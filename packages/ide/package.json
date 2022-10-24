@@ -1,0 +1,929 @@
+{
+  "name": "cfs-ide",
+  "displayName": "CodeFusion Studio",
+  "description": "Build and Debug applications for Analog Devices targets",
+  "icon": "media/images/cfs-app-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/analogdevicesinc/codefusion-studio"
+  },
+  "publisher": "analogdevices",
+  "displayPublisher": "Analog Devices Inc",
+  "author": {
+    "name": "Analog Devices Inc"
+  },
+  "license": "See LICENSE",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.89.0",
+    "node": "^18.x"
+  },
+  "keywords": [
+    "Analog Devices",
+    "ADI",
+    "ARM",
+    "Embedded",
+    "MAXIM",
+    "MaximSDK",
+    "MSDK",
+    "Code",
+    "Fusion",
+    "CodeFusion",
+    "Studio",
+    "CodeFusion Studio",
+    "CFS"
+  ],
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:c",
+    "onLanguage:cpp",
+    "onDebugResolve:cppdbg",
+    "workspaceContains:project.mk",
+    "workspaceContains:**/*.[c|cpp]",
+    "onView: cfs.quickAccess"
+  ],
+  "main": "./out/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "cfgtools.editor",
+        "displayName": "Package Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.cfsconfig"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "elf.fileEditor",
+        "displayName": "ELF File Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.axf"
+          },
+          {
+            "filenamePattern": "*.bin"
+          },
+          {
+            "filenamePattern": "*.elf"
+          },
+          {
+            "filenamePattern": "*.o"
+          },
+          {
+            "filenamePattern": "*.out"
+          },
+          {
+            "filenamePattern": "*.prx"
+          },
+          {
+            "filenamePattern": "*.puff"
+          },
+          {
+            "filenamePattern": "*.ko"
+          },
+          {
+            "filenamePattern": "*.mod"
+          },
+          {
+            "filenamePattern": "*.so"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "CodeFusionStudio",
+          "title": "CodeFusion Studio",
+          "icon": "media/images/cfs-activitybar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "CodeFusionStudio": [
+        {
+          "id": "cfs.quickAccessTree",
+          "name": "Home",
+          "type": "tree"
+        },
+        {
+          "id": "cfs.actionsView",
+          "name": "Actions",
+          "type": "tree",
+          "contextualTitle": "Actions"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "cfs.quickAccessTree",
+        "contents": "Loading Quick Access Links..."
+      },
+      {
+        "view": "cfs.actionsView",
+        "contents": "Loading Actions..."
+      }
+    ],
+    "terminal": {
+      "profiles": [
+        {
+          "title": "CFS Terminal",
+          "id": "cfs.terminal"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cfs.openProject",
+        "title": "Open Project",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "cfs.MSDK.openuserguide",
+        "title": "(MSDK) Open the User Guide"
+      },
+      {
+        "command": "cfs.MSDK.openuserguide-installation",
+        "title": "(MSDK) Open installation instructions"
+      },
+      {
+        "command": "cfs.newProject",
+        "title": "New Project",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "cfs.SDK.selectSdkPath",
+        "title": "(CFS) Select the CodeFusion Studio path from the discovered installations."
+      },
+      {
+        "command": "cfs.openSettings",
+        "title": "(CFS) Open CodeFusion Studio settings"
+      },
+      {
+        "command": "cfs.configureWorkspace",
+        "title": "(CFS) Configure workspace as a CodeFusion Studio project"
+      },
+      {
+        "command": "cfs.openWalkthrough",
+        "title": "(CFS) Open CodeFusion Studio Walkthrough"
+      },
+      {
+        "command": "cfs.selectProgramFile",
+        "title": "(CFS) Select the program to debug"
+      },
+      {
+        "command": "cfs.selectRiscvProgramFile",
+        "title": "(CFS) Select the RISCV program to debug"
+      },
+      {
+        "command": "cfs.debug.start",
+        "title": "(CFS) Start Debugging",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cfs.runBuildTask",
+        "title": "(CFS) Run Build Task"
+      },
+      {
+        "command": "cfs.runCleanTask",
+        "title": "(CFS) Run Clean Task"
+      },
+      {
+        "command": "cfs.openHomePage",
+        "title": "(CFS) Open Home Page"
+      },
+      {
+        "command": "cfs.openOnlineDocumentation",
+        "title": "(CFS) Open Online Documentation"
+      },
+      {
+        "command": "cfs.showHomePageAtStartup",
+        "title": "(CFS) Show Homepage at Startup"
+      },
+      {
+        "command": "cfgtools.loadConfig",
+        "title": "(CFS) Load configuration file",
+        "category": "Config Tools",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "cfs.selectZephyrWorkspace",
+        "title": "(CFS) Select the Zephyr Workspace."
+      },
+      {
+        "command": "cfgtools.viewConfigFileSource",
+        "title": "(CFS) View Config File Source (JSON)",
+        "category": "Config Tools",
+        "icon": {
+          "light": "resources/assets/view-source-file.svg",
+          "dark": "resources/assets/view-source-file-white.svg"
+        }
+      },
+      {
+        "command": "cfs.openPinConfigWalkthrough",
+        "title": "(CFS) Open CodeFusion Studio Pin Config Walkthrough"
+      },
+      {
+        "command": "cfs.openPinConfigGettingStarted",
+        "title": "(CFS) Open CodeFusion Studio Pin Config Getting Started"
+      },
+      {
+        "command": "cfs-elf.loadElf",
+        "title": "(CFS) Load ELF file",
+        "category": "ELF Explorer",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "cfs.migrateMsdkProjects",
+        "title": "(CFS) Migrate MSDK projects"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "submenu": "CodeFusionStudioMenu",
+          "group": "navigation",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "CodeFusionStudioMenu": [
+        {
+          "command": "cfs.openProject",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "cfs.newProject",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cfs.debug.start",
+          "when": "view == cfs.actionsView && viewItem == debug-launch",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.newProject",
+          "when": "viewItem == projectActions",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.openProject",
+          "when": "viewItem == projectActions",
+          "group": "inline"
+        },
+        {
+          "command": "cfgtools.loadConfig",
+          "when": "viewItem == configTools",
+          "group": "inline"
+        },
+        {
+          "command": "cfs-elf.loadElf",
+          "when": "viewItem == elfExplorer",
+          "group": "inline"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "resourceScheme == 'file' && resourceExtname == '.cfsconfig'",
+          "command": "cfgtools.viewConfigFileSource",
+          "group": "navigation"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "CodeFusionStudioMenu",
+        "label": "CodeFusion Studio"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "General",
+        "properties": {
+          "cfs.configureWorkspace": {
+            "type": "string",
+            "default": "No",
+            "description": "Whether this workspace should be configured as an CodeFusion IDE project.",
+            "scope": "resource",
+            "enum": [
+              "Yes",
+              "No",
+              "Never"
+            ]
+          },
+          "cfs.openHomePageAtStartup": {
+            "type": "string",
+            "default": "Yes",
+            "description": "Whether the CFS Home Page should be launched when an CFS project is opened.",
+            "scope": "machine-overridable",
+            "enum": [
+              "Yes",
+              "No"
+            ]
+          },
+          "cfs.sdk.path": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to your CodeFusion Studio installation",
+            "scope": "machine-overridable",
+            "order": 0
+          },
+          "cfs.programFile": {
+            "type": "string",
+            "default": null,
+            "description": "ELF binary to debug",
+            "scope": "resource"
+          },
+          "cfs.riscvProgramFile": {
+            "type": "string",
+            "default": null,
+            "description": "ELF binary to debug",
+            "scope": "resource"
+          },
+          "cfs.debugPath": {
+            "type": "string",
+            "default": null,
+            "description": "Path to the directory containing the ELF binary to debug",
+            "scope": "resource"
+          },
+          "cfs.riscvDebugPath": {
+            "type": "string",
+            "default": null,
+            "description": "Path to the directory containing the ELF binary to debug",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "Tools",
+        "properties": {
+          "cfs.tools.searchDirectories": {
+            "type": "array",
+            "default": [
+              "${config:cfs.sdk.path}/Utils",
+              "${config:cfs.sdk.path}/Tools"
+            ],
+            "description": "Paths to search for tools and toolchains.",
+            "items": {
+              "type": "string"
+            },
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "Config Tools",
+        "properties": {
+          "cfgtools.cfsutil.path": {
+            "type": "string",
+            "default": null,
+            "description": "Path to the cfsutil CLI command."
+          }
+        }
+      },
+      {
+        "title": "Toolchain",
+        "properties": {
+          "cfs.toolchain.selectedToolchain": {
+            "type": "string",
+            "order": 0,
+            "description": "The toolchain to build the current project with",
+            "scope": "resource",
+            "enum": [
+              "arm-none-eabi",
+              "riscv-none-elf"
+            ],
+            "default": "arm-none-eabi"
+          },
+          "cfs.toolchain.armAArch32GCC.path": {
+            "type": "string",
+            "order": 1,
+            "default": "${config:cfs.sdk.path}/Tools/gcc/arm-none-eabi",
+            "description": "Path to the arm-none-eabi GCC toolchain",
+            "scope": "resource"
+          },
+          "cfs.toolchain.riscVGCC.path": {
+            "type": "string",
+            "order": 2,
+            "default": "${config:cfs.sdk.path}/Tools/gcc/riscv-none-elf",
+            "description": "Path to the RISCV GCC toolchain",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "OpenOCD",
+        "properties": {
+          "cfs.openocd.path": {
+            "type": "string",
+            "default": "${config:cfs.sdk.path}/Tools/openocd",
+            "description": "Path to openocd",
+            "scope": "resource",
+            "order": 0
+          },
+          "cfs.openocd.interface": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to the OpenOCD interface script",
+            "scope": "resource",
+            "order": 1
+          },
+          "cfs.openocd.target": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to the OpenOCD target / board script",
+            "scope": "resource",
+            "order": 3
+          },
+          "cfs.openocd.riscvInterface": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to the OpenOCD interface script for RISCV core",
+            "scope": "resource",
+            "order": 2
+          },
+          "cfs.openocd.riscvTarget": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to the OpenOCD target / board script for RISCV core",
+            "scope": "resource",
+            "order": 4
+          },
+          "cfs.debugger.SWD": {
+            "type": "string",
+            "markdownDescription": "Select the debugger to use.",
+            "default": "MAX32625PICO",
+            "enum": [
+              "MAX32625PICO"
+            ],
+            "order": 5,
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "SEGGER JLink",
+        "properties": {
+          "cfs.jlink.path": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to directory containing the JLink binaries",
+            "scope": "machine-overridable"
+          },
+          "cfs.jlink.device": {
+            "type": "string",
+            "default": null,
+            "description": "Device used for JLink debug sessions",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "CMSIS",
+        "properties": {
+          "cfs.cmsis.root": {
+            "type": "string",
+            "default": "${userHome}/AppData/Local/Analog/Packs",
+            "description": "Absolute path to the root CMSIS pack directory",
+            "scope": "resource"
+          },
+          "cfs.cmsis.pack": {
+            "type": "string",
+            "default": null,
+            "description": "Absolute path to the CMSIS pack",
+            "scope": "resource"
+          },
+          "cfs.cmsis.svdFile": {
+            "type": "string",
+            "default": "",
+            "description": "Absolute path to the .svd file.",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "Project",
+        "properties": {
+          "cfs.project.target": {
+            "type": "string",
+            "default": null,
+            "description": "Target processor",
+            "order": 1,
+            "scope": "resource"
+          },
+          "cfs.project.board": {
+            "type": "string",
+            "default": "EvKit_V1",
+            "description": "Target Board Support Package (BSP)",
+            "order": 2,
+            "scope": "resource"
+          },
+          "cfs.project.name": {
+            "type": "string",
+            "default": "${workspaceFolderBasename}",
+            "description": "Project name",
+            "scope": "resource"
+          },
+          "cfs.project.firmwarePlatform": {
+            "type": "string",
+            "description": "Firmware platform to build the project against",
+            "default": "MSDK",
+            "enum": [
+              "MSDK",
+              "Zephyr"
+            ],
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "Elf File Explorer",
+        "properties": {
+          "elf.queries": {
+            "type": "array",
+            "default": [],
+            "description": "List of saved queries for the Elf Symbols Explorer."
+          },
+          "elf.tableFormatNumbers": {
+            "type": "object",
+            "default": {},
+            "description": "Format number values between hexadecimal and decimal for tables"
+          }
+        }
+      },
+      {
+        "title": "Zephyr",
+        "properties": {
+          "cfs.zephyr.sdk.path": {
+            "type": "string",
+            "order": 1,
+            "default": "${config:cfs.sdk.path}/Tools/zephyr-sdk",
+            "description": "Path to the Zephyr sdk.",
+            "scope": "machine-overridable"
+          },
+          "cfs.zephyr.workspace.path": {
+            "type": "string",
+            "order": 2,
+            "default": "${config:cfs.sdk.path}/SDK/zephyr/zephyr",
+            "description": "Path to the Zephyr workspace.",
+            "scope": "machine-overridable"
+          }
+        }
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "cfs.gettingStarted",
+        "icon": "media/images/cfs-app-icon.png",
+        "title": "Get Started with CodeFusion Studio",
+        "description": "Create, build and debug your first CodeFusion Studio project.",
+        "steps": [
+          {
+            "id": "install",
+            "title": "Install CodeFusion Studio SDK",
+            "description": "Download and install the CodeFusion Studio SDK.",
+            "media": {
+              "markdown": "docs-walkthrough/install-sdk.md"
+            }
+          },
+          {
+            "id": "setup",
+            "title": "Set up CodeFusion Studio",
+            "description": "Set up your environment.",
+            "media": {
+              "markdown": "docs-walkthrough/setup.md"
+            }
+          },
+          {
+            "id": "create-project",
+            "title": "Create a project",
+            "description": "Create your first project.",
+            "media": {
+              "markdown": "docs-walkthrough/create-project.md"
+            }
+          },
+          {
+            "id": "configure-project",
+            "title": "Configure a project",
+            "description": "Configure your project.",
+            "media": {
+              "markdown": "docs-walkthrough/configure-project.md"
+            }
+          },
+          {
+            "id": "pin-config",
+            "title": "Pin Configuration",
+            "description": "Configure the pin settings for your project.",
+            "media": {
+              "markdown": "docs-walkthrough/pin-config.md"
+            }
+          }
+        ]
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "cppdbg",
+        "label": "GDB and OpenOCD",
+        "configurationSnippets": [
+          {
+            "label": "CFS: Debug with GDB and OpenOCD (ARM Embedded)",
+            "description": "Launch OpenOCD and debug an ARM application using GDB for GCC ARM Embedded using Cortex Debug.",
+            "body": {
+              "executable": "^\"\\${command:cfs.selectProgramFile}\"",
+              "cwd": "^\"\\${command:cfs.setDebugPath}\"",
+              "name": "CFS: Debug with GDB and OpenOCD (ARM Embedded)",
+              "request": "launch",
+              "type": "cortex-debug",
+              "runToEntryPoint": "main",
+              "showDevDebugOutput": "both",
+              "servertype": "openocd",
+              "serverpath": "^\"\\${config:cfs.openocd.path}/bin/openocd\"",
+              "armToolchainPath": "^\"\\${config:cfs.toolchain.armAArch32GCC.path}/bin\"",
+              "svdFile": "^\"\\${command:cfs.cmsis.selectSvdFile}\"",
+              "searchDir": [
+                "^\"\\${command:cfs.cmsis.selectCmsisPack}/openocd/scripts\""
+              ],
+              "configFiles": [
+                "^\"\\${command:cfs.openocd.selectInterface}\"",
+                "^\"\\${command:cfs.openocd.selectTarget}\""
+              ],
+              "gdbTarget": "localhost:3333",
+              "preLaunchCommands": [
+                "set logging overwrite on",
+                "set logging file debug-arm.log",
+                "set logging on",
+                "set remotetimeout 60",
+                "tbreak abort",
+                "tbreak _fatal_error",
+                "tbreak _exit"
+              ],
+              "preLaunchTask": "CFS: build"
+            }
+          },
+          {
+            "label": "CFS: Debug with JlinkGDBServer and JLink (ARM Embedded)",
+            "description": "Launch JLink and debug an ARM application using JlinkGDBServer for GCC ARM Embedded using Cortex Debug.",
+            "body": {
+              "name": "CFS: Debug with JlinkGDBServer and JLink (ARM Embedded)",
+              "executable": "^\"\\${command:cfs.selectProgramFile}\"",
+              "cwd": "^\"\\${command:cfs.setDebugPath}\"",
+              "request": "launch",
+              "type": "cortex-debug",
+              "runToEntryPoint": "main",
+              "showDevDebugOutput": "both",
+              "servertype": "jlink",
+              "linux": {
+                "serverpath": "^\"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCLExe\""
+              },
+              "windows": {
+                "serverpath": "^\"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCL.exe\""
+              },
+              "osx": {
+                "serverpath": "^\"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCLExe\""
+              },
+              "device": "^\"\\${command:cfs.jlink.setDevice}\"",
+              "interface": "swd",
+              "armToolchainPath": "^\"\\${config:cfs.toolchain.armAArch32GCC.path}/bin\"",
+              "svdFile": "^\"\\${command:cfs.cmsis.selectSvdFile}\"",
+              "gdbTarget": "localhost:2331",
+              "preLaunchCommands": [
+                "set logging overwrite on",
+                "set logging file debug-arm.log",
+                "set logging on",
+                "set remotetimeout 60",
+                "tbreak abort",
+                "tbreak _fatal_error",
+                "tbreak _exit"
+              ],
+              "preLaunchTask": "CFS: build",
+              "overrideLaunchCommands": [
+                "monitor halt",
+                "monitor reset",
+                "-target-download"
+              ],
+              "overrideResetCommands": [
+                "monitor reset"
+              ],
+              "overrideRestartCommands": [
+                "monitor reset"
+              ]
+            }
+          },
+          {
+            "label": "CFS: Debug with GDB and OpenOCD (RISC-V)",
+            "description": "Launch OpenOCD and debug a RISCV application using GDB",
+            "body": {
+              "name": "CFS: Debug with GDB and OpenOCD (RISC-V)",
+              "type": "cppdbg",
+              "request": "launch",
+              "program": "^\"\\${command:cfs.selectRiscvProgramFile}\"",
+              "args": [],
+              "stopAtEntry": false,
+              "cwd": "^\"\\${command:cfs.setRiscvDebugPath}\"",
+              "environment": [],
+              "externalConsole": false,
+              "MIMode": "gdb",
+              "linux": {
+                "miDebuggerPath": "^\"\\${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb\"",
+                "debugServerPath": "^\"\\${config:cfs.openocd.path}/bin/openocd\""
+              },
+              "windows": {
+                "miDebuggerPath": "^\"\\${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb.exe\"",
+                "debugServerPath": "^\"\\${config:cfs.openocd.path}/bin/openocd.exe\""
+              },
+              "osx": {
+                "miDebuggerPath": "^\"\\${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb\"",
+                "debugServerPath": "^\"\\${config:cfs.openocd.path}/bin/openocd\""
+              },
+              "logging": {
+                "exceptions": true,
+                "trace": true,
+                "traceResponse": true,
+                "engineLogging": true
+              },
+              "miDebuggerServerAddress": "localhost:3334",
+              "debugServerArgs": "^\"-c \\\"gdb_port 3334\\\" -s '\\${config:cfs.openocd.path}/share/openocd/scripts/' -f \\${command:cfs.openocd.selectRiscvInterface} -f \\${command:cfs.openocd.selectRiscvTarget}\"",
+              "serverStarted": "Info : Listening on port 3334 for gdb connections",
+              "filterStderr": true,
+              "customLaunchSetupCommands": [
+                {
+                  "text": "-list-features"
+                }
+              ],
+              "targetArchitecture": "arm",
+              "setupCommands": [
+                {
+                  "text": "set logging overwrite on"
+                },
+                {
+                  "text": "set logging file debug-riscv.log"
+                },
+                {
+                  "text": "set logging on"
+                },
+                {
+                  "text": "^\"cd \\${command:cfs.setRiscvDebugPath}\""
+                },
+                {
+                  "text": "set architecture riscv:rv32",
+                  "ignoreFailures": false
+                },
+                {
+                  "text": "^\"exec-file \\${command:cfs.selectRiscvProgramFile}\"",
+                  "ignoreFailures": false
+                },
+                {
+                  "text": "^\"symbol-file \\${command:cfs.selectRiscvProgramFile}\"",
+                  "ignoreFailures": false
+                },
+                {
+                  "text": "target remote localhost:3334"
+                },
+                {
+                  "text": "^\"set \\$pc=Reset_Handler\"",
+                  "ignoreFailures": false
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "extensionDependencies": [
+    "ms-vscode.cpptools",
+    "marus25.cortex-debug"
+  ],
+  "scripts": {
+    "cfgtools:dev": "vite --config ./vite.config.config-tools.ts",
+    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.ts ./src/webviews/config-tools/**/*.tsx",
+    "cfgtools:open-cypress": "cypress open --component",
+    "cfgtools:run-cypress": "cypress run --component --browser electron",
+    "cfgtools:run-extester": "yarn cfgtools:compile-tests && node out/tests/ui-test-config-tools/runTest.js",
+    "cfgtools:build": "vite build --config ./vite.config.config-tools.ts",
+    "cfgtools:compile-tests": "tsc -p src/tests/ui-test-config-tools/tsconfig.json",
+    "elf:dev": "vite --config ./vite.config.elf-explorer.ts",
+    "elf:build": "vite build --config ./vite.config.elf-explorer.ts",
+    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.ts src/webviews/elf-explorer/**/*.tsx",
+    "webviews:lint-common": "eslint src/webviews/common/**/*.ts src/webviews/common/**/*.tsx",
+    "build-local-deps": "yarn ws:react-lib build && yarn workspace elf-parser build && yarn ws:lib build",
+    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests",
+    "vite:extension": "vite build --mode extension",
+    "vite:webview": "vite build --mode webview",
+    "vite:new-project-wizard": "vite build --mode new-project-wizard",
+    "vite:watch": "vite build --watch",
+    "dev:config-tools": "vite --config ./vite.config.config-tools.ts",
+    "pretest": "yarn run build:extension",
+    "lint": "yarn run stylelint && yarn run eslint && yarn run markdownlint",
+    "stylelint": "npx stylelint \"**/src/**/*.{scss,css}\" --fix",
+    "eslint": "eslint --ext .js,.jsx,.ts,.tsx --ignore-path .gitignore .",
+    "markdownlint": "npx markdownlint-cli docs/**/*.md",
+    "test:cy-run-component": "cypress run --component --browser electron",
+    "test:ui": "extest setup-and-run \"out/tests/ui-test/**/*-test.js\" -c 1.85.2 -u --yarn --mocha_config .mocharc.js",
+    "test:unit": "yarn run pretest && vscode-test --code-version 1.85.2",
+    "package": "vsce package --yarn --dependencies --baseImagesUrl https://github.com/analogdevicesinc/codefusion-studio/raw/HEAD/packages/ide",
+    "build:extension": "yarn vite:extension && yarn vite:webview && yarn vite:new-project-wizard && yarn cfgtools:build && yarn elf:build"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.10",
+    "@types/lodash.debounce": "^4.0.8",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.27",
+    "@types/path-browserify": "^1.0.2",
+    "@types/react": "^18.2.62",
+    "@types/react-dom": "^18.2.19",
+    "@types/styled-components": "^5.1.29",
+    "@types/vscode": "^1.73.0",
+    "@types/vscode-webview": "^1.57.3",
+    "@types/xml2js": "^0.4.11",
+    "@typescript-eslint/eslint-plugin": "^6.18.0",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "@vscode/codicons": "^0.0.35",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "2.3.8",
+    "@vscode/vsce": "2.23.0",
+    "chai": "^4.3.7",
+    "concurrently": "^8.2.2",
+    "css-loader": "^6.8.1",
+    "cypress": "^13.8.1",
+    "cypress-real-events": "^1.13.0",
+    "eslint": "^8.53.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-standard-with-typescript": "^34.0.1",
+    "eslint-config-xo": "^0.43.1",
+    "eslint-config-xo-react": "^0.27.0",
+    "eslint-config-xo-typescript": "^1.0.1",
+    "eslint-plugin-cypress": "^3.3.0",
+    "eslint-plugin-header": "^3.1.1",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-jsonc": "^2.11.2",
+    "eslint-plugin-markdown": "^3.0.0",
+    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "eslint-plugin-unused-imports": "^3.0.0",
+    "eslint-plugin-yml": "^1.11.0",
+    "focus-trap-react": "^10.2.3",
+    "markdownlint-cli": "^0.40.0",
+    "mocha": "^10.1.0",
+    "plop": "^4.0.0",
+    "prettier": "^2.8.8",
+    "prettier-config-xo": "^2.0.0",
+    "prop-types": "^15.7.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sass": "^1.69.5",
+    "stylelint": "^16.2.1",
+    "stylelint-config-recess-order": "^4.4.0",
+    "stylelint-config-standard": "^36.0.0",
+    "stylelint-config-standard-scss": "^13.0.0",
+    "typescript": "5.0.4",
+    "vite": "^5.2.11",
+    "vite-plugin-node-polyfills": "^0.19.0",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vscode-extension-tester": "^8.1.0"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.0.1",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "cfs-lib": "workspace:*",
+    "cfs-react-library": "workspace:^",
+    "echarts": "^5.5.0",
+    "echarts-for-react": "^3.0.2",
+    "elf-parser": "workspace:^",
+    "glob": "^10.4.1",
+    "htmlparser2": "^9.1.0",
+    "lodash.debounce": "^4.0.8",
+    "path-browserify": "^1.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-inlinesvg": "^4.1.3",
+    "react-redux": "^9.0.4",
+    "react-router-dom": "^6.21.1",
+    "recharts": "^2.12.6",
+    "swiper": "^11.0.5",
+    "xml2js": "^0.5.0"
+  },
+  "resolutions": {
+    "@types/react": "^18.2.62"
+  },
+  "__metadata": {
+    "publisherDisplayName": "Analog Devices"
+  }
+}

@@ -1,0 +1,62 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/fonts';
+
+.header {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0 32px 24px 32px;
+	border-bottom: 1px solid colors.$default-border;
+	gap: 6px;
+
+	h3 {
+		margin: 0;
+	}
+}
+
+.divider {
+	flex: 1;
+}
+
+.container {
+	padding: 20px 32px;
+}
+
+.signPost {
+	margin-bottom: 12px;
+}
+
+.error {
+	ul.valueError {
+		margin: 0;
+		padding: 0;
+
+		& li::marker {
+			color: colors.$error;
+		}
+	}
+
+	p {
+		margin: 2px 0;
+		color: colors.$error;
+	}
+}
+
+.label {
+	font-size: fonts.$font-size-m;
+	color: colors.$description-foreground;
+}

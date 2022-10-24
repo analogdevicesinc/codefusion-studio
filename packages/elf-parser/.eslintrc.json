@@ -1,0 +1,12 @@
+{
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/strict-type-checked",
+		"plugin:@typescript-eslint/stylistic-type-checked",
+		"prettier"
+	],
+	"rules": {},
+	"parserOptions": {
+		"project": "./tsconfig.json"
+	}
+}

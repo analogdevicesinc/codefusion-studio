@@ -1,0 +1,119 @@
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: false
+        description: tag used to publish to npm
+        default: latest
+        type: string
+      sign:
+        required: false
+        description: signs the package using sf-release if set to true
+        default: false
+        type: boolean
+      dryrun:
+        required: false
+        description: if true, the job will run but will not publish to npm or push to git
+        default: false
+        type: boolean
+      prerelease:
+        required: false
+        description: if true, it will use the version <version>-<branch>.0
+        type: boolean
+        default: false
+      nodeVersion:
+        description: version of node to use.  It's better to specify latest, lts/* or lts/-1 than to hardode numbers
+        type: string
+        default: lts/*
+        required: false
+      runsOn:
+        description: the runner.  Only needed if you need a non-public runner (ex, for git checkout from IP restricted private repo)
+        default: ubuntu-latest
+        required: false
+        type: string
+      githubTag:
+        description: the github release tag that you want to publish as an npm package
+        required: true
+        type: string
+jobs:
+  check-publish:
+    outputs:
+      published: ${{ steps.is-published.outputs.published }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.githubTag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.nodeVersion }}
+      - name: Is published
+        id: is-published
+        run: |
+          RESPONSE=$(npm view .@${{ inputs.githubTag }} version --json --silent || echo "Not published")
+
+          if [ "$RESPONSE" = "\"${{ inputs.githubTag }}\"" ]; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: echo "published said ${{ steps.is-published.outputs.published }}"
+
+  npm-publish:
+    needs: [check-publish]
+    if: ${{ always() && needs.check-publish.outputs.published == 'false' }}
+    runs-on: ${{ inputs.runsOn }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.githubTag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.nodeVersion }}
+          cache: yarn
+      - run: yarn install --network-timeout 600000
+      - run: yarn ws:cli build
+      - run: npm install sfdx-cli -g @salesforce/plugin-release-management --omit=dev
+
+      # when dryrun is true: publish with --dryrun flag
+      - if: ${{ inputs.dryrun && !inputs.prerelease }}
+        name: Release Dryrun
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --dryrun --no-install --npmtag ${{ inputs.tag }}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        # when dryrun and prerelease is true: publish with --dryrun and --prerelease flags
+      - if: ${{ inputs.dryrun && inputs.prerelease }}
+        name: PreRelease Dryrun
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --dryrun --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        # when dryrun is false and sign is true: sign and publish package
+      - if: ${{ !inputs.dryrun && inputs.sign && !inputs.prerelease}}
+        name: Sign and Release
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --sign --no-install --npmtag ${{ inputs.tag }}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+        # when dryrun is false and sign is true and prerelease is true: sign and publish prerelease package
+      - if: ${{ !inputs.dryrun && inputs.sign && inputs.prerelease}}
+        name: Sign and PreRelease
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --sign --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+        # when dryrun is false and sign is false: publish package
+      - if: ${{ !inputs.dryrun && !inputs.sign && !inputs.prerelease}}
+        name: Release
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        # when dryrun is false and sign is false and prerelease is true: publish prerelease package
+      - if: ${{ !inputs.sign && !inputs.dryrun && inputs.prerelease }}
+        name: PreRelease
+        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}

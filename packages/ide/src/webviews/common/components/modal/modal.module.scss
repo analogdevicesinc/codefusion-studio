@@ -1,0 +1,122 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '../../styles/colors';
+@use '../../styles/layout';
+@use 'sass:color';
+
+.modal {
+	width: 600px;
+	height: 80%;
+	background-color: colors.$notifications-background;
+	color: colors.$notifications-foreground;
+	border: 1px solid colors.$default-border;
+	padding: 0;
+	box-shadow: layout.$default-shadow;
+
+	&::backdrop {
+		background-color: colors.$default-background;
+		opacity: 0.8;
+	}
+}
+
+.innerModal {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.modalHeader {
+	width: 100%;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	box-sizing: border-box;
+	padding: 24px;
+	padding-bottom: 8px;
+}
+
+.modalBody {
+	background: colors.$notifications-background;
+	width: 100%;
+	height: 100%;
+	flex-grow: 1;
+	padding: 0 24px;
+	box-sizing: border-box;
+	overflow-y: auto;
+	overflow-x: hidden;
+
+	h1 {
+		margin-top: 0;
+	}
+}
+
+.modalFooter {
+	height: 72px;
+	padding: 22px 24px;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: end;
+	gap: 12px;
+	position: sticky;
+}
+
+.closeButton {
+	color: colors.$icon-foreground;
+	display: flex;
+	justify-content: flex-end;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	width: 16px;
+	height: 16px;
+
+	& path {
+		fill: colors.$icon-foreground;
+	}
+}
+
+.closeButton:hover {
+	color: colors.$button-foreground;
+}
+
+.footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 13px;
+}
+
+.backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: colors.$default-background;
+	opacity: 0.8;
+	z-index: 100;
+}
+
+//Dynamic height
+.modalHeight {
+	height: fit-content;
+	[class*='innerModal'] {
+		height: auto;
+	}
+	[class*='modalBody'] {
+		flex-grow: 0;
+		height: auto;
+	}
+}

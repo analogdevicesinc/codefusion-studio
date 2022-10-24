@@ -1,0 +1,45 @@
+{
+  "extends": [
+    "stylelint-config-standard-scss",
+    "stylelint-config-recess-order"
+  ],
+  "rules": {
+    "declaration-property-unit-allowed-list": [
+      {
+        "border": ["px"],
+        "padding|gap": ["em", "rem", "px"],
+        "font-size": ["em", "px"],
+        "width": ["vw", "%", "rem"],
+        "height": ["vh", "%", "rem"]
+      },
+      {
+        "ignore": ["inside-function"]
+      }
+    ],
+    "color-named": [
+      "never",
+      {
+        "message": "Named colors are not allowed; please use HSL (Hue, Saturation, Lightness) instead. Example of valid HSL format: hsl(120 100% 50%)"
+      }
+    ],
+    "color-no-hex": [
+      true,
+      {
+        "message": "Hex color values are not allowed; please use HSL (Hue, Saturation, Lightness) instead. Example of valid HSL format: hsl(120 100% 50%)"
+      }
+    ],
+    "function-disallowed-list": ["rgb", "hwb", "lch"],
+    "comment-empty-line-before": null,
+    "custom-property-pattern": "^(--vscode-[a-z][a-z0-9-]*-[a-z0-9-]*)|^(?!--vscode).*$",
+    "lightness-notation": null
+  },
+  "ignoreFiles": [
+    "**/*.js",
+    "**/*.jsx",
+    "test-resources/**/*.*",
+    "site/**/*.*",
+    "src/webviews/common/components/modal/modal.module.scss",
+    "src/webviews/common/components/navigation/Navigation.module.scss",
+    "src/webviews/common/components/radio-selection-box/radioSelectionBox.module.scss"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+	// container for building and testing mkdocs documentation
+	"name": "Documentation",
+	"build": {
+		"dockerfile": "Dockerfile",
+	},
+}

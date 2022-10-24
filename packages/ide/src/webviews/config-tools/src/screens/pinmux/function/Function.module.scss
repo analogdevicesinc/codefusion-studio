@@ -1,0 +1,99 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/fonts';
+@use '@common/styles/layout';
+
+.container {
+	display: flex;
+	align-items: center;
+	color: colors.$default-foreground;
+	height: 16px;
+	gap: 8px;
+	width: 100%;
+	position: relative;
+}
+
+.dropDownPin {
+	--input-min-width: 44px;
+	--design-unit: 4;
+	--font-family: #{fonts.$default-font-family};
+	--input-height: 16;
+	--type-ramp-base-font-size: #{fonts.$font-size-small};
+	--type-ramp-base-line-height: 16px;
+	--corner-radius-round: 5;
+	--dropdown-background: #{colors.$editor-widget-background};
+	--foreground: #{colors.$editor-widget-foreground};
+	--list-active-selection-background: #{colors.$list-active-selection-background};
+	--list-active-selection-foreground: #{colors.$list-active-selection-foreground};
+	--dropdown-border: #{colors.$editor-widget-border};
+
+	&::part(control) {
+		padding: 0 4px;
+		width: 100%;
+		justify-content: space-around;
+	}
+
+	&::part(indicator) {
+		margin-inline-start: 4px;
+		width: 0;
+	}
+
+	&::part(selected-value) {
+		flex: none;
+	}
+}
+
+.divider {
+	flex: 1;
+}
+
+.conflictIcon {
+	cursor: pointer;
+	display: flex;
+	$conflictIconDim: 16px;
+	$gap: 5px;
+
+	position: absolute;
+	left: -#{calc($conflictIconDim + $gap)};
+	width: $conflictIconDim;
+	height: $conflictIconDim;
+
+	path {
+		fill: #{colors.$error};
+	}
+}
+
+.dropdownPinOption {
+	padding: 0;
+	height: 16px;
+
+	&::part(content) {
+		padding: 0 4px;
+		width: 100%;
+	}
+
+	.checkmarkIcon {
+		width: 16px;
+		height: 16px;
+		text-align: center;
+	}
+
+	.dropdownPinLabel {
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+	}
+}

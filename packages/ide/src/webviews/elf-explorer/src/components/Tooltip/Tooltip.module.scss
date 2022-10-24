@@ -1,0 +1,53 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+
+.tooltipContainer {
+	display: inline-block;
+	position: relative;
+}
+
+.tooltipContent {
+	position: absolute;
+	top: 100%;
+	background-color: colors.$tooltip-background;
+	border: 1px solid colors.$tooltip-border;
+	box-shadow: 0px 2px 16px 0px colors.$default-shadow;
+	color: colors.$default-foreground;
+	padding: 5px 10px;
+	z-index: 1000;
+	visibility: visible;
+	opacity: 1;
+	min-width: 400px;
+	padding: 20px;
+	white-space: normal;
+}
+
+.tooltipContent div {
+	display: block;
+	word-wrap: break-word;
+	padding: 10px 0;
+	overflow-y: auto;
+	max-height: 250px;
+
+	ul {
+		list-style-type: disc;
+		padding-left: 20px;
+	}
+
+	li {
+		display: list-item;
+	}
+}

@@ -1,0 +1,68 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+$default-font-family: var(--vscode-font-family, 'SF Pro Display');
+$font-size-m: 12px;
+$font-size-small: 11px;
+$font-size-xs: 8px;
+$font-size-xss: 6px;
+$default-font-weight: var(--vscode-editor-font-weight, 400);
+
+@mixin body-b1 {
+	font-weight: 500;
+	font-size: 13px;
+	line-height: 15px;
+}
+
+@mixin body-b2 {
+	font-weight: 500;
+	font-size: $font-size-m;
+	line-height: 14px;
+}
+
+@mixin body-b3 {
+	font-weight: 500;
+	font-size: $font-size-small;
+	line-height: 13px;
+}
+
+@mixin heading-h3 {
+	font-weight: 500;
+	font-size: 14px;
+	line-height: 16px;
+	margin: 0;
+}
+
+@mixin heading-h4 {
+	font-weight: 700;
+	font-size: 13px;
+	line-height: 15px;
+}
+
+@mixin heading-h6 {
+	font-size: $font-size-small;
+	font-weight: 500;
+	line-height: 13px;
+}
+
+@mixin heading-h7 {
+	@include heading-h6;
+	font-weight: 800;
+}
+
+@mixin label-l2 {
+	font-size: $font-size-m;
+	font-weight: 700;
+	line-height: 18px;
+}

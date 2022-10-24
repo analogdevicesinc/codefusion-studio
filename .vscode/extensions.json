@@ -1,0 +1,11 @@
+{
+	"recommendations": [
+		"arcanis.vscode-zipfs",
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"ms-vscode-remote.remote-wsl",
+		"connor4312.css-theme-completions",
+		"davidanson.vscode-markdownlint",
+		"editorconfig.editorconfig"
+	]
+}

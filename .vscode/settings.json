@@ -1,0 +1,30 @@
+{
+	"search.exclude": {
+		"**/.yarn": true,
+		"**/.pnp.*": true,
+		"**/node_modules": true
+	},
+	"[markdown]": {
+		"editor.formatOnSave": true,
+		"editor.formatOnPaste": true,
+		"editor.defaultFormatter": "DavidAnson.vscode-markdownlint",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.markdownlint": "always"
+		}
+	},
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"eslint.nodePath": ".yarn/sdks",
+	"prettier.prettierPath": ".yarn/sdks/prettier/index.cjs",
+	"editor.formatOnSave": true,
+	"editor.formatOnPaste": true,
+	"eslint.enable": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"eslint.validate": ["typescript", "typescriptreact"],
+	"eslint.workingDirectories": [{ "mode": "auto" }],
+	"typescript.preferences.importModuleSpecifier": "relative",
+	"git.alwaysSignOff": true,
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
+}

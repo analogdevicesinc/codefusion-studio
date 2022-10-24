@@ -1,0 +1,48 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+
+.sticky-grid-header {
+	top: 53px;
+}
+.right-align {
+	text-align: right;
+}
+.setRelative {
+	position: relative;
+}
+.circle {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-right: 5px;
+	vertical-align: middle;
+}
+.textColor {
+	background-color: colors.$chart-blue;
+}
+.dataColor {
+	background-color: colors.$chart-green;
+}
+.bssColor {
+	background-color: colors.$chart-orange;
+}
+
+.makeItElipsis {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+}

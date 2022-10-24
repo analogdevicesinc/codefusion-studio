@@ -1,0 +1,124 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/fonts';
+@use '@common/styles/layout';
+
+$item-height: 48px;
+$item-width: 48px;
+$tooltip-left-offset: 4px;
+
+.icon {
+	box-sizing: border-box;
+	border: 2px solid transparent;
+	border-bottom: 0;
+	border-top: 0;
+	padding: 0;
+	font-size: fonts.$font-size-small;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: $item-height;
+	text-align: center;
+	cursor: pointer;
+
+	p {
+		margin-bottom: 0;
+		color: colors.$navigation-color-inactive;
+		max-width: min-content;
+	}
+
+	& path {
+		fill: colors.$navigation-color-inactive;
+	}
+}
+
+[data-tooltip] {
+	position: relative;
+	cursor: pointer;
+}
+
+[data-tooltip]::after {
+	@include fonts.body-b3;
+
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+	content: attr(data-tooltip);
+	left: $tooltip-left-offset;
+	top: calc(100% + 10px);
+	border-radius: 2px;
+	border: 1px solid colors.$editor-widget-border;
+	box-shadow: layout.$default-shadow;
+	background-color: colors.$default-background;
+	color: colors.$default-foreground;
+	z-index: 10;
+	padding: 5px 8px;
+	width: max-content;
+	transform: translateY(-#{$item-height}) translateX($item-width);
+	transition: all 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+[data-tooltip]::before {
+	content: '';
+	position: absolute;
+	left: calc($tooltip-left-offset + -10px);
+	top: -31px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: transparent colors.$editor-widget-border transparent
+		transparent;
+	transform: translateY($item-height) translateX($item-width);
+	transition: all 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+	opacity: 0;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:hover .tooltipNotch {
+	opacity: 1;
+	transition-duration: 300ms;
+}
+
+.tooltipNotch {
+	position: absolute;
+	left: calc($tooltip-left-offset + 39px);
+	top: 17px;
+	border-style: solid;
+	border-width: 5px;
+	border-color: transparent colors.$default-background transparent
+		transparent;
+	z-index: 10;
+	opacity: 0;
+	z-index: 20;
+}
+
+.active {
+	border-right: 2px solid transparent;
+	border-left: 2px solid colors.$navigation-color-active;
+}
+
+.active,
+.icon:hover:not(.disabled) {
+	& p {
+		color: colors.$navigation-color-active;
+	}
+
+	path {
+		fill: colors.$navigation-color-active;
+	}
+}

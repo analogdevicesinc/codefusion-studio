@@ -1,0 +1,75 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/fonts';
+
+.container {
+	border-bottom: 1px solid colors.$default-border;
+	font-size: fonts.$font-size-small;
+	color: colors.$default-foreground;
+
+	border-left: 2px solid transparent;
+
+	&:hover {
+		border-left: 2px solid colors.$default-foreground;
+	}
+}
+
+.body {
+	display: flex;
+	flex-direction: column;
+	padding-left: 30px;
+	padding-right: 14px;
+	box-sizing: border-box;
+	gap: 13px;
+	margin: 6px 0;
+}
+
+.hasBorder {
+	border-left: 2px solid colors.$default-foreground;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	padding: 8px 14px;
+	height: 28px;
+	width: 100%;
+	box-sizing: border-box;
+	cursor: pointer;
+
+	& > span {
+		font-weight: 700;
+		margin-left: 11px;
+	}
+}
+
+.iconOpen {
+	transform: rotate(90deg);
+}
+
+.divider {
+	flex: 1;
+}
+
+.conflictIcon {
+	display: flex;
+	width: 16px;
+	height: 16px;
+
+	path {
+		fill: #{colors.$error};
+	}
+}

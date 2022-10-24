@@ -1,0 +1,45 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+.tooltip {
+	position: relative;
+	display: inline-block;
+
+	.title {
+		position: absolute;
+		top: 100%;
+		z-index: 101;
+		padding: 2px 4px;
+		margin-top: 2px;
+		font-size: 12px;
+		color: var(--vscode-activityBar-foreground);
+		text-align: center;
+		visibility: hidden;
+		background-color: var(--vscode-activityBar-background);
+		box-shadow: 0 2px 16px 0 hsl(0deg 0% 0% / 36%);
+		opacity: 0;
+		transition: opacity 0.25s;
+	}
+
+	&:hover .title {
+		visibility: visible;
+		opacity: 1;
+	}
+
+	&.long .title {
+		width: max-content;
+		max-width: var(--tooltip-max-width, 200px);
+	}
+}

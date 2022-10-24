@@ -1,0 +1,43 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Run Config Tools Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
+			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
+			"preLaunchTask": "cfgtools: build"
+		},
+		{
+			"name": "Run IDE Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
+			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
+			"preLaunchTask": "ide: build"
+		},
+		{
+			"name": "Run ELF file viewer",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
+			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
+			"preLaunchTask": "elf: build"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Execute CLI Dev Command",
+			"skipFiles": ["<node_internals>/**"],
+			"program": "${workspaceFolder}/packages/pinconfig-cli/bin/dev.js",
+			"args": ["hello", "world"],
+			"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/tsx",
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		}
+	]
+}

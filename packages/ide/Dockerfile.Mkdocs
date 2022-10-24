@@ -1,0 +1,16 @@
+FROM python:3
+
+RUN pip install mkdocs mkdocs-techdocs-core
+RUN mkdocs new letscloud
+
+EXPOSE 8000
+
+RUN mkdir /vscode
+
+COPY . /vscode
+
+WORKDIR /vscode
+
+ENTRYPOINT ["mkdocs"]
+
+CMD ["serve", "-a0.0.0.0:8000"]

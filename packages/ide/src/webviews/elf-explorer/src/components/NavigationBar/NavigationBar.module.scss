@@ -1,0 +1,80 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+
+.navigation-bar {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	display: flex;
+	flex: 1 0 auto;
+	justify-content: space-between;
+	align-items: center;
+	height: 40px;
+	padding: 8px;
+	box-sizing: border-box;
+	background: colors.$navigation-background;
+	border: solid colors.$default-border;
+	border-width: 0 0 1px 0;
+	color: colors.$navigation-color-inactive;
+	text-align: center;
+
+	button {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px;
+		color: colors.$icon-foreground;
+		background: colors.$navigation-background;
+		border: 1px solid colors.$default-border;
+		cursor: pointer;
+		path {
+			fill: colors.$icon-foreground;
+		}
+	}
+
+	.start-slot,
+	.end-slot {
+		:first-child {
+			border-radius: 4px 0 0 4px;
+		}
+		:last-child {
+			border-radius: 0 4px 4px 0;
+		}
+		:only-child {
+			border-radius: 4px;
+		}
+		* + * {
+			margin-left: -1px;
+		}
+	}
+
+	.end-slot {
+		margin-left: auto;
+	}
+	.title {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		text-align: center;
+		text-transform: uppercase;
+		color: colors.$button-secondary-foreground;
+		h1 {
+			font-weight: normal;
+			font-size: 11px;
+			margin: 0;
+			line-height: normal;
+		}
+	}
+}

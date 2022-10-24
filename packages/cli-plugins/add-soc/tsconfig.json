@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"declaration": true,
+		"module": "Node16",
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": true,
+		"target": "es2022",
+		"moduleResolution": "node16",
+		"skipLibCheck": true,
+	},
+	"include": ["./src/**/*"],
+	"ts-node": {
+		"esm": true,
+	},
+}

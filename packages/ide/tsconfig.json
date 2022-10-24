@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "outDir": "out",
+    "lib": ["DOM", "ES6", "ES2021.String"],
+    "types": ["node"],
+    "sourceMap": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "strict": true /* enable all strict type-checking options */,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": true,
+    "noEmit": false,
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "paths": {
+      "@common/*": ["./src/webviews/common/*"]
+    }
+  },
+  "include": ["packages/ide/src/vscode-maxim/*.json"],
+  "exclude": [
+    "node_modules",
+    "test-resources",
+    "src/webview",
+    "src/webviews/**/*",
+    ".vscode-test",
+    "cypress/**/*",
+    "resources/**/*"
+  ]
+}

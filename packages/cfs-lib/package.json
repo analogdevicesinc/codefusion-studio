@@ -1,0 +1,32 @@
+{
+	"name": "cfs-lib",
+	"publisher": "adi",
+	"description": "Reusable utilities for CFS components",
+	"author": "Analog Devices",
+	"version": "1.0.0-7",
+	"scripts": {
+		"build": "yarn build-local-deps && shx rm -rf dist && tsc -b",
+		"build-local-deps": "yarn workspace elf-parser build",
+		"lint": "eslint . --ext .ts",
+		"test": "mocha --require ts-node/register --recursive src/**/*.test.ts"
+	},
+	"dependencies": {
+		"elf-parser": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.1",
+		"@types/node": "^18.19.8",
+		"@typescript-eslint/eslint-plugin": "^7.8.0",
+		"@typescript-eslint/parser": "^7.8.0",
+		"chai": "^5",
+		"eslint": "^8.56.0",
+		"mocha": "^10",
+		"shx": "^0.3.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"license": "Apache-2.0"
+}

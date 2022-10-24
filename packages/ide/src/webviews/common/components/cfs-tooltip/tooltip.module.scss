@@ -1,0 +1,88 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '../../styles/colors';
+@use '../../styles/layout';
+@use '../../styles/fonts';
+
+.tooltipContainer {
+	position: absolute;
+	display: flex;
+	width: 200px;
+	z-index: 100;
+	pointer-events: none;
+
+	.tooltipLayout {
+		display: flex;
+		min-width: 160px;
+		flex-direction: column;
+		justify-content: center;
+		align-items: flex-start;
+		gap: -1px;
+		flex: 1 0 0;
+
+		.notch {
+			left: 12px;
+			position: absolute;
+			border-style: solid;
+			border-width: 7px;
+			border-color: transparent transparent colors.$default-background
+				transparent;
+			z-index: 10;
+		}
+
+		.notchBorder {
+			@extend .notch;
+			border-color: transparent transparent
+				colors.$editor-widget-border transparent;
+		}
+
+		.contentWrapper {
+			display: flex;
+			position: relative;
+			flex-direction: column;
+			align-items: flex-start;
+			align-self: stretch;
+			border-radius: 2px;
+			border: 1px solid colors.$editor-widget-border;
+			background: colors.$default-background;
+			box-shadow: layout.$default-shadow;
+
+			.header {
+				box-sizing: border-box;
+				padding: 16px;
+				width: 100%;
+				border-bottom: var(--cfs-header-separator, unset);
+			}
+
+			.title {
+				@include fonts.heading-h4;
+				color: colors.$default-foreground;
+				font-weight: 700;
+				margin: 0;
+				word-wrap: break-word;
+			}
+
+			.body {
+				@include fonts.body-b3;
+				color: colors.$notifications-foreground;
+				font-weight: 500;
+				word-wrap: break-word;
+				padding: var(--cfs-tooltip-body-padding, 16px);
+				width: 100%;
+				box-sizing: border-box;
+			}
+		}
+	}
+}

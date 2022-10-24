@@ -1,0 +1,5 @@
+*-debug.log
+*-error.log
+/dist
+node_modules
+

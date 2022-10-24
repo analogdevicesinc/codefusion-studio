@@ -1,0 +1,97 @@
+.schematicContainer {
+	--disabled-color: var(--vscode-editor-foreground, #7f7f7f);
+	--connected-node-fill-color: var(
+		--vscode-editor-foreground,
+		#7f7f7f
+	);
+	--connected-node-stroke-opacity: 0;
+	--output-port-hover-animation: unset;
+	--line-horizontal-cursor: default;
+	--line-vertical-cursor: default;
+	--line-center-point-vertical-cursor: default;
+	--line-center-point-horizontal-cursor: default;
+
+	height: 100%;
+	width: 100%;
+	position: relative;
+	opacity: 0;
+}
+
+.rendered {
+	opacity: 1;
+	/* add fade in effect when rendered */
+	transition: opacity 0.3s ease-in;
+}
+
+.diagramLoader {
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: var(--vscode-editor-background, #1e1e1e);
+}
+
+body[data-vscode-theme-kind='vscode-light']
+	.drawing_editor
+	.planner_container
+	image.adi_diagram_content_node {
+	filter: invert(1);
+}
+
+body[data-vscode-theme-kind='vscode-light']
+	.drawing_editor
+	.planner_container
+	path.input.connectedNode.disabled {
+	fill: var(--vscode-editor-background, #1e1e1e);
+	filter: brightness(80%);
+}
+
+circle.schematic_dot {
+	filter: brightness(55%);
+}
+
+body[data-vscode-theme-kind='vscode-light'] circle.schematic_dot {
+	fill: var(--vscode-editor-background);
+	filter: brightness(55%);
+}
+
+rect[data-selector='icon-background'] {
+	fill: none;
+}
+
+.adi_diagram_content_node_highlight {
+	rx: 8;
+}
+
+.adi_diagram_content_node_highlight.disabled {
+	fill: var(--vscode-editor-background, #1e1e1e);
+	fill-opacity: 0.8;
+}
+
+.segment.segment-highlight-disabled {
+	stroke: var(--disabled-color);
+	stroke-dasharray: 8 2;
+	opacity: 0.2;
+}
+
+.output.connectedNode.disabled,
+path.input.connectedNode.disabled {
+	--connected-node-fill-color: var(--disabled-color);
+	fill: var(--disabled-color);
+	filter: brightness(30%);
+}
+
+body[data-vscode-theme-kind='vscode-light']
+	.drawing_editor
+	.planner_container
+	.output.connectedNode.disabled {
+	fill: var(--vscode-editor-background);
+	filter: brightness(80%);
+}
+
+.connection .center_point.vertical,
+.connection .center_point.horizontal {
+	display: none;
+}

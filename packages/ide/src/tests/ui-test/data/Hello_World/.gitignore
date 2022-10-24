@@ -1,0 +1,15 @@
+# Settings
+.settings
+
+# Project Files
+.cproject
+.project
+
+# Logs
+flash.log
+
+# VS Code Files
+.vscode
+
+# Build Files
+build/

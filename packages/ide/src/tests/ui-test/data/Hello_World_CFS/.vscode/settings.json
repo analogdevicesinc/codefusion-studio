@@ -1,0 +1,5 @@
+{
+  "cfs.configureWorkspace": "Yes",
+  "terminal.integrated.defaultProfile.windows": "CFS Terminal",
+  "cfs.project.board": "max32690evkit/max32690/m4"
+}

@@ -1,0 +1,10 @@
+{
+  "folders": [
+    {
+      "path": "./packages/pinconfig-cli"
+    },
+    {
+      "path": "./packages/pinconfig-ui"
+    }
+  ]
+}

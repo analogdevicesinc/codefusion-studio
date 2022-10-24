@@ -1,0 +1,313 @@
+{
+  "elf": {
+    "stats": {
+      "title": "Statistics",
+      "description": "<p>This screen offers a high-level summary of the ELF file's structure and contents.</p><h3 style='margin-bottom: 5px;'><strong>File Overview</strong></h3>Displays the basic properties of the ELF file.<ul><li><strong>Format</strong>: ELF 32-bit or 64-bit.</li><li><strong>Data Encoding</strong>: Indicates the endianness (little or big endian).</li><li><strong>File Type</strong>: Executable, relocatable, shared object, or core file.</li><li><strong>Architecture</strong>: Target architecture, e.g., ARM, x86.</li><li><strong>ABI Version</strong>: Application Binary Interface version.</li><li><strong>Debug Info</strong>: Whether the file contains debugging information.</li><li><strong>Stripping</strong>: Whether the file has been stripped of symbol information.</li></ul><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-orange);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-blue);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-green);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: #d28716;'>&#9679;</span>.text, <span style='color: #d28716;'>&#9679;</span>.init, <span style='color: #d28716;'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Symbol Types</strong></h3>Categorizes functions and variables based on their binding. <br>Global and weak symbols are accessible outside of their defining component, while local symbols remain hidden. Additionally, global and weak symbols can be preempted, meaning they can be overridden by definitions with the same name in another component.<h3 style='margin-bottom: 5px;'><strong>Sections</strong></h3>Detailed breakdown of each section within the ELF file:<ul><li><strong>Num</strong>: Section number.</li><li><strong>Name</strong>: Name of the section.</li><li><strong>Size</strong>: Size of the section in bytes.</li><li><strong>Functions</strong>: Number of functions within the section.</li><li><strong>Variables</strong>: Number of variables within the section.</li></ul><h3 style='margin-bottom: 5px;'><strong>Largest Symbols</strong></h3>Lists the largest symbols in the ELF file, including:<ul><li><strong>Name</strong>: Name of the symbol.</li><li><strong>Section</strong>: Section where the symbol is located.</li><li><strong>Size</strong>: Size of the symbol in bytes.</li></ul>",
+      "chart": {
+        "title": "Main section sizes",
+        "tooltips": {
+          "title": "Main section sizes",
+          "description": "The <code>text</code> section contains the executable code of the program.<br />It is typically read-only and may include instructions, read-only data, and some constant values and its size reflects the amount of memory allocated for storing the executable instructions.<br /><br />The <code>data</code> section holds initialized data that the program uses, including global and static variables that have been assigned a value before the program starts.<br />It is readable and writable and contains variables that need to retain their values throughout the execution of the program.<br />Its size indicates the amount of memory needed to store the initialized variables.<br /><br />The <code>bss</code> section (BSS stands for Block Started by Symbol) contains uninitialized data, which includes global and static variables that are declared but not assigned a value initially.<br />It is also readable and writable. Although it does not hold any actual data initially, its size represents the amount of memory reserved for uninitialized variables."
+        }
+      },
+      "symbolTypes": {
+        "title": "Symbol Types",
+        "tooltips": {
+          "title": "Symbol Types",
+          "description": "Categorizes functions and variables based on their binding.</br> </br> Global and weak symbols are accessible outside of their defining component, while local symbols remain hidden.</br> Additionally, global and weak symbols can be preempted, meaning they can be overridden by definitions with the same name in another component.</br> </br> <i>Use the buttons (all, text, data, bss) to filter symbols by main section type.</i>"
+        }
+      },
+      "sections": {
+        "title": "Sections",
+        "tooltips": {
+          "title": "Sections",
+          "description": "Breakdown of each section within the ELF file.<br /><ul><li> <strong>Num:</strong> The section number.</li> <li><strong>Name:</strong> The name of the section. </li> <li><strong>Size:</strong> The size of the section in bytes.</li> <li> <strong>Functions:</strong> The number of functions within the section.</li> <li> <strong>Variables:</strong> The number of variables within the section.</li></ul>"
+        }
+      },
+      "topSymbols": {
+        "title": "Largest Symbols",
+        "tooltips": {
+          "title": "Largest Symbols",
+          "description": "Displays the largest symbols within the ELF file, categorized by their section type.<br /><ul><li><strong>Name:</strong> The name of the symbol.</li><li><strong>Section:</strong> The section where the symbol is located (e.g., text, noinit).</li><li><strong>Size:</strong> The size of the symbol in bytes.</li></ul><br /><br /><i>Use the buttons (all, text, data, bss) to filter symbols by main section type.</i>"
+        }
+      }
+    },
+    "metadata": {
+      "title": "Metadata",
+      "description": "<p>This screen displays detailed information about the ELF file, including its size distribution, header, attributes and inferred characteristics.</p><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-orange);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-blue);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-green);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.text, <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.init, <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Header Info</strong></h3>The ELF file header contains metadata about the ELF file, including its type, architecture, entry point, program headers, and section headers.<br>This information is essential for the operating system to correctly load and execute the file.<h3 style='margin-bottom: 5px;'><strong>AEABI Attributes</strong></h3>The AEABI (ARM Embedded Application Binary Interface) attributes in an ELF file provide important metadata about the binary, such as the target architecture, floating-point configuration, and optimization level.<br>These attributes ensure compatibility and optimize performance by conveying specific details about how the binary was built, allowing tools and runtime environments to correctly interpret and execute the code.<h3 style='margin-bottom: 5px;'><strong>Heuristic Information</strong></h3>Indicates the presence of any heuristic information detected in the ELF file related to the Zephyr and MSDK toolchains.<br>It can provide information regarding Flash and RAM sizes, among other available data.",
+      "sizes": {
+        "title": "Main Section Sizes",
+        "tooltips": {
+          "title": "Main Section Sizes",
+          "description": "The <code>text</code> section contains the executable code of the program.<br />It is typically read-only and may include instructions, read-only data, and some constant values and its size reflects the amount of memory allocated for storing the executable instructions.<br /><br />The <code>data</code> section holds initialized data that the program uses, including global and static variables that have been assigned a value before the program starts.<br />It is readable and writable and contains variables that need to retain their values throughout the execution of the program.<br />Its size indicates the amount of memory needed to store the initialized variables.<br /><br />The <code>bss</code> section (BSS stands for Block Started by Symbol) contains uninitialized data, which includes global and static variables that are declared but not assigned a value initially.<br />It is also readable and writable. Although it does not hold any actual data initially, its size represents the amount of memory reserved for uninitialized variables."
+        }
+      },
+      "header": {
+        "title": "Header Info",
+        "tooltips": {
+          "title": "Header Info",
+          "description": "Contains essential metadata that the operating system needs to execute the file.</br>It enables the OS to correctly interpret and run the binary.",
+          "list": {
+            "Class": {
+              "title": "Indicates the file type, either ELF32 or ELF64"
+            },
+            "Data": {
+              "title": "Indicates the endianness of the file, which can be Least Significant Byte (LSB, little-endian) or Most Significant Byte (MSB, big-endian)"
+            },
+            "Header Version": {
+              "title": "Version of the ELF header. Set to 1 for the original and current version of ELF"
+            },
+            "OS ABI": {
+              "title": "Target operating system and ABI"
+            },
+            "ABI Version": {
+              "title": "Further specifies the ABI version. Its interpretation depends on the target ABI.\nLinux kernel (after at least 2.6) has no definition of it, so it is ignored for statically-linked executables"
+            },
+            "Type": {
+              "title": "Type of the file, such as an executable file (EXEC), relocatable file (REL), or shared object file (DYN)"
+            },
+            "Machine": {
+              "title": "Specifies the target architecture, such as ARM, x86, etc."
+            },
+            "Version": {
+              "title": "Version of the ELF file format"
+            },
+            "Entry point address": {
+              "title": "Memory address where the program starts executing"
+            },
+            "Program headers start": {
+              "title": "Byte offset in the file where the program headers start"
+            },
+            "Section headers start": {
+              "title": "Byte offset in the file where the section headers start"
+            },
+            "Flags": {
+              "title": "Processor-specific flags associated with the ELF file"
+            },
+            "Header size": {
+              "title": "Size of the ELF header in bytes"
+            },
+            "Program headers size": {
+              "title": "Size of a program header table entry in bytes"
+            },
+            "Number of program headers": {
+              "title": "Total number of program headers"
+            },
+            "Section headers size": {
+              "title": "Size of a section header table entry in bytes"
+            },
+            "Number of section headers": {
+              "title": "Total number of section headers"
+            },
+            "Section header string table index": {
+              "title": "Index of the section header table entry that contains the section names"
+            }
+          }
+        }
+      },
+      "armAttributes": {
+        "title": "AEABI Attributes",
+        "tooltips": {
+          "title": "AEABI Attributes",
+          "description": "ARM Embedded Application Binary Interface Attributes.</br>Lists specific attributes relevant to ARM architecture.",
+          "list": {
+            "Tag_CPU_name": {
+              "title": "A CPU name is defined by Arm or the architecture licensee responsible for designing the part. It is the official product name, with no extension and no abbreviation."
+            },
+            "Tag_CPU_arch": {
+              "title": "Specifies the architecture of the CPU, indicating the version of the ARM architecture being used, such as ARMv7 or ARMv8"
+            },
+            "Tag_CPU_arch_profile": {
+              "title": "Defines the profile of the CPU architecture, such as Application, Real-time, Microcontroller, or Secure"
+            },
+            "Tag_THUMB_ISA_use": {
+              "title": "Indicates whether the Thumb Instruction Set Architecture (ISA) is used, which is a compact, efficient instruction set for ARM processors."
+            },
+            "Tag_ABI_PCS_wchar_t": {
+              "title": "Specifies the size and alignment of the wchar_t type in the Procedure Call Standard (PCS) for the ABI, which defines how functions receive parameters and return values"
+            },
+            "Tag_ABI_FP_denormal": {
+              "title": "Describes the handling of denormalized floating-point numbers by the ABI, which refers to very small numbers that do not use the standard floating-point format"
+            },
+            "Tag_ABI_FP_exceptions": {
+              "title": "Indicates whether floating-point exceptions are supported and how they are handled by the ABI, affecting the behavior of floating-point operations"
+            },
+            "Tag_ABI_FP_number_model": {
+              "title": "Specifies the floating-point number model used, such as IEEE 754, detailing how floating-point numbers are represented and manipulated"
+            },
+            "Tag_ABI_align_needed": {
+              "title": "Describes the required alignment for data types, indicating whether the ABI mandates specific alignment for efficient memory access and performance"
+            },
+            "Tag_ABI_enum_size": {
+              "title": "Defines the size of enumeration types (enum) in the ABI, specifying how much memory is allocated for enum values"
+            },
+            "Tag_ABI_optimization_goals": {
+              "title": "Indicates the primary optimization goals, such as speed or size, guiding the compiler on which aspects to prioritize during code generation"
+            },
+            "Tag_CPU_unaligned_access": {
+              "title": "Specifies whether the CPU supports unaligned memory access, allowing data to be read from or written to memory locations that are not aligned to their natural boundaries"
+            },
+            "Tag_DSP_extension": {
+              "title": "Indicates the presence and use of DSP (Digital Signal Processing) extensions, providing additional instructions for efficient processing of digital signals and multimedia applications"
+            },
+            "Tag_CPU_raw_name": {
+              "title": "Specifies the raw name of the CPU. An empty value denotes that the raw name is identical to the CPU name"
+            },
+            "Tag_ARM_ISA_use": {
+              "title": "Indicates whether the ARM instruction set is used"
+            },
+            "Tag_FP_arch": {
+              "title": "Specifies the floating-point architecture used"
+            },
+            "Tag_WMMX_arch": {
+              "title": "Specifies the Wireless MMX architecture used"
+            },
+            "Tag_Advanced_SIMD_arch": {
+              "title": "Specifies the Advanced SIMD (NEON) architecture used"
+            },
+            "Tag_ABI_PCS_R9_use": {
+              "title": "Specifies the usage of register R9 in the Procedure Call Standard"
+            },
+            "Tag_ABI_PCS_RW_data": {
+              "title": "Indicates the read/write data in the Procedure Call Standard"
+            },
+            "Tag_ABI_PCS_RO_data": {
+              "title": "Indicates the read-only data in the Procedure Call Standard"
+            },
+            "Tag_ABI_PCS_GOT_use": {
+              "title": "Specifies the usage of Global Offset Table in the Procedure Call Standard"
+            },
+            "Tag_ABI_FP_rounding": {
+              "title": "Specifies the floating-point rounding mode used"
+            },
+            "Tag_ABI_FP_user_exceptions": {
+              "title": "Indicates the support for user-defined floating-point exceptions"
+            },
+            "Tag_ABI_align_preserved": {
+              "title": "Specifies whether alignment is preserved for data types"
+            },
+            "Tag_ABI_HardFP_use": {
+              "title": "Indicates the use of hardware floating-point instructions"
+            },
+            "Tag_ABI_VFP_args": {
+              "title": "Specifies the use of VFP (Vector Floating Point) registers for function arguments"
+            },
+            "Tag_ABI_WMMX_args": {
+              "title": "Specifies the use of WMMX registers for function arguments"
+            },
+            "Tag_ABI_FP_optimization_goals": {
+              "title": "Specifies the optimization goals for floating-point operations"
+            },
+            "Tag_compatibility": {
+              "title": "Indicates compatibility with specific ABI versions or features"
+            },
+            "Tag_ABI_FP_16bit_format": {
+              "title": "Indicates the format used for 16-bit floating-point numbers"
+            }
+          }
+        }
+      },
+      "heuristicInfo": {
+        "title": "Heuristic Information",
+        "tooltips": {
+          "title": "Heuristic Information",
+          "description": "Indicates the presence of any heuristic information detected in the ELF file related to the Zephyr and MSDK toolchains",
+          "list": {
+            "Firmware Platform": {
+              "title": "Inferred Firmware Platform: Zephyr RTOS, MSDK, or unknown"
+            },
+            "Main stack size": {
+              "title": "Size of stack for initialization and main thread"
+            },
+            "SRAM size": {
+              "title": "SRAM Size in KB."
+            },
+            "Heap memory pool size": {
+              "title": "Heap memory pool size in bytes"
+            },
+            "Flash size": {
+              "title": "Flash Size in KB"
+            },
+            "Flash load size": {
+              "title": "Kernel load size. If non-zero, this option specifies the size, in bytes, of the flash area that the Zephyr image will be allowed to occupy. If zero, the image will be able to occupy from the FLASH_LOAD_OFFSET to the end of the device."
+            },
+            "Stack Size": {
+              "title": "Stack size in bytes"
+            },
+            "Heap Size": {
+              "title": "Heap size in bytes."
+            }
+          }
+        }
+      }
+    },
+    "symbols": {
+      "title": "Symbol Explorer",
+      "description": "<p>This screen allows you to explore and query the symbols in the ELF file using SQL commands.</p><p>The interface works as a SQL database where each attribute is a column in a table named <code>symbols</code>.<br>You can enter SQL queries in the provided text box to filter and retrieve specific data based on your criteria.</p><h3 style='margin-bottom: 5px;'><strong>Symbol table structure for queries</strong></h3><ul><li><strong>num <i>(integer)</i></strong>: The unique number identifying the symbol.</li><li><strong>name <i>(string)</i></strong>: The name of the symbol.</li><li><strong>type <i>(string)</i></strong>: The type of the symbol, indicating what kind of entity it represents.</li><li><strong>address <i>(integer)</i></strong>: The memory address where the symbol is located.</li><li><strong>section <i>(string)</i></strong>: The section of the program in which the symbol is defined.</li><li><strong>size <i>(integer)</i></strong>: The size of the symbol in bytes.</li><li><strong>localstack <i>(integer/optional)</i></strong>: The worst stack usage size for a function (only local stack, not considering functions called).</li><li><strong>stack <i>(integer/optional)</i></strong>: The worst stack usage size for a function (considering functions called).</li><li><strong>bind <i>(string)</i></strong>: The linkage type of the symbol (e.g., local, global).</li><li><strong>visibility <i>(string)</i></strong>: The visibility of the symbol, indicating its accessibility from other modules (e.g., default, hidden).</li><li><strong>path <i>(string/optional)</i></strong>: The source file location where the symbol is defined, useful for tracing the symbol back to its origin in the codebase.</li></ul></br><i>Note: Optional columns will appear only if additional files are present. For more details, please refer to the 'Worst Stack Usage' and 'Path to Source Code' sections.</i></br><i>Note: To obtain detailed information about specific values in certain columns (such as type, bind, and visibility), right-click on a cell to bring up the contextual menu and select the “Help” option.</i><h3 style='margin-bottom: 5px;'><strong>Examples</strong></h3><ul><li>Filter the results by adding conditions:<br><code>SELECT * FROM symbols <strong>WHERE size > 0 ORDER BY size ASC</strong></code></li><li>Filter the results and display only specific columns:<br><code>SELECT <strong>num, name, type, address, size</strong> FROM symbols WHERE bind = 'GLOBAL'</code></li><li>Use ranges on numeric columns:<br><code>SELECT * FROM symbols WHERE address <strong>BETWEEN 0x100004F5 AND 0x100030F0</strong></code></li></ul><br><h3 style='margin-bottom: 5px;'><strong>More Controls</strong></h3><ul><li>Use the search bar at the top to quickly find symbols by their name or address.</li><li>Sort columns by clicking on the column header.</li><li>Filter by a specific value by right-clicking on a cell and choosing 'Filter by...'</li></ul><br><h3 style='margin-bottom: 5px;'><strong>Saved Queries</strong></h3>Save your frequently used SQL queries for quick access.<br>You can save, modify, and run the queries from that panel.<br><br><h3 style='margin-bottom: 5px;'><strong>Worst Stack Usage</strong></h3>When opening an ELF file that is in a folder containing additional files generated by the compiler (.su and .cgraph files), two additional columns will be available: <code>localstack</code> and <code>stack</code>.<br><br>To generate .su and .cgraph files with GCC, compile your code with the following flags: <code>-fstack-usage -fdump-ipa-cgraph -gdwarf-4</code>.<br><br>Examples for Zephyr and MSDK projects:<ul><li>For Zephyr Projects, add the following flags to <code>CMakeLists.txt</code>:<ul><li><code>zephyr_cc_option(-fstack-usage)</code></li><li><code>zephyr_cc_option(-fdump-ipa-cgraph)</code></li><li><code>zephyr_cc_option(-gdwarf-4)</code></li></ul></li><br><li>For MSDK projects, add the following flags to the <code>Makefile</code>:<ul><li><code>PROJ_CFLAGS += -fstack-usage</code></li><li><code>PROJ_CFLAGS += -fdump-ipa-cgraph</code></li><li><code>PROJ_CFLAGS += -gdwarf-4</code></li></ul></li></ul></br><i>Note: The stack column calculation does not account for recursive functions or loops (a function calling itself or a second function that calls the first).</i><br>When this is detected, the following tags will be displayed:<ul><li><strong>R:</strong> Recursive function detected</li><li><strong>SR:</strong> Self-recursive function detected</li><li><strong>G:</strong> Loop in the call graph detected</li></ul><br><h3 style='margin-bottom: 5px;'><strong>Path to Source Code</strong></h3>When the ELF file includes debug information, an additional column, <code>path</code>, will be available.<br>This column shows the source code, including the filename and line where the symbol is defined.<br>If the original source file is present on the local machine, it can be automatically opened by right-clicking on the path cell and selecting 'Go to symbol source code.'",
+      "helpModal": {
+        "Type": "<code>NOTYPE</code><br />The type of the symbol is unspecified.<br /><br /><code>OBJECT</code><br />The symbol is linked to a data object such as a variable or an array.<br /><br /><code>FUNC</code><br />The symbol is linked to a function or executable code.<br /><br /><code>SECTION</code><br />The symbol is linked to a section. These symbols are primarily used for relocation and usually have local binding (LOCAL).<br /><br /><code>FILE</code><br />The symbol’s name typically indicates the name of the source file related to the object file. A file symbol has local binding (LOCAL), its section index is SHN_ABS, and it comes before other local symbols in the file.<br /><br /><code>COMMON</code><br />The symbol indicates an uninitialized common block.<br /><br /><code>TLS</code><br />The symbol specifies a Thread-Local Storage entity. When defined, it provides the offset assigned to the symbol, not the actual address. Only special thread-local storage relocations can reference these symbols, and these relocations can only refer to symbols of type TLS. Support for thread-local storage is not mandatory.",
+        "Localstack": "Maximum amount of stack memory used locally for this symbol in the worst-case scenario (in bytes)",
+        "Stack": "Maximum amount of stack memory used by the application in the worst-case scenario (in bytes)",
+        "Bind": "<code>LOCAL</code><br />Local symbols are not visible outside the object file containing their definition. Local symbols of the same name may exist in multiple files without interfering with each other.<br /><br /><code>GLOBAL</code><br />Global symbols are visible to all object files being combined. One file's definition of a global symbol will satisfy another file's undefined reference to the same global symbol.<br /><br /><code>WEAK</code><br />Weak symbols resemble global symbols, but their definitions have lower precedence.",
+        "Visibility": "<code>DEFAULT</code><br />The visibility of these symbols is determined by their binding type.<ul><li>Global and Weak Symbols: Visible outside their defining component. They can be overridden by symbols of the same name in other components.</li> <li>Local Symbols: Hidden and not accessible outside their defining component.</li><li>Note: Implementations may limit the visibility of global and weak symbols.</li></ul><br /><br /><code>PROTECTED</code><br />These symbols are visible in other components but cannot be overridden. Any reference to them from within their defining component will always use the local definition.<ul><li>Local Binding: Symbols with local binding cannot have protected visibility. If a symbol with protected visibility is used to resolve a reference from another component, it defaults to DEFAULT visibility.</li><li>Note: Protected visibility does not affect symbol resolution for references from outside the containing load module.</li></ul><br /><br /><code>HIDDEN</code><br />These symbols are not visible to other components. They are inherently protected.<ul><li>Address Passing: Objects referenced by hidden symbols can still be accessed if their addresses are passed outside.</li><li>Link-Editor Behavior: Hidden symbols in relocatable objects must be removed or converted to local binding when included in an executable or shared object.</li></ul><br /><br /><code>INTERNAL</code><br />Defined by processor supplements to further restrict hidden symbols. Generic tools treat internal symbols as hidden.<br />Link-Editor Behavior: Internal symbols in relocatable objects must be removed or converted to local binding when included in an executable or shared object.",
+        "Path": "Source code including the filename and line where this symbol is defined.<br><br>If the original source file is present on the local machine, it can be automatically opened by right-clicking on the path cell and selecting 'Go to symbol source code.'"
+      }
+    },
+    "files": {
+      "title": "Files Explorer",
+      "description": "Files and such"
+    },
+    "memory layout": {
+      "title": "Memory Layout",
+      "description": "<p>This screen allows you to visually analyze the placement and size of segments, sections and symbols within the memory layout.</p>The memory layout is displayed in three levels:<code>Segments</code> -> <code>Sections</code> -> <code>Symbols</code><h3 style='margin-bottom: 5px;'><strong>Segments</strong></h3>The initial view shows how the ELF segments are distributed in memory.</br></br>This layer includes a visual representation of the segments in memory, along with a table containing extended information for each segment. When you hover the mouse over a segment in the visual representation, the corresponding segment in the table is highlighted, and vice versa.</br></br><i>Note: In the visual representation, overlapping segments are rendered as smaller rectangles to the right of the main segments. Additionally, small segments may be displayed taller than their actual relative size to enhance usability. Refer to the size value for an accurate size value.</i></br></br>Table columns:<ul><li><strong>Id</strong>: The unique identifier for the segment.</li><li><strong>Type</strong>: The type of the segment, indicating its purpose (e.g., loadable, dynamic).</li><li><strong>Address</strong>: The memory address where the segment begins</li><li><strong>Size</strong>: The size of the segment in bytes</li><li><strong>Flags</strong>: Permissions and attributes for the segment (R: read, W: write, X: executable)</li><li><strong>Align</strong>: The alignment requirement of the segment in memory in bytes.</li></ul></br>When a segment is selected, the next level, showing the sections within that selected segment, is displayed.</br></br><h3 style='margin-bottom: 5px;'><strong>Sections in a Segment</strong></h3>The second layer includes a visual representation of the sections within a segment, along with a table containing extended information for each section. Hovering the mouse over a section in the visual representation will highlight the corresponding section in the table, and vice versa.</br></br>Table columns:<ul><li><strong>Num</strong>: The unique number identifying the section.</li><li><strong>Name</strong>: The name of the section.</li><li><strong>Address</strong>: The memory address where the section begins</li><li><strong>Size</strong>: The size of the section in bytes</li><li><strong>Flags</strong>: Permissions and attributes for the section: W (write), A (alloc), X (execute), M (merge), S (strings), I (info), L (link order), O (extra OS processing required), G (group), T (TLS), C (compressed), x (unknown), o (OS specific), E (exclude), D (mbind), y (purecode), p (processor specific)</li><li><strong>Type</strong>: The type of the section, indicating its contents and purposes</li></ul></br>When a section is selected, the next level, showing the symbols within that selected section, is displayed.</br></br><h3 style='margin-bottom: 5px;'><strong>Symbols in a Section</strong></h3>The third layer contains information about the selected Section, and a table with all the symbols contained in said section.</br>Table columns:<ul><li><strong>Num</strong>: The unique number identifying the symbol.</li><li><strong>Name</strong>: The name of the symbol.</li><li><strong>Address</strong>: The memory address where the symbol is located</li><li><strong>Size</strong>: The size of the symbol in bytes</li><li><strong>Bind</strong>: The linkage type of the symbol (e.g., local, global).</li><li><strong>Visibility</strong>: The visibility of the symbol, indicating its accessibility from other modules (e.g., default, hidden).</li></ul>",
+
+      "helpModal": {
+        "Segment-Flags": "<code>R</code>: read<br><code>W</code>: write<br><code>X</code>: executable",
+        "Sections-Flags": "<code>W</code>: write<br><code>A</code>: alloc<br><code>X</code>: execute<br><code>M</code>: merge<br><code>S</code>: strings<br><code>I</code>: info<br><code>L</code>: link order<br><code>O</code>: extra OS processing required<br><code>G</code>: group<br><code>T</code>: TLS<br><code>C</code>: compressed<br><code>x</code>: unknown<br><code>o</code>: OS specific<br><code>E</code>: exclude<br><code>D</code>: mbind<br><code>y</code>: purecode<br><code>p</code>: processor specific<br>"
+      },
+
+      "table": {
+        "flags": {
+          "title": "Processor-specific flags associated with the ELF file"
+        }
+      }
+    }
+  },
+  "cfgtools": {
+    "pinmux": {
+      "title": "Pin Mux",
+      "description": "<p>This screen allows you to configure the pin multiplexing for your project. It also allows you to configure GPIO pins with settings such as drive strength and use pull-up or pull-down resistors to avoid floating inputs.</p><p>The main canvas depicts the footprint of your project processor, showing the layout of the pins on the package. Each pin is color-coded according to whether it has a fixed-function, has a signal already assigned, or is available for use. Pins that have been assigned multiple signals are also shown in red to indicate that there is an error, and the pin is in conflict state. You can save your project when pins are in conflict, but you may not generate code until such errors are fixed.</p><p>To assign signals to pins, find the signal you wish to assign in the left-hand side panel, where the signals are grouped by the peripheral they belong to. On expanding the peripheral, you will see a list of signals for that peripheral, and you can enable it by enabling the toggle. In addition, where a signal can be mapped to multiple locations, you may choose the pin to which you wish to send the signal. Any conflicts created during this assignment will be marked with a red cross in the panel. You can also navigate around the footprint and click on pins to assign them.</p><p>One a signal is assigned to a pin, you can click on the icon to the right of the signal's toggle in the side panel to modify the signal configuration. This will bring up a dialog box in which you can adjust its settings. The settings can also be accessed via the <strong>Function Config</strong> screen.</p>",
+      "help": {
+        "title": "Pin Mux Help"
+      }
+    },
+    "config": {
+      "title": "Function Config",
+      "description": "<p>This screen focuses on allowing you to configure the signals that you have assigned using the <strong>Pin Mux</strong> screen. You can view all the signals you have assigned to pins, and for each one, you can click on it to view the editable configuration options for the signal. These may include:<ul><li>Input vs output mode</li><li>Drive strength</li><li>Pull-up and pull-down resistors</li><li>Power Supply</li><li>Identifiers used when generating code for platforms such as Zephyr</li></ul></p><p>Changes to the configuration values persist automatically. If you wish to reset the values to their default values and discard any changes, click on <strong>Reset to default</strong>.</p>",
+      "help": {
+        "title": "Function Config Help"
+      }
+    },
+    "clockconfig": {
+      "title": "Clock Config",
+      "description": "<p>This screen allows you easily configure the clock frequencies that are used by each of the peripherals and cores on the processor. It includes error checking to ensure that the frequencies user are within the constraints of the processor specification. After configuring your clock tree using this screen, you can then generate code that will configure the hardware to the desired configuration.</p><p>The main part of the screen is a visual representation of the clock tree, similar to that which can be found in the processor User Guide. The diagram contains nodes which represent the cores, peripherals, pins, multiplexers and clock scalers present in the processor. The frequencies used at each node are shown within the node, or in the case where a single node is associated with multiple frequencies (for example, a single node represents multiple peripheral instances), the frequencies can be seen by hovering your mouse over the node. Likewise, frequency and other information can be seen by hovering over the lines in the diagrams, which represent clocks. Nodes and clock lines on the diagram are grayed when they are not in use.</p><p>In the left panel, the nodes from the diagram are listed, grouped by the type of the node. These comprise:<ul><li><strong>Core</strong>: One of the cores on the processor.</li><li><strong>Divider</strong>: A frequency step-down scaler node.</li><li><strong>Multiplier</strong>: A frequency step-up scaler node</li><li><strong>Mux</strong>: A multiplexer that selects one of its inputs. In some cases, a mux can also direct a single input to one of its outputs.</li><li><strong>Oscillator</strong>: One of the internal oscillators present in the processor.</li><li><strong>Peripheral</strong>: A peripheral of the processor that is fed by one of the clocks. A peripheral can often be enabled or disabled.</li><li><strong>Pin Input</strong>: A pin that can be attached to an external oscillator. Usually, to use a pin input you will need to assign it using the <strong>Pin Mux</strong> tool first.</li><li><strong>Pin Output</strong>: A pin that can send a clock out externally. Usually, to use a pin output you will need to assign it using the <strong>Pin Mux</strong> tool first.</li></ul></p><p>To configure your clocks, the easiest way is to click on the nodes you want to configure on the diagram, and then use the left-hand panel to modify the settings of that node. After changing a setting, verify using the diagram that the frequencies at each peripheral and core are as desired. Also, look on the diagram to see if any of the nodes are shown in red, indicating an error. By clicking on or hovering over a node you can find out the cause of the error. The cause might be:<ul><li>A frequency out of range: The error will indicate whether the frequency is above or below the limits of operability of the peripheral.</li><li>Unconfigured value: This error usually means that you have not specified the frequency at a pin input. It can also mean that you have not set the pin mux to direct the clock signal to the peripheral.</li></ul>After fixing errors and ensuring you have the desired frequencies at your enabled periphrerals, you can proceed to generate code using the <strong>Generate Code</strong> screen.</p>",
+      "help": {
+        "title": "Clock Config Help"
+      }
+    },
+    "registers": {
+      "title": "Registers",
+      "description": "<p>This screen allows you to view information on the registers used by the configuration code. For each register, you can see: <ul><li><strong>Name</strong>: The name of the register.</li><li><strong>Address</strong>: The address of the memory-mapped register.</li><li><strong>Description</strong>: A description of what the register is used for.</li><li><strong>Value</strong>: The value the register will have after execution of the configuration code.</li></ul></p><p>The registers can be sorted on each column, and the filters at the top of the screen allow you to view only those registers that have changed from their default values.</p><p>If you click on a register, you can see information on the fields within the register, including:<ul><li>The name of the bit field.</li><li>The description of the bit field.</li><li>The meaning of the values the bit field can take.</li><li><strong>Bits</strong>: The position of the field within the register.</li><li><strong>Access</strong>: The read-write permissions for the field.</li><li><strong>Value</strong>: The value of the field after completion of the configuration code.</li><li><strong>Reset value</strong>: The value of the field at processor reset.</li></ul></p><p>There are two ways of viewing the register, presented on two tabs. The <strong>Bit Fields</strong> tab shows the information in tabular form. The <strong>Diagram</strong> tab shows a graphical representation of the register and the fields it is composed of. Note that in this latter tab, only the values of the fields at processor reset are shown.</p><p>Only registers used for pin and clock configuration are shown.</p>",
+      "help": {
+        "title": "Registers Help"
+      }
+    },
+    "generate": {
+      "title": "Generate Code",
+      "description": "<p>This screen is used to allow you to generate the configuration code for your project. Note that if your configuration contains any errors, such as pin mux conflicts or clock configuration errors, you will need to correct these errors before you are able to generate code.</p><p>To generate code, select one of the available code generation engines, and click <strong>Generate</strong>. If your configuration is not saved, you will be prompted to save it before you can continue.</p><p>When code generation is complete, any generated files will be opened in the editor in unsaved state. If a file already exists, the same filename will be used. If you are happy with the generated file, use <strong>Ctrl-S</strong> to save the file.</p><p>The filenames and locations are chosen so that the code is automatically picked up and built in your project. There is no need to explicitly call the generated functions as the start-up code will automatically do this for you.</p>",
+      "help": {
+        "title": "Generate Code Help"
+      }
+    }
+  }
+}

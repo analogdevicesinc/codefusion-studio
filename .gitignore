@@ -1,0 +1,26 @@
+**/*.tsbuildinfo
+node_modules
+
+# package manager files
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+**/*.vsix
+**/*.bkp
+
+# python files
+/.venv
+/site
+
+# OS Generated
+.DS_STORE
+packages/ide/cypress/screenshots
+
+# Profile
+*.cpuprofile
+*.heapprofile

@@ -1,0 +1,8 @@
+{
+  "extends": ["../../.eslintrc.json", "plugin:cypress/recommended"],
+  "rules": {},
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "ignorePatterns": ["node_modules/**/*", "src/**/*"]
+}

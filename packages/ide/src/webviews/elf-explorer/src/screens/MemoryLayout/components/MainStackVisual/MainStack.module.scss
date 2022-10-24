@@ -1,0 +1,207 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/layout';
+@use '@common/styles/fonts';
+
+$padding: 4px;
+
+[class*='main-stack'] {
+	[class*='tooltipContainer'] {
+		pointer-events: none;
+		width: 260px;
+	}
+
+	[class*='header'] {
+		color: colors.$default-foreground;
+		padding: 16px 16px 0 16px !important;
+		font-size: 13px;
+		font-weight: 800;
+	}
+}
+
+.segment {
+	width: 100%;
+	position: absolute;
+
+	.container {
+		display: flex;
+		flex-direction: column-reverse;
+		height: 100%;
+		width: inherit;
+		position: relative;
+
+		.description {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+
+			.name {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				padding: 2px 4px;
+			}
+
+			.size {
+				padding: 4px 4px 3px 6px;
+			}
+		}
+
+		.address {
+			position: absolute;
+			z-index: 0;
+			bottom: 0;
+			right: layout.$elf-main-stack-width + calc($padding / 2);
+			background-color: colors.$list-inactive-selection-background;
+			font-size: 12px;
+			line-height: 10px;
+			padding: $padding;
+
+			&:hover {
+				background-color: colors.$list-active-selection-background;
+				color: colors.$list-active-selection-foreground;
+			}
+		}
+	}
+}
+
+.segment:hover .name,
+.segment:hover .size {
+	background-color: colors.$list-active-selection-background;
+	color: colors.$list-active-selection-foreground;
+}
+
+.active {
+	background-color: colors.$list-active-selection-background !important;
+	color: colors.$list-active-selection-foreground;
+}
+
+.segment.read-write-exec {
+	box-sizing: border-box;
+
+	&:hover {
+		cursor: pointer;
+		color: colors.$list-active-selection-foreground;
+
+		.address {
+			background-color: colors.$list-active-selection-background !important;
+		}
+	}
+}
+
+.segment.read-write-exec::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border: 2px solid colors.$list-inactive-selection-background;
+}
+
+.segment.read-write-exec:hover::before {
+	border: 2px solid colors.$list-active-selection-background;
+}
+
+.segment.read {
+	&:hover {
+		cursor: pointer;
+		color: colors.$list-active-selection-foreground;
+
+		.address {
+			background-color: colors.$list-active-selection-background !important;
+		}
+	}
+}
+
+.segment.read::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: colors.$list-inactive-selection-background;
+}
+
+.segment.read:hover::before {
+	background-color: colors.$list-active-selection-background;
+}
+
+.segment.unused::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	background-image: repeating-linear-gradient(
+		45deg,
+		colors.$default-background 0px,
+		colors.$default-background 2px,
+		colors.$list-inactive-selection-background 0,
+		colors.$list-inactive-selection-background 50%
+	);
+	background-size: 6px 6px;
+}
+
+.segment.unused:hover::before {
+	background-image: repeating-linear-gradient(
+		45deg,
+		colors.$default-background 0px,
+		colors.$default-background 2px,
+		colors.$list-active-selection-background 0,
+		colors.$list-active-selection-background 50%
+	);
+	background-size: 6px 6px;
+}
+
+.segment.read-write-exec.highlight::before {
+	border: 2px solid colors.$list-active-selection-background;
+	color: colors.$list-active-selection-foreground;
+}
+
+.segment.read.highlight::before {
+	background-color: colors.$list-active-selection-background;
+	color: colors.$list-active-selection-foreground;
+}
+
+.address.highlight {
+	background-color: colors.$list-active-selection-background !important;
+	color: colors.$list-active-selection-foreground;
+}
+
+.tooltip-container {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+
+	.tooltip-row {
+		font-family: fonts.$default-font-family;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+
+		.start {
+			color: colors.$default-foreground;
+		}
+
+		.end {
+			color: colors.$description-foreground;
+		}
+	}
+}

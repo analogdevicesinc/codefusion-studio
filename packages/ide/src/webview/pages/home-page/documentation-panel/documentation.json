@@ -1,0 +1,38 @@
+[
+  {
+    "link": "https://docs.zephyrproject.org/3.7.0/",
+    "title": "Zephyr 3.7 Documentation"
+  },
+  {
+    "link": "https://www.analog.com/en/products/max32690.html",
+    "title": "MAX32690 Product Info"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX32690.pdf",
+    "title": "MAX32690 Data Sheet"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/data-sheets/max32690evkit.pdf",
+    "title": "MAX32690 Evaluation Kit Data Sheet"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/user-guides/ug7618.pdf",
+    "title": "MAX32690 User Guide"
+  },
+  {
+    "link": "https://www.analog.com/en/products/max78002.html",
+    "title": "MAX78002 Product Info"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX78002.pdf",
+    "title": "MAX78002 Data Sheet"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX78002EVKIT.pdf",
+    "title": "MAX78002 Evaluation Kit Data Sheet"
+  },
+  {
+    "link": "https://www.analog.com/media/en/technical-documentation/user-guides/max78002-user-guide.pdf",
+    "title": "MAX78002 User Guide"
+  }
+]

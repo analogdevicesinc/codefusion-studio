@@ -1,0 +1,84 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/fonts';
+
+.input {
+	display: flex;
+	flex-direction: column;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	overflow-y: auto;
+	max-height: 350px;
+
+	.item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+
+		.container {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			min-width: 75%;
+			cursor: pointer;
+
+			.name {
+				height: 17px;
+				font-weight: 500;
+				font-size: 14px;
+				line-height: 17px;
+				color: colors.$default-foreground;
+			}
+
+			.value {
+				height: 13px;
+				font-weight: fonts.$default-font-weight;
+				font-size: fonts.$font-size-small;
+				line-height: 13px;
+				color: colors.$side-bar-title-foreground;
+			}
+
+			.ellipsis {
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		}
+
+		.action-buttons {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 16px;
+			padding: 0 16px;
+		}
+	}
+}
+
+.icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: colors.$icon-foreground;
+
+	& path {
+		fill: colors.$icon-foreground;
+	}
+}

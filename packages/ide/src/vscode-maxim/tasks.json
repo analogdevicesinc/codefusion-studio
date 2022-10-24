@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "type": "shell",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "make -r -j 8 --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "make -j 8 clean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "clean-periph",
+      "type": "shell",
+      "command": "make -j 8 distclean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "flash (OpenOCD)",
+      "type": "shell",
+      "command": "arm-none-eabi-gdb --cd=\"${workspaceFolder}\" --se=\"${command:cfs.selectProgramFile}\" --symbols=${command:cfs.selectProgramFile} -x=\"${workspaceFolder}/.vscode/flash.gdb\" --ex=\"flash_m4 ${config:cfs.openocd.path} ${command:cfs.openocd.selectInterface} ${command:cfs.openocd.selectTarget}\" --batch",
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": ["build"]
+    },
+    {
+      "label": "flash (JLink)",
+      "type": "shell",
+      "windows": {
+        "command": "echo loadfile ${command:cfs.selectProgramFile} | \"${command:cfs.jlink.setJlinkPath}/JLink.exe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "osx": {
+        "command": "echo loadfile ${command:cfs.selectProgramFile} | \"${command:cfs.jlink.setJlinkPath}/JLinkExe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "linux": {
+        "command": "echo loadfile ${command:cfs.selectProgramFile} | \"${command:cfs.jlink.setJlinkPath}/JLinkExe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": ["build"]
+    },
+    {
+      "label": "flash & run",
+      "type": "shell",
+      "command": "arm-none-eabi-gdb --cd=\"${workspaceFolder}\" --se=\"${command:cfs.selectProgramFile}\" --symbols=${command:cfs.selectProgramFile} -x=\"${workspaceFolder}/.vscode/flash.gdb\" --ex=\"flash_m4_run ${config:cfs.openocd.path} ${command:cfs.openocd.selectInterface} ${command:cfs.openocd.selectTarget}\" --batch",
+      "args": [],
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": ["build"]
+    },
+    {
+      "label": "erase flash (OpenOCD)",
+      "type": "shell",
+      "command": "openocd -s ${config:cfs.openocd.path}/share/openocd/scripts -f ${command:cfs.openocd.selectInterface} -f ${command:cfs.openocd.selectTarget} -c \"init; reset halt; max32xxx mass_erase 0;\" -c exit",
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": []
+    },
+    {
+      "label": "erase flash (JLink)",
+      "type": "shell",
+      "windows": {
+        "command": "echo erase | \"${command:cfs.jlink.setJlinkPath}/JLink.exe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "osx": {
+        "command": "echo erase | \"${command:cfs.jlink.setJlinkPath}/JLinkExe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "linux": {
+        "command": "echo erase | \"${command:cfs.jlink.setJlinkPath}/JLinkExe\" -device ${command:cfs.jlink.setDevice} -if SWD -speed 4000 -autoconnect 1"
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "dependsOn": []
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/fonts';
+@use '@common/styles/colors';
+
+.bodyNoPadding {
+	--cfs-tooltip-body-padding: 0;
+}
+
+.headerContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.root {
+	--cfs-header-separator: #{1px solid colors.$editor-widget-border};
+}
+
+.nodeName {
+	@include fonts.heading-h4;
+	margin: 0;
+}
+
+.nodeDescription {
+	@include fonts.body-b2;
+	color: colors.$notifications-foreground;
+}
+
+.sectionTitle {
+	@include fonts.label-l2;
+	margin-left: 16px;
+}
+
+.inputsTitle {
+	margin-top: 16px;
+}
+
+.clockEntry {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 16px;
+	padding-top: 0;
+
+	&:first-child {
+		padding-top: 16px;
+	}
+
+	& .name {
+		@include fonts.heading-h7;
+	}
+
+	& p {
+		margin: 0;
+	}
+
+	&:last-child {
+		margin-bottom: 0;
+		border-bottom: none;
+	}
+
+	&.firstGroupItem {
+		border-top: 1px solid colors.$default-border;
+		padding-top: 16px;
+	}
+}
+
+ul.valueError {
+	margin: 0;
+	margin-top: 16px;
+	padding-inline-start: 6px;
+	list-style-position: outside;
+
+	& li {
+		text-indent: -4px;
+	}
+
+	& li::marker {
+		color: colors.$error;
+	}
+}

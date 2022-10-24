@@ -1,0 +1,49 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+@use '@common/styles/layout';
+
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	box-sizing: border-box;
+
+	.visual-container {
+		display: flex;
+		margin: layout.$elf-memory-visual-margin;
+		height: calc(
+			100vh - 205px
+		); // Total height of the viewport without the values for margin, padding and gap
+		flex: 1.8;
+		gap: 2px;
+
+		.main-stack {
+			display: flex;
+			flex-direction: column-reverse;
+			position: relative;
+			width: layout.$elf-main-stack-width;
+			height: inherit;
+		}
+
+		.overlapping-stacks {
+			display: flex;
+			flex-direction: column-reverse;
+			position: relative;
+			width: layout.$elf-overlapping-stack-width;
+			height: inherit;
+		}
+	}
+}

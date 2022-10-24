@@ -1,0 +1,100 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "cfgtools: build",
+			"type": "shell",
+			"command": "yarn vite:extension && yarn cfgtools:build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".*",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": ".",
+						"endsPattern": "."
+					}
+				}
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": true
+			}
+		},
+		{
+			"label": "ide: build",
+			"type": "shell",
+			"command": "yarn ws:ide build:extension",
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".*",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": ".",
+						"endsPattern": "."
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["ide: deps"]
+		},
+		{
+			"label": "elf: build",
+			"type": "shell",
+			"command": "yarn vite:extension && yarn elf:build",
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".*",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": ".",
+						"endsPattern": "."
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "ide: deps",
+			"type": "shell",
+			"command": "yarn install --immutable && yarn ws:ide build-local-deps",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

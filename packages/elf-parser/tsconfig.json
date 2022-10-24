@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"declaration": true,
+		"module": "Node16",
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": false,
+		"target": "es2022",
+		"moduleResolution": "node16",
+		"skipLibCheck": true,
+		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+		"sourceMap": true, // Ensure source maps are generated
+	},
+	"include": ["./src/**/*"],
+	"ts-node": {
+		"esm": true,
+	},
+}

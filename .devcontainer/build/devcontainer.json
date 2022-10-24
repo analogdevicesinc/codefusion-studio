@@ -1,0 +1,7 @@
+{
+	// container for building CFS extensions
+	"name": "Build",
+	"build": {
+		"dockerfile": "Dockerfile",
+	},
+}

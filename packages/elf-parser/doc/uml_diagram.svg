@@ -1,0 +1,2065 @@
+<svg version="1.1" baseProfile="full" width="10232.8" height="3416.0" viewbox="0 0 10232.75 3416" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<desc >#.interface: fill=lightblue
+#.enumeration: fill=lightgreen
+#.type: fill=lightgray
+[ElfArmAttributes|+Tag_CPU_raw_name: string;+Tag_CPU_name: string;+Tag_CPU_arch: cpu_arch;+Tag_CPU_arch_profile: arch_profile;+Tag_ARM_ISA_use: isa_use;+Tag_THUMB_ISA_use: thumb_isa_use;+Tag_FP_arch: fp_arch;+Tag_WMMX_arch: WMMX_arch;+Tag_Advanced_SIMD_arch: SIMD_arch;+Tag_PCS_config: PCS_config;+Tag_ABI_PCS_R9_use: PCS_R9_use;+Tag_ABI_PCS_RW_data: PCS_RW_data;+Tag_ABI_PCS_RO_data: PCS_RO_data;+Tag_ABI_PCS_GOT_use: PCS_GOT_use;+Tag_ABI_PCS_wchar_t: PCS_wchar_t;+Tag_ABI_FP_rounding: ABI_FP_rounding;+Tag_ABI_FP_denormal: ABI_FP_denormal;+Tag_ABI_FP_exceptions: ABI_FP_exceptions;+Tag_ABI_FP_user_exceptions: ABI_FP_user_exceptions;+Tag_ABI_FP_number_model: ABI_FP_number_model;+Tag_ABI_align_needed: ABI_align_needed;+Tag_ABI_align_preserved: ABI_align_preserved;+Tag_ABI_enum_size: ABI_enum_size;+Tag_ABI_HardFP_use: ABI_HardFP_use;+Tag_ABI_VFP_args: ABI_VFP_args;+Tag_ABI_WMMX_args: ABI_WMMX_args;+Tag_ABI_optimization_goals: ABI_optimization_goals;+Tag_ABI_FP_optimization_goals: ABI_optimization_goals;+Tag_compatibility: Tag_compatibility;+Tag_CPU_unaligned_access: CPU_unaligned_access;+Tag_FP_HP_extension: FP_HP_extension;+Tag_ABI_FP_16bit_format: ABI_FP_16bit_format;+Tag_MPextension_use: MPextension_use;+Tag_DIV_use: DIV_use;+Tag_DSP_extension: DSP_extension;+Tag_MVE_arch: MVE_arch;+Tag_PAC_extension: PAC_extension;+Tag_BTI_extension: BTI_extension;+Tag_nodefaults: number;+Tag_also_compatible_with: string;+Tag_conformance: string;+Tag_T2EE_use: T2EE_use;+Tag_Virtualization_use: Virtualization_use;+Tag_FramePointer_use: FramePointer_use;+Tag_BTI_use: BTI_use;+Tag_PACRET_use: PACRET_use|]
+[ElfArmAttributes]  -  [cpu_arch]
+[ElfArmAttributes]  -  [arch_profile]
+[ElfArmAttributes]  -  [isa_use]
+[ElfArmAttributes]  -  [thumb_isa_use]
+[ElfArmAttributes]  -  [fp_arch]
+[ElfArmAttributes]  -  [WMMX_arch]
+[ElfArmAttributes]  -  [SIMD_arch]
+[ElfArmAttributes]  -  [PCS_config]
+[ElfArmAttributes]  -  [PCS_R9_use]
+[ElfArmAttributes]  -  [PCS_RW_data]
+[ElfArmAttributes]  -  [PCS_RO_data]
+[ElfArmAttributes]  -  [PCS_GOT_use]
+[ElfArmAttributes]  -  [PCS_wchar_t]
+[ElfArmAttributes]  -  [ABI_FP_rounding]
+[ElfArmAttributes]  -  [ABI_FP_denormal]
+[ElfArmAttributes]  -  [ABI_FP_exceptions]
+[ElfArmAttributes]  -  [ABI_FP_user_exceptions]
+[ElfArmAttributes]  -  [ABI_FP_number_model]
+[ElfArmAttributes]  -  [ABI_align_needed]
+[ElfArmAttributes]  -  [ABI_align_preserved]
+[ElfArmAttributes]  -  [ABI_enum_size]
+[ElfArmAttributes]  -  [ABI_HardFP_use]
+[ElfArmAttributes]  -  [ABI_VFP_args]
+[ElfArmAttributes]  -  [ABI_WMMX_args]
+[ElfArmAttributes]  -  [ABI_optimization_goals]
+[ElfArmAttributes]  -  [ABI_optimization_goals]
+[ElfArmAttributes]  -  [Tag_compatibility]
+[ElfArmAttributes]  -  [CPU_unaligned_access]
+[ElfArmAttributes]  -  [FP_HP_extension]
+[ElfArmAttributes]  -  [ABI_FP_16bit_format]
+[ElfArmAttributes]  -  [MPextension_use]
+[ElfArmAttributes]  -  [DIV_use]
+[ElfArmAttributes]  -  [DSP_extension]
+[ElfArmAttributes]  -  [MVE_arch]
+[ElfArmAttributes]  -  [PAC_extension]
+[ElfArmAttributes]  -  [BTI_extension]
+[ElfArmAttributes]  -  [T2EE_use]
+[ElfArmAttributes]  -  [Virtualization_use]
+[ElfArmAttributes]  -  [FramePointer_use]
+[ElfArmAttributes]  -  [BTI_use]
+[ElfArmAttributes]  -  [PACRET_use]
+[ElfDataModel|+elfFileAccess: ElfFileData;+elfHeader: ElfHeader;+elfProgramHeaders: ElfProgramHeader\[\];+elfSectionHeaders: ElfSectionHeader\[\];+elfSymbols: ElfSymbol\[\];+elfArmAttributes: ElfArmAttributes;+isSuFilePresent: boolean;-helper: Helper|-loadProgramHeaderTables(): DataResult;-loadSectionHeaderTables(): DataResult;-loadSymbolTables(): DataResult;-loadArmAttributes(): DataResult;+getNumOfProgramHeaderTables(): number;+getNumOfSectionHeaderTables(): number;+getNumOfSymbolTables(): number;+load(): DataResult]
+[ElfDataModel]  -  [ElfFileData]
+[ElfDataModel]  -  [ElfHeader]
+[ElfDataModel]  - 0..* [ElfProgramHeader]
+[ElfDataModel]  - 0..* [ElfSectionHeader]
+[ElfDataModel]  - 0..* [ElfSymbol]
+[ElfDataModel]  -  [ElfArmAttributes]
+[ElfDataModel]  -  [Helper]
+[ElfFileData|-dataViewer: DataView;-littleEndian: boolean|+setLittleEndian(): void;+isLittleEndian(): boolean;+getDataView(): DataView;+readNullTerminatedString(): string]
+[ElfFileParser|-path: string;-model?: ElfDataModel;-elfReader: ElfReader|-loadSuData(): Promise&lt;Map&lt;string, number&gt;&gt;;+getDataModel(): ElfDataModel;+initialize(): Promise&lt;DataResult&gt;;+query(): any;+dropSymbolsTable(): Promise&lt;void&gt;]
+[ElfReader||+readFile(): Promise&lt;ArrayBuffer&gt;;+findSuFiles(): Promise&lt;void&gt;;+parseSuFiles(): Promise&lt;Map&lt;string, number&gt;&gt;]
+[ElfFileParser]  -  [ElfDataModel]
+[ElfFileParser]  -  [ElfReader]
+[ElfHeader|-fileAccess: ElfFileData;+magicNumber: string;+classType: EI_CLASS;+dataEncoding: EI_DATA;+version: e_version;+osAbi: EI_OSABI;+osAbiVersion: number;+fileType: e_type;+machine: e_machine;+elfVersion: e_version;+entryPoint: bigint;+programHeaderOffset: bigint;+sectionHeaderOffset: bigint;+flags: e_flags;+headerSize: number;+programHeaderEntrySize: number;+programHeaderEntryCount: number;+sectionHeaderEntrySize: number;+sectionHeaderEntryCount: number;+sectionHeaderStringTableIndex: number|+load(): DataResult;+isELF64Bit(): boolean]
+[ElfHeader]  -  [ElfFileData]
+[ElfHeader]  -  [EI_CLASS]
+[ElfHeader]  -  [EI_DATA]
+[ElfHeader]  -  [e_version]
+[ElfHeader]  -  [EI_OSABI]
+[ElfHeader]  -  [e_type]
+[ElfHeader]  -  [e_machine]
+[ElfHeader]  -  [e_version]
+[ElfHeader]  -  [e_flags]
+[ElfProgramHeader|-fileData: ElfFileData;+index: number;-elfDataModel: ElfDataModel;+type: ph_type;+flags: ph_flags;+offset: bigint;+virtualAddress: bigint;+physicalAddress: bigint;+fileSize: bigint;+memorySize: bigint;+alignment: bigint;+sectionIndexList: number\[\]|+load(): void]
+[ElfProgramHeader]  -  [ElfFileData]
+[ElfProgramHeader]  -  [ph_type]
+[ElfProgramHeader]  -  [ph_flags]
+[ElfSectionHeader|-elfFileAccess: ElfFileData;+index: number;-elfDataModel: ElfDataModel;+name: number;+type: sh_type;+flags: sh_flags;+address: bigint;+offset: bigint;+size: bigint;+link: number;+info: number;+addressAlignment: bigint;+entitySize: bigint|+load(): void;+getShNameString(): string]
+[ElfSectionHeader]  -  [ElfFileData]
+[ElfSectionHeader]  -  [sh_type]
+[ElfSectionHeader]  -  [sh_flags]
+[ElfSymbol|+sectionTable: ElfSectionHeader;+symbolData: ElfSymbolData\[\];-elfDataModel: ElfDataModel|+load(): void]
+[ElfSymbolData|-symTable: ElfSymbol;-elfDataModel: ElfDataModel;-fileAccess: ElfFileData;+index: number;+name: number;+info: number;+intoType: sym_type;+infoBinding: sym_binding;+other: number;+otherVisibility: sym_visibility;+sectionHeaderIndex: number;+value: bigint;+size: bigint;+stack: number|+load(): void;+getSymNameString(): string]
+[ElfSymbol]  -  [ElfSectionHeader]
+[ElfSymbol]  - 0..* [ElfSymbolData]
+[ElfSymbolData]  -  [ElfDataModel]
+[ElfSymbolData]  -  [ElfFileData]
+[ElfSymbolData]  -  [sym_type]
+[ElfSymbolData]  -  [sym_binding]
+[ElfSymbolData]  -  [sym_visibility]
+[&lt;enumeration&gt;DataResult|OK;INVALID]
+[&lt;enumeration&gt;e_type|ET_NONE;ET_REL;ET_EXEC;ET_DYN;ET_CORE;ET_LOOS;ET_HIOS;ET_LOPROC;ET_HIPROC]
+[&lt;enumeration&gt;e_machine|EM_NONE;EM_M32;EM_SPARC;EM_386;EM_68K;EM_88K;reserved;EM_860;EM_MIPS;EM_S370;EM_MIPS_RS3_LE;reserved1;EM_PARISC;reserved2;EM_VPP500;EM_SPARC32PLUS;EM_960;EM_PPC;EM_PPC64;EM_S390;reserved3;EM_V800;EM_FR20;EM_RH32;EM_RCE;EM_ARM;EM_ALPHA;EM_SH;EM_SPARCV9;EM_TRICORE;EM_ARC;EM_H8_300;EM_H8_300H;EM_H8S;EM_H8_500;EM_IA_64;EM_MIPS_X;EM_COLDFIRE;EM_68HC12;EM_MMA;EM_PCP;EM_NCPU;EM_NDR1;EM_STARCORE;EM_ME16;EM_ST100;EM_TINYJ;EM_X86_64;EM_PDSP;EM_PDP10;EM_PDP11;EM_FX66;EM_ST9PLUS;EM_ST7;EM_68HC16;EM_68HC11;EM_68HC08;EM_68HC05;EM_SVX;EM_ST19;EM_VAX;EM_CRIS;EM_JAVELIN;EM_FIREPATH;EM_ZSP;EM_MMIX;EM_HUANY;EM_PRISM;EM_AVR;EM_FR30;EM_D10V;EM_D30V;EM_V850;EM_M32R;EM_MN10300;EM_MN10200;EM_PJ;EM_OPENRISC;EM_ARC_A5;EM_XTENSA;EM_VIDEOCORE;EM_TMM_GPP;EM_NS32K;EM_TPC;EM_SNP1K;EM_ST200;EM_RISCV]
+[&lt;enumeration&gt;e_version|EV_NONE;EV_CURRENT]
+[&lt;enumeration&gt;e_flags|EF_SPARC_EXT_MASK;EF_SPARC_32PLUS;EF_SPARC_SUN_US1;EF_SPARC_HAL_R1;EF_SPARC_SUN_US3;EF_SPARCV9_MM;EF_SPARCV9_TSO;EF_SPARCV9_PSO;EF_SPARCV9_RMO]
+[&lt;enumeration&gt;e_flags_arm|EF_ARM_EABIMASK;EF_ARM_RELEXEC;EF_ARM_SYMSARESORTED;EF_ARM_DYNSYMSUSESEGIDX;EF_ARM_MAPSYMSFIRST;EF_ARM_EABI_UNKNOWN;EF_ARM_EABI_VER1;EF_ARM_EABI_VER2;EF_ARM_EABI_VER3;EF_ARM_EABI_VER4;EF_ARM_EABI_VER5;EF_ARM_BE8;EF_ARM_LE8;EF_ARM_ABI_FLOAT_SOFT;EF_ARM_ABI_FLOAT_HARD;EF_ARM_INTERWORK;EF_ARM_APCS_26;EF_ARM_APCS_FLOAT;EF_ARM_PIC;EF_ARM_ALIGN8;EF_ARM_NEW_ABI;EF_ARM_OLD_ABI;EF_ARM_SOFT_FLOAT;EF_ARM_VFP_FLOAT]
+[&lt;enumeration&gt;e_flags_riscv|EF_RISCV_RVC;EF_RISCV_RVE;EF_RISCV_TSO;EF_RISCV_FLOAT_ABI;EF_RISCV_FLOAT_ABI_SOFT;EF_RISCV_FLOAT_ABI_SINGLE;EF_RISCV_FLOAT_ABI_DOUBLE;EF_RISCV_FLOAT_ABI_QUAD]
+[&lt;enumeration&gt;e_ident_index|EI_MAG0;EI_MAG1;EI_MAG2;EI_MAG3;EI_CLASS;EI_DATA;EI_VERSION;EI_OSABI;EI_ABIVERSION;EI_PAD;EI_NIDENT]
+[&lt;enumeration&gt;EI_CLASS|ELFCLASSNONE;ELFCLASS32;ELFCLASS64]
+[&lt;enumeration&gt;EI_DATA|ELFDATANONE;ELFDATA2LSB;ELFDATA2MSB]
+[&lt;enumeration&gt;EI_OSABI|ELFOSABI_NONE;ELFOSABI_HPUX;ELFOSABI_NETBSD;ELFOSABI_LINUX;ELFOSABI_SOLARIS;ELFOSABI_AIX;ELFOSABI_IRIX;ELFOSABI_FREEBSD;ELFOSABI_TRU64;ELFOSABI_MODESTO;ELFOSABI_OPENBSD;ELFOSABI_OPENVMS;ELFOSABI_NSK;specific]
+[&lt;enumeration&gt;sh_flags|SHF_WRITE;SHF_ALLOC;SHF_EXECINSTR;SHF_ORDERED;SHF_EXCLUDE;SHF_MASKPROC;SHF_TLS;SHF_MASKOS;SHF_GROUP;SHF_OS_NONCONFORMING;SHF_LINK_ORDER;SHF_INFO_LINK;SHF_STRINGS;SHF_MERGE]
+[&lt;enumeration&gt;sh_type|SHT_NULL;SHT_PROGBITS;SHT_SYMTAB;SHT_STRTAB;SHT_RELA;SHT_HASH;SHT_DYNAMIC;SHT_NOTE;SHT_NOBITS;SHT_REL;SHT_SHLIB;SHT_DYNSYM;SHT_LOPROC;SHT_HIPROC;SHT_LOUSER;SHT_HIUSER;SHT_ARM_ATTRIBUTES]
+[&lt;enumeration&gt;ph_type|PT_NULL;PT_LOAD;PT_DYNAMIC;PT_INTERP;PT_NOTE;PT_SHLIB;PT_PHDR;PT_TLS;PT_LOSUNW;PT_SUNWBSS;PT_SUNWSTACK;PT_HISUNW;PT_LOPROC;PT_HIPROC;PT_GNU_RELRO;PT_GNU_STACK]
+[&lt;enumeration&gt;ph_flags|None;PF_X;PF_W;PF_WX;PF_R;PF_RX;PF_RW;PF_RWX]
+[&lt;enumeration&gt;sym_type|NOTYPE;OBJECT;FUNC;SECTION;FILE;COMMON;TLS;LOOS;HIOS;LOPROC;HIPROC]
+[&lt;enumeration&gt;sym_binding|LOCAL;GLOBAL;WEAK;LOPROC;HIPROC]
+[&lt;enumeration&gt;sym_visibility|STV_DEFAULT;STV_INTERNAL;STV_HIDDEN;STV_PROTECTED;STV_EXPORTED;STV_SINGLETON;STV_ELIMINATE]
+[&lt;enumeration&gt;cpu_arch|Prev4;Armv4;Armv4T;Armv5T;Armv5TE;Armv5TEJ;Armv6;Armv6KZ;Armv6T2;Armv6K;Armv7;Armv6M;Armv6SM;Armv7EM;Armv8A;Armv8R;Armv8Mbaseline;Armv8Mmainline;Armv81A;Armv82A;Armv83A;Armv81M;Armv9A]
+[&lt;enumeration&gt;arch_profile|NA;A;R;M;S]
+[&lt;enumeration&gt;isa_use|NotPermitted;Permitted]
+[&lt;enumeration&gt;thumb_isa_use|NotPermitted;Deprecated_16Bit;Deprecated_32Bit;Thumbcode]
+[&lt;enumeration&gt;WMMX_arch|NotPermitted;v1;v2]
+[&lt;enumeration&gt;fp_arch|NotPermitted;v1;v2;v3;v3_DS;v4;v4_DS;v8;v8_DS]
+[&lt;enumeration&gt;SIMD_arch|NotPermitted;SIMDv1;SIMDv2;Armv8;Armv8_1]
+[&lt;enumeration&gt;MVE_arch|NotPermitted;Int_M;FP_M]
+[&lt;enumeration&gt;FP_HP_extension|HP_ASIMD;HP_v3;HP_v8_2]
+[&lt;enumeration&gt;CPU_unaligned_access|UnaAlign;v6]
+[&lt;enumeration&gt;T2EE_use|NotPermitted;Permitted]
+[&lt;enumeration&gt;Virtualization_use|NotPermitted;TrustZone;HVC;TrustZoneHVC]
+[&lt;enumeration&gt;MPextension_use|NotPermitted;v7MP]
+[&lt;enumeration&gt;DIV_use|NotPermitted;Intended;SDIV]
+[&lt;enumeration&gt;DSP_extension|DSP;ThumbDSP]
+[&lt;enumeration&gt;PAC_extension|NotPermitted;NOP;NoNOP]
+[&lt;enumeration&gt;BTI_extension|NotPermitted;NOP;NoNOP]
+[&lt;enumeration&gt;PCS_config|NoStd;Bare;Linux;LinuxDSO;PalmOS;Reserved;SymbianOS;ReservedSymb]
+[&lt;enumeration&gt;PCS_R9_use|V6;SB;TLS;Unused]
+[&lt;enumeration&gt;PCS_RW_data|Permitted;PC;SB;NotPermitted]
+[&lt;enumeration&gt;PCS_RO_data|Permitted;PC;NotPermitted]
+[&lt;enumeration&gt;PCS_GOT_use|NotPermitted;Direct;GOT]
+[&lt;enumeration&gt;PCS_wchar_t|NotPermitted;v2;v4]
+[&lt;enumeration&gt;ABI_enum_size|NotPermitted;Smalest;v32;Every]
+[&lt;enumeration&gt;ABI_align_needed|NotPermitted;v8;v4;Reserved;v8_2n]
+[&lt;enumeration&gt;ABI_align_preserved|NotPermitted;v8;v8SP;Reserved;v8_2n]
+[&lt;enumeration&gt;ABI_FP_rounding|IEEE_754;IEEE_754_RT]
+[&lt;enumeration&gt;ABI_FP_denormal|Flushed;IEEE_754;Sign]
+[&lt;enumeration&gt;ABI_FP_exceptions|Exact;Inexact]
+[&lt;enumeration&gt;ABI_FP_user_exceptions|NotUse;Use]
+[&lt;enumeration&gt;ABI_FP_number_model|NotUse;IEEE_754;Numbers;IEEE_754_FP]
+[&lt;enumeration&gt;ABI_FP_16bit_format|NotPermitted;NOP;NoNOP]
+[&lt;enumeration&gt;BTI_extension|NotUse;IEEE_754;VFPv3]
+[&lt;enumeration&gt;ABI_VFP_args|AAPCS_BV;AAPCS_VFP;AAPCS_TCS;ALL_VFP]
+[&lt;enumeration&gt;ABI_WMMX_args|AAPCS_BV;Intel;TCS]
+[&lt;enumeration&gt;FramePointer_use|Tag_FP;FR_LR;FR_FP]
+[&lt;enumeration&gt;BTI_use|NoBT;BT_Enforce]
+[&lt;enumeration&gt;PACRET_use|No_RASD;RASD]
+[&lt;enumeration&gt;ABI_optimization_goals|NoOpt;Speed;AggressivelySpeed;SmallSize;AggressivelySmallSize;GoodDebugging;BestDebugging]
+[&lt;enumeration&gt;ABI_HardFP_use|Tag_FP;SP_Tag_FP;Reserved;FP_Tag_FP]
+[&lt;enumeration&gt;Tag_compatibility|No_TCSR;ABI;No_ABI]
+[Helper||+isSectionInSegment(): boolean;+parseEabiSection(): ElfArmAttributes;-parseULEB128(): \[number, number\];-parseNTBS(): string;-parserEabiSubsection(): ElfArmAttributes;-getElfSectionSize(): number]
+[ResolveItem||+static Get32BitValue(): number;+static Get64BitValue(): bigint]</desc>
+<g stroke-width="1.0" text-align="left" font="12pt Helvetica, Arial, sans-serif" font-size="12pt" font-family="Helvetica" font-weight="normal" font-style="normal">
+<g font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" stroke-width="3.0" stroke-linejoin="round" stroke-linecap="round" stroke="#33322E">
+<g stroke="transparent" fill="transparent">
+<rect x="0.0" y="0.0" height="3416.0" width="10232.8" stroke="none"></rect>
+</g>
+<g transform="translate(8, 8)" fill="#33322E">
+<g transform="translate(20, 20)" fill="#33322E" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal">
+<path d="M3536.0 1187.8 L73.5 1555 L73.5 1575.5 L73.5 1575.5 " fill="none"></path>
+<path d="M3536.0 1189.0 L242 1555 L242 1710.5 L242.0 1710.5 " fill="none"></path>
+<path d="M3536.0 1190.2 L396 1555 L396 1733 L396.0 1733.0 " fill="none"></path>
+<path d="M3536.0 1191.7 L574 1555 L574 1718 L574.0 1718.0 " fill="none"></path>
+<path d="M3536.0 1193.5 L752 1555 L752 1680.5 L752.0 1680.5 " fill="none"></path>
+<path d="M3536.0 1195.2 L910 1555 L910 1725.5 L910.0 1725.5 " fill="none"></path>
+<path d="M3536.0 1197.1 L1068 1555 L1068 1710.5 L1068.0 1710.5 " fill="none"></path>
+<path d="M3536.0 1199.4 L1235 1555 L1235 1688 L1235.0 1688.0 " fill="none"></path>
+<path d="M3536.0 1202.0 L1403.5 1555 L1403.5 1718 L1403.5 1718.0 " fill="none"></path>
+<path d="M3536.0 1205.0 L1570.5 1555 L1570.5 1718 L1570.5 1718.0 " fill="none"></path>
+<path d="M3536.0 1208.6 L1742 1555 L1742 1725.5 L1742.0 1725.5 " fill="none"></path>
+<path d="M3536.0 1212.8 L1914.5 1555 L1914.5 1725.5 L1914.5 1725.5 " fill="none"></path>
+<path d="M3536.0 1217.8 L2083 1555 L2083 1725.5 L2083.0 1725.5 " fill="none"></path>
+<path d="M3536.0 1224.4 L2261 1555 L2261 1733 L2261.0 1733.0 " fill="none"></path>
+<path d="M3536.0 1233.6 L2457 1555 L2457 1725.5 L2457.0 1725.5 " fill="none"></path>
+<path d="M3536.0 1246.6 L2661 1555 L2661 1733 L2661.0 1733.0 " fill="none"></path>
+<path d="M3536.0 1268.8 L2893.5 1555 L2893.5 1733 L2893.5 1733.0 " fill="none"></path>
+<path d="M3536.0 1310.5 L3142 1555 L3142 1718 L3142.0 1718.0 " fill="none"></path>
+<path d="M3536.0 1390.3 L3363.5 1555 L3363.5 1710.5 L3363.5 1710.5 " fill="none"></path>
+<path d="M3584.7 1535.0 L3574.5 1555 L3574.5 1710.5 L3574.5 1710.5 " fill="none"></path>
+<path d="M3774.5 1535.0 L3774.5 1555 L3774.5 1718 L3774.5 1718.0 " fill="none"></path>
+<path d="M3950.1 1535.0 L3959.5 1555 L3959.5 1718 L3959.5 1718.0 " fill="none"></path>
+<path d="M4013.0 1418.6 L4140 1555 L4140 1718 L4140.0 1718.0 " fill="none"></path>
+<path d="M4013.0 1333.6 L4321.5 1555 L4321.5 1725.5 L4321.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1272.3 L4627.25 1555 L4569.654734411086 1695.5 L4569.7 1695.5 " fill="none"></path>
+<path d="M4013.0 1301.1 L4450 1555 L4507.433025404157 1695.5 L4507.4 1695.5 " fill="none"></path>
+<path d="M4013.0 1257.9 L4756 1555 L4756 1725.5 L4756.0 1725.5 " fill="none"></path>
+<path d="M4013.0 1240.4 L4975.5 1555 L4975.5 1733 L4975.5 1733.0 " fill="none"></path>
+<path d="M4013.0 1228.3 L5196.5 1555 L5196.5 1725.5 L5196.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1219.9 L5406.5 1555 L5406.5 1725.5 L5406.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1213.3 L5616.5 1555 L5616.5 1733 L5616.5 1733.0 " fill="none"></path>
+<path d="M4013.0 1208.9 L5794 1555 L5794 1725.5 L5794.0 1725.5 " fill="none"></path>
+<path d="M4013.0 1205.3 L5961.5 1555 L5961.5 1733 L5961.5 1733.0 " fill="none"></path>
+<path d="M4013.0 1202.3 L6129 1555 L6129 1725.5 L6129.0 1725.5 " fill="none"></path>
+<path d="M4013.0 1199.6 L6296.5 1555 L6296.5 1725.5 L6296.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1197.2 L6469.5 1555 L6469.5 1725.5 L6469.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1195.2 L6633 1555 L6633 1733 L6633.0 1733.0 " fill="none"></path>
+<path d="M4013.0 1193.3 L6810.5 1555 L6810.5 1718 L6810.5 1718.0 " fill="none"></path>
+<path d="M4013.0 1191.4 L7009.5 1555 L7009.5 1725.5 L7009.5 1725.5 " fill="none"></path>
+<path d="M4013.0 1190.0 L7184 1555 L7184 1733 L7184.0 1733.0 " fill="none"></path>
+<path d="M4013.0 1188.8 L7339 1555 L7339 1733 L7339.0 1733.0 " fill="none"></path>
+<path d="M8266.3 750.0 L8251.75 770 L8251.75 1162.5 L8251.75 1162.5 L8251.75 1555 L8251.75 1555 L8251.75 1771.5 L8251.75 1771.5 L8251.75 1988 L8251.75 1988 L8180.543103448276 2607.5 L8180.5 2607.5 " fill="none"></path>
+<path d="M8194.0 639.5 L7612.5 770 L7612.5 1162.5 L7612.5 1162.5 L7612.5 1555 L7612.5 1555 L7612.5 1575 L7612.5 1575.0 " fill="none"></path>
+<text x="8685.8" y="1634.5" stroke="none">0..*</text>
+<path d="M8559.0 702.4 L8677.75 770 L8677.75 1162.5 L8677.75 1162.5 L8677.75 1555 L8677.75 1555 L8677.75 1642.5 L8677.8 1642.5 " fill="none"></path>
+<text x="9073.8" y="1619.5" stroke="none">0..*</text>
+<path d="M8559.0 642.6 L9086.5 770 L9086.5 1162.5 L9086.5 1162.5 L9086.5 1555 L9086.5 1555 L9065.821593533487 1627.5 L9065.8 1627.5 " fill="none"></path>
+<text x="9271.5" y="1093.0" stroke="none">0..*</text>
+<path d="M8559.0 633.8 L9263.5 770 L9263.5 1101 L9263.5 1101.0 " fill="none"></path>
+<path d="M8194.0 605.3 L3774.5 770 L3774.5 790 L3774.5 790.0 " fill="none"></path>
+<path d="M8194.0 670.4 L7941.25 770 L7941.25 1090 L7941.3 1090.0 " fill="none"></path>
+<path d="M8577.5 295.0 L8376.5 427 L8376.5 447 L8376.5 447.0 " fill="none"></path>
+<path d="M8751.0 295.0 L8800.5 427 L8800.5 548.5 L8800.5 548.5 " fill="none"></path>
+<path d="M7785.0 1837.8 L8175.5 1988 L8172.162176724138 2607.5 L8172.2 2607.5 " fill="none"></path>
+<path d="M7440.0 1828.8 L6960.25 1988 L6960.25 2638 L6960.3 2638.0 " fill="none"></path>
+<path d="M7440.0 1851.3 L7144.75 1988 L7144.75 2638 L7144.8 2638.0 " fill="none"></path>
+<path d="M7612.5 1968.0 L7612.5 1988 L7554.165768678161 2645.5 L7554.2 2645.5 " fill="none"></path>
+<path d="M7440.0 1913.9 L7350.25 1988 L7350.25 2555.5 L7350.3 2555.5 " fill="none"></path>
+<path d="M7704.9 1968.0 L7714.25 1988 L7714.25 2593 L7714.3 2593.0 " fill="none"></path>
+<path d="M7785.0 1901.7 L7899.25 1988 L7899.25 2008 L7899.3 2008.0 " fill="none"></path>
+<path d="M7483.6 1968.0 L7470.5 1988 L7546.310883620689 2645.5 L7546.3 2645.5 " fill="none"></path>
+<path d="M7785.0 1815.6 L8459.75 1988 L8459.75 2593 L8459.8 2593.0 " fill="none"></path>
+<path d="M8557.3 1819.6 L8135.5 1988 L8167.765625 2607.5 L8167.8 2607.5 " fill="none"></path>
+<path d="M8677.8 1900.5 L8677.75 1988 L8677.75 2540.5 L8677.8 2540.5 " fill="none"></path>
+<path d="M8772.8 1900.5 L8837.25 1988 L8837.25 2600.5 L8837.3 2600.5 " fill="none"></path>
+<path d="M8904.3 1799.6 L8095.5 1988 L8163.369073275862 2607.5 L8163.4 2607.5 " fill="none"></path>
+<path d="M9024.8 1915.5 L9024.75 1988 L9024.75 2533 L9024.8 2533.0 " fill="none"></path>
+<path d="M9145.3 1869.0 L9292.25 1988 L9292.25 2555.5 L9292.3 2555.5 " fill="none"></path>
+<path d="M9202.0 1224.0 L8871.25 1555 L8922.65300230947 1627.5 L8922.7 1627.5 " fill="none"></path>
+<text x="9596.7" y="1612.0" stroke="none">0..*</text>
+<path d="M9315.4 1224.0 L9594.75 1555 L9588.745381062356 1620 L9588.7 1620.0 " fill="none"></path>
+<path d="M9480.8 1620.0 L9440.5 1555 L9440.5 1162.5 L9440.5 1162.5 L9440.5 770 L9440.5 770 L8559 627.9161184210526 L8559.0 627.9 " fill="none"></path>
+<path d="M9447.3 1789.7 L8055.5 1988 L8158.972521551724 2607.5 L8159.0 2607.5 " fill="none"></path>
+<path d="M9524.0 1923.0 L9502.25 1988 L9502.25 2578 L9502.3 2578.0 " fill="none"></path>
+<path d="M9625.5 1923.0 L9647.25 1988 L9647.25 2623 L9647.3 2623.0 " fill="none"></path>
+<path d="M9702.3 1881.7 L9825.25 1988 L9825.25 2608 L9825.3 2608.0 " fill="none"></path>
+<g data-name="ElfArmAttributes">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfArmAttributes">
+<rect x="3536.0" y="790.0" height="745.0" width="477.0" data-name="ElfArmAttributes"></rect>
+<path d="M3536.0 821.0 L4013.0 821.0" fill="none" data-name="ElfArmAttributes"></path>
+<path d="M3536.0 1527.0 L4013.0 1527.0" fill="none" data-name="ElfArmAttributes"></path>
+</g>
+<g transform="translate(3536, 790)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfArmAttributes">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfArmAttributes">
+<a id="../src/ElfArmAttributes.ts.ElfArmAttributes" xlink:href="../src/ElfArmAttributes.ts"><text x="230.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfArmAttributes">ElfArmAttributes</text></a>
+
+</g>
+</g>
+<g transform="translate(3536, 821)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfArmAttributes">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfArmAttributes">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfArmAttributes">+Tag_CPU_raw_name: string</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfArmAttributes">+Tag_CPU_name: string</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfArmAttributes">+Tag_CPU_arch: cpu_arch</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfArmAttributes">+Tag_CPU_arch_profile: arch_profile</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfArmAttributes">+Tag_ARM_ISA_use: isa_use</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfArmAttributes">+Tag_THUMB_ISA_use: thumb_isa_use</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfArmAttributes">+Tag_FP_arch: fp_arch</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfArmAttributes">+Tag_WMMX_arch: WMMX_arch</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ElfArmAttributes">+Tag_Advanced_SIMD_arch: SIMD_arch</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ElfArmAttributes">+Tag_PCS_config: PCS_config</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_PCS_R9_use: PCS_R9_use</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_PCS_RW_data: PCS_RW_data</text>
+<text x="0.0" y="193.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_PCS_RO_data: PCS_RO_data</text>
+<text x="0.0" y="208.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_PCS_GOT_use: PCS_GOT_use</text>
+<text x="0.0" y="223.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_PCS_wchar_t: PCS_wchar_t</text>
+<text x="0.0" y="238.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_rounding: ABI_FP_rounding</text>
+<text x="0.0" y="253.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_denormal: ABI_FP_denormal</text>
+<text x="0.0" y="268.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_exceptions: ABI_FP_exceptions</text>
+<text x="0.0" y="283.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_user_exceptions: ABI_FP_user_exceptions</text>
+<text x="0.0" y="298.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_number_model: ABI_FP_number_model</text>
+<text x="0.0" y="313.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_align_needed: ABI_align_needed</text>
+<text x="0.0" y="328.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_align_preserved: ABI_align_preserved</text>
+<text x="0.0" y="343.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_enum_size: ABI_enum_size</text>
+<text x="0.0" y="358.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_HardFP_use: ABI_HardFP_use</text>
+<text x="0.0" y="373.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_VFP_args: ABI_VFP_args</text>
+<text x="0.0" y="388.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_WMMX_args: ABI_WMMX_args</text>
+<text x="0.0" y="403.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_optimization_goals: ABI_optimization_goals</text>
+<text x="0.0" y="418.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_optimization_goals: ABI_optimization_goals</text>
+<text x="0.0" y="433.5" stroke="none" data-name="ElfArmAttributes">+Tag_compatibility: Tag_compatibility</text>
+<text x="0.0" y="448.5" stroke="none" data-name="ElfArmAttributes">+Tag_CPU_unaligned_access: CPU_unaligned_access</text>
+<text x="0.0" y="463.5" stroke="none" data-name="ElfArmAttributes">+Tag_FP_HP_extension: FP_HP_extension</text>
+<text x="0.0" y="478.5" stroke="none" data-name="ElfArmAttributes">+Tag_ABI_FP_16bit_format: ABI_FP_16bit_format</text>
+<text x="0.0" y="493.5" stroke="none" data-name="ElfArmAttributes">+Tag_MPextension_use: MPextension_use</text>
+<text x="0.0" y="508.5" stroke="none" data-name="ElfArmAttributes">+Tag_DIV_use: DIV_use</text>
+<text x="0.0" y="523.5" stroke="none" data-name="ElfArmAttributes">+Tag_DSP_extension: DSP_extension</text>
+<text x="0.0" y="538.5" stroke="none" data-name="ElfArmAttributes">+Tag_MVE_arch: MVE_arch</text>
+<text x="0.0" y="553.5" stroke="none" data-name="ElfArmAttributes">+Tag_PAC_extension: PAC_extension</text>
+<text x="0.0" y="568.5" stroke="none" data-name="ElfArmAttributes">+Tag_BTI_extension: BTI_extension</text>
+<text x="0.0" y="583.5" stroke="none" data-name="ElfArmAttributes">+Tag_nodefaults: number</text>
+<text x="0.0" y="598.5" stroke="none" data-name="ElfArmAttributes">+Tag_also_compatible_with: string</text>
+<text x="0.0" y="613.5" stroke="none" data-name="ElfArmAttributes">+Tag_conformance: string</text>
+<text x="0.0" y="628.5" stroke="none" data-name="ElfArmAttributes">+Tag_T2EE_use: T2EE_use</text>
+<text x="0.0" y="643.5" stroke="none" data-name="ElfArmAttributes">+Tag_Virtualization_use: Virtualization_use</text>
+<text x="0.0" y="658.5" stroke="none" data-name="ElfArmAttributes">+Tag_FramePointer_use: FramePointer_use</text>
+<text x="0.0" y="673.5" stroke="none" data-name="ElfArmAttributes">+Tag_BTI_use: BTI_use</text>
+<text x="0.0" y="688.5" stroke="none" data-name="ElfArmAttributes">+Tag_PACRET_use: PACRET_use</text>
+
+</g>
+</g>
+<g transform="translate(3536, 1527)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfArmAttributes">
+<g transform="translate(8, 8)" fill="#33322E" data-name="ElfArmAttributes">
+
+</g>
+</g>
+</g>
+<g data-name="cpu_arch">
+<g fill="lightgreen" stroke="#33322E" data-name="cpu_arch">
+<rect x="0.0" y="1575.5" height="392.0" width="147.0" data-name="cpu_arch"></rect>
+<path d="M0.0 1606.5 L147.0 1606.5" fill="none" data-name="cpu_arch"></path>
+</g>
+<g transform="translate(0, 1575.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="cpu_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="cpu_arch">
+<a id="../src/enums.ts.cpu_arch" xlink:href="../src/enums.ts"><text x="65.5" y="13.5" stroke="none" text-anchor="middle" data-name="cpu_arch">cpu_arch</text></a>
+
+</g>
+</g>
+<g transform="translate(0, 1606.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="cpu_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="cpu_arch">
+<text x="0.0" y="13.5" stroke="none" data-name="cpu_arch">Prev4</text>
+<text x="0.0" y="28.5" stroke="none" data-name="cpu_arch">Armv4</text>
+<text x="0.0" y="43.5" stroke="none" data-name="cpu_arch">Armv4T</text>
+<text x="0.0" y="58.5" stroke="none" data-name="cpu_arch">Armv5T</text>
+<text x="0.0" y="73.5" stroke="none" data-name="cpu_arch">Armv5TE</text>
+<text x="0.0" y="88.5" stroke="none" data-name="cpu_arch">Armv5TEJ</text>
+<text x="0.0" y="103.5" stroke="none" data-name="cpu_arch">Armv6</text>
+<text x="0.0" y="118.5" stroke="none" data-name="cpu_arch">Armv6KZ</text>
+<text x="0.0" y="133.5" stroke="none" data-name="cpu_arch">Armv6T2</text>
+<text x="0.0" y="148.5" stroke="none" data-name="cpu_arch">Armv6K</text>
+<text x="0.0" y="163.5" stroke="none" data-name="cpu_arch">Armv7</text>
+<text x="0.0" y="178.5" stroke="none" data-name="cpu_arch">Armv6M</text>
+<text x="0.0" y="193.5" stroke="none" data-name="cpu_arch">Armv6SM</text>
+<text x="0.0" y="208.5" stroke="none" data-name="cpu_arch">Armv7EM</text>
+<text x="0.0" y="223.5" stroke="none" data-name="cpu_arch">Armv8A</text>
+<text x="0.0" y="238.5" stroke="none" data-name="cpu_arch">Armv8R</text>
+<text x="0.0" y="253.5" stroke="none" data-name="cpu_arch">Armv8Mbaseline</text>
+<text x="0.0" y="268.5" stroke="none" data-name="cpu_arch">Armv8Mmainline</text>
+<text x="0.0" y="283.5" stroke="none" data-name="cpu_arch">Armv81A</text>
+<text x="0.0" y="298.5" stroke="none" data-name="cpu_arch">Armv82A</text>
+<text x="0.0" y="313.5" stroke="none" data-name="cpu_arch">Armv83A</text>
+<text x="0.0" y="328.5" stroke="none" data-name="cpu_arch">Armv81M</text>
+<text x="0.0" y="343.5" stroke="none" data-name="cpu_arch">Armv9A</text>
+
+</g>
+</g>
+</g>
+<g data-name="arch_profile">
+<g fill="lightgreen" stroke="#33322E" data-name="arch_profile">
+<rect x="187.0" y="1710.5" height="122.0" width="110.0" data-name="arch_profile"></rect>
+<path d="M187.0 1741.5 L297.0 1741.5" fill="none" data-name="arch_profile"></path>
+</g>
+<g transform="translate(187, 1710.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="arch_profile">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="arch_profile">
+<a id="../src/enums.ts.arch_profile" xlink:href="../src/enums.ts"><text x="47.0" y="13.5" stroke="none" text-anchor="middle" data-name="arch_profile">arch_profile</text></a>
+
+</g>
+</g>
+<g transform="translate(187, 1741.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="arch_profile">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="arch_profile">
+<text x="0.0" y="13.5" stroke="none" data-name="arch_profile">NA</text>
+<text x="0.0" y="28.5" stroke="none" data-name="arch_profile">A</text>
+<text x="0.0" y="43.5" stroke="none" data-name="arch_profile">R</text>
+<text x="0.0" y="58.5" stroke="none" data-name="arch_profile">M</text>
+<text x="0.0" y="73.5" stroke="none" data-name="arch_profile">S</text>
+
+</g>
+</g>
+</g>
+<g data-name="isa_use">
+<g fill="lightgreen" stroke="#33322E" data-name="isa_use">
+<rect x="337.0" y="1733.0" height="77.0" width="118.0" data-name="isa_use"></rect>
+<path d="M337.0 1764.0 L455.0 1764.0" fill="none" data-name="isa_use"></path>
+</g>
+<g transform="translate(337, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="isa_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="isa_use">
+<a id="../src/enums.ts.isa_use" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="isa_use">isa_use</text></a>
+
+</g>
+</g>
+<g transform="translate(337, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="isa_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="isa_use">
+<text x="0.0" y="13.5" stroke="none" data-name="isa_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="isa_use">Permitted</text>
+
+</g>
+</g>
+</g>
+<g data-name="thumb_isa_use">
+<g fill="lightgreen" stroke="#33322E" data-name="thumb_isa_use">
+<rect x="495.0" y="1718.0" height="107.0" width="158.0" data-name="thumb_isa_use"></rect>
+<path d="M495.0 1749.0 L653.0 1749.0" fill="none" data-name="thumb_isa_use"></path>
+</g>
+<g transform="translate(495, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="thumb_isa_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="thumb_isa_use">
+<a id="../src/enums.ts.thumb_isa_use" xlink:href="../src/enums.ts"><text x="71.0" y="13.5" stroke="none" text-anchor="middle" data-name="thumb_isa_use">thumb_isa_use</text></a>
+
+</g>
+</g>
+<g transform="translate(495, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="thumb_isa_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="thumb_isa_use">
+<text x="0.0" y="13.5" stroke="none" data-name="thumb_isa_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="thumb_isa_use">Deprecated_16Bit</text>
+<text x="0.0" y="43.5" stroke="none" data-name="thumb_isa_use">Deprecated_32Bit</text>
+<text x="0.0" y="58.5" stroke="none" data-name="thumb_isa_use">Thumbcode</text>
+
+</g>
+</g>
+</g>
+<g data-name="fp_arch">
+<g fill="lightgreen" stroke="#33322E" data-name="fp_arch">
+<rect x="693.0" y="1680.5" height="182.0" width="118.0" data-name="fp_arch"></rect>
+<path d="M693.0 1711.5 L811.0 1711.5" fill="none" data-name="fp_arch"></path>
+</g>
+<g transform="translate(693, 1680.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="fp_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="fp_arch">
+<a id="../src/enums.ts.fp_arch" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="fp_arch">fp_arch</text></a>
+
+</g>
+</g>
+<g transform="translate(693, 1711.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="fp_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="fp_arch">
+<text x="0.0" y="13.5" stroke="none" data-name="fp_arch">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="fp_arch">v1</text>
+<text x="0.0" y="43.5" stroke="none" data-name="fp_arch">v2</text>
+<text x="0.0" y="58.5" stroke="none" data-name="fp_arch">v3</text>
+<text x="0.0" y="73.5" stroke="none" data-name="fp_arch">v3_DS</text>
+<text x="0.0" y="88.5" stroke="none" data-name="fp_arch">v4</text>
+<text x="0.0" y="103.5" stroke="none" data-name="fp_arch">v4_DS</text>
+<text x="0.0" y="118.5" stroke="none" data-name="fp_arch">v8</text>
+<text x="0.0" y="133.5" stroke="none" data-name="fp_arch">v8_DS</text>
+
+</g>
+</g>
+</g>
+<g data-name="WMMX_arch">
+<g fill="lightgreen" stroke="#33322E" data-name="WMMX_arch">
+<rect x="851.0" y="1725.5" height="92.0" width="118.0" data-name="WMMX_arch"></rect>
+<path d="M851.0 1756.5 L969.0 1756.5" fill="none" data-name="WMMX_arch"></path>
+</g>
+<g transform="translate(851, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="WMMX_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="WMMX_arch">
+<a id="../src/enums.ts.WMMX_arch" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="WMMX_arch">WMMX_arch</text></a>
+
+</g>
+</g>
+<g transform="translate(851, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="WMMX_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="WMMX_arch">
+<text x="0.0" y="13.5" stroke="none" data-name="WMMX_arch">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="WMMX_arch">v1</text>
+<text x="0.0" y="43.5" stroke="none" data-name="WMMX_arch">v2</text>
+
+</g>
+</g>
+</g>
+<g data-name="SIMD_arch">
+<g fill="lightgreen" stroke="#33322E" data-name="SIMD_arch">
+<rect x="1009.0" y="1710.5" height="122.0" width="118.0" data-name="SIMD_arch"></rect>
+<path d="M1009.0 1741.5 L1127.0 1741.5" fill="none" data-name="SIMD_arch"></path>
+</g>
+<g transform="translate(1009, 1710.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="SIMD_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="SIMD_arch">
+<a id="../src/enums.ts.SIMD_arch" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="SIMD_arch">SIMD_arch</text></a>
+
+</g>
+</g>
+<g transform="translate(1009, 1741.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="SIMD_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="SIMD_arch">
+<text x="0.0" y="13.5" stroke="none" data-name="SIMD_arch">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="SIMD_arch">SIMDv1</text>
+<text x="0.0" y="43.5" stroke="none" data-name="SIMD_arch">SIMDv2</text>
+<text x="0.0" y="58.5" stroke="none" data-name="SIMD_arch">Armv8</text>
+<text x="0.0" y="73.5" stroke="none" data-name="SIMD_arch">Armv8_1</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_config">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_config">
+<rect x="1167.0" y="1688.0" height="167.0" width="136.0" data-name="PCS_config"></rect>
+<path d="M1167.0 1719.0 L1303.0 1719.0" fill="none" data-name="PCS_config"></path>
+</g>
+<g transform="translate(1167, 1688)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_config">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_config">
+<a id="../src/enums.ts.PCS_config" xlink:href="../src/enums.ts"><text x="60.0" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_config">PCS_config</text></a>
+
+</g>
+</g>
+<g transform="translate(1167, 1719)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_config">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_config">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_config">NoStd</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_config">Bare</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_config">Linux</text>
+<text x="0.0" y="58.5" stroke="none" data-name="PCS_config">LinuxDSO</text>
+<text x="0.0" y="73.5" stroke="none" data-name="PCS_config">PalmOS</text>
+<text x="0.0" y="88.5" stroke="none" data-name="PCS_config">Reserved</text>
+<text x="0.0" y="103.5" stroke="none" data-name="PCS_config">SymbianOS</text>
+<text x="0.0" y="118.5" stroke="none" data-name="PCS_config">ReservedSymb</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_R9_use">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_R9_use">
+<rect x="1343.0" y="1718.0" height="107.0" width="121.0" data-name="PCS_R9_use"></rect>
+<path d="M1343.0 1749.0 L1464.0 1749.0" fill="none" data-name="PCS_R9_use"></path>
+</g>
+<g transform="translate(1343, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_R9_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_R9_use">
+<a id="../src/enums.ts.PCS_R9_use" xlink:href="../src/enums.ts"><text x="52.5" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_R9_use">PCS_R9_use</text></a>
+
+</g>
+</g>
+<g transform="translate(1343, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_R9_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_R9_use">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_R9_use">V6</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_R9_use">SB</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_R9_use">TLS</text>
+<text x="0.0" y="58.5" stroke="none" data-name="PCS_R9_use">Unused</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_RW_data">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_RW_data">
+<rect x="1504.0" y="1718.0" height="107.0" width="133.0" data-name="PCS_RW_data"></rect>
+<path d="M1504.0 1749.0 L1637.0 1749.0" fill="none" data-name="PCS_RW_data"></path>
+</g>
+<g transform="translate(1504, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_RW_data">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_RW_data">
+<a id="../src/enums.ts.PCS_RW_data" xlink:href="../src/enums.ts"><text x="58.5" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_RW_data">PCS_RW_data</text></a>
+
+</g>
+</g>
+<g transform="translate(1504, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_RW_data">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_RW_data">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_RW_data">Permitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_RW_data">PC</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_RW_data">SB</text>
+<text x="0.0" y="58.5" stroke="none" data-name="PCS_RW_data">NotPermitted</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_RO_data">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_RO_data">
+<rect x="1677.0" y="1725.5" height="92.0" width="130.0" data-name="PCS_RO_data"></rect>
+<path d="M1677.0 1756.5 L1807.0 1756.5" fill="none" data-name="PCS_RO_data"></path>
+</g>
+<g transform="translate(1677, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_RO_data">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_RO_data">
+<a id="../src/enums.ts.PCS_RO_data" xlink:href="../src/enums.ts"><text x="57.0" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_RO_data">PCS_RO_data</text></a>
+
+</g>
+</g>
+<g transform="translate(1677, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_RO_data">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_RO_data">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_RO_data">Permitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_RO_data">PC</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_RO_data">NotPermitted</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_GOT_use">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_GOT_use">
+<rect x="1847.0" y="1725.5" height="92.0" width="135.0" data-name="PCS_GOT_use"></rect>
+<path d="M1847.0 1756.5 L1982.0 1756.5" fill="none" data-name="PCS_GOT_use"></path>
+</g>
+<g transform="translate(1847, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_GOT_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_GOT_use">
+<a id="../src/enums.ts.PCS_GOT_use" xlink:href="../src/enums.ts"><text x="59.5" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_GOT_use">PCS_GOT_use</text></a>
+
+</g>
+</g>
+<g transform="translate(1847, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_GOT_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_GOT_use">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_GOT_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_GOT_use">Direct</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_GOT_use">GOT</text>
+
+</g>
+</g>
+</g>
+<g data-name="PCS_wchar_t">
+<g fill="lightgreen" stroke="#33322E" data-name="PCS_wchar_t">
+<rect x="2022.0" y="1725.5" height="92.0" width="122.0" data-name="PCS_wchar_t"></rect>
+<path d="M2022.0 1756.5 L2144.0 1756.5" fill="none" data-name="PCS_wchar_t"></path>
+</g>
+<g transform="translate(2022, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_wchar_t">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PCS_wchar_t">
+<a id="../src/enums.ts.PCS_wchar_t" xlink:href="../src/enums.ts"><text x="53.0" y="13.5" stroke="none" text-anchor="middle" data-name="PCS_wchar_t">PCS_wchar_t</text></a>
+
+</g>
+</g>
+<g transform="translate(2022, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PCS_wchar_t">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PCS_wchar_t">
+<text x="0.0" y="13.5" stroke="none" data-name="PCS_wchar_t">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PCS_wchar_t">v2</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PCS_wchar_t">v4</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_rounding">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_rounding">
+<rect x="2184.0" y="1733.0" height="77.0" width="154.0" data-name="ABI_FP_rounding"></rect>
+<path d="M2184.0 1764.0 L2338.0 1764.0" fill="none" data-name="ABI_FP_rounding"></path>
+</g>
+<g transform="translate(2184, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_rounding">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_rounding">
+<a id="../src/enums.ts.ABI_FP_rounding" xlink:href="../src/enums.ts"><text x="69.0" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_rounding">ABI_FP_rounding</text></a>
+
+</g>
+</g>
+<g transform="translate(2184, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_rounding">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_rounding">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_rounding">IEEE_754</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_rounding">IEEE_754_RT</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_denormal">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_denormal">
+<rect x="2378.0" y="1725.5" height="92.0" width="158.0" data-name="ABI_FP_denormal"></rect>
+<path d="M2378.0 1756.5 L2536.0 1756.5" fill="none" data-name="ABI_FP_denormal"></path>
+</g>
+<g transform="translate(2378, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_denormal">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_denormal">
+<a id="../src/enums.ts.ABI_FP_denormal" xlink:href="../src/enums.ts"><text x="71.0" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_denormal">ABI_FP_denormal</text></a>
+
+</g>
+</g>
+<g transform="translate(2378, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_denormal">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_denormal">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_denormal">Flushed</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_denormal">IEEE_754</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_FP_denormal">Sign</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_exceptions">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_exceptions">
+<rect x="2576.0" y="1733.0" height="77.0" width="170.0" data-name="ABI_FP_exceptions"></rect>
+<path d="M2576.0 1764.0 L2746.0 1764.0" fill="none" data-name="ABI_FP_exceptions"></path>
+</g>
+<g transform="translate(2576, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_exceptions">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_exceptions">
+<a id="../src/enums.ts.ABI_FP_exceptions" xlink:href="../src/enums.ts"><text x="77.0" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_exceptions">ABI_FP_exceptions</text></a>
+
+</g>
+</g>
+<g transform="translate(2576, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_exceptions">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_exceptions">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_exceptions">Exact</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_exceptions">Inexact</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_user_exceptions">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_user_exceptions">
+<rect x="2786.0" y="1733.0" height="77.0" width="215.0" data-name="ABI_FP_user_exceptions"></rect>
+<path d="M2786.0 1764.0 L3001.0 1764.0" fill="none" data-name="ABI_FP_user_exceptions"></path>
+</g>
+<g transform="translate(2786, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_user_exceptions">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_user_exceptions">
+<a id="../src/enums.ts.ABI_FP_user_exceptions" xlink:href="../src/enums.ts"><text x="99.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_user_exceptions">ABI_FP_user_exceptions</text></a>
+
+</g>
+</g>
+<g transform="translate(2786, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_user_exceptions">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_user_exceptions">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_user_exceptions">NotUse</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_user_exceptions">Use</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_number_model">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_number_model">
+<rect x="3041.0" y="1718.0" height="107.0" width="202.0" data-name="ABI_FP_number_model"></rect>
+<path d="M3041.0 1749.0 L3243.0 1749.0" fill="none" data-name="ABI_FP_number_model"></path>
+</g>
+<g transform="translate(3041, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_number_model">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_number_model">
+<a id="../src/enums.ts.ABI_FP_number_model" xlink:href="../src/enums.ts"><text x="93.0" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_number_model">ABI_FP_number_model</text></a>
+
+</g>
+</g>
+<g transform="translate(3041, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_number_model">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_number_model">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_number_model">NotUse</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_number_model">IEEE_754</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_FP_number_model">Numbers</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_FP_number_model">IEEE_754_FP</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_align_needed">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_align_needed">
+<rect x="3283.0" y="1710.5" height="122.0" width="161.0" data-name="ABI_align_needed"></rect>
+<path d="M3283.0 1741.5 L3444.0 1741.5" fill="none" data-name="ABI_align_needed"></path>
+</g>
+<g transform="translate(3283, 1710.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_align_needed">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_align_needed">
+<a id="../src/enums.ts.ABI_align_needed" xlink:href="../src/enums.ts"><text x="72.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_align_needed">ABI_align_needed</text></a>
+
+</g>
+</g>
+<g transform="translate(3283, 1741.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_align_needed">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_align_needed">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_align_needed">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_align_needed">v8</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_align_needed">v4</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_align_needed">Reserved</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ABI_align_needed">v8_2n</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_align_preserved">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_align_preserved">
+<rect x="3484.0" y="1710.5" height="122.0" width="181.0" data-name="ABI_align_preserved"></rect>
+<path d="M3484.0 1741.5 L3665.0 1741.5" fill="none" data-name="ABI_align_preserved"></path>
+</g>
+<g transform="translate(3484, 1710.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_align_preserved">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_align_preserved">
+<a id="../src/enums.ts.ABI_align_preserved" xlink:href="../src/enums.ts"><text x="82.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_align_preserved">ABI_align_preserved</text></a>
+
+</g>
+</g>
+<g transform="translate(3484, 1741.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_align_preserved">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_align_preserved">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_align_preserved">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_align_preserved">v8</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_align_preserved">v8SP</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_align_preserved">Reserved</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ABI_align_preserved">v8_2n</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_enum_size">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_enum_size">
+<rect x="3705.0" y="1718.0" height="107.0" width="139.0" data-name="ABI_enum_size"></rect>
+<path d="M3705.0 1749.0 L3844.0 1749.0" fill="none" data-name="ABI_enum_size"></path>
+</g>
+<g transform="translate(3705, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_enum_size">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_enum_size">
+<a id="../src/enums.ts.ABI_enum_size" xlink:href="../src/enums.ts"><text x="61.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_enum_size">ABI_enum_size</text></a>
+
+</g>
+</g>
+<g transform="translate(3705, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_enum_size">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_enum_size">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_enum_size">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_enum_size">Smalest</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_enum_size">v32</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_enum_size">Every</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_HardFP_use">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_HardFP_use">
+<rect x="3884.0" y="1718.0" height="107.0" width="151.0" data-name="ABI_HardFP_use"></rect>
+<path d="M3884.0 1749.0 L4035.0 1749.0" fill="none" data-name="ABI_HardFP_use"></path>
+</g>
+<g transform="translate(3884, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_HardFP_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_HardFP_use">
+<a id="../src/enums.ts.ABI_HardFP_use" xlink:href="../src/enums.ts"><text x="67.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_HardFP_use">ABI_HardFP_use</text></a>
+
+</g>
+</g>
+<g transform="translate(3884, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_HardFP_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_HardFP_use">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_HardFP_use">Tag_FP</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_HardFP_use">SP_Tag_FP</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_HardFP_use">Reserved</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_HardFP_use">FP_Tag_FP</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_VFP_args">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_VFP_args">
+<rect x="4075.0" y="1718.0" height="107.0" width="130.0" data-name="ABI_VFP_args"></rect>
+<path d="M4075.0 1749.0 L4205.0 1749.0" fill="none" data-name="ABI_VFP_args"></path>
+</g>
+<g transform="translate(4075, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_VFP_args">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_VFP_args">
+<a id="../src/enums.ts.ABI_VFP_args" xlink:href="../src/enums.ts"><text x="57.0" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_VFP_args">ABI_VFP_args</text></a>
+
+</g>
+</g>
+<g transform="translate(4075, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_VFP_args">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_VFP_args">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_VFP_args">AAPCS_BV</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_VFP_args">AAPCS_VFP</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_VFP_args">AAPCS_TCS</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_VFP_args">ALL_VFP</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_WMMX_args">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_WMMX_args">
+<rect x="4245.0" y="1725.5" height="92.0" width="153.0" data-name="ABI_WMMX_args"></rect>
+<path d="M4245.0 1756.5 L4398.0 1756.5" fill="none" data-name="ABI_WMMX_args"></path>
+</g>
+<g transform="translate(4245, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_WMMX_args">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_WMMX_args">
+<a id="../src/enums.ts.ABI_WMMX_args" xlink:href="../src/enums.ts"><text x="68.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_WMMX_args">ABI_WMMX_args</text></a>
+
+</g>
+</g>
+<g transform="translate(4245, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_WMMX_args">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_WMMX_args">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_WMMX_args">AAPCS_BV</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_WMMX_args">Intel</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_WMMX_args">TCS</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_optimization_goals">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_optimization_goals">
+<rect x="4438.0" y="1695.5" height="152.0" width="201.0" data-name="ABI_optimization_goals"></rect>
+<path d="M4438.0 1726.5 L4639.0 1726.5" fill="none" data-name="ABI_optimization_goals"></path>
+</g>
+<g transform="translate(4438, 1695.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_optimization_goals">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_optimization_goals">
+<a id="../src/enums.ts.ABI_optimization_goals" xlink:href="../src/enums.ts"><text x="92.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_optimization_goals">ABI_optimization_goals</text></a>
+
+</g>
+</g>
+<g transform="translate(4438, 1726.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_optimization_goals">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_optimization_goals">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_optimization_goals">NoOpt</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_optimization_goals">Speed</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_optimization_goals">AggressivelySpeed</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ABI_optimization_goals">SmallSize</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ABI_optimization_goals">AggressivelySmallSize</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ABI_optimization_goals">GoodDebugging</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ABI_optimization_goals">BestDebugging</text>
+
+</g>
+</g>
+</g>
+<g data-name="Tag_compatibility">
+<g fill="lightgreen" stroke="#33322E" data-name="Tag_compatibility">
+<rect x="4679.0" y="1725.5" height="92.0" width="154.0" data-name="Tag_compatibility"></rect>
+<path d="M4679.0 1756.5 L4833.0 1756.5" fill="none" data-name="Tag_compatibility"></path>
+</g>
+<g transform="translate(4679, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Tag_compatibility">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Tag_compatibility">
+<a id="../src/enums.ts.Tag_compatibility" xlink:href="../src/enums.ts"><text x="69.0" y="13.5" stroke="none" text-anchor="middle" data-name="Tag_compatibility">Tag_compatibility</text></a>
+
+</g>
+</g>
+<g transform="translate(4679, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Tag_compatibility">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="Tag_compatibility">
+<text x="0.0" y="13.5" stroke="none" data-name="Tag_compatibility">No_TCSR</text>
+<text x="0.0" y="28.5" stroke="none" data-name="Tag_compatibility">ABI</text>
+<text x="0.0" y="43.5" stroke="none" data-name="Tag_compatibility">No_ABI</text>
+
+</g>
+</g>
+</g>
+<g data-name="CPU_unaligned_access">
+<g fill="lightgreen" stroke="#33322E" data-name="CPU_unaligned_access">
+<rect x="4873.0" y="1733.0" height="77.0" width="205.0" data-name="CPU_unaligned_access"></rect>
+<path d="M4873.0 1764.0 L5078.0 1764.0" fill="none" data-name="CPU_unaligned_access"></path>
+</g>
+<g transform="translate(4873, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="CPU_unaligned_access">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="CPU_unaligned_access">
+<a id="../src/enums.ts.CPU_unaligned_access" xlink:href="../src/enums.ts"><text x="94.5" y="13.5" stroke="none" text-anchor="middle" data-name="CPU_unaligned_access">CPU_unaligned_access</text></a>
+
+</g>
+</g>
+<g transform="translate(4873, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="CPU_unaligned_access">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="CPU_unaligned_access">
+<text x="0.0" y="13.5" stroke="none" data-name="CPU_unaligned_access">UnaAlign</text>
+<text x="0.0" y="28.5" stroke="none" data-name="CPU_unaligned_access">v6</text>
+
+</g>
+</g>
+</g>
+<g data-name="FP_HP_extension">
+<g fill="lightgreen" stroke="#33322E" data-name="FP_HP_extension">
+<rect x="5118.0" y="1725.5" height="92.0" width="157.0" data-name="FP_HP_extension"></rect>
+<path d="M5118.0 1756.5 L5275.0 1756.5" fill="none" data-name="FP_HP_extension"></path>
+</g>
+<g transform="translate(5118, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="FP_HP_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="FP_HP_extension">
+<a id="../src/enums.ts.FP_HP_extension" xlink:href="../src/enums.ts"><text x="70.5" y="13.5" stroke="none" text-anchor="middle" data-name="FP_HP_extension">FP_HP_extension</text></a>
+
+</g>
+</g>
+<g transform="translate(5118, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="FP_HP_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="FP_HP_extension">
+<text x="0.0" y="13.5" stroke="none" data-name="FP_HP_extension">HP_ASIMD</text>
+<text x="0.0" y="28.5" stroke="none" data-name="FP_HP_extension">HP_v3</text>
+<text x="0.0" y="43.5" stroke="none" data-name="FP_HP_extension">HP_v8_2</text>
+
+</g>
+</g>
+</g>
+<g data-name="ABI_FP_16bit_format">
+<g fill="lightgreen" stroke="#33322E" data-name="ABI_FP_16bit_format">
+<rect x="5315.0" y="1725.5" height="92.0" width="183.0" data-name="ABI_FP_16bit_format"></rect>
+<path d="M5315.0 1756.5 L5498.0 1756.5" fill="none" data-name="ABI_FP_16bit_format"></path>
+</g>
+<g transform="translate(5315, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_16bit_format">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ABI_FP_16bit_format">
+<a id="../src/enums.ts.ABI_FP_16bit_format" xlink:href="../src/enums.ts"><text x="83.5" y="13.5" stroke="none" text-anchor="middle" data-name="ABI_FP_16bit_format">ABI_FP_16bit_format</text></a>
+
+</g>
+</g>
+<g transform="translate(5315, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ABI_FP_16bit_format">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ABI_FP_16bit_format">
+<text x="0.0" y="13.5" stroke="none" data-name="ABI_FP_16bit_format">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ABI_FP_16bit_format">NOP</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ABI_FP_16bit_format">NoNOP</text>
+
+</g>
+</g>
+</g>
+<g data-name="MPextension_use">
+<g fill="lightgreen" stroke="#33322E" data-name="MPextension_use">
+<rect x="5538.0" y="1733.0" height="77.0" width="157.0" data-name="MPextension_use"></rect>
+<path d="M5538.0 1764.0 L5695.0 1764.0" fill="none" data-name="MPextension_use"></path>
+</g>
+<g transform="translate(5538, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="MPextension_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="MPextension_use">
+<a id="../src/enums.ts.MPextension_use" xlink:href="../src/enums.ts"><text x="70.5" y="13.5" stroke="none" text-anchor="middle" data-name="MPextension_use">MPextension_use</text></a>
+
+</g>
+</g>
+<g transform="translate(5538, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="MPextension_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="MPextension_use">
+<text x="0.0" y="13.5" stroke="none" data-name="MPextension_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="MPextension_use">v7MP</text>
+
+</g>
+</g>
+</g>
+<g data-name="DIV_use">
+<g fill="lightgreen" stroke="#33322E" data-name="DIV_use">
+<rect x="5735.0" y="1725.5" height="92.0" width="118.0" data-name="DIV_use"></rect>
+<path d="M5735.0 1756.5 L5853.0 1756.5" fill="none" data-name="DIV_use"></path>
+</g>
+<g transform="translate(5735, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DIV_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="DIV_use">
+<a id="../src/enums.ts.DIV_use" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="DIV_use">DIV_use</text></a>
+
+</g>
+</g>
+<g transform="translate(5735, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DIV_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="DIV_use">
+<text x="0.0" y="13.5" stroke="none" data-name="DIV_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="DIV_use">Intended</text>
+<text x="0.0" y="43.5" stroke="none" data-name="DIV_use">SDIV</text>
+
+</g>
+</g>
+</g>
+<g data-name="DSP_extension">
+<g fill="lightgreen" stroke="#33322E" data-name="DSP_extension">
+<rect x="5893.0" y="1733.0" height="77.0" width="137.0" data-name="DSP_extension"></rect>
+<path d="M5893.0 1764.0 L6030.0 1764.0" fill="none" data-name="DSP_extension"></path>
+</g>
+<g transform="translate(5893, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DSP_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="DSP_extension">
+<a id="../src/enums.ts.DSP_extension" xlink:href="../src/enums.ts"><text x="60.5" y="13.5" stroke="none" text-anchor="middle" data-name="DSP_extension">DSP_extension</text></a>
+
+</g>
+</g>
+<g transform="translate(5893, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DSP_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="DSP_extension">
+<text x="0.0" y="13.5" stroke="none" data-name="DSP_extension">DSP</text>
+<text x="0.0" y="28.5" stroke="none" data-name="DSP_extension">ThumbDSP</text>
+
+</g>
+</g>
+</g>
+<g data-name="MVE_arch">
+<g fill="lightgreen" stroke="#33322E" data-name="MVE_arch">
+<rect x="6070.0" y="1725.5" height="92.0" width="118.0" data-name="MVE_arch"></rect>
+<path d="M6070.0 1756.5 L6188.0 1756.5" fill="none" data-name="MVE_arch"></path>
+</g>
+<g transform="translate(6070, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="MVE_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="MVE_arch">
+<a id="../src/enums.ts.MVE_arch" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="MVE_arch">MVE_arch</text></a>
+
+</g>
+</g>
+<g transform="translate(6070, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="MVE_arch">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="MVE_arch">
+<text x="0.0" y="13.5" stroke="none" data-name="MVE_arch">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="MVE_arch">Int_M</text>
+<text x="0.0" y="43.5" stroke="none" data-name="MVE_arch">FP_M</text>
+
+</g>
+</g>
+</g>
+<g data-name="PAC_extension">
+<g fill="lightgreen" stroke="#33322E" data-name="PAC_extension">
+<rect x="6228.0" y="1725.5" height="92.0" width="137.0" data-name="PAC_extension"></rect>
+<path d="M6228.0 1756.5 L6365.0 1756.5" fill="none" data-name="PAC_extension"></path>
+</g>
+<g transform="translate(6228, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PAC_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PAC_extension">
+<a id="../src/enums.ts.PAC_extension" xlink:href="../src/enums.ts"><text x="60.5" y="13.5" stroke="none" text-anchor="middle" data-name="PAC_extension">PAC_extension</text></a>
+
+</g>
+</g>
+<g transform="translate(6228, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PAC_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PAC_extension">
+<text x="0.0" y="13.5" stroke="none" data-name="PAC_extension">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PAC_extension">NOP</text>
+<text x="0.0" y="43.5" stroke="none" data-name="PAC_extension">NoNOP</text>
+
+</g>
+</g>
+</g>
+<g data-name="BTI_extension">
+<g fill="lightgreen" stroke="#33322E" data-name="BTI_extension">
+<rect x="6405.0" y="1725.5" height="92.0" width="129.0" data-name="BTI_extension"></rect>
+<path d="M6405.0 1756.5 L6534.0 1756.5" fill="none" data-name="BTI_extension"></path>
+</g>
+<g transform="translate(6405, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="BTI_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="BTI_extension">
+<a id="../src/enums.ts.BTI_extension" xlink:href="../src/enums.ts"><text x="56.5" y="13.5" stroke="none" text-anchor="middle" data-name="BTI_extension">BTI_extension</text></a>
+
+</g>
+</g>
+<g transform="translate(6405, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="BTI_extension">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="BTI_extension">
+<text x="0.0" y="13.5" stroke="none" data-name="BTI_extension">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="BTI_extension">NOP</text>
+<text x="0.0" y="43.5" stroke="none" data-name="BTI_extension">NoNOP</text>
+
+</g>
+</g>
+</g>
+<g data-name="T2EE_use">
+<g fill="lightgreen" stroke="#33322E" data-name="T2EE_use">
+<rect x="6574.0" y="1733.0" height="77.0" width="118.0" data-name="T2EE_use"></rect>
+<path d="M6574.0 1764.0 L6692.0 1764.0" fill="none" data-name="T2EE_use"></path>
+</g>
+<g transform="translate(6574, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="T2EE_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="T2EE_use">
+<a id="../src/enums.ts.T2EE_use" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="T2EE_use">T2EE_use</text></a>
+
+</g>
+</g>
+<g transform="translate(6574, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="T2EE_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="T2EE_use">
+<text x="0.0" y="13.5" stroke="none" data-name="T2EE_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="T2EE_use">Permitted</text>
+
+</g>
+</g>
+</g>
+<g data-name="Virtualization_use">
+<g fill="lightgreen" stroke="#33322E" data-name="Virtualization_use">
+<rect x="6732.0" y="1718.0" height="107.0" width="157.0" data-name="Virtualization_use"></rect>
+<path d="M6732.0 1749.0 L6889.0 1749.0" fill="none" data-name="Virtualization_use"></path>
+</g>
+<g transform="translate(6732, 1718)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Virtualization_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Virtualization_use">
+<a id="../src/enums.ts.Virtualization_use" xlink:href="../src/enums.ts"><text x="70.5" y="13.5" stroke="none" text-anchor="middle" data-name="Virtualization_use">Virtualization_use</text></a>
+
+</g>
+</g>
+<g transform="translate(6732, 1749)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Virtualization_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="Virtualization_use">
+<text x="0.0" y="13.5" stroke="none" data-name="Virtualization_use">NotPermitted</text>
+<text x="0.0" y="28.5" stroke="none" data-name="Virtualization_use">TrustZone</text>
+<text x="0.0" y="43.5" stroke="none" data-name="Virtualization_use">HVC</text>
+<text x="0.0" y="58.5" stroke="none" data-name="Virtualization_use">TrustZoneHVC</text>
+
+</g>
+</g>
+</g>
+<g data-name="FramePointer_use">
+<g fill="lightgreen" stroke="#33322E" data-name="FramePointer_use">
+<rect x="6929.0" y="1725.5" height="92.0" width="161.0" data-name="FramePointer_use"></rect>
+<path d="M6929.0 1756.5 L7090.0 1756.5" fill="none" data-name="FramePointer_use"></path>
+</g>
+<g transform="translate(6929, 1725.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="FramePointer_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="FramePointer_use">
+<a id="../src/enums.ts.FramePointer_use" xlink:href="../src/enums.ts"><text x="72.5" y="13.5" stroke="none" text-anchor="middle" data-name="FramePointer_use">FramePointer_use</text></a>
+
+</g>
+</g>
+<g transform="translate(6929, 1756.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="FramePointer_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="FramePointer_use">
+<text x="0.0" y="13.5" stroke="none" data-name="FramePointer_use">Tag_FP</text>
+<text x="0.0" y="28.5" stroke="none" data-name="FramePointer_use">FR_LR</text>
+<text x="0.0" y="43.5" stroke="none" data-name="FramePointer_use">FR_FP</text>
+
+</g>
+</g>
+</g>
+<g data-name="BTI_use">
+<g fill="lightgreen" stroke="#33322E" data-name="BTI_use">
+<rect x="7130.0" y="1733.0" height="77.0" width="108.0" data-name="BTI_use"></rect>
+<path d="M7130.0 1764.0 L7238.0 1764.0" fill="none" data-name="BTI_use"></path>
+</g>
+<g transform="translate(7130, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="BTI_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="BTI_use">
+<a id="../src/enums.ts.BTI_use" xlink:href="../src/enums.ts"><text x="46.0" y="13.5" stroke="none" text-anchor="middle" data-name="BTI_use">BTI_use</text></a>
+
+</g>
+</g>
+<g transform="translate(7130, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="BTI_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="BTI_use">
+<text x="0.0" y="13.5" stroke="none" data-name="BTI_use">NoBT</text>
+<text x="0.0" y="28.5" stroke="none" data-name="BTI_use">BT_Enforce</text>
+
+</g>
+</g>
+</g>
+<g data-name="PACRET_use">
+<g fill="lightgreen" stroke="#33322E" data-name="PACRET_use">
+<rect x="7278.0" y="1733.0" height="77.0" width="122.0" data-name="PACRET_use"></rect>
+<path d="M7278.0 1764.0 L7400.0 1764.0" fill="none" data-name="PACRET_use"></path>
+</g>
+<g transform="translate(7278, 1733)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PACRET_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="PACRET_use">
+<a id="../src/enums.ts.PACRET_use" xlink:href="../src/enums.ts"><text x="53.0" y="13.5" stroke="none" text-anchor="middle" data-name="PACRET_use">PACRET_use</text></a>
+
+</g>
+</g>
+<g transform="translate(7278, 1764)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="PACRET_use">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="PACRET_use">
+<text x="0.0" y="13.5" stroke="none" data-name="PACRET_use">No_RASD</text>
+<text x="0.0" y="28.5" stroke="none" data-name="PACRET_use">RASD</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfDataModel">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfDataModel">
+<rect x="8194.0" y="447.0" height="303.0" width="365.0" data-name="ElfDataModel"></rect>
+<path d="M8194.0 478.0 L8559.0 478.0" fill="none" data-name="ElfDataModel"></path>
+<path d="M8194.0 614.0 L8559.0 614.0" fill="none" data-name="ElfDataModel"></path>
+</g>
+<g transform="translate(8194, 447)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfDataModel">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfDataModel">
+<a id="../src/ElfDataModel.ts.ElfDataModel" xlink:href="../src/ElfDataModel.ts"><text x="174.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfDataModel">ElfDataModel</text></a>
+
+</g>
+</g>
+<g transform="translate(8194, 478)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfDataModel">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfDataModel">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfDataModel">+elfFileAccess: ElfFileData</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfDataModel">+elfHeader: ElfHeader</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfDataModel">+elfProgramHeaders: ElfProgramHeader[]</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfDataModel">+elfSectionHeaders: ElfSectionHeader[]</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfDataModel">+elfSymbols: ElfSymbol[]</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfDataModel">+elfArmAttributes: ElfArmAttributes</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfDataModel">+isSuFilePresent: boolean</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfDataModel">-helper: Helper</text>
+
+</g>
+</g>
+<g transform="translate(8194, 614)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfDataModel">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfDataModel">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfDataModel">-loadProgramHeaderTables(): DataResult</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfDataModel">-loadSectionHeaderTables(): DataResult</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfDataModel">-loadSymbolTables(): DataResult</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfDataModel">-loadArmAttributes(): DataResult</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfDataModel">+getNumOfProgramHeaderTables(): number</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfDataModel">+getNumOfSectionHeaderTables(): number</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfDataModel">+getNumOfSymbolTables(): number</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfDataModel">+load(): DataResult</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfFileData">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfFileData">
+<rect x="8025.3" y="2607.5" height="153.0" width="293.0" data-name="ElfFileData"></rect>
+<path d="M8025.3 2638.5 L8318.3 2638.5" fill="none" data-name="ElfFileData"></path>
+<path d="M8025.3 2684.5 L8318.3 2684.5" fill="none" data-name="ElfFileData"></path>
+</g>
+<g transform="translate(8025.25, 2607.5)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfFileData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfFileData">
+<a id="../src/ElfFileData.ts.ElfFileData" xlink:href="../src/ElfFileData.ts"><text x="138.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfFileData">ElfFileData</text></a>
+
+</g>
+</g>
+<g transform="translate(8025.25, 2638.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfFileData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfFileData">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfFileData">-dataViewer: DataView</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfFileData">-littleEndian: boolean</text>
+
+</g>
+</g>
+<g transform="translate(8025.25, 2684.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfFileData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfFileData">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfFileData">+setLittleEndian(): void</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfFileData">+isLittleEndian(): boolean</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfFileData">+getDataView(): DataView</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfFileData">+readNullTerminatedString(): string</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfHeader">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfHeader">
+<rect x="7440.0" y="1575.0" height="393.0" width="345.0" data-name="ElfHeader"></rect>
+<path d="M7440.0 1606.0 L7785.0 1606.0" fill="none" data-name="ElfHeader"></path>
+<path d="M7440.0 1922.0 L7785.0 1922.0" fill="none" data-name="ElfHeader"></path>
+</g>
+<g transform="translate(7440, 1575)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfHeader">
+<a id="../src/ElfHeader.ts.ElfHeader" xlink:href="../src/ElfHeader.ts"><text x="164.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfHeader">ElfHeader</text></a>
+
+</g>
+</g>
+<g transform="translate(7440, 1606)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfHeader">-fileAccess: ElfFileData</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfHeader">+magicNumber: string</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfHeader">+classType: EI_CLASS</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfHeader">+dataEncoding: EI_DATA</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfHeader">+version: e_version</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfHeader">+osAbi: EI_OSABI</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfHeader">+osAbiVersion: number</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfHeader">+fileType: e_type</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ElfHeader">+machine: e_machine</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ElfHeader">+elfVersion: e_version</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ElfHeader">+entryPoint: bigint</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ElfHeader">+programHeaderOffset: bigint</text>
+<text x="0.0" y="193.5" stroke="none" data-name="ElfHeader">+sectionHeaderOffset: bigint</text>
+<text x="0.0" y="208.5" stroke="none" data-name="ElfHeader">+flags: e_flags</text>
+<text x="0.0" y="223.5" stroke="none" data-name="ElfHeader">+headerSize: number</text>
+<text x="0.0" y="238.5" stroke="none" data-name="ElfHeader">+programHeaderEntrySize: number</text>
+<text x="0.0" y="253.5" stroke="none" data-name="ElfHeader">+programHeaderEntryCount: number</text>
+<text x="0.0" y="268.5" stroke="none" data-name="ElfHeader">+sectionHeaderEntrySize: number</text>
+<text x="0.0" y="283.5" stroke="none" data-name="ElfHeader">+sectionHeaderEntryCount: number</text>
+<text x="0.0" y="298.5" stroke="none" data-name="ElfHeader">+sectionHeaderStringTableIndex: number</text>
+
+</g>
+</g>
+<g transform="translate(7440, 1922)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfHeader">+load(): DataResult</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfHeader">+isELF64Bit(): boolean</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfProgramHeader">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfProgramHeader">
+<rect x="8557.3" y="1642.5" height="258.0" width="241.0" data-name="ElfProgramHeader"></rect>
+<path d="M8557.3 1673.5 L8798.3 1673.5" fill="none" data-name="ElfProgramHeader"></path>
+<path d="M8557.3 1869.5 L8798.3 1869.5" fill="none" data-name="ElfProgramHeader"></path>
+</g>
+<g transform="translate(8557.25, 1642.5)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfProgramHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfProgramHeader">
+<a id="../src/ElfProgramHeader.ts.ElfProgramHeader" xlink:href="../src/ElfProgramHeader.ts"><text x="112.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfProgramHeader">ElfProgramHeader</text></a>
+
+</g>
+</g>
+<g transform="translate(8557.25, 1673.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfProgramHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfProgramHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfProgramHeader">-fileData: ElfFileData</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfProgramHeader">+index: number</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfProgramHeader">-elfDataModel: ElfDataModel</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfProgramHeader">+type: ph_type</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfProgramHeader">+flags: ph_flags</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfProgramHeader">+offset: bigint</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfProgramHeader">+virtualAddress: bigint</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfProgramHeader">+physicalAddress: bigint</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ElfProgramHeader">+fileSize: bigint</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ElfProgramHeader">+memorySize: bigint</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ElfProgramHeader">+alignment: bigint</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ElfProgramHeader">+sectionIndexList: number[]</text>
+
+</g>
+</g>
+<g transform="translate(8557.25, 1869.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfProgramHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfProgramHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfProgramHeader">+load(): void</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfSectionHeader">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfSectionHeader">
+<rect x="8904.3" y="1627.5" height="288.0" width="241.0" data-name="ElfSectionHeader"></rect>
+<path d="M8904.3 1658.5 L9145.3 1658.5" fill="none" data-name="ElfSectionHeader"></path>
+<path d="M8904.3 1869.5 L9145.3 1869.5" fill="none" data-name="ElfSectionHeader"></path>
+</g>
+<g transform="translate(8904.25, 1627.5)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfSectionHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfSectionHeader">
+<a id="../src/ElfSectionHeader.ts.ElfSectionHeader" xlink:href="../src/ElfSectionHeader.ts"><text x="112.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfSectionHeader">ElfSectionHeader</text></a>
+
+</g>
+</g>
+<g transform="translate(8904.25, 1658.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSectionHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSectionHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSectionHeader">-elfFileAccess: ElfFileData</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfSectionHeader">+index: number</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfSectionHeader">-elfDataModel: ElfDataModel</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfSectionHeader">+name: number</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfSectionHeader">+type: sh_type</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfSectionHeader">+flags: sh_flags</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfSectionHeader">+address: bigint</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfSectionHeader">+offset: bigint</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ElfSectionHeader">+size: bigint</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ElfSectionHeader">+link: number</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ElfSectionHeader">+info: number</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ElfSectionHeader">+addressAlignment: bigint</text>
+<text x="0.0" y="193.5" stroke="none" data-name="ElfSectionHeader">+entitySize: bigint</text>
+
+</g>
+</g>
+<g transform="translate(8904.25, 1869.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSectionHeader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSectionHeader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSectionHeader">+load(): void</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfSectionHeader">+getShNameString(): string</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfSymbol">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfSymbol">
+<rect x="9126.5" y="1101.0" height="123.0" width="274.0" data-name="ElfSymbol"></rect>
+<path d="M9126.5 1132.0 L9400.5 1132.0" fill="none" data-name="ElfSymbol"></path>
+<path d="M9126.5 1193.0 L9400.5 1193.0" fill="none" data-name="ElfSymbol"></path>
+</g>
+<g transform="translate(9126.5, 1101)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfSymbol">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfSymbol">
+<a id="../src/ElfSymbol.ts.ElfSymbol" xlink:href="../src/ElfSymbol.ts"><text x="129.0" y="13.5" stroke="none" text-anchor="middle" data-name="ElfSymbol">ElfSymbol</text></a>
+
+</g>
+</g>
+<g transform="translate(9126.5, 1132)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSymbol">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSymbol">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSymbol">+sectionTable: ElfSectionHeader</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfSymbol">+symbolData: ElfSymbolData[]</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfSymbol">-elfDataModel: ElfDataModel</text>
+
+</g>
+</g>
+<g transform="translate(9126.5, 1193)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSymbol">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSymbol">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSymbol">+load(): void</text>
+
+</g>
+</g>
+</g>
+<g data-name="Helper">
+<g fill="#eee8d5" stroke="#33322E" data-name="Helper">
+<rect x="7769.3" y="1090.0" height="145.0" width="344.0" data-name="Helper"></rect>
+<path d="M7769.3 1121.0 L8113.3 1121.0" fill="none" data-name="Helper"></path>
+<path d="M7769.3 1129.0 L8113.3 1129.0" fill="none" data-name="Helper"></path>
+</g>
+<g transform="translate(7769.25, 1090)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="Helper">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="Helper">
+<a id="../src/Helper.ts.Helper" xlink:href="../src/Helper.ts"><text x="164.0" y="13.5" stroke="none" text-anchor="middle" data-name="Helper">Helper</text></a>
+
+</g>
+</g>
+<g transform="translate(7769.25, 1121)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Helper">
+<g transform="translate(8, 8)" fill="#33322E" data-name="Helper">
+
+</g>
+</g>
+<g transform="translate(7769.25, 1129)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="Helper">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="Helper">
+<text x="0.0" y="13.5" stroke="none" data-name="Helper">+isSectionInSegment(): boolean</text>
+<text x="0.0" y="28.5" stroke="none" data-name="Helper">+parseEabiSection(): ElfArmAttributes</text>
+<text x="0.0" y="43.5" stroke="none" data-name="Helper">-parseULEB128(): [number, number]</text>
+<text x="0.0" y="58.5" stroke="none" data-name="Helper">-parseNTBS(): string</text>
+<text x="0.0" y="73.5" stroke="none" data-name="Helper">-parserEabiSubsection(): ElfArmAttributes</text>
+<text x="0.0" y="88.5" stroke="none" data-name="Helper">-getElfSectionSize(): number</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfFileParser">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfFileParser">
+<rect x="8522.8" y="112.0" height="183.0" width="388.0" data-name="ElfFileParser"></rect>
+<path d="M8522.8 143.0 L8910.8 143.0" fill="none" data-name="ElfFileParser"></path>
+<path d="M8522.8 204.0 L8910.8 204.0" fill="none" data-name="ElfFileParser"></path>
+</g>
+<g transform="translate(8522.75, 112)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfFileParser">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfFileParser">
+<a id="../src/ElfFileParser.ts.ElfFileParser" xlink:href="../src/ElfFileParser.ts"><text x="186.0" y="13.5" stroke="none" text-anchor="middle" data-name="ElfFileParser">ElfFileParser</text></a>
+
+</g>
+</g>
+<g transform="translate(8522.75, 143)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfFileParser">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfFileParser">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfFileParser">-path: string</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfFileParser">-model?: ElfDataModel</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfFileParser">-elfReader: ElfReader</text>
+
+</g>
+</g>
+<g transform="translate(8522.75, 204)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfFileParser">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfFileParser">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfFileParser">-loadSuData(): Promise&lt;Map&lt;string, number&gt;&gt;</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfFileParser">+getDataModel(): ElfDataModel</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfFileParser">+initialize(): Promise&lt;DataResult&gt;</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfFileParser">+query(): any</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfFileParser">+dropSymbolsTable(): Promise&lt;void&gt;</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfReader">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfReader">
+<rect x="8599.0" y="548.5" height="100.0" width="403.0" data-name="ElfReader"></rect>
+<path d="M8599.0 579.5 L9002.0 579.5" fill="none" data-name="ElfReader"></path>
+<path d="M8599.0 587.5 L9002.0 587.5" fill="none" data-name="ElfReader"></path>
+</g>
+<g transform="translate(8599, 548.5)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfReader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfReader">
+<a id="../src/ElfFileParser.ts.ElfReader" xlink:href="../src/ElfFileParser.ts"><text x="193.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfReader">ElfReader</text></a>
+
+</g>
+</g>
+<g transform="translate(8599, 579.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfReader">
+<g transform="translate(8, 8)" fill="#33322E" data-name="ElfReader">
+
+</g>
+</g>
+<g transform="translate(8599, 587.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfReader">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfReader">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfReader">+readFile(): Promise&lt;ArrayBuffer&gt;</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfReader">+findSuFiles(): Promise&lt;void&gt;</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfReader">+parseSuFiles(): Promise&lt;Map&lt;string, number&gt;&gt;</text>
+
+</g>
+</g>
+</g>
+<g data-name="EI_CLASS">
+<g fill="lightgreen" stroke="#33322E" data-name="EI_CLASS">
+<rect x="6885.3" y="2638.0" height="92.0" width="150.0" data-name="EI_CLASS"></rect>
+<path d="M6885.3 2669.0 L7035.3 2669.0" fill="none" data-name="EI_CLASS"></path>
+</g>
+<g transform="translate(6885.25, 2638)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_CLASS">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="EI_CLASS">
+<a id="../src/enums.ts.EI_CLASS" xlink:href="../src/enums.ts"><text x="67.0" y="13.5" stroke="none" text-anchor="middle" data-name="EI_CLASS">EI_CLASS</text></a>
+
+</g>
+</g>
+<g transform="translate(6885.25, 2669)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_CLASS">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="EI_CLASS">
+<text x="0.0" y="13.5" stroke="none" data-name="EI_CLASS">ELFCLASSNONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="EI_CLASS">ELFCLASS32</text>
+<text x="0.0" y="43.5" stroke="none" data-name="EI_CLASS">ELFCLASS64</text>
+
+</g>
+</g>
+</g>
+<g data-name="EI_DATA">
+<g fill="lightgreen" stroke="#33322E" data-name="EI_DATA">
+<rect x="7075.3" y="2638.0" height="92.0" width="139.0" data-name="EI_DATA"></rect>
+<path d="M7075.3 2669.0 L7214.3 2669.0" fill="none" data-name="EI_DATA"></path>
+</g>
+<g transform="translate(7075.25, 2638)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_DATA">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="EI_DATA">
+<a id="../src/enums.ts.EI_DATA" xlink:href="../src/enums.ts"><text x="61.5" y="13.5" stroke="none" text-anchor="middle" data-name="EI_DATA">EI_DATA</text></a>
+
+</g>
+</g>
+<g transform="translate(7075.25, 2669)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_DATA">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="EI_DATA">
+<text x="0.0" y="13.5" stroke="none" data-name="EI_DATA">ELFDATANONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="EI_DATA">ELFDATA2LSB</text>
+<text x="0.0" y="43.5" stroke="none" data-name="EI_DATA">ELFDATA2MSB</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_version">
+<g fill="lightgreen" stroke="#33322E" data-name="e_version">
+<rect x="7486.3" y="2645.5" height="77.0" width="129.0" data-name="e_version"></rect>
+<path d="M7486.3 2676.5 L7615.3 2676.5" fill="none" data-name="e_version"></path>
+</g>
+<g transform="translate(7486.25, 2645.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_version">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_version">
+<a id="../src/enums.ts.e_version" xlink:href="../src/enums.ts"><text x="56.5" y="13.5" stroke="none" text-anchor="middle" data-name="e_version">e_version</text></a>
+
+</g>
+</g>
+<g transform="translate(7486.25, 2676.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_version">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_version">
+<text x="0.0" y="13.5" stroke="none" data-name="e_version">EV_NONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_version">EV_CURRENT</text>
+
+</g>
+</g>
+</g>
+<g data-name="EI_OSABI">
+<g fill="lightgreen" stroke="#33322E" data-name="EI_OSABI">
+<rect x="7254.3" y="2555.5" height="257.0" width="192.0" data-name="EI_OSABI"></rect>
+<path d="M7254.3 2586.5 L7446.3 2586.5" fill="none" data-name="EI_OSABI"></path>
+</g>
+<g transform="translate(7254.25, 2555.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_OSABI">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="EI_OSABI">
+<a id="../src/enums.ts.EI_OSABI" xlink:href="../src/enums.ts"><text x="88.0" y="13.5" stroke="none" text-anchor="middle" data-name="EI_OSABI">EI_OSABI</text></a>
+
+</g>
+</g>
+<g transform="translate(7254.25, 2586.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="EI_OSABI">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="EI_OSABI">
+<text x="0.0" y="13.5" stroke="none" data-name="EI_OSABI">ELFOSABI_NONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="EI_OSABI">ELFOSABI_HPUX</text>
+<text x="0.0" y="43.5" stroke="none" data-name="EI_OSABI">ELFOSABI_NETBSD</text>
+<text x="0.0" y="58.5" stroke="none" data-name="EI_OSABI">ELFOSABI_LINUX</text>
+<text x="0.0" y="73.5" stroke="none" data-name="EI_OSABI">ELFOSABI_SOLARIS</text>
+<text x="0.0" y="88.5" stroke="none" data-name="EI_OSABI">ELFOSABI_AIX</text>
+<text x="0.0" y="103.5" stroke="none" data-name="EI_OSABI">ELFOSABI_IRIX</text>
+<text x="0.0" y="118.5" stroke="none" data-name="EI_OSABI">ELFOSABI_FREEBSD</text>
+<text x="0.0" y="133.5" stroke="none" data-name="EI_OSABI">ELFOSABI_TRU64</text>
+<text x="0.0" y="148.5" stroke="none" data-name="EI_OSABI">ELFOSABI_MODESTO</text>
+<text x="0.0" y="163.5" stroke="none" data-name="EI_OSABI">ELFOSABI_OPENBSD</text>
+<text x="0.0" y="178.5" stroke="none" data-name="EI_OSABI">ELFOSABI_OPENVMS</text>
+<text x="0.0" y="193.5" stroke="none" data-name="EI_OSABI">ELFOSABI_NSK</text>
+<text x="0.0" y="208.5" stroke="none" data-name="EI_OSABI">specific</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_type">
+<g fill="lightgreen" stroke="#33322E" data-name="e_type">
+<rect x="7655.3" y="2593.0" height="182.0" width="118.0" data-name="e_type"></rect>
+<path d="M7655.3 2624.0 L7773.3 2624.0" fill="none" data-name="e_type"></path>
+</g>
+<g transform="translate(7655.25, 2593)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_type">
+<a id="../src/enums.ts.e_type" xlink:href="../src/enums.ts"><text x="51.0" y="13.5" stroke="none" text-anchor="middle" data-name="e_type">e_type</text></a>
+
+</g>
+</g>
+<g transform="translate(7655.25, 2624)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_type">
+<text x="0.0" y="13.5" stroke="none" data-name="e_type">ET_NONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_type">ET_REL</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_type">ET_EXEC</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_type">ET_DYN</text>
+<text x="0.0" y="73.5" stroke="none" data-name="e_type">ET_CORE</text>
+<text x="0.0" y="88.5" stroke="none" data-name="e_type">ET_LOOS</text>
+<text x="0.0" y="103.5" stroke="none" data-name="e_type">ET_HIOS</text>
+<text x="0.0" y="118.5" stroke="none" data-name="e_type">ET_LOPROC</text>
+<text x="0.0" y="133.5" stroke="none" data-name="e_type">ET_HIPROC</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_machine">
+<g fill="lightgreen" stroke="#33322E" data-name="e_machine">
+<rect x="7813.3" y="2008.0" height="1352.0" width="172.0" data-name="e_machine"></rect>
+<path d="M7813.3 2039.0 L7985.3 2039.0" fill="none" data-name="e_machine"></path>
+</g>
+<g transform="translate(7813.25, 2008)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_machine">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_machine">
+<a id="../src/enums.ts.e_machine" xlink:href="../src/enums.ts"><text x="78.0" y="13.5" stroke="none" text-anchor="middle" data-name="e_machine">e_machine</text></a>
+
+</g>
+</g>
+<g transform="translate(7813.25, 2039)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_machine">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_machine">
+<text x="0.0" y="13.5" stroke="none" data-name="e_machine">EM_NONE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_machine">EM_M32</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_machine">EM_SPARC</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_machine">EM_386</text>
+<text x="0.0" y="73.5" stroke="none" data-name="e_machine">EM_68K</text>
+<text x="0.0" y="88.5" stroke="none" data-name="e_machine">EM_88K</text>
+<text x="0.0" y="103.5" stroke="none" data-name="e_machine">reserved</text>
+<text x="0.0" y="118.5" stroke="none" data-name="e_machine">EM_860</text>
+<text x="0.0" y="133.5" stroke="none" data-name="e_machine">EM_MIPS</text>
+<text x="0.0" y="148.5" stroke="none" data-name="e_machine">EM_S370</text>
+<text x="0.0" y="163.5" stroke="none" data-name="e_machine">EM_MIPS_RS3_LE</text>
+<text x="0.0" y="178.5" stroke="none" data-name="e_machine">reserved1</text>
+<text x="0.0" y="193.5" stroke="none" data-name="e_machine">EM_PARISC</text>
+<text x="0.0" y="208.5" stroke="none" data-name="e_machine">reserved2</text>
+<text x="0.0" y="223.5" stroke="none" data-name="e_machine">EM_VPP500</text>
+<text x="0.0" y="238.5" stroke="none" data-name="e_machine">EM_SPARC32PLUS</text>
+<text x="0.0" y="253.5" stroke="none" data-name="e_machine">EM_960</text>
+<text x="0.0" y="268.5" stroke="none" data-name="e_machine">EM_PPC</text>
+<text x="0.0" y="283.5" stroke="none" data-name="e_machine">EM_PPC64</text>
+<text x="0.0" y="298.5" stroke="none" data-name="e_machine">EM_S390</text>
+<text x="0.0" y="313.5" stroke="none" data-name="e_machine">reserved3</text>
+<text x="0.0" y="328.5" stroke="none" data-name="e_machine">EM_V800</text>
+<text x="0.0" y="343.5" stroke="none" data-name="e_machine">EM_FR20</text>
+<text x="0.0" y="358.5" stroke="none" data-name="e_machine">EM_RH32</text>
+<text x="0.0" y="373.5" stroke="none" data-name="e_machine">EM_RCE</text>
+<text x="0.0" y="388.5" stroke="none" data-name="e_machine">EM_ARM</text>
+<text x="0.0" y="403.5" stroke="none" data-name="e_machine">EM_ALPHA</text>
+<text x="0.0" y="418.5" stroke="none" data-name="e_machine">EM_SH</text>
+<text x="0.0" y="433.5" stroke="none" data-name="e_machine">EM_SPARCV9</text>
+<text x="0.0" y="448.5" stroke="none" data-name="e_machine">EM_TRICORE</text>
+<text x="0.0" y="463.5" stroke="none" data-name="e_machine">EM_ARC</text>
+<text x="0.0" y="478.5" stroke="none" data-name="e_machine">EM_H8_300</text>
+<text x="0.0" y="493.5" stroke="none" data-name="e_machine">EM_H8_300H</text>
+<text x="0.0" y="508.5" stroke="none" data-name="e_machine">EM_H8S</text>
+<text x="0.0" y="523.5" stroke="none" data-name="e_machine">EM_H8_500</text>
+<text x="0.0" y="538.5" stroke="none" data-name="e_machine">EM_IA_64</text>
+<text x="0.0" y="553.5" stroke="none" data-name="e_machine">EM_MIPS_X</text>
+<text x="0.0" y="568.5" stroke="none" data-name="e_machine">EM_COLDFIRE</text>
+<text x="0.0" y="583.5" stroke="none" data-name="e_machine">EM_68HC12</text>
+<text x="0.0" y="598.5" stroke="none" data-name="e_machine">EM_MMA</text>
+<text x="0.0" y="613.5" stroke="none" data-name="e_machine">EM_PCP</text>
+<text x="0.0" y="628.5" stroke="none" data-name="e_machine">EM_NCPU</text>
+<text x="0.0" y="643.5" stroke="none" data-name="e_machine">EM_NDR1</text>
+<text x="0.0" y="658.5" stroke="none" data-name="e_machine">EM_STARCORE</text>
+<text x="0.0" y="673.5" stroke="none" data-name="e_machine">EM_ME16</text>
+<text x="0.0" y="688.5" stroke="none" data-name="e_machine">EM_ST100</text>
+<text x="0.0" y="703.5" stroke="none" data-name="e_machine">EM_TINYJ</text>
+<text x="0.0" y="718.5" stroke="none" data-name="e_machine">EM_X86_64</text>
+<text x="0.0" y="733.5" stroke="none" data-name="e_machine">EM_PDSP</text>
+<text x="0.0" y="748.5" stroke="none" data-name="e_machine">EM_PDP10</text>
+<text x="0.0" y="763.5" stroke="none" data-name="e_machine">EM_PDP11</text>
+<text x="0.0" y="778.5" stroke="none" data-name="e_machine">EM_FX66</text>
+<text x="0.0" y="793.5" stroke="none" data-name="e_machine">EM_ST9PLUS</text>
+<text x="0.0" y="808.5" stroke="none" data-name="e_machine">EM_ST7</text>
+<text x="0.0" y="823.5" stroke="none" data-name="e_machine">EM_68HC16</text>
+<text x="0.0" y="838.5" stroke="none" data-name="e_machine">EM_68HC11</text>
+<text x="0.0" y="853.5" stroke="none" data-name="e_machine">EM_68HC08</text>
+<text x="0.0" y="868.5" stroke="none" data-name="e_machine">EM_68HC05</text>
+<text x="0.0" y="883.5" stroke="none" data-name="e_machine">EM_SVX</text>
+<text x="0.0" y="898.5" stroke="none" data-name="e_machine">EM_ST19</text>
+<text x="0.0" y="913.5" stroke="none" data-name="e_machine">EM_VAX</text>
+<text x="0.0" y="928.5" stroke="none" data-name="e_machine">EM_CRIS</text>
+<text x="0.0" y="943.5" stroke="none" data-name="e_machine">EM_JAVELIN</text>
+<text x="0.0" y="958.5" stroke="none" data-name="e_machine">EM_FIREPATH</text>
+<text x="0.0" y="973.5" stroke="none" data-name="e_machine">EM_ZSP</text>
+<text x="0.0" y="988.5" stroke="none" data-name="e_machine">EM_MMIX</text>
+<text x="0.0" y="1003.5" stroke="none" data-name="e_machine">EM_HUANY</text>
+<text x="0.0" y="1018.5" stroke="none" data-name="e_machine">EM_PRISM</text>
+<text x="0.0" y="1033.5" stroke="none" data-name="e_machine">EM_AVR</text>
+<text x="0.0" y="1048.5" stroke="none" data-name="e_machine">EM_FR30</text>
+<text x="0.0" y="1063.5" stroke="none" data-name="e_machine">EM_D10V</text>
+<text x="0.0" y="1078.5" stroke="none" data-name="e_machine">EM_D30V</text>
+<text x="0.0" y="1093.5" stroke="none" data-name="e_machine">EM_V850</text>
+<text x="0.0" y="1108.5" stroke="none" data-name="e_machine">EM_M32R</text>
+<text x="0.0" y="1123.5" stroke="none" data-name="e_machine">EM_MN10300</text>
+<text x="0.0" y="1138.5" stroke="none" data-name="e_machine">EM_MN10200</text>
+<text x="0.0" y="1153.5" stroke="none" data-name="e_machine">EM_PJ</text>
+<text x="0.0" y="1168.5" stroke="none" data-name="e_machine">EM_OPENRISC</text>
+<text x="0.0" y="1183.5" stroke="none" data-name="e_machine">EM_ARC_A5</text>
+<text x="0.0" y="1198.5" stroke="none" data-name="e_machine">EM_XTENSA</text>
+<text x="0.0" y="1213.5" stroke="none" data-name="e_machine">EM_VIDEOCORE</text>
+<text x="0.0" y="1228.5" stroke="none" data-name="e_machine">EM_TMM_GPP</text>
+<text x="0.0" y="1243.5" stroke="none" data-name="e_machine">EM_NS32K</text>
+<text x="0.0" y="1258.5" stroke="none" data-name="e_machine">EM_TPC</text>
+<text x="0.0" y="1273.5" stroke="none" data-name="e_machine">EM_SNP1K</text>
+<text x="0.0" y="1288.5" stroke="none" data-name="e_machine">EM_ST200</text>
+<text x="0.0" y="1303.5" stroke="none" data-name="e_machine">EM_RISCV</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_flags">
+<g fill="lightgreen" stroke="#33322E" data-name="e_flags">
+<rect x="8358.3" y="2593.0" height="182.0" width="203.0" data-name="e_flags"></rect>
+<path d="M8358.3 2624.0 L8561.3 2624.0" fill="none" data-name="e_flags"></path>
+</g>
+<g transform="translate(8358.25, 2593)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_flags">
+<a id="../src/enums.ts.e_flags" xlink:href="../src/enums.ts"><text x="93.5" y="13.5" stroke="none" text-anchor="middle" data-name="e_flags">e_flags</text></a>
+
+</g>
+</g>
+<g transform="translate(8358.25, 2624)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_flags">
+<text x="0.0" y="13.5" stroke="none" data-name="e_flags">EF_SPARC_EXT_MASK</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_flags">EF_SPARC_32PLUS</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_flags">EF_SPARC_SUN_US1</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_flags">EF_SPARC_HAL_R1</text>
+<text x="0.0" y="73.5" stroke="none" data-name="e_flags">EF_SPARC_SUN_US3</text>
+<text x="0.0" y="88.5" stroke="none" data-name="e_flags">EF_SPARCV9_MM</text>
+<text x="0.0" y="103.5" stroke="none" data-name="e_flags">EF_SPARCV9_TSO</text>
+<text x="0.0" y="118.5" stroke="none" data-name="e_flags">EF_SPARCV9_PSO</text>
+<text x="0.0" y="133.5" stroke="none" data-name="e_flags">EF_SPARCV9_RMO</text>
+
+</g>
+</g>
+</g>
+<g data-name="ph_type">
+<g fill="lightgreen" stroke="#33322E" data-name="ph_type">
+<rect x="8601.3" y="2540.5" height="287.0" width="153.0" data-name="ph_type"></rect>
+<path d="M8601.3 2571.5 L8754.3 2571.5" fill="none" data-name="ph_type"></path>
+</g>
+<g transform="translate(8601.25, 2540.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ph_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ph_type">
+<a id="../src/enums.ts.ph_type" xlink:href="../src/enums.ts"><text x="68.5" y="13.5" stroke="none" text-anchor="middle" data-name="ph_type">ph_type</text></a>
+
+</g>
+</g>
+<g transform="translate(8601.25, 2571.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ph_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ph_type">
+<text x="0.0" y="13.5" stroke="none" data-name="ph_type">PT_NULL</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ph_type">PT_LOAD</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ph_type">PT_DYNAMIC</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ph_type">PT_INTERP</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ph_type">PT_NOTE</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ph_type">PT_SHLIB</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ph_type">PT_PHDR</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ph_type">PT_TLS</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ph_type">PT_LOSUNW</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ph_type">PT_SUNWBSS</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ph_type">PT_SUNWSTACK</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ph_type">PT_HISUNW</text>
+<text x="0.0" y="193.5" stroke="none" data-name="ph_type">PT_LOPROC</text>
+<text x="0.0" y="208.5" stroke="none" data-name="ph_type">PT_HIPROC</text>
+<text x="0.0" y="223.5" stroke="none" data-name="ph_type">PT_GNU_RELRO</text>
+<text x="0.0" y="238.5" stroke="none" data-name="ph_type">PT_GNU_STACK</text>
+
+</g>
+</g>
+</g>
+<g data-name="ph_flags">
+<g fill="lightgreen" stroke="#33322E" data-name="ph_flags">
+<rect x="8794.3" y="2600.5" height="167.0" width="86.0" data-name="ph_flags"></rect>
+<path d="M8794.3 2631.5 L8880.3 2631.5" fill="none" data-name="ph_flags"></path>
+</g>
+<g transform="translate(8794.25, 2600.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ph_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ph_flags">
+<a id="../src/enums.ts.ph_flags" xlink:href="../src/enums.ts"><text x="35.0" y="13.5" stroke="none" text-anchor="middle" data-name="ph_flags">ph_flags</text></a>
+
+</g>
+</g>
+<g transform="translate(8794.25, 2631.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ph_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ph_flags">
+<text x="0.0" y="13.5" stroke="none" data-name="ph_flags">None</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ph_flags">PF_X</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ph_flags">PF_W</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ph_flags">PF_WX</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ph_flags">PF_R</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ph_flags">PF_RX</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ph_flags">PF_RW</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ph_flags">PF_RWX</text>
+
+</g>
+</g>
+</g>
+<g data-name="sh_type">
+<g fill="lightgreen" stroke="#33322E" data-name="sh_type">
+<rect x="8920.3" y="2533.0" height="302.0" width="209.0" data-name="sh_type"></rect>
+<path d="M8920.3 2564.0 L9129.3 2564.0" fill="none" data-name="sh_type"></path>
+</g>
+<g transform="translate(8920.25, 2533)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sh_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="sh_type">
+<a id="../src/enums.ts.sh_type" xlink:href="../src/enums.ts"><text x="96.5" y="13.5" stroke="none" text-anchor="middle" data-name="sh_type">sh_type</text></a>
+
+</g>
+</g>
+<g transform="translate(8920.25, 2564)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sh_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="sh_type">
+<text x="0.0" y="13.5" stroke="none" data-name="sh_type">SHT_NULL</text>
+<text x="0.0" y="28.5" stroke="none" data-name="sh_type">SHT_PROGBITS</text>
+<text x="0.0" y="43.5" stroke="none" data-name="sh_type">SHT_SYMTAB</text>
+<text x="0.0" y="58.5" stroke="none" data-name="sh_type">SHT_STRTAB</text>
+<text x="0.0" y="73.5" stroke="none" data-name="sh_type">SHT_RELA</text>
+<text x="0.0" y="88.5" stroke="none" data-name="sh_type">SHT_HASH</text>
+<text x="0.0" y="103.5" stroke="none" data-name="sh_type">SHT_DYNAMIC</text>
+<text x="0.0" y="118.5" stroke="none" data-name="sh_type">SHT_NOTE</text>
+<text x="0.0" y="133.5" stroke="none" data-name="sh_type">SHT_NOBITS</text>
+<text x="0.0" y="148.5" stroke="none" data-name="sh_type">SHT_REL</text>
+<text x="0.0" y="163.5" stroke="none" data-name="sh_type">SHT_SHLIB</text>
+<text x="0.0" y="178.5" stroke="none" data-name="sh_type">SHT_DYNSYM</text>
+<text x="0.0" y="193.5" stroke="none" data-name="sh_type">SHT_LOPROC</text>
+<text x="0.0" y="208.5" stroke="none" data-name="sh_type">SHT_HIPROC</text>
+<text x="0.0" y="223.5" stroke="none" data-name="sh_type">SHT_LOUSER</text>
+<text x="0.0" y="238.5" stroke="none" data-name="sh_type">SHT_HIUSER</text>
+<text x="0.0" y="253.5" stroke="none" data-name="sh_type">SHT_ARM_ATTRIBUTES</text>
+
+</g>
+</g>
+</g>
+<g data-name="sh_flags">
+<g fill="lightgreen" stroke="#33322E" data-name="sh_flags">
+<rect x="9169.3" y="2555.5" height="257.0" width="246.0" data-name="sh_flags"></rect>
+<path d="M9169.3 2586.5 L9415.3 2586.5" fill="none" data-name="sh_flags"></path>
+</g>
+<g transform="translate(9169.25, 2555.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sh_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="sh_flags">
+<a id="../src/enums.ts.sh_flags" xlink:href="../src/enums.ts"><text x="115.0" y="13.5" stroke="none" text-anchor="middle" data-name="sh_flags">sh_flags</text></a>
+
+</g>
+</g>
+<g transform="translate(9169.25, 2586.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sh_flags">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="sh_flags">
+<text x="0.0" y="13.5" stroke="none" data-name="sh_flags">SHF_WRITE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="sh_flags">SHF_ALLOC</text>
+<text x="0.0" y="43.5" stroke="none" data-name="sh_flags">SHF_EXECINSTR</text>
+<text x="0.0" y="58.5" stroke="none" data-name="sh_flags">SHF_ORDERED</text>
+<text x="0.0" y="73.5" stroke="none" data-name="sh_flags">SHF_EXCLUDE</text>
+<text x="0.0" y="88.5" stroke="none" data-name="sh_flags">SHF_MASKPROC</text>
+<text x="0.0" y="103.5" stroke="none" data-name="sh_flags">SHF_TLS</text>
+<text x="0.0" y="118.5" stroke="none" data-name="sh_flags">SHF_MASKOS</text>
+<text x="0.0" y="133.5" stroke="none" data-name="sh_flags">SHF_GROUP</text>
+<text x="0.0" y="148.5" stroke="none" data-name="sh_flags">SHF_OS_NONCONFORMING</text>
+<text x="0.0" y="163.5" stroke="none" data-name="sh_flags">SHF_LINK_ORDER</text>
+<text x="0.0" y="178.5" stroke="none" data-name="sh_flags">SHF_INFO_LINK</text>
+<text x="0.0" y="193.5" stroke="none" data-name="sh_flags">SHF_STRINGS</text>
+<text x="0.0" y="208.5" stroke="none" data-name="sh_flags">SHF_MERGE</text>
+
+</g>
+</g>
+</g>
+<g data-name="ElfSymbolData">
+<g fill="#eee8d5" stroke="#33322E" data-name="ElfSymbolData">
+<rect x="9447.3" y="1620.0" height="303.0" width="255.0" data-name="ElfSymbolData"></rect>
+<path d="M9447.3 1651.0 L9702.3 1651.0" fill="none" data-name="ElfSymbolData"></path>
+<path d="M9447.3 1877.0 L9702.3 1877.0" fill="none" data-name="ElfSymbolData"></path>
+</g>
+<g transform="translate(9447.25, 1620)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ElfSymbolData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ElfSymbolData">
+<a id="../src/ElfSymbol.ts.ElfSymbolData" xlink:href="../src/ElfSymbol.ts"><text x="119.5" y="13.5" stroke="none" text-anchor="middle" data-name="ElfSymbolData">ElfSymbolData</text></a>
+
+</g>
+</g>
+<g transform="translate(9447.25, 1651)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSymbolData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSymbolData">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSymbolData">-symTable: ElfSymbol</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfSymbolData">-elfDataModel: ElfDataModel</text>
+<text x="0.0" y="43.5" stroke="none" data-name="ElfSymbolData">-fileAccess: ElfFileData</text>
+<text x="0.0" y="58.5" stroke="none" data-name="ElfSymbolData">+index: number</text>
+<text x="0.0" y="73.5" stroke="none" data-name="ElfSymbolData">+name: number</text>
+<text x="0.0" y="88.5" stroke="none" data-name="ElfSymbolData">+info: number</text>
+<text x="0.0" y="103.5" stroke="none" data-name="ElfSymbolData">+intoType: sym_type</text>
+<text x="0.0" y="118.5" stroke="none" data-name="ElfSymbolData">+infoBinding: sym_binding</text>
+<text x="0.0" y="133.5" stroke="none" data-name="ElfSymbolData">+other: number</text>
+<text x="0.0" y="148.5" stroke="none" data-name="ElfSymbolData">+otherVisibility: sym_visibility</text>
+<text x="0.0" y="163.5" stroke="none" data-name="ElfSymbolData">+sectionHeaderIndex: number</text>
+<text x="0.0" y="178.5" stroke="none" data-name="ElfSymbolData">+value: bigint</text>
+<text x="0.0" y="193.5" stroke="none" data-name="ElfSymbolData">+size: bigint</text>
+<text x="0.0" y="208.5" stroke="none" data-name="ElfSymbolData">+stack: number</text>
+
+</g>
+</g>
+<g transform="translate(9447.25, 1877)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ElfSymbolData">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ElfSymbolData">
+<text x="0.0" y="13.5" stroke="none" data-name="ElfSymbolData">+load(): void</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ElfSymbolData">+getSymNameString(): string</text>
+
+</g>
+</g>
+</g>
+<g data-name="sym_type">
+<g fill="lightgreen" stroke="#33322E" data-name="sym_type">
+<rect x="9455.3" y="2578.0" height="212.0" width="94.0" data-name="sym_type"></rect>
+<path d="M9455.3 2609.0 L9549.3 2609.0" fill="none" data-name="sym_type"></path>
+</g>
+<g transform="translate(9455.25, 2578)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="sym_type">
+<a id="../src/enums.ts.sym_type" xlink:href="../src/enums.ts"><text x="39.0" y="13.5" stroke="none" text-anchor="middle" data-name="sym_type">sym_type</text></a>
+
+</g>
+</g>
+<g transform="translate(9455.25, 2609)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_type">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="sym_type">
+<text x="0.0" y="13.5" stroke="none" data-name="sym_type">NOTYPE</text>
+<text x="0.0" y="28.5" stroke="none" data-name="sym_type">OBJECT</text>
+<text x="0.0" y="43.5" stroke="none" data-name="sym_type">FUNC</text>
+<text x="0.0" y="58.5" stroke="none" data-name="sym_type">SECTION</text>
+<text x="0.0" y="73.5" stroke="none" data-name="sym_type">FILE</text>
+<text x="0.0" y="88.5" stroke="none" data-name="sym_type">COMMON</text>
+<text x="0.0" y="103.5" stroke="none" data-name="sym_type">TLS</text>
+<text x="0.0" y="118.5" stroke="none" data-name="sym_type">LOOS</text>
+<text x="0.0" y="133.5" stroke="none" data-name="sym_type">HIOS</text>
+<text x="0.0" y="148.5" stroke="none" data-name="sym_type">LOPROC</text>
+<text x="0.0" y="163.5" stroke="none" data-name="sym_type">HIPROC</text>
+
+</g>
+</g>
+</g>
+<g data-name="sym_binding">
+<g fill="lightgreen" stroke="#33322E" data-name="sym_binding">
+<rect x="9589.3" y="2623.0" height="122.0" width="116.0" data-name="sym_binding"></rect>
+<path d="M9589.3 2654.0 L9705.3 2654.0" fill="none" data-name="sym_binding"></path>
+</g>
+<g transform="translate(9589.25, 2623)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_binding">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="sym_binding">
+<a id="../src/enums.ts.sym_binding" xlink:href="../src/enums.ts"><text x="50.0" y="13.5" stroke="none" text-anchor="middle" data-name="sym_binding">sym_binding</text></a>
+
+</g>
+</g>
+<g transform="translate(9589.25, 2654)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_binding">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="sym_binding">
+<text x="0.0" y="13.5" stroke="none" data-name="sym_binding">LOCAL</text>
+<text x="0.0" y="28.5" stroke="none" data-name="sym_binding">GLOBAL</text>
+<text x="0.0" y="43.5" stroke="none" data-name="sym_binding">WEAK</text>
+<text x="0.0" y="58.5" stroke="none" data-name="sym_binding">LOPROC</text>
+<text x="0.0" y="73.5" stroke="none" data-name="sym_binding">HIPROC</text>
+
+</g>
+</g>
+</g>
+<g data-name="sym_visibility">
+<g fill="lightgreen" stroke="#33322E" data-name="sym_visibility">
+<rect x="9745.3" y="2608.0" height="152.0" width="160.0" data-name="sym_visibility"></rect>
+<path d="M9745.3 2639.0 L9905.3 2639.0" fill="none" data-name="sym_visibility"></path>
+</g>
+<g transform="translate(9745.25, 2608)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_visibility">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="sym_visibility">
+<a id="../src/enums.ts.sym_visibility" xlink:href="../src/enums.ts"><text x="72.0" y="13.5" stroke="none" text-anchor="middle" data-name="sym_visibility">sym_visibility</text></a>
+
+</g>
+</g>
+<g transform="translate(9745.25, 2639)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="sym_visibility">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="sym_visibility">
+<text x="0.0" y="13.5" stroke="none" data-name="sym_visibility">STV_DEFAULT</text>
+<text x="0.0" y="28.5" stroke="none" data-name="sym_visibility">STV_INTERNAL</text>
+<text x="0.0" y="43.5" stroke="none" data-name="sym_visibility">STV_HIDDEN</text>
+<text x="0.0" y="58.5" stroke="none" data-name="sym_visibility">STV_PROTECTED</text>
+<text x="0.0" y="73.5" stroke="none" data-name="sym_visibility">STV_EXPORTED</text>
+<text x="0.0" y="88.5" stroke="none" data-name="sym_visibility">STV_SINGLETON</text>
+<text x="0.0" y="103.5" stroke="none" data-name="sym_visibility">STV_ELIMINATE</text>
+
+</g>
+</g>
+</g>
+<g data-name="DataResult">
+<g fill="lightgreen" stroke="#33322E" data-name="DataResult">
+<rect x="8950.8" y="165.0" height="77.0" width="103.0" data-name="DataResult"></rect>
+<path d="M8950.8 196.0 L9053.8 196.0" fill="none" data-name="DataResult"></path>
+</g>
+<g transform="translate(8950.75, 165)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DataResult">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="DataResult">
+<a id="../src/enums.ts.DataResult" xlink:href="../src/enums.ts"><text x="43.5" y="13.5" stroke="none" text-anchor="middle" data-name="DataResult">DataResult</text></a>
+
+</g>
+</g>
+<g transform="translate(8950.75, 196)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="DataResult">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="DataResult">
+<text x="0.0" y="13.5" stroke="none" data-name="DataResult">OK</text>
+<text x="0.0" y="28.5" stroke="none" data-name="DataResult">INVALID</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_flags_arm">
+<g fill="lightgreen" stroke="#33322E" data-name="e_flags_arm">
+<rect x="9093.8" y="0.0" height="407.0" width="273.0" data-name="e_flags_arm"></rect>
+<path d="M9093.8 31.0 L9366.8 31.0" fill="none" data-name="e_flags_arm"></path>
+</g>
+<g transform="translate(9093.75, 0)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags_arm">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_flags_arm">
+<a id="../src/enums.ts.e_flags_arm" xlink:href="../src/enums.ts"><text x="128.5" y="13.5" stroke="none" text-anchor="middle" data-name="e_flags_arm">e_flags_arm</text></a>
+
+</g>
+</g>
+<g transform="translate(9093.75, 31)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags_arm">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_flags_arm">
+<text x="0.0" y="13.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABIMASK</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_flags_arm">EF_ARM_RELEXEC</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_flags_arm">EF_ARM_SYMSARESORTED</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_flags_arm">EF_ARM_DYNSYMSUSESEGIDX</text>
+<text x="0.0" y="73.5" stroke="none" data-name="e_flags_arm">EF_ARM_MAPSYMSFIRST</text>
+<text x="0.0" y="88.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_UNKNOWN</text>
+<text x="0.0" y="103.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_VER1</text>
+<text x="0.0" y="118.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_VER2</text>
+<text x="0.0" y="133.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_VER3</text>
+<text x="0.0" y="148.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_VER4</text>
+<text x="0.0" y="163.5" stroke="none" data-name="e_flags_arm">EF_ARM_EABI_VER5</text>
+<text x="0.0" y="178.5" stroke="none" data-name="e_flags_arm">EF_ARM_BE8</text>
+<text x="0.0" y="193.5" stroke="none" data-name="e_flags_arm">EF_ARM_LE8</text>
+<text x="0.0" y="208.5" stroke="none" data-name="e_flags_arm">EF_ARM_ABI_FLOAT_SOFT</text>
+<text x="0.0" y="223.5" stroke="none" data-name="e_flags_arm">EF_ARM_ABI_FLOAT_HARD</text>
+<text x="0.0" y="238.5" stroke="none" data-name="e_flags_arm">EF_ARM_INTERWORK</text>
+<text x="0.0" y="253.5" stroke="none" data-name="e_flags_arm">EF_ARM_APCS_26</text>
+<text x="0.0" y="268.5" stroke="none" data-name="e_flags_arm">EF_ARM_APCS_FLOAT</text>
+<text x="0.0" y="283.5" stroke="none" data-name="e_flags_arm">EF_ARM_PIC</text>
+<text x="0.0" y="298.5" stroke="none" data-name="e_flags_arm">EF_ARM_ALIGN8</text>
+<text x="0.0" y="313.5" stroke="none" data-name="e_flags_arm">EF_ARM_NEW_ABI</text>
+<text x="0.0" y="328.5" stroke="none" data-name="e_flags_arm">EF_ARM_OLD_ABI</text>
+<text x="0.0" y="343.5" stroke="none" data-name="e_flags_arm">EF_ARM_SOFT_FLOAT</text>
+<text x="0.0" y="358.5" stroke="none" data-name="e_flags_arm">EF_ARM_VFP_FLOAT</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_flags_riscv">
+<g fill="lightgreen" stroke="#33322E" data-name="e_flags_riscv">
+<rect x="9406.8" y="120.0" height="167.0" width="278.0" data-name="e_flags_riscv"></rect>
+<path d="M9406.8 151.0 L9684.8 151.0" fill="none" data-name="e_flags_riscv"></path>
+</g>
+<g transform="translate(9406.75, 120)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags_riscv">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_flags_riscv">
+<a id="../src/enums.ts.e_flags_riscv" xlink:href="../src/enums.ts"><text x="131.0" y="13.5" stroke="none" text-anchor="middle" data-name="e_flags_riscv">e_flags_riscv</text></a>
+
+</g>
+</g>
+<g transform="translate(9406.75, 151)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_flags_riscv">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_flags_riscv">
+<text x="0.0" y="13.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_RVC</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_RVE</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_TSO</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_FLOAT_ABI</text>
+<text x="0.0" y="73.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_FLOAT_ABI_SOFT</text>
+<text x="0.0" y="88.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_FLOAT_ABI_SINGLE</text>
+<text x="0.0" y="103.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_FLOAT_ABI_DOUBLE</text>
+<text x="0.0" y="118.5" stroke="none" data-name="e_flags_riscv">EF_RISCV_FLOAT_ABI_QUAD</text>
+
+</g>
+</g>
+</g>
+<g data-name="e_ident_index">
+<g fill="lightgreen" stroke="#33322E" data-name="e_ident_index">
+<rect x="9724.8" y="97.5" height="212.0" width="144.0" data-name="e_ident_index"></rect>
+<path d="M9724.8 128.5 L9868.8 128.5" fill="none" data-name="e_ident_index"></path>
+</g>
+<g transform="translate(9724.75, 97.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_ident_index">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="e_ident_index">
+<a id="../src/enums.ts.e_ident_index" xlink:href="../src/enums.ts"><text x="64.0" y="13.5" stroke="none" text-anchor="middle" data-name="e_ident_index">e_ident_index</text></a>
+
+</g>
+</g>
+<g transform="translate(9724.75, 128.5)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="e_ident_index">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="e_ident_index">
+<text x="0.0" y="13.5" stroke="none" data-name="e_ident_index">EI_MAG0</text>
+<text x="0.0" y="28.5" stroke="none" data-name="e_ident_index">EI_MAG1</text>
+<text x="0.0" y="43.5" stroke="none" data-name="e_ident_index">EI_MAG2</text>
+<text x="0.0" y="58.5" stroke="none" data-name="e_ident_index">EI_MAG3</text>
+<a id="../src/enums.ts.EI_CLASS" xlink:href="../src/enums.ts"><text x="0.0" y="73.5" stroke="none" data-name="e_ident_index">EI_CLASS</text></a>
+<a id="../src/enums.ts.EI_DATA" xlink:href="../src/enums.ts"><text x="0.0" y="88.5" stroke="none" data-name="e_ident_index">EI_DATA</text></a>
+<text x="0.0" y="103.5" stroke="none" data-name="e_ident_index">EI_VERSION</text>
+<a id="../src/enums.ts.EI_OSABI" xlink:href="../src/enums.ts"><text x="0.0" y="118.5" stroke="none" data-name="e_ident_index">EI_OSABI</text></a>
+<text x="0.0" y="133.5" stroke="none" data-name="e_ident_index">EI_ABIVERSION</text>
+<text x="0.0" y="148.5" stroke="none" data-name="e_ident_index">EI_PAD</text>
+<text x="0.0" y="163.5" stroke="none" data-name="e_ident_index">EI_NIDENT</text>
+
+</g>
+</g>
+</g>
+<g data-name="ResolveItem">
+<g fill="#eee8d5" stroke="#33322E" data-name="ResolveItem">
+<rect x="9908.8" y="161.0" height="85.0" width="268.0" data-name="ResolveItem"></rect>
+<path d="M9908.8 192.0 L10176.8 192.0" fill="none" data-name="ResolveItem"></path>
+<path d="M9908.8 200.0 L10176.8 200.0" fill="none" data-name="ResolveItem"></path>
+</g>
+<g transform="translate(9908.75, 161)" font-family="Helvetica" font-size="12pt" font-weight="bold" font-style="normal" data-name="ResolveItem">
+<g transform="translate(8, 8)" fill="#33322E" text-align="center" data-name="ResolveItem">
+<a id="../src/ResolveItem.ts.ResolveItem" xlink:href="../src/ResolveItem.ts"><text x="126.0" y="13.5" stroke="none" text-anchor="middle" data-name="ResolveItem">ResolveItem</text></a>
+
+</g>
+</g>
+<g transform="translate(9908.75, 192)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ResolveItem">
+<g transform="translate(8, 8)" fill="#33322E" data-name="ResolveItem">
+
+</g>
+</g>
+<g transform="translate(9908.75, 200)" font-family="Helvetica" font-size="12pt" font-weight="normal" font-style="normal" data-name="ResolveItem">
+<g transform="translate(8, 8)" fill="#33322E" text-align="left" data-name="ResolveItem">
+<text x="0.0" y="13.5" stroke="none" data-name="ResolveItem">+static Get32BitValue(): number</text>
+<text x="0.0" y="28.5" stroke="none" data-name="ResolveItem">+static Get64BitValue(): bigint</text>
+
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

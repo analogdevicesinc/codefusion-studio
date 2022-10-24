@@ -1,0 +1,46 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+.labelsContainer {
+	display: flex;
+	gap: 8px;
+	width: fit-content;
+}
+
+.verticalLabelsContainer {
+	@extend .labelsContainer;
+	justify-content: 'center';
+}
+
+.horizontalLabelsContainer {
+	@extend .labelsContainer;
+	flex-direction: column;
+}
+
+.horizontalLabels {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(1em, 1fr));
+	gap: 6px;
+	place-items: center;
+	padding: 0 42px; // 20px pin container padding + 14px vertical labels width + 8px gap
+}
+
+.verticalLabels {
+	display: grid;
+	grid-template-rows: repeat(auto-fit, minmax(1em, 1fr));
+	gap: 6px;
+	place-items: center;
+	padding: 20px 0;
+	width: 14px;
+}

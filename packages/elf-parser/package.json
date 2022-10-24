@@ -1,0 +1,42 @@
+{
+	"name": "elf-parser",
+	"version": "1.0.0-1",
+	"description": "A parser for ELF Files",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"dependencies": {
+		"@types/node": "^18",
+		"alasql": "^4.4.0",
+		"shx": "^0.3.3",
+		"ts-node": "^10.9.2",
+		"typescript": "^5"
+	},
+	"devDependencies": {
+		"@types/chai": "^4",
+		"@types/mocha": "^10",
+		"@types/node": "^18",
+		"@types/source-map-support": "^0",
+		"alasql": "^4.5.1",
+		"chai": "^4",
+		"chai-as-promised": "^8.0.0",
+		"copyfiles": "^2.4.1",
+		"mocha": "^10",
+		"nyc": "^17.0.0",
+		"shx": "^0.3.4",
+		"source-map-support": "^0.5.21",
+		"ts-node": "^10.9.2",
+		"typescript": "^5"
+	},
+	"scripts": {
+		"test": "mocha --require ts-node/register 'test/**/*.test.ts'",
+		"coverage": "nyc npm run test",
+		"build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/**/*.json' dist/",
+		"lint": "eslint . --ext .ts"
+	},
+	"keywords": [
+		"ELF"
+	],
+	"author": "ADI",
+	"license": "MIT"
+}

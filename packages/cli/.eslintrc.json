@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "../../.eslintrc.json",
+    "oclif",
+    "oclif-typescript",
+    "prettier"
+  ],
+  "rules": {
+    "no-await-in-loop": "off",
+    "no-bitwise": "off",
+    "perfectionist/sort-object-types": "off",
+    "perfectionist/sort-objects": "off",
+    "import/namespace": "off",
+    "import/no-unresolved": "off",
+    "import/no-duplicates": "off",
+    "import/duplicate": "off",
+    "import/default": "off",
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/consistent-type-assertions": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "@typescript-eslint/array-type": "off",
+    "max-depth": "off",
+    "@typescript-eslint/prefer-optional-chain": "off",
+    "logical-assignment-operators": "off",
+    "@typescript-eslint/consistent-type-imports": "off",
+    "@typescript-eslint/no-unused-expressions": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
+    "no-warning-comments": "off"
+  },
+  "ignorePatterns": ["test/**/*"]
+}

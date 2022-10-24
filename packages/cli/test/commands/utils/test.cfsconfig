@@ -1,0 +1,20 @@
+{
+   "Soc":"MAX32690",
+   "Package":"WLP",
+   "FirmwarePlatform": "msdk",
+   "Pins":[
+      {
+         "Peripheral":"UART2",
+         "Signal":"TX",
+         "Pin":"J2",
+         "Config":{
+            "PWR":"VDDIO"
+         }
+      },
+      {
+         "Peripheral":"SPI4",
+         "Signal":"SS0",
+         "Pin":"E5"
+      }
+   ]
+} 

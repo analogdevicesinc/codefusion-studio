@@ -1,0 +1,14 @@
+{
+	"extends": ["../../../.eslintrc.json", "oclif", "oclif-typescript", "prettier"],
+	"rules": {
+		"import/no-unresolved": "off",
+		"@typescript-eslint/consistent-type-imports": "off",
+		"import/namespace": 0,
+		"import/no-duplicates": "off",
+		"import/duplicate": "off",
+		"import/default": "off",
+		"import/no-named-as-default": "off",
+		"import/no-named-as-default-member": "off"
+	},
+	"ignorePatterns": ["test/**"]
+}

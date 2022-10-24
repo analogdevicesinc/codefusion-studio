@@ -1,0 +1,16 @@
+{
+	"root": true,
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/strict-type-checked",
+		"plugin:@typescript-eslint/stylistic-type-checked",
+		"prettier"
+	],
+	"rules": {
+		"@typescript-eslint/no-namespace": "off",
+		"no-case-declarations": "off"
+	},
+	"parserOptions": {
+		"project": "./tsconfig.json"
+	}
+}

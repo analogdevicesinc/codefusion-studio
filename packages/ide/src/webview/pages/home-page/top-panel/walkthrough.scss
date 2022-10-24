@@ -1,0 +1,83 @@
+/**
+ *
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+.walkthrough-frame {
+   position: relative;
+   flex-grow: 2;
+   flex-shrink: 0;
+}
+
+.walkthrough-title {
+   font-size: 18px;
+   font-weight: 600;
+   color: var(--vscode-foreground);
+}
+
+.walkthrough-contentbox {
+   height: 6.625rem;
+   margin-top: 1.5rem;
+}
+
+.walkthrough-textbox-frame {
+   height: 5.625rem;
+   cursor: pointer;
+}
+
+.walkthrough-textbox-layer-one {
+   flex-shrink: 0;
+   height: 5.625rem;
+   background: var(--vscode-badge-background);
+   border-radius: 0.5rem;
+}
+
+.walkthrough-textbox-layer-two {
+   flex-shrink: 0;
+   height: 5.625rem;
+   /* stylelint-disable-next-line custom-property-pattern */
+   background: var(--vscode-sideBar-background);
+   border: 0.5px solid color-mix(in srgb, var(--vscode-icon-foreground), transparent 75% );
+   border-radius: 0.5rem;
+}
+
+.walkthrough-textbox {
+   flex-shrink: 0;
+   height: 2.25rem;
+   margin-top: 1.88rem;
+   margin-right: 1.52rem;
+   margin-left: 1.52rem;
+}
+
+.walkthrough-textbox-title {
+   font-size: 14px;
+   font-weight: 600;
+   color: var(--vscode-foreground);
+}
+
+.walkthrough-textbox-text {
+   font-size: 13px;
+   font-weight: 400;
+   color: var(--vscode-foreground);
+}
+
+.walkthrough-logo {
+   position: absolute;
+   top: 0;
+   flex-shrink: 0;
+   width: 2rem;
+   height: 2rem;
+   margin-top: 1.9rem;
+   margin-left: 1.5rem;
+   color: var(--vscode-foreground);
+}

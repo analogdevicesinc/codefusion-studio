@@ -1,0 +1,81 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '@common/styles/colors';
+
+.switch {
+	position: relative;
+	width: 28px;
+	height: 16px;
+
+	input {
+		display: none;
+
+		&:checked + .slider {
+			background-color: colors.$button-background;
+		}
+
+		&:focus + .slider {
+			box-shadow: 0 0 1px colors.$default-shadow;
+		}
+
+		&:checked + .slider:before {
+			transform: translateX(12px);
+		}
+	}
+
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: colors.$button-secondary-background;
+		transition: 0.4s;
+
+		&:before {
+			position: absolute;
+			content: '';
+			height: 12px;
+			width: 12px;
+			top: 2px;
+			left: 2px;
+			background-color: colors.$default-foreground;
+			transition: 0.4s;
+		}
+
+		&.round {
+			border-radius: 18px;
+
+			&:before {
+				border-radius: 50%;
+			}
+		}
+	}
+}
+
+.disabled {
+	cursor: not-allowed !important;
+}
+
+.icon {
+	cursor: pointer;
+	display: flex;
+	min-width: 12.5px;
+
+	path {
+		fill: #{colors.$default-foreground};
+	}
+}

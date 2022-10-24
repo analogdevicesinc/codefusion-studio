@@ -1,0 +1,20 @@
+site_name: CodeFusion Studio User Guide
+nav:
+  - Home: index.md
+  - Install CodeFusion Studio SDK: installSdk.md
+  - Install CodeFusion Studio extensions: installExtension.md
+  - Set up your CodeFusion Studio Paths: setUpSdk.md
+  - Supported Processors: supportedProcessors.md
+  - Create a New Project: createNewProject.md
+  - Open an Existing Project: openProject.md
+  - Open and Migrate an Example: openAndMigrateExample.md
+  - Build Tasks: buildTasks.md
+  - Debug an Application: debugAnApplication.md
+  - Heterogeneous Debugging: heterogeneousDebug.md
+  - Extension Settings: extensionSettings.md
+  - Support: cfsSupport.md
+  - Uninstall the SDK: uninstallSdk.md
+
+theme: readthedocs
+plugins:
+  - techdocs-core

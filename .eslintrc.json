@@ -1,0 +1,96 @@
+{
+	/*
+	 * The rules that are commented out are causing major linting issues.
+	 * It would be best to tack each one of these rules as individual efforts.
+	 */
+	"root": true,
+	"overrides": [
+		{
+			"files": ["**/*.js", "**/*.ts", "**/*.jsx", "**/*.tsx"],
+			"plugins": ["header", "simple-import-sort"],
+			"extends": [
+				"xo",
+				//"xo-typescript",
+				"plugin:react/jsx-runtime",
+				"prettier"
+			],
+			"parser": "@typescript-eslint/parser",
+			"parserOptions": {
+				"project": ["./tsconfig.json"]
+			},
+			"rules": {
+				// "header/header": [
+				// 	2,
+				// 	"block",
+				// 	[
+				// 		{
+				// 			"pattern": "Copyright \\(c\\) \\d{4}(-\\d{4})? Analog Devices, Inc. All Rights Reserved."
+				// 		}
+				// 	]
+				// ],
+
+				"import/no-unassigned-import": 0,
+				"import/extensions": 0,
+				"import/no-extraneous-dependencies": 0,
+				"import/no-cycle": 0,
+				"import/no-absolute-path": 0,
+				"n/file-extension-in-import": 0,
+				"@typescript-eslint/prefer-nullish-coalescing": 0,
+				"@typescript-eslint/naming-convention": 0,
+
+				// "react/jsx-tag-spacing": [
+				// 	"error",
+				// 	{
+				// 		"beforeSelfClosing": "always"
+				// 	}
+				// ],
+				"comma-dangle": 0,
+				"indent": 0,
+				"@typescript-eslint/indent": 0,
+				"@typescript-eslint/comma-dangle": 0,
+				"@typescript-eslint/triple-slash-reference": 0,
+				"@typescript-eslint/no-unsafe-call": 0,
+				"@typescript-eslint/no-unsafe-assignment": 0,
+				"@typescript-eslint/no-unsafe-return": 0
+				// "@typescript-eslint/naming-convention": [
+				// 	"error",
+				// 	{
+				// 		"selector": "variableLike",
+				// 		"format": ["camelCase", "PascalCase", "UPPER_CASE"],
+				// 		"leadingUnderscore": "allow",
+				// 		"trailingUnderscore": "allow"
+				// 	}
+				// ],
+				// "padding-line-between-statements": [
+				// 	"error",
+				// 	{
+				// 		"blankLine": "always",
+				// 		"prev": "*",
+				// 		"next": "return"
+				// 	},
+				// 	{
+				// 		"blankLine": "always",
+				// 		"prev": "multiline-block-like",
+				// 		"next": "*"
+				// 	},
+				// 	{
+				// 		"blankLine": "always",
+				// 		"prev": "*",
+				// 		"next": "multiline-block-like"
+				// 	}
+				// ],
+				// "simple-import-sort/imports": "error",
+				// "simple-import-sort/exports": "error"
+			}
+		}
+	],
+	"ignorePatterns": [
+		"**/node_modules/**",
+		// TODO: Fix the linting for each package.
+		"packages/elf-parser",
+		"packages/pinconfig-ui",
+		"packages/cli",
+		"packages/ide/src/webviews/**/*",
+		"packages/cfs-lib"
+	]
+}

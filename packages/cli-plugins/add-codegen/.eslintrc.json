@@ -1,0 +1,13 @@
+{
+	"extends": ["../../../.eslintrc.json", "oclif", "oclif-typescript", "prettier"],
+	"rules": {
+		"perfectionist/sort-objects": "off",
+		"import/no-unresolved": "off",
+		"@typescript-eslint/consistent-type-imports": "off",
+		"import/namespace": "off",
+		"import/no-duplicates": "off",
+		"@typescript-eslint/ban-types": "off",
+		"@typescript-eslint/no-unused-expressions": "off"
+	},
+	"ignorePatterns": ["test/**"]
+}

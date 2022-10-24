@@ -1,0 +1,58 @@
+{
+	"dependencies": {
+		"@oclif/core": "^3"
+	},
+	"description": "cfsutil plugin that adds one or multiple SoC data models",
+	"devDependencies": {
+		"@oclif/prettier-config": "^0.2.1",
+		"@oclif/test": "^3",
+		"@types/chai": "^4",
+		"@types/mocha": "^10",
+		"@types/node": "^18",
+		"chai": "^4",
+		"eslint": "^8",
+		"eslint-config-oclif": "^5",
+		"eslint-config-oclif-typescript": "3.0.38",
+		"eslint-config-prettier": "^9.1.0",
+		"mocha": "^10",
+		"oclif": "^4.1.3",
+		"shx": "^0.3.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5"
+	},
+	"engines": {
+		"node": "^18.x"
+	},
+	"files": [
+		"/dist",
+		"/oclif.manifest.json"
+	],
+	"homepage": "https://github.com/adi-ctx/cfs-cfsutil/tree/main/packages/cli-plugins/add-soc",
+	"license": "MIT",
+	"name": "add-soc",
+	"oclif": {
+		"hooks": {
+			"get-data-models": "./dist/hooks/get-data-models/provide-data-models"
+		}
+	},
+	"repository": "https://github.com/adi-ctx/cfs-cfsutil/tree/main/packages/cli-plugins/add-soc",
+	"scripts": {
+		"build": "shx rm -rf dist && tsc -b && shx cp -r src/socs dist/",
+		"lint": "eslint . --ext .ts",
+		"postpack": "shx rm -f oclif.manifest.json",
+		"posttest": "yarn lint",
+		"prepack": "yarn build && oclif manifest && oclif readme",
+		"prepare": "yarn build",
+		"test": "mocha --forbid-only \"test/**/*.test.ts\"",
+		"version": "oclif readme && git add README.md"
+	},
+	"version": "1.0.0-1",
+	"bugs": "https://github.com/adi-ctx/cfs-cfsutil/issues",
+	"keywords": [
+		"oclif",
+		"cfsutil"
+	],
+	"types": "dist/index.d.ts",
+	"exports": "./lib/index.js",
+	"type": "module"
+}

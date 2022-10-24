@@ -1,0 +1,1025 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="190.76mm" height="308.77mm" baseProfile="tiny" version="1.2" viewBox="0 0 721 1167" xmlns="http://www.w3.org/2000/svg">
+ <title>Qt SVG Document</title>
+ <desc>Generated with Qt</desc>
+ <g fill="none" fill-rule="evenodd" stroke="var(--vscode-editor-foreground, #d4d4d4)" stroke-linecap="square">
+  <g transform="matrix(.99996 0 0 .99996 9.9996 9.9996)" fill-rule="evenodd" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel" stroke-width="2">
+   <path d="m340.36 38.227v5h10.532v-5m-5.266 5v474.8h149.73"/>
+   <path d="m320.86 38.227v5h10.532v-5m-5.266 5v474.8h-224.56"/>
+   <path d="m359.86 38.227v5h10.532v-5m-5.266 5v408.83h130.23"/>
+   <path d="m301.36 38.227v5h10.532v-5m-5.266 5v408.83h-205.06"/>
+   <path d="m379.36 38.227v5h10.532v-5m-5.266 5v342.86h110.73"/>
+   <path d="m281.86 38.227v5h10.532v-5m-5.266 5v342.86h-168.88"/>
+   <path d="m398.86 38.227v5h10.532v-5m-5.266 5v276.89h91.234"/>
+   <path d="m262.36 38.227v5h10.532v-5m-5.266 5v276.89h-149.38"/>
+   <path d="m418.36 38.227v5h10.532v-5m-5.266 5v210.92h71.734"/>
+   <path d="m242.86 38.227v5h10.532v-5m-5.266 5v210.92h-129.88"/>
+   <path d="m437.86 38.227v5h10.532v-5m-5.266 5v144.95h52.234"/>
+   <path d="m223.36 38.227v5h10.532v-5m-5.266 5v144.95h-110.38"/>
+   <path d="m457.36 38.227v5h10.532v-5m-5.266 5v78.984h32.734"/>
+   <path d="m203.86 38.227v5h10.532v-5m-5.266 5v78.984h-90.875"/>
+   <path d="m476.86 38.227v5h10.532v-5m-5.266 5v13.016h13.234"/>
+   <path d="m184.36 38.227v5h10.532v-5m-5.266 5v13.016h-71.375"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 548.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 548.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 562.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 562.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 534.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 7</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 528)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 548.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 548.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 562.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 562.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 534.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 8</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 111.56 528)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 482.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 482.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 496.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 496.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 468.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 6</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 462.04)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 482.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 482.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 496.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 496.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 468.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 9</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 111.56 462.04)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 416.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 416.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 430.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 430.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 402.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 5</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 396.07)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 416.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 416.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 430.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 430.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 402.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 10</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 396.07)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 350.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 350.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 364.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 364.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 336.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 4</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 330.1)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 350.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 350.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 364.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 364.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 336.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 11</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 330.1)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 284.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 284.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 298.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 298.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 270.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 3</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 264.14)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 284.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 284.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 298.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 298.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 270.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 12</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 264.14)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 218.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 218.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 232.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 232.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 204.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 2</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 198.17)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 218.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 218.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 232.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 232.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 204.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 13</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 198.17)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 152.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 152.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 166.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 166.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 138.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 1</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 132.21)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 152.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 152.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 166.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 166.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 138.7)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 14</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 132.21)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 86.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 86.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 100.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 100.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 72.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 66.24)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 86.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 86.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 100.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 100.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 72.739)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 15</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 66.24)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 189.87 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+   <polyline points="-6.5 0 0 0" fill="none"/>
+   <polyline points="-6.5 19.5 0 19.5" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 209.37 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 228.87 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 248.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 267.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 287.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 306.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 326.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 345.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 365.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 384.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 404.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 423.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 443.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 462.86 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 482.36 24.241)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 589.5)" fill-rule="evenodd" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel" stroke-width="2">
+   <path d="m340.36 38.227v5h10.532v-5m-5.266 5v474.8h149.73"/>
+   <path d="m320.86 38.227v5h10.532v-5m-5.266 5v474.8h-207.88"/>
+   <path d="m359.86 38.227v5h10.532v-5m-5.266 5v408.83h130.23"/>
+   <path d="m301.36 38.227v5h10.532v-5m-5.266 5v408.83h-188.38"/>
+   <path d="m379.36 38.227v5h10.532v-5m-5.266 5v342.86h110.73"/>
+   <path d="m281.86 38.227v5h10.532v-5m-5.266 5v342.86h-168.88"/>
+   <path d="m398.86 38.227v5h10.532v-5m-5.266 5v276.89h91.234"/>
+   <path d="m262.36 38.227v5h10.532v-5m-5.266 5v276.89h-149.38"/>
+   <path d="m418.36 38.227v5h10.532v-5m-5.266 5v210.92h71.734"/>
+   <path d="m242.86 38.227v5h10.532v-5m-5.266 5v210.92h-129.88"/>
+   <path d="m437.86 38.227v5h10.532v-5m-5.266 5v144.95h52.234"/>
+   <path d="m223.36 38.227v5h10.532v-5m-5.266 5v144.95h-110.38"/>
+   <path d="m457.36 38.227v5h10.532v-5m-5.266 5v78.984h32.734"/>
+   <path d="m203.86 38.227v5h10.532v-5m-5.266 5v78.984h-90.875"/>
+   <path d="m476.86 38.227v5h10.532v-5m-5.266 5v13.016h13.234"/>
+   <path d="m184.36 38.227v5h10.532v-5m-5.266 5v13.016h-71.375"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 1128)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 1128)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 1142)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 1142)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 1114)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 23</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 1107.5)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 1128)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 1128)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 1142)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 1142)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 1114)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 24</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 1107.5)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 1062)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 1062)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 1076)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 1076)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 1048)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 22</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 1041.5)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 1062)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 1062)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 1076)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 1076)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 1048)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 25</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 1041.5)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 996.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 996.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 1010.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 1010.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 982.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 21</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 975.57)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 996.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 996.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 1010.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 1010.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 982.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 26</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 975.57)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 930.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 930.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 944.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 944.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 916.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 20</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 909.6)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 930.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 930.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 944.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 944.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 916.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 27</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 909.6)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 864.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 864.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 878.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 878.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 850.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 19</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 843.64)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 864.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 864.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 878.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 878.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 850.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 28</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 843.64)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 798.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 798.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 812.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 812.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 784.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 18</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 777.67)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 798.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 798.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 812.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 812.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 784.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 29</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 777.67)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 732.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 732.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 746.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 746.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 718.21)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 17</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 711.71)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 732.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 732.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 746.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 746.2)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 718.21)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 30</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 711.71)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 666.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 666.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 540.42 680.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 519.79 680.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 652.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 16</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 505.34 645.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 666.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Weak Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 666.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 39.592 680.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Strong Pull-up/Pull-down.</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 18.968 680.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">1:</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 652.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">Pull-up/Pull-down Strength Pin 31</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 128.24 645.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <rect width="0" height="0"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 189.87 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 209.37 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 228.87 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 248.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 267.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 287.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 306.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 326.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 345.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 365.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 384.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 404.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 423.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 443.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 462.86 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 482.36 603.74)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <rect width="19.5" height="19.5"/>
+   <polyline points="19.5 0 26 0" fill="none"/>
+   <polyline points="19.5 19.5 26 19.5" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 520.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[7] PIN7 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 520.5)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[8] PIN8 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 454.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[6] PIN6 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 454.54)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[9] PIN9 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 388.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[5] PIN5 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 388.57)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[10] PIN10 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 322.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[4] PIN4 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 322.6)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[11] PIN11 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 256.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[3] PIN3 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 256.64)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[12] PIN12 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 190.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[2] PIN2 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 190.67)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[13] PIN13 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 124.71)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[1] PIN1 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 124.71)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[14] PIN14 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 58.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[0] PIN0 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 58.74)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[15] PIN15 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 195.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 193.9 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">15</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 215.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 213.4 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">14</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 234.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 232.9 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">13</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 254.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 252.4 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">12</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 267.86 20.341)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 273.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 271.9 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">11</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 293.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 291.4 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">10</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 312.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 313.75 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">9</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 332.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 333.25 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">8</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 345.86 20.341)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 351.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 352.75 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">7</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 371.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 372.25 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">6</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 390.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 391.75 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">5</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 410.3 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 411.25 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">4</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 423.86 20.341)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 429.8 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 430.75 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">3</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 449.29 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 450.25 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">2</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 468.79 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 469.75 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">1</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 488.29 26.491)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 489.25 9.9996)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 1100)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[23] PIN23 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 1100)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[24] PIN24 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 1034)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[22] PIN22 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 1034)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[25] PIN25 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 968.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[21] PIN21 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 968.07)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[26] PIN26 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 902.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[20] PIN20 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 902.1)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[27] PIN27 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 836.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[19] PIN19 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 836.14)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[28] PIN28 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 770.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[18] PIN18 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 770.17)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[29] PIN29 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 704.21)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[17] PIN17 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 704.21)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[30] PIN30 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 510.82 638.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[16] PIN16 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 9.9996 638.24)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="700" stroke="none" xml:space="preserve">[31] PIN31 (R/W)</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 195.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 193.9 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">31</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 215.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 213.4 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">30</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 234.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 232.9 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">29</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 254.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 252.4 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">28</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 267.86 599.84)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 273.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 271.9 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">27</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 293.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 291.4 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">26</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 312.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 310.89 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">25</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 332.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 330.39 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">24</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 345.86 599.84)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 351.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 349.89 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">23</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 371.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 369.39 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">22</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 390.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 388.89 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">21</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 410.3 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 408.39 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">20</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 423.86 599.84)" font-family="Sans Serif" font-size="12" font-weight="400" stroke-miterlimit="2" stroke-width="2">
+   <polyline points="0 0 0 3.9" fill="none"/>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 429.8 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 427.89 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">19</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 449.29 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 447.39 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">18</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 468.79 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 466.89 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">17</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 488.29 605.99)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke-linejoin="bevel">
+   <text y="12" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="12" font-weight="400" stroke="none" xml:space="preserve">0</text>
+  </g>
+  <g transform="matrix(.99996 0 0 .99996 486.39 589.5)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke-linejoin="bevel">
+   <text y="9" fill="var(--vscode-editor-foreground, #d4d4d4)" font-family="Bitstream Vera Sans" font-size="9" font-weight="400" stroke="none" xml:space="preserve">16</text>
+  </g>
+ </g>
+</svg>

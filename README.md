@@ -56,7 +56,7 @@ Tools VS Code extensions depend on:
 
 #### Install
 
-!!! note
+⚠️
    The Linux installer downloads without execute permissions. Run `chmod a+x <installer>` to grant execute permissions before continuing.
 
 1. Open the downloaded installer wizard to begin the installation process. ![Installer Setup](docs/user-guide/installation/images/installer-setup.png)
@@ -74,12 +74,12 @@ Tools VS Code extensions depend on:
 
 Specify your CodeFusion Studio installation path by selecting it from a list of detected installations.
 
-!!! note
+⚠️
   Path can also be manually configured under user settings.
 
 #### Set CFSUtil path
 
-!!! note
+⚠️
   By default, the CFSUtil path points to `${config:cfs.sdk.path}/Utils/cfsutil/bin/cfsutil`.
   The default CFSUtil path should be sufficient in most cases.
 
@@ -89,8 +89,8 @@ Change your CFSUtil path if prompted or manually configure in user settings.
 
 ### Install the VS Code extensions
 
-!!! note
-  The VS Code extensions should be installed automatically as part of the installation process. This step is only required if you need to manually install an extension.
+⚠️
+  The VS Code extensions should normally be installed from [VisualStudio Marketplace](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide). This step is only required if you need to manually install an extension.
 
 The CodeFusion Studio VS Code extensions can be found in the VS Code directory in the `CodeFusion Studio` installer.
 To install the `*.vsix` file, open Visual Studio Code. From the `Extensions` tab, click `Install from VSIX...`  from the ellipses menu:

@@ -90,7 +90,9 @@ Change your CFSUtil path if prompted or manually configure in user settings.
 ### Install the VS Code extension
 
 ⚠️
-  The VS Code extensions should normally be installed from [VisualStudio Marketplace](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide). This step is only required if you need to manually install an extension.
+  The VS Code extension can be installed from the [VisualStudio Marketplace](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide), or manually from the CodeFusion Studio installation.
+  
+  This step is only required if you need to manually install an extension.
 
 The CodeFusion Studio VS Code extensions can be found in the VS Code directory in the `CodeFusion Studio` installer.
 To install the `*.vsix` file, open Visual Studio Code. From the `Extensions` tab, click `Install from VSIX...`  from the ellipses menu:

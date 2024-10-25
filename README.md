@@ -87,7 +87,7 @@ Change your CFSUtil path if prompted or manually configure in user settings.
 
 ![Set CFS Util Path](docs/user-guide/installation/images/cfs-util-path-notification.png)
 
-### Install the VS Code extensions
+### Install the VS Code extension
 
 ⚠️
   The VS Code extensions should normally be installed from [VisualStudio Marketplace](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide). This step is only required if you need to manually install an extension.

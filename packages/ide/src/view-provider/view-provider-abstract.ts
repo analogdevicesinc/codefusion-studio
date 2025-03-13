@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  *
  */
 import * as fs from "fs";
-import * as path from "path";
 import * as vscode from "vscode";
 import { modifyHtml } from "../utils/html-modifier";
 
@@ -84,14 +83,14 @@ export abstract class AbstractViewProvider {
 
     const injectCommandArgs = `<script> window.__command_args__ = ${JSON.stringify(commandArgs)}</script>`;
 
-    const htmlPath = path.join(this.context.extensionPath, indexPath);
+    const htmlPath = `${this.context.extensionPath}/${indexPath}`;
 
     const htmlText = fs.readFileSync(htmlPath).toString();
 
     return modifyHtml(htmlText, {
       onopentag(name, attribs) {
-        if (name === "script") attribs.src = path.join(webviewUri, attribs.src);
-        if (name === "link") attribs.href = path.join(webviewUri, attribs.href);
+        if (name === "script") attribs.src = `${webviewUri}/${attribs.src}`;
+        if (name === "link") attribs.href = `${webviewUri}/${attribs.href}`;
 
         return { name, attribs };
       },

@@ -555,6 +555,12 @@ export class NewProjectPanel {
       return null; // should never happen
     }
 
-    return extension.packageJSON.version.split("-")[0];
+    const version = extension.packageJSON.version.split("-")[0];
+    if (version === "1.0.2") {
+      // 1.0.2 was a patch release for 1.0.0 and doesn't require a new project location.
+      return "1.0.0";
+    }
+
+    return version;
   }
 }

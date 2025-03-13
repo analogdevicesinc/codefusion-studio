@@ -1,10 +1,34 @@
-# Release Notes 1.0.0
+# Release Notes
 
-## ⛔ Breaking Changes
+## 1.0.2
+
+### ⛔ Breaking Changes
 
 - None
 
-## ✨ New Features
+### ✨ New Features
+
+- None
+
+### 🐞 Bug fixes, Minor Improvements
+
+- Fix incompatibility issue with VS Code 1.98 (February 2025)
+
+### 🚧 Experimental Features
+
+- None
+
+### 👷 CI Improvements
+
+- None
+
+## 1.0.0
+
+### ⛔ Breaking Changes
+
+- None
+
+### ✨ New Features
 
 - Access quick links and documentation from the CodeFusion Studio (CFS) Home Page
 - Create new projects for the MAX32xxx and MAX7800x processors from the New Project Wizard in the CFS Home Page
@@ -18,14 +42,14 @@
 - Build and debug through the command line using the `CodeFusion Studio Terminal`
 - Analyze compiled binaries with the ELF file explorer, reduce debugging and profiling time while gaining insights into the application structure
 
-## 🐞 Bug fixes, Minor Improvements
+### 🐞 Bug fixes, Minor Improvements
 
 - None
 
-## 🚧 Experimental Features
+### 🚧 Experimental Features
 
 - None
 
-## 👷 CI Improvements
+### 👷 CI Improvements
 
 - None

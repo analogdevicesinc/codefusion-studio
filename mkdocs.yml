@@ -1,5 +1,5 @@
 site_name: CodeFusion Studio
-copyright: Copyright &copy; 2024 Analog Devices Inc. All Rights Reserved.
+copyright: Copyright &copy; 2024-2025 Analog Devices Inc. All Rights Reserved.
 site_url: https://developer.analog.com/docs/codefusion-studio
 site_description: CodeFusion Studio is a powerful, easy-to-use development environment for Analog Devices' microcontrollers.
 
@@ -87,6 +87,7 @@ nav:
     - Third-party: user-guide/resources/third-party-resources.md
   - Release Notes:
     - release-notes/index.md
+    - 1.0.2: release-notes/1.0.2.md
     - 1.0.0: release-notes/1.0.0.md
 
 not_in_nav: |

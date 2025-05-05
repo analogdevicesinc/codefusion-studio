@@ -27,20 +27,19 @@ import {
   BROWSE_MAXIM_EXAMPLES_COMMAND_ID,
   CONFIG_TOOLS_COMMANDS,
   ELF_EXPLORER_COMMANDS,
-  NEW_PROJECT_COMMAND_ID,
   OPEN_ONLINE_DOCUMENTATION_COMMAND_ID,
-  OPEN_PROJECT_COMMAND_ID,
   OPEN_WALKTHROUGH_COMMAND_ID,
+  WORKSPACE_CREATION_COMMANDS,
 } from "../commands/constants";
-import { ShowHomePageAtStartupOptionEnum } from "../configurations/configureWorkspace";
+import { YesNoEnum } from "../configurations/configureWorkspace";
 import {
   BROWSE_EXAMPLES,
   CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP,
-  CREATE_NEW_PROJECT,
+  CREATE_NEW_CFS_WORKSPACE,
   EXTENSION_ID,
+  OPEN_CFS_WORKSPACE,
   OPEN_ELF_FILE,
   OPEN_EXISTING_CONFIG_FILE,
-  OPEN_EXISTING_PROJECT,
   OPEN_WALKTHROUGH,
   REQUEST_HOME_PAGE_CHECKBOX_STATE,
   SHOW_HOME_PAGE_AT_STARTUP_CHECKBOX,
@@ -49,21 +48,13 @@ import {
 import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
 import { SocDataType } from "../webview/common/types/soc-data";
+import { readFileSync } from "node:fs";
+import path from "path";
 
 export interface Message {
-  command: string;
-  data:
-    | boolean
-    | { location: string; name: string }
-    | { location: string; soc: string }
-    | {
-        projectName: string;
-        projectLocation: string;
-        template: SocDataType.Template;
-        firmwarePlatform: string;
-        socPackage: SocDataType.Package;
-      }
-    | object;
+  id: string;
+  type: string;
+  body?: Record<string, unknown>;
 }
 
 /**
@@ -130,6 +121,12 @@ export class HomePagePanel {
         },
       );
 
+      const HomeTabIcon = vscode.Uri.file(
+        `${extensionUri.fsPath}/media/images/cfs-activitybar-icon.svg`,
+      );
+
+      panel.iconPath = HomeTabIcon;
+
       HomePagePanel.currentPanel = new HomePagePanel(panel, extensionUri);
     }
   }
@@ -162,16 +159,26 @@ export class HomePagePanel {
    */
 
   private _getWebviewContent(webview: Webview, extensionUri: Uri) {
+    let translations = vscode.l10n.bundle;
+
+    if (!translations) {
+      const translationUri = getUri(webview, extensionUri, [
+        "l10n",
+        "bundle.l10n.en.json",
+      ]);
+      const enJSON = readFileSync(translationUri.fsPath);
+      translations = JSON.parse(Buffer.from(enJSON).toString("utf8"));
+    }
     const scriptUri = getUri(webview, extensionUri, [
       "out",
-      "webview",
+      "home-page",
       "index.js",
     ]);
 
     const stylesUri = getUri(webview, extensionUri, [
       "out",
-      "webview",
-      "style.css",
+      "home-page",
+      "index.css",
     ]);
     const nonce = getNonce();
 
@@ -189,6 +196,9 @@ export class HomePagePanel {
           <div id="modal-root"></div>
           <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
         </body>
+        <script>
+          window.__webview_localization_resources__ = ${JSON.stringify(translations)}
+        </script>
       </html>
     `;
     return htmlContent;
@@ -202,13 +212,17 @@ export class HomePagePanel {
   private _setWebviewMessageListener(webview: Webview) {
     webview.onDidReceiveMessage(
       async (message: Message) => {
-        const command = message.command;
+        const command = message.type;
         switch (command) {
-          case CREATE_NEW_PROJECT:
-            vscode.commands.executeCommand(NEW_PROJECT_COMMAND_ID);
+          case CREATE_NEW_CFS_WORKSPACE:
+            vscode.commands.executeCommand(
+              WORKSPACE_CREATION_COMMANDS.NEW_WORKSPACE,
+            );
             return;
-          case OPEN_EXISTING_PROJECT:
-            vscode.commands.executeCommand(OPEN_PROJECT_COMMAND_ID);
+          case OPEN_CFS_WORKSPACE:
+            vscode.commands.executeCommand(
+              WORKSPACE_CREATION_COMMANDS.OPEN_CFS_WORKSPACE_COMMAND_ID,
+            );
             return;
           case OPEN_EXISTING_CONFIG_FILE:
             vscode.commands.executeCommand(
@@ -231,21 +245,17 @@ export class HomePagePanel {
             return;
           case SHOW_HOME_PAGE_AT_STARTUP_CHECKBOX:
             const conf = vscode.workspace.getConfiguration(EXTENSION_ID);
-            if (message.data === true) {
+            if (message.body?.data === true) {
               conf.update(
                 CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP,
-                ShowHomePageAtStartupOptionEnum[
-                  ShowHomePageAtStartupOptionEnum.Yes
-                ],
+                YesNoEnum[YesNoEnum.Yes],
                 false,
               );
             }
-            if (message.data === false) {
+            if (message.body?.data === false) {
               conf.update(
                 CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP,
-                ShowHomePageAtStartupOptionEnum[
-                  ShowHomePageAtStartupOptionEnum.No
-                ],
+                YesNoEnum[YesNoEnum.No],
                 false,
               );
             }

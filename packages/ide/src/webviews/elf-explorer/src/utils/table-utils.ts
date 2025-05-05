@@ -25,37 +25,33 @@ export const getColumns = (
 ): Array<`${SYMBOL_COLUMNS}` | string> => {
 	if (!data.length) return [];
 
-	const allKeys = Object.keys(data[0]);
-	const idIndex = allKeys.indexOf('id');
-
-	// There are cases when "id" is not returned
-	if (idIndex !== -1) {
-		allKeys.splice(idIndex, 1);
-	}
-
-	return allKeys;
+	return Object.keys(data[0]);
 };
 
 export const getColumnSizes = (layer: number) => {
 	switch (layer) {
 		case 1:
-			return '11% 26% 18% 16% 14% 15%';
+			return '8% 40% 15% 15% 12% 10%';
 		case 2:
-			return '11% 23% 18% 16% 14% 18%';
+			return '8% 40% 15% 15% 8% 14%';
 		case 3:
-			return '8% 40% 14% 12% 12% 14%';
+			return '8% 40% 15% 15% 12% 10%';
 		default:
 			return '1fr';
 	}
 };
 
+// TO DO: refactor
 export const computeSymbolSizes = (
 	columns: Array<`${SYMBOL_COLUMNS}`>
 ): string => {
 	let totalWidth = 100;
+
+	const idWidth = 5;
 	const nameWidth = 20;
-	const numWidth = 5;
-	const addressWidth = 10;
+	const typeWidth = 5;
+	const addressWidth = 8;
+	const sizeWidth = 8;
 	const columnWidths: any = {};
 
 	const filteredColumns = columns.filter(
@@ -64,14 +60,19 @@ export const computeSymbolSizes = (
 			item !== SYMBOL_COLUMNS.RECURSIVE
 	);
 
+	if (filteredColumns.includes(SYMBOL_COLUMNS.ID)) {
+		columnWidths.id = idWidth;
+		totalWidth -= idWidth;
+	}
+
 	if (filteredColumns.includes(SYMBOL_COLUMNS.NAME)) {
 		columnWidths.name = nameWidth;
 		totalWidth -= nameWidth;
 	}
 
-	if (filteredColumns.includes(SYMBOL_COLUMNS.NUM)) {
-		columnWidths.num = numWidth;
-		totalWidth -= numWidth;
+	if (filteredColumns.includes(SYMBOL_COLUMNS.SIZE)) {
+		columnWidths.size = sizeWidth;
+		totalWidth -= sizeWidth;
 	}
 
 	if (filteredColumns.includes(SYMBOL_COLUMNS.ADDRESS)) {
@@ -79,11 +80,18 @@ export const computeSymbolSizes = (
 		totalWidth -= addressWidth;
 	}
 
+	if (filteredColumns.includes(SYMBOL_COLUMNS.TYPE)) {
+		columnWidths.type = typeWidth;
+		totalWidth -= typeWidth;
+	}
+
 	const columnsWithoutName = filteredColumns.filter(
 		item =>
+			item !== SYMBOL_COLUMNS.ID &&
 			item !== SYMBOL_COLUMNS.NAME &&
-			item !== SYMBOL_COLUMNS.NUM &&
-			item !== SYMBOL_COLUMNS.ADDRESS
+			item !== SYMBOL_COLUMNS.TYPE &&
+			item !== SYMBOL_COLUMNS.ADDRESS &&
+			item !== SYMBOL_COLUMNS.SIZE
 	);
 	const remainingColumnWidth = totalWidth / columnsWithoutName.length;
 
@@ -114,7 +122,7 @@ export function getOrder(layer: number) {
 		'type'
 	];
 	const orderLayer3 = [
-		'num',
+		'id',
 		'name',
 		'address',
 		'size',

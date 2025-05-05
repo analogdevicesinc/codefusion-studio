@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,29 @@
  *
  */
 import {useEffect, useRef} from 'react';
-import RightArrow from '@common/icons/RightArrow';
+import ChevronRight from '../../icons/ChevronRight';
 import styles from './Accordion.module.scss';
-import ConflictIcon from '../../icons/Conflict';
 
-type AccordionProps = {
-	readonly title: string;
-	readonly hasError?: boolean;
-	readonly body: React.ReactNode;
-	readonly isOpen: boolean;
-	readonly toggleExpandMenu: (title: string) => void;
-};
+type AccordionProps = Readonly<{
+	title: string;
+	body: React.ReactNode;
+	caption?: React.ReactNode;
+	isOpen: boolean;
+	id?: string;
+	icon?: React.ReactNode;
+	variant?: 'default' | 'no-gap';
+	toggleExpand: (title: string) => void;
+}>;
 
 export default function Accordion({
+	id,
 	title,
-	hasError = false,
 	body,
+	caption,
 	isOpen,
-	toggleExpandMenu
+	variant = 'default',
+	icon,
+	toggleExpand
 }: AccordionProps) {
 	const peripheralRef = useRef<HTMLDivElement>(null);
 
@@ -66,30 +71,32 @@ export default function Accordion({
 	return (
 		<div
 			ref={peripheralRef}
-			className={`${styles.container} ${isOpen && styles.hasBorder}`}
-			data-test={title}
+			className={`${styles.container} ${isOpen && styles.hasBorder} ${
+				styles[variant]
+			}`}
+			data-test={`accordion:${title}`}
 		>
 			<section
 				className={styles.header}
 				onClick={() => {
-					toggleExpandMenu(title);
+					toggleExpand(id ?? title);
 				}}
 			>
-				<div className={` ${isOpen ? styles.iconOpen : ''}`}>
-					<RightArrow />
+				<div className={styles.leftSection}>
+					<div
+						className={`${styles.chevron}${isOpen ? ` ${styles.iconOpen}` : ''}`}
+					>
+						<ChevronRight />
+					</div>
+					<span className={styles.title}>{title}</span>
+					{icon && (
+						<>
+							<div className={styles.divider} />
+							<div>{icon}</div>
+						</>
+					)}
 				</div>
-				<span>{title}</span>
-				{hasError && (
-					<>
-						<div className={styles.divider} />
-						<div
-							id={`${title}-conflict`}
-							className={styles.conflictIcon}
-						>
-							<ConflictIcon />
-						</div>
-					</>
-				)}
+				{caption && <span className={styles.caption}>{caption}</span>}
 			</section>
 			{isOpen && <section className={styles.body}>{body}</section>}
 		</div>

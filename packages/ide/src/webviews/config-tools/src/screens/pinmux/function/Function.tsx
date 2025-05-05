@@ -12,39 +12,50 @@
  * limitations under the License.
  *
  */
-import {type MouseEventHandler, useState, memo} from 'react';
+import {memo, type MouseEventHandler, useMemo, useState} from 'react';
 import styles from './Function.module.scss';
 import {
-	VSCodeButton,
-	// @ts-expect-error Import Needed to register web component.
-	// eslint-disable-next-line unused-imports/no-unused-imports
 	VSCodeDropdown,
 	VSCodeOption
 } from '@vscode/webview-ui-toolkit/react';
 import {
+	assignCoprogrammedSignal,
+	removeAppliedCoprogrammedSignals,
 	removeAppliedSignal,
 	setAppliedSignal,
 	setIsPinFocused
 } from '../../../state/slices/pins/pins.reducer';
-import {useAppDispatch} from '../../../state/store';
+import {useAppDispatch, useAppSelector} from '../../../state/store';
 import Config from '@common/icons/Config';
 import type {Pin} from '@common/types/soc';
 import {
-	usePinAppliedSignals,
-	usePinDetails
+	useAssignedPins,
+	usePinAppliedSignals
 } from '../../../state/slices/pins/pins.selector';
 import ConflictIcon from '@common/icons/Conflict';
-import {useCurrentTarget} from '../../../state/slices/peripherals/peripherals.selector';
-import {setCurrentTarget} from '../../../state/slices/peripherals/peripherals.reducer';
-import {setActiveConfiguredSignal} from '../../../state/slices/app-context/appContext.reducer';
 import {
-	useActiveConfiguredSignal,
-	useRegisters
-} from '../../../state/slices/app-context/appContext.selector';
-import {Modal} from '@common/components/modal/Modal';
-import PinconfigDisplay from '../../pin-config/pinconfig-display/PinconfigDisplay';
+	useActivePeripheral,
+	useActiveSignal,
+	useCurrentSignalTarget,
+	useGetAllocatedProjectId
+} from '../../../state/slices/peripherals/peripherals.selector';
+import {
+	removePeripheralAssignment,
+	setActivePeripheral,
+	setActiveSignal,
+	setCurrentTarget,
+	setSignalGroupAssignment
+} from '../../../state/slices/peripherals/peripherals.reducer';
+import {setActiveConfiguredSignal} from '../../../state/slices/app-context/appContext.reducer';
+import {useActiveConfiguredSignal} from '../../../state/slices/app-context/appContext.selector';
 import CheckmarkIcon from '@common/icons/Checkmark';
 import Toggle from '@common/components/toggle/Toggle';
+import DownArrow from '../../../../../common/icons/DownArrow';
+import {getSocPinDetails} from '../../../utils/soc-pins';
+import {Button} from 'cfs-react-library';
+import {computeInitialPinConfig} from '../../../utils/pin-reset-controls';
+import {getConfigurablePeripherals} from '../../../utils/soc-peripherals';
+import {getPrimaryProjectId} from '../../../utils/config';
 
 type FunctionProps = {
 	readonly peripheralGroup: string;
@@ -55,97 +66,211 @@ type FunctionProps = {
 
 function Function({
 	peripheralGroup,
-	name,
+	name: signalName,
 	pins,
 	isLastIndex = false
 }: FunctionProps) {
+	const [isExpanded, setIsExpanded] = useState(false);
 	const dispatch = useAppDispatch();
-
-	const registers = useRegisters();
-
+	const activePeripheralName = useActivePeripheral();
 	const {signal: activeConfiguredSignal, pin: activeConfiguredPin} =
 		useActiveConfiguredSignal();
+	const openSignal = useActiveSignal();
+
+	const allocatedProjectId = useGetAllocatedProjectId(
+		peripheralGroup,
+		signalName
+	);
+
+	const assignedPeripherals = useAppSelector(
+		state => state.peripheralsReducer.assignments
+	);
+	const assignedPins = useAssignedPins();
+	const peripheral = assignedPeripherals[peripheralGroup];
 
 	const currentTargetForSignal =
-		useCurrentTarget(peripheralGroup, name) ?? pins[0].Name;
+		useCurrentSignalTarget(peripheralGroup, signalName) ??
+		pins[0].Name;
 
 	const targetPinId =
 		pins.length === 1 ? pins[0].Name : currentTargetForSignal;
-
-	const [isConfiguringFunction, setIsConfiguringFunction] =
-		useState<boolean>(false);
 
 	const signalsForTargetPin = usePinAppliedSignals(targetPinId) ?? [];
 
 	const assignedPin = signalsForTargetPin.find(
 		signal =>
 			signal.Pin === (targetPinId ?? pins[0].Name) &&
-			signal.Peripheral === peripheralGroup
+			signal.Peripheral === peripheralGroup &&
+			signal.Name === signalName
 	);
 
-	const coprogrammedSignals = usePinDetails(
+	const isPeripheralConfigurable = useMemo(
+		() =>
+			getConfigurablePeripherals().some(
+				peripheral => peripheral.name === peripheralGroup
+			),
+		[peripheralGroup]
+	);
+
+	const hasAssignedPin = (peripheral: string, signal: string) =>
+		assignedPins.some(assignedPin =>
+			assignedPin.appliedSignals.some(
+				assignedSignal =>
+					assignedSignal.Peripheral === peripheral &&
+					assignedSignal.Name === signal
+			)
+		);
+
+	const coprogrammedSignals = getSocPinDetails(
 		targetPinId
 	)?.Signals?.find(
-		signal => signal.Name === name
+		signal => signal.Name === signalName
 	)?.coprogrammedSignals;
 
 	const isToggledOn = Boolean(assignedPin);
 
 	const shouldRenderConflict =
-		signalsForTargetPin.length > 1 && isToggledOn;
+		isToggledOn &&
+		(signalsForTargetPin.length > 1 ||
+			Object.keys(assignedPin?.Errors ?? {}).length);
 
-	const handleModalClose = () => {
-		setIsConfiguringFunction(false);
-	};
+	const handlePanelOpen = () => {
+		if (!activePeripheralName) {
+			dispatch(setActivePeripheral(peripheralGroup));
+		}
 
-	const handleModalOpen = () => {
-		setIsConfiguringFunction(true);
 		dispatch(
-			setActiveConfiguredSignal({
-				peripheralName: peripheralGroup,
-				signalName: name,
-				pinId: targetPinId
+			setActiveSignal({
+				peripheral: peripheralGroup,
+				signal: signalName,
+				keepActivePeripheral: true
 			})
 		);
 	};
 
-	const handleToggle = () => {
+	const handleToggle = async () => {
 		const payload = {
 			Pin: targetPinId,
 			Peripheral: peripheralGroup,
-			Name: name
+			Name: signalName
 		};
 
 		if (isToggledOn) {
-			dispatch(removeAppliedSignal(payload));
-
-			if (
-				activeConfiguredPin === targetPinId &&
-				activeConfiguredSignal === name
-			) {
-				dispatch(setActiveConfiguredSignal({})); // Removes pinconfig selection
-			}
-
+			// Remove the active assignment
 			if (coprogrammedSignals?.length) {
-				coprogrammedSignals.forEach(coprogrammedSignal => {
-					const payload = {
+				const payloads = [
+					payload,
+					...coprogrammedSignals.map(coprogrammedSignal => ({
 						Pin: coprogrammedSignal.Pin,
 						Peripheral: coprogrammedSignal.Peripheral,
 						Name: coprogrammedSignal.Signal
-					};
+					}))
+				];
 
-					dispatch(removeAppliedSignal(payload));
+				dispatch(removeAppliedCoprogrammedSignals(payloads));
 
+				payloads.forEach(signalPayload => {
 					if (
-						activeConfiguredPin === payload.Pin &&
-						activeConfiguredSignal === payload.Name
+						activeConfiguredPin === signalPayload.Pin &&
+						activeConfiguredSignal === signalPayload.Name
 					) {
 						dispatch(setActiveConfiguredSignal({})); // Removes pinconfig selection
 					}
 				});
+			} else {
+				dispatch(removeAppliedSignal(payload));
+
+				if (
+					activeConfiguredPin === targetPinId &&
+					activeConfiguredSignal === signalName
+				) {
+					dispatch(setActiveConfiguredSignal({})); // Removes pinconfig selection
+				}
+			}
+
+			// Unassign peripheral if no other signals are assigned excluding this signal and coprogrammed signals
+			const shouldUnassignPeripheral =
+				!isPeripheralConfigurable &&
+				!Object.values(peripheral?.signals ?? {}).some(
+					signal =>
+						hasAssignedPin(peripheralGroup, signal.name) &&
+						signal.name !== signalName &&
+						(!coprogrammedSignals?.length ||
+							coprogrammedSignals.every(
+								s => s.Signal !== signal.name
+							))
+				);
+
+			if (shouldUnassignPeripheral) {
+				dispatch(
+					removePeripheralAssignment({
+						peripheral: peripheralGroup
+					})
+				);
+			}
+
+			if (openSignal === `${peripheralGroup} ${signalName}`) {
+				handlePanelOpen();
 			}
 		} else {
-			dispatch(setAppliedSignal({...payload, registers}));
+			const primaryProjectId = getPrimaryProjectId();
+			let projectToAllocate: string | undefined = allocatedProjectId;
+
+			if (!isPeripheralConfigurable && !allocatedProjectId) {
+				projectToAllocate = primaryProjectId;
+				dispatch(
+					setSignalGroupAssignment({
+						peripheral: peripheralGroup,
+						projectId: projectToAllocate ?? '',
+						config: {}
+					})
+				);
+			}
+
+			if (coprogrammedSignals?.length) {
+				const signalCfg = await computeInitialPinConfig({
+					Pin: payload.Pin,
+					Peripheral: payload.Peripheral,
+					Signal: payload.Name,
+					ProjectId: projectToAllocate ?? ''
+				});
+
+				const payloads = [
+					{...payload, PinCfg: signalCfg},
+					...(await Promise.all(
+						coprogrammedSignals.map(async coprogrammedSignal => ({
+							Pin: coprogrammedSignal.Pin,
+							Peripheral: coprogrammedSignal.Peripheral,
+							Name: coprogrammedSignal.Signal,
+							PinCfg: projectToAllocate
+								? await computeInitialPinConfig({
+										Pin: coprogrammedSignal.Pin,
+										Peripheral: coprogrammedSignal.Peripheral,
+										Signal: coprogrammedSignal.Signal,
+										ProjectId: projectToAllocate ?? ''
+									})
+								: {}
+						}))
+					))
+				];
+
+				dispatch(assignCoprogrammedSignal(payloads));
+			} else {
+				let initialPinConfig = {};
+
+				if (projectToAllocate) {
+					initialPinConfig = await computeInitialPinConfig({
+						Pin: targetPinId,
+						Peripheral: peripheralGroup,
+						Signal: signalName,
+						ProjectId: projectToAllocate ?? ''
+					});
+				}
+
+				dispatch(
+					setAppliedSignal({...payload, PinCfg: initialPinConfig})
+				);
+			}
 
 			if (targetPinId !== currentTargetForSignal) {
 				dispatch(
@@ -158,22 +283,10 @@ function Function({
 				dispatch(
 					setCurrentTarget({
 						peripheralGroup,
-						signalName: name,
+						signalName,
 						dropdownVal: targetPinId
 					})
 				);
-			}
-
-			if (coprogrammedSignals?.length) {
-				coprogrammedSignals.forEach(coprogrammedSignal => {
-					const payload = {
-						Pin: coprogrammedSignal.Pin,
-						Peripheral: coprogrammedSignal.Peripheral,
-						Name: coprogrammedSignal.Signal
-					};
-
-					dispatch(setAppliedSignal({...payload, registers}));
-				});
 			}
 		}
 	};
@@ -184,13 +297,13 @@ function Function({
 		const payload = {
 			Pin: value,
 			Peripheral: peripheralGroup,
-			Name: name
+			Name: signalName
 		};
 
 		dispatch(
 			setCurrentTarget({
 				peripheralGroup,
-				signalName: name,
+				signalName,
 				dropdownVal: value
 			})
 		);
@@ -200,94 +313,90 @@ function Function({
 
 			if (
 				activeConfiguredPin === targetPinId &&
-				activeConfiguredSignal === name
+				activeConfiguredSignal === signalName
 			) {
 				dispatch(setActiveConfiguredSignal({})); // Removes pinconfig selection
 			}
 
-			dispatch(setAppliedSignal({...payload, registers}));
+			dispatch(
+				setAppliedSignal({
+					...payload,
+					PinCfg: assignedPin?.PinCfg ?? {}
+				})
+			);
 		}
 
 		dispatch(setIsPinFocused({id: targetPinId, isFocused: false}));
 	};
 
 	return (
-		<>
-			<section
-				key={name}
-				className={styles.container}
-				data-test={`${peripheralGroup}-${name}`}
-			>
-				{shouldRenderConflict && (
+		<section
+			key={signalName}
+			className={styles.container}
+			data-test={`${peripheralGroup}-${signalName}`}
+		>
+			<div>{signalName}</div>
+			<div className={styles.divider} />
+			{pins.length === 1 ? (
+				<div>{pins[0].Name}</div>
+			) : (
+				<VSCodeDropdown
+					position={isLastIndex ? 'above' : 'below'}
+					value={targetPinId}
+					className={styles.dropDownPin}
+					onClick={() => {
+						setIsExpanded(!isExpanded);
+					}}
+				>
 					<div
-						id={`signal-${name}-conflict`}
-						className={styles.conflictIcon}
+						slot='indicator'
+						className={`${styles.indicator}${isExpanded ? ` ${styles.expanded}` : ''}`}
 					>
+						<DownArrow />
+					</div>
+					{pins.map(pin => (
+						<VSCodeOption
+							key={pin.Name}
+							selected={pin.Name === targetPinId}
+							className={styles.dropdownPinOption}
+							value={pin.Name}
+							onClick={handleDropdown}
+						>
+							<div className={styles.dropdownPinLabel}>
+								{pin.Name}
+								<div className={styles.checkmarkIcon}>
+									{pin.Name === targetPinId && <CheckmarkIcon />}
+								</div>
+							</div>
+						</VSCodeOption>
+					))}
+				</VSCodeDropdown>
+			)}
+			<Toggle
+				isToggledOn={isToggledOn}
+				handleToggle={handleToggle}
+				dataTest={`${peripheralGroup}-${signalName}`}
+			/>
+			<div
+				className={`${styles.configButtonContainer} ${openSignal === `${peripheralGroup} ${signalName}` ? styles.active : ''}`}
+			>
+				<Button
+					appearance='icon'
+					disabled={!isToggledOn}
+					onClick={handlePanelOpen}
+				>
+					{isToggledOn && <Config width='12.5' height='10.8' />}
+				</Button>
+			</div>
+			{/* Always display container to reserve space */}
+			<div className={styles.iconConflictContainer}>
+				{Boolean(shouldRenderConflict) && (
+					<div id={`signal-${signalName}-conflict`}>
 						<ConflictIcon />
 					</div>
 				)}
-				<div>{name}</div>
-				<div className={styles.divider} />
-				{pins.length === 1 ? (
-					<div>{pins[0].Name}</div>
-				) : (
-					// @ts-expect-error: Due to an open bug in the React wrapper, we need to use the plain web component instead.
-					// See: https://github.com/microsoft/vscode-webview-ui-toolkit/issues/406
-					<vscode-dropdown
-						position={isLastIndex ? 'above' : 'below'}
-						value={targetPinId}
-						class={styles.dropDownPin}
-					>
-						{pins.map(pin => (
-							<VSCodeOption
-								key={pin.Name}
-								selected={pin.Name === targetPinId}
-								className={styles.dropdownPinOption}
-								value={pin.Name}
-								onClick={handleDropdown}
-							>
-								<div className={styles.dropdownPinLabel}>
-									{pin.Name}
-									<div className={styles.checkmarkIcon}>
-										{pin.Name === targetPinId && <CheckmarkIcon />}
-									</div>
-								</div>
-							</VSCodeOption>
-						))}
-						{/* @ts-expect-error: See previous above. */}
-					</vscode-dropdown>
-				)}
-				<Toggle
-					isToggledOn={isToggledOn}
-					handleToggle={handleToggle}
-					icon={<Config width='12.5' height='10.8' />}
-					handleModalOpen={handleModalOpen}
-				/>
-			</section>
-			{isConfiguringFunction && (
-				<Modal
-					isOpen={isConfiguringFunction}
-					isDynamicHeight={false}
-					handleModalClose={handleModalClose}
-					footer={
-						<VSCodeButton
-							appearance='secondary'
-							onClick={handleModalClose}
-						>
-							Close
-						</VSCodeButton>
-					}
-				>
-					<>
-						<div style={{marginBottom: '40px'}}>
-							<h1>Configuration</h1>
-							<p>Change or reset the configuration values</p>
-						</div>
-						<PinconfigDisplay />
-					</>
-				</Modal>
-			)}
-		</>
+			</div>
+		</section>
 	);
 }
 

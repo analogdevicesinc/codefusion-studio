@@ -18,6 +18,8 @@
 	grid-template-rows: 40px 1fr;
 	height: 100%;
 
+	--sliding-panel-vertical-offset: 40px;
+
 	.topBar {
 		grid-column: 1 / 3;
 	}

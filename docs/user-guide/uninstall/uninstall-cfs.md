@@ -1,7 +1,7 @@
 ---
 description: Uninstall CodeFusion Studio
 author: Analog Devices
-date: 2024-09-02
+date: 2025-01-27
 ---
 
 # Uninstall CodeFusion Studio
@@ -19,16 +19,27 @@ date: 2024-09-02
 !!! note
     Keyboard shortcut to extensions is **Control** + **SHIFT** + **X** (Windows/Linux) or **Command** + **SHIFT** + **X** (Mac).
 
-## Uninstall from file system on Windows
+## Uninstall from file system
+
+You can uninstall CodeFusion Studio using the Maintenance Tool.
 
 1. Navigate to the directory where **CodeFusion Studio** is installed.
-2. Locate the **MaintenanceTool.exe** application and double click on it.![CodeFusion Studio Installer Directory](images/code-fusion-studio-sdk-directory.png)
-3. After the **MaintenanceTool.exe** application launches, select **Remove all components** from the setup menu.![Installer Setup](images/uninstaller-setup.png)
-4. Click **Next** to continue.
-5. Confirm that the correct directory is being removed and click **Uninstall**.![Ready to Uninstall](images/ready-to-uninstall.png)
+    - The Windows default location is `C:\analog\cfs\`
+    - The macOS or Linux default location is `~/analog/cfs/`
+2. Open the folder for the version you want to uninstall.
+3. Launch the Maintenance Tool:
+    - On Windows, double click **MaintenanceTool.exe**
+    - On macOS, double click **MaintenanceTool.app**
+    - On Ubuntu, double click **MaintenanceTool**
+4. Select **Remove all components** and follow the prompt to continue![Installer Setup](images/uninstaller-setup.png)
+5. Check that the correct directory is being removed and click **Uninstall**.![Ready to Uninstall](images/ready-to-uninstall.png)
 6. CodeFusion Studio will now be uninstalled.![Uninstall In Progress](images/uninstalling-progress.png)
-7. After the uninstallation completes, you may close the installer by clicking **Finish**.![Completed Uninstallation](images/uninstallation-complete.png)
+7. When the process completes, close the uninstaller ![Completed Uninstallation](images/uninstallation-complete.png)
 
-## Remove the file system on Linux or Mac
+## Command line uninstall
 
-The CodeFusion Studio directory can be deleted directly from the filesystem without needing to run an uninstall utility.
+Use the following command to uninstall CodeFusion Studio from the default location:
+
+- Windows: `C:\analog\CFS\1.1.0\MaintenanceTool.exe purge`
+- Linux: `~/analog/cfs/1.1.0/MaintenanceTool purge`
+- macOS: `~/analog/cfs/1.1.0/MaintenanceTool.app/Contents/MacOS/MaintenanceTool purge`

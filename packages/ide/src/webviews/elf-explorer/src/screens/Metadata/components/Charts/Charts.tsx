@@ -26,6 +26,7 @@ import {transformBtoKB} from '../../../../utils/number';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 import type {TLocaleContext} from '../../../../common/types/context';
 import styles from './Charts.module.scss';
+import type {ECElementEvent} from 'echarts';
 
 type TMainSectionChartProps = {
 	readonly sections: TSection[];
@@ -80,6 +81,15 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				show: false
 			}
 		},
+		tooltip: {
+			trigger: 'item',
+			className: styles.chartTooltip,
+			formatter(params: ECElementEvent) {
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+				return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+			},
+			confine: true
+		},
 		series: [
 			{
 				name: 'text',
@@ -88,7 +98,11 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				barGap: '100%',
 				itemStyle: {
 					color: chartLegendColors.text
-				}
+				},
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			},
 			{
 				name: 'data',
@@ -96,7 +110,11 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				data: [chartData.data],
 				itemStyle: {
 					color: chartLegendColors.data
-				}
+				},
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			},
 			{
 				name: 'bss',
@@ -104,7 +122,11 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				data: [chartData.bss],
 				itemStyle: {
 					color: chartLegendColors.bss
-				}
+				},
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			}
 		]
 	});

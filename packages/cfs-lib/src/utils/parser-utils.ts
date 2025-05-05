@@ -209,11 +209,12 @@ export const filterSymbolsToSection = (
 ) => {
 	const result: TSymbol[] = [];
 	const dbSymbols: TSymbol[] = getFormattedDbSymbols(parser);
+
 	for (const symSection of elfModel.elfSymbols) {
-		for (const symbol of [...symSection.symbolData]) {
-			if (symbol.sectionHeaderIndex === section.index) {
-				const dbSymbol: TSymbol | undefined = dbSymbols.find(
-					(item: TSymbol) => item.num === symbol.index
+		for (const parserSymbol of symSection.symbolData) {
+			if (parserSymbol.sectionHeaderIndex === section.index) {
+				const dbSymbol: TSymbol | undefined = [...dbSymbols].find(
+					(item: TSymbol) => item.id === parserSymbol.dbId,
 				);
 
 				if (dbSymbol) {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,23 @@
  *
  */
 import { PathLike, rmSync, unlinkSync } from "fs";
-import { EditorView, InputBox, Key, TitleBar } from "vscode-extension-tester";
+import { EditorView, InputBox, Key, TitleBar,VSBrowser } from "vscode-extension-tester";
+const isMac = process.platform === "darwin";
 
 /**
  * Open the given folder
  * @param folder - The folder to open
  */
+
 export async function openFolder(folder: string): Promise<void> {
   const titleBar = new TitleBar();
   await titleBar.select("File", "Open Folder...");
   const input = await InputBox.create();
   await input.setText(folder);
   await input.confirm();
+  if (isMac) {
+    await VSBrowser.instance.openResources(folder);
+  }
 }
 
 /**
@@ -69,6 +74,11 @@ export async function closeWindows() {
   if (titles.includes("Welcome")) {
     await editorView.closeEditor("Welcome");
   }
+
+  if (titles.includes("CFS Home Page")) {
+    await editorView.closeEditor("CFS Home Page");
+  }
+
   if (titles.includes("Settings")) {
     await editorView.closeEditor("Settings");
   }
@@ -76,3 +86,4 @@ export async function closeWindows() {
     await editorView.closeEditor("launch.json");
   }
 }
+

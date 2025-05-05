@@ -1,0 +1,39 @@
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+
+.templateHeader {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 40px;
+
+	.chipsContainer {
+		display: flex;
+		gap: 4px;
+	}
+}
+
+.templatesContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+
+	.template {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+
+		h3 {
+			@include fonts.heading-h3;
+		}
+
+		p {
+			margin: 0;
+			color: colors.$description-foreground;
+			font-size: fonts.$font-size-m;
+		}
+	}
+}
+
+.templatesNotification {
+	margin: 0 0 24px 0;
+}

@@ -1,46 +1,79 @@
 ---
 description: Features included with CodeFusion Studio
 author: Analog Devices
-date: 2024-09-24
+date: 2025-04-23
 ---
 
 # Features
 
-See all the features CodeFusion Studio has to offer.
+Explore all the features CodeFusion Studio has to offer.
 
-## Homepage
+## System Planner Configuration Tools dashboard
 
-Homepage with quick access links for common tasks, links to articles and videos related to your projects, user guides, hardware reference manuals, data sheets, and other useful resources.
+The [System Planner Configuration Tools dashboard](../tools/config-tool/index.md) centralizes the configuration of cores, memory partitions, peripherals, clocks, and pins. This dashboard simplifies hardware resource management in multi-core SoCs and facilitates the generation of source code to integrate directly into your projects.
 
-![Welcome homepage](./images/welcome-homepage-light.png#only-light)
-![Welcome homepage](./images/welcome-homepage-dark.png#only-dark)
+![System Planner dashboard](./images/system-planner-dashboard-dark.png#only-dark)
+![System Planner dashboard](./images/system-planner-dashboard-light.png#only-light)
 
-## Project wizard
+## Multi-core software development
 
-A new [project wizard](../projects/create-new-project.md) for quickly creating projects as well as example applications to jump-start your development.
+Manage all your projects with the [workspace creation wizard](../workspaces/create-new-workspace.md). Create multiple, distinct projects for each core and use the provided tools to streamline development at the system and individual core level.
 
-![Project Wizard](./images/project-wizard-light.png#only-light)
-![Project Wizard](./images/project-wizard-dark.png#only-dark)
+![Workspace Creation Wizard](./images/workspace-creation-light.png#only-light)
+![Workspace Creation Wizard](./images/workspace-creation-dark.png#only-dark)
 
-## Toolchain support
+## Heterogeneous multi-core debugging
 
-Toolchain support for [building](../projects/tasks.md) applications on Arm and RISC-V processors.
+CodeFusion Studio provides an advanced multi-core debugging environment, allowing developers to debug multiple cores within a single IDE, single debug session, and single hardware debugger. It supports:
 
-- MSDK projects use the Arm GNU toolchain and the xPack GNU RISK-V embedded GCC toolchain.
-- Zephyr projects use the Zephyr SDK's Arm and RISC-V toolchains.
+- Breakpoints, disassembly, heterogeneous debug, and RTOS thread awareness.
+- Multi-architecture debugging, with tools and libraries supporting development across ARM, RISC-V, and other architectures.
 
-## Configuration tools
+![Multi-core debugging](./images/multi-core-debugging-light.png#only-light)
+![Multi-core debugging](./images/multi-core-debugging-dark.png#only-dark)
 
-[Pin  and clock configuration](../tools/config-tool/index.md) tools for assigning signals to pins, configuring pin values such as input or output mode and power supply, viewing register details and values, and generating source code to be included in your project.
+## Platform agnostic architecture
 
-![pinmux](../tools/config-tool/images/pinmux-light.png#only-light)
-![pinmux](../tools/config-tool/images/pinmux-dark.png#only-dark)
+CodeFusion Studio separates configuration from code generation using an extensible plugin-based architecture. This enables flexibility when selecting RTOS, middleware, and project structures, allowing you to adapt your development workflow without being locked into a specific platform.
+
+- Configuration choices are captured through the GUI and stored in a structured JSON file, ensuring consistency across projects.
+- Code generation is executed by command-line plugins, enabling automation and repeatable builds.
+- Multiple plugins are available per core (Zephyr, MSDK, etc.), with each exposing custom configuration options specific to the selected environment.
+
+![Platform Agnostic Architecture](./images/platform-agnostic-architecture-dark.png#only-dark)
+![Platform Agnostic Architecture](./images/platform-agnostic-architecture-light.png#only-light)
+
+## Graphical resource allocation
+
+Manage SOC resource constraints in one place using dedicated graphical interfaces. These interfaces expose the plugin architecture, enabling context-aware settings specific to the selected core and firmware platform
+
+[Peripheral Allocation](../tools/config-tool/peripheral-allocation.md) provides a graphical interface to assign and optimize peripheral distribution across cores.
+
+![Peripheral Allocation](./images/peripheral-allocation-dark.png#only-dark)
+![Peripheral Allocation](./images/peripheral-allocation-light.png#only-light)
+
+[Memory Allocation](../tools/config-tool/memory-allocation.md) allows graphical allocation and configuration of memory resources across available cores.
+
+![Memory Allocation](./images/memory-allocation-dark.png#only-dark)
+![Memory Allocation](./images/memory-allocation-light.png#only-light)
+
+## Plugin-based GUI
+
+A flexible, plugin-driven, graphical interface supports multiple RTOS and firmware platforms. Settings defined in the GUI get captured by plugins to generate customized workspaces, projects, and configuration files that align with your development standards, middleware, and coding guidelines. Each plugin exposes adjustable configuration options in the GUI.
+
+![Plugin Config Settings](./images/plugin-config-settings-dark.png#only-dark)
+![Plugin Config Settings](./images/plugin-config-settings-light.png#only-light)
 
 ## ELF file explorer
 
 [ELF File Explorer](../tools/elf-file-explorer.md) provides a graphical interface to help understand and analyze the contents of ELF files.
 
-- Run SQL queries for symbols found in the ELF file:
+- Analyze flash and memory usage in your ELF image:
+
+![symbols](./images/elf-flash-and-memory-usage-light.png#only-light)
+![symbols](./images/elf-flash-and-memory-usage-dark.png#only-dark)
+
+- Run SQL queries for symbols within in the ELF file:
 
 ![symbols](./images/symbols-light.gif#only-light)
 ![symbols](./images/symbols-dark.gif#only-dark)
@@ -49,10 +82,3 @@ Toolchain support for [building](../projects/tasks.md) applications on Arm and R
 
 ![Memory layout](./images/memorylayout-light.gif#only-light)
 ![Memory layout](./images/memorylayout-dark.gif#only-dark)
-
-## Debug
-
-[Debugging](../debugging/index.md) features including breakpoints, disassembly, heterogeneous debug, etc.
-
-![Debug session](../debugging/images/launch-debug-session-light.png#only-light)
-![Debug session](../debugging/images/launch-debug-session-dark.png#only-dark)

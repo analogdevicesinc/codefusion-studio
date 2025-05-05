@@ -12,14 +12,15 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/fonts';
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+$body-padding: var(--accordion-body-padding, 0 12px 0 30px);
+$body-margin: var(--accordion-body-margin, 6px 0);
 
 .container {
 	border-bottom: 1px solid colors.$default-border;
 	font-size: fonts.$font-size-small;
 	color: colors.$default-foreground;
-
 	border-left: 2px solid transparent;
 
 	&:hover {
@@ -30,11 +31,15 @@
 .body {
 	display: flex;
 	flex-direction: column;
-	padding-left: 30px;
-	padding-right: 14px;
+	padding: $body-padding;
 	box-sizing: border-box;
 	gap: 13px;
-	margin: 6px 0;
+	margin: $body-margin;
+}
+.no-gap {
+	.body {
+		gap: 0;
+	}
 }
 
 .hasBorder {
@@ -44,15 +49,30 @@
 .header {
 	display: flex;
 	align-items: center;
-	padding: 8px 14px;
+	justify-content: space-between;
+	padding: 6px 8px;
+	padding-right: 12px;
 	height: 28px;
 	width: 100%;
 	box-sizing: border-box;
 	cursor: pointer;
 
-	& > span {
+	.leftSection {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		gap: 8px;
+	}
+
+	.chevron {
+		display: flex;
+		align-items: center;
+		transition: transform 0.3s ease-in-out;
+	}
+
+	.title {
 		font-weight: 700;
-		margin-left: 11px;
+		text-transform: uppercase;
 	}
 }
 
@@ -71,5 +91,14 @@
 
 	path {
 		fill: #{colors.$error};
+	}
+}
+
+.checkmarkIcon {
+	display: flex;
+	svg {
+		path {
+			fill: colors.$disabled-foreground;
+		}
 	}
 }

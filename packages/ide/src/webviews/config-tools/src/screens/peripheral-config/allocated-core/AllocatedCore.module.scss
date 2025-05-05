@@ -1,0 +1,63 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
+.cardContent {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px;
+	box-sizing: border-box;
+	width: 100%;
+
+	.labelContainer {
+		--type-ramp-minus1-font-size: 8px;
+		--type-ramp-minus1-line-height: 10px;
+
+		display: flex;
+		align-items: center;
+		gap: 8px;
+
+		.badge {
+			--type-ramp-minus1-font-size: 8px;
+			--design-unit: 3;
+			opacity: 0.9;
+
+			&::part(control) {
+				padding: 2px 6px;
+				height: 14px;
+				font-weight: 700;
+				gap: 10px;
+			}
+		}
+	}
+
+	.deleteIconWrapper {
+		height: 13px;
+
+		svg {
+			transition: transform 0.3s ease;
+			cursor: pointer;
+		}
+	}
+
+	p {
+		margin: 0;
+		@include fonts.body-b3;
+	}
+}

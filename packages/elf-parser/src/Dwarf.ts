@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-﻿/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-namespace */
 import * as Enums from "./enums.js";
 import { Helper } from "./Helper.js";
 import { ElfSectionHeader } from "./ElfSectionHeader.js";
@@ -43,6 +43,7 @@ export namespace Dwarf {
 		frame,
 		info,
 		line,
+		line_str,
 		loc,
 		macinfo,
 		pubnames,
@@ -59,13 +60,20 @@ export namespace Dwarf {
 		public name: DwarfData.DW_AT;
 		public form: DwarfData.DW_FORM;
 
+		public implicitConst = 0;
+
 		// Computed information
 		public type: DwarfData.ValueType;
 
-		constructor(name: DwarfData.DW_AT, form: DwarfData.DW_FORM) {
+		constructor(
+			name: DwarfData.DW_AT,
+			form: DwarfData.DW_FORM,
+			implicitConst: number,
+		) {
 			this.name = name;
 			this.form = form;
 			this.type = DwarfData.TypeResolver.resolveType(name, form);
+			this.implicitConst = implicitConst;
 		}
 	}
 
@@ -78,7 +86,7 @@ export namespace Dwarf {
 		public children: boolean = false;
 		public attributes: Array<AttributeSpec> = [];
 
-		public static read(cur: Cursor): AbbrevEntry {
+		public static read(cur: Cursor, debug: boolean): AbbrevEntry {
 			let ret = new AbbrevEntry();
 
 			// Section 7.5.3
@@ -96,24 +104,24 @@ export namespace Dwarf {
 					break;
 				}
 
-				/*
-				console.log(
-					"ABBREV: name:0x",
-					name.toString(16),
-					" / ",
-					//name as DwarfData.DW_AT,
-					DwarfData.DW_AT[name],
+				// For implicit_const, read the constant
+				let implicitConst = 0;
+				if (form === DwarfData.DW_FORM.implicit_const) {
+					implicitConst = cur.sleb128();
+				}
 
-					" form:0x",
-					form.toString(16),
-					" / ",
-					//form as DwarfData.DW_FORM,
-					DwarfData.DW_FORM[form],
-				);
-				*/
+				//if (debug) {
+				//	console.log(`ABBREV: tag:${DwarfData.DW_TAG[ret.tag]} name:0x${name.toString(16)}/${DwarfData.DW_AT[name]} ` +
+				//	    `form:0x${form.toString(16)}/${DwarfData.DW_FORM[form]} ` +
+				//	    (form === DwarfData.DW_FORM.implicit_const ? `IC:${implicitConst}` : ""));
+				//}
 
 				ret.attributes.push(
-					new AttributeSpec(name as DwarfData.DW_AT, form as DwarfData.DW_FORM),
+					new AttributeSpec(
+						name as DwarfData.DW_AT,
+						form as DwarfData.DW_FORM,
+						implicitConst,
+					),
 				);
 			}
 			return ret;
@@ -150,6 +158,10 @@ export namespace Dwarf {
 
 		public size(): number {
 			return this.end - this.begin;
+		}
+
+		public clone(): Section {
+			return Object.assign({}, this);
 		}
 	}
 
@@ -289,6 +301,10 @@ export namespace Dwarf {
 
 				case DwarfData.DW_FORM.indirect:
 					this.skipForm(this.uleb128() as DwarfData.DW_FORM);
+					break;
+
+				case DwarfData.DW_FORM.implicit_const:
+					// No need to skip implicit_const
 					break;
 
 				default:
@@ -477,6 +493,7 @@ export namespace Dwarf {
 		public secAbbrev: Section = null;
 		public secLoc: Section = null;
 		public secLine: Section = null;
+		public secLineStr: Section = null;
 		public secStr: Section = null;
 		public secRanges: Section = null;
 
@@ -518,6 +535,7 @@ export namespace Dwarf {
 			secAbbrev: Section,
 			secLoc: Section,
 			secLine: Section,
+			secLineStr: Section,
 			secStr: Section,
 			secRanges: Section,
 			offset: number,
@@ -527,6 +545,7 @@ export namespace Dwarf {
 			this.secAbbrev = secAbbrev;
 			this.secLoc = secLoc;
 			this.secLine = secLine;
+			this.secLineStr = secLineStr;
 			this.secStr = secStr;
 			this.secRanges = secRanges;
 
@@ -538,12 +557,14 @@ export namespace Dwarf {
 
 			subCursor.skipInitialLength();
 			this.version = subCursor.fixedUInt16();
-			if (this.version > 4)
+
+			if (this.version > 5)
 				throw new Error(
 					"Unsupported compilation unit version " +
 						this.version +
-						". Supports up to 4",
+						". Supports up to 5",
 				);
+
 			// .debug_abbrev-relative offset of this unit's abbrevs
 			let debugAbbrevOffset: number;
 			if (this.version >= 5) {
@@ -601,7 +622,7 @@ export namespace Dwarf {
 			const c = new Cursor(this.dv, this.secAbbrev, this.abbrevOffset);
 
 			let entry: AbbrevEntry = null;
-			while ((entry = AbbrevEntry.read(c))) {
+			while ((entry = AbbrevEntry.read(c, this.dw.debug))) {
 				this.abbrevsMap.set(entry.code, entry);
 			}
 
@@ -648,10 +669,12 @@ export namespace Dwarf {
 			this.lt = new DwarfLine.LineTable(
 				this.dv,
 				this.secLine,
+				this.secLineStr,
 				d.getValue(DwarfData.DW_AT.stmt_list).asSecOffset(),
 				this.subsec.addrSize,
 				compDir,
 				d.getValue(DwarfData.DW_AT.name).asString(),
+				this.dw.debug,
 			);
 
 			return this.lt;
@@ -687,19 +710,186 @@ export namespace Dwarf {
 			const root = this.getRoot();
 			if (root) {
 				this.traverseDie(this, root, 0, fn);
-				/*
-				// Not recursive
-				let next = root
-				while ((next = DwarfDie.Die.next(dwarf, next))) {
-					this.dumpDie(dwarf, cu, next, 0)
-				}
-				*/
 			}
 		}
 
 		public contains(addr: number): boolean {
 			return addr >= this.lowPc && addr < this.highPc;
 		}
+
+		// Prints detailed DIE information
+		public printDie(
+			cu: Dwarf.CompilationUnit,
+			die: DwarfDie.Die,
+			depth: number,
+		) {
+			console.log(
+				`<${depth}><0x${die.getSectionOffset().toString(16)}> DIE tag:${DwarfData.DW_TAG[die.tag]} acode:${die.abbrev.code} children:${die.abbrev.children}`,
+			);
+
+			if (die.dieName !== undefined) {
+				console.log(`DIE name: "${die.dieName}"`);
+			}
+
+			if (die.path) {
+				console.log(`path: "${die.path}" line:${die.line} col:${die.column}`);
+			}
+
+			if (die.ranges) {
+				for (const r of die.ranges) {
+					console.log(
+						`range: [0x${r.low.toString(16)} ... 0x${r.high.toString(16)}]`,
+					);
+				}
+			}
+
+			for (const spec of die.abbrev.attributes) {
+				let str = `DIE attr: name:${DwarfData.DW_AT[spec.name]} form:${DwarfData.DW_FORM[spec.form]}`;
+
+				const lt = cu.getLineTable();
+
+				let val = null;
+				switch (spec.form) {
+					case DwarfData.DW_FORM.string:
+					case DwarfData.DW_FORM.strp: {
+						val = `"${die.getValue(spec.name).asString()}"`;
+						break;
+					}
+
+					case DwarfData.DW_FORM.addr: {
+						val = `0x${die.getValue(spec.name).asAddress().toString(16)}`;
+						break;
+					}
+
+					case DwarfData.DW_FORM.data1:
+					case DwarfData.DW_FORM.data2:
+					case DwarfData.DW_FORM.data4:
+					case DwarfData.DW_FORM.implicit_const: {
+						val = die.getValue(spec.name).asUConstant();
+						break;
+					}
+
+					case DwarfData.DW_FORM.exprloc: {
+						try {
+							val = `0x${die.getValue(spec.name).asExprLock().evaluate([]).value.toString(16)}`;
+						} catch (error) {
+							console.log(
+								`DIE: Cannot parse value for DIE name:${DwarfData.DW_AT[spec.name]} form:${DwarfData.DW_FORM[spec.form]}: ${error}`,
+							);
+
+							val = "NOT IMPLEMENTED!";
+						}
+
+						break;
+					}
+				}
+
+				str += ` = ${val}`;
+
+				const valn = val as number;
+				switch (spec.name) {
+					case DwarfData.DW_AT.decl_file: {
+						if (lt && lt.fileNames.length > valn) {
+							str += " / ";
+							console.log(`DIE: fileIdx:${valn} nFiles:${lt.fileNames.length}`);
+							str += lt.fileNames[valn].path;
+						}
+
+						break;
+					}
+
+					case DwarfData.DW_AT.decl_line:
+					case DwarfData.DW_AT.decl_column: {
+						break;
+					}
+				}
+
+				console.log(str);
+			}
+		} // printDie
+
+		public print(doLineTables: boolean, doAbbrevs: boolean, doDies: boolean) {
+			console.log(
+				`CU: version:${this.version}` +
+					` size:${this.size}` +
+					` abbrev_offset:${this.abbrevOffset}` +
+					` address_size:${this.addressSize}` +
+					` nDies:${this.dies.length}` +
+					` pc:[0x${this.lowPc.toString(16)} ... 0x${this.highPc.toString(16)}]`,
+			);
+
+			if (doLineTables) {
+				const lt = this.getLineTable();
+				if (lt) {
+					console.log("CU lines:");
+					console.log("  cuOffset:0x" + lt.cuOffset.toString(16));
+					console.log("  LT version:" + lt.version);
+					console.log("  cmp_dir:", lt.compDir);
+					console.log("  line_base:" + lt.lineBase);
+					console.log("  line_range:" + lt.lineRange);
+					console.log("  opcode_base:" + lt.opcodeBase);
+
+					console.log(
+						"  " + lt.includeDirectories.length + " include directories:",
+					);
+					let idx = 0;
+					for (const inc of lt.includeDirectories) {
+						console.log(`  [${idx}]: ${inc}`);
+						idx++;
+					}
+
+					console.log("  " + lt.fileNames.length + " file names:");
+					idx = 0;
+					for (const f of lt.fileNames) {
+						console.log(`  [${idx}]: ${f.path}`);
+						idx++;
+					}
+
+					console.log("  Address to entry map:");
+					idx = 0;
+					// for (const entry of lt.entries) { // slow. map is faster
+					for (const [, entry] of lt.addressToEntryMap) {
+						console.log(
+							`  [${idx}]:` +
+								` path:${entry.file.path}` +
+								` line:${entry.line}` +
+								` col:${entry.column}` +
+								` stmt:${entry.isStmt}` +
+								` address:0x${entry.address.toString(16)}`,
+						);
+						idx++;
+					}
+				} else {
+					console.log("No DWARF line_table found!");
+				}
+			}
+
+			if (doAbbrevs) {
+				this.forceAbbrevs();
+
+				console.log("abbrevs_map:");
+				for (const [key, value] of this.abbrevsMap) {
+					console.log(
+						`  [${key}]:` +
+							` code:${value.code}` +
+							` tag:${DwarfData.DW_TAG[value.tag]}` +
+							` children:${value.children}` +
+							` nAttributes(${value.attributes.length})`,
+					);
+					for (const spec of value.attributes) {
+						console.log(
+							`    name:${DwarfData.DW_AT[spec.name]} form:${DwarfData.DW_FORM[spec.form]}`,
+						);
+					}
+				}
+			}
+
+			if (doDies) {
+				for (const die of this.dies) {
+					this.printDie(this, die, die.depth);
+				}
+			}
+		} // print
 	} // CompilationUnit
 
 	export class Dwarf {
@@ -709,6 +899,7 @@ export namespace Dwarf {
 		public secAbbrev: Section = null;
 		public secLoc: Section = null;
 		public secLine: Section = null;
+		public secLineStr: Section = null;
 		public secStr: Section = null;
 		public secRanges: Section = null;
 
@@ -719,7 +910,7 @@ export namespace Dwarf {
 		// Max DIE depth
 		public maxDepth = 0;
 
-		private debug = false;
+		public debug = false;
 
 		constructor(
 			dv: DataView,
@@ -727,6 +918,7 @@ export namespace Dwarf {
 			debugAbbrev: ElfSectionHeader,
 			debugLoc: ElfSectionHeader,
 			debugLine: ElfSectionHeader,
+			debugLineStr: ElfSectionHeader,
 			debugStr: ElfSectionHeader,
 			debugRanges: ElfSectionHeader,
 			debug: boolean,
@@ -808,6 +1000,15 @@ export namespace Dwarf {
 					this.secInfo.fmt,
 				);
 			}
+			if (debugLineStr) {
+				this.secLineStr = new Section(
+					SectionType.line_str,
+					Number(debugLineStr.offset),
+					Number(debugLineStr.size),
+					this.secInfo.ord,
+					this.secInfo.fmt,
+				);
+			}
 			if (debugStr) {
 				this.secStr = new Section(
 					SectionType.str,
@@ -837,6 +1038,7 @@ export namespace Dwarf {
 						this.secAbbrev,
 						this.secLoc,
 						this.secLine,
+						this.secLineStr,
 						this.secStr,
 						this.secRanges,
 						infocur.getSectionOffset(),
@@ -892,20 +1094,6 @@ export namespace Dwarf {
 			return -1;
 		}
 
-		public exactLineTableKey(
-			arr: Array<number>,
-			target: number,
-		): number {
-			for (let i = 0; i < arr.length; ++i) {
-				const key = arr[i];
-				if (key === target) {
-					return i;
-				}
-			}
-			return -1;
-		}
-
-
 		// Binary search
 		public binaryClosestLineTableKey(
 			arr: Array<number>,
@@ -942,6 +1130,7 @@ export namespace Dwarf {
 
 			// DIEs
 			let dies = new Array<DwarfDie.Die>();
+			let namedDies = new Map<string, DwarfDie.Die>();
 
 			// LTs
 			const ltMap = new Map<number, DwarfLine.LineTableEntry>();
@@ -950,8 +1139,12 @@ export namespace Dwarf {
 			// Fill all dies and all line table entries from all CUs
 			for (const cu of this.compilationUnits) {
 				for (const die of cu.dies) {
+					// If the die has source information
 					if (die.path) {
 						dies.push(die);
+						if (die.dieName !== undefined && die.dieName.length > 0) {
+							namedDies.set(die.dieName, die);
+						}
 					}
 				}
 
@@ -978,19 +1171,24 @@ export namespace Dwarf {
 						(sec) => sec.index === symData.sectionHeaderIndex,
 					)[0];
 
-					if (
-						symData.value > 0 &&
-						section &&
-						symData.infoType != Enums.sym_type.SECTION
-					) {
+					if (section && symData.infoType != Enums.sym_type.SECTION) {
 						const addr = Number(symData.value);
 
-						// Populate from Dies with file line info
-						let idx = -1;
-						idx = this.binaryClosestDIE(dies, addr);
-						if (idx != -1) {
-							const die = dies[idx];
-							//if (!die.contains(addr)) { console.log("DWARF: binaryClosestIdx ERROR!"); }
+						/// Populate from Dies with file line info
+
+						// Search by DIE name
+						let die = namedDies.get(symData.nameStr);
+						if (addr > 0 && (die === undefined || !die.contains(addr))) {
+							// Binary search for the closest address when address is not 0
+							const idx = this.binaryClosestDIE(dies, addr);
+							if (idx != -1) {
+								die = dies[idx];
+							}
+						} else if (die) {
+							//console.log(`DWARF: found named DIE "${symData.nameStr}" with address 0x${addr.toString(16)} path:${die.path}:${die.line} diff:${addr - die.lowPc}`);
+						}
+
+						if (die) {
 							symData.path = die.path;
 							symData.line = die.line;
 							if (die.column > 0) symData.column = die.column;
@@ -998,19 +1196,17 @@ export namespace Dwarf {
 							symData.debugAddress = die.lowPc;
 
 							nFromDies++;
-						} else {
+						} else if (addr > 0) {
 							// Populate from line_tables
-							// Functions will be searched using binary search, while other exact
-							if (symData.infoType == Enums.sym_type.FUNC) {
-								idx = this.binaryClosestLineTableKey(keys, addr);
-							} else {
-								idx = this.exactLineTableKey(keys, addr);
-							}
+							const idx = this.binaryClosestLineTableKey(keys, addr);
 
 							if (idx !== -1) {
 								const entry = ltMap.get(keys[idx]);
 								// Not too far
-								if (addr >= entry.address && addr <= entry.address + LineTableMaxDistance) {
+								if (
+									addr >= entry.address &&
+									addr <= entry.address + LineTableMaxDistance
+								) {
 									symData.path = entry.file.path;
 									symData.line = entry.line;
 									symData.column = entry.column;
@@ -1031,5 +1227,5 @@ export namespace Dwarf {
 					`DWARF: Matching took ${diff} millis. nFromDies:${nFromDies} nFromLineTables:${nFromLineTables}`,
 				);
 		}
-	} // Dwarf
+	} // Dwarf class
 } // namespace Dwarf

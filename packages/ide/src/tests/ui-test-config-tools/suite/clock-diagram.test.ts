@@ -12,27 +12,14 @@
  * limitations under the License.
  *
  */
-import {
-  By,
-  CustomEditor,
-  EditorView,
-  VSBrowser,
-  WebView,
-} from "vscode-extension-tester";
+import { By, EditorView, VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
 import * as path from "path";
 
 describe("Clock Diagram", () => {
-  let browser: VSBrowser;
-  let view: WebView;
-
-  before(function () {
-    this.timeout(60000);
-
-    browser = VSBrowser.instance;
-  });
-
   it("Renders the clock diagram inside vscode", async () => {
+    const browser = VSBrowser.instance;
+
     await browser.openResources(
       path.join(
         "src",
@@ -45,33 +32,63 @@ describe("Clock Diagram", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const editor = new CustomEditor();
+    const view = new WebView();
 
-    view = await editor.getWebView();
+    await view.wait(60000);
 
     await view.switchToFrame();
 
     const navItem = await view.findWebElement(By.css("#clockconfig"));
 
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    await navItem.click();
 
-      // assert diagram rendered
-      expect(await view.findWebElement(By.css("#adi_diagram"))).to.exist;
+    await new Promise((resolve) => setTimeout(resolve, 6000));
 
-      expect(
-        await view.findWebElement(
-          By.css(
-            "#a86d8eb0-1766-11ef-a073-695fa460553d > rect.adi_diagram_content_node",
-          ),
+    // assert diagram rendered
+    expect(await view.findWebElement(By.css("#adi_diagram"))).to.exist;
+
+    const muxAccordion = await view.findWebElement(
+      By.css("[data-test='accordion:MUX']"),
+    );
+
+    await muxAccordion.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const sysMux = await view.findWebElement(
+      By.css("[data-test='SYS_OSC Mux']"),
+    );
+
+    await sysMux.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const formContainer = await view.findWebElement(
+      By.css("[data-test='clock-details:options']"),
+    );
+
+    expect(formContainer).to.exist;
+
+    const option = formContainer.findElement(
+      By.css("[data-test='MUX-SYS_OSC Mux']"),
+    );
+
+    expect(option).to.exist;
+
+    expect(
+      await view.findWebElement(
+        By.css(
+          "#a86d8eb0-1766-11ef-a073-695fa460553d > rect.adi_diagram_content_node",
         ),
-      ).to.exist;
-    });
+      ),
+    ).to.exist;
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     await view.switchBack();
 
     const ev = new EditorView();
 
     await ev.closeAllEditors();
-  }).timeout(60_000);
+  }).timeout(60000);
 });

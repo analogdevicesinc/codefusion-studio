@@ -16,46 +16,23 @@
 import * as vscode from "vscode";
 
 import {
-  BROWSE_MAXIM_EXAMPLES_COMMAND_ID,
   ELF_EXPLORER_COMMANDS,
-  NEW_PROJECT_COMMAND_ID,
   OPEN_HOME_PAGE_COMMAND_ID,
   OPEN_CONFIG_TOOLS_GETTING_STARTED_COMMAND_ID,
-  OPEN_PROJECT_COMMAND_ID,
   OPEN_WALKTHROUGH_COMMAND_ID,
   CONFIG_TOOLS_COMMANDS,
+  WORKSPACE_CREATION_COMMANDS,
 } from "../commands/constants";
 import {
-  EXAMPLES,
   HOME as HOMEPAGE,
   CONFIG_TOOLS,
   PROJECTS,
   ELF_FILE_EXPLORER,
-} from "../constants";
-
-class ViewContainerItemLink extends vscode.TreeItem {
-  constructor(
-    public readonly label: string,
-    public readonly tooltip: string,
-    public readonly commandId?: string,
-    public readonly iconPath?: string | vscode.ThemeIcon,
-    public readonly collapsible: vscode.TreeItemCollapsibleState = vscode
-      .TreeItemCollapsibleState.None,
-    public readonly contextValue?: string,
-  ) {
-    super(label, collapsible);
-    if (commandId) {
-      this.command = {
-        command: commandId,
-        title: label,
-        arguments: [],
-      };
-    }
-    this.iconPath = iconPath;
-    this.tooltip = tooltip;
-    this.contextValue = contextValue;
-  }
-}
+  CFS_WORKSPACE,
+  CONFIGURE_WORKSPACE,
+  OPEN_WORKSPACE,
+} from "./constants";
+import { ViewContainerItem } from "./view-container-item";
 
 /**
  * This provider is responsible for supplying data in a tree structure to the welcome view container.
@@ -64,63 +41,71 @@ export class QuickAccessProvider
   implements vscode.TreeDataProvider<vscode.TreeItem>
 {
   homePageItems: vscode.TreeItem[] = [
-    new ViewContainerItemLink(
-      "Open Home Page",
-      "Open the CFS Home Page",
-      OPEN_HOME_PAGE_COMMAND_ID,
-      new vscode.ThemeIcon("home"),
-    ),
-    new ViewContainerItemLink(
-      "Walkthrough",
-      "Get started with the CodeFusion Studio VS Code extension",
-      OPEN_WALKTHROUGH_COMMAND_ID,
-      new vscode.ThemeIcon("compass"),
-    ),
+    new ViewContainerItem({
+      label: "Open Home Page",
+      tooltip: "Open the CFS Home Page",
+      commandId: OPEN_HOME_PAGE_COMMAND_ID,
+      icon: new vscode.ThemeIcon("home"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+    new ViewContainerItem({
+      label: "Walkthrough",
+      tooltip: "Get started with the CodeFusion Studio VS Code extension",
+      commandId: OPEN_WALKTHROUGH_COMMAND_ID,
+      icon: new vscode.ThemeIcon("compass"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
   ];
 
-  projectTreeItems: vscode.TreeItem[] = [
-    new ViewContainerItemLink(
-      "New Project",
-      "Create a new project",
-      NEW_PROJECT_COMMAND_ID,
-      new vscode.ThemeIcon("file-add"),
-    ),
-    new ViewContainerItemLink(
-      "Open Project",
-      "Open an existing project",
-      OPEN_PROJECT_COMMAND_ID,
-      new vscode.ThemeIcon("go-to-file"),
-    ),
-    new ViewContainerItemLink(
-      EXAMPLES,
-      "Browse existing examples",
-      BROWSE_MAXIM_EXAMPLES_COMMAND_ID,
-      new vscode.ThemeIcon("file-code"),
-    ),
+  workspaceTreeItems: vscode.TreeItem[] = [
+    new ViewContainerItem({
+      label: "New Workspace",
+      tooltip: "Create a New Workspace",
+      commandId: WORKSPACE_CREATION_COMMANDS.NEW_WORKSPACE,
+      icon: new vscode.ThemeIcon("new-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+    new ViewContainerItem({
+      label: OPEN_WORKSPACE.label,
+      tooltip: OPEN_WORKSPACE.tooltip,
+      commandId: WORKSPACE_CREATION_COMMANDS.OPEN_CFS_WORKSPACE_COMMAND_ID,
+      icon: new vscode.ThemeIcon("go-to-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+    new ViewContainerItem({
+      label: CONFIGURE_WORKSPACE.label,
+      tooltip: CONFIGURE_WORKSPACE.tooltip,
+      commandId: WORKSPACE_CREATION_COMMANDS.CONFIG_CFS_WORKSPACE_COMMAND_ID,
+      icon: new vscode.ThemeIcon("gear"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
   ];
 
   configTreeItems: vscode.TreeItem[] = [
-    new ViewContainerItemLink(
-      "Open Config File",
-      "Open an existing config file",
-      CONFIG_TOOLS_COMMANDS.LOAD_CONFIG_FILE,
-      new vscode.ThemeIcon("go-to-file"),
-    ),
-    new ViewContainerItemLink(
-      "Config Tools Guide",
-      "Help getting set up or using the pin and clock config tool",
-      OPEN_CONFIG_TOOLS_GETTING_STARTED_COMMAND_ID,
-      new vscode.ThemeIcon("question"),
-    ),
+    new ViewContainerItem({
+      label: "Open Config File",
+      tooltip: "Open an existing config file",
+      commandId: CONFIG_TOOLS_COMMANDS.LOAD_CONFIG_FILE,
+      icon: new vscode.ThemeIcon("go-to-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+    new ViewContainerItem({
+      label: "Config Tools Guide",
+      tooltip: "Help getting set up or using the pin and clock config tool",
+      commandId: OPEN_CONFIG_TOOLS_GETTING_STARTED_COMMAND_ID,
+      icon: new vscode.ThemeIcon("question"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
   ];
 
   elfFileExplorerTreeItems: vscode.TreeItem[] = [
-    new ViewContainerItemLink(
-      "Open ELF File",
-      "Open an ELF file to examine",
-      ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE,
-      new vscode.ThemeIcon("go-to-file"),
-    ),
+    new ViewContainerItem({
+      label: "Open ELF File",
+      tooltip: "Open an ELF file to examine",
+      commandId: ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE,
+      icon: new vscode.ThemeIcon("go-to-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
   ];
 
   /**
@@ -142,8 +127,8 @@ export class QuickAccessProvider
       switch (element.label) {
         case HOMEPAGE:
           return Promise.resolve(this.homePageItems);
-        case PROJECTS:
-          return Promise.resolve(this.projectTreeItems);
+        case CFS_WORKSPACE:
+          return Promise.resolve(this.workspaceTreeItems);
         case CONFIG_TOOLS:
           return Promise.resolve(this.configTreeItems);
         case ELF_FILE_EXPLORER:
@@ -153,37 +138,29 @@ export class QuickAccessProvider
       }
     } else {
       return Promise.resolve([
-        new ViewContainerItemLink(
-          HOMEPAGE,
-          "Get started with CFS",
-          undefined,
-          undefined,
-          vscode.TreeItemCollapsibleState.Expanded,
-        ),
-        new ViewContainerItemLink(
-          PROJECTS,
-          "Project actions",
-          undefined,
-          undefined,
-          vscode.TreeItemCollapsibleState.Expanded,
-          "projectActions",
-        ),
-        new ViewContainerItemLink(
-          CONFIG_TOOLS,
-          "Config tool actions",
-          undefined,
-          undefined,
-          vscode.TreeItemCollapsibleState.Expanded,
-          "configTools",
-        ),
-        new ViewContainerItemLink(
-          ELF_FILE_EXPLORER,
-          "ELF file explorer actions",
-          undefined,
-          undefined,
-          vscode.TreeItemCollapsibleState.Expanded,
-          "elfExplorer",
-        ),
+        new ViewContainerItem({
+          label: HOMEPAGE,
+          tooltip: "Get started with CFS",
+          collapsible: vscode.TreeItemCollapsibleState.Expanded,
+        }),
+        new ViewContainerItem({
+          label: CFS_WORKSPACE,
+          tooltip: "Workspace actions",
+          collapsible: vscode.TreeItemCollapsibleState.Expanded,
+          contextValue: "workspaceActions",
+        }),
+        new ViewContainerItem({
+          label: CONFIG_TOOLS,
+          tooltip: "Config tool actions",
+          collapsible: vscode.TreeItemCollapsibleState.Expanded,
+          contextValue: "configTools",
+        }),
+        new ViewContainerItem({
+          label: ELF_FILE_EXPLORER,
+          tooltip: "ELF file explorer actions",
+          collapsible: vscode.TreeItemCollapsibleState.Expanded,
+          contextValue: "elfExplorer",
+        }),
       ]);
     }
   }

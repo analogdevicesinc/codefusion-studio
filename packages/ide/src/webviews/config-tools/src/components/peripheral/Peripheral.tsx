@@ -14,45 +14,42 @@
  */
 import {useAppDispatch} from '../../state/store';
 import {setActivePeripheral} from '../../state/slices/peripherals/peripherals.reducer';
-import {useActivePeripheral} from '../../state/slices/peripherals/peripherals.selector';
-import {memo, useEffect} from 'react';
+import {memo, useCallback, useEffect} from 'react';
 import Function from '../../screens/pinmux/function/Function';
-import type {Signal} from '../../utils/json-formatter';
-import {
-	focusPinSet,
-	unfocusPinSet
-} from '../../state/slices/pins/pins.reducer';
-import {useFocusedPins} from '../../state/slices/pins/pins.selector';
-
+import {focusPinSet} from '../../state/slices/pins/pins.reducer';
+import type {FormattedPeripheralSignal} from '@common/types/soc';
+import ConflictIcon from '../../../../common/icons/Conflict';
 import Accordion from '@common/components/accordion/Accordion';
+import styles from '@common/components/accordion/Accordion.module.scss';
 
-type PeripheralProps = {
-	readonly title: string;
-	readonly signals: Signal[];
-	readonly isLastPeripheralGroup: boolean;
-};
+type PeripheralProps = Readonly<{
+	isOpen: boolean;
+	hasPinConflict: boolean;
+	signals: Array<
+		FormattedPeripheralSignal & {currentTarget?: string}
+	>;
+	title: string;
+	isLastPeripheralGroup: boolean;
+}>;
 
 function Peripheral({
-	title,
+	isOpen,
+	hasPinConflict,
 	signals,
+	title,
 	isLastPeripheralGroup
 }: PeripheralProps) {
 	const dispatch = useAppDispatch();
-	const currentPeripheral = useActivePeripheral();
-	const alreadyFocusedPins = useFocusedPins();
 
-	const targetPins = signals
+	const targetPinsIds = signals
 		.map(signal => signal.currentTarget ?? '')
 		.filter(pinId => pinId !== '' && pinId !== undefined);
 
-	const toggleExpandMenu = (name: string) => {
-		dispatch(setActivePeripheral(name));
-	};
-
-	const isOpen = title === currentPeripheral;
-
-	const shouldRenderPeripheral = signals.some(
-		signal => signal.pins.length > 0
+	const toggleExpandMenu = useCallback(
+		(name: string) => {
+			dispatch(setActivePeripheral(name));
+		},
+		[dispatch]
 	);
 
 	const sortedSignals = signals.sort((a, b) =>
@@ -63,46 +60,47 @@ function Peripheral({
 	);
 
 	useEffect(() => {
-		const areTargetPinsFocused = targetPins.every(pin =>
-			alreadyFocusedPins.includes(pin)
-		);
-
-		if (isOpen && !areTargetPinsFocused) {
-			dispatch(unfocusPinSet(alreadyFocusedPins));
-			dispatch(focusPinSet(targetPins));
+		if (isOpen && targetPinsIds.length > 0) {
+			dispatch(focusPinSet(targetPinsIds));
 		}
-
-		return () => {
-			if (isOpen && areTargetPinsFocused) {
-				dispatch(unfocusPinSet(targetPins));
-			}
-		};
-	}, [isOpen, targetPins, alreadyFocusedPins, dispatch]);
-
-	if (!shouldRenderPeripheral) return null;
+	}, [dispatch, isOpen, targetPinsIds]);
 
 	return (
 		<Accordion
 			title={title}
+			icon={
+				hasPinConflict ? (
+					<div
+						data-test={`accordion:conflict:${title}`}
+						id={`${title}-conflict`}
+						className={styles.conflictIcon}
+					>
+						<ConflictIcon />
+					</div>
+				) : null
+			}
 			body={
-				<>
-					{sortedSignals.map(signal => {
-						if (signal.pins.length === 0) return null;
+				isOpen ? (
+					<>
+						{sortedSignals.map(signal => {
+							if (signal.pins.length === 0) return null;
 
-						return (
-							<Function
-								key={signal.name}
-								peripheralGroup={title}
-								name={signal.name}
-								pins={signal.pins}
-								isLastIndex={isLastPeripheralGroup}
-							/>
-						);
-					})}
-				</>
+							return (
+								<Function
+									key={signal.name}
+									peripheralGroup={title}
+									name={signal.name}
+									pins={signal.pins}
+									isLastIndex={isLastPeripheralGroup}
+								/>
+							);
+						})}
+					</>
+				) : null
 			}
 			isOpen={isOpen}
-			toggleExpandMenu={toggleExpandMenu}
+			variant='no-gap'
+			toggleExpand={toggleExpandMenu}
 		/>
 	);
 }

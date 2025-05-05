@@ -12,8 +12,13 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/fonts';
-@use '@common/styles/colors';
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+@use '#table' as table;
+
+.table {
+	@include table.table-styles;
+}
 
 .header {
 	font-size: 18px;
@@ -21,25 +26,4 @@
 	line-height: 22px;
 	color: colors.$default-foreground;
 	margin-bottom: 12px;
-}
-.tooltip-container {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	*[class*='tooltipContainer'] {
-		margin: -5px 0;
-	}
-}
-
-.icon-button {
-	> * {
-		width: 14px;
-		height: 14px;
-	}
-}
-.last {
-	text-align: right;
-}
-.first {
-	text-align: left;
 }

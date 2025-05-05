@@ -44,7 +44,7 @@ import {
 import { WARNING } from "../messages";
 import {
   CORTEX_DEBUG_ARM_EMBEDDED_DEBUG_CONFIGURATION,
-  CPP_RISCV_DEBUG_CONFIGURATION,
+  CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION,
 } from "../resources/debugConfigurations";
 import {
   ARM_NONE_EABI_TOOLCHAIN_NAME,
@@ -55,7 +55,7 @@ import { resolveVariables } from "../utils/resolveVariables";
 import { Utils } from "../utils/utils";
 
 import { SELECT_TOOLCHAIN } from "./constants";
-import { MSDKToolchain } from "../toolchains/msdk";
+import { MSDKToolchain } from "../toolchains/msdk/msdk";
 import path from "path";
 import { SocDataType } from "../webview/common/types/soc-data";
 import { SocDataObj } from "../panels/data/soc-data-obj";
@@ -115,7 +115,7 @@ export class CreateDebugConfiguration {
           debugConfigArr.push(CORTEX_DEBUG_ARM_EMBEDDED_DEBUG_CONFIGURATION);
           break;
         case RISCV_NONE_ELF_TOOLCHAIN_NAME:
-          debugConfigArr.push(CPP_RISCV_DEBUG_CONFIGURATION);
+          debugConfigArr.push(CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION);
           break;
       }
     } else {
@@ -420,7 +420,7 @@ export class CreateDebugConfiguration {
   }
 
   /**
-   * Searches for setting file/folder and allows user to select it via quickpick menu
+   * Searches for setting file/folder and allows user to select it via quick pick menu
    */
   static async selectSetting(
     settingType: string,
@@ -472,7 +472,7 @@ export class CreateDebugConfiguration {
         isProgramFile = true;
         browsePath = currentWorkspaceFolder.uri.fsPath;
         searchQuery = "**/*.elf";
-        placeHolderString = `Select ARM Program File for ${projectName}`;
+        placeHolderString = `Select Arm Program File for ${projectName}`;
         break;
 
       // Configuration for RISCV program file search
@@ -505,7 +505,7 @@ export class CreateDebugConfiguration {
         const interfaceResolvedPath = resolveVariables(openocdScriptsInterface);
         browsePath = interfaceResolvedPath + "/interface";
         searchQuery = interfaceResolvedPath + "/interface/*.cfg";
-        placeHolderString = `Select ARM OpenOCD Interface for ${projectName}`;
+        placeHolderString = `Select Arm OpenOCD Interface for ${projectName}`;
         break;
 
       // Configuration for openocd target search
@@ -521,17 +521,18 @@ export class CreateDebugConfiguration {
         );
         settingValue = confSetting.get(OPENOCD_TARGET);
         const openocdPathTarget = confSetting.get(OPENOCD_PATH);
-        const openocdScrptsTarget = openocdPathTarget + "/share/openocd";
+        const openocdScriptsTarget = openocdPathTarget + "/share/openocd";
         const cmsisRootTarget = confCmsisSetting.get(ROOT);
         const cmsisScriptsTarget = cmsisRootTarget + "/**/openocd";
-        const openOcdTargetResolvedPath = resolveVariables(openocdScrptsTarget);
+        const openOcdTargetResolvedPath =
+          resolveVariables(openocdScriptsTarget);
         const cmsisRootTargetResolvedPath =
           resolveVariables(cmsisScriptsTarget);
         browsePath = openOcdTargetResolvedPath + "/scripts";
         openOcdSearchQuery =
           openOcdTargetResolvedPath + "/scripts/**/{target,board}/*.cfg";
         cmsisRootSearchQuery = cmsisRootTargetResolvedPath + "/**/*.cfg";
-        placeHolderString = `Select ARM OpenOCD Target for ${projectName}`;
+        placeHolderString = `Select Arm OpenOCD Target for ${projectName}`;
         break;
 
       // Configuration for openocd interface search
@@ -565,12 +566,12 @@ export class CreateDebugConfiguration {
         );
         settingValue = confSetting.get(OPENOCD_RISCV_TARGET);
         const openocdPathRiscvTarget = confSetting.get(OPENOCD_PATH);
-        const openocdScrptsRiscvTarget =
+        const openocdScriptsRiscvTarget =
           openocdPathRiscvTarget + "/share/openocd";
         const cmsisRootRiscvTarget = confCmsisRiscvSetting.get(ROOT);
         const cmsisScriptsRiscvTarget = cmsisRootRiscvTarget + "/**/openocd";
         const openOcdRiscvTargetResolvedPath = resolveVariables(
-          openocdScrptsRiscvTarget,
+          openocdScriptsRiscvTarget,
         );
         const cmsisRootRiscvTargetResolvedPath = resolveVariables(
           cmsisScriptsRiscvTarget,

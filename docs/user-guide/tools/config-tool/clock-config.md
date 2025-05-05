@@ -1,12 +1,12 @@
 ---
 description: Clock Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2024-09-02
+date: 2025-04-24
 ---
 
 # Clock Configuration
 
-The Clock Configuration is a screen within the Config Tool. For details on accessing the Config Tool and using the output see [Config Tool](./index.md).
+The Clock Configuration feature allows you to configure and manage clock sources, dividers, and multiplexers to control the clock frequencies supplied to processor cores and peripherals. It ensures clock settings comply with hardware constraints and allows code generation to apply the desired configuration.
 
 ## Clock config diagram
 
@@ -29,7 +29,7 @@ The diagram can be zoomed in/out using the scroll wheel of your mouse or by usin
 ![Fit To Screen](images/icon-fit-to-screen-light.png#only-light)
  resizes the diagram to the size of your window.  
 
-The diagram can be dragged around the window using the left/primary mouse button or equivalent touchscreen gestures.
+The diagram can be dragged within the window using the left or primary mouse button.
 
 ### Node types
 
@@ -57,13 +57,15 @@ Only valid options will be enabled by the tool.
 Clicking **back** will take you back to the list.  
 
 !!! note
-    Some clock settings such as external input and output will require a corresponding pin to be configured via the [Pin Config](./pin-config.md) tool before it can be enabled here.
+    Some clock settings, such as external input and output, require a corresponding pin to be configured in the [Pin Config](./pin-config.md) tool before it can be enabled.
 
 ### Errors
 
 Errors that cause nodes to display in red and indicate an error that needs to be resolved:
 
-* **A frequency out of range:** The error indicates whether the frequency is above or below the limits of operability of the peripheral.
-* **Unconfigured value:** This error indicates a required setting has not been specified:
-    * Unspecified frequency at a pin input
-    * Pin mux is not set to direct the clock signal to the peripheral
+* **A frequency out of range:** The error indicates whether the frequency is above or below the limits of operability of the peripheral.  
+
+* **Unconfigured value:** This error indicates a required setting has not been specified:  
+
+      * Unspecified frequency at a pin input  
+      * Pin mux is not set to direct the clock signal to the peripheral  

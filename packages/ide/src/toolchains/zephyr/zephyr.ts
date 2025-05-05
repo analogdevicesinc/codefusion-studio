@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 import { ToolManager } from "../toolManager";
 import * as vscode from "vscode";
-import { ZephyrTaskProvider } from "./tasks";
+import { ZephyrTaskProvider } from "./tasks-provider";
 
 // Globals
 let zephyrTasksProvider: vscode.Disposable | undefined;
@@ -42,7 +42,10 @@ export class ZephyrToolchain {
 }
 
 export async function configureWorkspaceForZephyr() {
-  zephyrTasksProvider = vscode.tasks.registerTaskProvider("shell", new ZephyrTaskProvider());
+  zephyrTasksProvider = vscode.tasks.registerTaskProvider(
+    "shell",
+    new ZephyrTaskProvider(),
+  );
 }
 
 export function deactivate(): void {

@@ -2,7 +2,7 @@
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "0.0.25",
   "DataModelSchemaVersion": "0.0.1",
-  "Timestamp": "2024-08-30T10:59:55.654Z",
+  "Timestamp": "2025-02-25T16:18:00.555Z",
   "Soc": "MAX32690",
   "Package": "WLP",
   "Pins": [
@@ -10,55 +10,25 @@
       "Pin": "F2",
       "Peripheral": "GPIO0",
       "Signal": "P0.11",
-      "Config": {
-        "MODE": "IN",
-        "PWR": "VDDIO",
-        "PS": "DIS"
-      },
-      "ControlResetValues": {
-        "MODE": "IN",
-        "PWR": "VDDIO",
-        "PS": "DIS",
-        "DS": "0"
-      }
+      "Config": {}
     },
     {
       "Pin": "F3",
       "Peripheral": "GPIO0",
       "Signal": "P0.12",
-      "Config": {
-        "MODE": "OUT",
-        "PWR": "VDDIOH",
-        "DS": "2"
-      },
-      "ControlResetValues": {
-        "MODE": "IN",
-        "PWR": "VDDIO",
-        "PS": "DIS",
-        "DS": "0"
-      }
+      "Config": {}
     },
     {
       "Pin": "F4",
       "Peripheral": "MISC",
       "Signal": "CLKEXT",
-      "Config": {
-        "PWR": "VDDIO"
-      },
-      "ControlResetValues": {
-        "PWR": "VDDIO"
-      }
+      "Config": {}
     },
     {
       "Pin": "G5",
       "Peripheral": "USBHS",
       "Signal": "CLKEXT",
-      "Config": {
-        "PWR": "VDDIO"
-      },
-      "ControlResetValues": {
-        "PWR": "VDDIO"
-      }
+      "Config": {}
     }
   ],
   "ClockNodes": [
@@ -98,5 +68,68 @@
       "Enabled": true
     }
   ],
-  "FirmwarePlatform": "msdk"
+  "FirmwarePlatform": "msdk",
+  "Projects": [
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "max32xxx_78xxx-msdk",
+      "FirmwarePlatform": "MSDK",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.11",
+              "Config": {
+                "MODE": "IN",
+                "PWR": "VDDIO",
+                "PS": "DIS"
+              }
+            },
+            {
+              "Name": "P0.12",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIOH",
+                "DS": "2"
+              }
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "USBHS",
+          "Signals": [
+            {
+              "Name": "CLKEXT",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            },
+            {
+              "Name": "DM",
+              "Config": {}
+            },
+            {
+              "Name": "DP",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    },
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "max32xxx_78xxx-zephry37",
+      "ExternallyManaged": false,
+      "FirmwarePlatform": "Zephyr 3.7",
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ]
 }

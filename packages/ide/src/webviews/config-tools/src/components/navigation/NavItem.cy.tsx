@@ -13,17 +13,17 @@
  *
  */
 import PinMUX from '@common/icons/PinMUX';
-import {NavItem} from './NavItem';
+import {CfsNavItem} from '../../../../common/components/cfs-navigation/CfsNavItem';
 
 describe('Navigation Item', () => {
 	it('Displays a tooltip when a tooltip label is provided and the item is hovered', () => {
 		cy.mount(
 			<div style={{width: '48px', filter: 'invert(1)'}}>
-				<NavItem
+				<CfsNavItem
 					isActive
 					id='pinmux'
 					icon={<PinMUX />}
-					tooltipLabel='Pin Mux'
+					tooltipLabel='Pin Config'
 					disabled={false}
 					// eslint-disable-next-line @typescript-eslint/no-empty-function
 					onClick={() => {}}
@@ -43,7 +43,7 @@ describe('Navigation Item', () => {
 
 			cy.wrap(tooltip.getPropertyValue('content')).should(
 				'eq',
-				'"Pin Mux"'
+				'"Pin Config"'
 			);
 		});
 	});

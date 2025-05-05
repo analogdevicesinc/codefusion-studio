@@ -61,11 +61,12 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 		customBoardLocation?: string
 	): Promise<boolean> {
 		let isProjectFolderCreated = false;
+		const isMultiCoreProject = templateInfo.folders.length > 1;
 		const projectPath = path.join(dest as string, projectName);
 		try {
 			if (!this.doesTemplateExist(templateInfo)) {
 				throw new Error(
-					`Error while creating CFS project, template does not exist. Template name: ${templateInfo.name}}`
+					`Error while creating CFS project, template does not exist. Template name: ${templateInfo.name}`
 				);
 			}
 
@@ -120,6 +121,12 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 					".cfg";
 				additionalSettings["cfs.openocd.riscvTarget"] =
 					`target/${socName}_riscv.cfg`;
+				if (isMultiCoreProject) {
+					additionalSettings["cfs.riscvProgramFile"] = "riscv.elf";
+					additionalSettings["cfs.riscvDebugPath"] =
+						"${workspaceFolder}/build/buildrv";
+				}
+
 				this.updateSettingsFile(settingsFilePath, additionalSettings);
 
 				if (customBoardLocation) {
@@ -128,6 +135,16 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 						customBoardLocation
 					);
 				}
+
+				//Creating a Ozone Debug file
+				this.addOzoneDebugFile(
+					folder,
+					`${projectName}_${templateFolder.name}`,
+					socDisplayName,
+					`build/${templateFolder.name}.elf`,
+					templateFolder.segger.ozoneSvd
+				);
+
 				if (socData && templateInfo.configs) {
 					let configTemplate;
 					for (const config of templateInfo.configs) {
@@ -154,8 +171,8 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 					}
 				}
 
-				// For MAX32xxx/78xxx parts, the ARM core is the booting core, so we use the RV_ARM_Loader example
-				// on the ARM core to load the application to the RISCV core.
+				// For MAX32xxx/78xxx parts, the Arm core is the booting core, so we use the RV_ARM_Loader example
+				// on the Arm core to load the application to the RISC-V core.
 				if (templateFolder.boot) {
 					// Open project.mk and update RISCV_APP to point to the RISCV project
 					const projectMkPath = path.join(folder, "project.mk");
@@ -196,8 +213,8 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 				fs.rmdirSync(projectPath, { recursive: true });
 			}
 			let newErr = new Error(`Error while creating CFS project.`);
-			if (typeof error === typeof newErr) {
-				newErr = error as Error;
+			if (error instanceof Error) {
+				newErr = error;
 				newErr.message = `Error while creating CFS project. ${newErr.message}`;
 			}
 			throw newErr;
@@ -271,8 +288,8 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 			}
 		} catch (err: unknown) {
 			let newErr = new Error(`Error while updating the settings.`);
-			if (typeof err === typeof newErr) {
-				newErr = err as Error;
+			if (err instanceof Error) {
+				newErr = err;
 				newErr.message = `Error while updating the settings. ${newErr.message}`;
 			}
 			throw newErr;
@@ -333,8 +350,8 @@ export class MsdkProjectGenerator extends ProjectGenerator {
 			let newErr = new Error(
 				`Error while appending content to the makefile.`
 			);
-			if (typeof err === typeof newErr) {
-				newErr = err as Error;
+			if (err instanceof Error) {
+				newErr = err;
 				newErr.message = `Error while appending content to the makefile. ${newErr.message}`;
 			}
 			throw newErr;

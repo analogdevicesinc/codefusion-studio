@@ -1,0 +1,394 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "0.0.1",
+  "Timestamp": "2025-03-05T10:35:03.091Z",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "FirmwarePlatform": "zephyr-4.0",
+  "ZephyrId": "apard32690/max32690/m4",
+  "Pins": [
+    {
+      "Pin": "C6",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.18",
+      "Config": {}
+    },
+    {
+      "Pin": "D6",
+      "Peripheral": "UART1",
+      "Signal": "RX",
+      "Config": {}
+    },
+    {
+      "Pin": "E7",
+      "Peripheral": "UART1",
+      "Signal": "TX",
+      "Config": {}
+    },
+    {
+      "Pin": "F4",
+      "Peripheral": "I2S0",
+      "Signal": "CLKEXT",
+      "Config": {}
+    },
+    {
+      "Pin": "G5",
+      "Peripheral": "USBHS",
+      "Signal": "CLKEXT",
+      "Config": {}
+    },
+    {
+      "Pin": "H4",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.25",
+      "Config": {}
+    },
+    {
+      "Pin": "J2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.1",
+      "Config": {}
+    },
+    {
+      "Pin": "J5",
+      "Peripheral": "UART0",
+      "Signal": "TX",
+      "Config": {}
+    },
+    {
+      "Pin": "K1",
+      "Peripheral": "SPI0",
+      "Signal": "CS0",
+      "Config": {}
+    },
+    {
+      "Pin": "K2",
+      "Peripheral": "SPI0",
+      "Signal": "SDIO3",
+      "Config": {}
+    },
+    {
+      "Pin": "K3",
+      "Peripheral": "SPI0",
+      "Signal": "SCK",
+      "Config": {}
+    },
+    {
+      "Pin": "K5",
+      "Peripheral": "UART0",
+      "Signal": "RX",
+      "Config": {}
+    },
+    {
+      "Pin": "L1",
+      "Peripheral": "SPI0",
+      "Signal": "MOSI",
+      "Config": {}
+    },
+    {
+      "Pin": "L2",
+      "Peripheral": "SPI0",
+      "Signal": "MISO",
+      "Config": {}
+    },
+    {
+      "Pin": "L3",
+      "Peripheral": "SPI0",
+      "Signal": "SDIO2",
+      "Config": {}
+    },
+    {
+      "Pin": "L7",
+      "Peripheral": "SPI1",
+      "Signal": "MISO",
+      "Config": {}
+    },
+    {
+      "Pin": "L8",
+      "Peripheral": "SPI1",
+      "Signal": "SCK",
+      "Config": {}
+    },
+    {
+      "Pin": "M2",
+      "Peripheral": "SPI0",
+      "Signal": "CS1",
+      "Config": {}
+    },
+    {
+      "Pin": "M7",
+      "Peripheral": "SPI1",
+      "Signal": "MOSI",
+      "Config": {}
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Name": "SYS_OSC Mux",
+      "Control": "MUX",
+      "Value": "INRO",
+      "Enabled": true
+    },
+    {
+      "Name": "ADC",
+      "Control": "DIV",
+      "Value": "8",
+      "Enabled": false
+    },
+    {
+      "Name": "High-Speed USB",
+      "Control": "USB_MUX",
+      "Value": "USBCLKEXT",
+      "Enabled": false
+    },
+    {
+      "Name": "PRESCALER",
+      "Control": "DIV",
+      "Value": "4",
+      "Enabled": true
+    },
+    {
+      "Name": "P0.23",
+      "Control": "P0_23_FREQ",
+      "Value": "250000",
+      "Enabled": true
+    },
+    {
+      "Name": "P0.27",
+      "Control": "P0_27_FREQ",
+      "Value": "12500000",
+      "Enabled": true
+    }
+  ],
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.zephyr41.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "Partitions": [
+        {
+          "Name": "abc",
+          "StartAddress": "0x10000000",
+          "Size": 262144,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+            "CHOSEN": "some_zephyr_id"
+          }
+        },
+        {
+          "Name": "new ram partition",
+          "StartAddress": "0x20040000",
+          "Size": 262144,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+            "CHOSEN": "chosen_memory_identifier"
+          }
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.1",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_1",
+                "PHANDLE": "gpio_p0_1",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            },
+            {
+              "Name": "P0.18",
+              "Config": {
+                "GPIO_TYPE": "LED",
+                "PWR": "VDDIOH",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_18",
+                "PHANDLE": "gpio_p0_18",
+                "DS": "1"
+              }
+            },
+            {
+              "Name": "P0.25",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_25",
+                "PHANDLE": "gpio_p0_25",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "UART1",
+          "Signals": [
+            {
+              "Name": "CTS",
+              "Config": {}
+            },
+            {
+              "Name": "RTS",
+              "Config": {}
+            },
+            {
+              "Name": "RX",
+              "Config": {}
+            },
+            {
+              "Name": "TX",
+              "Config": {}
+            }
+          ],
+          "Config": {
+            "PARITY": "DISABLED",
+            "CHAR_SIZE": "5",
+            "STOP_BITS": "1",
+            "HW_FLOW_CTRL": "DISABLED"
+          }
+        },
+        {
+          "Name": "SPI0",
+          "Signals": [
+            {
+              "Name": "CS0",
+              "Config": {}
+            },
+            {
+              "Name": "CS1",
+              "Config": {}
+            },
+            {
+              "Name": "MISO",
+              "Config": {}
+            },
+            {
+              "Name": "MOSI",
+              "Config": {}
+            },
+            {
+              "Name": "SCK",
+              "Config": {}
+            },
+            {
+              "Name": "SDIO2",
+              "Config": {}
+            },
+            {
+              "Name": "SDIO3",
+              "Config": {}
+            }
+          ],
+          "Config": {
+            "FREQ": "15000005"
+          }
+        },
+        {
+          "Name": "SPI4",
+          "Signals": [
+            {
+              "Name": "CS0",
+              "Config": {}
+            },
+            {
+              "Name": "CS1",
+              "Config": {}
+            },
+            {
+              "Name": "CS2",
+              "Config": {}
+            },
+            {
+              "Name": "MISO",
+              "Config": {}
+            },
+            {
+              "Name": "MOSI",
+              "Config": {}
+            },
+            {
+              "Name": "SCK",
+              "Config": {}
+            },
+            {
+              "Name": "SDIO2",
+              "Config": {}
+            },
+            {
+              "Name": "SDIO3",
+              "Config": {}
+            }
+          ],
+          "Config": {
+            "ENABLE": "FALSE",
+            "MODE": "FOUR_WIRE",
+            "DIRECTION": "TARGET",
+            "WORD_SIZE": "16",
+            "PHASE_POL_MODE": "0",
+            "CS0_POLARITY": "ACTIVE_LOW",
+            "CS1_POLARITY": "ACTIVE_LOW",
+            "CS2_POLARITY": "ACTIVE_LOW",
+            "CS3_POLARITY": "ACTIVE_LOW",
+            "INACTIVE_STRETCH": "256",
+            "PRE_STRETCH": "256",
+            "POST_STRETCH": "256",
+            "CLOCK_SCALE": "1",
+            "SCK_HI_CYCLES": "DISABLED",
+            "SCK_LO_CYCLES": "DISABLED",
+            "RECEIVE_DMA_ENABLE": "TRUE",
+            "RECEIVE_FIFO_THRESHOLD": "0",
+            "TRANSMIT_DMA_ENABLE": "FALSE",
+            "TRANSMIT_FIFO_THRESHOLD": "2",
+            "CHIP_SELECT_DIRECTION": "OUTPUT"
+          }
+        }
+      ]
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "",
+      "PluginVersion": "",
+      "FirmwarePlatform": "",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "TMR0",
+          "Signals": [
+            {
+              "Name": "IOA",
+              "Config": {}
+            },
+            {
+              "Name": "IOAN",
+              "Config": {}
+            },
+            {
+              "Name": "IOB",
+              "Config": {}
+            },
+            {
+              "Name": "IOBN",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    }
+  ]
+}

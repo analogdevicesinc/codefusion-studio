@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-﻿import { ElfDataModel } from "./ElfDataModel.js";
+import { ElfDataModel } from "./ElfDataModel.js";
+import { ElfDemangler } from "./ElfDemangler.js";
 import { StackUsageData } from "./ElfFileParser.js";
 import { FunctionRecursiveType } from "./enums.js";
 import { promises as fs } from "node:fs";
@@ -41,6 +42,8 @@ export class GraphNode {
 	public callNodes = new Array<GraphNode>(); // refs to nodes
 
 	public recursiveType = FunctionRecursiveType.NoRecursion;
+
+	public maxDepth = 0;
 
 	public isFunction() {
 		return this.type.includes("function");
@@ -122,6 +125,9 @@ export class CallGraph {
 		}
 
 		ret.stack += node.localStack;
+		if (node.maxDepth < depth) {
+			node.maxDepth = depth;
+		}
 
 		const childReports = new Array<GraphAnalysisReport>();
 		for (const child of node.callNodes) {
@@ -241,7 +247,10 @@ export class CallGraph {
 			prefix += "  ";
 		}
 		console.log(
-			`GRAPH: ${prefix}(${depth}) ${isRecursive ? "(STOP) " : ""}${node.mangledName}/${node.symbolNr}: stack:[${node.localStack}/${node.graphStack}]${recursiveStr} file:${this.file} addr:0x${node.address}`,
+			`GRAPH: ${prefix}(${depth}) ${isRecursive ? "(STOP) " : ""}${node.mangledName}/${node.symbolNr}: stack:[${node.localStack}/${node.graphStack}]${recursiveStr}` +
+				//` file:${this.file}`,
+				` addr:0x${node.address}` +
+				` callNodes:${node.callNodes.length}`,
 		);
 
 		if (!isRecursive) {
@@ -260,14 +269,15 @@ export class CallGraph {
 		for (const node of this.nodes) {
 			if (
 				node.graphStack > 0 ||
-				node.recursiveType !== FunctionRecursiveType.NoRecursion
+				node.recursiveType !== FunctionRecursiveType.NoRecursion ||
+				node.maxDepth > 0
 			) {
 				this.printNode(node, new GraphAnalysisReport(), 0);
 			}
 		}
 	}
 
-	// Updates hasGraphStack and graphStack for each symbol data
+	// Updates hasGraphStack, graphStack and maxDepth for each symbol data
 	public updateModel(model: ElfDataModel): number {
 		if (model === undefined || model === null) {
 			console.log("GRAPH: model is null");
@@ -276,22 +286,35 @@ export class CallGraph {
 
 		let nSymbolsUpdated = 0;
 		for (const [key, node] of this.mangledToNode) {
-			for (const symTab of model.elfSymbols) {
-				if (
-					node.graphStack > 0 ||
-					node.recursiveType !== FunctionRecursiveType.NoRecursion
-				) {
-					const sym = symTab.findByName(key);
-					if (sym === undefined) {
-						if (this.debug) {
-							console.log(
-								`GRAPH: No symbol with name "${key}" found! graphStack:${node.graphStack}`,
-							);
-						}
-					} else {
+			if (
+				node.graphStack > 0 ||
+				node.recursiveType !== FunctionRecursiveType.NoRecursion ||
+				node.maxDepth > 0
+			) {
+				const syms = model.findSymbolsByName(key);
+				if (syms.length === 0) {
+					if (this.debug) {
+						console.log(
+							`GRAPH: No symbol with name "${key}" found! graphStack:${node.graphStack}`,
+						);
+					}
+				} else {
+					for (const sym of syms) {
 						if (node.recursiveType !== FunctionRecursiveType.NoRecursion) {
 							sym.recursiveType = node.recursiveType;
 						}
+
+						if (ElfDemangler.isMangled(sym.nameStr)) {
+							if (this.debug) {
+								console.log(
+									`GRAPH DEMANGLER: "${sym.nameStr}" => "${node.name}". old:"${sym.demangledName}" oldSrc:${sym.demangledNameSource}`,
+								);
+							}
+							sym.demangledName = node.name;
+							sym.demangledNameSource = "graph";
+						}
+
+						sym.maxDepth = node.maxDepth;
 
 						if (node.graphStack > 0 && sym.graphStack < node.graphStack) {
 							sym.hasGraphStack = true;
@@ -299,15 +322,36 @@ export class CallGraph {
 							// Update localStack as well
 							sym.stack = node.localStack;
 
+							// Update sym callees
+							sym.callees.clear();
+							for (const child of node.callNodes) {
+								const callSyms = model.findSymbolsByName(child.mangledName);
+								if (this.debug && callSyms.length === 0) {
+									console.log(
+										`GRAPH: WARN: cannot find any sym callee "${child.mangledName}" caller:"${key}"!`,
+									);
+								}
+								for (const callSym of callSyms) {
+									sym.callees.add(callSym);
+									//if (this.debug) {
+									//	console.log(`GRAPH: push callSym "${callSym.nameStr}" for "${sym.nameStr}" nCallees:${sym.callees.size}`);
+									//}
+								}
+							}
+
 							if (this.debug) {
 								console.log(
-									`GRAPH: Update sym ${sym.nameStr}/0x${sym.value.toString(16)} with graphStack:${node.graphStack} recursive:${FunctionRecursiveType[node.recursiveType]}`,
+									`GRAPH: Update sym ${sym.nameStr}/0x${sym.value.toString(16)} with graphStack:${node.graphStack}` +
+										` recursive:${FunctionRecursiveType[node.recursiveType]}` +
+										(sym.callees.size > 0
+											? ` nCallees:${sym.callees.size}`
+											: ""),
 								);
 							}
 
 							nSymbolsUpdated++;
 						}
-					}
+					} // loop syms
 				}
 			}
 		}

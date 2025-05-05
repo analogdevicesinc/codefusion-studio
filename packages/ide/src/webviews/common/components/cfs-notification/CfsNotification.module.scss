@@ -12,15 +12,15 @@
  * limitations under the License.
  *
  */
-@use '../../styles/colors';
+@use '#colors' as colors;
 
 .notificationContainer {
-	height: 24px;
+	height: 32px;
 	width: 100%;
 	display: flex;
 	gap: 4px;
 	align-items: center;
 	background: colors.$notifications-background;
-	padding: 4px;
+	padding: 8px;
 	box-sizing: border-box;
 }

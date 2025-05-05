@@ -12,18 +12,12 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
-@use '@common/styles/colors';
+@use '#layout' as layout;
+@use '#colors' as colors;
 
 .container {
 	word-wrap: break-word;
 	padding-bottom: layout.$elf-main-gap;
-}
-
-.header {
-	text-transform: uppercase;
-	font-size: 11px;
-	margin-bottom: 10px !important;
 }
 
 .overviewWrapper {
@@ -39,8 +33,14 @@
 }
 .underlined {
 	text-decoration: underline;
-	cursor: pointer;
+	cursor: default;
+
 	&:hover {
 		text-decoration: none;
 	}
+}
+.title {
+	font-size: 18px;
+	line-height: 22px;
+	padding: 8px 0;
 }

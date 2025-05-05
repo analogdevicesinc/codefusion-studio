@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,22 +12,23 @@
  * limitations under the License.
  *
  */
-import type {ControlErrorTypes} from '../types/errorTypes';
+import type {
+	ControlErrorTypes,
+	TControlTypes
+} from '../types/errorTypes';
 import {controlErrorTypes} from './control-errors';
 
 export const generateValidationErrorType = (inputData: {
-	content: string | undefined;
-	controlType: string | undefined;
-	minVal: number | undefined;
-	maxVal: number | undefined;
+	content: string;
+	controlType: TControlTypes;
+	minVal?: number;
+	maxVal?: number;
+	pattern?: string;
 }): ControlErrorTypes | undefined => {
-	const {content, controlType, minVal, maxVal} = inputData;
+	const {content, controlType, minVal, maxVal, pattern} = inputData;
 
 	if (!content) {
 		if (controlType === 'integer') return controlErrorTypes.integer;
-
-		if (controlType === 'identifier')
-			return controlErrorTypes.identifier;
 	}
 
 	if (
@@ -40,7 +41,7 @@ export const generateValidationErrorType = (inputData: {
 
 	if (
 		controlType === 'integer' &&
-		minVal &&
+		typeof minVal === 'number' &&
 		Number(content) < minVal
 	) {
 		return controlErrorTypes.minVal;
@@ -48,7 +49,7 @@ export const generateValidationErrorType = (inputData: {
 
 	if (
 		controlType === 'integer' &&
-		maxVal &&
+		typeof maxVal === 'number' &&
 		Number(content) > maxVal
 	) {
 		return controlErrorTypes.maxVal;
@@ -56,10 +57,20 @@ export const generateValidationErrorType = (inputData: {
 
 	if (
 		content &&
-		controlType === 'identifier' &&
-		!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(content)
+		controlType === 'text' &&
+		pattern &&
+		!new RegExp('^' + pattern + '$').test(content)
 	) {
-		return controlErrorTypes.identifier;
+		return controlErrorTypes.text;
+	}
+
+	if (
+		!content &&
+		controlType === 'text' &&
+		pattern &&
+		!new RegExp('^' + pattern + '$').test('')
+	) {
+		return controlErrorTypes.text;
 	}
 
 	return undefined;

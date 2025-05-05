@@ -2,7 +2,10 @@
 	--foreground: var(--vscode-foreground, hsl(0, 0%, 80%));
 	--border-width: 1px;
 	--focus-border: var(--vscode-focusBorder, hsl(204, 100%, 42%));
-	--dropdown-background: var(--vscode-dropdown-background, hsl(0, 0%, 24%));
+	--dropdown-background: var(
+		--vscode-dropdown-background,
+		hsl(0, 0%, 24%)
+	);
 	--dropdown-border: var(--vscode-dropdown-border, hsl(0, 0%, 24%));
 	--list-active-selection-background: var(
 		--vscode-list-activeSelectionBackground,
@@ -19,7 +22,7 @@
 
 	--corner-radius-round: 2px;
 
-	--font-family: var(
+	--vscode-font-family: var(
 		--vscode-font-family,
 		-apple-system,
 		BlinkMacSystemFont,
@@ -32,5 +35,6 @@
 		Segoe UI Emoji,
 		Segoe UI Symbol
 	);
+	--font-family: var(--vscode-font-family);
 	--base-font-size: var(--vscode-font-size, 13px);
 }

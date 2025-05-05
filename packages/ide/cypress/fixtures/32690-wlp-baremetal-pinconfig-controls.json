@@ -1,0 +1,126 @@
+{
+  "PinConfig": [
+    {
+      "Id": "MODE",
+      "Description": "Input or Output Mode",
+      "EnumValues": [
+        {
+          "Id": "IN",
+          "Description": "Input Mode",
+          "Value": 0
+        },
+        {
+          "Id": "OUT",
+          "Description": "Output Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "TMR_SIGNAL_TYPE",
+      "Description": "Signal Type",
+      "EnumValues": [
+        {
+          "Id": "IN",
+          "Description": "Input",
+          "Value": 0
+        },
+        {
+          "Id": "OUT",
+          "Description": "Output",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PWR",
+      "Description": "Power Supply",
+      "EnumValues": [
+        {
+          "Id": "VDDIO",
+          "Description": "Use VDDIO",
+          "Value": 0
+        },
+        {
+          "Id": "VDDIOH",
+          "Description": "Use VDDIOH",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PS",
+      "Description": "Pull-up/Pull-down",
+      "EnumValues": [
+        {
+          "Id": "STRONG_PU",
+          "Description": "Strong Pull-up",
+          "Value": 0
+        },
+        {
+          "Id": "WEAK_PU",
+          "Description": "Weak Pull-up",
+          "Value": 1
+        },
+        {
+          "Id": "PU",
+          "Description": "Pull-up",
+          "Value": 2
+        },
+        {
+          "Id": "DIS",
+          "Description": "Disabled (High Impedance)",
+          "Value": 3
+        },
+        {
+          "Id": "PD",
+          "Description": "Pull-down",
+          "Value": 4
+        },
+        {
+          "Id": "WEAK_PD",
+          "Description": "Weak Pull-down",
+          "Value": 5
+        },
+        {
+          "Id": "STRONG_PD",
+          "Description": "Strong Pull-down",
+          "Value": 6
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:IN} = ${Node:Name} ${String:P[0-9]\\.[0-9]+} match ! ${Control:TMR_SIGNAL_TYPE} ${String:OUT} != & |"
+    },
+    {
+      "Id": "DS",
+      "Description": "Drive Strength",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "Drive Strength 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "Drive Strength 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "Drive Strength 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "Drive Strength 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:OUT} = ${Node:Name} ${String:P[0-9]\\.[0-9]+} match ! ${Control:TMR_SIGNAL_TYPE} ${String:IN} != & |"
+    }
+  ]
+}

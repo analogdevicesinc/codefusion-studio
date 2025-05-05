@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {VSCodeDivider} from '@vscode/webview-ui-toolkit/react';
+import {Divider} from 'cfs-react-library';
 import AttributesListItem from '../AttributesListItem/AttributesListItem';
 import NoData from '../../../../components/NoData/NoData';
 import HeaderWithTooltip from '../../../../components/HeaderWithTooltip/HeaderWithTooltip';
@@ -39,12 +39,12 @@ export default function AttributesList({
 			{list.length ? (
 				<ul className={styles.list}>
 					<div>
-						<VSCodeDivider />
+						<Divider />
 						<li className={styles.item}>
 							<span className={styles.header}>File attribute</span>
 							<span className={styles.header}>Value</span>
 						</li>
-						<VSCodeDivider />
+						<Divider />
 					</div>
 					{list.map(
 						(item: TArmAttributes | Record<string, any>) =>

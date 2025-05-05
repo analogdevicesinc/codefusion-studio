@@ -1,4 +1,10 @@
 # The Node + Python container used to build and test CFS docs
+#
+# To refresh the image:
+#
+#     docker build . -t artifactory.analog.com:6556/cfs-build-docs:latest -f .devcontainer/docs/Dockerfile --platform=linux/amd64
+#     docker login artifactory.analog.com:6556:latest
+#     docker image push artifactory.analog.com:6556/cfs-build-docs:latest
 
 FROM node:20
 

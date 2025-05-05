@@ -13,9 +13,7 @@
  *
  */
 import {
-	VSCodeTextField,
-	VSCodeDivider,
-	VSCodeButton
+	VSCodeTextField
 } from '@vscode/webview-ui-toolkit/react';
 import type {ChangeEvent} from 'react';
 
@@ -25,6 +23,7 @@ import EditIcon from '@common/icons/Edit';
 
 import type {TSavedQuery} from '../../../../common/types/symbols';
 import styles from './SavedQueryContainer.module.scss';
+import {Button, Divider} from 'cfs-react-library';
 
 type TSavedQueriesContainerProps = {
 	readonly queryToFilter: string;
@@ -51,10 +50,10 @@ export default function SavedQueryContainer({
 			item =>
 				item?.value
 					?.toLowerCase()
-					.includes(queryToFilter.toLowerCase()) ||
+					.includes(queryToFilter?.toLowerCase()) ||
 				item?.name
 					?.toLowerCase()
-					.includes(queryToFilter.toLowerCase())
+					.includes(queryToFilter?.toLowerCase())
 		);
 
 	return (
@@ -73,7 +72,7 @@ export default function SavedQueryContainer({
 					<SearchIcon />
 				</span>
 			</VSCodeTextField>
-			<VSCodeDivider />
+			<Divider />
 			<ul className={styles.list}>
 				{getFilteredQueries().map(item => (
 					<li key={item.id} className={styles.item}>
@@ -91,7 +90,7 @@ export default function SavedQueryContainer({
 							</div>
 						</div>
 						<div className={styles['action-buttons']}>
-							<VSCodeButton
+							<Button
 								appearance='icon'
 								className={styles.icon}
 								onClick={() => {
@@ -99,8 +98,8 @@ export default function SavedQueryContainer({
 								}}
 							>
 								<EditIcon />
-							</VSCodeButton>
-							<VSCodeButton
+							</Button>
+							<Button
 								appearance='icon'
 								className={styles.icon}
 								onClick={() => {
@@ -108,7 +107,7 @@ export default function SavedQueryContainer({
 								}}
 							>
 								<DeleteIcon />
-							</VSCodeButton>
+							</Button>
 						</div>
 					</li>
 				))}

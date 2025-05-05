@@ -13,7 +13,7 @@
  *
  */
 import type {
-	ClockNode,
+	ClockNodesDictionary,
 	ClockNodeState
 } from '../../../common/types/soc';
 import {
@@ -21,23 +21,37 @@ import {
 	UNDEFINED_MARKER
 } from '../screens/clock-config/constants/clocks';
 import type {NodeErrorTypes} from '../types/errorTypes';
+import {getClockNodeConfig, getTargetControls} from './clock-nodes';
 import {nodeErrorTypes} from './control-errors';
 import {getValueFromClockDictionary} from './rpn-expression-resolver';
-import {getSocControlsDictionary} from './soc-controls';
+import {getPrimaryProjectId} from './config';
+import {CONTROL_SCOPES} from '../constants/scopes';
 
 export function getCurrentNodeError(
-	nodeState: ClockNodeState | undefined,
-	nodeDetails: ClockNode,
-	computeEnabledState: (condition: string) => boolean
+	nodeState: ClockNodeState,
+	computeEnabledState: (
+		condition: string,
+		currentNode: string
+	) => boolean
 ): [string, NodeErrorTypes] | undefined {
-	const controls = getSocControlsDictionary('ClockConfig');
+	const projectId = getPrimaryProjectId();
+	const nodeDetails = getClockNodeConfig(nodeState?.Name ?? '');
+
+	const targetControls = getTargetControls(
+		'clockConfig',
+		projectId ?? '',
+		nodeState?.Name ?? ''
+	);
 
 	const controlErrors = Object.entries(
 		nodeState?.Errors ?? {}
 	).filter(([key, error]) => {
 		const isControlEnabled =
-			typeof controls[key].Condition === 'string'
-				? computeEnabledState(controls[key].Condition)
+			typeof targetControls[key]?.Condition === 'string'
+				? computeEnabledState(
+						targetControls[key].Condition,
+						nodeState.Name
+					)
 				: true;
 
 		return isControlEnabled && Boolean(error);
@@ -47,8 +61,11 @@ export function getCurrentNodeError(
 		nodeState?.controlValues ?? {}
 	).filter(([key, val]) => {
 		const isControlEnabled =
-			typeof controls[key].Condition === 'string'
-				? computeEnabledState(controls[key].Condition)
+			typeof targetControls[key]?.Condition === 'string'
+				? computeEnabledState(
+						targetControls[key].Condition,
+						nodeState?.Name ?? ''
+					)
 				: true;
 
 		return isControlEnabled && val === '';
@@ -56,11 +73,11 @@ export function getCurrentNodeError(
 
 	const outputErrors: Array<[string, NodeErrorTypes]> = [];
 
-	nodeDetails.Outputs.forEach(output => {
+	Object.values(nodeDetails?.Outputs ?? {}).forEach(output => {
 		const computedFreq = getValueFromClockDictionary(output.Name);
 
 		const isOutputEnabled = output.Condition
-			? computeEnabledState(output.Condition)
+			? computeEnabledState(output.Condition, nodeState.Name)
 			: true;
 
 		if (!isOutputEnabled) {
@@ -110,10 +127,10 @@ export function getCurrentNodeError(
 	return undefined;
 }
 
+// eslint-disable-next-line complexity
 export function generateOutputValueErrorString(
 	error: [string, NodeErrorTypes],
-	nodeState: ClockNodeState | undefined,
-	nodeDetails: ClockNode
+	nodeState: ClockNodeState | undefined
 ) {
 	let errorString: string = EMPTY_CLOCK_VALUE;
 	const [id, errorType] = error;
@@ -137,13 +154,19 @@ export function generateOutputValueErrorString(
 				: undefined;
 
 	if (errorType === minVal || errorType === maxVal) {
-		const controls = getSocControlsDictionary('ClockConfig');
+		const projectId = getPrimaryProjectId();
+
+		const targetControls = getTargetControls(
+			CONTROL_SCOPES.CLOCK_CONFIG,
+			projectId ?? '',
+			nodeState?.Name ?? ''
+		);
 
 		const allowedValue =
 			errorType === minVal
-				? controls[id].MinimumValue + ')'
+				? targetControls[id].MinimumValue + ')'
 				: errorType === maxVal
-					? controls[id].MaximumValue + ')'
+					? targetControls[id].MaximumValue + ')'
 					: '';
 
 		errorString = `${nodeState?.controlValues?.[id] ?? ''} ${errorTypePrefix} ${allowedValue}`;
@@ -153,8 +176,10 @@ export function generateOutputValueErrorString(
 		errorType === highComputedValue ||
 		errorType === lowComputedValue
 	) {
+		const nodeDetails = getClockNodeConfig(nodeState?.Name ?? '');
 		const computedFreq = getValueFromClockDictionary(id);
-		const outputConfig = nodeDetails.Outputs.find(
+
+		const outputConfig = nodeDetails?.Outputs.find(
 			output => output.Name === id
 		);
 
@@ -174,3 +199,37 @@ export function generateOutputValueErrorString(
 
 	return errorString;
 }
+
+export const computeClockNodeErr = (
+	clockConfig: ClockNodesDictionary,
+	diagramData: Record<
+		string,
+		{
+			enabled: boolean | undefined;
+			error: boolean | undefined;
+		}
+	>,
+	computeEnabledState: (
+		condition: string,
+		currentNode?: string
+	) => boolean
+): number => {
+	let counter = 0;
+
+	Object.values(clockConfig).forEach(node => {
+		const isNodeEnabled = diagramData[node.Name]?.enabled;
+
+		if (!isNodeEnabled) return;
+
+		const currentError = getCurrentNodeError(
+			node,
+			computeEnabledState
+		);
+
+		if (currentError !== undefined) {
+			counter++;
+		}
+	});
+
+	return counter;
+};

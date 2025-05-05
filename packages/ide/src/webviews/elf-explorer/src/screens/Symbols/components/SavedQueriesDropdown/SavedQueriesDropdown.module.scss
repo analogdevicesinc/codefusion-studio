@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/layout';
+@use '#colors' as colors;
+@use '#layout' as layout;
 
 .container {
 	position: relative;
@@ -34,7 +34,6 @@
 		padding: 12px 16px;
 		left: calc(-436px - layout.$common-padding);
 		top: 40px;
-		z-index: 1;
 		width: 570px;
 		box-shadow: layout.$default-shadow;
 	}

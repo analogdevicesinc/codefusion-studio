@@ -1,0 +1,85 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
+.socGroupsContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 36px;
+	height: max-content;
+
+	.socGroupTitle {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin: 0 0 12px 0;
+
+		h2 {
+			@include fonts.heading-h2;
+			margin: 0;
+		}
+
+		.tag {
+			text-align: center;
+			padding: 1px 7px;
+			border: 1px solid colors.$default-border;
+			border-radius: 20px;
+			opacity: 90%;
+		}
+	}
+
+	.socGroupContainer {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+
+		.socTitle {
+			@include fonts.heading-h3;
+			margin: 0 0 4px 0;
+		}
+
+		.socDesc {
+			@include fonts.body-b1;
+			color: colors.$description-foreground;
+			margin: 0;
+			display: -webkit-box;
+			-webkit-line-clamp: 3;
+			line-clamp: 3;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+	}
+
+	.noSearchResults {
+		text-align: center;
+		padding: 20px 64px;
+		border: 1px solid colors.$default-border;
+		border-radius: 4px;
+
+		h2 {
+			@include fonts.heading-h2;
+			margin: 0 0 8px 0;
+		}
+
+		p {
+			@include fonts.body-b1;
+			color: colors.$description-foreground;
+			margin: 0 auto;
+			max-width: 438px;
+		}
+	}
+}

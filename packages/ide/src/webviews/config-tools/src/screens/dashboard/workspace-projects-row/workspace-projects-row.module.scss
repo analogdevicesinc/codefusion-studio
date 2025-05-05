@@ -1,0 +1,61 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
+.workspaceTableRow {
+	@include fonts.body-b2;
+	padding: 5px 0px;
+	vscode-data-grid-cell {
+		color: colors.$default-foreground;
+	}
+}
+
+.coreCol {
+	width: var(--wrksp-table-core-width, 190px);
+	display: flex;
+	align-items: center;
+	gap: 2px;
+
+	vscode-badge {
+		user-select: none;
+	}
+}
+
+.workspaceCol {
+	width: var(--wrksp-table-workspace-width, 225px);
+	display: flex;
+	align-items: center;
+}
+.col {
+	// For chevron icon
+	--design-unit: 4px;
+
+	.icon {
+		margin-left: 2px;
+	}
+}
+
+.btn {
+	display: flex;
+	gap: 2px;
+}
+
+.suspenseLoader {
+	vscode-progress-ring {
+		--design-unit: 3;
+	}
+}

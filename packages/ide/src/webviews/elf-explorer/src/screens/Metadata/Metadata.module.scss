@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
+@use '#layout' as layout;
 
 .container {
 	display: flex;

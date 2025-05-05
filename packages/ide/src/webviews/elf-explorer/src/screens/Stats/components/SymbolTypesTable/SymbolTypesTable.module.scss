@@ -12,6 +12,12 @@
  * limitations under the License.
  *
  */
+@use '#table' as table;
+
+.table {
+	@include table.table-styles;
+}
+
 .last {
 	text-align: right;
 }

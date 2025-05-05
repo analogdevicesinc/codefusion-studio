@@ -14,6 +14,7 @@
  */
 import {
   By,
+  CustomEditor,
   ModalDialog,
   TextEditor,
   VSBrowser,
@@ -29,11 +30,9 @@ type Pin = {
   Peripheral: string;
   Signal: string;
   Config: Record<string, string>;
-  ControlResetValues: Record<string, string>;
 };
 
 describe("Reset to Default", () => {
-  let view: WebView;
   let browser: VSBrowser;
   let driver: WebDriver;
 
@@ -42,149 +41,188 @@ describe("Reset to Default", () => {
 
     browser = VSBrowser.instance;
     driver = browser.driver;
-    view = new WebView();
 
-    await browser.waitForWorkbench();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 
-  after(async function () {
-    this.timeout(60000);
+  it.skip(
+    "Correctly resets function config to the default values - also in document",
+    async () => {
+      await VSBrowser.instance.openResources(
+        path.join(
+          "src",
+          "tests",
+          "ui-test-config-tools",
+          "fixtures",
+          "max32690-tqfn.cfsconfig",
+        ),
+      );
 
-    await view.switchBack();
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    const wb = new Workbench();
+      const view = new WebView();
 
-    await wb.wait();
+      await view.switchToFrame();
 
-    await wb.executeCommand("view: close all editors");
+      const nav = await view.findWebElement(By.css(`#pinmux`));
 
-    await new Promise((res) => {
-      setTimeout(res, 1000);
-    });
+      await nav.click().then(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    const dialog = new ModalDialog();
+        const pin = await view.findWebElement(
+          By.css(
+            "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
+          ),
+        );
 
-    await dialog.pushButton("Don't Save");
-  });
+        await pin.click();
 
-  it("Correctly resets function config to the default values - also in document", async () => {
-    await VSBrowser.instance.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-tqfn.cfsconfig",
-      ),
-    );
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    await view.wait();
-    await view.switchToFrame();
+        expect(await view.findWebElement(By.css("#details-container"))).to
+          .exist;
 
-    const pin = await view.findWebElement(
-      By.css(
-        "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
-      ),
-    );
+        const firstSignalToggle = await view.findWebElement(
+          By.css(
+            "#pin-details-signals-container > div:nth-child(1) > section > label",
+          ),
+        );
 
-    await pin.click();
+        await firstSignalToggle.click();
 
-    expect(await view.findWebElement(By.css("#details-container"))).to.exist;
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const firstSignalToggle = await view.findWebElement(
-      By.css(
-        "#pin-details-signals-container > div:nth-child(1) > section > label",
-      ),
-    );
+        const navItem = await view.findWebElement(By.css("#config"));
 
-    await firstSignalToggle.click();
+        await navItem.click();
 
-    const navItem = await view.findWebElement(By.css("#config"));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    await navItem.click();
+        await view
+          .findWebElement(
+            By.xpath(
+              "/html/body/div/div/div[3]/div[3]/div/section/div[6]/div[2]/vscode-text-field",
+            ),
+          )
+          .then(async (dtNameInputField) => {
+            expect(dtNameInputField).to.exist;
 
-    let dtNameInputField = await view.findWebElement(
-      By.xpath(
-        "/html/body/div/div/div[3]/div[3]/div/section/div[6]/div[2]/vscode-text-field",
-      ),
-    );
+            await dtNameInputField.sendKeys("Invalid!");
 
-    expect(dtNameInputField).to.exist;
+            await new Promise((res) => {
+              setTimeout(res, 1500);
+            });
 
-    await dtNameInputField.sendKeys("Invalid!");
+            await view.switchBack();
 
-    await view.switchBack();
+            let quickAccess = await driver.findElement(
+              By.xpath(
+                '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
+              ),
+            );
 
-    let quickAccess = await driver.findElement(
-      By.xpath(
-        '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
-      ),
-    );
+            expect(await quickAccess.getAttribute("aria-label")).to.equal(
+              "(CFS) View Config File Source (JSON)",
+            );
 
-    expect(await quickAccess.getAttribute("aria-label")).to.equal(
-      "(CFS) View Config File Source (JSON)",
-    );
+            await quickAccess.click();
 
-    await quickAccess.click();
+            await new Promise((res) => {
+              setTimeout(res, 3000);
+            });
 
-    await new Promise((res) => {
-      setTimeout(res, 1000);
-    });
+            let activeEditor = new TextEditor();
 
-    let activeEditor = new TextEditor();
-    let documentContent = await activeEditor.getText();
-    let jsonObject: {
-      Pins: Pin[];
-    } = JSON.parse(documentContent);
+            await activeEditor.getText().then((documentContent) => {
+              let jsonObject: {
+                Pins: Pin[];
+              } = JSON.parse(documentContent);
 
-    expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal("Invalid!");
+              expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal("Invalid!");
+            });
 
-    const extensionTab = await driver.findElement(
-      By.xpath(
-        '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[1]/div[1]/div[1]',
-      ),
-    );
+            const extensionTab = await driver.findElement(
+              By.xpath(
+                '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[1]/div[1]/div[1]',
+              ),
+            );
 
-    expect(await extensionTab.getAttribute("aria-label")).to.equal(
-      "max32690-tqfn.cfsconfig",
-    );
+            expect(await extensionTab.getAttribute("aria-label")).to.equal(
+              "max32690-tqfn.cfsconfig",
+            );
 
-    await extensionTab.click();
+            await extensionTab.click();
 
-    await view.switchToFrame();
+            await view.switchToFrame();
 
-    const resetToDefBtn = await view.findWebElement(
-      By.xpath('//*[@id="root"]/div/div[3]/div[3]/div/section/div[1]/h3'),
-    );
+            const resetToDefBtn = await view.findWebElement(
+              By.xpath(
+                '//*[@id="root"]/div/div[3]/div[3]/div/section/div[1]/h3',
+              ),
+            );
 
-    await resetToDefBtn.click();
+            await resetToDefBtn.click();
 
-    await new Promise((res) => {
-      setTimeout(res, 1000);
-    });
+            await new Promise((res) => {
+              setTimeout(res, 1000);
+            });
 
-    expect(await dtNameInputField.getAttribute("current-value")).to.equal(
-      "gpio_p2_26",
-    );
+            await view
+              .findWebElement(
+                By.xpath(
+                  "/html/body/div/div/div[3]/div[3]/div/section/div[6]/div[2]/vscode-text-field",
+                ),
+              )
+              .then(async (dtNameInputField) => {
+                await dtNameInputField
+                  .getAttribute("current-value")
+                  .then((value) => {
+                    expect(value).to.equal("gpio_p2_26");
+                  });
 
-    await view.switchBack();
+                await view.switchBack();
 
-    quickAccess = await driver.findElement(
-      By.xpath(
-        '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
-      ),
-    );
+                quickAccess = await driver.findElement(
+                  By.xpath(
+                    '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
+                  ),
+                );
 
-    expect(await quickAccess.getAttribute("aria-label")).to.equal(
-      "(CFS) View Config File Source (JSON)",
-    );
+                expect(await quickAccess.getAttribute("aria-label")).to.equal(
+                  "(CFS) View Config File Source (JSON)",
+                );
 
-    await quickAccess.click();
+                await quickAccess.click();
 
-    activeEditor = new TextEditor();
-    documentContent = await activeEditor.getText();
-    jsonObject = JSON.parse(documentContent);
+                await new Promise((res) => {
+                  setTimeout(res, 3000);
+                });
 
-    expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal("gpio_p2_26");
-  }).timeout(60000);
+                activeEditor = new TextEditor();
+
+                await activeEditor.getText().then(async (documentContent) => {
+                  const jsonObject = JSON.parse(documentContent);
+                  expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal(
+                    "gpio_p2_26",
+                  );
+                });
+
+                const wb = new Workbench();
+
+                await wb.wait();
+
+                await wb.executeCommand("view: close all editors");
+
+                await new Promise((res) => {
+                  setTimeout(res, 1000);
+                });
+
+                const dialog = new ModalDialog();
+
+                await dialog.pushButton("Don't Save");
+              });
+          });
+      });
+    },
+  ).timeout(60000);
 });

@@ -201,21 +201,25 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-This software is subject to the above license, and also includes additional
-software components that are identified at the following location:
+This software is subject to the above license, and also includes
+additional software components that are identified at the following
+location:
 
 https://download.analog.com/codefusion-studio/versions.html
 
-With respect to any Third Party Software subject to the GNU General Public License Version 2
-(“GPL2”) distributed by Analog Devices in object code or executable form and not distributed in
-source code form (to the extent such distribution is required by GPL2) in connection with this
-Agreement, Analog Devices hereby offers, for a period of three years from the date of Licensee’s
-receipt of the applicable Third Party Software, to give any third party, for a charge no more than
-the cost of physically performing source distribution, a complete machine-readable copy of the
-corresponding source code, to be distributed on a medium customarily used for software
-interchange.
+With respect to any Third Party Software subject to the GNU General
+Public License Version 2 ("GPL2") distributed by Analog Devices in
+object code or executable form and not distributed in source code form
+(to the extent such distribution is required by GPL2) in connection
+with this Agreement, Analog Devices hereby offers, for a period of three
+years from the date of Licensee's receipt of the applicable Third Party
+Software, to give any third party, for a charge no more than the cost of
+physically performing source distribution, a complete machine-readable
+copy of the corresponding source code, to be distributed on a medium
+customarily used for software interchange.
 
-In the event that Third Party Software has only been provided to Licensee in object code form under
-this Agreement, and the Third Party License requires distribution of the corresponding source code,
-Licensee may contact software.licensing@analog.com regarding receiving a copy of such source
-code.
+In the event that Third Party Software has only been provided to Licensee
+in object code form under this Agreement, and the Third Party License
+requires distribution of the corresponding source code, Licensee may
+contact software.licensing@analog.com regarding receiving a copy of such
+source code.

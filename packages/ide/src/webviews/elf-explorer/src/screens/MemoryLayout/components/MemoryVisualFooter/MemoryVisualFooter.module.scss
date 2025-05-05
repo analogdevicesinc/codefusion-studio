@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/layout';
+@use '#colors' as colors;
+@use '#layout' as layout;
 
 .footer {
 	display: flex;

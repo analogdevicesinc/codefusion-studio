@@ -13,13 +13,8 @@
  *
  */
 // Components
-import React, {memo, useState} from 'react';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell,
-	VSCodeButton
-} from '@vscode/webview-ui-toolkit/react';
+import React, {memo} from 'react';
+import {VSCodeDataGrid} from '@vscode/webview-ui-toolkit/react';
 import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
 
 import styles from './MemoryList.module.scss';
@@ -28,8 +23,6 @@ import {
 	transformBtoKB,
 	convertDecimalToHex
 } from '../../../../utils/number';
-import Tooltip from '../../../../components/Tooltip/Tooltip';
-import Info from '@common/icons/Info';
 import {calculateSegmentEndAddress} from '../../../../utils/visual-utils';
 
 import {
@@ -37,6 +30,7 @@ import {
 	type TSection
 } from '../../../../common/types/memory-layout';
 import type {TLocaleContext} from '../../../../common/types/context';
+import MemoryListItem from '../MemoryListItem/MemoryListItem';
 
 type TMemoryListProps = {
 	readonly data: TSection[];
@@ -45,141 +39,96 @@ type TMemoryListProps = {
 
 function MemoryList({data, i10n}: TMemoryListProps) {
 	const columns: string[] = getColumns(data);
-	const [isHovered, setIsHovered] = useState<boolean>(false);
 
 	return (
 		<>
 			<div className={styles.header}>About this section</div>
 			<VSCodeDataGrid
 				aria-label='Memory List'
-				className='table-styles'
+				className={styles.table}
 			>
 				{data.map((row, index) => (
 					<React.Fragment key={`${row.id}`}>
 						{columns.includes('name') && (
-							<VSCodeDataGridRow key={`name-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Section Name
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell grid-column={index + 2}>
-									{row.name && (
-										<SectionNameWithCircle
-											value={row.name}
-											bucket={row.bucket}
-											align='right'
-										/>
-									)}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Section Name'
+								i10n={i10n}
+							>
+								{row.name}
+							</MemoryListItem>
 						)}
+
 						{columns.includes('type') && (
-							<VSCodeDataGridRow key={`type-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Section Type
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									{row.type}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Section Type'
+								i10n={i10n}
+							>
+								{row.type}
+							</MemoryListItem>
 						)}
 						{columns.includes('address') && (
-							<VSCodeDataGridRow key={`addressStart-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Starting Address
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									{row.address}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Starting Address'
+								i10n={i10n}
+							>
+								{row.address}
+							</MemoryListItem>
 						)}
 						{columns.includes('address') && (
-							<VSCodeDataGridRow key={`addressEnd-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Ending Address
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									{convertDecimalToHex(
-										calculateSegmentEndAddress(
-											data[0] as unknown as TSegment
-										)
-									)}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Ending Address'
+								i10n={i10n}
+							>
+								{convertDecimalToHex(
+									calculateSegmentEndAddress(
+										data[0] as unknown as TSegment
+									)
+								)}
+							</MemoryListItem>
 						)}
 						{columns.includes('size') && (
-							<VSCodeDataGridRow key={`size-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Size
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									{transformBtoKB(row.size)}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Size'
+								i10n={i10n}
+							>
+								{transformBtoKB(row.size)}
+							</MemoryListItem>
 						)}
 						{columns.includes('bucket') && (
-							<VSCodeDataGridRow key={`bucket-${row.id}`}>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									Is part of
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									{row?.bucket?.toLowerCase()}
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Is part of'
+								i10n={i10n}
+							>
+								{row.name && (
+									<SectionNameWithCircle
+										value={row?.bucket?.toLowerCase()}
+										bucket={row.bucket}
+										align='right'
+									/>
+								)}
+							</MemoryListItem>
 						)}
 						{columns.includes('flags') && (
-							<VSCodeDataGridRow
-								key={`flags-${row.id}`}
-								onMouseEnter={() => {
-									setIsHovered(true);
-								}}
-								onMouseLeave={() => {
-									setIsHovered(false);
-								}}
+							<MemoryListItem
+								section={row}
+								index={index}
+								title='Flags'
+								i10n={i10n}
 							>
-								<VSCodeDataGridCell grid-column={index + 1}>
-									<div className={styles['tooltip-container']}>
-										<span>Flags</span>
-
-										{isHovered && i10n?.title && (
-											<Tooltip
-												content={{
-													title: i10n?.title || ''
-												}}
-											>
-												<VSCodeButton
-													appearance='icon'
-													className={styles['icon-button']}
-												>
-													<Info />
-												</VSCodeButton>
-											</Tooltip>
-										)}
-									</div>
-								</VSCodeDataGridCell>
-								<VSCodeDataGridCell
-									grid-column={index + 2}
-									className={styles.last}
-								>
-									<div className={styles['min-container']}>
-										{row.flags}
-									</div>
-								</VSCodeDataGridCell>
-							</VSCodeDataGridRow>
+								{row.flags}
+							</MemoryListItem>
 						)}
 					</React.Fragment>
 				))}

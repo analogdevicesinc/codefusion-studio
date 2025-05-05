@@ -73,10 +73,18 @@ export default function Metadata() {
 						list={metadata.armAttributes}
 						i10n={i10n?.armAttributes || ''}
 					/>
-					<AttributesList
-						list={metadata.heuristicInfo}
-						i10n={i10n?.heuristicInfo || ''}
-					/>
+					{metadata.heuristicInfo.length > 1 ? (
+						<AttributesList
+							list={metadata.heuristicInfo}
+							i10n={i10n?.heuristicInfo || ''}
+						/>
+					) : (
+						<AttributesList
+							list={[]}
+							noDataMessage='No heuristics information available.'
+							i10n={i10n?.heuristicInfo || ''}
+						/>
+					)}
 				</section>
 			</div>
 		</ScreenLayout>

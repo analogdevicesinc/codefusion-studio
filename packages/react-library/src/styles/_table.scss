@@ -1,0 +1,72 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use './colors';
+@use './fonts';
+
+@mixin table-styles {
+	--foreground: #{colors.$default-foreground};
+	--font-family: #{fonts.$default-font-family};
+	--design-unit: 0;
+	--border-width: 0;
+	--type-ramp-base-font-size: #{fonts.$font-size-m};
+	--type-ramp-base-line-height: 14px;
+	--list-active-selection-background: #{colors.$list-active-selection-background};
+	--list-active-selection-foreground: #{colors.$list-active-selection-foreground};
+	--list-hover-background: #{colors.$table-row-hover};
+	--contrast-active-border: transparent;
+
+	border-top: 1px solid colors.$default-border;
+
+	& > * {
+		border-bottom: 1px solid colors.$default-border;
+	}
+
+	svg {
+		path {
+			fill: colors.$default-foreground;
+		}
+	}
+}
+
+@mixin table-title {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	cursor: pointer;
+	height: 14px;
+
+	&.asc,
+	&.desc {
+		font-weight: bolder;
+	}
+
+	&.desc {
+		svg {
+			transform: rotate(180deg);
+		}
+	}
+}
+
+vscode-data-grid-cell {
+	padding: 8px 3px;
+
+	&:focus {
+		svg {
+			path {
+				fill: colors.$list-active-selection-foreground;
+			}
+		}
+	}
+}

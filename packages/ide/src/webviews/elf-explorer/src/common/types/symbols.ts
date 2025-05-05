@@ -15,7 +15,7 @@
 export type TSymbol = Record<string, any>;
 
 export enum SYMBOL_COLUMNS {
-	NUM = 'num',
+	ID = 'id',
 	NAME = 'name',
 	TYPE = 'type',
 	ADDRESS = 'address',
@@ -27,7 +27,9 @@ export enum SYMBOL_COLUMNS {
 	VISIBILITY = 'visibility',
 	PATH = 'path',
 	BUCKET = 'bucket',
-	RECURSIVE = 'recursive'
+	RECURSIVE = 'recursive',
+	DEMANGLED = 'demangled',
+	STACKDEPTH = 'stackdepth'
 }
 
 export enum RECURSION_TYPES {
@@ -37,7 +39,7 @@ export enum RECURSION_TYPES {
 }
 
 export type TColumn =
-	| 'num'
+	| 'id'
 	| 'name'
 	| 'type'
 	| 'address'
@@ -54,7 +56,7 @@ export type TNewColumn = string;
 export type TSortByStateVal = 'asc' | 'desc' | undefined;
 
 export type TSortByState = {
-	num?: TSortByStateVal;
+	id?: TSortByStateVal;
 	name?: TSortByStateVal;
 	type?: TSortByStateVal;
 	value?: TSortByStateVal;
@@ -67,7 +69,7 @@ export type TSortByState = {
 };
 
 export const columns: string[] = [
-	'num',
+	'id',
 	'name',
 	'type',
 	'value',

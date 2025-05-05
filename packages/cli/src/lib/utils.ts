@@ -12,6 +12,9 @@
  * limitations under the License.
  *
  */
+import {Eta} from "eta";
+import path from 'node:path';
+
 import {ConfigdataClock, ConfigdataPin} from '../types/configdata.js';
 import {Soc, SocPinSignal} from '../types/soc.js';
 
@@ -199,8 +202,19 @@ export function generatePinConfigCode(
 
   configForPin[`${pin.Name}`] = getDefaultConfigValues();
 
+  if (configuredPin.Config?.DESC) {
+    cLinesPinConfig.push(
+      `/* ${pin.Label} (${pin.Name}): assigned to ${configuredPin.Peripheral}_${configuredPin.Signal}.`,
+      ` * This pin is used for ${configuredPin.Config.DESC}.`,
+      ` */`
+    );
+  } else {
+    cLinesPinConfig.push(
+      `/* ${pin.Label} (${pin.Name}): assigned to ${configuredPin.Peripheral}_${configuredPin.Signal}. */ `
+    );
+  }
+
   cLinesPinConfig.push(
-    `/* ${pin.Label} (${pin.Name}): assigned to ${configuredPin.Peripheral}_${configuredPin.Signal} */`,
     `const mxc_gpio_cfg_t cfg_p${pin.GPIOPort}_${pin.GPIOPin} = {`,
     INDENTATION + `MXC_GPIO${pin.GPIOPort},`,
     INDENTATION + `MXC_GPIO_PIN_${pin.GPIOPin},`
@@ -229,23 +243,25 @@ export function generatePinConfigCode(
           continue;
         }
 
-        const valueId = configuredPin.Config[control.Id];
-        const value = control.EnumValues?.find(
-          (value) => value.Id === valueId
-        );
+        if (control.Type === 'enum') {
+          const valueId = configuredPin.Config[control.Id];
+          const value = control.EnumValues?.find(
+            (value) => value.Id === valueId
+          );
 
-        if (!value) {
-          throw new Error(
-            `Invalid value "${valueId}" for control "${control.Id}"`
+          if (!value) {
+            throw new Error(
+              `Invalid value "${valueId}" for control "${control.Id}"`
+            );
+          }
+
+          computeGpioConfig(
+            control.Id,
+            valueId,
+            configForPin,
+            pin.Name
           );
         }
-
-        computeGpioConfig(
-          control.Id,
-          valueId,
-          configForPin,
-          pin.Name
-        );
       }
     }
 
@@ -311,3 +327,18 @@ export function createOrderMapping(
     {} as Record<string, number>
   );
 }
+
+// Returns a new instance of ETA pointing to the generators folder
+export function createETA(rootDir: string) {
+  const templateDir = path.resolve(path.join(rootDir, "dist/generators"));
+  const eta = new Eta({
+    views: templateDir,
+    // By default ETA uses XMLEscape,
+    // which maps special HTML characters (&, <, >, ", ') to their XML-escaped equivalents
+    // We do not want that
+    escapeFunction: String,
+    debug: true,
+  });
+  return eta;
+}
+

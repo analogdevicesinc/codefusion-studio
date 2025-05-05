@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
 .root {
 	--cfs-header-separator: #{1px solid colors.$editor-widget-border};

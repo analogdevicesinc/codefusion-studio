@@ -12,6 +12,7 @@ node_modules
 **/*.map
 **/*.ts
 **/*.js.map
+**/*.test.js
 
 *.vsix
 

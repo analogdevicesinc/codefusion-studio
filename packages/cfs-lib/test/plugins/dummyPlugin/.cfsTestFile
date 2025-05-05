@@ -1,0 +1,49 @@
+{
+    "pluginName": "pluginName",
+    "pluginDescription": "pluginDescription",
+    "pluginId": "1",
+    "pluginVersion": "1",
+    "pluginApiVersion": 1,
+    "minConfigSchema": 0,
+    "maxConfigSchema": 1,
+    "author": "author",
+    "supportedSocs": [
+        {
+            "name": "soc1",
+            "dataModel": "dataModel",
+            "board": "board",
+            "package": "package"
+        }
+    ],
+    "firmwarePlatform": "firmwarePlatform",
+    "extends": {
+        "pluginId": "pluginId",
+        "pluginVersion": "pluginVersion"
+    },
+    "features": {
+        "feat1": {
+            "files": [
+                {}
+            ],
+            "templates": [],
+            "jsPluginPath": "path"
+        }
+    },
+    "properties": {
+        "prop1": {
+            "name": "prop1",
+            "description": "description",
+            "category": "category",
+            "default": "default",
+            "type": "string",
+            "enum": [
+                "1",
+                "2",
+                "3"
+            ],
+            "required": false,
+            "readonly": false
+        }
+    },
+    "configOverrides": []
+}

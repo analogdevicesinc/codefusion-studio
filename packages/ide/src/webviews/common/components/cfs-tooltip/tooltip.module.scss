@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
  * limitations under the License.
  *
  */
-@use '../../styles/colors';
-@use '../../styles/layout';
-@use '../../styles/fonts';
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '#fonts' as fonts;
 
 .tooltipContainer {
 	position: absolute;
 	display: flex;
-	width: 200px;
+	width: var(--tooltip-width, 200px);
 	z-index: 100;
 	pointer-events: none;
 
@@ -44,8 +44,8 @@
 
 		.notchBorder {
 			@extend .notch;
-			border-color: transparent transparent
-				colors.$editor-widget-border transparent;
+			border-color: transparent transparent colors.$default-border
+				transparent;
 		}
 
 		.contentWrapper {
@@ -55,28 +55,22 @@
 			align-items: flex-start;
 			align-self: stretch;
 			border-radius: 2px;
-			border: 1px solid colors.$editor-widget-border;
+			border: 1px solid colors.$default-border;
 			background: colors.$default-background;
 			box-shadow: layout.$default-shadow;
 
 			.header {
+				@include fonts.heading-h4;
+				color: colors.$default-foreground;
 				box-sizing: border-box;
 				padding: 16px;
 				width: 100%;
 				border-bottom: var(--cfs-header-separator, unset);
 			}
 
-			.title {
-				@include fonts.heading-h4;
-				color: colors.$default-foreground;
-				font-weight: 700;
-				margin: 0;
-				word-wrap: break-word;
-			}
-
 			.body {
 				@include fonts.body-b3;
-				color: colors.$notifications-foreground;
+				color: colors.$description-foreground;
 				font-weight: 500;
 				word-wrap: break-word;
 				padding: var(--cfs-tooltip-body-padding, 16px);

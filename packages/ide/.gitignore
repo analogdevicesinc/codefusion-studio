@@ -29,10 +29,22 @@ yarn-error.log*
 
 # intermediate build files
 *.d
-*.o 
+*.o
 
 # documentation
 site/
 
 src/tests/ui-test-config-tools/build/
 src/tests/ui-test-config-tools/.vscode/*
+src/tests/ui-test-config-tools/build/
+src/tests/ui-test-config-tools/.vscode/*
+src/tests/ui-test/.vscode/*
+src/tests/ui-test-utils/*.js
+src/tests/ui-test/analog*/
+src/tests/ui-test/.obsolete
+src/tests/ui-test/extensions.json
+# workspace-creation extension tests
+src/tests/ui-test-workspace-creation/build/
+src/tests/ui-test-workspace-creation/.vscode/*
+!src/tests/ui-test-workspace-creation/.vscode/extensions.json
+

@@ -1,12 +1,58 @@
 {
-	"Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-	"DataModelVersion": "0.0.25",
-	"DataModelSchemaVersion": "0.0.1",
-	"Timestamp": "2024-03-12T13:09:29.484Z",
-	"Soc": "MAX32690",
-	"Package": "TQFN",
-	"Pins": [],
-	"ClockNodes": [],
-	"FirmwarePlatform": "msdk",
-	"BoardName": "EvKit_V1"
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.1.0",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-02-28T12:29:03.185Z",
+  "Soc": "MAX32690",
+  "Package": "TQFN",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "AD-APARD32690-SL",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.zephyr41.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr-4.1",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4",
+        "ZephyrBoardName": "max32690-evkit/evkit/m4",
+        "KConfigFlags": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
+        "CMakeArgs": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n"
+      },
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "CM4 SysTick",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        }
+      ]
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "RV mtime",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        }
+      ],
+      "PlatformConfig": {
+        "ProjectName": "rv"
+      }
+    }
+  ]
 }

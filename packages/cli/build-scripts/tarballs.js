@@ -1,18 +1,29 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-const localDepsPaths = [
-	path.resolve(process.cwd(), '../cfs-lib'),
-	path.resolve(process.cwd(), '../elf-parser'),
-	path.resolve(process.cwd(), '../cli'),
-]
 
-async function* patchLocalDepsGenerator() {
-	for (const p of localDepsPaths) {
-		await patchLocalDependenciesPaths(path.join(p, 'package.json'))
-		yield p
-	}
+
+// The oclif tarball script needs all dependencies present in the temporary workspace
+// before the tarball is created. This script copies the necessary files to the temporary workspace
+// For this to work correctly, assure the cfs-plugins-api was build before running this script
+const apiPath = path.resolve(process.cwd(), '../../submodules/cfs-plugins/api')
+const finalDest = path.resolve(process.cwd(), 'tmp/cfs-plugins-api')
+
+// Create cfs-plugins-api directory if it doesn't exist
+if (!fs.existsSync(finalDest)) {
+  fs.mkdirSync(finalDest, { recursive: true })
 }
+
+// Copy api folder content to cfs-plugins-api directory
+fs.cpSync(apiPath, finalDest, { recursive: true }, (err) => {
+  if (err) {
+    console.error(`An error occurred while copying API files to cfsutil/tmp/cfs-plugins-api: ${err}`)
+  } else {
+    console.log('Successfully copied API files to cfs-plugins-api directory')
+  }
+})
+
+
 
 for await (const p of patchLocalDepsGenerator()) {
 	const localDepName = path.basename(p)
@@ -24,6 +35,29 @@ for await (const p of patchLocalDepsGenerator()) {
 				console.error(`An error ocurred while copying files to cfsutil/tmp workspace: ${err}`)
 			}
 		})
+	}
+}
+
+
+/**
+ * Asynchronous generator that patches package.json files for local dependencies.
+ * Iterates through each path in localDepsPaths, applies dependency path patching,
+ * and yields the processed path.
+ *
+ * @async
+ * @generator
+ * @yields {string} The path to the directory containing the processed package.json file
+ */
+async function* patchLocalDepsGenerator() {
+	const localDepsPaths = [
+	path.resolve(process.cwd(), '../cfs-lib'),
+	path.resolve(process.cwd(), '../elf-parser'),
+	path.resolve(process.cwd(), '../cli'),
+]
+
+	for (const p of localDepsPaths) {
+		await patchLocalDependenciesPaths(path.join(p, 'package.json'))
+		yield p
 	}
 }
 
@@ -55,6 +89,7 @@ async function patchLocalDependenciesPaths(packageJsonPath) {
 				if (localDependencies.length === 0) {
 					console.log('No local dependencies found to patch, continuing...')
 					resolve()
+					return
 				}
 
 				for (const [key] of localDependencies) {

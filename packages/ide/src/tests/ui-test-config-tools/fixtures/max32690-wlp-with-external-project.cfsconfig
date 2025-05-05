@@ -1,0 +1,181 @@
+{
+  "Copyright": "Copyright (c) undefined Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.0.0",
+  "DataModelSchemaVersion": "1.0.0",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "BoardName": "AD-APARD32690-SL",
+  "Timestamp": "",
+  "Pins": [
+    {
+      "Pin": "D6",
+      "Peripheral": "UART1",
+      "Signal": "RX"
+    },
+    {
+      "Pin": "E7",
+      "Peripheral": "UART1",
+      "Signal": "TX"
+    },
+    {
+      "Pin": "F2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.11"
+    },
+    {
+      "Pin": "F3",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.12"
+    },
+    {
+      "Pin": "H6",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.1"
+    },
+    {
+      "Pin": "J5",
+      "Peripheral": "UART0",
+      "Signal": "TX"
+    },
+    {
+      "Pin": "K5",
+      "Peripheral": "UART0",
+      "Signal": "RX"
+    },
+    {
+      "Pin": "K7",
+      "Peripheral": "GPIO1",
+      "Signal": "P1.27"
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Type": "Peripheral",
+      "Name": "UART0/1/2",
+      "Control": "UART0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Type": "Peripheral",
+      "Name": "UART0/1/2",
+      "Control": "UART0_MUX",
+      "Value": "IBRO",
+      "Enabled": true
+    },
+    {
+      "Type": "Mux",
+      "Name": "SYS_OSC Mux",
+      "Control": "MUX",
+      "Value": "IPO",
+      "Enabled": true
+    },
+    {
+      "Name": "RISC-V",
+      "Control": "ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    }
+  ],
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.zephyr41.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr-4.1",
+      "ExternallyManaged": true,
+      "Partitions": [ ],
+      "Peripherals": [],
+      "PlatformConfig": {
+        "ProjectName": "m4",
+        "ZephyrBoardName": "apard32690/max32690/m4",
+        "KConfigFlags": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
+        "CMakeArgs": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n"
+      }
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "Partitions": [
+        {
+          "Name": "RISCV_FLASH",
+          "StartAddress": "0x10300000",
+          "Size": 262144,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+            "NAME_OVERRIDE": "FLASH"
+          }
+        },
+        {
+          "Name": "RISCV_SRAM",
+          "StartAddress": "0x20100000",
+          "Size": 131072,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+            "NAME_OVERRIDE": "SRAM"
+          }
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "UART1",
+          "Signals": [
+            {
+              "Name": "CTS",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            },
+            {
+              "Name": "RTS",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            },
+            {
+              "Name": "RX",
+              "Config": {
+                "PWR": "VDDIO",
+                "PS": "WEAK_PU"
+              }
+            },
+            {
+              "Name": "TX",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            }
+          ],
+          "Config": {
+            "PARITY": "DISABLED",
+            "PARITY_MD": "MARK",
+            "CTS_SAMPLING": "DIS",
+            "CHAR_SIZE": "8",
+            "STOP_BITS": "1",
+            "HW_FLOW_CTRL": "DISABLED",
+            "RTS_THRESH": "0",
+            "BAUD_CLK_EN": "FALSE",
+            "ERROR_DETECT_EN": "FALSE",
+            "FRACTIONAL_DM": "INTEGER",
+            "DUAL_EDGE": "FALSE",
+            "CLKDIV": "0",
+            "OVERSAMPLE_LP_NOFDM": "128",
+            "OVERSAMPLE_LP_FDM": "8",
+            "DMA_TX_THD_VAL": "0",
+            "DMA_RX_THD_VAL": "0"
+          }
+        }
+      ],
+      "PlatformConfig": {
+        "ProjectName": "riscv"
+      }
+    }
+  ]
+}

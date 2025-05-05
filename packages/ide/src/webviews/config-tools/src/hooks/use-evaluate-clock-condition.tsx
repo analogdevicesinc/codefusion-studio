@@ -20,9 +20,9 @@ export function useEvaluateClockCondition() {
 	const nodesConfig = useClockNodesConfig();
 	const assignedPins = useAssignedPins();
 
-	const evaluateFn = (condition: string) =>
+	const evaluateFn = (condition: string, currentNode?: string) =>
 		evaluateClockCondition(
-			{clockconfig: nodesConfig, assignedPins},
+			{clockconfig: nodesConfig, assignedPins, currentNode},
 			condition
 		);
 

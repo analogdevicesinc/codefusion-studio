@@ -1,0 +1,118 @@
+/**
+ *
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '../../styles/colors';
+@use '../../styles/fonts';
+
+.container {
+	display: flex;
+	--focus-border: #{colors.$focus-border};
+
+	&.full-width {
+		flex: 1;
+	}
+
+	.textField {
+		--input-background: #{colors.$input-background};
+		--input-foreground: #{colors.$input-foreground};
+		--input-height: 30;
+		--font-family: #{fonts.$default-font-family};
+		--dropdown-border: #{colors.$editor-widget-border};
+
+		&::part(root) {
+			box-sizing: border-box;
+			justify-content: center;
+			align-items: center;
+			gap: 8px;
+		}
+
+		&::part(control) {
+			padding: 0;
+			&::placeholder {
+				color: colors.$description-foreground;
+			}
+		}
+	}
+
+	[slot='start'],
+	[slot='end'] {
+		display: flex;
+		align-items: center;
+	}
+
+	&.empty {
+		.textField {
+			&::part(start),
+			&::part(end) {
+				color: colors.$description-foreground;
+			}
+		}
+	}
+
+	.errorBorder {
+		--dropdown-border: #{colors.$error};
+		--focus-border: #{colors.$error};
+	}
+
+	.errorMsg {
+		margin: 4px 0 0 0;
+		@include fonts.body-b1;
+		font-family: fonts.$default-font-family;
+		color: colors.$error;
+		width: 100%;
+	}
+}
+
+.labelContainer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+
+	& > label {
+		@include fonts.body-b1;
+	}
+
+	.optionalLabel {
+		@include fonts.label-l4;
+		color: colors.$description-foreground;
+	}
+}
+
+.horizontal {
+	align-items: center;
+
+	& label {
+		@include fonts.body-b1;
+	}
+
+	.textField {
+		min-width: 192px;
+		width: 100%;
+	}
+
+	.divider {
+		flex: 1;
+	}
+}
+
+.vertical {
+	flex-direction: column;
+	justify-content: center;
+	gap: var(--cfs-text-field-vertical-gap, 6px);
+
+	.textField {
+		min-width: 198px;
+		width: 100%;
+	}
+}

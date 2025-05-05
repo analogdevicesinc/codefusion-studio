@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import SearchInput from '../../../components/search-input/SearchInput';
+import FilterControls from '../../../components/filter-controls/FilterControls';
+import ContextSearchInput from '../../../components/context-search-input/context-search-input';
 
 import style from './PinmuxHeader.module.scss';
 
@@ -20,8 +21,9 @@ export default function PinmuxHeader() {
 	return (
 		<div className={style.headerContainer}>
 			<div className={style.inputWrapper}>
-				<SearchInput searchContext='pinconfig' />
+				<ContextSearchInput searchContext='pinconfig' />
 			</div>
+			<FilterControls />
 		</div>
 	);
 }

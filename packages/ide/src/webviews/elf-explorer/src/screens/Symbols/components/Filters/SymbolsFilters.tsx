@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
 import {
 	type ChangeEvent,
 	useState,
@@ -25,6 +24,7 @@ import SavedQueriesDropdown from '../SavedQueriesDropdown/SavedQueriesDropdown';
 import SaveEditQueryModal from '../SaveEditQueryModal/SaveEditQueryModal';
 import QueryFilterInput from '../QueryFilterInput/QueryFilterInput';
 import {Modal} from '@common/components/modal/Modal';
+import {Button} from 'cfs-react-library';
 
 import {
 	getQueries,
@@ -274,20 +274,16 @@ export default function SymbolsFilters({
 			/>
 
 			<Modal
-				isDynamicHeight
 				isOpen={isSaveModalOpen}
 				handleModalClose={resetState}
 				footer={
 					<>
-						<VSCodeButton appearance='secondary' onClick={resetState}>
+						<Button appearance='secondary' onClick={resetState}>
 							Cancel
-						</VSCodeButton>
-						<VSCodeButton
-							appearance='primary'
-							onClick={handleOnSaveQuery}
-						>
+						</Button>
+						<Button appearance='primary' onClick={handleOnSaveQuery}>
 							Save
-						</VSCodeButton>
+						</Button>
 					</>
 				}
 			>

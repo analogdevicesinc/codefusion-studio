@@ -16,40 +16,49 @@ import {memo, useEffect, useMemo} from 'react';
 import type {Pin} from '@common/types/soc';
 import {setActiveSearchString} from '../../state/slices/app-context/appContext.reducer';
 import {useSearchString} from '../../state/slices/app-context/appContext.selector';
-import {
-	useAssignedPins,
-	useFocusedPins,
-	usePackagePins
-} from '../../state/slices/pins/pins.selector';
+import {useAssignedPins} from '../../state/slices/pins/pins.selector';
 import {useAppDispatch} from '../../state/store';
 import SideDetailsView from '../pinmux/side-details-view/SideDetailsView';
-import {
-	focusPinSet,
-	unfocusPinSet
-} from '../../state/slices/pins/pins.reducer';
+import {focusPinSet} from '../../state/slices/pins/pins.reducer';
+import {getConfigurablePins} from '../../utils/soc-pins';
 
 function PinSearch() {
 	const dispatch = useAppDispatch();
 	const searchString = useSearchString('pinconfig');
-	const nonReservedPins = Object.values(usePackagePins()).filter(
-		pin => pin.details.Signals && pin.details.Signals.length > 1
-	);
-	const alreadyFocusedPins = useFocusedPins();
+	const configurablePins = useMemo(() => getConfigurablePins(), []);
+
 	const assignedPins = useAssignedPins().map(
-		assignedPin => assignedPin.details.Name
+		assignedPin => assignedPin.Name
 	);
 
-	const searchedForPins = nonReservedPins
-		.filter(pin =>
-			pin.details.Label.toLowerCase().startsWith(
-				searchString.toLowerCase()
-			)
-		)
-		.map(pin => pin.details);
+	const shouldSearchExactMatch = (): boolean => {
+		if (
+			(searchString.startsWith('"') && searchString.endsWith('"')) ||
+			(searchString.startsWith("'") && searchString.endsWith("'")) ||
+			searchString.endsWith(' ')
+		) {
+			return true;
+		}
 
-	const searchedForSignals = nonReservedPins
+		return false;
+	};
+
+	const cleanseSearchString = (): string =>
+		searchString.replace(/['"]+/g, '').trimEnd();
+
+	const searchedForPins = shouldSearchExactMatch()
+		? configurablePins.filter(
+				pin =>
+					pin.Label.toLocaleLowerCase() ===
+					cleanseSearchString().toLowerCase()
+			)
+		: configurablePins.filter(pin =>
+				pin.Label.toLowerCase().startsWith(searchString.toLowerCase())
+			);
+
+	const searchedForSignals = configurablePins
 		.filter(pin =>
-			pin.details.Signals?.find(signal =>
+			pin.Signals?.find(signal =>
 				signal.Name.toLowerCase().startsWith(
 					searchString.toLowerCase()
 				)
@@ -57,7 +66,7 @@ function PinSearch() {
 		)
 		.map(pin => {
 			const pinDetailsCopy = {
-				...pin.details
+				...pin
 			};
 
 			// Filter out the signals that don't start with searchString
@@ -72,9 +81,9 @@ function PinSearch() {
 			return pinDetailsCopy;
 		});
 
-	const searchedForPeripherals = nonReservedPins
+	const searchedForPeripherals = configurablePins
 		.filter(pin =>
-			pin.details.Signals?.find(signal =>
+			pin.Signals?.find(signal =>
 				signal.Peripheral?.toLowerCase().startsWith(
 					searchString.toLowerCase()
 				)
@@ -82,7 +91,7 @@ function PinSearch() {
 		)
 		.map(pin => {
 			const pinDetailsCopy = {
-				...pin.details
+				...pin
 			};
 
 			// Filter out the signals that don't start with searchString
@@ -96,6 +105,7 @@ function PinSearch() {
 
 			return pinDetailsCopy;
 		});
+
 	let searchedForTarget: Pin[] = useMemo(() => [], []);
 
 	if (searchedForPins.length) {
@@ -156,27 +166,9 @@ function PinSearch() {
 				}
 			);
 
-			const areSearchResultsPinsFocused = searchResultsPins.every(
-				pin => alreadyFocusedPins.includes(pin)
-			);
-
-			if (!areSearchResultsPinsFocused) {
-				dispatch(focusPinSet(searchResultsPins));
-			}
-
-			return () => {
-				if (areSearchResultsPinsFocused) {
-					dispatch(unfocusPinSet(searchResultsPins));
-				}
-			};
+			dispatch(focusPinSet(searchResultsPins));
 		}
-	}, [
-		alreadyFocusedPins,
-		assignedPins,
-		dispatch,
-		searchResults,
-		searchString
-	]);
+	}, [assignedPins, dispatch, searchResults, searchString.length]);
 
 	let errorMsg = '';
 

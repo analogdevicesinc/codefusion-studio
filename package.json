@@ -1,7 +1,7 @@
 {
 	"name": "adi-cfs",
 	"publisher": "Analog Devices",
-	"version": "1.0.0-1",
+	"version": "1.1.0-1",
 	"private": true,
 	"packageManager": "yarn@4.2.2",
 	"type": "module",
@@ -23,14 +23,6 @@
 		"tsx": "^4.7.0",
 		"typescript": "^5"
 	},
-	"resolutions": {
-		"got@npm:^13.0.0": "12.4.1",
-		"@vscode/vsce@npm:^2.18.0": "2.23.0",
-		"@vscode/vsce@npm:^2.26.1": "2.23.0",
-		"@vscode/vsce@npm:^2.27.0": "2.23.0",
-		"@vscode/vsce@npm:^2.29.0": "2.23.0",
-		"@vscode/vsce@npm:^2.31.1": "2.23.0"
-	},
 	"scripts": {
 		"lint": "eslint --fix . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
 		"build": "yarn run lint",
@@ -43,14 +35,17 @@
 		"ws:add-engine": "yarn workspace add-codegen",
 		"ws:add-soc": "yarn workspace add-soc",
 		"ws:lib": "yarn workspace cfs-lib",
+		"ws:ccm-lib": "yarn workspace cfs-ccm-lib",
 		"ws:elf-parser": "yarn workspace elf-parser",
 		"ws:react-lib": "yarn workspace cfs-react-library",
+		"ws:plugins-api": "yarn workspace cfs-plugins-api",
 		"cfsutil": "yarn ws:cli cfsutil",
 		"ui-package": "yarn ws:ui package",
 		"ide-package": "yarn ws:ide package"
 	},
 	"workspaces": [
 		"packages/*",
-		"packages/cli-plugins/*"
+		"packages/cli-plugins/*",
+		"submodules/cfs-plugins/api"
 	]
 }

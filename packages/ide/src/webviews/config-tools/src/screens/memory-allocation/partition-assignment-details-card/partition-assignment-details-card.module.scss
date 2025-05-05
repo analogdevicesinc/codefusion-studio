@@ -1,0 +1,88 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
+.partitionsContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	align-self: stretch;
+}
+
+.memoryCardDetails {
+	@include fonts.body-b3;
+	text-transform: uppercase;
+	color: colors.$description-foreground;
+}
+
+.memoryCardTitle {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	@include fonts.heading-h3;
+}
+.memoryCardTitleInfo {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	align-self: stretch;
+}
+
+.memoryCardTitleSlot {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	flex: 1 0 0;
+}
+
+.memoryCardTitleSection {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	flex: 1 0 0;
+}
+
+.partitionLabel {
+	@include fonts.body-b3;
+	display: inline-block;
+	width: 100%;
+	padding: 10px 5px 10px 10px;
+}
+
+.partitionHeading {
+	@include fonts.heading-h5;
+	color: colors.$default-foreground;
+	text-transform: uppercase;
+}
+
+.partitionsCards {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	width: 100%;
+}
+
+.partitionCardsSection {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	align-self: stretch;
+}

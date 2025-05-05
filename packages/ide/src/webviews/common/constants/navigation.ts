@@ -13,9 +13,12 @@
  *
  */
 export const navigationItems = {
+	dashboard: 'dashboard',
 	pinmux: 'pinmux',
 	pinconfig: 'config',
 	clockConfig: 'clockconfig',
 	registers: 'registers',
+	memory: 'memory',
+	peripherals: 'peripherals',
 	generate: 'generate'
 } as const;

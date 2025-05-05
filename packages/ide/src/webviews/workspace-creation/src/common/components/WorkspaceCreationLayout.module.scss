@@ -1,0 +1,35 @@
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.workspaceLayoutMainPanel {
+	width: layout.$main-width;
+	height: calc(
+		100vh - layout.$navbar-height - layout.$footer-height -
+			(2 * layout.$secondary-layout-padding-top-bottom)
+	);
+	margin: auto;
+
+	.layoutHeader {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		margin: 20px 0 40px 0;
+
+		& > h1 {
+			@include fonts.heading-h1;
+			margin: 0;
+		}
+
+		& > p:first-of-type {
+			@include fonts.body-b1;
+			color: colors.$description-foreground;
+			margin: 0;
+		}
+	}
+
+	.layoutBody {
+		box-sizing: border-box;
+		padding: 0 0 calc(layout.$footer-height + 20px) 0;
+	}
+}

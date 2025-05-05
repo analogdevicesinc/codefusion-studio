@@ -7,5 +7,27 @@
 	"Package": "TQFN",
 	"Pins": [],
 	"ClockNodes": [],
-	"FirmwarePlatform": "zephyr-3.7"
+	"FirmwarePlatform": "zephyr-4.0",
+  "Projects": [
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "max32xxx_78xxx-msdk",
+      "PluginVersion": "1.0.0",
+      "ExternallyManaged": false,
+      "FirmwarePlatform": "MSDK 3.0",
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "max32xxx_78xxx-zephry37",
+      "PluginVersion": "1.0.0",
+      "ExternallyManaged": false,
+      "FirmwarePlatform": "Zephyr 3.7",
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ]
 }

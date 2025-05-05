@@ -15,10 +15,7 @@
 import {useMemo, useRef, useState} from 'react';
 
 import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
-import {
-	getStylesForSegment,
-	isSegmReadOnly
-} from '../../../../utils/visual-utils';
+import {getStylesForSegment} from '../../../../utils/visual-utils';
 import {
 	convertDecimalToHex,
 	convertHexToDecimal
@@ -137,7 +134,7 @@ export default function OverlappingStacks({
 
 	const getCssClasses = (segment: TSegment) => `
 		${styles.segment}
-		${isSegmReadOnly(segment) ? styles.read : styles['read-write-exec']}
+		${segment.showAsReadOnly ? styles.read : styles['read-write-exec']}
 		${isSegmToBeHighlighted(segment) ? styles.active : ''}
 	`;
 

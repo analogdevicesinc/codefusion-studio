@@ -12,4 +12,3 @@ Learn about CodeFusion Studio, the supported processors, and how to get help.
 - See what [Features](./features.md) CodeFusion Studio has to offer.
 - Learn how to [Navigate](./navigation.md) CodeFusion Studio.
 - Verify the [Supported processors](./supported-processors.md)
-- Get [Help](./help.md) with CodeFusion Studio.

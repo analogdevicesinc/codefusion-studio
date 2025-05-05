@@ -1,0 +1,182 @@
+<%
+/**
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// Include common plugin code
+eval(this.render("common/utilities/utilities.js"));
+
+// Return the SPI Type enumeration value for this instance.
+function getSpiType(instance) {
+  return getAssignedPeripheral(instance).Config?.DIRECTION === "TARGET" ? "MXC_SPI_TYPE_TARGET" : "MXC_SPI_TYPE_CONTROLLER";
+}
+
+// Return the SPI Mode enumeration value for this instance.
+function getSpiMode(instance) {
+  let peri = getAssignedPeripheral(instance);
+  let mode = "MXC_SPI_INTERFACE_STANDARD";
+  switch (peri.Config?.MODE) {
+    case "THREE_WIRE":
+      mode = "MXC_SPI_INTERFACE_3WIRE";
+      break;
+    case "DUAL":
+      mode = "MXC_SPI_INTERFACE_DUAL";
+      break;
+    case "QUAD":
+      mode = "MXC_SPI_INTERFACE_QUAD";
+      break;
+  }
+  return mode;
+}
+
+// Return the number of targets used for this instance.
+// Not used in v2 of the API.
+function getSpiNumTargets(instance) {
+  // FIXME: Not sure what this should be.
+  return getAssignedPeripheral(instance).Config?.DIRECTION === "TARGET" ? "3" : "0";
+}
+
+// Return a mask of the polarity of the chip select pins.
+function getSpiPolarityMask(instance) {
+  let peri = getAssignedPeripheral(instance);
+  let mask = 0;
+  if (peri.Config?.CS0_POLARITY === "ACTIVE_HIGH") {
+    mask |= 1;
+  }
+  if (peri.Config?.CS1_POLARITY === "ACTIVE_HIGH") {
+    mask |= 2;
+  }
+  if (peri.Config?.CS2_POLARITY === "ACTIVE_HIGH") {
+    mask |= 4;
+  }
+  if (peri.Config?.CS3_POLARITY === "ACTIVE_HIGH") {
+    mask |= 8;
+  }
+  return mask;
+}
+
+// Return the SPI frequency value string.
+function getSpiFreq(instance) {
+  const freq = getAssignedPeripheral(instance).Config?.FREQ;
+  return freq ? freq + "U" : `(${it.clock} / 4U)`;
+}
+
+// Return the SPI clock mode.
+function getSpiClkMode(instance) {
+  return getAssignedPeripheral(instance).Config?.PHASE_POL_MODE ?? "0";
+}
+
+// Return the DMA TX setting.
+function getSpiDmaTx(instance) {
+  return getAssignedPeripheral(instance).Config?.TRANSMIT_DMA_ENABLE !== "TRUE" ? false : true;
+}
+
+// Return the DMA RX setting.
+function getSpiDmaRx(instance) {
+  return getAssignedPeripheral(instance).Config?.RECEIVE_DMA_ENABLE !== "TRUE" ? false : true;
+}
+
+// Return the DMA structure.
+function getSpiDma(instance) {
+  return "MXC_DMA";
+}
+
+// Return the TX FIFO threshold.
+function getSpiTxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.TRANSMIT_FIFO_THRESHOLD ?? "2";
+}
+
+// Return the RX FIFO threshold.
+function getSpiRxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.RECEIVE_FIFO_THRESHOLD ?? "0";
+}
+
+// Return the SPI frame size.
+function getSpiFrameSize(instance) {
+  return getAssignedPeripheral(instance).Config?.WORD_SIZE ?? "16";
+}
+%>
+<% if (getAssignedPeripheral(it.instance)) { %>
+  { /* Configure <%= it.instance %>.
+<%   if (getPeripheralDescription(it.instance)) { %>
+     * This peripheral is used for <%= getPeripheralDescription(it.instance) %>.
+<%   } %>
+<%   if (!isClockSetTo(it.clocknode, it.enable, "TRUE")) { %>
+     * Note: This peripheral was not enabled on the clock configuration canvas.
+     * Nonetheless, as a result of the following configuration, the peripheral will be
+     * clocked on.
+<%   } %>
+     */
+    mxc_spi_pins_t <%= it.instance.toLowerCase() %>_pins_dummy = { 0 };
+<% if (it.datamodel.Name === "MAX32690" || it.datamodel.Name === "MAX78002") { %>
+    mxc_spi_cfg_t <%= it.instance.toLowerCase() %>_config = {
+      MXC_<%= it.instance %>,
+      MXC_SPI_CLKMODE_<%= getSpiClkMode(it.instance) %>,
+      <%= getSpiFrameSize(it.instance) %>U, // bits per character
+      <%= getSpiDmaTx(it.instance) %>, // Is TX DMA enabled
+      <%= getSpiDmaRx(it.instance) %>, // Is RX DMA enabled
+<%   if (getSpiDmaTx(it.instance) || getSpiDmaRx(it.instance)) { %>
+      <%= getSpiDma(it.instance) %>
+<%   } else { %>
+      NULL // DMA regs
+<%   } %>
+    };
+
+    /* Initialize the peripheral. */
+    result = MXC_SPI_Init(MXC_<%= it.instance %>,
+                          <%= getSpiType(it.instance) %>,
+                          <%= getSpiMode(it.instance) %>,
+                          <%= getSpiNumTargets(it.instance) %>,
+                          <%= getSpiPolarityMask(it.instance) %>U,
+                          <%= getSpiFreq(it.instance) %>,
+                          <%= it.instance.toLowerCase() %>_pins_dummy);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Configure bits per character, clock phase and polarity mode, and DMA. */
+    result = MXC_SPI_Config(&<%= it.instance.toLowerCase() %>_config);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } else { %>
+    /* Initialize the peripheral. */
+    result = MXC_SPI_Init(MXC_<%= it.instance %>,
+                          <%= getSpiType(it.instance) === "MXC_SPI_TYPE_CONTROLLER" ? 1 : 0 %>,
+                          <%= getSpiMode(it.instance) === "QUAD" ? 1 : 0 %>,
+                          <%= getSpiNumTargets(it.instance) %>,
+                          <%= getSpiPolarityMask(it.instance) %>U,
+                          <%= getSpiFreq(it.instance) %>,
+                          <%= it.instance.toLowerCase() %>_pins_dummy);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } %>
+
+<%   if (!getSpiDmaTx(it.instance)) { %>
+    /* Set TX FIFO threshold. */
+    result = MXC_SPI_SetTXThreshold(MXC_<%= it.instance %>, <%= getSpiTxThreshold(it.instance) %>U);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } %>
+<%   if (!getSpiDmaRx(it.instance)) { %>
+    /* Set RX FIFO threshold. */
+    result = MXC_SPI_SetRXThreshold(MXC_<%= it.instance %>, <%= getSpiRxThreshold(it.instance) %>U);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } %>
+  }
+
+<% } %>

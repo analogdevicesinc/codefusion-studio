@@ -77,7 +77,7 @@ export default function MetadataOverview({
 		// prettier-ignore
 		<div className={styles.container}>
 			<div className={styles.overviewWrapper}>
-				<h5 className={styles.header}>File overview</h5>
+				<h1 className={styles.title}>File overview</h1>
 				{filteredDataToDisplay.map((item, index) => (
 					<React.Fragment key={item}>
 						<Tooltip
@@ -85,6 +85,7 @@ export default function MetadataOverview({
 								title: TooltipInfo[index].title,
 								description: TooltipInfo[index].description
 							}}
+							containerPosition='relative'
 						>
 							<span className={styles.underlined}>{item}</span>
 						</Tooltip>

@@ -1,53 +1,65 @@
 ---
 description: Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2024-08-22
+date: 2025-04-28
 ---
 
-# Config Tool
+# System Planner Configuration Tools
 
-CodeFusion Studio (CFS) provides a combined configuration tool to allow easy configuration of pin and clock settings.
-The Configuration Tool uses CFSCONFIG files which are generated using the New Project wizard.
-Clicking on the appropriate `.cfsconfig` file in your project will open the Config Tool.
+CodeFusion Studio (CFS) provides a dashboard for the System Planner Configuration Tools to allow easy configuration of pin multiplexing, clock settings, and System-on-Chip (SoC) resources.
+
+![System Planner Configuration Tools dashboard](../../about/images/system-planner-dashboard-dark.png#only-dark)
+![System Planner Configuration Tools dashboard](../../about/images/system-planner-dashboard-light.png#only-light)
+
+To open the System Planner Configuration Tools dashboard:
+
+- Click the appropriate `.cfsconfig` file in your workspace, or:
+- Go to **Config Tools > Open Config File** on the CFS Home page to open the Config Tool.
 
 !!! tip
-    See [Create a new project](../../projects/create-new-project.md) or enter **create project** in the command palette to open the wizard.
+    For information on creating a new workspace, see [Create a new workspace](../../workspaces/create-new-workspace.md) or enter **cfs.createWorkspace** in the command palette.
 
-## Tool tabs
+## Dashboard
 
-The Config Tool comprises of the following tabs.
+The System Planner Configuration Tools dashboard consists of the following tabs:
 
-### Pin Mux
+### Peripheral Allocation
 
-Configures the pin multiplexing. See [Pin Config](./pin-config.md) for details.
+Assign peripherals to cores and configure their functionality. See [Peripheral Allocation](peripheral-allocation.md) for details.
 
-### Function Config
+### Pin Config
 
-Configures the function of enabled pins. See [Pin Config](./pin-config.md) for details.
+Configures pin multiplexing and function settings. See [Pin Config](./pin-config.md) for details.
 
-### Clock Confing
+### Clock Config
 
 Configures the various clocks and divers. See [Clock Config](./clock-config.md) for details.
 
+### Memory Allocation
+
+Manage memory allocation and partitioning for different cores. See [Memory Allocation](memory-allocation.md) for details.
+
 ### Registers
 
-Displays all registers and corresponding values. The search bar provides filters for modified or unmodified registers and allows filtering based on partial register names.
+View and manage register values used by the configuration code. Filter to view modified or default values. See [Registers](registers.md) for details.
 
-Click on the register name to view the register details.
+### Generate Code
 
-!!! note
-    Registers with an asterisk (*) indicate a value other than the default.
+After setting all configurations, such as pin multiplexing, clock settings, and memory allocation, you can generate the necessary source files for your application. See [Generate Code](generate-code.md) for details.
 
-## Generate Code
+### Workspace Projects table
 
-Generates the source files required to configure the pins in the application.
+The Workspace Projects table provides an overview of the cores in the workspace and their assigned resources.  
+
+Use this table to track resource allocation across cores and ensure proper configuration before code generation. Click the chevron (**>**) in a relevant cell to open the corresponding page, where you can modify assignments or resolve any detected issues.
 
 !!! warning
-    Any pin conflicts must be resolved in PinMUX before code can be generated.
+    If the system detects configuration issues (such as pin conflicts), an error appears in the affected cell. Use the chevron (**>**) to open the corresponding page and address the issue.
 
-1. Save the configuration file.
-2. Select the export module in which the generated code will be run.
-3. Click Generate code. This generates files containing the configuration code.
-    * The files created depend on the firmware platform used.
-    * For Zephyr and MSDK projects, the code is built and run automatically if saved using the recommended filenames.
-4. Save the generated files in the application with appropriate names.
+| **Column** | **Description** |
+|------------|---------------|
+| Core | Lists available processor cores. |
+| Code Generation Plugin | Displays the associated plugin used for code generation. |
+| Allocated Peripherals | Displays the number of peripherals assigned to each core. |
+| Assigned Pins | Displays the number of assigned pins. |
+| Memory Partitions | Displays the number of allocated memory partitions. |

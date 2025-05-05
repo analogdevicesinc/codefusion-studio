@@ -13,15 +13,23 @@
  *
  */
 import * as vscode from "vscode";
-import { CONFIG_TOOLS_COMMANDS } from "./constants";
-import { CONFIG_FILE_EXTENSION } from "../constants";
-import { MCU_EDITOR_ID } from "../custom-editors/mcu-editor";
+import {
+  CONFIG_TOOLS_COMMANDS,
+  WORKSPACE_CREATION_COMMANDS,
+} from "./constants";
+import {
+  CONFIG_FILE_EXTENSION,
+  WORKSPACE_CONFIG_FILE_EXTENSION,
+} from "../constants";
 
-export function registerViewConfigFileSourceCommand() {
+function baseRegisterCommand(
+  commandId: string,
+  fileExtension: string,
+): vscode.Disposable {
   return vscode.commands.registerCommand(
-    CONFIG_TOOLS_COMMANDS.VIEW_CONFIG_FILE_SOURCE,
-    async (args: vscode.Uri) => {
-      let path;
+    commandId,
+    async (args: vscode.Uri): Promise<void> => {
+      let path: string | undefined;
       if (args) {
         path = args.path;
       } else {
@@ -31,19 +39,36 @@ export function registerViewConfigFileSourceCommand() {
           canSelectMany: false,
           openLabel: "Load",
           filters: {
-            "Configuration Files": [CONFIG_FILE_EXTENSION],
+            "Configuration Files": [fileExtension],
           },
         });
 
         path = uri?.[0].path;
       }
 
-      const document = await vscode.workspace.openTextDocument(path);
-
-      await vscode.window.showTextDocument(document, {
-        viewColumn: vscode.ViewColumn.One,
-        preview: false,
-      });
+      if (path) {
+        const document = await vscode.workspace.openTextDocument(path);
+        await vscode.window.showTextDocument(document, {
+          viewColumn: vscode.ViewColumn.One,
+          preview: false,
+        });
+      } else {
+        vscode.window.showErrorMessage("Path is undefined.");
+      }
     },
+  );
+}
+
+export function registerViewConfigFileSourceCommand() {
+  return baseRegisterCommand(
+    CONFIG_TOOLS_COMMANDS.VIEW_CONFIG_FILE_SOURCE,
+    CONFIG_FILE_EXTENSION,
+  );
+}
+
+export function registerViewWorkspaceConfigFileSourceCommand() {
+  return baseRegisterCommand(
+    WORKSPACE_CREATION_COMMANDS.VIEW_CONFIG_FILE_SOURCE,
+    WORKSPACE_CONFIG_FILE_EXTENSION,
   );
 }

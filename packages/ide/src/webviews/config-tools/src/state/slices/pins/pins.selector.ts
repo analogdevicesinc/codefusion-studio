@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
 import {useAppSelector} from '../../store';
 import {createSelector} from '@reduxjs/toolkit';
 import type {RootState} from '../../store';
-import {type PinDictionary} from '@common/types/soc';
-
-let dataModelPins: PinDictionary | undefined;
+import {getSocPinDictionary} from '../../../utils/soc-pins';
+import {useAssignedPeripherals} from '../peripherals/peripherals.selector';
 
 export function usePin(id: string) {
 	return useAppSelector(state => state.pinsReducer.pins[id]);
@@ -27,45 +26,22 @@ export function usePackagePins() {
 	return useAppSelector(state => state.pinsReducer.pins);
 }
 
-const dataModelPinsSelector = createSelector(
-	(state: RootState) => state.pinsReducer.pins,
-	pins => {
-		if (dataModelPins !== undefined) {
-			return dataModelPins;
-		}
-
-		dataModelPins = pins;
-
-		return pins;
-	}
-);
-
-export function useDataModelPins() {
-	return useAppSelector(dataModelPinsSelector);
-}
-
-export function usePackageCanvas() {
-	return useAppSelector(state => state.pinsReducer.canvas);
-}
-
 export function usePinDetailsTargetPin() {
 	return useAppSelector(
 		state => state.pinsReducer.pinDetailsTargetPin
 	);
 }
 
-export function usePinDetails(id: string | undefined) {
-	return useAppSelector(state =>
-		id ? state.pinsReducer.pins[id].details : undefined
-	);
-}
-
 const selectFocusedPins = createSelector(
 	(state: RootState) => state.pinsReducer.pins,
-	pins =>
-		Object.values(pins)
-			.filter(pin => pin.isFocused)
-			.map(pin => pin.details.Name)
+	pins => {
+		const socPinsDictionary = getSocPinDictionary();
+
+		return Object.entries(pins)
+			.filter(([, pin]) => pin.isFocused)
+			.map(([pinKey]) => socPinsDictionary[pinKey]?.Name)
+			.filter(Boolean);
+	}
 );
 
 export function useFocusedPins() {
@@ -80,8 +56,21 @@ export function usePinAppliedSignals(id: string | undefined) {
 
 // Memoize useAssignedPins to avoid unnecessary re-renders
 const selectPins = (state: RootState) => state.pinsReducer.pins;
-export const selectAssignedPins = createSelector([selectPins], pins =>
-	Object.values(pins).filter(pin => pin.appliedSignals.length)
+
+export const selectAssignedPins = createSelector(
+	[selectPins],
+	pins => {
+		const socPinsDictionary = getSocPinDictionary();
+
+		return Object.entries(pins)
+			.filter(([, pin]) => pin.appliedSignals.length > 0)
+			.map(([pinKey, pin]) => ({
+				...pin,
+				Name: socPinsDictionary[pinKey]?.Name,
+				Signals: socPinsDictionary[pinKey]?.Signals
+			}))
+			.filter(pin => pin.Name);
+	}
 );
 
 export function useAssignedPins() {
@@ -90,12 +79,15 @@ export function useAssignedPins() {
 
 export function useAppliedSignalCfg(
 	pinId: string | undefined,
+	peripheralName: string | undefined,
 	signalName: string | undefined
 ) {
 	return useAppSelector(state => {
 		if (pinId && signalName) {
 			return state.pinsReducer.pins[pinId]?.appliedSignals.find(
-				appliedSignal => appliedSignal.Name === signalName
+				appliedSignal =>
+					appliedSignal.Name === signalName &&
+					appliedSignal.Peripheral === peripheralName
 			);
 		}
 
@@ -103,20 +95,137 @@ export function useAppliedSignalCfg(
 	});
 }
 
-export function usePinConfig() {
-	return useAppSelector(state => state.pinsReducer.pinConfig);
-}
-
 export function usePinConfigError(
 	pinId: string,
+	peripheralName: string,
 	signalName: string,
 	control: string
 ) {
 	return useAppSelector(state => {
 		if (pinId && signalName) {
 			return state.pinsReducer.pins[pinId]?.appliedSignals.find(
-				appliedSignal => appliedSignal.Name === signalName
+				appliedSignal =>
+					appliedSignal.Name === signalName &&
+					appliedSignal.Peripheral === peripheralName
 			)?.Errors?.[control];
 		}
 	});
+}
+
+export function useHoveredPin() {
+	return useAppSelector(state => state.pinsReducer.hoveredPin);
+}
+
+/**
+ * Custom hook to get the assigned pin based on the provided peripheral and signal.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {string} params.peripheral - The name of the peripheral.
+ * @param {string} params.signal - The name of the signal.
+ * @returns {Object|undefined} The assigned pin object if found, otherwise undefined.
+ */
+export function useAssignedPin({
+	peripheral,
+	signal
+}: {
+	peripheral: string;
+	signal: string;
+}) {
+	const assignedPins = useAppSelector(selectAssignedPins);
+
+	if (!assignedPins.length) {
+		return undefined;
+	}
+
+	return assignedPins.find(assignedPin =>
+		assignedPin.appliedSignals.some(
+			assignedSignal =>
+				assignedSignal.Peripheral === peripheral &&
+				assignedSignal.Name === signal
+		)
+	);
+}
+
+/**
+ * Custom hook to get the assigned pins for a given project.
+ *
+ * @param {string} projectId - The project ID.
+ * @returns {Array} The assigned pins.
+ */
+export function useProjectAssignedPins(projectId: string) {
+	const peripheralsForProject = useAssignedPeripherals(projectId);
+
+	return useAssignedPins().filter(pin =>
+		peripheralsForProject.some(peripheral =>
+			pin.appliedSignals.some(
+				signal => signal.Peripheral === peripheral.name
+			)
+		)
+	);
+}
+
+export function useSignalCoreId(
+	signalName: string,
+	peripheralName: string,
+	pinId: string
+): string | undefined {
+	const assignedPins = useAppSelector(selectAssignedPins);
+
+	if (!assignedPins.length) {
+		return undefined;
+	}
+
+	const pin = assignedPins.find(
+		assignedPin => assignedPin.pinId === pinId
+	);
+
+	if (pin) {
+		const signal = pin.appliedSignals.find(
+			signal =>
+				signal.Name === signalName &&
+				signal.Peripheral === peripheralName
+		);
+
+		if (signal) {
+			return signal.Name ?? undefined; // FIX
+		}
+	}
+
+	return undefined;
+}
+
+/**
+ * Selector to get pins assigned to a specific peripheral.
+ *
+ * @param {string} peripheralId - The ID of the peripheral.
+ * @returns {Array} The pins assigned to the specified peripheral.
+ */
+export const selectPinsByPeripheral = createSelector(
+	[
+		selectAssignedPins,
+		(_state: RootState, peripheralId: string) => peripheralId
+	],
+	(assignedPins, peripheralId) => {
+		if (!assignedPins.length || !peripheralId) {
+			return [];
+		}
+
+		return assignedPins.filter(pin =>
+			pin.appliedSignals.some(
+				signal => signal.Peripheral === peripheralId
+			)
+		);
+	}
+);
+
+/**
+ * Custom hook to get all pins assigned to a specific peripheral.
+ *
+ * @param {string} peripheralId - The ID of the peripheral.
+ * @returns {Array} The pins assigned to the specified peripheral.
+ */
+export function usePinsByPeripheral(peripheralId: string) {
+	return useAppSelector(state =>
+		selectPinsByPeripheral(state, peripheralId)
+	);
 }

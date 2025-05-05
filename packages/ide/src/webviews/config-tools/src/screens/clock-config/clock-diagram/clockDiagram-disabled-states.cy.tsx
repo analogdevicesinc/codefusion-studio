@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -23,91 +24,112 @@ const soc = await import(
 	'../../../../../../../../cli/src/socs/max32690-wlp.json'
 ).then(module => module.default as unknown as Soc);
 
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'baremetal',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+};
+
 describe('Clock Diagram disabled states', () => {
+	beforeEach(() => {
+		window.localStorage.setItem(
+			'Package',
+			JSON.stringify(soc.Packages[0])
+		);
+
+		window.localStorage.setItem(
+			'configDict',
+			JSON.stringify(configDict)
+		);
+
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				window.localStorage.setItem(
+					'pluginControls:CM4-proj',
+					JSON.stringify(controls)
+				);
+			}
+		);
+	});
 	it('Should enable and disable nodes and clocks in the diagram', () => {
-		const reduxStore = configurePreloadedStore(soc);
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				const reduxStore = configurePreloadedStore(
+					soc,
+					undefined,
+					controls
+				);
 
-		const targetClocks = [
-			'4e8bca4b-1763-11ef-a073-695fa460553d',
-			'0385d850-1c41-11ef-8079-f382b26e79a7',
-			'0385d850-1c41-11ef-8079-f382b26e79a7',
-			'12bb4710-1c41-11ef-8079-f382b26e79a7',
-			'14aae210-1c41-11ef-8079-f382b26e79a7',
-			'26e7c470-1c41-11ef-8079-f382b26e79a7',
-			'99485470-3fa6-11ef-81bd-539cdfd3aa72',
-			'496384e6-3fa4-11ef-b175-05083d74e1b4',
-			'a50e8d16-3fa6-11ef-81bd-539cdfd3aa72',
-			'a50e3ef2-3fa6-11ef-81bd-539cdfd3aa72'
-		];
+				const targetClocks = [
+					'4e8bca4b-1763-11ef-a073-695fa460553d',
+					'0385d850-1c41-11ef-8079-f382b26e79a7',
+					'12bb4710-1c41-11ef-8079-f382b26e79a7',
+					'14aae210-1c41-11ef-8079-f382b26e79a7',
+					'26e7c470-1c41-11ef-8079-f382b26e79a7',
+					'496384e6-3fa4-11ef-b175-05083d74e1b4',
+					'd0e0e8e0-1c40-11ef-8079-f382b26e79a7',
+					'de0d75d0-ce59-11ef-8762-074fe3ac9b96',
+					'd424c482-c44d-11ef-a69d-a35a325d3daf',
+					'3629a4e6-3fa4-11ef-b175-05083d74e1b4',
+					'd52ea2b5-175f-11ef-bfcc-eff1a86f1e4c'
+				];
 
-		cy.mount(
-			<div style={{width: '100%', height: '400px'}}>
-				<ClockDiagram
-					canvas={soc.Packages[0].ClockCanvas}
-					handleNodeHover={() => {}}
-					handleClockHover={() => {}}
-				/>
-			</div>,
-			reduxStore
-		).then(() => {
-			cy.wait(1000);
-
-			cy.get(
-				'g#21f6be60-1761-11ef-a073-695fa460553d > rect.adi_diagram_content_node_highlight.disabled'
-			).should('exist');
-
-			const junctions = cy.get('circle.schematic_dot');
-
-			junctions.should('have.length', 48);
-
-			cy.wrap(
-				targetClocks.map(clock => {
-					const line = cy.get(`g#${clock} > g > path`);
-
-					return line;
-				})
-			)
-				.then($ => {
-					$.forEach(line =>
-						line.should('have.class', 'segment-highlight-disabled')
-					);
-				})
-				.then(() => {
-					const enableClock = reduxStore.dispatch(
-						setClockNodeControlValue({
-							type: 'Peripheral',
-							name: 'TMR0/1/2/3',
-							key: 'TMR0_ENABLE',
-							value: 'TRUE'
-						})
-					);
-
-					cy.log(JSON.stringify(enableClock.payload));
-
+				cy.mount(
+					<div style={{width: '100%', height: '400px'}}>
+						<ClockDiagram
+							canvas={soc.Packages[0].ClockCanvas}
+							handleNodeHover={() => {}}
+							handleClockHover={() => {}}
+						/>
+					</div>,
+					reduxStore
+				).then(() => {
 					cy.wait(1000);
 
+					cy.get(
+						'g#21f6be60-1761-11ef-a073-695fa460553d > rect.adi_diagram_content_node_highlight.disabled'
+					).should('exist');
+
+					const junctions = cy.get('circle.schematic_dot');
+
+					junctions.should('have.length', 47);
+
 					cy.wrap(
-						targetClocks.map(clock => cy.get(`g#${clock} > g > path`))
+						targetClocks.map(clock => {
+							const line = cy.get(`g#${clock} > g > path`);
+
+							return line;
+						})
 					)
 						.then($ => {
 							$.forEach(line =>
 								line.should(
-									'not.have.class',
+									'have.class',
 									'segment-highlight-disabled'
 								)
 							);
 						})
 						.then(() => {
-							const disableClock = reduxStore.dispatch(
+							const enableClock = reduxStore.dispatch(
 								setClockNodeControlValue({
-									type: 'Peripheral',
 									name: 'TMR0/1/2/3',
 									key: 'TMR0_ENABLE',
-									value: 'FALSE'
+									value: 'TRUE'
 								})
 							);
 
-							cy.log(JSON.stringify(disableClock.payload));
+							cy.log(JSON.stringify(enableClock.payload));
 
 							cy.wait(1000);
 
@@ -119,19 +141,47 @@ describe('Clock Diagram disabled states', () => {
 								.then($ => {
 									$.forEach(line =>
 										line.should(
-											'have.class',
+											'not.have.class',
 											'segment-highlight-disabled'
 										)
 									);
 								})
 								.then(() => {
-									cy.get('circle.schematic_dot').should(
-										'have.length',
-										48
+									const disableClock = reduxStore.dispatch(
+										setClockNodeControlValue({
+											name: 'TMR0/1/2/3',
+											key: 'TMR0_ENABLE',
+											value: 'FALSE'
+										})
 									);
+
+									cy.log(JSON.stringify(disableClock.payload));
+
+									cy.wait(1000);
+
+									cy.wrap(
+										targetClocks.map(clock =>
+											cy.get(`g#${clock} > g > path`)
+										)
+									)
+										.then($ => {
+											$.forEach(line =>
+												line.should(
+													'have.class',
+													'segment-highlight-disabled'
+												)
+											);
+										})
+										.then(() => {
+											cy.get('circle.schematic_dot').should(
+												'have.length',
+												47
+											);
+										});
 								});
 						});
 				});
-		});
+			}
+		);
 	});
 });

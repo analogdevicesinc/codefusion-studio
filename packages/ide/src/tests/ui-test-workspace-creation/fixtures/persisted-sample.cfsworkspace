@@ -1,0 +1,49 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.1",
+  "DataModelSchemaVersion": "0.0.1",
+  "Timestamp": "2025-03-17T13:17:04.502Z",
+  "Soc": "MAX32690",
+  "WorkspacePluginId": "",
+  "WorkspacePluginVersion": "",
+  "Board": "AD-APARD32690-SL",
+  "Package": "WLP",
+  "Projects": [
+    {
+      "Id": "corepart_01jrdgezrce69rsqvja125h3v2",
+      "CoreId": "CM4",
+      "Name": "Arm Cortex-M4F",
+      "IsPrimary": true,
+      "IsEnabled": true,
+      "PluginId": "com.analog.project.zephyr40.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "Zephyr 4.0",
+      "PlatformConfig": {
+        "ProjectName": "myProject",
+        "BuildSystem": "ninja",
+        "ZephyrBoardName": "",
+        "KConfigFlags": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
+        "CMakeArgs": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n"
+      }
+    },
+    {
+      "Id": "max32690_risc-v",
+      "CoreId": "RV",
+      "Name": "RISC-V",
+      "IsPrimary": false,
+      "IsEnabled": true,
+      "PluginId": "com.analog.project.zephyr40.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "Zephyr 4.0",
+      "PlatformConfig": {
+        "ProjectName": "myProject",
+        "BuildSystem": "ninja",
+        "ZephyrBoardName": "",
+        "KConfigFlags": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
+        "CMakeArgs": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n"
+      }
+    }
+  ],
+  "WorkspaceName": "test-workspace-name",
+  "Location": "test/workspace/path"
+}

@@ -15,14 +15,16 @@
 import { defineConfig } from "cypress";
 import { defineConfig as defineViteConfig, loadEnv } from "vite";
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import react from "@vitejs/plugin-react-swc";
 
 const viteConfig = defineViteConfig(async () => {
   const devSocId = loadEnv("development", process.cwd(), "").DEV_SOC_ID;
 
-  const devSoc = await import(
-    path.resolve(process.cwd(), `../cli/src/socs/${devSocId}.json`)
-  );
+  const devSoc = await readFile(
+    path.resolve(process.cwd(), `../cli/src/socs/${devSocId}.json`),
+    'utf-8'
+  ).then((data) => JSON.parse(data));
 
   return {
     root: path.resolve(process.cwd(), "./src/webviews/config-tools"),
@@ -81,6 +83,7 @@ export default defineConfig({
   env: {
     DEV_SOC_ID: "max32690-tqfn",
     CLOCK_CONFIG_DEV_SOC_ID: "max32690-wlp",
+    VITE_FIRMWARE_PLATFORM: "MSDK",
   },
   fileServerFolder: path.resolve(process.cwd(), "src/webviews/"),
 });

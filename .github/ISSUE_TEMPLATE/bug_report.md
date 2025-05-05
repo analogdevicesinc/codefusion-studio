@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a problem with CodeFusion Studio
+about: Report a problem with the VS Code extensions
 title: ""
 labels: "bug"
 assignees: ""
@@ -30,7 +30,7 @@ If applicable, suggest a fix or reason for the bug.
 
 ## Your Environment
 
-- VS Code CFS extension version (example: v1.0.0):
+- VS Code CFS extension version (example: v1.0.0-2):
 - VS Code version (example: 1.91.0):
 - Operating System and version (example: Windows 10, Ubuntu 22.04 x64, macOS M3):
 - Link or attachment to projects or zip files needed to reproduce the issue:

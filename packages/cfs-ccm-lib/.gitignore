@@ -1,0 +1,8 @@
+# Build output
+/dist
+
+# Node Modules folder
+node_modules
+
+# TSC files
+*.tsbuildinfo

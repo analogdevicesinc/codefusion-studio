@@ -16,23 +16,23 @@
 /* eslint-disable no-bitwise */
 import type {
 	ClockNodeState,
-	Condition,
-	PinState
+	Expression,
+	PinState,
+	ControlCfg
 } from '@common/types/soc';
 import {
 	NOT_COMPUTED_MARKER,
 	UNCONFIGURED_TEXT,
 	UNDEFINED_MARKER
 } from '../screens/clock-config/constants/clocks';
-import {getFirmwarePlatform} from './firmware-platform';
+import {getClockNodeDictionary} from './clock-nodes';
+import {getSocPinDetails} from './soc-pins';
+import {getPrimaryProjectFirmwarePlatform} from './config';
 
-export type ClockConfigNodes = Record<
-	string,
-	Partial<ClockNodeState>
->;
+type ClockNodesConfig = Record<string, Partial<ClockNodeState>>;
 
 export type GlobalConfig = {
-	clockconfig: ClockConfigNodes;
+	clockconfig: ClockNodesConfig;
 	pinconfig?: unknown; // @TODO: Implement once we have a reference in the socs.
 	assignedPins?: PinState[];
 	currentNode?: string;
@@ -48,6 +48,7 @@ const BOOLEAN_NOT_OPERATOR = '!';
 const CLOCK_OPERATOR = 'clk';
 const LWR_CASE_OPERATOR = 'lwr';
 const MATCH_OPERATOR = 'match';
+const REPLACE_OPERATOR = 'replace';
 
 const isHex = (str: string) => /^0x[0-9a-fA-F]+$/.test(str);
 
@@ -165,7 +166,7 @@ function processControlWithReferencedValues(
 
 function processTemplateString(
 	token: string,
-	currentConfig: Record<string, string> | GlobalConfig
+	currentConfig: Record<string, string> | GlobalConfig | number
 ) {
 	if (token.includes(UNDEFINED_MARKER)) {
 		return UNDEFINED_MARKER;
@@ -173,11 +174,13 @@ function processTemplateString(
 
 	// eslint-disable-next-line no-template-curly-in-string
 	if (token === '${FirmwarePlatform}') {
-		return getFirmwarePlatform() ?? UNCONFIGURED_TEXT;
+		return getPrimaryProjectFirmwarePlatform() ?? UNCONFIGURED_TEXT;
 	}
 
 	const match =
-		/\$\{(Control|String|Clock|PinMux|Node):([^}]+)\}/.exec(token);
+		/\$\{(Control|ControlExists|String|Clock|PinMux|Node):([^}]+)\}/.exec(
+			token
+		);
 
 	if (match) {
 		const [_fullMatch, operandType, operandValue] = match;
@@ -187,33 +190,66 @@ function processTemplateString(
 		}
 
 		if (operandType === 'Control') {
+			const controlConfig = currentConfig as
+				| GlobalConfig
+				| Record<string, string>;
+
 			if (hasReferencedControlValues(operandValue)) {
 				return formatOperand(
 					processControlWithReferencedValues(
 						operandValue,
-						currentConfig as GlobalConfig
+						controlConfig as GlobalConfig
 					)
 				);
 			}
 
-			if (currentConfig.currentNode !== undefined) {
+			if (controlConfig.currentNode !== undefined) {
 				return formatOperand(
-					(currentConfig as GlobalConfig).clockconfig[
-						currentConfig.currentNode
+					(controlConfig as GlobalConfig).clockconfig[
+						controlConfig.currentNode
 					]?.controlValues?.[operandValue] ?? UNCONFIGURED_TEXT
 				);
 			}
 
+			/* NOTE
+			 * Search all nodes for the first match.
+			 * For example UART0 and UART2 is under UART0/2.
+			 */
+			if (
+				typeof controlConfig.clockconfig === 'object' &&
+				controlConfig.clockconfig !== null
+			) {
+				const found = Object.values(controlConfig.clockconfig).find(
+					node => node.controlValues?.[operandValue] !== undefined
+				);
+
+				if (found) {
+					const value = found.controlValues![operandValue];
+
+					return formatOperand(value);
+				}
+			}
+
 			return formatOperand(
-				(currentConfig as Record<string, string>)[operandValue]
+				(controlConfig as Record<string, string>)[operandValue]
 			);
+		}
+
+		if (operandType === 'ControlExists') {
+			const clockNodeDict = getClockNodeDictionary();
+			const config =
+				clockNodeDict[(currentConfig as GlobalConfig).currentNode!]
+					.Config?.[operandValue];
+
+			return formatOperand(config === undefined ? 0 : 1);
 		}
 
 		if (operandType === 'PinMux') {
 			const targetPin = (
 				currentConfig as GlobalConfig
 			).assignedPins?.find(
-				({details}) => details.Label === operandValue
+				pinState =>
+					getSocPinDetails(pinState.pinId)?.Label === operandValue
 			);
 
 			if (targetPin) {
@@ -242,26 +278,39 @@ function processTemplateString(
 		return formatOperand(operandValue);
 	}
 
+	// eslint-disable-next-line no-template-curly-in-string
+	if (token === '${Value}') {
+		return formatOperand(currentConfig as number);
+	}
+
 	console.error(`Invalid template string format: ${token}`);
 
 	return UNDEFINED_MARKER;
 }
 
-function baseEvaluateCondition(
+function baseEvaluateExpression(
+	currentCfg: number,
+	expression: Expression
+): number;
+function baseEvaluateExpression(
 	currentCfg: Record<string, string> | undefined,
-	condition: Condition | undefined
-): string | number | boolean | undefined;
-function baseEvaluateCondition(
+	expression: Expression | undefined
+): string | number | boolean;
+function baseEvaluateExpression(
 	currentCfg: GlobalConfig,
-	condition: Condition
-): string | number | boolean | undefined;
-function baseEvaluateCondition(
-	currentCfg: Record<string, string> | GlobalConfig | undefined,
-	condition: Condition | undefined
+	expression: Expression
+): string | number | boolean;
+function baseEvaluateExpression(
+	currentCfg:
+		| Record<string, string>
+		| GlobalConfig
+		| number
+		| undefined,
+	expression: Expression | undefined
 ) {
-	if (!currentCfg || !condition) return 1;
+	if (typeof currentCfg === 'undefined' || !expression) return 1;
 
-	const tokens = splitCondition(condition);
+	const tokens = tokenizeExpression(expression.trim());
 	const stack: Array<string | number | boolean> = [];
 
 	for (const token of tokens) {
@@ -351,6 +400,12 @@ function baseEvaluateCondition(
 			const operand1 = stack.pop() as string;
 
 			stack.push(operand1.match(operand2) === null ? 0 : 1);
+		} else if (token === REPLACE_OPERATOR) {
+			const operand3 = stack.pop() as string;
+			const operand2 = stack.pop() as string;
+			const operand1 = stack.pop() as string;
+
+			stack.push(operand1.replace(new RegExp(operand2), operand3));
 		} else {
 			throw new Error(`Unsupported operator: ${token}`);
 		}
@@ -361,9 +416,9 @@ function baseEvaluateCondition(
 
 export function evaluateCondition(
 	currentCfg: Record<string, string> | undefined,
-	condition: Condition | undefined
+	condition: Expression | undefined
 ) {
-	const result = baseEvaluateCondition(currentCfg, condition);
+	const result = baseEvaluateExpression(currentCfg, condition);
 
 	if (result === NOT_COMPUTED_MARKER) {
 		return NOT_COMPUTED_MARKER;
@@ -374,20 +429,60 @@ export function evaluateCondition(
 		: result === 1;
 }
 
+/**
+ * Determines if a control should be rendered based on its condition
+ *
+ * @param control - The control configuration to check
+ * @param userSelections - The current user selections
+ * @param signalName - The active signal name to include in the evaluation context
+ * @returns boolean indicating if the control should be rendered
+ */
+export function shouldRenderControl(
+	control: ControlCfg,
+	userSelections: Record<string, string> = {},
+	signalName?: string
+): boolean {
+	// If control has no condition, it should always be rendered
+	if (!control?.Condition) return true;
+
+	// Create evaluation context with signal name
+	const evaluationContext = {...userSelections};
+
+	if (signalName) {
+		evaluationContext.Name = signalName;
+	}
+
+	// Evaluate the control's condition
+	return Boolean(
+		evaluateCondition(evaluationContext, control.Condition)
+	);
+}
+
+export function evaluateBitfieldExpression(
+	value: number | undefined,
+	expression: Expression
+) {
+	return baseEvaluateExpression(value ?? 0, expression);
+}
+
 export function computeEntryBoxDefaultValue(
 	currentCfg: Record<string, string> | undefined,
-	condition: Condition | undefined
+	expression: Expression | undefined
 ) {
-	const result = baseEvaluateCondition(currentCfg, condition);
+	let result;
+
+	if (expression) {
+		result = baseEvaluateExpression(currentCfg, expression);
+	}
 
 	return result;
 }
 
 export function evaluateClockCondition(
 	currentCfg: GlobalConfig,
-	condition: Condition
+	condition: Expression
 ) {
-	const result = baseEvaluateCondition(currentCfg, condition);
+	const result = baseEvaluateExpression(currentCfg, condition);
 
 	if (
 		(typeof result === 'string' &&
@@ -403,9 +498,9 @@ export function evaluateClockCondition(
 
 export function computeClockFrequency(
 	currentCfg: GlobalConfig,
-	condition: Condition
+	expression: Expression
 ) {
-	const result = baseEvaluateCondition(currentCfg, condition);
+	const result = baseEvaluateExpression(currentCfg, expression);
 
 	return result;
 }
@@ -418,22 +513,25 @@ export function hasReferencedControlValues(token: string) {
 	return token.split(':').length >= 2;
 }
 
-// Adds support for splitting conditions whith spaces inside template strings
-function splitCondition(condition: string) {
-	const tokens = condition.split(/\s+/);
+// Split expression string into tokens
+function tokenizeExpression(expression: string | undefined) {
+	if (typeof expression !== 'string') return [];
+
+	const tokens = expression.split(/\s+/);
 	const splitTokens: string[] = [];
 
 	for (let i = 0; i < tokens.length; i++) {
-		if (tokens[i].startsWith('${') && !tokens[i].endsWith('}')) {
-			splitTokens.push(`${tokens[i]} ${tokens[i + 1]}`);
-		} else if (
-			tokens[i].endsWith('}') &&
-			!tokens[i].startsWith('${')
-		) {
-			continue;
-		} else {
-			splitTokens.push(tokens[i]);
+		let token = tokens[i];
+
+		// Tokens are mostly delimited by spaces, but names inside {} may contain spaces
+		if (token.startsWith('${')) {
+			while (!token.endsWith('}') && i + 1 < tokens.length) {
+				i++;
+				token += ` ${tokens[i]}`;
+			}
 		}
+
+		splitTokens.push(token);
 	}
 
 	return splitTokens;
@@ -462,7 +560,9 @@ export function computeFrequencies(
 	assignedPins: PinState[]
 ) {
 	// Initialization
-	const visitList = Object.values(clockNodesConfig).reduce<
+	const nodeDictionary = getClockNodeDictionary();
+
+	const visitList = Object.values(nodeDictionary).reduce<
 		Array<{
 			Name: string;
 			Value: string;
@@ -486,10 +586,8 @@ export function computeFrequencies(
 	}, []);
 
 	// Init all entries in the computed frequencies dictionary as not computed.
-	Object.keys(clockNodesConfig).forEach(nodeName => {
-		const node = clockNodesConfig[nodeName];
-
-		node.Outputs.forEach(output => {
+	Object.values(nodeDictionary).forEach(nodeConfig => {
+		nodeConfig.Outputs.forEach(output => {
 			clockFrequencyDictionary[output.Name] = NOT_COMPUTED_MARKER;
 		});
 	});
@@ -528,4 +626,8 @@ export function computeFrequencies(
 	}
 
 	return clockFrequencyDictionary;
+}
+
+export function getFirmwareVersion() {
+	return getPrimaryProjectFirmwarePlatform() ?? UNCONFIGURED_TEXT;
 }

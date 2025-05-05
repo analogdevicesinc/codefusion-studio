@@ -20,13 +20,17 @@ function TopbarButton({
 	title,
 	tooltipType = 'short',
 	tooltipDirection = Direction.Right,
+	isDisabled = false,
+	variant = 'rounded',
 	clickHandler
 }: {
 	readonly icon: React.ReactNode;
 	readonly title: string;
 	readonly tooltipType?: 'short' | 'long';
 	readonly tooltipDirection?: Direction;
-	readonly clickHandler: () => void;
+	readonly isDisabled?: boolean;
+	readonly variant?: 'rounded' | 'square' | 'startingRadius' | 'endingRadius';
+	readonly clickHandler?: () => void;
 }) {
 	return (
 		<Tooltip
@@ -36,7 +40,9 @@ function TopbarButton({
 		>
 			<button
 				type='button'
-				className={styles.btn}
+				className={`${styles.btn} ${isDisabled ? undefined : styles.enabled} ${styles[variant]}`}
+				disabled={isDisabled}
+				data-test={`top-bar-button:${title}`}
 				onClick={clickHandler}
 			>
 				{icon}

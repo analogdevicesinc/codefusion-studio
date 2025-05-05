@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a new feature for CodeFusion Studio
+about: Suggest a new feature for the VS Code extensions
 title: ""
 labels: "enhancement"
 assignees: ""

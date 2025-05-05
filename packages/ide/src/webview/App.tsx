@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
  */
 
 import * as React from "react";
-import { HomePage } from "./pages/home-page/home-page";
-import { NavigationBar } from "./top-nav/navigation-bar";
 
 import "./App.scss";
 
 const App = () => {
   return (
     <div className="app">
-      <NavigationBar />
-      <div className="container">
-        <div className="content">
-          <HomePage />
-        </div>
-      </div>
+        <div className="container"></div>
     </div>
   );
 };

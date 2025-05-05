@@ -31,7 +31,7 @@ export default function ChartLegend({
 			{Object.entries(data).map(([key, value]) => (
 				<div key={key} className={styles.labelWrapper}>
 					<div
-						className={`${styles.legendDot} ${styles[key.toLowerCase()]}`}
+						className={`${styles.legendDot} ${styles[key?.toLowerCase()]}`}
 					/>
 					<div className={styles.legendLabel}>
 						{key} {value}

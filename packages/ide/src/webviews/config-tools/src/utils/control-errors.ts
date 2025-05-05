@@ -19,7 +19,7 @@ import type {
 
 export const controlErrorTypes: Record<string, ControlErrorTypes> = {
 	integer: 'INVALID_INTEGER',
-	identifier: 'INVALID_IDENTIFIER',
+	text: 'INVALID_TEXT',
 	minVal: 'INVALID_MIN_VAL',
 	maxVal: 'INVALID_MAX_VAL'
 };
@@ -39,8 +39,8 @@ export function generateControlErrorMessage(
 	switch (errorType) {
 		case nodeErrorTypes.integer:
 			return 'Invalid input type';
-		case nodeErrorTypes.identifier:
-			return 'Invalid C expression';
+		case nodeErrorTypes.text:
+			return 'Invalid format for field';
 		case nodeErrorTypes.minVal:
 			checkMinMaxValues(minVal, maxVal);
 

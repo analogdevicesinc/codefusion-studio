@@ -23,7 +23,7 @@
       "@common/*": ["./src/webviews/common/*"]
     }
   },
-  "include": ["packages/ide/src/vscode-maxim/*.json"],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
     "test-resources",

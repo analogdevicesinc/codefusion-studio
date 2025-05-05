@@ -15,23 +15,27 @@
 import {Provider} from 'react-redux';
 import {store} from './state/store';
 // Components
-import CfsNavigation from './components/Navigation/Navigation';
+import Navigation from './components/Navigation/Navigation';
 import ElfHeader from './components/ElfHeader/ElfHeader';
 import AppRouter from './routes/AppRoute';
+
 import {LocalizationProvider} from '@common/contexts/LocaleContext';
+import {AppProvider} from './common/contexts/AppContext';
 
 import styles from './App.module.scss';
 
 function App() {
 	return (
 		<Provider store={store}>
-			<LocalizationProvider namespace='elf'>
-				<ElfHeader />
-				<div className={styles.container}>
-					<CfsNavigation />
-					<AppRouter />
-				</div>
-			</LocalizationProvider>
+			<AppProvider>
+				<LocalizationProvider namespace='elf'>
+					<ElfHeader />
+					<div className={styles.container}>
+						<Navigation />
+						<AppRouter />
+					</div>
+				</LocalizationProvider>
+			</AppProvider>
 		</Provider>
 	);
 }

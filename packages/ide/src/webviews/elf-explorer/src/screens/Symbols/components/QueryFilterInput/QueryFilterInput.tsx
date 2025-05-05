@@ -12,11 +12,9 @@
  * limitations under the License.
  *
  */
-import {
-	VSCodeTextField,
-	VSCodeButton
-} from '@vscode/webview-ui-toolkit/react';
+import {VSCodeTextField} from '@vscode/webview-ui-toolkit/react';
 import type {ChangeEvent} from 'react';
+import {Button} from 'cfs-react-library';
 
 import InputError from '../InputErrorMessage/InputError';
 
@@ -66,20 +64,20 @@ export default function QueryFilterInput({
 				</span>
 
 				<div slot='end' className={styles['slot-end-container']}>
-					<VSCodeButton
+					<Button
 						appearance='icon'
 						className={styles.icon}
 						onClick={onClear}
 					>
 						<CloseIcon />
-					</VSCodeButton>
-					<VSCodeButton
+					</Button>
+					<Button
 						appearance='icon'
 						className={styles.icon}
 						onClick={onSave}
 					>
 						<SaveIcon />
-					</VSCodeButton>
+					</Button>
 				</div>
 			</VSCodeTextField>
 

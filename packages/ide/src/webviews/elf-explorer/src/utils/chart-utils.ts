@@ -32,15 +32,15 @@ export const calculateSectionSizes = (
 	const result: Record<string, number> = {text: 0, data: 0, bss: 0};
 
 	sections.forEach(section => {
-		if (section.bucket.toLowerCase() === 'text') {
+		if (section?.bucket?.toLowerCase() === 'text') {
 			result.text += section.size;
 		}
 
-		if (section.bucket.toLowerCase() === 'bss') {
+		if (section?.bucket?.toLowerCase() === 'bss') {
 			result.bss += section.size;
 		}
 
-		if (section.bucket.toLowerCase() === 'data') {
+		if (section?.bucket?.toLowerCase() === 'data') {
 			result.data += section.size;
 		}
 	});

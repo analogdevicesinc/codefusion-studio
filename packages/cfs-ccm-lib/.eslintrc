@@ -1,0 +1,61 @@
+{
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+    "plugins": ["@typescript-eslint"],
+    "rules": {
+        "no-restricted-syntax": [
+            "error",
+            {
+                "selector": "ExportDefaultDeclaration",
+                "message": "Prefer named exports"
+            },
+            {
+                "selector": "Program > ExpressionStatement > AwaitExpression",
+                "message": "Top-level await is not allowed"
+            }
+        ]
+    },
+    "overrides": [
+        {
+            "files": ["src/**/*.ts"],
+            "extends": ["plugin:jsdoc/recommended-typescript"],
+            "plugins": ["eslint-plugin-jsdoc"],
+            "rules": {
+                "jsdoc/require-jsdoc": [
+                    "error",
+                    {
+                    "publicOnly": true,
+                    "require": {
+                        "ClassExpression": true,
+                        "MethodDefinition": true
+                    },
+                    "checkConstructors": true,
+                    "enableFixer": true
+                    }
+                ],
+                "jsdoc/require-param": [
+                    "error", {
+                        "unnamedRootBase": ["args"], // object params: {args0, args0.id, args1, args1.id, ...}
+                        "enableFixer": true
+                    }
+                ],
+                "jsdoc/require-returns": [
+                    "error", {
+                        "enableFixer": true
+                    }
+                ],
+                "jsdoc/require-param-name": "error",
+                "jsdoc/require-description": "warn",
+                "jsdoc/require-yields": "warn",
+                "jsdoc/require-throws": "warn"
+            }
+        }
+    ],
+    "env": {
+      "node": true,
+      "es2022": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+    }
+  }

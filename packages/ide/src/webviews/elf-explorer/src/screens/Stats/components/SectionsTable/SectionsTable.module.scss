@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
+@use '#layout' as layout;
+@use '#table' as table;
 
 .container {
 	width: calc(50% - (layout.$elf-main-gap / 2));
@@ -21,6 +22,11 @@
 	flex-direction: column;
 	gap: 8px;
 }
+
+.table {
+	@include table.table-styles;
+}
+
 .marginLeft {
 	margin-left: 10px;
 }

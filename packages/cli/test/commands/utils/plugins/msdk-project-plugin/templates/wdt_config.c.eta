@@ -1,0 +1,117 @@
+<%
+/**
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// Include common plugin code
+eval(this.render("common/utilities/utilities.js"));
+
+// Return the WDT clock source enum.
+function getWDTClock(node, mux, clock_default) {
+  const clock = getClockSetting(node, mux, clock_default);
+  let clock_enum = "MXC_WDT_PCLK";
+  switch (clock) {
+    case "ERTCO":
+      clock_enum = "MXC_WDT_ERTCO_CLK";
+      break;
+    case "INRO":
+      clock_enum = "MXC_WDT_INRO_CLK";
+      break;
+    case "IBRO":
+      clock_enum = "MXC_WDT_IBRO_CLK";
+      break;
+    case "PCLK":
+      clock_enum = "MXC_WDT_PCLK";
+      break;
+    case "APBCLK":
+      clock_enum = "MXC_WDT_APB_CLK";
+      break;
+  }
+  return clock_enum;
+}
+
+// Return the watchdog mode
+function getWDTMode(instance) {
+  return getAssignedPeripheral(instance).Config?.EVENTS !== "EARLY_AND_LATE" ? "COMPATIBILITY" : "WINDOWED";
+}
+
+// Return the requested period macro.
+function getWDTPeriod(instance, event) {
+  const enumval = getAssignedPeripheral(instance).Config?.[event] ?? "2POW31";
+  return enumval.replace("POW", "_");
+}
+
+// Return Enable/Disable string
+function getWDTEnable(instance, ctrl) {
+  return getAssignedPeripheral(instance).Config?.[ctrl] !== "TRUE" ? "Disable" : "Enable";
+}
+%>
+<% if (getAssignedPeripheral(it.instance)) { %>
+  { /* Configure <%= it.instance %>.
+<%   if (getPeripheralDescription(it.instance)) { %>
+     * This peripheral is used for <%= getPeripheralDescription(it.instance) %>.
+<%   } %>
+<%   if (!isClockSetTo(it.clocknode, it.enable, "TRUE")) { %>
+     * Note: This peripheral was not enabled on the clock configuration canvas.
+     * Nonetheless, as a result of the following configuration, the peripheral will be
+     * clocked on.
+<%   } %>
+     */
+
+    /* Initialize the peripheral. */
+<%   if (it.datamodel.Name === "MAX32650" || it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+    result = MXC_WDT_Init(MXC_<%= it.msdk_instance ?? it.instance %>);
+<%   } else { %>
+    mxc_wdt_cfg_t <%= it.instance.toLowerCase() %>_config = {
+      MXC_WDT_<%= getWDTMode(it.instance) %>,
+      MXC_WDT_PERIOD_<%= getWDTPeriod(it.instance, "RST_LATE_VAL") %>,
+      MXC_WDT_PERIOD_<%= getWDTPeriod(it.instance, "RST_EARLY_VAL") %>,
+      MXC_WDT_PERIOD_<%= getWDTPeriod(it.instance, "INT_LATE_VAL") %>,
+      MXC_WDT_PERIOD_<%= getWDTPeriod(it.instance, "INT_EARLY_VAL") %>
+    };
+
+    result = MXC_WDT_Init(MXC_<%= it.msdk_instance ?? it.instance %>,
+                          &<%= it.instance.toLowerCase() %>_config);
+<%   } %>
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set reset enable/disable. */
+    MXC_WDT_<%= getWDTEnable(it.instance, "WDT_RST_EN") %>Reset(MXC_<%= it.msdk_instance ?? it.instance %>);
+
+<%   if (getWDTEnable(it.instance, "WDT_RST_EN") === "Enable") { %>
+    /* Set reset period. */
+    MXC_WDT_SetResetPeriod(MXC_<%= it.msdk_instance ?? it.instance %>,
+<%     if (it.datamodel.Name === "MAX32650" || it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+                           <%= getWDTPeriod(it.instance, "RST_LATE_VAL") %>);
+<%     } else { %>
+                           &<%= it.instance.toLowerCase() %>_config);
+<%     } %>
+
+<%   } %>
+    /* Set interrupt enable/disable. */
+    MXC_WDT_<%= getWDTEnable(it.instance, "WDT_INT_EN") %>Int(MXC_<%= it.msdk_instance ?? it.instance %>);
+
+<%   if (getWDTEnable(it.instance, "INT_RST_EN") === "Enable") { %>
+    /* Set interrupt period. */
+    MXC_WDT_SetIntPeriod(MXC_<%= it.msdk_instance ?? it.instance %>,
+<%     if (it.datamodel.Name === "MAX32650" || it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+                         <%= getWDTPeriod(it.instance, "INT_LATE_VAL") %>);
+<%     } else { %>
+                         &<%= it.instance.toLowerCase() %>_config);
+<%     } %>
+<%   } %>
+  }
+
+<% } %>

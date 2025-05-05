@@ -12,16 +12,20 @@
  * limitations under the License.
  *
  */
-import TwoColumnLayout from '../../components/main-layout/MainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
 import ClockConfigSideContainer from './side/Side';
 import ClockDiagramContainer from './diagram-container/DiagramContainer';
 
 function ClockConfig() {
 	return (
-		<TwoColumnLayout
-			sidePanel={<ClockConfigSideContainer />}
-			mainPanel={<ClockDiagramContainer />}
-		/>
+		<CfsTwoColumnLayout>
+			<div slot='header' />
+			<div slot='side-panel'>
+				<ClockConfigSideContainer />
+			</div>
+
+			<ClockDiagramContainer />
+		</CfsTwoColumnLayout>
 	);
 }
 

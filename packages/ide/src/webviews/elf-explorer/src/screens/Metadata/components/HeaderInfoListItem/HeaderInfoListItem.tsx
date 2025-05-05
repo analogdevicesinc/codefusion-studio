@@ -14,8 +14,8 @@
  */
 import {useState} from 'react';
 
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
 import Info from '@common/icons/Info';
+import {Button} from 'cfs-react-library';
 
 import type {THeaderInfo} from '../../../../common/types/metadata';
 import type {TLocaleContext} from '../../../../common/types/context';
@@ -61,10 +61,11 @@ export default function HeaderInfoListItem({
 							title: i10n?.[`${item.label}`]?.title || '',
 							description: i10n?.[`${item.label}`]?.description || ''
 						}}
+						containerPosition='relative'
 					>
-						<VSCodeButton appearance='icon'>
+						<Button appearance='icon' className={styles.icon}>
 							<Info />
-						</VSCodeButton>
+						</Button>
 					</Tooltip>
 				)}
 			</div>

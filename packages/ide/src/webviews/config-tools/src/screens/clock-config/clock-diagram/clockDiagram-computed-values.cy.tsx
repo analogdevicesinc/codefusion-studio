@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -23,65 +24,110 @@ const soc = await import(
 	'../../../../../../../../cli/src/socs/max32690-wlp.json'
 ).then(module => module.default as unknown as Soc);
 
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'msdk',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+};
+
 describe('Clock Diagram computed values', () => {
 	beforeEach(() => {
 		cy.viewport(1068, 688);
+
+		localStorage.setItem(
+			'ClockNodes',
+			JSON.stringify(soc.ClockNodes)
+		);
+
+		localStorage.setItem('Package', JSON.stringify(soc.Packages[0]));
+
+		localStorage.setItem('configDict', JSON.stringify(configDict));
+
+		cy.fixture('clock-config-plugin-controls-msdk.json').then(
+			controls => {
+				window.localStorage.setItem(
+					'pluginControls:CM4-proj',
+					JSON.stringify(controls)
+				);
+			}
+		);
 	});
 
 	it('Updates the computed clock values in the diagram', () => {
-		const reduxStore = configurePreloadedStore(soc);
+		cy.fixture('clock-config-plugin-controls-msdk.json').then(
+			controls => {
+				const reduxStore = configurePreloadedStore(
+					soc,
+					undefined,
+					controls
+				);
 
-		cy.mount(
-			<div style={{width: '100%', height: '688px'}}>
-				<ClockDiagram
-					canvas={soc.Packages[0].ClockCanvas}
-					handleNodeHover={() => {}}
-					handleClockHover={() => {}}
-				/>
-			</div>,
-			reduxStore
-		).then(() => {
-			cy.get('g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c')
-				.should('be.visible')
-				.find('text')
-				.first()
-				.should('have.text', '120 MHz')
-				.then(() => {
-					cy.wrap(
-						reduxStore.dispatch(
-							setClockNodeControlValue({
-								type: 'Divider',
-								name: 'PRESCALER',
-								key: 'DIV',
-								value: '4'
-							})
-						)
-					).then(setDivider => {
-						cy.log(JSON.stringify(setDivider.payload));
-
-						cy.get('g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c')
-							.find('text')
-							.first()
-							.should('have.text', '30 MHz')
-							.then(() => {
-								const setClock = reduxStore.dispatch(
+				cy.mount(
+					<div style={{width: '100%', height: '688px'}}>
+						<ClockDiagram
+							canvas={soc.Packages[0].ClockCanvas}
+							handleNodeHover={() => {}}
+							handleClockHover={() => {}}
+						/>
+					</div>,
+					reduxStore
+				).then(() => {
+					cy.get('g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c')
+						.should('be.visible')
+						.find('text')
+						.first()
+						.should('have.text', '120 MHz')
+						.then(() => {
+							cy.wrap(
+								reduxStore.dispatch(
 									setClockNodeControlValue({
-										type: 'Mux',
-										name: 'SYS_OSC Mux',
-										key: 'MUX',
-										value: 'ERTCO'
+										name: 'PRESCALER',
+										key: 'DIV',
+										value: '4'
 									})
-								);
+								)
+							).then(setDivider => {
+								cy.log(JSON.stringify(setDivider.payload));
 
-								cy.log(JSON.stringify(setClock.payload)).then(() => {
-									cy.get('g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c')
-										.find('text')
-										.first()
-										.should('have.text', '8.192 kHz');
-								});
+								cy.get('g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c')
+									.find('text')
+									.first()
+									.should('have.text', '30 MHz')
+									.then(() => {
+										const setClock = reduxStore.dispatch(
+											setClockNodeControlValue({
+												name: 'SYS_OSC Mux',
+												key: 'MUX',
+												value: 'ERTCO'
+											})
+										);
+
+										cy.log(JSON.stringify(setClock.payload)).then(
+											() => {
+												cy.get(
+													'g#0ef58c80-175f-11ef-bfcc-eff1a86f1e4c'
+												)
+													.find('text')
+													.first()
+													.should('have.text', '8.192 kHz');
+											}
+										);
+									});
 							});
-					});
+						});
 				});
-		});
+			}
+		);
 	});
 });

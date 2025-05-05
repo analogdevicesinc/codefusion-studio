@@ -55,11 +55,8 @@ import {
   getPropertyName,
   PropertyNode,
 } from "../properties";
-import {
-  CORTEX_DEBUG_CONFIGURATIONS,
-  CPP_DEBUG_CONFIGURATIONS,
-} from "../resources/debugConfigurations";
-import * as msdk from "../toolchains/msdk";
+import { CORTEX_DEBUG_CONFIGURATIONS } from "../resources/debugConfigurations";
+import * as msdk from "../toolchains/msdk/msdk";
 import { configureWorkspaceForZephyr } from "../toolchains/zephyr/zephyr";
 import { Utils } from "../utils/utils";
 
@@ -72,7 +69,7 @@ export enum ConfigureWorkspaceOptionEnum {
   Never,
 }
 
-export enum ShowHomePageAtStartupOptionEnum {
+export enum YesNoEnum {
   Yes,
   No,
 }
@@ -112,17 +109,6 @@ export function configureWorkspace(
   context: vscode.ExtensionContext,
   silent = false,
 ) {
-  //Adding debug configurations for Cpp
-  context.subscriptions.push(
-    vscode.debug.registerDebugConfigurationProvider("cppdbg", {
-      provideDebugConfigurations(): vscode.ProviderResult<
-        vscode.DebugConfiguration[]
-      > {
-        return CPP_DEBUG_CONFIGURATIONS;
-      },
-    }),
-  );
-
   //Adding Debug Configuration for Cortex
   context.subscriptions.push(
     vscode.debug.registerDebugConfigurationProvider("cortex-debug", {

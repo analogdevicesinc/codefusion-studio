@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
 import styles from './CodeGenerationError.module.scss';
+import {Button} from 'cfs-react-library';
 import ConflictIcon from '@common/icons/Conflict';
 import type {navigationItems} from '../../../../../common/constants/navigation';
 import {useAppDispatch} from '../../../state/store';
@@ -23,13 +23,47 @@ import {
 } from '../../../state/slices/app-context/appContext.reducer';
 import EightColumnLayout from '../../../components/eight-column-layout/EightColumnLayout';
 
-type CodeGenenerationErrorProps = {
-	readonly pinConflicts?: number;
-	readonly hasClockErrors?: boolean;
-};
+type CodeGenenerationErrorProps = Readonly<{
+	pinConflicts: number;
+	hasClockErrors: boolean;
+	hasFunctionConfigErrors: boolean;
+}>;
+
+function ErrorCard({
+	id,
+	dataTest,
+	label,
+	clickHandler
+}: Readonly<{
+	id: (typeof navigationItems)[keyof typeof navigationItems];
+	dataTest: string;
+	label: string;
+	clickHandler: (
+		id: (typeof navigationItems)[keyof typeof navigationItems]
+	) => void;
+}>) {
+	return (
+		<div data-test={dataTest} className={styles.errorCard}>
+			<h3>
+				<ConflictIcon />
+				{label}
+			</h3>
+			<span className={styles.divider} />
+			<Button
+				appearance='secondary'
+				onClick={() => {
+					clickHandler(id);
+				}}
+			>
+				View
+			</Button>
+		</div>
+	);
+}
 
 export default function CodeGenerationError({
 	pinConflicts,
+	hasFunctionConfigErrors,
 	hasClockErrors
 }: CodeGenenerationErrorProps) {
 	const dispatch = useAppDispatch();
@@ -48,38 +82,32 @@ export default function CodeGenerationError({
 			icon={<ConflictIcon width='22' height='22' />}
 			subtitle='To generate code there must be no pin conflicts or clock errors.'
 			body={
-				<>
+				<div className={styles.errorsContainer}>
 					{pinConflicts ? (
-						<div
-							className={styles.errorContainer}
-							onClick={() => {
-								handleViewClick('pinmux');
-							}}
-						>
-							<h3 data-test='generate-pin-conflicts'>
-								<ConflictIcon />
-								Pin Conflicts: {pinConflicts}
-							</h3>
-							<span className={styles.divider} />
-							<VSCodeButton appearance='secondary'>View</VSCodeButton>
-						</div>
+						<ErrorCard
+							id='pinmux'
+							dataTest='generate:pin-conflicts'
+							label={`Pin Conflicts: ${pinConflicts}`}
+							clickHandler={handleViewClick}
+						/>
+					) : null}
+					{hasFunctionConfigErrors ? (
+						<ErrorCard
+							id='config'
+							dataTest='generate:function-config-errors'
+							label='Function Config Errors'
+							clickHandler={handleViewClick}
+						/>
 					) : null}
 					{hasClockErrors ? (
-						<div
-							className={styles.errorContainer}
-							onClick={() => {
-								handleViewClick('clockconfig');
-							}}
-						>
-							<h3 data-test='generate-clock-errors'>
-								<ConflictIcon />
-								Clock Errors
-							</h3>
-							<span className={styles.divider} />
-							<VSCodeButton appearance='secondary'>View</VSCodeButton>
-						</div>
+						<ErrorCard
+							id='clockconfig'
+							dataTest='generate:clock-errors'
+							label='Clock Errors'
+							clickHandler={handleViewClick}
+						/>
 					) : null}
-				</>
+				</div>
 			}
 		/>
 	);

@@ -34,14 +34,10 @@ import type { ElfSectionHeader } from "elf-parser/src/ElfSectionHeader";
 import type { ElfHeuristics } from "elf-parser/src/ElfHeuristics";
 import { ELF_EXPLORER_COMMANDS } from "../commands/constants";
 
-type TSymbol = Record<
-  string,
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  number | string | bigint | undefined | null
->;
+const SEGM_FLAG_READ_ONLY = "R";
 
+type TSymbol = Record<string, number | string | bigint | undefined | null>;
 type TFormat = "dec" | "hex";
-
 type TDefaultFormatTable =
   | {
       memory: {
@@ -163,8 +159,21 @@ const getHeuristics = (heuristics: ElfHeuristics) => {
     });
   });
 
+  result.push({
+    label: "Detected Compiler",
+    value: heuristics.getCompilerDetected(),
+  });
+
   return result;
 };
+
+/**
+ * If the flags === 'R' then is READ ONLY, otherwise is executable (RE, RW, RWE, E)
+ * @param segment
+ * @returns
+ */
+export const isSegmReadOnly = (segmentFlags: string): boolean =>
+  segmentFlags.toUpperCase() === SEGM_FLAG_READ_ONLY;
 
 const populateSavedQueriesOnInit = async () => {
   await vscode.workspace
@@ -196,15 +205,13 @@ export async function elfMessageHandler(
   // TO DO: refactor file to receive only parser.query and mapped data
 
   /**
-   * Serialize symbols from DB because there are fields typeof bigint
+   * Serialize symbols from DB because there may be fields with typeof bigint or null
    * @param symbols
    * @returns
    */
   const serializeSymbols = (symbols: TSymbol[]): TSymbol[] =>
     symbols?.map((symbol: TSymbol) => {
       Object.keys(symbol).forEach((key) => {
-        if (key === "address") return;
-
         if (typeof symbol[key] === "bigint") {
           symbol[key] =
             symbol[key] || symbol[key] === 0n
@@ -217,24 +224,33 @@ export async function elfMessageHandler(
         ...symbol,
         localstack:
           Object.prototype.hasOwnProperty.call(symbol, "localstack") &&
-          symbol.localstack === undefined
-            ? null
-            : symbol.localstack,
+          elfModel.isLocalStackColumnAvailable()
+            ? symbol.localstack === undefined
+              ? null
+              : symbol.localstack
+            : undefined,
         stack:
           Object.prototype.hasOwnProperty.call(symbol, "stack") &&
+          elfModel.isLocalStackColumnAvailable() &&
           symbol.stack === undefined
             ? null
             : symbol.stack,
-        recursive:
-          Object.prototype.hasOwnProperty.call(symbol, "recursive") &&
-          symbol.recursive === undefined
+        path:
+          Object.prototype.hasOwnProperty.call(symbol, "path") &&
+          elfModel.isPathColumnAvailable() &&
+          symbol.path === undefined
             ? null
-            : symbol.recursive,
+            : symbol.path,
+        recursive: elfModel.isRecursiveColumnAvailable()
+          ? symbol.recursive === undefined
+            ? null
+            : symbol.recursive
+          : null,
         bucket: symbol?.section ? getBucketInfoForSymbol(symbol) : undefined,
         address:
           // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-          symbol?.address || symbol?.address === 0n
-            ? decimalToHex(symbol?.address as bigint)
+          symbol?.address || symbol?.address === 0
+            ? decimalToHex(symbol?.address as number)
             : undefined,
       };
     });
@@ -263,14 +279,14 @@ export async function elfMessageHandler(
   };
 
   /**
-   * The purpose of this method is to format the query which contains "size" or/and "address" fields
-   * from "SELECT * FROM symbols WHERE size == 0" to "SELECT * FROM symbols WHERE size == ?" with paramValues === [0n]
-   * from "SELECT * FROM symbols WHERE address == 0xf" to "SELECT * FROM symbols WHERE address == ?" with paramValues === [15n]
+   * The purpose of this method is to format the query which contains "size" or/and "address" fields, due to a bug in AlaSQL library
+   * from "SELECT * FROM symbols WHERE size == 0" to "SELECT * FROM symbols WHERE size == ?" with paramValues === [0]
+   * from "SELECT * FROM symbols WHERE address == 0xf" to "SELECT * FROM symbols WHERE address == ?" with paramValues === [15]
    * @param query
-   * @returns - object containing the formatted query and an array of bigint values
+   * @returns - object containing the formatted query and an array of number values
    */
   const formatQueryWithStrictEquality = (query: string) => {
-    const paramValues: bigint[] = [];
+    const paramValues: number[] = [];
     // Regex to find size or address with any operator and value (decimal or hexadecimal)
     const regex =
       /\b(size|address)\s*(==|=)\s*(['"]?(?:0x[0-9a-fA-F]+|\d+)['"]?)\b/g;
@@ -279,8 +295,8 @@ export async function elfMessageHandler(
       regex,
       (_match, field, operator, value) => {
         const strippedValue = value.replace(/['"]/g, "");
-        const bigIntValue = BigInt(strippedValue as number | string);
-        paramValues.push(bigIntValue);
+        const number = Number(strippedValue);
+        paramValues.push(number);
 
         return `${field} ${operator} ?`;
       },
@@ -304,29 +320,22 @@ export async function elfMessageHandler(
     return filteredSections;
   };
 
-  /**
-   * Go through symbols returned from parser
-   * find the same symbol from DB which has the correct mappings, add it to the section
-   * chosen approach because of missing "Shndx" field in DB symbols, with which it correlates with the section
-   */
-  const filterSymbolsToSection = (
+  const filterSymbolsBySection = (
     section: ElfSectionHeader,
     dbSymbols: TSymbol[],
   ) => {
-    const result: Array<Record<string, unknown>> = [];
+    const result: TSymbol[] = [];
 
     for (const symSection of elfModel.elfSymbols) {
-      for (const symbol of symSection.symbolData) {
-        if (symbol.sectionHeaderIndex === section.index) {
-          const dbSymbol: Record<string, unknown> | undefined = [
-            ...dbSymbols,
-          ].find((item: Record<string, unknown>) => item.num === symbol.index);
+      for (const parserSymbol of symSection.symbolData) {
+        if (parserSymbol.sectionHeaderIndex === section.index) {
+          const dbSymbol: TSymbol | undefined = [...dbSymbols].find(
+            (item: TSymbol) => item.id === parserSymbol.dbId,
+          );
 
           if (dbSymbol) {
             symbolRouteId += 1;
-            const clonedObj: Record<string, unknown> = JSON.parse(
-              JSON.stringify(dbSymbol),
-            );
+            const clonedObj: TSymbol = JSON.parse(JSON.stringify(dbSymbol));
             clonedObj.routeId = symbolRouteId;
             result.push(clonedObj);
           }
@@ -337,7 +346,11 @@ export async function elfMessageHandler(
     return result;
   };
 
-  const mapSections = (sections: ElfSectionHeader[], dbSymbols: TSymbol[]) =>
+  const mapSections = (
+    sections: ElfSectionHeader[],
+    dbSymbols: TSymbol[],
+    segmentFlags?: string | undefined,
+  ) =>
     [...sections].map((section: ElfSectionHeader) => {
       sectionRouteId += 1;
 
@@ -347,10 +360,13 @@ export async function elfMessageHandler(
         type: section.getTypeString(),
         address: decimalToHex(section?.address),
         size: section.size.toString(),
-        symbols: filterSymbolsToSection(section, dbSymbols),
+        symbols: filterSymbolsBySection(section, dbSymbols),
         name: section.shName,
         label: section.shName,
         flags: getFlags(section.flags),
+        showAsReadOnly:
+          // The logic is that if the segment, in which the section is part of, is read only then show section as read only
+          segmentFlags ? isSegmReadOnly(segmentFlags) : false,
         bucket: getBucket(section.flags, section.type),
       };
     });
@@ -360,6 +376,7 @@ export async function elfMessageHandler(
       id: segment.index,
       align: segment.alignment.toString(),
       flags: getSegmentFlags(segment.flags),
+      showAsReadOnly: isSegmReadOnly(getSegmentFlags(segment.flags)),
       size: segment.memorySize.toString(),
       address: decimalToHex(segment?.virtualAddress),
       type: getSegmentTypes(segment.type),
@@ -367,6 +384,7 @@ export async function elfMessageHandler(
       sections: mapSections(
         filterSectionsBySegment(segment.sectionIndexList),
         dbSymbols,
+        getSegmentFlags(segment.flags),
       ),
     }));
 
@@ -379,9 +397,10 @@ export async function elfMessageHandler(
         formatQueryWithStrictEquality(query);
 
       if (paramValues.length) {
-        // There is a case when querying for strict equality ("==") for columns which are type BigInt (size and address),
+        // There is a case when querying for strict equality ("==") for columns which are type BigInt,
         // that only works if the BigInt val is send as query param
         // ex: modifiedQuery = "SELECT * FROM symbols WHERE size == ?", paramValues = "144n"
+        // update: BigInt was change to number for size and address, but this approach remains unchanged intentionally
         result = parser.query(modifiedQuery || "", paramValues) as TSymbol[];
       } else {
         // Identifies hexadecimal numbers and convert it in decimal
@@ -393,6 +412,7 @@ export async function elfMessageHandler(
 
       request = Promise.resolve(serializeSymbols(result));
     } catch (error) {
+      console.error(error);
       request = Promise.reject(error);
     }
   }

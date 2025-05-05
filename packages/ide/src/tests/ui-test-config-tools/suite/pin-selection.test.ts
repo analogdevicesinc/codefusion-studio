@@ -12,75 +12,73 @@
  * limitations under the License.
  *
  */
-import {
-	By,
-	VSBrowser,
-	WebView,
-	Workbench
-} from 'vscode-extension-tester';
-import { expect } from 'chai';
-import * as path from 'path';
+import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { expect } from "chai";
+import * as path from "path";
 
-describe('Pin Selection', () => {
-	let browser: VSBrowser;
-	let view: WebView;
+describe("Pin Selection", () => {
+  let browser: VSBrowser;
+  let view: WebView;
 
-	before(async function () {
-		this.timeout(60000);
-		browser = VSBrowser.instance;
-		await browser.waitForWorkbench();
-	});
+  before(async function () {
+    this.timeout(60000);
+    browser = VSBrowser.instance;
+    await browser.waitForWorkbench();
+  });
 
-	after(async function () {
-		this.timeout(60000);
-		await view.switchBack();
+  after(async function () {
+    this.timeout(60000);
+    await view.switchBack();
 
-		const wb = new Workbench();
+    const wb = new Workbench();
 
-		await wb.wait();
+    await wb.wait();
 
-		await wb.executeCommand('workbench.action.closeAllEditors');
-	});
+    await wb.executeCommand("workbench.action.closeAllEditors");
+  });
 
-	it('Displays the pin details sidebar when a pin is clicked', async () => {
-		await browser.openResources(
-			path.join(
-				'src',
-				'tests',
-				'ui-test-config-tools',
-				'fixtures',
-				'max32690-tqfn.cfsconfig'
-			)
-		);
+  it("Displays the pin details sidebar when a pin is clicked", async () => {
+    await browser.openResources(
+      path.join(
+        "src",
+        "tests",
+        "ui-test-config-tools",
+        "fixtures",
+        "max32690-tqfn.cfsconfig",
+      ),
+    );
 
-		view = new WebView();
+    view = new WebView();
 
-		await view.wait();
+    await view.wait();
 
-		await view.switchToFrame();
+    await view.switchToFrame();
 
-		const pin = await view.findWebElement(
-			By.css(
-				'#pin-rows-container > div:nth-child(1) > div:nth-child(2)'
-			)
-		);
+    const navItem = await view.findWebElement(By.css(`#pinmux`));
 
-		expect(await pin.getText()).to.contain('P2.26');
+    await navItem.click().then(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-		await pin.click().then(async () => {
-			expect(await view.findWebElement(By.css('#details-container')))
-				.to.exist;
+      const pin = await view.findWebElement(
+        By.css("#pin-rows-container > div:nth-child(1) > div:nth-child(2)"),
+      );
 
-			const title = await view.findWebElement(
-				By.css('#pin-details-title > h3')
-			);
+      expect(await pin.getText()).to.contain("P2.26");
 
-			expect(await title.getText()).to.contain('P2.26');
+      await pin.click().then(async () => {
+        expect(await view.findWebElement(By.css("#details-container"))).to
+          .exist;
 
-			// assert backdrop exists
-			expect(
-				await view.findWebElement(By.css('#focused-pin-backdrop'))
-			).to.exist;
-		});
-	}).timeout(60000);
+        const title = await view.findWebElement(
+          By.xpath('//*[@id="pin-details-title"]/div[1]/h3[1]'),
+        );
+
+        expect(await title.getText()).to.contain("P2.26");
+
+        // assert backdrop exists
+        expect(await view.findWebElement(By.css("#focused-pin-backdrop"))).to
+          .exist;
+      });
+    });
+  }).timeout(60000);
 });

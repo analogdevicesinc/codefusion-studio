@@ -87,6 +87,32 @@
 			}
 		},
 		{
+			"label": "wrksp: build",
+			"type": "shell",
+			"command": "yarn vite:extension && yarn wrksp:build",
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".*",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": ".",
+						"endsPattern": "."
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
 			"label": "ide: deps",
 			"type": "shell",
 			"command": "yarn install --immutable && yarn ws:ide build-local-deps",

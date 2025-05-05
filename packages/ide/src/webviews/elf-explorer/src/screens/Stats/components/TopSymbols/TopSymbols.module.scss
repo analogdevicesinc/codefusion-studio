@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
+@use '#layout' as layout;
 
 .container {
 	width: calc(50% - (layout.$elf-main-gap / 2));

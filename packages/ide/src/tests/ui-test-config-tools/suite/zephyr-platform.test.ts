@@ -55,44 +55,50 @@ describe("Zephyr Firmware Platform", () => {
 
     await view.switchToFrame();
 
-    const pin = await view.findWebElement(
-      By.css(
-        "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
-      ),
-    );
+    const navItem = await view.findWebElement(By.css(`#pinmux`));
 
-    expect(await pin.getAttribute("class")).to.contain("unassigned");
+    await navItem.click().then(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const pin = await view.findWebElement(
+        By.css(
+          "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
+        ),
+      );
 
-    await pin.click().then(async () => {
-      // assert pin details sidebar is rendered
-      expect(await view.findWebElement(By.css("#details-container"))).to.exist;
+      expect(await pin.getAttribute("class")).to.contain("unassigned");
 
-      await new Promise((res) => {
-        setTimeout(res, 500);
+      await pin.click().then(async () => {
+        // assert pin details sidebar is rendered
+        expect(await view.findWebElement(By.css("#details-container"))).to
+          .exist;
+
+        await new Promise((res) => {
+          setTimeout(res, 500);
+        });
       });
-    });
 
-    const firstSignalToggle = await view.findWebElement(
-      By.css(
-        "#pin-details-signals-container > div:nth-child(1) > section > label",
-      ),
-    );
+      const firstSignalToggle = await view.findWebElement(
+        By.css(
+          "#pin-details-signals-container > div:nth-child(1) > section > label",
+        ),
+      );
 
-    firstSignalToggle.click().then(async () => {
-      const navItem = await view.findWebElement(By.css("#config"));
+      firstSignalToggle.click().then(async () => {
+        const navItem = await view.findWebElement(By.css("#config"));
 
-      await navItem.click().then(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await navItem.click().then(async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        expect(
-          await view.findWebElement(By.css("#MODE-P0.19-control-dropdown")),
-        ).to.not.exist;
+          expect(
+            await view.findWebElement(By.css("#MODE-P0.19-control-dropdown")),
+          ).to.not.exist;
 
-        expect(
-          await view.findWebElement(
-            By.css("#GPIO_TYPE-P2.26-control-dropdown"),
-          ),
-        ).to.exist;
+          expect(
+            await view.findWebElement(
+              By.css("#GPIO_TYPE-P2.26-control-dropdown"),
+            ),
+          ).to.exist;
+        });
       });
     });
   }).timeout(60000);

@@ -341,6 +341,28 @@ export class ToolManager {
   }
 
   /**
+   * Get the envVars for each tool.json
+   * @returns an object containing all envVars for each tool.json
+   */
+  public getEnvVars(): Record<string, string> {
+    const envVars: Record<string, string> = {};
+
+    this.installedTools.forEach((tool) => {
+      const toolInfo = tool.getInfo();
+      if (toolInfo.envVars && toolInfo.envVars.length > 0) {
+        toolInfo.envVars.forEach((envVar) => {
+          const value = envVar.isPath
+            ? path.join(tool.getPath(), envVar.value)
+            : envVar.value;
+          envVars[envVar.name] = value;
+        });
+      }
+    });
+
+    return envVars;
+  }
+
+  /**
    * Get the shell path, including the SDK path and the
    * binary path for each installed tool
    * @returns the shell path
@@ -405,6 +427,9 @@ export class ToolManager {
       }
     }
 
+    // Retrieve envVars for all tool.json files
+    const envVarsObj = this.getEnvVars();
+
     return {
       PATH: shellPath,
       MAXIM_PATH: maximPath,
@@ -412,6 +437,7 @@ export class ToolManager {
       CMAKE_PREFIX_PATH: cmakePrefixPath,
       GIT_EXEC_PATH: gitExecPath,
       ZEPHYR_BASE: resolveVariables("${config:cfs.zephyr.workspace.path}"),
+      ...envVarsObj,
     };
   }
 }

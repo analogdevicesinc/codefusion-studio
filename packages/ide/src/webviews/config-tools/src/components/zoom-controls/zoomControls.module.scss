@@ -12,21 +12,21 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 @use '../../styles/layout';
 
 .zoomControls {
 	position: absolute;
+	box-sizing: border-box;
 	bottom: 0;
 	right: 0;
-	display: flex;
-	flex-direction: column;
-	width: 24px;
+	display: inline-flex;
+	flex-direction: row;
+	width: 75px;
 	margin: 8px;
 	z-index: 1000;
-	gap: 2px;
 	background: colors.$notifications-background;
-	border-radius: layout.$default-border-radius;
-	padding: 2px;
+	border: 1px solid colors.$default-border;
+	border-radius: 3px;
 	box-sizing: border-box;
 }

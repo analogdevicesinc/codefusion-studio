@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "outDir": "../../../out/tests/ui-test",
+    "moduleResolution": "node",
+    "strict": true,
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+
+  "include": ["../../src/**/*", "./**/*"],
+  "exclude": ["node_modules"]
+  //included and excluded so that it matches and searched all folders for the classes export
+}

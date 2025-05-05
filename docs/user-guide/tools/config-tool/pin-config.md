@@ -1,85 +1,99 @@
 ---
 description: Pin Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2024-09-12
+date: 2025-04-24
 ---
 
-# Pin Configuration
+# Pin Config
 
-The Pin Configuration tool allows you to graphically manipulate the pin muxing and function within your processor, removing the tedious and error prone elements from manual configuarion. The tool will flag up any conflicting configurations and show you the available pins and functions for any peripheral.  
+The Pin Configuration tool allows you to graphically manipulate pin multiplexing and function selection within your processor, removing the tedious and error-prone elements of manual configuration. The tool flags conflicting configurations and displays the available pins and functions for each peripheral.  
 
-The Pin Configuration consists of two screens within the Config Tool. For details on accessing the Config Tool and using the output see [Config Tool](./index.md).
+## Pin Config overview
 
-## Pin Mux
+![Pin Config](images/pinmux-dark.png#only-dark)
+![Pin Config](images/pinmux-light.png#only-light)
 
-The map of pins displays the current multiplexing configuration. This will update as peripherals are configured and will show which pins are available, in use or any conflicts.  
+The Pin Config screen consists of several key components:
 
-Hovering over a pin will provide a summary of what function the pin is and can be assigned to.  
-![Pin Mux](images/pinmux-dark.png#only-dark)
-![Pin Mux](images/pinmux-light.png#only-light)
+1. **Peripheral list**: View available peripherals. Click a peripheral to view associated signals.
+1. **Filter options**: Use search bar and filters to locate specific pins or peripherals based on status.
+1. **Pin Mux map**: View a visual representation of the pin multiplexing configuration.
+1. **Assign pin**: Toggle ![Toggle](images/icon-toggle-dark.png#only-dark)
+![Toggle](images/icon-toggle-light.png#only-light) a pin on or off to enable or disable pin assignment.
+1. **Resolve conflicts**: Identify and correct conflicting pin assignments.
+1. **Configure pin functions**: Click configure ![Configure](images/icon-config-dark.png#only-dark)
+![Configure](images/icon-config-light.png#only-light) to open the configuration sidebar (7).
+1. **Configuration sidebar**: View and modify the pin functions.
 
-### Navigation
+### Peripheral list
 
-Hover over a pin to view available signal information. Nodes and lines on the diagram show as bold when enabled and faint when disabled.  
+The left panel displays a list of available peripherals. Click the arrow next to the peripheral to expand it and view associated pins. When a peripheral is selected, all of the pins not associated with that peripheral are greyed out and unavailable for selection on the pin map.
 
-The diagram can be zoomed in/out using the scroll wheel of your mouse or by using the zoom icons in the bottom right corner of the view. The fit to screen icon
+### Filter options
+
+Use the **Search** field to find any peripheral or pin by name or number. Non-matching entries will be hidden. Click **x** to reset the view.
+
+Click the filter buttons to filter by:
+
+- **Assigned** – Pins that are currently in use and allocated to a peripheral.
+- **Available** – Pins that are free and can be assigned to a peripheral.
+- **Conflicts** – Pins with multiple signals assigned, causing a conflict that must be resolved.
+
+### Pin Mux map
+
+The pin mux map displays the current multiplexing configuration. It updates dynamically as peripherals are configured and displays available, in-use, and conflicting pins.  
+
+Hover over a pin to view a summary of its assigned function and available assignments. Nodes and lines on the diagram show as bold when enabled and faint when disabled.  
+
+![Pin Mux](images/pinmux-dark-map.png#only-dark)
+![Pin Mux](images/pinmux-light-map.png#only-light)
+
+Zoom in or out of the diagram by scrolling with your mouse wheel or using the zoom icons in the bottom-right corner. Click the fit to screen icon
 ![Fit To Screen](images/icon-fit-to-screen-dark.png#only-dark)
 ![Fit To Screen](images/icon-fit-to-screen-light.png#only-light)
- resizes the diagram to the size of your window.
+ to resize the diagram to fit your window.
 
-The diagram can be dragged around the window using the left/primary mouse button or equivalent touchscreen gestures.
+The diagram can be dragged within the window using the left or primary mouse button.
 
-### Filtering
+### Assign pin
 
-The Search field will allow you to find any peripheral or pin by name or number. Any non-matching entries will be hidden from view. To reset the view, click on the 'x' to the right of the search bar.  
-
-### Peripherals
-
-On the left of the view is a list of available peripherals. Expand a peripheral by clicking on the arrow on the left to see all of the pins associated with that peripheral. When any peripheral is selected, all of the pins not associated with that peripheral are hidden from the pin map.  
-
-### Enable pins
-
-Under the expanded peripheral is a list of signals containing the signal name and the pin designation.  
+Each expanded peripheral lists signals with their signal name and pin designation.  
 Toggle the pin to 'on'
 ![Toggle](images/icon-toggle-dark.png#only-dark)
 ![Toggle](images/icon-toggle-light.png#only-light)
-to assign that signal to that pin. This enables the pin in the generated code and updates the map.  
+to assign a signal to a pin. This enables the pin in the generated code and updates the map.  
 
-When a pin is enabled, a configuration icon
-![Configure](images/icon-config-dark.png#only-dark)
-![Configure](images/icon-config-light.png#only-light)
-becomes available. Click on the configuration icon to configure the functions associated with that pin.
-
-### Conflicts
+### Resolve conflicts
 
 Conflicts occur when multiple signals are configured to use the same pin and will cause operational errors.  
-Conflicting signals will be shown as red circle in the pin map, hover over that pin to see which peripheral signals have been assigned.  
-A conflict is also shown in the signal list under a peripheral with a red X in a circle.
+Conflicting signals appear as a red circle in the pin map. Hover over the pin to see which peripheral signals have been assigned.
+A conflict is also indicated in the list of peripherals with a red X
 ![Conflict](images/icon-conflict-dark.png#only-dark)
 ![Conflict](images/icon-conflict-light.png#only-light)
 
 To resolve a conflict, disable one of the functions associated with that pin.
 
-## Function Config
+!!! tip
+    Use the **Conflicts** filter to quickly locate all conflicting pins.
 
-Displays a list of enabled signals and provides options to adjust the configuration of each.
-Each option has a default value and can be adjusted with the drop-down menu of allowed options, or a free form text box.
+### Configure pin functions
 
-![Pin Function](images/pin-function-dark.png#only-dark)
-![Pin Function](images/pin-function-light.png#only-light)
+Ensure the pin is [assigned](#assign-pin) and the peripheral is allocated to a core before proceeding with configuration. For information on peripheral allocation, see [Peripheral Allocation](./peripheral-allocation.md).
 
-Select the signal name to view the options available.
+Click configure ![Configure](images/icon-config-dark.png#only-dark)
+![Configure](images/icon-config-light.png#only-light) to open the configuration sidebar and modify settings.
 
-Examples of options:
+### Configuration sidebar
 
-* Input or output mode
-* Power supply
-* Pull-up/pull-down
+The configuration sidebar allows you to modify settings for enabled signals. These options are only available after the pin is assigned and its peripheral is allocated.
 
-On Zephyr projects, two additional fields are provided under function config:
+The fields shown in the sidebar vary depending on the selected signal type:
 
-* Device Tree identifier
-* phandle identifier
+- GPIO signals provide all available configuration options, including the attached function and, in some environments, code generation metadata. The availability of these code generation fields depends on the selected firmware platform.
+- Peripheral signals expose basic options such as pull-up/pull-down state and power supply. The behavior and code generation settings of supported peripherals can be configured in the [Peripheral Allocation](./peripheral-allocation.md) tool.
 
 !!! note
     Use the **Reset to default** link to revert any changes.
+
+![GPIO and UART sidebar comparison](images/pin-config-options-dark.png#only-dark)
+![GPIO and UART sidebar comparison](images/pin-config-options-light.png#only-light)

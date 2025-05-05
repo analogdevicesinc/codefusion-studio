@@ -13,13 +13,18 @@
  *
  */
 import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
-import {clockNodeDictionary} from '../../../utils/clock-nodes';
 import {getFormattedClockFrequency} from '../utils/format-schematic-data';
-import {clockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
-import {gap} from '../constants/tooltip';
+import {
+	evaluateClockCondition,
+	getClockFrequencyDictionary
+} from '../../../utils/rpn-expression-resolver';
+import {gap, notchHeight} from '../constants/tooltip';
 import type {DiagramNode} from '@common/types/soc';
 import {extractClockPrefix} from '../utils/clock-nodes';
-import {useClockNodeState} from '../../../state/slices/clock-nodes/clockNodes.selector';
+import {
+	useClockNodesConfig,
+	useClockNodeState
+} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {ShortDescErrors} from '../../../types/errorTypes';
 import CfsNotification from '@common/components/cfs-notification/CfsNotification';
 
@@ -29,6 +34,8 @@ import {
 	generateOutputValueErrorString,
 	getCurrentNodeError
 } from '../../../utils/node-error';
+import {getClockNodeConfig} from '../../../utils/clock-nodes';
+import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 
 type PositionedNodeTooltipProps = {
 	readonly hoveredNodeInfo: DiagramNode;
@@ -48,7 +55,11 @@ function FrequencyDisplayItem({
 		<div
 			className={`${styles.clockEntry}${isFirstGroupItem ? ` ${styles.firstGroupItem}` : ''}`}
 		>
-			{clockName && <p className={styles.name}>{clockName}</p>}
+			{clockName && (
+				<p data-test={clockName} className={styles.name}>
+					{clockName}
+				</p>
+			)}
 			{value}
 		</div>
 	);
@@ -59,12 +70,15 @@ function NodeTooltip({
 	containerRef
 }: PositionedNodeTooltipProps) {
 	const hoveredNode = document.getElementById(hoveredNodeInfo.id);
-	const nodeDetails = clockNodeDictionary[hoveredNodeInfo.name];
+	const nodeDetails = getClockNodeConfig(hoveredNodeInfo.name);
 	const nodeState = useClockNodeState(hoveredNodeInfo.name);
+	const nodesConfig = useClockNodesConfig();
+	const assignedPins = useAssignedPins();
 	const computeOutputEnabledState = useEvaluateClockCondition();
+	const clockFrequencyDictionary = getClockFrequencyDictionary();
+
 	const nodeError = getCurrentNodeError(
 		nodeState,
-		nodeDetails,
 		computeOutputEnabledState
 	);
 
@@ -81,12 +95,11 @@ function NodeTooltip({
 	const {
 		left: nodeLeft = 0,
 		top: nodeTop = 0,
-		height: nodeHeight = 0,
 		bottom: nodeBottom = 0
 	} = hoveredNode?.getBoundingClientRect() ?? {};
 
 	let top: number | undefined =
-		nodeTop - containerTop + nodeHeight + gap;
+		nodeBottom - containerTop + notchHeight + gap;
 	let bottom;
 	const left = nodeLeft - containerLeft;
 	const tooltipHeigth = 150;
@@ -103,20 +116,23 @@ function NodeTooltip({
 		nodeDetails.Outputs[0]?.Name
 	);
 
-	const NodeOutputs = nodeDetails?.Outputs.map(output => {
+	const NodeOutputs = nodeDetails?.Outputs.filter(
+		output =>
+			!output.Condition ||
+			evaluateClockCondition(
+				{
+					clockconfig: nodesConfig,
+					currentNode: nodeDetails.Name,
+					assignedPins
+				},
+				output.Condition
+			)
+	).map(output => {
 		let isFirstGroupItem = false;
 
 		const frequency = getFormattedClockFrequency(
 			clockFrequencyDictionary[output.Name]
 		);
-
-		const errorString =
-			nodeError &&
-			generateOutputValueErrorString(
-				nodeError,
-				nodeState,
-				nodeDetails
-			);
 
 		if (extractClockPrefix(output.Name) !== currentGroupPrefix) {
 			currentGroupPrefix = extractClockPrefix(output.Name);
@@ -129,7 +145,7 @@ function NodeTooltip({
 				clockName={
 					nodeDetails.Outputs.length > 1 ? output.Name : undefined
 				}
-				value={errorString ?? frequency}
+				value={frequency}
 				isFirstGroupItem={isFirstGroupItem}
 			/>
 		);
@@ -159,22 +175,15 @@ function NodeTooltip({
 				}
 			/>
 			<ul className={styles.valueError}>
-				<li
-					className={styles.errorItem}
-					data-test='tooltip:body:error-value'
-				>
-					{generateOutputValueErrorString(
-						nodeError,
-						nodeState,
-						nodeDetails
-					)}
+				<li data-test='tooltip:body:error-value'>
+					{generateOutputValueErrorString(nodeError, nodeState)}
 				</li>
 			</ul>
 		</>
 	);
 
 	const FrequencyInfoDisplay = (
-		<div className={styles.body}>
+		<div>
 			{NodeInputs?.length ? (
 				<>
 					<div
@@ -187,7 +196,7 @@ function NodeTooltip({
 				</>
 			) : null}
 
-			{NodeOutputs?.length && (
+			{NodeOutputs?.length ? (
 				<>
 					{/* Subtitle only required when both inputs and outputs are present */}
 					{shouldDisplayInputs ? (
@@ -200,13 +209,13 @@ function NodeTooltip({
 					) : null}
 					{NodeOutputs}
 				</>
-			)}
+			) : null}
 		</div>
 	);
 
 	const renderTooltipBody = () => {
 		if (!hoveredNodeInfo.enabled) {
-			return 'Disabled';
+			return <div className={styles.disabled}>Disabled</div>;
 		}
 
 		if (hoveredNodeInfo.enabled && nodeError) {
@@ -231,7 +240,7 @@ function NodeTooltip({
 						className={styles.nodeDescription}
 						data-test='tooltip:header:nodeDescription'
 					>
-						{clockNodeDictionary[hoveredNodeInfo.name].Description}
+						{nodeDetails.Description}
 					</div>
 				</div>
 			}

@@ -20,17 +20,21 @@ import {useAppDispatch} from '../../../state/store';
 import SideDetailsView from '../side-details-view/SideDetailsView';
 import {
 	useFocusedPins,
-	usePinDetails,
 	usePinDetailsTargetPin
 } from '../../../state/slices/pins/pins.selector';
 import {memo, useEffect} from 'react';
+import {getSocPinDetails} from '../../../utils/soc-pins';
+import {useSearchString} from '../../../state/slices/app-context/appContext.selector';
 
 function PinDetails() {
 	const dispatch = useAppDispatch();
 	const targetPinId = usePinDetailsTargetPin();
 	const focusedPins = useFocusedPins();
 	const pinDetailsTargetPin = usePinDetailsTargetPin();
-	const targetPinDetails = usePinDetails(pinDetailsTargetPin);
+	const targetPinDetails = getSocPinDetails(
+		pinDetailsTargetPin ?? ''
+	);
+	const searchString = useSearchString('pinconfig');
 
 	const targetPins =
 		pinDetailsTargetPin && targetPinDetails ? [targetPinDetails] : [];
@@ -52,6 +56,12 @@ function PinDetails() {
 			}
 		};
 	}, [dispatch, focusedPins, targetPinId]);
+
+	useEffect(() => {
+		if (searchString) {
+			dispatch(setPinDetailsTargetPin(undefined));
+		}
+	}, [searchString, dispatch]);
 
 	return (
 		<SideDetailsView

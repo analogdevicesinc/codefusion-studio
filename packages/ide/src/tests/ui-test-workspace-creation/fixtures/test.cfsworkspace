@@ -1,0 +1,33 @@
+{
+	"Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+	"DataModelVersion": "0.0.1",
+	"DataModelSchemaVersion": "0.0.1",
+	"Timestamp": "2024-03-12T13:09:29.484Z",
+	"Soc": "MAX32655",
+	"WorkspacePluginId": "",
+	"Board": "AD-APARD32690-SL",
+	"Package": "WLP",
+	"Projects": [
+    {
+      "Id": "Arm Cortex M85Fa",
+      "Name": "Arm Cortex M85F",
+      "PlatformConfig": {
+        "FirmwarePlatform": "Zephyr 3.7"
+      }
+    },
+    {
+      "Id": "Arm Cortex M85Fb",
+      "Name": "Arm Cortex M85F",
+      "PlatformConfig": {
+        "FirmwarePlatform": "Zephyr 3.7",
+        "ArmTrustZone": true,
+        "Template": "Blinky",
+        "CMakeArgs": "Arg1 Arg2",
+        "Compiler": "GCC"
+      }
+    }
+  ],
+	"WorkspacePluginVersion": "1.0.0",
+	"WorkspaceName": "test-workspace",
+	"Location": "/some/default/path"
+}

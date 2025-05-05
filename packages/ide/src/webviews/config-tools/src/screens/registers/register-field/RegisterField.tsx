@@ -17,15 +17,11 @@ import type {
 	FieldDictionary,
 	RegisterDictionary
 } from '@common/types/soc';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell
-} from '@vscode/webview-ui-toolkit/react';
 import {Fragment} from 'react';
 import {computeFieldValue} from '../../../utils/compute-register-value';
 
-import styles from './registerField.module.scss';
+import styles from './RegisterField.module.scss';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 type RegisterFieldProps = {
 	readonly assignedPinsRegisterConfigs: Array<{
@@ -79,41 +75,39 @@ function RegisterField({
 					))}
 				</div>
 			)}
-			<div className={styles.fieldTable}>
-				<VSCodeDataGrid>
-					<VSCodeDataGridRow rowType='header'>
-						<VSCodeDataGridCell gridColumn='1'>
-							Bits
-						</VSCodeDataGridCell>
-						<VSCodeDataGridCell gridColumn='2'>
-							Access
-						</VSCodeDataGridCell>
-						<VSCodeDataGridCell gridColumn='3'>
-							Value
-						</VSCodeDataGridCell>
-						<VSCodeDataGridCell gridColumn='4'>
-							Reset value
-						</VSCodeDataGridCell>
-					</VSCodeDataGridRow>
-					<VSCodeDataGridRow>
-						{[
-							`${position + (length - 1)}:${position}`,
-							access,
-							value,
-							'0x' + reset.toString(16)
-						].map((item, index) => (
-							<VSCodeDataGridCell
-								key={item}
-								gridColumn={String(index + 1)}
-								cellType='columnheader'
-								data-test={`${name}-${index}-data-grid-cell`}
-							>
-								{item}
-							</VSCodeDataGridCell>
-						))}
-					</VSCodeDataGridRow>
-				</VSCodeDataGrid>
-			</div>
+
+			<DataGrid className={styles.fieldTable}>
+				<DataGridRow rowType='header'>
+					<DataGridCell gridColumn='1' cellType='columnheader'>
+						Bits
+					</DataGridCell>
+					<DataGridCell gridColumn='2' cellType='columnheader'>
+						Access
+					</DataGridCell>
+					<DataGridCell gridColumn='3' cellType='columnheader'>
+						Value
+					</DataGridCell>
+					<DataGridCell gridColumn='4' cellType='columnheader'>
+						Reset value
+					</DataGridCell>
+				</DataGridRow>
+				<DataGridRow>
+					{[
+						`${position + (length - 1)}:${position}`,
+						access,
+						value,
+						'0x' + reset.toString(16)
+					].map((item, index) => (
+						<DataGridCell
+							key={`${name}- ${index + 1}`}
+							gridColumn={String(index + 1)}
+							dataTest={`${name}-${index}-data-grid-cell`}
+						>
+							{item}
+						</DataGridCell>
+					))}
+				</DataGridRow>
+			</DataGrid>
 		</div>
 	);
 }

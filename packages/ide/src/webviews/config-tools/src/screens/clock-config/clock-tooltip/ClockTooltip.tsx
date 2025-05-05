@@ -16,8 +16,8 @@ import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
 import type {HoveredClockInfo} from '../types/canvas';
 import {gap, notchHeight, tipOffset} from '../constants/tooltip';
 import {getFormattedClockFrequency} from '../utils/format-schematic-data';
-import {clockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
-import {clockDictionary} from '../../../utils/clock-nodes';
+import {getClockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
+import {getClockConfig} from '../../../utils/clock-nodes';
 
 import styles from './ClockTooltip.module.scss';
 
@@ -67,7 +67,7 @@ function ClockTooltip({
 			containerPosition.top +
 			(notchHeight + gap);
 
-	const headerString = `${clockDictionary[hoveredClockInfo.clock]?.Description ?? ''} (${hoveredClockInfo.clock})`;
+	const headerString = `${getClockConfig(hoveredClockInfo.clock)?.Description ?? ''} (${hoveredClockInfo.clock})`;
 
 	return (
 		<CfsTooltip
@@ -78,7 +78,7 @@ function ClockTooltip({
 			left={x}
 		>
 			{getFormattedClockFrequency(
-				clockFrequencyDictionary[hoveredClockInfo.clock] ?? ' '
+				getClockFrequencyDictionary()[hoveredClockInfo.clock] ?? ' '
 			)}
 		</CfsTooltip>
 	);

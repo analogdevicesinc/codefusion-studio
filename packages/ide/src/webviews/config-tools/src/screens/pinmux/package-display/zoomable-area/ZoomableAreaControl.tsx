@@ -146,13 +146,13 @@ function ZoomableAreaControl({
 	};
 
 	const zoomControls: Array<[string, ReactNode, () => void]> = [
-		['zoom-in', <ZoomInIcon key='z-i' />, zoomIn],
 		['zoom-out', <ZoomOutIcon key='z-o' />, zoomOut],
-		['zoom-reset', <ResetZoomIcon key='z-r' />, resetZoom]
+		['zoom-reset', <ResetZoomIcon key='z-r' />, resetZoom],
+		['zoom-in', <ZoomInIcon key='z-i' />, zoomIn]
 	];
 
 	useEffect(() => {
-		const ref = zoomableAreaRef.current;
+		const ref = zoomableAreaParentRef.current;
 
 		const handleWheelZoom = (e: WheelEvent) => {
 			e.preventDefault();

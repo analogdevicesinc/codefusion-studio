@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -23,9 +24,26 @@ import {useRef} from 'react';
 import {controlErrorTypes} from '../../../utils/control-errors';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
-const wlp = await import(
+const wlp = (await import(
 	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+).then(module => module.default)) as Soc;
+
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'baremetal',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+};
 
 const mockHoveredNodeInfo = {
 	name: '',
@@ -76,145 +94,215 @@ function MockDiagramNode({
 }
 
 describe('Node Tooltip', () => {
+	beforeEach(() => {
+		localStorage.setItem(
+			'ClockNodes',
+			JSON.stringify(wlp.ClockNodes)
+		);
+
+		localStorage.setItem('Package', JSON.stringify(wlp.Packages[0]));
+
+		localStorage.setItem('Registers', JSON.stringify(wlp.Registers));
+
+		localStorage.setItem('Cores', JSON.stringify(wlp.Cores));
+
+		localStorage.setItem('configDict', JSON.stringify(configDict));
+
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				localStorage.setItem(
+					'pluginControls:CM4-proj',
+					JSON.stringify(controls)
+				);
+			}
+		);
+	});
+
 	it('Displays correct error message on tooltip when a control contains a value greater than the allowed', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				const store = configurePreloadedStore(
+					wlp,
+					undefined,
+					controls
+				);
 
-		const {registers} =
-			store.getState().appContextReducer.registersScreen;
+				store.dispatch(
+					setAppliedSignal({
+						Pin: 'F4',
+						Peripheral: 'MISC',
+						Name: 'CLKEXT'
+					})
+				);
 
-		store.dispatch(
-			setAppliedSignal({
-				Pin: 'F4',
-				Peripheral: 'MISC',
-				Name: 'CLKEXT',
-				registers
-			})
+				store.dispatch(
+					setDiagramData({
+						'P0.23': {
+							enabled: true,
+							error: true
+						}
+					})
+				);
+
+				store.dispatch(
+					setClockNodeControlValue({
+						name: 'SYS_OSC Mux',
+						key: 'MUX',
+						value: 'CLKEXT'
+					})
+				);
+
+				store.dispatch(
+					setClockNodeControlValue({
+						name: 'P0.23',
+						key: 'P0_23_FREQ',
+						value: '200000000',
+						error: controlErrorTypes.maxVal
+					})
+				);
+
+				cy.mount(
+					<MockDiagramNode
+						hoveredNodeInfo={{
+							...mockHoveredNodeInfo,
+							name: 'P0.23',
+							error: true
+						}}
+					/>,
+					store
+				);
+
+				cy.dataTest('tooltip:notification:error').should(
+					'be.visible'
+				);
+
+				cy.dataTest('notification:message').contains(
+					'Entered value is too high'
+				);
+
+				cy.get(
+					'ul > li[data-test="tooltip:body:error-value"]'
+				).contains('200000000 (Max 80000000)');
+
+				cy.dataTest('notification:icon:conflict').should(
+					'be.visible'
+				);
+			}
 		);
-
-		store.dispatch(
-			setDiagramData({
-				'P0.23': {
-					enabled: true,
-					error: true
-				}
-			})
-		);
-
-		store.dispatch(
-			setClockNodeControlValue({
-				type: 'Mux',
-				name: 'SYS_OSC Mux',
-				key: 'MUX',
-				value: 'CLKEXT'
-			})
-		);
-
-		store.dispatch(
-			setClockNodeControlValue({
-				type: 'Pin Input',
-				name: 'P0.23',
-				key: 'P0_23_FREQ',
-				value: '200000000',
-				error: controlErrorTypes.maxVal
-			})
-		);
-
-		cy.mount(
-			<MockDiagramNode
-				hoveredNodeInfo={{
-					...mockHoveredNodeInfo,
-					name: 'P0.23',
-					error: true
-				}}
-			/>,
-			store
-		);
-
-		cy.dataTest('tooltip:notification:error').should('be.visible');
-
-		cy.dataTest('notification:message').contains(
-			'Entered value is too high'
-		);
-
-		cy.get('ul > li[data-test="tooltip:body:error-value"]').contains(
-			'200000000 (Max 80000000)'
-		);
-
-		cy.dataTest('notification:icon:conflict').should('be.visible');
 	});
 
 	it('Displays correct error message on tooltip when a control contains a value less than the allowed', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(wlp, undefined, controls);
 
-		const {registers} =
-			store.getState().appContextReducer.registersScreen;
+			store.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
+				})
+			);
 
-		store.dispatch(
-			setAppliedSignal({
-				Pin: 'F4',
-				Peripheral: 'MISC',
-				Name: 'CLKEXT',
-				registers
-			})
-		);
-
-		store.dispatch(
-			setClockNodeControlValue({
-				type: 'Pin Input',
-				name: 'P0.23',
-				key: 'P0_23_FREQ',
-				value: '0',
-				error: controlErrorTypes.minVal
-			})
-		);
-
-		cy.mount(
-			<MockDiagramNode
-				hoveredNodeInfo={{
-					...mockHoveredNodeInfo,
+			store.dispatch(
+				setClockNodeControlValue({
 					name: 'P0.23',
-					error: true
-				}}
-			/>,
-			store
-		);
+					key: 'P0_23_FREQ',
+					value: '0',
+					error: controlErrorTypes.minVal
+				})
+			);
 
-		cy.dataTest('tooltip:notification:error').should('be.visible');
+			cy.mount(
+				<MockDiagramNode
+					hoveredNodeInfo={{
+						...mockHoveredNodeInfo,
+						name: 'P0.23',
+						error: true
+					}}
+				/>,
+				store
+			);
 
-		cy.dataTest('notification:message').contains(
-			'Entered value is too low'
-		);
+			cy.dataTest('tooltip:notification:error').should('be.visible');
 
-		cy.get('ul > li[data-test="tooltip:body:error-value"]').contains(
-			'0 (Min 1)'
-		);
+			cy.dataTest('notification:message').contains(
+				'Entered value is too low'
+			);
 
-		cy.dataTest('notification:icon:conflict').should('be.visible');
+			cy.get(
+				'ul > li[data-test="tooltip:body:error-value"]'
+			).contains('0 (Min 1)');
+
+			cy.dataTest('notification:icon:conflict').should('be.visible');
+		});
 	});
 
 	it('Should display inputs and outputs when hovered node is a divider', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(wlp, undefined, controls);
 
-		cy.mount(
-			<MockDiagramNode
-				hoveredNodeInfo={{
-					...mockHoveredNodeInfo,
-					name: 'PRESCALER',
-					error: false
-				}}
-			/>,
-			store
-		);
+			cy.mount(
+				<MockDiagramNode
+					hoveredNodeInfo={{
+						...mockHoveredNodeInfo,
+						name: 'PRESCALER',
+						error: false
+					}}
+				/>,
+				store
+			);
 
-		cy.dataTest('tooltip:header:nodeName').should(
-			'have.text',
-			'PRESCALER'
-		);
-		cy.dataTest('tooltip:header:nodeDescription').should(
-			'have.text',
-			'System Oscillator Prescaler'
-		);
-		cy.dataTest('tooltip:inputs:title').should('be.visible');
-		cy.dataTest('tooltip:outputs:title').should('be.visible');
+			cy.dataTest('tooltip:header:nodeName').should(
+				'have.text',
+				'PRESCALER'
+			);
+			cy.dataTest('tooltip:header:nodeDescription').should(
+				'have.text',
+				'System Oscillator Prescaler'
+			);
+			cy.dataTest('tooltip:inputs:title').should('be.visible');
+			cy.dataTest('tooltip:outputs:title').should('be.visible');
+		});
+	});
+
+	it('Should only display information about active controls', () => {
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(wlp, undefined, controls);
+
+			store.dispatch(
+				setClockNodeControlValue({
+					name: 'TMR0/1/2/3',
+					key: 'TMR0_ENABLE',
+					value: 'TRUE'
+				})
+			);
+
+			cy.mount(
+				<MockDiagramNode
+					hoveredNodeInfo={{
+						...mockHoveredNodeInfo,
+						name: 'TMR0/1/2/3',
+						error: false
+					}}
+				/>,
+				store
+			);
+
+			cy.dataTest('tooltip:header:nodeName').should(
+				'have.text',
+				'TMR0/1/2/3'
+			);
+
+			cy.dataTest('tooltip:header:nodeDescription').should(
+				'have.text',
+				'Timer Peripherals'
+			);
+
+			cy.dataTest('TMR0a').should('be.visible');
+			cy.dataTest('TMR0b').should('be.visible');
+
+			cy.dataTest('TMR1a').should('not.exist');
+			cy.dataTest('TMR1b').should('not.exist');
+		});
 	});
 });

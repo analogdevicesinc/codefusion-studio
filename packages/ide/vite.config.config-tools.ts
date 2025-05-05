@@ -15,6 +15,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { readFile } from "fs/promises";
 
 // https://vitejs.dev/config/
 export default defineConfig(async ({ command, mode }) => {
@@ -24,12 +25,10 @@ export default defineConfig(async ({ command, mode }) => {
 
   if (mode === "development" && command === "serve") {
     try {
-      await import(
+      devSoc = await readFile(
         path.resolve(process.cwd(), `../cli/src/socs/${devSocId}.json`),
-        { assert: { type: "json" } }
-      ).then(({ default: soc }) => {
-        devSoc = soc;
-      });
+        "utf8",
+      ).then((data) => JSON.parse(data));
     } catch (e) {
       console.error(e);
     }

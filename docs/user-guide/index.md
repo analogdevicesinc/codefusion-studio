@@ -10,12 +10,10 @@ Codefusion Studio (CFS) is an embedded software development platform based on Mi
 
 - [About](about/index.md) CFS
 - The [Installation](installation/index.md) process
-- [Project](projects/index.md) creation and management
+- [Workspace](workspaces/index.md) creation and management
 - [Debugging](debugging/index.md) single and multi-core applications
 - Additional [Tools](tools/index.md)
 - [Uninstalling](uninstall/uninstall-cfs.md)
-
-See [Help](about/help.md) for details on how to get support with CodeFusion Studio.
 
 !!! note
     You can toggle between light and dark mode using the sun and moon icons on to the top right of this page.

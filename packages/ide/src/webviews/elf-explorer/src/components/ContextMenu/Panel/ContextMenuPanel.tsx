@@ -41,6 +41,8 @@ export default function ContextMenuPanel({
 	});
 
 	useEffect(() => {
+		const scrollableBody = document.getElementById('scrollable-body');
+
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
 				contextMenuRef.current &&
@@ -50,12 +52,20 @@ export default function ContextMenuPanel({
 			}
 		};
 
+		const handleScroll = () => {
+			if (contextMenuRef.current) {
+				closeMenu();
+			}
+		};
+
 		if (isVisible) {
 			document.addEventListener('mousedown', handleClickOutside);
+			scrollableBody?.addEventListener('scroll', handleScroll);
 		}
 
 		return () => {
 			document.removeEventListener('mousedown', handleClickOutside);
+			scrollableBody?.removeEventListener('scroll', handleScroll);
 		};
 	}, [isVisible, closeMenu]);
 

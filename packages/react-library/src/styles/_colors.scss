@@ -1,0 +1,183 @@
+/**
+ *
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+$default-background: var(--vscode-editor-background, #1e1e1e);
+$foreground: var(--vscode-foreground, #ccc);
+
+// TO DO: change name from "$default-foreground" to "$default-editor-foreground"
+$default-foreground: var(--vscode-editor-foreground, #d4d4d4);
+$default-elf-foreground: var(
+	--vscode-list-activeSelectionForeground,
+	#fff
+);
+
+$disabled-foreground: var(--vscode-disabledForeground, #808080);
+
+$default-border: var(--vscode-commandCenter-inactiveBorder, #cccccc);
+
+// Charts
+$chart-red: var(--vscode-charts-red, #f14c4c);
+$chart-green: var(--vscode-charts-green, #89d185);
+$chart-blue: var(--vscode-charts-blue, #3794ff);
+$chart-yellow: var(--vscode-charts-yellow, #cca700);
+$chart-purple: var(--vscode-charts-purple, #b180d7);
+$chart-orange: var(--vscode-charts-orange, #d18616);
+
+$activity-bar-background: var(
+	--vscode-activityBar-background,
+	#333333
+);
+
+// Buttons
+//TODO add the following color (properly) instead #0078d4
+$button-background: var(--vscode-button-background, #0e639c);
+
+$button-secondary-background: var(
+	--vscode-button-secondaryBackground,
+	#606060
+);
+
+$button-background-dark: var(
+	--vscode-button-hoverBackground,
+	#094771
+);
+
+$button-foreground: var(--vscode-button-foreground, #ffffff);
+
+$button-primary-background: var(--vscode-button-background, #0e639c);
+
+$button-primary-hover-background: var(
+	--vscode-button-hoverBackground,
+	#094771
+);
+
+$button-secondary-foreground: var(
+	--vscode-button-secondaryForeground,
+	#cccccc
+);
+
+$button-secondary-background: var(
+	--vscode-button-secondaryBackground,
+	#313131
+);
+
+// Editor widget
+$editor-widget-background: var(
+	--vscode-editorWidget-background,
+	#252526
+);
+$editor-widget-foreground: var(
+	--vscode-editorWidget-foreground,
+	#d4d4d4
+);
+$editor-widget-border: var(--vscode-editorWidget-border, #454545);
+
+// Input
+$input-background: var(--vscode-input-background, #1e1e1e);
+$input-foreground: var(--vscode-input-foreground, #d4d4d4);
+$input-border: var(--vscode-settings-dropdownBorder, #d4d4d4);
+$input-focus-border: var(--vscode-focusBorder, #3c3c3c);
+
+$dropdown-border: var(--vscode-panelInput-border, #454545);
+
+$badge-background: color-mix(
+	in srgb,
+	var(--vscode-button-secondaryBackground, #3c3c3c),
+	#000000 15%
+);
+
+$icon-foreground: var(--vscode-icon-foreground, #c5c5c5);
+
+$error: var(--vscode-notificationsErrorIcon-foreground, #f14c4c);
+
+$default-shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+
+$active-nav-item: var(--vscode-activityBar-foreground, #ffffff);
+
+$active-cta: var(--vscode-textLink-foreground, #61afef);
+
+$inactive-nav-item: var(
+	--vscode-activityBar-inactiveForeground,
+	#808080
+);
+
+$notifications-background: var(
+	--vscode-notifications-background,
+	#252526
+);
+
+$notifications-foreground: var(
+	--vscode-notifications-foreground,
+	#cccccc
+);
+
+$side-bar-title-foreground: var(
+	--vscode-sideBarTitle-foreground,
+	#bbb
+);
+
+$side-bar-background: var(--vscode-sideBar-background, #252526);
+
+$description-foreground: var(
+	--vscode-descriptionForeground,
+	rgba(204, 204, 204, 0.7)
+);
+
+$tooltip-background: var(--vscode-editorWidget-background, #252526);
+$tooltip-border: var(--vscode-editorWidget-border, #454545);
+
+$list-inactive-selection-background: var(
+	--vscode-list-inactiveSelectionBackground,
+	#37373d
+);
+
+$list-active-selection-background: var(
+	--vscode-list-activeSelectionBackground,
+	#04395e
+);
+
+$list-active-selection-foreground: var(
+	--vscode-list-activeSelectionForeground,
+	#fff
+);
+
+$list-hover-background: var(
+	--vscode-list-hoverBackground,
+	hsl(195, 5%, 17%)
+);
+
+$navigation-background: var(--vscode-tab-activeBackground, #1e1e1e);
+$navigation-color-inactive: var(
+	--vscode-tab-inactiveForeground,
+	rgba(255, 255, 255, 0.5)
+);
+$navigation-color-active: var(
+	--vscode-tab-activeForeground,
+	rgba(255, 255, 255, 1)
+);
+
+$table-row-hover: var(
+	--vscode-settings-focusedRowBackground,
+	#d4d4d4
+);
+
+$focus-border: var(--vscode-focusBorder, #007fd4);
+
+$button-secondary-hover-background: var(
+	--vscode-button-secondaryHoverBackground,
+	#45494e
+);
+
+$checkbox-foreground: var(--vscode-checkbox-foreground, #f0f0f0);
+$checkbox-background: var(--vscode-checkbox-background, #3c3c3c);

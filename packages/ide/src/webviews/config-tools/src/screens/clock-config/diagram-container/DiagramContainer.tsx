@@ -24,21 +24,12 @@ import debounce from 'lodash.debounce';
 import type {HoveredClockInfo} from '../types/canvas';
 import NodeTooltip from '../node-tooltip/NodeTooltip';
 import ClockTooltip from '../clock-tooltip/ClockTooltip';
-import type {DiagramData, DiagramNode} from '@common/types/soc';
-import {getClockCanvas} from '../../../utils/api';
+import type {DiagramNode} from '@common/types/soc';
 import {showInformationMessage} from '@common/api';
-
-let canvas: DiagramData | undefined;
-
-if (import.meta.env.MODE === 'development') {
-	canvas = (window as any).__DEV_SOC__.Packages[0].ClockCanvas;
-} else {
-	canvas = await getClockCanvas();
-}
-
-Object.freeze(canvas);
+import {getClockCanvas} from '../../../utils/clock-canvas';
 
 function ClockDiagramContainer() {
+	const canvas = getClockCanvas();
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mousePosition = useRef({x: 0, y: 0});
 
@@ -84,7 +75,7 @@ function ClockDiagramContainer() {
 				'There is no clock canvas provided for the current soc.'
 			);
 		}
-	}, []);
+	}, [canvas]);
 
 	return (
 		<div

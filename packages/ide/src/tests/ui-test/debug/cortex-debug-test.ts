@@ -114,7 +114,7 @@ describe("Cortex Debug Configuration Test", () => {
 });
 
 const CortexDebugConfig = {
-  name: "CFS: Debug with GDB and OpenOCD (ARM Embedded)",
+  name: "CFS: Debug with GDB and OpenOCD (Arm Embedded)",
   executable: "${command:cfs.selectProgramFile}",
   cwd: "${command:cfs.setDebugPath}",
   request: "launch",
@@ -123,8 +123,17 @@ const CortexDebugConfig = {
   showDevDebugOutput: "both",
   servertype: "openocd",
   serverpath: "${config:cfs.openocd.path}/bin/openocd",
-  armToolchainPath: "${config:cfs.toolchain.armAArch32GCC.path}/bin",
-  svdFile: "${command:cfs.cmsis.selectSvdFile}",
+  linux: {
+    gdbPath: "${config:cfs.toolchain.armAArch32GCC.path}/bin/arm-none-eabi-gdb",
+  },
+  windows: {
+    gdbPath:
+      "${config:cfs.toolchain.armAArch32GCC.path}/bin/arm-none-eabi-gdb.exe",
+  },
+  osx: {
+    gdbPath: "${config:cfs.toolchain.armAArch32GCC.path}/bin/arm-none-eabi-gdb",
+  },
+  svdPath: "${command:cfs.cmsis.selectSvdFile}",
   searchDir: ["${command:cfs.cmsis.selectCmsisPack}/openocd/scripts"],
   configFiles: [
     "${command:cfs.openocd.selectInterface}",

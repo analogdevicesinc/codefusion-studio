@@ -1,0 +1,1723 @@
+{
+  "P0.27": [
+    {
+      "Id": "P0_27_FREQ",
+      "Description": "Clock Frequency on Input Pin",
+      "MinimumValue": 1,
+      "MaximumValue": 120000000,
+      "Type": "integer",
+      "Condition": "${PinMux:P0.27} ${String:USBHS_CLKEXT} ="
+    }
+  ],
+  "P0.23": [
+    {
+      "Id": "P0_23_FREQ",
+      "Description": "Clock Frequency on Input Pin",
+      "Units": "Hz",
+      "MinimumValue": 1,
+      "MaximumValue": 80000000,
+      "Type": "integer",
+      "Condition": "${PinMux:P0.23} ${String:MISC_CLKEXT} = ${PinMux:P0.23} ${String:I2S0_CLKEXT} = |"
+    }
+  ],
+  "P3.5": [
+    {
+      "Id": "P3_5_FREQ",
+      "Description": "Clock Frequency on Input Pin",
+      "Units": "Hz",
+      "MinimumValue": 1,
+      "MaximumValue": 8000000,
+      "Type": "integer",
+      "Condition": "${PinMux:P3.5} ${String:LPTMR0_CLK} ="
+    }
+  ],
+  "P3.6": [
+    {
+      "Id": "P3_6_FREQ",
+      "Description": "Clock Frequency on Input Pin",
+      "Units": "Hz",
+      "MinimumValue": 1,
+      "MaximumValue": 8000000,
+      "Type": "integer",
+      "Condition": "${PinMux:P3.6} ${String:LPTMR1_CLK} ="
+    }
+  ],
+  "P0.9": [
+    {
+      "Id": "P0_9_FREQ",
+      "Description": "Clock Frequency on Input Pin",
+      "Units": "Hz",
+      "MinimumValue": 1,
+      "Type": "integer",
+      "Condition": "${PinMux:P0.9} ${String:ADC_CLK_EXT} ="
+    }
+  ],
+  "SYS_OSC Mux": [
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "PRESCALER": [
+    {
+      "Id": "DIV",
+      "Description": "Divider Value",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Divide by 1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Divide by 2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Divide by 4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Divide by 8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Divide by 16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Divide by 32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Divide by 64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Divide by 128",
+          "Value": 7
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "LPM Mux": [
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "ERFO Mux": [
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "ERTCO Mux": [
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "SQWOUT": [
+    {
+      "Id": "SQWOUT",
+      "Description": "Frequency on Output Pin",
+      "EnumValues": [
+        {
+          "Id": "DIS",
+          "Description": "Disabled",
+          "Value": 0
+        },
+        {
+          "Id": "1HZ",
+          "Description": "1 Hz",
+          "Value": 1
+        },
+        {
+          "Id": "512HZ",
+          "Description": "512 Hz",
+          "Value": 2
+        },
+        {
+          "Id": "4KHZ",
+          "Description": "4 kHz",
+          "Value": 3
+        },
+        {
+          "Id": "32KHZ",
+          "Description": "32 kHz",
+          "Value": 4
+        }
+      ],
+      "Type": "enum"
+    }
+  ],
+  "1-WIRE": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "ADC": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    },
+    {
+      "Id": "DIV",
+      "Description": "Divider Value",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Divide by 1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Divide by 2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Divide by 4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Divide by 8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Divide by 16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Divide by 32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Divide by 64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Divide by 128",
+          "Value": 7
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "Bluetooth": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "PUF": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "CAN0/1": [
+    {
+      "Id": "CAN0_ENABLE",
+      "Description": "Enable the CAN0 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "CAN1_ENABLE",
+      "Description": "Enable the CAN1 Clock",
+      "Type": "boolean"
+    }
+  ],
+  "CTB/TRNG": [
+    {
+      "Id": "CTB_ENABLE",
+      "Description": "Enable the CTB Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRNG_ENABLE",
+      "Description": "Enable the TRNG Clock",
+      "Type": "boolean"
+    }
+  ],
+  "DMA": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "I2C0/1/2": [
+    {
+      "Id": "I2C0_ENABLE",
+      "Description": "Enable the I2C0 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "I2C1_ENABLE",
+      "Description": "Enable the I2C1 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "I2C2_ENABLE",
+      "Description": "Enable the I2C2 Clock",
+      "Type": "boolean"
+    }
+  ],
+  "I2S": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "ICC": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "LPCOMP": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "LPTMR0": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "LPTMR1": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "LPUART0": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "LPWDT0": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "PT0-15": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "TMR0/1/2/3": [
+    {
+      "Id": "TMR0_ENABLE",
+      "Description": "Enable the TMR0 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TMR0a_MUX",
+      "Description": "Clock Source for TMR0a",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 3
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR0_ENABLE}"
+    },
+    {
+      "Id": "TMR0b_MUX",
+      "Description": "Clock Source for TMR0b",
+      "EnumValues": [
+        {
+          "Id": "32BIT",
+          "Description": "N/A - 32-bit Mode",
+          "Value": 4
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR0_ENABLE}"
+    },
+    {
+      "Id": "TMR1_ENABLE",
+      "Description": "Enable the TMR1 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TMR1a_MUX",
+      "Description": "Clock Source for TMR1a",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 3
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR1_ENABLE}"
+    },
+    {
+      "Id": "TMR1b_MUX",
+      "Description": "Clock Source for TMR1b",
+      "EnumValues": [
+        {
+          "Id": "32BIT",
+          "Description": "N/A - 32-bit Mode",
+          "Value": 4
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR1_ENABLE}"
+    },
+    {
+      "Id": "TMR2_ENABLE",
+      "Description": "Enable the TMR2 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TMR2a_MUX",
+      "Description": "Clock Source for TMR2a",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 3
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR2_ENABLE}"
+    },
+    {
+      "Id": "TMR2b_MUX",
+      "Description": "Clock Source for TMR2b",
+      "EnumValues": [
+        {
+          "Id": "32BIT",
+          "Description": "N/A - 32-bit Mode",
+          "Value": 4
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR2_ENABLE}"
+    },
+    {
+      "Id": "TMR3_ENABLE",
+      "Description": "Enable the TMR3 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TMR3a_MUX",
+      "Description": "Clock Source for TMR3a",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 3
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR3_ENABLE}"
+    },
+    {
+      "Id": "TMR3b_MUX",
+      "Description": "Clock Source for TMR3b",
+      "EnumValues": [
+        {
+          "Id": "32BIT",
+          "Description": "N/A - 32-bit Mode",
+          "Value": 4
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:TMR3_ENABLE}"
+    }
+  ],
+  "SEMA": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "SPI0/1/2": [
+    {
+      "Id": "SPI0_ENABLE",
+      "Description": "Enable the SPI0 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "SPI1_ENABLE",
+      "Description": "Enable the SPI1 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "SPI2_ENABLE",
+      "Description": "Enable the SPI2 Clock",
+      "Type": "boolean"
+    }
+  ],
+  "SPI3/4": [
+    {
+      "Id": "SPI3_ENABLE",
+      "Description": "Enable the SPI3 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "SPI4_ENABLE",
+      "Description": "Enable the SPI4 Clock",
+      "Type": "boolean"
+    }
+  ],
+  "SPIXF": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "SPIXR/HPB": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ],
+  "UART0/1/2": [
+    {
+      "Id": "UART0_ENABLE",
+      "Description": "Enable the UART0 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "UART0_MUX",
+      "Description": "Clock Source for UART0",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:UART0_ENABLE}"
+    },
+    {
+      "Id": "UART1_ENABLE",
+      "Description": "Enable the UART1 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "UART1_MUX",
+      "Description": "Clock Source for UART1",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:UART1_ENABLE}"
+    },
+    {
+      "Id": "UART2_ENABLE",
+      "Description": "Enable the UART2 Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "UART2_MUX",
+      "Description": "Clock Source for UART2",
+      "EnumValues": [
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 0
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 2
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:UART2_ENABLE}"
+    }
+  ],
+  "High-Speed USB": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "USB_MUX",
+      "Description": "Clock Source for USB PHY",
+      "EnumValues": [
+        {
+          "Id": "SYS_CLK_DIV_10",
+          "Description": "SYS_CLK divided by 10",
+          "Value": 0
+        },
+        {
+          "Id": "USBCLKEXT",
+          "Description": "USBCLKEXT on P0.27",
+          "Value": 1
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 2
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:ENABLE}"
+    }
+  ],
+  "WDT0": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    },
+    {
+      "Id": "MUX",
+      "Description": "Clock Source",
+      "EnumValues": [
+        {
+          "Id": "IPO",
+          "Description": "IPO (Internal Primary Osc.)",
+          "Value": 1
+        },
+        {
+          "Id": "IBRO_DIV_8",
+          "Description": "IBRO divided by 8",
+          "Value": 2
+        },
+        {
+          "Id": "SYS_CLK",
+          "Description": "SYS_CLK (System Clock)",
+          "Value": 3
+        },
+        {
+          "Id": "ADC_CLK_EXT",
+          "Description": "External Clock on P0.9",
+          "Value": 4
+        },
+        {
+          "Id": "LPTMR0_CLK",
+          "Description": "External LPTMR0 Clock on P3.5",
+          "Value": 5
+        },
+        {
+          "Id": "LPTMR1_CLK",
+          "Description": "External LPTMR1 Clock on P3.6",
+          "Value": 6
+        },
+        {
+          "Id": "ERFO",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 7
+        },
+        {
+          "Id": "ERFO_OSC",
+          "Description": "ERFO (External RF Osc.)",
+          "Value": 8
+        },
+        {
+          "Id": "ISO",
+          "Description": "ISO (Internal Secondary Osc.)",
+          "Value": 9
+        },
+        {
+          "Id": "IBRO",
+          "Description": "IBRO (Internal Baud Rate Osc.)",
+          "Value": 10
+        },
+        {
+          "Id": "ERTCO_OSC",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 12
+        },
+        {
+          "Id": "INRO",
+          "Description": "INRO (Internal Nano-Ring Osc.)",
+          "Value": 13
+        },
+        {
+          "Id": "CLKEXT",
+          "Description": "External Clock on P0.23",
+          "Value": 14
+        },
+        {
+          "Id": "ERFO_CLK",
+          "Description": "External Clock on HFXIN",
+          "Value": 15
+        },
+        {
+          "Id": "ERTCO_CLK",
+          "Description": "External Clock on 32KIN",
+          "Value": 16
+        },
+        {
+          "Id": "PCLK",
+          "Description": "PCLK (Peripheral Clock)",
+          "Value": 17
+        },
+        {
+          "Id": "ERTCO",
+          "Description": "ERTCO (External RTC Osc.)",
+          "Value": 11
+        },
+        {
+          "Id": "SYS_CLK_DIV_2",
+          "Description": "SYS_CLK_DIV_2",
+          "Value": 0
+        },
+        {
+          "Id": "SYS_CLK_DIV_2_ISO",
+          "Description": "SYS_CLK_DIV_2 (ISO if in LPM)",
+          "Value": 18
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${ControlExists:ENABLE} ! ${Control:ENABLE} |"
+    }
+  ],
+  "RISC-V": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the Component Clock",
+      "Type": "boolean"
+    }
+  ]
+}

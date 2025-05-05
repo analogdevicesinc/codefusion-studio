@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
+import {Button} from 'cfs-react-library';
 import {useRef, type ReactNode, useEffect} from 'react';
 import CloseIcon from '@common/components/icons/CloseIcon';
 
@@ -20,7 +20,6 @@ import styles from './modal.module.scss';
 
 export type ModalProps = {
 	readonly isOpen: boolean;
-	readonly isDynamicHeight: boolean;
 	readonly handleModalClose: () => void;
 	readonly children: ReactNode;
 	readonly footer?: ReactNode;
@@ -28,7 +27,6 @@ export type ModalProps = {
 
 export function Modal({
 	isOpen,
-	isDynamicHeight,
 	footer,
 	handleModalClose,
 	children
@@ -52,9 +50,7 @@ export function Modal({
 	return (
 		<dialog
 			ref={modalRef}
-			className={`${styles.modal} ${
-				isDynamicHeight ? styles.modalHeight : ''
-			}`}
+			className={styles.modal}
 			onClick={e => {
 				if (e.target === modalRef.current) {
 					modalRef.current?.close();
@@ -70,7 +66,7 @@ export function Modal({
 		>
 			<div className={styles.innerModal} data-test='inner-modal'>
 				<div className={styles.modalHeader}>
-					<VSCodeButton
+					<Button
 						appearance='icon'
 						className={styles.closeButton}
 						onClick={() => {
@@ -79,10 +75,10 @@ export function Modal({
 						}}
 					>
 						<CloseIcon />
-					</VSCodeButton>
+					</Button>
 				</div>
 				<div className={styles.modalBody}>{children}</div>
-				<div className={styles.modalFooter}>{footer}</div>
+				{footer && <div className={styles.modalFooter}>{footer}</div>}
 			</div>
 		</dialog>
 	);

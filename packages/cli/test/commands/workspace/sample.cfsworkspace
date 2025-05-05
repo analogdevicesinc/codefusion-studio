@@ -1,0 +1,14 @@
+{
+  "copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "dataModelVersion": "0.0.1",
+  "dataModelSchemaVersion": "0.0.1",
+  "timestamp": "2025-03-07T14:57:03.832Z",
+  "soc": "MAX32690",
+  "Board": "",
+  "package": "WLP",
+  "workspacePluginId": "",
+  "workspacePluginVersion": "1.0.0",
+  "workspaceName": "test-workspace-name",
+  "location": "test/commands/workspace/test-workspace-output",
+  "projects": []
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,10 @@ import {
 } from "../../project-generator.js";
 import { execSync } from "node:child_process";
 import settingsData from "./templates/.vscode/settings.js";
-import launchData from "./templates/.vscode/launch.js";
+import {
+	secureLaunch,
+	nonSecureLaunch
+} from "./templates/.vscode/launch.js";
 import cCppPropData from "./templates/.vscode/c_cpp_properties.js";
 import { Soc } from "../../../types/soc.js";
 
@@ -44,12 +47,14 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 	 * Creates a project based on the template passed at the destination with the passed project name.
 	 * @param templateInfo - object containing template information.
 	 * @param dest - the absolute path of the destination folder.
-	 * @param projectName - the name of the project to be create.
+	 * @param projectName - the name of the project to be created.
 	 * @param socDisplayName - the display name of the SoC.
 	 * @param board - the name of the board. (The display name of the board)
 	 * @param socPackage - the name of the SoC package, i.e. "tqfn" or "wlp"
 	 * @param identifier - The zephyr identifier.
 	 * @param socData - the SoC data from the data model
+	 * @param customBoardLocation - The location to the custom BSP
+	 * @param secure - Whether the project is in the secure domain or not
 	 * @returns Promise that resolves to true when a project is created successfully
 	 */
 	public async createProject(
@@ -60,7 +65,9 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 		board: string,
 		socPackage: string,
 		identifier: string,
-		socData?: Soc
+		socData?: Soc,
+		customBoardLocation?: string,
+		secure?: boolean
 	): Promise<boolean> {
 		let isProjectFolderCreated = false;
 		const projectPath = path.join(dest as string, projectName);
@@ -105,7 +112,7 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 				// Copying over the sample folder
 				await this.copyFiles(templatePath, folder, copyOptions);
 				this.updateCMakeLists(folder);
-				this.updatePrjConf(folder);
+				this.updatePrjConf(folder, templateInfo);
 				this.addFoldersToWorkspace([templateFolder.name]);
 				const additionalSettings: AdditionalSettingType = {};
 				additionalSettings["cfs.project.board"] = identifier;
@@ -122,8 +129,16 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 					socName +
 					".svd";
 				// Create .vscode folder with settings applied
-				this.addCfsSettings(folder, additionalSettings);
+				this.addCfsSettings(folder, additionalSettings, secure);
 
+				//Creating a Ozone Debug file
+				this.addOzoneDebugFile(
+					folder,
+					`${projectName}_${templateFolder.name}`,
+					socDisplayName,
+					"build/zephyr/zephyr.elf",
+					templateFolder.segger.ozoneSvd
+				);
 				if (socData && templateInfo.configs) {
 					let configTemplate;
 					for (const config of templateInfo.configs) {
@@ -139,7 +154,7 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 						socName,
 						socPackage,
 						board,
-						"zephyr-3.7",
+						"zephyr-4.0",
 						configTemplate,
 						identifier
 					);
@@ -218,23 +233,39 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 	 * the appropriate default CFS settings
 	 * @param folder the project folder
 	 */
-	updatePrjConf(folder: string) {
+	updatePrjConf(
+		folder: string,
+		templateInfo: ProjectGeneratorTypes.Template
+	) {
 		const prjConfPath = path.join(folder, "prj.conf");
 		if (fs.existsSync(prjConfPath)) {
 			const prjConf = fs.readFileSync(prjConfPath, {
 				encoding: "utf-8"
 			});
 			const output = prjConf.split("\n");
-			const settings = [
-				"CONFIG_THREAD_NAME",
-				"CONFIG_DEBUG_THREAD_INFO",
-				"CONFIG_THREAD_ANALYZER"
+			let settings;
+			if (templateInfo.name !== "cgm") {
+				// The CGM example needs optimizations enabled else it
+				// doesn't run fast enough to connect over Bluetooth.
+				// Otherwise, turn off optimization and build for debug.
+
+				settings = [
+					"# Build for debug (no optimizations) by default",
+					"CONFIG_DEBUG=y",
+					"CONFIG_NO_OPTIMIZATIONS=y",
+					"" // intentional empty line
+				];
+				output.push(...settings);
+			}
+
+			const thread_settings = [
+				"# Enable thread awareness when debugging",
+				"CONFIG_THREAD_NAME=y",
+				"CONFIG_DEBUG_THREAD_INFO=y",
+				"CONFIG_THREAD_ANALYZER=y"
 			];
 
-			output.push("# Enable thread awareness when debugging");
-			for (const setting of settings) {
-				output.push(`${setting}=y`);
-			}
+			output.push(...thread_settings);
 
 			fs.writeFileSync(prjConfPath, output.join("\n"));
 		}
@@ -321,65 +352,67 @@ export class ZephyrProjectGenerator extends ProjectGenerator {
 	 * This function adds the files present in the folder './templates/.vscode/*' to the .vscode folder in the arm folder.
 	 * @param {string} projectPath - path to the project location
 	 * @param boardIdentifier -  the board zephyr identifier.
+	 * @param secure - Whether the project is in the secure domain or not
 	 */
 	private addCfsSettings(
 		projectPath: string,
-		additionalSettings?: AdditionalSettingType
+		additionalSettings?: AdditionalSettingType,
+		secure?: boolean
 	) {
 		const vscodeSettingPath = path.join(projectPath, ".vscode");
 		try {
 			const isVscodeSettingCreated =
 				this.createFolder(vscodeSettingPath);
-			if (fs.existsSync(projectPath) && isVscodeSettingCreated) {
-				// Copying over the settings.json file
-				const settings = settingsData as Record<string, string>;
-
-				//Updating the settings for zephyr
-				if (additionalSettings) {
-					// eslint-disable-next-line @typescript-eslint/no-for-in-array
-					for (const key in Object.keys(additionalSettings)) {
-						const settingKey = Object.keys(additionalSettings)[key];
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-						const settingValue = Object.values(additionalSettings)[
-							key
-						];
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-						settings[settingKey] = settingValue;
-					}
-				}
-
-				const settingsString = JSON.stringify(settings, null, 2);
-
-				const settingsFilePath = path.join(
-					projectPath,
-					"./.vscode/settings.json"
-				);
-
-				fs.writeFileSync(settingsFilePath, settingsString);
-
-				// Copying over the launch.json file.
-				const launchString = JSON.stringify(launchData, null, 2);
-
-				const launchFilePath = path.join(
-					projectPath,
-					"./.vscode/launch.json"
-				);
-
-				fs.writeFileSync(launchFilePath, launchString);
-
-				// Copying over c_cpp_properties.json
-				const cCppPropString = JSON.stringify(cCppPropData, null, 2);
-
-				const cCppPropFilePath = path.join(
-					projectPath,
-					"./.vscode/c_cpp_properties.json"
-				);
-				fs.writeFileSync(cCppPropFilePath, cCppPropString);
-			} else {
+			if (!fs.existsSync(projectPath) || !isVscodeSettingCreated) {
 				throw new Error(
 					`Error while creating ${projectPath} folder and/or ${vscodeSettingPath}`
 				);
 			}
+
+			//Copying over the settings.json file
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			const settings: Record<string, string> = settingsData;
+
+			//Updating the settings for zephyr
+			if (additionalSettings) {
+				// eslint-disable-next-line @typescript-eslint/no-for-in-array
+				for (const indx in Object.keys(additionalSettings)) {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+					settings[Object.keys(additionalSettings)[indx]] =
+						Object.values(additionalSettings)[indx];
+				}
+			}
+
+			const settingsString = JSON.stringify(settings, null, 2);
+			const settingsFilePath = path.join(
+				projectPath,
+				"./.vscode/settings.json"
+			);
+			fs.writeFileSync(settingsFilePath, settingsString);
+
+			let launch;
+			if (secure) {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				launch = secureLaunch;
+			} else {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				launch = nonSecureLaunch;
+			}
+			const launchString = JSON.stringify(launch, null, 2);
+			const launchFilePath = path.join(
+				projectPath,
+				"./.vscode/launch.json"
+			);
+			fs.writeFileSync(launchFilePath, launchString);
+
+			//Copying over c_cpp_properties.json
+			const cCppProperties = cCppPropData;
+			const cCppPropString = JSON.stringify(cCppProperties, null, 2);
+			const cCppPropFilePath = path.join(
+				projectPath,
+				"./.vscode/c_cpp_properties.json"
+			);
+			fs.writeFileSync(cCppPropFilePath, cCppPropString);
 		} catch (err) {
 			let newErr = new Error(
 				`Error while adding the vscode specific settings.`

@@ -1,0 +1,134 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "1.0.0",
+  "Timestamp": "2025-02-28T12:29:03.185Z",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "Pins": [
+    {
+      "Pin": "J2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.1",
+      "Config": {}
+    },
+    {
+      "Pin": "K3",
+      "Peripheral": "SPI0",
+      "Signal": "SCK",
+      "Config": {}
+    },
+    {
+      "Pin": "L1",
+      "Peripheral": "SPI0",
+      "Signal": "MOSI",
+      "Config": {}
+    },
+    {
+      "Pin": "L2",
+      "Peripheral": "SPI0",
+      "Signal": "MISO",
+      "Config": {}
+    }
+  ],
+  "ClockNodes": [],
+  "FirmwarePlatform": "zephyr-4.0",
+  "BoardName": "AD-APARD32690-SL",
+  "ZephyrId": "",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "Secure": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.1",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_1",
+                "PHANDLE": "gpio_p0_1",
+                "INPUT_CODE": "INPUT_KEY_0"
+              },
+              "PluginConfig": {}
+            }
+          ],
+          "Config": {},
+          "PluginConfig": {}
+        }
+      ],
+      "PlatformConfig": {
+        "ProjectName": "",
+        "ZephyrBoardName": "asd/"
+      }
+    },
+    {
+      "CoreId": "RV",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "Secure": false,
+      "Partitions": [],
+      "PlatformConfig": {
+        "ProjectName": "",
+        "ZephyrBoardName": "as/"
+      },
+      "Peripherals": [
+        {
+          "Name": "SPI0",
+          "Signals": [
+            {
+              "Name": "CS0",
+              "PluginConfig": {}
+            },
+            {
+              "Name": "CS1",
+              "PluginConfig": {}
+            },
+            {
+              "Name": "MISO",
+              "Config": {
+                "PWR": "VDDIO"
+              },
+              "PluginConfig": {}
+            },
+            {
+              "Name": "MOSI",
+              "Config": {
+                "PWR": "VDDIO"
+              },
+              "PluginConfig": {}
+            },
+            {
+              "Name": "SCK",
+              "Config": {
+                "PWR": "VDDIO"
+              },
+              "PluginConfig": {}
+            },
+            {
+              "Name": "SDIO2",
+              "PluginConfig": {}
+            },
+            {
+              "Name": "SDIO3",
+              "PluginConfig": {}
+            }
+          ],
+          "Config": {},
+          "PluginConfig": {}
+        }
+      ]
+    }
+  ]
+}

@@ -13,8 +13,13 @@
  *
  */
 import type {Dispatch, SetStateAction} from 'react';
-import type {TSection, TSegment} from '../common/types/memory-layout';
+import {
+	COLUMNS,
+	type TSection,
+	type TSegment
+} from '../common/types/memory-layout';
 import type {TSymbol} from '../common/types/symbols';
+import type {TMemLayoutContext} from '../common/types/context';
 
 type LayerClickHandler = (
 	data: TSegment | TSection | TSymbol
@@ -26,20 +31,21 @@ const isSection = (data: any): data is TSection =>
 	(data as TSection).symbols !== undefined;
 
 export const handleLayerClick = (
-	setCurrentData: Dispatch<SetStateAction<any[]>>,
-	setParentLayer: Dispatch<
-		SetStateAction<TSegment | TSection | undefined>
-	>,
-	setLayer: Dispatch<SetStateAction<number>>
+	setMemoryLayout: (newValue: any) => void
 ): LayerClickHandler[] => [
 	(data: TSegment | TSection | TSymbol) => {
 		if (isSegment(data)) {
 			const SortedData = data.sections.sort(
 				(a, b) => a.size - b.size
 			);
-			setCurrentData(SortedData);
-			setParentLayer(data);
-			setLayer(2);
+
+			setMemoryLayout((prev: TMemLayoutContext) => ({
+				...prev,
+				layer: 2,
+				selectedItemName: `Sections for Segment "${data.id} - ${data.type}"`,
+				currentData: SortedData,
+				parentLayer: data
+			}));
 		}
 	},
 	(data: TSegment | TSection | TSymbol) => {
@@ -50,9 +56,14 @@ export const handleLayerClick = (
 
 				return valueA - valueB;
 			});
-			setCurrentData(SortedData);
-			setParentLayer(data);
-			setLayer(3);
+
+			setMemoryLayout((prev: TMemLayoutContext) => ({
+				...prev,
+				layer: 3,
+				selectedItemName: `Symbols for Section "${data.id} - ${data.name}"`,
+				currentData: SortedData,
+				parentLayer: data
+			}));
 		}
 	}
 ];
@@ -68,20 +79,19 @@ export const handleClick = (
 };
 
 export const handleBackClick = (
-	setCurrentData: Dispatch<SetStateAction<any[]>>,
-	setParentLayer: Dispatch<
-		SetStateAction<TSegment | TSection | undefined>
-	>,
-	setLayer: Dispatch<SetStateAction<number>>,
 	dataTree: TSegment[],
 	currentData: any[],
-	parentLayer: any
-	// eslint-disable-next-line max-params
+	parentLayer: any,
+	setMemoryLayout: (newValue: any) => void
 ) => [
 	() => {
-		setCurrentData(dataTree);
-		setParentLayer(undefined);
-		setLayer(1);
+		setMemoryLayout((prev: TMemLayoutContext) => ({
+			...prev,
+			layer: 1,
+			selectedItemName: 'All segments',
+			currentData: dataTree,
+			parentLayer: undefined
+		}));
 	},
 	() => {
 		const parentLayerArray = [parentLayer];
@@ -106,11 +116,13 @@ export const handleBackClick = (
 			);
 
 			if (parentSection) {
-				setCurrentData(
-					parentSegment.sections as Array<Record<string, any>>
-				);
-				setParentLayer(parentSegment);
-				setLayer(2);
+				setMemoryLayout((prev: TMemLayoutContext) => ({
+					...prev,
+					layer: 2,
+					selectedItemName: `Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`,
+					currentData: parentSegment.sections,
+					parentLayer: parentSegment
+				}));
 			}
 		}
 
@@ -125,11 +137,13 @@ export const handleBackClick = (
 			);
 
 			if (parentSegment) {
-				setCurrentData(
-					parentSegment.sections as Array<Record<string, any>>
-				);
-				setParentLayer(parentSegment);
-				setLayer(2);
+				setMemoryLayout((prev: TMemLayoutContext) => ({
+					...prev,
+					layer: 2,
+					selectedItemName: `Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`,
+					currentData: parentSegment.sections,
+					parentLayer: parentSegment
+				}));
 			}
 		}
 	}
@@ -171,3 +185,22 @@ export const handleMouseLeave = (
 	setHoveredItem(undefined);
 	setHoverSource(undefined);
 };
+
+export const isLayer1Flags = (
+	column: COLUMNS,
+	layer: number
+): boolean => layer === 1 && column === COLUMNS.FLAGS;
+
+export const isLayer2FlagsType = (
+	column: COLUMNS,
+	layer: number
+): boolean =>
+	layer === 2 &&
+	(column === COLUMNS.FLAGS || column === COLUMNS.TYPE);
+
+export const isLayer3BindVis = (
+	column: COLUMNS,
+	layer: number
+): boolean =>
+	layer === 3 &&
+	(column === COLUMNS.BIND || column === COLUMNS.VISIBILITY);

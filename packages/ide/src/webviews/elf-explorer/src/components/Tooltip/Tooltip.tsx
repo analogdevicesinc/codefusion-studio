@@ -23,6 +23,7 @@ type TooltipContent = {
 
 type TooltipProps = {
 	readonly content: TooltipContent;
+	readonly containerPosition: 'absolute' | 'relative';
 	readonly children: React.ReactNode;
 };
 
@@ -33,7 +34,11 @@ type PositionType = {
 	top: string;
 };
 
-export default function Tooltip({content, children}: TooltipProps) {
+export default function Tooltip({
+	content,
+	containerPosition,
+	children
+}: TooltipProps) {
 	const [visible, setVisible] = useState(false);
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const [position, setPosition] = useState<PositionType>({
@@ -70,6 +75,9 @@ export default function Tooltip({content, children}: TooltipProps) {
 	return (
 		<div
 			className={styles.tooltipContainer}
+			style={{
+				position: containerPosition ? containerPosition : 'absolute'
+			}}
 			onMouseEnter={() => {
 				setVisible(true);
 			}}

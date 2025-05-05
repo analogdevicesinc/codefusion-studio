@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,24 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 import react from "@vitejs/plugin-react";
+import { copyTemplatesPlugin } from "./vite-plugin-copy-templates";
 
+// Bundle the extension and all it's depencencies to CJS
 const extensionConfig = {
-  plugins: [react(), tsconfigPaths({ projects: ["./tsconfig.json"] })],
+  plugins: [
+    tsconfigPaths({ projects: ["./tsconfig.json"] }),
+    copyTemplatesPlugin(),
+  ],
   build: {
-    lib: {
-      entry: "src",
-      formats: ["cjs"],
-      fileName: "cfs-ide",
+    ssr: true, // the server side rendering preset uses rollup settings that support node modules properly
+    commonjsOptions: {
+      // These are used in conditional require statements in the `alasql` dependency
+      // Ignoring leaves the require statements intact (e.g. not hoisted to the top of the module)
+      ignore: ["react-native-fs", "react-native-fetch-blob"],
     },
     rollupOptions: {
       input: {
         extension: "src/extension.ts",
-        tests: "src/tests/test-index.ts",
       },
       output: {
         dir: "out",
@@ -40,31 +45,12 @@ const extensionConfig = {
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
         assetFileNames: "[name].[ext]",
+        exports: "named",
+        dynamicImportInCjs: false, // not supported in vscode-loader
       },
-      external: [
-        "vscode",
-        "fs/promises",
-        "fs",
-        "node:child_process",
-        "os",
-        "rm",
-        "path",
-        "node:process",
-        "node:child_process",
-        "public",
-        "timers/promises",
-        "glob",
-        "xml2js",
-        "htmlparser2",
-        "lodash.debounce",
-        /node_modules/,
-        "node:fs",
-        "node:path",
-        "node:buffer",
-        "alasql"
-      ],
+      external: ["vscode"], // prevent error when rollup can't resolve vscode module
       watch: {
-        exclude: ["node_modules/**"],
+        exclude: ["node_modules/**", "src/tests/**"],
         include: ["src/**/*"],
         clearScreen: false,
         chokidar: {
@@ -84,6 +70,12 @@ const extensionConfig = {
     },
     extensions: [".ts", ".tsx", ".js", ".jsx", "..."],
   },
+  ssr: {
+    external: ["vscode"], // do not attempt to bundle (or resolve)
+    noExternal: true, // bundle all the other dependencies
+    target: "node",
+  },
+  appType: "custom",
 };
 
 const webviewConfig = {
@@ -113,33 +105,6 @@ const webviewConfig = {
   },
 };
 
-const newProjectConfig = {
-  plugins: [react(), tsconfigPaths({ projects: ["./tsconfig.webview.json"] })],
-  build: {
-    outDir: "out/new-project-wizard",
-    emptyOutDir: true,
-    rollupOptions: {
-      input: "./src/webview/pages/new-project-wizard/index.tsx",
-      output: {
-        entryFileNames: `[name].js`,
-        chunkFileNames: `[name].js`,
-        assetFileNames: `[name].[ext]`,
-        inlineDynamicImports: true,
-      },
-    },
-    cssCodeSplit: false,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
-    },
-    extensions: [".ts", ".tsx", ".js", ".jsx", "..."],
-  },
-};
-
 export default defineConfig(({ mode }) => {
   if (mode === "extension") {
     return extensionConfig;
@@ -147,10 +112,6 @@ export default defineConfig(({ mode }) => {
 
   if (mode === "webview") {
     return webviewConfig;
-  }
-
-  if (mode === "new-project-wizard") {
-    return newProjectConfig;
   }
 
   return {};

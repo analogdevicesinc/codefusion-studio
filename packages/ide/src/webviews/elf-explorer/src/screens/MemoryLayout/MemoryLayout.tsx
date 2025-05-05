@@ -29,7 +29,10 @@ import NoData from '../../components/NoData/NoData';
 
 import {formatSegments} from '../../utils/format';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
-import type {TLocaleContext} from '../../common/types/context';
+import type {
+	TLocaleContext,
+	TMemLayoutContext
+} from '../../common/types/context';
 
 import styles from './MemoryLayout.module.scss';
 
@@ -48,16 +51,10 @@ import {
 	handleHover,
 	handleMouseLeave
 } from '../../utils/memory-handlers';
+import {useAppContext} from '../../common/contexts/AppContext';
 
 export default function MemoryLayout() {
-	const [dataTree, setDataTree] = useState<TSegment[]>([]);
-	const [layer, setLayer] = useState(1);
-	const [parentLayer, setParentLayer] = useState<
-		TSegment | TSection | undefined
-	>(undefined);
-	const [currentData, setCurrentData] = useState<
-		TSegment[] | TSection[] | TSymbol[]
-	>([]);
+	const {memLayout, setMemoryLayout} = useAppContext();
 	const [hoveredItem, setHoveredItem] = useState<
 		TSegment | TSection | TSymbol | undefined
 	>(undefined);
@@ -72,21 +69,37 @@ export default function MemoryLayout() {
 	const [loading, setLoading] = useState<boolean>(false);
 
 	useEffect(() => {
+		if (!memLayout.dataTree.length) {
+			getMemoryData();
+		}
+
+		// This is to know in what format to display the "number" value in the table
+		getOptions();
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const getMemoryData = (): void | never => {
 		setLoading(true);
 
 		getMemoryUsage()
 			.then((response: TSegmentResponse[]) => {
-				setLoading(false);
 				const formattedResponse = formatSegments(response);
-				setDataTree(formattedResponse);
-				setCurrentData(formattedResponse);
+
+				setMemoryLayout((prev: TMemLayoutContext) => ({
+					...prev,
+					dataTree: formattedResponse,
+					currentData: formattedResponse
+				}));
+				setLoading(false);
 			})
 			.catch((err: string) => {
 				setLoading(false);
 				throw new Error(err);
 			});
+	};
 
-		// This is to know in what format to display the "number" value in the table
+	const getOptions = (): void | never => {
 		getSavedOptionsForTableFormat()
 			.then(response => {
 				setSavedOptions(response);
@@ -95,31 +108,25 @@ export default function MemoryLayout() {
 				console.error(err);
 				throw new Error(err);
 			});
-	}, []);
+	};
 
-	const layerClickHandlers = handleLayerClick(
-		setCurrentData,
-		setParentLayer,
-		setLayer
-	);
+	const layerClickHandlers = handleLayerClick(setMemoryLayout);
 	const backClickHandlers = handleBackClick(
-		setCurrentData,
-		setParentLayer,
-		setLayer,
-		dataTree,
-		currentData,
-		parentLayer
+		memLayout.dataTree,
+		memLayout.currentData ?? [],
+		memLayout.parentLayer,
+		setMemoryLayout
 	);
 
 	return (
 		<ScreenLayout>
 			<MemoryBackButton
-				layer={layer}
-				data={parentLayer}
+				layer={memLayout.layer}
+				data={memLayout.parentLayer}
 				onClick={targetLayer => {
 					handleBack(
 						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, no-negated-condition
-						targetLayer !== undefined ? targetLayer : layer,
+						targetLayer !== undefined ? targetLayer : memLayout.layer,
 						backClickHandlers
 					);
 				}}
@@ -131,13 +138,19 @@ export default function MemoryLayout() {
 					) : (
 						// eslint-disable-next-line react/jsx-no-useless-fragment
 						<>
-							{layer < 3 ? (
+							{memLayout.layer < 3 ? (
 								<MemoryVisual
-									segments={currentData as TSegment[] | TSection[]}
+									segments={
+										memLayout.currentData as TSegment[] | TSection[]
+									}
 									hoveredItem={hoveredItem}
 									hoverSource={hoverSource}
 									onClick={data => {
-										handleClick(data, layer, layerClickHandlers);
+										handleClick(
+											data,
+											memLayout.layer,
+											layerClickHandlers
+										);
 									}}
 									onHover={(data, source) => {
 										handleHover(
@@ -153,23 +166,29 @@ export default function MemoryLayout() {
 								/>
 							) : (
 								<MemoryList
-									data={[parentLayer as TSection]}
-									i10n={i10n?.table?.flags || ''}
+									data={[memLayout.parentLayer as TSection]}
+									i10n={i10n?.aboutSectionList || ''}
 								/>
 							)}
 						</>
 					)}
 				</article>
 				<article className={styles.right}>
-					{currentData && currentData.length > 0 && savedOptions ? (
+					{memLayout.currentData &&
+					memLayout.currentData.length > 0 &&
+					savedOptions ? (
 						<MemoryTable
-							data={currentData}
+							data={memLayout.currentData}
 							hoveredItem={hoveredItem}
 							hoverSource={hoverSource}
-							layer={layer}
+							layer={memLayout.layer}
 							savedOptions={savedOptions}
 							onClickHandler={data => {
-								handleClick(data, layer, layerClickHandlers);
+								handleClick(
+									data,
+									memLayout.layer,
+									layerClickHandlers
+								);
 							}}
 							onHover={(data, source) => {
 								handleHover(

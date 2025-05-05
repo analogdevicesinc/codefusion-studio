@@ -13,10 +13,7 @@
  *
  */
 import {useEffect, useState, type ChangeEvent} from 'react';
-import {
-	VSCodeTextField,
-	VSCodeCheckbox
-} from '@vscode/webview-ui-toolkit/react';
+import {VSCodeTextField} from '@vscode/webview-ui-toolkit/react';
 // SVG
 import Database from '@common/icons/Database';
 
@@ -24,6 +21,7 @@ import type {TSavedQuery} from '../../../../common/types/symbols';
 
 import styles from './SaveEditQueryModal.module.scss';
 import InputError from '../InputErrorMessage/InputError';
+import {CheckBox} from 'cfs-react-library';
 
 type SaveEditQueryModalProps = {
 	readonly query: TSavedQuery | undefined;
@@ -116,7 +114,7 @@ export default function SaveEditQueryModal({
 				</VSCodeTextField>
 				{error && <InputError text={error} />}
 			</div>
-			<VSCodeCheckbox
+			<CheckBox
 				checked={isChecked}
 				onClick={(event: any) => {
 					setIsChecked(event?.target?.checked as boolean);
@@ -124,7 +122,7 @@ export default function SaveEditQueryModal({
 				}}
 			>
 				Save query even if there are errors
-			</VSCodeCheckbox>
+			</CheckBox>
 			<div className={styles.field}>
 				<label htmlFor='query-name' className={styles.label}>
 					Query name

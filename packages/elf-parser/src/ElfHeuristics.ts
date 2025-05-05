@@ -62,6 +62,7 @@ export class SymbolValue {
 export class ElfHeuristics {
 	public targetOs = TargetOs.Unknown;
 	public entries = new Map<string, SymbolValue>();
+	public compilerDetected: string | null = null;
 
 	public debug = false;
 
@@ -195,5 +196,22 @@ export class ElfHeuristics {
 
 	public getSymbolEntries(): Map<string, SymbolValue> {
 		return this.entries;
+	}
+
+	public getCompilerDetected(): string {
+		return this.compilerDetected ?? "No compiler detected";
+	}
+
+	public print() {
+		console.log(`Heuristics: Firmware Platform: ${this.getTargetOs()}`);
+
+		for (const [k, v] of this.getSymbolEntries()) {
+			console.log(
+				`Heuristics: syms: "${k}": "${v.stringValue}" / raw: ${v.value}`,
+			);
+		}
+
+		const compilerDetected = this.getCompilerDetected();
+		console.log(`Heuristics: Detected Compiler: ${compilerDetected}`);
 	}
 }

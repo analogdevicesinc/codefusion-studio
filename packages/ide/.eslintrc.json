@@ -4,5 +4,12 @@
   "parserOptions": {
     "project": "./tsconfig.json"
   },
-  "ignorePatterns": ["node_modules/**/*", "src/**/*"]
+  "ignorePatterns": [
+    "node_modules/**/*",
+    "src/**/*",
+    "vite.config.*.ts",
+    "vite.config.ts",
+    "vite-*.ts",
+    "out/**/*"
+  ]
 }

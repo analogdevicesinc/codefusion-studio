@@ -12,9 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/fonts';
-
+@use '#colors' as colors;
+@use '#fonts' as fonts;
 .header {
 	display: flex;
 	flex-direction: column;
@@ -34,6 +33,12 @@
 
 .container {
 	padding: 20px 32px;
+
+	& label {
+		@include fonts.body-b2;
+		margin-bottom: 8px;
+		color: colors.$description-foreground;
+	}
 }
 
 .signPost {
@@ -59,4 +64,9 @@
 .label {
 	font-size: fonts.$font-size-m;
 	color: colors.$description-foreground;
+}
+
+.clockNodeDetailsTargetNode {
+	@include fonts.body-b2;
+	margin-bottom: 12px;
 }

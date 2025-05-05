@@ -12,79 +12,90 @@
  * limitations under the License.
  *
  */
-import * as path from 'path';
-import { ExTester } from 'vscode-extension-tester';
-import * as fs from 'fs';
+import * as path from "path";
+import { ExTester } from "vscode-extension-tester";
+import * as fs from "fs";
 
 const EXTENSIONS_DIR = path.resolve(
-	process.cwd(),
-	'src',
-	'tests',
-	'ui-test-config-tools',
-	'.vscode'
+  process.cwd(),
+  "src",
+  "tests",
+  "ui-test-config-tools",
+  ".vscode",
 );
 
 async function main() {
-	const settingsPath =
-		process.env.SETTINGS_PATH ??
-		path.join(EXTENSIONS_DIR, 'settings.json');
+  const settingsPath =
+    process.env.SETTINGS_PATH ?? path.join(EXTENSIONS_DIR, "settings.json");
 
-	const isWin = process.platform === 'win32';
+  const isWin = process.platform === "win32";
 
-	try {
-		// Create settings file to set the path to cfsutil
-		await fs.promises.writeFile(settingsPath, '{}', 'utf-8');
+  try {
+    // Create settings file to set the path to cfsutil
+    await fs.promises.writeFile(settingsPath, "{}", "utf-8");
 
-		console.log(
-			'Settings file successfully created at',
-			settingsPath
-		);
+    console.log("Settings file successfully created at", settingsPath);
 
-		let cfsutilPath = path.resolve(
-			process.cwd(),
-			'..',
-			'cli', // update this path when moving
-			'bin',
-			`run${isWin ? '.cmd' : '.js'}`
-		);
+    let cfsutilPath = path.resolve(
+      process.cwd(),
+      "..",
+      "cli", // update this path when moving
+      "bin",
+      `run${isWin ? ".cmd" : ".js"}`,
+    );
 
-		if (isWin) {
-			cfsutilPath = cfsutilPath.replace(/\\/g, '\\\\');
-		}
+    let pluginsPath = path.resolve(
+      process.cwd(),
+      "..",
+      "..",
+      "submodules",
+      "cfs-plugins",
+      "plugins",
+      "dist",
+    );
 
-		await fs.promises.writeFile(
-			settingsPath,
-			`{"cfgtools.cfsutil.path": "${cfsutilPath}"}`,
-			'utf-8'
-		);
+    let socsPath = path.resolve(process.cwd(), "..", "cli", "src", "socs");
 
-		console.log('Generated path to cfsutil:', cfsutilPath);
+    if (isWin) {
+      cfsutilPath = cfsutilPath.replace(/\\/g, "\\\\");
+      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
+    }
 
-		const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
+    await fs.promises.writeFile(
+      settingsPath,
+      `{"cfgtools.cfsutil.path": "${cfsutilPath}", "cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"]}`,
+      "utf-8",
+    );
 
-		await tester.setupAndRunTests(
-			path.resolve(__dirname, 'suite/*.test.js'),
-			'max',
-			{
-				useYarn: true,
-			},
-			{
-				config: path.resolve(process.cwd(), '.mocharc.json'),
-				resources: [],
-				settings: settingsPath,
-				cleanup: true,
-				logLevel: 'debug' as any
-			}
-		);
-	} catch (err) {
-		console.error('Failed to run tests', err);
-		process.exit(1);
-	} finally {
-		await fs.promises.unlink(settingsPath);
-	}
+    console.log("Generated path to cfsutil:", cfsutilPath);
+    console.log("Generated path to plugins:", pluginsPath);
+
+    const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
+
+    await tester.setupAndRunTests(
+      path.resolve(__dirname, "suite/*.test.js"),
+      "max",
+      {
+        useYarn: false,
+        installDependencies: false,
+      },
+      {
+        config: path.resolve(process.cwd(), ".mocharc.js"),
+        resources: [],
+        settings: settingsPath,
+        cleanup: true,
+        logLevel: "debug" as any,
+      },
+    );
+  } catch (err) {
+    console.error("Failed to run tests", err);
+    process.exit(1);
+  } finally {
+    await fs.promises.unlink(settingsPath);
+  }
 }
 
-main().catch(err => {
-	console.error(err);
-	process.exit(1);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });

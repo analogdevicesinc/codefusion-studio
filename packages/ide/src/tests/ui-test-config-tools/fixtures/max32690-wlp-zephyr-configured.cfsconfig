@@ -5,7 +5,7 @@
   "Timestamp": "2024-08-30T10:34:57.314Z",
   "Soc": "MAX32690",
   "Package": "WLP",
-  "FirmwarePlatform": "zephyr-3.7",
+  "FirmwarePlatform": "zephyr-4.0",
   "Pins": [
     {
       "Pin": "B5",
@@ -19,17 +19,6 @@
         "ZEPHYR_GPIO_DT_NAME": "dsfdffd",
         "ZEPHYR_GPIO_PHANDLE": "6456g",
         "DS": "0"
-      },
-      "ControlResetValues": {
-        "MODE": "IN",
-        "ZEPHYR_GPIO_TYPE": "BUTTON",
-        "PWR": "VDDIO",
-        "PS": "DIS",
-        "DS": "0",
-        "ZEPHYR_GPIO_POLARITY": "HIGH",
-        "ZEPHYR_GPIO_DT_NAME": "",
-        "ZEPHYR_GPIO_PHANDLE": "",
-        "ZEPHYR_GPIO_INPUT_CODE": ""
       }
     },
     {
@@ -38,9 +27,6 @@
       "Signal": "CLKEXT",
       "Config": {
         "PWR": "VDDIO"
-      },
-      "ControlResetValues": {
-        "PWR": "VDDIO"
       }
     },
     {
@@ -48,9 +34,6 @@
       "Peripheral": "USBHS",
       "Signal": "CLKEXT",
       "Config": {
-        "PWR": "VDDIO"
-      },
-      "ControlResetValues": {
         "PWR": "VDDIO"
       }
     },
@@ -67,17 +50,6 @@
         "ZEPHYR_GPIO_DT_NAME": "fish",
         "ZEPHYR_GPIO_PHANDLE": "assd",
         "ZEPHYR_GPIO_INPUT_CODE": "sddghjgfd"
-      },
-      "ControlResetValues": {
-        "MODE": "IN",
-        "ZEPHYR_GPIO_TYPE": "BUTTON",
-        "PWR": "VDDIO",
-        "PS": "DIS",
-        "DS": "0",
-        "ZEPHYR_GPIO_POLARITY": "HIGH",
-        "ZEPHYR_GPIO_DT_NAME": "DT_NAME",
-        "ZEPHYR_GPIO_PHANDLE": "PHANDLE",
-        "ZEPHYR_GPIO_INPUT_CODE": "INPUT_CODE"
       }
     },
     {
@@ -86,9 +58,6 @@
       "Signal": "RX",
       "Config": {
         "PWR": "VDDIOH"
-      },
-      "ControlResetValues": {
-        "PWR": "VDDIO"
       }
     }
   ],
@@ -134,6 +103,26 @@
       "Control": "ENABLE",
       "Value": "TRUE",
       "Enabled": true
+    }
+  ],"Projects": [
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "max32xxx_78xxx-msdk",
+      "ExternallyManaged": false,
+      "FirmwarePlatform": "MSDK 3.0",
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "max32xxx_78xxx-zephry37",
+      "Secure": true,
+      "ExternallyManaged": false,
+      "FirmwarePlatform": "Zephyr 3.7",
+      "Partitions": [],
+      "Peripherals": []
     }
   ]
 }

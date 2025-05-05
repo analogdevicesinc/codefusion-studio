@@ -21,6 +21,7 @@ export type Filter =
 	| 'assigned'
 	| 'available'
 	| 'conflict'
+	| 'reserved'
 	| undefined;
 
 type AppContextState = {
@@ -32,6 +33,7 @@ type AppContextState = {
 			pin?: string;
 		};
 	};
+	isAllocatingCore: boolean;
 	registersScreen: {
 		registers: RegisterDictionary[];
 	};
@@ -40,13 +42,17 @@ type AppContextState = {
 		register: string;
 		pinconfig: string;
 	};
+	memoryTypeFilter: string[];
+	coresFilter: string[];
+	selectedProjects: string[];
 };
 
 export const appContextInitialState: AppContextState = {
-	activeScreen: navigationItems.pinmux,
+	activeScreen: navigationItems.dashboard,
 	configScreen: {
 		activeConfiguredSignalId: {}
 	},
+	isAllocatingCore: false,
 	registersScreen: {
 		registers: []
 	},
@@ -54,7 +60,10 @@ export const appContextInitialState: AppContextState = {
 	searchString: {
 		register: '',
 		pinconfig: ''
-	}
+	},
+	memoryTypeFilter: [],
+	coresFilter: [],
+	selectedProjects: []
 };
 
 const appContextSlice = createSlice({
@@ -83,6 +92,9 @@ const appContextSlice = createSlice({
 						}
 					: {};
 		},
+		setIsAllocatingCore(state, {payload}: PayloadAction<boolean>) {
+			state.isAllocatingCore = payload;
+		},
 		setActiveFilter(state, {payload}: PayloadAction<Filter>) {
 			state.filter = payload;
 		},
@@ -96,6 +108,15 @@ const appContextSlice = createSlice({
 			}>
 		) {
 			state.searchString[searchContext] = value;
+		},
+		setMemoryTypeFilter(state, {payload}: PayloadAction<string[]>) {
+			state.memoryTypeFilter = payload;
+		},
+		setCoresFilter(state, {payload}: PayloadAction<string[]>) {
+			state.coresFilter = payload;
+		},
+		setSelectedProjects(state, {payload}: PayloadAction<string[]>) {
+			state.selectedProjects = payload;
 		}
 	}
 });
@@ -103,8 +124,12 @@ const appContextSlice = createSlice({
 export const {
 	setActiveScreen,
 	setActiveConfiguredSignal,
+	setIsAllocatingCore,
 	setActiveFilter,
-	setActiveSearchString
+	setActiveSearchString,
+	setMemoryTypeFilter,
+	setCoresFilter,
+	setSelectedProjects
 } = appContextSlice.actions;
 
 export const appContextReducer = appContextSlice.reducer;

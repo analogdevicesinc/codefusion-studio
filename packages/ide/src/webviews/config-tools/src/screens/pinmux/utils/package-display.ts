@@ -16,8 +16,7 @@ import {type PinStatus} from '../../../types/pins';
 import type {
 	PinSignal,
 	PinCanvas,
-	Pin,
-	PinState
+	Pin
 } from '@common/types/soc';
 import {
 	LEFT_LABEL_GROUP_IDX,
@@ -65,7 +64,7 @@ export function generateLabelGroups(canvas: PinCanvas | undefined) {
 }
 
 export function createPinGridDataStructure(
-	pins: PinState[],
+	pins: Pin[],
 	canvas: PinCanvas | undefined
 ) {
 	if (canvas === undefined) {
@@ -78,9 +77,9 @@ export function createPinGridDataStructure(
 	);
 
 	pins.forEach(pin => {
-		const {X, Y} = pin.details.Position;
+		const {X, Y} = pin.Position;
 
-		twoDimArray[Y][X] = pin.details;
+		twoDimArray[Y][X] = pin;
 	});
 
 	return twoDimArray;

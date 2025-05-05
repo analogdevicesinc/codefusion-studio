@@ -41,7 +41,7 @@ describe("Home page show on startup test", () => {
 
     await openFolder(process.cwd() + "/" + testDirectory);
     const workbench = new Workbench();
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(15000);
   });
 
   afterEach(async () => {

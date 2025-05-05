@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
+import {Button} from 'cfs-react-library';
 import type {NavigationItem} from '../../../../common/types/navigation';
 import {useAppDispatch} from '../../state/store';
 import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
@@ -55,15 +55,14 @@ export default function EightColumnLayout({
 				<div className={styles.body}>
 					{body}
 					{buttonLabel && screenRedirect && (
-						<VSCodeButton
+						<Button
 							appearance='primary'
-							style={{maxWidth: '120px'}}
 							onClick={() =>
 								dispatch(setActiveScreen(screenRedirect))
 							}
 						>
 							{buttonLabel}
-						</VSCodeButton>
+						</Button>
 					)}
 				</div>
 			</div>

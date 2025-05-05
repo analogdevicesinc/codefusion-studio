@@ -1,0 +1,36 @@
+/**
+ *
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+$carousel-swiper-size: var(--carousel-swiper-size, 307px);
+$carousel-image-width: var(
+	--carousel-image-width,
+	$carousel-swiper-size
+);
+$carousel-image-height: var(
+	--carousel-image-height,
+	calc($carousel-image-width * 9 / 16)
+);
+$carousel-space-between: var(--carousel-space-between, 16px);
+$carousel-panel-padding: var(--carousel-panel-padding, 24px);
+$carousel-min-width: var(
+	--carousel-min-width,
+	calc(
+		(var(--carousel-swiper-size) * 2) + var(--carousel-space-between)
+	)
+);
+$body-padding: var(--body-section-padding, 40px);
+$home-page-min-width: var(
+	--home-page-min-width,
+	calc($carousel-min-width + $carousel-panel-padding * 2)
+);

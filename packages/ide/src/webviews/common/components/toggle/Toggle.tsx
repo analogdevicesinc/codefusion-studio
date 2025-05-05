@@ -18,34 +18,27 @@ type ToggleProps = {
 	readonly isToggledOn: boolean;
 	readonly handleToggle: () => void;
 	readonly isDisabled?: boolean;
-	readonly icon?: React.ReactElement;
-	readonly handleModalOpen?: () => void;
+	readonly dataTest?: string;
 };
 
 export default function Toggle({
 	isToggledOn,
 	handleToggle,
 	isDisabled,
-	icon,
-	handleModalOpen
+	dataTest
 }: ToggleProps) {
 	return (
-		<>
-			<label className={styles.switch}>
-				<input
-					checked={isToggledOn}
-					type='checkbox'
-					onChange={handleToggle}
-				/>
-				<span
-					className={`${styles.slider} ${styles.round} ${isToggledOn ? styles.active : ''} ${isDisabled ? styles.disabled : ''}`}
-				/>
-			</label>
-			{icon && (
-				<div className={styles.icon} onClick={handleModalOpen}>
-					{isToggledOn && icon}
-				</div>
-			)}
-		</>
+		<label className={styles.switch} tabIndex={0}>
+			<input
+				checked={isToggledOn}
+				type='checkbox'
+				onChange={handleToggle}
+			/>
+			<span
+				data-test={`${dataTest}-span`}
+				data-checked={isToggledOn}
+				className={`${styles.slider} ${styles.round} ${isToggledOn ? styles.active : ''} ${isDisabled ? styles.disabled : ''}`}
+			/>
+		</label>
 	);
 }

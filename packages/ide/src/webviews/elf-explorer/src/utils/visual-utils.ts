@@ -20,9 +20,10 @@ import {SegmentCategory} from '../common/types/memory-layout';
 import {convertDecimalToHex, convertHexToDecimal} from './number';
 
 const FACTOR_UNUSED_SEGMENT = 0.035;
-const SEGM_FLAG_READ_ONLY = 'R';
-
-export const MIN_SIZE_PERCENTAGE = FACTOR_UNUSED_SEGMENT * 100;
+const MIN_SIZE_OVERLAPPING = 2;
+export const MIN_SIZE_PERCENTAGE = parseFloat(
+	(FACTOR_UNUSED_SEGMENT * 100).toFixed(1)
+);
 
 // It's for sizePercetange, height of the segment
 export const calculateSegmentPercentage = (
@@ -59,7 +60,7 @@ export const getBiggestId = (segments: TSegment[]) =>
  * @param smallestAddress - smallest virtual address of segments
  * @param segmentAddress - segment's virtual address
  * @param range
- * @returns offset of segment relative to entire memory, in percentage
+ * @returns offset of segment relative to the addresable memory, in percentage
  */
 export const getOffsetForSegment = (
 	smallestAddress: number,
@@ -86,14 +87,6 @@ export const removeItemsWithoutSize = (
 
 	return newArr;
 };
-
-/**
- * If the flags === 'R' then is READ ONLY, otherwise is executable (RE, RW, RWE, E)
- * @param segment
- * @returns
- */
-export const isSegmReadOnly = (segment: TSegment): boolean =>
-	segment.flags.toString().toUpperCase() === SEGM_FLAG_READ_ONLY;
 
 const sortSegmentsByStartAddress = (segments: TSegment[]) => {
 	segments.sort(
@@ -154,14 +147,10 @@ export const calculateSegments = (segments: TSegment[]) => {
 	// Compute `size` and `offset`
 	calculateSizeAndOffset(segments, smallestAddress, totalMemory);
 
+	increaseSizePercentageForSmallSegments(segments);
+
 	// Place segments in the right stack
 	placeSegmentsInCorrectStack(segments, matrix, largestSegment);
-
-	if (isSmallSegment(matrix[0])) {
-		// This will change de offset for small segments (segment.sizePercentage <= MIN_SIZE_PERCENTAGE)
-		// and adjust the other segment's offset and sizePercentage values
-		matrix[0] = increaseSizePercentageForSmallSegments(matrix[0]);
-	}
 
 	return matrix;
 };
@@ -294,7 +283,7 @@ const computeSegmentsWithoutUnusedSpace = (segments: TSegment[]) => {
 			let prevEndAddress =
 				convertHexToDecimal(prevSegm.address) + prevSegm.size;
 
-			// If prev segm is overlapping and has its end address is smaller then the last main segment end address
+			// If prev segm is overlapping and has its end address smaller then the last main segment end address
 			if (
 				prevSegm.category === SegmentCategory.OVERLAPPING &&
 				prevEndAddress < endAddrLastMainSegm
@@ -339,7 +328,7 @@ const computeSegmentsWithoutUnusedSpace = (segments: TSegment[]) => {
 	// Add new segments to the `segments` list
 	unusedSpaceSegments.forEach(item => {
 		segments.splice(item.index, 0, {
-			id: getBiggestId(segments) + item.index + 1,
+			id: getBiggestId(segments) + item.index + 100,
 			type: '0',
 			label: 'UNUSED SEGMENT',
 			address: item.address,
@@ -347,6 +336,7 @@ const computeSegmentsWithoutUnusedSpace = (segments: TSegment[]) => {
 			computedEndAddr: item.computedEndAddr,
 			size: item.size,
 			flags: '',
+			showAsReadOnly: true,
 			align: 0,
 			sections: [],
 			sizePercentage: 0,
@@ -381,9 +371,9 @@ const calculateSizeAndOffset = (
 };
 
 /**
- * Will look for all segments that have sizePercentage <= 5% and will change sizePercentage = 5%
+ * Will look for all segments that have sizePercentage <= MIN_SIZE_PERCENTAGE and will change sizePercentage = MIN_SIZE_PERCENTAGE
  * the other segments will be adjusted properly to acomodate this new change
- * so, offset and sizePercentage will be also change for large segments
+ * so, offset and sizePercentage will change for large segments
  * and offset for small segments
  * @param segments
  * @returns
@@ -405,22 +395,36 @@ const increaseSizePercentageForSmallSegments = (
 		segm.sizePercentage = MIN_SIZE_PERCENTAGE;
 	});
 
-	// Calculate total size taken by small segments
-	const totalSmallPercentage =
-		smallSegments.length * MIN_SIZE_PERCENTAGE;
+	// Calculate total size taken by small segments, with category !== OVERLAPPING
+	const totalSmallPercentage = smallSegments.reduce((acc, segm) => {
+		if (segm.category !== SegmentCategory.OVERLAPPING) {
+			return acc + segm.sizePercentage;
+		}
+
+		return acc;
+	}, 0);
+
 	// Calculate remaining percentage available for large segments
 	const remainingPercentage = totalPercentage - totalSmallPercentage;
 	// Calculate the new size percentage for large segments proportionally
 	const totalLargeOriginalPercentage = largeSegments.reduce(
-		(acc, seg) => acc + seg.sizePercentage,
+		(acc, segm) => {
+			if (segm.category !== SegmentCategory.OVERLAPPING) {
+				return acc + segm.sizePercentage;
+			}
+
+			return acc;
+		},
 		0
 	);
 
 	// Recompute sizePercentage for large segments
-	largeSegments.forEach(seg => {
-		seg.sizePercentage =
-			(seg.sizePercentage / totalLargeOriginalPercentage) *
-			remainingPercentage;
+	largeSegments.forEach(segm => {
+		if (segm.category !== SegmentCategory.OVERLAPPING) {
+			segm.sizePercentage =
+				(segm.sizePercentage / totalLargeOriginalPercentage) *
+				remainingPercentage;
+		}
 	});
 
 	// Combine small and large segments back into a single array and sort it
@@ -435,23 +439,55 @@ const increaseSizePercentageForSmallSegments = (
 		largestSegment.computedStartAddr + largestSegment.size;
 
 	const totalMemory = largestAddress - smallestAddress;
+	let lastMainSegm: TSegment;
 
 	// Recompute the offsets based on the actual memory addresses
-	adjustedSegments.forEach((segm: TSegment, index: number) => {
-		if (index === 0) {
-			segm.offset = 0;
-		} else {
-			const prevSegm = adjustedSegments[index - 1];
-			const prevEndAddress =
-				prevSegm.computedStartAddr + prevSegm.size;
-			const gap = segm.computedStartAddr - prevEndAddress;
+	adjustedSegments.forEach(
+		(segm: TSegment, index: number, segments: TSegment[]) => {
+			if (index === 0) {
+				segm.offset = 0;
+			} else {
+				const prevSegm = adjustedSegments[index - 1];
+				let prevEndAddress = prevSegm.computedEndAddr;
+				const endAddrLastMainSegm = lastMainSegm.computedEndAddr;
 
-			segm.offset =
-				prevSegm.offset +
-				prevSegm.sizePercentage +
-				(gap / totalMemory) * totalPercentage;
+				if (prevSegm.category === SegmentCategory.OVERLAPPING) {
+					prevEndAddress = endAddrLastMainSegm;
+				}
+
+				const gap = segm.computedStartAddr - prevEndAddress;
+
+				segm.offset =
+					lastMainSegm.offset +
+					lastMainSegm.sizePercentage +
+					(gap / totalMemory) * totalPercentage;
+			}
+
+			if (segm.category !== SegmentCategory.OVERLAPPING) {
+				lastMainSegm = segm;
+			} else if (segm.category === SegmentCategory.OVERLAPPING) {
+				if (segm.sizePercentage === MIN_SIZE_PERCENTAGE) {
+					segm.sizePercentage = MIN_SIZE_OVERLAPPING;
+				}
+
+				const mainSegm = segments.find(segment => {
+					const diff =
+						segm.offset - (segment.sizePercentage + segment.offset);
+
+					if (
+						segment.category === SegmentCategory.MAIN &&
+						Math.abs(diff) <= 0.05
+					) {
+						return segment;
+					}
+
+					return undefined;
+				});
+
+				if (mainSegm) segm.offset -= 1;
+			}
 		}
-	});
+	);
 
 	return segments;
 };
@@ -487,12 +523,6 @@ export const getStylesForSegment = (
 
 	styles.height = `${segment.sizePercentage}%`;
 	styles.bottom = `${segment.offset}%`;
-
-	if (
-		segment.category === SegmentCategory.OVERLAPPING &&
-		segment?.sizePercentage < 2
-	)
-		styles.height = '2%';
 
 	return styles;
 };

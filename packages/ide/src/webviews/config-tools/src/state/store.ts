@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,20 +36,17 @@ import {
 	useDispatch,
 	useSelector
 } from 'react-redux';
-import type {
-	ConfiguredPin,
-	ConfigOptionsReturn,
-	ConfiguredClockNode
-} from '../../../common/api';
+import type {ConfigOptionsReturn} from '../../../common/api';
 import {
 	formatPinDictionary,
-	formatPeripheralData
+	formatPeripheralSignalsTargets,
+	formatPartitions,
+	formatPeripheralAllocations
 } from '../utils/json-formatter';
 import type {
 	ClockNode,
 	ClockNodesDictionary,
 	ControlCfg,
-	RegisterDictionary,
 	Soc
 } from '../../../common/types/soc';
 import {
@@ -61,8 +58,18 @@ import {
 	persistedActions
 } from './utils/persistence-middleware';
 import {computeDefaultValues} from '../utils/compute-register-value';
-import {getPersistedSocData} from '../utils/api';
-import {getFirmwarePlatform} from '../utils/firmware-platform';
+import {
+	getControlsForProjectIds,
+	getSocAndCfsconfigData
+} from '../utils/api';
+import {
+	partitionsInitialState,
+	partitionsReducer
+} from './slices/partitions/partitions.reducer';
+import {getCoreMemoryBlocks} from '../utils/memory';
+import {type PeripheralConfig} from '../types/peripherals';
+import {getPrimaryProjectId} from '../utils/config';
+import {CONTROL_SCOPES} from '../constants/scopes';
 
 type ResolvedType<T> = T extends Promise<infer R> ? R : T;
 
@@ -85,12 +92,13 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 	Action
 >;
 
-const rootReducer = combineReducers({
+export const rootReducer = combineReducers({
 	// New slices go here
 	appContextReducer,
 	pinsReducer,
 	peripheralsReducer,
-	clockNodesReducer
+	clockNodesReducer,
+	partitionsReducer
 });
 
 export const useAppSelector: TypedUseSelectorHook<RootState> =
@@ -100,109 +108,59 @@ export const useAppDispatch = () => useDispatch<AppDispatch>();
 
 function computeDefaultClockNodeValues(
 	clockNode: ClockNode,
-	registerDictionary: RegisterDictionary[],
 	controls: ControlCfg[]
 ) {
 	/* Work out the default from the reset values of the registers. */
 	const defaults: Record<string, string> = computeDefaultValues(
 		clockNode.Config,
-		registerDictionary,
 		controls
 	);
-	/* But if the default is specified in the control, then that overrides the register default. */
-	const firmwarePlatform = getFirmwarePlatform();
-
-	if (
-		firmwarePlatform?.toLowerCase().includes('zephyr') &&
-		clockNode.ConfigZephyr
-	) {
-		for (const [controlValueKey, controlValues] of Object.entries(
-			clockNode.ConfigZephyr
-		)) {
-			for (const [key, config] of Object.entries(controlValues)) {
-				if (config.Default) {
-					defaults[controlValueKey] = key;
-				}
-			}
-		}
-	} else if (
-		firmwarePlatform?.toLowerCase().includes('msdk') &&
-		clockNode.ConfigMSDK
-	) {
-		for (const [controlValueKey, controlValues] of Object.entries(
-			clockNode.ConfigMSDK
-		)) {
-			for (const [key, config] of Object.entries(controlValues)) {
-				if (config.Default) {
-					defaults[controlValueKey] = key;
-				}
-			}
-		}
-	}
 
 	return defaults;
 }
 
 export function configurePreloadedStore(
 	soc: Soc,
-	persistedPinConfig?: ConfiguredPin[],
-	persistedClockNodes?: ConfiguredClockNode[]
+	persistedConfig?: ConfigOptionsReturn['configOptions'],
+	clockControls?: Record<string, ControlCfg[]>
 ) {
+	const {
+		Pins: persistedPinConfig,
+		ClockNodes: persistedClockNodes,
+		Projects: persistedCores
+	} = persistedConfig ?? {};
+
+	const peripheralsReducerInitialState = {
+		...peripheralsInitialState,
+		peripheralSignalsTargets: formatPeripheralSignalsTargets(soc),
+		assignments: persistedCores
+			? formatPeripheralAllocations(persistedCores)
+			: ({} satisfies Record<string, PeripheralConfig>)
+	};
+
 	const pinReducerInitialState = {
 		...pinsInitialState,
 		...(soc.Packages?.[0].Pins
 			? {
-					pins: formatPinDictionary(soc.Packages[0]),
-					canvas: soc.Packages?.[0].PinCanvas,
-					pinConfig: soc.Controls.PinConfig
+					pins: formatPinDictionary(soc.Packages[0])
 				}
 			: {})
 	};
-
-	const registerDictionary = soc.Registers.map(register => ({
-		name: register.Name,
-		description: register.Description,
-		address: register.Address,
-		size: register.Size,
-		fields: register.Fields.map((field, fieldIdx) => ({
-			id: `${field.Name}-${fieldIdx}`,
-			name: field.Name,
-			description: field.Description,
-			documentation: field.Documentation,
-			position: field.Position,
-			length: field.Length,
-			reset: field.Reset,
-			access: field.Access,
-			enumVals: field.Enum?.map((enumVal, enumValIdx) => ({
-				id: `${enumVal.Name}-${enumValIdx}`,
-				name: enumVal.Name,
-				description: enumVal.Description,
-				value: enumVal.Value,
-				documentation: enumVal.Documentation
-			}))
-		})),
-		svg: `${soc.Name}-${soc.Packages[0].Name}/${register.Svg}`
-	}));
 
 	const clockNodesReducerInitialState = {
 		...clockNodesInitialState,
 		clockNodes: soc.ClockNodes.reduce<ClockNodesDictionary>(
 			(acc, clockNode) => {
-				acc[clockNode.Type] = {
-					...acc[clockNode.Type],
-					[clockNode.Name]: {
-						...clockNode,
-						controlValues: computeDefaultClockNodeValues(
-							clockNode,
-							registerDictionary,
-							soc.Controls.ClockConfig
-						),
-						initialControlValues: computeDefaultClockNodeValues(
-							clockNode,
-							registerDictionary,
-							soc.Controls.ClockConfig
-						)
-					}
+				// Use default overrides if available, otherwise compute
+				const defaultValues = computeDefaultClockNodeValues(
+					clockNode,
+					clockControls?.[clockNode.Name] ?? []
+				);
+
+				acc[clockNode.Name] = {
+					Name: clockNode.Name,
+					controlValues: defaultValues,
+					initialControlValues: defaultValues
 				};
 
 				return acc;
@@ -214,13 +172,24 @@ export function configurePreloadedStore(
 		clockConfig: soc.Controls.ClockConfig
 	};
 
+	const memoryBlocks = getCoreMemoryBlocks();
+
+	const partitionReducerInitialState = {
+		...partitionsInitialState,
+
+		partitions: persistedCores
+			? formatPartitions(soc, persistedCores, memoryBlocks)
+			: []
+	};
+
 	if (
 		persistedPinConfig &&
 		Object.keys(persistedPinConfig).length > 0
 	) {
 		applyPersistedPinConfig(
 			pinReducerInitialState.pins,
-			persistedPinConfig
+			persistedPinConfig,
+			persistedCores
 		);
 	}
 
@@ -242,20 +211,15 @@ export function configurePreloadedStore(
 			),
 		preloadedState: {
 			pinsReducer: pinReducerInitialState,
-			peripheralsReducer: {
-				...peripheralsInitialState,
-				peripherals: formatPeripheralData(soc)
-			},
+			peripheralsReducer: peripheralsReducerInitialState,
 			appContextReducer: {
 				...appContextInitialState,
 				configScreen: {
 					activeConfiguredSignalId: {}
-				},
-				registersScreen: {
-					registers: registerDictionary
 				}
 			},
-			clockNodesReducer: clockNodesReducerInitialState
+			clockNodesReducer: clockNodesReducerInitialState,
+			partitionsReducer: partitionReducerInitialState
 		}
 	});
 }
@@ -269,13 +233,15 @@ export async function getPreloadedStateStore() {
 			configOptions: undefined
 		};
 	} else {
-		persistedSocData = await getPersistedSocData();
+		persistedSocData = await getSocAndCfsconfigData();
 	}
 
 	const {dataModel, configOptions} = persistedSocData ?? {};
 
-	const {Pins: persistedPinConfig, ClockNodes: persistedClockNodes} =
-		configOptions ?? {};
+	const clockControls = await getControlsForProjectIds(
+		[getPrimaryProjectId() ?? ''],
+		CONTROL_SCOPES.CLOCK_CONFIG
+	);
 
 	if (!dataModel) {
 		throw new Error(
@@ -285,8 +251,8 @@ export async function getPreloadedStateStore() {
 
 	const store = configurePreloadedStore(
 		dataModel,
-		persistedPinConfig,
-		persistedClockNodes
+		configOptions,
+		clockControls
 	);
 
 	return store;

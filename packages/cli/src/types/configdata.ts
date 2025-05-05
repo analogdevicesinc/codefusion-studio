@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ export type Configdata = {
   Pins: ConfigdataPin[];
   ClockNodes: ConfigdataClock[];
   FirmwarePlatform: string;
+  Secure?: boolean;
   ZephyrId?: string;
 };
 

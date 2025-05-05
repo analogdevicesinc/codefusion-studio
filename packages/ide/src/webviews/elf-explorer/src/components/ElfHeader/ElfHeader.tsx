@@ -13,7 +13,8 @@
  *
  */
 import {useState, useCallback} from 'react';
-import CfsHeaderBar from '../NavigationBar/NavigationBar';
+
+import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import {Modal} from '@common/components/modal/Modal';
 import Help from '@common/icons/Help';
 import OpenFile from '@common/icons/OpenFile';
@@ -24,6 +25,10 @@ import {useLocaleContext} from '@common/contexts/LocaleContext';
 import type {TLocaleContext} from '../../common/types/context';
 
 import {useActiveScreen} from '../../state/slices/elf-context/elfContext.selector';
+import {useAppContext} from '../../common/contexts/AppContext';
+import {navigationItems} from '../../common/constants/navigation';
+import TopbarButton from '../../../../common/components/cfs-top-bar/TopbarButton';
+import {Direction} from '../../../../common/components/tooltip/Tooltip';
 
 export default function ElfHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
@@ -36,6 +41,7 @@ export default function ElfHeader() {
 	const id = useActiveScreen() as NavigationItem;
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.[`${id}`];
+	const {memLayout} = useAppContext();
 
 	const handleButtonClick = useCallback(async () => {
 		try {
@@ -49,23 +55,39 @@ export default function ElfHeader() {
 		}
 	}, []);
 
+	const getTitle = () => {
+		if (navigationItems.memoryLayout === id)
+			return `${i10n?.title} - ${memLayout.selectedItemName}`;
+
+		return i10n?.title;
+	};
+
 	return (
 		<>
-			<CfsHeaderBar title={i10n?.title}>
+			<CfsTopBar>
 				<div slot='start'>
-					<button type='button' onClick={handleButtonClick}>
-						<OpenFile />
-					</button>
+					<TopbarButton
+						title='Search for ELF files'
+						icon={<OpenFile />}
+						tooltipType='long'
+						tooltipDirection={Direction.Right}
+						clickHandler={handleButtonClick}
+					/>
 				</div>
+				<div slot='center'>{getTitle()}</div>
+
 				<div slot='end'>
-					<button type='button' onClick={onToggleHelpModal}>
-						<Help />
-					</button>
+					<TopbarButton
+						title='Open modal'
+						icon={<Help />}
+						tooltipType='long'
+						tooltipDirection={Direction.Left}
+						clickHandler={onToggleHelpModal}
+					/>
 				</div>
-			</CfsHeaderBar>
+			</CfsTopBar>
 
 			<Modal
-				isDynamicHeight
 				isOpen={isHelpModalOpen}
 				handleModalClose={onToggleHelpModal}
 			>

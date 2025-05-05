@@ -38,7 +38,7 @@ import {
 import ZoomInIcon from '../../../../../common/icons/ZoomIn';
 import ZoomOutIcon from '../../../../../common/icons/ZoomOut';
 import ResetZoomIcon from '../../../../../common/icons/ZoomReset';
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react';
+import {ProgressRing} from 'cfs-react-library';
 import {useClockNodesConfig} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import type {
@@ -129,13 +129,6 @@ function ClockDiagram({
 		useMemo(
 			() => [
 				[
-					'zoom-in',
-					<ZoomInIcon key='z-i' />,
-					() => {
-						engineApi.current?.zoomIn?.();
-					}
-				],
-				[
 					'zoom-out',
 					<ZoomOutIcon key='z-o' />,
 					() => {
@@ -147,6 +140,13 @@ function ClockDiagram({
 					<ResetZoomIcon key='z-r' />,
 					() => {
 						engineApi.current?.zoomReset?.();
+					}
+				],
+				[
+					'zoom-in',
+					<ZoomInIcon key='z-i' />,
+					() => {
+						engineApi.current?.zoomIn?.();
 					}
 				]
 			],
@@ -303,7 +303,7 @@ function ClockDiagram({
 					data-test='clock-diagram:loader'
 					className='diagramLoader'
 				>
-					<VSCodeProgressRing />
+					<ProgressRing />
 				</div>
 			)}
 			<div

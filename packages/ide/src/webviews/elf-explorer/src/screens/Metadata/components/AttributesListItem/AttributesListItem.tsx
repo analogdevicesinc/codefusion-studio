@@ -13,12 +13,9 @@
  *
  */
 import {useState} from 'react';
-import {
-	VSCodeButton,
-	VSCodeDivider
-} from '@vscode/webview-ui-toolkit/react';
 
 import Tooltip from '../../../../components/Tooltip/Tooltip';
+import {Button, Divider} from 'cfs-react-library';
 
 import Info from '@common/icons/Info';
 import type {TArmAttributes} from '../../../../common/types/metadata';
@@ -53,7 +50,7 @@ export default function AttributesListItem({
 					setHoveredItem(undefined);
 				}}
 			>
-				<div className={styles.field}>
+				<div className={styles['item-detail']}>
 					<span>{item.label}</span>
 					{isItemHovered(item?.label as string) && (
 						<Tooltip
@@ -62,17 +59,20 @@ export default function AttributesListItem({
 								description:
 									i10n?.[`${item.label}`]?.description || ''
 							}}
+							containerPosition='relative'
 						>
-							<VSCodeButton appearance='icon'>
+							<Button appearance='icon' className={styles.icon}>
 								<Info />
-							</VSCodeButton>
+							</Button>
 						</Tooltip>
 					)}
 				</div>
 
-				<span className={styles.field}>{item.value}</span>
+				<div className={`${styles['item-detail']} ${styles.value}`}>
+					{item.value}
+				</div>
 			</li>
-			<VSCodeDivider />
+			<Divider />
 		</>
 	);
 }

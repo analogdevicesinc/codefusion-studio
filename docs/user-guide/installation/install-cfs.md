@@ -1,38 +1,44 @@
 ---
 description: Download and installation instructions for CodeFusion Studio
 author: Analog Devices
-date: 2024-09-26
+date: 2025-01-27
 ---
 
-# Installing CodeFusion Studio
+# Install CodeFusion Studio
 
-## Download
+The CodeFusion Studio installation consists of two steps: [installing the SDK](#install-the-codefusion-studio-sdk) and the [VS Code Extension](#install-the-codefusion-studio-vs-code-extension).
 
-1. Navigate to [:octicons-link-external-24: CodeFusion Studio](https://analog.com/CodeFusionStudio){:target="_blank"}
-2. Click on **Downloads And Related Software**.
-3. Select the version and operating system you require.
+## Install the CodeFusion Studio SDK
 
-## Install
+### Download
+
+The CodeFusion Studio SDK version 1.1.0 can be downloaded from the following links.
+
+- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.run){:target="_blank"}
+- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.dmg){:target="_blank"}
+- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.exe){:target="_blank"}
+
+### Install
 
 !!! note
      The Linux installer downloads without execute permissions. Run `chmod a+x <installer>` to grant execute permissions before continuing.
      The CodeFusion Studio installer doesn't require elevated `sudo` permissions to run.
 
-1. Open the downloaded installer wizard to begin the installation process. ![Installer Setup](images/installer-setup.png)
-2. Click **Next** to continue the setup.
-3. Specify the folder destination for the install, and click **Next**.
-4. Select the Default or desired components to install, and click **Next**.
-5. Read the license agreement and click the box if you accept the license, then click **Next**.
-6. Select the Start Menu in which to create a shortcut, and click **Next**.
-7. Review setup selections and click **Install**.
-8. Click **Finish** to close the installer.
+1. Double click the SDK (`.exe`, `.dmg`, `.run`) to launch the setup wizard. ![Installer Setup](images/installer-setup.png)
+2. Follow the on-screen instructions to begin setup.
+3. Specify the installation folder when prompted. We recommend using the default location.
+4. Select the default or desired components to install, then proceed to the next step.
+5. Review and accept the license agreement to continue.
+6. (Windows only). Choose the Start Menu folder for the shortcut.
+7. Review your selections and start the installation.
+8. When the installation is complete, close the wizard.
 
 !!! warning
     Installation path cannot contain spaces.
 
-## Command line installation
+### Command line install
 
-Invoke the installer with the `install` switch to install to the full package to the default location, with the following switches:
+Invoke the installer with the `install` switch to install the full package to the default location, with the following switches:
 
 | Switch   | Effect                         |
 | -------- | ------------------------------ |  
@@ -44,8 +50,31 @@ Invoke the installer with the `install` switch to install to the full package to
 !!! note
     If using the `--al` switch to accept the license, refer to the `Licenses` directory for the licence text and ensure you agree with them before using CodeFusion Studio.
 
-To run the installer headless, use the following:
+To run the installer from the command line, use the following:
+
+**macOS:**
 
 ``` bash
-CodeFusion_Studio_1.0.0 install -c --al
+hdiutil mount CodeFusionStudio_1.1.0.dmg -mountpoint cfs
+cfs/CodeFusionStudio_1.1.0.app/Contents/MacOS/CodeFusionStudio_1.1.0 install --am --al -c
+hdiutil unmount cfs
 ```
+
+**Windows:**
+
+``` bash
+CodeFusionStudio_1.1.0.exe install --am --al -c
+```
+
+**Linux:**
+
+``` bash
+./CodeFusionStudio_1.1.0.run install --am --al -c
+```
+
+## Install the CodeFusion Studio VS Code extension
+
+Install the [:octicons-link-external-24: CodeFusion Studio VS Code extension](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide){:target="_blank"} from the Visual Studio Code Marketplace.
+
+!!! note
+    If you are unable to install the extension directly from the marketplace due to firewall restrictions or an offline environment, you can install it manually. For more information, see [Manually install the VS Code Extension](./install-extensions.md).

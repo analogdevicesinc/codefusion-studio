@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,11 @@
  * limitations under the License.
  *
  */
-import type {ControlErrorTypes} from '../../config-tools/src/types/errorTypes';
+import type {SocControl} from 'cfs-plugins-api';
+import type {
+	ControlErrorTypes,
+	TControlTypes
+} from '../../config-tools/src/types/errorTypes';
 
 export type Soc = {
 	Copyright: string;
@@ -32,6 +36,8 @@ export type Soc = {
 		Package: string;
 		MemoryDescription: string;
 	}>;
+	Cores: Core[];
+	MemoryTypes: MemoryType[];
 };
 
 export type ClockNode = {
@@ -42,10 +48,7 @@ export type ClockNode = {
 	Outputs: NodeOutput[];
 	Inputs?: NodeInput[];
 	Config: ConfigFields;
-	ConfigMSDK: ConfigFieldsMSDK;
-	ConfigZephyr: ConfigFieldsZephyr;
 	ConfigUIOrder: string[];
-	ConfigProgrammingOrder: string[];
 };
 
 export type NodeOutput = {
@@ -61,25 +64,17 @@ export type NodeInput = {
 	Name: string;
 };
 
-export type Controls = {
-	PinConfig: ControlCfg[];
-	ClockConfig: ControlCfg[];
-};
+export type Controls = Record<string, ControlCfg[]>;
 
-export type ControlCfg = {
+export type EnumValue = {
 	Id: string;
 	Description: string;
-	Type: string;
-	EnumValues?: Array<{Id: string; Description: string}>;
-	Condition?: Condition;
-	MinimumValue?: number;
-	MaximumValue?: number;
-	Units?: string;
-	FirmwarePlatforms?: string[];
-	Hint?: string;
+	Value: number;
 };
 
-export type Condition = string;
+export type ControlCfg = SocControl & {Type: TControlTypes};
+
+export type Expression = string;
 
 export type Package = {
 	Name: string;
@@ -117,22 +112,12 @@ export type Pin = {
 	Signals?: PinSignal[];
 };
 
-export type ConfigFieldsMSDK = Record<
-	string,
-	Record<string, ConfigFieldMSDK>
->;
-
-export type ConfigFieldMSDK = {
-	Default?: string;
-};
-
-export type ConfigFieldsZephyr = Record<
-	string,
-	Record<string, ConfigFieldZephyr>
->;
-
-export type ConfigFieldZephyr = {
-	Default?: string;
+export type Signal = {
+	name: string;
+	description: string;
+	pins: Pin[];
+	currentTarget: string | undefined;
+	invalid?: Record<string, string[]>;
 };
 
 export type ConfigFields = Record<
@@ -141,10 +126,12 @@ export type ConfigFields = Record<
 >;
 
 export type ConfigField = {
-	Register: string;
+	Register?: string;
 	Field: string;
-	Value: number | string;
+	Value?: Expression;
+	InverseValue?: Expression;
 	Operation: string;
+	ControlValue?: number; // Filled in at runtime depending on control value.
 };
 
 export type Position = {
@@ -164,23 +151,62 @@ export type PinSignal = {
 	}>;
 };
 
+export type AssignedPin = {
+	Name: string;
+	Signals: PinSignal[] | undefined;
+	pinId: string;
+	isFocused: boolean;
+	appliedSignals: AppliedSignal[];
+};
+
 export type AppliedSignal = PinSignal & {
 	Pin: string;
 	PinCfg?: Record<string, string>;
-	ControlResetValues?: Record<string, string>;
 	Errors?: Record<string, ControlErrorTypes | undefined>;
 };
 
 export type Peripheral = {
 	Name: string;
 	Description: string;
+	Cores: string[];
 	Signals: PeripheralSignal[];
+	SignalGroup?: string;
+	Preassigned?: boolean;
+	Config?: ConfigFields;
+	Security?: 'Any' | 'Secure' | 'Non-Secure';
 };
 
 export type PeripheralSignal = {
 	Name: string;
 	Description: string;
+	Required?: string; // Requires evaluating a condition using the expression parser
 };
+
+export type FormattedPeripheralSignal = {
+	name: string;
+	description: string;
+	pins: Pin[];
+	required?: string;
+};
+
+export type FormattedPeripheral<T> = {
+	name: string;
+	description: string;
+	signals: Record<string, T>;
+	preassigned?: boolean;
+	config?: ConfigFields;
+	pluginConfig?: Record<string, string>;
+	cores?: string[];
+	signalGroup?: string;
+	security?: string;
+};
+
+export type UnifiedPeripherals = Record<
+	string,
+	FormattedPeripheral<
+		FormattedPeripheralSignal & {currentTarget?: string}
+	>
+>;
 
 export type Register = {
 	Name: string;
@@ -208,7 +234,7 @@ export type Field = {
 };
 
 export type PinState = {
-	details: Pin;
+	pinId: string;
 	isFocused: boolean;
 	appliedSignals: AppliedSignal[];
 };
@@ -241,6 +267,7 @@ export type RegisterDictionary = {
 	address: string;
 	size: number;
 	fields: FieldDictionary[];
+	reset: number;
 	svg: string;
 };
 
@@ -248,16 +275,14 @@ export type NodeErrors =
 	| Record<string, ControlErrorTypes | undefined>
 	| undefined;
 
-export type ClockNodeState = ClockNode & {
+export type ClockNodeState = {
+	Name: string;
 	controlValues?: Record<string, string>;
 	Errors?: NodeErrors;
 	initialControlValues?: Record<string, string>;
 };
 
-export type ClockNodesDictionary = Record<
-	string,
-	Record<string, ClockNodeState>
->;
+export type ClockNodesDictionary = Record<string, ClockNodeState>;
 
 export type ClockDictionary = Record<string, NodeOutput>;
 
@@ -328,4 +353,34 @@ export type DiagramData = {
 	junctions: unknown;
 	annotations: unknown;
 	symbols: unknown;
+};
+
+export type Core = {
+	Name: string;
+	Description: string;
+	Id: string;
+	CoreNum: number;
+	IsPrimary: boolean;
+	Memory: MemoryBlock[];
+};
+
+export type MemoryBlock = {
+	Name: string;
+	Description: string;
+	AddressStart: string;
+	AddressEnd: string;
+	Width: number;
+	MinimumAlignment?: number;
+	Access: string;
+	Location: string;
+	Type: string;
+	TrustZone?: {
+		SecureAddressOffset: string;
+	};
+};
+
+export type MemoryType = {
+	Name: string;
+	Description: string;
+	IsVolatile: boolean;
 };

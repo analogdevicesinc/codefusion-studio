@@ -1,0 +1,40 @@
+/**
+ *
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '../../common/styles/variables';
+
+.resource-card {
+	width: 100%;
+	text-decoration: none;
+
+	img {
+		width: 100%;
+		height: variables.$carousel-image-height;
+		user-select: none;
+		object-fit: cover;
+	}
+}
+
+.title {
+	margin: 8px 0 4px;
+	color: colors.$default-foreground;
+	user-select: none;
+}
+
+.description {
+	margin: 0;
+	color: colors.$description-foreground;
+	user-select: none;
+}

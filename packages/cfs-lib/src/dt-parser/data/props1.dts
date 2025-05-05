@@ -1,0 +1,23 @@
+/dts-v1/;
+
+/ {
+        soc {
+                i2c@40003000 {
+                        compatible = "nordic,nrf-twim";
+                        reg = <0x40003000 0x1000>;
+
+                        apds9960@39 {
+                                compatible = "avago,apds9960";
+                                reg = <0x39>;
+                        };
+                        ti_hdc@43 {
+                                compatible = "ti,hdc", "ti,hdc1010";
+                                reg = <0x43>;
+                        };
+                        mma8652fc@1d {
+                                compatible = "nxp,fxos8700", "nxp,mma8652fc";
+                                reg = <0x1d>;
+                        };
+                };
+        };
+};

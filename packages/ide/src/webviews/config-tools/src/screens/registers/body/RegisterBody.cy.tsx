@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -17,6 +18,7 @@ import {configurePreloadedStore} from '../../../state/store';
 import RegisterBody from './RegisterBody';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
+import {resetRegisterDictionary} from '../../../utils/register-dictionary';
 
 const mock = await import(
 	`../../../../../../../../cli/src/socs/${Cypress.env('DEV_SOC_ID')}.json`
@@ -26,6 +28,84 @@ const clockConfigMock = await import(
 );
 
 describe('Register body component', () => {
+	beforeEach(() => {
+		window.localStorage.setItem(
+			'ClockNodes',
+			JSON.stringify(clockConfigMock.ClockNodes)
+		);
+
+		window.localStorage.setItem(
+			'Registers',
+			JSON.stringify(mock.Registers)
+		);
+
+		window.localStorage.setItem(
+			'Package',
+			JSON.stringify(mock.Packages[0])
+		);
+	});
+
+	afterEach(() => {
+		resetRegisterDictionary();
+	});
+
+	it('should render the register details header when a register is selected', () => {
+		const reduxStore = configurePreloadedStore(
+			mock as unknown as Soc
+		);
+
+		cy.mount(<RegisterBody />, reduxStore);
+
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').not(':first').first().click();
+		});
+
+		cy.dataTest('register-details-header').should('be.visible');
+	});
+
+	it('should navigate back registers table when the user clicks the back button', () => {
+		const reduxStore = configurePreloadedStore(
+			mock as unknown as Soc
+		);
+
+		cy.mount(<RegisterBody />, reduxStore);
+
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').not(':first').first().click();
+		});
+
+		cy.dataTest('register-details-header').should('be.visible');
+
+		cy.dataTest('chevron-left-icon').click();
+
+		cy.dataTest('register-table-grid').should('be.visible');
+	});
+
+	it('should succesfully filter on the register details table', () => {
+		const reduxStore = configurePreloadedStore(
+			mock as unknown as Soc
+		);
+
+		cy.mount(<RegisterBody />, reduxStore);
+
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').not(':first').first().click();
+		});
+
+		cy.dataTest('search-control-input')
+			.shadow()
+			.find('input')
+			.type('RESERVED');
+
+		cy.dataTest('register-details-grid').within(() => {
+			cy.get('vscode-data-grid-row')
+				.not(':first')
+				.each($row => {
+					cy.wrap($row).should('contain.text', 'RESERVED');
+				});
+		});
+	});
+
 	it('Filters registers by search input', () => {
 		const reduxStore = configurePreloadedStore(
 			mock as unknown as Soc
@@ -33,7 +113,10 @@ describe('Register body component', () => {
 
 		cy.mount(<RegisterBody />, reduxStore);
 
-		cy.dataTest('search-input').shadow().find('input').type('GPIO');
+		cy.dataTest('search-control-input')
+			.shadow()
+			.find('input')
+			.type('GPIO');
 
 		cy.dataTest('register-table-grid').within(() => {
 			cy.get('vscode-data-grid-row')
@@ -52,7 +135,7 @@ describe('Register body component', () => {
 		cy.mount(<RegisterBody />, reduxStore);
 
 		// Type 'randomRegister' into the search input
-		cy.dataTest('search-input')
+		cy.dataTest('search-control-input')
 			.shadow()
 			.find('input')
 			.type('randomRegister');
@@ -62,177 +145,150 @@ describe('Register body component', () => {
 			.should('be.visible')
 			.and('have.css', 'text-align', 'center');
 
-		cy.dataTest('search-input').shadow().find('input').clear();
+		cy.dataTest('search-control-input')
+			.shadow()
+			.find('input')
+			.clear();
 	});
 
 	it('Verifies the initial state of Modified and Unmodified chips with no pin assignments, reflecting the reset value of the MCU.', () => {
-		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				const reduxStore = configurePreloadedStore(
+					mock,
+					undefined,
+					controls
+				);
+
+				cy.mount(<RegisterBody />, reduxStore);
+
+				// Verify the 'Modified' chip is disabled
+				cy.get('[data-test="Modified"]').should('be.disabled');
+
+				// Verify the 'Unmodified' chip is enabled and contains the correct count
+				cy.get('[data-test="Unmodified"]')
+					.should('not.be.disabled')
+					.and('contain.text', mock.Registers.length.toString());
+			}
 		);
-
-		cy.mount(<RegisterBody />, reduxStore);
-
-		// Verify the 'Modified' chip is disabled
-		cy.get('[data-test="Modified"]').should('be.disabled');
-
-		// Verify the 'Unmodified' chip is enabled and contains the correct count
-		cy.get('[data-test="Unmodified"]')
-			.should('not.be.disabled')
-			.and('contain.text', '72');
 	});
 
-	it('Filters registers by modified/unmodified state', () => {
+	it('Filters registers by modified/unmodified state', async () => {
 		const reduxStore = configurePreloadedStore(
 			mock as unknown as Soc
 		);
-
-		const {registers} =
-			reduxStore.getState().appContextReducer.registersScreen;
 
 		// Apply a signal
 		reduxStore.dispatch(
 			setAppliedSignal({
 				Pin: '41',
 				Peripheral: 'LPTMR0',
-				Name: 'IOA',
-				registers
+				Name: 'IOA'
 			})
 		);
 
-		cy.mount(<RegisterBody />, reduxStore);
+		cy.mount(<RegisterBody />, reduxStore).then(() => {
+			// Verify the 'Modified' chip is enabled and contains the correct count
+			cy.get('[data-test="Modified"]')
+				.should('not.be.disabled')
+				.and('contain.text', '2');
 
-		// Verify the 'Modified' chip is enabled and contains the correct count
-		cy.get('[data-test="Modified"]')
-			.should('not.be.disabled')
-			.and('contain.text', '2');
+			// Verify the 'Unmodified' chip is enabled and contains the correct count
+			cy.get('[data-test="Unmodified"]')
+				.should('not.be.disabled')
+				.and('contain.text', (mock.Registers.length-2).toString());
 
-		// Verify the 'Unmodified' chip is enabled and contains the correct count
-		cy.get('[data-test="Unmodified"]')
-			.should('not.be.disabled')
-			.and('contain.text', '70');
-
-		// Click on 'Modified' chip
-		cy.get('[data-test="Modified"]').click();
-
-		// Verify that there are results
-		cy.dataTest('register-table-grid').within(() => {
-			cy.get('vscode-data-grid-row')
-				.not(':first')
-				.each($row => {
-					cy.wrap($row).should('exist').and('not.be.empty');
-				});
-		});
-	});
-
-	describe('Verify modal details', () => {
-		it('Checks initial values before dispatch', () => {
-			const reduxStore = configurePreloadedStore(mock as Soc);
-
-			cy.mount(<RegisterBody />, reduxStore);
-
-			cy.dataTest('GPIO0_EN0-data-grid-row').within(() => {
-				cy.dataTest('GPIO0_EN0-name-grid-cell').click();
-			});
-
-			cy.dataTest('inner-modal').should('be.visible');
-
-			cy.dataTest('inner-modal').within(() => {
-				cy.dataTest('PIN23-2-data-grid-cell')
-					.scrollIntoView()
-					.should('be.visible')
-					.should('have.text', '0x1');
-			});
-
-			cy.get('vscode-button').contains('Close').click();
-
-			cy.dataTest('inner-modal').should('not.exist');
-
-			cy.dataTest('GCR_CLKCTRL-data-grid-row').within(() => {
-				cy.dataTest('GCR_CLKCTRL-name-grid-cell').click();
-			});
-
-			cy.dataTest('inner-modal').should('be.visible');
-
-			cy.dataTest('inner-modal').within(() => {
-				cy.dataTest('SYSCLK_SEL-2-data-grid-cell')
-					.scrollIntoView()
-					.should('be.visible')
-					.should('have.text', '0x0');
-			});
-		});
-
-		it('Checks values after dispatch for pin config', () => {
-			const reduxStore = configurePreloadedStore(mock as Soc);
-
-			cy.mount(<RegisterBody />, reduxStore);
-
-			const {registers} =
-				reduxStore.getState().appContextReducer.registersScreen;
-			reduxStore.dispatch(
-				setAppliedSignal({
-					Pin: '13',
-					Peripheral: 'MISC',
-					Name: 'CLKEXT',
-					registers
-				})
-			);
-
+			// Click on 'Modified' chip
 			cy.get('[data-test="Modified"]').click();
 
-			cy.dataTest('GPIO0_EN0-data-grid-row').within(() => {
-				cy.dataTest('GPIO0_EN0-name-grid-cell').click();
-			});
-
-			cy.dataTest('inner-modal').should('be.visible');
-
-			cy.dataTest('inner-modal').within(() => {
-				cy.dataTest('PIN23-2-data-grid-cell')
-					.scrollIntoView()
-					.should('be.visible')
-					.should('have.text', '0x0');
+			// Verify that there are results
+			cy.dataTest('register-table-grid').within(() => {
+				cy.get('vscode-data-grid-row')
+					.not(':first')
+					// eslint-disable-next-line max-nested-callbacks
+					.each($row => {
+						cy.wrap($row).should('exist').and('not.be.empty');
+					});
 			});
 		});
 	});
 
 	it('Checks values after dispatch for clock config', () => {
+		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+			controls => {
+				const reduxStore = configurePreloadedStore(
+					clockConfigMock as Soc,
+					undefined,
+					controls
+				);
+
+				cy.mount(<RegisterBody />, reduxStore);
+
+				reduxStore.dispatch(
+					setClockNodeControlValue({
+						name: 'SYS_OSC Mux',
+						key: 'MUX',
+						value: 'CLKEXT'
+					})
+				);
+
+				reduxStore.dispatch(
+					setClockNodeControlValue({
+						name: 'P0.23',
+						key: 'P0_23_FREQ',
+						value: '23',
+						error: undefined
+					})
+				);
+
+				cy.get('[data-test="Modified"]').click();
+
+				cy.dataTest('GCR_CLKCTRL-data-grid-row').within(() => {
+					cy.dataTest('GCR_CLKCTRL-name-grid-cell').click();
+				});
+
+				cy.dataTest('bit-group').should('be.visible');
+
+				cy.dataTest('register-details-grid')
+					.should('be.visible')
+					.and('include.text', 'SYSCLK_SEL');
+			}
+		);
+	});
+
+	it('Updates on Modified chip counts after applying signal and search input', async () => {
 		const reduxStore = configurePreloadedStore(
-			clockConfigMock as Soc
+			mock as unknown as Soc
 		);
+		cy.mount(<RegisterBody />, reduxStore).then(() => {
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: '41',
+					Peripheral: 'LPTMR0',
+					Name: 'IOA'
+				})
+			);
 
-		cy.mount(<RegisterBody />, reduxStore);
+			cy.get('[data-test="Modified"]').click();
 
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				type: 'Mux',
-				name: 'SYS_OSC Mux',
-				key: 'MUX',
-				value: 'CLKEXT'
-			})
-		);
+			cy.dataTest('search-control-input')
+				.shadow()
+				.find('input')
+				.type('EN0');
 
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				type: 'Pin Input',
-				name: 'P0.23',
-				key: 'P0_23_FREQ',
-				value: '23',
-				error: undefined
-			})
-		);
+			cy.get('[data-test="Modified"]').should('contain.text', '1');
 
-		cy.get('[data-test="Modified"]').click();
+			cy.dataTest('search-control-input')
+				.shadow()
+				.find('input')
+				.clear();
 
-		cy.dataTest('GCR_CLKCTRL-data-grid-row').within(() => {
-			cy.dataTest('GCR_CLKCTRL-name-grid-cell').click();
-		});
+			cy.get('[data-test="Modified"]').should('contain.text', '2');
 
-		cy.dataTest('inner-modal').should('be.visible');
-
-		cy.dataTest('inner-modal').within(() => {
-			cy.dataTest('SYSCLK_SEL-2-data-grid-cell')
-				.scrollIntoView()
-				.should('be.visible')
-				.should('have.text', '0x7');
+			cy.get('[data-test="Unmodified"]').should(
+				'contain.text',
+				(mock.Registers.length-2).toString()
+			);
 		});
 	});
 });

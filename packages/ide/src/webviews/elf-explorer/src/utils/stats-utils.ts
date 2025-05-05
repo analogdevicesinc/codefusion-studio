@@ -22,8 +22,8 @@ enum EntityType {
 
 function groupAndCountByBind(symbols: TSymbol[], type: EntityType) {
 	const counts = symbols.reduce((acc, symbol) => {
-		if (symbol.type === type) {
-			const bindType = symbol.bind.toLowerCase();
+		if (symbol?.type === type) {
+			const bindType = symbol?.bind?.toLowerCase();
 
 			if (!acc[bindType]) {
 				acc[bindType] = 0;
@@ -66,8 +66,8 @@ function groupAndCountByBindAndSection(
 	bucket: string
 ) {
 	const counts = symbols.reduce((acc, symbol) => {
-		if (symbol.type === type && symbol.bucket === bucket) {
-			const bindType = symbol.bind.toLowerCase();
+		if (symbol?.type === type && symbol?.bucket === bucket) {
+			const bindType = symbol?.bind?.toLowerCase();
 
 			if (!acc[bindType]) {
 				acc[bindType] = 0;
@@ -171,7 +171,7 @@ export function filterTopSymbols(
 ) {
 	let filteredSymbols: TSymbol[];
 
-	switch (selectedFilter.toLowerCase()) {
+	switch (selectedFilter?.toLowerCase()) {
 		case 'all':
 			filteredSymbols = [...symbols]
 				.sort((a, b) => b.size - a.size)
@@ -183,8 +183,8 @@ export function filterTopSymbols(
 			filteredSymbols = symbols
 				.filter(
 					symbol =>
-						symbol.bucket?.toLowerCase() ===
-						selectedFilter.toLowerCase()
+						symbol?.bucket?.toLowerCase() ===
+						selectedFilter?.toLowerCase()
 				)
 				.sort((a, b) => b.size - a.size)
 				.slice(0, 10);
@@ -242,7 +242,7 @@ export function convertArray(inputArray: string[]): string[] {
 			.map(word =>
 				word === word.toUpperCase() && word.length > 1
 					? word
-					: word.toLowerCase()
+					: word?.toLowerCase()
 			)
 			.join(' ');
 	});

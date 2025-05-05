@@ -12,18 +12,19 @@
  * limitations under the License.
  *
  */
-@use '../../../styles/layout';
+@use '../../../styles/layout' as configLayout;
+@use '#layout' as layout;
 
 $left-padding: 32px;
 
 .headerContainer {
 	display: flex;
-	gap: layout.$default-spacing;
+	gap: configLayout.$default-spacing;
 }
 
 .inputWrapper {
 	width: calc(
-		layout.$max-sidebar-width - layout.$default-spacing -
+		layout.$max-sidebar-width - configLayout.$default-spacing -
 			$left-padding
 	);
 }

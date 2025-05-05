@@ -1,0 +1,473 @@
+{
+  "soc": [
+    {
+      "id": "soc_01jrdgezmjehdazd3dkqgns3pb",
+      "family": {
+        "id": "socfamily_01jrdgexk6ejcb9ep7s31hykmp",
+        "name": "MAX32XXX"
+      },
+      "description": "Low-Power, Arm Cortex-M4 Processor with FPU-Based Microcontroller and Bluetooth 5.2.",
+      "name": "MAX32655",
+      "cores": [
+        {
+          "id": "corepart_01jrdgezmjehdrxjc30xrfwd9x",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "name": "Arm Cortex-M4F",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsdfkvttt2p6k3x3yww",
+            "architecture": "Armv7E-M",
+            "isa": "Thumb / Thumb-2"
+          },
+          "dataModelCoreID": "CM4"
+        },
+        {
+          "id": "corepart_01jrdgezmjehebx9pw7n8fve8n",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "name": "RISC-V",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsefnmsrt3kxbwmn41h",
+            "architecture": "RV32",
+            "isa": "rv32i"
+          },
+          "dataModelCoreID": "RV"
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_01jrdgezmjehetnj4dnqwbf5dq",
+          "name": "CTBGA",
+          "description": "81-ball CTBGA package",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "packageType": "CTBGA"
+        },
+        {
+          "id": "package_01jrdgezmjehfbfwy6sar1ek6t",
+          "name": "WLP",
+          "description": "51-ball WLP package",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "packageType": "WLP"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_01jrdgezmjehfscjmchg7haxxc",
+          "name": "EvKit_V1",
+          "description": "The MAX32655 evaluation kit (EV kit) provides a platform for evaluation capabilities of the MAX32655 microcontroller, which is an advanced system-on-chip (SoC).",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655evkit.html",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "packageIDs": [
+            "package_01jrdgezmjehetnj4dnqwbf5dq"
+          ]
+        },
+        {
+          "id": "board_01jrdgezmjehg9gmam8ckxf366",
+          "name": "FTHR",
+          "description": "The MAX32655FTHR is a rapid development platform to help engineers quickly implement ultra low-power wireless solutions using MAX32655 Arm© Cortex®-M4F and Bluetooth® 5.2 Low Energy (LE)",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655fthr.html",
+          "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
+          "packageIDs": [
+            "package_01jrdgezmjehetnj4dnqwbf5dq"
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "name": "MAX32655 Product Info",
+          "url": "https://www.analog.com/en/products/max32655.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/max32655.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 EvKit Product Info",
+          "url": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655evkit.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 Evkit Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX32655EVKIT.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 FTHR Product Info",
+          "url": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655fthr.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 FTHR Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX32655FTHR.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32655 User Guide",
+          "url": "https://www.analog.com/media/en/technical-documentation/user-guides/max32655-user-guide.pdf",
+          "categories": [
+            "dashboard"
+          ]
+        }
+      ],
+      "media": []
+    },
+    {
+      "id": "soc_01jrdgezphe4mrnzszxn3189wa",
+      "family": {
+        "id": "socfamily_01jrdgexsjeqhv7cjbkq26n3n1",
+        "name": "MAX78XXX"
+      },
+      "description": "Artificial Intelligence Microcontroller with Low-Power Convolutional Neural Network Accelerator.",
+      "name": "MAX78002",
+      "cores": [
+        {
+          "id": "corepart_01jrdgezphe4na53xk7nwssdg7",
+          "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
+          "name": "Arm Cortex-M4F",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsdfkvttt2p6k3x3yww",
+            "architecture": "Armv7E-M",
+            "isa": "Thumb / Thumb-2"
+          },
+          "dataModelCoreID": "CM4"
+        },
+        {
+          "id": "corepart_01jrdgezphe4ntw1y97qj3qn92",
+          "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
+          "name": "RISC-V",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsefnmsrt3kxbwmn41h",
+            "architecture": "RV32",
+            "isa": "rv32i"
+          },
+          "dataModelCoreID": "RV"
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_01jrdgezphe4p8thcavw037exe",
+          "name": "CSBGA",
+          "description": "144-ball CSBGA 12mm x 12mm package (0.8mm pitch)",
+          "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
+          "packageType": "CSBGA"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_01jrdgezphe4prs63wx7qfkhgp",
+          "name": "EvKit_V1",
+          "description": "The MAX78002 evaluation kit (EV kit) provides a platform and tools for leveraging device capabilities to build new generations of artificial intelligence (AI) products.",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max78002evkit.html",
+          "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
+          "packageIDs": [
+            "package_01jrdgezphe4p8thcavw037exe"
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "name": "MAX78002 Product Info",
+          "url": "https://www.analog.com/en/products/max78002.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX78002 Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX78002.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX78002 EvKit Product Info",
+          "url": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max78002evkit.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX78002 User Guide",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX78002EVKIT.pdf",
+          "categories": [
+            "dashboard"
+          ]
+        }
+      ],
+      "media": []
+    },
+    {
+      "id": "soc_01jrdgezrce698gcnq1qmwrw4c",
+      "family": {
+        "id": "socfamily_01jrdgexk6ejcb9ep7s31hykmp",
+        "name": "MAX32XXX"
+      },
+      "description": "Arm Cortex-M4 with FPU Microcontroller and Bluetooth LE 5 for Industrial and Wearables.",
+      "name": "MAX32690",
+      "cores": [
+        {
+          "id": "corepart_01jrdgezrce69rsqvja125h3v2",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "name": "Arm Cortex-M4F",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsdfkvttt2p6k3x3yww",
+            "architecture": "Armv7E-M",
+            "isa": "Thumb / Thumb-2"
+          },
+          "dataModelCoreID": "CM4"
+        },
+        {
+          "id": "corepart_01jrdgezrce6a8zq3xaqac6wkg",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "name": "RISC-V",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsefnmsrt3kxbwmn41h",
+            "architecture": "RV32",
+            "isa": "rv32i"
+          },
+          "dataModelCoreID": "RV"
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_01jrdgezrce6asccftccpc6df0",
+          "name": "WLP",
+          "description": "140-ball WLP package (0.35mm pitch)",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "packageType": "WLP"
+        },
+        {
+          "id": "package_01jrdgezrce6b9nqbjfzkfg20a",
+          "name": "TQFN",
+          "description": "68-pin TQFN package (0.40mm pitch)",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "packageType": "TQFN"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_01jrdgezrce6bsbc3yezgs4ttn",
+          "name": "AD-APARD32690-SL",
+          "description": "The AD-APARD32690-SL is a platform for prototyping intelligent, secure, and connected field devices. It has an Arduino Mega-compatible form factor and two Pmod™-compatible connectors",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "packageIDs": [
+            "package_01jrdgezrce6asccftccpc6df0"
+          ]
+        },
+        {
+          "id": "board_01jrdgezrce6cbvzcpf51aehwv",
+          "name": "EvKit_V1",
+          "description": "The MAX32690 evaluation kit (EV kit) provides a platform for evaluating the capabilities of the MAX32690 microcontroller, which is an advanced system-on-chip (SoC). It features an Arm® Cortex®-M4F CPU for efficient computation of complex functions and algorithms, and the latest generation Bluetooth® 5 Low Energy (Bluetooth LE) radio designed for wearable and hearable fitness devices, portable and wearable wireless medical devices, industrial sensors/networks, internet of things (IoT), and asset tracking.",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/MAX32690EVKIT.html",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "packageIDs": [
+            "package_01jrdgezrce6b9nqbjfzkfg20a"
+          ]
+        },
+        {
+          "id": "board_01jrdgezrce6cre3v0jq18vss4",
+          "name": "FTHR",
+          "description": "MAX32690 dev board in a compact Feather form factor, including LIPO battery charging and CAN interface.",
+          "productUrl": "https://www.analog.com/en/products/max32690.html#evaluation-kit",
+          "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
+          "packageIDs": [
+            "package_01jrdgezrce6b9nqbjfzkfg20a"
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "name": "MAX32690 Product Info",
+          "url": "https://www.analog.com/en/products/max32690.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32690 Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX32690.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32690 Evaluation Kit Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/max32690evkit.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32690 User Guide",
+          "url": "https://www.analog.com/media/en/technical-documentation/user-guides/ug7618.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "AD-APARD32690-SL Product Info",
+          "url": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "AD-APARD32690-SL User Guide",
+          "url": "https://wiki.analog.com/resources/eval/user-guides/ad-apard32690-sl",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32690 FTHR Zephyr",
+          "url": "https://docs.zephyrproject.org/latest/boards/adi/max32690fthr/doc/index.html",
+          "categories": [
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32690 User Guide",
+          "url": "https://www.analog.com/media/en/technical-documentation/user-guides/ug7618.pdf",
+          "categories": [
+            "dashboard"
+          ]
+        }
+      ],
+      "media": []
+    },
+    {
+      "id": "soc_01jrdgezssf129rva9p2vbhc3w",
+      "family": {
+        "id": "socfamily_01jrdgexk6ejcb9ep7s31hykmp",
+        "name": "MAX32XXX"
+      },
+      "description": "High-Reliability, Tiny, Ultra-Low-Power Arm Cortex-M4F Microcontroller with 12-Bit 1MSPS ADC.",
+      "name": "MAX32672",
+      "cores": [
+        {
+          "id": "corepart_01jrdgezssf12rd22s71j3943w",
+          "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
+          "name": "Arm Cortex-M4F",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsdfkvttt2p6k3x3yww",
+            "architecture": "Armv7E-M",
+            "isa": "Thumb / Thumb-2"
+          },
+          "dataModelCoreID": "CM4"
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_01jrdgezssf139s4zyg2hqpqxj",
+          "name": "TQFN-40",
+          "description": "40-pin TQFN-EP package",
+          "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
+          "packageType": "TQFN"
+        },
+        {
+          "id": "package_01jrdgezssf13tmxfxgm5218j9",
+          "name": "TQFN-56",
+          "description": "56-pin TQFN-EP package",
+          "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
+          "packageType": "TQFN"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_01jrdgezssf148e50prgger6yq",
+          "name": "EvKit_V1",
+          "description": "The MAX32672 evaluation kit (EV kit) provides a platform for evaluation capabilities of the MAX32672.",
+          "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32672evkit.html",
+          "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
+          "packageIDs": [
+            "package_01jrdgezssf139s4zyg2hqpqxj"
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "name": "MAX32672 Product Info",
+          "url": "https://www.analog.com/en/products/max32672.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32672 EvKit Product Info",
+          "url": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32672evkit.html",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32672 EvKit Datasheet",
+          "url": "https://www.analog.com/media/en/technical-documentation/data-sheets/max32672.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        },
+        {
+          "name": "MAX32672 User Guide",
+          "url": "https://www.analog.com/media/en/technical-documentation/user-guides/max32672-user-guide.pdf",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        }
+      ],
+      "media": []
+    }
+  ],
+  "metadata": {
+    "data": {
+      "fetchedAt": "2025-04-10T13:09:15.611Z",
+      "libName": "cfs-ccm-lib",
+      "libVersion": "1.1.0-16"
+    }
+  }
+}

@@ -12,12 +12,9 @@
  * limitations under the License.
  *
  */
-import {
-	VSCodeDataGridCell,
-	VSCodeDataGridRow
-} from '@vscode/webview-ui-toolkit/react';
 import type {ReactNode} from 'react';
 import styles from './RegisterTableRow.module.scss';
+import {DataGridCell, DataGridRow} from 'cfs-react-library';
 
 type TableItemType = {
 	readonly id: string;
@@ -37,34 +34,23 @@ export default function RegisterTableRow({
 	handleRegisterSelection
 }: TableItemType) {
 	return (
-		<VSCodeDataGridRow data-test={`${id}-data-grid-row`}>
-			<VSCodeDataGridCell
-				cellType='columnheader'
-				gridColumn='1'
-				data-test={`${id}-name-grid-cell`}
-				onClick={() => {
-					handleRegisterSelection(id);
-				}}
-			>
+		<DataGridRow
+			dataTest={`${id}-data-grid-row`}
+			className={styles.clickableRow}
+			onClick={() => {
+				handleRegisterSelection(id);
+			}}
+		>
+			<DataGridCell gridColumn='1' dataTest={`${id}-name-grid-cell`}>
 				{label}
-			</VSCodeDataGridCell>
-			<VSCodeDataGridCell
-				cellType='columnheader'
-				gridColumn='2'
-				className={styles.monospace}
-			>
+			</DataGridCell>
+			<DataGridCell gridColumn='2' className={styles.monospace}>
 				{address}
-			</VSCodeDataGridCell>
-			<VSCodeDataGridCell cellType='columnheader' gridColumn='3'>
-				{description}
-			</VSCodeDataGridCell>
-			<VSCodeDataGridCell
-				cellType='columnheader'
-				gridColumn='4'
-				className={styles.monospace}
-			>
+			</DataGridCell>
+			<DataGridCell gridColumn='3'>{description}</DataGridCell>
+			<DataGridCell gridColumn='4' className={styles.monospace}>
 				{value}
-			</VSCodeDataGridCell>
-		</VSCodeDataGridRow>
+			</DataGridCell>
+		</DataGridRow>
 	);
 }

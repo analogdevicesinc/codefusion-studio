@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
 .outerContainer {
 	width: 100%;
@@ -39,6 +39,10 @@
 		.subtitle {
 			margin: 8px 0 24px 0;
 			color: colors.$description-foreground;
+		}
+
+		button {
+			max-width: 120px;
 		}
 	}
 

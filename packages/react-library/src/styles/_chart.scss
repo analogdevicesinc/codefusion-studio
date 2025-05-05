@@ -1,0 +1,15 @@
+@use './colors';
+@use './fonts';
+
+// This is duplicating the ELF tooltip styles - to be used for stylizing chart native tooltips, as using our component instead presents a series of challenges
+// Styles are marked as important to overwrite the inline styles of said tooltip - which can only be replaced in getOption() - but there we can't access vscode tokens
+
+@mixin chartTooltip {
+	background-color: colors.$tooltip-background !important;
+	box-shadow: 0px 2px 16px 0px colors.$default-shadow !important;
+	color: colors.$default-foreground !important;
+	font-size: 13px !important;
+	font-family: fonts.$default-font-family !important;
+	border-color: colors.$tooltip-border !important;
+	border-radius: 0 !important;
+}

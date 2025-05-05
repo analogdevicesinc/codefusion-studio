@@ -28,6 +28,7 @@ import type {TSection} from '../../../../common/types/memory-layout';
 import type {TLocaleContext} from '../../../../common/types/context';
 
 import styles from './MainSectionChart.module.scss';
+import type {ECElementEvent} from 'echarts';
 
 type TMainSectionChartProps = {
 	readonly sections: TSection[];
@@ -99,6 +100,15 @@ export default function MainSectionChart({
 			max: totalSize + step,
 			interval: step
 		},
+		tooltip: {
+			trigger: 'item',
+			className: styles.chartTooltip,
+			formatter(params: ECElementEvent) {
+				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+				return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+			},
+			confine: true
+		},
 		series: [
 			{
 				name: 'text',
@@ -109,7 +119,11 @@ export default function MainSectionChart({
 					color: chartLegendColors.text
 				},
 				barCategoryGap: '0%',
-				barWidth: '80px'
+				barWidth: '80px',
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			},
 			{
 				name: 'data',
@@ -120,7 +134,11 @@ export default function MainSectionChart({
 					color: chartLegendColors.data
 				},
 				barCategoryGap: '0%',
-				barWidth: '80px'
+				barWidth: '80px',
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			},
 			{
 				name: 'bss',
@@ -131,7 +149,11 @@ export default function MainSectionChart({
 					color: chartLegendColors.bss
 				},
 				barCategoryGap: '0%',
-				barWidth: '80px'
+				barWidth: '80px',
+				emphasis: {
+					disabled: true
+				},
+				cursor: 'default'
 			}
 		]
 	});
@@ -144,12 +166,14 @@ export default function MainSectionChart({
 					i10n={i10n}
 				/>
 			</div>
-
 			<div className={styles.chartWrapper}>
 				<div className={styles.chartContainer}>
 					<ReactECharts
 						option={getOption()}
-						style={{height: '100%', width: '180px'}}
+						style={{
+							height: '100%',
+							width: '180px'
+						}}
 					/>
 					<div className={styles.legendContainer}>
 						<ChartLegend data={legendData} />

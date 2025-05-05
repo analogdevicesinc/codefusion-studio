@@ -13,15 +13,12 @@
  *
  */
 import {useState, useCallback, memo, useEffect, useRef} from 'react';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell
-} from '@vscode/webview-ui-toolkit/react';
 
 import ElfTableHeaderCell from '../../../../components/ElfTableHeaderCell/ElfTableHeaderCell';
 import ContextMenuPanel from '../../../../components/ContextMenu/Panel/ContextMenuPanel';
-import HelpOptionModal from '../HelpOptionModal/HelpOptionModal';
+import HelpOptionModal from '../../../../components/HelpOptionModal/HelpOptionModal';
+import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
+import NameCellTooltip from './NameCellTooltip';
 import sortData from '../../../../utils/sorting-utils';
 
 import {
@@ -31,15 +28,16 @@ import {
 	setRightAlign,
 	setRelative,
 	setRightAlignForHeader,
-	setBucketStyling,
 	displayValue,
 	splitStringByFirstSpace,
 	setFlagsForStack
 } from '../../../../utils/symbols-utils';
 import type {TSymbol} from '../../../../common/types/symbols';
 import type {TSavedTableOptions} from '../../../../common/types/memory-layout';
+import type {TLocaleContext} from '../../../../common/types/context';
 
 import {CONTEXT_MENU_SYMOLS_OPTIONS as MENU_OPTIONS} from '../../../../common/constants/symbols';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {
 	computeSymbolSizes,
 	getColumns
@@ -48,12 +46,13 @@ import {
 	goToSourceCode,
 	checkPath
 } from '../../../../utils/extension-utils';
-import {capitalizeWord} from '../../../../utils/string';
+import {capitalizeWord} from '@common/utils/string';
 
 import {SYMBOL_COLUMNS} from '../../../../common/types/symbols';
 import type {TContextMenuOption} from '../../../../common/types/generic';
 
 import styles from './SymbolsTable.module.scss';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 const HELP_OPTION_COLUMNS = [
 	SYMBOL_COLUMNS.TYPE,
@@ -77,6 +76,8 @@ function SymbolsTable({
 	emitValToFilter
 }: TSymbolsTableProps) {
 	const itemsPerPage = 100;
+	const i10n: TLocaleContext | undefined =
+		useLocaleContext()?.symbols?.helpModal;
 	const [clonedData, setClonedData] = useState<TSymbol[]>(
 		JSON.parse(JSON.stringify(data)) as TSymbol[]
 	);
@@ -84,7 +85,7 @@ function SymbolsTable({
 	const [symbols, setSymbols] = useState(data.slice(0, itemsPerPage));
 	const [nextIndex, setNextIndex] = useState(itemsPerPage);
 	const [sortBy, setSortBy] = useState<Record<string, any>>({
-		num: 'asc'
+		id: 'asc'
 	});
 
 	const [contextMenuVisible, setContextMenuVisible] = useState(false);
@@ -112,7 +113,9 @@ function SymbolsTable({
 	const headerColumns = columns.filter(
 		column =>
 			column !== (SYMBOL_COLUMNS.RECURSIVE as typeof column) &&
-			column !== (SYMBOL_COLUMNS.BUCKET as typeof column)
+			column !== (SYMBOL_COLUMNS.BUCKET as typeof column) &&
+			column !== `${SYMBOL_COLUMNS.DEMANGLED}` &&
+			column !== `${SYMBOL_COLUMNS.STACKDEPTH}`
 	);
 
 	const onSortColumn = useCallback(
@@ -304,86 +307,102 @@ function SymbolsTable({
 
 	return (
 		<>
-			<VSCodeDataGrid
-				className='table-styles'
-				aria-label='Symbols'
-				gridTemplateColumns={computeSymbolSizes(
-					columns as Array<`${SYMBOL_COLUMNS}`>
-				)}
+			<div
+				className={styles['symbol-table-container']}
+				id='symbols-table-container'
 			>
-				<VSCodeDataGridRow
-					row-type='sticky-header'
-					className={styles['sticky-grid-header']}
+				<DataGrid
+					className={styles.table}
+					ariaLabel='Symbols'
+					gridTemplateColumns={computeSymbolSizes(
+						headerColumns as Array<`${SYMBOL_COLUMNS}`>
+					)}
 				>
-					{headerColumns.map((column: string) => (
-						<VSCodeDataGridCell
-							key={column}
-							cell-type='columnheader'
-							grid-column={headerColumns.indexOf(column) + 1}
-							className={setRelative(
-								column as SYMBOL_COLUMNS,
-								styles as Record<string, string>
-							)}
-						>
-							<ElfTableHeaderCell
-								dir={sortBy[column]}
-								column={column}
-								label={column}
-								alignRight={setRightAlignForHeader(
-									column as SYMBOL_COLUMNS
-								)}
-								onSort={onSortColumn}
-							/>
-						</VSCodeDataGridCell>
-					))}
-				</VSCodeDataGridRow>
-
-				{symbols.map(row => (
-					<VSCodeDataGridRow ref={lastItemRef} key={row.id}>
-						{headerColumns.map((column, index) => (
-							<VSCodeDataGridCell
-								key={`${row.id}-${column}`}
-								title={displayValue(
-									column as SYMBOL_COLUMNS,
-									row,
-									savedOptions
-								)}
-								grid-column={index + 1}
-								className={`${setRightAlign(
+					<DataGridRow
+						rowType='sticky-header'
+						className={styles['sticky-grid-header']}
+					>
+						{headerColumns.map((column: string) => (
+							<DataGridCell
+								key={column}
+								cellType='columnheader'
+								gridColumn={String(headerColumns.indexOf(column) + 1)}
+								className={setRelative(
 									column as SYMBOL_COLUMNS,
 									styles as Record<string, string>
-								)} ${styles.makeItElipsis}`}
-								onContextMenu={e => {
-									handleContextMenu(
-										e,
-										`${column} '${row[column]}'`,
-										row
-									);
-								}}
+								)}
 							>
-								{(column as SYMBOL_COLUMNS) ===
-									SYMBOL_COLUMNS.SECTION && (
-									<div
-										className={setBucketStyling(
-											row,
-											styles as Record<string, string>
-										)}
-									/>
-								)}
-								{(column as SYMBOL_COLUMNS) ===
-									SYMBOL_COLUMNS.STACK && (
-									<span>{setFlagsForStack(row)}</span>
-								)}
-								{displayValue(
-									column as SYMBOL_COLUMNS,
-									row,
-									savedOptions
-								)}
-							</VSCodeDataGridCell>
+								<ElfTableHeaderCell
+									dir={sortBy[column]}
+									column={column}
+									label={column}
+									alignRight={setRightAlignForHeader(
+										column as SYMBOL_COLUMNS
+									)}
+									onSort={onSortColumn}
+								/>
+							</DataGridCell>
 						))}
-					</VSCodeDataGridRow>
-				))}
-			</VSCodeDataGrid>
+					</DataGridRow>
+
+					{symbols.map(row => (
+						<DataGridRow ref={lastItemRef} key={row.id}>
+							{headerColumns.map((column, index) => (
+								<DataGridCell
+									key={`${row.id}-${column}`}
+									title={displayValue(
+										column as SYMBOL_COLUMNS,
+										row,
+										savedOptions
+									)}
+									gridColumn={String(index + 1)}
+									className={`${setRightAlign(
+										column as SYMBOL_COLUMNS,
+										styles as Record<string, string>
+									)} ${styles.makeItElipsis}`}
+									onContextMenu={(
+										e: React.MouseEvent<HTMLElement>
+									) => {
+										handleContextMenu(
+											e,
+											`${column} '${row[column]}'`,
+											row
+										);
+									}}
+								>
+									{(column as SYMBOL_COLUMNS) ===
+										SYMBOL_COLUMNS.NAME && (
+										<NameCellTooltip
+											id={row.id}
+											value={row[column]}
+											demangled={row?.demangled}
+										/>
+									)}
+									{(column as SYMBOL_COLUMNS) ===
+										SYMBOL_COLUMNS.SECTION && (
+										<SectionNameWithCircle
+											value={row.section}
+											bucket={row.bucket}
+										/>
+									)}
+									{(column as SYMBOL_COLUMNS) ===
+										SYMBOL_COLUMNS.STACK && (
+										<span>{setFlagsForStack(row)}</span>
+									)}
+									{displayValue(
+										column as SYMBOL_COLUMNS,
+										row,
+										savedOptions
+									)}
+								</DataGridCell>
+							))}
+						</DataGridRow>
+					))}
+				</DataGrid>
+				<DataGridRow className={styles['sticky-grid-footer']}>
+					<strong>{`${data.length} Symbols`}</strong>
+				</DataGridRow>
+			</div>
 			<ContextMenuPanel
 				isVisible={contextMenuVisible}
 				x={contextMenuPosition.x}
@@ -395,6 +414,7 @@ function SymbolsTable({
 			{helpOptionModal.isVisible && (
 				<HelpOptionModal
 					state={helpOptionModal}
+					i10n={i10n}
 					onModalClose={() => {
 						setHelpOptionModal(prev => ({
 							...prev,

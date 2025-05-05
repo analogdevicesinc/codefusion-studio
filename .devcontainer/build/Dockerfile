@@ -1,4 +1,10 @@
 # The Node container used to build CFS extensions
+#
+# To refresh the image:
+#
+#     docker build . -t artifactory.analog.com:6556/cfs-build -f .devcontainer/build/Dockerfile --platform=linux/amd64
+#     docker login artifactory.analog.com:6556
+#     docker image push artifactory.analog.com:6556/cfs-build:latest
 
 FROM node:20
 

@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/fonts';
+@use '#colors' as colors;
+@use '#fonts' as fonts;
 
 .text {
 	font-size: fonts.$font-size-m;

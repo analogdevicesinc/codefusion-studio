@@ -19,75 +19,76 @@ import {
 } from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import styles from './ControlDropdown.module.scss';
 import {
-	useClockConfigs,
 	useClockNodeState,
 	useClockNodeDetailsTargetNode,
 	useControl
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
-import {type MouseEventHandler} from 'react';
-import CfsDropDown, {
-	type CfsDropDownOptions
-} from '../../../../../common/components/cfs-dropdown/CfsDropDown';
+import {DropDown, type DropDownOptions} from 'cfs-react-library';
+import type {EnumValue} from '@common/types/soc';
+
+type ControlConfig = {
+	key: string;
+	type: string;
+	values: Record<string, unknown>;
+	default?: string;
+	options?: EnumValue[];
+};
 
 type ControlDropdownProps = {
-	readonly controlId: string;
+	readonly controlCfg: ControlConfig;
 	readonly isDisabled: boolean;
 	readonly label: string;
-	readonly values: Array<string | undefined>;
 };
 
 export default function ControlDropdown({
-	controlId,
+	controlCfg,
 	isDisabled,
-	label,
-	values
+	label
 }: ControlDropdownProps) {
+	const {
+		key: controlId,
+		default: defaultValue,
+		options: enums = []
+	} = controlCfg;
 	const dispatch = useAppDispatch();
 	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
 
 	const activeClockNodeDetails = useClockNodeState(
 		clockNodeDetailsTargetNode
 	);
-	const currentControlValue = useControl(
-		activeClockNodeDetails?.Type,
+
+	const storeValue = useControl(
 		clockNodeDetailsTargetNode,
 		controlId
 	);
 
-	const clockConfigs = useClockConfigs();
+	// Use default value if storeValue is empty and a default is provided
+	const currentControlValue =
+		!storeValue && defaultValue !== undefined
+			? defaultValue
+			: storeValue;
 
-	const getEnumLabel = (enumId: string) =>
-		clockConfigs
-			.find(control => control.Id === controlId)
-			?.EnumValues?.find(enumVal => enumVal.Id === enumId)
-			?.Description ?? enumId;
+	const handleDropdown = (value: string) => {
+		if (value === currentControlValue) return;
 
-	const handleDropdown: MouseEventHandler<HTMLOptionElement> = e => {
-		if (e.currentTarget.value === currentControlValue) return;
+		const changedClockNode: ClockNodeSet = {
+			name: clockNodeDetailsTargetNode!,
+			key: controlId,
+			value
+		};
 
-		if (activeClockNodeDetails?.Type) {
-			const changedClockNode: ClockNodeSet = {
-				type: activeClockNodeDetails?.Type,
-				name: clockNodeDetailsTargetNode!,
-				key: controlId,
-				value: e.currentTarget.value
-			};
-
-			dispatch(setClockNodeControlValue(changedClockNode));
-		}
+		dispatch(setClockNodeControlValue(changedClockNode));
 	};
 
-	const options: CfsDropDownOptions = values
-		.filter(enumValue => enumValue !== undefined)
-		.map(enumValue => ({
-			value: enumValue,
-			label: getEnumLabel(enumValue)
-		}));
+	const options: DropDownOptions = enums.map(e => ({
+		label: e.Description,
+		value: e.Id
+	}));
 
 	return (
 		<div className={styles.dropdownContainer}>
 			<label htmlFor='controlDropdown'>{label}</label>
-			<CfsDropDown
+			<DropDown
 				controlId={controlId}
 				isDisabled={isDisabled}
 				currentControlValue={currentControlValue}

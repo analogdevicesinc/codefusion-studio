@@ -1,0 +1,104 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "0.0.1",
+  "Timestamp": "2024-10-31T17:07:32.077Z",
+  "Soc": "MAX32690",
+  "Package": "TQFN",
+  "Pins": [
+    {
+      "Pin": "39",
+      "Peripheral": "GPIO3",
+      "Signal": "P3.0",
+      "Config": {
+        "DESC": "Fish",
+        "MODE": "OUT",
+        "PWR": "VDDIOH",
+        "DS": "2"
+      }
+    },
+    {
+      "Pin": "40",
+      "Peripheral": "GPIO3",
+      "Signal": "P3.1",
+      "Config": {
+        "DESC": "Fowl",
+        "MODE": "IN",
+        "PWR": "VDDIO",
+        "PS": "WEAK_PD"
+      }
+    },
+    {
+      "Pin": "64",
+      "Peripheral": "CAN1",
+      "Signal": "RX",
+      "Config": {
+        "PWR": "VDDIO"
+      }
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Name": "CAN0/1",
+      "Control": "CAN0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "UART0/1/2",
+      "Control": "UART0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "UART0/1/2",
+      "Control": "UART0_MUX",
+      "Value": "ERFO",
+      "Enabled": true
+    },
+    {
+      "Name": "SYS_OSC Mux",
+      "Control": "MUX",
+      "Value": "IBRO",
+      "Enabled": true
+    },
+    {
+      "Name": "RISC-V",
+      "Control": "ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "TMR0/1/2/3",
+      "Control": "TMR0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "TMR0/1/2/3",
+      "Control": "TMR0a_MUX",
+      "Value": "ISO",
+      "Enabled": true
+    },
+    {
+      "Name": "TMR0/1/2/3",
+      "Control": "TMR1_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "TMR0/1/2/3",
+      "Control": "TMR1a_MUX",
+      "Value": "IBRO",
+      "Enabled": true
+    },
+    {
+      "Name": "TMR0/1/2/3",
+      "Control": "TMR1b_MUX",
+      "Value": "ERFO",
+      "Enabled": true
+    }
+  ],
+  "FirmwarePlatform": "msdk",
+  "BoardName": "EvKit_V1"
+}

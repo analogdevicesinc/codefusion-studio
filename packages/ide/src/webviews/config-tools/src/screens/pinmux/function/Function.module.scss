@@ -12,18 +12,18 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/fonts';
-@use '@common/styles/layout';
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
 
 .container {
 	display: flex;
 	align-items: center;
+	gap: 8px;
 	color: colors.$default-foreground;
 	height: 16px;
-	gap: 8px;
-	width: 100%;
-	position: relative;
+	padding: 8px 0;
+	border-top: 1px solid colors.$default-border;
 }
 
 .dropDownPin {
@@ -48,28 +48,62 @@
 
 	&::part(indicator) {
 		margin-inline-start: 4px;
-		width: 0;
+		width: 10px;
+		min-width: 10px;
 	}
 
 	&::part(selected-value) {
 		flex: none;
+	}
+
+	& .indicator {
+		display: flex;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+
+		& svg {
+			transition: transform 0.3s ease;
+		}
+
+		& svg {
+			position: relative;
+			top: 1px;
+		}
+
+		&.expanded {
+			& svg {
+				transform: rotate(180deg);
+			}
+		}
 	}
 }
 
 .divider {
 	flex: 1;
 }
-
-.conflictIcon {
-	cursor: pointer;
+.configButtonContainer {
 	display: flex;
-	$conflictIconDim: 16px;
-	$gap: 5px;
+	min-width: 22px;
+	// For vscode toolkit button component
+	--design-unit: 3;
+	vscode-button {
+		border: 1px solid transparent;
+	}
 
-	position: absolute;
-	left: -#{calc($conflictIconDim + $gap)};
-	width: $conflictIconDim;
-	height: $conflictIconDim;
+	path {
+		fill: #{colors.$default-foreground};
+	}
+	&.active vscode-button {
+		border: 1px solid #{colors.$focus-border};
+		background-color: colors.$editor-widget-background;
+	}
+}
+.iconConflictContainer {
+	cursor: default;
+	display: flex;
+	width: 16px;
+	height: 16px;
 
 	path {
 		fill: #{colors.$error};

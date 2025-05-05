@@ -20,20 +20,23 @@ import {
 	generateLabelGroups
 } from '../utils/package-display';
 import {
-	useDataModelPins,
-	usePackageCanvas,
+	useHoveredPin,
 	usePinDetailsTargetPin
 } from '../../../state/slices/pins/pins.selector';
 import {useAppDispatch} from '../../../state/store';
 import {setPinDetailsTargetPin} from '../../../state/slices/pins/pins.reducer';
 import {setActiveSearchString} from '../../../state/slices/app-context/appContext.reducer';
 import {useMemo} from 'react';
+import PinTooltip from '../../../components/pin-tooltip/PinTooltip';
+import {getSocPinDictionary} from '../../../utils/soc-pins';
+import {getPinCanvas} from '../../../utils/pin-canvas';
 
 function PackageDisplayContainer() {
-	const pins = useDataModelPins();
-	const canvas = usePackageCanvas();
+	const pins = getSocPinDictionary();
+	const canvas = getPinCanvas();
 	const dispatch = useAppDispatch();
 	const pinDetailsTargetPin = usePinDetailsTargetPin();
+	const hoveredPinId = useHoveredPin();
 
 	const onContainerClick = (e: React.SyntheticEvent<HTMLElement>) => {
 		if (
@@ -66,12 +69,17 @@ function PackageDisplayContainer() {
 	);
 
 	return (
-		<div id='main-panel' onClick={onContainerClick}>
+		<div
+			id='pinmux-main-panel'
+			style={{height: '100%'}}
+			onClick={onContainerClick}
+		>
 			<ZoomableAreaControl>
 				<LabelsFrame labelGroups={labelGroups}>
 					<PinGrid pinArray={pinGridDataStructure} />
 				</LabelsFrame>
 			</ZoomableAreaControl>
+			{hoveredPinId && <PinTooltip pinId={hoveredPinId} />}
 		</div>
 	);
 }

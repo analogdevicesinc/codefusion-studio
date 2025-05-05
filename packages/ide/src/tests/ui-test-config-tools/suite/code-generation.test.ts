@@ -13,28 +13,40 @@
  *
  */
 import { expect } from "chai";
+import { describe, it } from "mocha";
 import * as path from "path";
-import {
-  By,
-  CustomEditor,
-  EditorView,
-  VSBrowser,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, EditorView, VSBrowser, WebView } from "vscode-extension-tester";
 
-describe.skip("Config tools code generation", () => {
-  let browser: VSBrowser;
+// Helper function to dismiss the overwrite modal if it appears
+async function dismissOverwriteModal(view: WebView): Promise<void> {
+  try {
+    const dismissBtn = await view
+      .findWebElement(By.css('[data-test="generate-code:modal:overwrite"]'))
+      .catch(() => null);
 
-  before(function () {
+    if (dismissBtn) {
+      await dismissBtn.click();
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      console.log("Dismissed overwrite modal");
+    }
+  } catch (error) {
+    console.warn("no dismiss button found");
+  }
+}
+
+describe("Config tools code generation", function () {
+  before(async function () {
     this.timeout(60000);
 
-    if (browser === undefined) {
-      browser = VSBrowser.instance;
-    }
+    const editorView = new EditorView();
+
+    await editorView.closeAllEditors();
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
   });
 
-  it("Should generate code files when the firmware platform is Zephyr", async function () {
-    this.timeout(60000);
+  it("Should call generateConfigCode only with selected projects", async function () {
+    const browser = VSBrowser.instance;
 
     await browser.openResources(
       path.join(
@@ -42,15 +54,13 @@ describe.skip("Config tools code generation", () => {
         "tests",
         "ui-test-config-tools",
         "fixtures",
-        "max32690-wlp-zephyr-configured.cfsconfig",
+        "max32690-wlp-dual-core-blinky.cfsconfig",
       ),
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const editor = new CustomEditor();
-
-    const view = await editor.getWebView();
+    const view = new WebView();
 
     await view.wait();
 
@@ -58,47 +68,65 @@ describe.skip("Config tools code generation", () => {
 
     const navItem = await view.findWebElement(By.css("#generate"));
 
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    await navItem.click();
 
-      // assert engine list is rendered
-      expect(await view.findWebElement(By.css("#zephyr"))).to.exist;
-    });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const projectRVCheckbox = await view.findWebElement(
+      By.css('[data-test="generate-code:core:RV:checkbox"]'),
+    );
+
+    await projectRVCheckbox.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    console.log("Clicked on RV checkbox");
 
     const generateBtn = await view.findWebElement(
       By.xpath('//*[@id="root"]/div/section/div[2]/vscode-button'),
     );
 
-    await generateBtn.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log("Found generate button");
 
-      await view.switchBack();
+    await generateBtn.click();
 
-      const editorView = new EditorView();
+    console.log("Clicked generate button");
 
-      const files = await editorView.getOpenEditorTitles();
+    await dismissOverwriteModal(view);
 
-      const expectedFiles = [
-        "max32690-wlp-zephyr-configured.cfsconfig",
-        "cfs_config.overlay",
-        "prj.conf",
-      ];
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      expect(files).to.have.members(expectedFiles);
-    });
+    await dismissOverwriteModal(view);
 
-    const wb = new Workbench();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // Close prj.conf
-    await wb.executeCommand("Revert and close editor");
-    // Close cfs_config.overlay
-    await wb.executeCommand("Revert and close editor");
-    // Close max32690-wlp-zephyr-configured.cfsconfig
-    await wb.executeCommand("Revert and close editor");
-  }).timeout(60000);
+    await browser.takeScreenshot("disabled-project-skip-test-generate-click");
 
-  it("Should generate code files when the firmware platform is MSDK", async function () {
+    const generatedFilesList = await view.findWebElement(
+      By.css('[data-test="generated-files:list-container"]'),
+    );
+
+    const listItems = await generatedFilesList.findElements(By.css("li"));
+
+    await Promise.all(
+      listItems.map(async (child) => {
+        const text = await child.getText();
+
+        expect(text.toLowerCase()).to.include("m4");
+      }),
+    );
+
+    await view.switchBack();
+
+    const ev = new EditorView();
+
+    await ev.closeAllEditors();
+  }).timeout(120000);
+
+  it("Should not include externally managed projects in code generation", async function () {
     this.timeout(60000);
+
+    const browser = VSBrowser.instance;
 
     await browser.openResources(
       path.join(
@@ -106,56 +134,60 @@ describe.skip("Config tools code generation", () => {
         "tests",
         "ui-test-config-tools",
         "fixtures",
-        "max32690-wlp-msdk-configured.cfsconfig",
+        "max32690-wlp-with-external-project.cfsconfig",
       ),
     );
 
-    const editor = new CustomEditor();
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const view = await editor.getWebView();
+    const view = new WebView();
 
     await view.wait();
 
     await view.switchToFrame();
 
+    expect(await view.findWebElement(By.css("#generate"))).to.exist;
+
     const navItem = await view.findWebElement(By.css("#generate"));
 
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    await navItem.click();
 
-      // assert engine list is rendered
-      expect(await view.findWebElement(By.css("#msdk"))).to.exist;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const generateBtn = await view.findWebElement(
-        By.xpath('//*[@id="root"]/div/section/div[2]/vscode-button'),
-      );
+    // Generate code with only RV project (externally managed CM4 should be excluded)
+    const generateBtn = await view.findWebElement(
+      By.xpath('//*[@id="root"]/div/section/div[2]/vscode-button'),
+    );
 
-      await generateBtn.click().then(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log("Found generate button");
 
-        await view.switchBack();
+    await generateBtn.click();
 
-        // Assert the code files are created successfully
-        const editor = new EditorView();
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        const files = await editor.getOpenEditorTitles();
+    await dismissOverwriteModal(view);
 
-        const expectedFiles = [
-          "max32690-wlp-msdk-configured.cfsconfig",
-          "MAX32690_soc_init.c",
-        ];
+    // take a snapshot of the screen to debug any issues
+    await browser.takeScreenshot("external-project-test-generate-click");
 
-        expect(files).to.have.members(expectedFiles);
+    const generatedFilesList = await view.findWebElement(
+      By.css('[data-test="generated-files:list-container"]'),
+    );
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      });
+    const listItems = await generatedFilesList.findElements(By.css("li"));
 
-      const wb = new Workbench();
+    await Promise.all(
+      listItems.map(async (child) => {
+        const text = await child.getText();
 
-      // Close MAX32690_soc_init.c
-      await wb.executeCommand("Revert and close editor");
-      // Close max32690-wlp-msdk-configured.cfsconfig
-      await wb.executeCommand("Revert and close editor");
-    });
-  }).timeout(60_000);
+        expect(text.toLowerCase()).to.include("riscv");
+      }),
+    );
+
+    await view.switchBack();
+
+    const ev = new EditorView();
+
+    await ev.closeAllEditors();
+  }).timeout(120000);
 });

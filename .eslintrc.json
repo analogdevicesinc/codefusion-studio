@@ -91,6 +91,7 @@
 		"packages/pinconfig-ui",
 		"packages/cli",
 		"packages/ide/src/webviews/**/*",
-		"packages/cfs-lib"
+		"packages/cfs-lib",
+		"packages/cfs-ccm-lib"
 	]
 }

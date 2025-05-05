@@ -15,6 +15,8 @@
 import {Args, Command, Flags} from '@oclif/core';
 import {ElfFileParser} from 'elf-parser';
 
+import {Logger} from '../../logger.js';
+
 /**
  * Capitalizes all words in the input string and removes spaces or other separators.
  * @param input - The input string to be transformed.
@@ -78,6 +80,8 @@ export default class Analyze extends Command {
             jsonString += `\t"${capitalizeAndRemoveSeparators(k, unit)}": ${JSON.stringify(v.value)},\n`;
           }
 
+          jsonString += `\t"DetectedCompiler":"${heuristics.getCompilerDetected()}"\n`;
+
           jsonString = jsonString.slice(0, -2); // remove last comma
           jsonString += '\n}';
           console.log(jsonString);
@@ -88,12 +92,18 @@ export default class Analyze extends Command {
           for (const [k, v] of heuristics.getSymbolEntries()) {
             console.log(`${k}: ${v.stringValue}`);
           }
+
+          console.log(
+            `Detected Compiler: ${heuristics.getCompilerDetected()}`
+          );
         }
       } catch (error) {
-        console.log((error as Error).message);
+        Logger.logError(`${error}`);
       }
     } else {
-      console.log(`Please input ELF file`);
+      Logger.logError(
+        `No input file. Please provide a valid file path.`
+      );
     }
   }
 }

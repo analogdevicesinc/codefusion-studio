@@ -12,6 +12,16 @@ It consists of a pair of command-line tools: a GDB server, and a GDB client. The
 
 To use GDB, you start a GDB server which physically connects to the target device, and then connect to the server with a GDB client, allowing you to interact with the target device.
 
+## Required Client Version
+
+CFS includes a pre-configured version of GDB, so you don’t need to install it separately. For best results, it is recommended to use GDB 7.12+ or later:
+
+- **GDB 7.12+** – Supports modern debugging features, including inline breakpoints.  
+- **GDB 8.x+** – Adds improvements and bug fixes for a better debugging experience.  
+
+!!! Note
+    You can check the GDB version by running `show version` in the VS Code debug console.
+
 ## Breakpoints
 
 Breakpoints allow you to set a precise place in your code where execution will stop automatically. GDB has  breakpoint command options to set rich conditions to cause a breakpoint. Setting rich conditions allows you to debug very specific errors that only reproduce in given conditions.
@@ -27,6 +37,10 @@ Temporary breakpoints allow you to set a breakpoint that will only fire once and
 ### Delete existing breakpoint
 
 Recommendation is to delete breakpoints not in use as there are a limited number of hardware breakpoints available.
+
+### Inline breakpoints
+
+Inline breakpoints let you pause execution within a specific expression or statement, such as inside a loop or method chain.
 
 ## Watchpoints
 

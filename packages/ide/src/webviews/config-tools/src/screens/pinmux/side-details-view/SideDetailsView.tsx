@@ -14,12 +14,12 @@
  */
 import DetailsView from '@common/components/details-view/DetailsView';
 import type {Pin} from '@common/types/soc';
-import {
-	useAssignedPins,
-	usePackagePins
-} from '../../../state/slices/pins/pins.selector';
+import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import Function from '../function/Function';
 import styles from './SideDetailsView.module.scss';
+import ConflictIcon from '../../../../../common/icons/Conflict';
+import {getSocPinDictionary} from '../../../utils/soc-pins';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
 
 type PinDetailsProps = {
 	readonly targetPins: Array<Pin[] | undefined>;
@@ -32,14 +32,25 @@ export default function SideDetailsView({
 	handleBackClick,
 	errorMsg
 }: PinDetailsProps) {
-	const assignedPinsNames = useAssignedPins().map(
-		assignedPin => assignedPin.details.Name
+	const assignedPins = useAssignedPins();
+
+	const assignedPinsNames = assignedPins.map(
+		assignedPin => assignedPin.Name
 	);
-	const targetPinsNames = targetPins
+	const targetPinsIds = targetPins
 		.map(pinArray => pinArray?.map(pin => pin.Name))
 		.flat();
 
-	const packagePins = usePackagePins();
+	const targetPinsState = targetPins.map(pinArray =>
+		pinArray?.map(targetPin => ({
+			...targetPin,
+			appliedSignals: assignedPins.find(
+				assignedPin => assignedPin.Name === targetPin.Name
+			)?.appliedSignals
+		}))
+	);
+
+	const packagePins = getSocPinDictionary();
 
 	return (
 		<DetailsView
@@ -48,12 +59,12 @@ export default function SideDetailsView({
 				errorMsg ? (
 					<div style={{textAlign: 'center'}}>{errorMsg}</div>
 				) : (
-					targetPins.map(pinArray =>
+					targetPinsState.map(pinArray =>
 						pinArray?.map(targetPin => {
 							const isAssignedPin = assignedPinsNames.includes(
 								targetPin.Name
 							);
-							const isAnyPinAssigned = targetPinsNames.some(
+							const isAnyPinAssigned = targetPinsIds.some(
 								pinName =>
 									pinName && assignedPinsNames.includes(pinName)
 							);
@@ -75,29 +86,45 @@ export default function SideDetailsView({
 									<div
 										data-testid='pin-details-title'
 										id='pin-details-title'
-										className={styles.title}
+										className={styles.titleContainer}
 									>
-										<h3>{targetPin?.Label}</h3>
-										<h3 className={styles.pinName}>
-											{targetPin?.Name}
-										</h3>
+										<div className={styles.title}>
+											<h3>{targetPin?.Label}</h3>
+											<h3 className={styles.pinName}>
+												{targetPin?.Name}
+											</h3>
+										</div>
+										{targetPin.appliedSignals &&
+											targetPin.appliedSignals.length > 1 && (
+												<div
+													className={styles.conflictContainer}
+													data-test='pin:tooltip:conflictMarker'
+												>
+													<div className={styles.notification}>
+														<p>Pin conflict</p>
+														<ConflictIcon />
+													</div>
+												</div>
+											)}
 									</div>
+
 									<section id='pin-details-signals-container'>
-										{(
-											packagePins[targetPin.Name].details.Signals ??
-											[]
-										).length === 1 ? (
-											<>
+										{isPinReserved(
+											packagePins[targetPin.Name].Name
+										) ? (
+											<div className={styles.reservedPinContainer}>
 												<h4>RESERVED PIN</h4>
 												<p>{`${targetPin?.Description}`}</p>
-											</>
+											</div>
 										) : (
 											targetPin?.Signals?.map(signal => (
 												<div
 													key={`pinDetails:signals:${signal.Peripheral}:${signal.Name}`}
 													className={styles.peripheralGroup}
 												>
-													<h4>{signal.Peripheral}</h4>
+													<div className={styles.groupTitle}>
+														{signal.Peripheral}
+													</div>
 													<Function
 														peripheralGroup={signal.Peripheral ?? ''}
 														name={signal.Name}

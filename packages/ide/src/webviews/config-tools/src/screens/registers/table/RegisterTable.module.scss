@@ -12,51 +12,16 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/fonts';
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#table' as table;
 
 .table {
-	--foreground: #{colors.$default-foreground};
-	--font-family: #{fonts.$default-font-family};
-	--border-width: 10;
-	--design-unit: 0;
-	--type-ramp-base-font-size: #{fonts.$font-size-m};
-	--type-ramp-base-line-height: 14px;
-	--list-active-selection-background: transparent;
-	--list-active-selection-foreground: #{colors.$default-foreground};
-	--list-hover-background: #{colors.$table-row-hover};
-	--contrast-active-border: #{colors.$active-cta};
-	--focus-border: transparent;
+	@include table.table-styles;
+}
 
-	border-top: 1px solid colors.$default-border;
-
-	& > * {
-		border-bottom: 1px solid colors.$default-border;
-	}
-
-	svg {
-		path {
-			fill: colors.$default-foreground;
-		}
-	}
-
-	.sortable-title {
-		display: flex;
-		gap: 8px;
-		align-items: center;
-		cursor: pointer;
-	}
-
-	.asc,
-	.desc {
-		font-weight: bolder;
-	}
-
-	.desc {
-		svg {
-			transform: rotate(180deg);
-		}
-	}
+.sortable-title {
+	@include table.table-title;
 }
 
 .name {

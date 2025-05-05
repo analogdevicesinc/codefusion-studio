@@ -17,8 +17,7 @@ import { ElfFileParser } from "elf-parser/src/index";
 import type { ElfDataModel } from "elf-parser/src/ElfDataModel";
 import { elfMessageHandler } from "../utils/elf-message-handler";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
-
-export const ELF_EDITOR_ID = "elf.fileEditor";
+import { ELF_EDITOR_ID } from "../constants";
 
 class ElfDocument implements vscode.CustomDocument {
   private readonly _uri: vscode.Uri;

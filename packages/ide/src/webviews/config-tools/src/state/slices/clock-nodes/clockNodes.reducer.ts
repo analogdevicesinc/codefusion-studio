@@ -13,16 +13,10 @@
  *
  */
 import {type PayloadAction, createSlice} from '@reduxjs/toolkit';
-import type {
-	ClockNodesDictionary,
-	ControlCfg
-} from '@common/types/soc';
+import type {ClockNodesDictionary} from '@common/types/soc';
 import type {ControlErrorTypes} from '../../../types/errorTypes';
 
-// @TODO: Refactor clock state, types should not be required (or be in the dictionary at all)
-
 export type ClockNodeSet = {
-	type: string;
 	name: string;
 	key: string;
 	value: string;
@@ -33,7 +27,6 @@ export type ClockNodesState = {
 	clockNodes: ClockNodesDictionary;
 	activeClockNodeType: string | undefined;
 	clockNodeDetailsTargetNode: string | undefined;
-	clockConfig: ControlCfg[];
 	diagramData: Record<
 		string,
 		{enabled: boolean | undefined; error: boolean | undefined}
@@ -44,7 +37,6 @@ export const clockNodesInitialState: ClockNodesState = {
 	clockNodes: {},
 	activeClockNodeType: undefined,
 	clockNodeDetailsTargetNode: undefined,
-	clockConfig: [],
 	diagramData: {}
 };
 
@@ -71,9 +63,8 @@ const clockNodes = createSlice({
 				payload
 			}: PayloadAction<ClockNodeSet & {discardPersistence?: boolean}>
 		) {
-			if (payload.type && payload.name) {
-				const targetClockNode =
-					state.clockNodes[payload.type][payload.name];
+			if (payload.name) {
+				const targetClockNode = state.clockNodes[payload.name];
 
 				if (
 					targetClockNode.controlValues?.[payload.key] !== undefined

@@ -1,0 +1,120 @@
+<%
+/**
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// Include common plugin code
+eval(this.render("common/utilities/utilities.js"));
+
+// Include processor-specific plugin code
+eval(this.render("msdk-project-plugin/codegen/" + it.cfsconfig.Soc.toLowerCase() + "/clocks.js"));
+
+var pull_map = {
+  "STRONG_PU" : "PULL_UP",
+  "PU"        : "PULL_UP",
+  "WEAK_PU"   : "WEAK_PULL_UP",
+  "STRONG_PD" : "PULL_DOWN",
+  "PD"        : "PULL_DOWN",
+  "WEAK_PD"   : "WEAK_PULL_DOWN",
+  "DIS"       : "NONE"
+}
+
+function getGpioPorts() {
+  const ports = new Set();
+  for (const pin of it.cfsconfig.Pins) {
+    const p = getPin(pin);
+    ports.add(p.GPIOPort);
+  }
+  return Array.from(ports).sort()
+}
+
+function sanitize_identifier(iden) {
+  return iden.replace(".", "_");
+}
+
+function getHeaders() {
+  const hdrs = new Set();
+  if (hasClockConfig()) {
+    addClockHeaders(hdrs);
+  }
+  hdrs.add("mxc_device.h")
+  hdrs.add("mxc_sys.h")
+  hdrs.add("stddef.h")
+  return Array.from(hdrs).sort();
+}
+%>
+<%~ include("../../common/utilities/copyright-header.eta", it) %>
+
+<% for (const header of getHeaders()) { %>
+#include <<%= header %>>
+<% } %>
+
+/* Prototypes for functions in this file.
+*/
+int PinInit(void);
+<% if (hasClockConfig()) { %>
+int ClockInit(void);
+<% } %>
+
+int PinInit(void) {
+<% if (it.cfsconfig.Pins.length > 0) { %>
+  int result;
+
+  /* Initialize all the used GPIO Ports.
+  */
+  result = MXC_GPIO_Init(<%_ = getGpioPorts().map(port => `MXC_GPIO_PORT_${port}`).join(' | ') %>);
+  if (result != E_NO_ERROR) {
+    return result;
+  }
+
+  MXC_GPIO_SetConfigLock(MXC_GPIO_CONFIG_UNLOCKED);
+<%   for (const pin of it.cfsconfig.Pins) { %>
+<%     const peri = getAssignedPeripheral(pin.Peripheral); %>
+<%     const signal = peri?.Signals?.find(s => s.Name === pin.Signal); %>
+<%     if (signal || (!getAssignedProjectForPin(pin) && isPrimaryProject())) { %>
+
+  /* <%= getPin(pin).Label %> (<%= pin.Pin %>): assigned to <%= pin.Peripheral %>_<%= pin.Signal %>.
+<%       if (signal?.Description) { %>
+  ** This pin is used for <%= signal.Description %>.
+<%       } %>
+  */
+  const mxc_gpio_cfg_t cfg_<%= sanitize_identifier(getPin(pin).Label.toLowerCase()) %> = {
+    MXC_<%=getPin(pin).GPIOName %>,
+    MXC_GPIO_PIN_<%= getPin(pin).GPIOPin %>,
+<%     if (getSignal(pin).PinMuxSlot) { %>
+    MXC_GPIO_FUNC_ALT<%= getSignal(pin).PinMuxSlot %>,
+<%     } else { %>
+    MXC_GPIO_FUNC_<%= signal?.Config.MODE ?? "IN"%>,
+<%     } %>
+    MXC_GPIO_PAD_<%= signal?.Config.PS ? pull_map[signal.Config.PS] : "NONE"%>,
+    MXC_GPIO_VSSEL_<%= signal?.Config.PWR ?? "VDDIO" %>,
+    MXC_GPIO_DRVSTR_<%= signal?.Config.DS ?? "0" %>
+  };
+  result = MXC_GPIO_Config(&cfg_<%= sanitize_identifier(getPin(pin).Label.toLowerCase()) %>);
+  if (result != E_NO_ERROR) {
+    return result;
+  }
+<%     } %>
+<%   } %>
+<% } else { %>
+  /* Pin configuration in default state. */
+<% } %>
+
+  MXC_GPIO_SetConfigLock(MXC_GPIO_CONFIG_LOCKED);
+
+  return E_NO_ERROR;
+}
+
+<% if (hasClockConfig()) { %>
+<%~ include("./" + it.cfsconfig.Soc.toLowerCase() + "/peripherals.c.eta", it) %>
+<% } %>

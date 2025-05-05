@@ -14,40 +14,31 @@
  */
 import type {WebviewApi} from 'vscode-webview';
 import type {Soc} from './types/soc';
-import type {ControlErrorTypes} from '../config-tools/src/types/errorTypes';
+import type {
+	ConfiguredPin as Pin,
+	ConfiguredClockNode as ClockNode,
+	PluginConfig as PluginC,
+	ConfiguredPartition as Partition,
+	ConfiguredPeripheral as Peripheral,
+	ConfiguredProject as Project,
+	CfsConfig
+} from 'cfs-plugins-api';
 
-export type ConfiguredPin = {
-	Pin: string;
-	Peripheral: string;
-	Signal: string;
-	Config: Record<string, string>;
-	ControlResetValues: Record<string, string> | undefined;
-	Errors?: Record<string, ControlErrorTypes | undefined>;
-};
+export type ConfiguredPin = Pin;
 
-export type ConfiguredClockNode = {
-	Type: string;
-	Name: string;
-	Control: string;
-	Value: string;
-	Error?: ControlErrorTypes;
-	Enabled?: boolean;
-};
+export type ConfiguredClockNode = ClockNode;
 
-export type ConfigFileProperties = {
-	DataModelVersion: string;
-	DataModelSchemaVersion: string;
-	Timestamp: string;
-	Name: string;
-	Package: string;
-	Pins: ConfiguredPin[];
-	ClockNodes: ConfiguredClockNode[];
-	FirmwarePlatform?: string;
-};
+export type PluginConfig = PluginC;
+
+export type ConfiguredPartition = Partition;
+
+export type ConfiguredPeripheral = Peripheral;
+
+export type ConfiguredProject = Project;
 
 export type ConfigOptionsReturn = {
 	dataModel: Soc;
-	configOptions: ConfigFileProperties | undefined;
+	configOptions: CfsConfig | undefined;
 };
 
 /**

@@ -2,19 +2,19 @@
 	"extends": "@tsconfig/node18/tsconfig.json",
 	"references": [
 		{
-			"path": "packages/pinconfig-ui/extension",
+			"path": "packages/ide"
 		},
 		{
-			"path": "packages/pinconfig-ui",
+			"path": "packages/cfs-lib"
 		},
 		{
-			"path": "packages/cli",
+			"path": "packages/cli"
 		},
 		{
-			"path": "packages/elf-parser",
+			"path": "packages/elf-parser"
 		},
 		{
 			"path": "packages/react-library"
-		},
-	],
+		}
+	]
 }

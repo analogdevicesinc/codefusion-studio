@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {VSCodeDivider} from '@vscode/webview-ui-toolkit/react';
+import {Divider} from 'cfs-react-library';
 import styles from './NoData.module.scss';
 type NoDataProps = {
 	readonly content?: string;
@@ -23,7 +23,7 @@ export default function NoData({
 }: NoDataProps) {
 	return (
 		<div>
-			<VSCodeDivider />
+			<Divider />
 			<div className={styles.content}>{content}</div>
 		</div>
 	);

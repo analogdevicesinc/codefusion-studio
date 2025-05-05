@@ -12,12 +12,18 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
-.errorContainer {
+.errorsContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.errorCard {
 	display: flex;
 	align-items: center;
-	cursor: pointer;
+	cursor: default;
 	height: 27px;
 	padding: 3px 4px;
 

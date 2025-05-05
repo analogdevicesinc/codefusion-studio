@@ -6,8 +6,9 @@
 
 *[AEABI]: Arm Embedded Application Binary Interface.
 
-*[Arm]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings.
-*[ARM]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings.
+*[Arm]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings. In CodeFusion Studio, ARM refers to an ARM Cortex-M core, such as the Cortex-M4 used in MAX32xxx and MAX78xxx microcontrollers.
+
+*[ARM]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings. In CodeFusion Studio, ARM refers to an ARM Cortex-M core, such as the Cortex-M4 used in MAX32xxx and MAX78xxx microcontrollers.
 
 *[BSP]: Board support package. The layer of software containing hardware-specific boot firmware and device drivers.
 
@@ -27,17 +28,25 @@
 
 *[GNU]: GNU's Not Unix. A free software operating system.
 
+*[HALs]: Hardware Abstraction Layers. A conceptual interface between software and hardware that simplifies hardware access and improves portability.
+
 *[IDE]: Integrated development environment. A software application that helps developers write and debug code.
 
 *[MCU]: Microcontroller unit
 
 *[MMR]: Memory Mapped Register. A configuration register that is accessed as memory.
 
-*[MSDK]: The MAX Software Development Kit. A collection of software drivers for the MAX line of microcontrollers at Analog Devices, Inc.
+*[MSDK]: A collection of software and tools used to develop firmware for Analog Devices' MAX32xxx and MAX78xxx microcontrollers.
+
+*[Oclif]: Open Command Line Interface Framework. A tool used to build your own command line interface (CLI).
 
 *[OpenOCD]: Open on-chip debugger. A software that provides debugging and in-system programming for embedded target devices.
 
-*[RISC-V]: Reduced Instruction Set Computer-5th generation. An open instruction set architecture (ISA) maintained by RISC-V International.
+*[R]: Read-only access. Refers to the capability of a component to perform read-only operations.
+
+*[R/W]: Read/Write access. Refers to the capability of a component to perform both reading and writing operations.
+
+*[RISC-V]: Reduced Instruction Set Computer-5th generation. An open instruction set architecture (ISA) maintained by RISC-V International. In CodeFusion Studio, RISC-V refers to a RISC-V core, such as the one used as a secondary core in some MAX32xxx and MAX78xxx microcontrollers.
 
 *[RTOS]: Real-Time Operating System.
 

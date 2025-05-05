@@ -12,9 +12,10 @@
  * limitations under the License.
  *
  */
-import {useCallback, type ReactElement} from 'react';
+import {useCallback} from 'react';
 
 import type {NavigationItem} from '../../common/types/navigation';
+import CfsNavigation from '../../../../common/components/cfs-navigation/CfsNavigation';
 
 import {useActiveScreen} from '../../state/slices/elf-context/elfContext.selector';
 import {useAppDispatch} from '../../state/store';
@@ -30,41 +31,35 @@ import {navigationItems} from '../../common/constants/navigation';
 import type {TLocaleContext} from '../../common/types/context';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 
-import styles from './Navigation.module.scss';
-import {NavItem} from '../../../../config-tools/src/components/navigation/NavItem';
+export default function Navigation() {
+	const i10n: TLocaleContext | undefined = useLocaleContext();
+	const dispatch = useAppDispatch();
+	const activeScreen = useActiveScreen();
 
-type INavItems = {
-	icon: ReactElement;
-	id: (typeof navigationItems)[keyof typeof navigationItems];
-	disabled?: boolean;
-	label: string;
-};
-
-export default function CfsNavigation() {
-	const availableSVG: INavItems[] = [
-		{icon: <Stats />, id: navigationItems.stats, label: 'Statistics'},
+	const availableSVG = [
+		{
+			icon: <Stats />,
+			id: navigationItems.stats,
+			tooltipLabel: i10n?.[navigationItems.stats]?.title
+		},
 		{
 			icon: <Metadata />,
 			id: navigationItems.metadata,
-			label: 'Metadata'
+			tooltipLabel: i10n?.[navigationItems.metadata]?.title
 		},
 		{
 			icon: <Symbols />,
 			id: navigationItems.symbols,
-			label: 'Symbol Explorer'
+			tooltipLabel: i10n?.[navigationItems.symbols]?.title
 		},
 		{
 			icon: <MemoryLayout />,
 			id: navigationItems.memoryLayout,
-			label: 'Memory Layout'
+			tooltipLabel: i10n?.[navigationItems.memoryLayout]?.title
 		}
 	];
 
-	const dispatch = useAppDispatch();
-	const activeScreen = useActiveScreen();
-	const i10n: TLocaleContext | undefined = useLocaleContext();
-
-	const onNavItemClick = useCallback(
+	const handleNavItemClick = useCallback(
 		async (id: NavigationItem) => {
 			dispatch(setActiveScreen(id));
 		},
@@ -72,19 +67,10 @@ export default function CfsNavigation() {
 	);
 
 	return (
-		<div className={styles.container}>
-			{availableSVG.map(({icon, id, disabled, label}) => (
-				<NavItem
-					key={id}
-					id={id as any}
-					disabled={disabled}
-					isActive={id === activeScreen}
-					label={i10n?.[`${id}`]?.title as string}
-					tooltipLabel={label}
-					icon={icon}
-					onClick={onNavItemClick as any}
-				/>
-			))}
-		</div>
+		<CfsNavigation
+			activeScreen={activeScreen}
+			availableIcons={availableSVG}
+			onNavItemClick={handleNavItemClick}
+		/>
 	);
 }

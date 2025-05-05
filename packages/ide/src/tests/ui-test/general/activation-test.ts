@@ -37,7 +37,7 @@ describe("Extension Activation Tests", () => {
   beforeEach(async () => {
     await closeFolder();
     deleteFolder(testDirectory + "/.vscode");
-    await new Workbench().getDriver().sleep(1000);
+    await new Workbench().getDriver().sleep(20000);
   });
 
   afterEach(async () => {
@@ -57,7 +57,7 @@ describe("Extension Activation Tests", () => {
   it("Do not activate without prompt", async () => {
     await openFolder(process.cwd() + "/" + testDirectory);
     const workbench = new Workbench();
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(20000);
     await configureWorkspace();
     // verify no settings have been applied
     verifyAdiSettingsNotApplied();
@@ -65,7 +65,7 @@ describe("Extension Activation Tests", () => {
 
   it("Do not activate after prompt 'No'", async () => {
     await openFolder(process.cwd() + "/" + testDirectory);
-    await new Workbench().getDriver().sleep(5000);
+    await new Workbench().getDriver().sleep(20000);
     await configureWorkspace("No");
     // verify no settings have been applied
     verifyAdiSettingsNotApplied();
@@ -73,7 +73,7 @@ describe("Extension Activation Tests", () => {
 
   it("Do not activate after prompt 'Never'", async () => {
     await openFolder(process.cwd() + "/" + testDirectory);
-    await new Workbench().getDriver().sleep(5000);
+    await new Workbench().getDriver().sleep(20000);
     await configureWorkspace("Never");
     await closeFolder();
     await openFolder(process.cwd() + "/" + testDirectory);
@@ -90,9 +90,9 @@ describe("Extension Activation Tests", () => {
   it("Activate after prompt 'Yes'", async () => {
     await openFolder(process.cwd() + "/" + testDirectory);
     const workbench = new Workbench();
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(20000);
     await configureWorkspace("Yes");
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(20000);
     const notification = await getNotificationByMessage(
       INFO.workspaceConfigured
     );

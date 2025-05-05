@@ -14,7 +14,6 @@
  */
 import {createSelector} from '@reduxjs/toolkit';
 import {type RootState, useAppSelector} from '../../store';
-import {useSelector} from 'react-redux';
 import {type ClockNodeState} from '@common/types/soc';
 
 export function useClockNodeDetailsTargetNode() {
@@ -29,39 +28,32 @@ export const useClockNodes = () =>
 // Memoize useClockNode to avoid unnecessary re-renders
 const selectAllClockNodes = createSelector(
 	(state: RootState) => state.clockNodesReducer.clockNodes,
-	clockNodes =>
-		Object.values(clockNodes).flatMap(clockNodeForType =>
-			Object.values(clockNodeForType)
-		)
+	clockNodes => clockNodes
 );
 
-export const useClockNodesConfig = () => {
-	const nodes = useAppSelector(selectAllClockNodes);
+// Properly memoized selector for useClockNodesConfig
+const selectClockNodesConfig = createSelector(
+	(state: RootState) => state.clockNodesReducer.clockNodes,
+	clockNodes => ({...clockNodes})
+);
 
-	return Object.values(nodes).reduce<Record<string, ClockNodeState>>(
-		(acc, curr) => {
-			acc[curr.Name] = curr;
-
-			return acc;
-		},
-		{}
-	);
-};
+export const useClockNodesConfig = () =>
+	useAppSelector(selectClockNodesConfig);
 
 export const useModifiedClockNodes = () => {
 	const nodes = useAppSelector(selectAllClockNodes);
 
-	return Object.values(nodes).reduce<Record<string, ClockNodeState>>(
-		(acc, curr) => {
+	return Object.entries(nodes).reduce<Record<string, ClockNodeState>>(
+		(acc, [nodeName, nodeState]) => {
 			if (
-				Object.entries(curr.controlValues ?? {}).some(
+				Object.entries(nodeState.controlValues ?? {}).some(
 					([key, val]) =>
 						val !== undefined &&
 						val !== '' &&
-						val !== curr.initialControlValues?.[key]
+						val !== nodeState.initialControlValues?.[key]
 				)
 			) {
-				acc[curr.Name] = curr;
+				acc[nodeName] = nodeState;
 			}
 
 			return acc;
@@ -70,18 +62,10 @@ export const useModifiedClockNodes = () => {
 	);
 };
 
-const selectClockNodeByName = createSelector(
-	[
-		selectAllClockNodes,
-		(_: RootState, name: string | undefined) => name
-	],
-	(allClockNodes, name) =>
-		allClockNodes.find(clockNode => clockNode.Name === name)
-);
-
 export const useClockNodeState = (name: string | undefined) =>
-	useSelector((state: RootState) =>
-		selectClockNodeByName(state, name)
+	useAppSelector(
+		(state: RootState) =>
+			state.clockNodesReducer.clockNodes[name ?? '']
 	);
 
 export const useActiveClockNodeType = () =>
@@ -89,24 +73,13 @@ export const useActiveClockNodeType = () =>
 		state => state.clockNodesReducer.activeClockNodeType
 	);
 
-export const useClockConfigs = () =>
-	useAppSelector(state => state.clockNodesReducer.clockConfig);
-
-export const useConfigForClockNode = (clockNodeId: string) =>
-	useAppSelector(state =>
-		state.clockNodesReducer.clockConfig.find(
-			config => config.Id === clockNodeId
-		)
-	);
-
 export function useControl(
-	type: string | undefined,
 	clockNode: string | undefined,
 	control: string
 ) {
 	return useAppSelector(state => {
-		if (type && clockNode) {
-			return state.clockNodesReducer.clockNodes[type][clockNode]
+		if (clockNode) {
+			return state.clockNodesReducer.clockNodes[clockNode]
 				.controlValues?.[control];
 		}
 
@@ -115,14 +88,14 @@ export function useControl(
 }
 
 export function useClockConfigError(
-	type: string,
 	clockNode: string,
 	control: string
 ) {
 	return useAppSelector(state => {
-		if (type && clockNode) {
-			return state.clockNodesReducer.clockNodes[type][clockNode]
-				.Errors?.[control];
+		if (clockNode) {
+			return state.clockNodesReducer.clockNodes[clockNode].Errors?.[
+				control
+			];
 		}
 	});
 }

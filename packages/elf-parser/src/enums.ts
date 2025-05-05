@@ -13,8 +13,7 @@
  *
  */
 // Enum Order is very important!
-export enum FunctionRecursiveType
-{
+export enum FunctionRecursiveType {
 	// Not a recursive function
 	NoRecursion = 0,
 
@@ -410,13 +409,13 @@ export enum sym_binding {
 }
 
 export enum sym_visibility {
-	STV_DEFAULT = 0,
-	STV_INTERNAL = 1,
-	STV_HIDDEN = 2,
-	STV_PROTECTED = 3,
-	STV_EXPORTED = 4,
-	STV_SINGLETON = 5,
-	STV_ELIMINATE = 6,
+	DEFAULT = 0,
+	INTERNAL = 1,
+	HIDDEN = 2,
+	PROTECTED = 3,
+	EXPORTED = 4,
+	SINGLETON = 5,
+	ELIMINATE = 6,
 }
 
 export enum cpu_arch {

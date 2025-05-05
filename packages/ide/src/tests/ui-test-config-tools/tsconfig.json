@@ -1,13 +1,13 @@
 {
-	"compilerOptions": {
-		"module": "CommonJS",
-		"target": "es2020",
-		"lib": ["es2020"],
-		"outDir": "../../../out/tests/ui-test-config-tools",
-		"rootDir": ".",
-		"strict": true,
-		"noImplicitAny": true,
-		"allowSyntheticDefaultImports": true,
-		"skipLibCheck": true,
-	},
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "outDir": "../../../out/tests/ui-test-config-tools",
+    "rootDir": ".",
+    "strict": true,
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  }
 }

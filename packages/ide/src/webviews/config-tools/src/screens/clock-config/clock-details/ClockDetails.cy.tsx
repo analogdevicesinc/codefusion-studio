@@ -21,163 +21,275 @@ import {
 import {configurePreloadedStore} from '../../../state/store';
 import ClockDetails from './ClockDetails';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
+import type {CfsConfig, SocControl} from 'cfs-plugins-api';
 
 const mock = await import(
 	`../../../../../../../../cli/src/socs/${Cypress.env('CLOCK_CONFIG_DEV_SOC_ID')}.json`
 );
 
+// Helper function to convert Cypress fixture to a standard Promise
+async function getControlsPromise(): Promise<
+	Record<string, SocControl[]>
+> {
+	return new Promise(resolve => {
+		cy.fixture('clock-config-plugin-controls-msdk.json').then(
+			data => {
+				resolve(data as Record<string, SocControl[]>);
+			}
+		);
+	});
+}
+
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'msdk',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+};
+
 describe('Clock details component', () => {
-	const reduxStore = configurePreloadedStore(mock as Soc);
+	beforeEach(() => {
+		getControlsPromise()
+			.then(controls => {
+				window.localStorage.setItem(
+					'pluginControls:CM4-proj',
+					JSON.stringify(controls)
+				);
+			})
+			.catch(() => null);
 
-	const {registers} =
-		reduxStore.getState().appContextReducer.registersScreen;
+		window.localStorage.setItem(
+			'configDict',
+			JSON.stringify(configDict)
+		);
 
-	reduxStore.dispatch(
-		setAppliedSignal({
-			Pin: 'F4',
-			Peripheral: 'MISC',
-			Name: 'CLKEXT',
-			registers
-		})
-	);
+		window.localStorage.setItem(
+			'Package',
+			JSON.stringify(mock.Packages[0])
+		);
 
-	reduxStore.dispatch(
-		setClockNodeControlValue({
-			type: 'Mux',
-			name: 'SYS_OSC Mux',
-			key: 'MUX',
-			value: 'External Clock on P0.23',
-			error: undefined
-		})
-	);
+		window.localStorage.setItem(
+			'Registers',
+			JSON.stringify(mock.Registers)
+		);
+
+		window.localStorage.setItem(
+			'Peripherals',
+			JSON.stringify(mock.Peripherals)
+		);
+	});
 
 	it('Adds a non-valid integer value and checks for errors', () => {
-		const store = {...reduxStore};
+		getControlsPromise()
+			.then(controls => {
+				const store = configurePreloadedStore(
+					mock as Soc,
+					undefined,
+					controls
+				);
 
-		store.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+				store.dispatch(
+					setAppliedSignal({
+						Pin: 'F4',
+						Peripheral: 'MISC',
+						Name: 'CLKEXT'
+					})
+				);
 
-		cy.mount(<ClockDetails />, store);
+				store.dispatch(
+					setClockNodeControlValue({
+						name: 'SYS_OSC Mux',
+						key: 'MUX',
+						value: 'External Clock on P0.23',
+						error: undefined
+					})
+				);
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').type('test');
-			});
+				store.dispatch(setClockNodeDetailsTargetNode('P0.23'));
 
-		cy.dataTest('P0_23_FREQ-P0.23-error').should(
-			'contain.text',
-			'Invalid input type'
-		);
+				cy.mount(
+					<ClockDetails
+						controlsPromise={Promise.resolve(controls)}
+					/>,
+					store
+				);
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').clear();
-				cy.wait(1000);
-			});
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').type('test');
+					});
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').type('800000001');
-			});
+				cy.dataTest('P0_23_FREQ-P0.23-error').should(
+					'contain.text',
+					'Invalid input type'
+				);
 
-		cy.dataTest('P0_23_FREQ-P0.23-error').should(
-			'contain',
-			'Value exceeds the range 1 to 80000000'
-		);
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').clear();
+						cy.wait(1000);
+					});
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').clear();
-				cy.wait(1000);
-			});
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').type('800000001');
+					});
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').type('1');
-			});
+				cy.dataTest('P0_23_FREQ-P0.23-error').should(
+					'contain',
+					'Value exceeds the range 1 to 80000000'
+				);
 
-		cy.dataTest('P0_23_FREQ-P0.23-error').should('be.empty');
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').clear();
+						cy.wait(1000);
+					});
 
-		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.shadow()
-			.within(() => {
-				cy.get('#control').clear();
-				cy.wait(1000);
-			});
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').type('1');
+					});
+
+				cy.dataTest('P0_23_FREQ-P0.23-error').should('not.exist');
+
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').clear();
+						cy.wait(1000);
+					});
+			})
+			.catch(() => null);
 	});
 
 	it('Checks that controls are disabled when clock conditions are not met', () => {
-		const store = {...reduxStore};
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(
+				mock as Soc,
+				{} as CfsConfig,
+				controls as Record<string, SocControl[]>
+			);
+			const controlsPromise = getControlsPromise();
 
-		store.dispatch(setClockNodeDetailsTargetNode('TMR0/1/2/3'));
+			store.dispatch(setClockNodeDetailsTargetNode('TMR0/1/2/3'));
 
-		cy.mount(<ClockDetails />, store);
+			cy.mount(
+				<ClockDetails controlsPromise={controlsPromise} />,
+				store
+			);
 
-		cy.dataTest('TMR0a_MUX-TMR0/1/2/3').should(
-			'have.attr',
-			'aria-disabled',
-			'true'
-		);
+			cy.dataTest('TMR0a_MUX-TMR0/1/2/3').should(
+				'have.attr',
+				'aria-disabled',
+				'true'
+			);
 
-		cy.dataTest('TMR0_ENABLE-TMR0/1/2/3').within(() => {
-			cy.get('span').click();
+			cy.dataTest('TMR0_ENABLE-TMR0/1/2/3').within(() => {
+				cy.get('span').click();
+			});
+
+			cy.dataTest('TMR0a_MUX-TMR0/1/2/3').should(
+				'have.attr',
+				'aria-disabled',
+				'false'
+			);
 		});
-
-		cy.dataTest('TMR0a_MUX-TMR0/1/2/3').should(
-			'have.attr',
-			'aria-disabled',
-			'false'
-		);
 	});
 
 	it('Checks that controls are disabled when pinmux conditions are not met', () => {
-		const store = {...reduxStore};
+		cy.fixture('clock-config-plugin-controls.json').then(
+			cfsconfig => {
+				const store = configurePreloadedStore(
+					mock as Soc,
+					cfsconfig as CfsConfig
+				);
+				const controlsPromise = getControlsPromise();
 
-		reduxStore.dispatch(setClockNodeDetailsTargetNode('P0.27'));
+				store.dispatch(setClockNodeDetailsTargetNode('P0.27'));
 
-		cy.mount(<ClockDetails />, store);
+				cy.mount(
+					<ClockDetails controlsPromise={controlsPromise} />,
+					store
+				);
 
-		cy.dataTest('P0_27_FREQ-P0.27-control-input').should(
-			'have.attr',
-			'disabled'
+				cy.dataTest('P0_27_FREQ-P0.27-control-input').should(
+					'have.attr',
+					'disabled'
+				);
+			}
 		);
 	});
 
 	it('Checks that input controls are persisted', () => {
-		const store = {...reduxStore};
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(
+				mock as Soc,
+				{} as CfsConfig,
+				controls as Record<string, SocControl[]>
+			);
+			const controlsPromise = getControlsPromise();
 
-		store.dispatch(setClockNodeDetailsTargetNode('P0.23'));
-
-		cy.mount(<ClockDetails />, store).then(() => {
-			cy.dataTest('P0_23_FREQ-P0.23-control-input')
-				.shadow()
-				.within(() => {
-					cy.get('#control').type('22');
-					cy.wait(1000);
+			store.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
 				})
-				.then(() => {
-					cy.wrap(
-						reduxStore.dispatch(
-							setClockNodeDetailsTargetNode(undefined)
-						)
-					).then(() => {
+			);
+
+			store.dispatch(
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'External Clock on P0.23',
+					error: undefined
+				})
+			);
+
+			store.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+
+			cy.mount(
+				<ClockDetails controlsPromise={controlsPromise} />,
+				store
+			).then(() => {
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.shadow()
+					.within(() => {
+						cy.get('#control').type('22');
+						cy.wait(1000);
+					})
+					.then(() => {
 						cy.wrap(
-							reduxStore.dispatch(
-								setClockNodeDetailsTargetNode('P0.23')
-							)
+							store.dispatch(setClockNodeDetailsTargetNode(undefined))
 						).then(() => {
-							cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
-								'have.attr',
-								'current-value',
-								'22'
-							);
+							cy.wrap(
+								store.dispatch(setClockNodeDetailsTargetNode('P0.23'))
+							).then(() => {
+								cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
+									'have.attr',
+									'current-value',
+									'22'
+								);
+							});
 						});
 					});
-				});
+			});
 		});
 	});
 });

@@ -76,7 +76,7 @@ To debug the CFS IDE extension, select **Run IDE Extension** from the VS Code la
 
 ## Getting help
 
-For more information about the project, see the [User documentation](https://developer.analog.com/docs/codefusion-studio/1.0.0/).
+For more information about the project, see the [User documentation](https://developer.analog.com/docs/codefusion-studio/1.1.0/).
 
 ## Project Structure
 
@@ -85,8 +85,9 @@ The project uses yarn as a package manager, and yarn workspace as monorepo manag
     .
     ├── packages              # Host the main packages of this repo
     |   |── cfs-lib           # Reusable utilities for CFS components
+    |   |── cfs-ccm-lib       # Reusable utilities for CFS cloud components
     |   |── cli               # CodeFusion Studio CLI source files
-    |   |── cli-plugins       # CodeFusion Studio CLI additional plugins 
+    |   |── cli-plugins       # CodeFusion Studio CLI additional plugins
     |   |── elf-parser        # A parser for ELF Files
     |   |── ide               # Build and Debug applications for Analog Devices targets
     |   |── react-library     # Custom React components for CFS
@@ -143,6 +144,7 @@ The workspace identifiers are shorthands declared in the root package.json file.
 | `ws:ide`        | /packages/ide                     |
 | `ws:cli`        | /packages/cfsutil                 |
 | `ws:lib`        | /packages/cfs-lib                 |
+| `ws:ccm-lib`    | /packages/cfs-ccm-lib             |
 | `ws:react-lib`  | /packages/react-library           |
 | `ws:add-engine` | /packages/cli-plugin/add-codegen  |
 | `ws:add-soc`    | /packages/cli-plugin/add-soc      |

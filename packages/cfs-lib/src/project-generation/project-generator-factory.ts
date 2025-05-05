@@ -23,7 +23,7 @@ export const ProjectGeneratorFactory = {
 		switch (firmwarePlatform) {
 			case "msdk":
 				return new MsdkProjectGenerator();
-			case "zephyr-3.7":
+			case "zephyr-4.0":
 				return new ZephyrProjectGenerator();
 		}
 	}

@@ -118,21 +118,3 @@ export type GeneratedCode = {
   files: Record<string, string[]>;
   status: "success" | "error";
 };
-
-export async function generateCode(
-  engine: string,
-  configUriFsPath: string,
-): Promise<GeneratedCode> {
-  const { stdout } = await runCli(
-    "generate",
-    "--engine",
-    engine,
-    "--input",
-    configUriFsPath,
-    "--preview",
-    "--format",
-    "json",
-  );
-
-  return JSON.parse(stdout) as GeneratedCode;
-}

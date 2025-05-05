@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 /*
- * The purpose of this file is to define the CPP and Cortex debug configurations for ARM Embedded debug, ARM AARch64 debug, and ARM AARch32 debug.
+ * The purpose of this file is to define the Cortex debug configurations for Arm Embedded debug and RISC-V debug.
  * The configurations are constructed using constants since these configurations do not contain any states.
  * These configuration definitions are used to ensure that the appropriate CFS debug settings are included in the launch.json for CFS IDE projects.
  */
@@ -26,13 +26,14 @@ import {
   JLINK_PATH,
   OPENOCD,
   OPENOCD_PATH,
+  RISC_V_GCC_PATH,
   TOOLCHAIN,
 } from "../constants";
 import { getPropertyName } from "../properties";
 
 const debugConfigCommon = {
-  program: "${command:cfs.selectProgramFile}",
-  riscvProgram: "${command:cfs.selectRiscvProgramFile}",
+  program: "${config:cfs.programFile}",
+  riscvProgram: "${config:cfs.riscvProgramFile}",
   debugServerPathWindows:
     getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd.exe",
   debugServerPathOsxLinux:
@@ -41,35 +42,38 @@ const debugConfigCommon = {
     "-s '" +
     getPropertyName(OPENOCD, OPENOCD_PATH) +
     "/share/openocd/scripts/' -f " +
-    "${command:cfs.openocd.selectInterface}" +
+    "${config:cfs.openocd.interface}" +
     " -f " +
-    "${command:cfs.openocd.selectTarget}",
+    "${config:cfs.openocd.target}",
   debugServerArgsCmsis:
     "-s '" +
     getPropertyName(OPENOCD, OPENOCD_PATH) +
     "/share/openocd/scripts/'" +
     " -f " +
-    "${command:cfs.openocd.selectInterface}" +
+    "${config:cfs.openocd.interface}" +
     " -f " +
-    "${command:cfs.openocd.selectTarget}",
+    "${config:cfs.openocd.target}",
+  svdPath: "${config:cfs.cmsis.svdFile}",
 };
 
 export const CORTEX_DEBUG_ARM_EMBEDDED_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
   {
     name: "CFS: Debug with GDB and OpenOCD (ARM Embedded)",
     executable: debugConfigCommon.program,
-    cwd: "${command:cfs.setDebugPath}",
+    cwd: "${config:cfs.debugPath}",
     request: "launch",
     type: "cortex-debug",
     runToEntryPoint: "main",
     servertype: "openocd",
     serverpath: getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd",
-    armToolchainPath: getPropertyName(TOOLCHAIN, ARM_AARCH32_GCC_PATH) + "/bin",
-    svdFile: "${command:cfs.cmsis.selectSvdFile}",
+    gdbPath:
+      getPropertyName(TOOLCHAIN, ARM_AARCH32_GCC_PATH) +
+      "/bin/arm-none-eabi-gdb.exe",
+    svdPath: debugConfigCommon.svdPath,
     searchDir: ["${config:cfs.openocd.path}/share/openocd/scripts"],
     configFiles: [
-      "${command:cfs.openocd.selectInterface}",
-      "${command:cfs.openocd.selectTarget}",
+      "${config:cfs.openocd.interface}",
+      "${config:cfs.openocd.target}",
     ],
     gdbTarget: "localhost:3333",
     preLaunchCommands: [
@@ -87,7 +91,7 @@ export const CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
   {
     name: "CFS: Debug with JlinkGDBServer and JLink (ARM Embedded)",
     executable: debugConfigCommon.program,
-    cwd: "${command:cfs.setDebugPath}",
+    cwd: "${config:cfs.debugPath}",
     request: "launch",
     type: "cortex-debug",
     runToEntryPoint: "main",
@@ -101,10 +105,12 @@ export const CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
     osx: {
       serverpath: getPropertyName(JLINK_PATH) + "/JLinkGDBServerCLExe",
     },
-    device: "${command:cfs.jlink.setDevice}",
+    device: "${config:cfs.jlink.device}",
     interface: "swd",
-    armToolchainPath: getPropertyName(TOOLCHAIN, ARM_AARCH32_GCC_PATH) + "/bin",
-    svdFile: "${command:cfs.cmsis.selectSvdFile}",
+    gdbPath:
+      getPropertyName(TOOLCHAIN, ARM_AARCH32_GCC_PATH) +
+      "/bin/arm-none-eabi-gdb.exe",
+    svdPath: debugConfigCommon.svdPath,
     gdbTarget: "localhost:2331",
     preLaunchCommands: [
       "set logging overwrite on",
@@ -124,84 +130,40 @@ export const CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
     overrideRestartCommands: ["monitor reset"],
   };
 
-export const CPP_RISCV_DEBUG_CONFIGURATION: vscode.DebugConfiguration = {
-  name: "CFS: Debug with GDB and OpenOCD (RISC-V)",
-  type: "cppdbg",
-  request: "launch",
-  program: debugConfigCommon.riscvProgram,
-  args: [],
-  stopAtEntry: false,
-  cwd: "${command:cfs.setRiscvDebugPath}",
-  environment: [],
-  externalConsole: false,
-  MIMode: "gdb",
-  linux: {
-    miDebuggerPath:
-      "${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb",
-    debugServerPath: getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd",
-  },
-  windows: {
-    miDebuggerPath:
-      "${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb.exe",
-    debugServerPath:
-      getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd.exe",
-  },
-  osx: {
-    miDebuggerPath:
-      "${config:cfs.toolchain.riscVGCC.path}/bin/riscv-none-elf-gdb",
-    debugServerPath: getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd",
-  },
-  logging: {
-    exceptions: true,
-  },
-  miDebuggerServerAddress: "localhost:3334",
-  debugServerArgs:
-    '-c "gdb_port 3334" -s ${config:cfs.openocd.path}/share/openocd/scripts -f ${command:cfs.openocd.selectRiscvInterface} -f ${command:cfs.openocd.selectRiscvTarget}',
-  serverStarted: "Info : Listening on port 3334 for gdb connections",
-  filterStderr: true,
-  customLaunchSetupCommands: [
-    {
-      text: "-list-features",
-    },
-  ],
-  targetArchitecture: "arm",
-  setupCommands: [
-    {
-      text: "set logging overwrite on",
-    },
-    {
-      text: "set logging file debug-riscv.log",
-    },
-    {
-      text: "set logging on",
-    },
-    {
-      text: "cd ${command:cfs.setRiscvDebugPath}",
-    },
-    {
-      text: "set architecture riscv:rv32",
-      ignoreFailures: false,
-    },
-    {
-      text: "exec-file" + debugConfigCommon.riscvProgram,
-      ignoreFailures: false,
-    },
-    {
-      text: "symbol-file" + debugConfigCommon.riscvProgram,
-      ignoreFailures: false,
-    },
-    {
-      text: "target remote localhost:3334",
-    },
-    {
-      text: "set $pc=Reset_Handler",
-      ignoreFailures: false,
-    },
-  ],
-};
+export const CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
+  {
+    name: "CFS: Debug with GDB and OpenOCD (RISC-V)",
+    executable: debugConfigCommon.riscvProgram,
+    cwd: "${config:cfs.riscvDebugPath}",
+    request: "attach",
+    type: "cortex-debug",
+    runToEntryPoint: "main",
+    servertype: "openocd",
+    serverpath: getPropertyName(OPENOCD, OPENOCD_PATH) + "/bin/openocd",
+    gdbPath:
+      getPropertyName(TOOLCHAIN, RISC_V_GCC_PATH) +
+      "/bin/riscv-none-elf-gdb.exe",
+    svdPath: debugConfigCommon.svdPath,
+    searchDir: ["${config:cfs.openocd.path}/share/openocd/scripts"],
+    configFiles: [
+      "${config:cfs.openocd.riscvInterface}",
+      "${config:cfs.openocd.riscvTarget}",
+    ],
+    gdbTarget: "localhost:3334",
+    preAttachCommands: [
+      "set logging overwrite on",
+      "set logging file debug-riscv.log",
+      "set logging on",
+      "set remotetimeout 60",
+      "tbreak abort",
+      "tbreak _exit",
+      "set $pc=Reset_Handler",
+    ],
+    postAttachCommands: ["continue"],
+  };
 
-export const CPP_DEBUG_CONFIGURATIONS = [CPP_RISCV_DEBUG_CONFIGURATION];
 export const CORTEX_DEBUG_CONFIGURATIONS = [
   CORTEX_DEBUG_ARM_EMBEDDED_DEBUG_CONFIGURATION,
   CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION,
+  CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION,
 ];

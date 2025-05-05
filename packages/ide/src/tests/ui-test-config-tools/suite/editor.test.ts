@@ -28,15 +28,12 @@ describe("Editor Customization", () => {
     driver = browser.driver;
     editor = new EditorView();
 
-    await browser.waitForWorkbench();
-  });
-
-  after(async function () {
-    this.timeout(60000);
     await editor.closeAllEditors();
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 
-  it.skip('Should display the "Show Source" quick access button when opening *.cfsconfig files', async () => {
+  it('Should display the "Show Source" quick access button when opening *.cfsconfig files', async () => {
     await browser.openResources(
       path.join(
         "src",
@@ -46,6 +43,8 @@ describe("Editor Customization", () => {
         "test.cfsconfig",
       ),
     );
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const quickAccess = await driver.findElement(
       By.xpath(
@@ -57,14 +56,10 @@ describe("Editor Customization", () => {
       "(CFS) View Config File Source (JSON)",
     );
 
-    await quickAccess.click();
+    await quickAccess.click().then(async () => {
+      expect(await editor.getOpenEditorTitles()).to.include("test.cfsconfig");
 
-    const editorTitles = await editor.getOpenEditorTitles();
-
-    editorTitles.forEach((title) => {
-      if (!title.includes("Welcome")) {
-        expect(title).to.include("test.cfsconfig");
-      }
+      await editor.closeAllEditors();
     });
   }).timeout(60000);
 });

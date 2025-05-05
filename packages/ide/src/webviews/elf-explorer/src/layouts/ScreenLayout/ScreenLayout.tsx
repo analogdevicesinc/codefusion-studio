@@ -28,7 +28,7 @@ export default function ScreenLayout({children}: LayoutProps) {
 	const childrenArr = Children.toArray(children);
 
 	return (
-		<section className={styles.container}>
+		<section id='scrollable-body' className={styles.container}>
 			<div className={styles.inner}>{childrenArr}</div>
 		</section>
 	);

@@ -12,10 +12,27 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '#table' as table;
+
+.table {
+	@include table.table-styles;
+}
+
+.symbol-table-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	justify-content: space-between;
+	z-index: layout.$elf-symbols-table-z-index;
+	margin-bottom: 20px;
+}
 
 .sticky-grid-header {
 	top: 53px;
+	--list-hover-background: #{colors.$default-background};
+	z-index: 10;
 }
 .right-align {
 	text-align: right;
@@ -41,8 +58,33 @@
 	background-color: colors.$chart-orange;
 }
 
+.sticky-grid-footer {
+	position: sticky;
+	display: flex;
+	align-items: center;
+	bottom: -40px;
+	margin-bottom: -40px;
+	background: colors.$default-background;
+	border-top: 1px solid colors.$default-border;
+	z-index: 1;
+	height: 32px;
+	padding: 8px 3px;
+}
+
 .makeItElipsis {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	overflow: hidden;
+}
+
+.nameCellValue {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	height: 15px;
+}
+
+.tooltipContent {
+	word-wrap: break-word;
+	white-space: normal;
 }

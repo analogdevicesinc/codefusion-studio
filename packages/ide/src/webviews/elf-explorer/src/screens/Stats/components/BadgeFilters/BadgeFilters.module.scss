@@ -12,25 +12,10 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
-.customBadge {
-	cursor: pointer;
-	& + .customBadge {
-		margin-left: 5px;
-	}
-}
-
-.customBadge::part(control) {
-	color: colors.$button-secondary-foreground;
-	background-color: colors.$button-secondary-background;
-	padding: 6px 11px;
-	font-size: 13px;
-	height: auto;
-	border-radius: 50px;
-}
-
-.selected::part(control) {
-	color: colors.$button-foreground;
-	background: colors.$button-background;
+.filtersContainer {
+	--chip-min-width: 49px;
+	display: flex;
+	gap: 4px;
 }

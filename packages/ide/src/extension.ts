@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2022-2024 Analog Devices, Inc.
+ * Copyright (c) 2022-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import {
   ACTIONS_TREE_COMMAND_ID,
   BROWSE_MAXIM_EXAMPLES_COMMAND_ID,
   GET_CONTEXT_COMMAND_ID,
-  NEW_PROJECT_COMMAND_ID,
   OPEN_CFS_UTIL_PATH_SETTING_COMMAND_ID,
   OPEN_HOME_PAGE_COMMAND_ID,
   OPEN_ONLINE_DOCUMENTATION_COMMAND_ID,
@@ -30,11 +29,8 @@ import {
   OPEN_PROJECT_BOARD_SETTING_COMMAND_ID,
   OPEN_PROJECT_SETTING_COMMAND_ID,
   OPEN_WALKTHROUGH_COMMAND_ID,
-  QUICK_ACCESS_TREE_COMMAND_ID,
   RUN_BUILD_TASK_COMMAND_ID,
   RUN_CLEAN_TASK_COMMAND_ID,
-  RUN_OPENOCD_ERASE_FLASH_TASK_COMMAND_ID,
-  RUN_JLINK_ERASE_FLASH_TASK_COMMAND_ID,
   RUN_OPENOCD_FLASH_TASK_COMMAND_ID,
   START_DEBUG_COMMAND_ID,
   SELECT_START_DEBUG_ARM_COMMAND_ID,
@@ -47,12 +43,19 @@ import {
   VSCODE_START_DEBUG_COMMAND_ID,
   VSCODE_SELECT_START_DEBUG_COMMAND_ID,
   SELECT_ZEPHYR_WORKSPACE,
+  LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
+  QUICK_ACCESS_TREE_VIEW_ID,
+  SET_SDK_PATH_COMMAND_ID,
   RUN_JLINK_FLASH_TASK_COMMAND_ID,
+  DEVICE_TREE_VIEW_ID,
+  CONTEXT_VIEW_ID,
+  SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID,
+  OPEN_SYSTEM_PLANNER_COMMAND_ID,
+  RUN_DEFAULT_BUILD_TASKS_COMMAND_ID,
 } from "./commands/constants";
 import {
   BROWSE_SDK_PATH_COMMAND_ID,
   OPEN_OPENOCD_TARGET_SETTING_COMMAND_ID,
-  OPEN_PROJECT_COMMAND_ID,
   OPEN_SDK_PATH_SETTINGS_COMMAND_ID,
   OPEN_SDK_SETTINGS_COMMAND_ID,
   SELECT_SDK_PATH_COMMAND_ID,
@@ -62,18 +65,20 @@ import {
   configureWorkspace,
   configureWorkspaceCommandHandler,
   ConfigureWorkspaceOptionEnum,
-  ShowHomePageAtStartupOptionEnum,
+  YesNoEnum,
 } from "./configurations/configureWorkspace";
 import { HomePagePanel } from "./panels/homepage";
-import * as msdk from "./toolchains/msdk";
+import * as msdk from "./toolchains/msdk/msdk";
 import * as zephyr from "./toolchains/zephyr/zephyr";
 import { resolveVariables } from "./utils/resolveVariables";
 import { Utils } from "./utils/utils";
-import { QuickAccessProvider } from "./view-container/quick-access";
 import {
-  ActionItem,
   ActionsViewProvider,
-} from "./view-container/actions-panel";
+  QuickAccessProvider,
+  DeviceTreeProvider,
+  ViewContainerItem,
+  ContextPanelProvider,
+} from "./view-container";
 import {
   ADI_CONFIGURE_WORKSPACE_SETTING,
   BOARD,
@@ -94,32 +99,35 @@ import {
   RISCV_DEBUG,
   SDK_PATH,
   ZEPHYR_WORKSPACE,
-  OPENOCD_FLASH,
-  JLINK_FLASH,
-  JLINK_ERASE_FLASH,
-  OPENOCD_ERASE_FLASH,
   PIN_CONFIG_USER_GUIDE_URL,
+  FLASH_OPENOCD,
+  DEBUG_ACTION,
+  FLASH_JLINK,
+  OPEN_SYSTEM_PLANNER_AT_STARTUP,
+  MCU_EDITOR_ID,
+  ACTIVE_CONTEXT,
 } from "./constants";
 import { INFO } from "./messages";
-//TODO: move the file and update the import
-import { NewProjectPanel } from "./panels/new-project";
 import { CFS_TERMINAL, CFS_TERMINAL_ID } from "./toolchains/constants";
 import { ToolManager } from "./toolchains/toolManager";
 import { platform } from "node:process";
-import { registerViewConfigFileSourceCommand } from "./commands/view-config-file-source";
+import {
+  registerViewConfigFileSourceCommand,
+  registerViewWorkspaceConfigFileSourceCommand,
+} from "./commands/view-config-file-source";
 import { registerLoadConfigFileCommand } from "./commands/load-config-file";
 import { registerLoadElfFileCommand } from "./commands/load-elf-file";
 import { McuEditor } from "./custom-editors/mcu-editor";
 import { ElfEditor } from "./custom-editors/elf-editor";
-import {
-  DOWNLOAD_SDK,
-  SDK_DOWNLOAD_URL,
-  SELECT_SDK_PATH,
-} from "./utils/constants";
+import { OzoneDebugConfiguration } from "./configurations/externalDebugConfiguration";
 import { SocDataObj } from "./panels/data/soc-data-obj";
+import WorkspaceCreationEditor from "./custom-editors/workspace-creation-editor";
+import { registerAllCommands } from "./commands/commands";
+import { openFileAtLocation } from "./utils/open-file-location";
+import { CatalogManager } from "./catalog/catalogManager";
 
 const DOCUMENTATION_URL =
-  "https://developer.analog.com/docs/codefusion-studio/1.0.0/";
+  "https://developer.analog.com/docs/codefusion-studio/1.1.0/";
 
 /**
  * Activate the extension
@@ -176,24 +184,7 @@ export async function activate(
     .getConfiguration()
     .get<string>(`${EXTENSION_ID}.${SDK_PATH}`);
   const isCfsSdkPathValid = cfsSdkPath && existsSync(cfsSdkPath);
-  if (!isCfsSdkPathValid) {
-    vscode.window
-      .showWarningMessage(
-        "The path to the CFS SDK is missing or not valid and this prevented the extension from loading correctly. Please download and install the CFS SDK, or set the path to the CFS SDK through the CodeFusion Studio extension settings.",
-        DOWNLOAD_SDK,
-        SELECT_SDK_PATH,
-      )
-      .then((choice) => {
-        switch (choice) {
-          case DOWNLOAD_SDK:
-            vscode.env.openExternal(vscode.Uri.parse(SDK_DOWNLOAD_URL));
-            break;
-          case SELECT_SDK_PATH:
-            vscode.commands.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
-            break;
-        }
-      });
-  } else if (!isCfsUtilPathValid) {
+  if (!isCfsUtilPathValid && isCfsSdkPathValid) {
     const path = normalize(
       join(
         cfsSdkPath,
@@ -213,9 +204,11 @@ export async function activate(
   context.subscriptions.push(
     McuEditor.register(context),
     ElfEditor.register(context),
+    WorkspaceCreationEditor.register(context),
   );
 
   registerCommands(context);
+  registerAllCommands(context);
 
   activateWorkspace(context);
 
@@ -299,6 +292,13 @@ function registerCommands(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
+      SET_SDK_PATH_COMMAND_ID,
+      SdkPath.setSdkPathCommandHandler,
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
       BROWSE_SDK_PATH_COMMAND_ID,
       SdkPath.browseSdkPathCommandHandler,
     ),
@@ -367,12 +367,6 @@ function registerCommands(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand(OPEN_PROJECT_COMMAND_ID, async () => {
-      openExistingProjects();
-    }),
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand(OPEN_WALKTHROUGH_COMMAND_ID, () => {
       vscode.commands.executeCommand(
         VSCODE_OPEN_WALKTHROUGH_COMMAND_ID,
@@ -415,13 +409,78 @@ function registerCommands(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      START_DEBUG_COMMAND_ID,
-      (actionItem: ActionItem) => {
-        if (actionItem) {
-          const [workspaceFolder, configName] = [...actionItem.commandArgs];
-          vscode.debug.startDebugging(workspaceFolder, configName);
+      RUN_DEFAULT_BUILD_TASKS_COMMAND_ID,
+      async () => {
+        await Utils.runDefaultBuildTasks();
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "cfs.edit-config",
+      async (actionItem: ViewContainerItem) => {
+        if (!vscode.workspace.workspaceFolders) {
+          return;
+        }
+
+        const isTask =
+          actionItem.contextValue?.localeCompare("debug-task") === 0;
+
+        if (isTask) {
+          await Utils.addTaskToTasksJson(actionItem);
         } else {
-          vscode.commands.executeCommand(VSCODE_START_DEBUG_COMMAND_ID);
+          const mainFolder = actionItem.commandArgs[0];
+          const filePath = `${mainFolder?.uri.fsPath}/.vscode/launch.json`;
+          openFileAtLocation(filePath, actionItem.label);
+        }
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "cfs.copyAndEditTask",
+      async (actionItem: ViewContainerItem) => {
+        if (!vscode.workspace.workspaceFolders) {
+          return;
+        }
+
+        const isTask =
+          actionItem.contextValue?.localeCompare("copy-and-edit-task") === 0;
+
+        if (isTask) {
+          await Utils.addTaskToTasksJson(actionItem);
+        } else {
+          const mainFolder = actionItem.commandArgs[0];
+          const filePath = `${mainFolder?.uri.fsPath}/.vscode/launch.json`;
+          openFileAtLocation(filePath, actionItem.label);
+        }
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      START_DEBUG_COMMAND_ID,
+      async (actionItem: ViewContainerItem) => {
+        if (actionItem) {
+          const [workspaceFolder, configName] = actionItem.commandArgs;
+          const activeSession = vscode.debug.activeDebugSession;
+          if (activeSession && activeSession.name === configName) {
+            const answer = await vscode.window.showInformationMessage(
+              `"${configName}" is already running. Do you want to start another instance?`,
+              { modal: true },
+              "Yes",
+            );
+            if (answer === "Yes") {
+              await vscode.debug.startDebugging(workspaceFolder, configName);
+            }
+          } else {
+            await vscode.debug.startDebugging(workspaceFolder, configName);
+          }
+        } else {
+          await vscode.commands.executeCommand(VSCODE_START_DEBUG_COMMAND_ID);
         }
       },
     ),
@@ -429,13 +488,15 @@ function registerCommands(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(RUN_BUILD_TASK_COMMAND_ID, async () => {
-      await executeTask(BUILD);
+      const activeContext = getActiveWorkspace();
+      await Utils.executeStatusBarTask(BUILD, activeContext);
     }),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(RUN_CLEAN_TASK_COMMAND_ID, async () => {
-      await executeTask(CLEAN);
+      const activeContext = getActiveWorkspace();
+      await Utils.executeStatusBarTask(CLEAN, activeContext);
     }),
   );
 
@@ -443,7 +504,8 @@ function registerCommands(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       RUN_OPENOCD_FLASH_TASK_COMMAND_ID,
       async () => {
-        await executeTask(OPENOCD_FLASH);
+        const activeContext = getActiveWorkspace();
+        await Utils.executeStatusBarTask(FLASH_OPENOCD, activeContext);
       },
     ),
   );
@@ -452,25 +514,8 @@ function registerCommands(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       RUN_JLINK_FLASH_TASK_COMMAND_ID,
       async () => {
-        await executeTask(JLINK_FLASH);
-      },
-    ),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      RUN_OPENOCD_ERASE_FLASH_TASK_COMMAND_ID,
-      async () => {
-        await executeTask(OPENOCD_ERASE_FLASH);
-      },
-    ),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      RUN_JLINK_ERASE_FLASH_TASK_COMMAND_ID,
-      async () => {
-        await executeTask(JLINK_ERASE_FLASH);
+        const activeContext = getActiveWorkspace();
+        await Utils.executeStatusBarTask(FLASH_JLINK, activeContext);
       },
     ),
   );
@@ -482,15 +527,52 @@ function registerCommands(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand(NEW_PROJECT_COMMAND_ID, async () => {
-      NewProjectPanel.render(context.extensionUri);
-      await NewProjectPanel.currentPanel?.launchNewProjectWizard();
+    vscode.commands.registerCommand(OPEN_SYSTEM_PLANNER_COMMAND_ID, () => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        return;
+      }
+      for (const folder of workspaceFolders) {
+        if (folder.name === ".cfs") {
+          vscode.workspace
+            .findFiles(new vscode.RelativePattern(folder, "*.cfsconfig"))
+            .then((cfsConfigFiles) => {
+              if (cfsConfigFiles.length === 0) {
+                return;
+              }
+              vscode.commands.executeCommand(
+                "vscode.openWith",
+                cfsConfigFiles[0],
+                MCU_EDITOR_ID,
+              );
+            });
+        }
+      }
     }),
+  );
+
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand(
+  //     WORKSPACE_CREATION_COMMANDS.LOAD_CONFIG_FILE,
+  //     async () => {
+  //       await vscode.commands.executeCommand(
+  //         VSCODE_OPEN_FOLDER_COMMAND_ID,
+  //         vscode.workspace.workspaceFolders![0].uri,
+  //       );
+  //     },
+  //   ),
+  // );
+
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider(
+      CONTEXT_VIEW_ID,
+      new ContextPanelProvider(),
+    ),
   );
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
-      QUICK_ACCESS_TREE_COMMAND_ID,
+      QUICK_ACCESS_TREE_VIEW_ID,
       new QuickAccessProvider(),
     ),
   );
@@ -502,13 +584,28 @@ function registerCommands(context: vscode.ExtensionContext) {
       actionsViewProvider,
     ),
   );
+
+  const deviceTreeViewProvider = new DeviceTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider(
+      DEVICE_TREE_VIEW_ID,
+      deviceTreeViewProvider,
+    ),
+  );
+
   vscode.workspace.onDidChangeConfiguration(
-    (event: vscode.ConfigurationChangeEvent) => {
+    async (event: vscode.ConfigurationChangeEvent) => {
       // refresh the actions panel when launch configurations change
       if (event.affectsConfiguration("launch")) {
-        actionsViewProvider.refreshEvent.fire(
-          actionsViewProvider.getChildren()[0],
-        );
+        const debugActionElement = actionsViewProvider.getElement(DEBUG_ACTION);
+        if (debugActionElement) {
+          actionsViewProvider.refreshEvent.fire(debugActionElement);
+        }
+      }
+
+      // refresh the actions panel when tasks change
+      if (event.affectsConfiguration("tasks")) {
+        actionsViewProvider.updateTaskActions();
       }
     },
   );
@@ -563,11 +660,21 @@ function registerCommands(context: vscode.ExtensionContext) {
         const openHomePageAtStartup = conf.get(
           CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP,
         );
-        if (
-          openHomePageAtStartup ===
-          ShowHomePageAtStartupOptionEnum[ShowHomePageAtStartupOptionEnum.Yes]
-        ) {
+        if (openHomePageAtStartup === YesNoEnum[YesNoEnum.Yes]) {
           vscode.commands.executeCommand(OPEN_HOME_PAGE_COMMAND_ID);
+        }
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID,
+      async () => {
+        const conf = vscode.workspace.getConfiguration(EXTENSION_ID);
+        const open = conf.get(OPEN_SYSTEM_PLANNER_AT_STARTUP);
+        if (open === YesNoEnum[YesNoEnum.Yes]) {
+          vscode.commands.executeCommand(OPEN_SYSTEM_PLANNER_COMMAND_ID);
         }
       },
     ),
@@ -587,11 +694,27 @@ function registerCommands(context: vscode.ExtensionContext) {
     }),
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
+      async () => {
+        await OzoneDebugConfiguration.launchOzoneCommandHandler();
+      },
+    ),
+  );
+
   const loadELfFile = registerLoadElfFileCommand();
   const loadConfigFile = registerLoadConfigFileCommand();
   const viewConfigFileSource = registerViewConfigFileSourceCommand();
+  const viewWorkspaceConfigFileSource =
+    registerViewWorkspaceConfigFileSourceCommand();
 
-  context.subscriptions.push(loadELfFile, loadConfigFile, viewConfigFileSource);
+  context.subscriptions.push(
+    loadELfFile,
+    loadConfigFile,
+    viewConfigFileSource,
+    viewWorkspaceConfigFileSource,
+  );
 }
 
 /**
@@ -653,6 +776,9 @@ async function activateWorkspace(context: vscode.ExtensionContext) {
           ConfigureWorkspaceOptionEnum[ConfigureWorkspaceOptionEnum.Yes]
         ) {
           vscode.commands.executeCommand(SHOW_HOME_PAGE_AT_STARTUP_COMMAND_ID);
+          vscode.commands.executeCommand(
+            SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID,
+          );
         }
 
         await conf.update(ADI_CONFIGURE_WORKSPACE_SETTING, choice, false);
@@ -667,6 +793,7 @@ async function activateWorkspace(context: vscode.ExtensionContext) {
   ) {
     configureWorkspace(context, !choiceSelected);
     vscode.commands.executeCommand(SHOW_HOME_PAGE_AT_STARTUP_COMMAND_ID);
+    vscode.commands.executeCommand(SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID);
   }
 
   //Configuring workspace as ADI workspace on change of ADI_CONFIGURE_WORKSPACE_SETTING property
@@ -708,9 +835,9 @@ async function activateWorkspace(context: vscode.ExtensionContext) {
     vscode.StatusBarAlignment.Left,
     100,
   );
-  statusBarFlash.command = RUN_OPENOCD_FLASH_TASK_COMMAND_ID;
+  statusBarFlash.command = RUN_JLINK_FLASH_TASK_COMMAND_ID;
   context.subscriptions.push(statusBarFlash);
-  updateStatusBarItem(statusBarFlash, OPENOCD_FLASH);
+  updateStatusBarItem(statusBarFlash, FLASH_JLINK);
 
   // Debug Status Bar Icon
   const statusBarDebug = vscode.window.createStatusBarItem(
@@ -722,31 +849,6 @@ async function activateWorkspace(context: vscode.ExtensionContext) {
   context.subscriptions.push(statusBarDebug);
   updateStatusBarItem(statusBarDebug, DEBUG);
 }
-
-/**
- * Executes the tasks, indicates an error if the task is not defined.
- * @param taskName - string to identify task name
- */
-const executeTask = async (taskName: string) => {
-  const tasks = (await vscode.tasks.fetchTasks()).filter((task) => {
-    // Allow build tasks from CFS or from the User's workspace
-    return (
-      task.group === vscode.TaskGroup.Build &&
-      (task.source === "CFS" || task.source === "Workspace")
-    );
-  });
-  const selectedTask = tasks.find((task) => {
-    return (
-      (task.source === "CFS" && task.name === taskName) ||
-      (task.source === "Workspace" && task.name === `CFS: ${taskName}`)
-    );
-  });
-  if (selectedTask) {
-    vscode.tasks.executeTask(selectedTask);
-  } else {
-    console.error(`Error: Task '${taskName}' not found`);
-  }
-};
 
 /**
  * Adds actions to the status bar, and defines their tooltips.
@@ -768,7 +870,7 @@ const updateStatusBarItem = (
       statusBarItem.tooltip = CFS_CLEAN;
       break;
 
-    case OPENOCD_FLASH:
+    case FLASH_JLINK:
       statusBarItem.text = `$(zap)`;
       statusBarItem.tooltip = CFS_FLASH;
       break;
@@ -871,6 +973,23 @@ const selectZephyrWorkspace = async () => {
         );
       }
     });
+};
+
+/**
+ * Checks cfs.activeContext setting and searches for the corresponding workspace folder
+ * @returns active workspace or undefined
+ */
+const getActiveWorkspace = () => {
+  const config = vscode.workspace.getConfiguration(EXTENSION_ID);
+  const context = config.get(ACTIVE_CONTEXT) as string;
+  if (context === "Workspace") {
+    return context;
+  } else {
+    const wrksp = vscode.workspace.workspaceFolders?.find(
+      (w) => w.name === context,
+    );
+    return wrksp;
+  }
 };
 
 /**

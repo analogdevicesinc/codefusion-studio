@@ -1,0 +1,102 @@
+/**
+ *
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '../../styles/fonts';
+@use '../../styles/colors';
+
+.container {
+	display: flex;
+	flex-direction: column;
+}
+
+.inputWrapper {
+	display: flex;
+	position: relative;
+	height: 28px;
+	border: 0.5px solid var(--vscode-commandCenter-inactiveBorder);
+	font-size: 13px;
+	padding-left: 8px;
+	background-color: var(--vscode-input-background);
+
+	.input {
+		padding: 0;
+		width: 100%;
+		outline: none;
+		border: none;
+	}
+
+	.hexPrefix,
+	.input {
+		height: 100%;
+		background-color: var(--vscode-input-background);
+		color: var(--vscode-foreground);
+		font-family: fonts.$default-font-family;
+		@include fonts.body-b1;
+	}
+
+	.hexPrefix, .input{
+		display: flex;
+		align-items: center;
+	}
+
+	&:focus-within {
+		border: 1px solid var(--vscode-focusBorder);
+	}
+
+	.iconButton {
+		outline: none;
+	}
+
+	.arrows {
+		height: 100%;
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		margin-right: 4px;
+		margin-bottom: 4px;
+
+		.upArrow,
+		.downArrow {
+			height: 8px;
+			outline: none;
+		}
+		.upArrow {
+			svg {
+				transform: rotate(180deg);
+			}
+		}
+
+		svg {
+			width: 10px;
+			height: 5px;
+
+			path {
+				fill: var(--vscode-foreground);
+			}
+		}
+	}
+}
+
+.error {
+	margin-top: 4px;
+	@include fonts.body-b1;
+	font-family: fonts.$default-font-family;
+	color: colors.$error;
+	width: 100%;
+}
+
+.errorBorder {
+	border: 1px solid colors.$error;
+}

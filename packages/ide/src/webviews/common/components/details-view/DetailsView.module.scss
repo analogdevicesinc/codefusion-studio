@@ -12,16 +12,15 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/fonts';
-@use '@common/styles/colors';
+@use '#fonts' as fonts;
+@use '#colors' as colors;
 
 .navigationControl {
 	display: flex;
 	align-items: center;
 	position: relative;
 	cursor: pointer;
-	height: 22px;
-	margin: 18px 0 28px 16px;
+	padding: 16px 12px;
 
 	span {
 		font-size: fonts.$font-size-small;

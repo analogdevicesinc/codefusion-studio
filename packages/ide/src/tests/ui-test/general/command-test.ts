@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,16 @@
 import { expect } from "chai";
 import { platform } from "node:process";
 import { InputBox, Workbench } from "vscode-extension-tester";
-
-import { SELECT_SDK_PATH_COMMAND_ID } from "../../../commands/constants";
+import { CFS_IDE_VERSION } from "../../ui-test-utils/settings-utils";
 import { configureWorkspace } from "../../ui-test-utils/activation-utils";
+import {SELECT_SDK_PATH_COMMAND_ID} from "../../../commands/constants";
 import {
   closeFolder,
   closeWindows,
   deleteFolder,
   openFolder,
 } from "../../ui-test-utils/file-utils";
+
 
 describe("Command Tests", () => {
   const testDirectory = "src/tests/ui-test/data/Hello_World";
@@ -40,9 +41,9 @@ describe("Command Tests", () => {
     deleteFolder(testDirectory + "/.vscode");
     await openFolder(process.cwd() + "/" + testDirectory);
     workbench = new Workbench();
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(30000);
     await configureWorkspace("Yes");
-    await workbench.getDriver().sleep(10000);
+    await workbench.getDriver().sleep(20000);
     await closeWindows();
   });
 
@@ -60,7 +61,7 @@ describe("Command Tests", () => {
     let sdkPath;
     for (const item of picks) {
       const text = await item.getText();
-      if (text.match(".*0.9.1")) {
+      if (text.match(".*"+ CFS_IDE_VERSION)) {
         sdkPath = text;
         break;
       }
@@ -74,7 +75,6 @@ describe("Command Tests", () => {
       let value = await setting.getValue();
       if (platform === "win32") {
         value = value.toString();
-        value = value.replace(/\//g, "\\");
       }
       expect(value).to.equal(sdkPath);
     }

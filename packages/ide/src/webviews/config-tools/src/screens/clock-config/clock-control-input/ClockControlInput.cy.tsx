@@ -27,24 +27,26 @@ const wlp = await import(
 ).then(module => module.default);
 
 describe('Clock Control Input', () => {
+	beforeEach(() => {
+		window.localStorage.setItem(
+			'Package',
+			JSON.stringify(wlp.Packages[0])
+		);
+	});
+
 	it('Should format correctly the error message when the input value is greater than the maximum value', () => {
 		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
-
-		const {registers} =
-			reduxStore.getState().appContextReducer.registersScreen;
 
 		reduxStore.dispatch(
 			setAppliedSignal({
 				Pin: 'F4',
 				Peripheral: 'MISC',
-				Name: 'CLKEXT',
-				registers
+				Name: 'CLKEXT'
 			})
 		);
 
 		reduxStore.dispatch(
 			setClockNodeControlValue({
-				type: 'Pin Input',
 				name: 'P0.23',
 				key: 'P0_23_FREQ',
 				value: '100000000',
@@ -56,13 +58,15 @@ describe('Clock Control Input', () => {
 
 		cy.mount(
 			<ClockControlInput
-				control='P0_23_FREQ'
-				controlType='integer'
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
 				isDisabled={false}
 				label='Test Label'
-				unit=''
-				minVal={1}
-				maxVal={80000000}
 			/>,
 			reduxStore
 		);
@@ -78,7 +82,6 @@ describe('Clock Control Input', () => {
 
 		reduxStore.dispatch(
 			setClockNodeControlValue({
-				type: 'Pin Input',
 				name: 'P0.23',
 				key: 'P0_23_FREQ',
 				value: '0',
@@ -90,13 +93,15 @@ describe('Clock Control Input', () => {
 
 		cy.mount(
 			<ClockControlInput
-				control='P0_23_FREQ'
-				controlType='integer'
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
 				isDisabled={false}
 				label='Test Label'
-				unit=''
-				minVal={1}
-				maxVal={80000000}
 			/>,
 			reduxStore
 		);
@@ -105,5 +110,58 @@ describe('Clock Control Input', () => {
 			'contain',
 			'Value is lower than the allowed range 1 to 80000000'
 		);
+	});
+
+	it('Should only allow positive integers as inputs', () => {
+		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
+
+		reduxStore.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+
+		cy.mount(
+			<ClockControlInput
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
+				isDisabled={false}
+				label='Test Label'
+			/>,
+			reduxStore
+		);
+
+		const focusInput = () => {
+			cy.dataTest('P0_23_FREQ-P0.23-control-input')
+				.shadow()
+				.find('input')
+				.focus();
+		};
+
+		focusInput();
+
+		cy.realType('!.-  +/');
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input')
+			.should('have.value', '')
+			.then(() => {
+				focusInput();
+
+				cy.realType('abc');
+
+				cy.dataTest('P0_23_FREQ-P0.23-control-input')
+					.should('have.value', '')
+					.then(() => {
+						focusInput();
+
+						cy.realType('-1');
+
+						cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
+							'have.value',
+							'1'
+						);
+					});
+			});
 	});
 });

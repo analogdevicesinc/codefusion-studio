@@ -27,7 +27,6 @@ export enum COLUMNS {
 	SIZE = 'size',
 	FLAGS = 'flags',
 	ALIGN = 'align',
-	NUM = 'num',
 	NAME = 'name',
 	BIND = 'bind',
 	VISIBILITY = 'visibility'
@@ -42,6 +41,7 @@ export type TSegment = {
 	computedEndAddr: number;
 	size: number;
 	flags: number | string;
+	showAsReadOnly: boolean;
 	align: number;
 	sections: TSection[];
 	sizePercentage: number;
@@ -59,6 +59,7 @@ export type TSegmentResponse = {
 	address: string;
 	size: string;
 	flags: string;
+	showAsReadOnly: boolean;
 	align: string;
 	sections: TSectionResponse[];
 };
@@ -72,6 +73,7 @@ export type TSection = {
 	size: number;
 	symbols: TSymbol[];
 	flags?: string;
+	showAsReadOnly: boolean;
 	bucket: string;
 	name?: string;
 	sizePercentage?: number;
@@ -85,6 +87,7 @@ export type TSectionResponse = {
 	routeId: number; // This id is only used in Memory Layout for the navigation between layers (segments -> sections -> symbols)
 	address: string;
 	flags: string;
+	showAsReadOnly: boolean;
 	bucket: string;
 	name: string;
 	size: string;

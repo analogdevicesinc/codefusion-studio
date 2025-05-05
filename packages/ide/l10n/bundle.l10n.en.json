@@ -112,7 +112,7 @@
           "description": "ARM Embedded Application Binary Interface Attributes.</br>Lists specific attributes relevant to ARM architecture.",
           "list": {
             "Tag_CPU_name": {
-              "title": "A CPU name is defined by Arm or the architecture licensee responsible for designing the part. It is the official product name, with no extension and no abbreviation."
+              "title": "A CPU name is defined by Arm or the architecture licensee responsible for designing the part. It is the official product name, with no extension and no abbreviation"
             },
             "Tag_CPU_arch": {
               "title": "Specifies the architecture of the CPU, indicating the version of the ARM architecture being used, such as ARMv7 or ARMv8"
@@ -121,7 +121,7 @@
               "title": "Defines the profile of the CPU architecture, such as Application, Real-time, Microcontroller, or Secure"
             },
             "Tag_THUMB_ISA_use": {
-              "title": "Indicates whether the Thumb Instruction Set Architecture (ISA) is used, which is a compact, efficient instruction set for ARM processors."
+              "title": "Indicates whether the Thumb Instruction Set Architecture (ISA) is used, which is a compact, efficient instruction set for ARM processors"
             },
             "Tag_ABI_PCS_wchar_t": {
               "title": "Specifies the size and alignment of the wchar_t type in the Procedure Call Standard (PCS) for the ABI, which defines how functions receive parameters and return values"
@@ -222,8 +222,23 @@
             "SRAM size": {
               "title": "SRAM Size in KB."
             },
+            "ARM SRAM size": {
+              "title": "ARM SRAM size in bytes."
+            },
+            "ARM Flash size": {
+              "title": "ARM Flash size in bytes."
+            },
+            "RISCV SRAM size": {
+              "title": "RISCV SRAM size in bytes."
+            },
+            "RISCV Flash size": {
+              "title": "RISCV Flash size in bytes."
+            },
             "Heap memory pool size": {
               "title": "Heap memory pool size in bytes"
+            },
+            "Detected Compiler": {
+              "title": "Detected compiler, version, and toolchain information, if available"
             },
             "Flash size": {
               "title": "Flash Size in KB"
@@ -260,25 +275,68 @@
     "memory layout": {
       "title": "Memory Layout",
       "description": "<p>This screen allows you to visually analyze the placement and size of segments, sections and symbols within the memory layout.</p>The memory layout is displayed in three levels:<code>Segments</code> -> <code>Sections</code> -> <code>Symbols</code><h3 style='margin-bottom: 5px;'><strong>Segments</strong></h3>The initial view shows how the ELF segments are distributed in memory.</br></br>This layer includes a visual representation of the segments in memory, along with a table containing extended information for each segment. When you hover the mouse over a segment in the visual representation, the corresponding segment in the table is highlighted, and vice versa.</br></br><i>Note: In the visual representation, overlapping segments are rendered as smaller rectangles to the right of the main segments. Additionally, small segments may be displayed taller than their actual relative size to enhance usability. Refer to the size value for an accurate size value.</i></br></br>Table columns:<ul><li><strong>Id</strong>: The unique identifier for the segment.</li><li><strong>Type</strong>: The type of the segment, indicating its purpose (e.g., loadable, dynamic).</li><li><strong>Address</strong>: The memory address where the segment begins</li><li><strong>Size</strong>: The size of the segment in bytes</li><li><strong>Flags</strong>: Permissions and attributes for the segment (R: read, W: write, X: executable)</li><li><strong>Align</strong>: The alignment requirement of the segment in memory in bytes.</li></ul></br>When a segment is selected, the next level, showing the sections within that selected segment, is displayed.</br></br><h3 style='margin-bottom: 5px;'><strong>Sections in a Segment</strong></h3>The second layer includes a visual representation of the sections within a segment, along with a table containing extended information for each section. Hovering the mouse over a section in the visual representation will highlight the corresponding section in the table, and vice versa.</br></br>Table columns:<ul><li><strong>Num</strong>: The unique number identifying the section.</li><li><strong>Name</strong>: The name of the section.</li><li><strong>Address</strong>: The memory address where the section begins</li><li><strong>Size</strong>: The size of the section in bytes</li><li><strong>Flags</strong>: Permissions and attributes for the section: W (write), A (alloc), X (execute), M (merge), S (strings), I (info), L (link order), O (extra OS processing required), G (group), T (TLS), C (compressed), x (unknown), o (OS specific), E (exclude), D (mbind), y (purecode), p (processor specific)</li><li><strong>Type</strong>: The type of the section, indicating its contents and purposes</li></ul></br>When a section is selected, the next level, showing the symbols within that selected section, is displayed.</br></br><h3 style='margin-bottom: 5px;'><strong>Symbols in a Section</strong></h3>The third layer contains information about the selected Section, and a table with all the symbols contained in said section.</br>Table columns:<ul><li><strong>Num</strong>: The unique number identifying the symbol.</li><li><strong>Name</strong>: The name of the symbol.</li><li><strong>Address</strong>: The memory address where the symbol is located</li><li><strong>Size</strong>: The size of the symbol in bytes</li><li><strong>Bind</strong>: The linkage type of the symbol (e.g., local, global).</li><li><strong>Visibility</strong>: The visibility of the symbol, indicating its accessibility from other modules (e.g., default, hidden).</li></ul>",
-
       "helpModal": {
-        "Segment-Flags": "<code>R</code>: read<br><code>W</code>: write<br><code>X</code>: executable",
-        "Sections-Flags": "<code>W</code>: write<br><code>A</code>: alloc<br><code>X</code>: execute<br><code>M</code>: merge<br><code>S</code>: strings<br><code>I</code>: info<br><code>L</code>: link order<br><code>O</code>: extra OS processing required<br><code>G</code>: group<br><code>T</code>: TLS<br><code>C</code>: compressed<br><code>x</code>: unknown<br><code>o</code>: OS specific<br><code>E</code>: exclude<br><code>D</code>: mbind<br><code>y</code>: purecode<br><code>p</code>: processor specific<br>"
-      },
-
-      "table": {
-        "flags": {
-          "title": "Processor-specific flags associated with the ELF file"
+        "1": {
+          "Flags": "<code>R (Read)</code>: The segment is readable, allowing the program to read data from this segment.<br /><br /><code>W (Write)</code>: The segment is writable, meaning the program can modify data in this segment<br /><br /><code>X (executable)</code>: The segment is executable, enabling the program to run code stored in this segment."
+        },
+        "2": {
+          "Flags": "<code>W (Write)</code>: The segment is writable, allowing data modification.<br /><br /><code>A (Alloc)</code>: The segment is allocated in memory during execution.<br /><br /><code>X (Execute)</code>: The segment is executable, allowing code execution.<br /><br /><code>M (Merge)</code>: Identical sections can be merged to save space.<br /><br /><code>S (Strings)</code>: The segment contains null-terminated strings.<br /><br /><code>I (Info)</code>: Extra information provided, such as metadata.<br /><br /><code>L (Link Order)</code>: The section follows a specific linking order.<br /><br /><code>O (Extra OS Processing Required)</code>: Requires additional OS-specific processing.<br /><br /><code>G (Group)</code>: The segment is part of a section group.<br /><br /><code>T (TLS)</code>: The segment contains Thread-Local Storage data.<br /><br /><code>C (Compressed)</code>: The segment is compressed.<br /><br /><code>x (Unknown)</code>: The flag is unknown or reserved.<br /><br /><code>o (OS Specific)</code>: The segment is OS-specific.<br /><br /><code>E (Exclude)</code>: Excluded from final executable.<br /><br /><code>D (Mbind)</code>: Memory binding, typically used for NUMA (non-uniform memory access).<br /><br /><code>y (Purecode)</code>: Segment contains only pure code, without data.<br /><br /><code>p (Processor Specific)</code>: The segment has processor-specific attributes.<br /><br />",
+          "Type": "<code>NULL</code>: An unused section type, typically represented by a null entry in the section header table.<br /><br /><code>PROGBITS</code>: A section that holds information defined by the program, such as executable code or initialized data.<br /><br /><code>SYMTAB</code>: A symbol table section that contains entries for each symbol, providing information for linking and symbol resolution.<br /><br /><code>STRTAB</code>: A string table section that contains null-terminated strings, often used for symbol names and other identifiers.<br /><br /><code>RELA</code>: A relocation section that includes explicit addends, used for adjusting addresses in the code or data.<br /><br /><code>HASH</code>: A section that contains a hash table for symbol lookup, facilitating faster symbol resolution.<br /><br /><code>DYNAMIC</code>: A section used for dynamic linking, containing information required for dynamic linking and loading.<br /><br /><code>NOTE</code>: A section that holds notes, typically used for metadata or debugging information about the file.<br /><br /><code>NOBITS</code>: A section that occupies no space in the file; its size is represented, but it does not hold any data until the program is loaded.<br /><br /><code>REL</code>: A relocation section that contains relocation entries without explicit addends, used for adjusting addresses in the code or data.<br /><br /><code>SHLIB</code>: A section that is reserved for definitions of shared library information.<br /><br /><code>DYNSYM</code>: A dynamic symbol table section that contains symbols used for dynamic linking.<br /><br /><code>INIT_ARRAY</code>: A section containing pointers to functions that are called before the main function, typically used for initialization.<br /><br /><code>FINI_ARRAY</code>: A section containing pointers to functions that are called after the main function, typically used for cleanup.<br /><br /><code>PREINIT_ARRAY</code>: A section containing pointers to functions that are called before the initialization function, allowing for early setup.<br /><br /><code>GROUP</code>: A section that contains a group of sections, allowing them to be treated as a single entity during linking.<br /><br /><code>SYMTAB_SHNDX</code>: A section that contains indices for entries in the symbol table, used in conjunction with <code>SYMTAB</code>.<br /><br /><code>RELR</code>: A relocation section specifically designed for relative relocations.<br /><br /><code>LOPROC</code>: A section type reserved for processor-specific semantics.<br /><br /><code>HIPROC</code>: A section type reserved for processor-specific semantics at the upper range.<br /><br /><code>LOUSER</code>: A section type reserved for user-defined semantics at the lower range.<br /><br /><code>HIUSER</code>: A section type reserved for user-defined semantics at the upper range.<br /><br /><code>GNU_INCREMENTAL_INPUTS</code>: A section used for incremental linking, containing input files that contribute to the final binary.<br /><br /><code>GNU_INCREMENTAL_SYMTAB</code>: A section that provides an incremental symbol table for linking.<br /><br /><code>GNU_INCREMENTAL_RELOCS</code>: A section that holds relocation entries for incremental linking.<br /><br /><code>GNU_INCREMENTAL_GOT_PLT</code>: A section for the Global Offset Table (GOT) and Procedure Linkage Table (PLT) used in incremental linking.<br /><br /><code>GNU_ATTRIBUTES</code>: A section containing attributes that describe the sections or the file itself.<br /><br /><code>GNU_HASH</code>: A section that contains a hash table for symbol lookup, optimized for use with GNU tools.<br /><br /><code>GNU_LIBLIST</code>: A section that lists shared libraries required by the executable.<br /><br /><code>GNU_verdef</code>: A section that contains version definitions for dynamic linking.<br /><br /><code>GNU_verneed</code>: A section that specifies version needs for dynamic linking.<br /><br /><code>GNU_versym</code>: A section that associates version information with symbols in the dynamic symbol table.<br /><br /><code>ARM_EXIDX</code>: A section used for exception handling information in ARM architectures.<br /><br /><code>ARM_PREEMPTMAP</code>: A section that contains information for preemption in ARM binaries.<br /><br /><code>ARM_ATTRIBUTES</code>: A section that holds attributes specific to ARM binaries.<br /><br /><code>ARM_DEBUGOVERLAY</code>: A section that provides debug information for overlay sections in ARM binaries.<br /><br /><code>ARM_OVERLAYSECTION</code>: A section that describes overlay sections used in ARM binaries.<br /><br /><code>MIPS_REGINFO</code>: A section that contains register information for MIPS architectures.<br /><br /><code>MIPS_OPTIONS</code>: A section that provides options for MIPS binary execution.<br /><br /><code>MIPS_ABIFLAGS</code>: A section that contains ABI flags specific to MIPS architecture.<br /><br />"
+        },
+        "3": {
+          "Bind": "<code>LOCAL</code><br />Local symbols are not visible outside the object file containing their definition. Local symbols of the same name may exist in multiple files without interfering with each other.<br /><br /><code>GLOBAL</code><br />Global symbols are visible to all object files being combined. One file's definition of a global symbol will satisfy another file's undefined reference to the same global symbol.<br /><br /><code>WEAK</code><br />Weak symbols resemble global symbols, but their definitions have lower precedence.",
+          "Visibility": "<code>DEFAULT</code><br />The visibility of these symbols is determined by their binding type.<ul><li>Global and Weak Symbols: Visible outside their defining component. They can be overridden by symbols of the same name in other components.</li> <li>Local Symbols: Hidden and not accessible outside their defining component.</li><li>Note: Implementations may limit the visibility of global and weak symbols.</li></ul><br /><br /><code>PROTECTED</code><br />These symbols are visible in other components but cannot be overridden. Any reference to them from within their defining component will always use the local definition.<ul><li>Local Binding: Symbols with local binding cannot have protected visibility. If a symbol with protected visibility is used to resolve a reference from another component, it defaults to DEFAULT visibility.</li><li>Note: Protected visibility does not affect symbol resolution for references from outside the containing load module.</li></ul><br /><br /><code>HIDDEN</code><br />These symbols are not visible to other components. They are inherently protected.<ul><li>Address Passing: Objects referenced by hidden symbols can still be accessed if their addresses are passed outside.</li><li>Link-Editor Behavior: Hidden symbols in relocatable objects must be removed or converted to local binding when included in an executable or shared object.</li></ul><br /><br /><code>INTERNAL</code><br />Defined by processor supplements to further restrict hidden symbols. Generic tools treat internal symbols as hidden.<br />Link-Editor Behavior: Internal symbols in relocatable objects must be removed or converted to local binding when included in an executable or shared object."
         }
+      },
+      "aboutSectionList": {
+        "Section Name": "Identifies each section within the file",
+        "Section Type": "Specifies the purpose and content of each section within the file. It defines the kind of data stored in the section, such as code, symbols, relocation information, or metadata. Common section types include executable code, symbol tables, string tables, and relocation entries",
+        "Starting Address": "Indicates the memory address where the section will be loaded during program execution",
+        "Ending Address": "Represents the memory address where a section concludes, marking the boundary where the section’s content ends in memory during program execution",
+        "Size": "This size is measured in bytes and includes all the data or code contained in the section. For sections that do not occupy space in the file but are allocated in memory, such as .bss (uninitialized data), the size indicates how much memory will be reserved when the program is loaded.",
+        "Is part of": "ELF Sections are grouped into 'Main sections': 'text' for executable code, 'data' for initialized data, and 'bss' for uninitialized data",
+        "Flags": "Describe the attributes and permissions of a section, such as whether the section is writable, executable, or allocated in memory during program execution. These flags help the system manage how the section behaves, including if it contains code, data, or special linking information"
       }
     }
   },
   "cfgtools": {
-    "pinmux": {
-      "title": "Pin Mux",
-      "description": "<p>This screen allows you to configure the pin multiplexing for your project. It also allows you to configure GPIO pins with settings such as drive strength and use pull-up or pull-down resistors to avoid floating inputs.</p><p>The main canvas depicts the footprint of your project processor, showing the layout of the pins on the package. Each pin is color-coded according to whether it has a fixed-function, has a signal already assigned, or is available for use. Pins that have been assigned multiple signals are also shown in red to indicate that there is an error, and the pin is in conflict state. You can save your project when pins are in conflict, but you may not generate code until such errors are fixed.</p><p>To assign signals to pins, find the signal you wish to assign in the left-hand side panel, where the signals are grouped by the peripheral they belong to. On expanding the peripheral, you will see a list of signals for that peripheral, and you can enable it by enabling the toggle. In addition, where a signal can be mapped to multiple locations, you may choose the pin to which you wish to send the signal. Any conflicts created during this assignment will be marked with a red cross in the panel. You can also navigate around the footprint and click on pins to assign them.</p><p>One a signal is assigned to a pin, you can click on the icon to the right of the signal's toggle in the side panel to modify the signal configuration. This will bring up a dialog box in which you can adjust its settings. The settings can also be accessed via the <strong>Function Config</strong> screen.</p>",
+    "dashboard": {
+      "title": "System Planner Configuration Tools dashboard",
+      "description": "<p>Get a complete overview of your system configuration with the System Planner Configuration tools dashboard.<ul><li><strong>Navigate to system tools pages</strong>: Use the links to access tools for allocating peripherals, assigning pins, configuring clocks, partitioning memory, and viewing registers. Once your setup is complete, generate code for your project.</li><br /><li><strong>Review existing configurations</strong>: Use the Workspace Projects table to review resource assignments for each core and ensure proper configuration before code generation. If a conflict is detected, an error icon will appear. Click the chevron (>) in any cell to jump to the relevant configuration page and resolve issues.</li><br /><li><strong>Access documentation</strong>: View board-specific documentation links that provide quick access to product information, datasheets, and user guides.</li></ul></p>",
       "help": {
-        "title": "Pin Mux Help"
+        "title": "System Planner Dashboard Help"
+      },
+      "helpSection": {
+        "title": "Help",
+        "cfs-configuration-tools-overview": "CFS configuration tool overview"
+      },
+      "workspace_projects_table": {
+        "table": {
+          "title": "Workspace Projects"
+        },
+        "column": {
+          "core": "Core",
+          "code-generation": "Code Generation Plugin",
+          "assigned-pins": "Assigned Pins",
+          "allocated-peripherals": "Allocated Peripherals",
+          "memory-partitions": "Memory Partitions"
+        }
+      },
+      "system_config_tools": {
+        "title": "System Planner Configuration Tools",
+        "allocate-peripherals": "Allocate and Configure Peripherals",
+        "assign-pins": "Assign and Configure Pins",
+        "configure-clocks": "Configure Clocks",
+        "partition-memory": "Allocate and Partition Memory",
+        "registers": "View Registers",
+        "generate-code": "Generate Code"
+      }
+    },
+    "pinmux": {
+      "title": "Pin Config",
+      "description": "<p>This screen allows you to configure the pin multiplexing for your project. It also allows you to configure GPIO pins with settings such as drive strength and use pull-up or pull-down resistors to avoid floating inputs.</p><br /><h2>Main canvas overview</h2><p>The main canvas depicts the footprint of your project processor, showing the layout of the pins on the package. Each pin is color-coded according to whether it has a fixed-function, has a signal already assigned, or is available for use.</p><ul>  <li>Pins with multiple signals assigned are shown in <span style='color: var(--vscode-charts-red);'>red</span> to indicate a conflict error.</li>  <li>You can save a project with conflicts, but code generation is blocked until errors are fixed.</li></ul><h2>Assigning signals to pins</h2><p>To assign signals to pins, find the signal you wish to assign in the left-hand side panel. Signals are grouped by the peripheral they belong to. </p><ul>  <li>Expand the peripheral to view signals.</li> <li>Enable available signals using the toggle.</li><li>If a signal can be mapped to multiple pins, select your desired pin.</li>  <li>Conflicts during assignment will be marked with a red cross in the side panel.</li>  <li>You can also navigate around the footprint and click directly on pins to assign signals.</li></ul><h2>Modifying signal configuration</h2><p>Once a signal is assigned to a pin, you can click the icon to the right of the signal's toggle in the side panel to modify its configuration. A separate side panel will open on the right where you can adjust the signal's settings.</p><br /><p><strong>Important:</strong> Before configuring a signal, ensure its peripheral is assigned to a core in the <strong>Peripheral Allocation</strong> screen.</p>",
+      "help": {
+        "title": "Pin Config Help"
       }
     },
     "config": {
@@ -295,18 +353,395 @@
         "title": "Clock Config Help"
       }
     },
+    "peripherals": {
+      "title": "Peripheral Allocation",
+      "description": "<p>The peripheral allocation feature allows you to assign peripherals and GPIO pins to cores. The left panel lists available peripherals, while the main screen displays cores.</p><br /><h2>Assigning a peripheral to a core</h2><ol><li>In the left panel, find the peripheral and click the chevron to expand it.</li><li>Click <strong>Assign (>)</strong> to see available cores.<ul><li>For GPIO peripherals, individual pins can be assigned instead of the entire peripheral. The process remains the same—just select the specific pin instead.</li></ul></li><li>Select a core to manage the peripheral.</li><li>The peripheral appears under the selected core in the main screen.</li></ol><br /><h2>Configuring a peripheral</h2><p>Click the configure icon next to an assigned peripheral or signal. This opens the <strong>Details</strong> section in the right-hand sidebar. From here, you can:</p><ul><li>Click the delete icon to remove the allocation.</li><li>Add a <strong>Description</strong> to give the peripheral or signal a meaningful name.</li><li>View signals used by the peripheral and manage pin assignments.</li><li>Configure the peripheral for its intended use.</li></ul>",
+      "help": {
+        "title": "Peripheral Allocation Help"
+      }
+    },
+    "memory": {
+      "title": "Memory Allocation",
+      "description": "<p>The memory allocation feature allows you to partition SoC memory across different cores. The left panel lists available memory banks and existing memory partitions, while the central area displays memory partitions grouped by core.</p><br /><h2><strong>Creating a partition</strong></h2><br /><p>To create a new partition, click <strong>Create Partition</strong> in the left panel and supply the following information:</p><ul><li><strong>Details</strong><ul><li><strong>Memory Type</strong>: The type of memory (e.g., RAM, FLASH).</li><li><strong>Partition Name</strong>: A unique name for the partition.</li></ul></li><br/><li><strong>Assigned Core(s)</strong><ul><li><strong>Core(s)</strong>: Choose one or more cores that require access.</li><li><strong>Access Permissions</strong>: Configure access permissions (e.g., read, read/write) for each assigned core.</li><li><strong>Owner</strong>: If multiple cores are assigned, designate one as the owner. The owner core is responsible for initializing the memory. Other cores may access the memory but do not manage it.</li></ul></li><br/><li><strong>Plugin Options</strong><p>Use these fields to pass additional configuration to the code generation plugin for the selected core. The available options depend on the firmware platform. For example, for a Zephyr-based core, you might enter <code>sram</code> or <code>flash</code> into chosen field to assign a specific role (such as system SRAM or flash storage) to the memory region. Multiple values can be entered as a comma-separated list.</p></li><br /><li><strong>Memory Blocks</strong><ul><li><strong>Base Block</strong>: Select a base memory block. If left blank, this value is auto-determined based on the starting address.</li><li><strong>Starting Address</strong>: Specify a hexadecimal address for the start of the partition. This field updates automatically if a base block is selected.</li><li><strong>Size</strong>: Enter the size of the partition (KB, MB, or bytes).</li></ul></li></ul><h2><strong>Managing existing partitions</strong></h2><br /><p>Created partitions appear under their assigned cores in the central view. Expand the memory panel to view partitions. You can click the configure icon to update partition details, or use the delete icon to remove the partition.</p>",
+      "help": {
+        "title": "Memory Allocation Help"
+      },
+      "blocks": {
+        "no-blocks-found": "No results to display. Reduce the number of filters applied.",
+        "occupied-memory": "in this block",
+        "min-alignment": "Minimum Alignment",
+        "memory-blocks": "Memory Blocks",
+        "available-total": "Available / Total",
+        "base": "Base Block",
+        "starting-address": "Starting Address",
+        "size": "Size"
+      },
+      "access": {
+        "R/W": {
+          "title": "Read/Write"
+        },
+        "R": {
+          "title": "Read"
+        },
+        "R/W/X": {
+          "title": "Read/Write/Execute"
+        },
+        "R/X": {
+          "title": "Read/Execute"
+        }
+      },
+      "core": {
+        "owner": "Owner"
+      },
+      "partition": {
+        "create": "Create Partition",
+        "edit": "Edit Partition",
+        "details": "Details",
+        "type": "Memory Type",
+        "name": "Partition Name",
+        "badge": {
+          "primary": "Primary",
+          "secure": "Secure",
+          "non_secure": "Non-secure",
+          "external_managed": "Externally-managed"
+        },
+        "plugin-options": "Plugin Options",
+        "missing-assignment": "Please assign to a core to configure plugin options.",
+        "num_partitions": {
+          "zero": "No memory partitions allocated yet.",
+          "one": {
+            "label": {
+              "title": "Partition"
+            }
+          },
+          "other": {
+            "label": {
+              "title": "Partitions"
+            }
+          }
+        },
+        "partition_type": {
+          "volatile": {
+            "label": "Volatile"
+          },
+          "volatile-memory": "Volatile Memory",
+          "non-volatile-memory": "Non-Volatile Memory",
+          "non-volatile": "Non-Volatile"
+        }
+      },
+      "user-partition": {
+        "header": {
+          "title": "User Created Partitions"
+        },
+        "empty": {
+          "title": "No user-created partitions yet."
+        },
+        "core-info": {
+          "title": "Info"
+        },
+        "assigned-cores": {
+          "label": "Assigned Core(s)"
+        },
+        "start-address": {
+          "label": "Start Address"
+        },
+        "end-address": {
+          "label": "End Address"
+        },
+        "range": "Memory Range",
+        "block": {
+          "header": {
+            "title": "Blocks"
+          }
+        }
+      }
+    },
     "registers": {
       "title": "Registers",
-      "description": "<p>This screen allows you to view information on the registers used by the configuration code. For each register, you can see: <ul><li><strong>Name</strong>: The name of the register.</li><li><strong>Address</strong>: The address of the memory-mapped register.</li><li><strong>Description</strong>: A description of what the register is used for.</li><li><strong>Value</strong>: The value the register will have after execution of the configuration code.</li></ul></p><p>The registers can be sorted on each column, and the filters at the top of the screen allow you to view only those registers that have changed from their default values.</p><p>If you click on a register, you can see information on the fields within the register, including:<ul><li>The name of the bit field.</li><li>The description of the bit field.</li><li>The meaning of the values the bit field can take.</li><li><strong>Bits</strong>: The position of the field within the register.</li><li><strong>Access</strong>: The read-write permissions for the field.</li><li><strong>Value</strong>: The value of the field after completion of the configuration code.</li><li><strong>Reset value</strong>: The value of the field at processor reset.</li></ul></p><p>There are two ways of viewing the register, presented on two tabs. The <strong>Bit Fields</strong> tab shows the information in tabular form. The <strong>Diagram</strong> tab shows a graphical representation of the register and the fields it is composed of. Note that in this latter tab, only the values of the fields at processor reset are shown.</p><p>Only registers used for pin and clock configuration are shown.</p>",
+      "description": "<p>This screen allows you to view information on the registers used by the configuration code. It also highlights registers that are modified due to changes in peripheral or signal configurations. For each register, you can see: <ul><li><strong>Name</strong>: The name of the register.</li><li><strong>Address</strong>: The address of the memory-mapped register.</li><li><strong>Description</strong>: A description of what the register is used for.</li><li><strong>Value</strong>: The value the register will have after execution of the configuration code.</li></ul></p><p>The registers can be sorted on each column, and the filters at the top of the screen allow you to view only those registers that have changed from their default values.</p><p>If you click on a register, you can see information on the fields within the register, including:<ul><li>The name of the bit field.</li><li>The description of the bit field.</li><li>The meaning of the values the bit field can take.</li><li><strong>Bits</strong>: The position of the field within the register.</li><li><strong>Access</strong>: The read-write permissions for the field.</li><li><strong>Value</strong>: The value of the field after completion of the configuration code.</li><li><strong>Reset value</strong>: The value of the field at processor reset.</li></ul></p>",
       "help": {
         "title": "Registers Help"
+      },
+      "details-section": {
+        "name": "Name",
+        "bits": "Bits",
+        "access": "Access",
+        "value": "Value",
+        "reset": "Reset",
+        "description": "Description"
       }
     },
     "generate": {
       "title": "Generate Code",
-      "description": "<p>This screen is used to allow you to generate the configuration code for your project. Note that if your configuration contains any errors, such as pin mux conflicts or clock configuration errors, you will need to correct these errors before you are able to generate code.</p><p>To generate code, select one of the available code generation engines, and click <strong>Generate</strong>. If your configuration is not saved, you will be prompted to save it before you can continue.</p><p>When code generation is complete, any generated files will be opened in the editor in unsaved state. If a file already exists, the same filename will be used. If you are happy with the generated file, use <strong>Ctrl-S</strong> to save the file.</p><p>The filenames and locations are chosen so that the code is automatically picked up and built in your project. There is no need to explicitly call the generated functions as the start-up code will automatically do this for you.</p>",
+      "description": "<p>This screen allows you to generate the configuration code for your project. If your configuration contains any errors, such as pin mux conflicts or clock configuration errors, you must correct these errors before you can generate code.</p></br><h2>Generating Code</h2><p>To generate code, select all the available cores (recommended) and click <strong>Generate</strong>. If your configuration is not saved, you will be prompted to save it before you can continue.</p> </br><p>The generated filenames and locations are chosen so that the code is automatically picked up and built in your project. There is no need to explicitly call the generated functions as the start-up code will automatically do this for you.</p></br><p><strong>Important:</strong> Generated files will overwrite any existing versions.</p>",
       "help": {
         "title": "Generate Code Help"
+      },
+      "warningModal": {
+        "title": "Overwrite existing files",
+        "description": "Choosing to continue with your selection will overwrite any existing changes you have made to the generated files.",
+        "dismiss": "Don't show this message again."
+      }
+    }
+  },
+  "project-wizard": {
+    "misc": {
+      "cancel": {
+        "title": "Cancel"
+      },
+      "generate": {
+        "title": "Generate"
+      },
+      "available": {
+        "title": "available"
+      },
+      "browse": {
+        "title": "Browse"
+      },
+      "loading": {
+        "title": "Loading..."
+      },
+      "sdkDownloadLink": {
+        "title": "Download SDK"
+      },
+      "setSdkPathLink": {
+        "title": "Choose SDK path"
+      }
+    },
+
+    "errors": {
+      "invalidCharacters": {
+        "description": "Project name contains invalid characters."
+      },
+      "emptyString": {
+        "description": "Project name cannot be an empty string."
+      },
+      "noSpacesProject": {
+        "description": "Project name cannot contain spaces."
+      },
+      "noSpacesLocation": {
+        "description": "Project location cannot contain spaces."
+      },
+      "alreadyExists": {
+        "description": "Project name already exists."
+      },
+      "notExists": {
+        "description": "Project location does not exist."
+      },
+      "fileNotExists": {
+        "description": "File does not exist."
+      },
+      "boardNotMatchProc": {
+        "description": "The processor and board file don't match. Please correct."
+      },
+      "socDataUnavailable": {
+        "description": "The SoC data is unavailable. Please download and install the CFS SDK, or set the path to the CFS SDK through the CodeFusion Studio extension settings."
+      }
+    },
+
+    "header": {
+      "title": "Create a project",
+      "description": "Ensure you have the details of the SoC at hand. Our project wizard guides you through the steps to create your new project."
+    },
+    "projectName": {
+      "title": "Project name",
+      "description": "Start typing..."
+    },
+    "soc": {
+      "heading": {
+        "name": {
+          "title": "Name"
+        },
+        "description": {
+          "title": "Description"
+        }
+      },
+      "label": {
+        "title": "Processor"
+      },
+      "placeholder": {
+        "title": "Search SOCs"
+      }
+    },
+    "board": {
+      "label": {
+        "title": "Board"
+      },
+      "standard": {
+        "name": {
+          "title": "Standard"
+        },
+        "default": {
+          "title": "Select EV Kit"
+        },
+        "procPackage": {
+          "title": "Processor Package",
+          "description": "Processor package for the selected board."
+        }
+      },
+      "custom": {
+        "name": {
+          "title": "Custom"
+        },
+        "header": {
+          "description": "Please enter or select your custom board file location."
+        },
+        "info": {
+          "description": "Please ensure the processor you have selected and the custom board file type are compatible."
+        },
+        "note": {
+          "description": "Note: \"myboard.mk\" for MSDK, \"myboard.yaml\" for Zephyr."
+        },
+        "boardName": {
+          "title": "Board Name",
+          "description": "The 'BOARD' string to be passed to the build system."
+        },
+        "package": {
+          "label": {
+            "title": "Package"
+          },
+          "select": {
+            "title": "Select Package"
+          }
+        }
+      }
+    },
+    "firmware": {
+      "label": {
+        "title": "Firmware Platform"
+      },
+      "select": {
+        "title": "Select Firmware Platform"
+      }
+    },
+    "template": {
+      "heading": {
+        "template": {
+          "title": "Template"
+        },
+        "description": {
+          "title": "Description"
+        }
+      },
+      "label": {
+        "title": "Template"
+      },
+      "placeholder": {
+        "title": "Search Templates"
+      }
+    },
+    "location": {
+      "label": {
+        "title": "Project Location"
+      },
+      "default": {
+        "title": "Use default location"
+      }
+    }
+  },
+  "homepage": {
+    "header": {
+      "title": "CFS Homepage"
+    },
+    "title": {
+      "welcome": {
+        "title": "CodeFusion Studio"
+      },
+      "showAtStartup": {
+        "title": "Show at startup"
+      }
+    },
+    "help": {
+      "title": "Welcome to CodeFusion Studio",
+      "description": "<p>Use the <strong>Quick Access</strong> panel to create or open a workspace, or to load configuration and ELF files </p> <p>To get started with your environment setup, check out the <strong>Walkthrough</strong></p><p>Explore the <strong>Helpful Resources</strong> carousel for technical articles and videos, or find platform-specific datasheets, user guides, and documentation links under <strong>Documentation Related to Your Projects</strong></p><p>Need more? Click <strong>View more online documentation</strong> to browse the full knowledge base</p>"
+    },
+    "onlineHelp": {
+      "title": "Online Help"
+    },
+    "engineerZone": {
+      "title": "Engineer Zone"
+    },
+    "github": {
+      "title": "GitHub"
+    },
+    "techSupport": {
+      "title": "Tech Support"
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "newWorkspace": {
+        "title": "New Workspace"
+      },
+      "openWorkspace": {
+        "title": "Open Workspace"
+      },
+      "openConfigFile": {
+        "title": "Open Config File"
+      },
+      "openElfFile": {
+        "title": "Open ELF File"
+      }
+    },
+    "walkthrough": {
+      "title": "Walkthrough",
+      "getStarted": {
+        "title": "Get started with the CodeFusion Studio VS Code extension"
+      },
+      "setup": {
+        "title": "Set up your environment and create your first project."
+      }
+    },
+    "carousel": {
+      "title": "Helpful Resources"
+    },
+    "documentation": {
+      "title": "Documentation Related to Your Projects",
+      "seeMore": {
+        "title": "View more online documentation"
+      }
+    }
+  },
+  "wrksp": {
+    "soc-selection": {
+      "description": "<p>Select the System on Chip (SoC) for your workspace from the list. Use the search bar to quickly find a specific SoC by name.",
+      "help": {
+        "title": "Select an SoC"
+      }
+    },
+    "board-selection": {
+      "description": "<p>Choose the appropriate board and package configuration for your SoC. <ul> <li><strong>Standard Boards and Packages:</strong> Ideal for quick setup and rapid prototyping, these are pre-configured boards suitable for a variety of applications. Click the documentation link for more information about each board.</li> <li><strong>Custom Board Packages:</strong> Select this option if you are working with a custom board. Note that fewer templates are available for custom board packages.</li></ul></p>",
+      "help": {
+        "title": "Select a Board and Package"
+      }
+    },
+    "cores-selection": {
+      "description": "<p>Select the cores for your workspace. Start with the primary core, which must be configured before you can continue. You can then add and configure additional cores as needed.<ol><li><strong>Select a core:</strong> Check the box next to the core you want to configure, starting with the primary core.</li><li><strong>Configure the core:</strong> With the core selected, click <strong>Config Options</strong> (to the right of the configuration status) to open the <strong>Core Configuration</strong> page.</li><li><strong>Apply configuration:</strong> On the configuration page, set options such as the firmware platform. Click <strong>Apply</strong> to save settings and return to the page.</li><li><strong>Review configuration:</strong> After applying settings, you can expand the configured core to review details before proceeding.</li></ol>Repeat these steps for any other cores you wish to configure.</p>",
+      "help": {
+        "title": "Select Cores for your Workspace"
+      }
+    },
+    "core-config": {
+      "description": "<p>Select a firmware platform and configure its options for your core. <ol><li><strong>Select a platform:</strong> Browse or use filters to select a specific firmware platform.</li><li><strong>Configure platform options:</strong> Set up the available options. These options vary depending on the selected platform.</li> <li><strong>Apply configuration:</strong> Click <strong>Apply</strong> to save your settings and return to the previous page.</li> </ol></p>",
+      "help": {
+        "title": "Configure the Core"
+      }
+    },
+    "path-selection": {
+      "description": "<p>Review your workspace settings, and choose a workspace name and location. <ul> <li><strong>Summary:</strong> Check the summary of your selected options, including SoC, board and package, and template details. You can go back to earlier steps to make changes if needed.</li> <li><strong>Workspace name: </strong> Enter a name for your workspace (required).</li><li><strong>Workspace location: </strong> Use the default location or uncheck the box and click <strong>Browse</strong> to select a different location.</li></ul></p>",
+      "help": {
+        "title": "Review and Create your Workspace"
+      }
+    },
+    "template-selection": {
+      "description": "<p>Browse available templates for your selected SoC. Use the search bar or filter options to find templates suited to specific firmware platforms, such as MSDK or Zephyr.</p>",
+      "help": {
+        "title": "Browse Templates"
+      }
+    },
+    "workspace-options": {
+      "description": "<p>Choose a workspace creation option. <ul> <li><strong>Select a workspace template:</strong> Choose from SoC predefined templates that come pre-populated with ADI recommended configurations. These templates provide a quick start with settings optimized for your SoC.</li> <li><strong>Manually configure the workspace:</strong> Continue setting up your system configuration manually for full control over every detail.</li></ul></p>",
+      "help": {
+        "title": "Choose a Workspace Creation Option"
       }
     }
   }

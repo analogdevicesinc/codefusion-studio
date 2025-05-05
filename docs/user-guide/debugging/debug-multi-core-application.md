@@ -1,7 +1,7 @@
 ---
 description: Debugging a multi core application in CodeFusion Studio
 author: Analog Devices
-date: 2024-09-02
+date: 2025-04-22
 ---
 
 # Debug a multi core application
@@ -18,7 +18,23 @@ The secondary core is enabled with a code sequence on the primary core. Debuggin
 
 See [Supported processors](../about/supported-processors.md) for a full list of supported processors.
 
-## RV_ARM_Loader example
+## Create a multi-core workspace
+
+To get started, you need to create a multi-core workspace. There are two options:
+
+1. [Create a multi-core workspace using the Workspace Creation Wizard](debug-multi-core-application.md#option-1-create-a-multi-core-workspace-using-the-workspace-creation-wizard)
+2. [Create a multi-core workspace by combining two SDK examples](debug-multi-core-application.md#option-2-create-a-multi-core-workspace-by-combining-sdk-examples)
+
+## Option 1: Create a multi-core workspace using the Workspace Creation wizard
+
+1. Click the CodeFusion Studio icon ![CodeFusion Studio Icon](../about/images/cfs-icon-dark.png#only-dark) ![CodeFusion Studio Icon](../about/images/cfs-icon-light.png#only-light) in the VS Code activity bar.
+1. Click **New Workspace**.
+1. Select the **MAX78002** processor and **EvKIT_V1** board.
+1. Choose **Select a workspace template** and select the MSDK multi-core example.
+1. Click **Continue**.
+1. Enter a name for your workspace and click **Create Workspace**.
+
+## Option 2: Create a multi-core workspace by combining SDK examples
 
 The `MAX78002` RV_ARM_Loader example is located within the CodeFusion Studio installation at `<CodeFusion Studio Install>/SDK/MAX/Examples/MAX78002/RV_ARM_Loader`. This example uses the Arm processor to load and prepare the RISC-V processor to run a chosen program.
 
@@ -44,35 +60,61 @@ The `MAX78002` RV_ARM_Loader example is located within the CodeFusion Studio ins
     RISCV_APP=../Hello_World
     ```
 
-### Set up a workspace
+1. Create a new directory, such as `MAX78002_Multicore`, outside of the SDK examples folder.
 
-!!! Warning
-    Copy the example it into a new directory before modifying it so the original example can be restored.
-
-1. Place the `MAX78002` `Hello_World` example (or the example you'd like to run on the RISC-V processor) in the same directory as the `MAX78002` `RV_ARM_Loader` example.
+2. Copy the `MAX78002` `Hello_World` example (or the example you'd like to run on the RISC-V processor) and the `MAX78002` `RV_ARM_Loader` example into the `MAX78002_Multicore` directory.
 
     !!! note
-        If the `Hello_World` project doesn't reside at `../Hello_World` relative to `RV_ARM_Loader` or you want to use a different project, you will need to update the `project.mk` within the `RV_ARM_Loader` example.
+        If the `Hello_World` project isn't located at `../Hello_World` relative to `RV_ARM_Loader`, or if you are using a different project, you will need to update the `RISCV_APP` path in `RV_ARM_Loader/project.mk`.
 
-2. Click **File** > **Open Folder** to open the `MAX78002` `RV_ARM_Loader` example in a single-folder workspace.
+3. Click **File** > **Open Folder** to open the copied `RV_ARM_Loader` folder as single-folder workspace.
 
-3. Click **File** > **Add Folder to Workspace** to add the `MAX78002` `Hello_World` example to the workspace.
+4. Click **File** > **Add Folder to Workspace** to add the copied `Hello_World` folder.
 
     !!! note
-        Convert the projects to CodeFusion Studio projects if required. See [Open and Migrate Example](../projects/open-and-migrate-example.md) for more info.
+        Convert the projects to CodeFusion Studio workspaces if required. See [Open and Migrate Example](../workspaces/open-and-migrate-example.md) for more info.
 
-4. Run the [CFS: build](../projects/tasks.md) to create the build directory which contains the ELF files for the Arm processor. These files are used for the program file settings.
-    - `build/RV_ARM_Loader.elf`
-    - `build/buildrv/riscv.elf`
+## Build the projects
 
-### Debug settings
+Run the [CFS: build](../workspaces/tasks.md) to create the build directory and generate the ELF files needed for debugging.
 
-1. Launch the Arm debug instance using the **CFS: Cortex Debug with GDB and OpenOCD (ARM Embedded)** debug configuration.
-2. Select configuration/image files if prompted.
-3. After the Arm debug session reaches the breakpoint in the main.c code, press **Continue** on the debugging tool bar or **F5**.
-4. Confirm RISC-V is running by observing LED0 blinking, or pause the Arm core to check it has passed the call to `MXC_SYS_RISCVRun();`
-5. Launch the RISC-V debug instance using the **CFS: Debug with GDB and OpenOCD (RISC-V)** debug configuration.
-6. Select configuration/image files if prompted.
+- Click the **CFS icon** ![cfs-icon](../about/images/cfs-icon-light.png#only-light) ![cfs-icon](../about/images/cfs-icon-dark.png#only-dark) in the **Activity Bar**.
+- Select **Build (m4)** or **Build (RV_ARM_Loader)** in the **Actions** view.
+
+This action creates the following files:
+
+- `build/m4.elf` or `build/RV_ARM_Loader.elf`
+- `build/buildrv/riscv.elf`
+
+## Debug settings
+
+1. Select the **Run and Debug** icon on the activity bar.
+2. Select the **CFS: Debug with GDB and OpenOCD (Arm Embedded)** from the dropdown menu.
+3. Click on the **Start Debugging** icon (green play button) to the left of your selection or press **F5**.
+4. Select configuration or image files if prompted.
+
+    !!! note
+        If prompted to specify the Arm ELF binary, the path depends on your project layout:
+
+        - If you are using the `m4` core directory from the template use:  
+        `<workspace-folder>/m4/build/m4.elf`
+
+        - If you are using the `RV_ARM_Loader` example use:  
+        `<workspace-folder>/RV_ARM_Loader/build/RV_ARM_Loader.elf`.
+
+5. When the Arm debug session reaches the breakpoint in the main.c code, press **Continue** on the debugging tool bar or **F5**.
+6. Confirm RISC-V is running by observing LED0 blinking, or pause the Arm core to check it has passed the call to `MXC_SYS_RISCVRun();`
+7. Launch the RISC-V debug instance using the **CFS: Debug with GDB and OpenOCD (RISC-V)** debug configuration.
+8. Select configuration/image files if prompted.
+
+    !!! note
+        If prompted to specify the RISC-V ELF binary, the path depends on your project layout:
+
+        - If you are using the `m4` core directory from the template use:  
+        `<workspace-folder>/m4/build/buildrv/riscv.elf`
+
+        - If you are using the `RV_ARM_Loader` example use:  
+        `<workspace-folder>/RV_ARM_Loader/build/buildrv/riscv.elf`
 
 ## Control the session
 

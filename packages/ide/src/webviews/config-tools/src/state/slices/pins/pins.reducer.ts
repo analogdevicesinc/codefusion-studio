@@ -15,26 +15,20 @@
 import {type PayloadAction, createSlice} from '@reduxjs/toolkit';
 import type {
 	AppliedSignal,
-	ConfigFields,
-	ControlCfg,
 	PinCanvas,
-	PinDictionary,
-	RegisterDictionary
+	PinDictionary
 } from '@common/types/soc';
-import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
-import {
-	getCachedSocControls,
-	getSocControlsDictionary
-} from '../../../utils/soc-controls';
-import {computeDefaultValues} from '../../../utils/compute-register-value';
+import {getControlsFromCache} from '../../../utils/api';
 import type {ControlErrorTypes} from '../../../types/errorTypes';
-import {getFirmwarePlatform} from '../../../utils/firmware-platform';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {getSocPinDictionary} from '../../../utils/soc-pins';
+import {computeNextPinConfig} from '../../../utils/pin-reset-controls';
 
 type PinsState = {
 	pins: PinDictionary;
 	pinDetailsTargetPin: string | undefined;
 	canvas: PinCanvas | undefined;
-	pinConfig: ControlCfg[];
+	hoveredPin: string | undefined;
 };
 
 type Control = {
@@ -44,14 +38,33 @@ type Control = {
 	control: string;
 	controlValue: string;
 	errType?: ControlErrorTypes;
+	pluginOption?: boolean;
 };
 
 export const pinsInitialState: PinsState = {
 	pins: {} satisfies PinDictionary,
 	pinDetailsTargetPin: undefined,
 	canvas: undefined,
-	pinConfig: []
+	hoveredPin: undefined
 };
+
+function removeSignalFromPin(
+	state: PinsState,
+	{
+		Pin,
+		Peripheral,
+		Name
+	}: {Pin: string; Peripheral: string | undefined; Name: string}
+) {
+	const targetPin = state.pins[Pin];
+
+	if (targetPin) {
+		targetPin.appliedSignals = targetPin.appliedSignals.filter(
+			signal =>
+				!(signal.Name === Name && signal.Peripheral === Peripheral)
+		);
+	}
+}
 
 const pinsSlice = createSlice({
 	name: 'Pins',
@@ -64,13 +77,43 @@ const pinsSlice = createSlice({
 			state.pins[payload.id].isFocused = payload.isFocused;
 		},
 		focusPinSet(state, {payload}: PayloadAction<string[]>) {
-			payload.forEach(pinId => {
-				if (pinId && state.pins[pinId]) {
-					state.pins[pinId].isFocused = true;
+			const pinsToFocus = payload.reduce<Record<string, boolean>>(
+				(acc, pinId) => {
+					acc[pinId] = true;
+
+					return acc;
+				},
+				{}
+			);
+
+			// Each new focus will involve unfocusing previously focused pins
+			// To avoid having two dispatches, we will unfocus all pins first
+			for (const pinId in state.pins) {
+				if (Object.prototype.hasOwnProperty.call(state.pins, pinId)) {
+					if (state.pins[pinId].isFocused && !pinsToFocus[pinId]) {
+						state.pins[pinId].isFocused = false;
+					} else if (pinsToFocus[pinId]) {
+						state.pins[pinId].isFocused = true;
+					}
 				}
-			});
+			}
 		},
-		unfocusPinSet(state, {payload}: PayloadAction<string[]>) {
+		unfocusPinSet(
+			state,
+			{payload}: PayloadAction<string[] | undefined>
+		) {
+			if (!payload) {
+				for (const pinId in state.pins) {
+					if (
+						Object.prototype.hasOwnProperty.call(state.pins, pinId)
+					) {
+						state.pins[pinId].isFocused = false;
+					}
+				}
+
+				return;
+			}
+
 			payload.forEach(pinId => {
 				if (pinId && state.pins[pinId]) {
 					state.pins[pinId].isFocused = false;
@@ -80,93 +123,112 @@ const pinsSlice = createSlice({
 		setAppliedSignal(
 			state,
 			{
-				payload: {Pin, Peripheral, Name, registers}
+				payload: {Pin, Peripheral, Name, PinCfg}
 			}: PayloadAction<
 				AppliedSignal &
 					Partial<{
 						discardPersistence: boolean;
-					}> & {registers: RegisterDictionary[]}
+					}>
 			>
 		) {
 			const targetPin = state.pins[Pin];
-			const initialPinCfg: Record<string, string> = {};
-			let computedResetValues: Record<string, string> = {};
-			let filteredSourcePinCfg: ConfigFields = {};
-			const controlsDict = getSocControlsDictionary('PinConfig');
-			const firmwarePlatform = getFirmwarePlatform();
-			const getControlFirmwarePlatforms = (controlId: string) =>
-				state.pinConfig.find(config => config.Id === controlId)
-					?.FirmwarePlatforms;
 
-			const sourcePinCfg = state.pins[Pin].details?.Signals?.find(
-				signal =>
-					signal.Name === Name && signal.Peripheral === Peripheral
-			)?.PinConfig;
-
-			if (sourcePinCfg) {
-				// Only keep the correct controls based on firmware platform
-				filteredSourcePinCfg = Object.keys(
-					sourcePinCfg ?? {}
-				).reduce<ConfigFields>((acc, controlId) => {
-					if (
-						!getControlFirmwarePlatforms(controlId) ||
-						!firmwarePlatform ||
-						getControlFirmwarePlatforms(controlId)?.some(fw =>
-							firmwarePlatform
-								?.toLowerCase()
-								.includes(fw.toLowerCase())
-						)
-					) {
-						acc[controlId] = sourcePinCfg[controlId];
-					}
-
-					return acc;
-				}, {});
-
-				const signalName =
-					targetPin.details?.Signals?.find(
-						signal =>
-							signal.Name === Name && signal.Peripheral === Peripheral
-					)?.Name ?? '';
-
-				computedResetValues = computeDefaultValues(
-					filteredSourcePinCfg,
-					registers,
-					getCachedSocControls('PinConfig'),
-					{Name: signalName}
-				);
-
-				let augmentedCfg: Record<string, string> | undefined =
-					computedResetValues;
-
-				if (augmentedCfg && signalName) {
-					augmentedCfg = {...computedResetValues};
-					augmentedCfg.Name = signalName;
-				}
-
-				Object.entries(filteredSourcePinCfg).forEach(
-					([controlKey]) => {
-						if (
-							evaluateCondition(
-								augmentedCfg,
-								controlsDict[controlKey]?.Condition
-							)
-						) {
-							initialPinCfg[controlKey] =
-								computedResetValues[controlKey];
-						}
-					}
-				);
+			if (!targetPin) {
+				return;
 			}
 
-			if (targetPin) {
+			targetPin.appliedSignals.push({
+				Pin,
+				Peripheral,
+				Name,
+				PinCfg
+			});
+		},
+		assignCoprogrammedSignal(
+			state,
+			{
+				payload
+			}: PayloadAction<
+				Array<
+					AppliedSignal &
+						Partial<{
+							discardPersistence: boolean;
+						}>
+				>
+			>
+		) {
+			for (const signal of payload) {
+				const {Pin, Peripheral, Name, PinCfg} = signal;
+				const targetPin = state.pins[Pin];
+
+				if (!targetPin) {
+					continue;
+				}
+
 				targetPin.appliedSignals.push({
 					Pin,
 					Peripheral,
 					Name,
-					PinCfg: initialPinCfg,
-					ControlResetValues: computedResetValues
+					PinCfg
 				});
+			}
+		},
+		setMultiSignalConfig(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				signals: Array<{
+					Pin: string;
+					Peripheral: string;
+					Name: string;
+					PinCfg: Record<string, any>;
+				}>;
+			}>
+		) {
+			for (const signal of payload.signals) {
+				const targetPin = state.pins[signal.Pin];
+
+				if (!targetPin) {
+					continue;
+				}
+
+				const signalToUpdate = targetPin.appliedSignals.find(
+					s =>
+						s.Name === signal.Name &&
+						s.Peripheral === signal.Peripheral
+				);
+
+				if (signalToUpdate) {
+					signalToUpdate.PinCfg = signal.PinCfg;
+				}
+			}
+		},
+		updateSignalConfig(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				Pin: string;
+				Peripheral: string;
+				Signal: string;
+				PinCfg: Record<string, any>;
+			}>
+		) {
+			const targetPin = state.pins[payload.Pin];
+
+			if (!targetPin) {
+				return;
+			}
+
+			const signalToUpdate = targetPin.appliedSignals.find(
+				signal =>
+					signal.Name === payload.Signal &&
+					signal.Peripheral === payload.Peripheral
+			);
+
+			if (signalToUpdate) {
+				signalToUpdate.PinCfg = payload.PinCfg;
 			}
 		},
 		removeAppliedSignal(
@@ -180,15 +242,19 @@ const pinsSlice = createSlice({
 					}>
 			>
 		) {
-			const targetPin = state.pins[Pin];
-
-			if (targetPin) {
-				targetPin.appliedSignals = targetPin.appliedSignals.filter(
-					signal =>
-						!(
-							signal.Name === Name && signal.Peripheral === Peripheral
-						)
-				);
+			removeSignalFromPin(state, {Pin, Peripheral, Name});
+		},
+		removeAppliedCoprogrammedSignals(
+			state,
+			{
+				payload
+			}: PayloadAction<
+				Array<AppliedSignal & Partial<{discardPersistence: boolean}>>
+			>
+		) {
+			for (const signal of payload) {
+				const {Pin, Peripheral, Name} = signal;
+				removeSignalFromPin(state, {Pin, Peripheral, Name});
 			}
 		},
 		setPinDetailsTargetPin(
@@ -200,98 +266,122 @@ const pinsSlice = createSlice({
 		setAppliedSignalControlValue(
 			state,
 			{
-				payload: {controls}
+				payload: {control, projectId}
 			}: PayloadAction<{
-				controls: Control[];
+				control: Control;
+				projectId?: string;
 				discardPersistence?: boolean;
 			}>
 		) {
-			controls.forEach(controlData => {
-				const {
-					Peripheral,
-					Name,
-					pinId,
-					control,
-					controlValue,
-					errType
-				} = controlData;
+			const socPins = getSocPinDictionary();
 
-				if (Peripheral && Name && pinId) {
-					const sourcePinCfg = state.pins[
-						pinId
-					].details?.Signals?.find(
-						signal =>
-							signal.Name === Name && signal.Peripheral === Peripheral
-					)?.PinConfig;
+			const {
+				Peripheral,
+				Name,
+				pinId,
+				control: controlKey,
+				controlValue,
+				errType,
+				pluginOption = false
+			} = control;
 
-					const targetAssignedPin = state.pins[
-						pinId
-					].appliedSignals.find(
-						appliedSignal =>
-							appliedSignal.Peripheral === Peripheral &&
-							appliedSignal.Name === Name
+			if (Peripheral && Name && pinId) {
+				const sourcePinCfg = socPins[pinId]?.Signals?.find(
+					signal =>
+						signal.Name === Name && signal.Peripheral === Peripheral
+				)?.PinConfig;
+
+				const controlsList = projectId
+					? (getControlsFromCache(
+							CONTROL_SCOPES.PIN_CONFIG,
+							projectId
+						)?.PinConfig ?? [])
+					: [];
+
+				// Include only controls that have a configuration step present in the SoC
+				const filteredControls = controlsList.filter(control => {
+					if (control.PluginOption) return true;
+
+					return Object.prototype.hasOwnProperty.call(
+						sourcePinCfg ?? {},
+						control.Id
 					);
+				});
 
-					if (targetAssignedPin) {
-						targetAssignedPin.Errors = {
-							...targetAssignedPin.Errors,
-							[control]: errType
-						};
+				const targetAssignedPin = state.pins[
+					pinId
+				].appliedSignals.find(
+					appliedSignal =>
+						appliedSignal.Peripheral === Peripheral &&
+						appliedSignal.Name === Name
+				);
 
-						if (
-							Object.values(targetAssignedPin.Errors).every(
-								error => !error
-							)
-						)
-							delete targetAssignedPin.Errors;
-					}
+				if (targetAssignedPin) {
+					targetAssignedPin.Errors = {
+						...targetAssignedPin.Errors,
+						[controlKey]: errType
+					};
 
 					if (
-						sourcePinCfg &&
-						targetAssignedPin?.PinCfg?.[control] !== undefined
-					) {
-						targetAssignedPin.PinCfg[control] = controlValue;
-						const controls = getSocControlsDictionary('PinConfig');
-
-						Object.keys(sourcePinCfg).forEach(controlKey => {
-							const targetAssignedPinCfg = targetAssignedPin?.PinCfg;
-
-							const defaultValueForControl =
-								targetAssignedPin?.ControlResetValues?.[controlKey];
-
-							let augmentedCfg: Record<string, string> | undefined =
-								targetAssignedPinCfg;
-
-							if (augmentedCfg && Name) {
-								augmentedCfg = {...targetAssignedPinCfg};
-								augmentedCfg.Name = Name;
-							}
-
-							if (
-								evaluateCondition(
-									augmentedCfg,
-									controls[controlKey]?.Condition
-								)
-							) {
-								if (!targetAssignedPin.PinCfg) {
-									targetAssignedPin.PinCfg = {};
-								}
-
-								if (
-									targetAssignedPin.PinCfg[controlKey] ===
-										undefined &&
-									defaultValueForControl
-								) {
-									targetAssignedPin.PinCfg[controlKey] =
-										defaultValueForControl;
-								}
-							} else {
-								delete targetAssignedPin?.PinCfg?.[controlKey];
-							}
-						});
-					}
+						Object.values(targetAssignedPin.Errors).every(
+							error => !error
+						)
+					)
+						delete targetAssignedPin.Errors;
 				}
-			});
+
+				if (sourcePinCfg && targetAssignedPin) {
+					const newConfig = {
+						...(targetAssignedPin.PinCfg ?? {}),
+						[controlKey]: controlValue
+					};
+
+					targetAssignedPin.PinCfg = computeNextPinConfig({
+						controls: filteredControls,
+						pinId,
+						Name,
+						Peripheral,
+						newConfig
+					});
+				} else if (targetAssignedPin && pluginOption) {
+					// For plugin options, we need to set the value directly
+					targetAssignedPin.PinCfg = {
+						...targetAssignedPin.PinCfg,
+						[controlKey]: controlValue
+					};
+				}
+			}
+		},
+		setResetControlValues(
+			state,
+			{
+				payload: {Peripheral, Name, pinId, resetValues}
+			}: PayloadAction<{
+				Peripheral: string | undefined;
+				Name: string | undefined;
+				pinId: string | undefined;
+				resetValues: Record<string, string>;
+			}>
+		) {
+			if (pinId && Peripheral && Name) {
+				const targetAssignedPin = state.pins[
+					pinId
+				].appliedSignals.find(
+					appliedSignal =>
+						appliedSignal.Peripheral === Peripheral &&
+						appliedSignal.Name === Name
+				);
+
+				if (targetAssignedPin) {
+					targetAssignedPin.PinCfg = {...resetValues};
+				}
+			}
+		},
+		setHoveredPin(
+			state,
+			{payload: pinId}: PayloadAction<string | undefined>
+		) {
+			state.hoveredPin = pinId;
 		}
 	}
 });
@@ -303,7 +393,13 @@ export const {
 	setAppliedSignal,
 	removeAppliedSignal,
 	setPinDetailsTargetPin,
-	setAppliedSignalControlValue
+	setAppliedSignalControlValue,
+	setResetControlValues,
+	assignCoprogrammedSignal,
+	setMultiSignalConfig,
+	updateSignalConfig,
+	removeAppliedCoprogrammedSignals,
+	setHoveredPin
 } = pinsSlice.actions;
 
 export const pinsReducer = pinsSlice.reducer;

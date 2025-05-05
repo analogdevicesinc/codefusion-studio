@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,13 +35,15 @@ export interface AdditionalSettingType {
 	"cfs.openocd.target"?: string;
 	"cfs.openocd.riscvTarget"?: string;
 	"cfs.project.target"?: string;
+	"cfs.riscvProgramFile"?: string;
+	"cfs.riscvDebugPath"?: string;
 }
 
 /**
  * This namespace defines the object types used in Project Generation
  */
 export namespace ProjectGeneratorTypes {
-	export type FirmwarePlatform = "msdk" | "zephyr-3.7";
+	export type FirmwarePlatform = "msdk" | "zephyr-4.0";
 
 	export type TemplateLocation =
 		| {
@@ -63,8 +65,11 @@ export namespace ProjectGeneratorTypes {
 		name: string;
 		location: TemplateLocation;
 		boot?: boolean;
+		segger: SeggerOptions;
 	}
-
+	export interface SeggerOptions {
+		ozoneSvd: string;
+	}
 	/**
 	 * Object containing information about the template.
 	 */
@@ -99,6 +104,7 @@ export abstract class ProjectGenerator {
 	 * @param identifier - The identifier based on the firmware platform
 	 * @param socData - the SoC data from the data model
 	 * @param customBoardLocation - The location to the custom BSP
+	 * @param secure - Whether the project is in the secure domain or not
 	 * @returns true if the project is created, false if the project is not created.
 	 */
 	public abstract createProject(
@@ -110,7 +116,8 @@ export abstract class ProjectGenerator {
 		socPackage: string,
 		identifier: string,
 		socData?: Soc,
-		customBoardLocation?: string
+		customBoardLocation?: string,
+		secure?: boolean
 	): Promise<boolean>;
 
 	/**
@@ -271,5 +278,74 @@ export abstract class ProjectGenerator {
 				JSON.stringify(cfsconfigTemplate, undefined, 2)
 			);
 		}
+	}
+
+	protected addOzoneDebugFile(
+		projectLocation: fs.PathLike,
+		projectName: string,
+		socName: string,
+		elfFileRelativeLoc: string,
+		archSvdFile: string
+	) {
+		// Define the file path
+		const templatePath = path.join(
+			__dirname,
+			"templates",
+			"ozone.jdebug"
+		);
+		const ozoneFileName = `${projectName}.jdebug`;
+		const outputFilePath = path.join(
+			projectLocation.toString(),
+			ozoneFileName
+		);
+		// Read the file content synchronously
+		let data = fs.readFileSync(templatePath, "utf8");
+
+		//Getting the current date
+		// Parse the date string
+		const date = new Date();
+
+		// Format the date
+		const formattedDate = new Intl.DateTimeFormat("en-GB", {
+			year: "numeric",
+			month: "short",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false
+		}).format(date);
+
+		// Define the find and replace pairs
+		const replacements: { find: string; replace: string }[] = [
+			{
+				find: "##PROJECT_LOCATION##",
+				replace: projectLocation.toString().replace(/\\/g, "/")
+			},
+			{ find: "##SOC_NAME##", replace: socName },
+			{
+				find: "##ELF_FILE_RELATIVE_LOC##",
+				replace: elfFileRelativeLoc.replace(/\\/g, "/")
+			},
+			{
+				find: "##PROJECT_NAME##",
+				replace: projectName
+			},
+			{
+				find: "##DATE##",
+				replace: formattedDate
+			},
+			{
+				find: "##ARCH_SVD_FILE##",
+				replace: archSvdFile
+			}
+		];
+
+		// Perform the replacements
+		replacements.forEach((pair) => {
+			data = data.replace(new RegExp(pair.find, "g"), pair.replace);
+		});
+
+		// Write the modified content to the new file in the project location
+		fs.writeFileSync(outputFilePath, data, "utf8");
 	}
 }

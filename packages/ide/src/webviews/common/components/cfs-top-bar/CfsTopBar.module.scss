@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
+@use '#layout' as layout;
 
 .container {
 	position: sticky;
@@ -21,12 +22,13 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	height: 40px;
+	height: layout.$navbar-height;
 	width: 100%;
 	padding: 8px;
 	box-sizing: border-box;
 	background: colors.$navigation-background;
-	border-bottom: 1px solid colors.$default-border;
+	border: 1px solid colors.$default-border;
+	border-right: none;
 	color: colors.$navigation-color-inactive;
 	justify-content: space-between;
 

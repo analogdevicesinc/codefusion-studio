@@ -18,93 +18,135 @@ import {
 	removeAppliedSignal,
 	setAppliedSignal
 } from '../../state/slices/pins/pins.reducer';
-import {Suspense, lazy} from 'react';
+import FilterControls from './FilterControls';
+import {resetPinDictionary} from '../../utils/soc-pins';
 
 const mock = await import(
 	`../../../../../../../cli/src/socs/${Cypress.env('DEV_SOC_ID')}.json`
 );
 
-// Lazy loading components in tests allow the soc to be available before the component is rendered
-const FilterControls = lazy(async () => import('./FilterControls'));
-
-function LazyFilterControls() {
-	return (
-		<Suspense fallback={<div>Loading...</div>}>
-			<FilterControls />
-		</Suspense>
-	);
-}
-
 describe('Filter Controls', () => {
-	const reduxStore = configurePreloadedStore(mock as Soc);
-	const {registers} =
-		reduxStore.getState().appContextReducer.registersScreen;
+	before(() => {
+		resetPinDictionary();
 
-	it('Selects/deselects filters correctly', () => {
-		cy.mount(<LazyFilterControls />, reduxStore);
-
-		cy.dataTest('Assigned').click();
-
-		cy.dataTest('Assigned')
-			.should('have.attr', 'appearance')
-			.and('equal', 'primary');
-
-		cy.dataTest('Available').click();
-
-		cy.dataTest('Assigned')
-			.should('have.attr', 'appearance')
-			.and('equal', 'secondary');
+		window.localStorage.setItem(
+			'Package',
+			JSON.stringify(mock.Packages[0])
+		);
 	});
 
-	it('Does pin assignment and checks chip filters numbers', () => {
-		cy.mount(<LazyFilterControls />, reduxStore);
+	it('Selects/deselects filters correctly', () => {
+		const reduxStore = configurePreloadedStore(mock as Soc);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
 				Pin: '39',
 				Peripheral: 'ADC',
-				Name: 'AIN0',
-				registers
+				Name: 'AIN0'
 			})
 		);
 
-		cy.dataTest('Assigned')
-			.should('have.attr', 'data-value')
-			.and('equal', '31');
+		cy.mount(<FilterControls />, reduxStore);
 
-		cy.dataTest('Available')
+		cy.dataTest('filter-control:assigned').click();
+
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'appearance')
+			.and('equal', 'primary');
+
+		cy.dataTest('filter-control:available').click();
+
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'appearance')
+			.and('equal', 'secondary');
+	});
+
+	it('Does pin assignment and checks chip filters numbers', () => {
+		const reduxStore = configurePreloadedStore(mock as Soc);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'ADC',
+				Name: 'AIN0'
+			})
+		);
+
+		cy.mount(<FilterControls />, reduxStore);
+
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'data-value')
+			.and('equal', '1');
+
+		cy.dataTest('filter-control:available')
 			.should('have.attr', 'data-value')
 			.and('equal', '37');
 	});
 
 	it('Does pin conflict and checks chip filter numbers', () => {
-		cy.mount(<LazyFilterControls />, reduxStore);
+		const reduxStore = configurePreloadedStore(mock as Soc);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
 				Pin: '39',
-				Peripheral: 'GPIO3',
-				Name: 'P3.0',
-				registers
+				Peripheral: 'ADC',
+				Name: 'AIN0'
 			})
 		);
 
-		cy.dataTest('Conflicts')
-			.should('have.attr', 'data-value')
-			.and('equal', '1');
-	});
-
-	it('Removes pin conflict and disables conflict chip', () => {
-		cy.mount(<LazyFilterControls />, reduxStore);
-
 		reduxStore.dispatch(
-			removeAppliedSignal({
+			setAppliedSignal({
 				Pin: '39',
 				Peripheral: 'GPIO3',
 				Name: 'P3.0'
 			})
 		);
 
-		cy.dataTest('Conflicts').should('have.attr', 'disabled');
+		cy.mount(<FilterControls />, reduxStore);
+
+		cy.dataTest('filter-control:conflicts')
+			.should('have.attr', 'data-value')
+			.and('equal', '1');
+	});
+
+	it('Removes pin conflict and disables conflict chip', () => {
+		const reduxStore = configurePreloadedStore(mock as Soc);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'ADC',
+				Name: 'AIN0'
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'GPIO3',
+				Name: 'P3.0'
+			})
+		);
+
+		cy.mount(<FilterControls />, reduxStore).then(() => {
+			cy.wrap(
+				reduxStore.dispatch(
+					removeAppliedSignal({
+						Pin: '39',
+						Peripheral: 'GPIO3',
+						Name: 'P3.0'
+					})
+				)
+			).then(() => {
+				cy.dataTest('filter-control:conflicts')
+					.should('have.attr', 'appearance')
+					.and('equal', 'secondary');
+
+				cy.dataTest('filter-control:conflicts').should(
+					'have.attr',
+					'disabled'
+				);
+			});
+		});
 	});
 });

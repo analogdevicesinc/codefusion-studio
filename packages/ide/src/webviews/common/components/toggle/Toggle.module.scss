@@ -12,27 +12,40 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
 .switch {
 	position: relative;
+	display: block;
 	width: 28px;
 	height: 16px;
+
+	&:focus .slider {
+		outline: 1px solid colors.$focus-border;
+	}
 
 	input {
 		display: none;
 
 		&:checked + .slider {
-			background-color: colors.$button-background;
-		}
-
-		&:focus + .slider {
-			box-shadow: 0 0 1px colors.$default-shadow;
+			background-color: colors.$button-primary-hover-background;
 		}
 
 		&:checked + .slider:before {
 			transform: translateX(12px);
 		}
+
+		&:checked:hover + .slider {
+			background-color: colors.$button-primary-hover-background;
+		}
+
+		&:not(:checked):hover + .slider {
+			background-color: colors.$button-secondary-hover-background;
+		}
+	}
+
+	&:focus input:checked + .slider {
+		background-color: colors.$button-background;
 	}
 
 	.slider {
@@ -52,7 +65,7 @@
 			width: 12px;
 			top: 2px;
 			left: 2px;
-			background-color: colors.$default-foreground;
+			background-color: colors.$checkbox-foreground;
 			transition: 0.4s;
 		}
 
@@ -68,14 +81,4 @@
 
 .disabled {
 	cursor: not-allowed !important;
-}
-
-.icon {
-	cursor: pointer;
-	display: flex;
-	min-width: 12.5px;
-
-	path {
-		fill: #{colors.$default-foreground};
-	}
 }

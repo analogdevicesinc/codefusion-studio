@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,28 @@
  * limitations under the License.
  *
  */
-import TwoColumnLayout from '../../components/main-layout/MainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
 import PinmuxHeader from './header/PinmuxHeader';
 import PinmuxSide from './side/Side';
 import PackageDisplay from './package-display/PackageDisplay';
 import {useEffect, useState} from 'react';
 import EightColumnLayout from '../../components/eight-column-layout/EightColumnLayout';
+import PinConfigSidebar from './pin-config-sidebar/pin-config-sidebar';
+import {useAppDispatch} from '../../state/store';
+import {
+	setActivePeripheral,
+	setActiveSignal
+} from '../../state/slices/peripherals/peripherals.reducer';
+import {
+	useActivePeripheral,
+	useActiveSignal
+} from '../../state/slices/peripherals/peripherals.selector';
+import styles from './pin-mux.module.scss';
 
 function PinMUX() {
+	const dispatch = useAppDispatch();
+	const activeSignal = useActiveSignal();
+	const peripheral = useActivePeripheral();
 	const [innerWidth, setInnerWidth] = useState(window.innerWidth);
 	const [innerHeight, setInnerHeight] = useState(window.innerHeight);
 
@@ -36,18 +50,36 @@ function PinMUX() {
 		};
 	}, []);
 
+	useEffect(
+		() => () => {
+			// Assure that the config task bar is always closed when navigating from pinmux screen
+			dispatch(setActivePeripheral(undefined));
+			dispatch(setActiveSignal(undefined));
+		},
+		[dispatch]
+	);
+
 	return innerWidth < 900 || innerHeight < 475 ? (
 		<EightColumnLayout
-			header='Pin Mux'
+			header='Pin Config'
 			subtitle='This feature is not currently supported for windows this size. If possible please increase the size of this window.'
 		/>
 	) : (
-		<TwoColumnLayout
-			header={<PinmuxHeader />}
-			sidePanel={<PinmuxSide />}
-			mainPanel={<PackageDisplay />}
-			sidePanelId='peripheral-navigation'
-		/>
+		<CfsTwoColumnLayout>
+			<div slot='header'>
+				<PinmuxHeader />
+			</div>
+			<div slot='side-panel' id='peripheral-navigation'>
+				<PinmuxSide />
+			</div>
+
+			<PackageDisplay />
+			<div className={styles.sidePanelContainer}>
+				<PinConfigSidebar
+					isMinimised={!activeSignal || !peripheral}
+				/>
+			</div>
+		</CfsTwoColumnLayout>
 	);
 }
 

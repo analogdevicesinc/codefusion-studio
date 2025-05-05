@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 export default function Help() {
 	return (
 		<svg
-			width='14'
-			height='14'
-			viewBox='0 0 14 14'
+			width='16'
+			height='16'
+			viewBox='0 0 16 16'
 			fill='none'
 			xmlns='http://www.w3.org/2000/svg'
 		>

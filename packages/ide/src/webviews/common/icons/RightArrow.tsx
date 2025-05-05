@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-export default function RightArrow() {
+import {memo} from 'react';
+
+function RightArrow() {
 	return (
 		<svg
 			width='5'
@@ -25,3 +27,5 @@ export default function RightArrow() {
 		</svg>
 	);
 }
+
+export default memo(RightArrow);

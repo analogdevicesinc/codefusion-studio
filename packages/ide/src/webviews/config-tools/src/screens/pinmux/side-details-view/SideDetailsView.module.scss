@@ -12,31 +12,68 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/fonts';
-@use '@common/styles/colors';
+@use '#fonts' as fonts;
+@use '#colors' as colors;
 
-.title {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin: 0 0 16px 0;
+.titleContainer {
+	border-bottom: 1px solid colors.$default-border;
+
+	.title {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		padding: 8px 32px;
+		padding-bottom: 12px;
+		margin-bottom: 4px;
+	}
 
 	.pinName {
 		color: colors.$disabled-foreground;
 	}
+
+	& h3 {
+		margin: 0;
+	}
+}
+
+.reservedPinContainer {
+	padding: 8px 32px 4px 32px;
 }
 
 .peripheralGroup {
-	margin-bottom: 12px;
+	padding: 8px 32px 4px 32px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid colors.$default-border;
 }
 
 .body {
 	font-size: fonts.$font-size-small;
-	margin-left: 32px;
-	margin-right: 16px;
 
-	& h4 {
+	.groupTitle {
+		padding: 0 0 4px 0;
 		font-weight: 700;
 		margin: 0;
+	}
+}
+
+.conflictContainer {
+	padding: 4px 32px;
+	padding-bottom: 0px;
+	margin-bottom: 16px;
+
+	.notification {
+		background: colors.$notifications-background;
+		gap: 4px;
+		display: flex;
+		align-items: center;
+		border: 1px solid colors.$default-border;
+		padding: 8px;
+		box-sizing: border-box;
+	}
+
+	& p {
+		font-size: fonts.$font-size-m;
+		margin: 0;
+		flex-grow: 1;
 	}
 }

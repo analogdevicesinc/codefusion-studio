@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,9 +12,24 @@
  * limitations under the License.
  *
  */
-﻿/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-namespace */
 import { Dwarf } from "./Dwarf.js";
 import { DwarfData } from "./DwarfData.js";
+
+/// Debug: Check DWARF implementation against the command "nm -l"
+// 1. Dump the address next to the path and the line to ~/x_ts. Sort by address
+// $ ./run.js elf info /mnt/c/_/work/tmp/1/MyProject_zepyre2/m4/build/zephyr/zephyr.elf --debug_syms > x
+// $ grep path x | grep -oE -e "\"(.+)\": " -e " addr:0[xX]([0-9a-fA-F]+) " -e " path:(.+) line:([0-9]+)" | sed s/addr:0x//g | sed s/path://g | sed s/" line:"/:/g | sed s/^\"//g | sed s/\"://g | paste - - - | awk '{print $2" "$1" "$3}' | sort > x_ts
+// 2. Dump nm output to ~/x_nm. In my case all paths contain the word "work". Sort by address
+// $ ~/nm-new -l /mnt/c/_/work/tmp/1/MyProject_zepyre2/m4/build/zephyr/zephyr.elf | grep work | awk '{print $1" "$3" "$4}' | sort > ~/x_nm
+// Check the output. It is possible to manually adjust the file for the diff command to work
+// $ vimdiff ~/x_ts ~/x_nm
+
+/// Debug: check line table opcodes:
+// for opcode instructions:
+// $ readelf --debug=line <file>
+// for decoded opcode files and lines:
+// $ readelf --debug=line <file>
 
 export namespace DwarfLine {
 	// The expected number of arguments for standard opcodes.  This is
@@ -195,8 +210,12 @@ export namespace DwarfLine {
 	export class LineTable {
 		dv: DataView = null;
 		sec: Dwarf.Section = null;
+		secStr: Dwarf.Section = null;
+		cuOffset = 0;
+		debug = false;
 
 		// Header information
+		version: number;
 		programOffset: number;
 		minimumInstruction_length: number; // ubyte
 		maximumOperationsPerInstruction: number; // ubyte
@@ -240,12 +259,20 @@ export namespace DwarfLine {
 		constructor(
 			dv: DataView,
 			secLine: Dwarf.Section,
+			secLineStr: Dwarf.Section,
 			cuOffset: number,
 			cuAddrSize: number,
 			cuCompDir: string,
 			cuName: string,
+			debug: boolean,
 		) {
 			this.dv = dv;
+			// Clone because we modify addrSize file!
+			if (secLineStr) {
+				this.secStr = secLineStr.clone();
+			}
+			this.cuOffset = cuOffset;
+			this.debug = debug;
 
 			// XXX DWARF2 and 3 give a weird specification for DW_AT_comp_dir
 
@@ -264,14 +291,27 @@ export namespace DwarfLine {
 			this.sec.addrSize = cuAddrSize;
 
 			// Basic header information
-			const version = cur.fixedUInt16(); // uhalf
-			if (version < 2 || version > 4)
-				throw new Error("unknown line number table version " + version);
+			this.version = cur.fixedUInt16(); // uhalf
+			if (this.version < 2 || this.version > 5)
+				throw new Error("unknown line number table version " + this.version);
+
+			if (this.version >= 5) {
+				const addrSize = cur.fixedUInt8(); // ubyte
+				this.sec.addrSize = addrSize;
+				if (this.secStr) {
+					this.secStr.addrSize = addrSize;
+				}
+				// Ignore the segment selector.
+				cur.fixedUInt8();
+			}
+
 			const header_length = cur.offset();
 			this.programOffset = cur.getSectionOffset() + header_length;
 			this.minimumInstruction_length = cur.fixedUInt8(); // ubyte
 			this.maximumOperationsPerInstruction = 1;
-			if (version >= 4) this.maximumOperationsPerInstruction = cur.fixedUInt8(); // ubyte
+			if (this.version >= 4) {
+				this.maximumOperationsPerInstruction = cur.fixedUInt8(); // ubyte
+			}
 			if (this.maximumOperationsPerInstruction == 0)
 				throw new Error(
 					"maximum_operations_per_instruction cannot be 0 in line number table",
@@ -284,7 +324,7 @@ export namespace DwarfLine {
 			this.opcodeBase = cur.fixedUInt8(); // ubyte
 
 			// Opcode length table
-			this.standardOpcodeLengths = new Array<number>(this.opcodeBase); // has one additional elem for idx 0
+			this.standardOpcodeLengths = new Array<number>(this.opcodeBase + 1); // has one additional elem for idx 0
 			this.standardOpcodeLengths[0] = 0;
 			for (let i = 1; i < this.opcodeBase; ++i) {
 				const length = cur.fixedUInt8(); // ubyte
@@ -303,27 +343,30 @@ export namespace DwarfLine {
 				this.standardOpcodeLengths[i] = length;
 			}
 
-			// Include directories list
-			// Include directory 0 is implicitly the compilation unit
-			// current directory
-			this.includeDirectories.push(this.compDir);
-			while (true) {
-				let incdir = cur.str();
-				if (incdir.length == 0) break;
-				if (!incdir.endsWith("/")) incdir += "/";
-				if (this.isAbsolutePath(incdir)) this.includeDirectories.push(incdir);
-				else this.includeDirectories.push(this.compDir + incdir);
+			if (this.debug) {
+				console.log(
+					`LT: version:${this.version}: offset:0x${cuOffset.toString(16)} minIL:${this.minimumInstruction_length} maxOps:${this.maximumOperationsPerInstruction} LB:${this.lineBase} LR:${this.lineRange} OPB:${this.opcodeBase}`,
+				);
 			}
 
-			// File name list
-			// File name 0 is implicitly the compilation unit file name.
-			// cu_name can be relative to comp_dir or absolute.
-			if (this.isAbsolutePath(cuName)) {
-				this.fileNames.push(new LineTableFile(cuName));
+			if (this.version >= 2 && this.version <= 4) {
+				// Include directory 0 is implicitly the compilation unit
+				// current directory
+				this.includeDirectories.push(this.compDir);
+
+				// File name 0 is implicitly the compilation unit file name.
+				// cu_name can be relative to comp_dir or absolute.
+				if (this.isAbsolutePath(cuName)) {
+					this.fileNames.push(new LineTableFile(cuName));
+				} else {
+					this.fileNames.push(new LineTableFile(this.compDir + cuName));
+				}
+
+				this.readHeaderTables_v2(cur, cuName);
 			} else {
-				this.fileNames.push(new LineTableFile(this.compDir + cuName));
+				// version 5
+				this.readHeaderTables_v5(cur, cuName);
 			}
-			while (this.readFileEntry(cur, true));
 
 			// Fill entries
 			this.entry.reset(this.defaultIsStmt);
@@ -335,48 +378,189 @@ export namespace DwarfLine {
 				if (!entry.endSequence) {
 					//this.entries.push(entry);
 					if (entry.isStmt) {
-						this.addressToEntryMap.set(entry.address, entry);
+						// Do not overwrite locations for the same address
+						const existing = this.addressToEntryMap.get(entry.address);
+						if (existing === undefined) {
+							//console.log(`LT: ADD: addr:0x${entry.address.toString(16)} line: ${entry.line} stmt:${entry.isStmt}`);
+							this.addressToEntryMap.set(entry.address, entry);
+						}
 					}
 				}
 			}
-			//console.log('addressToEntryMap.size:' + this.addressToEntryMap.size);
+			//console.log(`LT: addressToEntryMap.size:${this.addressToEntryMap.size}`);
 		}
 
-		private isAbsolutePath(path: string) : boolean {
-			if (path.length > 0 && path[0] === '/') return true; // unix
-			if (path.length > 1 && path[1] === ':') return true; // win: first letter is the drive
-			return false;
+		private addIncludeDir(incDirP: string): void {
+			let incdir = incDirP;
+			if (!incdir.endsWith("/")) incdir += "/";
+			if (!this.isAbsolutePath(incdir)) {
+				incdir = this.compDir + incdir;
+			}
+			this.includeDirectories.push(incdir);
+
+			if (this.debug) {
+				console.log(`LT: incdir: ${incdir}`);
+			}
 		}
 
-		public getFile(index: number): LineTableFile {
-			return this.fileNames[index];
+		private readHeaderTables_v2(cur: Dwarf.Cursor, cuName: string): boolean {
+			while (true) {
+				const incdir = cur.str();
+				if (incdir.length == 0) {
+					break;
+				}
+				this.addIncludeDir(incdir);
+			}
+
+			// File name list
+			while (this.readFileEntry(cur, true)) {}
+
+			return true;
+		}
+
+		private readHeaderTables_v5(cur: Dwarf.Cursor, cuName: string): boolean {
+			// Read the directory list
+			{
+				const formatCount = cur.fixedUInt8(); // ubyte
+
+				const types = new Array<number>();
+				const forms = new Array<number>();
+
+				for (let i = 0; i < formatCount; ++i) {
+					const type = cur.uleb128();
+					const form = cur.uleb128();
+					types.push(type);
+					forms.push(form);
+				}
+
+				const entryCount = cur.uleb128();
+				for (let j = 0; j < entryCount; ++j) {
+					for (let i = 0; i < formatCount; ++i) {
+						if (types[i] === DwarfData.DW_LNCT.path) {
+							if (forms[i] === DwarfData.DW_FORM.string) {
+								const incdir = cur.str();
+								this.addIncludeDir(incdir);
+							} else if (forms[i] === DwarfData.DW_FORM.line_strp) {
+								const offset = cur.offset();
+								if (this.secStr) {
+									// TODO: support relocs
+									const scur = new Dwarf.Cursor(this.dv, this.secStr, offset);
+									const incdir = scur.str();
+									this.addIncludeDir(incdir);
+									//if (this.debug) {
+									//	console.log(`lt: line_strp incdir: ${incdir}`);
+									//}
+								} else {
+									console.warn(
+										`lt: incdirs: dw_form.line_strp: no .debug_line_str section found! lt version:${this.version} offset:${offset}`,
+									);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Read the filenames list. It is similar as reading the include directories
+			{
+				const formatCount = cur.fixedUInt8(); // ubyte
+
+				const types = new Array<number>();
+				const forms = new Array<number>();
+
+				for (let i = 0; i < formatCount; ++i) {
+					const type = cur.uleb128();
+					const form = cur.uleb128();
+					types.push(type);
+					forms.push(form);
+				}
+
+				const entryCount = cur.uleb128();
+				for (let j = 0; j < entryCount; ++j) {
+					let file = "";
+					let dirIndex = -1;
+
+					for (let i = 0; i < formatCount; ++i) {
+						if (types[i] === DwarfData.DW_LNCT.path) {
+							if (forms[i] === DwarfData.DW_FORM.string) {
+								file = cur.str();
+							} else if (forms[i] === DwarfData.DW_FORM.line_strp) {
+								const offset = cur.offset();
+								if (this.secStr) {
+									// TODO: support relocs
+									const scur = new Dwarf.Cursor(this.dv, this.secStr, offset);
+									file = scur.str();
+									//if (this.debug) {
+									//	console.log(`lt: line_strp file: ${file}`);
+									//}
+								} else {
+									console.warn(
+										`lt: file: dw_form.line_strp: no .debug_line_str section found! lt version:${this.version} offset:${offset}`,
+									);
+								}
+							}
+						} else if (types[i] === DwarfData.DW_LNCT.directory_index) {
+							if (forms[i] === DwarfData.DW_FORM.udata) {
+								dirIndex = cur.uleb128();
+							}
+						}
+					}
+
+					if (file.length > 0) {
+						this.addFilename(file, 0, 0, dirIndex);
+					}
+				}
+			}
+
+			return true;
+		}
+
+		private addFilename(file_name: string, mtime, length, dirIndex) {
+			if (dirIndex >= 0) {
+				if (dirIndex < this.includeDirectories.length) {
+					if (this.debug) {
+						console.log(
+							`LT: fileName(dirIndex:${dirIndex}): ${this.includeDirectories[dirIndex] + file_name}`,
+						);
+					}
+					this.fileNames.push(
+						new LineTableFile(
+							this.includeDirectories[dirIndex] + file_name,
+							mtime,
+							length,
+						),
+					);
+				} else {
+					throw new Error(
+						"file name directory index out of range: " + dirIndex,
+					);
+				}
+			} else {
+				if (this.debug) {
+					console.log(`LT: fileName: ${file_name}`);
+				}
+				this.fileNames.push(new LineTableFile(file_name, mtime, length));
+			}
 		}
 
 		private readFileEntry(cur: Dwarf.Cursor, in_header: boolean): boolean {
 			//assert(cur.sec == this.sec);
 
 			const file_name = cur.str();
-			if (in_header && file_name.length == 0) return false;
+			if (in_header && file_name.length == 0) {
+				return false;
+			}
 			const dirIndex = cur.uleb128();
 			const mtime = cur.uleb128();
 			const length = cur.uleb128();
 
 			// Have we already processed this file entry?
-			if (cur.getSectionOffset() <= this.lastFileNameEnd) return true;
+			if (cur.getSectionOffset() <= this.lastFileNameEnd) {
+				return true;
+			}
 			this.lastFileNameEnd = cur.getSectionOffset();
 
-			if (this.isAbsolutePath(file_name))
-				this.fileNames.push(new LineTableFile(file_name, mtime, length));
-			else if (dirIndex < this.includeDirectories.length)
-				this.fileNames.push(
-					new LineTableFile(
-						this.includeDirectories[dirIndex] + file_name,
-						mtime,
-						length,
-					),
-				);
-			else
-				throw new Error("file name directory index out of range: " + dirIndex);
+			this.addFilename(file_name, mtime, length, dirIndex);
 
 			return true;
 		}
@@ -392,7 +576,9 @@ export namespace DwarfLine {
 				output = this.step(cur);
 				stepped = true;
 			}
-			if (stepped && !output) throw new Error("unexpected end of line table");
+			if (stepped && !output) {
+				throw new Error("unexpected end of line table");
+			}
 			if (stepped && cur.end()) {
 				// Record that all file names must be known now
 				this.fileNamesComplete = true;
@@ -403,7 +589,7 @@ export namespace DwarfLine {
 					this.entry.file = this.fileNames[this.entry.fileIndex];
 				else
 					throw new Error(
-						"bad file index " + this.entry.fileIndex + " in line table",
+						`bad file index ${this.entry.fileIndex} in line table. nFiles:${this.fileNames.length}`,
 					);
 			}
 
@@ -424,15 +610,16 @@ export namespace DwarfLine {
 		private step(cur: Dwarf.Cursor): boolean {
 			// Read the opcode (DWARF4 section 6.2.3)
 			const opcode = cur.fixedUInt8(); // ubyte
-			//console.log("process opcode " + opcode);
+			//console.log(`LT: process opcode ${opcode}`);
 			if (opcode >= this.opcodeBase) {
 				// Special opcode (DWARF4 section 6.2.5.1)
 				const adjusted_opcode = (opcode - this.opcodeBase) % 255; // ubyte
-				//console.log("Special opcode (DWARF4 section 6.2.5.1). op:" + adjusted_opcode,);
+				//console.log(`LT: special opcode (DWARF4 section 6.2.5.1). op:${adjusted_opcode}`);
 				const op_advance = Math.floor(adjusted_opcode / this.lineRange);
-				const line_inc = this.lineBase + (adjusted_opcode % this.lineRange);
+				const lineInc = this.lineBase + (adjusted_opcode % this.lineRange);
 
-				this.regs.line += line_inc;
+				//console.log(`LT: special: advance line by ${lineInc} to ${this.regs.line + lineInc}`);
+				this.regs.line += lineInc;
 				this.regs.address +=
 					this.minimumInstruction_length *
 					Math.floor(
@@ -449,7 +636,6 @@ export namespace DwarfLine {
 					this.regs.epilogueBegin =
 						false;
 				this.regs.discriminator = 0;
-
 				return true;
 			} else if (opcode != 0) {
 				// Standard opcode (DWARF4 sections 6.2.3 and 6.2.5.2)
@@ -466,6 +652,7 @@ export namespace DwarfLine {
 				switch (lns) {
 					case DwarfData.DW_LNS.copy:
 						this.entry = this.regs.clone();
+						//console.log(`LT: copy: addr:0x${this.regs.address.toString(16)} line: ${this.regs.line} stmt:${this.regs.isStmt}`);
 						this.regs.basicBlock =
 							this.regs.prologue_end =
 							this.regs.epilogueBegin =
@@ -477,9 +664,12 @@ export namespace DwarfLine {
 						uarg = cur.uleb128();
 						this.stepAdvancePc(uarg);
 						break;
-					case DwarfData.DW_LNS.advance_line:
-						this.regs.line = this.regs.line + cur.sleb128();
+					case DwarfData.DW_LNS.advance_line: {
+						const n = cur.sleb128();
+						//console.log(`LT: advance_line: advance line by ${n} to ${this.regs.line + n}`);
+						this.regs.line += n;
 						break;
+					}
 					case DwarfData.DW_LNS.set_file:
 						this.regs.fileIndex = cur.uleb128();
 						break;
@@ -530,10 +720,7 @@ export namespace DwarfLine {
 						break;
 					case DwarfData.DW_LNE.set_address:
 						this.regs.address = cur.address();
-						//console.log(
-						//	"DwarfData.DW_LNE.set_address: 0x" +
-						//		this.regs.address.toString(16),
-						//);
+						//console.log(`LT: set_address: 0x${this.regs.address.toString(16)}`);
 						this.regs.opIndex = 0;
 						break;
 					case DwarfData.DW_LNE.define_file:
@@ -563,6 +750,16 @@ export namespace DwarfLine {
 				cur.pos += end - cur.getSectionOffset();
 				return lne == DwarfData.DW_LNE.end_sequence;
 			}
+		} // step
+
+		private isAbsolutePath(path: string): boolean {
+			if (path.length > 0 && path[0] === "/") return true; // unix
+			if (path.length > 1 && path[1] === ":") return true; // win: first letter is the drive
+			return false;
+		}
+
+		public getFile(index: number): LineTableFile {
+			return this.fileNames[index];
 		}
 	}
 } // namespace DwarfLine

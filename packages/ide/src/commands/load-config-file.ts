@@ -12,32 +12,32 @@
  * limitations under the License.
  *
  */
-import * as vscode from 'vscode';
-import { CONFIG_FILE_EXTENSION } from '../constants';
-import {MCU_EDITOR_ID} from '../custom-editors/mcu-editor';
-import { CONFIG_TOOLS_COMMANDS } from './constants';
+import * as vscode from "vscode";
+import { CONFIG_FILE_EXTENSION } from "../constants";
+import { MCU_EDITOR_ID } from "../constants";
+import { CONFIG_TOOLS_COMMANDS } from "./constants";
 
 export function registerLoadConfigFileCommand() {
-	return vscode.commands.registerCommand(
-		CONFIG_TOOLS_COMMANDS.LOAD_CONFIG_FILE,
-		async () => {
-			const uri = await vscode.window.showOpenDialog({
-				canSelectFiles: true,
-				canSelectFolders: false,
-				canSelectMany: false,
-				openLabel: 'Load',
-				filters: {
-					'Configuration Files': [CONFIG_FILE_EXTENSION]
-				}
-			});
+  return vscode.commands.registerCommand(
+    CONFIG_TOOLS_COMMANDS.LOAD_CONFIG_FILE,
+    async () => {
+      const uri = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        openLabel: "Load",
+        filters: {
+          "Configuration Files": [CONFIG_FILE_EXTENSION],
+        },
+      });
 
-			if (uri) {
-				await vscode.commands.executeCommand(
-					'vscode.openWith',
-					uri[0],
-					MCU_EDITOR_ID
-				);
-			}
-		}
-	);
+      if (uri) {
+        await vscode.commands.executeCommand(
+          "vscode.openWith",
+          uri[0],
+          MCU_EDITOR_ID,
+        );
+      }
+    },
+  );
 }

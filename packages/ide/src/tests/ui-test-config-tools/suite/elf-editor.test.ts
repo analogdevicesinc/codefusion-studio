@@ -12,55 +12,74 @@
  * limitations under the License.
  *
  */
-import * as path from 'path';
+import { expect } from "chai";
+import * as path from "path";
 import {
-	By,
-	CustomEditor,
-	EditorView,
-	VSBrowser,
-	WebDriver,
-	WebView
-} from 'vscode-extension-tester';
+  By,
+  CustomEditor,
+  EditorView,
+  VSBrowser,
+  WebDriver,
+  WebView,
+  Workbench,
+} from "vscode-extension-tester";
 
-describe('Elf file custom editor', () => {
-	let browser: VSBrowser;
-	let driver: WebDriver;
-	let view: WebView;
+describe("Elf file custom editor", () => {
+  let browser: VSBrowser;
+  let driver: WebDriver;
+  let view: WebView;
 
-	before(async function () {
-		this.timeout(60000);
+  before(async function () {
+    this.timeout(60000);
 
-		browser = VSBrowser.instance;
-		driver = browser.driver;
+    browser = VSBrowser.instance;
+    driver = browser.driver;
 
-		await browser.waitForWorkbench();
-	});
+    await browser.waitForWorkbench();
+  });
 
-	after(async function () {
-		this.timeout(60000);
-		view.switchBack();
-		await new EditorView().closeAllEditors();
-	});
+  after(async function () {
+    this.timeout(60000);
 
-	it('Should open the elf viewer panel when opening a file with *.elf extension', async () => {
-		await browser.openResources(
-			path.join(
-				'src',
-				'tests',
-				'ui-test-config-tools',
-				'fixtures',
-				'hello_world.elf'
-			)
-		);
+    await view.switchBack();
 
-		const editor = new CustomEditor();
+    await new Workbench().getNotifications().then(async (notifications) => {
+      await Promise.all(
+        notifications.map(
+          (notification) =>
+            new Promise((resolve) => {
+              notification.dismiss().then(() => {
+                resolve("closed");
+              });
+            }),
+        ),
+      );
 
-		view = editor.getWebView();
+      await new EditorView().closeAllEditors();
+    });
+  });
 
-		await view.switchToFrame();
+  it("Should open the elf viewer panel when opening a file with *.elf extension", async () => {
+    await browser.openResources(
+      path.join(
+        "src",
+        "tests",
+        "ui-test-config-tools",
+        "fixtures",
+        "hello_world.elf",
+      ),
+    );
 
-		await view.findWebElement(
-			By.xpath('//*[@id="root"]/div/article/h1')
-		);
-	}).timeout(60000);
+    const editor = new CustomEditor();
+
+    view = editor.getWebView();
+
+    await view.switchToFrame();
+
+    const title = await view.findWebElement(
+      By.xpath('//*[@id="root"]/div[1]/div[2]'),
+    );
+
+    expect(await title.getText()).to.eq("STATISTICS");
+  }).timeout(60000);
 });

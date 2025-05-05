@@ -458,7 +458,8 @@ describe('RPN Expression Resolver', () => {
 	});
 
 	it('Should evaluate string concatenation', () => {
-		const condition = '${String:FISH} ${String:FOWL} + ${String:FISHFOWL} =';
+		const condition =
+			'${String:FISH} ${String:FOWL} + ${String:FISHFOWL} =';
 		const pinCfg = {};
 
 		cy.mount(
@@ -804,7 +805,6 @@ describe('RPN Expression Resolver', () => {
 					],
 					Config: {},
 					ConfigUIOrder: [],
-					ConfigProgrammingOrder: [],
 					controlValues: {}
 				}
 			},
@@ -819,7 +819,7 @@ describe('RPN Expression Resolver', () => {
 		);
 
 		const expectedDictEntry = {
-			'ERTCO_CLK': 32768
+			ERTCO_CLK: 32768
 		};
 
 		cy.dataTest('result').should('have.text', 32768);
@@ -865,8 +865,7 @@ describe('RPN Expression Resolver', () => {
 						}
 					],
 					Config: {},
-					ConfigUIOrder: [],
-					ConfigProgrammingOrder: []
+					ConfigUIOrder: []
 				}
 			},
 			currentNode: 'ADC'
@@ -976,13 +975,13 @@ describe('RPN Expression Resolver', () => {
 					clockconfig: {
 						'P3.5': {
 							Name: 'P3.5',
-							Outputs: [
-								{
-									Name: 'LPTMR0_CLK',
-									Description: 'P3.5 Pin Input',
-									Value: '${Control:FREQ}'
-								}
-							],
+							// Outputs: [
+							// 	{
+							// 		Name: 'LPTMR0_CLK',
+							// 		Description: 'P3.5 Pin Input',
+							// 		Value: '${Control:FREQ}'
+							// 	}
+							// ],
 							controlValues: {
 								FREQ: ''
 							}

@@ -1,0 +1,9 @@
+{
+    "require": "tsx",
+    "extensions": ["ts"],
+    "forbid-only": true,
+    "watch-extensions": ["ts"],
+    "recursive": true,
+    "reporter": "spec",
+    "timeout": 60000
+}

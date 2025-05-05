@@ -17,14 +17,16 @@ import styles from './SecondaryLayout.module.scss';
 type LayoutProps = {
 	readonly header?: React.ReactNode;
 	readonly body?: React.ReactNode;
+	readonly variant?: 'default' | 'low-density';
 };
 
 export default function SingleColumnLayout({
 	header,
-	body
+	body,
+	variant = 'default'
 }: LayoutProps) {
 	return (
-		<section className={styles.container}>
+		<section className={`${styles.container} ${styles[variant]}`}>
 			<div
 				className={`${styles.header} ${header ? '' : ` ${styles.empty}`}`}
 			>

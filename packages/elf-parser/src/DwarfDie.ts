@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-﻿import { Dwarf } from "./Dwarf.js";
+import { Dwarf } from "./Dwarf.js";
 import { DwarfData } from "./DwarfData.js";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -58,6 +58,9 @@ export namespace DwarfDie {
 
 		// tree depth
 		public depth: number = 0;
+
+		// DW_AT.name if exists
+		public dieName: string;
 
 		constructor(cu: Dwarf.CompilationUnit) {
 			this.cu = cu;
@@ -154,16 +157,20 @@ export namespace DwarfDie {
 				return ret;
 			}
 
+			if (ret.has(DwarfData.DW_AT.name)) {
+				ret.dieName = ret.getValue(DwarfData.DW_AT.name).asString();
+			}
+
 			if (
 				ret.has(DwarfData.DW_AT.decl_file) &&
 				ret.has(DwarfData.DW_AT.decl_line)
 			) {
 				const lt = ret.cu.getLineTable();
 
-				ret.path =
-					lt.fileNames[
-						ret.getValue(DwarfData.DW_AT.decl_file).asUConstant()
-					].path;
+				const fileIdx = ret.getValue(DwarfData.DW_AT.decl_file).asUConstant();
+				//console.log(`DIE: fileIdx:${fileIdx} nFiles:${lt.fileNames.length}`);
+				ret.path = lt.fileNames[fileIdx].path;
+
 				ret.line = ret.getValue(DwarfData.DW_AT.decl_line).asUConstant();
 				if (ret.has(DwarfData.DW_AT.decl_column)) {
 					ret.column = ret.getValue(DwarfData.DW_AT.decl_column).asUConstant();
@@ -195,8 +202,9 @@ export namespace DwarfDie {
 					try {
 						const val = ret.getValue(DwarfData.DW_AT.location);
 						let addr = 0;
-						if (val.form == DwarfData.DW_FORM.addr) addr = val.asAddress();
-						else if (val.form == DwarfData.DW_FORM.exprloc)
+						if (val.form == DwarfData.DW_FORM.addr) {
+							addr = val.asAddress();
+						} else if (val.form == DwarfData.DW_FORM.exprloc)
 							addr = val.asExprLock().evaluate([]).value;
 						//else if (val.form == DwarfData.DW_FORM.sec_offset)
 						//	addr = val.asSecOffset();
@@ -250,6 +258,7 @@ export namespace DwarfDie {
 				abbrevAttr.name,
 				abbrevAttr.form,
 				abbrevAttr.type,
+				abbrevAttr.implicitConst,
 				at,
 			);
 		}
@@ -289,7 +298,7 @@ export namespace DwarfDie {
 
 			return null;
 		}
-	}
+	} // Die
 
 	export class Value {
 		cu: Dwarf.CompilationUnit = null;
@@ -299,16 +308,20 @@ export namespace DwarfDie {
 		// offset in CU
 		cuOffset: number = 0;
 
+		implicitConst = 0;
+
 		constructor(
 			cu: Dwarf.CompilationUnit,
 			name: DwarfData.DW_AT,
 			form: DwarfData.DW_FORM,
 			type: DwarfData.ValueType,
+			implicitConst: number,
 			cuOffset: number,
 		) {
 			this.cu = cu;
 			this.form = form;
 			this.type = type;
+			this.implicitConst = implicitConst;
 			this.cuOffset = cuOffset;
 
 			if (form == DwarfData.DW_FORM.indirect) this.resolveIndirect(name);
@@ -421,8 +434,12 @@ export namespace DwarfDie {
 					return cur.fixedUInt64();
 				case DwarfData.DW_FORM.udata:
 					return cur.uleb128();
+				case DwarfData.DW_FORM.implicit_const:
+					return this.implicitConst;
 				default:
-					throw new Error("cannot read " + this.type + " as uconstant");
+					throw new Error(
+						`cannot read ${this.type} as uconstant. form:${DwarfData.DW_FORM[this.form]}`,
+					);
 			}
 		}
 
@@ -545,13 +562,21 @@ export namespace DwarfDie {
 			switch (this.form) {
 				case DwarfData.DW_FORM.string:
 					return cur.str();
-				case DwarfData.DW_FORM.strp:
+				case DwarfData.DW_FORM.strp: {
 					// TODO
 					if (!this.cu.secStr)
 						throw new Error("strp: CU has no .debug_str section!");
 					const off = cur.offset();
 					const scur = new Dwarf.Cursor(this.cu.dv, this.cu.secStr, off);
 					return scur.str();
+				}
+				case DwarfData.DW_FORM.line_strp: {
+					if (!this.cu.secLineStr)
+						throw new Error("line_strp: CU has no .debug_line_str section!");
+					const off = cur.offset();
+					const scur = new Dwarf.Cursor(this.cu.dv, this.cu.secLineStr, off);
+					return scur.str();
+				}
 				default:
 					throw new Error("cannot read " + this.type + " as string");
 			}
@@ -603,7 +628,7 @@ export namespace DwarfDie {
 			do {
 				newForm = cur.uleb128() as DwarfData.DW_FORM;
 			} while (newForm == DwarfData.DW_FORM.indirect);
-			const attr = new Dwarf.AttributeSpec(name, newForm);
+			const attr = new Dwarf.AttributeSpec(name, newForm, 0);
 			this.type = attr.type;
 			this.cuOffset = cur.getSectionOffset();
 		}

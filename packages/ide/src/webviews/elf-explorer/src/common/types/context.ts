@@ -1,3 +1,6 @@
+import type {TSection, TSegment} from './memory-layout';
+import type {TSymbol} from './symbols';
+
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -12,8 +15,19 @@
  * limitations under the License.
  *
  */
+export type TMemLayoutContext = {
+	layer: 1 | 2 | 3;
+	selectedItemName: string;
+	dataTree: TSegment[];
+	currentData: TSegment[] | TSection[] | TSymbol[] | undefined;
+	parentLayer: TSegment | TSection | undefined;
+};
+
 export type TLocaleContext = Record<string, any>;
+
 export type TAppContext = {
 	query: string;
+	memLayout: TMemLayoutContext;
 	editQuery: (newQuery: string) => void;
+	setMemoryLayout: (newValue: any) => void;
 };

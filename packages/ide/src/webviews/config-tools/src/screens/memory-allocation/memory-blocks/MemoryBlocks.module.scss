@@ -1,0 +1,70 @@
+/**
+ *
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px 20px;
+	border-top: 0.5px solid var(--vscode-commandCenter-inactiveBorder);
+
+	.blockDropdownContainer {
+		--cfs-dropdown-max-width: 222px;
+		margin-top: 4px;
+	}
+
+	.section {
+		.sizeContainer {
+			display: flex;
+
+			.sizeStepper {
+				width: 75%;
+			}
+
+			.sizeDropdown {
+				margin-left: 4px;
+				vscode-dropdown {
+					min-width: 0;
+				}
+			}
+		}
+
+		.label {
+			@include fonts.label-l2;
+			padding-bottom: 4px;
+		}
+	}
+
+	.blockItem:not(:first-of-type) {
+		padding-top: 12px;
+	}
+}
+
+.startAddressheader {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	box-sizing: border-box;
+	svg {
+		width: 13px;
+		height: 13px;
+		cursor: pointer;
+	}
+	div {
+		padding-bottom: 1px;
+	}
+}

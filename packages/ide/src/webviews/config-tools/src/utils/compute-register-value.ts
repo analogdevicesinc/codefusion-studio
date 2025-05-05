@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,12 @@ import type {
 	FieldDictionary,
 	RegisterDictionary
 } from '@common/types/soc';
-import {getFirmwarePlatform} from './firmware-platform';
-import {computeEntryBoxDefaultValue} from './rpn-expression-resolver';
+import {
+	computeEntryBoxDefaultValue,
+	evaluateBitfieldExpression
+} from './rpn-expression-resolver';
+import {getRegisterDictionary} from './register-dictionary';
+import {getSocControlsDictionary} from './soc-controls';
 
 export default function computeRegisterValue(
 	assignedPinsConfigs: Array<{
@@ -30,6 +34,9 @@ export default function computeRegisterValue(
 		signalConfig: ConfigField[] | undefined;
 	}>,
 	modifiedClockNodesConfigs: Array<
+		Record<string, ConfigField[] | undefined>
+	>,
+	modifiedPeripheralConfigs: Array<
 		Record<string, ConfigField[] | undefined>
 	>,
 	currentRegister: RegisterDictionary
@@ -85,6 +92,26 @@ export default function computeRegisterValue(
 			});
 	});
 
+	previousRegister = '';
+
+	modifiedPeripheralConfigs.forEach(config => {
+		Object.values(config)
+			.flat()
+			.forEach(cfg => {
+				if (
+					cfg?.Register === currentRegister.name &&
+					cfg?.Operation.toLowerCase() !== 'read'
+				) {
+					modifiedFields.push(cfg);
+					previousRegister = cfg.Register;
+				} else if (cfg?.Operation.toLowerCase() === 'withprevious') {
+					if (currentRegister.name === previousRegister) {
+						modifiedFields.push(cfg);
+					}
+				}
+			});
+	});
+
 	// Compute reset value
 	currentRegister.fields.forEach(field => {
 		const reset = BigInt(field.reset);
@@ -103,7 +130,12 @@ export default function computeRegisterValue(
 		if (socField) {
 			const position = BigInt(socField.position);
 			const length = BigInt(socField.length);
-			const value = BigInt(modifiedField.Value);
+			const value = BigInt(
+				evaluateBitfieldExpression(
+					modifiedField.ControlValue,
+					modifiedField.Value!
+				)
+			);
 
 			computedValue =
 				(computedValue &
@@ -125,11 +157,15 @@ export function computeFieldValue(
 		signalConfig: ConfigField[] | undefined;
 	}>,
 	clockNodesConfigs: Array<Record<string, ConfigField[] | undefined>>,
+	modifiedPeripheralConfigs: Array<
+		Record<string, ConfigField[] | undefined>
+	>,
 	registerName: string,
 	field: FieldDictionary,
 	resetValue: number | string
 ) {
 	let computedValue = BigInt(resetValue);
+	let previousRegister = '';
 
 	// Filtered pin config fields that belong to the current register
 	const pinsConfig = configs
@@ -139,8 +175,6 @@ export function computeFieldValue(
 		])
 		.flat()
 		.reduce<ConfigField[]>((acc, config) => {
-			let previousRegister = '';
-
 			if (
 				config?.Register === registerName &&
 				config.Operation.toLowerCase() !== 'read'
@@ -160,8 +194,6 @@ export function computeFieldValue(
 	const nodesConfig = Object.values(clockNodesConfigs).reduce<
 		ConfigField[]
 	>((acc, config) => {
-		let previousRegister = '';
-
 		Object.values(config).forEach(cfg => {
 			// Only add fields that belong to the current register taking in consideration the withprevious operation
 			cfg?.forEach(field => {
@@ -182,78 +214,164 @@ export function computeFieldValue(
 		return acc;
 	}, []);
 
-	const mergedConfigs = [...pinsConfig, ...nodesConfig];
+	// Filtered peripheral config fields that belong to the current register
+	const peripheralConfig = Object.values(
+		modifiedPeripheralConfigs
+	).reduce<ConfigField[]>((acc, config) => {
+		Object.values(config).forEach(cfg => {
+			// Only add fields that belong to the current register taking in consideration the withprevious operation
+			cfg?.forEach(field => {
+				if (
+					field.Register === registerName &&
+					field.Operation.toLowerCase() !== 'read'
+				) {
+					acc.push(field);
+					previousRegister = field.Register;
+				} else if (field.Operation.toLowerCase() === 'withprevious') {
+					if (registerName === previousRegister) {
+						acc.push(field);
+					}
+				}
+			});
+		});
 
-	const targetedRegisterField = mergedConfigs.find(
-		mergedConfig => mergedConfig?.Field === field.name
-	);
+		return acc;
+	}, []);
+
+	const mergedConfigs = [
+		...pinsConfig,
+		...nodesConfig,
+		...peripheralConfig
+	];
+
+	// Find the last modified field value for the current field
+	const targetedRegisterField = mergedConfigs
+		.reverse()
+		.find(mergedConfig => mergedConfig?.Field === field.name);
 
 	if (targetedRegisterField) {
-		computedValue = BigInt(targetedRegisterField.Value);
+		computedValue = BigInt(
+			evaluateBitfieldExpression(
+				targetedRegisterField.ControlValue,
+				targetedRegisterField.Value!
+			)
+		);
 	}
 
 	return '0x' + computedValue.toString(16);
 }
 
-function getControl(controlId: string, clockConfig: ControlCfg[]) {
-	return clockConfig.find(control => control.Id === controlId);
+function getControl(controlId: string, controls: ControlCfg[]) {
+	return controls.find(control => control.Id === controlId);
 }
 
+function getControlIntegerValue(
+	controlId: string,
+	controlValue: string,
+	controls: ControlCfg[]
+): number {
+	const control = getControl(controlId, controls);
+
+	if (control?.Type === 'enum') {
+		// For enums, get the value of the enum's Value field
+		return (
+			control?.EnumValues?.find(e => e.Id === controlValue)?.Value ??
+			0
+		);
+	}
+
+	return parseInt(controlValue, 10);
+}
+
+export function getNamespacedControlIntegerValue(
+	namespace: string,
+	controlId: string,
+	controlValue: string
+): number {
+	const controls = Object.values(getSocControlsDictionary(namespace));
+
+	return getControlIntegerValue(controlId, controlValue, controls);
+}
+
+// eslint-disable-next-line complexity
 export function computeDefaultValues(
 	config: ConfigFields,
-	registers: RegisterDictionary[],
 	controls: ControlCfg[],
 	pinSignalName?: Record<string, string>
 ) {
-	const firmwarePlatform = getFirmwarePlatform();
 	const defaultValueObj: Record<string, string> = {};
 
-	if (config) {
+	// Operate only on config fields that can be configured throught the available controls
+	const filteredConfig = Object.entries(
+		config ?? {}
+	).reduce<ConfigFields>((acc, [key, fields]) => {
+		const control = getControl(key, controls);
+
+		if (control) {
+			const enums = control.EnumValues ?? [];
+
+			let filteredConfigFields:
+				| Record<string, ConfigField[]>
+				| undefined;
+
+			// If the control is an enum, filter the config fields to only include
+			// filter out configuration that are not accessible through the available enum options
+			if (enums.length) {
+				filteredConfigFields = Object.entries(fields).reduce<
+					Record<string, ConfigField[]>
+				>((acc, [fieldKey, fieldValue]) => {
+					const field = enums.find(en => String(fieldKey) === en.Id);
+
+					if (field) {
+						acc[fieldKey] = fieldValue;
+					}
+
+					return acc;
+				}, {});
+			}
+
+			if (filteredConfigFields) {
+				acc[key] = filteredConfigFields;
+			} else {
+				acc[key] = fields;
+			}
+		}
+
+		return acc;
+	}, {});
+
+	if (Object.keys(filteredConfig).length) {
 		for (const [controlValueKey, controlValues] of Object.entries(
-			config
+			filteredConfig
 		)) {
 			const control = getControl(controlValueKey, controls);
 			const controlType = control?.Type;
-			const controlFirmwarePlatforms = control?.FirmwarePlatforms;
-
-			if (
-				controlFirmwarePlatforms &&
-				!controlFirmwarePlatforms?.some(fw =>
-					firmwarePlatform?.toLowerCase().includes(fw.toLowerCase())
-				)
-			)
-				continue;
 
 			let defaultValue: string | undefined;
 
+			if (control?.Default) {
+				defaultValue = String(control.Default);
+
+				defaultValueObj[controlValueKey] = defaultValue;
+
+				continue;
+			}
+
 			if (controlType === 'integer') {
 				defaultValueObj[controlValueKey] =
-					getIntegerControlResetValue(controlValues, registers);
+					getIntegerControlResetValue(controlValues);
 				continue;
 			} else if (controlType === 'text') {
 				const hint = controls.find(
 					control => control.Id === controlValueKey
 				)?.Hint;
 
-				const textDefaultValue = computeEntryBoxDefaultValue(
+				const textDefaultValue = (computeEntryBoxDefaultValue(
 					pinSignalName,
 					hint
-				) as string;
+				) ?? '') as string;
 
 				defaultValueObj[controlValueKey] = textDefaultValue || '';
-				continue;
-			} else if (controlType === 'identifier') {
-				const hint = controls.find(
-					control => control.Id === controlValueKey
-				)?.Hint;
-
-				const identifierDefaultValue = computeEntryBoxDefaultValue(
-					pinSignalName,
-					hint
-				) as string;
-
-				defaultValueObj[controlValueKey] =
-					identifierDefaultValue.replace(/\./g, '_') || '';
 				continue;
 			}
 
@@ -262,13 +380,29 @@ export function computeDefaultValues(
 
 				for (let i = configs.length - 1; i >= 0; i--) {
 					const cfg = configs[i];
+					const cfgValue: string | undefined = cfg.Value;
 
-					if (cfg.Operation === 'WithPrevious') {
+					if (cfg.Operation.toLowerCase() === 'poll') {
+						// Don't check Poll operations. They tend to not match, even if
+						// this is the default value, because the chip's reset value
+						// will normally start with the value in its opposite state
+						// but then it will have flipped by the time we get to the
+						// startup.
+						// For example, we might enable an oscillator at reset, but the
+						// oscillator ready bit won't be set at reset, but will be by
+						// the time we got to the configuration code.
+						continue;
+					} else if (cfg.Operation.toLowerCase() === 'read') {
+						// Nothing to check.
+						continue;
+					} else if (cfg.Operation.toLowerCase() === 'withprevious') {
 						// Find the operation and register from the upcoming operations
 						for (let j = i - 1; j >= 0; j--) {
 							const prevCfg = configs[j];
 
-							if (prevCfg.Operation !== 'WithPrevious') {
+							if (
+								prevCfg.Operation.toLowerCase() !== 'withprevious'
+							) {
 								cfg.Register = prevCfg.Register;
 								cfg.Operation = prevCfg.Operation;
 								break;
@@ -276,15 +410,20 @@ export function computeDefaultValues(
 						}
 					}
 
+					const value = evaluateBitfieldExpression(
+						getControlIntegerValue(controlValueKey, key, controls),
+						cfgValue!
+					);
+
 					const id = `${cfg.Register}_${cfg.Field}`;
 
 					if (checkedItems.includes(id)) {
 						continue;
 					}
 
-					const resetValue = getResetValue(registers, cfg);
+					const resetValue = getResetValue(cfg);
 
-					if (cfg.Value !== resetValue) {
+					if (value !== resetValue) {
 						defaultValue = undefined;
 						break;
 					}
@@ -307,10 +446,10 @@ export function computeDefaultValues(
 }
 
 function getIntegerControlResetValue(
-	cfg: Record<string, ConfigField[]>,
-	registers: RegisterDictionary[]
+	cfg: Record<string, ConfigField[]>
 ) {
-	const valueCfg = cfg.VALUE[0];
+	const valueCfgSteps = cfg.VALUE;
+	let valueCfg: ConfigField | undefined;
 
 	if (cfg.VALUE === undefined) {
 		throw new Error(
@@ -318,28 +457,36 @@ function getIntegerControlResetValue(
 		);
 	}
 
-	// Value key exists but is empty
+	for (const step of valueCfgSteps) {
+		if (
+			step.Operation.toLowerCase() === 'write' &&
+			step.Value?.match(/\$\{Value\}/)
+		) {
+			valueCfg = step;
+			break;
+		}
+	}
+
+	// No register write of the value found.
 	if (valueCfg === undefined) {
 		return '';
 	}
 
-	const resetValue = getResetValue(registers, valueCfg);
+	let resetValue = getResetValue(valueCfg);
 
-	if (
-		typeof resetValue === 'string' &&
-		resetValue?.startsWith('0x')
-	) {
-		return parseInt(resetValue, 16).toString();
+	if (typeof resetValue !== 'undefined' && valueCfg.InverseValue) {
+		resetValue = evaluateBitfieldExpression(
+			resetValue,
+			valueCfg.InverseValue
+		);
 	}
 
 	return String(resetValue);
 }
 
-function getResetValue(
-	registers: RegisterDictionary[],
-	valueCfg: ConfigField
-) {
-	const register = registers.find(
+function getResetValue(valueCfg: ConfigField) {
+	const registerDictionary = getRegisterDictionary();
+	const register = registerDictionary.find(
 		reg => reg.name === valueCfg.Register
 	);
 
@@ -347,5 +494,18 @@ function getResetValue(
 		fld => fld.name === valueCfg.Field
 	);
 
-	return field?.reset;
+	const fieldResetValue = field?.reset;
+	let resetValue;
+
+	if (typeof fieldResetValue === 'string') {
+		if (fieldResetValue.startsWith('0x')) {
+			resetValue = parseInt(fieldResetValue, 16);
+		} else {
+			resetValue = parseInt(fieldResetValue, 10);
+		}
+	} else if (typeof fieldResetValue === 'number') {
+		resetValue = fieldResetValue;
+	}
+
+	return resetValue;
 }

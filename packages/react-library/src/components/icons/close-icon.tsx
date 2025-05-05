@@ -13,19 +13,20 @@
  *
  */
 
-function CloseIcon() {
+import React from 'react';
+
+type CloseIconProps = React.SVGProps<SVGSVGElement>;
+
+function CloseIcon(props: CloseIconProps) {
 	return (
 		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="16"
-			height="16"
-			viewBox="0 0 16 16"
-			fill="none"
+			width='16'
+			height='17'
+			viewBox='0 0 16 17'
+			fill='currentColor'
+			{...props}
 		>
-			<path
-				d="M8 8.78594L12.2138 13L13 12.2143L8.78589 8.00001L13 3.78569L12.2139 3L8 7.21407L3.78614 3L3 3.78569L7.21411 8.00001L3.00001 12.2143L3.78616 13L8 8.78594Z"
-				fill="currentColor"
-			/>
+			<path d='M8 9.28594L12.2138 13.5L13 12.7143L8.78589 8.50001L13 4.28569L12.2139 3.5L8 7.71407L3.78614 3.5L3 4.28569L7.21411 8.50001L3.00001 12.7143L3.78616 13.5L8 9.28594Z' />
 		</svg>
 	);
 }

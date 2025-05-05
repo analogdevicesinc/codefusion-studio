@@ -12,11 +12,11 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
 .tooltipContainer {
 	display: inline-block;
-	position: relative;
+	position: absolute;
 }
 
 .tooltipContent {

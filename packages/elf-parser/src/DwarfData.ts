@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-﻿/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-namespace */
 
 export namespace DwarfData {
 	// DIE tags (Section 7, figure 18).  typedef, friend, and namespace
@@ -198,6 +198,9 @@ export namespace DwarfData {
 
 		lo_user = 0x2000,
 		hi_user = 0x3fff,
+
+		// DWARF 5
+		macros = 0x79,
 	}
 
 	// Attribute form encodings (Section 7, figure 21)
@@ -233,7 +236,24 @@ export namespace DwarfData {
 		ref_sig8 = 0x20, // reference
 
 		//DWARF 5
+		addrx = 0x1b,
+		addrx1 = 0x29,
+		addrx2 = 0x2a,
+		addrx3 = 0x2b,
+		addrx4 = 0x2c,
+		data16 = 0x1e,
 		implicit_const = 0x21,
+		line_strp = 0x1f,
+		loclistx = 0x22,
+		rnglistx = 0x23,
+		ref_sup4 = 0x1c,
+		ref_sup8 = 0x24,
+		strp_sup = 0x1d,
+		strx = 0x1a,
+		strx1 = 0x25,
+		strx2 = 0x26,
+		strx3 = 0x27,
+		strx4 = 0x28,
 	}
 
 	// DWARF operation encodings (Section 7.7.1 and figure 24)
@@ -497,6 +517,17 @@ export namespace DwarfData {
 		string,
 	}
 
+	// Line number table content type codes.
+	export enum DW_LNCT {
+		path = 0x1,
+		directory_index = 0x2,
+		timestamp = 0x3,
+		size = 0x4,
+		MD5 = 0x5,
+		lo_user = 0x2000,
+		hi_user = 0x3fff,
+	}
+
 	export class TypeResolver {
 		static resolveType(name: DW_AT, form: DW_FORM): ValueType {
 			switch (form) {
@@ -591,11 +622,17 @@ export namespace DwarfData {
 
 				case DW_FORM.string:
 				case DW_FORM.strp:
+				case DW_FORM.strp_sup:
+				case DW_FORM.line_strp:
 					return ValueType.string;
 
 				case DW_FORM.indirect:
 					// There's nothing meaningful we can do
 					return ValueType.invalid;
+
+				case DW_FORM.implicit_const:
+					// There's nothing meaningful we can do
+					return ValueType.constant;
 
 				case DW_FORM.sec_offset:
 					// The type of this form depends on the attribute
@@ -615,6 +652,7 @@ export namespace DwarfData {
 							return ValueType.loclist;
 
 						case DW_AT.macro_info:
+						case DW_AT.macros:
 							return ValueType.mac;
 
 						case DW_AT.start_scope:
@@ -628,11 +666,13 @@ export namespace DwarfData {
 							}
 
 							throw new Error(
-								"DW_FORM_sec_offset not expected for attribute " + name,
+								`DW_FORM_sec_offset not expected for attribute 0x${name.toString(16)}/${DW_AT[name]}`,
 							);
 					}
 			}
-			throw new Error("unknown attribute form " + form);
+			throw new Error(
+				`unknown attribute form 0x${(form as number).toString(16)}/${form}`,
+			);
 		}
 	}
 } // namespace DwarfData

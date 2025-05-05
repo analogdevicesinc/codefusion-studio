@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -19,229 +20,262 @@ import ClockDiagram from './ClockDiagram';
 import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
+import type {CfsConfig} from 'cfs-plugins-api';
 
 const soc = await import(
 	'../../../../../../../../cli/src/socs/max32690-wlp.json'
 ).then(module => module.default as unknown as Soc);
 
 describe('Clock Diagram', () => {
-	it('Should render error states in the diagram', () => {
-		cy.viewport(1068, 688);
+	beforeEach(() => {
+		cy.clearLocalStorage().then(() => {
+			localStorage.setItem(
+				'ClockNodes',
+				JSON.stringify(soc.ClockNodes)
+			);
 
-		const reduxStore = configurePreloadedStore(soc);
+			cy.fixture('clock-config-plugin-controls.json').then(
+				controls => {
+					window.localStorage.setItem(
+						'pluginControls:CM4-proj',
+						JSON.stringify(controls)
+					);
+				}
+			);
 
-		const {registers} =
-			reduxStore.getState().appContextReducer.registersScreen;
+			window.localStorage.setItem(
+				'configDict',
+				JSON.stringify({
+					BoardName: '',
+					Package: 'WLP',
+					Soc: 'MAX32690',
+					projects: [
+						{
+							Description: 'ARM Cortex-M4',
+							ExternallyManaged: false,
+							FirmwarePlatform: 'zephyr',
+							CoreId: 'CM4',
+							Name: 'ARM Cortex-M4',
+							PluginId: '',
+							ProjectId: 'CM4-proj'
+						}
+					]
+				})
+			);
 
-		reduxStore.dispatch(
-			setAppliedSignal({
-				Pin: 'F4',
-				Peripheral: 'MISC',
-				Name: 'CLKEXT',
-				registers
-			})
-		);
+			localStorage.setItem(
+				'Package',
+				JSON.stringify(soc.Packages[0])
+			);
 
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				type: 'Mux',
-				name: 'SYS_OSC Mux',
-				key: 'MUX',
-				value: 'CLKEXT',
-				error: undefined
-			})
-		);
+			localStorage.setItem(
+				'Registers',
+				JSON.stringify(soc.Registers)
+			);
 
-		cy.mount(
-			<div style={{width: '100%', height: '400px'}}>
-				<ClockDiagram
-					canvas={soc.Packages[0].ClockCanvas}
-					handleNodeHover={() => {}}
-					handleClockHover={() => {}}
-				/>
-			</div>,
-			reduxStore
-		).then(() => {
-			// P0.23 has unconfigured value, it should display as error
-			cy.get(
-				'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			// All related nodes should be in error state
-			cy.get(
-				'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			cy.get(
-				'#ec99b0a0-175c-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			cy.get(
-				'#\\36 4a89760-178e-11ef-a3f8-3128e749cdb5 > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			cy.get(
-				'#\\35 7c00a30-175f-11ef-bfcc-eff1a86f1e4c > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			cy.get(
-				'#f8b687d0-3202-11ef-9ee9-a103ae3867ee > rect.adi_diagram_content_node_highlight.error'
-			).should('be.visible');
-
-			// @TODO: Fix test
-			// cy.wrap(
-			// 	reduxStore.dispatch(
-			// 		setClockNodeControlValue({
-			// 			type: 'Pin Input',
-			// 			name: 'P0.23',
-			// 			key: 'P0_23_FREQ',
-			// 			value: '10000',
-			// 			error: undefined
-			// 		})
-			// 	)
-			// ).then(setValidValue => {
-			// 	cy.log(JSON.stringify(setValidValue.payload))
-			// 		.then(() => {
-			// 			// when a valid value is set, all the error path is removed
-			// 			cy.get(
-			// 				'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-
-			// 			// All related nodes should be in error state
-			// 			cy.get(
-			// 				'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-
-			// 			cy.get(
-			// 				'#ec99b0a0-175c-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-
-			// 			cy.get(
-			// 				'#\\36 4a89760-178e-11ef-a3f8-3128e749cdb5 > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-
-			// 			cy.get(
-			// 				'#\\35 7c00a30-175f-11ef-bfcc-eff1a86f1e4c > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-
-			// 			cy.get(
-			// 				'#f8b687d0-3202-11ef-9ee9-a103ae3867ee > rect.adi_diagram_content_node'
-			// 			).should('be.visible');
-			// 		})
-			// 		.then(() => {
-			// 			cy.wrap(
-			// 				reduxStore.dispatch(
-			// 					setClockNodeControlValue({
-			// 						type: 'Pin Input',
-			// 						name: 'P0.23',
-			// 						key: 'P0_23_FREQ',
-			// 						value: '20000000',
-			// 						error: 'INVALID_MAX_VAL'
-			// 					})
-			// 				)
-			// 			).then(revert => {
-			// 				cy.log(JSON.stringify(revert.payload));
-			// 				cy.wait(1000);
-
-			// 				cy.get(
-			// 					'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-
-			// 				// All related nodes should be in error state
-			// 				cy.get(
-			// 					'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-
-			// 				cy.get(
-			// 					'#ec99b0a0-175c-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-
-			// 				cy.get(
-			// 					'#\\36 4a89760-178e-11ef-a3f8-3128e749cdb5 > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-
-			// 				cy.get(
-			// 					'#\\35 7c00a30-175f-11ef-bfcc-eff1a86f1e4c > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-
-			// 				cy.get(
-			// 					'#f8b687d0-3202-11ef-9ee9-a103ae3867ee > rect.adi_diagram_content_node_highlight.error'
-			// 				).should('be.visible');
-			// 			});
-			// 		});
-			// });
+			localStorage.setItem('Cores', JSON.stringify(soc.Cores));
 		});
+
+		cy.viewport(1068, 688);
 	});
 
-	it('Correctly disables nodes that are initialized in error state', () => {
-		cy.viewport(1068, 688);
+	it('Should render error states in the diagram', () => {
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const reduxStore = configurePreloadedStore(
+				soc,
+				{} as CfsConfig,
+				controls
+			);
 
-		const reduxStore = configurePreloadedStore(soc);
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
+				})
+			);
 
-		cy.mount(
-			<div style={{width: '100%', height: '400px'}}>
-				<ClockDiagram
-					canvas={soc.Packages[0].ClockCanvas}
-					handleNodeHover={() => {}}
-					handleClockHover={() => {}}
-				/>
-			</div>,
-			reduxStore
-		).then(() => {
-			cy.wait(2000);
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'CLKEXT',
+					error: undefined
+				})
+			);
 
-			// Assert High-Speed USB initializes in disabled state
-			cy.get(
-				'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+			cy.mount(
+				<div style={{width: '100%', height: '400px'}}>
+					<ClockDiagram
+						canvas={soc.Packages[0].ClockCanvas}
+						handleNodeHover={() => {}}
+						handleClockHover={() => {}}
+					/>
+				</div>,
+				reduxStore
 			)
-				.should('be.visible')
+				.then(() => {
+					// P0.23 has unconfigured value, it should display as error
+					cy.get(
+						'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+
+					// All related nodes should be in error state
+					cy.get(
+						'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+
+					cy.get(
+						'#ec99b0a0-175c-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+
+					cy.get(
+						'#\\36 4a89760-178e-11ef-a3f8-3128e749cdb5 > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+
+					cy.get(
+						'#\\35 7c00a30-175f-11ef-bfcc-eff1a86f1e4c > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+
+					cy.get(
+						'#f8b687d0-3202-11ef-9ee9-a103ae3867ee > rect.adi_diagram_content_node_highlight.error'
+					).should('be.visible');
+				})
 				.then(() => {
 					cy.wrap(
 						reduxStore.dispatch(
 							setClockNodeControlValue({
-								type: 'Peripheral',
-								name: 'High-Speed USB',
-								key: 'ENABLE',
-								value: 'TRUE'
-							})
-						),
-						reduxStore.dispatch(
-							setClockNodeControlValue({
-								type: 'Mux',
-								name: 'SYS_OSC Mux',
-								key: 'MUX',
-								value: 'ISO'
+								name: 'P0.23',
+								key: 'P0_23_FREQ',
+								value: '10000',
+								error: undefined
 							})
 						)
-					).then(() => {
-						cy.wait(1000);
-
-						// Assert High-Speed USB enables with error state
-						cy.get(
-							'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.error'
-						)
-							.should('be.visible')
+					).then(setValidValue => {
+						cy.log(JSON.stringify(setValidValue.payload))
+							.then(() => {
+								// When a valid value is set, all the error path is removed
+								cy.get(
+									'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
+								).should('be.visible');
+								// All related nodes should be in error state
+								cy.get(
+									'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
+								).should('be.visible');
+								cy.get(
+									'#ec99b0a0-175c-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node'
+								).should('be.visible');
+								cy.get(
+									'#\\36 4a89760-178e-11ef-a3f8-3128e749cdb5 > rect.adi_diagram_content_node'
+								).should('be.visible');
+								cy.get(
+									'#\\35 7c00a30-175f-11ef-bfcc-eff1a86f1e4c > rect.adi_diagram_content_node'
+								).should('be.visible');
+								cy.get(
+									'#f8b687d0-3202-11ef-9ee9-a103ae3867ee > rect.adi_diagram_content_node'
+								).should('be.visible');
+							})
 							.then(() => {
 								cy.wrap(
 									reduxStore.dispatch(
 										setClockNodeControlValue({
-											type: 'Peripheral',
-											name: 'High-Speed USB',
-											key: 'ENABLE',
-											value: 'FALSE'
+											name: 'P0.23',
+											key: 'P0_23_FREQ',
+											value: '90000000',
+											error: 'INVALID_MAX_VAL'
 										})
 									)
-								).then(() => {
+								).then(revert => {
+									cy.log(JSON.stringify(revert.payload));
 									cy.wait(1000);
-
-									// Assert High-Speed USB returns to disabled state
 									cy.get(
-										'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+										'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
+									).should('be.visible');
+									cy.get(
+										'#\\31 84f1cd0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
 									).should('be.visible');
 								});
 							});
 					});
 				});
+		});
+	});
+
+	it('Correctly disables nodes that are initialized in error state', () => {
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const reduxStore = configurePreloadedStore(
+				soc,
+				{} as CfsConfig,
+				controls
+			);
+
+			cy.mount(
+				<div style={{width: '100%', height: '400px'}}>
+					<ClockDiagram
+						canvas={soc.Packages[0].ClockCanvas}
+						handleNodeHover={() => {}}
+						handleClockHover={() => {}}
+					/>
+				</div>,
+				reduxStore
+			).then(() => {
+				cy.wait(2000);
+
+				// Assert High-Speed USB initializes in disabled state
+				cy.get(
+					'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+				)
+					.should('be.visible')
+					.then(() => {
+						cy.wrap(
+							reduxStore.dispatch(
+								setClockNodeControlValue({
+									name: 'High-Speed USB',
+									key: 'ENABLE',
+									value: 'TRUE'
+								})
+							)
+						)
+							.then(() => {
+								cy.wrap(
+									reduxStore.dispatch(
+										setClockNodeControlValue({
+											name: 'SYS_OSC Mux',
+											key: 'MUX',
+											value: 'ISO'
+										})
+									)
+								);
+							})
+							.then(() => {
+								cy.wait(1000);
+
+								// Assert High-Speed USB enables with error state
+								cy.get(
+									'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.error'
+								)
+									.should('be.visible')
+									.then(() => {
+										cy.wrap(
+											reduxStore.dispatch(
+												setClockNodeControlValue({
+													name: 'High-Speed USB',
+													key: 'ENABLE',
+													value: 'FALSE'
+												})
+											)
+										).then(() => {
+											cy.wait(1000);
+
+											// Assert High-Speed USB returns to disabled state
+											cy.get(
+												'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+											).should('be.visible');
+										});
+									});
+							});
+					});
+			});
 		});
 	});
 });

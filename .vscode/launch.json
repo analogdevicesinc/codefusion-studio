@@ -2,7 +2,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Run Config Tools Extension",
+			"name": "Debug config tools webview",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
@@ -20,13 +20,22 @@
 			"preLaunchTask": "ide: build"
 		},
 		{
-			"name": "Run ELF file viewer",
+			"name": "Debug ELF file explorer webview",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
 			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
 			"preLaunchTask": "elf: build"
+		},
+		{
+			"name": "Debug workspace creation webview",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
+			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
+			"preLaunchTask": "wrksp: build"
 		},
 		{
 			"type": "node",

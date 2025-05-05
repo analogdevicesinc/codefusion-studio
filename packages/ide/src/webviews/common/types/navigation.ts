@@ -13,6 +13,5 @@
  *
  */
 import type {navigationItems} from '../constants/navigation';
-export type NavigationLabel = string;
 export type NavigationItem =
 	(typeof navigationItems)[keyof typeof navigationItems];

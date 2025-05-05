@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,23 @@
 export const EXTENSION_ID = "cfs";
 export const CONFIG_TOOLS_ID = "cfgtools";
 export const CONFIG_FILE_EXTENSION = "cfsconfig";
+export const WORKSPACE_CONFIG_FILE_EXTENSION = "cfsworkspace";
+export const WORKSPACE_CONTEXT = "Workspace";
+
+// Custom Editor Ids
+export const WORKSPACE_CREATION_EDITOR_ID = "cfs.workspaceCreation";
+export const MCU_EDITOR_ID = "cfgtools.editor";
+export const ELF_EDITOR_ID = "elf.fileEditor";
 
 // Settings
 export const ADI_CONFIGURE_WORKSPACE_SETTING = "configureWorkspace";
 export const C_CPP = "C_Cpp.default";
-export const CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP = "openHomePageAtStartup";
+export const CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP = "home.openAtStartup";
+export const OPEN_SYSTEM_PLANNER_AT_STARTUP = "systemPlanner.openAtStartup";
 
+export const CLI_ID = "cfsutil";
+export const CFS_UTIL_PATH = `${CLI_ID}.path`;
 export const SDK_PATH = "sdk.path";
-export const CFS_UTIL_PATH = "cfsutil.path";
 
 export const PROGRAM_FILE = "programFile";
 export const RISCV_PROGRAM_FILE = "riscvProgramFile";
@@ -41,10 +50,6 @@ export const OPENOCD_TARGET = "target";
 export const OPENOCD_RISCV_INTERFACE = "riscvInterface";
 export const OPENOCD_RISCV_TARGET = "riscvTarget";
 
-export const TOOLS = "tools";
-export const BEAKER = "beaker";
-export const TRASH = "trash";
-export const ZAP = "zap";
 export const DEBUG_ALT = "debug-alt";
 export const SEARCH_DIRECTORIES = "searchDirectories";
 
@@ -60,6 +65,7 @@ export const PACK = "pack";
 export const SVD_FILE = "svdFile";
 export const JLINK_PATH = "jlink.path";
 export const JLINK_DEVICE = "jlink.device";
+export const OZONE_EXE = "ozone.executable";
 
 export const PROJECT = "project";
 export const NAME = "name";
@@ -77,19 +83,17 @@ export const BROWSE_STRING = "Browse...";
 export const CFS_PREFIX = "CFS: ";
 export const BUILD = "build";
 export const CLEAN = "clean";
-export const OPENOCD_FLASH = "flash (OpenOCD)";
-export const JLINK_FLASH = "flash (JLink)";
-export const OPENOCD_ERASE_FLASH = "erase flash (OpenOCD)";
-export const JLINK_ERASE_FLASH = "erase flash (JLink)";
+export const FLASH_OPENOCD = "flash (OpenOCD)";
+export const FLASH_JLINK = "flash (JLink)";
 export const DEBUG = "debug";
 export const CFS_BUILD = `${CFS_PREFIX}${BUILD}`;
 export const CFS_CLEAN = `${CFS_PREFIX}${CLEAN}`;
-export const CFS_FLASH = `${CFS_PREFIX}${OPENOCD_FLASH}`;
+export const CFS_FLASH = `${CFS_PREFIX}${FLASH_JLINK}`;
 export const CFS_DEBUG = `${CFS_PREFIX}${DEBUG}`;
 
 export const CREATE_NEW_CONFIG_FILE = "createNewConfigFile";
-export const CREATE_NEW_PROJECT = "createNewProject";
-export const OPEN_EXISTING_PROJECT = "openExistingProject";
+export const CREATE_NEW_CFS_WORKSPACE = "createNewCfsWorkspace";
+export const OPEN_CFS_WORKSPACE = "openCfsWorkspace";
 export const OPEN_EXISTING_CONFIG_FILE = "openExistingConfigFile";
 export const OPEN_ELF_FILE = "openElfFile";
 export const BROWSE_EXAMPLES = "browseExamples";
@@ -103,42 +107,48 @@ export const REQUEST_HOME_PAGE_CHECKBOX_STATE = "requestHomePageCheckboxState";
 export const GET_DEFAULT_LOCATION = "getDefaultLocation";
 export const CHECK_FILE_EXISTS = "checkFileExists";
 export const CHECK_CUSTOM_BOARD = "checkCustomBoard";
-export const SUBMIT_NEW_PROJECT_FORM = "submitNewProjectForm";
-export const CLOSE_NEW_PROJECT_WIZARD_TAB = "closeNewProjectWizardTab";
 export const GET_SOC_DATA = "getSocData";
+export const DOWNLOAD_SDK = "downloadSdk";
+export const SET_SDK_PATH = "setSdkPath";
+export const ACTIVE_CONTEXT = "activeContext";
 
-// Quick Access Panel Items
-
-export const PROJECTS = "Projects";
-export const ACTIONS = "Actions";
-export const EXAMPLES = "Browse Examples";
-export const HOME = "CFS Home Page";
-export const CONFIG_TOOLS = "Config Tools";
-export const ELF_FILE_EXPLORER = "ELF File Explorer";
+//Component Manager
+export const CATALOG_MANAGER = "catalogManager";
+export const CM_URL = "url";
+export const CATALOG_LOCATION = "catalogLocation";
+export const CHECK_FOR_UPDATES = "checkForUpdates";
 
 // Action Panel Actions
+//TODO: export the following in an ACTION_PANEL object
+export const BUILD_ALL_ACTION = "Build All";
 export const BUILD_ACTION = "Build";
 export const CLEAN_ACTION = "Clean";
 export const ERASE_ACTION = "Erase";
 export const FLASH_ACTION = "Flash";
 export const DEBUG_ACTION = "Debug";
+export const SECURITY_ACTION = "Security";
 export const OZONE_DEBUG_ACTION = "Debug with Ozone";
 export const JLINK_ACTION = "(JLink)";
 export const OPENOCD_ACTION = "(OpenOCD)";
 
 export const DEBUG_LAUNCH_CONTEXT = "debug-launch";
-
-export const FLASH_OPENOCD_ACTION = `${FLASH_ACTION} ${OPENOCD_ACTION}`;
-export const FLASH_JLINK_ACTION = `${FLASH_ACTION} ${JLINK_ACTION}`;
-export const ERASE_OPENOCD_ACTION = `${ERASE_ACTION} ${OPENOCD_ACTION}`;
-export const ERASE_JLINK_ACTION = `${ERASE_ACTION} ${JLINK_ACTION}`;
+export const DEBUG_TASK_CONTEXT = "debug-task";
+export const COPY_AND_EDIT_TASK_CONTEXT = "copy-and-edit-task";
 
 export const DEBUG_ARM_OPENOCD_ACTION = "Debug (Arm Cortex-M4, OpenOCD)";
 export const DEBUG_ARM_JLINK_ACTION = "Debug (Arm Cortex-M4, JLink)";
 export const DEBUG_RISCV_OPENOCD_ACTION = "Debug (RISC-V, OpenOCD)";
 export const RISCV_DEBUG = "CFS: Debug with GDB and OpenOCD (RISC-V)";
 
-export const CLI_ID = "cfsutil";
+// Icons
+export const TOOLS = "tools";
+export const BEAKER = "beaker";
+export const TRASH = "trash";
+export const ZAP = "zap";
 
 export const PIN_CONFIG_USER_GUIDE_URL =
-  "https://developer.analog.com/docs/codefusion-studio/1.0.0/";
+  "https://developer.analog.com/docs/codefusion-studio/1.1.0/";
+
+export enum SECURITY_TASKS_SEARCH_STRING {
+  generateKey = "generate mcuboot key",
+}

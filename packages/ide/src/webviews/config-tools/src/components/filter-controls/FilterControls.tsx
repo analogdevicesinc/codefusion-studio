@@ -13,7 +13,6 @@
  *
  */
 import {
-	useFocusedPins,
 	usePackagePins,
 	usePinDetailsTargetPin
 } from '../../state/slices/pins/pins.selector';
@@ -22,160 +21,127 @@ import {computePinState} from '../../screens/pinmux/utils/filters';
 import styles from './filterControls.module.scss';
 import {useEffect, useMemo} from 'react';
 import {useDispatch} from 'react-redux';
-import {focusPinSet} from '../../state/slices/pins/pins.reducer';
+
 import {
 	useActivePeripheral,
-	usePeripherals
+	useCurrentSignalsTargets
 } from '../../state/slices/peripherals/peripherals.selector';
-import {setActiveFilter} from '../../state/slices/app-context/appContext.reducer';
 import {
-	useFilter,
+	type Filter,
+	setActiveFilter
+} from '../../state/slices/app-context/appContext.reducer';
+import {
+	useActiveFilterType,
 	useSearchString
 } from '../../state/slices/app-context/appContext.selector';
-import type {Pin} from '@common/types/soc';
+import {Chip} from 'cfs-react-library';
 import {setActivePeripheral} from '../../state/slices/peripherals/peripherals.reducer';
-import {VSCodeBadge} from '@vscode/webview-ui-toolkit/react';
-import {Chip} from '@common/components/chip/Chip';
 
-type Filter = 'assigned' | 'available' | 'conflict' | undefined;
-
-function getPinsCount(string: string, type: Pin[]) {
-	const count = string ? 0 : type.length;
-
-	return Boolean(count) && <VSCodeBadge>{count}</VSCodeBadge>;
-}
+const emptyCounter = 0;
 
 function FilterControls() {
-	const packagePins = usePackagePins();
-	const focusedPins = useFocusedPins();
+	const pinsState = usePackagePins();
 	const pinDetailsTargetId = usePinDetailsTargetPin();
-	const filterState = useFilter();
+	const activeFilterType = useActiveFilterType();
 	const searchString = useSearchString('pinconfig');
 
 	const dispatch = useDispatch();
 
 	const activePeripheral = useActivePeripheral();
-	const peripherals = usePeripherals();
+	const peripherals = useCurrentSignalsTargets();
 
-	const beforeFilterPins = useMemo(() => {
+	const targetPinSet = useMemo(() => {
 		if (pinDetailsTargetId) {
-			return [packagePins[pinDetailsTargetId]];
+			return [pinsState[pinDetailsTargetId]];
 		}
 
 		if (activePeripheral) {
 			return Object.values(
-				peripherals[activePeripheral].signals.dict
-			).map(signal => packagePins[signal.currentTarget!]);
+				peripherals[activePeripheral].signalsTargets
+			).map(signal => pinsState[signal!]);
 		}
 
-		return Object.values(packagePins);
-	}, [
-		activePeripheral,
-		packagePins,
-		peripherals,
-		pinDetailsTargetId
-	]);
+		return Object.values(pinsState);
+	}, [activePeripheral, peripherals, pinDetailsTargetId, pinsState]);
 
-	const {assigned, available, conflicts} =
-		computePinState(beforeFilterPins);
+	const categorizedPins = computePinState(targetPinSet);
 
-	const handleFilterState = (filter: Filter) => {
-		if (filterState === filter) {
+	const {assigned, available, conflict} = categorizedPins;
+
+	const handleFilterState = (selectedFilterType: Filter) => {
+		if (activeFilterType === selectedFilterType) {
 			dispatch(setActiveFilter(undefined));
 		} else {
-			dispatch(setActiveFilter(filter));
-		}
-	};
-
-	// @TODO: This should not be handled as a side effect. This logic should be moved to the click handler.
-	useEffect(() => {
-		let pins: Pin[];
-
-		switch (filterState) {
-			case 'assigned':
-				pins = assigned;
-				break;
-			case 'available':
-				pins = available;
-				break;
-			case 'conflict':
-				pins = conflicts;
-				break;
-			default:
-				return;
+			dispatch(setActiveFilter(selectedFilterType));
 		}
 
-		const areTargetPinsFocused = pins.every(pin =>
-			focusedPins.includes(pin.Name)
-		);
+		if (selectedFilterType === undefined) return;
 
-		if (!areTargetPinsFocused) {
-			dispatch(focusPinSet(pins.map(pin => pin.Name)));
-		}
-
-		if (
-			(filterState === 'assigned' && pins.length === 0) ||
-			(filterState === 'available' && pins.length === 0) ||
-			(filterState === 'conflict' && pins.length === 0)
-		) {
+		// @TODO: Probably this does not belong here.
+		if (categorizedPins[selectedFilterType].length === 0) {
 			if (activePeripheral) {
 				dispatch(setActivePeripheral(''));
 			} else {
 				dispatch(setActiveFilter(undefined));
 			}
 		}
-	}, [
-		assigned,
-		available,
-		conflicts,
-		filterState,
-		beforeFilterPins,
-		focusedPins,
-		dispatch,
-		activePeripheral
-	]);
+	};
+
+	useEffect(() => {
+		if (
+			activeFilterType &&
+			categorizedPins[activeFilterType].length === 0
+		)
+			dispatch(setActiveFilter(undefined));
+	}, [activeFilterType, categorizedPins, dispatch]);
 
 	return (
 		<div className={styles.filterControlsContainer}>
 			<Chip
-				isActive={filterState === 'assigned'}
+				key='filterControl-assigned'
+				isActive={activeFilterType === 'assigned'}
 				id='filterControl-assigned'
 				label='Assigned'
-				dataTest='Assigned'
-				isDisabled={searchString ? 0 : assigned.length}
-				dataValue={searchString ? 0 : assigned.length}
+				dataTest='filter-control:assigned'
+				isDisabled={
+					Boolean(pinDetailsTargetId) ||
+					(searchString ? emptyCounter : assigned.length)
+				}
+				dataValue={searchString ? emptyCounter : assigned.length}
 				onClick={() => {
 					handleFilterState('assigned');
 				}}
-			>
-				{getPinsCount(searchString, assigned)}
-			</Chip>
+			/>
 			<Chip
-				isActive={filterState === 'available'}
+				key='filterControl-available'
+				isActive={activeFilterType === 'available'}
 				id='filterControl-available'
 				label='Available'
-				dataTest='Available'
-				isDisabled={searchString ? 0 : available.length}
-				dataValue={searchString ? 0 : available.length}
+				dataTest='filter-control:available'
+				isDisabled={
+					Boolean(pinDetailsTargetId) ||
+					(searchString ? emptyCounter : available.length)
+				}
+				dataValue={searchString ? emptyCounter : available.length}
 				onClick={() => {
 					handleFilterState('available');
 				}}
-			>
-				{getPinsCount(searchString, available)}
-			</Chip>
+			/>
 			<Chip
-				isActive={filterState === 'conflict'}
+				key='filterControl-conflicts'
+				isActive={activeFilterType === 'conflict'}
 				id='filterControl-conflicts'
 				label='Conflicts'
-				dataTest='Conflicts'
-				isDisabled={searchString ? 0 : conflicts.length}
-				dataValue={searchString ? 0 : conflicts.length}
+				dataTest='filter-control:conflicts'
+				isDisabled={
+					Boolean(pinDetailsTargetId) ||
+					(searchString ? emptyCounter : conflict.length)
+				}
+				dataValue={searchString ? emptyCounter : conflict.length}
 				onClick={() => {
 					handleFilterState('conflict');
 				}}
-			>
-				{getPinsCount(searchString, conflicts)}
-			</Chip>
+			/>
 		</div>
 	);
 }

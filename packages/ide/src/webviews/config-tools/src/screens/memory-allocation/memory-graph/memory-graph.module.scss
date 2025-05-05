@@ -1,0 +1,102 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+
+@mixin partitionGap {
+	position: absolute;
+	height: 100%;
+	width: 1px;
+	background-color: colors.$default-background;
+}
+
+.container {
+	border-radius: 4px;
+	border: 2px solid colors.$list-inactive-selection-background;
+	width: 98%;
+	height: 20px;
+	padding: 0 1px;
+}
+.section {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	position: relative;
+	.partition,
+	.hashedPartition,
+	.block {
+		height: 16px;
+	}
+	.partition,
+	.hashedPartition {
+		position: absolute;
+	}
+	.partition::before,
+	.hashedPartition::before {
+		content: '';
+		@include partitionGap;
+		left: 0px;
+	}
+	.partition::after,
+	.hashedPartition::after {
+		content: '';
+		@include partitionGap;
+		right: 0px;
+	}
+	.partition {
+		background-color: colors.$list-inactive-selection-background;
+	}
+	.hashedPartition {
+		background-image: repeating-linear-gradient(
+			120deg,
+			colors.$list-inactive-selection-background 12px,
+			transparent 18px
+		);
+	}
+	.hashedHoveredPartition {
+		cursor: pointer;
+		background-image: repeating-linear-gradient(
+			120deg,
+			colors.$list-active-selection-background 12px,
+			transparent 18px
+		);
+	}
+	.hoveredPartition {
+		cursor: pointer;
+		background-color: colors.$list-active-selection-background;
+	}
+	.block {
+		padding: 2px 0;
+		position: relative;
+	}
+}
+.startingPartition {
+	border-radius: 2px 0 0 2px;
+}
+
+.endingPartition {
+	border-radius: 0 2px 2px 0;
+}
+
+.block:not(:first-child):after {
+	content: '';
+	position: absolute;
+	height: 100%;
+	width: 2px;
+	background: colors.$list-inactive-selection-background;
+	top: 0;
+	left: -1px;
+}

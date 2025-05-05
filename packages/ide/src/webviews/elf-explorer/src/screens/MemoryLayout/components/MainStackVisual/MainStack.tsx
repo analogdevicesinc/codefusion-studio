@@ -18,7 +18,6 @@ import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
 import {SegmentCategory} from '../../../../common/types/memory-layout';
 import {
 	getStylesForSegment,
-	isSegmReadOnly,
 	getNextSegment,
 	MIN_SIZE_PERCENTAGE
 } from '../../../../utils/visual-utils';
@@ -117,7 +116,7 @@ export default function MainStack({
 		if (segment.category === SegmentCategory.UNUSED)
 			return styles.unused;
 
-		return isSegmReadOnly(segment)
+		return segment.showAsReadOnly
 			? styles.read
 			: styles['read-write-exec'];
 	};
@@ -182,20 +181,27 @@ export default function MainStack({
 			segm => segm.id === hoveredPartInfo.id
 		) as TSegment;
 
-		const {top: containerTop = 0, left: containerLeft = 0} =
+		const {top: containerTop = 0, bottom: containerBottom = 0} =
 			containerRef.current?.getBoundingClientRect() ?? {};
 
 		const {
-			left: nodeLeft = 0,
 			top: nodeTop = 0,
+			bottom: nodeBottom = 0,
 			height: nodeHeight = 0
 		} = hoveredNode?.getBoundingClientRect() ?? {};
 
+		const viewportHeight = window.innerHeight;
+
 		const gap = 4;
-		const top: number | undefined =
-			nodeTop - containerTop + nodeHeight + gap;
 		let bottom;
-		const left = nodeLeft - containerLeft + 150;
+		let top;
+		const left = 150;
+
+		if (viewportHeight < nodeBottom + gap + 150) {
+			bottom = nodeBottom - containerBottom - nodeHeight - gap;
+		} else {
+			top = nodeTop - containerTop + nodeHeight + gap;
+		}
 
 		return (
 			<CfsTooltip

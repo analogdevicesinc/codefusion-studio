@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ export namespace SocDataType {
     msdkIdentifier?: string;
     zephyrIdentifier?: string;
     description: string;
+    secure?: boolean;
   };
 
   export type Location =
@@ -47,6 +48,11 @@ export namespace SocDataType {
     name: string;
     location: Location;
     boot?: boolean;
+    segger: SeggerOptions;
+  };
+
+  export type SeggerOptions = {
+    ozoneSvd: string;
   };
 
   export type Template = {
@@ -54,6 +60,7 @@ export namespace SocDataType {
     description: string;
     folders: TemplateFolder[];
     configs?: CfsConfig[];
+    supportedDomains: string[];
   };
 
   export type CfsConfig = {

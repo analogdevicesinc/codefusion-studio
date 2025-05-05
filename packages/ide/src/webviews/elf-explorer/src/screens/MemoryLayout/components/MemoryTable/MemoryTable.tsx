@@ -14,15 +14,7 @@
  */
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {memo, useCallback, useMemo, useState} from 'react';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell
-} from '@vscode/webview-ui-toolkit/react';
-import {
-	camelCaseToSpaces,
-	capitalizeWord
-} from '../../../../utils/string';
+import {capitalizeWord} from '@common/utils/string';
 import styles from './MemoryTable.module.scss';
 
 import type {
@@ -34,6 +26,7 @@ import {updateSavedOptionsForTableFormat} from '../../../../common/api';
 
 import type {TSymbol} from '../../../../common/types/symbols';
 import type {TContextMenuOption} from '../../../../common/types/generic';
+import type {TLocaleContext} from '../../../../common/types/context';
 import ElfTableHeaderCell from '../../../../components/ElfTableHeaderCell/ElfTableHeaderCell';
 import sortData from '../../../../utils/sorting-utils';
 import {formatSize} from '../../../../utils/stats-utils';
@@ -47,6 +40,7 @@ import {COLUMNS} from '../../../../common/types/memory-layout';
 import ContextMenuPanel from '../../../../components/ContextMenu/Panel/ContextMenuPanel';
 import {convertDecimalToHex} from '../../../../utils/number';
 import {GO_TO_SOURCE_CODE} from '../../../../common/constants/statistics';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 import {
 	checkPath,
 	goToSourceCode
@@ -55,6 +49,15 @@ import {
 	extractPositionFromPath,
 	formatPath
 } from '../../../../utils/symbols-utils';
+import HelpOptionModal from '../../../../components/HelpOptionModal/HelpOptionModal';
+import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
+
+import {
+	isLayer1Flags,
+	isLayer2FlagsType,
+	isLayer3BindVis
+} from '../../../../utils/memory-handlers';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 const MENU_OPTIONS: TContextMenuOption[] = [
 	{
@@ -65,6 +68,11 @@ const MENU_OPTIONS: TContextMenuOption[] = [
 	{
 		id: 1,
 		label: '',
+		show: false
+	},
+	{
+		id: 2,
+		label: 'Help - ',
 		show: false
 	}
 ];
@@ -98,11 +106,13 @@ function MemoryTable({
 	hoverSource
 }: TMemoryTableProps) {
 	const [sortBy, setSortBy] = useState<Record<string, any>>({
-		id: 'asc'
+		address: 'asc'
 	});
+	const i10n: TLocaleContext | undefined =
+		useLocaleContext()?.['memory layout']?.helpModal?.[`${layer}`];
 
 	const columns: string[] = getColumns(data);
-	const filteredOutColumns = getOrder(layer);
+	const filteredOutColumns = getOrder(layer) as unknown as COLUMNS[];
 
 	const [isMenuVisible, setIsMenuVisible] = useState(false);
 	const [contextMenuPosition, setContextMenuPosition] = useState<{
@@ -114,6 +124,13 @@ function MemoryTable({
 	const [clickedSymbol, setClickedSymbol] = useState<
 		TSymbol | undefined
 	>(undefined);
+	const [helpOptionModal, setHelpOptionModal] = useState<{
+		isVisible: boolean;
+		item: string;
+	}>({
+		isVisible: false,
+		item: ''
+	});
 
 	const updateSavedOptions = (newOptions: TSavedTableOptions) => {
 		updateSavedOptionsForTableFormat(newOptions)
@@ -139,17 +156,30 @@ function MemoryTable({
 
 	const handleContextMenu = (
 		event: React.MouseEvent<HTMLElement>,
-		column: string,
+		column: COLUMNS,
 		index: number
 	) => {
 		MENU_OPTIONS[0].show = false;
 		MENU_OPTIONS[1].show = false;
+		MENU_OPTIONS[2].show = false;
 		event.preventDefault();
 		setContextMenuPosition({
 			x: event.clientX,
 			y: event.clientY
 		});
 		setClickedCol(column);
+
+		if (
+			isLayer1Flags(column, layer) ||
+			isLayer2FlagsType(column, layer) ||
+			isLayer3BindVis(column, layer)
+		) {
+			MENU_OPTIONS[2].show = true;
+			MENU_OPTIONS[2].label = `Help - ${capitalizeWord(column)}`;
+
+			setIsMenuVisible(true);
+			setMenuOptions(MENU_OPTIONS);
+		}
 
 		if (layer === 3) {
 			const clonedSymbol: TSymbol = JSON.parse(
@@ -183,6 +213,7 @@ function MemoryTable({
 			elem?.innerText?.includes('Show column as');
 		const isOptionGoToSourceCode =
 			elem?.innerText?.includes(GO_TO_SOURCE_CODE);
+		const isOptionHelpModal = elem?.innerText?.includes('Help - ');
 		const currentOption = savedOptions?.memory?.[layer]?.[clickedCol];
 
 		if (isOptionFormat && currentOption) {
@@ -204,6 +235,14 @@ function MemoryTable({
 				formatPath((clickedSymbol?.path as string) || ''),
 				pos as number[]
 			);
+		}
+
+		if (isOptionHelpModal) {
+			setHelpOptionModal(prev => ({
+				...prev,
+				isVisible: true,
+				item: elem?.innerText.split(' - ')[1] || ''
+			}));
 		}
 	};
 
@@ -258,6 +297,16 @@ function MemoryTable({
 			return convertDecimalToHex(Number(row[column]));
 		}
 
+		if (column === COLUMNS.NAME && layer === 2) {
+			return (
+				<SectionNameWithCircle
+					value={row.name}
+					bucket={row.bucket}
+					align='left'
+				/>
+			);
+		}
+
 		return row[column];
 	};
 
@@ -299,84 +348,108 @@ function MemoryTable({
 		return '';
 	};
 
+	const displayModal = () => (
+		<HelpOptionModal
+			state={helpOptionModal}
+			i10n={i10n}
+			onModalClose={() => {
+				setHelpOptionModal(prev => ({
+					...prev,
+					isVisible: false,
+					item: ''
+				}));
+			}}
+		/>
+	);
+
 	return (
 		<>
 			<div className={styles['footer-container']}>
-				<VSCodeDataGrid
-					aria-label='Memory Table'
-					className={`table-styles ${styles['min-height']} ${styles['highligh-table']}`}
-					grid-template-columns={getColumnSizes(layer)}
+				<DataGrid
+					ariaLabel='Memory Table'
+					className={`${styles.table} ${styles['min-height']} ${styles['highlight-table']}`}
+					gridTemplateColumns={getColumnSizes(layer)}
 				>
-					<VSCodeDataGridRow row-type='header'>
+					<DataGridRow rowType='header'>
 						{filteredOutColumns.map((column: string, index) => (
-							<VSCodeDataGridCell
+							<DataGridCell
 								key={column}
-								cell-type='columnheader'
-								grid-column={index + 1}
+								cellType='columnheader'
+								gridColumn={String(index + 1)}
 								className={setRightAlignToDecColumns(column)}
 							>
 								<ElfTableHeaderCell
 									dir={sortBy[column]}
 									column={column}
-									label={capitalizeWord(
-										camelCaseToSpaces(
-											layer === 2 && column === 'id' ? 'num' : column
-										)
-									)}
+									label={capitalizeWord(column)}
 									onSort={onSortColumn}
 								/>
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						))}
-					</VSCodeDataGridRow>
-					{sortedData.map((row, rowIndex) => {
-						// Check if any column in the row is an object
-						const hasNextLayer = columns.some(
-							column => typeof row[column] === 'object'
-						);
+					</DataGridRow>
+					{sortedData
+						.filter(item => {
+							// Hide the symbol in table which is type section
+							if (layer === 3) {
+								return item.name !== item.section;
+							}
 
-						return (
-							<VSCodeDataGridRow
-								key={row.id}
-								className={`${
-									hasNextLayer
-										? styles.enabledRow
-										: styles.disabledRow
-								} ${
-									row.id === hoveredItem?.id &&
-									hoverSource === 'MemoryVisual'
-										? styles.highlight
-										: ''
-								}`}
-								onClick={() => {
-									if (hasNextLayer) {
-										onClickHandler(
-											row as TSegment | TSection | TSymbol
-										);
-									}
-								}}
-								onMouseEnter={() => {
-									onHover(row, 'MemoryTable');
-								}}
-								onMouseLeave={onMouseLeave}
-							>
-								{filteredOutColumns.map((column, index: number) => (
-									<VSCodeDataGridCell
-										key={`${row.id}-${column}`}
-										title={displayContent(column, row)}
-										grid-column={index + 1}
-										className={setRightAlignToDecValues(column)}
-										onContextMenu={event => {
-											handleContextMenu(event, column, rowIndex);
-										}}
-									>
-										{displayContent(column, row)}
-									</VSCodeDataGridCell>
-								))}
-							</VSCodeDataGridRow>
-						);
-					})}
-				</VSCodeDataGrid>
-				<VSCodeDataGridRow className={styles['sticky-grid-footer']}>
+							return item;
+						})
+						.map((row, rowIndex) => {
+							// Check if any column in the row is an object
+							// TO DO: change this approach
+							const hasNextLayer = columns.some(
+								column => typeof row[column] === 'object'
+							);
+
+							return (
+								<DataGridRow
+									key={row.id}
+									className={`${
+										hasNextLayer
+											? styles.enabledRow
+											: styles.disabledRow
+									} ${
+										row.id === hoveredItem?.id &&
+										hoverSource === 'MemoryVisual'
+											? styles.highlight
+											: ''
+									}`}
+									onClick={() => {
+										if (hasNextLayer) {
+											onClickHandler(
+												row as TSegment | TSection | TSymbol
+											);
+										}
+									}}
+									onMouseEnter={() => {
+										onHover(row, 'MemoryTable');
+									}}
+									onMouseLeave={onMouseLeave}
+								>
+									{filteredOutColumns.map(
+										(column: COLUMNS, index: number) => (
+											<DataGridCell
+												key={`${row.id}-${column}`}
+												title={displayContent(column, row)}
+												gridColumn={String(index + 1)}
+												className={setRightAlignToDecValues(column)}
+												onContextMenu={(
+													event: React.MouseEvent<HTMLElement>
+												) => {
+													handleContextMenu(event, column, rowIndex);
+												}}
+											>
+												{displayContent(column, row)}
+											</DataGridCell>
+										)
+									)}
+								</DataGridRow>
+							);
+						})}
+				</DataGrid>
+				<DataGridRow className={styles['sticky-grid-footer']}>
 					<>
 						<strong>{sortedData.length}</strong>
 						{layer === 1
@@ -385,7 +458,7 @@ function MemoryTable({
 								? ' Sections'
 								: ' Symbols'}
 					</>
-				</VSCodeDataGridRow>
+				</DataGridRow>
 			</div>
 
 			<ContextMenuPanel
@@ -396,6 +469,8 @@ function MemoryTable({
 				handleOptionClick={handleOptionClick}
 				closeMenu={closeContextMenu}
 			/>
+
+			{helpOptionModal.isVisible && displayModal()}
 		</>
 	);
 }

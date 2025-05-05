@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
+@use '#colors' as colors;
 
 .item {
 	padding: 5px 0;
@@ -29,6 +29,10 @@
 		color: colors.$default-foreground;
 		font-weight: 500;
 		line-height: 14px;
+
+		.icon {
+			cursor: default;
+		}
 	}
 
 	.value {

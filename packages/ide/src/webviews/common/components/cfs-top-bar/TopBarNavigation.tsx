@@ -18,9 +18,13 @@ import TopbarButton from './TopbarButton';
 import styles from './TopbarNavigation.module.scss';
 
 function TopbarNavigation({
+	isBackBtnDisabled = false,
+	isForwardBtnDisabled = false,
 	navigateBackHandler,
 	navigateForwardHandler
 }: {
+	readonly isBackBtnDisabled?: boolean;
+	readonly isForwardBtnDisabled?: boolean;
 	readonly navigateBackHandler: () => void;
 	readonly navigateForwardHandler: () => void;
 }) {
@@ -29,11 +33,13 @@ function TopbarNavigation({
 			<TopbarButton
 				title='Back'
 				icon={<LeftArrowIcon />}
+				isDisabled={isBackBtnDisabled}
 				clickHandler={navigateBackHandler}
 			/>
 			<TopbarButton
 				title='Forward'
 				icon={<RightArrowIcon />}
+				isDisabled={isForwardBtnDisabled}
 				clickHandler={navigateForwardHandler}
 			/>
 		</div>

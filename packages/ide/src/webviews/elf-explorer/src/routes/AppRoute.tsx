@@ -25,9 +25,6 @@ import {navigationItems} from '../common/constants/navigation';
 // State
 import {useActiveScreen} from '../state/slices/elf-context/elfContext.selector';
 
-// Context
-import {AppProvider} from '../common/contexts/AppContext';
-
 /**
  * This component handles the routing mechanism
  * clicking on side nav item, will save selection in store and then based on that, will show the correct screen component
@@ -36,13 +33,11 @@ export default function CfsAppPanel() {
 	const activeScreen = useActiveScreen();
 
 	return (
-		<AppProvider>
-			<NavigationPanel activeNavItem={activeScreen}>
-				<Stats key={navigationItems.stats} />
-				<Metadata key={navigationItems.metadata} />
-				<Symbols key={navigationItems.symbols} />
-				<MemoryLayout key={navigationItems.memoryLayout} />
-			</NavigationPanel>
-		</AppProvider>
+		<NavigationPanel activeNavItem={activeScreen}>
+			<Stats key={navigationItems.stats} />
+			<Metadata key={navigationItems.metadata} />
+			<Symbols key={navigationItems.symbols} />
+			<MemoryLayout key={navigationItems.memoryLayout} />
+		</NavigationPanel>
 	);
 }

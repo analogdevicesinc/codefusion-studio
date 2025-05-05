@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   libxcb-icccm4 \
   libxcb-image0 \
   libxcb-keysyms1 \
+  unzip \
   libxcb-randr0 \
   libxcb-render-util0 \
   libxcb-shape0 \
@@ -45,6 +46,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   rm -rf /var/lib/apt/lists/*
 
 RUN update-ca-certificates
+
+RUN curl -O https://artifactory.analog.com:443/artifactory/dte-kits/CFSIO-00/1.1.0/w2501037/CodeFusionStudio_1.1.0.run && \
+    chmod +x CodeFusionStudio_1.1.0.run && \
+    ./CodeFusionStudio_1.1.0.run --root /github/home/analog/cfs/1.1.0 --accept-licenses --default-answer --confirm-command install || echo "Installation failed" && \
+    rm CodeFusionStudio_1.1.0.run
 
 # Install NVM, NodeJS, yarn, vsce
 ENV NVM_DIR=/.nvm

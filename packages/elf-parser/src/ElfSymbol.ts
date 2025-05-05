@@ -72,15 +72,6 @@ export class ElfSymbol {
 			this.symbolData.push(symEntry);
 		}
 	}
-
-	public findByName(name: string) : ElfSymbolData {
-		for (const symData of this.symbolData) {
-			if (symData.nameStr === name) {
-				return symData;
-			}
-		}
-		return undefined;
-	}
 }
 
 /**
@@ -107,8 +98,12 @@ export class ElfSymbolData {
 	public hasGraphStack = false;
 	public graphStack = 0;
 	public recursiveType = Enums.FunctionRecursiveType.NoRecursion;
+	public callees = new Set<ElfSymbolData>();
+	public maxDepth: number;
 
 	public nameStr: string;
+	public demangledName: string;
+	public demangledNameSource = "";
 	public sectionNameStr: string; // can be null!
 
 	// Debug info
@@ -117,6 +112,9 @@ export class ElfSymbolData {
 	public column = 0;
 	public fromDies = false;
 	public debugAddress = 0;
+
+	// DB related info
+	public dbId: number;
 
 	/**
 	 * Constructs a new instance of the `ElfSymbolData` class.
@@ -244,8 +242,7 @@ export class ElfSymbolData {
 		return str;
 	}
 
-	public cacheName()
-	{
+	public cacheName() {
 		this.nameStr = this.getSymNameString();
 		// In case section symbols don't have a name, use section name
 		if (this.nameStr.length == 0 && this.infoType === Enums.sym_type.SECTION) {
@@ -253,8 +250,7 @@ export class ElfSymbolData {
 		}
 	}
 
-	public cacheSectionName(md: ElfDataModel)
-	{
+	public cacheSectionName(md: ElfDataModel) {
 		this.sectionNameStr = md.getSectionName(this.sectionHeaderIndex);
 	}
 }

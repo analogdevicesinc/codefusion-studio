@@ -1,7 +1,7 @@
 ---
 description: ELF File Explorer for CodeFusion Studio
 author: Analog Devices
-date: 2024-09-24
+date: 2025-04-28
 ---
 
 # ELF File Explorer
@@ -11,7 +11,7 @@ The ELF File Explorer enables users to quickly parse and analyze compiled binari
 ## Supported formats
 
 The CodeFusion Studio ELF File Explorer can open and display the contents of any file with a valid ELF header.
-The file extensions supported by the ELF File Explorer are: AXF, ELF, KO, MOD, O, OUT, PRX, PUFF, and SO.
+The file extensions supported by the ELF File Explorer are: AXF, DOJ, DXE, ELF, EXE, KO, MOD, O, OUT, PRX, PUFF, and SO.
 
 ## Open a file
 
@@ -105,7 +105,7 @@ The default view `SELECT *` includes the following fields. You can change which 
 
 | Column     | Type    | Description                                                                                    |
 | ---------- | ------- | ---------------------------------------------------------------------------------------------- |
-| num        | integer | The unique number identifying the symbol                                                      |
+| id         | integer | The unique identifier for the symbol                                                      |
 | name       | string  | The name of the symbol                                                                        |
 | type       | string  | The type of the symbol, indicating what kind of entity it represents                          |
 | address    | integer | The memory address where the symbol is located                                                |
@@ -131,7 +131,7 @@ These flags will force the compiler to generate debug information using the DWAR
 
 #### Zephyr
 
-For Zephyr Projects, add the following flags to CMakeLists.txt:
+For Zephyr projects, add the following flags to CMakeLists.txt:
 
 ``` kconfig
   zephyr_cc_option(-fstack-usage)  
@@ -165,7 +165,7 @@ Queries can be saved using the save icon to the right of the query field.
 Click on the **Saved queries** button to the right of the query field to see a list of saved queries including some pre-populated queries. Queries can be edited or deleted from here by clicking on the pencil or trash can icons.  
 
 !!! note
-    Saved queries are stored in the user settings so they are available on any project.
+    Saved queries are stored in the user settings so they are available on any workspace.
 
 Any valid SQL construct is supported here, including `WHERE`, `ORDER`, `LIMIT`, `LIKE` and `REGEXP`.
 Some examples of queries are as follows.
@@ -217,7 +217,7 @@ Clicking on a segment will show you a table with the sections in that segment.
 
 ### Sections in a Segment
 
-The Sections in a segment table shows a high-level summary of all the sections in that memory segement.
+The Sections in a segment table shows a high-level summary of all the sections in that memory segment.
 ![ELF Memory Sections](images/elf-explorer-memory-sections-dark.png#only-dark)
 ![ELF Memory Sections](images/elf-explorer-memory-sections-light.png#only-light)
 
@@ -225,7 +225,7 @@ The Sections in a Segment table includes the following fields:
 
 | Field   | Description                                                                    |
 | ------- | ------------------------------------------------------------------------------ |
-| Num     |  The unique number identifying the section                                     |
+| Id     |  The unique identifier for the section                                     |
 | Name    |  The name of the section                                                       |
 | Address |  The memory address where the section begins                                   |
 | Size    |  The size of the section in bytes                                              |
@@ -265,7 +265,7 @@ The Symbols in a section table includes the following fields:
 
 | Field      | Description                                                                   |
 | ---------- | ----------------------------------------------------------------------------- |
-| Num        |  The unique number identifying the symbol                                     |
+| Id        |  The unique identifier for the symbol                                     |
 | Name       |  The name of the symbol                                                       |
 | Address    |  The memory address where the symbol is located                               |
 | Size       |  The size of the symbol in bytes                                              |

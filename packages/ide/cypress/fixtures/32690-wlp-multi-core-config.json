@@ -1,0 +1,39 @@
+{
+  "Copyright": "Copyright (c) undefined Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "undefined",
+  "DataModelSchemaVersion": "undefined",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "BoardName": "AD-APARD32690-SL",
+  "Timestamp": "2025-04-04T11:40:53.997Z",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4-proj",
+      "PluginId": "com.analog.project.zephyr40.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "Zephyr 4.1",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV-proj",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "riscv"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ],
+  "Pins": [],
+  "ClockNodes": []
+}

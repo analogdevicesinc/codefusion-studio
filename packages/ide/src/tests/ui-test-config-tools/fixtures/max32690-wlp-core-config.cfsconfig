@@ -1,0 +1,189 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.1.25",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-02-25T13:55:35.662Z",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "FirmwarePlatform": "zephyr-4.0",
+  "Pins": [
+    {
+      "Pin": "C3",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.20",
+      "Config": {}
+    },
+    {
+      "Pin": "F2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.11",
+      "Config": {}
+    },
+    {
+      "Pin": "F3",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.12",
+      "Config": {}
+    },
+    {
+      "Pin": "J2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.1",
+      "Config": {}
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Type": "Peripheral",
+      "Name": "High-Speed USB",
+      "Control": "ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    }
+  ],
+  "Projects": [
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "max32xxx_78xxx-msdk",
+      "FirmwarePlatform": "MSDK 3.0",
+      "ExternallyManaged": false,
+      "Partitions": [
+        {
+          "Name": "Shared_Partition",
+          "StartAddress": "0x10300000",
+          "Size": 30720,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {}
+        },
+        {
+          "Name": "Partition3",
+          "StartAddress": "0x20100000",
+          "Size": 20480,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {}
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.11",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_11",
+                "PHANDLE": "gpio_p0_11",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            },
+            {
+              "Name": "P0.12",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_12",
+                "PHANDLE": "gpio_p0_12",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    },
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "max32xxx_78xxx-zephry37",
+      "FirmwarePlatform": "Zephyr 3.7",
+      "ExternallyManaged": false,
+      "Partitions": [
+        {
+          "Name": "Shared_Partition",
+          "StartAddress": "0x10300000",
+          "Size": 30720,
+          "IsOwner": false,
+          "Access": "R"
+        },
+        {
+          "Name": "Partition2",
+          "StartAddress": "0x20060000",
+          "Size": 30720,
+          "IsOwner": true,
+          "Access": "R"
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.1",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_1",
+                "PHANDLE": "gpio_p0_1",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            },
+            {
+              "Name": "P0.20",
+              "Config": {
+                "GPIO_TYPE": "BUTTON",
+                "PWR": "VDDIO",
+                "PS": "DIS",
+                "POLARITY": "LOW",
+                "DT_NAME": "gpio_p0_20",
+                "PHANDLE": "gpio_p0_20",
+                "INPUT_CODE": "INPUT_KEY_0"
+              }
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "BLE",
+          "Signals": [
+            {
+              "Name": "ANT",
+              "Config": {}
+            },
+            {
+              "Name": "ANT_CTRL0",
+              "Config": {}
+            },
+            {
+              "Name": "ANT_CTRL1",
+              "Config": {}
+            },
+            {
+              "Name": "ANT_CTRL2",
+              "Config": {}
+            },
+            {
+              "Name": "ANT_CTRL3",
+              "Config": {}
+            },
+            {
+              "Name": "LDO_IN",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    }
+  ],
+  "BoardName": "AD-APARD32690-SL"
+}

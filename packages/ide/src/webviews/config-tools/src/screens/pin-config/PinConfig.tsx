@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import TwoColumnLayout from '../../components/main-layout/MainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
 import {useAssignedPins} from '../../state/slices/pins/pins.selector';
 import PinConfigMainPanel from './main-panel/PinConfigMainPanel';
 import PinConfigSide from './side/Side';
@@ -29,9 +29,13 @@ export default function PinConfig() {
 			screenRedirect='pinmux'
 		/>
 	) : (
-		<TwoColumnLayout
-			sidePanel={<PinConfigSide />}
-			mainPanel={<PinConfigMainPanel />}
-		/>
+		<CfsTwoColumnLayout>
+			<div slot='header' />
+			<div slot='side-panel'>
+				<PinConfigSide />
+			</div>
+
+			<PinConfigMainPanel />
+		</CfsTwoColumnLayout>
 	);
 }

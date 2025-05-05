@@ -12,9 +12,11 @@
  * limitations under the License.
  *
  */
-import RadioSelectionBox from '@common/components/radio-selection-box/RadioSelectionBox';
 import type {ExportEngine} from '@common/types/engines';
-import {VSCodeProgressRing} from '@vscode/webview-ui-toolkit/react';
+import CfsSelectionCard from '../../../../../common/components/cfs-selection-card/CfsSelectionCard';
+import {ProgressRing, Radio} from 'cfs-react-library';
+
+import styles from './ExportEnginesList.module.scss';
 
 function ExportEnginesList({
 	engines,
@@ -23,24 +25,32 @@ function ExportEnginesList({
 }: {
 	readonly engines: ExportEngine[] | undefined;
 	readonly activeEngine: string;
-	readonly handleEngineSelection: (
-		e: Event | React.FormEvent<HTMLElement>
-	) => void;
+	readonly handleEngineSelection: (selectedId: string) => void;
 }) {
-	if (engines === undefined) return <VSCodeProgressRing />;
+	if (engines === undefined) return <ProgressRing />;
 
 	return (
 		<>
 			{engines.map(engine => (
-				<RadioSelectionBox
+				<CfsSelectionCard
 					key={`export-engine-${engine.name}`}
 					id={engine.name}
-					label={engine.label}
-					description={engine.description}
-					additionalInfo={`Version: ${engine.version}`}
-					isActive={activeEngine === engine.name}
-					onSelection={handleEngineSelection}
-				/>
+					isChecked={engine.name === activeEngine}
+					onChange={(id: string) => {
+						handleEngineSelection(id);
+					}}
+				>
+					<div slot='start'>
+						<Radio checked={engine.name === activeEngine} />
+					</div>
+					<div slot='title'>
+						<h3 className={styles['cfs-radio-title']}>
+							{engine.label ?? engine.name}
+						</h3>
+						<p title={engine.description}>{engine.description}</p>
+					</div>
+					<div slot='end'>Version: {engine.version}</div>
+				</CfsSelectionCard>
 			))}
 		</>
 	);

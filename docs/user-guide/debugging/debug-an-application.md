@@ -10,7 +10,7 @@ A default debug configuration is automatically generated with each new project. 
 
 !!! warning
 
-    Make sure you have a successful build for the core you intend to debug. Each project generates a build directory in the respective project folder. For more information, refer to [CFS build task](../projects/tasks.md).
+    Make sure you have a successful build for the core you intend to debug. Each project generates a build directory in the respective project folder. For more information, refer to [CFS build task](../workspaces/tasks.md).
 
 ## Supported microcontrollers
 
@@ -23,16 +23,18 @@ For debugging multiple cores together, follow the [Debugging a multi core applic
 
 Debug configuration settings are automatically selected using your CFS workspace settings. Follow the extension prompts for any undefined settings. Adjust settings manually under the **File**  > **Preferences** > **Settings** menu.
 
-When using the **CFS: Debug with GDB and OpenOCD (ARM Embedded)** configuration, CFS automatically searches for and adds the SVD file from the CMSIS Pack directory.
+When using the **CFS: Debug with GDB and OpenOCD (Arm Embedded)** configuration, CFS automatically searches for and adds the SVD file from the CMSIS Pack directory.
 For other parts, the SVD file can be selected manually when prompted.
 
-For more information regarding these settings, refer to [CFS Settings](../projects/cfs-settings.md).
+For more information regarding these settings, refer to [CFS Settings](../workspaces/cfs-settings.md).
 
 ## Activate single debug session
 
 1. Select the **Run and Debug** icon on the activity bar.
-2. Select the **CFS: Debug with GDB and OpenOCD (ARM Embedded)** from the dropdown menu.
+2. Select the **CFS: Debug with GDB and OpenOCD (Arm Embedded)** from the dropdown menu.
 3. Click on the **Start Debugging** Icon to the left of your selection (green play icon) or press **F5**.
+
+For additional information about GDB, refer to the [GDB Basics](../../tutorials/gdb-tutorial/gdb-basics.md).
 
 ![Launch Debug Session](images/launch-debug-session-dark.png#only-dark)
 ![Launch Debug Session](images/launch-debug-session-light.png#only-light)
@@ -57,8 +59,8 @@ New debug configurations can be created using the following steps:
 
     | Supported Targets | Type                                                           |
     | ----------------- | -------------------------------------------------------------- |
-    | Cortex-M (CMSIS)  | CFS: Debug with GDB and OpenOCD (ARM Embedded)                 |
-    | Cortex-M (CMSIS)  | CFS: Debug with JlinkGDBServer and JLink (ARM Embedded)        |
+    | Cortex-M (CMSIS)  | CFS: Debug with GDB and OpenOCD (Arm Embedded)                 |
+    | Cortex-M (CMSIS)  | CFS: Debug with JlinkGDBServer and JLink (Arm Embedded)        |
     | RISC-V            | CFS: Debug with GDB and OpenOCD (RISC-V)                       |
 
 4. Save the `launch.json` file which now contains the chosen debug configuration.
@@ -146,17 +148,42 @@ Selecting a function in the call stack will show the registers and local variabl
 
 ### Breakpoints
 
-The breakpoints view allows you to see currently set breakpoints, toggle them on/off, and add new breakpoints.
-To add a new breakpoint, click on the **+** icon in the breakpoints view, click in the gutter of the source line, or right click on a source file and select **Add inline breakpoint** or click **SHIFT + F9**.
-Right-click on a breakpoint to view a list of operations that can be performed on the selected breakpoint and all breakpoints in general.
+Breakpoints allow you to pause execution at a specific line of code and inspect program behavior.
+
+To view all set breakpoints, toggle them on/off, or add new ones, open the breakpoints view in the **Run and Debug** view.
+
+Right-click on a breakpoint to access a list of available actions.
 
 ![View Breakpoints](images/viewing-breakpoints-dark.png#only-dark)
 ![View Breakpoints](images/viewing-breakpoints-light.png#only-light)
 
-To make a breakpoint conditional; right click on the breakpoint and select **Edit breakpoint...** then selected **Expression** from the drop-down and enter your expression in the text field.
+#### Line breakpoints
+
+Line breakpoints pause execution at the beginning of a specific line in the source code, allowing you to inspect variables, step through execution, and debug effectively.
+
+To set a breakpoint, click on the left margin of the editor next to the line number where you want to pause. A red dot will appear, indicating the breakpoint. Alternatively, right-click in the left margin and select **Add breakpoint**.
+
+#### Conditional breakpoints
+
+Conditional breakpoints allow execution to pause only when a specified condition is met. This is useful when debugging loops or tracking specific variable values.
+
+To create a conditional breakpoint, right click on an existing breakpoint, select **Edit breakpoint**, choose **Expression**, and enter your condition.
 
 ![View Conditional Breakpoints](images/viewing-breakpoints-conditional-dark.png#only-dark)
 ![View Conditional Breakpoints](images/viewing-breakpoints-conditional-light.png#only-light)
+
+#### Inline breakpoints
+
+Inline breakpoints allow execution to stop inside specific expressions within a line of code, such as inside a loop or within method chains. They are useful when you need to debug a particular part of an expression rather than stopping at the start of the line.
+
+To set an inline breakpoint:
+
+1. Click on the exact position where you want to place the inline breakpoint.
+1. Go to **Run > New Breakpoint > Inline Breakpoint**. You can also use the shortcut **Shift + F9** (Windows/Linux) or **Cmd + F9** (Mac).
+1. The inline breakpoint will now be set at the cursor position.
+
+![View Inline Breakpoints](images/viewing-breakpoints-inline-dark.png#only-dark)
+![View Inline Breakpoints](images/viewing-breakpoints-inline-light.png#only-light)
 
 ### Peripheral registers
 

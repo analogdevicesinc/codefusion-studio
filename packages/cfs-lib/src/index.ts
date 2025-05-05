@@ -43,3 +43,15 @@ export {
 } from "./project-generation/project-generator.js";
 export { ProjectGeneratorFactory } from "./project-generation/project-generator-factory.js";
 export * from "./types/soc.js";
+export { DtParser } from "./dt-parser/DtParser.js";
+export { CfsFeatureScope } from "cfs-plugins-api";
+
+// Export plugin types from cfs-plugins-api
+export type {
+	CfsPluginInfo,
+	CfsPluginProperty,
+	CfsWorkspace,
+	CfsCodeGenerationContext
+} from "cfs-plugins-api";
+
+export { CfsPluginManager } from "./plugins/cfs-plugin-manager.js";

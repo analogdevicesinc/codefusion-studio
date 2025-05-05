@@ -16,6 +16,7 @@ import type {PinStatus} from '../../../../types/pins';
 import styles from './pin.module.scss';
 
 type McuPinProps<T> = {
+	readonly id?: T extends true ? never : string;
 	readonly label?: T extends true ? never : string;
 	readonly status?: T extends true ? never : PinStatus;
 	readonly isFocused?: T extends true ? never : boolean;
@@ -24,6 +25,7 @@ type McuPinProps<T> = {
 };
 
 function McuPin({
+	id,
 	label,
 	status = 'unassigned',
 	isEmpty,
@@ -38,7 +40,8 @@ function McuPin({
 
 	return (
 		<div
-			data-test={`pin:${label}`}
+			id={id ? `pin:${id}` : undefined}
+			data-test={label ? `pin:${label}` : undefined}
 			className={`${baseStyles} ${statusStyles} ${focusedStyles}`}
 			onClick={onClick}
 		>

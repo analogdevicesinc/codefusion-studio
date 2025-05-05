@@ -14,11 +14,10 @@
  */
 import {useCallback, useState, useRef, useEffect} from 'react';
 import type {ChangeEvent} from 'react';
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
 import {getSymbols} from '../../../../common/api';
 
 // Components
-import {Chip} from '@common/components/chip/Chip';
+import {Chip, Button} from 'cfs-react-library';
 import {Modal} from '@common/components/modal/Modal';
 import DeleteQueryModal from '../DeleteModal/DeleteQueryModal';
 import SaveEditQueryModal from '../SaveEditQueryModal/SaveEditQueryModal';
@@ -166,29 +165,23 @@ export default function SavedQueriesDropdown({
 
 	const getDeleteModalFooter = () => (
 		<>
-			<VSCodeButton
-				appearance='secondary'
-				onClick={onToggleDeleteModal}
-			>
+			<Button appearance='secondary' onClick={onToggleDeleteModal}>
 				Cancel
-			</VSCodeButton>
-			<VSCodeButton appearance='primary' onClick={onDeleteQuery}>
+			</Button>
+			<Button appearance='primary' onClick={onDeleteQuery}>
 				Confirm
-			</VSCodeButton>
+			</Button>
 		</>
 	);
 
 	const getEditModalFooter = () => (
 		<>
-			<VSCodeButton
-				appearance='secondary'
-				onClick={onToggleEditModal}
-			>
+			<Button appearance='secondary' onClick={onToggleEditModal}>
 				Cancel
-			</VSCodeButton>
-			<VSCodeButton appearance='primary' onClick={onEditQuery}>
+			</Button>
+			<Button appearance='primary' onClick={onEditQuery}>
 				Confirm
-			</VSCodeButton>
+			</Button>
 		</>
 	);
 
@@ -204,7 +197,7 @@ export default function SavedQueriesDropdown({
 				}}
 			>
 				<Chip
-					isDisabled
+					isDisabled={false}
 					isActive={isDropdownOpen}
 					id='saved-queries'
 					label='Saved queries'
@@ -236,7 +229,6 @@ export default function SavedQueriesDropdown({
 
 			{/* DELETE MODAL */}
 			<Modal
-				isDynamicHeight
 				isOpen={isDeleteModalOpen}
 				handleModalClose={onToggleDeleteModal}
 				footer={getDeleteModalFooter()}
@@ -246,7 +238,6 @@ export default function SavedQueriesDropdown({
 
 			{/* EDIT MODAL */}
 			<Modal
-				isDynamicHeight
 				isOpen={isEditModalOpen}
 				handleModalClose={onToggleEditModal}
 				footer={getEditModalFooter()}

@@ -32,6 +32,21 @@ const writeOperations = [
 	"ALTER",
 ];
 
+// Define "to_number" as AlaSQL method
+alasql.fn.to_number = (value, format: string) => {
+	if (!value) return null;
+
+	let num = parseFloat(value as string);
+
+	if (isNaN(num)) return null;
+
+	const found = format.match(/\./g) || [];
+	let decimalPlaces = found.length ? format.split(".")[1].length : 0;
+
+	return parseFloat(num.toFixed(decimalPlaces));
+};
+alasql.fn.TO_NUMBER = alasql.fn.to_number;
+
 // Function to check if a query is a write operation
 function isWriteOperation(query: string): boolean {
 	return writeOperations.some((op) =>
@@ -137,7 +152,9 @@ export class ElfFileParser {
 			}
 
 			if (this.debug) {
-				console.log(`DBG: SU: Found ${suFileList.length} su and ${graphFileList.length} graph files in "${rootDir}"`);
+				console.log(
+					`DBG: SU: Found ${suFileList.length} su and ${graphFileList.length} graph files in "${rootDir}"`,
+				);
 				let i = 0;
 				for (const f of suFileList) {
 					console.log(`DBG: SU: [${++i}/${suFileList.length}]: "${f}"`);
@@ -182,14 +199,16 @@ export class ElfFileParser {
 			if (dataBuffer.byteLength < MIN_BUFFER_LENGTH) return DataResult.INVALID;
 
 			// Load .stack data from files found in the same directory as the ELF file
-			let rootDir =  path.dirname(this.path);
+			let rootDir = path.dirname(this.path);
 			// Workaround for zephyr where the .su and .cgraph files are in both ../CMakeFiles and ../zephyr
 			// So we will search in th parent folder
 			const idx = rootDir.lastIndexOf("zephyr");
 			if (idx !== -1) {
 				const newRootDir = rootDir.substring(0, idx);
 				if (this.debug) {
-					console.log(`DBG: SU: zephyr: search stack files in "${newRootDir}". oldRootDir:"${rootDir}" ...`);
+					console.log(
+						`DBG: SU: zephyr: search stack files in "${newRootDir}". oldRootDir:"${rootDir}" ...`,
+					);
 				}
 				rootDir = newRootDir;
 			}
@@ -283,7 +302,6 @@ class ElfReader {
 			}
 		} catch (error) {
 			console.error("Error finding stack files:", error);
-			throw error;
 		}
 	}
 
@@ -300,9 +318,8 @@ class ElfReader {
 					.map((data) => data.trim());
 				if (funcName && stackSize && type == "static") {
 					// only static types
-					let lastIdx = funcName.lastIndexOf('/');
-					if (lastIdx === -1)
-						lastIdx = funcName.lastIndexOf('\\');
+					let lastIdx = funcName.lastIndexOf("/");
+					if (lastIdx === -1) lastIdx = funcName.lastIndexOf("\\");
 					const startPos = lastIdx === -1 ? 0 : lastIdx + 1;
 
 					const splits = funcName.substring(startPos).split(":", 3);
@@ -360,4 +377,3 @@ export class StackData {
 	public stackUsage = new Array<Map<string, StackUsageData>>(); // from .su. Keys are demangled
 	public graphs = new Array<CallGraph>(); // from .cgraph. One array item corresponds to a single source file
 }
-

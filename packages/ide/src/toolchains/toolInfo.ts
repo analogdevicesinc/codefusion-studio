@@ -38,4 +38,6 @@ export interface ToolInfo {
   license: string;
   /** Paths to add to the Path environment variable */
   paths: string[];
+  /** Environment variables to set */
+  envVars: [{ name: string; value: string; isPath: boolean }];
 }

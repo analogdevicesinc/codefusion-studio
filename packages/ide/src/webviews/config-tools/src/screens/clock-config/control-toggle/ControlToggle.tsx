@@ -47,17 +47,12 @@ export default function ControlToggle({
 	);
 
 	const isToggledOn =
-		useControl(
-			activeClockNodeDetails?.Type,
-			clockNodeDetailsTargetNode,
-			controlId
-		) === 'TRUE';
+		useControl(clockNodeDetailsTargetNode, controlId) === 'TRUE';
 
 	const handleToggle = () => {
 		if (isDisabled) return;
 
 		const changedClockNode: ClockNodeSet = {
-			type: activeClockNodeDetails?.Type,
 			name: clockNodeDetailsTargetNode!,
 			key: controlId,
 			value: isToggledOn ? 'FALSE' : 'TRUE'
@@ -77,6 +72,7 @@ export default function ControlToggle({
 				isToggledOn={isToggledOn}
 				handleToggle={handleToggle}
 				isDisabled={isDisabled}
+				dataTest={`${controlId}-${activeClockNodeDetails?.Name}`}
 			/>
 		</div>
 	);

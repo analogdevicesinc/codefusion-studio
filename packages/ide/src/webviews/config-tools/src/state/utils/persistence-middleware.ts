@@ -20,35 +20,152 @@ import type {RootState} from '../store';
 
 import {
 	formatClockNodePersistencePayload,
-	formatPinPersistencePayload
+	formatProjectPersistencePayload,
+	formatPinPersistencePayload,
+	filterClockFrequencies
 } from '../../utils/persistence';
 import {
+	assignCoprogrammedSignal,
+	removeAppliedCoprogrammedSignals,
 	removeAppliedSignal,
 	setAppliedSignal,
 	setAppliedSignalControlValue
 } from '../slices/pins/pins.reducer';
 import {
 	type ClockNodeSet,
-	setClockNodeControlValue
+	setClockNodeControlValue,
+	setDiagramData
 } from '../slices/clock-nodes/clockNodes.reducer';
-import {
-	getClockCanvas,
-	updatePersistedClockNodesAssignments,
-	updatePersistedPinAssignments
-} from '../../utils/api';
+import {getClockCanvas, updatePersistedConfig} from '../../utils/api';
+import {getPrimaryProjectId} from '../../utils/config';
+import {getTargetControls} from '../../utils/clock-nodes';
 import {
 	evaluateClockCondition,
-	type ClockConfigNodes,
+	getClockFrequencyDictionary,
 	type GlobalConfig
 } from '../../utils/rpn-expression-resolver';
+import {
+	createPartition,
+	editPartition,
+	removePartition
+} from '../slices/partitions/partitions.reducer';
+
+import {
+	setPeripheralAssignment,
+	setSignalAssignment,
+	setSignalGroupAssignment,
+	setPeripheralDescription,
+	setSignalDescription,
+	setPeripheralConfig,
+	removePeripheralAssignment,
+	removeSignalAssignment
+} from '../slices/peripherals/peripherals.reducer';
+import type {
+	PinDictionary,
+	ClockNodesDictionary
+} from '../../../../common/types/soc';
+import type {ControlErrorTypes} from '../../types/errorTypes';
 
 export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 	[
 		setAppliedSignal,
 		removeAppliedSignal,
 		setAppliedSignalControlValue,
-		setClockNodeControlValue
+		setClockNodeControlValue,
+		assignCoprogrammedSignal,
+		removeAppliedCoprogrammedSignals,
+		createPartition,
+		editPartition,
+		removePartition,
+		setPeripheralAssignment,
+		removePeripheralAssignment,
+		removeSignalAssignment,
+		setPeripheralConfig,
+		setSignalAssignment,
+		setSignalGroupAssignment,
+		setPeripheralDescription,
+		setSignalDescription,
+		setDiagramData
 	];
+
+let lastModifiedClockNode:
+	| {
+			Name: string;
+			Control: string;
+			Value: string;
+			Error: ControlErrorTypes | undefined;
+	  }
+	| undefined;
+
+async function getModifiedClockNodes(
+	clockNodes: ClockNodesDictionary,
+	pins: PinDictionary,
+	diagramData: Record<
+		string,
+		{enabled: boolean | undefined; error: boolean | undefined}
+	>
+) {
+	const assignedPins = Object.values(pins).filter(
+		pin => pin.appliedSignals.length
+	);
+
+	const projectId = getPrimaryProjectId();
+	const canvas = await getClockCanvas();
+
+	return Object.values(clockNodes)
+		.filter(clockNode =>
+			Object.entries(clockNode.controlValues ?? {}).some(
+				([control, controlVal]) =>
+					controlVal !== clockNode.initialControlValues?.[control]
+			)
+		)
+		.filter(clockNode => {
+			const nodeData = diagramData[clockNode.Name];
+
+			// Include the node only if it doesn't exist in diagram data or is explicitly enabled
+			return Boolean(nodeData?.enabled);
+		})
+		.map(clockNode => {
+			const globalConfig: GlobalConfig = {
+				clockconfig: clockNodes,
+				assignedPins,
+				currentNode: clockNode.Name
+			};
+
+			const canvasCondition = Object.values(canvas?.parts ?? {}).find(
+				part =>
+					part.name === clockNode.Name &&
+					(!part.mount ||
+						evaluateClockCondition(globalConfig, part.mount))
+			)?.condition;
+
+			const targetControls = getTargetControls(
+				'clockConfig',
+				projectId ?? '',
+				clockNode.Name
+			);
+
+			const isClockNodeEnabled = canvasCondition
+				? evaluateClockCondition(globalConfig, canvasCondition)
+				: true;
+
+			const enabledControls = Object.keys(
+				clockNode.controlValues ?? {}
+			).reduce<Record<string, boolean>>((acc, control) => {
+				const controlCondition = targetControls[control]?.Condition;
+
+				const isControlEnabled = controlCondition
+					? evaluateClockCondition(globalConfig, controlCondition)
+					: true;
+
+				acc[control] = isClockNodeEnabled && isControlEnabled;
+
+				return acc;
+			}, {});
+
+			return {...clockNode, EnabledControls: enabledControls};
+		});
+}
 
 export function getPersistenceListenerMiddleware(
 	actionsArray: Array<ActionCreatorWithPayload<unknown>>
@@ -66,113 +183,84 @@ export function getPersistenceListenerMiddleware(
 					return;
 
 				const state = listenerApi.getState() as RootState;
+				let modifiedClockNodes;
+				let updatedClockNode;
+				let initialControlValues;
+				let updatedPins;
+				let updatedProjects;
+				let clockFrequencies;
 
-				const assignedPins = Object.values(
-					state.pinsReducer.pins
-				).filter(pin => pin.appliedSignals.length);
+				if (
+					action.type.includes('Pins') ||
+					action.type.includes('ClockConfig')
+				) {
+					modifiedClockNodes = await getModifiedClockNodes(
+						state.clockNodesReducer.clockNodes,
+						state.pinsReducer.pins,
+						state.clockNodesReducer.diagramData
+					);
 
-				const {clockConfig} = state.clockNodesReducer;
-
-				const clockConfigNodes = Object.values(
-					state.clockNodesReducer.clockNodes
-				)
-					.flatMap(clockNodeForType =>
-						Object.values(clockNodeForType).map(
-							clockNode => clockNode
-						)
-					)
-					.reduce<ClockConfigNodes>((acc, clockNode) => {
-						acc[clockNode.Name] = clockNode;
-
-						return acc;
-					}, {});
-
-				const canvas = await getClockCanvas();
-
-				const modifiedClockNodes = Object.values(
-					state.clockNodesReducer.clockNodes
-				)
-					.flatMap(clockNodeForType =>
-						Object.values(clockNodeForType).filter(clockNode =>
-							Object.entries(clockNode.controlValues ?? {}).some(
-								([control, controlVal]) =>
-									controlVal !==
-									clockNode.initialControlValues?.[control]
-							)
-						)
-					)
-					.map(clockNode => {
-						const globalConfig: GlobalConfig = {
-							clockconfig: clockConfigNodes,
-							assignedPins,
-							currentNode: clockNode.Name
-						};
-
-						const canvasCondition = Object.values(
-							canvas?.parts ?? {}
-						).find(
-							part =>
-								part.name === clockNode.Name &&
-								(!part.mount ||
-									evaluateClockCondition(globalConfig, part.mount))
-						)?.condition;
-
-						const isClockNodeEnabled = canvasCondition
-							? evaluateClockCondition(globalConfig, canvasCondition)
-							: true;
-
-						const enabledControls = Object.keys(
-							clockNode.controlValues ?? {}
-						).reduce<Record<string, boolean>>((acc, control) => {
-							const controlCondition = clockConfig.find(
-								config => config.Id === control
-							)?.Condition;
-
-							const isControlEnabled = controlCondition
-								? evaluateClockCondition(
-										globalConfig,
-										controlCondition
-									)
-								: true;
-
-							acc[control] = isClockNodeEnabled && isControlEnabled;
-
-							return acc;
-						}, {});
-
-						return {...clockNode, EnabledControls: enabledControls};
-					});
-
-				if (action.type.includes('Pins')) {
-					updatePersistedPinAssignments(
-						formatPinPersistencePayload(state.pinsReducer.pins),
-						modifiedClockNodes
-					)?.catch(e => {
-						console.error(
-							'There was an error in the persistence process: ',
-							e
+					if (action.type.includes('Pins')) {
+						updatedPins = formatPinPersistencePayload(
+							state.pinsReducer.pins
 						);
-					});
-				}
+					}
 
-				if (action.type.includes('ClockConfig')) {
-					const payload = action.payload as ClockNodeSet;
-					const {type, name} = payload;
+					if (action.type.includes('ClockConfig')) {
+						const payload = action.payload as ClockNodeSet;
+						const {name} = payload;
 
-					if (type) {
-						updatePersistedClockNodesAssignments(
-							formatClockNodePersistencePayload(payload),
-							state.clockNodesReducer.clockNodes[type][name]
-								.initialControlValues,
-							modifiedClockNodes
-						)?.catch(e => {
-							console.error(
-								'There was an error in the persistence process: ',
-								e
-							);
-						});
+						if (name) {
+							lastModifiedClockNode =
+								formatClockNodePersistencePayload(payload);
+
+							return;
+						}
+
+						if (lastModifiedClockNode === undefined) return;
+
+						// Given that the diagram is updated after the sidebar selection is done
+						// we need to wait for this action to acccess correctly the last diagram state data
+						clockFrequencies = filterClockFrequencies(
+							state.clockNodesReducer.diagramData,
+							getClockFrequencyDictionary()
+						);
+						updatedClockNode = lastModifiedClockNode;
+						initialControlValues =
+							state.clockNodesReducer.clockNodes[
+								lastModifiedClockNode.Name
+							].initialControlValues;
+
+						lastModifiedClockNode = undefined;
 					}
 				}
+
+				if (
+					action.type.includes('Partitions') ||
+					action.type.includes('Peripherals') ||
+					action.type === 'Pins/setAppliedSignalControlValue' ||
+					action.type === 'Pins/setAppliedSignal' // NOTE we need this as a newly enabled pin gets configs assigned in this step.
+				) {
+					updatedProjects = formatProjectPersistencePayload(
+						state.partitionsReducer.partitions,
+						state.peripheralsReducer.assignments,
+						state.pinsReducer.pins
+					);
+				}
+
+				updatePersistedConfig({
+					updatedPins,
+					initialControlValues,
+					updatedClockNode,
+					modifiedClockNodes,
+					updatedProjects,
+					clockFrequencies
+				})?.catch(e => {
+					console.error(
+						'There was an error in the persistence process: ',
+						e
+					);
+				});
 			}
 		});
 

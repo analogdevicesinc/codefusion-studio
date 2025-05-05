@@ -1,4 +1,4 @@
-/**
+﻿/**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
  *
@@ -12,18 +12,21 @@
  * limitations under the License.
  *
  */
-﻿import { SYMBOLS_TABLE_ID } from "./constants/symbols.js";
+import { CALLERS_TABLE_ID } from "./constants/constants.js";
+import { SYMBOLS_TABLE_ID } from "./constants/symbols.js";
 import { ElfArmAttributes } from "./ElfArmAttributes.js";
+import { ElfDemangler } from "./ElfDemangler.js";
 import * as Enums from "./enums.js";
 import { ElfFileData } from "./ElfFileData.js";
 import { ElfProgramHeader } from "./ElfProgramHeader.js";
 import { ElfSectionHeader } from "./ElfSectionHeader.js";
-import { ElfSymbol } from "./ElfSymbol.js";
+import { ElfSymbol, ElfSymbolData } from "./ElfSymbol.js";
 import { ElfHeader } from "./ElfHeader.js";
 import { ElfHeuristics } from "./ElfHeuristics.js";
 import { Helper } from "./Helper.js";
 import { Dwarf } from "./Dwarf.js";
 import { StackData, StackUsageData } from "./ElfFileParser.js";
+import { ElfCommentParser } from "./ElfCommentParser.js";
 
 /**
  * ELF Data Model
@@ -62,11 +65,13 @@ export class ElfDataModel {
 
 	/**
 	 * Indicates whether the SU file is present or not.
+	 * localstack DB columns are filled
 	 */
 	public isSuFilePresent = false;
 
 	/**
 	 * Indicates whether the cgraph file is present or not.
+	 * recursive, stack, stackdepth fields are filled
 	 */
 	public isGraphFilePresent = false;
 
@@ -79,6 +84,26 @@ export class ElfDataModel {
 	 * Represents the heuristics for the ELF data model.
 	 */
 	public heuristics = new ElfHeuristics();
+
+	// Information about available db columns / tables
+	public isLocalStackColumnAvailable(): boolean {
+		return this.isSuFilePresent;
+	}
+	public isRecursiveColumnAvailable(): boolean {
+		return this.isGraphFilePresent;
+	}
+	public isGraphStackColumnAvailable(): boolean {
+		return this.isGraphFilePresent;
+	}
+	public isStackDepthColumnAvailable(): boolean {
+		return this.isGraphFilePresent;
+	}
+	public isCallersTableAvailable(): boolean {
+		return this.isGraphFilePresent;
+	}
+	public isPathColumnAvailable(): boolean {
+		return !!this.dw;
+	}
 
 	/**
 	 * Gets the number of symbols in the ElfDataModel.
@@ -108,6 +133,8 @@ export class ElfDataModel {
 	 * The number of symbols in the ELF data model.
 	 */
 	private _numberOfSymbols = 0;
+
+	private demangler = new ElfDemangler();
 
 	constructor(fileBytes: ArrayBuffer, debug = false, database: any) {
 		if (fileBytes.byteLength === 0) {
@@ -231,13 +258,22 @@ export class ElfDataModel {
 			// Create the symbols table if it doesn't exist
 			//console.log("Creating symbols table ...");
 			this.database.exec(
-				`CREATE TABLE ${SYMBOLS_TABLE_ID} (id INT PRIMARY KEY AUTOINCREMENT, num INT, name TEXT, type TEXT, address BIGINT, section TEXT, size BIGINT` +
-					(this.isSuFilePresent ? `, localstack INT` : "") +
-					(this.isGraphFilePresent ? `, stack INT` : "") +
-					", bind TEXT, visibility TEXT" +
-					(this.isGraphFilePresent ? `, recursive INT` : "") +
-					(this.dw != null ? `, path TEXT` : "") +
+				`CREATE TABLE ${SYMBOLS_TABLE_ID} (id INT PRIMARY KEY AUTOINCREMENT, name STRING, demangled STRING, type STRING, address INT, section STRING, size INT` +
+					`, localstack INT` +
+					`, stack INT` +
+					`, bind STRING, visibility STRING` +
+					`, recursive INT` +
+					`, path STRING` +
+					`, stackdepth INT` +
 					`)`,
+			);
+
+			// Create the callers/callee table if it doesn't exist
+			//console.log("Creating callers table ...");
+			this.database.exec(
+				`CREATE TABLE ${CALLERS_TABLE_ID} (caller_id INT, callee_id INT, PRIMARY KEY(caller_id, callee_id), ` +
+					`FOREIGN KEY (caller_id) REFERENCES ${SYMBOLS_TABLE_ID}(id), ` +
+					`FOREIGN KEY (callee_id) REFERENCES ${SYMBOLS_TABLE_ID}(id)) `,
 			);
 		} catch (error) {
 			console.error(`Error creating database! `, error);
@@ -266,53 +302,68 @@ export class ElfDataModel {
 			this._numberOfSymbols += symTab.symbolData.length;
 			symTab.symbolData.forEach((symData) => {
 				const values = [
-					symData.index, // num: The number of the symbol.
 					symData.nameStr, // name: The name of the symbol.
+					symData.demangledName ? symData.demangledName : null, // name: The name of the symbol.
 					Enums.sym_type[symData.infoType], // type: The type of the symbol.
-					symData.value, // address as bigint: The address of the symbol.
+					Number(symData.value), // address as number: The address of the symbol.
 					symData.sectionNameStr, // section: The section to which the symbol belongs. Can be null!
-					symData.size, // size as bigint: The size of the symbol.
+					Number(symData.size), // size as number: The size of the symbol.
 					Enums.sym_binding[symData.infoBinding], // bind: The binding of the symbol.
 					Enums.sym_visibility[symData.otherVisibility], // visibility: The visibility of the symbol.
 				];
-				if (this.isSuFilePresent) {
-					values.push(symData.stack); // stack: The stack information of the symbol (if available).
-				}
-				if (this.isGraphFilePresent) {
-					values.push(symData.hasGraphStack ? symData.graphStack : null); // graphStack: Computed stack usage from .cgraph files
-					values.push(
-						symData.hasGraphStack &&
-							symData.recursiveType !== Enums.FunctionRecursiveType.NoRecursion
-							? symData.recursiveType.valueOf()
-							: null,
-					); // recursive: FunctionRecursiveType
-				}
-				if (this.dw != null) {
-					values.push(
-						symData.path
-							? symData.path +
-									":" +
-									symData.line +
-									(symData.column ? ":" + symData.column : "")
-							: "",
-					);
-				}
+				values.push(symData.stack); // stack: The stack information of the symbol (if available).
+				values.push(symData.hasGraphStack ? symData.graphStack : null); // graphStack: Computed stack usage from .cgraph files
+				values.push(
+					symData.hasGraphStack &&
+						symData.recursiveType !== Enums.FunctionRecursiveType.NoRecursion
+						? symData.recursiveType.valueOf()
+						: null,
+				); // recursive: FunctionRecursiveType
+				values.push(
+					symData.path
+						? symData.path +
+								":" +
+								symData.line +
+								(symData.column ? ":" + symData.column : "")
+						: "",
+				);
+				values.push(symData.maxDepth !== undefined ? symData.maxDepth : null);
 				try {
 					this.database.exec(
-						"INSERT INTO symbols(num, name, type, address, section, size, bind, visibility" +
-							(this.isSuFilePresent ? ", localstack" : "") +
-							(this.isGraphFilePresent ? ", stack" : "") +
-							(this.isGraphFilePresent ? ", recursive" : "") +
-							(this.dw != null ? ", path" : "") +
+						`INSERT INTO ${SYMBOLS_TABLE_ID}(name` +
+							", demangled" +
+							", type" +
+							", address" +
+							", section" +
+							", size" +
+							", bind" +
+							", visibility" +
+							", localstack" +
+							", stack" +
+							", recursive" +
+							", path" +
+							", stackdepth" +
 							") " +
-							"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?" +
-							(this.isSuFilePresent ? ", ?" : "") +
-							(this.isGraphFilePresent ? ", ?" : "") + // graphStack
-							(this.isGraphFilePresent ? ", ?" : "") + // recursiveType
-							(this.dw != null ? ", ?" : "") +
+							"VALUES (" +
+							"  ?" + // name
+							", ?" + // demangled
+							", ?" + // type
+							", ?" + // address
+							", ?" + // section
+							", ?" + // size
+							", ?" + // bind
+							", ?" + // visibility
+							", ?" + // localStack
+							", ?" + // graphStack
+							", ?" + // recursiveType
+							", ?" + // path
+							", ?" + // depth
 							")",
 						values,
 					);
+
+					symData.dbId = this.database.autoval(SYMBOLS_TABLE_ID, "id");
+					//console.log(`DB: dbId ${symData.dbId} for "${symData.nameStr}"`);
 				} catch (error) {
 					console.error(
 						`Error inserting data into table for ${symData.nameStr}`,
@@ -322,6 +373,30 @@ export class ElfDataModel {
 				}
 			});
 		});
+
+		// Update callees table
+		this.elfSymbols.forEach((symTab: ElfSymbol) => {
+			symTab.symbolData.forEach((symData) => {
+				for (const callee of symData.callees) {
+					try {
+						//console.log(`DB: callees: INSERT(${symData.dbId}, ${callee.dbId}) sym:"${symData.nameStr}" callee:"${callee.nameStr}"`);
+						this.database.exec(
+							`INSERT INTO ${CALLERS_TABLE_ID}(caller_id, callee_id)` +
+								"VALUES (?, ?)",
+							[symData.dbId, callee.dbId],
+						);
+					} catch (error) {
+						console.error(
+							`Error inserting data into ${CALLERS_TABLE_ID} table for ${symData.nameStr}`,
+							error,
+						);
+						throw error;
+					}
+				}
+			});
+		});
+
+		//console.log(this.database.exec(`SELECT * FROM ${CALLERS_TABLE_ID}`));
 
 		return Enums.DataResult.OK;
 	}
@@ -367,6 +442,7 @@ export class ElfDataModel {
 		let debugAbbrev: ElfSectionHeader = null;
 		let debugLoc: ElfSectionHeader = null;
 		let debugLine: ElfSectionHeader = null;
+		let debugLineStr: ElfSectionHeader = null;
 		let debugStr: ElfSectionHeader = null;
 		let debugRanges: ElfSectionHeader = null;
 
@@ -379,6 +455,8 @@ export class ElfDataModel {
 				debugLoc = sectionHeader;
 			} else if (sectionHeader.shName == ".debug_line") {
 				debugLine = sectionHeader;
+			} else if (sectionHeader.shName == ".debug_line_str") {
+				debugLineStr = sectionHeader;
 			} else if (sectionHeader.shName == ".debug_str") {
 				debugStr = sectionHeader;
 			} else if (sectionHeader.shName == ".debug_ranges") {
@@ -394,6 +472,7 @@ export class ElfDataModel {
 					debugAbbrev,
 					debugLoc,
 					debugLine,
+					debugLineStr,
 					debugStr,
 					debugRanges,
 					this.debug,
@@ -409,6 +488,7 @@ export class ElfDataModel {
 					"DWARF: Error loading debug information:",
 					error instanceof Error ? error.message : "Unknown error",
 				);
+				console.error(error);
 				if (this.dw != null) {
 					this.dw = null;
 				}
@@ -432,37 +512,45 @@ export class ElfDataModel {
 								`SU: Duplicate symbol (different su file) "${key}"! path:${v.path}" existingStack:${found.stack} newStack:${v.stack}`,
 							);
 						}
-						if (this.dw) { // if we have DWARF information
+						if (this.dw) {
+							// if we have DWARF information
 							// Update the symbol only if there is a symbol having the DWARF path matching the one from SU file
-							for (const sym of this.elfSymbols) {
-								const searchSym = sym.findByName(key);
-								if (searchSym !== undefined && searchSym.path) {
-								       if (searchSym.path.endsWith(v.path)) {
-									       	if (this.debug) {
-											console.log(`SU: DW: Update ${key}/0x${searchSym.value.toString(16)} suPath:"${v.path}" symPath:"${searchSym.path}" stack:${v.stack}`);
-									       	}
+							const searchSyms = this.findSymbolsByName(key);
+							for (const searchSym of searchSyms) {
+								if (searchSym.path) {
+									if (searchSym.path.endsWith(v.path)) {
+										if (this.debug) {
+											console.log(
+												`SU: DW: Update ${key}/0x${searchSym.value.toString(16)} suPath:"${v.path}" symPath:"${searchSym.path}" stack:${v.stack}`,
+											);
+										}
 										found.type = v.type;
 										found.stack = v.stack;
 										found.path = v.path;
 										break;
-								       }
-								       else if (this.debug) {
-										console.log(`SU: DW: Ignore ${key}/0x${searchSym.value.toString(16)} suPath:"${v.path}" symPath:"${searchSym.path}" stack:${v.stack}`);
-								       }
+									} else if (this.debug) {
+										console.log(
+											`SU: DW: Ignore ${key}/0x${searchSym.value.toString(16)} suPath:"${v.path}" symPath:"${searchSym.path}" stack:${v.stack}`,
+										);
+									}
 								}
 							}
 						} else {
 							// Use max
 							if (found.stack < v.stack) {
 								if (this.debug) {
-									console.log(`SU: NDW: Update ${key} suPath:"${v.path}" with stack:${v.stack} oldStack:${found.stack}`);
+									console.log(
+										`SU: NDW: Update ${key} suPath:"${v.path}" with stack:${v.stack} oldStack:${found.stack}`,
+									);
 								}
 
 								found.type = v.type;
 								found.stack = v.stack;
 								found.path = v.path;
 							} else if (this.debug) {
-								console.log(`SU: NDW: Ignore ${key} suPath:"${v.path}" with stack:${v.stack} keepStack:${found.stack}`);
+								console.log(
+									`SU: NDW: Ignore ${key} suPath:"${v.path}" with stack:${v.stack} keepStack:${found.stack}`,
+								);
 							}
 						}
 					}
@@ -476,21 +564,39 @@ export class ElfDataModel {
 			}
 		}
 
-		// Update ELf symbols localStack
+		// Update ELf symbols localStack and demangledName
 		for (const [key, su] of mergedStackUsage) {
-			if (su.stack <= 0) continue;
 			for (const name of su.mangledNames) {
-				for (const sym of this.elfSymbols) {
-					const symData = sym.findByName(name);
-					if (symData !== undefined) {
+				const syms = this.findSymbolsByName(name);
+				if (syms.length > 0) {
+					for (const symData of syms) {
 						if (this.debug) {
-							console.log(`SU: ${symData.nameStr}/0x${symData.value.toString(16)}/${symData.index}: set localStack to ${su.stack}. nNames:${su.mangledNames.length} demangledName:"${key}"`);
+							console.log(
+								`SU: ${symData.nameStr}/0x${symData.value.toString(16)}/${symData.index}: set localStack to ${su.stack}. nNames:${su.mangledNames.length} demangledName:"${key}"`,
+							);
 						}
-						symData.stack = su.stack;
-						this.isSuFilePresent = true;
-					} else if (this.debug) {
-						console.log(`SU: No symbol with name "${name}" found! stack:${su.stack}`);
+
+						// update demangledName
+						if (ElfDemangler.isMangled(name)) {
+							if (this.debug) {
+								console.log(
+									`SU DEMANGLER: "${symData.nameStr}" => "${key}". old:"${symData.demangledName}" oldSrc:${symData.demangledNameSource}`,
+								);
+							}
+							symData.demangledName = key;
+							symData.demangledNameSource = "SU";
+						}
+
+						if (su.stack > 0) {
+							// Update stack
+							symData.stack = su.stack;
+							this.isSuFilePresent = true;
+						}
 					}
+				} else if (this.debug) {
+					console.log(
+						`SU: No symbol with name "${name}" found! stack:${su.stack}`,
+					);
 				}
 			}
 		}
@@ -504,6 +610,53 @@ export class ElfDataModel {
 			nSymbolsUpdated += graph.updateModel(this);
 		}
 		this.isGraphFilePresent = nSymbolsUpdated > 0;
+	}
+
+	/**
+	 * Loads the .comment section from the ELF file.
+	 * @returns The content of the .comment section as a string.
+	 */
+	private loadCommentSection(): Enums.DataResult {
+		let commentSection: ElfSectionHeader = null;
+
+		// Iterate through section headers to find the .comment section
+		for (const sectionHeader of this.elfSectionHeaders) {
+			if (sectionHeader.shName == ".comment") {
+				commentSection = sectionHeader;
+				break;
+			}
+		}
+
+		// If .comment section is found, process it
+		if (commentSection != null) {
+			try {
+				const elfCommentParser = new ElfCommentParser(
+					this.elfFileAccess,
+					commentSection,
+				);
+				this.heuristics.compilerDetected =
+					elfCommentParser.getDetectedCompiler();
+				if (this.debug) {
+					const comments = elfCommentParser.getComments();
+					let i = 0;
+					for (const comment of comments) {
+						console.log(`COMMENT[${i}]: "${comment}"`);
+						i++;
+					}
+					console.log(
+						`COMMENT: detected compiler: "${this.heuristics.compilerDetected}"`,
+					);
+				}
+			} catch (error) {
+				console.error("Error loading .comment section:", error.message);
+				return Enums.DataResult.INVALID;
+			}
+		} else {
+			console.warn(".comment section not found in the ELF file");
+			return Enums.DataResult.INVALID;
+		}
+
+		return Enums.DataResult.OK;
 	}
 
 	/**
@@ -532,6 +685,24 @@ export class ElfDataModel {
 					for (const symData of sym.symbolData) {
 						symData.cacheSectionName(this);
 						symData.cacheName();
+						if (ElfDemangler.isMangled(symData.nameStr)) {
+							try {
+								const demangled = this.demangler.demangle(symData.nameStr);
+								if (this.debug) {
+									console.log(
+										`DEMANGLER: "${symData.nameStr}" => "${demangled}" old:"${symData.demangledName}" oldSrc:${symData.demangledNameSource}`,
+									);
+								}
+								symData.demangledName = demangled;
+								symData.demangledNameSource = "demangler";
+							} catch (err) {
+								if (this.debug) {
+									console.log(
+										`DEMANGLER: ERROR: "${symData.nameStr}" => ${err.toString()}`,
+									);
+								}
+							}
+						}
 						this.heuristics.collect(symData);
 					}
 				}
@@ -546,6 +717,10 @@ export class ElfDataModel {
 		// Update symbol stack data
 		if (result == Enums.DataResult.OK) {
 			this.updateStackData(stackData);
+		}
+		// Get compiler attributes. Failing to get it is not critical
+		if (result == Enums.DataResult.OK) {
+			this.loadCommentSection();
 		}
 
 		if (result == Enums.DataResult.OK && !noDb) {
@@ -581,5 +756,18 @@ export class ElfDataModel {
 
 	public getHeuristics(): ElfHeuristics {
 		return this.heuristics;
+	}
+
+	// Lokup by mangled name
+	public findSymbolsByName(name: string): Array<ElfSymbolData> {
+		const ret = new Array<ElfSymbolData>();
+		for (const symTab of this.elfSymbols) {
+			for (const symData of symTab.symbolData) {
+				if (name === symData.nameStr) {
+					ret.push(symData);
+				}
+			}
+		}
+		return ret;
 	}
 }

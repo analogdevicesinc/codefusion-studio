@@ -1,0 +1,238 @@
+<%
+/**
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// Include common plugin code
+eval(this.render("common/utilities/utilities.js"));
+
+// Return the UART Baud rate.
+function getUartBaud(instance) {
+  const baud = getAssignedPeripheral(instance).Config?.BAUD ?? 115200;
+  return baud + "U";
+}
+
+// Return the UART clock source enum.
+function getUartClock(node, mux, clock_default) {
+  const clock = getClockSetting(node, mux, clock_default);
+  let clock_enum = "MXC_UART_APB_CLK";
+  switch (clock) {
+    case "AOD_CLK":
+      clock_enum = "MXC_UART_AOD_CLK";
+      break;
+    case "ERFO":
+      clock_enum = "MXC_UART_ERFO_CLK";
+      break;
+    case "ERTCO":
+      clock_enum = "MXC_UART_ERTCO_CLK";
+      break;
+    case "EXT":
+      clock_enum = "MXC_UART_EXT_CLK";
+      break;
+    case "INRO":
+      clock_enum = "MXC_UART_INRO_CLK";
+      break;
+    case "IBRO":
+      clock_enum = "MXC_UART_IBRO_CLK";
+      break;
+    case "APBCLK":
+    case "PCLK":
+      clock_enum = "MXC_UART_APB_CLK";
+      break;
+  }
+  return clock_enum;
+}
+
+// Return the Data Size setting.
+function getUARTDataSize(instance) {
+  return getAssignedPeripheral(instance).Config?.CHAR_SIZE ?? 8;
+}
+
+// Return the Stop Bits setting.
+function getUARTStopBits(instance) {
+  return getAssignedPeripheral(instance).Config?.STOP_BITS === "1" ? "MXC_UART_STOP_1" : "MXC_UART_STOP_2";
+}
+
+// Return the Flow Ctrl setting.
+function getUARTFlowCtrl(instance) {
+  // The logic is complicated here to deal with both old- and new-style UART
+  // instances.
+  let flow_params = "MXC_UART_FLOW_DIS";
+  let setting = getAssignedPeripheral(instance).Config?.HW_FLOW_CTRL ?? "DISABLED";
+  const rts_thresh = getAssignedPeripheral(instance).Config?.RTS_THRESH ?? "1";
+  setting = getAssignedPeripheral(instance).Config?.RTSDC_LP_FDM ?? setting;
+  switch (setting) {
+    case "DISABLED":
+      break;
+    case "DEASSERT_ON_FULL":
+      flow_params = "MXC_UART_FLOW_EN";
+      break;
+    case "DEASSERT_ON_THRESHOLD":
+      flow_params = "MXC_UART_FLOW_EN";
+      break;
+    case "FLOW_POL_0":
+      flow_params = "MXC_UART_FLOW_EN_LOW";
+      break;
+    case "FLOW_POL_1":
+      flow_params = "MXC_UART_FLOW_EN_HIGH";
+      break;
+  }
+  flow_params += ", " + rts_thresh;
+  return flow_params;
+}
+
+// Return the Parity setting.
+function getUARTParity(instance) {
+  // The logic is complicated here to deal with both old- and new-style UART
+  // instances.
+  let parity = "MXC_UART_PARITY_DISABLE";
+  const setting = getAssignedPeripheral(instance).Config?.PARITY ?? "DISABLED";
+  const level = getAssignedPeripheral(instance).Config?.PARITY_LEVEL ?? "0s";
+  const md = getAssignedPeripheral(instance).Config?.PARITY_MD;
+  switch (setting) {
+    case "DISABLED":
+      break;
+    case "ODD":
+      if (level === "1s" || md === "MARK") {
+        parity = "MXC_UART_PARITY_ODD_1";
+      } else {
+        parity = "MXC_UART_PARITY_ODD_0";
+      }
+      break;
+    case "EVEN":
+      if (level === "1s" || md === "MARK") {
+        parity = "MXC_UART_PARITY_EVEN_1";
+      } else {
+        parity = "MXC_UART_PARITY_EVEN_0";
+      }
+      break;
+    case "MARK":
+      if (level === "1s") {
+        parity = "MXC_UART_PARITY_MARK_1";
+      } else {
+        parity = "MXC_UART_PARITY_MARK_0";
+      }
+      break;
+    case "SPACE":
+      if (level === "1s") {
+        parity = "MXC_UART_PARITY_SPACE_1";
+      } else {
+        parity = "MXC_UART_PARITY_SPACE_0";
+      }
+      break;
+  }
+  return parity;
+}
+
+// Return the Null Modem setting.
+function getUARTNullModem(instance) {
+  return getAssignedPeripheral(instance).Config?.NULL_MODEM === "NULL_MODEM" ? "1" : "0";
+}
+
+// Return the DMA TX setting.
+function getUARTDmaTx(instance) {
+  return getAssignedPeripheral(instance).Config?.TRANSMIT_DMA_ENABLE ?? false;
+}
+
+// Return the DMA RX setting.
+function getUARTDmaRx(instance) {
+  return getAssignedPeripheral(instance).Config?.RECEIVE_DMA_ENABLE ?? false;
+}
+
+// Return the TX FIFO threshold.
+function getUARTTxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.DMA_TX_THD_VAL ?? 2;
+}
+
+// Return the RX FIFO threshold.
+function getUARTRxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.DMA_RX_THD_VAL ?? 0;
+}
+%>
+<% if (getAssignedPeripheral(it.instance)) { %>
+  { /* Configure <%= it.instance %>.
+<%   if (getPeripheralDescription(it.instance)) { %>
+     * This peripheral is used for <%= getPeripheralDescription(it.instance) %>.
+<%   } %>
+<%   if (!isClockSetTo(it.clocknode, it.enable, "TRUE")) { %>
+     * Note: This peripheral was not enabled on the clock configuration canvas.
+     * Nonetheless, as a result of the following configuration, the peripheral will be
+     * clocked on.
+<%   } %>
+     */
+
+    /* Initialize the peripheral. */
+    result = MXC_UART_Init(MXC_<%= it.msdk_instance ?? it.instance %>,
+<%   if (it.datamodel.Name === "MAX32650") { %>
+                           <%= getUartBaud(it.instance) %>);
+<%   } else if (it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+                           <%= getUartBaud(it.instance) %>,
+                           MAP_A /*dummy*/);
+<%   } else if (it.datamodel.Name === "MAX32662") { %>
+                           <%= getUartBaud(it.instance) %>,
+                           <%= getUartClock(it.clocknode, it.mux, it.clock_default) %>,
+                           MAP_A /*dummy*/);
+<%   } else { %>
+                           <%= getUartBaud(it.instance) %>,
+                           <%= getUartClock(it.clocknode, it.mux, it.clock_default) %>);
+<%   } %>
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+<%   if (it.datamodel.Name === "MAX32650" || it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+    result = MXC_UART_SetClockSource(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUartClock(it.clocknode, it.mux, it.clock_default) === "MXC_UART_APB_CLK" ? 1 : 0 %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+<%   } %>
+    /* Set Data Size. */
+    result = MXC_UART_SetDataSize(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTDataSize(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set Stop Bits. */
+    result = MXC_UART_SetStopBits(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTStopBits(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set Flow Control. */
+<%   if (it.datamodel.Name === "MAX32665") { %>
+    result = MXC_UART_SetFlowCtrl(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTFlowCtrl(it.instance) %>, MAP_A /*dummy*/);
+<%   } else { %>
+    result = MXC_UART_SetFlowCtrl(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTFlowCtrl(it.instance) %>);
+<%   } %>
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set Parity. */
+    result = MXC_UART_SetParity(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTParity(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+<%   if (it.datamodel.Name === "MAX32650" || it.datamodel.Name === "MAX32660" || it.datamodel.Name === "MAX32665") { %>
+    /* Set Null Modem. */
+    result = MXC_UART_SetNullModem(MXC_<%= it.msdk_instance ?? it.instance %>, <%= getUARTNullModem(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+<%   } %>
+  }
+
+<% } %>

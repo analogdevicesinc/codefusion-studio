@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import { InputBox, Workbench } from "vscode-extension-tester";
 
 import { SELECT_SDK_PATH_COMMAND_ID } from "../../commands/constants";
 
-export const CFS_IDE_VERSION = "0.9.1";
+export const CFS_IDE_VERSION = "1.1.0";
 
 /**
  * Select the SDK path using the quick pick option

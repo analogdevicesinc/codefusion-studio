@@ -12,11 +12,6 @@
  * limitations under the License.
  *
  */
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridCell,
-	VSCodeDataGridRow
-} from '@vscode/webview-ui-toolkit/react';
 import styles from './RegisterTable.module.scss';
 import RegisterTableRow from '../table-row/RegisterTableRow';
 import type {ComputedRegisters} from '../body/RegisterBody';
@@ -28,6 +23,7 @@ type RegisterTableProps = {
 import {useMemo, useState, memo, useEffect} from 'react';
 import DownFilledArrow from '@common/icons/DownFilledArrow';
 import DownArrow from '@common/icons/DownArrow';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 function RegisterTable({
 	computedRegisters,
@@ -85,16 +81,16 @@ function RegisterTable({
 	}, []);
 
 	return (
-		<VSCodeDataGrid
+		<DataGrid
 			className={styles.table}
 			gridTemplateColumns={
 				innerWidth > 1130 ? '20% 20% 50% 10%' : '20% 20% 40% 20%'
 			}
 			ariaLabel='Registers table'
-			data-test='register-table-grid'
+			dataTest='register-table-grid'
 		>
-			<VSCodeDataGridRow rowType='header'>
-				<VSCodeDataGridCell gridColumn='1'>
+			<DataGridRow rowType='header'>
+				<DataGridCell gridColumn='1' cellType='columnheader'>
 					<div
 						className={`${styles['sortable-title']} ${styles[sortedBy?.name ?? ''] ?? ''} `}
 						onClick={() => {
@@ -104,8 +100,8 @@ function RegisterTable({
 						Name
 						{sortedBy?.name ? <DownFilledArrow /> : <DownArrow />}
 					</div>
-				</VSCodeDataGridCell>
-				<VSCodeDataGridCell gridColumn='2'>
+				</DataGridCell>
+				<DataGridCell gridColumn='2' cellType='columnheader'>
 					<div
 						className={`${styles['sortable-title']} ${styles[sortedBy?.address ?? ''] ?? ''} `}
 						onClick={() => {
@@ -115,12 +111,14 @@ function RegisterTable({
 						Address
 						{sortedBy?.address ? <DownFilledArrow /> : <DownArrow />}
 					</div>
-				</VSCodeDataGridCell>
-				<VSCodeDataGridCell gridColumn='3'>
+				</DataGridCell>
+				<DataGridCell gridColumn='3' cellType='columnheader'>
 					Description
-				</VSCodeDataGridCell>
-				<VSCodeDataGridCell gridColumn='4'>Value</VSCodeDataGridCell>
-			</VSCodeDataGridRow>
+				</DataGridCell>
+				<DataGridCell gridColumn='4' cellType='columnheader'>
+					Value
+				</DataGridCell>
+			</DataGridRow>
 			{sortedRegisters.map(register => (
 				<RegisterTableRow
 					key={register.name}
@@ -143,7 +141,7 @@ function RegisterTable({
 					handleRegisterSelection={setActiveRegister}
 				/>
 			))}
-		</VSCodeDataGrid>
+		</DataGrid>
 	);
 }
 

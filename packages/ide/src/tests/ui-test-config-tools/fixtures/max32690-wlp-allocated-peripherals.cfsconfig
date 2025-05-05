@@ -1,0 +1,121 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "0.0.1",
+  "Timestamp": "2025-02-25T13:51:53.871Z",
+  "Soc": "MAX32690",
+  "Package": "WLP",
+  "Pins": [],
+  "ClockNodes": [],
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4-proj",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "ADC",
+          "Signals": [
+            {
+              "Name": "AIN0",
+              "Config": {}
+            },
+            {
+              "Name": "AIN1",
+              "Config": {}
+            },
+            {
+              "Name": "AIN2",
+              "Config": {}
+            },
+            {
+              "Name": "AIN3",
+              "Config": {}
+            },
+            {
+              "Name": "AIN4",
+              "Config": {}
+            },
+            {
+              "Name": "AIN5",
+              "Config": {}
+            },
+            {
+              "Name": "AIN6",
+              "Config": {}
+            },
+            {
+              "Name": "AIN7",
+              "Config": {}
+            },
+            {
+              "Name": "CLK_EXT",
+              "Config": {}
+            },
+            {
+              "Name": "HW_TRIG_C",
+              "Config": {}
+            },
+            {
+              "Name": "TRIG_A",
+              "Config": {}
+            },
+            {
+              "Name": "TRIG_B",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.1",
+              "Config": {}
+            },
+            {
+              "Name": "P0.2",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV-proj",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "DMA",
+          "Signals": [],
+          "Config": {}
+        },
+        {
+          "Name": "GPIO4",
+          "Signals": [
+            {
+              "Name": "P4.0",
+              "Config": {}
+            },
+            {
+              "Name": "P4.1",
+              "Config": {}
+            }
+          ],
+          "Config": {}
+        }
+      ]
+    }
+  ]
+}

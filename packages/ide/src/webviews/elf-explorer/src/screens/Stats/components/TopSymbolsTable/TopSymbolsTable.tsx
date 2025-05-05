@@ -13,16 +13,11 @@
  *
  */
 import {useCallback, useMemo, useState} from 'react';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell
-} from '@vscode/webview-ui-toolkit/react';
 import type {TSymbol} from '../../../../common/types/symbols';
 import type {TSavedTableOptions} from '../../../../common/types/memory-layout';
 import styles from './TopSymbolsTable.module.scss';
 import {getColumns} from '../../../../utils/table-utils';
-import {capitalizeWord} from '../../../../utils/string';
+import {capitalizeWord} from '@common/utils/string';
 import {formatSize} from '../../../../utils/stats-utils';
 import ContextMenuPanel from '../../../../components/ContextMenu/Panel/ContextMenuPanel';
 import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
@@ -43,6 +38,7 @@ import {
 	checkPath,
 	goToSourceCode
 } from '../../../../utils/extension-utils';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 type TopSymbolsTableProps = {
 	readonly data: TSymbol[];
@@ -193,42 +189,36 @@ export default function TopSymbolsTable({
 
 	return (
 		<>
-			<VSCodeDataGrid
-				aria-label='Top Symbols Table'
-				className={`table-styles ${styles.topTable}`}
-				grid-template-columns='9fr 1fr 1fr 80px 2fr'
+			<DataGrid
+				ariaLabel='Top Symbols Table'
+				className={`${styles.table} ${styles.topTable}`}
+				gridTemplateColumns='9fr 1fr 1fr 80px 2fr'
 			>
-				<VSCodeDataGridRow row-type='header'>
+				<DataGridRow rowType='header'>
 					{columns.includes('name') && (
-						<VSCodeDataGridCell
-							cell-type='columnheader'
-							grid-column='1 / 3'
-						>
+						<DataGridCell cellType='columnheader' gridColumn='1 / 3'>
 							<ElfTableHeaderCell
 								dir={sortBy.name}
 								column='name'
 								label={capitalizeWord('name')}
 								onSort={onSortColumn}
 							/>
-						</VSCodeDataGridCell>
+						</DataGridCell>
 					)}
 					{columns.includes('section') && (
-						<VSCodeDataGridCell
-							cell-type='columnheader'
-							grid-column='3 / 5'
-						>
+						<DataGridCell cellType='columnheader' gridColumn='3 / 5'>
 							<ElfTableHeaderCell
 								dir={sortBy.section}
 								column='section'
 								label={capitalizeWord('section')}
 								onSort={onSortColumn}
 							/>
-						</VSCodeDataGridCell>
+						</DataGridCell>
 					)}
 					{columns.includes('size') && (
-						<VSCodeDataGridCell
-							cell-type='columnheader'
-							grid-column='5 / 7'
+						<DataGridCell
+							cellType='columnheader'
+							gridColumn='5 / 7'
 							className={styles['right-align']}
 						>
 							<ElfTableHeaderCell
@@ -237,31 +227,31 @@ export default function TopSymbolsTable({
 								label={capitalizeWord('size')}
 								onSort={onSortColumn}
 							/>
-						</VSCodeDataGridCell>
+						</DataGridCell>
 					)}
-				</VSCodeDataGridRow>
+				</DataGridRow>
 				{sortedData.map((row, index) => (
-					<VSCodeDataGridRow
+					<DataGridRow
 						key={row.id}
 						className={
 							highlightedRow === index ? styles.highlightedRow : ''
 						}
 					>
 						{columns.includes('name') && (
-							<VSCodeDataGridCell
-								grid-column='1 / 3'
-								onContextMenu={e => {
+							<DataGridCell
+								gridColumn='1 / 3'
+								onContextMenu={(e: React.MouseEvent<HTMLElement>) => {
 									handleContextMenu(e, index, 'name');
 								}}
 							>
 								<div className={styles.ellipsis}>{row.name}</div>
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						)}
 						{columns.includes('section') && (
-							<VSCodeDataGridCell
-								grid-column='3 / 5'
+							<DataGridCell
+								gridColumn='3 / 5'
 								className={styles.cancelHighlight}
-								onContextMenu={e => {
+								onContextMenu={(e: React.MouseEvent<HTMLElement>) => {
 									handleContextMenu(e, index, 'section');
 								}}
 							>
@@ -269,22 +259,22 @@ export default function TopSymbolsTable({
 									value={row.section}
 									bucket={row.bucket}
 								/>
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						)}
 						{columns.includes('size') && (
-							<VSCodeDataGridCell
-								grid-column='5 / 7'
+							<DataGridCell
+								gridColumn='5 / 7'
 								className={styles['right-align']}
-								onContextMenu={e => {
+								onContextMenu={(e: React.MouseEvent<HTMLElement>) => {
 									handleContextMenu(e, index, 'size');
 								}}
 							>
 								{displaySizeContent(row.size as number)}
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						)}
-					</VSCodeDataGridRow>
+					</DataGridRow>
 				))}
-			</VSCodeDataGrid>
+			</DataGrid>
 			<ContextMenuPanel
 				isVisible={contextMenuVisible}
 				x={contextMenuPosition.x}

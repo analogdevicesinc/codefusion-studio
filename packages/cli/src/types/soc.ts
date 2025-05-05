@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ export type Soc = {
   Timestamp: string;
   Name: string;
   Description: string;
+  Cores: SocCore[];
   Controls: {
     PinConfig: SocControl[];
     ClockConfig: SocControl[];
@@ -31,6 +32,10 @@ export type Soc = {
   Registers: SocRegister[];
   Schema: string;
 };
+
+export type SocCore = {
+  Id: string;
+}
 
 export type SocControl = {
   Id: string;
@@ -44,7 +49,6 @@ export type SocControl = {
 export type SocControlValue = {
   Id: string;
   Description: string;
-  Zephyr: string;
 };
 
 type SocPackage = {
@@ -69,7 +73,7 @@ export type SocPin = {
   Signals: SocPinSignal[];
 };
 
-export type SocPinConfig = {
+export type ConfigField = {
   Register: string;
   Field: string;
   Value: number;
@@ -80,30 +84,14 @@ export type SocPinSignal = {
   Peripheral: string;
   Name: string;
   PinMuxSlot: number;
-  PinMuxConfig: SocPinSignalConfig[];
-  PinConfig: Record<string, Record<string, SocPinConfig[]>>;
-  PinMuxNameZephyr?: string;
-};
-
-type SocPinSignalConfig = {
-  Register: string;
-  Field: string;
-  Value: number;
-  Operation?: string;
+  PinMuxConfig: ConfigField[];
+  PinConfig: Record<string, Record<string, ConfigField[]>>;
 };
 
 export type SocClockNode = {
   Name: string;
-  Description: string,
-  Config: Record<string, Record<string, SocPinConfig[]>>;
-};
-
-export type SocConfigZephyr = {
-  Code?: string;
-  Peripheral?: string;
-  Clock?: string;
-  Default?: boolean;
-  Diagnostic?: string;
+  Description: string;
+  Config: Record<string, Record<string, ConfigField[]>>;
 };
 
 export type SocRegister = {
@@ -122,29 +110,18 @@ export type SocRegisterField = {
   Reset: SocValue;
 };
 
-type SocPeripheralZephyr = {
-  Name?: string;
-  Header?: string;
-  ConfigMacros?: string[];
-  Diagnostic?: string;
-  ClocksSection?: boolean;
-  AlwaysEmitPinctrl0?: boolean;
-};
-
 export type SocPeripheral = {
   Name: string;
-  Zephyr?: SocPeripheralZephyr;
+  Security?: string;
   Description: string;
   Signals: SocPeripheralSignalConfig[];
-  Initialization?: SocPeripheralInitializationConfig[];
+  Initialization?: ConfigField[];
 };
 
 type SocPeripheralSignalConfig = {
   Name: string;
   Description: string;
 };
-
-type SocPeripheralInitializationConfig = SocPinSignalConfig;
 
 export type SocClock = {
   Name: string;
@@ -155,8 +132,6 @@ export type SocClock = {
   Config?: ClockConfig;
   ConfigUIOrder?: Array<string>;
   ConfigProgrammingOrder?: Array<string>;
-  ConfigMSDK?: ConfigMSDK;
-  ConfigZephyr?: Record<string, Record<string, SocConfigZephyr>>;
 };
 
 type ClockInput = {
@@ -170,30 +145,9 @@ type ClockOutput = {
 };
 
 type NestedConfig = {
-  [key: string]: [] | ClockRegister[] | NestedConfig;
+  [key: string]: [] | ConfigField[] | NestedConfig;
 };
 
 type ClockConfig = {
   [key: string]: NestedConfig;
-};
-
-type ClockRegister = {
-  Register?: string;
-  Field: string;
-  Value: number;
-  Operation?: string;
-};
-
-type ConfigCode = {
-  Code: string;
-  Epilog: string;
-  Headers: Array<string>;
-};
-
-type NestedConfigMSDK = {
-  [key: string]: ConfigCode | NestedConfigMSDK;
-};
-
-type ConfigMSDK = {
-  [key: string]: NestedConfigMSDK | Record<string, never>;
 };

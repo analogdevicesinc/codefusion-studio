@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,41 +19,54 @@ import * as path from "path";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import { createUnsavedFile } from "../utils/document";
 import debounce from "lodash.debounce";
-import { CONFIG_FILE_EXTENSION } from "../constants";
-import { generateCode, getExportEngines, getSoc, getSocs } from "../cli";
+import { CONFIG_FILE_EXTENSION, MCU_EDITOR_ID } from "../constants";
+import { getExportEngines, getSoc, getSocs } from "../cli";
 import * as fs from "fs";
+import { CfsPluginManager } from "cfs-lib";
+import {
+  CfsConfig,
+  CfsFeatureScope,
+  ConfiguredClockNode,
+  ConfiguredProject,
+  ConfiguredPin,
+} from "cfs-plugins-api";
+import { resolveVariables } from "../utils/resolveVariables";
+import { tmpdir } from "os";
 
 const messageTypes = {
-  getSocConfig: "get-soc-config",
+  getSocAndConfig: "get-soc-and-config",
   getSocs: "get-socs",
   getSoc: "get-soc",
   getExportEngines: "get-export-engines",
   getIsDocumentUnsaved: "get-is-document-unsaved",
-  updatePersistedPinAssignments: "update-pin-assignments",
-  updatePersistedClockNodeAssignments: "update-clock-node-assignments",
+  updatePersistedConfig: "update-persisted-config",
   showSaveDialog: "show-save-dialog",
   generateCode: "generate-code",
   showInformationMessage: "show-information-message",
+  getCores: "get-cores",
   getSocControls: "get-soc-controls",
   getClockCanvas: "get-clock-canvas",
   getClockNodes: "get-clock-nodes",
+  getRegisters: "get-registers",
+  getSocPackage: "get-soc-package",
+  getPinCanvas: "get-pin-canvas",
+  getSocPeripherals: "get-soc-peripherals",
+  getMemoryTypes: "get-memory-types",
+  getIsPeripheralBanner: "get-is-peripheral-banner",
+  updateIsPeripheralBanner: "update-is-peripheral-banner",
+  getProperties: "get-properties",
+  showGenerateCodeWarning: "show-generate-code-warning",
+  getGenerateCodeWarning: "get-generate-code-warning",
 };
 
-type Pin = {
-  Pin: string;
-  Peripheral: string;
-  Signal: string;
-  Config: Record<string, string>;
-  ControlResetValues: Record<string, string>;
-};
-
-type ClockNode = {
-  Type: string;
-  Name: string;
-  Control: string;
-  Value: string;
-  Enabled?: boolean;
-};
+type ClockNodesPayload = Partial<{
+  updatedClockNode: ConfiguredClockNode;
+  initialControlValues: Record<string, string> | undefined;
+  modifiedClockNodes: Array<{
+    Name: string;
+    EnabledControls: Record<string, boolean>;
+  }>;
+}>;
 
 type Document = {
   Copyright: string;
@@ -62,13 +75,13 @@ type Document = {
   Package: string;
   Soc: string;
   Timestamp: string;
-  Pins: Pin[];
-  ClockNodes: ClockNode[];
+  Projects: ConfiguredProject[];
+  Pins: ConfiguredPin[];
+  ClockNodes: ConfiguredClockNode[];
+  ClockFrequencies?: Record<string, string | number>;
 };
 
 // To do: would be nice to import some of the above types instead of duplicating.. But due to current tsconfig structure is not possible
-
-export const MCU_EDITOR_ID = "cfgtools.editor";
 
 export class McuEditor implements vscode.CustomTextEditorProvider {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
@@ -111,7 +124,37 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
         distDir: "out/config-tools",
         indexPath: "out/config-tools/index.html",
       });
+
       const parsedDoc = this.getDocumentAsJson(document);
+      if (!parsedDoc) {
+        const error = new Error("Invalid JSON document.");
+        await vscode.window.showErrorMessage(error.message);
+        throw error;
+      }
+
+      const pluginSearchDirs = vscode.workspace
+        .getConfiguration("cfs")
+        .get<string[]>("plugins.searchDirectories")
+        ?.map((dir) => resolveVariables(dir, true));
+
+      const dataModelSearchDirs = vscode.workspace
+        .getConfiguration("cfs")
+        .get<string[]>("plugins.dataModelSearchDirectories")
+        ?.map((dir) => resolveVariables(dir, true));
+
+      let pluginManager: CfsPluginManager | undefined;
+
+      try {
+        const searchPaths = [
+          ...(pluginSearchDirs ?? []),
+          ...(dataModelSearchDirs ?? []),
+        ];
+        pluginManager = new CfsPluginManager(searchPaths);
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Plugin Manager failed to initialize. All code generation features will not work as expected. Error: ${(error as Error).message}`,
+        );
+      }
 
       if ("Timestamp" in parsedDoc) {
         const mcuId = parsedDoc.Soc ?? "";
@@ -121,6 +164,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
           `${mcuId}${packageId ? `-${packageId}` : ""}`.toLowerCase();
 
         const dataModel = await getSoc(socId);
+
+        Object.freeze(dataModel);
 
         const changeDocumentSubscription =
           vscode.workspace.onDidChangeTextDocument((e) => {
@@ -162,42 +207,45 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
         // Listen for messages from the webview
         webviewPanel.webview.onDidReceiveMessage(async (message) => {
-          // To do: would be nice to have types on this message for better safety and support - but that would require changes in tsconfig structure
           let request;
 
           if (message.type === messageTypes.getSocs) {
             request = getSocs();
           } else if (message.type === messageTypes.getSoc) {
             request = Promise.resolve(dataModel);
-          } else if (message.type === messageTypes.getSocConfig) {
+          } else if (message.type === messageTypes.getSocAndConfig) {
             request = Promise.resolve({
               dataModel,
-              configOptions: this.getDocumentAsJson(document),
+              configOptions: parsedDoc,
             });
-          } else if (
-            message.type === messageTypes.updatePersistedPinAssignments
-          ) {
-            await this.updatePinAssignments(
-              document,
-              message.body.updatedPins as Pin[],
-              message.body.modifiedClockNodes as Array<{
-                Name: string;
-                EnabledControls: Record<string, boolean>;
-              }>,
-            );
-          } else if (
-            message.type === messageTypes.updatePersistedClockNodeAssignments
-          ) {
-            await this.updateClockNodeAssignments(
-              document,
-              message.body.updatedClockNode as ClockNode,
-              message.body.initialControlValues as
+          } else if (message.type === messageTypes.updatePersistedConfig) {
+            const {
+              updatedPins,
+              updatedClockNode,
+              initialControlValues,
+              modifiedClockNodes,
+              updatedProjects,
+              clockFrequencies,
+            } = message.body.updatedConfig;
+
+            const clockNodesPayload: ClockNodesPayload = {
+              updatedClockNode,
+              initialControlValues: initialControlValues as
                 | Record<string, string>
                 | undefined,
-              message.body.modifiedClockNodes as Array<{
+              modifiedClockNodes: modifiedClockNodes as Array<{
                 Name: string;
                 EnabledControls: Record<string, boolean>;
               }>,
+            };
+
+            await this.updatePersistedConfig(
+              document,
+              parsedDoc,
+              updatedPins as ConfiguredPin[],
+              clockNodesPayload,
+              updatedProjects as ConfiguredProject[],
+              clockFrequencies as Record<string, string | number>,
             );
           } else if (message.type === messageTypes.getExportEngines) {
             request = getExportEngines();
@@ -225,66 +273,88 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               request = Promise.resolve(null);
             }
           } else if (message.type === messageTypes.generateCode) {
-            const { engine } = message.body;
-
             try {
-              const { files } = await generateCode(
-                engine as string,
-                document.uri.fsPath,
-              );
-
-              if (!files) {
-                throw new Error(
-                  "No files generated during code generation process.",
-                );
-              }
-
-              const generatedDocs: vscode.TextDocument[] = [];
-              const projectDeps: Set<string> = new Set<string>();
-
-              // Using Promise.all results in concurrency issues with the vscode api
-              for (const [file, fileContent] of Object.entries(files)) {
-                generatedDocs.push(
-                  // eslint-disable-next-line no-await-in-loop
-                  await createUnsavedFile(
-                    path.join(
-                      path.dirname(document.uri.fsPath),
-                      engine === "zephyr" ? `boards/${file}` : file,
-                    ),
-                    fileContent,
-                  ).catch((e) => {
-                    throw new Error(`Error creating file: ${e}`);
-                  }),
+              if (document.isDirty) {
+                const res = await vscode.window.showInformationMessage(
+                  "Save Config File?",
+                  {
+                    modal: true,
+                    detail:
+                      "To generate code you must first save your config file",
+                  },
+                  "Save",
                 );
 
-                for (const dep of this.parseProjectDependencies(fileContent)) {
-                  projectDeps.add(dep);
+                if (!res) {
+                  return; // User closed dialog
+                }
+
+                if (res === "Save") {
+                  await document.save();
                 }
               }
 
-              // add project dependencies to project.mk
-              const projectMk = path.join(
-                path.dirname(document.uri.fsPath),
-                "project.mk",
-              );
-              await this.updateProjectMk(projectMk, projectDeps).catch((e) => {
-                throw new Error(`Error updating project.mk: ${e}`);
-              });
+              const cfsconfig = this.getDocumentAsJson(
+                document,
+              )! as unknown as CfsConfig;
 
-              if (generatedDocs.length) {
-                // Display the first generated file
-                await vscode.window.showTextDocument(generatedDocs[0]);
+              const selectedProjectIds = message.body?.selectedProjectIds as
+                | string[]
+                | undefined;
+
+              if (!(selectedProjectIds ?? []).length) {
+                vscode.window.showErrorMessage(
+                  "No valid projects were selected for code generation. Resolve any errors present and select at least one project.",
+                );
+
+                return;
               }
 
-              await vscode.window.showInformationMessage(
-                `${generatedDocs.length} code files have been generated.`,
-              );
+              // Patching disabled project as externally managed so that code generation for a given project is skipped,
+              // but project information is preserved in the object provided to the code generator templates.
+              cfsconfig.Projects = cfsconfig.Projects.map((project) => {
+                const shouldSkipCodegen =
+                  project.ExternallyManaged ||
+                  !selectedProjectIds?.includes(project.ProjectId);
 
-              request = Promise.resolve("success");
+                return {
+                  ...project,
+                  ExternallyManaged: shouldSkipCodegen,
+                };
+              });
+
+              const workspaceFile = vscode.workspace.workspaceFile;
+
+              const workspacePath = workspaceFile
+                ? path.dirname(workspaceFile.fsPath)
+                : path.join(tmpdir(), "cfs").replace(/\\/g, "/");
+
+              const generatedFilesPath =
+                (await pluginManager?.generateConfigCode(
+                  {
+                    cfsconfig,
+                    datamodel: dataModel,
+                  },
+                  workspacePath,
+                )) ?? [];
+
+              if (!generatedFilesPath.length) {
+                throw new Error(
+                  "No files returned by the code generation plugin. This may be an issue with the plugin itself.",
+                );
+              }
+
+              request = Promise.resolve(generatedFilesPath);
+
+              vscode.window.showInformationMessage(
+                `Code generation completed successfully. ${
+                  generatedFilesPath.length
+                } files created.`,
+              );
             } catch (e) {
-              console.log("e", e);
-              await vscode.window.showErrorMessage(
-                "Unable to generate files, please try again later.",
+              console.error("Code generation error", e);
+              vscode.window.showErrorMessage(
+                `Code generation failed with error: ${(e as Error).message}`,
               );
 
               request = Promise.reject(e);
@@ -295,6 +365,10 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             void vscode.window.showInformationMessage(text as string);
 
             request = Promise.resolve();
+          } else if (message.type === messageTypes.getCores) {
+            request = Promise.resolve(dataModel.Cores);
+          } else if (message.type === messageTypes.getMemoryTypes) {
+            request = Promise.resolve(dataModel.MemoryTypes);
           } else if (message.type === messageTypes.getSocControls) {
             request = Promise.resolve(dataModel.Controls);
           } else if (message.type === messageTypes.getClockCanvas) {
@@ -303,6 +377,66 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             request = Promise.resolve(canvas);
           } else if (message.type === messageTypes.getClockNodes) {
             request = Promise.resolve(dataModel.ClockNodes);
+          } else if (message.type === messageTypes.getRegisters) {
+            request = Promise.resolve(dataModel.Registers);
+          } else if (message.type === messageTypes.getSocPackage) {
+            request = Promise.resolve(dataModel.Packages[0]);
+          } else if (message.type === messageTypes.getPinCanvas) {
+            request = Promise.resolve(dataModel.Packages[0]?.PinCanvas);
+          } else if (message.type === messageTypes.getSocPeripherals) {
+            request = Promise.resolve(dataModel.Peripherals);
+          } else if (message.type === messageTypes.getIsPeripheralBanner) {
+            try {
+              const isBanner =
+                this.context.globalState.get("isPeripheralBanner") === undefined
+                  ? true
+                  : false;
+
+              request = Promise.resolve(isBanner);
+            } catch (error) {
+              request = Promise.reject(error);
+            }
+          } else if (message.type === messageTypes.updateIsPeripheralBanner) {
+            this.context.globalState.update(
+              "isPeripheralBanner",
+              message.body.flag,
+            );
+          } else if (message.type === messageTypes.getProperties) {
+            try {
+              const { pluginId, pluginVersion, scope } = message.body;
+
+              const controls = await pluginManager?.getProperties(
+                pluginId,
+                pluginVersion,
+                scope as CfsFeatureScope,
+                JSON.parse(JSON.stringify(dataModel)),
+              );
+
+              request = Promise.resolve(controls);
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `An error ocurred while fetching plugin properties: ${(error as Error).message}`,
+              );
+
+              request = Promise.reject(error);
+            }
+          } else if (message.type === messageTypes.showGenerateCodeWarning) {
+            this.context.globalState.update(
+              "show-generate-code-warning",
+              message.body.flag,
+            );
+          } else if (message.type === messageTypes.getGenerateCodeWarning) {
+            try {
+              const showWarning =
+                this.context.globalState.get("show-generate-code-warning") ===
+                undefined
+                  ? true
+                  : false;
+
+              request = Promise.resolve(showWarning);
+            } catch (error) {
+              request = Promise.reject(error);
+            }
           }
 
           if (request) {
@@ -387,13 +521,11 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
   /**
    * Get the current document as json
    */
-  private getDocumentAsJson(
-    document: vscode.TextDocument,
-  ): Document | Record<never, never> {
+  private getDocumentAsJson(document: vscode.TextDocument): Document | null {
     const text = document.getText();
 
     if (text.trim().length === 0) {
-      return {};
+      return null;
     }
 
     try {
@@ -405,29 +537,43 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     }
   }
 
-  private async updatePinAssignments(
+  private async updatePersistedConfig(
     document: vscode.TextDocument,
-    updatedPins: Pin[],
-    modifiedClockNodes: Array<{
-      Name: string;
-      EnabledControls: Record<string, boolean>;
-    }>,
+    parsedDoc: Document,
+    updatedPins: ConfiguredPin[],
+    clockNodesPayload: ClockNodesPayload,
+    updatedProjects?: ConfiguredProject[],
+    clockFrequencies?: Record<string, string | number>,
   ) {
     const edit = new vscode.WorkspaceEdit();
-    const timestamp = new Date().toISOString();
-    const parsedDoc = this.getDocumentAsJson(document);
+    const { ClockNodes } = parsedDoc;
+    const { updatedClockNode, initialControlValues, modifiedClockNodes } =
+      clockNodesPayload;
+    parsedDoc.Timestamp = new Date().toISOString();
 
-    if ("Timestamp" in parsedDoc) {
-      parsedDoc.Timestamp = timestamp;
-
+    if (updatedPins && modifiedClockNodes) {
       parsedDoc.Pins = updatedPins;
-
-      parsedDoc.ClockNodes = parsedDoc.ClockNodes.map((clockNode) => ({
-        ...clockNode,
-        Enabled: modifiedClockNodes.find(
-          (modifiedClockNode) => modifiedClockNode.Name === clockNode.Name,
-        )?.EnabledControls[clockNode.Control],
-      }));
+      parsedDoc.ClockNodes = this.updateClockNodes(
+        ClockNodes,
+        modifiedClockNodes,
+      );
+    }
+    if (updatedClockNode && initialControlValues && modifiedClockNodes) {
+      parsedDoc.ClockNodes = this.updateClockNodeAssignments(
+        ClockNodes,
+        updatedClockNode,
+        initialControlValues,
+      );
+      parsedDoc.ClockNodes = this.updateClockNodes(
+        parsedDoc.ClockNodes,
+        modifiedClockNodes,
+      );
+    }
+    if (updatedProjects) {
+      parsedDoc.Projects = updatedProjects;
+    }
+    if (clockFrequencies) {
+      parsedDoc.ClockFrequencies = clockFrequencies;
     }
 
     edit.replace(
@@ -442,73 +588,61 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     await vscode.workspace.applyEdit(edit);
   }
 
-  private async updateClockNodeAssignments(
-    document: vscode.TextDocument,
-    updatedClockNode: ClockNode,
-    initialControlValues: Record<string, string> | undefined,
+  private updateClockNodes(
+    clockNodes: ConfiguredClockNode[],
     modifiedClockNodes: Array<{
       Name: string;
       EnabledControls: Record<string, boolean>;
     }>,
   ) {
-    const edit = new vscode.WorkspaceEdit();
-    const timestamp = new Date().toISOString();
-    const parsedDoc = this.getDocumentAsJson(document);
+    return clockNodes.map((clockNode) => ({
+      ...clockNode,
+      Enabled: Boolean(
+        modifiedClockNodes.find(
+          (modifiedClockNode) => modifiedClockNode.Name === clockNode.Name,
+        )?.EnabledControls[clockNode.Control],
+      ),
+    }));
+  }
 
-    if ("Timestamp" in parsedDoc) {
-      parsedDoc.Timestamp = timestamp;
+  private updateClockNodeAssignments(
+    clockNodes: ConfiguredClockNode[],
+    updatedClockNode: ConfiguredClockNode,
+    initialControlValues: Record<string, string> | undefined,
+  ) {
+    // If new value is the same as the initial default, remove from parsedDoc
+    if (
+      initialControlValues &&
+      initialControlValues[updatedClockNode.Control] === updatedClockNode.Value
+    ) {
+      clockNodes = clockNodes.filter(
+        (clockNode) =>
+          !(
+            clockNode.Name === updatedClockNode.Name &&
+            clockNode.Control === updatedClockNode.Control
+          ),
+      );
+    } else {
+      const nodeToChange = clockNodes.find(
+        (clockNode) =>
+          clockNode.Control === updatedClockNode.Control &&
+          clockNode.Name === updatedClockNode.Name,
+      );
 
-      // If new value is the same as the initial default, remove from parsedDoc
-      if (
-        initialControlValues &&
-        initialControlValues[updatedClockNode.Control] ===
-          updatedClockNode.Value
-      ) {
-        parsedDoc.ClockNodes = parsedDoc.ClockNodes.filter(
+      // If there's an old entry, remove it before populating with the new one
+      if (nodeToChange) {
+        clockNodes = clockNodes.filter(
           (clockNode) =>
             !(
-              clockNode.Name === updatedClockNode.Name &&
+              clockNode.Name === nodeToChange.Name &&
               clockNode.Control === updatedClockNode.Control
             ),
         );
-      } else {
-        const nodeToChange = parsedDoc.ClockNodes.find(
-          (clockNode) =>
-            clockNode.Control === updatedClockNode.Control &&
-            clockNode.Name === updatedClockNode.Name,
-        );
-
-        // If there's an old entry, remove it before populating with the new one
-        if (nodeToChange) {
-          parsedDoc.ClockNodes = parsedDoc.ClockNodes.filter(
-            (clockNode) =>
-              !(
-                clockNode.Name === nodeToChange.Name &&
-                clockNode.Control === updatedClockNode.Control
-              ),
-          );
-        }
-
-        parsedDoc.ClockNodes = [...parsedDoc.ClockNodes, updatedClockNode];
       }
 
-      parsedDoc.ClockNodes = parsedDoc.ClockNodes.map((clockNode) => ({
-        ...clockNode,
-        Enabled: modifiedClockNodes.find(
-          (modifiedClockNode) => modifiedClockNode.Name === clockNode.Name,
-        )?.EnabledControls[clockNode.Control],
-      }));
+      clockNodes = [...clockNodes, updatedClockNode];
     }
 
-    edit.replace(
-      document.uri,
-      new vscode.Range(
-        new vscode.Position(0, 0),
-        new vscode.Position(document.lineCount, 0),
-      ),
-      JSON.stringify(parsedDoc, null, 2) + "\n",
-    );
-
-    await vscode.workspace.applyEdit(edit);
+    return clockNodes;
   }
 }

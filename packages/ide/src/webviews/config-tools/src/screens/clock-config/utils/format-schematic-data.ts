@@ -14,7 +14,7 @@
  */
 /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 /* eslint-disable complexity */
-import {type DiagramData} from '@common/types/soc';
+import type {DiagramData} from '@common/types/soc';
 import {
 	type GlobalConfig,
 	evaluateClockCondition
@@ -24,7 +24,11 @@ import {
 	EMPTY_CLOCK_VALUE,
 	UNDEFINED_MARKER
 } from '../constants/clocks';
-import {getSocControlsDictionary} from '../../../utils/soc-controls';
+import {
+	getClockNodeConfig,
+	getTargetControls
+} from '../../../utils/clock-nodes';
+import {getPrimaryProjectId} from '../../../utils/config';
 
 function formatIconPath(iconName: string) {
 	const resourcesPath =
@@ -78,7 +82,7 @@ export function formatDiagramData(
 			if (typeof formattedData.wires[wire].mount === 'string') {
 				const shouldMount = evaluateClockCondition(
 					currentConfig,
-					formattedData.wires[wire].mount
+					formattedData.wires[wire].mount ?? ''
 				);
 
 				if (shouldMount === false) {
@@ -109,7 +113,7 @@ export function formatDiagramData(
 			if (typeof formattedData.parts[part].mount === 'string') {
 				const shouldMount = evaluateClockCondition(
 					currentConfig,
-					formattedData.parts[part].mount
+					formattedData.parts[part].mount ?? ''
 				);
 
 				if (shouldMount === false) {
@@ -125,6 +129,11 @@ export function formatDiagramData(
 			const fallbackForeground = '#ffffff';
 			const {condition} = formattedData.parts[part];
 			const {clockconfig} = currentConfig;
+
+			const nodeConfig = getClockNodeConfig(
+				formattedData.parts[part].name
+			);
+
 			const currentNodeConfig =
 				clockconfig[formattedData.parts[part].name];
 
@@ -153,11 +162,11 @@ export function formatDiagramData(
 
 			// Format metadata info
 			formattedData.parts[part].metadata.description =
-				clockconfig[formattedData.parts[part].name]?.Description ??
+				nodeConfig?.Description ??
 				`missing description for ${formattedData.parts[part].name}`;
 
 			formattedData.parts[part].metadata.type =
-				clockconfig[formattedData.parts[part].name]?.Type ??
+				nodeConfig?.Type ??
 				`missing type for ${formattedData.parts[part].name}`;
 
 			// Format group info
@@ -201,64 +210,67 @@ export function formatDiagramData(
 			}
 
 			if (formattedData.parts[part].enabled) {
-				const controls = getSocControlsDictionary('ClockConfig');
+				const projectId = getPrimaryProjectId();
+				const targetControls = getTargetControls(
+					'clockConfig',
+					projectId ?? '',
+					currentNodeConfig?.Name ?? ''
+				);
 
 				// Set error state of node
 				const isControlError = Object.entries(
 					currentNodeConfig?.Errors ?? {}
 				).some(([key, error]) => {
 					const isControlEnabled =
-						typeof controls[key].Condition === 'string'
+						typeof targetControls[key]?.Condition === 'string'
 							? evaluateClockCondition(
 									currentConfig,
-									controls[key].Condition
+									targetControls[key].Condition
 								)
 							: true;
 
 					return Boolean(error) && isControlEnabled;
 				});
 
-				const hasOutputError = currentNodeConfig.Outputs?.some(
-					output => {
-						const {MaximumValue, MinimumValue} = output;
+				const hasOutputError = nodeConfig?.Outputs?.some(output => {
+					const {MaximumValue, MinimumValue} = output;
 
-						const computedFreq = computedFrequencies[output.Name];
+					const computedFreq = computedFrequencies[output.Name];
 
-						const isOutputEnabled =
-							typeof output.Condition === 'string'
-								? evaluateClockCondition(
-										currentConfig,
-										output.Condition
-									)
-								: true;
+					const isOutputEnabled =
+						typeof output.Condition === 'string'
+							? evaluateClockCondition(
+									currentConfig,
+									output.Condition
+								)
+							: true;
 
-						if (isOutputEnabled === false) {
-							return false;
-						}
-
-						const isGreaterThanMaxAllowed =
-							typeof MaximumValue === 'number' &&
-							Number(computedFreq) > MaximumValue;
-
-						const isLessThanMinAllowed =
-							typeof MinimumValue === 'number' &&
-							Number(computedFreq) < MinimumValue;
-
-						const hasUnconfiguredValue =
-							computedFreq === EMPTY_CLOCK_VALUE ||
-							computedFreq === UNDEFINED_MARKER;
-
-						return (
-							isGreaterThanMaxAllowed ||
-							isLessThanMinAllowed ||
-							hasUnconfiguredValue
-						);
+					if (isOutputEnabled === false) {
+						return false;
 					}
-				);
 
-				const referencedClockConfig = currentConfig.clockconfig[
-					formattedData.parts[part].name
-				]?.Outputs?.filter(output => output.Name === clockKey)[0];
+					const isGreaterThanMaxAllowed =
+						typeof MaximumValue === 'number' &&
+						Number(computedFreq) > MaximumValue;
+
+					const isLessThanMinAllowed =
+						typeof MinimumValue === 'number' &&
+						Number(computedFreq) < MinimumValue;
+
+					const hasUnconfiguredValue =
+						computedFreq === EMPTY_CLOCK_VALUE ||
+						computedFreq === UNDEFINED_MARKER;
+
+					return (
+						isGreaterThanMaxAllowed ||
+						isLessThanMinAllowed ||
+						hasUnconfiguredValue
+					);
+				});
+
+				const referencedClockConfig = nodeConfig?.Outputs?.filter(
+					output => output.Name === clockKey
+				)[0];
 
 				const hasUnconfiguredValue =
 					clockValue === UNDEFINED_MARKER ||

@@ -12,17 +12,23 @@
  * limitations under the License.
  *
  */
-import type {AppliedSignal, Pin, PinState} from '@common/types/soc';
 import type {
+	AppliedSignal,
 	FormattedPeripheral,
-	Signal
-} from '../../../utils/json-formatter';
+	FormattedPeripheralSignal,
+	PinState
+} from '@common/types/soc';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
 import type {Filter} from '../../../state/slices/app-context/appContext.reducer';
+import {getConfigurablePins} from '../../../utils/soc-pins';
 
 const updatePins = (
-	pins: Record<'assigned' | 'available' | 'conflicts', Pin[]>,
+	pins: Record<
+		'assigned' | 'available' | 'conflict' | 'reserved',
+		PinState[]
+	>,
 	appliedSignals: AppliedSignal[],
-	pin: Pin
+	pin: PinState
 ) => {
 	const appliedSignalsCount = appliedSignals.length;
 
@@ -31,76 +37,101 @@ const updatePins = (
 	} else if (appliedSignalsCount === 1) {
 		pins.assigned.push(pin);
 	} else {
-		pins.conflicts.push(pin);
+		pins.conflict.push(pin);
 	}
 };
 
-export const computePinState = (
-	pinsArray: Array<
-		| {
-				details: Pin;
-				appliedSignals: AppliedSignal[];
-		  }
-		| undefined
-	>
-) =>
-	pinsArray.reduce(
+export const computePinState = (pinsArray: PinState[]) =>
+	pinsArray.reduce<
+		Record<
+			'assigned' | 'available' | 'conflict' | 'reserved',
+			PinState[]
+		>
+	>(
 		(pins, pin) => {
-			if (!pin) return pins;
+			if (!pin.pinId) return pins;
 
-			const isReserved = pin.details.Signals?.length === 1;
+			const isReserved = isPinReserved(pin.pinId);
 
 			if (isReserved) {
-				pins.assigned.push(pin.details);
+				pins.reserved.push(pin);
 			} else {
-				updatePins(pins, pin.appliedSignals, pin.details);
+				updatePins(pins, pin.appliedSignals, pin);
 			}
 
 			return pins;
 		},
 		{
-			assigned: [] as Pin[],
-			available: [] as Pin[],
-			conflicts: [] as Pin[]
+			assigned: [],
+			available: [],
+			conflict: [],
+			reserved: []
 		}
 	);
 
 export const filterSignals = (
-	peripheral: FormattedPeripheral,
-	filter: Filter,
-	nonReservedPins: Array<{
-		name: string;
-		signals: string[];
-		peripherals: Array<string | undefined>;
-	}>,
+	peripheral: FormattedPeripheral<
+		FormattedPeripheralSignal & {
+			currentTarget?: string;
+		}
+	>,
+	activeFilterType: Filter,
 	assignedPins: PinState[]
 ) =>
-	Object.values(peripheral.signals.dict).reduce<
-		Record<string, Signal>
+	Object.values(peripheral.signals).reduce<
+		Record<
+			string,
+			FormattedPeripheralSignal & {
+				currentTarget?: string;
+			}
+		>
 	>((acc, signal) => {
+		const configurablePins = getConfigurablePins();
+
+		const assignedPinsDict = assignedPins.reduce<
+			Record<string, PinState>
+		>(
+			(acc, pin) => ({
+				...acc,
+				[pin.pinId]: pin
+			}),
+			{}
+		);
+
 		if (
-			nonReservedPins.some(pin => {
-				const isSamePin = pin.name === signal.currentTarget;
-				const assignedPinNumberOfSignals =
-					assignedPins.find(
-						assignedPin => assignedPin.details.Name === pin.name
-					)?.appliedSignals.length ?? 0;
+			configurablePins.some(pin => {
+				const isCurrentTargetPin = pin.Name === signal.currentTarget;
 
-				const isAvailable =
-					filter === 'available' &&
-					(assignedPins.length === 0 ||
-						(isSamePin && assignedPinNumberOfSignals === 0));
-				const isAssigned =
-					filter === 'assigned' &&
-					isSamePin &&
-					assignedPinNumberOfSignals === 1;
-				const isConflict =
-					filter === 'conflict' &&
-					isSamePin &&
-					assignedPins &&
-					assignedPinNumberOfSignals > 1;
+				if (!isCurrentTargetPin) return false;
 
-				return isAvailable || isAssigned || isConflict;
+				const currentAppliedSignals =
+					assignedPinsDict[pin.Name]?.appliedSignals ?? [];
+
+				if (activeFilterType === 'assigned') {
+					return (
+						currentAppliedSignals.length === 1 &&
+						currentAppliedSignals[0].Peripheral === peripheral.name
+					);
+				}
+
+				if (activeFilterType === 'conflict') {
+					return (
+						currentAppliedSignals.length > 1 &&
+						currentAppliedSignals.some(
+							appliedSignal =>
+								appliedSignal.Peripheral === peripheral.name
+						)
+					);
+				}
+
+				if (activeFilterType === 'available') {
+					return (
+						assignedPins.length === 0 ||
+						currentAppliedSignals.length === 0
+					);
+				}
+
+				return false;
 			})
 		) {
 			acc[signal.name] = signal;

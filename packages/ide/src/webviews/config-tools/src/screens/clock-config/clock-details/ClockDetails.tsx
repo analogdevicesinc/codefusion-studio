@@ -15,7 +15,6 @@
 import DetailsView from '@common/components/details-view/DetailsView';
 import {setClockNodeDetailsTargetNode} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {
-	useClockConfigs,
 	useClockNodeState,
 	useClockNodeDetailsTargetNode,
 	useDiagramNodeData
@@ -26,12 +25,6 @@ import ControlToggle from '../control-toggle/ControlToggle';
 import styles from './ClockDetails.module.scss';
 import ClockControlInput from '../clock-control-input/ClockControlInput';
 import {
-	type GlobalConfig,
-	evaluateClockCondition
-} from '../../../utils/rpn-expression-resolver';
-import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
-import {getFirmwarePlatform} from '../../../utils/firmware-platform';
-import {
 	SET_INSTRUCTION,
 	SELECT_INSTRUCTION
 } from '../../../utils/soc-controls';
@@ -39,77 +32,97 @@ import {
 	generateOutputValueErrorString,
 	getCurrentNodeError
 } from '../../../utils/node-error';
-import {clockNodeDictionary} from '../../../utils/clock-nodes';
 import {ShortDescErrors} from '../../../types/errorTypes';
 import {useEvaluateClockCondition} from '../../../hooks/use-evaluate-clock-condition';
-import {memo} from 'react';
+import {memo, useMemo} from 'react';
+import {getClockNodeConfig} from '../../../utils/clock-nodes';
+import {use} from 'cfs-react-library';
+import type {ControlCfg} from '../../../../../common/types/soc';
 
 const toggleControlInTitle = 'ENABLE';
 
-function ClockDetails() {
+function ClockDetails({
+	controlsPromise
+}: Readonly<{
+	controlsPromise: Promise<Record<string, ControlCfg[]>>;
+}>) {
+	const clockControls = use(controlsPromise);
 	const dispatch = useAppDispatch();
-	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode()!;
-	const activeClockNodeDetails = useClockNodeState(
+	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
+
+	const activeClockNodeDetails = useMemo(
+		() => getClockNodeConfig(clockNodeDetailsTargetNode ?? '') ?? {},
+		[clockNodeDetailsTargetNode]
+	);
+
+	const activeClockNodeState = useClockNodeState(
 		clockNodeDetailsTargetNode
 	);
-	const clockConfigs = useClockConfigs();
 
-	const firmwarePlatform = getFirmwarePlatform();
+	const formattedControls = useMemo(() => {
+		if (!clockControls[activeClockNodeDetails.Name]) {
+			return {};
+		}
 
-	const getControlFirmwarePlatforms = (controlId: string) =>
-		clockConfigs.find(config => config.Id === controlId)
-			?.FirmwarePlatforms;
+		return clockControls[activeClockNodeDetails.Name]?.reduce<
+			Record<string, ControlCfg>
+		>((acc, control) => {
+			// Filter out enum values that do not have configuration steps.
+			let enumValues = control.EnumValues;
 
-	const shouldRenderControl = (controlId: string) =>
-		!getControlFirmwarePlatforms(controlId) ||
-		!firmwarePlatform ||
-		getControlFirmwarePlatforms(controlId)?.some(fw =>
-			firmwarePlatform?.toLowerCase().includes(fw.toLowerCase())
-		);
+			if (control.EnumValues) {
+				enumValues = control.EnumValues.filter(enumValue =>
+					Boolean(
+						activeClockNodeDetails.Config?.[control.Id]?.[
+							enumValue.Id
+						]
+					)
+				);
+				acc[control.Id] = {...control, EnumValues: enumValues};
+			} else {
+				acc[control.Id] = control;
+			}
 
-	const assignedPins = useAssignedPins();
-	const globalConfig: GlobalConfig = {
-		clockconfig: {
-			[clockNodeDetailsTargetNode]: activeClockNodeDetails ?? {}
-		},
-		assignedPins,
-		currentNode: clockNodeDetailsTargetNode
-	};
+			return acc;
+		}, {});
+	}, [clockControls, activeClockNodeDetails]);
 
-	const aggregatedClockNodeConfig = Object.values(
-		activeClockNodeDetails?.ConfigUIOrder?.map(controlId => {
-			const currentClockConfig = clockConfigs.find(
-				config => config.Id === controlId
-			);
+	const aggregatedClockNodeConfig = (
+		activeClockNodeDetails.ConfigUIOrder || []
+	)
+		.filter(controlId => formattedControls[controlId])
+		.map(controlId => {
+			const currentClockControls = formattedControls[controlId];
+			const configValues = activeClockNodeDetails.Config?.[controlId];
+			const filteredConfigValues: Record<string, unknown> = {};
 
-			let configValues: Record<string, any> | undefined =
-				activeClockNodeDetails?.Config?.[controlId];
-			const firmwarePlatform: string | undefined =
-				getFirmwarePlatform();
-
-			if (firmwarePlatform?.toLowerCase().includes('msdk')) {
-				configValues =
-					activeClockNodeDetails?.ConfigMSDK?.[controlId];
-			} else if (firmwarePlatform?.toLowerCase().includes('zephyr')) {
-				configValues =
-					activeClockNodeDetails?.ConfigZephyr?.[controlId];
+			// Filter out config values that will not be rendered in the UI.
+			if (currentClockControls.EnumValues) {
+				currentClockControls.EnumValues.forEach(enumValue => {
+					if (configValues?.[enumValue.Id]) {
+						filteredConfigValues[enumValue.Id] =
+							configValues?.[enumValue.Id];
+					}
+				});
 			}
 
 			return {
 				key: controlId,
-				type: currentClockConfig?.Type,
-				condition: currentClockConfig?.Condition,
-				minVal: currentClockConfig?.MinimumValue,
-				maxVal: currentClockConfig?.MaximumValue,
-				values: configValues,
-				unit: currentClockConfig?.Units
+				type: currentClockControls.Type,
+				label: currentClockControls.Description,
+				condition: currentClockControls.Condition,
+				minVal: currentClockControls.MinimumValue,
+				maxVal: currentClockControls.MaximumValue,
+				values: filteredConfigValues,
+				unit: currentClockControls.Units,
+				...(currentClockControls.Default
+					? {default: String(currentClockControls.Default)}
+					: {}),
+				...(currentClockControls.EnumValues
+					? {options: currentClockControls.EnumValues}
+					: {})
 			};
-		}) ?? {}
-	);
-
-	const getControlLabel = (controlId: string) =>
-		clockConfigs.find(control => control.Id === controlId)
-			?.Description ?? '';
+		});
 
 	const handleBackClick = () => {
 		dispatch(setClockNodeDetailsTargetNode(undefined));
@@ -134,14 +147,17 @@ function ClockDetails() {
 		aggregatedClockNodeConfig[0]?.key
 	);
 
-	const diagramData = useDiagramNodeData(clockNodeDetailsTargetNode);
+	const diagramData = useDiagramNodeData(
+		clockNodeDetailsTargetNode ?? ''
+	);
 
-	const nodeDetails = clockNodeDictionary[clockNodeDetailsTargetNode];
-	const computeOutputEnabledState = useEvaluateClockCondition();
+	const computeEnabledState = useEvaluateClockCondition();
+
+	if (clockNodeDetailsTargetNode === undefined) return null;
+
 	const nodeError = getCurrentNodeError(
-		activeClockNodeDetails,
-		nodeDetails,
-		computeOutputEnabledState
+		activeClockNodeState,
+		computeEnabledState
 	);
 
 	const nodeErrorMessage =
@@ -150,11 +166,7 @@ function ClockDetails() {
 		];
 	const nodeErrorDetails =
 		nodeError &&
-		generateOutputValueErrorString(
-			nodeError,
-			activeClockNodeDetails,
-			nodeDetails
-		);
+		generateOutputValueErrorString(nodeError, activeClockNodeState);
 
 	const shouldRenderError =
 		diagramData?.enabled &&
@@ -162,7 +174,7 @@ function ClockDetails() {
 			ShortDescErrors.UNCONFIGURED_VALUE,
 			ShortDescErrors.LOW_COMPUTED_VALUE,
 			ShortDescErrors.HIGH_COMPUTED_VALUE
-		].includes(nodeErrorMessage);
+		].includes(nodeErrorMessage as ShortDescErrors);
 
 	return (
 		<DetailsView
@@ -170,8 +182,7 @@ function ClockDetails() {
 			body={
 				<>
 					<section className={styles.header}>
-						{displayToggleInTitle &&
-						shouldRenderControl(toggleControlInTitle) ? (
+						{displayToggleInTitle ? (
 							<ControlToggle
 								key={clockNodeDetailsTargetNode}
 								isInTitle
@@ -187,78 +198,78 @@ function ClockDetails() {
 							{activeClockNodeDetails?.Description}
 						</label>
 					</section>
-					<section className={styles.container}>
-						{aggregatedClockNodeConfig.map(control => {
-							if (!shouldRenderControl(control.key)) return null;
+					<section
+						data-test='clock-details:options'
+						className={styles.container}
+					>
+						{aggregatedClockNodeConfig.length
+							? aggregatedClockNodeConfig.map(control => {
+									let isFirstGroupItem = false;
 
-							let isFirstGroupItem = false;
+									if (
+										extractPrefix(control.key) !== currentGroupPrefix
+									) {
+										currentGroupPrefix = extractPrefix(control.key);
+										isFirstGroupItem = true;
+									}
 
-							if (extractPrefix(control.key) !== currentGroupPrefix) {
-								currentGroupPrefix = extractPrefix(control.key);
-								isFirstGroupItem = true;
-							}
+									const isControlEnabled = control.condition
+										? computeEnabledState(
+												control.condition,
+												activeClockNodeDetails?.Name
+											)
+										: true;
 
-							const isControlEnabled = control.condition
-								? evaluateClockCondition(
-										globalConfig,
-										control.condition
+									if (control.type === 'enum')
+										return (
+											<ControlDropdown
+												key={`dropdown_${clockNodeDetailsTargetNode}_${control.key}`}
+												controlCfg={control}
+												isDisabled={!isControlEnabled}
+												label={
+													SELECT_INSTRUCTION + ' ' + control.label
+												}
+											/>
+										);
+
+									if (
+										control.type === 'boolean' &&
+										!displayToggleInTitle
 									)
-								: true;
+										return (
+											<ControlToggle
+												key={`toggle_${clockNodeDetailsTargetNode}_${control.key}`}
+												controlId={control.key}
+												isDisabled={!isControlEnabled}
+												label={control.label}
+												isFirstGroupItem={isFirstGroupItem}
+											/>
+										);
 
-							if (control.type === 'enum')
-								return (
-									<ControlDropdown
-										key={`dropdown_${clockNodeDetailsTargetNode}_${control.key}`}
-										controlId={control.key}
-										isDisabled={!isControlEnabled}
-										label={
-											SELECT_INSTRUCTION +
-											' ' +
-											getControlLabel(control.key)
-										}
-										values={Object.keys(control.values)}
-									/>
-								);
+									if (control.key === toggleControlInTitle)
+										return null;
 
-							if (control.type === 'boolean' && !displayToggleInTitle)
-								return (
-									<ControlToggle
-										key={`toggle_${clockNodeDetailsTargetNode}_${control.key}`}
-										controlId={control.key}
-										isDisabled={!isControlEnabled}
-										label={getControlLabel(control.key)}
-										isFirstGroupItem={isFirstGroupItem}
-									/>
-								);
-
-							if (control.key === toggleControlInTitle) return null;
-
-							return (
-								<div
-									key={`input_${clockNodeDetailsTargetNode}_${control.key}`}
-									style={{marginBottom: '12px'}}
-								>
-									<ClockControlInput
-										control={control.key}
-										controlType={control.type}
-										isDisabled={!isControlEnabled}
-										label={
-											SET_INSTRUCTION +
-											' ' +
-											getControlLabel(control.key)
-										}
-										minVal={control.minVal}
-										maxVal={control.maxVal}
-										unit={control.unit ?? ''}
-									/>
-								</div>
-							);
-						})}
-						{activeClockNodeDetails?.Signpost && (
+									return (
+										<div
+											key={`input_${clockNodeDetailsTargetNode}_${control.key}`}
+											className={styles.clockNodeDetailsTargetNode}
+										>
+											<ClockControlInput
+												controlCfg={control}
+												isDisabled={!isControlEnabled}
+												label={SET_INSTRUCTION + ' ' + control.label}
+											/>
+										</div>
+									);
+								})
+							: !activeClockNodeDetails?.Signpost && (
+									<label>No configuration options available.</label>
+								)}
+						{activeClockNodeDetails?.Signpost ? (
 							<div className={styles.signPost}>
 								{activeClockNodeDetails.Signpost}
 							</div>
-						)}
+						) : null}
 						{shouldRenderError && (
 							<div className={styles.error}>
 								<ul className={styles.valueError}>

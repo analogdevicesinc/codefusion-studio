@@ -13,6 +13,6 @@
  *
  */
 export const tipOffset = 12;
-export const gap = 4;
+export const gap = 2;
 export const notchHeight = 6;
 export const notchWidth = 12;

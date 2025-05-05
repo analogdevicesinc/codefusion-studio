@@ -1,0 +1,19 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "disableGit": true,
+    "entryPoints": ["./src/index.ts"],
+    "entryPointStrategy": "resolve",
+    "excludeTags": ["@strict"],
+    "excludeExternals": true,
+    "includeVersion": false,
+    "plugin": [
+        "typedoc-plugin-rename-defaults",
+        "typedoc-plugin-markdown",
+        "typedoc-plugin-missing-exports"
+    ],
+    "out": "docs",
+    "readme": "none",
+    "sourceLinkTemplate": "#",
+    "basePath": "./",
+    "logLevel": "Error"
+}

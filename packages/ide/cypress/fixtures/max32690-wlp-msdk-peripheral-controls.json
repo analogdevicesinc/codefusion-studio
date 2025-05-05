@@ -1,0 +1,4606 @@
+{
+  "RV mtime": [],
+  "CM4 SysTick": [
+    {
+      "Id": "ENABLE",
+      "Description": "Enable the SysTick Timer",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TICKS_BETWEEN_INTS",
+      "Description": "Clock Ticks Between Interrupts",
+      "Type": "integer",
+      "Condition": "${Control:ENABLE}"
+    }
+  ],
+  "WDT0": [
+    {
+      "Id": "WDT_RST_EN",
+      "Description": "Timer Reset Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "WDT_INT_EN",
+      "Description": "Timer Interrupt Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "EVENTS",
+      "Description": "Captured Events",
+      "EnumValues": [
+        {
+          "Id": "ONLY_LATE",
+          "Description": "Only Late Events",
+          "Value": 0
+        },
+        {
+          "Id": "EARLY_AND_LATE",
+          "Description": "Early and Late Events",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "RST_EARLY_VAL",
+      "Description": "Reset Lower Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_RST_EN} ${Control:EVENTS} ${String:EARLY_AND_LATE} = &"
+    },
+    {
+      "Id": "RST_LATE_VAL",
+      "Description": "Reset Upper Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_RST_EN}"
+    },
+    {
+      "Id": "INT_EARLY_VAL",
+      "Description": "Interrupt Lower Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_INT_EN} ${Control:EVENTS} ${String:EARLY_AND_LATE} = &"
+    },
+    {
+      "Id": "INT_LATE_VAL",
+      "Description": "Interrupt Upper Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_INT_EN}"
+    }
+  ],
+  "TMR0": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "DUAL_16BIT",
+          "Description": "Dual 16-bit Timers",
+          "Value": 0
+        },
+        {
+          "Id": "SINGLE_32BIT",
+          "Description": "Single 32-bit Timer",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT",
+      "Description": "Timer Count",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "COMPARE",
+      "Description": "Timer Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "PWM",
+      "Description": "Timer PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "COUNT_A",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_A",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "PWM_A",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "MODE_B",
+      "Description": "Mode for Timer B",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_B",
+      "Description": "Clock Divider for Timer B",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "POL_B",
+      "Description": "Timer Polarity for Timer B",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_B",
+      "Description": "Timer B Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    }
+  ],
+  "TMR1": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "DUAL_16BIT",
+          "Description": "Dual 16-bit Timers",
+          "Value": 0
+        },
+        {
+          "Id": "SINGLE_32BIT",
+          "Description": "Single 32-bit Timer",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT",
+      "Description": "Timer Count",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "COMPARE",
+      "Description": "Timer Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "PWM",
+      "Description": "Timer PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "COUNT_A",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_A",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "PWM_A",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "MODE_B",
+      "Description": "Mode for Timer B",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_B",
+      "Description": "Clock Divider for Timer B",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "POL_B",
+      "Description": "Timer Polarity for Timer B",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_B",
+      "Description": "Timer B Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    }
+  ],
+  "TMR2": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "DUAL_16BIT",
+          "Description": "Dual 16-bit Timers",
+          "Value": 0
+        },
+        {
+          "Id": "SINGLE_32BIT",
+          "Description": "Single 32-bit Timer",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT",
+      "Description": "Timer Count",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "COMPARE",
+      "Description": "Timer Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "PWM",
+      "Description": "Timer PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "COUNT_A",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_A",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "PWM_A",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "MODE_B",
+      "Description": "Mode for Timer B",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_B",
+      "Description": "Clock Divider for Timer B",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "POL_B",
+      "Description": "Timer Polarity for Timer B",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_B",
+      "Description": "Timer B Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    }
+  ],
+  "TMR3": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "DUAL_16BIT",
+          "Description": "Dual 16-bit Timers",
+          "Value": 0
+        },
+        {
+          "Id": "SINGLE_32BIT",
+          "Description": "Single 32-bit Timer",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT",
+      "Description": "Timer Count",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "COMPARE",
+      "Description": "Timer Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} ="
+    },
+    {
+      "Id": "PWM",
+      "Description": "Timer PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 4294967295,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "COUNT_A",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_A",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "PWM_A",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_A} ${String:PWM} = &"
+    },
+    {
+      "Id": "MODE_B",
+      "Description": "Mode for Timer B",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_B",
+      "Description": "Clock Divider for Timer B",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "POL_B",
+      "Description": "Timer Polarity for Timer B",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_B",
+      "Description": "Timer B Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+    }
+  ],
+  "I2C0": [
+    {
+      "Id": "MODE",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "TARGET",
+          "Description": "Target Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "GC_ADDR_EN",
+      "Description": "General Call Address",
+      "EnumValues": [
+        {
+          "Id": "IGNORE",
+          "Description": "Ignore",
+          "Value": 0
+        },
+        {
+          "Id": "ACK",
+          "Description": "Acknowledge",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "CLKSTR",
+      "Description": "Target Clock Stretching",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 8,
+      "Type": "integer"
+    },
+    {
+      "Id": "PRELOAD_MODE",
+      "Description": "Transmit FIFO Preaload Mode",
+      "EnumValues": [
+        {
+          "Id": "NORMAL",
+          "Description": "Normal operation",
+          "Value": 0
+        },
+        {
+          "Id": "PRELOAD",
+          "Description": "Transmit FIFO Preload Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 7,
+      "Type": "integer"
+    },
+    {
+      "Id": "SCL_TIMEOUT",
+      "Description": "Bus Error SCL Timeout Period",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TARGET0_ADDR",
+      "Description": "Target Address 0",
+      "MinimumValue": 0,
+      "MaximumValue": 1023,
+      "Type": "integer",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "100000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "I2C1": [
+    {
+      "Id": "MODE",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "TARGET",
+          "Description": "Target Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "GC_ADDR_EN",
+      "Description": "General Call Address",
+      "EnumValues": [
+        {
+          "Id": "IGNORE",
+          "Description": "Ignore",
+          "Value": 0
+        },
+        {
+          "Id": "ACK",
+          "Description": "Acknowledge",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "CLKSTR",
+      "Description": "Target Clock Stretching",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 8,
+      "Type": "integer"
+    },
+    {
+      "Id": "PRELOAD_MODE",
+      "Description": "Transmit FIFO Preaload Mode",
+      "EnumValues": [
+        {
+          "Id": "NORMAL",
+          "Description": "Normal operation",
+          "Value": 0
+        },
+        {
+          "Id": "PRELOAD",
+          "Description": "Transmit FIFO Preload Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 7,
+      "Type": "integer"
+    },
+    {
+      "Id": "SCL_TIMEOUT",
+      "Description": "Bus Error SCL Timeout Period",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TARGET0_ADDR",
+      "Description": "Target Address 0",
+      "MinimumValue": 0,
+      "MaximumValue": 1023,
+      "Type": "integer",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "100000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "I2C2": [
+    {
+      "Id": "MODE",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "TARGET",
+          "Description": "Target Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "GC_ADDR_EN",
+      "Description": "General Call Address",
+      "EnumValues": [
+        {
+          "Id": "IGNORE",
+          "Description": "Ignore",
+          "Value": 0
+        },
+        {
+          "Id": "ACK",
+          "Description": "Acknowledge",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "CLKSTR",
+      "Description": "Target Clock Stretching",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 8,
+      "Type": "integer"
+    },
+    {
+      "Id": "PRELOAD_MODE",
+      "Description": "Transmit FIFO Preaload Mode",
+      "EnumValues": [
+        {
+          "Id": "NORMAL",
+          "Description": "Normal operation",
+          "Value": 0
+        },
+        {
+          "Id": "PRELOAD",
+          "Description": "Transmit FIFO Preload Mode",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold",
+      "MinimumValue": 0,
+      "MaximumValue": 7,
+      "Type": "integer"
+    },
+    {
+      "Id": "SCL_TIMEOUT",
+      "Description": "Bus Error SCL Timeout Period",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TARGET0_ADDR",
+      "Description": "Target Address 0",
+      "MinimumValue": 0,
+      "MaximumValue": 1023,
+      "Type": "integer",
+      "Condition": "${Control:MODE} ${String:TARGET} ="
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "100000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "UART0": [
+    {
+      "Id": "PARITY",
+      "Description": "Parity",
+      "EnumValues": [
+        {
+          "Id": "EVEN",
+          "Description": "Even Parity",
+          "Value": 0
+        },
+        {
+          "Id": "ODD",
+          "Description": "Odd Parity",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PARITY_MD",
+      "Description": "Parity Based on 1s or 0s",
+      "EnumValues": [
+        {
+          "Id": "MARK",
+          "Description": "Number of 1 Bits (Mark)",
+          "Value": 0
+        },
+        {
+          "Id": "SPACE",
+          "Description": "Number of 0 Bits (Space)",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:PARITY} ${String:DISABLED} !="
+    },
+    {
+      "Id": "CHAR_SIZE",
+      "Description": "UART Character Size",
+      "EnumValues": [
+        {
+          "Id": "5",
+          "Description": "5 Bits",
+          "Value": 0
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits",
+          "Value": 1
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "STOP_BITS",
+      "Description": "Number of Stop Bits",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "1 Stop Bit",
+          "Value": 0
+        },
+        {
+          "Id": "1.5/2",
+          "Description": "1.5 Stop Bits or 2 Stop Bits",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "HW_FLOW_CTRL",
+      "Description": "Hardware Flow Control RTS Mode",
+      "EnumValues": [
+        {
+          "Id": "DEASSERT_ON_FULL",
+          "Description": "Deassert On Full",
+          "Value": 0
+        },
+        {
+          "Id": "DEASSERT_ON_THRESHOLD",
+          "Description": "Deassert On Threshold",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "BAUD",
+      "Description": "Baud Rate",
+      "Hint": "115200",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "UART1": [
+    {
+      "Id": "PARITY",
+      "Description": "Parity",
+      "EnumValues": [
+        {
+          "Id": "EVEN",
+          "Description": "Even Parity",
+          "Value": 0
+        },
+        {
+          "Id": "ODD",
+          "Description": "Odd Parity",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PARITY_MD",
+      "Description": "Parity Based on 1s or 0s",
+      "EnumValues": [
+        {
+          "Id": "MARK",
+          "Description": "Number of 1 Bits (Mark)",
+          "Value": 0
+        },
+        {
+          "Id": "SPACE",
+          "Description": "Number of 0 Bits (Space)",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:PARITY} ${String:DISABLED} !="
+    },
+    {
+      "Id": "CHAR_SIZE",
+      "Description": "UART Character Size",
+      "EnumValues": [
+        {
+          "Id": "5",
+          "Description": "5 Bits",
+          "Value": 0
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits",
+          "Value": 1
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "STOP_BITS",
+      "Description": "Number of Stop Bits",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "1 Stop Bit",
+          "Value": 0
+        },
+        {
+          "Id": "1.5/2",
+          "Description": "1.5 Stop Bits or 2 Stop Bits",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "HW_FLOW_CTRL",
+      "Description": "Hardware Flow Control RTS Mode",
+      "EnumValues": [
+        {
+          "Id": "DEASSERT_ON_FULL",
+          "Description": "Deassert On Full",
+          "Value": 0
+        },
+        {
+          "Id": "DEASSERT_ON_THRESHOLD",
+          "Description": "Deassert On Threshold",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "BAUD",
+      "Description": "Baud Rate",
+      "Hint": "115200",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "UART2": [
+    {
+      "Id": "PARITY",
+      "Description": "Parity",
+      "EnumValues": [
+        {
+          "Id": "EVEN",
+          "Description": "Even Parity",
+          "Value": 0
+        },
+        {
+          "Id": "ODD",
+          "Description": "Odd Parity",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PARITY_MD",
+      "Description": "Parity Based on 1s or 0s",
+      "EnumValues": [
+        {
+          "Id": "MARK",
+          "Description": "Number of 1 Bits (Mark)",
+          "Value": 0
+        },
+        {
+          "Id": "SPACE",
+          "Description": "Number of 0 Bits (Space)",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:PARITY} ${String:DISABLED} !="
+    },
+    {
+      "Id": "CHAR_SIZE",
+      "Description": "UART Character Size",
+      "EnumValues": [
+        {
+          "Id": "5",
+          "Description": "5 Bits",
+          "Value": 0
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits",
+          "Value": 1
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "STOP_BITS",
+      "Description": "Number of Stop Bits",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "1 Stop Bit",
+          "Value": 0
+        },
+        {
+          "Id": "1.5/2",
+          "Description": "1.5 Stop Bits or 2 Stop Bits",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "HW_FLOW_CTRL",
+      "Description": "Hardware Flow Control RTS Mode",
+      "EnumValues": [
+        {
+          "Id": "DEASSERT_ON_FULL",
+          "Description": "Deassert On Full",
+          "Value": 0
+        },
+        {
+          "Id": "DEASSERT_ON_THRESHOLD",
+          "Description": "Deassert On Threshold",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "BAUD",
+      "Description": "Baud Rate",
+      "Hint": "115200",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "SPI0": [
+    {
+      "Id": "MODE",
+      "Description": "Operation Mode",
+      "EnumValues": [
+        {
+          "Id": "FOUR_WIRE",
+          "Description": "Four-Wire (Standard) Mode",
+          "Value": 0
+        },
+        {
+          "Id": "THREE_WIRE",
+          "Description": "Three-Wire Mode",
+          "Value": 1
+        },
+        {
+          "Id": "DUAL",
+          "Description": "Dual Mode",
+          "Value": 2
+        },
+        {
+          "Id": "QUAD",
+          "Description": "Quadruple Mode",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "DIRECTION",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller",
+          "Value": 0
+        },
+        {
+          "Id": "TARGET",
+          "Description": "Target",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "WORD_SIZE",
+      "Description": "Bits Per Character",
+      "EnumValues": [
+        {
+          "Id": "2",
+          "Description": "2 Bits per Character",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "3 Bits per Character",
+          "Value": 3
+        },
+        {
+          "Id": "4",
+          "Description": "4 Bits per Character",
+          "Value": 4
+        },
+        {
+          "Id": "5",
+          "Description": "5 Bits per Character",
+          "Value": 5
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits per Character",
+          "Value": 6
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits per Character",
+          "Value": 7
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits per Character",
+          "Value": 8
+        },
+        {
+          "Id": "10",
+          "Description": "10 Bits per Character",
+          "Value": 10
+        },
+        {
+          "Id": "11",
+          "Description": "11 Bits per Character",
+          "Value": 11
+        },
+        {
+          "Id": "12",
+          "Description": "12 Bits per Character",
+          "Value": 12
+        },
+        {
+          "Id": "13",
+          "Description": "13 Bits per Character",
+          "Value": 13
+        },
+        {
+          "Id": "14",
+          "Description": "14 Bits per Character",
+          "Value": 14
+        },
+        {
+          "Id": "15",
+          "Description": "15 Bits per Character",
+          "Value": 15
+        },
+        {
+          "Id": "16",
+          "Description": "16 Bits per Character",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PHASE_POL_MODE",
+      "Description": "Clock Phase and Polarity Mode",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "SPI Mode 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "SPI Mode 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "SPI Mode 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "SPI Mode 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS0_POLARITY",
+      "Description": "Chip Select 0 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS1_POLARITY",
+      "Description": "Chip Select 1 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS2_POLARITY",
+      "Description": "Chip Select 2 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 30,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 31,
+      "Type": "integer"
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "15000000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "WDT1": [
+    {
+      "Id": "WDT_RST_EN",
+      "Description": "Timer Reset Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "WDT_INT_EN",
+      "Description": "Timer Interrupt Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "EVENTS",
+      "Description": "Captured Events",
+      "EnumValues": [
+        {
+          "Id": "ONLY_LATE",
+          "Description": "Only Late Events",
+          "Value": 0
+        },
+        {
+          "Id": "EARLY_AND_LATE",
+          "Description": "Early and Late Events",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "RST_EARLY_VAL",
+      "Description": "Reset Lower Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_RST_EN} ${Control:EVENTS} ${String:EARLY_AND_LATE} = &"
+    },
+    {
+      "Id": "RST_LATE_VAL",
+      "Description": "Reset Upper Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_RST_EN}"
+    },
+    {
+      "Id": "INT_EARLY_VAL",
+      "Description": "Interrupt Lower Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_INT_EN} ${Control:EVENTS} ${String:EARLY_AND_LATE} = &"
+    },
+    {
+      "Id": "INT_LATE_VAL",
+      "Description": "Interrupt Upper Limit",
+      "EnumValues": [
+        {
+          "Id": "2POW31",
+          "Description": "2**31 Clock Cycles",
+          "Value": 0
+        },
+        {
+          "Id": "2POW30",
+          "Description": "2**30 Clock Cycles",
+          "Value": 1
+        },
+        {
+          "Id": "2POW29",
+          "Description": "2**29 Clock Cycles",
+          "Value": 2
+        },
+        {
+          "Id": "2POW28",
+          "Description": "2**28 Clock Cycles",
+          "Value": 3
+        },
+        {
+          "Id": "2POW27",
+          "Description": "2^27 Clock Cycles",
+          "Value": 4
+        },
+        {
+          "Id": "2POW26",
+          "Description": "2**26 Clock Cycles",
+          "Value": 5
+        },
+        {
+          "Id": "2POW25",
+          "Description": "2**25 Clock Cycles",
+          "Value": 6
+        },
+        {
+          "Id": "2POW24",
+          "Description": "2**24 Clock Cycles",
+          "Value": 7
+        },
+        {
+          "Id": "2POW23",
+          "Description": "2**23 Clock Cycles",
+          "Value": 8
+        },
+        {
+          "Id": "2POW22",
+          "Description": "2**22 Clock Cycles",
+          "Value": 9
+        },
+        {
+          "Id": "2POW21",
+          "Description": "2**21 Clock Cycles",
+          "Value": 10
+        },
+        {
+          "Id": "2POW20",
+          "Description": "2**20 Clock Cycles",
+          "Value": 11
+        },
+        {
+          "Id": "2POW19",
+          "Description": "2**19 Clock Cycles",
+          "Value": 12
+        },
+        {
+          "Id": "2POW18",
+          "Description": "2**18 Clock Cycles",
+          "Value": 13
+        },
+        {
+          "Id": "2POW17",
+          "Description": "2**17 Clock Cycles",
+          "Value": 14
+        },
+        {
+          "Id": "2POW16",
+          "Description": "2**16 Clock Cycles",
+          "Value": 15
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:WDT_INT_EN}"
+    }
+  ],
+  "LPTMR0": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "SINGLE_16BIT",
+          "Description": "Single 16-bit Timer",
+          "Value": 2
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT_SINGLE",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_SINGLE",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    },
+    {
+      "Id": "PWM_SINGLE",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    }
+  ],
+  "LPTMR1": [
+    {
+      "Id": "CONFIGURATION",
+      "Description": "Timer Configuration",
+      "EnumValues": [
+        {
+          "Id": "SINGLE_16BIT",
+          "Description": "Single 16-bit Timer",
+          "Value": 2
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "MODE_A",
+      "Description": "Mode for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "ONE_SHOT",
+          "Description": "One-Shot Mode",
+          "Value": 0
+        },
+        {
+          "Id": "CONTINUOUS",
+          "Description": "Continuous Mode",
+          "Value": 1
+        },
+        {
+          "Id": "COUNTER",
+          "Description": "Counter Mode",
+          "Value": 2
+        },
+        {
+          "Id": "PWM",
+          "Description": "PWM Mode",
+          "Value": 3
+        },
+        {
+          "Id": "CAPTURE",
+          "Description": "Capture Mode",
+          "Value": 4
+        },
+        {
+          "Id": "COMPARE",
+          "Description": "Compare Mode",
+          "Value": 5
+        },
+        {
+          "Id": "GATED",
+          "Description": "Gated Mode",
+          "Value": 6
+        },
+        {
+          "Id": "CAPCOMP",
+          "Description": "Capture/Compare Mode",
+          "Value": 7
+        },
+        {
+          "Id": "DUAL_EDGE",
+          "Description": "Dual Edge Capture Mode",
+          "Value": 8
+        }
+      ],
+      "Type": "enum",
+      "Default": "COUNTER"
+    },
+    {
+      "Id": "CLKDIV_A",
+      "Description": "Clock Divider for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "Prescaler Divide-By-1",
+          "Value": 0
+        },
+        {
+          "Id": "2",
+          "Description": "Prescaler Divide-By-2",
+          "Value": 1
+        },
+        {
+          "Id": "4",
+          "Description": "Prescaler Divide-By-4",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "Prescaler Divide-By-8",
+          "Value": 3
+        },
+        {
+          "Id": "16",
+          "Description": "Prescaler Divide-By-16",
+          "Value": 4
+        },
+        {
+          "Id": "32",
+          "Description": "Prescaler Divide-By-32",
+          "Value": 5
+        },
+        {
+          "Id": "64",
+          "Description": "Prescaler Divide-By-64",
+          "Value": 6
+        },
+        {
+          "Id": "128",
+          "Description": "Prescaler Divide-By-128",
+          "Value": 7
+        },
+        {
+          "Id": "256",
+          "Description": "Prescaler Divide-By-256",
+          "Value": 8
+        },
+        {
+          "Id": "512",
+          "Description": "Prescaler Divide-By-512",
+          "Value": 9
+        },
+        {
+          "Id": "1024",
+          "Description": "Prescaler Divide-By-1024",
+          "Value": 10
+        },
+        {
+          "Id": "2048",
+          "Description": "Prescaler Divide-By-2048",
+          "Value": 11
+        },
+        {
+          "Id": "4096",
+          "Description": "Prescaler Divide-By-4096",
+          "Value": 12
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "POL_A",
+      "Description": "Timer Polarity for Single Timer or Timer A",
+      "EnumValues": [
+        {
+          "Id": "POLARITY_0",
+          "Description": "Polarity 0",
+          "Value": 0
+        },
+        {
+          "Id": "POLARITY_1",
+          "Description": "Polarity 1",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "COUNT_SINGLE",
+      "Description": "Timer A Count",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    },
+    {
+      "Id": "COMPARE_SINGLE",
+      "Description": "Timer A Compare Value",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    },
+    {
+      "Id": "PWM_SINGLE",
+      "Description": "Timer A PWM Match",
+      "MinimumValue": 0,
+      "MaximumValue": 65535,
+      "Type": "integer",
+      "Condition": "${Control:CONFIGURATION} ${String:SINGLE_16BIT} ="
+    }
+  ],
+  "LPUART0": [
+    {
+      "Id": "PARITY",
+      "Description": "Parity",
+      "EnumValues": [
+        {
+          "Id": "EVEN",
+          "Description": "Even Parity",
+          "Value": 0
+        },
+        {
+          "Id": "ODD",
+          "Description": "Odd Parity",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PARITY_MD",
+      "Description": "Parity Based on 1s or 0s",
+      "EnumValues": [
+        {
+          "Id": "MARK",
+          "Description": "Number of 1 Bits (Mark)",
+          "Value": 0
+        },
+        {
+          "Id": "SPACE",
+          "Description": "Number of 0 Bits (Space)",
+          "Value": 1
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:PARITY} ${String:DISABLED} !="
+    },
+    {
+      "Id": "CHAR_SIZE",
+      "Description": "UART Character Size",
+      "EnumValues": [
+        {
+          "Id": "5",
+          "Description": "5 Bits",
+          "Value": 0
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits",
+          "Value": 1
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits",
+          "Value": 2
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "STOP_BITS",
+      "Description": "Number of Stop Bits",
+      "EnumValues": [
+        {
+          "Id": "1",
+          "Description": "1 Stop Bit",
+          "Value": 0
+        },
+        {
+          "Id": "1.5/2",
+          "Description": "1.5 Stop Bits or 2 Stop Bits",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "HW_FLOW_CTRL",
+      "Description": "Hardware Flow Control RTS Mode",
+      "EnumValues": [
+        {
+          "Id": "DEASSERT_ON_FULL",
+          "Description": "Deassert On Full",
+          "Value": 0
+        },
+        {
+          "Id": "DEASSERT_ON_THRESHOLD",
+          "Description": "Deassert On Threshold",
+          "Value": 1
+        },
+        {
+          "Id": "DISABLED",
+          "Description": "Disabled",
+          "Value": 20
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "BAUD",
+      "Description": "Baud Rate",
+      "Hint": "115200",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "SPI1": [
+    {
+      "Id": "MODE",
+      "Description": "Operation Mode",
+      "EnumValues": [
+        {
+          "Id": "FOUR_WIRE",
+          "Description": "Four-Wire (Standard) Mode",
+          "Value": 0
+        },
+        {
+          "Id": "THREE_WIRE",
+          "Description": "Three-Wire Mode",
+          "Value": 1
+        },
+        {
+          "Id": "DUAL",
+          "Description": "Dual Mode",
+          "Value": 2
+        },
+        {
+          "Id": "QUAD",
+          "Description": "Quadruple Mode",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "DIRECTION",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller",
+          "Value": 0
+        },
+        {
+          "Id": "TARGET",
+          "Description": "Target",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "WORD_SIZE",
+      "Description": "Bits Per Character",
+      "EnumValues": [
+        {
+          "Id": "2",
+          "Description": "2 Bits per Character",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "3 Bits per Character",
+          "Value": 3
+        },
+        {
+          "Id": "4",
+          "Description": "4 Bits per Character",
+          "Value": 4
+        },
+        {
+          "Id": "5",
+          "Description": "5 Bits per Character",
+          "Value": 5
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits per Character",
+          "Value": 6
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits per Character",
+          "Value": 7
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits per Character",
+          "Value": 8
+        },
+        {
+          "Id": "10",
+          "Description": "10 Bits per Character",
+          "Value": 10
+        },
+        {
+          "Id": "11",
+          "Description": "11 Bits per Character",
+          "Value": 11
+        },
+        {
+          "Id": "12",
+          "Description": "12 Bits per Character",
+          "Value": 12
+        },
+        {
+          "Id": "13",
+          "Description": "13 Bits per Character",
+          "Value": 13
+        },
+        {
+          "Id": "14",
+          "Description": "14 Bits per Character",
+          "Value": 14
+        },
+        {
+          "Id": "15",
+          "Description": "15 Bits per Character",
+          "Value": 15
+        },
+        {
+          "Id": "16",
+          "Description": "16 Bits per Character",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PHASE_POL_MODE",
+      "Description": "Clock Phase and Polarity Mode",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "SPI Mode 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "SPI Mode 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "SPI Mode 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "SPI Mode 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS0_POLARITY",
+      "Description": "Chip Select 0 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS1_POLARITY",
+      "Description": "Chip Select 1 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS2_POLARITY",
+      "Description": "Chip Select 2 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS3_POLARITY",
+      "Description": "Chip Select 3 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 30,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 31,
+      "Type": "integer"
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "15000000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "SPI2": [
+    {
+      "Id": "MODE",
+      "Description": "Operation Mode",
+      "EnumValues": [
+        {
+          "Id": "FOUR_WIRE",
+          "Description": "Four-Wire (Standard) Mode",
+          "Value": 0
+        },
+        {
+          "Id": "THREE_WIRE",
+          "Description": "Three-Wire Mode",
+          "Value": 1
+        },
+        {
+          "Id": "DUAL",
+          "Description": "Dual Mode",
+          "Value": 2
+        },
+        {
+          "Id": "QUAD",
+          "Description": "Quadruple Mode",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "DIRECTION",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller",
+          "Value": 0
+        },
+        {
+          "Id": "TARGET",
+          "Description": "Target",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "WORD_SIZE",
+      "Description": "Bits Per Character",
+      "EnumValues": [
+        {
+          "Id": "2",
+          "Description": "2 Bits per Character",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "3 Bits per Character",
+          "Value": 3
+        },
+        {
+          "Id": "4",
+          "Description": "4 Bits per Character",
+          "Value": 4
+        },
+        {
+          "Id": "5",
+          "Description": "5 Bits per Character",
+          "Value": 5
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits per Character",
+          "Value": 6
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits per Character",
+          "Value": 7
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits per Character",
+          "Value": 8
+        },
+        {
+          "Id": "10",
+          "Description": "10 Bits per Character",
+          "Value": 10
+        },
+        {
+          "Id": "11",
+          "Description": "11 Bits per Character",
+          "Value": 11
+        },
+        {
+          "Id": "12",
+          "Description": "12 Bits per Character",
+          "Value": 12
+        },
+        {
+          "Id": "13",
+          "Description": "13 Bits per Character",
+          "Value": 13
+        },
+        {
+          "Id": "14",
+          "Description": "14 Bits per Character",
+          "Value": 14
+        },
+        {
+          "Id": "15",
+          "Description": "15 Bits per Character",
+          "Value": 15
+        },
+        {
+          "Id": "16",
+          "Description": "16 Bits per Character",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PHASE_POL_MODE",
+      "Description": "Clock Phase and Polarity Mode",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "SPI Mode 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "SPI Mode 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "SPI Mode 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "SPI Mode 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS0_POLARITY",
+      "Description": "Chip Select 0 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS1_POLARITY",
+      "Description": "Chip Select 1 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS2_POLARITY",
+      "Description": "Chip Select 2 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS3_POLARITY",
+      "Description": "Chip Select 3 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 30,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 31,
+      "Type": "integer"
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "15000000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "SPI3": [
+    {
+      "Id": "MODE",
+      "Description": "Operation Mode",
+      "EnumValues": [
+        {
+          "Id": "FOUR_WIRE",
+          "Description": "Four-Wire (Standard) Mode",
+          "Value": 0
+        },
+        {
+          "Id": "THREE_WIRE",
+          "Description": "Three-Wire Mode",
+          "Value": 1
+        },
+        {
+          "Id": "DUAL",
+          "Description": "Dual Mode",
+          "Value": 2
+        },
+        {
+          "Id": "QUAD",
+          "Description": "Quadruple Mode",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "DIRECTION",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller",
+          "Value": 0
+        },
+        {
+          "Id": "TARGET",
+          "Description": "Target",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "WORD_SIZE",
+      "Description": "Bits Per Character",
+      "EnumValues": [
+        {
+          "Id": "2",
+          "Description": "2 Bits per Character",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "3 Bits per Character",
+          "Value": 3
+        },
+        {
+          "Id": "4",
+          "Description": "4 Bits per Character",
+          "Value": 4
+        },
+        {
+          "Id": "5",
+          "Description": "5 Bits per Character",
+          "Value": 5
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits per Character",
+          "Value": 6
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits per Character",
+          "Value": 7
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits per Character",
+          "Value": 8
+        },
+        {
+          "Id": "10",
+          "Description": "10 Bits per Character",
+          "Value": 10
+        },
+        {
+          "Id": "11",
+          "Description": "11 Bits per Character",
+          "Value": 11
+        },
+        {
+          "Id": "12",
+          "Description": "12 Bits per Character",
+          "Value": 12
+        },
+        {
+          "Id": "13",
+          "Description": "13 Bits per Character",
+          "Value": 13
+        },
+        {
+          "Id": "14",
+          "Description": "14 Bits per Character",
+          "Value": 14
+        },
+        {
+          "Id": "15",
+          "Description": "15 Bits per Character",
+          "Value": 15
+        },
+        {
+          "Id": "16",
+          "Description": "16 Bits per Character",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PHASE_POL_MODE",
+      "Description": "Clock Phase and Polarity Mode",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "SPI Mode 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "SPI Mode 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "SPI Mode 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "SPI Mode 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS0_POLARITY",
+      "Description": "Chip Select 0 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS1_POLARITY",
+      "Description": "Chip Select 1 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS2_POLARITY",
+      "Description": "Chip Select 2 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS3_POLARITY",
+      "Description": "Chip Select 3 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 30,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 31,
+      "Type": "integer"
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "15000000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ],
+  "SPI4": [
+    {
+      "Id": "MODE",
+      "Description": "Operation Mode",
+      "EnumValues": [
+        {
+          "Id": "FOUR_WIRE",
+          "Description": "Four-Wire (Standard) Mode",
+          "Value": 0
+        },
+        {
+          "Id": "THREE_WIRE",
+          "Description": "Three-Wire Mode",
+          "Value": 1
+        },
+        {
+          "Id": "DUAL",
+          "Description": "Dual Mode",
+          "Value": 2
+        },
+        {
+          "Id": "QUAD",
+          "Description": "Quadruple Mode",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "DIRECTION",
+      "Description": "Controller or Target Mode",
+      "EnumValues": [
+        {
+          "Id": "CONTROLLER",
+          "Description": "Controller",
+          "Value": 0
+        },
+        {
+          "Id": "TARGET",
+          "Description": "Target",
+          "Value": 1
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "WORD_SIZE",
+      "Description": "Bits Per Character",
+      "EnumValues": [
+        {
+          "Id": "2",
+          "Description": "2 Bits per Character",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "3 Bits per Character",
+          "Value": 3
+        },
+        {
+          "Id": "4",
+          "Description": "4 Bits per Character",
+          "Value": 4
+        },
+        {
+          "Id": "5",
+          "Description": "5 Bits per Character",
+          "Value": 5
+        },
+        {
+          "Id": "6",
+          "Description": "6 Bits per Character",
+          "Value": 6
+        },
+        {
+          "Id": "7",
+          "Description": "7 Bits per Character",
+          "Value": 7
+        },
+        {
+          "Id": "8",
+          "Description": "8 Bits per Character",
+          "Value": 8
+        },
+        {
+          "Id": "10",
+          "Description": "10 Bits per Character",
+          "Value": 10
+        },
+        {
+          "Id": "11",
+          "Description": "11 Bits per Character",
+          "Value": 11
+        },
+        {
+          "Id": "12",
+          "Description": "12 Bits per Character",
+          "Value": 12
+        },
+        {
+          "Id": "13",
+          "Description": "13 Bits per Character",
+          "Value": 13
+        },
+        {
+          "Id": "14",
+          "Description": "14 Bits per Character",
+          "Value": 14
+        },
+        {
+          "Id": "15",
+          "Description": "15 Bits per Character",
+          "Value": 15
+        },
+        {
+          "Id": "16",
+          "Description": "16 Bits per Character",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "PHASE_POL_MODE",
+      "Description": "Clock Phase and Polarity Mode",
+      "EnumValues": [
+        {
+          "Id": "0",
+          "Description": "SPI Mode 0",
+          "Value": 0
+        },
+        {
+          "Id": "1",
+          "Description": "SPI Mode 1",
+          "Value": 1
+        },
+        {
+          "Id": "2",
+          "Description": "SPI Mode 2",
+          "Value": 2
+        },
+        {
+          "Id": "3",
+          "Description": "SPI Mode 3",
+          "Value": 3
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS0_POLARITY",
+      "Description": "Chip Select 0 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum"
+    },
+    {
+      "Id": "CS1_POLARITY",
+      "Description": "Chip Select 1 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS2_POLARITY",
+      "Description": "Chip Select 2 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "CS3_POLARITY",
+      "Description": "Chip Select 3 Polarity",
+      "EnumValues": [
+        {
+          "Id": "ACTIVE_HIGH",
+          "Description": "Active High",
+          "Value": 1
+        },
+        {
+          "Id": "ACTIVE_LOW",
+          "Description": "Active Low",
+          "Value": 0
+        }
+      ],
+      "Type": "enum",
+      "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+    },
+    {
+      "Id": "RECEIVE_DMA_ENABLE",
+      "Description": "Receive DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "RECEIVE_FIFO_THRESHOLD",
+      "Description": "Receive FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 30,
+      "Type": "integer"
+    },
+    {
+      "Id": "TRANSMIT_DMA_ENABLE",
+      "Description": "Transmit DMA Enable",
+      "Type": "boolean"
+    },
+    {
+      "Id": "TRANSMIT_FIFO_THRESHOLD",
+      "Description": "Transmit FIFO Threshold Level",
+      "MinimumValue": 0,
+      "MaximumValue": 31,
+      "Type": "integer"
+    },
+    {
+      "Id": "FREQ",
+      "Description": "Frequency",
+      "Hint": "15000000",
+      "Type": "integer",
+      "PluginOption": true
+    }
+  ]
+}

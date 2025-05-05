@@ -51,6 +51,10 @@ export default function Symbols() {
 		TSavedTableOptions | undefined
 	>(undefined);
 
+	const [queryChangedBy, setQueryChangedBy] = useState<
+		'search' | 'filter'
+	>('filter');
+
 	const {query, editQuery} = useAppContext();
 
 	useEffect(() => {
@@ -72,7 +76,9 @@ export default function Symbols() {
 				const formattedSymbols = formatSymbols(response);
 
 				const symbols =
-					formattedSymbols && Object.keys(formattedSymbols).length
+					formattedSymbols &&
+					Object.keys(formattedSymbols).length &&
+					Object.keys(formattedSymbols[0]).length
 						? formattedSymbols
 						: [];
 
@@ -94,6 +100,7 @@ export default function Symbols() {
 	const onEmitQuery = useCallback(
 		(query: string) => {
 			editQuery(query);
+			setQueryChangedBy('filter');
 		},
 		[editQuery]
 	);
@@ -105,6 +112,7 @@ export default function Symbols() {
 				: `SELECT * FROM symbols WHERE name LIKE '%${value}%' OR address = ${value}`;
 
 			editQuery(query);
+			setQueryChangedBy('search');
 		},
 		[editQuery]
 	);
@@ -174,7 +182,10 @@ export default function Symbols() {
 		<ScreenLayout>
 			<div className={styles.header}>
 				<div className={styles.search}>
-					<SymbolsSearch emitValue={search} />
+					<SymbolsSearch
+						emitValue={search}
+						queryChangedBy={queryChangedBy}
+					/>
 				</div>
 			</div>
 			<section className={styles['table-section']}>

@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
-@use '@common/styles/colors';
+@use '#layout' as layout;
+@use '#colors' as colors;
 
 .container {
 	display: flex;

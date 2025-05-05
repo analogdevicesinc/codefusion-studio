@@ -32,6 +32,8 @@ import {
   openFolder,
 } from "../../ui-test-utils/file-utils";
 import { selectQuickPick } from "../../ui-test-utils/settings-utils";
+import {SELECT_SDK_PATH_COMMAND_ID} from "../../../commands/constants";
+import { CFS_IDE_VERSION } from "../../ui-test-utils/settings-utils";
 
 // Test user setting prompt for missing sdk path
 describe("SDK Path User Setting Prompt Test", () => {
@@ -43,9 +45,9 @@ describe("SDK Path User Setting Prompt Test", () => {
     deleteFolder(testDirectory + "/.vscode");
     await openFolder(process.cwd() + "/" + testDirectory);
     workbench = new Workbench();
-    await workbench.getDriver().sleep(10000);
+    await workbench.getDriver().sleep(20000);
     await configureWorkspace("Yes");
-    await workbench.getDriver().sleep(5000);
+    await workbench.getDriver().sleep(10000);
   });
 
   afterEach(async () => {
@@ -54,7 +56,8 @@ describe("SDK Path User Setting Prompt Test", () => {
 
   it("Prompt User to Select SDK Path", async () => {
     await workbench.getDriver().sleep(10000);
-    await selectQuickPick(`.*0.9.1`).then(async (sdkPath: string) => {
+    await workbench.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
+    await selectQuickPick(".*"+ CFS_IDE_VERSION).then(async (sdkPath: string) => {
       expect(sdkPath).not.equal("");
     });
   });

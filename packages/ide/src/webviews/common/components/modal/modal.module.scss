@@ -12,18 +12,19 @@
  * limitations under the License.
  *
  */
-@use '../../styles/colors';
-@use '../../styles/layout';
+@use '#colors' as colors;
+@use '#layout' as layout;
 @use 'sass:color';
 
 .modal {
+	max-height: 75vh;
 	width: 600px;
-	height: 80%;
 	background-color: colors.$notifications-background;
 	color: colors.$notifications-foreground;
 	border: 1px solid colors.$default-border;
 	padding: 0;
 	box-shadow: layout.$default-shadow;
+	overflow: hidden;
 
 	&::backdrop {
 		background-color: colors.$default-background;
@@ -32,9 +33,11 @@
 }
 
 .innerModal {
+	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	height: 100%;
+	max-height: inherit;
+	padding: 24px;
 }
 
 .modalHeader {
@@ -43,8 +46,7 @@
 	justify-content: flex-end;
 	align-items: center;
 	box-sizing: border-box;
-	padding: 24px;
-	padding-bottom: 8px;
+	padding-bottom: 12px;
 }
 
 .modalBody {
@@ -52,7 +54,6 @@
 	width: 100%;
 	height: 100%;
 	flex-grow: 1;
-	padding: 0 24px;
 	box-sizing: border-box;
 	overflow-y: auto;
 	overflow-x: hidden;
@@ -64,7 +65,7 @@
 
 .modalFooter {
 	height: 72px;
-	padding: 22px 24px;
+	padding-top: 12px;
 	box-sizing: border-box;
 	display: flex;
 	align-items: center;
@@ -75,8 +76,6 @@
 
 .closeButton {
 	color: colors.$icon-foreground;
-	display: flex;
-	justify-content: flex-end;
 	border: none;
 	background: transparent;
 	cursor: pointer;
@@ -107,16 +106,4 @@
 	background-color: colors.$default-background;
 	opacity: 0.8;
 	z-index: 100;
-}
-
-//Dynamic height
-.modalHeight {
-	height: fit-content;
-	[class*='innerModal'] {
-		height: auto;
-	}
-	[class*='modalBody'] {
-		flex-grow: 0;
-		height: auto;
-	}
 }

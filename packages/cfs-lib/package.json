@@ -2,23 +2,27 @@
 	"name": "cfs-lib",
 	"publisher": "adi",
 	"description": "Reusable utilities for CFS components",
-	"author": "Analog Devices",
-	"version": "1.0.0-7",
+	"author": "Analog Devices, Inc.",
+	"version": "1.1.0-18",
 	"scripts": {
-		"build": "yarn build-local-deps && shx rm -rf dist && tsc -b",
-		"build-local-deps": "yarn workspace elf-parser build",
+		"build": "yarn build-local-deps && shx rm -rf dist && tsc -b && yarn run cfslib:copy-templates-dist",
+		"cfslib:copy-templates-dist": "node copyTemplatesCfsLib.mjs",
+		"build-local-deps": "yarn workspace elf-parser build && yarn workspace cfs-plugins-api install --immutable && yarn workspace cfs-plugins-api build",
 		"lint": "eslint . --ext .ts",
-		"test": "mocha --require ts-node/register --recursive src/**/*.test.ts"
+		"test": "mocha --require ts-node/register --recursive test/**/*.test.ts"
 	},
 	"dependencies": {
-		"elf-parser": "workspace:*"
+		"cfs-plugins-api": "workspace:^",
+		"elf-parser": "workspace:^"
 	},
 	"devDependencies": {
+		"@types/chai-as-promised": "^8.0.1",
 		"@types/mocha": "^10.0.1",
 		"@types/node": "^18.19.8",
 		"@typescript-eslint/eslint-plugin": "^7.8.0",
 		"@typescript-eslint/parser": "^7.8.0",
 		"chai": "^5",
+		"chai-as-promised": "^8.0.1",
 		"eslint": "^8.56.0",
 		"mocha": "^10",
 		"shx": "^0.3.4",

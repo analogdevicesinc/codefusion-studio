@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,17 @@ function CfsTooltip({
 	bottom,
 	left,
 	classNames,
-	children
+	children,
+	isShowingNotch = true
 }: {
 	readonly id: string;
-	readonly header: ReactNode | string;
+	readonly header?: ReactNode | string;
 	readonly top?: number;
 	readonly bottom?: number;
 	readonly left?: number;
 	readonly children?: ReactNode;
 	readonly classNames?: string;
+	readonly isShowingNotch?: boolean;
 }) {
 	const tooltipBodyRef = useRef<HTMLDivElement>(null);
 	const tooltipContainerRef = useRef<HTMLDivElement>(null);
@@ -63,24 +65,28 @@ function CfsTooltip({
 			}}
 		>
 			<div className={styles.tooltipLayout}>
-				<div
-					className={styles.notchBorder}
-					style={{
-						top: top ? '-12px' : 'unset',
-						bottom: bottom ? '-12px' : 'unset',
-						transform: bottom ? 'rotate(180deg)' : 'unset'
-					}}
-				/>
-				<div
-					className={styles.notch}
-					style={{
-						top: top ? '-11px' : 'unset',
-						bottom: bottom ? '-11px' : 'unset',
-						transform: bottom ? 'rotate(180deg)' : 'unset'
-					}}
-				/>
+				{isShowingNotch && (
+					<>
+						<div
+							className={styles.notchBorder}
+							style={{
+								top: top ? '-12px' : 'unset',
+								bottom: bottom ? '-12px' : 'unset',
+								transform: bottom ? 'rotate(180deg)' : 'unset'
+							}}
+						/>
+						<div
+							className={styles.notch}
+							style={{
+								top: top ? '-11px' : 'unset',
+								bottom: bottom ? '-11px' : 'unset',
+								transform: bottom ? 'rotate(180deg)' : 'unset'
+							}}
+						/>
+					</>
+				)}
 				<div ref={tooltipBodyRef} className={styles.contentWrapper}>
-					<div className={styles.header}>{header}</div>
+					{header && <div className={styles.header}>{header}</div>}
 					<div className={styles.body}>{children}</div>
 				</div>
 			</div>

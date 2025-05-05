@@ -10,10 +10,10 @@
 		"moduleResolution": "node16",
 		"skipLibCheck": true,
 		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
-		"sourceMap": true, // Ensure source maps are generated
+		"sourceMap": true
 	},
 	"include": ["./src/**/*"],
 	"ts-node": {
-		"esm": true,
-	},
+		"esm": true
+	}
 }

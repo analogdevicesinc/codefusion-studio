@@ -1,5 +1,5 @@
 {
-  "author": "Analog Devices",
+  "author": "Analog Devices, Inc.",
   "bin": "./bin/run.js",
   "description": "ADI CodeFusion Studio CLI tool",
   "dependencies": {
@@ -7,9 +7,11 @@
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^4",
     "cfs-lib": "workspace:*",
+    "cfs-plugins-api": "workspace:*",
     "cli-table3": "^0.6.5",
     "elf-parser": "workspace:*",
-    "eslint-plugin-import": "^2.29.1"
+    "eslint-plugin-import": "^2.29.1",
+    "eta": "^3.5.0"
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",
@@ -38,7 +40,7 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/adi-partners/codefusion-studio/tree/release/1.0.0/packages/cli",
+  "homepage": "https://github.com/analogdevicesinc/codefusion-studio/tree/V1.1.0/packages/cli",
   "license": "MIT",
   "main": "",
   "name": "cfsutil",
@@ -47,9 +49,7 @@
     "dirname": "cfsutil",
     "commands": "./dist/commands",
     "hooks": {
-      "generate-code": "./dist/hooks/generate-code/index",
-      "get-data-models": "./dist/hooks/get-data-models/provide-data-models",
-      "get-engines": "./dist/hooks/get-engines/provide-engines"
+      "get-data-models": "./dist/hooks/get-data-models/provide-data-models"
     },
     "plugins": [
       "@oclif/plugin-help",
@@ -57,32 +57,40 @@
     ],
     "topicSeparator": " ",
     "topics": {
-      "socs": {
-        "description": "SoC data models."
-      },
-      "engines": {
-        "description": "Code generation engines."
-      },
       "elf": {
         "description": "ELF parsing library."
+      },
+      "dt": {
+        "description": "Devicetree parser."
+      },
+      "cfsplugins": {
+        "description": "CFS plugins."
+      },
+      "workspace": {
+        "description": "Workspace."
+      },
+      "project": {
+        "description": "Project."
       }
     }
   },
-  "repository": "https://github.com/adi-partners/codefusion-studio/tree/release/1.0.0/packages/cli",
+  "repository": "https://github.com/analogdevicesinc/codefusion-studio/tree/V1.1.0/packages/cli",
   "scripts": {
-    "build": "yarn ws:elf-parser build && yarn ws:lib build &&  shx rm -rf dist && tsc -b && copyfiles -u 1 'src/**/*.json' dist/",
+    "build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/**/*.json' dist/",
+    "build-local-deps": "yarn ws:lib build && yarn ws:elf-parser build",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
-    "prepack": "yarn ws:lib build && yarn build && oclif manifest && oclif readme",
+    "prepack": "yarn build && oclif manifest && oclif readme",
     "prepare": "yarn build",
-    "tarballs": "node build-scripts/tarballs.js && oclif pack tarballs",
+    "tarballs": "yarn build-local-deps && node build-scripts/tarballs.js && oclif pack tarballs",
     "test": "mocha --forbid-only \"test/commands/**/*.test.ts\"",
     "test-plugins": "mocha --forbid-only \"test/plugins/**/*.test.ts\"",
+    "test-gen": "mocha --forbid-only \"test/commands/generate.test.ts\"",
     "version": "oclif readme && git add README.md"
   },
-  "version": "1.0.0-7",
-  "bugs": "https://github.com/adi-partners/codefusion-studio/issues",
+  "version": "1.1.0-25",
+  "bugs": "https://github.com/analogdevicesinc/codefusion-studio/issues",
   "keywords": [
     "oclif"
   ],

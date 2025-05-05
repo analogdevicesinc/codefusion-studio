@@ -12,8 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/fonts';
-@use '@common/styles/colors';
+@use '#fonts' as fonts;
+@use '#colors' as colors;
 
 .bodyNoPadding {
 	--cfs-tooltip-body-padding: 0;
@@ -36,7 +36,7 @@
 
 .nodeDescription {
 	@include fonts.body-b2;
-	color: colors.$notifications-foreground;
+	color: colors.$description-foreground;
 }
 
 .sectionTitle {
@@ -53,6 +53,8 @@
 	width: 100%;
 	padding: 16px;
 	padding-top: 0;
+	@include fonts.body-b2;
+	color: colors.$default-foreground;
 
 	&:first-child {
 		padding-top: 16px;
@@ -82,12 +84,14 @@ ul.valueError {
 	margin-top: 16px;
 	padding-inline-start: 6px;
 	list-style-position: outside;
-
-	& li {
-		text-indent: -4px;
-	}
+	color: colors.$default-foreground;
 
 	& li::marker {
 		color: colors.$error;
 	}
+}
+
+.disabled {
+	@include fonts.body-b2;
+	color: colors.$default-foreground;
 }

@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/layout';
+@use '#layout' as layout;
+@use '#chart' as chart;
 
 .container {
 	width: calc(50% - (layout.$elf-main-gap / 2));
@@ -39,4 +40,8 @@
 
 .legendContainer {
 	width: 50%;
+}
+
+.chartTooltip {
+	@include chart.chartTooltip;
 }

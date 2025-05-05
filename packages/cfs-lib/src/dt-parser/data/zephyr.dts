@@ -1,0 +1,352 @@
+/dts-v1/;
+
+/ {
+	property-with-staces = "1 2 3 4";
+	property-with-special-chars = "[a {b }c d, abc, }";
+	property-string-list = "nxp,fxos8700", "nxp,mma8652fc";
+	some-unwanted-property;
+	/delete-property/ some-unwanted-property1;
+	a-byte-array = [00 01 ab];
+	#address-cells = < 0x1 >;
+	#size-cells = < 0x1 >;
+	model = "Analog Devices MAX32690EVKIT";
+	compatible = "adi,max32690evkit";
+	chosen {
+		zephyr,flash-controller = &flc0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &pb0;
+	};
+	soc {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+		compatible = "simple-bus";
+		interrupt-parent = < &nvic >;
+		ranges;
+		nvic: interrupt-controller@e000e100 {
+			#address-cells = < 0x1 >;
+			compatible = "arm,v7m-nvic";
+			reg = < 0xe000e100 0xc00 >;
+			interrupt-controller;
+			#interrupt-cells = < 0x2 >;
+			arm,num-irq-priority-bits = < 0x3 >;
+			phandle = < 0x1 >;
+		};
+		systick: timer@e000e010 {
+			compatible = "arm,armv7m-systick";
+			reg = < 0xe000e010 0x10 >;
+		};
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = < 0x20000000 0x20000 >;
+		};
+		flc0: flash_controller@40029000 {
+			compatible = "flash-controller";
+			reg = < 0x40029000 0x400 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+			status = "okay";
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = < 0x10000000 0x300000 >;
+				write-block-size = < 0x10 >;
+				erase-block-size = < 0x4000 >;
+			};
+		};
+		gcr: clock-controller@40000000 {
+			reg = < 0x40000000 0x400 >;
+			compatible = "adi,max32-gcr";
+			#clock-cells = < 0x2 >;
+			clocks = < &clk_ipo >;
+			status = "okay";
+			phandle = < 0x3 >;
+		};
+		i2c0: i2c0@4001d000 {
+			compatible = "adi,max32-i2c";
+			reg = < 0x4001d000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clock-frequency = < 0x186a0 >;
+			clocks = < &gcr 0x0 0xd >;
+			interrupts = < 0xd 0x0 >;
+			status = "disabled";
+		};
+		i2c1: i2c1@4001e000 {
+			compatible = "adi,max32-i2c";
+			reg = < 0x4001e000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clock-frequency = < 0x186a0 >;
+			clocks = < &gcr 0x0 0x1c >;
+			interrupts = < 0x24 0x0 >;
+			status = "disabled";
+		};
+		i2c2: i2c2@4001f000 {
+			compatible = "adi,max32-i2c";
+			reg = < 0x4001f000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clock-frequency = < 0x186a0 >;
+			clocks = < &gcr 0x1 0x18 >;
+			interrupts = < 0x3e 0x0 >;
+			status = "disabled";
+		};
+		pinctrl: pin-controller@40008000 {
+			compatible = "adi,max32-pinctrl";
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+			reg = < 0x40008000 0x3220 >;
+			gpio0: gpio@40008000 {
+				reg = < 0x40008000 0x1000 >;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = < 0x2 >;
+				clocks = < &gcr 0x0 0x0 >;
+				interrupts = < 0x18 0x0 >;
+				status = "okay";
+				phandle = < 0x6 >;
+			};
+			gpio1: gpio@40009000 {
+				reg = < 0x40009000 0x1000 >;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = < 0x2 >;
+				interrupts = < 0x19 0x0 >;
+				clocks = < &gcr 0x0 0x1 >;
+				status = "okay";
+			};
+			gpio2: gpio@4000a000 {
+				reg = < 0x4000a000 0x1000 >;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = < 0x2 >;
+				interrupts = < 0x1a 0x0 >;
+				clocks = < &gcr 0x0 0x2 >;
+				status = "okay";
+				phandle = < 0x7 >;
+			};
+			gpio3: gpio@40080400 {
+				reg = < 0x40080400 0x200 >;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = < 0x2 >;
+				interrupts = < 0x3a 0x0 >;
+				clocks = < &gcr 0x2 0x0 >;
+				status = "okay";
+			};
+			gpio4: gpio@4000c000 {
+				reg = < 0x4000c000 0x20 >;
+				compatible = "adi,max32-gpio";
+				gpio-controller;
+				#gpio-cells = < 0x2 >;
+				interrupts = < 0x36 0x0 >;
+				status = "okay";
+				phandle = < 0x8 >;
+			};
+			uart2a_rx_p1_9: uart2a_rx_p1_9 {
+				pinmux = < 0x911 >;
+				phandle = < 0x5 >;
+			};
+			uart2a_tx_p1_10: uart2a_tx_p1_10 {
+				pinmux = < 0xa11 >;
+				phandle = < 0x4 >;
+			};
+		};
+		uart0: serial@40042000 {
+			compatible = "adi,max32-uart";
+			reg = < 0x40042000 0x1000 >;
+			clocks = < &gcr 0x0 0x9 >;
+			clock-source = < 0x0 >;
+			interrupts = < 0xe 0x0 >;
+			status = "disabled";
+		};
+		uart1: serial@40043000 {
+			compatible = "adi,max32-uart";
+			reg = < 0x40043000 0x1000 >;
+			clocks = < &gcr 0x0 0xa >;
+			clock-source = < 0x0 >;
+			interrupts = < 0xf 0x0 >;
+			status = "disabled";
+		};
+		uart2: serial@40044000 {
+			compatible = "adi,max32-uart";
+			reg = < 0x40044000 0x1000 >;
+			clocks = < &gcr 0x1 0x1 >;
+			clock-source = < 0x2 >;
+			interrupts = < 0x22 0x0 >;
+			status = "okay";
+			pinctrl-0 = < &uart2a_tx_p1_10 &uart2a_rx_p1_9 >;
+			pinctrl-names = "default";
+			current-speed = < 0x1c200 >;
+			data-bits = < 0x8 >;
+			parity = "none";
+		};
+		sram1: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = < 0x20020000 0x20000 >;
+		};
+		sram2: memory@20040000 {
+			compatible = "mmio-sram";
+			reg = < 0x20040000 0x20000 >;
+		};
+		sram3: memory@20060000 {
+			compatible = "mmio-sram";
+			reg = < 0x20060000 0x20000 >;
+		};
+		sram4: memory@20080000 {
+			compatible = "mmio-sram";
+			reg = < 0x20080000 0x20000 >;
+		};
+		sram5: memory@200a0000 {
+			compatible = "mmio-sram";
+			reg = < 0x200a0000 0x20000 >;
+		};
+		sram6: memory@200c0000 {
+			compatible = "mmio-sram";
+			reg = < 0x200c0000 0x10000 >;
+		};
+		sram7: memory@200d0000 {
+			compatible = "mmio-sram";
+			reg = < 0x200d0000 0x10000 >;
+		};
+		flc1: flash_controller@40029400 {
+			compatible = "adi,max32-flash-controller";
+			reg = < 0x40029400 0x400 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x1 >;
+			status = "okay";
+			flash1: flash@10080000 {
+				compatible = "soc-nv-flash";
+				reg = < 0x10080000 0x40000 >;
+				write-block-size = < 0x10 >;
+				erase-block-size = < 0x4000 >;
+			};
+		};
+		spi0: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = < 0x40046000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clocks = < &gcr 0x0 0x6 >;
+			interrupts = < 0x10 0x0 >;
+			status = "disabled";
+		};
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = < 0x40047000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clocks = < &gcr 0x0 0x7 >;
+			interrupts = < 0x11 0x0 >;
+			status = "disabled";
+		};
+		spi2: spi@40048000 {
+			compatible = "adi,max32-spi";
+			reg = < 0x40048000 0x1000 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clocks = < &gcr 0x0 0x8 >;
+			interrupts = < 0x12 0x0 >;
+			status = "disabled";
+		};
+		spi3: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = < 0x400be000 0x400 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clocks = < &gcr 0x1 0x10 >;
+			interrupts = < 0x38 0x0 >;
+			status = "disabled";
+		};
+		spi4: spi@400be400 {
+			compatible = "adi,max32-spi";
+			reg = < 0x400be400 0x400 >;
+			#address-cells = < 0x1 >;
+			#size-cells = < 0x0 >;
+			clocks = < &gcr 0x1 0x11 >;
+			interrupts = < 0x69 0x0 >;
+			status = "disabled";
+		};
+		uart3: serial@40081400 {
+			compatible = "adi,max32-uart";
+			reg = < 0x40081400 0x400 >;
+			clocks = < &gcr 0x2 0x4 >;
+			clock-source = < 0x2 >;
+			interrupts = < 0x58 0x0 >;
+			status = "disabled";
+		};
+	};
+	cpus {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x0 >;
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = < 0x0 >;
+		};
+	};
+	clocks {
+		clk_ipo: clk_ipo {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x7270e00 >;
+			status = "okay";
+			phandle = < 0x2 >;
+		};
+		clk_iso: clk_iso {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x3938700 >;
+			status = "disabled";
+		};
+		clk_inro: clk_inro {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x1f40 >;
+			status = "disabled";
+		};
+		clk_ibro: clk_ibro {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x708000 >;
+			status = "okay";
+		};
+		clk_ertco: clk_ertco {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x8000 >;
+			status = "disabled";
+		};
+		clk_erfo: clk_erfo {
+			compatible = "fixed-clock";
+			#clock-cells = < 0x0 >;
+			clock-frequency = < 0x1e84800 >;
+			status = "disabled";
+		};
+	};
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = < &gpio0 0xe 0x1 >;
+			label = "LED0";
+		};
+		green_led: led_1 {
+			gpios = < &gpio2 0xc 0x1 >;
+			label = "LED1";
+		};
+	};
+	buttons {
+		compatible = "gpio-keys";
+		pb0: pb0 {
+			gpios = < &gpio4 0x0 0x11 >;
+			label = "SW2";
+			zephyr,code = < 0xb >;
+		};
+	};
+};

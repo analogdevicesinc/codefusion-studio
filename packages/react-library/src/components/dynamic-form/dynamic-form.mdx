@@ -1,0 +1,44 @@
+<h2>DynamicForm Component</h2>
+
+<h3>Overview</h3>
+<div>
+	The DynamicForm component is a schema-driven form builder that
+	renders UI elements based on a predefined controls schema. It
+	provides a dynamic interface to display and manage form data while
+	offering validation feedback via an errors prop.
+</div>
+<div>
+	For the DynamicForm to function correctly, each control's `id` must
+	match the key in the `data` object. This ensures that the component
+	can correctly map form controls to their corresponding values in the
+	`data` object.
+</div>
+
+<h3>Summary</h3>
+<div>The DynamicForm is designed to:</div>
+<ol>
+	<li>
+		Dynamically generate form controls based on a static controls
+		schema.
+	</li>
+	<li>
+		Bind form controls to the data prop, reflecting the current state
+		of the form values.
+	</li>
+	<li>
+		Emit updates through the onControlChange handler, enabling the
+		consumer to handle state management externally.
+	</li>
+	<li>
+		Provide error feedback for individual controls using the errors
+		prop.
+	</li>
+</ol>
+
+<h3>Props</h3>
+<ul>
+	<li>`controls` (required)</li>
+	<li>`data` (required)</li>
+	<li>`errors` (optional)</li>
+	<li>`onControlChange` (required)</li>
+</ul>

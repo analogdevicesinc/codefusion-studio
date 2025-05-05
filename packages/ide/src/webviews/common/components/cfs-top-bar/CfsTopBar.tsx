@@ -12,20 +12,18 @@
  * limitations under the License.
  *
  */
-import React, {type ReactNode, type ReactElement} from 'react';
+import React, {type ReactNode} from 'react';
+import {isReactElement} from '../../utils';
+
 import styles from './CfsTopBar.module.scss';
 
 type CfsTopBarProps = {
 	readonly children: ReactNode;
-	readonly title: string | ReactNode;
 };
 
-const isReactElement = (
-	child: ReactNode
-): child is ReactElement<any, string> => React.isValidElement(child);
-
-export default function CfsTopBar({children, title}: CfsTopBarProps) {
+export default function CfsTopBar({children}: CfsTopBarProps) {
 	const startSlot: ReactNode[] = [];
+	const centerSlot: ReactNode[] = [];
 	const endSlot: ReactNode[] = [];
 	const modalSlot: ReactNode[] = [];
 
@@ -35,6 +33,8 @@ export default function CfsTopBar({children, title}: CfsTopBarProps) {
 
 			if (slot === 'start') {
 				startSlot.push(child);
+			} else if (slot === 'center') {
+				centerSlot.push(child);
 			} else if (slot === 'end') {
 				endSlot.push(child);
 			} else if (slot === 'modal') {
@@ -44,9 +44,12 @@ export default function CfsTopBar({children, title}: CfsTopBarProps) {
 	});
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='cfs-top-bar:container'
+		>
 			<div className={styles['start-slot']}>{startSlot}</div>
-			<div className={styles.title}>{title}</div>
+			<div className={styles.title}>{centerSlot}</div>
 			<div className={styles['end-slot']}>{endSlot}</div>
 			<div>{modalSlot}</div>
 		</div>

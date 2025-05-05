@@ -1,0 +1,13 @@
+.container {
+	width: 100%;
+	.row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		--cfs-dropdown-max-width: 120px;
+	}
+	.toggleContainer {
+		display: flex;
+		gap: 8px;
+	}
+}

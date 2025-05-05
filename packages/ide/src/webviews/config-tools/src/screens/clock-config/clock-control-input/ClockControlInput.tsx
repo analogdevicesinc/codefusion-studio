@@ -14,12 +14,12 @@
  */
 import {
 	useMemo,
-	type ChangeEvent,
-	useState,
 	memo,
-	useEffect
+	useEffect,
+	useState,
+	type FormEvent
 } from 'react';
-import CfsTextField from '@common/components/cfs-text-field/CfsTextField';
+import {TextField} from 'cfs-react-library';
 import {useAppDispatch} from '../../../state/store';
 import {generateValidationErrorType} from '../../../utils/validate-inputs';
 import {
@@ -34,37 +34,57 @@ import {
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import debounce from 'lodash.debounce';
 import type {ClockNodeState} from '@common/types/soc';
+import type {TControlTypes} from '../../../types/errorTypes';
 import {generateControlErrorMessage} from '../../../utils/control-errors';
 
-type ClockControlInputProps = {
-	readonly control: string;
-	readonly controlType: string | undefined;
-	readonly isDisabled: boolean;
-	readonly label: string;
-	readonly minVal?: number;
-	readonly maxVal?: number;
-	readonly unit: string;
+type ControlConfig = {
+	key: string;
+	type: TControlTypes;
+	minVal?: number;
+	maxVal?: number;
+	unit?: string;
+	default?: string | number;
 };
 
+type ClockControlInputProps = Readonly<{
+	controlCfg: ControlConfig;
+	isDisabled: boolean;
+	label: string;
+}>;
+
+function testInputValue(e: FormEvent<HTMLInputElement>) {
+	if (!/^\d+$/.test((e as unknown as InputEvent).data!)) {
+		e.preventDefault();
+	}
+}
+
 function ClockControlInput({
-	control,
-	controlType,
+	controlCfg,
 	isDisabled,
-	label,
-	minVal,
-	maxVal,
-	unit
+	label
 }: ClockControlInputProps) {
+	const {
+		key: control,
+		type: controlType,
+		minVal,
+		maxVal,
+		unit = '',
+		default: defaultValue
+	} = controlCfg;
 	const dispatch = useAppDispatch();
 	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
+
 	const activeClockNodeDetails = useClockNodeState(
 		clockNodeDetailsTargetNode
-	)!;
-	const storeInput = useControl(
-		activeClockNodeDetails.Type,
-		clockNodeDetailsTargetNode,
-		control
 	);
+
+	const storeInput = useControl(clockNodeDetailsTargetNode, control);
+
+	// Use default value if storeInput is empty and default is provided
+	const currentValue =
+		!storeInput && defaultValue !== undefined
+			? String(defaultValue)
+			: storeInput;
 
 	let desc: string | undefined;
 	if (minVal && maxVal)
@@ -80,10 +100,11 @@ function ClockControlInput({
 			`Value must be an integer less than ${maxVal} ${unit}.`.trimEnd() +
 			'.';
 
-	const [input, setInput] = useState<string | undefined>(storeInput);
+	const [input, setInput] = useState<string | undefined>(
+		currentValue
+	);
 
 	const errType = useClockConfigError(
-		activeClockNodeDetails.Type,
 		activeClockNodeDetails.Name,
 		control
 	);
@@ -91,24 +112,20 @@ function ClockControlInput({
 	const handleInputChange = useMemo(
 		() =>
 			debounce(
-				(
-					e: ChangeEvent<HTMLInputElement>,
-					nodeDetails: ClockNodeState
-				) => {
+				(value: string, nodeDetails: ClockNodeState) => {
 					// Clock inputs should only accept numbers to process correctly the clock frequencies.
 
 					const inputData = {
-						content: e.target.value,
+						content: value,
 						controlType,
 						minVal,
 						maxVal
 					};
 
 					const changedClockNode: ClockNodeSet = {
-						type: nodeDetails.Type,
 						name: nodeDetails.Name,
 						key: control,
-						value: e.target.value,
+						value,
 						error: generateValidationErrorType(inputData)
 					};
 
@@ -122,6 +139,43 @@ function ClockControlInput({
 	);
 
 	useEffect(() => {
+		// Set default value in store if no value exists and default is available
+		if (
+			!storeInput &&
+			defaultValue !== undefined &&
+			!isDisabled &&
+			clockNodeDetailsTargetNode
+		) {
+			const inputData = {
+				content: String(defaultValue),
+				controlType,
+				minVal,
+				maxVal
+			};
+
+			const changedClockNode: ClockNodeSet = {
+				name: activeClockNodeDetails.Name,
+				key: control,
+				value: String(defaultValue),
+				error: generateValidationErrorType(inputData)
+			};
+
+			dispatch(setClockNodeControlValue(changedClockNode));
+		}
+	}, [
+		control,
+		defaultValue,
+		dispatch,
+		isDisabled,
+		storeInput,
+		clockNodeDetailsTargetNode,
+		controlType,
+		minVal,
+		maxVal,
+		activeClockNodeDetails.Name
+	]);
+
+	useEffect(() => {
 		if (storeInput === input) return;
 
 		// Synchronizes local and store state to cover undo-redo scenarios
@@ -130,7 +184,7 @@ function ClockControlInput({
 	}, [storeInput]);
 
 	return (
-		<CfsTextField
+		<TextField
 			dataTest={`${control}-${activeClockNodeDetails.Name}`}
 			inputVal={input}
 			isDisabled={isDisabled}
@@ -145,11 +199,12 @@ function ClockControlInput({
 					<p style={{margin: '4px 0'}}>{desc}</p>
 				</>
 			}
-			unit={unit}
+			endSlot={unit}
 			direction='vertical'
-			onInputChange={e => {
-				setInput(e.target.value);
-				handleInputChange(e, activeClockNodeDetails);
+			onBeforeInput={testInputValue}
+			onInputChange={inputValue => {
+				setInput(inputValue);
+				handleInputChange(inputValue, activeClockNodeDetails);
 			}}
 		/>
 	);

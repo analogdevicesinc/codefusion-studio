@@ -13,7 +13,7 @@
  *
  */
 import {useState} from 'react';
-import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
+import {Button} from 'cfs-react-library';
 
 import Tooltip from '../../components/Tooltip/Tooltip';
 import Info from '@common/icons/Info';
@@ -50,10 +50,11 @@ export default function HeaderWithTooltip({
 						title: i10n?.tooltips?.title || '',
 						description: i10n?.tooltips?.description || ''
 					}}
+					containerPosition='relative'
 				>
-					<VSCodeButton appearance='icon'>
+					<Button appearance='icon' className={styles.icon}>
 						<Info />
-					</VSCodeButton>
+					</Button>
 				</Tooltip>
 			)}
 		</div>

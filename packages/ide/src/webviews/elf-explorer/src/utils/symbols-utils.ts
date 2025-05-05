@@ -20,7 +20,6 @@ import {
 } from '../common/types/symbols';
 import {convertDecimalToHex, convertHexToDecimal} from './number';
 import {formatSize} from './stats-utils';
-import {BUCKET_ENUM} from './table-utils';
 
 export function extractPositionFromPath(
 	path: string
@@ -45,7 +44,7 @@ export function formatPath(path: string) {
 	return path.replace(/:\d+(?::\d+)?$/, '');
 }
 
-export function extractFilename(path: string) {
+export function extractFilename(path: string): string {
 	if (typeof path !== 'string') {
 		throw new Error('Invalid path: path must be a string');
 	}
@@ -53,11 +52,18 @@ export function extractFilename(path: string) {
 	const parts = path.split('/');
 	const fileName = parts.pop();
 
-	const res = fileName
-		? fileName.slice(0, fileName.lastIndexOf(':'))
-		: '';
+	if (fileName) {
+		// Should return the name of the file containing only with the line number
+		// the strucutre is "/fileName.c:line:col" where line is mandatory and col is optional
+		const isLineAndColumn = fileName?.split(':')?.length === 3;
+		const formattedFileName = isLineAndColumn
+			? fileName?.slice(0, fileName?.lastIndexOf(':'))
+			: fileName;
 
-	return res;
+		return formattedFileName;
+	}
+
+	return '';
 }
 
 // Remove the row and col information from symbol path
@@ -127,11 +133,16 @@ export const displayColumnAndValue = (
 	return result;
 };
 
+// eslint-disable-next-line complexity
 export const displayValue = (
 	column: SYMBOL_COLUMNS,
 	row: TSymbol,
 	savedOptions: TSavedTableOptions
 ) => {
+	if (column === SYMBOL_COLUMNS.NAME) {
+		return '';
+	}
+
 	if (
 		column === SYMBOL_COLUMNS.SIZE &&
 		savedOptions?.symbols[SYMBOL_COLUMNS.SIZE] === 'dec'
@@ -153,6 +164,8 @@ export const displayValue = (
 		return convertHexToDecimal(row[column] as string);
 	}
 
+	if (column === SYMBOL_COLUMNS.SECTION) return '';
+
 	if (
 		column === SYMBOL_COLUMNS.LOCALSTACK &&
 		savedOptions?.symbols[SYMBOL_COLUMNS.LOCALSTACK] === 'hex'
@@ -173,10 +186,22 @@ export const displayValue = (
 		return row[column];
 	}
 
+	const isStackOrLocalStack =
+		column === SYMBOL_COLUMNS.LOCALSTACK ||
+		column === SYMBOL_COLUMNS.STACK;
+
+	if (isStackOrLocalStack && row[column] === null) {
+		return '';
+	}
+
 	if (column === SYMBOL_COLUMNS.PATH)
 		return extractFilename(row[column] as string);
 
-	return row[column];
+	return row[column] === null ||
+		row[column] === undefined ||
+		typeof row[column] === 'boolean'
+		? `${row[column]}`
+		: row[column];
 };
 
 export const setRightAlign = (
@@ -210,22 +235,6 @@ export const setRightAlignForHeader = (column: SYMBOL_COLUMNS) => {
 	if (column === SYMBOL_COLUMNS.STACK) return 'rightAlignForHeader';
 
 	return '';
-};
-
-export const setBucketStyling = (
-	row: TSymbol,
-	styles: Record<string, any>
-) => {
-	let classes = '';
-
-	if (row.bucket === BUCKET_ENUM.TEXT)
-		classes = `${styles.circle} ${styles.textColor}`;
-	if (row.bucket === BUCKET_ENUM.DATA)
-		classes = `${styles.circle} ${styles.dataColor}`;
-	if (row.bucket === BUCKET_ENUM.BSS)
-		classes = `${styles.circle} ${styles.bssColor}`;
-
-	return classes;
 };
 
 export const setFlagsForStack = (row: TSymbol) => {

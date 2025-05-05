@@ -12,12 +12,11 @@
  * limitations under the License.
  *
  */
-import {useCallback, useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Provider} from 'react-redux';
 import Navigation from './components/navigation/Navigation';
 import AppPanel from './components/app-panel/AppPanel';
 import {type Store, getPreloadedStateStore} from './state/store';
-import {handleConfigDocumentUpdates} from './utils/persistence';
 import styles from './App.module.scss';
 import CfgtoolsTopBar from './components/cfgtools-header/CfgtoolsTopbar';
 import {LocalizationProvider} from '../../common/contexts/LocaleContext';
@@ -25,12 +24,13 @@ import {LocalizationProvider} from '../../common/contexts/LocaleContext';
 function App() {
 	const [store, setStore] = useState<Store | undefined>();
 
-	const updateStateHandler = useCallback(
-		(event: MessageEvent) => {
-			handleConfigDocumentUpdates(event, store!);
-		},
-		[store]
-	);
+	// Disabling the event listener until we can implement undo/redo on all screens
+	// const updateStateHandler = useCallback(
+	// 	(event: MessageEvent) => {
+	// 		handleConfigDocumentUpdates(event, store!);
+	// 	},
+	// 	[store]
+	// );
 
 	useEffect(() => {
 		if (store === undefined) {
@@ -50,15 +50,16 @@ function App() {
 		}
 	}, [store]);
 
-	useEffect(() => {
-		if (store === undefined) return;
+	// Disabling the event listener until we can implement undo/redo on all screens
+	// useEffect(() => {
+	// 	if (store === undefined) return;
 
-		window.addEventListener('message', updateStateHandler);
+	// 	window.addEventListener('message', updateStateHandler);
 
-		return () => {
-			window.removeEventListener('message', updateStateHandler);
-		};
-	}, [store, updateStateHandler]);
+	// 	return () => {
+	// 		window.removeEventListener('message', updateStateHandler);
+	// 	};
+	// }, [store, updateStateHandler]);
 
 	if (store === undefined) return null;
 

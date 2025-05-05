@@ -13,16 +13,11 @@
  *
  */
 import {useCallback, useMemo, useState} from 'react';
-import {
-	VSCodeDataGrid,
-	VSCodeDataGridRow,
-	VSCodeDataGridCell
-} from '@vscode/webview-ui-toolkit/react';
 import type {
 	TSavedTableOptions,
 	TSection
 } from '../../../../common/types/memory-layout';
-import {capitalizeWord} from '../../../../utils/string';
+import {capitalizeWord} from '@common/utils/string';
 import {getColumns} from '../../../../utils/table-utils';
 import {
 	countElementsByType,
@@ -40,6 +35,7 @@ import type {TContextMenuOption} from '../../../../common/types/generic';
 
 import styles from './SectionsTable.module.scss';
 import {convertDecimalToHex} from '../../../../utils/number';
+import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 
 const MENU_OPTIONS: TContextMenuOption[] = [
 	{
@@ -138,40 +134,34 @@ export default function SectionsTable({
 				<HeaderWithTooltip title={i10n?.title} i10n={i10n} />
 			</div>
 
-			<VSCodeDataGrid
-				aria-label='Sections Table'
-				className={`table-styles ${styles.topTable}`}
+			<DataGrid
+				ariaLabel='Sections Table'
+				className={`${styles.table} ${styles.topTable}`}
 				grid-template-columns='70px 1fr 90px 100px 95px'
 			>
-				<VSCodeDataGridRow row-type='header'>
-					<VSCodeDataGridCell
-						cell-type='columnheader'
-						grid-column={1}
-					>
+				<DataGridRow rowType='header'>
+					<DataGridCell cellType='columnheader' gridColumn='1'>
 						<ElfTableHeaderCell
 							dir={sortBy.id}
 							column='id'
-							label={capitalizeWord('num')}
+							label={capitalizeWord('id')}
 							onSort={onSortColumn}
 						/>
-					</VSCodeDataGridCell>
+					</DataGridCell>
 					{columns.includes('type') && (
-						<VSCodeDataGridCell
-							cell-type='columnheader'
-							grid-column={2}
-						>
+						<DataGridCell cellType='columnheader' gridColumn='2'>
 							<ElfTableHeaderCell
 								dir={sortBy.name}
 								column='name'
 								label={capitalizeWord('name')}
 								onSort={onSortColumn}
 							/>
-						</VSCodeDataGridCell>
+						</DataGridCell>
 					)}
 					{columns.includes('size') && (
-						<VSCodeDataGridCell
-							cell-type='columnheader'
-							grid-column={3}
+						<DataGridCell
+							cellType='columnheader'
+							gridColumn='3'
 							className={styles['right-align']}
 						>
 							<ElfTableHeaderCell
@@ -180,12 +170,12 @@ export default function SectionsTable({
 								label={capitalizeWord('size')}
 								onSort={onSortColumn}
 							/>
-						</VSCodeDataGridCell>
+						</DataGridCell>
 					)}
 
-					<VSCodeDataGridCell
-						cell-type='columnheader'
-						grid-column={4}
+					<DataGridCell
+						cellType='columnheader'
+						gridColumn='4'
 						className={styles['right-align']}
 					>
 						<ElfTableHeaderCell
@@ -194,10 +184,10 @@ export default function SectionsTable({
 							label={capitalizeWord('functions')}
 							onSort={onSortColumn}
 						/>
-					</VSCodeDataGridCell>
-					<VSCodeDataGridCell
-						cell-type='columnheader'
-						grid-column={5}
+					</DataGridCell>
+					<DataGridCell
+						cellType='columnheader'
+						gridColumn='5'
 						className={styles['right-align']}
 					>
 						<ElfTableHeaderCell
@@ -206,50 +196,50 @@ export default function SectionsTable({
 							label={capitalizeWord('variables')}
 							onSort={onSortColumn}
 						/>
-					</VSCodeDataGridCell>
-				</VSCodeDataGridRow>
+					</DataGridCell>
+				</DataGridRow>
 				{sortedSections.map(row => (
-					<VSCodeDataGridRow key={row.id}>
-						<VSCodeDataGridCell grid-column={1}>
-							{row.id}
-						</VSCodeDataGridCell>
+					<DataGridRow key={row.id}>
+						<DataGridCell gridColumn='1'>{row.id}</DataGridCell>
 						{columns.includes('name') && (
-							<VSCodeDataGridCell
-								grid-column={2}
+							<DataGridCell
+								gridColumn='2'
 								className={styles.cellEllipsis}
 							>
 								<SectionNameWithCircle
 									value={row.name}
 									bucket={row.bucket}
 								/>
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						)}
 						{columns.includes('size') && (
-							<VSCodeDataGridCell
-								grid-column={3}
+							<DataGridCell
+								gridColumn='3'
 								className={styles['right-align']}
-								onContextMenu={event => {
+								onContextMenu={(
+									event: React.MouseEvent<HTMLElement>
+								) => {
 									handleContextMenu(event);
 								}}
 							>
 								{displaySizeContent(row.size as number)}
-							</VSCodeDataGridCell>
+							</DataGridCell>
 						)}
-						<VSCodeDataGridCell
-							grid-column={4}
+						<DataGridCell
+							gridColumn='4'
 							className={styles['right-align']}
 						>
 							{row.functions}
-						</VSCodeDataGridCell>
-						<VSCodeDataGridCell
-							grid-column={5}
+						</DataGridCell>
+						<DataGridCell
+							gridColumn='5'
 							className={styles['right-align']}
 						>
 							{row.variables}
-						</VSCodeDataGridCell>
-					</VSCodeDataGridRow>
+						</DataGridCell>
+					</DataGridRow>
 				))}
-			</VSCodeDataGrid>
+			</DataGrid>
 			<ContextMenuPanel
 				isVisible={isMenuVisible}
 				x={contextMenuPosition.x}

@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {VSCodeBadge} from '@vscode/webview-ui-toolkit/react';
+import {Chip} from 'cfs-react-library';
 import styles from './BadgeFilters.module.scss';
 
 type FiltersProps = {
@@ -20,42 +20,23 @@ type FiltersProps = {
 	readonly onFilterClick: (filter: string) => void;
 };
 
+const FILTERS = ['All', 'Text', 'Data', 'Bss'];
+
 function BadgeFilter({selectedFilter, onFilterClick}: FiltersProps) {
 	return (
-		<>
-			<VSCodeBadge
-				className={`${styles.customBadge} ${selectedFilter === 'All' ? styles.selected : ''}`}
-				onClick={() => {
-					onFilterClick('All');
-				}}
-			>
-				All
-			</VSCodeBadge>
-			<VSCodeBadge
-				className={`${styles.customBadge} ${selectedFilter === 'Text' ? styles.selected : ''}`}
-				onClick={() => {
-					onFilterClick('Text');
-				}}
-			>
-				Text
-			</VSCodeBadge>
-			<VSCodeBadge
-				className={`${styles.customBadge} ${selectedFilter === 'Data' ? styles.selected : ''}`}
-				onClick={() => {
-					onFilterClick('Data');
-				}}
-			>
-				Data
-			</VSCodeBadge>
-			<VSCodeBadge
-				className={`${styles.customBadge} ${selectedFilter === 'Bss' ? styles.selected : ''}`}
-				onClick={() => {
-					onFilterClick('Bss');
-				}}
-			>
-				Bss
-			</VSCodeBadge>
-		</>
+		<div className={styles.filtersContainer}>
+			{FILTERS.map(label => (
+				<Chip
+					key={label}
+					label={label}
+					isDisabled={false}
+					isActive={selectedFilter === label}
+					onClick={() => {
+						onFilterClick(label);
+					}}
+				/>
+			))}
+		</div>
 	);
 }
 

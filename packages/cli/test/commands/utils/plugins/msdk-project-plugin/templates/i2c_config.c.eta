@@ -1,0 +1,152 @@
+<%
+/**
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// Include common plugin code
+eval(this.render("common/utilities/utilities.js"));
+
+// Return the I2C mode value for this instance.
+function getI2CType(instance) {
+  return getAssignedPeripheral(instance).Config?.MODE === "TARGET" ? "0" : "1";
+}
+
+// Return the I2C clock stretching value for this instance.
+function getI2CClockStretching(instance) {
+  return getAssignedPeripheral(instance).Config?.CLKSTR !== "TRUE" ? "0" : "1";
+}
+
+// Return the I2C target address for this instance.
+function getI2CTargAddr(instance) {
+  return getAssignedPeripheral(instance).Config?.TARGET0_ADDR ?? "0";
+}
+
+// Return the I2C timeout period for this instance.
+function getI2CTimeout(instance) {
+  return getAssignedPeripheral(instance).Config?.SCL_TIMEOUT ?? "0";
+}
+
+// Return the I2C frequency value string.
+function getI2CFreq(instance) {
+  const freq = getAssignedPeripheral(instance).Config?.FREQ;
+  return freq ? freq + "U" : "100000U";
+}
+
+// Return the DMA TX setting.
+function getI2CDmaTx(instance) {
+  return getAssignedPeripheral(instance).Config?.TRANSMIT_DMA_ENABLE !== "TRUE" ? false : true;
+}
+
+// Return the DMA RX setting.
+function getI2CDmaRx(instance) {
+  return getAssignedPeripheral(instance).Config?.RECEIVE_DMA_ENABLE !== "TRUE" ? false : true;
+}
+
+// Return the DMA structure.
+function getI2CDma(instance) {
+  return "MXC_DMA";
+}
+
+// Return the TX FIFO threshold.
+function getI2CTxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.TRANSMIT_FIFO_THRESHOLD ?? "2";
+}
+
+// Return the RX FIFO threshold.
+function getI2CRxThreshold(instance) {
+  return getAssignedPeripheral(instance).Config?.RECEIVE_FIFO_THRESHOLD ?? "0";
+}
+%>
+<% if (getAssignedPeripheral(it.instance)) { %>
+  { /* Configure <%= it.instance %>.
+<%   if (getPeripheralDescription(it.instance)) { %>
+     * This peripheral is used for <%= getPeripheralDescription(it.instance) %>.
+<%   } %>
+<%   if (!isClockSetTo(it.clocknode, it.enable, "TRUE")) { %>
+     * Note: This peripheral was not enabled on the clock configuration canvas.
+     * Nonetheless, as a result of the following configuration, the peripheral will be
+     * clocked on.
+<%   } %>
+     */
+
+    /* Initialize the peripheral. */
+    result = MXC_I2C_Init(MXC_<%= it.instance %>,
+                          <%= getI2CType(it.instance) %>,
+                          <%= getI2CTargAddr(it.instance) %>U);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set the frequency. */
+    result = MXC_I2C_SetFrequency(MXC_<%= it.instance %>, <%= getI2CFreq(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Enable or disable clock stretching. */
+    result = MXC_I2C_SetClockStretching(MXC_<%= it.instance %>, <%= getI2CClockStretching(it.instance) %>);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+    /* Set the timeout. */
+    MXC_I2C_SetTimeout(MXC_<%= it.instance %>, <%= getI2CTimeout(it.instance) %>U);
+
+<%   if (getAssignedPeripheral(it.instance).Config?.PRELOAD_MODE === "PRELOAD") { %>
+    /* Enable preload mode. */
+    MXC_I2C_EnablePreload(MXC_<%= it.instance %>);
+
+<%   } %>
+<%   if (getAssignedPeripheral(it.instance).Config?.PRELOAD_MODE === "NORMAL") { %>
+    /* Disable preload mode. */
+    MXC_I2C_DisablePreload(MXC_<%= it.instance %>);
+
+<%   } %>
+<%   if (getAssignedPeripheral(it.instance).Config?.GC_ADDR_EN === "ACK") { %>
+    /* Enable general call acknowledgement. */
+    MXC_I2C_EnableGeneralCall(MXC_<%= it.instance %>);
+
+<%   } %>
+<%   if (getAssignedPeripheral(it.instance).Config?.GC_ADDR_EN === "IGNORE") { %>
+    /* Disable general call acknowledgement. */
+    MXC_I2C_DisableGeneralCall(MXC_<%= it.instance %>);
+
+<%   } %>
+<%   if (getI2CDmaTx(it.instance) || getI2CDmaRx(it.instance)) { %>
+    /* Set up DMA. */
+    result = MXC_I2C_DMA_Init(MXC_<%= it.instance %>,
+                              <%= getI2CDma(it.instance) %>,
+                              <%= getI2CDmaTx(it.instance) %> /*use TX DMA*/,
+                              <%= getI2CDmaRx(it.instance) %> /*use RX DMA*/);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+
+<%   } %>
+<%   if (!getI2CDmaTx(it.instance)) { %>
+    /* Set TX FIFO threshold. */
+    result = MXC_I2C_SetTXThreshold(MXC_<%= it.instance %>, <%= getI2CTxThreshold(it.instance) %>U);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } %>
+<%   if (!getI2CDmaRx(it.instance)) { %>
+    /* Set RX FIFO threshold. */
+    result = MXC_I2C_SetRXThreshold(MXC_<%= it.instance %>, <%= getI2CRxThreshold(it.instance) %>U);
+    if (result != E_NO_ERROR) {
+      return result;
+    }
+<%   } %>
+  }
+
+<% } %>

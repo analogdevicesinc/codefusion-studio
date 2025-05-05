@@ -46,19 +46,21 @@ nav:
       - Requirements: user-guide/installation/software-requirements.md
       - Install CFS: user-guide/installation/install-cfs.md
       - Set up CFS: user-guide/installation/set-up-cfs.md
-      - Install extensions: user-guide/installation/install-extensions.md
+      - Manually install the VS Code extension: user-guide/installation/install-extensions.md
       - Install Olimex JTAG drivers: user-guide/installation/install-olimex-drivers.md
       - Install Segger J-Link drivers: user-guide/installation/install-jlink-drivers.md
-    - Project Management:
-      - user-guide/projects/index.md
-      - Create a new project: user-guide/projects/create-new-project.md
-      - Open a project: user-guide/projects/open-project.md
-      - Open and migrate example: user-guide/projects/open-and-migrate-example.md
-      - CFS settings: user-guide/projects/cfs-settings.md
-      - Tasks: user-guide/projects/tasks.md
-      - The CFS Terminal: user-guide/projects/cfs-terminal.md
-      - Zephyr RTOS: user-guide/projects/zephyr.md
-      - Troubleshooting: user-guide/projects/troubleshooting.md
+    - Workspace Management:
+      - user-guide/workspaces/index.md
+      - Create a new workspace: user-guide/workspaces/create-new-workspace.md
+      - Open a workspace: user-guide/workspaces/open-workspace.md
+      - Open and migrate example: user-guide/workspaces/open-and-migrate-example.md
+      - Migrate a project to System Planner: user-guide/workspaces/migrate-project-to-system-planner.md
+      - CFS settings: user-guide/workspaces/cfs-settings.md
+      - Catalog Manager: user-guide/workspaces/catalog-manager.md
+      - Tasks: user-guide/workspaces/tasks.md
+      - The CFS Terminal: user-guide/workspaces/cfs-terminal.md
+      - Zephyr RTOS: user-guide/workspaces/zephyr.md
+      - Troubleshooting: user-guide/workspaces/troubleshooting.md
     - Debugging:
       - user-guide/debugging/index.md
       - Debug an application: user-guide/debugging/debug-an-application.md
@@ -66,12 +68,21 @@ nav:
       - Troubleshooting: user-guide/debugging/troubleshooting.md
     - Tools:
       - user-guide/tools/index.md
-      - Config Tool:
+      - System Planner:
         - user-guide/tools/config-tool/index.md
-        - Pin configuration: user-guide/tools/config-tool/pin-config.md
-        - Clock configuration: user-guide/tools/config-tool/clock-config.md
+        - Peripheral Allocation: user-guide/tools/config-tool/peripheral-allocation.md
+        - Pin Config: user-guide/tools/config-tool/pin-config.md
+        - Clock Config: user-guide/tools/config-tool/clock-config.md
+        - Memory Allocation: user-guide/tools/config-tool/memory-allocation.md
+        - Registers: user-guide/tools/config-tool/registers.md
+        - Generate Code: user-guide/tools/config-tool/generate-code.md
       - CFS Command Line Utility: user-guide/tools/cfsutil.md
       - ELF File Explorer: user-guide/tools/elf-file-explorer.md
+      - Device Tree View: user-guide/tools/device-tree-view.md
+    - Plugins:
+      - user-guide/plugins/index.md
+      - Plugins overview: user-guide/plugins/plugin-integration-overview.md
+      - Develop plugins: user-guide/plugins/develop-plugins.md
     - Uninstall:
       - Uninstalling CodeFusion Studio: user-guide/uninstall/uninstall-cfs.md
   - Tutorials:
@@ -87,6 +98,7 @@ nav:
     - Third-party: user-guide/resources/third-party-resources.md
   - Release Notes:
     - release-notes/index.md
+    - 1.1.0: release-notes/1.1.0.md
     - 1.0.2: release-notes/1.0.2.md
     - 1.0.0: release-notes/1.0.0.md
 

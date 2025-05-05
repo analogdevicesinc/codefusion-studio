@@ -12,16 +12,19 @@
  * limitations under the License.
  *
  */
-@use '@common/styles/colors';
-@use '@common/styles/layout';
+@use '#colors' as colors;
+@use '#layout' as layout;
 
 .container {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	padding: 24px 32px;
-	overflow-y: scroll;
+	padding: layout.$secondary-layout-padding-top-bottom
+		layout.$secondary-layout-padding-left-right;
 	box-sizing: border-box;
+	.low-density {
+		padding: 40px;
+	}
 
 	.header {
 		border-bottom: 1px solid colors.$default-border;

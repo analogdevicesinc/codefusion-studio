@@ -1,0 +1,49 @@
+@use '#colors' as colors;
+
+.configurationContainer {
+	display: flex;
+	align-items: center;
+	height: 20px;
+	gap: 2px;
+
+	.inactive {
+		color: colors.$description-foreground;
+	}
+
+	.hide {
+		visibility: hidden;
+	}
+}
+
+.icon {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 20px;
+	height: 20px;
+
+	&.interactable {
+		svg {
+			path {
+				fill: colors.$default-foreground;
+			}
+		}
+
+		&.hoverable {
+			&:hover {
+				background: colors.$list-inactive-selection-background;
+				border-radius: 4px;
+			}
+		}
+	}
+
+	&.disabled {
+		cursor: default;
+
+		svg {
+			path {
+				fill: colors.$description-foreground;
+			}
+		}
+	}
+}

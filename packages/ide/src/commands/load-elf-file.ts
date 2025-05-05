@@ -12,42 +12,44 @@
  * limitations under the License.
  *
  */
-import * as vscode from 'vscode';
-import {ELF_EDITOR_ID} from '../custom-editors/elf-editor';
-import { ELF_EXPLORER_COMMANDS } from './constants';
+import * as vscode from "vscode";
+import { ELF_EXPLORER_COMMANDS } from "./constants";
+import { ELF_EDITOR_ID } from "../constants";
 
 export function registerLoadElfFileCommand() {
-	return vscode.commands.registerCommand(
-		ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE,
-		async () => {
-			const uri = await vscode.window.showOpenDialog({
-				canSelectFiles: true,
-				canSelectFolders: false,
-				canSelectMany: false,
-				openLabel: 'Load',
-				filters: {
-					'ELF Files': [
-						'axf',
-						'bin',
-						'elf',
-						'o',
-						'out',
-						'prx',
-						'puff',
-						'ko',
-						'mod',
-						'so'
-					]
-				}
-			});
+  return vscode.commands.registerCommand(
+    ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE,
+    async () => {
+      const uri = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        openLabel: "Load",
+        filters: {
+          "ELF Files": [
+            "axf",
+            "elf",
+            "o",
+            "out",
+            "prx",
+            "puff",
+            "ko",
+            "mod",
+            "so",
+            "doj",
+            "dxe",
+            "exe",
+          ],
+        },
+      });
 
-			if (uri) {
-				await vscode.commands.executeCommand(
-					'vscode.openWith',
-					uri[0],
-					ELF_EDITOR_ID
-				);
-			}
-		}
-	);
+      if (uri) {
+        await vscode.commands.executeCommand(
+          "vscode.openWith",
+          uri[0],
+          ELF_EDITOR_ID,
+        );
+      }
+    },
+  );
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ import * as fs from "fs";
 import { glob } from "glob";
 import * as path from "path";
 import * as vscode from "vscode";
-import * as xml2js from "xml2js";
+import { tmpdir } from "os";
 
 import {
   SELECT_CMSIS_PACK_COMMAND_ID,
@@ -28,6 +28,7 @@ import {
   SELECT_RISCV_PROGRAM_FILE_COMMAND_ID,
   SELECT_SDK_PATH_COMMAND_ID,
   SET_JLINK_PATH_COMMAND_ID,
+  SET_SDK_PATH_COMMAND_ID,
 } from "../commands/constants";
 import {
   EXTENSION_ID,
@@ -43,8 +44,16 @@ import {
 } from "../constants";
 import { ERROR } from "../messages";
 import { PropertyNode } from "../properties";
+import { resolveVariables } from "./resolveVariables";
 
-import { SELECT_JLINK_PATH, SELECT_SDK_PATH } from "./constants";
+import {
+  DOWNLOAD_SDK,
+  SDK_DOWNLOAD_URL,
+  SELECT_JLINK_PATH,
+  SELECT_SDK_PATH,
+} from "./constants";
+import { openFileAtLocation } from "./open-file-location";
+import { ViewContainerItem } from "../view-container";
 
 const SELECT_OPENOCD_TARGET = "Choose OpenOCD Target";
 const SELECT_OPENOCD_INTERFACE = "Choose OpenOCD Interface";
@@ -59,20 +68,8 @@ export enum ToolchainType {
   RISCV = "riscv.none.elf",
 }
 
+import { executeTask } from "../commands/commands";
 export class Utils {
-  /**
-   * This function pushes all elements of source array into destination while avoiding duplicate entries.
-   * @param destination - the array you want to add entries.
-   * @param source - the array which is the source of the entries.
-   */
-  static pushElementsInArray(destination: unknown[], source: unknown[]) {
-    for (const obj of source) {
-      if (!destination.includes(obj)) {
-        destination.push(obj);
-      }
-    }
-  }
-
   /**
    * Find files within the current workspace
    * @param pattern - the pattern to search for
@@ -167,69 +164,6 @@ export class Utils {
       });
     });
   }
-
-  /**
-   * @param xmlstr - XML in string format
-   * @returns json object of the type 'object'
-   */
-  static parseXMLToJson(xmlstr: string): object {
-    let jsonObject: object = {};
-    xml2js.parseString(xmlstr, (_err, results) => {
-      jsonObject = results;
-    });
-    return jsonObject;
-  }
-
-  /**
-   * @param searchQuery - the file name
-   * @param exclude - the folders you want to exclude
-   * @returns - Array of files with full path.
-   */
-  static getCprojectFiles = async (exclude?: string) => {
-    const cprojectFiles = await Utils.findFilesInWorkspace(
-      "**/.cproject",
-      exclude,
-    );
-    return cprojectFiles;
-  };
-
-  /**
-   * Takes .cproject file in json format as input and returns the project type as string
-   * @param jsonData - .cproject file in JSON format
-   * @returns the toolchain used.
-   */
-  static getProjectTypeFromCprojectJsonData = (jsonData: object): string => {
-    //Using try catch access to json in try catch because of uncertainity of json file
-    try {
-      const cproject = jsonData["cproject" as keyof object];
-      const storageModuleArr: object[] =
-        cproject["storageModule" as keyof object];
-      for (const storageModule of storageModuleArr) {
-        const cconfigurationArr: object[] =
-          storageModule["cconfiguration" as keyof object];
-        for (const cconfiguration of cconfigurationArr) {
-          const configId = cconfiguration["$" as keyof object];
-          const toolchainId: string = configId["id" as keyof object];
-          if (toolchainId.includes("toolchain")) {
-            if (toolchainId.includes(ToolchainType.ARM)) {
-              return ToolchainType.ARM;
-            } else if (toolchainId.match(ToolchainType.RISCV)) {
-              return ToolchainType.RISCV;
-            }
-          }
-        }
-      }
-      return "Not Found";
-    } catch (error: unknown) {
-      if (typeof error === "string") {
-        error = error.toUpperCase(); // works, `e` narrowed to string
-      } else if (error instanceof Error) {
-        error = error.message; // works, `e` narrowed to Error
-      }
-      console.error(error);
-      return "Error encountered while traversing the .cproject file.";
-    }
-  };
 
   /**
    * Displays the message as a warning and logs the message as a warning
@@ -413,17 +347,26 @@ export class Utils {
 
     if (!sdkPath) {
       // If sdk path is missing the user will be prompted to select the appropriate sdk path
-      await vscode.commands.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
+      await vscode.commands.executeCommand(SET_SDK_PATH_COMMAND_ID);
       conf = vscode.workspace.getConfiguration(EXTENSION_ID);
       sdkPath = conf.get(SDK_PATH);
     }
 
     if (!sdkPath) {
-      vscode.window
-        .showErrorMessage(ERROR.sdkPathMissing, SELECT_SDK_PATH)
+      await vscode.window
+        .showWarningMessage(
+          "The path to the CFS SDK is missing or not valid and this prevented the extension from loading correctly. Please download and install the CFS SDK, or set the path to the CFS SDK through the CodeFusion Studio extension settings.",
+          DOWNLOAD_SDK,
+          SELECT_SDK_PATH,
+        )
         .then((choice) => {
-          if (choice === SELECT_SDK_PATH) {
-            vscode.commands.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
+          switch (choice) {
+            case DOWNLOAD_SDK:
+              vscode.env.openExternal(vscode.Uri.parse(SDK_DOWNLOAD_URL));
+              break;
+            case SELECT_SDK_PATH:
+              vscode.commands.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
+              break;
           }
         });
     }
@@ -489,5 +432,351 @@ export class Utils {
     }
 
     return [];
+  }
+
+  /**
+   * Executes the tasks, indicates an error if the task is not defined.
+   * @param _taskType - string to identify task type
+   * @param taskName - string to identify task name
+   */
+  static async executeTask(_taskType: string, taskName: string) {
+    const tasks = (await vscode.tasks.fetchTasks()).filter((task) => {
+      return task.group === vscode.TaskGroup.Build && task.source === "CFS";
+    });
+    const selectedTask = tasks.find((task) => task.name === taskName);
+    if (selectedTask) {
+      return vscode.tasks.executeTask(selectedTask);
+    } else {
+      console.error(`Error: Task '${taskName}' not found`);
+    }
+  }
+
+  static getDefaultLocation() {
+    const userHome = resolveVariables("${userHome}");
+    const version = this.getExtensionVersion();
+
+    const defaultLocation = Utils.normalizePath(
+      `${userHome}/cfs${version !== undefined ? `/${version}` : ""}`,
+    );
+
+    return defaultLocation;
+  }
+
+  static getExtensionVersion(): string | undefined {
+    const extension = vscode.extensions.getExtension("analogdevices.cfs-ide");
+
+    if (!extension) {
+      return undefined;
+    }
+
+    return extension.packageJSON.version.split("-")[0];
+  }
+
+  static async runDefaultBuildTasks() {
+    const allTasks = await vscode.tasks.fetchTasks();
+    const defaultBuildTasks = allTasks.filter(
+      (task) => task.group?.isDefault === true,
+    );
+    for (const task of defaultBuildTasks) {
+      await vscode.tasks.executeTask(task);
+      await new Promise<void>((resolve) => {
+        const disposable = vscode.tasks.onDidEndTaskProcess((e) => {
+          if (e.execution.task === task) {
+            disposable.dispose();
+            resolve();
+          }
+        });
+      });
+    }
+  }
+
+  /**
+   * Adds a task to the tasks.json file in the .vscode directory of the workspace.
+   * If the tasks.json file does not exist, it creates one with the appropriate structure.
+   * The task is added based on the provided action item.
+   *
+   * @param actionItem - The action item containing the task details to be added.
+   * @returns A promise that resolves when the task has been added to the tasks.json file.
+   */
+  static async addTaskToTasksJson(actionItem: ViewContainerItem) {
+    if (!vscode.workspace.workspaceFolders) return;
+    let taskFolder = vscode.workspace.workspaceFolders[0];
+    for (const folder of vscode.workspace.workspaceFolders) {
+      if (actionItem.label.includes(folder.name)) {
+        taskFolder = folder;
+        break;
+      }
+    }
+    const filePath = `${taskFolder.uri.fsPath}/.vscode/tasks.json`;
+    const taskLabelMatch = /(CFS: )?([\w \&]+) (\(\w+\))( \((\w+)\))?/.exec(
+      actionItem.label,
+    );
+
+    if (!taskLabelMatch) return;
+
+    if (taskLabelMatch[1]?.includes("CFS")) {
+      openFileAtLocation(
+        filePath,
+        `CFS: ${taskLabelMatch[2]}${taskLabelMatch[4] ? " " + taskLabelMatch[3] : ""}`,
+      );
+      return;
+    }
+
+    this.ensureTasksJsonExists(filePath);
+
+    const task = this.createTaskDefinition(actionItem.commandArgs[0]);
+    const taskJson = await this.getTaskJson(filePath);
+
+    taskJson.tasks.push(task);
+    await this.updateTasksJson(filePath, taskJson);
+
+    setTimeout(() => openFileAtLocation(filePath, task.label), 200);
+  }
+
+  /**
+   * Ensures that the tasks.json file exists at the specified file path.
+   * If the file does not exist, it creates a new tasks.json file with the appropriate structure.
+   *
+   * @param filePath - The path to the tasks.json file.
+   */
+  static ensureTasksJsonExists(filePath: string) {
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(
+        filePath,
+        JSON.stringify({ version: "2.0.0", tasks: [] }),
+        { encoding: "utf-8" },
+      );
+    }
+  }
+
+  /**
+   * Creates a task definition object based on the provided command arguments.
+   *
+   * @param cmdArgs - The command arguments containing the task definition and execution
+   * @returns A task definition object.
+   **/
+  static createTaskDefinition(cmdArgs: any): vscode.TaskDefinition {
+    const execution = cmdArgs.execution as vscode.ShellExecution;
+    return {
+      type: cmdArgs.definition.type,
+      command: execution.commandLine,
+      options: {
+        cwd: execution.options?.cwd,
+        env: execution.options?.env,
+        shell: {
+          args: execution.options?.shellArgs,
+          executable: execution.options?.executable,
+        },
+      },
+      group: cmdArgs.group.id,
+      label: `CFS: ${cmdArgs.name}`,
+    };
+  }
+
+  /**
+   * Reads a JSON file from the given file path and parses its content.
+   * If the file cannot be read or parsed, returns a default JSON object.
+   *
+   * @param filePath - The path to the JSON file.
+   * @returns A promise that resolves to the parsed JSON object, or a default object if an error occurs.
+   */
+  static async getTaskJson(filePath: string) {
+    try {
+      const doc = await vscode.workspace.openTextDocument(filePath);
+      return JSON.parse(doc.getText());
+    } catch {
+      return { version: "2.0.0", tasks: [] };
+    }
+  }
+
+  /**
+   * Updates the JSON content of a file at the given file path with the provided task JSON object.
+   * Opens the file, replaces its content with the new JSON, and saves the file.
+   *
+   * @param filePath - The path to the JSON file to be updated.
+   * @param taskJson - The new JSON object to write to the file.
+   */
+  static async updateTasksJson(filePath: string, taskJson: any) {
+    const doc = await vscode.workspace.openTextDocument(filePath);
+    const editor = await vscode.window.showTextDocument(doc, 1, false);
+    await editor.edit((e) =>
+      e.replace(
+        new vscode.Range(0, 0, doc.lineCount, 0),
+        JSON.stringify(taskJson, null, 2),
+      ),
+    );
+    await doc.save();
+  }
+
+  public static async directoryExists(path: fs.PathLike): Promise<boolean> {
+    try {
+      fs.accessSync(path);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   *
+   * @param fn - Function to retry calling
+   * @param finalError - Error message
+   * @param retries - Number of retries
+   * @param delay - Amount of delay in ms
+   * @returns - Promise with T type result
+   */
+  static async retryWithDelay<T>(
+    fn: () => Promise<T>,
+    retries: number = 10,
+    delay: number = 200,
+  ): Promise<T> {
+    let attempts = 0;
+
+    return new Promise((resolve, reject) => {
+      const attempt = () => {
+        fn()
+          .then((results: T) => {
+            resolve(results);
+          })
+          .catch(() => {
+            attempts += 1;
+            if (attempts >= retries) {
+              // Reached maximum number of attempts.
+              console.log("Max retries reached.");
+              reject();
+            } else {
+              const newDelay = delay * Math.pow(2, attempts);
+              console.log(
+                `Attempt ${attempts} failed. Retrying in ${newDelay}ms.`,
+              );
+              setTimeout(attempt, newDelay);
+            }
+          });
+      };
+
+      attempt();
+    });
+  }
+
+  /**
+   * Returns context from tasks.json file path
+   * @param filePath
+   * @returns {string} context
+   */
+  static getContextFromFullPath = (filePath: string): string => {
+    const loc = filePath.split("/");
+    let context = "";
+
+    for (const c of loc) {
+      if (c === ".vscode") {
+        break;
+      }
+      context = c;
+    }
+
+    return context;
+  };
+
+  /**
+   * Returns .cfsworkspace URI path in os temporary folder
+   * @returns {string} .cfsworkspace URI path
+   */
+  static getTempCfsWorkspacePath(): vscode.Uri {
+    const tmpDir = tmpdir().replace(/\\/g, "/");
+    const defaultLocation = `${tmpDir}/cfs`;
+    const filePath = `${defaultLocation}/.cfsworkspace`;
+    const dotCfsWorkspace = vscode.Uri.file(filePath);
+
+    return dotCfsWorkspace;
+  }
+
+  /**
+   * Executes a task from the Status Bar based on the context and task name.
+   * @param context - The context in which to execute the task.
+   * @param taskName - The name of the task to execute.
+   */
+  static async executeStatusBarTask(taskName: string, context: any) {
+    const workspaceFolders = vscode.workspace.workspaceFolders || [];
+
+    if (context === "Workspace") {
+      const targetFolderName = this.getTargetFolderName([...workspaceFolders]);
+
+      if (!targetFolderName) {
+        vscode.window.showWarningMessage(
+          `Please select a project context in the CFS Context view. Available projects: ${this.getFolderNames([...workspaceFolders]).join(", ")}`,
+        );
+        return;
+      }
+
+      await this.executeTaskForFolder(taskName, targetFolderName, "CFS");
+    } else {
+      await this.executeTaskForFolder(taskName, context.name, "CFS");
+    }
+  }
+
+  /**
+   * Retrieves the target folder name, ignoring `.cfs` folders.
+   * @param workspaceFolders - List of workspace folders.
+   * @returns The name of the target folder or null if no valid folder is found.
+   */
+  private static getTargetFolderName(
+    workspaceFolders: vscode.WorkspaceFolder[],
+  ): string | null {
+    const folderNames = this.getFolderNames(workspaceFolders);
+
+    if (folderNames.length < 1) {
+      vscode.window.showWarningMessage(`Please add projects to workspace.`);
+      return null;
+    }
+
+    if (folderNames.length === 1) {
+      return folderNames[0];
+    }
+
+    if (folderNames.length === 2 && folderNames.includes(".cfs")) {
+      return folderNames.find((folder) => folder !== ".cfs") || null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts folder names from the workspace folders, excluding `.cfs`.
+   * @param workspaceFolders - List of workspace folders.
+   * @returns An array of folder names.
+   */
+  private static getFolderNames(
+    workspaceFolders: vscode.WorkspaceFolder[],
+  ): string[] {
+    return workspaceFolders
+      .filter((folder) => folder.name !== ".cfs")
+      .map((folder) => folder.name);
+  }
+
+  /**
+   * Executes a task for a specific folder and source.
+   * @param taskName - The name of the task to execute.
+   * @param folderName - The name of the folder to execute the task in.
+   * @param source - The source of the task (e.g., "CFS").
+   */
+  private static async executeTaskForFolder(
+    taskName: string,
+    folderName: string,
+    source: string,
+  ) {
+    const filteredTasks = (await vscode.tasks.fetchTasks()).filter(
+      (task) =>
+        task.name === taskName &&
+        task.source === source &&
+        (task.scope as vscode.WorkspaceFolder)?.name === folderName,
+    );
+
+    if (filteredTasks.length > 0) {
+      await vscode.tasks.executeTask(filteredTasks[0]);
+    } else {
+      vscode.window.showErrorMessage(
+        `Task '${taskName}' not found in project '${folderName}'.`,
+      );
+    }
   }
 }

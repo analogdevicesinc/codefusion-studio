@@ -14,7 +14,7 @@
  */
 import {createContext, useContext, useMemo, useState} from 'react';
 
-import type {TAppContext} from '../types/context';
+import type {TAppContext, TMemLayoutContext} from '../types/context';
 
 const AppContext = createContext<TAppContext | undefined>(undefined);
 
@@ -36,13 +36,32 @@ export function AppProvider({children}: TAContext) {
 	const [query, setQuery] = useState<string>(
 		'SELECT * FROM symbols WHERE size > 0'
 	);
+	const [memLayout, setMemLayout] = useState<TMemLayoutContext>({
+		layer: 1,
+		selectedItemName: 'All segments',
+		dataTree: [],
+		currentData: [],
+		parentLayer: undefined
+	});
+
+	const setMemoryLayout = (memLayout: TMemLayoutContext) => {
+		setMemLayout(memLayout);
+	};
 
 	const editQuery = (newQuery: string) => {
 		setQuery(newQuery);
 	};
 
 	// Important to memoize the context because we don't want unnecessary re-renders
-	const contextValue = useMemo(() => ({query, editQuery}), [query]);
+	const contextValue = useMemo(
+		() => ({
+			query,
+			memLayout,
+			editQuery,
+			setMemoryLayout
+		}),
+		[query, memLayout]
+	);
 
 	return (
 		<AppContext.Provider value={contextValue}>

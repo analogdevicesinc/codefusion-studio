@@ -24,15 +24,19 @@ describe('generate', () => {
   const inputFilePath = path.resolve(
     __dirname,
     'utils',
-    'test.cfsconfig'
+    'preconfigured-max32690-wlp.cfsconfig'
   );
+
   const outputDirectoryPath = path.resolve(__dirname, 'output');
 
-  after(async () => {
+  const pluginsPath = path.resolve(__dirname, 'utils/plugins');
+
+  afterEach(async () => {
     fs.rmSync(outputDirectoryPath, {recursive: true, force: true});
   });
 
   test
+    .stdout()
     .stderr()
     .command(
       [
@@ -40,254 +44,81 @@ describe('generate', () => {
         '--input',
         `${inputFilePath}`,
         '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        'The output directory does not exist. Use the --force flag to create it automatically.'
-      );
-    })
-    .it(
-      'requires force flag to create the output directory automatically'
-    );
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        `${inputFilePath}`,
-        '--output',
         `${outputDirectoryPath}`,
-        '--force'
+        '-s',
+        `${pluginsPath}`
       ],
       {root: '..'}
     )
     .it(
-      'default engine, specified input, default output',
-      async () => {
-        // Use fs.promises to check if the directory exists and contains files
-        let directoryExists = false;
-        try {
-          await fs.promises.access(outputDirectoryPath);
-          directoryExists = true;
-        } catch {
-          directoryExists = false;
-        }
+      'creates code generation files using a single plugins path',
+      (ctx) => {
+        expect(ctx.stderr.trim(), 'stderr should be empty').to.equal(
+          ''
+        );
+        expect(ctx.stdout.trim(), 'stdout should be empty').to.equal(
+          ''
+        );
 
+        const directoryExists =
+          fs.existsSync(outputDirectoryPath) &&
+          fs.lstatSync(outputDirectoryPath).isDirectory();
         expect(directoryExists).to.be.true;
 
-        // Use fs.promises to read the contents of the directory
-        const files = await fs.promises.readdir(outputDirectoryPath);
-        expect(files).to.not.be.empty;
-
-        expect(files).to.include.members(['MAX32690_soc_init.c']);
+        const expectedFiles = ['memory.ld', 'soc_init.c'];
+        expectedFiles.forEach((file) => {
+          const filePath = path.join(outputDirectoryPath, file);
+          const fileExists = fs.existsSync(filePath);
+          expect(fileExists).to.be.true;
+        });
       }
     );
 
   test
     .stdout()
+    .stderr()
     .command(
       [
         'generate',
         '--input',
         `${inputFilePath}`,
-        '--verbose',
         '--output',
         `${outputDirectoryPath}`,
-        '--force'
+        '-s',
+        `${pluginsPath}`,
+        '--search-path',
+        `${pluginsPath}`,
+        '-s',
+        'testPath'
       ],
       {root: '..'}
     )
-    .it('verbose output paths', (ctx) => {
-      expect(ctx.stdout).to.contain('Writing output to');
-    });
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--preview',
-        '--file',
-        'MAX32690_soc_init.c',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .it('preview .c file in text format', (ctx) => {
-      expect(ctx.stdout).to.not.contain('File:');
-      expect(ctx.stdout).to.not.contain('Content:');
-      expect(ctx.stdout).to.not.contain('MAX32690_soc_init.c');
-    });
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--preview',
-        '--file',
-        'MAX32690_soc_init.c',
-        '--format',
-        'json',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .it('preview .c file in json format', (ctx) => {
-      const previewOutput = JSON.parse(ctx.stdout);
-      expect(previewOutput).to.be.an('object');
-    });
-
-  test
-    .stderr()
-    .command(
-      [
-        'generate',
-        '--input',
-        `${inputFilePath}`,
-        '--file',
-        'MAX32690_soc_init.bla',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        'No file named "MAX32690_soc_init.bla" found.'
-      );
-    })
-    .it('requires a valid file name');
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--preview',
-        '--format',
-        'text',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .it('preview in text format', (ctx) => {
-      expect(ctx.stdout).to.contain('File:');
-      expect(ctx.stdout).to.contain('Content:');
-    });
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--preview',
-        '--format',
-        'json',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {root: '..'}
-    )
-    .it('preview in json format', (ctx) => {
-      const previewOutput = JSON.parse(ctx.stdout);
-      expect(previewOutput).to.be.an('object');
-    });
-
-  test
-    .stderr()
-    .command(
-      [
-        'generate',
-        '--input',
-        `${inputFilePath}`,
-        '--verbose',
-        '--output',
-        `${outputDirectoryPath}`
-      ],
-      {
-        root: '..'
+    .it(
+      'accepts multiple plugin directories for code generation',
+      (ctx) => {
+        expect(ctx.stderr.trim(), 'stderr should be empty').to.equal(
+          ''
+        );
+        const directoryExists =
+          fs.existsSync(outputDirectoryPath) &&
+          fs.lstatSync(outputDirectoryPath).isDirectory();
+        expect(directoryExists).to.be.true;
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        'The file(s) "MAX32690_soc_init.c" already exist. Use the --force flag to overwrite.'
-      );
-    })
-    .it('requires force flag to overwrite existing files');
+    );
 
   test
-    .stdout()
-    .command(['generate', '--input', inputFilePath, '--list'], {
+    .stderr()
+    .command(['generate', '--output', `${outputDirectoryPath}`], {
       root: '..'
     })
-    .it(
-      'list the file names that are going to be generated',
-      (ctx) => {
-        expect(ctx.stdout).to.contain('.c');
-      }
-    );
+    .catch((error) => {
+      expect(error.message).to.contain('Missing required flag input');
+    })
+    .it('requires input flag to be provided');
 
   test
     .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--list',
-        '--format',
-        'json'
-      ],
-      {root: '..'}
-    )
-    .it(
-      'list the file names that are going to be generated in json format',
-      (ctx) => {
-        const listGeneratedFilenames = JSON.parse(ctx.stdout);
-        expect(listGeneratedFilenames).to.be.an('object');
-      }
-    );
-
-  test
-    .stdout()
-    .command(
-      [
-        'generate',
-        '--input',
-        inputFilePath,
-        '--list',
-        '--format',
-        'json'
-      ],
-      {root: '..'}
-    )
-    .it(
-      'list the file names that are going to be generated in json format',
-      (ctx) => {
-        const listGeneratedFilenames = JSON.parse(ctx.stdout);
-        expect(listGeneratedFilenames).to.be.an('object');
-      }
-    );
-
-  test
-    .stdout()
+    .stderr()
     .command(
       [
         'generate',
@@ -295,16 +126,27 @@ describe('generate', () => {
         `${inputFilePath}`,
         '--output',
         `${outputDirectoryPath}`,
-        '--force',
-        '--file',
-        'MAX32690_soc_init.c'
+        '-s',
+        `${pluginsPath}`,
+        '--verbose'
       ],
       {root: '..'}
     )
-    .it('generate one file', async () => {
-      const file = await fs.promises.readdir(outputDirectoryPath);
-      expect(file).to.not.be.empty;
+    .it(
+      'generates code and outputs absolute path of generated files',
+      (ctx) => {
+        expect(ctx.stderr.trim(), 'stderr should be empty').to.equal(
+          ''
+        );
 
-      expect(file).to.include.members(['MAX32690_soc_init.c']);
-    });
+        const outputPaths = ctx.stdout.trim().split('\n');
+
+        expect(outputPaths.length).to.greaterThan(0);
+
+        for (const outputPath of outputPaths) {
+          expect(fs.existsSync(outputPath)).to.be.true;
+          expect(path.isAbsolute(outputPath)).to.be.true;
+        }
+      }
+    );
 });

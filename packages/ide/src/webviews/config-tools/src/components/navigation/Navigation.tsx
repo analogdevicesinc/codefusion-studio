@@ -12,43 +12,52 @@
  * limitations under the License.
  *
  */
-import {useCallback, type ReactElement} from 'react';
-import PinMUX from '@common/icons/PinMUX';
-import Config from '@common/icons/Config';
-import Registers from '@common/icons/Registers';
-import Generate from '@common/icons/Generate';
-import ClockIcon from '@common/icons/Clock';
-import type {NavigationItem} from '@common/types/navigation';
-import {NavItem} from './NavItem';
+import {useCallback} from 'react';
+
+import type {NavigationItem} from '../../../../common/types/navigation';
+import CfsNavigation from '../../../../common/components/cfs-navigation/CfsNavigation';
+
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../../state/store';
 import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
+
+// SVGs
+
+import PinMUX from '@common/icons/PinMUX';
+import Registers from '@common/icons/Registers';
+import Generate from '@common/icons/Generate';
+import ClockIcon from '@common/icons/Clock';
+import Home from '../../../../common/icons/Home';
+
 import {navigationItems} from '@common/constants/navigation';
 
-import styles from './Navigation.module.scss';
+import {MemoryLayoutIcon, PeripheralsIcon} from 'cfs-react-library';
 
-type Icons = {
-	icon: ReactElement;
-	id: (typeof navigationItems)[keyof typeof navigationItems];
-	disabled?: boolean;
-	tooltipLabel?: string;
-};
-
-const availableSVG: Icons[] = [
+const availableSVG = [
+	{
+		icon: <Home />,
+		id: navigationItems.dashboard,
+		tooltipLabel: 'Dashboard'
+	},
+	{
+		icon: <PeripheralsIcon />,
+		id: navigationItems.peripherals,
+		tooltipLabel: 'Peripheral Allocation'
+	},
 	{
 		icon: <PinMUX />,
 		id: navigationItems.pinmux,
-		tooltipLabel: 'Pin Mux'
-	},
-	{
-		icon: <Config />,
-		id: navigationItems.pinconfig,
-		tooltipLabel: 'Function Config'
+		tooltipLabel: 'Pin Config'
 	},
 	{
 		icon: <ClockIcon />,
 		id: navigationItems.clockConfig,
 		tooltipLabel: 'Clock Config'
+	},
+	{
+		icon: <MemoryLayoutIcon width={24} height={24} />,
+		id: navigationItems.memory,
+		tooltipLabel: 'Memory Allocation'
 	},
 	{
 		icon: <Registers />,
@@ -66,7 +75,7 @@ export default function Navigation() {
 	const dispatch = useAppDispatch();
 	const activeScreen = useActiveScreen();
 
-	const onNavItemClick = useCallback(
+	const handleNavItemClick = useCallback(
 		async (id: NavigationItem) => {
 			dispatch(setActiveScreen(id));
 		},
@@ -74,18 +83,10 @@ export default function Navigation() {
 	);
 
 	return (
-		<div className={styles.container}>
-			{availableSVG.map(({icon, id, disabled, tooltipLabel}) => (
-				<NavItem
-					key={id}
-					id={id}
-					disabled={disabled}
-					isActive={id === activeScreen}
-					icon={icon}
-					tooltipLabel={tooltipLabel}
-					onClick={onNavItemClick}
-				/>
-			))}
-		</div>
+		<CfsNavigation
+			activeScreen={activeScreen}
+			availableIcons={availableSVG}
+			onNavItemClick={handleNavItemClick}
+		/>
 	);
 }

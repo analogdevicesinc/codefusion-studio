@@ -13,7 +13,6 @@
  *
  */
 /* eslint-disable new-cap */
-import {useState} from 'react';
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import {Modal} from '@common/components/modal/Modal';
@@ -22,6 +21,7 @@ import {type NavigationItem} from '@common/types/navigation';
 import {LocalizedMessage} from '@common/components/l10n/LocalizedMessage';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
 import {Direction} from '@common/components/tooltip/Tooltip';
+import {useState} from 'react';
 
 export default function CfgtoolsHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
@@ -34,7 +34,7 @@ export default function CfgtoolsHeader() {
 	const id = useActiveScreen() as NavigationItem;
 
 	return (
-		<CfsTopBar title={LocalizedMessage({id: `${id}.title`})}>
+		<CfsTopBar>
 			<div slot='end'>
 				<TopbarButton
 					title={LocalizedMessage({id: `${id}.help.title`}) as string}
@@ -44,10 +44,10 @@ export default function CfgtoolsHeader() {
 					clickHandler={onToggleHelpModal}
 				/>
 			</div>
+			<div slot='center'>{LocalizedMessage({id: `${id}.title`})}</div>
 
 			<div slot='modal'>
 				<Modal
-					isDynamicHeight
 					isOpen={isHelpModalOpen}
 					handleModalClose={onToggleHelpModal}
 				>

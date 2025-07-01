@@ -8,8 +8,8 @@ date: 2025-04-28
 
 The code generation feature allows you to generate configuration code for your project. This includes generating the necessary source files to configure memory allocation, peripheral settings, pin mappings, clock configurations, and other essential system settings.
 
-![Code generation feature](images/generate-code-dark.png#only-dark)
-![Code generation feature](images/generate-code-light.png#only-light)
+![Code generation feature](images/generate-code-dark.png){.only-dark}
+![Code generation feature](images/generate-code-light.png){.only-light}
 
 ## Prerequisites
 

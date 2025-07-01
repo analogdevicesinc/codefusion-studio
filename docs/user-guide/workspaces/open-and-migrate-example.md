@@ -8,13 +8,15 @@ date: 2025-04-26
 
 The MSDK contains examples for each microcontroller that demonstrate the usage of peripheral APIs and other supported libraries. These examples are provided as reference.
 
-!!!note
-    If you are moving a project to System Planner, follow the steps to [migrate a project to System Planner](../workspaces/migrate-project-to-system-planner.md)
+```{note}
+If you are moving a project to System Planner, follow the steps to [migrate a project to System Planner](../workspaces/migrate-project-to-system-planner.md)
+```
 
 ## Duplicate the example folder
 
-!!! warning
-    We strongly recommend copying the example projects before modifying any files to preserve the original examples.
+```{warning}
+We strongly recommend copying the example projects before modifying any files to preserve the original examples.
+```
 
 1. Open **File Explorer**.
 2. Navigate to your installation directory: **SDK>MAX>Examples**
@@ -27,11 +29,12 @@ The MSDK contains examples for each microcontroller that demonstrate the usage o
 2. Click on the **Explorer** icon in the VS Code activity bar.
 3. Click **Open Folder**.
 
-    ![VS Code Explorer](images/explorer-empty-dark.png#only-dark)
-    ![VS Code Explorer](images/explorer-empty-light.png#only-light)
+   ![VS Code Explorer](images/explorer-empty-dark.png){.only-dark}
+   ![VS Code Explorer](images/explorer-empty-light.png){.only-light}
 
-    !!! tip
-        Alternatively, click **File > Open Folder** from the top menu.
+	 ```{tip}
+	 Alternatively, click **File > Open Folder** from the top menu.
+	 ```
 
 4. Navigate to the location where you saved the example projects.
 5. Select the example project to open.
@@ -39,8 +42,8 @@ The MSDK contains examples for each microcontroller that demonstrate the usage o
 7. If your existing project has not been configured as a CodeFusion Studio workspace, wait for the **Configuring** dialog box to complete before proceeding.
 8. Confirm the project is ready by expanding the `.vscode` folder and verifying that the `settings.json` file contains the correct project settings.
 
- ![Migration Successful Notification](images/single-migration-successful-dark.png#only-dark)
- ![Migration Successful Notification](images/single-migration-successful-light.png#only-light)
+   ![Migration Successful Notification](images/single-migration-successful-dark.png){.only-dark}
+   ![Migration Successful Notification](images/single-migration-successful-light.png){.only-light}
 
 ## Open in a multi folder workspace
 
@@ -48,23 +51,24 @@ The MSDK contains examples for each microcontroller that demonstrate the usage o
 2. Click on the **Explorer** icon in the VS Code activity bar.
 3. Click **Open Folder**.
 
-    ![VS Code Explorer](images/explorer-empty-dark.png#only-dark)
-    ![VS Code Explorer](images/explorer-empty-light.png#only-light)
+   ![VS Code Explorer](images/explorer-empty-dark.png){.only-dark}
+   ![VS Code Explorer](images/explorer-empty-light.png){.only-light}
 
-    !!! tip
-        Alternatively, click **File > Open Folder** from the top menu.
+   ```{tip}
+   Alternatively, click **File > Open Folder** from the top menu.
+   ```
 
 4. Navigate to the location where you saved the examples.
 5. Select two example projects to open.
 6. If you receive the notification **Do you trust the authors of the files in this workspace?**, click **Yes, I trust the authors** to continue.
 
-    !!! warning
-        You must select two distinct projects, each containing a **makefile** at the highest level in their respective folder structure.
-
-    ![Selection of Multiple Folders](images/select-multiple-folders.png)
+   ```{warning}
+   You must select two distinct projects, each containing a **makefile** at the highest level in their respective folder structure.
+   ```
+   ![Selection of Multiple Folders](images/select-multiple-folders.png){width=500px}
 
 7. If your existing project has not been configured as a CodeFusion Studio workspace, wait for the **Configuring** dialog box to complete before proceeding.
 8. Confirm the project is ready by expanding the `.vscode` folder and verifying that the `settings.json` file contains the correct project settings.
 
- ![Migration Successful Notification](images/single-migration-successful-dark.png#only-dark)
- ![Migration Successful Notification](images/single-migration-successful-light.png#only-light)
+   ![Migration Successful Notification](images/single-migration-successful-dark.png){.only-dark}
+   ![Migration Successful Notification](images/single-migration-successful-light.png){.only-light}

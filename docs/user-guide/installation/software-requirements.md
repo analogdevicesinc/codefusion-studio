@@ -22,11 +22,14 @@ Tools VS Code extensions depend on:
 
 ## Linux support
 
-The CodeFusion Studio installer requires the following packages in order to run.
+The CodeFusion Studio installer requires the following packages in order to run:
 
-``` bash
-sudo apt install libfontconfig1 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxkbcommon-x11-0 libgl1
+```bash
+sudo apt install libfontconfig1 libdbus-1-3 libxcb-icccm4 libxcb-image0 \
+                 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 \
+                 libxcb-xinerama0 libxkbcommon-x11-0 libgl1
 ```
 
-!!! note
-    These packages are included in default Ubuntu installations, but may need to be added to headless installations.
+```{note}
+These packages are included in default Ubuntu installations, but may need to be added to headless installations.
+```

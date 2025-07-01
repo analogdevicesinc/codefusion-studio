@@ -17,3 +17,11 @@ How to create and manage workspaces in CodeFusion Studio.
 - Available [Tasks](tasks.md) such as build, clean, flash and debug
 - Using the [CFS Terminal](cfs-terminal.md)
 - Managing [Zephyr RTOS projects](zephyr.md)
+
+
+```{toctree}
+:hidden:
+:glob:
+
+*
+```

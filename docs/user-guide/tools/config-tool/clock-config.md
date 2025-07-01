@@ -10,24 +10,24 @@ The Clock Configuration feature allows you to configure and manage clock sources
 
 ## Clock config diagram
 
-This screen allows you configure the clock frequencies that are used by each of the peripherals and cores on the processor.
+This screen allows you to configure the clock frequencies that are used by each of the peripherals and cores on the processor.
 It includes error checking to ensure that the frequencies used are within the constraints of the processor specification.
 After configuring your clock tree, you can generate code that will set the hardware to the desired configuration.
 
-This visual representation of the clock tree is similar to that found in the processor user guide. The diagram contains nodes which represent the cores, peripherals, pins, multiplexers, and clock scalers present in the processor.
+This visual representation of the clock tree is similar to that found in the processor user guide. The diagram contains nodes which represent the cores, peripherals, pins, multiplexers, and clocks scalers present in the processor.
 The frequencies used at each node are shown within the node.
 
-![Clock Config](images/clock-config-dark.png#only-dark)
-![Clock Config](images/clock-config-light.png#only-light)
+![Clock Config](images/clock-config-dark.png){.only-dark}
+![Clock Config](images/clock-config-light.png){.only-light}
 
 ### Navigation
 
 Hover over the lines or nodes in the diagram to view frequency and other information. Nodes and lines on the diagram show as bold when enabled and faint when disabled.
 
 The diagram can be zoomed in/out using the scroll wheel of your mouse or by using the zoom icons in the bottom right corner of the view. The fit to screen icon
-![Fit To Screen](images/icon-fit-to-screen-dark.png#only-dark)
-![Fit To Screen](images/icon-fit-to-screen-light.png#only-light)
- resizes the diagram to the size of your window.  
+![Fit To Screen](images/icon-fit-to-screen-dark.png){.only-dark}
+![Fit To Screen](images/icon-fit-to-screen-light.png){.only-light}
+ resizes the diagram to the size of your window.
 
 The diagram can be dragged within the window using the left or primary mouse button.
 
@@ -48,24 +48,25 @@ In the left panel, the nodes from the diagram are listed, grouped by the type of
 
 Clicking on a node in the diagram or from the node list will show a view with the configuration options relevant to that node:
 
-![Clock Config Node](images/clock-config-node-dark.png#only-dark)
-![Clock Config Node](images/clock-config-node-light.png#only-light)
+![Clock Config Node](images/clock-config-node-dark.png){.only-dark}
+![Clock Config Node](images/clock-config-node-light.png){.only-light}
 
-Changing any of the configuration options will be reflected in the diagram.  
-Only valid options will be enabled by the tool.  
+Changing any of the configuration options will be reflected in the diagram.
+Only valid options will be enabled by the tool.
 
-Clicking **back** will take you back to the list.  
+Clicking **back** will take you back to the list.
 
-!!! note
-    Some clock settings, such as external input and output, require a corresponding pin to be configured in the [Pin Config](./pin-config.md) tool before it can be enabled.
+```{note}
+Some clock settings, such as external input and output, require a corresponding pin to be configured in the [Pin Config](./pin-config.md) tool before it can be enabled.
+```
 
 ### Errors
 
 Errors that cause nodes to display in red and indicate an error that needs to be resolved:
 
-* **A frequency out of range:** The error indicates whether the frequency is above or below the limits of operability of the peripheral.  
+* **A frequency out of range:** The error indicates whether the frequency is above or below the limits of operability of the peripheral.
 
-* **Unconfigured value:** This error indicates a required setting has not been specified:  
+* **Unconfigured value:** This error indicates a required setting has not been specified:
 
-      * Unspecified frequency at a pin input  
-      * Pin mux is not set to direct the clock signal to the peripheral  
+  * Unspecified frequency at a pin input
+  * Pin mux is not set to direct the clock signal to the peripheral

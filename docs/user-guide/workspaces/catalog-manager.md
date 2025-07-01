@@ -8,8 +8,8 @@ date: 2025-04-28
 
 The Catalog Manager is a background service in CodeFusion Studio that retrieves and maintains the SoC catalog. This catalog provides the latest metadata for supported System-on-Chip (SoC) devices, ensuring access to up-to-date information on documentation, cores, boards, and packages.
 
-![Catalog Manager Workspace Creation](./images/catalog-manager-workspace-creation-dark.png#only-dark)
-![Catalog Manager Workspace Creation](./images/catalog-manager-workspace-creation-light.png#only-light)
+![Catalog Manager Workspace Creation](./images/catalog-manager-workspace-creation-dark.png){.only-dark}
+![Catalog Manager Workspace Creation](./images/catalog-manager-workspace-creation-light.png){.only-light}
 
 ## Settings
 
@@ -21,8 +21,9 @@ The Catalog Manager regularly checks for updates to the SoC catalog. If using **
 
 ## CFS Settings
 
-!!! note
-    For details on accessing CFS settings, see [CFS Settings](./cfs-settings.md).
+```{note}
+For details on accessing CFS settings, see [CFS Settings](./cfs-settings.md).
+```
 
 The Catalog Manager has the following user and workspace CFS settings:
 

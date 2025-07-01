@@ -13,12 +13,13 @@ date: 2025-04-28
 
 ## Accessing CFSUtil
 
-From the [CFS Terminal](../workspaces/cfs-terminal.md), access CFSUtil with the `cfsutil` command.  
-From Windows command prompt, access CFSUtil with `<CFS-Install>/Utils/cfsutil/bin/cfsutil.cmd`.  
-From Linux and macOS, access CFSUtil with `<CFS-Install>/Utils/cfsutil/bin/cfsutil`.  
+From the [CFS Terminal](../workspaces/cfs-terminal.md), access CFSUtil with the `cfsutil` command.
+From Windows command prompt, access CFSUtil with `<CFS-Install>/Utils/cfsutil/bin/cfsutil.cmd`.
+From Linux and macOS, access CFSUtil with `<CFS-Install>/Utils/cfsutil/bin/cfsutil`.
 
-!!! note
-    This page refers to `cfsutil`, but the commands used are the same regardless of method used.
+```{note}
+This page refers to `cfsutil`, but the commands used are the same regardless of method used.
+```
 
 ## Structure
 
@@ -34,23 +35,23 @@ You can access help at various levels:
 - `cfsutil elf --help` provides help for the `elf` component.
 - `cfsutil elf info --help` provides help for generating info output.
 
-!!! example
+````{admonition} Example
+```sh
+cfsutil --help
+```
+````
 
-    ```sh
-    cfsutil --help
-    ```
+````{admonition} Example
+```sh
+cfsutil elf --help
+```
+````
 
-!!! example
-
-    ```sh
-    cfsutil elf --help
-    ```
-
-!!! example
-
-    ```sh
-    cfsutil elf info --help
-    ```
+````{admonition} Example
+```sh
+cfsutil elf info --help
+```
+````
 
 ## Device tree
 
@@ -58,7 +59,7 @@ The device tree provides a command to parse device tree files (`*.dts`,`*.dtsi`,
 
 ### Parse
 
-`cfsutil dt parse <FILEPATH> [-I <value>...] [-o <value>] [-v]`  
+`cfsutil dt parse <FILEPATH> [-I <value>...] [-o <value>] [-v]`
 
 | Switch | Effect                                     |
 | ------ | ------------------------------------------ |
@@ -66,12 +67,11 @@ The device tree provides a command to parse device tree files (`*.dts`,`*.dtsi`,
 | `-o, --output=<value>`   | Specifies the output file in JSON format.|
 | `-v, --verbose`   |   Enables verbose mode for additional details during parsing.     |
 
-!!! example
-
-    ```sh
-    cfsutil dt parse myfile.dts -o output.json
-
-    ```
+````{admonition} Example
+```sh
+cfsutil dt parse myfile.dts -o output.json
+```
+````
 
 ## ELF
 
@@ -79,15 +79,15 @@ Provides a series of commands to get information about an ELF file.
 
 ### Analyze
 
-`cfsutil elf analyze <FILEPATH> [-j]`  
-Provides high-level information about the ELF file, including the platform, stack/heap sizes and flash/sram sizes.  
-Use the `-j` switch to produce output in JSON format.  
+`cfsutil elf analyze <FILEPATH> [-j]`
+Provides high-level information about the ELF file, including the platform, stack/heap sizes and flash/sram sizes.
+Use the `-j` switch to produce output in JSON format.
 
 ### Info
 
 `cfsutil elf info <FILEPATH> [-j] [-h] [-a] [-c] [-s] [-v]`
 
-Provides more in depth information about the ELF file.  
+Provides more in depth information about the ELF file.
 At least one of the following switches are required. They can be used individually or in combination to select the required information.
 
 | Switch   | Information                         |
@@ -106,9 +106,9 @@ Additional options are available to control the output.
 
 ### Memory
 
-`cfsutil elf memory <FILEPATH> [-s] [-t] [-y] [-i <value>] [-n <value>] [-j] [-d]`  
+`cfsutil elf memory <FILEPATH> [-s] [-t] [-y] [-i <value>] [-n <value>] [-j] [-d]`
 
-Provides information on symbols, sections or segments within the ELF file.  
+Provides information on symbols, sections or segments within the ELF file.
 
 Choose at least one of the available switches:
 
@@ -122,15 +122,16 @@ Choose at least one of the available switches:
 | `-t`   | List of sections in each segment           |
 | `-y`   | List the symbols contain in each section   |
 
-!!! note
-    For `-t` and `-y`, the sections/symbols to display can be restricted to a segment/section using an id (`-i`) or a name (`-n`).  
-    For `-y`, the segment/symbols can be restricted to a segment/section using a name (`-n`).
+```{note}
+For `-t` and `-y`, the sections/symbols to display can be restricted to a segment/section using an id (`-i`) or a name (`-n`).
+For `-y`, the segment/symbols can be restricted to a segment/section using a name (`-n`).
+```
 
 ### Symbols
 
-`cfsutil elf symbols <FILEPATH> <SQLQUERY> [-j] [-f]`  
+`cfsutil elf symbols <FILEPATH> <SQLQUERY> [-j] [-f]`
 
-This command allows you to run SQL queries on the symbol table.  
+This command allows you to run SQL queries on the symbol table.
 This involves queries on a table called `symbols` with the following fields.
 
 | Name         | Meaning                                                                 |
@@ -195,9 +196,10 @@ Outputs the SoC data model in JSON format for the specified SoC. The `-n=<name>`
 | `-m`             | Minify the JSON output.                                                               |
 | `-o stdio`       | Print to the screen.                                                               |
 
-!!! note
-    It is recommended to pipe the output to a file, especially if compressing the output:  
-    `cfsutil socs export -n=max32690-tqfn --gzip > file.gz`
+```{note}
+It is recommended to pipe the output to a file, especially if compressing the output:
+`cfsutil socs export -n=max32690-tqfn --gzip > file.gz`
+```
 
 ## Oclif plugins
 
@@ -214,10 +216,11 @@ List installed plugins.
 | `--json` | Format output as JSON |
 | `--core` | Show core plugins     |
 
-!!! example
-    ```sh
-    cfsutil plugins
-    ```
+````{admonition} Example
+```sh
+cfsutil plugins
+```
+````
 
 ### Inspect plugin
 
@@ -231,10 +234,11 @@ Displays installation properties of a plugin.
 | `-v, --verbose`| Show verbose output     |
 | `--json`       | Format output as JSON   |
 
-!!! example
-    ```sh
-    cfsutil plugins inspect myplugin
-    ```
+````{admonition} Example
+```sh
+cfsutil plugins inspect myplugin
+```
+````
 
 ### Install plugin
 
@@ -250,14 +254,16 @@ Installs a plugin into the CLI from npm or a Git URL. Installation of a user-ins
 | `-v, --verbose`| Show verbose yarn output             |
 | `--json`       | Format output as JSON                |
 
-!!! note
-    Aliases: `cfsutil plugins add`
+```{note}
+Aliases: `cfsutil plugins add`
+```
 
-!!! example
-    ```sh
-    cfsutil plugins install myplugin
-    cfsutil plugins install https://github.com/someuser/someplugin
-    ```
+````{admonition} Example
+```sh
+cfsutil plugins install myplugin
+cfsutil plugins install https://github.com/someuser/someplugin
+```
+````
 
 ### Link plugin
 
@@ -271,10 +277,11 @@ Links a plugin into the CLI for development. Installation of a linked plugin wil
 | `-v, --verbose`   | Show verbose output                         |
 | `-h, --help`   | Show CLI help                                  |
 
-!!! example
-    ```sh
-    cfsutil plugins link ./myplugin
-    ```
+````{admonition} Example
+```sh
+cfsutil plugins link ./myplugin
+```
+````
 
 ### Reset plugins
 
@@ -298,13 +305,15 @@ Removes a plugin from the CLI.
 | `-v, --verbose`| Show verbose output   |
 | `-h, --help`   | Show CLI help         |
 
-!!! note
-    Aliases: `cfsutil plugins remove`, `cfsutil plugins unlink`
+```{note}
+Aliases: `cfsutil plugins remove`, `cfsutil plugins unlink`
+```
 
-!!! example
-    ```sh
-    cfsutil plugins uninstall myplugin
-    ```
+````{admonition} Example
+```sh
+cfsutil plugins uninstall myplugin
+```
+````
 
 ### Update plugins
 
@@ -321,8 +330,9 @@ Update installed plugins.
 
 Use the following CFS plugin commands to automate workspace, project, and code generation from the terminal. These commands work with both built-in and custom plugins discovered in your configured plugin directories.
 
-!!! note
-    The default plugin path is `${userHome}/cfs/plugins` if the `-s` flag is not specified for any of the following commands . This directory is intended for active development of custom plugins. For information on custom plugins, see [Developing plugins](../plugins/develop-plugins.md).
+```{note}
+The default plugin path is `${userHome}/cfs/plugins` if the `-s` flag is not specified for any of the following commands . This directory is intended for active development of custom plugins. For information on custom plugins, see [Developing plugins](../plugins/develop-plugins.md).
+```
 
 ### List
 
@@ -350,7 +360,7 @@ Use a valid `.cfsworkspace` file generated in the CFS UI. Do not reuse the origi
 {
     "Soc": "MAX32690",
     "Package": "WLP",
-    "WorkspacePluginId": "com.analog.multicore.msdk.helloworld",
+    "WorkspacePluginId": "com.analog.multi-core.msdk.helloworld",
     "WorkspacePluginVersion": "1.0.0",
     "WorkspaceName": "Apard_ws",
     "Location": "test-folder", //Must differ from the original location if copied from a UI-generated file, to avoid path conflicts
@@ -366,8 +376,9 @@ Use a valid `.cfsworkspace` file generated in the CFS UI. Do not reuse the origi
 | `-w=<path>`    | **Required.** Path and filename of the `.cfsworkspace` file |
 | `-s=<path>`    | (Optional) Additional plugin search path. If omitted, the default is `${userHome}/cfs/plugins`. Can be used multiple times. |
 
-!!! warning
-    Projects and workspaces created manually using these commands may not exactly match those generated by the IDE, depending on plugin versions and data model updates.
+```{warning}
+Projects and workspaces created manually using these commands may not exactly match those generated by the IDE, depending on plugin versions and data model updates.
+```
 
 ### Create project
 
@@ -377,12 +388,13 @@ cfsutil project create -w <path/.cfsworkspace> -p <project-name> [-s <plugin/sea
 
 Generates or regenerates a project defined within an existing `.cfsworkspace` file.
 
-!!! important
-    You must run `cfsutil workspace create` before using this command. The workspace and it's `cfs` folder must already exist. This command does not create standalone projects—it only works within a valid workspace.
+```{important}
+You must run `cfsutil workspace create` before using this command. The workspace and it's `cfs` folder must already exist. This command does not create standalone projects—it only works within a valid workspace.
 
-    The `project create` command is mainly intended to **regenerate** a project inside an existing workspace, typically after a plugin upgrade or workspace update. It **overwrites the project structure** based on the latest plugin templates but **does not modify user code**.
+The `project create` command is mainly intended to **regenerate** a project inside an existing workspace, typically after a plugin upgrade or workspace update. It **overwrites the project structure** based on the latest plugin templates but **does not modify user code**.
 
 Refer to the example below. The `-p` flag must match the **Name** value of the project you want to generate.
+```
 
 ```json
 {
@@ -424,11 +436,11 @@ Refer to the example below. The `-p` flag must match the **Name** value of the p
 | `-p=<name>`    | **Required.** Required. Name of the project to generate. Must match a **Name** field in the JSON. If the name contains spaces or special characters (for example, `ARM Cortex-M4F`), wrap it in quotes. |
 | `-s=<path>`    | (Optional) Additional plugin search path. If omitted, the default is `${userHome}/cfs/plugins`. Can be used multiple times. |
 
-!!! example
-
-    ```sh
-    cfsutil project create -w test.cfsworkspace -p m4 -s <CodeFusion Studio Install>/Plugins
-    ```
+````{admonition} Example
+```sh
+cfsutil project create -w test.cfsworkspace -p m4 -s <CodeFusion Studio Install>/Plugins
+```
+````
 
 ### Generate
 
@@ -436,9 +448,9 @@ Refer to the example below. The `-p` flag must match the **Name** value of the p
 
 Generates source code from a `.cfsconfig` file. The `-i <filename>` switch is required, whilst the others are optional. The following switches are available.
 
-| Switch           | Effect                                                      |
-| ---------------- | ----------------------------------------------------------- |
-| `-i=<file>`      | Required. The `.cfsconfig` file to generate from            |
-| `-o=<directory>` | The output directory for thee generated code                     |
-| `-v`             | Generate verbose output                                     |
+| Switch           | Effect                                                             |
+| ---------------- | -------------------------------------------------------------------|
+| `-i=<file>`      | Required. The `.cfsconfig` file to generate from                   |
+| `-o=<directory>` | The output directory for thee generated code                       |
+| `-v`             | Generate verbose output                                            |
 | `-s=<path>`      | Adds a directory to search for plugins. Can be used multiple times |

@@ -8,15 +8,19 @@ date: 2024-09-13
 
 This is the user documentation for CodeFusion Studio&trade;.
 
-!!! note
-    You can toggle between light and dark mode using the sun and moon icons on the top right of the page.
+```{tip}
+:class: only-screen
+You can {download}`download the entire document <./assets/codefusion-studio.pdf>` as a single PDF.
+```
 
-- [User guide](user-guide/index.md)
-- [Tutorials](tutorials/index.md)
-- [Resources](user-guide/resources/index.md)
-- [Release notes](release-notes/index.md)
+```{toctree}
+:maxdepth: 1
 
-<img src="assets/images/cfs-logo.svg" height="200" width="200" alt="CodeFusion Studio logo"/>
+user-guide/index
+tutorials/index
+resources/index
+release-notes/index
+glossary
+```
 
-!!! info
-    :fontawesome-regular-file-pdf: You can [download the entire document](./assets/codefusion-studio.pdf) as a single PDF.
+

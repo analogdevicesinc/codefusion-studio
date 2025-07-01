@@ -8,13 +8,13 @@ date: 2025-04-08
 
 CFS supports custom plugins, allowing you to extend its capabilities without modifying the base application. Using the CFS plugin API, you can develop plugins tailored to specific project needs—such as upgrading an RTOS, integrating middleware, or applying custom code templates.
 
-For information on how to build your own plugins, refer to the [:octicons-link-external-24: CFS Plugins repository](https://github.com/analogdevicesinc/cfs-plugins){:target="_blank"}.
+For information on how to build your own plugins, refer to the [CFS Plugins repository](https://github.com/analogdevicesinc/cfs-plugins).
 
 The following information is relevant once you have built your custom plugin.
 
 ## Plugin discovery
 
-The `CfsPluginManager` is part of the [cfs-lib](https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/cfs-lib) package and is responsible for automatically detecting and parsing plugins at startup. When VS Code launches, the manager performs the following tasks:
+The `CfsPluginManager` is part of the {git-codefusion-studio}`cfs-lib <packages/cfs-lib>` package and is responsible for automatically detecting and parsing plugins at startup. When VS Code launches, the manager performs the following tasks:
 
 - Scans the directories listed in `cfs.plugins.searchDirectories`.
 - Validates plugin metadata.
@@ -43,5 +43,6 @@ Alternatively, copy your plugin into the existing plugin directory (`${config:cf
 
 Once placed, restart CFS to detect the new plugin and create a workspace.
 
-!!! Tip
-    You can also use the cfsutil command line utility to automate plugin creation from the terminal. For more details, refer to [CFS command line utility](../tools/cfsutil.md).
+```{tip}
+You can also use the cfsutil command line utility to automate plugin creation from the terminal. For more details, refer to [CFS command line utility](../tools/cfsutil.md).
+```

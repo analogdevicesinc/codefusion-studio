@@ -13,11 +13,12 @@ date: 2025-01-27
 3. Click on the **Manage** (cog) icon on the right hand side.
 4. Select **Uninstall**.
 
-![CodeFusion Extension Uninstall](images/uninstall-extension-dark.png#only-dark)
-![CodeFusion Extension Uninstall](images/uninstall-extension-light.png#only-light)
+![CodeFusion Extension Uninstall](images/uninstall-extension-dark.png){.only-dark}
+![CodeFusion Extension Uninstall](images/uninstall-extension-light.png){.only-light}
 
-!!! note
-    Keyboard shortcut to extensions is **Control** + **SHIFT** + **X** (Windows/Linux) or **Command** + **SHIFT** + **X** (Mac).
+```{note}
+Keyboard shortcut to extensions is **Control** + **SHIFT** + **X** (Windows/Linux) or **Command** + **SHIFT** + **X** (Mac).
+```
 
 ## Uninstall from file system
 

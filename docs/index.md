@@ -13,8 +13,10 @@ This is the user documentation for CodeFusion Studio&trade;.
 You can {download}`download the entire document <./assets/codefusion-studio.pdf>` as a single PDF.
 ```
 
+Make sure to read the {doc}`user-guide/index`, and checkout the {doc}`tutorials/index`, {doc}`resources/index`, and {doc}`release-notes/index`.
+
 ```{toctree}
-:maxdepth: 1
+:hidden:
 
 user-guide/index
 tutorials/index
@@ -22,5 +24,3 @@ resources/index
 release-notes/index
 glossary
 ```
-
-

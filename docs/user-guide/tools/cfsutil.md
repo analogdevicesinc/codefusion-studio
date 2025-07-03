@@ -360,7 +360,7 @@ Use a valid `.cfsworkspace` file generated in the CFS UI. Do not reuse the origi
 {
     "Soc": "MAX32690",
     "Package": "WLP",
-    "WorkspacePluginId": "com.analog.multi-core.msdk.helloworld",
+    "WorkspacePluginId": "com.analog.multicore.msdk.helloworld",
     "WorkspacePluginVersion": "1.0.0",
     "WorkspaceName": "Apard_ws",
     "Location": "test-folder", //Must differ from the original location if copied from a UI-generated file, to avoid path conflicts

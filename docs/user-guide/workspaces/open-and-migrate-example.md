@@ -32,9 +32,9 @@ We strongly recommend copying the example projects before modifying any files to
    ![VS Code Explorer](images/explorer-empty-dark.png){.only-dark}
    ![VS Code Explorer](images/explorer-empty-light.png){.only-light}
 
-	 ```{tip}
-	 Alternatively, click **File > Open Folder** from the top menu.
-	 ```
+   ```{tip}
+   Alternatively, click **File > Open Folder** from the top menu.
+   ```
 
 4. Navigate to the location where you saved the example projects.
 5. Select the example project to open.

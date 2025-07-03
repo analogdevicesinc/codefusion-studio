@@ -22,7 +22,7 @@ You can toggle between light and dark mode using the sun and moon icons on to th
 ```
 
 ```{toctree}
-:maxdepth: 1
+:hidden:
 
 about/index
 installation/index

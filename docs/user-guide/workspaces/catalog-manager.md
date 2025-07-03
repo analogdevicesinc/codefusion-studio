@@ -31,7 +31,7 @@ The Catalog Manager has the following user and workspace CFS settings:
 - **Catalog Location** (`cfs.catalogManager.catalogLocation`) – Specifies the directory where the working copy of the catalog manager is stored. This location contains temporary files that store processed SoC data.
 - **Catalog URL** (`cfs.catalogManager.url`) – Specifies the cloud service used to fetch updates.
 
-## **Troubleshooting**
+## Troubleshooting
 
 Refer to the following table for Catalog Manager errors and their resolutions.
 

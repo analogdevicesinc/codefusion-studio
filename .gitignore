@@ -24,3 +24,6 @@ packages/ide/cypress/screenshots
 # Profile
 *.cpuprofile
 *.heapprofile
+
+# Docs
+docs/_build

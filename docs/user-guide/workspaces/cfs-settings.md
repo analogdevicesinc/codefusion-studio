@@ -14,7 +14,7 @@ Settings are saved at either the User, Workspace, or Folder level and are applie
 
 - User settings can be modified from the `File > Preferences > Settings` (on macOS, use `Code > Settings > Settings`) menu.
 - Workspace settings can be modified from the `File > Preferences > Settings` menu or by editing the `.vscode/settings.json` in your workspace.
-- Folder settings can be modified by editing the `.vscode/settings.json` in your sub directory.
+- Folder settings can be modified by editing the `.vscode/settings.json` in your subdirectory.
 
 When you create a new workspace, a corresponding set of workspace settings are automatically generated and will have values related to that workspace.
 

@@ -15,11 +15,11 @@ Access the Device Tree View using the following methods:
 - Build a Zephyr project, then select the project in the **Context** menu. The Device Tree View automatically displays the project's `zephyr.dts` file.
 - Open any Device Tree file (`*.dtsi` or `*.overlay`) in the VS Code window.
 
-![Device Tree View](images/device-tree-view-dark.png#only-dark)
-![Device Tree View](images/device-tree-view-light.png#only-light)
+![Device Tree View](images/device-tree-view-dark.png){.only-dark}
+![Device Tree View](images/device-tree-view-light.png){.only-light}
 
 ## Additional information
 
-The Device Tree View in CodeFusion Studio is based on the Zephyr devicetree specification. For more details, refer to the [:octicons-link-external-24: Zephyr Devicetree documentation](https://docs.zephyrproject.org/latest/build/dts/index.html#devicetree-guide).
+The Device Tree View in CodeFusion Studio is based on the Zephyr devicetree specification. For more details, refer to the [Zephyr Devicetree documentation](https://docs.zephyrproject.org/latest/build/dts/index.html#devicetree-guide).
 
 You can also use the `cfsutil` command line utility to parse device tree files from the terminal. For more details, refer to [CFS command line utility](cfsutil.md#device-tree).

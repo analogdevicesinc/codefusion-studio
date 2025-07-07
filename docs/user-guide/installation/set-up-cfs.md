@@ -12,10 +12,10 @@ If you are installing CodeFusion Studio for the first time or upgrading from an 
 
 The CodeFusion Studio SDK path should be set automatically during the installation process, but if it is missing you may be prompted to update it:
 
-![SDK Invalid Prompt](images/sdk-path-invalid-dark.png#only-dark)
-![SDK Invalid Prompt](images/sdk-path-invalid-light.png#only-light)
+![SDK Invalid Prompt](images/sdk-path-invalid-dark.png){.only-dark}
+![SDK Invalid Prompt](images/sdk-path-invalid-light.png){.only-light}
 
-Click on **Download SDK** to download the SDK if it isn't already installed, or **Choose SDK path** to enter the appropriate path.  
+Click on **Download SDK** to download the SDK if it isn't already installed, or **Choose SDK path** to enter the appropriate path.
 
 You can also manually configure the installation path by searching for `cfs.sdk.path` in VS Code settings. To access settings, press `Ctrl`(Windows/Linux) or `Cmd` (macOS), then press the `,` key — or click the gear icon in the lower-left corner. For more information, see [CFS Settings](../workspaces/cfs-settings.md).
 
@@ -26,7 +26,7 @@ If you are upgrading from a previous release, note that existing path settings a
 To update CFS paths to the latest version:
 
 1. Open VS Code settings.
-2. Search for all settings starting with `cfs.`  
+2. Search for all settings starting with `cfs.`
    Replace the older version number with the latest version number. For example, replace `1.0.0` with `1.1.0` in paths such as:
     - `cfs.sdk.path`
     - `cfgtools.cfsutil.path`

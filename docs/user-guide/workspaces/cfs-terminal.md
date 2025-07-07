@@ -20,8 +20,8 @@ The underlying shell depends on your host operating system:
 To launch a new CFS Terminal, click the **Terminal** menu and select **New Terminal**.
 You can also select the expansion arrow next to the **+** icon in the top right corner of the terminal window and select **CFS Terminal**.
 
-![New CFS Terminal](./images/terminal-new-dark.png#only-dark)
-![New CFS Terminal](./images/terminal-new-light.png#only-light)
+![New CFS Terminal](./images/terminal-new-dark.png){.only-dark}
+![New CFS Terminal](./images/terminal-new-light.png){.only-light}
 
 ## Clear the terminal
 

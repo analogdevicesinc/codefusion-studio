@@ -10,3 +10,11 @@ Learn how CFS plugins extend CodeFusion Studio and about how you can create and 
 
 - [Plugin integration overview](./plugin-integration-overview.md): See how plugins integrate into the CodeFusion Studio workflow.
 - [Develop plugins](./develop-plugins.md): Learn about how you can develop, test, and view custom plugins in the CFS UI.
+
+```{toctree}
+:glob:
+:hidden:
+:maxdepth: 1
+
+*
+```

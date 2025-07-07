@@ -24,19 +24,21 @@ The Trusted Edge provides a foundational layer of security for customers by meld
 
 The security installer for CodeFusion Studio is distributed under a non-disclosure agreement (NDA) through myAnalog.
 
-!!! note
-    A **myAnalog** account is required. Login or sign up at [analog.com](https://www.analog.com/en/index.html)
+```{note}
+A **myAnalog** account is required. Login or sign up at {adi}`analog.com </>`.
+```
 
-1. Access the [:octicons-link-external-24: Software Request Form](https://analog.com/srf){:target="_blank"}.
+1. Access the [Software Request Form](https://analog.com/srf).
 2. Log in or sign up for a myAnalog account.
 3. Complete the required fields in the **Software Recipient Information** section.
 4. Complete the required fields in the **Commercial information** section.
 5. In the Software requested section, select **Security** for the target technology.
 
-    !!! danger "Important"
-        Leave **Processor/SoC** and **Hardware Platform** blank.
+   ```{important}
+   Leave **Processor/SoC** and **Hardware Platform** blank.
+	 ```
 
-    ![Software requested](./images/software-requested-security.png)
+   ![Software requested](./images/software-requested-security.png)
 
 6. Check the box for your preferred opperating system: Windows, macOS, or Linux.
 7. Review the privacy settings and check the applicable boxes.
@@ -48,7 +50,7 @@ A confirmation is sent to the email address provided in the software request for
 
 Click the link received in your email or follow these steps to download the installer from myAnalog.
 
-1. Access [:octicons-link-external-24: analog.com](https://www.analog.com/en/index.html){:target="_blank"}.
+1. Access {adi}`analog.com </>`.
 
 2. Log in to your **myAnalog** account.
 
@@ -70,8 +72,9 @@ Click the link received in your email or follow these steps to download the inst
 
 The installer is downloaded to your computer.
 
-!!! note
-    You'll receive an email notification with a download link anytime a new version of the installer becomes available.
+```{note}
+You'll receive an email notification with a download link anytime a new version of the installer becomes available.
+```
 
 ## Security Foundation Layer
 
@@ -99,9 +102,9 @@ The installer is downloaded to your computer.
 
 #### Trusted Firmware-M (TF-M)
 
-Trusted Firmware-M (TF-M) is the reference functional PSA implementation provided by[:octicons-link-external-24: TrustedFirmware.org](https://www.trustedfirmware.org/){:target="_blank"}. It provides trusted execution environment functionality for Armv8 microcontrollers with TrustZone extensions.
+Trusted Firmware-M (TF-M) is the reference functional PSA implementation provided by [TrustedFirmware.org](https://www.trustedfirmware.org/). It provides trusted execution environment functionality for Armv8 microcontrollers with TrustZone extensions.
 
-ADI's security offering for the Intelligent Edge is called **Trusted Edge Security Architecture** (TESA). The list of devices supported by ADI’s TESA is available at [:octicons-link-external-24: TF-M ADI](https://trustedfirmware-m.readthedocs.io/en/latest/platform/adi/index.html){:target="_blank"}
+ADI's security offering for the Intelligent Edge is called **Trusted Edge Security Architecture** (TESA). The list of devices supported by ADI’s TESA is available at [TF-M ADI](https://trustedfirmware-m.readthedocs.io/en/latest/platform/adi/index.html)
 
 TESA provides out-of-the-box support for the open source generic TF-M implementation using mbedTLS for cryptographic functionality. It also provides a premium security configuration that enhances the performance of security services through Unified Security Software.
 
@@ -119,8 +122,8 @@ The PSA Crypto implementation within USS is called the ADI Universal Crypto Libr
 
 Unified Security Software provides rich, hardware-independent, industry-standard APIs for:
 
-- Crypto  
-- Life cycle management  
+- Crypto
+- Life cycle management
 - Secure storage
 
 ### TESA Toolkit
@@ -130,19 +133,19 @@ The TESA toolkit includes utility scripts and firmware to:
 - Generate signatures
 - Enable Secure Boot ROM
 
-The TESA toolkit is available at [:octicons-link-external-24: TESA-Toolkit](https://github.com/analogdevicesinc/tesa-toolkit){:target="_blank"}
+The TESA toolkit is available at {git-tesa-toolkit}`TESA-Toolkit </>`
 
 ### USS Supported boards
 
 - **MAX32650**
-    - [:octicons-link-external-24: EVKit V1](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650-evkit.html){:target="_blank"}
-    - [:octicons-link-external-24: FTHR](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650fthr.html){:target="_blank"}
-    - [:octicons-link-external-24: AD-SWIOT1L-SL](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-swiot1l-sl.html){:target="_blank"}
+    - {adi}`EVKit V1 <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650-evkit.html>`
+    - {adi}`FTHR <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650fthr.html>`
+    - {adi}`AD-SWIOT1L-SL <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-swiot1l-sl.html>`
 - **MAX32670**
-    - [:octicons-link-external-24: EVKit V1](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32670evkit.html){:target="_blank"}
+    - {adi}`EVKit V1 <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32670evkit.html>`
 - **MAX32690**
-    - [:octicons-link-external-24: AD-APARD32690-SL](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html){:target="_blank"}
-    - [:octicons-link-external-24: EVKit V1](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32690evkit.html){:target="_blank"}
-    - [:octicons-link-external-24: FTHR](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32620fthr.html){:target="_blank"}
-    - [:octicons-link-external-24: EVAL-ADIN1110](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/eval-adin1110.html){:target="_blank"}
-    - [:octicons-link-external-24: MAXQ1065EVKIT](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/maxq1065evkit.html){:target="_blank"}
+    - {adi}`AD-APARD32690-SL <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html>`
+    - {adi}`EVKit V1 <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32690evkit.html>`
+    - {adi}`FTHR <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32620fthr.html>`
+    - {adi}`EVAL-ADIN1110 <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/eval-adin1110.html>`
+    - {adi}`MAXQ1065EVKIT <en/resources/evaluation-hardware-and-software/evaluation-boards-kits/maxq1065evkit.html>`

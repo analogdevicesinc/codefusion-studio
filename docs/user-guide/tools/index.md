@@ -22,3 +22,11 @@ In addition to the System Planner Configuration Tools dashboard, CodeFusion Stud
 * The [CFS Command Line Utility](./cfsutil.md) – Provides command-line control over configuration tools and enables ELF file parsing.
 * The [ELF File Explorer](./elf-file-explorer.md) – Enables graphical analysis of ELF files.
 * The [Device Tree View](./device-tree-view.md) – Allows reviewing of hardware components in Zephyr.
+
+```{toctree}
+:hidden:
+:glob:
+
+*/index
+*
+```

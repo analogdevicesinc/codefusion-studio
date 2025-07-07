@@ -8,7 +8,7 @@ date: 2024-07-22
 
 The GNU Debugger (GDB) allows you to connect to and debug a wide variety of target devices.
 
-It consists of a pair of command-line tools: a GDB server, and a GDB client. These two tools are used together to locally or remotely analyze your program and asssembly code, and single step through the program.
+It consists of a pair of command-line tools: a GDB server, and a GDB client. These two tools are used together to locally or remotely analyze your program and assembly code, and single step through the program.
 
 To use GDB, you start a GDB server which physically connects to the target device, and then connect to the server with a GDB client, allowing you to interact with the target device.
 
@@ -16,15 +16,16 @@ To use GDB, you start a GDB server which physically connects to the target devic
 
 CFS includes a pre-configured version of GDB, so you don’t need to install it separately. For best results, it is recommended to use GDB 7.12+ or later:
 
-- **GDB 7.12+** – Supports modern debugging features, including inline breakpoints.  
-- **GDB 8.x+** – Adds improvements and bug fixes for a better debugging experience.  
+- **GDB 7.12+** – Supports modern debugging features, including inline breakpoints.
+- **GDB 8.x+** – Adds improvements and bug fixes for a better debugging experience.
 
-!!! Note
-    You can check the GDB version by running `show version` in the VS Code debug console.
+```{note}
+You can check the GDB version by running `show version` in the VS Code debug console.
+```
 
 ## Breakpoints
 
-Breakpoints allow you to set a precise place in your code where execution will stop automatically. GDB has  breakpoint command options to set rich conditions to cause a breakpoint. Setting rich conditions allows you to debug very specific errors that only reproduce in given conditions.
+Breakpoints allow you to set a precise place in your code where execution will stop automatically. GDB has breakpoint command options to set rich conditions to cause a breakpoint. Setting rich conditions allows you to debug very specific errors that only reproduce in given conditions.
 
 ### Conditional breakpoints
 
@@ -48,7 +49,7 @@ Watchpoints are more powerful than breakpoints because they can evaluate a numbe
 
 ## Stack Backtrace
 
-Stack backtrace allows you to rollback the stack frames and see the progression of branches and execution in the code. This helpes diagnose where you were before you ended up at the breakpoint or where you stopped the program execution.
+Stack backtrace allows you to rollback the stack frames and see the progression of branches and execution in the code. This helps diagnose where you were before you ended up at the breakpoint or where you stopped the program execution.
 
 ## Info
 
@@ -72,4 +73,4 @@ The find command allows you to scan a specific address range for a pattern or a 
 
 ## Multiple image support
 
-GDB normally parses one ELF file at a time, however, using the add-symbol-file command allows you to load multiple ELF files into the same GDB session and dynamically switch between the files. Useful when debugging a system with multiple cores or multiple images, allowing you to step accross boundries to continue debugging.
+GDB normally parses one ELF file at a time, however, using the add-symbol-file command allows you to load multiple ELF files into the same GDB session and dynamically switch between the files. Useful when debugging a system with multiple cores or multiple images, allowing you to step across boundaries to continue debugging.

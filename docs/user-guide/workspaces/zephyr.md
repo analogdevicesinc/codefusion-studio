@@ -42,13 +42,14 @@ To debug an application and receive more details when hitting a fault handler, d
 west build -p auto -b apard32690/max32690/m4 -- -DCONFIG_FAULT_DUMP=1
 ```
 
-!!! note
-    The double dash `--` in the `west` command line will pass any following arguments directly to **CMake**.
+```{note}
+The double dash `--` in the `west` command line will pass any following arguments directly to **CMake**.
+```
 
 ## Add compiler arguments
 
 To pass specific compiler switches to the build system, use **zephyr_cc_option** in **CMakeLists.txt**:
 
-``` kconfig
-  zephyr_cc_option(-fstack-usage)
+```kconfig
+zephyr_cc_option(-fstack-usage)
 ```

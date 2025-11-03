@@ -16,27 +16,37 @@
 import {memo, useCallback, useEffect, useMemo, useState} from 'react';
 import {Modal} from '@common/components/modal/Modal';
 import {LocalizedMessage} from '@common/components/l10n/LocalizedMessage';
-import type {Core} from '@common/types/soc';
 import HelpBanner from '../../../components/help-banner/HelpBanner';
-import CoreSummaryFilters from './CoreSummaryFilters';
 import CoreSummaryEntry from './CoreSummaryEntry';
 import styles from './CoreSummary.module.scss';
-import {getSocCoreList} from '../../../utils/soc-cores';
 import {
 	useActiveScreen,
-	useCoreFilters
+	useCoreFilters,
+	usePeripheralScreenOpenProjectCards
 } from '../../../state/slices/app-context/appContext.selector';
 import {
 	getIsPeripheralBanner,
 	updateIsPeripheralBanner
 } from '../../../utils/api';
 import {useDispatch} from 'react-redux';
-import {setCoresFilter} from '../../../state/slices/app-context/appContext.reducer';
 import {getProjectInfoList} from '../../../utils/config';
+import {
+	Button,
+	CollapseAllIcon,
+	ExpandAllIcon
+} from 'cfs-react-library';
+import Tooltip from '../../../../../common/components/tooltip/Tooltip';
+import {setPeripheralScreenOpenProjectCards} from '../../../state/slices/app-context/appContext.reducer';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../../common/contexts/LocaleContext';
+import {usePeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
 
 function CoreSummary() {
 	const filteredCoreName = useCoreFilters()[0];
-	const socCores = useMemo(() => getSocCoreList(), []);
+	const l10n: TLocaleContext | undefined =
+		useLocaleContext()?.peripherals;
 	const projects = getProjectInfoList();
 	const dispatch = useDispatch();
 	const [isHelpBannerDisplayed, setIsHelpBannerDisplayed] = useState<
@@ -44,6 +54,15 @@ function CoreSummary() {
 	>();
 	const [isHelpModalOpen, setIsHelpModalOpen] =
 		useState<boolean>(false);
+	const peripheralAllocations = usePeripheralAllocations();
+	const projectsWithPeripherals = useMemo(
+		() =>
+			Object.keys(peripheralAllocations).filter(
+				project => Object.keys(peripheralAllocations[project]).length
+			),
+		[peripheralAllocations]
+	);
+	const openProjectCards = usePeripheralScreenOpenProjectCards();
 
 	const id = useActiveScreen();
 
@@ -56,17 +75,6 @@ function CoreSummary() {
 				console.error(err);
 			});
 	}, []);
-
-	const onFilterHandler = useCallback(
-		(core: Core | undefined) => {
-			if (core) {
-				dispatch(setCoresFilter(core ? [core.Name] : []));
-			} else {
-				dispatch(setCoresFilter([]));
-			}
-		},
-		[dispatch]
-	);
 
 	const filteredProjectsByCoreName = useMemo(
 		() =>
@@ -94,13 +102,49 @@ function CoreSummary() {
 				}}
 			/>
 			<div className={styles.sectionContainer}>
-				<CoreSummaryFilters
-					cores={socCores}
-					activeCore={socCores.find(
-						core => core.Name === filteredCoreName
-					)}
-					onFilterCores={onFilterHandler}
-				/>
+				<div className={styles.coreSectionHeader}>
+					<h1>Core Projects</h1>
+					<div className={styles.headerIcons}>
+						<Tooltip
+							title={l10n?.['expand-action']?.tooltips?.expand}
+							type='long'
+						>
+							<Button
+								appearance='icon'
+								disabled={
+									projectsWithPeripherals.length ===
+									openProjectCards.length
+								}
+								className={styles.icon}
+								onClick={() => {
+									dispatch(
+										setPeripheralScreenOpenProjectCards(
+											projectsWithPeripherals
+										)
+									);
+								}}
+							>
+								<ExpandAllIcon />
+							</Button>
+						</Tooltip>
+
+						<Tooltip
+							title={l10n?.['expand-action']?.tooltips?.collapse}
+							type='long'
+						>
+							<Button
+								appearance='icon'
+								disabled={openProjectCards.length === 0}
+								className={styles.icon}
+								onClick={() => {
+									dispatch(setPeripheralScreenOpenProjectCards([]));
+								}}
+							>
+								<CollapseAllIcon />
+							</Button>
+						</Tooltip>
+					</div>
+				</div>
 				<div
 					className={styles.coreSection}
 					data-test='cores-summary-container'
@@ -118,7 +162,8 @@ function CoreSummary() {
 				}}
 			>
 				<h1>
-					<LocalizedMessage id={`${id}.help.title`} />
+					{/* eslint-disable-next-line new-cap */}
+					{LocalizedMessage({id: `${id}.help.title`})}
 				</h1>
 				<LocalizedMessage parseHtml id={`${id}.description`} />
 			</Modal>

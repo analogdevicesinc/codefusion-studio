@@ -15,13 +15,16 @@
 import {useState, useMemo, useEffect} from 'react';
 import {TextField} from 'cfs-react-library';
 import {usePinConfigError} from '../../../../state/slices/pins/pins.selector';
-import {generateValidationErrorType} from '../../../../utils/validate-inputs';
+import {generateValidationErrorType} from '@common/utils/validate-inputs';
 import {useAppDispatch} from '../../../../state/store';
 import {setAppliedSignalControlValue} from '../../../../state/slices/pins/pins.reducer';
 import debounce from 'lodash.debounce';
-import {generateControlErrorMessage} from '../../../../utils/control-errors';
+import {generateControlErrorMessage} from '@common/utils/control-errors';
 import {SET_INSTRUCTION} from '../../../../utils/soc-controls';
-import type {ControlErrorTypes} from '../../../../types/errorTypes';
+import type {
+	ControlErrorTypes,
+	TControlTypes
+} from '@common/types/errorTypes';
 import type {ControlCfg} from '@common/types/soc';
 
 type PinconfigControlInputProps = {
@@ -104,7 +107,7 @@ export default function PinconfigControlInput({
 
 		const inputData = {
 			content: e,
-			controlType: Type,
+			controlType: Type as TControlTypes,
 			minVal: MinimumValue,
 			maxVal: MaximumValue,
 			pattern: Pattern

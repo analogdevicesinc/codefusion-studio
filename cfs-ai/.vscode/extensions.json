@@ -1,0 +1,11 @@
+{
+    "recommendations": [
+        "EditorConfig.EditorConfig",
+        "tamasfe.even-better-toml",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "ms-python.debugpy",
+        "matangover.mypy",
+        "charliermarsh.ruff",
+    ]
+}

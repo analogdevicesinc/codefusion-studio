@@ -74,6 +74,7 @@ export default function Tooltip({
 
 	return (
 		<div
+			data-test='tooltip:container'
 			className={styles.tooltipContainer}
 			style={{
 				position: containerPosition ? containerPosition : 'absolute'
@@ -103,7 +104,9 @@ export default function Tooltip({
 						top: position.top
 					}}
 				>
-					{content?.title && <h3>{content?.title}</h3>}
+					{content?.title && (
+						<h3 data-test='tooltip:title'>{content?.title}</h3>
+					)}
 					{content?.description && (
 						<div
 							// Since the JSON is stored inside the code base there aren't security concerns

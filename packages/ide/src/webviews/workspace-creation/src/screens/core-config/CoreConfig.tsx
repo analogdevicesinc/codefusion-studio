@@ -18,14 +18,26 @@ import CoreConfigContainer from './CoreConfigContainer';
 import WorkspaceCreationLayout from '../../common/components/WorkspaceCreationLayout';
 import {ProgressRing} from 'cfs-react-library';
 import {fetchPlugins} from '../../utils/api';
+import CoreConfigHeader from './core-config-header/CoreConfigHeader';
+import {
+	useConfiguredCore,
+	useSelectedCoreToConfigId
+} from '../../state/slices/workspace-config/workspace-config.selector';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../common/contexts/LocaleContext';
 
 export default function CoreConfig() {
+	const l10n: TLocaleContext | undefined = useLocaleContext();
 	const pluginsPromise = useMemo(async () => fetchPlugins(), []);
+	const coreId = useSelectedCoreToConfigId();
+	const core = useConfiguredCore(coreId ?? '');
 
 	return (
 		<WorkspaceCreationLayout
-			title='Core Configuration'
-			description='Please select your platform and the associated options.'
+			title={<CoreConfigHeader core={core} />}
+			description={l10n?.['platform-option']?.description}
 		>
 			<Suspense fallback={<ProgressRing />}>
 				<CoreConfigContainer pluginsPromise={pluginsPromise} />

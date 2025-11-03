@@ -4,25 +4,24 @@
 		{
 			"label": "cfgtools: build",
 			"type": "shell",
-			"command": "yarn vite:extension && yarn cfgtools:build",
+			"command": "yarn cfgtools:build-dev",
+			"isBackground": true,
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
 			"problemMatcher": [
 				{
-					"pattern": [
-						{
-							"regexp": ".*",
-							"file": 1,
-							"location": 2,
-							"message": 3
-						}
-					],
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
 					"background": {
 						"activeOnStart": true,
-						"beginsPattern": ".",
-						"endsPattern": "."
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
 					}
 				}
 			],
@@ -31,7 +30,87 @@
 				"panel": "shared",
 				"showReuseMessage": true,
 				"clear": true
-			}
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "wrksp: build",
+			"type": "shell",
+			"command": "yarn wrksp:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"owner": "vite",
+					"pattern": {
+						"regexp": "vite v[0-9\\.]+ building",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "home-page: build",
+			"type": "shell",
+			"command": "yarn ws:ide home-page:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "extension: build",
+			"type": "shell",
+			"command": "yarn vite:extension",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["cfs-lib: build"]
 		},
 		{
 			"label": "ide: build",
@@ -87,23 +166,61 @@
 			}
 		},
 		{
-			"label": "wrksp: build",
+			"label": "ide: deps",
 			"type": "shell",
-			"command": "yarn vite:extension && yarn wrksp:build",
+			"command": "yarn install --immutable && yarn ws:ide build-local-deps",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "cfs-lib: build",
+			"type": "shell",
+			"command": "yarn ws:lib build-dev",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			// problem matcher for tsc builds in watch mode
 			"problemMatcher": [
 				{
-					"pattern": [
-						{
-							"regexp": ".*",
-							"file": 1,
-							"location": 2,
-							"message": 3
-						}
-					],
+					"owner": "typescript",
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
 					"background": {
 						"activeOnStart": true,
-						"beginsPattern": ".",
-						"endsPattern": "."
+						// [11:37:14 AM] Starting compilation in watch mode...
+						"beginsPattern": ".*Starting compilation in watch mode...",
+						// [11:37:16 AM] Found 0 errors. Watching for file changes.
+						"endsPattern": ".*Found \\d+ errors?\\. Watching for file changes\\."
+					}
+				}
+			]
+		},
+		{
+			"label": "react-lib: build",
+			"type": "shell",
+			"command": "yarn ws:react-lib build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
 					}
 				}
 			],
@@ -113,14 +230,38 @@
 			}
 		},
 		{
-			"label": "ide: deps",
+			"label": "system-planner: build",
 			"type": "shell",
-			"command": "yarn install --immutable && yarn ws:ide build-local-deps",
+			"command": "echo 'Building system planner dev environment...'",
 			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"dependsOn": [
+				"extension: build",
+				"cfgtools: build",
+				"wrksp: build",
+				"cfs-lib: build",
+				"react-lib: build",
+				"home-page: build"
+			],
+			"dependsOrder": "parallel"
 		}
 	]
 }

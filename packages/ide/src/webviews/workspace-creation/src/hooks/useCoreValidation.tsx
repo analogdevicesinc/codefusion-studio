@@ -43,6 +43,24 @@ const isCoreInErrorState = (
 	return Array.from(errorTypes);
 };
 
+const getPrimaryCoreError = (
+	selectedCores: Record<string, StateProject>
+): string[] => {
+	// Filter to only include base cores (not secure/non-secure variants)
+	const baseCores = Object.values(selectedCores).filter(
+		core =>
+			!core.id.endsWith('-secure') && !core.id.endsWith('-nonsecure')
+	);
+
+	const primaryCore = baseCores.find(core => core.isPrimary);
+
+	if (primaryCore && !primaryCore.isEnabled) {
+		return [ERROR_TYPES.noPrimaryCoreEnabled];
+	}
+
+	return [];
+};
+
 export default function useCoreValidation() {
 	const coresErrors = useConfigurationErrors('cores');
 
@@ -68,6 +86,7 @@ export default function useCoreValidation() {
 
 	return {
 		isCoreInErrorState,
+		getPrimaryCoreError,
 		isCoreCardErrorState
 	};
 }

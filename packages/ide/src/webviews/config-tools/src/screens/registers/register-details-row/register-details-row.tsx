@@ -93,7 +93,7 @@ export function RegisterDetailsRow({
 								{field.documentation}
 							</p>
 						)}
-						{field.enumVals?.map((value, i) => (
+						{field.enumVals?.map(value => (
 							<p key={value.id}>
 								{value.value}: {value.documentation}
 							</p>

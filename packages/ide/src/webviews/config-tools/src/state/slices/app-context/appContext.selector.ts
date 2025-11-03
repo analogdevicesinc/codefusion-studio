@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * limitations under the License.
  *
  */
+import type {SocCoreMemory} from 'cfs-plugins-api';
 import {type MemoryBlock} from '../../../../../common/types/soc';
 import {
 	getProjectInfoList,
@@ -25,6 +26,16 @@ import {usePartitions} from '../partitions/partitions.selector';
 
 export const useActiveScreen = () =>
 	useAppSelector(state => state.appContextReducer.activeScreen);
+
+export const useActiveScreenSubScreens = () =>
+	useAppSelector(
+		state => state.appContextReducer.activeScreenSubscreens
+	);
+
+export const useActiveScreenSubscreen = () =>
+	useAppSelector(
+		state => state.appContextReducer.activeScreenSubscreen
+	);
 
 export const useActiveConfiguredSignal = () =>
 	useAppSelector(
@@ -133,10 +144,61 @@ export const useFilteredCores = (): ProjectInfo[] => {
 
 				return (
 					memoryTypeFilter.length === 0 ||
-					dataModelCore?.Memory.some(memoryBlock =>
-						memoryTypeFilter.includes(memoryBlock.Type)
+					dataModelCore?.Memory.filter(
+						memoryBlock => 'Type' in memoryBlock
+					).some(memoryBlock =>
+						memoryTypeFilter.includes(
+							(memoryBlock as SocCoreMemory).Type
+						)
 					)
 				);
 			}) ?? []
 	);
 };
+
+export const useMemoryScreenActiveView = () =>
+	useAppSelector(
+		state => state.appContextReducer.memoryScreen.activeView
+	);
+
+export const useOpenProjectCards = () =>
+	useAppSelector(
+		state => state.appContextReducer.memoryScreen.openProjectCards
+	);
+
+export const useOpenTypeCards = () =>
+	useAppSelector(
+		state => state.appContextReducer.memoryScreen.openTypeCards
+	);
+
+export function useIsProjectSelectionView() {
+	return useAppSelector(
+		state => state.appContextReducer.isProjectSelectionView
+	);
+}
+
+export function useNewPeripheralAssignment() {
+	return useAppSelector(
+		state => state.appContextReducer.newPeripheralAssignment
+	);
+}
+
+export function useNewSignalAssignment() {
+	return useAppSelector(
+		state => state.appContextReducer.newSignalAssignment
+	);
+}
+
+export function usePeripheralErrorCount(peripheral: string) {
+	return useAppSelector(
+		state =>
+			state.appContextReducer.peripheralErrorCount[peripheral]
+				?.totalErrors ?? 0
+	);
+}
+
+export function usePeripheralScreenOpenProjectCards() {
+	return useAppSelector(
+		state => state.appContextReducer.peripheralScreen.openProjectCards
+	);
+}

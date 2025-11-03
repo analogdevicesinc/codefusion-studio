@@ -13,29 +13,27 @@
  *
  */
 
-import type {Package, PinCanvas} from '@common/types/soc';
-import {getPinCanvas as getPinCanvasApi} from './api';
+import type {PinCanvas} from '@common/types/soc';
+import {getCachedSocPackage} from './soc-pins';
 
 export let pinCanvas: PinCanvas | undefined;
 
-if (import.meta.env.MODE === 'development') {
-	pinCanvas =
-		(window as any).__DEV_SOC__?.Packages[0]?.PinCanvas ?? [];
-} else {
-	pinCanvas = await getPinCanvasApi();
+/**
+ * Initializes the pin canvas with the provided PinCanvas.
+ * Should be called once at app startup.
+ */
+export function initializePinCanvas(
+	pinCanvasData: PinCanvas | undefined
+) {
+	pinCanvas = pinCanvasData;
 }
 
 // Function to get pinCanvas with fallback to localStorage
 export function getPinCanvas() {
 	if (!pinCanvas) {
-		// Attempt to populate the pin canvas from localStorage (for testing purposes)
-		const localStoragePackage = localStorage.getItem('Package');
+		const socPackage = getCachedSocPackage();
 
-		if (localStoragePackage) {
-			const parsedPackage: Package = JSON.parse(localStoragePackage);
-
-			pinCanvas = parsedPackage?.PinCanvas;
-		}
+		pinCanvas = socPackage?.PinCanvas;
 	}
 
 	return pinCanvas;

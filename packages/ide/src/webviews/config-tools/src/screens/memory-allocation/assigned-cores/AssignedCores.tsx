@@ -29,30 +29,33 @@ import {
 	type ProjectInfo
 } from '../../../utils/config';
 import {useMemo} from 'react';
+import {
+	useActivePartitionProjects,
+	useActivePartitionType
+} from '../../../state/slices/partitions/partitions.selector';
 
-type AssignedCoresSectionProps = {
-	readonly assignedCores: PartitionCore[];
-	readonly errors: {
+type AssignedCoresSectionProps = Readonly<{
+	errors: {
 		displayName: string;
 		type: string;
 		cores: string;
 		startAddress: string;
 		size: string;
 	};
-	readonly memoryType: string;
-	readonly onCoreChange: (cores: PartitionCore[]) => void;
-};
+	onCoreChange: (cores: PartitionCore[]) => void;
+}>;
 
 export function AssignedCoresSection({
-	assignedCores,
 	errors,
-	memoryType,
 	onCoreChange
 }: AssignedCoresSectionProps) {
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.memory?.['user-partition'];
 	const socCores = getSocCoreList();
 	const projects = getProjectInfoList();
+	const assignedCores = useActivePartitionProjects() ?? [];
+	const memoryType = useActivePartitionType() ?? '';
+
 	const sortedCores = [...assignedCores].sort((a, b) =>
 		a.projectId.localeCompare(b.projectId)
 	);
@@ -78,7 +81,7 @@ export function AssignedCoresSection({
 				);
 
 				return socCore?.Memory.some(
-					memory => memory.Type === memoryType
+					memory => 'Type' in memory && memory.Type === memoryType
 				);
 			})
 			.map(project => ({

@@ -13,13 +13,160 @@
  *
  */
 @use '../../../styles/layout';
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layouts;
 
 .accordionContainer {
 	--accordion-body-padding: 0 12px 0 32px;
 	--accordion-body-margin: 0 0 4px 0;
+	& section:first-of-type:hover {
+		background-color: colors.$list-hover-background;
+		& svg {
+			visibility: visible;
+		}
+		& svg:hover {
+			background-color: inherit;
+			cursor: pointer;
+			border-radius: 4px;
+		}
+	}
+
+	&.selected {
+		& section:first-of-type:hover {
+			& svg {
+				visibility: visible;
+			}
+		}
+
+		& section:last-of-type {
+			padding: 0;
+		}
+	}
+}
+
+.accordionContainer.lasthovered {
+	& section:first-of-type {
+		background-color: colors.$list-hover-background;
+	}
+}
+
+.peripheralSignalsContainer {
+	width: 100%;
+	> div {
+		padding-left: 32px;
+		padding-right: 7px;
+		&:hover {
+			background-color: colors.$list-hover-background;
+
+			& svg {
+				visibility: visible;
+			}
+		}
+	}
 }
 
 .focused {
 	position: relative;
 	z-index: calc(layout.$sidebar-backdrop-z-index + 1);
+}
+
+.config {
+	& svg {
+		width: 14px;
+		height: 14px;
+		padding: 2px;
+		visibility: hidden;
+	}
+}
+
+.noGroupContainer {
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid colors.$default-border;
+	padding-left: 25px;
+	padding-right: 12px;
+	color: colors.$default-foreground;
+	border-left: 2px solid transparent;
+	@include fonts.body-b3;
+
+	& svg:hover {
+		background-color: colors.$default-background;
+		cursor: pointer;
+		border-radius: 4px;
+	}
+}
+
+.noGroupTitleContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 6px 8px;
+	padding-right: 12px;
+	min-height: 36px;
+	width: 100%;
+	box-sizing: border-box;
+	.noGroupTitle {
+		@include fonts.heading-h5;
+		text-transform: uppercase;
+	}
+	.core {
+		--allocated-core-foreground: var(
+			--vscode-disabledForeground,
+			#808080
+		);
+	}
+}
+
+.actionButton {
+	position: relative;
+	display: flex;
+	gap: 6px;
+	padding-right: 5px;
+	cursor: pointer;
+	.configureButton {
+		svg {
+			width: 14px;
+			height: 14px;
+		}
+	}
+	& svg {
+		visibility: hidden;
+		width: 10px;
+		height: 12px;
+		padding: 2px;
+	}
+	& svg:hover {
+		background-color: colors.$default-background;
+		cursor: pointer;
+	}
+}
+
+.tooltip {
+	position: fixed;
+	display: flex;
+	padding: 5px 8px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	border: 0.5px solid colors.$default-border;
+	border-radius: 2px;
+	background-color: colors.$default-background;
+	box-shadow: layouts.$default-shadow;
+}
+
+.highlight {
+	background-color: colors.$list-hover-background;
+	transition: background-color 0.8s ease;
+}
+
+.peripheralGroupListItem {
+	&:hover {
+		background-color: colors.$list-hover-background;
+		& svg {
+			visibility: visible;
+		}
+	}
 }

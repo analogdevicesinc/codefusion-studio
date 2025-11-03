@@ -13,7 +13,7 @@
       "ProjectId": "CM4",
       "FirmwarePlatform": "msdk",
       "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginVersion": "1.1.0",
       "ExternallyManaged": false,
       "Partitions": [],
       "Peripherals": [

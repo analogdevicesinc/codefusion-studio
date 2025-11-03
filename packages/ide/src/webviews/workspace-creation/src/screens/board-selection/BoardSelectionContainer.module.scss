@@ -28,6 +28,18 @@
 		gap: 40px;
 		width: 100%;
 
+		.separator {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			align-self: stretch;
+			span {
+				@include fonts.heading-h6;
+				text-transform: uppercase;
+				color: colors.$description-foreground;
+			}
+		}
+
 		.list {
 			display: flex;
 			flex-direction: column;

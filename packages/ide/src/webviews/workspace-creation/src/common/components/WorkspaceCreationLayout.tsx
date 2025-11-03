@@ -13,28 +13,45 @@
  *
  */
 
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import WorkspaceStepper from './workspace-stepper/workspace-stepper';
+
 import styles from './WorkspaceCreationLayout.module.scss';
-import SingleColumnLayout from '../../../../config-tools/src/components/secondary-layout/SecondaryLayout';
 
 function WorkspaceCreationLayout(
 	props: Readonly<{
-		title: string;
+		testId?: string | undefined;
+		title: string | React.ReactNode;
 		description: string;
 		children: React.ReactNode;
 	}>
 ) {
+	const isTitleString = typeof props.title === 'string';
+
 	return (
-		<SingleColumnLayout
-			body={
-				<div className={styles.workspaceLayoutMainPanel}>
-					<div className={styles.layoutHeader}>
+		<CfsTwoColumnLayout>
+			<section
+				slot='side-panel'
+				className={styles.workspaceLayoutSidePanel}
+			>
+				<WorkspaceStepper />
+			</section>
+
+			<section
+				className={styles.workspaceLayoutMainPanel}
+				data-test={props.testId && `layout:mainPanel:${props.testId}`}
+			>
+				<div className={styles.layoutHeader}>
+					{isTitleString ? (
 						<h1 className={styles.title}>{props.title}</h1>
-						<p className={styles.description}>{props.description}</p>
-					</div>
-					<div className={styles.layoutBody}>{props.children}</div>
+					) : (
+						props.title
+					)}
+					<p className={styles.description}>{props.description}</p>
 				</div>
-			}
-		/>
+				<div className={styles.layoutBody}>{props.children}</div>
+			</section>
+		</CfsTwoColumnLayout>
 	);
 }
 

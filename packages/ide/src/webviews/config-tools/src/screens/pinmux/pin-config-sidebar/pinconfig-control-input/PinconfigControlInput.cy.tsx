@@ -9,17 +9,30 @@ import {
 	setActiveSignal
 } from '../../../../state/slices/peripherals/peripherals.reducer';
 
-const wlp = await import(
-	'../../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+import type {CfsConfig} from 'cfs-plugins-api';
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
+
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	Projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: '',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+} as unknown as CfsConfig;
 
 describe('Pinconfig Input Field', () => {
-	before(() => {
-		localStorage.setItem('Package', JSON.stringify(wlp.Packages[0]));
-	});
-
 	it('Should display an error message when an invalid text is provided.', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		const store = configurePreloadedStore(wlp, configDict);
 
 		store.dispatch(setActivePeripheral('GPIO0'));
 		store.dispatch(
@@ -98,7 +111,7 @@ describe('Pinconfig Input Field', () => {
 	});
 
 	it('Should not display an error message when there is no pattern provided.', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		const store = configurePreloadedStore(wlp, configDict);
 
 		store.dispatch(setActivePeripheral('GPIO0'));
 		store.dispatch(

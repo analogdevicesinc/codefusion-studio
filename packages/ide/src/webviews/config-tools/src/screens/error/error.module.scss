@@ -1,0 +1,76 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+
+.errorContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	gap: 12px;
+
+	.errorMessage {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		max-width: 566px;
+		gap: 4px;
+
+		.messageTitle {
+			@include fonts.heading-h4;
+		}
+
+		.messageBody {
+			text-align: center;
+			white-space: pre-line;
+		}
+
+		.errorList {
+			display: flex;
+			flex-direction: column;
+			max-width: 300px;
+			gap: 4px;
+		}
+	}
+
+	.linkContainer {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+		cursor: pointer;
+
+		.quick-access-icon {
+			position: relative;
+			width: 20px;
+			height: 20px;
+		}
+
+		.linkText {
+			font-size: 13px;
+			font-weight: 400;
+			color: var(--vscode-textLink-foreground);
+		}
+
+		.linkSpan {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			color: var(--vscode-textLink-foreground);
+		}
+	}
+}

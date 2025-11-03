@@ -25,7 +25,7 @@
 		display: flex;
 		margin: layout.$elf-memory-visual-margin;
 		height: calc(
-			100vh - 205px
+			920px - 205px
 		); // Total height of the viewport without the values for margin, padding and gap
 		flex: 1.8;
 		gap: 2px;

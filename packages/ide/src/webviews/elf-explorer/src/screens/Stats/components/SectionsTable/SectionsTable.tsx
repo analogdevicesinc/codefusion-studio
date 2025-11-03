@@ -129,7 +129,10 @@ export default function SectionsTable({
 	};
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='stats:sections-container'
+		>
 			<div className={styles.title}>
 				<HeaderWithTooltip title={i10n?.title} i10n={i10n} />
 			</div>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import type {
 import {isPinReserved} from '../../../utils/is-pin-reserved';
 import type {Filter} from '../../../state/slices/app-context/appContext.reducer';
 import {getConfigurablePins} from '../../../utils/soc-pins';
+import {pinInConflict} from '../../../utils/pin-error';
 
 const updatePins = (
 	pins: Record<
@@ -34,10 +35,10 @@ const updatePins = (
 
 	if (appliedSignalsCount === 0) {
 		pins.available.push(pin);
-	} else if (appliedSignalsCount === 1) {
-		pins.assigned.push(pin);
-	} else {
+	} else if (pinInConflict(appliedSignals)) {
 		pins.conflict.push(pin);
+	} else {
+		pins.assigned.push(pin);
 	}
 };
 

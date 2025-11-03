@@ -16,6 +16,10 @@
 import ChevronRight from '@common/icons/ChevronRight';
 import styles from './ConfigSection.module.scss';
 import {useState} from 'react';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../../common/contexts/LocaleContext';
 
 function ConfigSection({
 	title,
@@ -38,6 +42,8 @@ function ConfigSection({
 		initialExpanded ?? false
 	);
 
+	const l10n: TLocaleContext | undefined = useLocaleContext();
+
 	const handleClickEvent = () => {
 		if (isUnavailable || variant === 'noChevron') return;
 
@@ -58,7 +64,14 @@ function ConfigSection({
 				onClick={handleClickEvent}
 			>
 				<h5>{title}</h5>
-				<ChevronRight />
+				<div className={styles.manage}>
+					{variant === 'navigate' && (
+						<span>
+							{l10n?.peripherals?.['pin-assignment']?.manage}
+						</span>
+					)}
+					<ChevronRight />
+				</div>
 			</div>
 			<div className={`${isExpanded ? '' : styles.collapsed}`}>
 				{children}

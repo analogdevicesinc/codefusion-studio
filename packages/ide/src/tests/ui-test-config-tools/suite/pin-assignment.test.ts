@@ -12,85 +12,64 @@
  * limitations under the License.
  *
  */
-import { By, VSBrowser, WebView } from "vscode-extension-tester";
+import { VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import {
+  assignedFilterControl,
+  availableFilterControl,
+  conflictFilterControl,
+  pinTab,
+} from "../page-objects/main-menu";
+import {
+  signalConflictIcon,
+  mainPanelPinOnLineAndColumn,
+  pinDetailsContainer,
+  signalToggleWithIndex,
+} from "../page-objects/pin-config-section/pin-config-screen";
 
 describe("Pin Assignment", () => {
   let view: WebView;
-
-  // after(async function () {
-  //   this.timeout(60000);
-
-  //   await view.switchBack();
-
-  //   const wb = new Workbench();
-
-  //   await wb.wait();
-
-  //   await wb.executeCommand("revert and close editor");
-  // });
 
   // @TODO: Enable back when filter controls are enabled.
   it.skip(
     "Assigns signals to pins and updates the UI according to the current pin state",
     async () => {
-      await VSBrowser.instance.openResources(
-        path.join(
-          "src",
-          "tests",
-          "ui-test-config-tools",
-          "fixtures",
-          "max32690-tqfn.cfsconfig",
-        ),
-      );
+      const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+      await VSBrowser.instance.openResources(configPath);
 
       view = new WebView();
-
       await view.wait();
-
       await view.switchToFrame();
 
-      const navItem = await view.findWebElement(By.css(`#pinmux`));
-
-      await navItem.click().then(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      await (await view.findWebElement(pinTab)).click().then(async () => {
+        await UIUtils.sleep(3000);
         const pin = await view.findWebElement(
-          By.css(
-            "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
-          ),
+          await mainPanelPinOnLineAndColumn(1, 2),
         );
 
-        const assignedFilterControl = await view.findWebElement(
-          By.css("#filterControl-assigned"),
+        const assignedFilter = await UIUtils.findWebElement(
+          view,
+          assignedFilterControl,
         );
-
-        const availableFilterControl = await view.findWebElement(
-          By.css("#filterControl-available"),
+        const availableFilter = await UIUtils.findWebElement(
+          view,
+          availableFilterControl,
         );
-
-        const conflictFilterControl = await view.findWebElement(
-          By.css("#filterControl-conflicts"),
+        const conflictFilter = await UIUtils.findWebElement(
+          view,
+          conflictFilterControl,
         );
 
         expect(await pin.getAttribute("class")).to.contain("unassigned");
-
-        expect(await assignedFilterControl.getAttribute("data-value")).to.eq(
-          "30",
-        );
-
-        expect(await availableFilterControl.getAttribute("data-value")).to.eq(
-          "38",
-        );
-
-        expect(await conflictFilterControl.getAttribute("disabled")).to.eq(
-          "true",
-        );
+        expect(await assignedFilter.getAttribute("data-value")).to.eq("30");
+        expect(await availableFilter.getAttribute("data-value")).to.eq("38");
+        expect(await conflictFilter.getAttribute("disabled")).to.eq("true");
 
         await pin.click().then(async () => {
-          // assert pin details sidebar is rendered
-          expect(await view.findWebElement(By.css("#details-container"))).to
-            .exist;
+          // Assert pin details sidebar is rendered
+          expect(await view.findWebElement(pinDetailsContainer)).to.exist;
 
           await new Promise((res) => {
             setTimeout(res, 500);
@@ -98,97 +77,56 @@ describe("Pin Assignment", () => {
         });
 
         const firstSignalToggle = await view.findWebElement(
-          By.css(
-            "#pin-details-signals-container > div:nth-child(1) > section > label",
-          ),
+          await signalToggleWithIndex(1),
         );
-
         const secondSignalToggle = await view.findWebElement(
-          By.css(
-            "#pin-details-signals-container > div:nth-child(2) > section > label",
-          ),
+          await signalToggleWithIndex(2),
         );
 
-        // assert counters are updated
-        expect(await availableFilterControl.getAttribute("data-value")).to.eq(
-          "1",
-        );
+        // Assert counters are updated
+        expect(await availableFilter.getAttribute("data-value")).to.eq("1");
+        expect(await assignedFilter.getAttribute("disabled")).to.eq("true");
+        expect(await conflictFilter.getAttribute("disabled")).to.eq("true");
 
-        expect(await assignedFilterControl.getAttribute("disabled")).to.eq(
-          "true",
-        );
-
-        expect(await conflictFilterControl.getAttribute("disabled")).to.eq(
-          "true",
-        );
-
-        firstSignalToggle.click().then(async function () {
-          // assert single pin assignment renders as assigned
+        firstSignalToggle.click().then(async () => {
+          // Assert single pin assignment renders as assigned
           expect(await pin.getAttribute("class")).to.contain("assigned");
 
-          // assert counters are updated
-          expect(await availableFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
-
-          expect(await assignedFilterControl.getAttribute("data-value")).to.eq(
-            "1",
-          );
-
-          expect(await conflictFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
+          // Assert counters are updated
+          expect(await availableFilter.getAttribute("disabled")).to.eq("true");
+          expect(await assignedFilter.getAttribute("data-value")).to.eq("1");
+          expect(await conflictFilter.getAttribute("disabled")).to.eq("true");
 
           await new Promise((res) => {
             setTimeout(res, 500);
           });
         });
 
-        secondSignalToggle.click().then(async function () {
-          // assert double pin assignemnt renders a conflict
+        secondSignalToggle.click().then(async () => {
+          // Assert double pin assignemnt renders a conflict
           expect(await pin.getAttribute("class")).to.contain("conflict");
-
-          // assert conflict icons are rendered
-          expect(await view.findWebElement(By.css("div#signal-WS-conflict"))).to
+          // Assert conflict icons are rendered
+          expect(await view.findWebElement(await signalConflictIcon("WS"))).to
             .exist;
-
-          expect(await view.findWebElement(By.css("div#signal-SS1-conflict")))
-            .to.exist;
-
-          // assert counters are updated
-          expect(await availableFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
-
-          expect(await assignedFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
-
-          expect(await conflictFilterControl.getAttribute("data-value")).to.eq(
-            "1",
-          );
+          expect(await view.findWebElement(await signalConflictIcon("SS1"))).to
+            .exist;
+          // Assert counters are updated
+          expect(await availableFilter.getAttribute("disabled")).to.eq("true");
+          expect(await assignedFilter.getAttribute("disabled")).to.eq("true");
+          expect(await conflictFilter.getAttribute("data-value")).to.eq("1");
 
           await new Promise((res) => {
             setTimeout(res, 500);
           });
         });
 
-        firstSignalToggle.click().then(async function () {
-          // assert app is able to resolve conflict
+        firstSignalToggle.click().then(async () => {
+          // Assert app is able to resolve conflict
           expect(await pin.getAttribute("class")).to.contain("assigned");
-
-          // assert counters are updated
-          expect(await availableFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
-
-          expect(await assignedFilterControl.getAttribute("data-value")).to.eq(
-            "1",
-          );
-
-          expect(await conflictFilterControl.getAttribute("disabled")).to.eq(
-            "true",
-          );
+          // Assert counters are updated
+          expect(await availableFilter.getAttribute("disabled")).to.eq("true");
+          expect(await assignedFilter.getAttribute("data-value")).to.eq("1");
+          expect(await conflictFilter.getAttribute("disabled")).to.eq("true");
 
           await new Promise((res) => {
             setTimeout(res, 500);

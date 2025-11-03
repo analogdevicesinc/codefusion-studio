@@ -28,7 +28,7 @@ import { LowDBDataStore } from './data.js';
 import { CfsApiClient } from '../sdk/cfsapi-client.js';
 import { DataStore, CatalogError, DataStoreError } from './types.js';
 import { RequireOptional } from '../types.js';
-import { LIB_NAME, LIB_VERSION } from '../config/constants.js';
+import { LIB_NAME, LIB_VERSION } from '../config/constants.cjs';
 
 // Any object that is returned by the REST client
 type RestObject = {
@@ -115,7 +115,7 @@ export abstract class Catalog<T extends RestEntity>
     private readonly cleanTmp: boolean;
     private readonly primaryStore: DataStore;
     private readonly tempStore: DataStore;
-    protected abstract itemParser: z.ZodSchema<T>;
+    protected abstract readonly itemParser: z.ZodSchema<T>;
     public readonly ZIP_FILE_MEMBER: string;
 
     /**
@@ -399,11 +399,11 @@ export abstract class Catalog<T extends RestEntity>
 
     /**
      * Exports catalog contents to the given zip file; this is suitable for use with the `import()` function in this class.
-     * Creates a zip file with a JSON file named `this.ZIP_FILE_MEMBER` at the root containing the catalog data.
+     * Create or updates a zip file with a JSON file named `this.ZIP_FILE_MEMBER` at the root containing the catalog data.
      * Schema of the created JSON file:
      * ```json
      * {
-     *    "items": [ {Item}, {Item}, ... ],
+     *    "${this.entityTag}": [ {Item}, {Item}, ... ],
      *    "exportDate": "ISO8601 date string",
      *    "libName": "string",
      *    "libVersion": "semver string"
@@ -416,6 +416,7 @@ export abstract class Catalog<T extends RestEntity>
      */
     public async export(zipFilePath: string): Promise<void> {
         try {
+            zipFilePath = path.resolve(zipFilePath);
             const data = {
                 // do not include extra keys (exported data should match lib version)
                 [this.entityTag]: await this.getAll(),
@@ -436,6 +437,11 @@ export abstract class Catalog<T extends RestEntity>
             }
 
             const zip = new JSZip();
+            // Add to or update the zip file if it already exists
+            if (existsSync(zipFilePath)) {
+                // load the existing zip file
+                await zip.loadAsync(fs.readFile(zipFilePath));
+            }
             zip.file(this.ZIP_FILE_MEMBER, JSON.stringify(data));
             const zipStream = zip.generateNodeStream({
                 type: 'nodebuffer',
@@ -466,6 +472,7 @@ export abstract class Catalog<T extends RestEntity>
      */
     public async import(zipFilePath: string): Promise<void> {
         try {
+            zipFilePath = path.resolve(zipFilePath);
             const zip = new JSZip();
             let objs: unknown[];
             let metaObj: unknown;

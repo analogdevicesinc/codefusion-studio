@@ -31,11 +31,11 @@ export default function HeaderInfo({
 		useLocaleContext()?.metadata?.header;
 
 	return (
-		<div className={styles.container}>
-			<HeaderWithTooltip
-				title={i10n?.title || 'Header Info'}
-				i10n={i10n}
-			/>
+		<div
+			className={styles.container}
+			data-test='header-info:container'
+		>
+			<HeaderWithTooltip title={i10n?.title} i10n={i10n} />
 			<ul className={styles.list}>
 				{data.map((item: THeaderInfo) => (
 					<HeaderInfoListItem key={item.label} item={item} />

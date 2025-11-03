@@ -28,6 +28,69 @@ import {Logger} from '../../logger.js';
 
 import Table = require('cli-table3');
 
+export interface MemoryFlags {
+  [flag: string]: unknown;
+  detail: boolean;
+  id: number | undefined;
+  json: boolean;
+  name: string | undefined;
+  section: boolean;
+  segment: boolean;
+  symbol: boolean;
+}
+
+export function generateMemoryJson(
+  md: ElfDataModel,
+  parser: ElfFileParser,
+  flags: MemoryFlags
+): string {
+  let flagsCount: number =
+    Number(flags.segment || 0) +
+    Number(flags.symbol || 0) +
+    Number(flags.section || 0);
+
+  if (flagsCount === 0) {
+    throw new Error(
+      'No flags provided. Please use at least one mandatory flag.'
+    );
+  }
+
+  let jsonString = '\n{\n';
+
+  if (flags.segment) {
+    ({flagsCount, jsonString} = formatSegment(
+      md,
+      parser,
+      flags,
+      flagsCount,
+      jsonString
+    ));
+  }
+
+  if (flags.section) {
+    ({flagsCount, jsonString} = formatSection(
+      md,
+      parser,
+      flags,
+      flagsCount,
+      jsonString
+    ));
+  }
+
+  if (flags.symbol) {
+    ({flagsCount, jsonString} = formatSymbol(
+      md,
+      parser,
+      flags,
+      flagsCount,
+      jsonString
+    ));
+  }
+
+  jsonString += '\n}\n';
+  return jsonString;
+}
+
 export default class Memory extends Command {
   static args = {
     filePath: Args.string({description: 'file path  to read'})
@@ -73,66 +136,31 @@ export default class Memory extends Command {
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(Memory);
 
-    let flagsCount: number =
-      Number(flags.segment || 0) +
-      Number(flags.symbol || 0) +
-      Number(flags.section || 0);
-
-    if (flagsCount === 0) {
+    if (!args.filePath) {
       Logger.logError(
-        'No flags provided. Please use at least one mandatory flag.'
+        'No input file. Please provide a valid file path.'
       );
+      return;
     }
 
-    if (args.filePath) {
-      try {
-        const parser = new ElfFileParser(args.filePath);
-        await parser.initialize();
-        const md = parser.getDataModel();
+    try {
+      const parser = new ElfFileParser(args.filePath);
+      await parser.initialize();
+      const md = parser.getDataModel();
 
-        let jsonString = '\n{\n';
-
-        if (flags.segment) {
-          ({flagsCount, jsonString} = formatSegment(
-            md,
-            parser,
-            flags,
-            flagsCount,
-            jsonString
-          ));
-        }
-
-        if (flags.section) {
-          ({flagsCount, jsonString} = formatSection(
-            md,
-            parser,
-            flags,
-            flagsCount,
-            jsonString
-          ));
-        }
-
-        if (flags.symbol) {
-          ({flagsCount, jsonString} = formatSymbol(
-            md,
-            parser,
-            flags,
-            flagsCount,
-            jsonString
-          ));
-        }
-
-        jsonString += '\n}\n';
-        if (flags.json) {
-          console.log(JSON.parse(jsonString), null, 2);
-        }
-      } catch (error) {
-        Logger.logError(`${error}`);
-      }
-    } else {
-      Logger.logError(
-        `No input file. Please provide a valid file path.`
+      const jsonString = generateMemoryJson(
+        md,
+        parser,
+        flags as MemoryFlags
       );
+
+      if (flags.json) {
+        // The parse and then stringify is for formatting, to facilitate testability with oclif test
+        const obj = JSON.parse(jsonString);
+        console.log(JSON.stringify(obj, null, 2));
+      }
+    } catch (error) {
+      Logger.logError(`${error}`);
     }
   }
 }
@@ -154,8 +182,8 @@ function formatSymbol(
   jsonString: string
 ) {
   let sections = mapSections(md.elfSectionHeaders, md, parser);
-  if (flags.index) {
-    sections = sections.filter((item) => item.id === flags.index);
+  if (flags.id !== undefined) {
+    sections = sections.filter((item) => item.id === flags.id);
   }
 
   if (flags.name) {
@@ -224,8 +252,8 @@ function formatSection(
     parser
   );
   if (segments.length > 0) {
-    if (flags.index) {
-      segments = segments.filter((item) => item.id === flags.index);
+    if (flags.id !== undefined) {
+      segments = segments.filter((item) => item.id === flags.id);
     }
 
     let segmentsCount: number = segments.length;
@@ -293,8 +321,12 @@ function formatSegment(
   flagsCount: number,
   jsonString: string
 ) {
-  const segments = mapSegments(md.elfProgramHeaders, md, parser);
+  let segments = mapSegments(md.elfProgramHeaders, md, parser);
   if (segments.length > 0) {
+    if (flags.id !== undefined) {
+      segments = segments.filter((item) => item.id === flags.id);
+    }
+
     const header: TSegment[] = JSON.parse(JSON.stringify(segments));
 
     // eslint-disable-next-line unicorn/no-array-for-each

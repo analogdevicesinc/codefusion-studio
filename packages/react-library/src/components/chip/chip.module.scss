@@ -19,17 +19,24 @@
 	--button-padding-vertical: var(--chip-padding-vertical, 6px);
 	--button-padding-horizontal: var(--chip-padding-horizontal, 11px);
 	--button-secondary-hover-background: #{colors.$button-primary-hover-background};
-	--badge-background: #{colors.$default-background};
-	--badge-foreground: #{colors.$default-foreground};
 
 	min-width: var(--chip-min-width, 74px);
 	height: var(--chip-height, auto);
+
+	&[appearance='secondary'] {
+		&::part(control) {
+			color: colors.$button-secondary-foreground;
+			background: colors.$button-secondary-background;
+			&:hover {
+				background-color: colors.$button-secondary-hover-background;
+			}
+		}
+	}
 }
 
 .bodyWrapper {
 	display: flex;
 	gap: 4px;
-	color: colors.$button-foreground;
 	text-transform: var(--chip-text-transform, none);
 	font-size: var(--chip-font-size, auto);
 }

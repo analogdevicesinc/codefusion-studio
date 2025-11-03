@@ -13,27 +13,28 @@
  *
  */
 
-import {type Package, type DiagramData} from '../../../common/types/soc';
-import {getClockCanvas as getClockCanvasApi} from './api';
+import {type DiagramData} from '../../../common/types/soc';
+import {getCachedSocPackage} from './soc-pins';
 
 export let canvas: DiagramData | undefined;
 
-if (import.meta.env.MODE === 'development') {
-	canvas = (window as any).__DEV_SOC__.Packages[0].ClockCanvas;
-} else {
-	canvas = await getClockCanvasApi();
+/**
+ * Initializes the clock canvas with the provided DiagramData.
+ * Should be called once at app startup.
+ */
+export function initializeClockCanvas(
+	diagramData: DiagramData | undefined
+) {
+	canvas = diagramData;
 }
 
-// Function to get clockCanvas with fallback to localStorage
+// Function to get clockCanvas from SoC
 export function getClockCanvas() {
 	if (!canvas) {
-		// Attempt to populate the clock canvas from localStorage (for testing purposes)
-		const localStoragePackage = localStorage.getItem('Package');
+		const socPackage = getCachedSocPackage();
 
-		if (localStoragePackage) {
-			const parsedPackage: Package = JSON.parse(localStoragePackage);
-
-			canvas = parsedPackage?.ClockCanvas;
+		if (socPackage) {
+			canvas = socPackage?.ClockCanvas;
 		}
 	}
 

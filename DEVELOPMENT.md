@@ -76,7 +76,7 @@ To debug the CFS IDE extension, select **Run IDE Extension** from the VS Code la
 
 ## Getting help
 
-For more information about the project, see the [User documentation](https://developer.analog.com/docs/codefusion-studio/1.1.0/).
+For more information about the project, see the [User documentation](https://developer.analog.com/docs/codefusion-studio/latest/).
 
 ## Project Structure
 
@@ -99,24 +99,50 @@ The project is configured to access all main scripts used by all workspaces from
 
 After installation, you will get prompted to install some VS Code extensions. Its important to install these extensions in case you are planning to contribute to the code base as they will keep the code consistent with the project's code style.
 
-## Running the UI development server
+## Start the UI or CLI in development mode
 
-To start the UI development environment, you can use vscode's "Run and Debug" (Ctrl + Shift + D). From the dropdown, you can select "Run IDE Extension". This will launch a dedicated instance of vscode with the UI extension pre-installed in it.
+To start the development environment, open the **Run and Debug** panel in VS Code (`Ctrl + Shift + D`).
+From the dropdown, choose one of the following launch configurations:
 
-You can debug the ELF parser with debug option "Run ELF file viewer".
+- **Debug System Planner** – Launches the System Planner and Workspace Creation UI in debug mode.
+This configuration includes inline source maps for the Workspace Creation and System Planner webviews, allowing you to set breakpoints directly in the VS Code **Developer Tools**.
+Use this option for debugging the UI.
+For setup and debug instructions, see [Set up the development environment](./packages/ide/DEVELOPMENT.md).
+- **Run IDE Extension (Production)** – Launches a production build of the UI extension in VS Code.
+This configuration does not include source maps for webviews and is intended to simulate VS Code with the extension installed in a production environment.
+Use this option for final testing or QA purposes.
+- **Debug ELF file explorer webview** – Opens the ELF parser in debug mode.
+- **Execute CLI Dev Command** – Runs the `cfsutil` CLI in development mode and lets you set breakpoints inside CLI source files (for example, `src/commands`). For configuration steps, see [CLI configuration and data model setup](../packages/cli/DEVELOPMENT.md).
+
+> **Note**
+> You can view or edit these configurations in [.vscode/launch.json](.vscode/launch.json).
 
 ## Running test commands of the CLI
 
-A symlink to the CLI package needs to be created globally by yarn. This is done by running the following command from the root:
+A symlink to the CLI package needs to be created globally by yarn. This is done by running the following command from the project root: `yarn ws:cli link`.
+
+Build and test the CLI like this:
 
 ```bash
-cd packages/cli
-yarn link
-yarn build
+yarn ws:cli build-local-deps
+yarn ws:cli build
 yarn cfsutil --help
 ```
 
 This should display the help menu of the CLI with the available commands.
+
+## SoC configuration (using config.json)
+
+The `cfsutil` CLI uses [Oclif configuration](https://oclif.io/docs/config) to load runtime settings. The `dataModelSearchPaths` defines where the CLI should look for SoC data models.
+
+See [CLI development configuration](../packages/cli/DEVELOPMENT.md) for details on how to:
+
+- Set default config locations
+- Override configuration with environment variables
+- Create and use a `config.json` file
+- Set authentication configuration
+- Generate the `.cfsdatamodels` index
+- Debug the CLI with VS Code
 
 ## CLI Plugins
 
@@ -167,43 +193,6 @@ code --install-extension packages/ide/*.vsix
 
 Additionally, a packaged extension is generated with every pull request and uploaded to github artifacts. A link is provided as a comment in each pull request where you can download a zip file containing the extension.
 
-## Running the UI extension
-
-### Configuring the CLI path
-
-To ensure the UI extension functions correctly, it is crucial to configure the path to the CLI in VSCode settings, because the UI extension depends on the CLI to be installed. Follow the next steps to set up the CLI path, making sure you are using the latest version of the CLI to have access to all recent features and fixes.
-
-#### 1: Build the CLI
-
-Start by building the CLI to get the latest version. In your terminal run the following command:
-
-```bash
-yarn ws:cli build
-```
-
-#### 2. Access Settings in VSCode
-
-- macOS: Use the shortcut **⌘,** or navigate through Code > Preferences > Settings.
-- Windows/Linux: navigate through File > Preferences > Settings or Manage > Settings.
-
-#### 3. Set the CLI Path
-
-Within the Settings interface, use the search bar to find 'Pinconfig'. Under the section labeled **Pinconfig > Cfsutil: Path**, input the path to where your CLI is located. Be sure to replace **YOUR_PATH_TO_THE_REPO** with the actual path to your repository:
-
-- macOS/Linux:
-
-```bash
-YOUR_PATH_TO_THE_REPO/packages/cli/bin/run.js
-```
-
-- Windows:
-
-```bash
-YOUR_PATH_TO_THE_REPO/packages/cli/bin/run.cmd
-```
-
-**Note:** Ensure the path is correct to avoid any issues with the CLI integration in VSCode.
-
 ## Building and authoring documentation
 
 Our documentation is authored in [Markdown](https://en.wikipedia.org/wiki/Markdown) using [MkDocs](https://www.mkdocs.org/) to publish the resulting HTML.
@@ -212,21 +201,21 @@ Our documentation is authored in [Markdown](https://en.wikipedia.org/wiki/Markdo
 
 MkDocs requires that [Python](https://www.python.org/downloads/) version 3.10 or greater be installed on your development machine.
 
+Poetry is used to build documentation.
+
 To install MkDocs and related dependencies:
 
 ```sh
-# create a virtual environment
-$ python -m venv .venv
-# activate the virtual environment
-$ source ./venv/bin/activate
-# install dependencies
-$ pip install -r docs/requirements.txt
+# install Poetry if not already available
+$ pip install poetry
+# install all dependencies into a virtual environment
+$ poetry install
 ```
 
 Once installed, you can run MkDocs and view the documentation in your browser:
 
 ```sh
-$ mkdocs serve
+$ poetry run mkdocs serve
 INFO    -  Building documentation...
 INFO    -  Cleaning site directory
 INFO    -  Documentation built in 0.41 seconds

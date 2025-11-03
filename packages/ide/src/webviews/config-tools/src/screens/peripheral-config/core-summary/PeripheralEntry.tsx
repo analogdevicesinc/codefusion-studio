@@ -15,20 +15,23 @@
 
 import ConfigIcon16px from '@common/icons/Config16px';
 import Lock from '@common/icons/Lock';
-import {setActivePeripheral} from '../../../state/slices/peripherals/peripherals.reducer';
+import {
+	removePeripheralAssignment,
+	setActivePeripheral
+} from '../../../state/slices/peripherals/peripherals.reducer';
 import {useAppDispatch} from '../../../state/store';
 import {
 	useActivePeripheral,
-	usePeripheralAllocations,
-	usePeripheralSignalAssignments
+	usePeripheralAllocations
 } from '../../../state/slices/peripherals/peripherals.selector';
-import {Badge} from 'cfs-react-library';
 import styles from './CoreSummaryEntry.module.scss';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {memo} from 'react';
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import {getPeripheralError} from '../../../utils/peripheral-errors';
 import type {ControlCfg} from '../../../../../common/types/soc';
+import Tooltip from '../../../../../common/components/tooltip/Tooltip';
+import {Button, DeleteIcon} from 'cfs-react-library';
 
 type PeripheralEntryProps = Readonly<{
 	projectId: string;
@@ -44,27 +47,6 @@ function PeripheralEntry({
 	controls
 }: PeripheralEntryProps) {
 	const dispatch = useAppDispatch();
-
-	const pinAssignments = useAssignedPins().flatMap(pin =>
-		pin.appliedSignals
-			.filter(signal => signal.Peripheral === peripheralName)
-			.map(signal => ({
-				Name: signal.Name,
-				Peripheral: signal.Peripheral
-			}))
-	);
-	const peripheralAssignedSignals = usePeripheralSignalAssignments(
-		peripheralName,
-		projectId
-	);
-
-	const totalPeripheralSignalsCount =
-		peripheralAssignedSignals.length;
-
-	const peripheralSignalsWithPinAssignmentsCount =
-		peripheralAssignedSignals.filter(signal =>
-			pinAssignments.some(pa => pa.Name === signal.name)
-		).length;
 
 	const isActive =
 		useActivePeripheral(true) === `${peripheralName}:${projectId}`;
@@ -83,43 +65,69 @@ function PeripheralEntry({
 	);
 
 	return (
-		<section className={styles.sectionHeader}>
+		<section
+			id={peripheralName}
+			className={`${styles.sectionHeader} ${isActive ? styles.highlight : ''}`}
+		>
 			<div className={styles.nameSection}>
+				<div className={styles.cardNamePlaceholder} />
 				<h4
 					data-test='peripheral-assignment:name'
 					className={styles.nameHeader}
 				>
 					{peripheralName}
 				</h4>
-				{totalPeripheralSignalsCount > 0 && (
-					<Badge
-						appearance='secondary'
-						dataTest='peripheral-assignment:counter'
-						className={styles.badge}
-					>{`${peripheralSignalsWithPinAssignmentsCount}/${totalPeripheralSignalsCount}`}</Badge>
-				)}
 			</div>
-			<div className={styles.iconWrapper}>
-				{hasPeripheralUnnasignedPinError ? (
-					<ConflictIcon data-test='peripheral-assignment:conflict' />
-				) : null}
-				<ConfigIcon16px
-					data-test='peripheral-assignment:config'
-					data-active={isActive}
-					className={styles.configIcon}
-					onClick={() => {
-						dispatch(
-							setActivePeripheral(`${peripheralName}:${projectId}`)
-						);
-					}}
-				/>
-				{preassigned ? (
-					<Lock
-						data-test={`core:${projectId}:allocation:lock-icon`}
-					/>
-				) : (
-					<span className={styles.iconPlaceholder} />
-				)}
+			<div className={styles.actionButtons}>
+				<div className={styles.iconWrapper}>
+					{hasPeripheralUnnasignedPinError ? (
+						<div className={styles.conflictIconWrapper}>
+							<ConflictIcon data-test='peripheral-assignment:conflict' />
+						</div>
+					) : (
+						<div className={styles.iconPlaceholder} />
+					)}
+					<Tooltip title='Configure' type='long'>
+						<Button
+							className={`${styles.configIcon} ${isActive ? styles.isActive : ''}`}
+							appearance='icon'
+							onClick={() => {
+								dispatch(
+									setActivePeripheral(
+										`${peripheralName}:${projectId}`
+									)
+								);
+							}}
+						>
+							<ConfigIcon16px data-test='peripheral-assignment:config' />
+						</Button>
+					</Tooltip>
+					{preassigned ? (
+						<Lock
+							data-test={`core:${projectId}:allocation:lock-icon`}
+							className={styles.lockIcon}
+						/>
+					) : (
+						<Tooltip title='Remove' type='long'>
+							<Button
+								className={styles.deleteIcon}
+								appearance='icon'
+								onClick={() => {
+									dispatch(
+										removePeripheralAssignment({
+											peripheral: peripheralName
+										})
+									);
+									dispatch(setActivePeripheral(undefined));
+								}}
+							>
+								<DeleteIcon
+									data-test={`core:${projectId}-${peripheralName}:allocation:delete-icon`}
+								/>
+							</Button>
+						</Tooltip>
+					)}
+				</div>
 			</div>
 		</section>
 	);

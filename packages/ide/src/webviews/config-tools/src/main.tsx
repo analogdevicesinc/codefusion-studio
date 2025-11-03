@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,30 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../../../../react-library/src/styles/index.scss';
+import ErrorView, {WebviewError} from './Error';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-	<React.StrictMode>
-		<App />
-	</React.StrictMode>
-);
+const root = document.getElementById('root');
+const errorDiv = document.getElementById('error');
+
+if (errorDiv) {
+	const rawError = errorDiv.getAttribute('data-error');
+	let error: WebviewError;
+
+	try {
+		error = rawError ? JSON.parse(rawError) : [];
+	} catch {
+		error = {type: 'unknown', body: 'unknown error'};
+	}
+
+	ReactDOM.createRoot(errorDiv).render(
+		<React.StrictMode>
+			<ErrorView error={error} />
+		</React.StrictMode>
+	);
+} else if (root) {
+	ReactDOM.createRoot(root).render(
+		<React.StrictMode>
+			<App />
+		</React.StrictMode>
+	);
+}

@@ -13,7 +13,40 @@
  *
  */
 
-import {type AssignedPin} from '../../../common/types/soc';
+import {
+	type AppliedSignal,
+	type AssignedPin
+} from '../../../common/types/soc';
+import {getSocPinDictionary} from './soc-pins';
+
+export function pinInConflict(
+	signalsForTargetPin: AppliedSignal[]
+): boolean {
+	const pinMap = getSocPinDictionary();
+	const signals = signalsForTargetPin.map(s =>
+		pinMap[s.Pin]?.Signals?.find(
+			s2 => s2.Peripheral === s.Peripheral && s2.Name === s.Name
+		)
+	);
+
+	// Input Tap signals don't create conflicts with function signals on automotive parts.
+	// On automotive parts, GPIO signals don't use the FER register. These do conflict with input tap signals (and function signals).
+	// On MAX parts, there are no input taps. All signals, including GPIOs, conflict. We count them all in Function signals.
+	const numFunctionSignals = signals.filter(
+		s => typeof s?.PinMuxSlot !== 'undefined'
+	).length;
+	const numAutoGpioSignals = signals.filter(
+		s => typeof s?.PinMuxSlot === 'undefined' && !s?.IsInputTap
+	).length;
+	const numInputTapSignals = signals.filter(
+		s => s?.IsInputTap
+	).length;
+
+	return (
+		numFunctionSignals + numAutoGpioSignals > 1 ||
+		numAutoGpioSignals + numInputTapSignals > 1
+	);
+}
 
 export function getAssignedPinErrors(
 	assignedPins: AssignedPin[],
@@ -22,7 +55,7 @@ export function getAssignedPinErrors(
 	let hasFunctionConfigErrors = false;
 
 	for (const pin of assignedPins) {
-		if (pin.appliedSignals.length > 1) {
+		if (pinInConflict(pin.appliedSignals)) {
 			errorCounter++;
 		}
 

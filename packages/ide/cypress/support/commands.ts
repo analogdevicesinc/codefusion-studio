@@ -15,6 +15,8 @@
 import { Soc } from "../../src/webviews/common/types/soc";
 import "cypress-real-events";
 
+import mockedParserJSON from "../fixtures/mockedParser.json";
+
 export {};
 
 declare global {
@@ -24,6 +26,7 @@ declare global {
     interface Chainable {
       dataTest(value: string): Chainable<JQuery>;
       soc(socId: string): Chainable;
+      mockElfParser(): Chainable;
     }
   }
 }
@@ -32,17 +35,6 @@ declare global {
 // cy.dataTest('sidebar')
 Cypress.Commands.add("dataTest", (value) => cy.get(`[data-test="${value}"]`));
 
-/**
- * Custom command to import an soc based on a provided soc id
- * @example cy.soc('max32690-tqfn')
- * @param {string} socId - The soc id to import
- * @returns {Soc} - The imported soc
- */
-Cypress.Commands.add("soc", (socId: string) => {
-  cy.readFile<Soc>(`../../../cli/src/socs/${socId}.json`).then((document) => {
-    (window as any).__DEV_SOC__ = JSON.stringify(document);
-    window.localStorage.setItem("SOC", JSON.stringify(document));
-
-    return document;
-  });
+Cypress.Commands.add("mockElfParser", () => {
+  window.localStorage.setItem("ELFParser", JSON.stringify(mockedParserJSON));
 });

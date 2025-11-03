@@ -1,0 +1,37 @@
+{
+	"Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.  All rights reserved.",
+	"Version": "1.1.44",
+	"Schema": "1.1.0",
+	"Timestamp": "2025-01-15T10:30:00.000Z",
+	"Name": "MAX32657",
+	"Description": "Test fixture for MAX32657",
+	"Parts": [
+		{
+			"Name": "MAX32657",
+			"Package": "WLP"
+		}
+	],
+	"Cores": [
+		{
+			"Id": "CM4",
+			"Name": "ARM Cortex-M4",
+			"CoreNum": 0,
+			"IsPrimary": true
+		}
+	],
+	"Controls": {},
+	"ClockNodes": [],
+	"Peripherals": [],
+	"Registers": [],
+	"Packages": [
+		{
+			"Name": "WLP",
+			"Description": "Wafer Level Package",
+			"NumPins": 36,
+			"Pins": [],
+			"PinCanvas": {},
+			"CoprogrammedSignals": [],
+			"ClockCanvas": {}
+		}
+	]
+}

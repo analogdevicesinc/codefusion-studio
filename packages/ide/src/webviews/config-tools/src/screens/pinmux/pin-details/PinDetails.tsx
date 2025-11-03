@@ -13,7 +13,7 @@
  *
  */
 import {
-	setIsPinFocused,
+	focusPinSet,
 	setPinDetailsTargetPin
 } from '../../../state/slices/pins/pins.reducer';
 import {useAppDispatch} from '../../../state/store';
@@ -22,9 +22,11 @@ import {
 	useFocusedPins,
 	usePinDetailsTargetPin
 } from '../../../state/slices/pins/pins.selector';
-import {memo, useEffect} from 'react';
-import {getSocPinDetails} from '../../../utils/soc-pins';
 import {useSearchString} from '../../../state/slices/app-context/appContext.selector';
+import {memo, useEffect, useMemo} from 'react';
+import {getSocPinDetails} from '../../../utils/soc-pins';
+import {getPeripheralList} from '../../../utils/soc-peripherals';
+import {usePinsGroupByPeripheralSignalPair} from '../../../hooks/use-pins-groupBy-peripherial-signal';
 
 function PinDetails() {
 	const dispatch = useAppDispatch();
@@ -35,24 +37,33 @@ function PinDetails() {
 		pinDetailsTargetPin ?? ''
 	);
 	const searchString = useSearchString('pinconfig');
+	const peripherals = getPeripheralList();
 
-	const targetPins =
-		pinDetailsTargetPin && targetPinDetails ? [targetPinDetails] : [];
+	const targetPins = useMemo(
+		() =>
+			pinDetailsTargetPin && targetPinDetails
+				? [targetPinDetails]
+				: [],
+		[pinDetailsTargetPin, targetPinDetails]
+	);
+
+	const peripheralPinsDict = usePinsGroupByPeripheralSignalPair(
+		targetPins,
+		peripherals
+	);
 
 	const handleBackClick = () => {
 		dispatch(setPinDetailsTargetPin(undefined));
 	};
 
 	useEffect(() => {
-		if (targetPinId && !focusedPins.includes(targetPinId)) {
-			dispatch(setIsPinFocused({id: targetPinId, isFocused: true}));
+		if (targetPinId) {
+			dispatch(focusPinSet([targetPinId]));
 		}
 
 		return () => {
 			if (targetPinId && focusedPins.includes(targetPinId)) {
-				dispatch(
-					setIsPinFocused({id: targetPinId, isFocused: false})
-				);
+				dispatch(focusPinSet([targetPinId]));
 			}
 		};
 	}, [dispatch, focusedPins, targetPinId]);
@@ -66,6 +77,7 @@ function PinDetails() {
 	return (
 		<SideDetailsView
 			targetPins={[targetPins]}
+			peripheralPins={peripheralPinsDict}
 			handleBackClick={handleBackClick}
 		/>
 	);

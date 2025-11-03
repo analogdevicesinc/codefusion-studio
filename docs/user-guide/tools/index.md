@@ -1,7 +1,7 @@
 ---
 description: Configuration & Analysis Tools for CodeFusion Studio
 author: Analog Devices
-date: 2025-04-28
+date: 2025-10-13
 ---
 
 # Tools
@@ -15,6 +15,8 @@ The [System Planner Configuration Tools dashboard](./config-tool/index.md) inclu
 * [Clock Config](./config-tool/clock-config.md) – Controls clocks and related signals.
 * [Memory Allocation](./config-tool/memory-allocation.md) – Manages memory partitions and assigns RAM or Flash to cores.
 * [Registers](./config-tool/registers.md) – Displays register values used by the configuration code and allows filtering based on modified or default values.
+* [Embedded AI Tools](./config-tool/manage-ai-models.md) – Import supported AI model files, assign them to cores, and configure engine-specific options for code generation.
+* [Profiling](./config-tool/profiling.md) – Captures runtime and inference-level performance data, and prepares captured traces for visualization using the Zephelin Profiler for supported Zephyr projects.
 * [Generate Code](./config-tool/generate-code.md) – Generates the necessary source files for application configuration.
 
 In addition to the System Planner Configuration Tools dashboard, CodeFusion Studio provides other utilities to support system development. These include:

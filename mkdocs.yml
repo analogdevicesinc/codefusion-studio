@@ -40,31 +40,57 @@ nav:
       - Features: user-guide/about/features.md
       - Navigation: user-guide/about/navigation.md
       - Supported processors: user-guide/about/supported-processors.md
+      - Telemetry: user-guide/about/telemetry.md
       - Help: user-guide/about/help.md
     - Installation:
       - user-guide/installation/index.md
-      - Requirements: user-guide/installation/software-requirements.md
+      - Software requirements: user-guide/installation/software-requirements.md
       - Install CFS: user-guide/installation/install-cfs.md
+      - Install the VS Code extension: user-guide/installation/install-extensions.md
       - Set up CFS: user-guide/installation/set-up-cfs.md
-      - Manually install the VS Code extension: user-guide/installation/install-extensions.md
-      - Install Olimex JTAG drivers: user-guide/installation/install-olimex-drivers.md
-      - Install Segger J-Link drivers: user-guide/installation/install-jlink-drivers.md
+      - Package Manager:
+          - Overview: user-guide/installation/package-manager/index.md
+          - Log in to access private packages: user-guide/installation/package-manager/auth.md
+          - Manage packages from the Command Palette: user-guide/installation/package-manager/manage-packages-command-palette.md
+          - Manage packages from the command line (`cfsutil`): user-guide/installation/package-manager/manage-packages-cfsutil.md
+          - Install required packages: user-guide/installation/package-manager/install-required.md
     - Workspace Management:
       - user-guide/workspaces/index.md
       - Create a new workspace: user-guide/workspaces/create-new-workspace.md
       - Open a workspace: user-guide/workspaces/open-workspace.md
-      - Open and migrate example: user-guide/workspaces/open-and-migrate-example.md
+      - Explore and open MSDK examples: user-guide/workspaces/open-and-migrate-example.md
       - Migrate a project to System Planner: user-guide/workspaces/migrate-project-to-system-planner.md
       - CFS settings: user-guide/workspaces/cfs-settings.md
       - Catalog Manager: user-guide/workspaces/catalog-manager.md
-      - Tasks: user-guide/workspaces/tasks.md
+      - Build and flash tasks: user-guide/workspaces/tasks.md
       - The CFS Terminal: user-guide/workspaces/cfs-terminal.md
       - Zephyr RTOS: user-guide/workspaces/zephyr.md
       - Troubleshooting: user-guide/workspaces/troubleshooting.md
+      - Target-specific setup:
+        - user-guide/workspaces/targets/index.md
+        - TrustZone: user-guide/workspaces/targets/trustzone.md
     - Debugging:
       - user-guide/debugging/index.md
+      - Install Olimex JTAG drivers: user-guide/debugging/install-olimex-drivers.md
+      - Install Segger J-Link drivers: user-guide/debugging/install-jlink-drivers.md
+      - Install ICE drivers (Windows only): user-guide/debugging/install-ice-drivers.md
       - Debug an application: user-guide/debugging/debug-an-application.md
-      - Debugging a multicore application: user-guide/debugging/debug-multi-core-application.md
+      - Debug a multicore MSDK application: user-guide/debugging/debug-multi-core-application.md
+      - Debug a SHARC-FX application: user-guide/debugging/debug-sharc-fx.md
+      - Debug tools:
+          - user-guide/debugging/debug-tools/index.md
+          - GDB Toolbox:
+              - user-guide/debugging/debug-tools/gdb-toolbox/index.md
+              - About the GDB Toolbox: user-guide/debugging/debug-tools/gdb-toolbox/gdb-toolbox-about.md
+              - Using the GDB Toolbox: user-guide/debugging/debug-tools/gdb-toolbox/gdb-toolbox.md
+              - GDB Toolbox reference: user-guide/debugging/debug-tools/gdb-toolbox/gdb-toolbox-reference.md
+              - GDB Toolbox examples: user-guide/debugging/debug-tools/gdb-toolbox/gdb-toolbox-examples.md
+          - Core Dump Analysis Tool:
+              - user-guide/debugging/debug-tools/core-dump-analysis/index.md
+              - Overview: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-overview.md
+              - Enable core dump support: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-enable.md
+              - Analyze core dumps: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-analyze.md
+              - Interpret core dump results: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-interpret.md
       - Troubleshooting: user-guide/debugging/troubleshooting.md
     - Tools:
       - user-guide/tools/index.md
@@ -75,6 +101,8 @@ nav:
         - Clock Config: user-guide/tools/config-tool/clock-config.md
         - Memory Allocation: user-guide/tools/config-tool/memory-allocation.md
         - Registers: user-guide/tools/config-tool/registers.md
+        - Embedded AI tools: user-guide/tools/config-tool/manage-ai-models.md
+        - Profiling: user-guide/tools/config-tool/profiling.md
         - Generate Code: user-guide/tools/config-tool/generate-code.md
       - CFS Command Line Utility: user-guide/tools/cfsutil.md
       - ELF File Explorer: user-guide/tools/elf-file-explorer.md
@@ -83,14 +111,25 @@ nav:
       - user-guide/plugins/index.md
       - Plugins overview: user-guide/plugins/plugin-integration-overview.md
       - Develop plugins: user-guide/plugins/develop-plugins.md
-    - Uninstall:
-      - Uninstalling CodeFusion Studio: user-guide/uninstall/uninstall-cfs.md
+    - AI Tools:
+      - user-guide/ai-tools/index.md
+      - Supported AI model formats: user-guide/ai-tools/supported-ai-model-formats.md
+      - CFSAI Command Line Utility:
+        - user-guide/ai-tools/cli/index.md
+        - Feature overview: user-guide/ai-tools/cli/cfsai.md
+        - Build command: user-guide/ai-tools/cli/cfsai-build.md
+        - Report command: user-guide/ai-tools/cli/cfsai-report.md
+        - Utility commands: user-guide/ai-tools/cli/cfsai-utility.md
+      - Compatibiity Analyzer report: user-guide/ai-tools/compat-report.md
+      - Resource Profiling report: user-guide/ai-tools/profiling-report.md
+    - Uninstalling CodeFusion Studio: user-guide/uninstall/uninstall-cfs.md
   - Tutorials:
     - tutorials/index.md
     - GDB Tutorial:
       - tutorials/gdb-tutorial/index.md
-      - GDB Basics: tutorials/gdb-tutorial/gdb-basics.md
-      - GDB Commands: tutorials/gdb-tutorial/gdb-commands.md
+      - GDB basics: tutorials/gdb-tutorial/gdb-basics.md
+      - GDB command types: tutorials/gdb-tutorial/gdb-command-types.md
+      - GDB commands: tutorials/gdb-tutorial/gdb-commands.md
   - Resources:
     - user-guide/resources/index.md
     - SDKs: user-guide/resources/sdk-resources.md
@@ -98,6 +137,7 @@ nav:
     - Third-party: user-guide/resources/third-party-resources.md
   - Release Notes:
     - release-notes/index.md
+    - 2.0.0: release-notes/2.0.0.md
     - 1.1.0: release-notes/1.1.0.md
     - 1.0.2: release-notes/1.0.2.md
     - 1.0.0: release-notes/1.0.0.md

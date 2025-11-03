@@ -28,7 +28,13 @@ export default function Toggle({
 	dataTest
 }: ToggleProps) {
 	return (
-		<label className={styles.switch} tabIndex={0}>
+		<label
+			className={styles.switch}
+			tabIndex={0}
+			onKeyUp={e => {
+				if (e.key === 'Enter' || e.key === ' ') handleToggle();
+			}}
+		>
 			<input
 				checked={isToggledOn}
 				type='checkbox'

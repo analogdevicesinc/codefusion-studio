@@ -17,22 +17,31 @@ import type {
 	MemoryBlock,
 	MemoryType
 } from '../../../common/types/soc';
-import {type Partition} from '../state/slices/partitions/partitions.reducer';
-import {getSocMemoryTypes} from './api';
+import {
+	type PartitionCore,
+	type Partition
+} from '../state/slices/partitions/partitions.reducer';
 import {ByteUnitMap, type ByteUnit} from '../types/memory';
+import {BYTE_UNITS} from '../constants/memory';
 import {getSocCoreList} from './soc-cores';
+import {SocCoreMemory} from 'cfs-plugins-api';
 
 const coreMemoryDictionary: Record<string, MemoryBlock> = {};
+const coreMemoryAliasDictionary: Record<string, MemoryAlias[]> = {};
 
 const coreMemoryBlocks: MemoryBlock[] = [];
 export type SocMemoryTypeList = MemoryType[];
 
 let socMemoryTypes: MemoryType[] = [];
 
-if (import.meta.env.MODE === 'development') {
-	socMemoryTypes = (window as any).__DEV_SOC__?.MemoryTypes ?? [];
-} else {
-	socMemoryTypes = (await getSocMemoryTypes()) ?? [];
+/**
+ * Initializes the SoC memory types.
+ * Should be called once at app startup.
+ */
+export function initializeSocMemoryTypes(
+	memoryTypes: MemoryType[] | undefined
+) {
+	socMemoryTypes = memoryTypes ?? [];
 }
 
 export function getCoreMemoryDictionary(): Record<
@@ -44,14 +53,100 @@ export function getCoreMemoryDictionary(): Record<
 
 		socCores.forEach(core => {
 			core.Memory.forEach(memoryBlock => {
+				// We don't return memory references
+				if ('AliasBaseAddress' in memoryBlock) return;
+
 				if (!(memoryBlock.Name in coreMemoryDictionary)) {
-					coreMemoryDictionary[memoryBlock.Name] = memoryBlock;
+					coreMemoryDictionary[memoryBlock.Name] =
+						memoryBlock as SocCoreMemory;
 				}
 			});
 		});
 	}
 
 	return coreMemoryDictionary;
+}
+
+// For Cypress Tests.
+// Should be called in tests to ensure clean state.
+export function resetCoreMemoryDictionary() {
+	// Clear the dictionary by removing all keys
+	for (const key in coreMemoryDictionary) {
+		if (
+			Object.prototype.hasOwnProperty.call(coreMemoryDictionary, key)
+		) {
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+			delete coreMemoryDictionary[key];
+		}
+	}
+}
+
+export type MemoryAlias = {
+	Name: string;
+	CoreId: string;
+	AliasType: string;
+	AliasBaseAddress: string;
+};
+
+export function getCoreMemoryAliasDictionary(): Record<
+	string,
+	MemoryAlias[]
+> {
+	if (Object.keys(coreMemoryAliasDictionary).length === 0) {
+		const socCores = getSocCoreList();
+
+		socCores.forEach(core => {
+			core.Memory.forEach(memoryBlock => {
+				if (!('AliasBaseAddress' in memoryBlock)) return;
+				const {Name} = memoryBlock;
+
+				if (!coreMemoryAliasDictionary[Name]) {
+					coreMemoryAliasDictionary[Name] = [];
+				}
+
+				coreMemoryAliasDictionary[Name].push({
+					Name: memoryBlock.Name,
+					AliasBaseAddress: memoryBlock.AliasBaseAddress ?? '',
+					AliasType: memoryBlock.AliasType ?? '',
+					CoreId: core.Id
+				});
+			});
+		});
+	}
+
+	return coreMemoryAliasDictionary;
+}
+
+/**
+ * Returns memory aliases for given block name.
+ * Uses getCoreMemoryAliasDictionary to retrieve memory aliases.
+ * Filters by coreIds.
+ *
+ * @param memoryName - Memory block name.
+ * @param coreIds - List of core IDs to filter by.
+ * @returns Filtered list of MemoryAlias[].
+ */
+
+export function getCoreMemoryAliases(
+	memoryName: string,
+	coreIds: string[]
+): MemoryAlias[] {
+	const aliases = getCoreMemoryAliasDictionary()[memoryName] ?? [];
+
+	if (!coreIds?.length) return [];
+
+	return aliases.filter(alias => coreIds.includes(alias.CoreId));
+}
+
+export function getAddressOffset(
+	baseAddress: string,
+	address: string
+) {
+	return parseInt(address, 16) - parseInt(baseAddress, 16);
+}
+
+export function offsetAddress(address: string, offset: number) {
+	return (parseInt(address, 16) + offset).toString(16);
 }
 
 export function getCoreMemoryBlocks(): MemoryBlock[] {
@@ -401,18 +496,15 @@ export const getBlocksInPartition = (
 ) => memoryBlocks.filter(block => blockNames.includes(block.Name));
 
 export function getSocMemoryTypeList(): SocMemoryTypeList {
-	if (socMemoryTypes.length === 0) {
-		const localStorageMemoryTypes =
-			localStorage.getItem('MemoryTypes');
-
-		if (localStorageMemoryTypes) {
-			socMemoryTypes = JSON.parse(localStorageMemoryTypes);
-		}
-	}
-
 	return socMemoryTypes;
 }
 
+/**
+ * Filters partition if it is volatile type
+ * @param partitionData partition []
+ * @param memoryTypes
+ * @returns volatile partitions
+ */
 export function getVolatileData(
 	partitionData: Partition[],
 	memoryTypes: MemoryType[]
@@ -424,6 +516,12 @@ export function getVolatileData(
 	);
 }
 
+/**
+ * Filters partition if it is non-volatile type
+ * @param partitionData partition []
+ * @param memoryTypes
+ * @returns non-volatile partitions
+ */
 export function getNonVolatileData(
 	partitionData: Partition[],
 	memoryTypes: MemoryType[]
@@ -455,3 +553,237 @@ export function getBlockMinAlignment(
 
 	return `${memoryBlock.MinimumAlignment} Bytes`;
 }
+
+export function getAvailableMemory(
+	block: MemoryBlock,
+	partitions: Partition[]
+) {
+	const totalMemory = getTotalBlockMemory(block);
+	const partitionsInBlock = getPartitionsInBlock(partitions, block);
+	const remainingMemory = getRemainingMemoryInBlock(
+		totalMemory,
+		partitionsInBlock,
+		block
+	);
+
+	return remainingMemory;
+}
+
+/**
+ * Checks if a memory block if occupied by a partition .
+ *
+ * @param block - memory block.
+ * @param sidebarParition - side bar parition
+ * @param partitions - partitions
+ * @returns false if block has available memory and true if it is fully ocuppied .
+ */
+
+export const isBlockOccupied = (
+	block: MemoryBlock,
+	sidebarPartition: Partition,
+	partitions: Partition[]
+): boolean => {
+	let filteredParitions: Partition[] = [];
+
+	if (sidebarPartition.size) {
+		filteredParitions = partitions.filter(
+			parition =>
+				sidebarPartition.displayName !== parition.displayName
+		);
+	}
+
+	const remainingMemory = getAvailableMemory(
+		block,
+		filteredParitions.length ? filteredParitions : partitions
+	);
+
+	return !remainingMemory;
+};
+
+/**
+ * Checks if each core has access to the block .
+ *
+ * @param block - memory block.
+ * @param cores - parition cores
+ * @param memoryType
+ * @returns false if core has access to the block and true if it doesn't .
+ */
+
+export const isBlockDisabled = (
+	block: MemoryBlock,
+	cores: PartitionCore[],
+	memoryType: string
+): boolean =>
+	cores.reduce((acc, core) => {
+		const socCore = getSocCoreList().find(c => c.Id === core.coreId);
+
+		if (
+			socCore?.Memory.find(
+				memory =>
+					'Type' in memory &&
+					memory.Type === memoryType &&
+					memory.Name === block.Name
+			)
+		) {
+			return acc;
+		}
+
+		return true;
+	}, false);
+
+const parseHex = (hex: string) => parseInt(hex, 16);
+
+/**
+ * Returns a start address from available memory block.
+ *
+ * @param block - memory block.
+ * @param partitions - partitions
+ * @returns startAddress from the available memory block.
+ */
+
+export const getFirstAvailableAddressFromBlock = (
+	block: MemoryBlock,
+	partitions: Partition[]
+): number => {
+	const blockStart = parseHex(block.AddressStart);
+	const blockEnd = parseHex(block.AddressEnd);
+
+	const memoryPartitions = partitions
+		.filter(p => p.baseBlock.Type === block.Type)
+		.sort(
+			(a, b) => parseHex(a.startAddress) - parseHex(b.startAddress)
+		);
+
+	// No partitions → free at block start
+	if (memoryPartitions.length === 0) return blockStart;
+
+	// Check if any partition overlaps this block’s start amd offset start
+	const overflowPartition = memoryPartitions.find(p => {
+		const start = parseHex(p.startAddress);
+		const end = start + p.size;
+
+		return (
+			start < blockStart &&
+			end > blockStart &&
+			p.baseBlock.Type === block.Type
+		);
+	});
+
+	if (overflowPartition) {
+		const end =
+			parseHex(overflowPartition.startAddress) +
+			overflowPartition.size;
+
+		return Math.min(end, blockEnd);
+	}
+
+	// No partitions in this block & NO overlaps → free at block start
+	const partitionInBlock = memoryPartitions.filter(
+		p => p.baseBlock.Name === block.Name
+	);
+	if (partitionInBlock.length === 0) return blockStart;
+
+	// If first partition in this block doesn’t start at block start → free at block start
+	const firstStart = parseHex(partitionInBlock[0].startAddress);
+	if (firstStart !== blockStart) return blockStart;
+
+	// Check for first gap between partitions
+	let offset = blockStart;
+
+	for (const p of partitionInBlock) {
+		const start = parseHex(p.startAddress);
+		const end = start + p.size;
+
+		if (start <= offset) {
+			offset = Math.max(offset, end);
+		} else {
+			// Gap found
+			break;
+		}
+	}
+
+	return offset;
+};
+
+export const getSizeStepValue = (
+	minAlignment: number | undefined,
+	unit: ByteUnit
+): number => {
+	if (minAlignment && minAlignment > ByteUnitMap[unit]) {
+		return minAlignment / ByteUnitMap[unit];
+	}
+
+	return 1;
+};
+
+export const getTotalBlockMemoryByType = (
+	memoryBlocks: MemoryBlock[]
+): number => {
+	const total = memoryBlocks.reduce(
+		(acc, block) => (block ? acc + getTotalBlockMemory(block) : acc),
+		0
+	);
+
+	return total;
+};
+
+/** This is a temporary fix.
+ * Since convertBytesToKbOrMb is being used in several places.
+ * This will be handled in the next story.
+ */
+export const formatBytesToKbOrMb = (
+	value: number,
+	returnWholeKb = false
+) => {
+	if (value >= 1024 * 1024) {
+		return `${displayFloatOrInt(value / (1024 * 1024))} MB`;
+	}
+
+	if (value >= 1024) {
+		if (returnWholeKb) {
+			return `${Math.round(value / 1024)} KB`;
+		}
+
+		return `${displayFloatOrInt(value / 1024)} KB`;
+	}
+
+	return `${displayFloatOrInt(value)} B`;
+};
+
+export const getTotalPartitionForMemoryType = (
+	partitions: Partition[],
+	type: string
+): number => {
+	const total = partitions.reduce(
+		(acc, partition) =>
+			partition.type === type ? acc + partition.size : acc,
+		0
+	);
+
+	return total;
+};
+
+export const mapDisplayUnit = (
+	unit: unknown
+): ByteUnit | undefined => {
+	if (
+		typeof unit === 'string' &&
+		BYTE_UNITS.includes(unit as ByteUnit)
+	) {
+		return unit as ByteUnit;
+	}
+
+	return undefined;
+};
+
+export const getCleanDivisibleSizeUnit = (size: number): ByteUnit => {
+	if (size % (1024 * 1024) === 0) {
+		return 'MB';
+	}
+
+	if (size % 1024 === 0) {
+		return 'KB';
+	}
+
+	return 'bytes';
+};

@@ -13,7 +13,7 @@
  *
  */
 import RegisterBody from './body/RegisterBody';
-import SingleColumnLayout from '../../components/secondary-layout/SecondaryLayout';
+import SingleColumnLayout from '@common/components/single-column-layout/single-column-layout';
 
 export default function Registers() {
 	return <SingleColumnLayout header={null} body={<RegisterBody />} />;

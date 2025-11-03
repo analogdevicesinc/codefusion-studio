@@ -15,10 +15,11 @@
       "package": "test-package",
       "board": "test-board",
       "soc": "test-soc",
+      "CoreId": "RV",
       "name": "test-project",
       "path": "project-test-path/project",
       "pluginId": "com.analog.project.msdk.plugin",
-      "pluginVersion": "1.0.0",
+      "pluginVersion": "1.1.0",
       "pluginConfig": {},
       "projects": [
         {
@@ -28,13 +29,8 @@
       ],
       "platformConfig": {
         "ProjectName": "riscv",
-        "Cflags": [
-          "-fdump-rtl-expand",
-          "-fdump-rtl-dfinish",
-          "-fdump-ipa-cgraph",
-          "-fstack-usage",
-          "-gdwarf-4"
-        ]
+        "Cflags":
+          "-fdump-rtl-expand\n-fdump-rtl-dfinish\n-fdump-ipa-cgraph\n-fstack-usage\n-gdwarf-4"
       }
     }
   ]

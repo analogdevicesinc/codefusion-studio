@@ -39,11 +39,13 @@ import {getDefaultLocation} from '../../utils/user-default-path';
 
 import styles from './PathSelection.module.scss';
 import {
+	getEnabledCores,
 	isPathInvalid,
 	isWorkspaceNameInvalid
 } from '../../utils/workspace-config';
+import {isCypressEnvironment} from '../../../../common/utils/env';
 
-const DEBOUNCE_DELAY = import.meta.env.DEV ? 0 : 250;
+const DEBOUNCE_DELAY = isCypressEnvironment() ? 0 : 250;
 
 function PathSelectionScreen() {
 	const dispatch = useAppDispatch();
@@ -59,12 +61,15 @@ function PathSelectionScreen() {
 	const {isEmptyName, isEmptyPath, isInvalidName, isInvalidPath} =
 		useConfigurationErrors('workspaceDetails').form ?? {};
 
+	// to remove out baseCore entry incase trustZone is enabled
+	const enabledCores = getEnabledCores(selectedCores);
+
 	const configuredCores = useMemo(
 		() =>
-			Object.values(selectedCores)
+			Object.values(enabledCores)
 				.filter(core => core.isEnabled)
 				.map(core => core.name),
-		[selectedCores]
+		[enabledCores]
 	);
 
 	const handleNameChange = useMemo(

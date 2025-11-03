@@ -15,11 +15,13 @@
 import {type PayloadAction, createSlice} from '@reduxjs/toolkit';
 import type {
 	AppliedSignal,
+	ControlCfg,
 	PinCanvas,
 	PinDictionary
 } from '@common/types/soc';
 import {getControlsFromCache} from '../../../utils/api';
-import type {ControlErrorTypes} from '../../../types/errorTypes';
+import type {ControlErrorTypes} from '@common/types/errorTypes';
+import type {ConfigFields} from '@common/types/soc';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {computeNextPinConfig} from '../../../utils/pin-reset-controls';
@@ -65,6 +67,32 @@ function removeSignalFromPin(
 		);
 	}
 }
+
+const getFilteredControlsAndCfg = (
+	controls: ControlCfg[],
+	pinId: string,
+	name: string,
+	peripheral: string | undefined
+): {
+	filteredControls: ControlCfg[];
+	sourcePinCfg: ConfigFields | undefined;
+} => {
+	const socPins = getSocPinDictionary();
+	const sourcePinCfg = socPins[pinId]?.Signals?.find(
+		signal => signal.Name === name && signal.Peripheral === peripheral
+	)?.PinConfig;
+
+	const filteredControls = controls.filter(control => {
+		if (control.PluginOption) return true;
+
+		return Object.prototype.hasOwnProperty.call(
+			sourcePinCfg ?? {},
+			control.Id
+		);
+	});
+
+	return {filteredControls, sourcePinCfg};
+};
 
 const pinsSlice = createSlice({
 	name: 'Pins',
@@ -273,8 +301,6 @@ const pinsSlice = createSlice({
 				discardPersistence?: boolean;
 			}>
 		) {
-			const socPins = getSocPinDictionary();
-
 			const {
 				Peripheral,
 				Name,
@@ -286,11 +312,6 @@ const pinsSlice = createSlice({
 			} = control;
 
 			if (Peripheral && Name && pinId) {
-				const sourcePinCfg = socPins[pinId]?.Signals?.find(
-					signal =>
-						signal.Name === Name && signal.Peripheral === Peripheral
-				)?.PinConfig;
-
 				const controlsList = projectId
 					? (getControlsFromCache(
 							CONTROL_SCOPES.PIN_CONFIG,
@@ -299,14 +320,13 @@ const pinsSlice = createSlice({
 					: [];
 
 				// Include only controls that have a configuration step present in the SoC
-				const filteredControls = controlsList.filter(control => {
-					if (control.PluginOption) return true;
-
-					return Object.prototype.hasOwnProperty.call(
-						sourcePinCfg ?? {},
-						control.Id
+				const {filteredControls, sourcePinCfg} =
+					getFilteredControlsAndCfg(
+						controlsList,
+						pinId,
+						Name,
+						Peripheral
 					);
-				});
 
 				const targetAssignedPin = state.pins[
 					pinId
@@ -355,14 +375,22 @@ const pinsSlice = createSlice({
 		setResetControlValues(
 			state,
 			{
-				payload: {Peripheral, Name, pinId, resetValues}
+				payload: {Peripheral, Name, pinId, controls, resetValues}
 			}: PayloadAction<{
 				Peripheral: string | undefined;
 				Name: string | undefined;
 				pinId: string | undefined;
+				controls: ControlCfg[];
 				resetValues: Record<string, string>;
 			}>
 		) {
+			const {filteredControls} = getFilteredControlsAndCfg(
+				controls,
+				pinId ?? '',
+				Name ?? '',
+				Peripheral
+			);
+
 			if (pinId && Peripheral && Name) {
 				const targetAssignedPin = state.pins[
 					pinId
@@ -373,7 +401,13 @@ const pinsSlice = createSlice({
 				);
 
 				if (targetAssignedPin) {
-					targetAssignedPin.PinCfg = {...resetValues};
+					targetAssignedPin.PinCfg = computeNextPinConfig({
+						controls: filteredControls,
+						pinId,
+						Name,
+						Peripheral,
+						newConfig: {...resetValues}
+					});
 				}
 			}
 		},
@@ -382,6 +416,29 @@ const pinsSlice = createSlice({
 			{payload: pinId}: PayloadAction<string | undefined>
 		) {
 			state.hoveredPin = pinId;
+		},
+		updateAppliedSignal(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				removeSignal: {Pin: string; Peripheral: string; Name: string};
+				addSignal: {
+					Pin: string;
+					Peripheral: string;
+					Name: string;
+					PinCfg: Record<string, string> | undefined;
+				};
+			}>
+		) {
+			//added to atomicly update both removal and addition of signal in signal Assignment
+			removeSignalFromPin(state, payload.removeSignal);
+
+			// Add the new signal
+			const targetPin = state.pins[payload.addSignal.Pin];
+			if (targetPin) {
+				targetPin.appliedSignals.push(payload.addSignal);
+			}
 		}
 	}
 });
@@ -399,7 +456,8 @@ export const {
 	setMultiSignalConfig,
 	updateSignalConfig,
 	removeAppliedCoprogrammedSignals,
-	setHoveredPin
+	setHoveredPin,
+	updateAppliedSignal
 } = pinsSlice.actions;
 
 export const pinsReducer = pinsSlice.reducer;

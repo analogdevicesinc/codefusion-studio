@@ -1,0 +1,102 @@
+{
+    "testsDescription": "Tests related to accelerator information",
+    "fail": [
+        {
+            "testDescription": "Check that its an error if an soc core manages an non-existant accelerator",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"ManagedAccelerators" : ["nonExistantAccelerator"], "Arch":"testArch"}
+                    }
+                }
+            },
+            "SupportedBackends" : {"testBackend" : {}}
+        }, 
+        {
+            "testDescription": "Checks that its an error if a backend targets an accelerator not supported by target core",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Accelerators" : ["myAccelerator"],
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch","ExecutionModes" : ["execMode"]}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware": {"Soc": "testSoc", "Core": "testCore", "Accelerator": "myAccelerator",
+                        "Kind": "explicit"}}
+                    ]
+                }
+            }
+        },
+        {
+            "testDescription": "Checks that its an error if an accelerator target is not a strin",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Accelerators" : ["myAccelerator"],
+                    "Cores" : {
+                        "testCore" : {"ManagedAccelerators" : ["myAccelerator"], "Arch":"testArch", "ExecutionModes" : ["execMode"]}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Accelerator": ["myAccelerator"],
+                        "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }
+    ],
+    "pass": [
+        {
+            "testDescription": "Check that you don't need to specify an accelerator as a target",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Accelerators" : ["myAccelerator"],
+                    "Cores" : {
+                        "testCore" : {"ManagedAccelerators" : ["myAccelerator"], "Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }, 
+        {
+            "testDescription": "Check that targeting an existing accelerator works",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Accelerators" : ["myAccelerator"],
+                    "Cores" : {
+                        "testCore" : {"ManagedAccelerators" : ["myAccelerator"], "Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore","Accelerator" : "myAccelerator",
+                        "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }
+    ]
+}

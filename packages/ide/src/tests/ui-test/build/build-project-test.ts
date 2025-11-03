@@ -40,14 +40,14 @@ describe("Build Project Test", () => {
   before(async () => {
     await closeFolder();
 
-    // delete the .vscode folder to remove any settings
+    // Delete the .vscode folder to remove any settings
     deleteFolder(testDirectory + "/.vscode");
 
     await openFolder(process.cwd() + "/" + testDirectory);
 
     workbench = new Workbench();
 
-    // give the extension some time to activate
+    // Give the extension some time to activate
     await workbench.getDriver().sleep(5000);
     await configureWorkspace("Yes");
     await workbench.getDriver().sleep(10000);
@@ -69,7 +69,7 @@ describe("Build Project Test", () => {
       (await input.getPlaceHolder()) === "Select the toolchain to build with"
     ) {
       await input.selectQuickPick("arm-none-eabi");
-      // prime the input for the make task
+      // Prime the input for the make task
       input = await InputBox.create();
       picks = await input.getQuickPicks();
     }
@@ -83,31 +83,30 @@ describe("Build Project Test", () => {
       "CFS: flash",
       "CFS: flash & run",
     ];
-
-    for (const [i, item] of picks.entries()) {
-      const text = await item.getText();
+    const texts = await Promise.all(picks.map((item) => item.getText()));
+    for (const [i, text] of texts.entries()) {
       expect(text).to.equal(expected[i]);
     }
 
-    // clean
+    // Clean
     await input.selectQuickPick("CFS: clean");
-    // wait for the task to complete
+    // Wait for the task to complete
     await workbench.getDriver().sleep(10000);
-    // verify the build output has been deleted
-    expect(existsSync(testDirectory + "/build")).to.be.false;
-    // build all
+    // Verify the build output has been deleted
+    expect(existsSync(testDirectory + "/build")).to.equal(false);
+    // Build all
     await workbench.executeCommand("Tasks: Run Build Task");
     await workbench.getDriver().sleep(5000);
     input = await InputBox.create();
     await input.selectQuickPick("CFS: build");
-    // wait for the task to complete
+    // Wait for the task to complete
     await workbench.getDriver().sleep(10000);
-    // verify the build succeeded
+    // Verify the build succeeded
     const text = await getTerminalViewText();
-    expect(text).to.not.be.empty;
+    expect(text).to.not.equal("");
     const error = text.match(".*[Ee]rror.*");
-    expect(error, "Unexpected error during build:\n" + text).to.be.null;
-    // verify the build output exists
-    expect(existsSync(testDirectory + "/build/Hello_World.elf")).to.be.true;
+    expect(error, "Unexpected error during build:\n" + text).to.equal(null);
+    // Verify the build output exists
+    expect(existsSync(testDirectory + "/build/Hello_World.elf")).to.equal(true);
   });
 });

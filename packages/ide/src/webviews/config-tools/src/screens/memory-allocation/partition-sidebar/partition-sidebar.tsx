@@ -15,12 +15,13 @@
 
 import {Button, SlidingPanel, CfsSuspense} from 'cfs-react-library';
 import styles from './partition-sidebar.module.scss';
-import CheckmarkIcon from '@common/icons/Checkmark';
 import {useAppDispatch} from '../../../state/store';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
 	createPartition,
 	editPartition,
+	removePartition,
+	updateActivePartition,
 	type Partition
 } from '../../../state/slices/partitions/partitions.reducer';
 import {PartitionDetails} from '../partition-details/PartitionDetails';
@@ -29,6 +30,7 @@ import {MemoryBlocks} from '../memory-blocks/MemoryBlocks';
 import type {ControlCfg, MemoryBlock} from '@common/types/soc';
 import {getCoreMemoryBlocks} from '../../../utils/memory';
 import {
+	useActivePartitionProjects,
 	usePartitions,
 	useSidebarState
 } from '../../../state/slices/partitions/partitions.selector';
@@ -36,20 +38,19 @@ import {validatePartitionForm} from '../../../utils/memory-validation';
 import {type TLocaleContext} from '../../../common/types/context';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {getControlsForProjectIds} from '../../../utils/api';
-import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {PluginOptionsSection} from '../plugin-options-section/plugin-options-section';
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
+import DeleteIcon from '../../../../../common/icons/Delete';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
 
 type PartitionSidebarProps = {
 	readonly isFormTouched: boolean;
-	readonly partition?: Partition;
 	readonly onClose: () => void;
 	readonly onFormTouched: (touched: boolean) => void;
 };
 
 export function PartitionSidebar({
 	isFormTouched,
-	partition,
 	onClose,
 	onFormTouched
 }: PartitionSidebarProps) {
@@ -57,14 +58,15 @@ export function PartitionSidebar({
 	const partitions = usePartitions();
 	const dispatch = useAppDispatch();
 	const memoryBlocks: MemoryBlock[] = getCoreMemoryBlocks();
-	const [activePartition, setActivePartition] = useState<
-		Partition | undefined
-	>();
-	const {sidebarPartition, isSidebarMinimised} = useSidebarState();
-
-	const pluginConfig = useRef<
-		Record<string, Record<string, string | number | boolean>>
+	const {sidebarPartition, isSidebarMinimised, activePartition} =
+		useSidebarState();
+	const projects = useActivePartitionProjects();
+	// Existing partitions have a name.
+	const existingPartition = Boolean(sidebarPartition.displayName);
+	const [pluginOptions, setPluginOptions] = useState<
+		Record<string, Record<string, ControlCfg[]>>
 	>({});
+
 	const blocksForType = useMemo(
 		() =>
 			memoryBlocks.filter(
@@ -73,25 +75,11 @@ export function PartitionSidebar({
 		[memoryBlocks, activePartition?.type]
 	);
 
-	useEffect(() => {
-		pluginConfig.current = {};
-	}, [sidebarPartition]);
-
-	useEffect(() => {
-		setActivePartition(partition);
-	}, [partition]);
-
 	const updateActivePartitionDetails = (
 		partitionDetails: Partition
 	): void => {
 		if (activePartition) {
-			setActivePartition({
-				...partitionDetails,
-				config:
-					Object.values(pluginConfig.current).length === 0
-						? partitionDetails.config
-						: pluginConfig.current
-			});
+			dispatch(updateActivePartition(partitionDetails));
 		}
 	};
 
@@ -127,34 +115,62 @@ export function PartitionSidebar({
 		isFormTouched
 	]);
 
-	const pluginOptionsPromise = useMemo(async () => {
-		if (!(activePartition?.projects ?? []).length) {
-			return Promise.resolve([
-				{
-					controls: {} satisfies Record<string, ControlCfg[]>,
-					projectId: ''
-				}
-			]);
-		}
-
-		return Promise.all(
-			(activePartition?.projects ?? []).map(async project => ({
-				controls: await getControlsForProjectIds(
+	useEffect(() => {
+		for (const project of projects ?? []) {
+			if (!pluginOptions[project.projectId]) {
+				getControlsForProjectIds(
 					[project.projectId],
 					CONTROL_SCOPES.MEMORY
-				),
-				projectId: project.projectId
-			}))
-		);
-	}, [activePartition?.projects]);
+				).then(controls => {
+					setPluginOptions({
+						...pluginOptions,
+						[project.projectId]: controls
+					});
+				});
+			}
+		}
+	}, [projects]);
+
+	const partitionTitle = useMemo(
+		() => (
+			<div
+				data-test='partition-title'
+				className={styles.titleContainer}
+			>
+				{existingPartition
+					? i10n?.partition.editTitle
+					: i10n?.partition.createTitle}
+				{existingPartition && (
+					<Button
+						appearance='icon'
+						dataTest='delete-partition-button'
+						onClick={() => {
+							dispatch(
+								removePartition({
+									startAddress: sidebarPartition.startAddress
+								})
+							);
+							onClose();
+						}}
+					>
+						<DeleteIcon />
+					</Button>
+				)}
+			</div>
+		),
+		[
+			existingPartition,
+			i10n?.partition.editTitle,
+			i10n?.partition.createTitle,
+			dispatch,
+			sidebarPartition.startAddress,
+			onClose
+		]
+	);
 
 	return (
 		<SlidingPanel
-			title={
-				sidebarPartition.type
-					? i10n?.partition.edit
-					: i10n?.partition.create
-			}
+			title={partitionTitle}
 			isMinimised={isSidebarMinimised}
 			closeSlider={onClose}
 			dataTest='partition-sidebar'
@@ -168,14 +184,10 @@ export function PartitionSidebar({
 								return;
 							}
 
-							const partitionDetails = activePartition.config
-								? {...activePartition, config: pluginConfig.current}
-								: activePartition;
-
 							if (!isFormTouched) {
 								if (
 									validatePartitionForm(
-										partitionDetails,
+										activePartition,
 										partitions.filter(
 											partition =>
 												parseInt(partition.startAddress, 16) !==
@@ -184,15 +196,15 @@ export function PartitionSidebar({
 										blocksForType
 									).valid
 								) {
-									if (sidebarPartition.startAddress) {
+									if (existingPartition) {
 										dispatch(
 											editPartition({
-												sidebarPartition: partitionDetails,
+												sidebarPartition: activePartition,
 												startAddress: sidebarPartition.startAddress
 											})
 										);
 									} else {
-										dispatch(createPartition(partitionDetails));
+										dispatch(createPartition(activePartition));
 									}
 
 									onClose();
@@ -200,98 +212,43 @@ export function PartitionSidebar({
 									onFormTouched(true);
 								}
 							} else if (formValidationState.valid) {
-								if (sidebarPartition.startAddress) {
+								if (existingPartition) {
 									dispatch(
 										editPartition({
-											sidebarPartition: partitionDetails,
+											sidebarPartition: activePartition,
 											startAddress: sidebarPartition.startAddress
 										})
 									);
 								} else {
-									dispatch(createPartition(partitionDetails));
+									dispatch(createPartition(activePartition));
 								}
 
 								onClose();
 							}
 						}}
 					>
-						<CheckmarkIcon />{' '}
-						{sidebarPartition.type
-							? i10n?.partition.edit
-							: i10n?.partition.create}
+						{existingPartition
+							? i10n?.partition.updateBtn
+							: i10n?.partition.createBtn}
 					</Button>
 				</div>
 			}
 		>
 			{activePartition && (
 				<>
-					<PartitionDetails
-						displayName={activePartition.displayName}
-						type={activePartition.type}
-						errors={formValidationState.errors}
-						onNameChange={name => {
-							updateActivePartitionDetails({
-								...activePartition,
-								displayName: name
-							});
-						}}
-						onTypeChange={type => {
-							pluginConfig.current = {};
-							updateActivePartitionDetails({
-								type,
-								displayName: activePartition.displayName,
-								projects: [],
-								startAddress: '',
-								size: 0,
-								blockNames: [],
-								baseBlock: {
-									Name: '',
-									Description: '',
-									AddressStart: '',
-									AddressEnd: '',
-									Width: 0,
-									MinimumAlignment: undefined,
-									Access: '',
-									Location: '',
-									Type: '',
-									TrustZone: undefined
-								},
-								config: {}
-							});
-						}}
-					/>
+					<PartitionDetails errors={formValidationState.errors} />
 					<AssignedCoresSection
-						assignedCores={activePartition.projects}
-						memoryType={activePartition.type}
 						errors={formValidationState.errors}
 						onCoreChange={cores => {
 							updateActivePartitionDetails({
 								...activePartition,
-								projects:
-									cores.length === 1
-										? [{...cores[0], owner: true}]
-										: cores
+								projects: cores.length === 1 ? [cores[0]] : cores
 							});
 						}}
 					/>
 					{activePartition.projects.length > 0 ? (
 						<CfsSuspense fallbackPosition='center'>
-							<PluginOptionsSection
-								config={activePartition.config}
-								pluginOptionsPromise={pluginOptionsPromise}
-								onChange={(projectId, controlId, value) => {
-									const currentConfig = pluginConfig.current;
-									pluginConfig.current = {
-										...activePartition.config,
-										...currentConfig,
-										[projectId]: {
-											...activePartition.config?.[projectId],
-											...currentConfig[projectId],
-											[controlId]: value
-										}
-									};
-								}}
-							/>
+							<PluginOptionsSection pluginOptions={pluginOptions} />
 						</CfsSuspense>
 					) : (
 						<div className={styles.section}>

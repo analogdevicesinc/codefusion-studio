@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -13,6 +12,8 @@
  * limitations under the License.
  *
  */
+
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import type {DiagramNode, Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import NodeTooltip from './NodeTooltip';
@@ -21,18 +22,18 @@ import {
 	setDiagramData
 } from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {useRef} from 'react';
-import {controlErrorTypes} from '../../../utils/control-errors';
+import {controlErrorTypes} from '@common/utils/control-errors';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
-const wlp = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
+import type {CfsConfig} from 'cfs-plugins-api';
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -43,7 +44,7 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 const mockHoveredNodeInfo = {
 	name: '',
@@ -95,19 +96,6 @@ function MockDiagramNode({
 
 describe('Node Tooltip', () => {
 	beforeEach(() => {
-		localStorage.setItem(
-			'ClockNodes',
-			JSON.stringify(wlp.ClockNodes)
-		);
-
-		localStorage.setItem('Package', JSON.stringify(wlp.Packages[0]));
-
-		localStorage.setItem('Registers', JSON.stringify(wlp.Registers));
-
-		localStorage.setItem('Cores', JSON.stringify(wlp.Cores));
-
-		localStorage.setItem('configDict', JSON.stringify(configDict));
-
 		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
 			controls => {
 				localStorage.setItem(
@@ -123,7 +111,7 @@ describe('Node Tooltip', () => {
 			controls => {
 				const store = configurePreloadedStore(
 					wlp,
-					undefined,
+					configDict,
 					controls
 				);
 

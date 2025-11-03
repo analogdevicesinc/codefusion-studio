@@ -42,6 +42,7 @@ $vertical-offset: var(
 	&.minimised {
 		width: 0;
 		transition: width $transition-speed;
+		visibility: hidden;
 
 		.header {
 			border-bottom: none;
@@ -73,6 +74,9 @@ $vertical-offset: var(
 	}
 
 	.header {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
 		padding: 16px 20px;
 		border-bottom: var(
 			--sliding-panel-header-border-bottom,
@@ -83,7 +87,6 @@ $vertical-offset: var(
 			justify-content: space-between;
 		}
 		.description {
-			margin-top: 8px;
 			color: colors.$description-foreground;
 			@include fonts.label-l3;
 			display: -webkit-box;

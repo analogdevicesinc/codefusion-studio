@@ -14,13 +14,14 @@
       "Name": "Arm Cortex-M4F",
       "IsPrimary": true,
       "IsEnabled": true,
-      "PluginId": "com.analog.project.zephyr41.plugin",
+      "PluginId": "com.analog.project.zephyr.plugin",
       "PluginVersion": "1.0.0",
-      "FirmwarePlatform": "Zephyr 4.1",
-      "Config": {
+      "FirmwarePlatform": "zephyr",
+      "PlatformConfig": {
         "ProjectName": "myProject",
         "BuildSystem": "ninja",
         "ZephyrBoardName": "zephyr_board_name",
+        "ZephyrVersion": "4.2.0",
         "KConfigFlags": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
         "CMakeArgs": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n",
         "EnableTFM": false,
@@ -35,18 +36,13 @@
       "IsPrimary": false,
       "IsEnabled": true,
       "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginVersion": "1.1.0",
       "FirmwarePlatform": "msdk",
-      "Config": {
+      "PlatformConfig": {
         "ProjectName": "myProject",
         "MsdkBoardName": "msdk_board_name",
-        "Cflags": [
-          "-fdump-rtl-expand",
-          "-fdump-rtl-dfinish",
-          "-fdump-ipa-cgraph",
-          "-fstack-usage",
-          "-gdwarf-4"
-        ]
+        "Cflags":
+          "-fdump-rtl-expand\n-fdump-rtl-dfinish\n-fdump-ipa-cgraph\n-fstack-usage\n-gdwarf-4"
       }
     }
   ],

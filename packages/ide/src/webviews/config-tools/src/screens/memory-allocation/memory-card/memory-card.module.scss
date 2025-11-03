@@ -49,12 +49,12 @@
 	display: flex;
 	position: relative;
 	align-items: center;
-	justify-content: center;
+	justify-content: end;
+	width: 100%;
 	gap: 8px;
 	bottom: 16px;
 	height: 100%;
 	padding-top: 5px;
-	width: fit-content;
 	&.expandable {
 		&:hover {
 			cursor: pointer;

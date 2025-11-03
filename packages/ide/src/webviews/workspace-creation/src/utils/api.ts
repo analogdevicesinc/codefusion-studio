@@ -21,6 +21,7 @@ import type {
 	CfsWorkspace
 } from 'cfs-lib';
 import type {SoC} from 'cfs-ccm-lib';
+import {isCypressEnvironment} from '@common/utils/env';
 
 export async function getCatalog() {
 	return request('get-catalog') as Promise<SoC[]>;
@@ -63,16 +64,32 @@ export async function getPluginsInfoList(
 	return request('get-plugins', {filter}) as Promise<CfsPluginInfo[]>;
 }
 
+export async function getHostPlatform() {
+	if (isCypressEnvironment()) {
+		return new Promise<string>(resolve => {
+			resolve(
+				JSON.parse(localStorage.getItem('host-platform') ?? '')
+			);
+		});
+	}
+	return request('get-host-platform') as Promise<string>;
+}
+
 /**
  * Gets the workspace properties supported by a specific plugin
  * @param pluginInfo - Information about the plugin to query
  * @returns Promise that resolves to an array of plugin properties
  * @throws Error if property retrieval fails
  */
-export async function getPluginProperties(pluginInfo: CfsPluginInfo) {
+export async function getPluginProperties(
+	pluginInfo: CfsPluginInfo,
+	context: Record<string, unknown>,
+	scope?: string
+) {
 	return request('get-plugin-properties', {
 		pluginInfo,
-		scope: 'workspace'
+		scope: scope ?? 'workspace',
+		context
 	}) as Promise<CfsPluginProperty[]>;
 }
 
@@ -83,9 +100,29 @@ export async function getPluginProperties(pluginInfo: CfsPluginInfo) {
  * @throws Error if property retrieval fails
  */
 export async function fetchPluginProperties(
-	pluginInfo: CfsPluginInfo
+	pluginInfo: CfsPluginInfo,
+	context: Record<string, unknown>
 ) {
-	return getPluginProperties(pluginInfo);
+	return new Promise<CfsPluginProperty[]>((resolve, reject) => {
+		if (isCypressEnvironment()) {
+			setTimeout(() => {
+				resolve(
+					JSON.parse(
+						localStorage.getItem('pluginsProperties') ?? '[]'
+					) as CfsPluginProperty[]
+				);
+			}, 1000);
+		} else {
+			getPluginProperties(pluginInfo, context, 'project')
+				.then(pluginProps => {
+					resolve(pluginProps);
+				})
+				.catch(e => {
+					console.error(e);
+					reject();
+				});
+		}
+	});
 }
 
 /**
@@ -95,7 +132,7 @@ export async function fetchPluginProperties(
  */
 export async function fetchPlugins() {
 	return new Promise<CfsPluginInfo[]>(resolve => {
-		if ((window as any).Cypress) {
+		if (isCypressEnvironment()) {
 			setTimeout(() => {
 				resolve(
 					JSON.parse(
@@ -146,7 +183,7 @@ export async function generateMulticoreTemplatesPromise(
 	boardId?: string
 ) {
 	return new Promise<CfsPluginInfo[]>(resolve => {
-		if ((window as any).Cypress) {
+		if (isCypressEnvironment()) {
 			setTimeout(() => {
 				resolve(
 					JSON.parse(

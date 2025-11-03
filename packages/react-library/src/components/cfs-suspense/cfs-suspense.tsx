@@ -30,7 +30,7 @@ interface CfsSuspenseProps {
 function CfsSuspense({
 	children,
 	fallbackPosition,
-	fallback = <ProgressRing position={fallbackPosition}/>
+	fallback = <ProgressRing position={fallbackPosition} />
 }: CfsSuspenseProps) {
 	return (
 		<ErrorBoundary>

@@ -19,6 +19,7 @@ import type {
 	ConfigFields,
 	ControlCfg,
 	FieldDictionary,
+	RegisterConfigField,
 	RegisterDictionary
 } from '@common/types/soc';
 import {
@@ -30,14 +31,11 @@ import {getSocControlsDictionary} from './soc-controls';
 
 export default function computeRegisterValue(
 	assignedPinsConfigs: Array<{
-		pinConfig: Array<ConfigField | undefined>;
+		pinConfig: Array<RegisterConfigField | undefined>;
 		signalConfig: ConfigField[] | undefined;
 	}>,
-	modifiedClockNodesConfigs: Array<
-		Record<string, ConfigField[] | undefined>
-	>,
-	modifiedPeripheralConfigs: Array<
-		Record<string, ConfigField[] | undefined>
+	registerConfigs: Array<
+		Record<string, RegisterConfigField[] | undefined>
 	>,
 	currentRegister: RegisterDictionary
 ) {
@@ -45,13 +43,15 @@ export default function computeRegisterValue(
 	let computedValue = BigInt(0);
 	let previousRegister = '';
 
-	const modifiedFields: ConfigField[] = [];
+	const modifiedFields: RegisterConfigField[] = [];
 
 	// Get modified fields for current register from pin assignments
 	assignedPinsConfigs.forEach(config => {
 		const mergedConfigs = [
 			...(config.pinConfig ?? []),
-			...(config.signalConfig ?? [])
+			// The control value is not used in PinMux and initialization sequences, so we set it to 0.
+			...(config.signalConfig?.map(s => ({...s, ControlValue: 0})) ??
+				[])
 		];
 
 		mergedConfigs.forEach(mergedConfig => {
@@ -74,27 +74,7 @@ export default function computeRegisterValue(
 	previousRegister = '';
 
 	// Get modified fields for current register from clock nodes
-	modifiedClockNodesConfigs.forEach(config => {
-		Object.values(config)
-			.flat()
-			.forEach(cfg => {
-				if (
-					cfg?.Register === currentRegister.name &&
-					cfg?.Operation.toLowerCase() !== 'read'
-				) {
-					modifiedFields.push(cfg);
-					previousRegister = cfg.Register;
-				} else if (cfg?.Operation.toLowerCase() === 'withprevious') {
-					if (currentRegister.name === previousRegister) {
-						modifiedFields.push(cfg);
-					}
-				}
-			});
-	});
-
-	previousRegister = '';
-
-	modifiedPeripheralConfigs.forEach(config => {
+	registerConfigs.forEach(config => {
 		Object.values(config)
 			.flat()
 			.forEach(cfg => {
@@ -153,12 +133,11 @@ export default function computeRegisterValue(
 // eslint-disable-next-line max-params
 export function computeFieldValue(
 	configs: Array<{
-		pinConfig: Array<ConfigField | undefined>;
+		pinConfig: Array<RegisterConfigField | undefined>;
 		signalConfig: ConfigField[] | undefined;
 	}>,
-	clockNodesConfigs: Array<Record<string, ConfigField[] | undefined>>,
-	modifiedPeripheralConfigs: Array<
-		Record<string, ConfigField[] | undefined>
+	registerConfigs: Array<
+		Record<string, RegisterConfigField[] | undefined>
 	>,
 	registerName: string,
 	field: FieldDictionary,
@@ -171,10 +150,12 @@ export function computeFieldValue(
 	const pinsConfig = configs
 		.map(config => [
 			...(config.pinConfig ?? []),
-			...(config.signalConfig ?? [])
+			// The control value is not used in PinMux and initialization sequences, so we set it to 0.
+			...(config.signalConfig?.map(s => ({...s, ControlValue: 0})) ??
+				[])
 		])
 		.flat()
-		.reduce<ConfigField[]>((acc, config) => {
+		.reduce<RegisterConfigField[]>((acc, config) => {
 			if (
 				config?.Register === registerName &&
 				config.Operation.toLowerCase() !== 'read'
@@ -190,9 +171,9 @@ export function computeFieldValue(
 			return acc;
 		}, []);
 
-	// Filtered clock config fields that belong to the current register
-	const nodesConfig = Object.values(clockNodesConfigs).reduce<
-		ConfigField[]
+	// Filtered config fields that belong to the current register
+	const otherConfig = Object.values(registerConfigs).reduce<
+		RegisterConfigField[]
 	>((acc, config) => {
 		Object.values(config).forEach(cfg => {
 			// Only add fields that belong to the current register taking in consideration the withprevious operation
@@ -214,35 +195,7 @@ export function computeFieldValue(
 		return acc;
 	}, []);
 
-	// Filtered peripheral config fields that belong to the current register
-	const peripheralConfig = Object.values(
-		modifiedPeripheralConfigs
-	).reduce<ConfigField[]>((acc, config) => {
-		Object.values(config).forEach(cfg => {
-			// Only add fields that belong to the current register taking in consideration the withprevious operation
-			cfg?.forEach(field => {
-				if (
-					field.Register === registerName &&
-					field.Operation.toLowerCase() !== 'read'
-				) {
-					acc.push(field);
-					previousRegister = field.Register;
-				} else if (field.Operation.toLowerCase() === 'withprevious') {
-					if (registerName === previousRegister) {
-						acc.push(field);
-					}
-				}
-			});
-		});
-
-		return acc;
-	}, []);
-
-	const mergedConfigs = [
-		...pinsConfig,
-		...nodesConfig,
-		...peripheralConfig
-	];
+	const mergedConfigs = [...pinsConfig, ...otherConfig];
 
 	// Find the last modified field value for the current field
 	const targetedRegisterField = mergedConfigs
@@ -293,7 +246,6 @@ export function getNamespacedControlIntegerValue(
 	return getControlIntegerValue(controlId, controlValue, controls);
 }
 
-// eslint-disable-next-line complexity
 export function computeDefaultValues(
 	config: ConfigFields,
 	controls: ControlCfg[],
@@ -377,6 +329,7 @@ export function computeDefaultValues(
 
 			for (const [key, configs] of Object.entries(controlValues)) {
 				const checkedItems: string[] = [];
+				defaultValue = key;
 
 				for (let i = configs.length - 1; i >= 0; i--) {
 					const cfg = configs[i];
@@ -429,7 +382,6 @@ export function computeDefaultValues(
 					}
 
 					checkedItems.push(id);
-					defaultValue = key;
 				}
 
 				if (defaultValue !== undefined) {

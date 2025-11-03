@@ -39,8 +39,8 @@
 }
 
 .workspaceTable {
-	@include table.table-styles;
 	box-sizing: border-box;
+
 	padding: 11px;
 	border-radius: 4px;
 	width: 100%;
@@ -48,6 +48,9 @@
 	--border-width: 1;
 	--list-hover-background: transparent;
 	--list-active-selection-background: transparent;
+	& {
+		@include table.table-styles;
+	}
 }
 
 .gridContainer {

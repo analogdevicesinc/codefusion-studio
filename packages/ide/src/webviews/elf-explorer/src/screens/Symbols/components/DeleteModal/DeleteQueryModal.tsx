@@ -26,7 +26,10 @@ export default function DeleteQueryModal({
 	query
 }: DeleteQueryModalProps) {
 	return (
-		<section className={styles.deleteQuery}>
+		<section
+			className={styles.deleteQuery}
+			data-test='symbols:delete-modal-container'
+		>
 			<article>
 				<Info />
 			</article>

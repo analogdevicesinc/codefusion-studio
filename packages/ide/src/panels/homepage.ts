@@ -24,7 +24,7 @@ import {
 import * as vscode from "vscode";
 
 import {
-  BROWSE_MAXIM_EXAMPLES_COMMAND_ID,
+  BROWSE_MSDK_EXAMPLES_COMMAND_ID,
   CONFIG_TOOLS_COMMANDS,
   ELF_EXPLORER_COMMANDS,
   OPEN_ONLINE_DOCUMENTATION_COMMAND_ID,
@@ -37,19 +37,23 @@ import {
   CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP,
   CREATE_NEW_CFS_WORKSPACE,
   EXTENSION_ID,
+  GET_SOC_DOCUMENTATION_LINKS,
   OPEN_CFS_WORKSPACE,
   OPEN_ELF_FILE,
   OPEN_EXISTING_CONFIG_FILE,
   OPEN_WALKTHROUGH,
+  PROJECT,
   REQUEST_HOME_PAGE_CHECKBOX_STATE,
   SHOW_HOME_PAGE_AT_STARTUP_CHECKBOX,
+  TARGET,
   VIEW_ONLINE_DOCUMENTATION,
 } from "../constants";
 import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
-import { SocDataType } from "../webview/common/types/soc-data";
 import { readFileSync } from "node:fs";
-import path from "path";
+import { CatalogManager } from "../catalog/catalogManager";
+import { SoC } from "cfs-ccm-lib";
+import { getCatalogManager } from "../utils/catalog";
 
 export interface Message {
   id: string;
@@ -65,6 +69,7 @@ export class HomePagePanel {
   public static currentPanel: HomePagePanel | undefined;
   private readonly _panel: WebviewPanel;
   private _disposables: Disposable[] = [];
+  private _catalogManager: CatalogManager | undefined;
   public readonly webview: vscode.Webview;
 
   /**
@@ -91,6 +96,13 @@ export class HomePagePanel {
     this._setWebviewMessageListener(this._panel.webview);
 
     this.setConfigurationChangeListener(this._panel.webview);
+
+    // Clean up and dispose of the catalog manager when the panel is closed
+    this._disposables.push({
+      dispose: () => {
+        void this._catalogManager?.dispose();
+      },
+    });
   }
 
   /**
@@ -148,6 +160,29 @@ export class HomePagePanel {
         disposable.dispose();
       }
     }
+  }
+
+  /**
+   * Fetches the list of System on Chips (SoCs) from the catalog.
+   * @returns A promise that resolves to an array of SoCs.
+   */
+  private async getSocsFromCatalog(): Promise<SoC[]> {
+    let socs: SoC[] = [];
+
+    try {
+      this._catalogManager ??= await getCatalogManager();
+      if (this._catalogManager) {
+        await this._catalogManager.loadCatalog();
+        socs = await this._catalogManager.socCatalog.getAll();
+      }
+    } catch (error) {
+      console.error("Catalog could not be loaded.", error);
+      void vscode.window.showErrorMessage(
+        "Catalog Manager failed to load catalog. Catalog data unavailable.",
+      );
+    }
+
+    return socs;
   }
 
   /**
@@ -212,6 +247,7 @@ export class HomePagePanel {
   private _setWebviewMessageListener(webview: Webview) {
     webview.onDidReceiveMessage(
       async (message: Message) => {
+        let request;
         const command = message.type;
         switch (command) {
           case CREATE_NEW_CFS_WORKSPACE:
@@ -233,7 +269,7 @@ export class HomePagePanel {
             vscode.commands.executeCommand(ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE);
             return;
           case BROWSE_EXAMPLES:
-            vscode.commands.executeCommand(BROWSE_MAXIM_EXAMPLES_COMMAND_ID);
+            vscode.commands.executeCommand(BROWSE_MSDK_EXAMPLES_COMMAND_ID);
             return;
           case VIEW_ONLINE_DOCUMENTATION:
             vscode.commands.executeCommand(
@@ -276,6 +312,42 @@ export class HomePagePanel {
               });
             }
             return;
+          case GET_SOC_DOCUMENTATION_LINKS:
+            const socs = await this.getSocsFromCatalog();
+            if (socs.length > 0) {
+              const config = vscode.workspace.getConfiguration(EXTENSION_ID);
+              const target = config.get<string>(`${PROJECT}.${TARGET}`);
+              const result = (
+                target ? socs.filter((soc) => soc.name === target) : socs
+              )
+                .filter(
+                  (soc) => soc.documentation && soc.documentation.length > 0,
+                )
+                .flatMap((soc) => soc.documentation)
+                .filter(
+                  (doc, index, self) =>
+                    self.findIndex((u) => u?.url === doc?.url) === index,
+                );
+              request = Promise.resolve(result);
+            } else {
+              request = Promise.reject(new Error("No SoCs found."));
+            }
+            break;
+        }
+
+        if (request) {
+          const { body, error } = await request.then(
+            (body) => ({ body, error: undefined }),
+            (error) => ({ body: undefined, error: error?.message ?? "error" }),
+          );
+
+          // Send result to the webview
+          await webview.postMessage({
+            type: "api-response",
+            id: message.id,
+            body,
+            error,
+          });
         }
       },
       undefined,

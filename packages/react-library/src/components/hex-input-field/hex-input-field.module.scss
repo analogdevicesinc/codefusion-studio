@@ -43,7 +43,7 @@
 		background-color: var(--vscode-input-background);
 		color: var(--vscode-foreground);
 		font-family: fonts.$default-font-family;
-		@include fonts.body-b1;
+		@include fonts.body-b2;
 	}
 
 	&.empty {

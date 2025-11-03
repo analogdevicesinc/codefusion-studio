@@ -13,19 +13,12 @@
  *
  */
 
-.container {
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+
+.signalAssignmentWrapper {
 	display: flex;
-	justify-content: space-between;
-	gap: 8px;
-
-	.signalName {
-		flex: 1;
-	}
-
-	.placeholder {
-		width: 16px;
-	}
-	.conflictIcon {
-		height: 16px;
-	}
+	gap: 4px;
+	flex-direction: column;
+	justify-content: center;
 }

@@ -45,7 +45,7 @@ function ConfigPanel({
 				<ConfigSection
 					isExpanded
 					dataTest='config-section:manage-pin-assignments'
-					title='MANAGE PIN ASSIGNMENTS'
+					title='PIN ASSIGNMENTS'
 					variant='navigate'
 					handleHeaderClick={onManagePinAssignmentsClick}
 				>

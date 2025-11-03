@@ -3,10 +3,21 @@ import {
 	setSelectedBoardPackage,
 	setSelectedSoc
 } from '../../state/slices/workspace-config/workspace-config.reducer';
-import BoardSelectionContainer from './BoardSelectionContainer';
+import BoardSelection from './BoardSelection';
 import WrkspFooter from '../../components/WrkspFooter/WrkspFooter';
 import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
 import {navigationItems} from '../../common/constants/navigation';
+
+const standardBoardsIds = [
+	'boardSelection:card:AD-APARD32690-SL___WLP',
+	'boardSelection:card:EvKit_V1___TQFN',
+	'boardSelection:card:FTHR___'
+];
+const customBoardsIds = [
+	'boardSelection:card:___MAX32690-tqfn',
+	'boardSelection:card:___TQFN',
+	'boardSelection:card:___WLP'
+];
 
 function TestComponent() {
 	return (
@@ -19,7 +30,7 @@ function TestComponent() {
 			}}
 		>
 			<div style={{flex: 1}}>
-				<BoardSelectionContainer />
+				<BoardSelection />
 			</div>
 			<div>
 				<WrkspFooter />
@@ -30,13 +41,14 @@ function TestComponent() {
 
 describe('BoardSelection', () => {
 	beforeEach(() => {
-		cy.viewport(1200, 600);
+		cy.viewport(1200, 800);
 		cy.mount(<TestComponent />, store);
 	});
 
-	it('Should mount the BoardSelection component and display sections', () => {
+	it('Should mount the BoardSelection component and display sections and the correct SoC selection', () => {
 		const testStore = {...store};
-		testStore.dispatch(setSelectedSoc('MAX32655'));
+		const socId = 'MAX32655';
+		testStore.dispatch(setSelectedSoc(socId));
 
 		cy.mount(<TestComponent />, store).then(() => {
 			cy.dataTest('board-selection:container').should('exist');
@@ -44,28 +56,10 @@ describe('BoardSelection', () => {
 				'exist'
 			);
 			cy.contains('h2', 'Custom Board Packages').should('exist');
-		});
-	});
-
-	it('Should display card', () => {
-		const testStore = {...store};
-		testStore.dispatch(setSelectedSoc('MAX32655'));
-
-		cy.mount(<TestComponent />, store).then(() => {
-			cy.dataTest(
-				`boardSelection:card:AD-APARD32655-SL___WLP`
-			).should('exist');
-		});
-	});
-
-	it('Should display an SVG icon for one of the board and package items', () => {
-		const testStore = {...store};
-		testStore.dispatch(setSelectedSoc('MAX32655'));
-
-		cy.mount(<TestComponent />, store).then(() => {
-			cy.dataTest(`boardSelection:card:AD-APARD32655-SL___WLP`)
-				.find('svg')
-				.should('exist');
+			cy.dataTest('layout:mainPanel:board-selection').should(
+				'contain.text',
+				`Select one option for ${socId}.`
+			);
 		});
 	});
 
@@ -100,10 +94,8 @@ describe('BoardSelection', () => {
 		);
 
 		cy.mount(<TestComponent />, store).then(() => {
-			const cardTestId = 'boardSelection:card:EvKit_V1___TQFN';
-
-			cy.dataTest(cardTestId).should('exist');
-			cy.dataTest(cardTestId).should(
+			cy.dataTest(standardBoardsIds[1]).should('exist');
+			cy.dataTest(standardBoardsIds[1]).should(
 				'have.attr',
 				'data-active',
 				'true'
@@ -111,16 +103,35 @@ describe('BoardSelection', () => {
 		});
 	});
 
-	it('Should display an external link for board items', () => {
+	it('Should display an external link for standard boards, but not for custom boards', () => {
+		const testStore = {...store};
+		testStore.dispatch(setSelectedSoc('MAX32690'));
+
 		cy.mount(<TestComponent />, store).then(() => {
-			const cardTestId = 'boardSelection:card:EvKit_V1___TQFN';
+			standardBoardsIds.forEach(id => {
+				cy.dataTest(id).should('exist');
 
-			cy.dataTest(cardTestId).should('exist');
+				cy.dataTest(id)
+					.find('a[href]')
+					.should('exist')
+					.and('have.attr', 'href');
+			});
 
-			cy.dataTest(cardTestId)
-				.find('a[href]')
-				.should('exist')
-				.and('have.attr', 'href');
+			customBoardsIds.forEach(id => {
+				cy.dataTest(id).should('exist');
+				cy.dataTest(id).find('a[href]').should('not.exist');
+			});
+		});
+	});
+
+	it('Should display the SVG icon for all boards', () => {
+		const testStore = {...store};
+		testStore.dispatch(setSelectedSoc('MAX32690'));
+
+		cy.mount(<TestComponent />, store).then(() => {
+			standardBoardsIds.concat(customBoardsIds).forEach(id => {
+				cy.dataTest(id).find('svg').should('exist');
+			});
 		});
 	});
 });

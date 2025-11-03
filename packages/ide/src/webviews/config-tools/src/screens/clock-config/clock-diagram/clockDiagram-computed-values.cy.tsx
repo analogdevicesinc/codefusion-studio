@@ -20,15 +20,15 @@ import ClockDiagram from './ClockDiagram';
 import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 
-const soc = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default as unknown as Soc);
+const soc = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
+import type {CfsConfig} from 'cfs-plugins-api';
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -39,21 +39,11 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Clock Diagram computed values', () => {
 	beforeEach(() => {
 		cy.viewport(1068, 688);
-
-		localStorage.setItem(
-			'ClockNodes',
-			JSON.stringify(soc.ClockNodes)
-		);
-
-		localStorage.setItem('Package', JSON.stringify(soc.Packages[0]));
-
-		localStorage.setItem('configDict', JSON.stringify(configDict));
-
 		cy.fixture('clock-config-plugin-controls-msdk.json').then(
 			controls => {
 				window.localStorage.setItem(
@@ -69,7 +59,7 @@ describe('Clock Diagram computed values', () => {
 			controls => {
 				const reduxStore = configurePreloadedStore(
 					soc,
-					undefined,
+					configDict,
 					controls
 				);
 

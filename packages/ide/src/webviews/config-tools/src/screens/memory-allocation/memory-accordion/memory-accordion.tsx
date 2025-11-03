@@ -84,7 +84,9 @@ export default function MemoryAccordion({
 				<span className={styles.label}>
 					{i10n?.blocks?.['min-alignment']}
 				</span>
-				<span className={styles.value}>{getBlockMinAlignment(memoryBlock)}</span>
+				<span className={styles.value} data-test='min-alignment'>
+					{getBlockMinAlignment(memoryBlock)}
+				</span>
 			</div>
 			<div className={`${styles.heading} ${styles.partitionSpacing}`}>
 				{i10n?.partition.num_partitions?.other.label.title}
@@ -121,7 +123,7 @@ export default function MemoryAccordion({
 						{formatTotalAndAvailableMemory(
 							totalMemory,
 							getRemainingMemory(),
-							true
+							false
 						)}
 					</div>
 				}

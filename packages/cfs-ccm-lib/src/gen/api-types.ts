@@ -111,7 +111,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        'application/json': components['schemas']['coretype.CreateOuput'];
+                        'application/json': components['schemas']['coretype.CreateOutput'];
                     };
                 };
                 /** @description Bad Request */
@@ -872,7 +872,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        'application/json': components['schemas']['socfamily.CreateOuput'];
+                        'application/json': components['schemas']['socfamily.CreateOutput'];
                     };
                 };
                 /** @description Bad Request */
@@ -1011,6 +1011,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    /** @description The version of CFS to filter results for */
+                    cfsVersion?: string;
                     /** @description Continuation token from previous response */
                     continue?: string;
                 };
@@ -1152,7 +1154,10 @@ export interface paths {
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description The version of CFS to filter results for */
+                    cfsVersion?: string;
+                };
                 header?: never;
                 path: {
                     /** @description The ID of the SoC to return */
@@ -1454,7 +1459,10 @@ export interface paths {
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Return only stored user data, otherwise derive values (such as tags) from defaults */
+                    stored?: boolean;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1587,7 +1595,72 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get a User by ID or email
+         * @description Returns a User
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Return only stored user data, otherwise derive values (such as tags) from defaults */
+                    stored?: boolean;
+                };
+                header?: never;
+                path: {
+                    /** @description ID or email of the user to be retrieved */
+                    userID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['user.GetUserOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
         /**
          * Update User
          * @description Updates a user key
@@ -1597,7 +1670,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description ID of the user to be updated */
+                    /** @description ID or email of the user to be updated */
                     userID: string;
                 };
                 cookie?: never;
@@ -1666,7 +1739,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description ID of the user to be deleted */
+                    /** @description ID or email of the user to be deleted */
                     userID: string;
                 };
                 cookie?: never;
@@ -1725,6 +1798,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    '/users/entitlements': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request an Entitlement for a user
+         * @description Requests an Entitlement for the user. Include the previous token to refresh it.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Details of the Entitlement to be created or refreshed */
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['main.EntitlementRequest'];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['main.EntitlementResponse'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     '/users/keys': {
         parameters: {
             query?: never;
@@ -1739,7 +1892,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description User ID to list keys for */
+                    /** @description User ID or email to list keys for */
                     userID?: string;
                 };
                 header?: never;
@@ -1944,7 +2097,7 @@ export interface components {
             /** @description A generic response object. This can be information related to a successful or failed request. */
             message?: string;
         };
-        'coretype.CreateOuput': {
+        'coretype.CreateOutput': {
             item: components['schemas']['types.CoreType'];
         };
         'coretype.GetCoreTypeOutput': {
@@ -1964,13 +2117,19 @@ export interface components {
         'main.AddPackageRequest': {
             description: string;
             name: string;
-            packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+            packageType:
+                | 'WLP'
+                | 'TQFN'
+                | 'TQFP'
+                | 'CTBGA'
+                | 'CSBGA'
+                | 'BGAED';
         };
         'main.CreateAPIKeyRequest': {
             description?: string;
-            readTags?: string[];
-            role?: 'user' | 'admin';
-            writeTags?: string[];
+            readTags: string[];
+            role: 'user' | 'admin';
+            writeTags: string[];
         };
         'main.CreateAPIKeyResponse': {
             item: components['schemas']['types.APIKey'];
@@ -2011,6 +2170,17 @@ export interface components {
             userType: 'user' | 'admin';
             writeTags?: string[];
         };
+        'main.EntitlementRequest': {
+            entitlementType: 'PACKAGE_REPO_TOKEN';
+            repoUrl: string;
+            /** @description Pass existing token to refresh the entitlement */
+            token?: string;
+        };
+        'main.EntitlementResponse': {
+            entitlementType: 'PACKAGE_REPO_TOKEN';
+            repoUrl: string;
+            token: string;
+        };
         'main.PatchSoCRequest': {
             accessTag?: components['schemas']['types.AccessTag'];
             description?: string;
@@ -2026,17 +2196,18 @@ export interface components {
             url: string;
         };
         'main.UpdateUserRequest': {
-            readTags?: string[];
-            userType?: 'user' | 'admin';
-            writeTags?: string[];
+            readTags: string[];
+            userType: 'user' | 'admin';
+            writeTags: string[];
         };
         'mainmodule_internal_pkg_types.User': {
+            accessTag: components['schemas']['types.AccessTag'];
             /** Format: email */
-            email: string;
+            email?: string;
             id: string;
-            read?: string[];
+            /** Format: email */
+            maskedEmail: string;
             userType: 'user' | 'admin';
-            write?: string[];
         };
         'resource.CreateResourceOutput': {
             item: components['schemas']['types.Resource'];
@@ -2072,6 +2243,7 @@ export interface components {
             extensions: string[];
             name: string;
             primary?: boolean;
+            supportsTrustZone?: boolean;
         };
         'soc.CreateInputCoreType': {
             architecture?: string;
@@ -2087,7 +2259,13 @@ export interface components {
             accessTag?: components['schemas']['types.AccessTag'];
             description: string;
             name: string;
-            packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+            packageType:
+                | 'WLP'
+                | 'TQFN'
+                | 'TQFP'
+                | 'CTBGA'
+                | 'CSBGA'
+                | 'BGAED';
         };
         'soc.CreateOutput': {
             item: components['schemas']['types.SoC'];
@@ -2102,7 +2280,7 @@ export interface components {
         'soc.UpdateSoCOutput': {
             item?: components['schemas']['types.SoC'];
         };
-        'socfamily.CreateOuput': {
+        'socfamily.CreateOutput': {
             item: components['schemas']['types.SoCFamily'];
         };
         'socfamily.GetSoCFamilyOutput': {
@@ -2148,6 +2326,7 @@ export interface components {
             name: string;
             primary: boolean;
             socID: string;
+            supportsTrustZone?: boolean;
         };
         'types.CoreType': {
             architecture: string;
@@ -2171,7 +2350,13 @@ export interface components {
             description: string;
             id: string;
             name: string;
-            packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+            packageType:
+                | 'WLP'
+                | 'TQFN'
+                | 'TQFP'
+                | 'CTBGA'
+                | 'CSBGA'
+                | 'BGAED';
             socID: string;
         };
         'types.Resource': {
@@ -2206,6 +2391,9 @@ export interface components {
             name: string;
         };
         'user.CreateUserOutput': {
+            item: components['schemas']['mainmodule_internal_pkg_types.User'];
+        };
+        'user.GetUserOutput': {
             item: components['schemas']['mainmodule_internal_pkg_types.User'];
         };
         'user.ListAPIKeysOutput': {

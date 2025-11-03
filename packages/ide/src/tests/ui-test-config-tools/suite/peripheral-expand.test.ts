@@ -13,14 +13,21 @@
  *
  */
 import {
-  By,
   CustomEditor,
   VSBrowser,
   WebView,
   Workbench,
 } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { pinTab } from "../page-objects/main-menu";
+import {
+  mainPanelPinOnLineAndColumn,
+  pinConfigButton,
+  pinDropdown,
+  pinToggle,
+} from "../page-objects/pin-config-section/pin-config-screen";
 
 describe("Peripheral Expansion", () => {
   let browser: VSBrowser;
@@ -28,79 +35,53 @@ describe("Peripheral Expansion", () => {
 
   before(function () {
     this.timeout(60000);
-
     browser = VSBrowser.instance;
   });
 
   after(async function () {
     this.timeout(60000);
-
     await view.switchBack();
-
     const wb = new Workbench();
-
     await wb.wait();
-
     await wb.executeCommand("View: revert and close editor");
   });
 
   it("Opens the correct peripheral group and focuses when clicking on a chevron", async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-tqfn.cfsconfig",
-      ),
-    );
-
+    const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+    await browser.openResources(configPath);
     const editor = new CustomEditor();
-
     view = editor.getWebView();
-
     await view.wait();
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css(`#pinmux`));
-
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      const peripheral = await view.findWebElement(
-        By.css("#peripheral-navigation > div:nth-child(36) > section"),
-      );
+    await (await view.findWebElement(pinTab)).click().then(async () => {
+      await UIUtils.sleep(3000);
+      const peripheral = await view.findWebElement(await pinDropdown("UART0"));
       await peripheral.click().then(async () => {
-        // assert peripheral expanded
-        expect(
-          await view.findWebElement(
-            By.css(
-              "#peripheral-navigation > div:nth-child(36) > section:nth-child(2)",
-            ),
-          ),
-        ).to.exist;
+        // Assert peripheral expanded
+        expect(await view.findWebElement(await pinConfigButton("UART0", "RX")))
+          .to.exist;
       });
-      // assert pins focused
+      // Assert pins focused
       const firstPinToBeFocused = await view.findWebElement(
-        By.css("#pin-row-0 > div:nth-child(2) > div:nth-child(1)"),
+        await mainPanelPinOnLineAndColumn(1, 2),
       );
       const secondPinToBeFocused = await view.findWebElement(
-        By.css("#pin-row-0 > div:nth-child(3) > div:nth-child(1)"),
+        await mainPanelPinOnLineAndColumn(1, 3),
       );
       expect(
         (await firstPinToBeFocused.getAttribute("class")) &&
           (await secondPinToBeFocused.getAttribute("class")),
       ).to.contain("focused");
+
       const firstSignalToggle = await view.findWebElement(
-        By.css(
-          "#peripheral-navigation > div:nth-child(36) > section:nth-child(2) > section:nth-child(1) > label",
-        ),
+        await pinToggle("UART0", "RX"),
       );
       const pinToBeActivated = await view.findWebElement(
-        By.css("#pin-row-0 > div:nth-child(3) > div:nth-child(1)"),
+        await mainPanelPinOnLineAndColumn(1, 3),
       );
-      await firstSignalToggle.click().then(async function () {
-        // assert single pin assignment renders as assigned
+      await firstSignalToggle.click().then(async () => {
+        // Assert single pin assignment renders as assigned
         expect(await pinToBeActivated.getAttribute("class")).to.contain(
           "assigned",
         );

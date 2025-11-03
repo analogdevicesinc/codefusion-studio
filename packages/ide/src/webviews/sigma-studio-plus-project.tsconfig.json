@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./sigma-studio-plus-project/**/*.ts",
+		"./sigma-studio-plus-project/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./sigma-studio-plus-project/**/*.json",
+		"./custom.d.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

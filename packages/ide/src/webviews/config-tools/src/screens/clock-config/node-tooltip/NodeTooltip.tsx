@@ -19,13 +19,13 @@ import {
 	getClockFrequencyDictionary
 } from '../../../utils/rpn-expression-resolver';
 import {gap, notchHeight} from '../constants/tooltip';
-import type {DiagramNode} from '@common/types/soc';
+import type {ClockOutput, DiagramNode} from '@common/types/soc';
 import {extractClockPrefix} from '../utils/clock-nodes';
 import {
 	useClockNodesConfig,
 	useClockNodeState
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
-import {ShortDescErrors} from '../../../types/errorTypes';
+import {ShortDescErrors} from '@common/types/errorTypes';
 import CfsNotification from '@common/components/cfs-notification/CfsNotification';
 
 import styles from './NodeTooltip.module.scss';
@@ -117,7 +117,7 @@ function NodeTooltip({
 	);
 
 	const NodeOutputs = nodeDetails?.Outputs.filter(
-		output =>
+		(output: ClockOutput) =>
 			!output.Condition ||
 			evaluateClockCondition(
 				{

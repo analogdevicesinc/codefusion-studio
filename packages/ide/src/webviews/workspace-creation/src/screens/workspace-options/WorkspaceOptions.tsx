@@ -16,56 +16,75 @@
 import CfsSelectionCard from '../../../../common/components/cfs-selection-card/CfsSelectionCard';
 import WorkspaceCreationLayout from '../../common/components/WorkspaceCreationLayout';
 import {
+	useConfigurationErrors,
+	useSelectedBoardPackage,
 	useSelectedSoc,
 	useWorkspaceTemplateType
 } from '../../state/slices/workspace-config/workspace-config.selector';
-import {setWorkspaceTemplateType} from '../../state/slices/workspace-config/workspace-config.reducer';
+import {
+	setConfigErrors,
+	setWorkspaceTemplateType
+} from '../../state/slices/workspace-config/workspace-config.reducer';
 import {useAppDispatch} from '../../state/store';
-import styles from './WorspaceOptions.module.scss';
-import {Radio} from 'cfs-react-library';
-import useBoardPackageSelection from '../../hooks/useBoardPackageSelection';
+import styles from './WorkspaceOptions.module.scss';
+import {Divider, ProgressRing, Radio} from 'cfs-react-library';
+import {Suspense, useMemo} from 'react';
+import {
+	generateMulticoreTemplatesPromise,
+	getHostPlatform
+} from '../../utils/api';
+import TemplateSelectionContainer from '../template-selection/TemplateSelectionContainer';
+import NotificationError from '../../components/notification-error/NotificationError';
+import {configErrors} from '../../common/constants/validation-errors';
 
 export default function WorkspaceOptions() {
 	const dispatch = useAppDispatch();
-	const currentSoC = useSelectedSoc();
-	const board = useBoardPackageSelection()?.selectedBoardPackageId;
 	// @TODO: Remove template type
 	const workspaceTemplateType = useWorkspaceTemplateType();
 
+	const selectedSoc = useSelectedSoc();
+	const {packageId, boardId} = useSelectedBoardPackage();
+
+	const errors = useConfigurationErrors('multiCoreTemplate');
+
+	const templateListPromise = useMemo(
+		async () =>
+			generateMulticoreTemplatesPromise(
+				selectedSoc,
+				packageId,
+				boardId
+			),
+		[packageId, selectedSoc, boardId]
+	);
+
+	const hostPlatformPromise = getHostPlatform();
+
 	return (
 		<WorkspaceCreationLayout
+			testId='workspace-options'
 			title='Workspace Creation Options'
-			description={`${currentSoC} | ${board} | How would you like to create your workspace?`}
+			description='How would you like to create your workspace?'
 		>
+			<NotificationError
+				error={errors}
+				testId='multicore-template-selection-error'
+			/>
 			<div className={styles.optionsList}>
-				<CfsSelectionCard
-					testId='workspaceOptions:card:predefinedConfig'
-					id='predefined'
-					isChecked={workspaceTemplateType === 'predefined'}
-					onChange={() => {
-						dispatch(setWorkspaceTemplateType('predefined'));
-					}}
-				>
-					<Radio
-						slot='start'
-						checked={workspaceTemplateType === 'predefined'}
-					/>
-					<div slot='title' className={styles.optionBody}>
-						<h3 className={styles.optionTitle}>
-							Select a workspace template
-						</h3>
-						<p className={styles.optionDescription}>
-							Choose from SoC predefined templates pre-populated with
-							ADI recommended configuration options.
-						</p>
-					</div>
-				</CfsSelectionCard>
 				<CfsSelectionCard
 					testId='workspaceOptions:card:manualConfig'
 					id='custom'
 					isChecked={workspaceTemplateType === 'custom'}
 					onChange={() => {
 						dispatch(setWorkspaceTemplateType('custom'));
+
+						if (errors.notifications.length) {
+							dispatch(
+								setConfigErrors({
+									id: configErrors.multiCoreTemplate,
+									notifications: []
+								})
+							);
+						}
 					}}
 				>
 					<Radio
@@ -81,6 +100,17 @@ export default function WorkspaceOptions() {
 						</p>
 					</div>
 				</CfsSelectionCard>
+				<div className={styles.separator}>
+					<Divider />
+					<span>OR</span>
+					<Divider />
+				</div>
+				<Suspense fallback={<ProgressRing />}>
+					<TemplateSelectionContainer
+						templateListPromise={templateListPromise}
+						hostPlatformPromise={hostPlatformPromise}
+					/>
+				</Suspense>
 			</div>
 		</WorkspaceCreationLayout>
 	);

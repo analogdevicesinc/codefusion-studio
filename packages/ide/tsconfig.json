@@ -23,11 +23,10 @@
       "@common/*": ["./src/webviews/common/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../cfs-lib/src/ai-tools/cfsai.ts"],
   "exclude": [
     "node_modules",
     "test-resources",
-    "src/webview",
     "src/webviews/**/*",
     ".vscode-test",
     "cypress/**/*",

@@ -14,7 +14,7 @@
  */
 
 import {memo, useCallback} from 'react';
-import {Badge, CheckBox} from 'cfs-react-library';
+import {Badge, CheckBox, InfoIcon, Tooltip} from 'cfs-react-library';
 
 import CfsSelectionCard from '@common/components/cfs-selection-card/CfsSelectionCard';
 import {
@@ -30,33 +30,42 @@ import ProjectListContent from './ProjectListContent';
 import type {ProjectInfo} from '../../../utils/config';
 
 import styles from './ProjectList.module.scss';
-
-type TCodeGenError = {
-	peripheralAllocErr: number;
-	pinConfigErr: number;
-	clockConfigErr: number;
-};
+import type {TCodeGenError} from '../../../hooks/useSystemErrorsCount';
+import {useAIModels} from '../../../state/slices/ai-tools/aiModel.selector';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 const isError = (errors: TCodeGenError) =>
 	Number(
 		errors.peripheralAllocErr +
 			errors.pinConfigErr +
-			errors.clockConfigErr
+			errors.clockConfigErr +
+			errors.dfgErr
 	);
 
 function ProjectItem({
 	project,
 	isSelected,
+	isAiSelected,
 	errors,
-	onProjectSelect
+	onProjectSelect,
+	onAiProjectSelect
 }: Readonly<{
 	project: ProjectInfo;
 	isSelected: boolean;
+	isAiSelected?: boolean;
 	errors: TCodeGenError;
 	onProjectSelect: (projectId: string, selected: boolean) => void;
+	onAiProjectSelect: (projectId: string, selected: boolean) => void;
 }>) {
 	const errorExists = isError(errors);
 	const canBeSelected = !project.ExternallyManaged && !errorExists;
+	const l10n = useLocaleContext()?.generate;
+
+	const aiModelsForCore = useAIModels().filter(
+		model =>
+			model.Enabled &&
+			model.Target.Core.toUpperCase() === project.CoreId.toUpperCase()
+	);
 
 	const handleCheckboxChange = useCallback(() => {
 		if (canBeSelected) {
@@ -79,7 +88,7 @@ function ProjectItem({
 			isChecked={isSelected}
 			id={project.ProjectId}
 			testId={`generate-code:core:${project.ProjectId}`}
-			ariaLabel='Selected core'
+			ariaLabel='Selected project'
 			hasError={false}
 			isDisabled={project.ExternallyManaged}
 			onChange={handleCheckboxChange}
@@ -121,6 +130,34 @@ function ProjectItem({
 				)}
 			</div>
 
+			{aiModelsForCore?.length > 0 && (
+				<div slot='subHeader' className={styles.aiModels}>
+					<CheckBox
+						isDisabled={!isSelected}
+						checked={isAiSelected}
+						onClick={e => {
+							e.stopPropagation();
+							onAiProjectSelect(project.ProjectId, !isAiSelected);
+						}}
+					>
+						<div className={styles.aiModelsLabel}>
+							<div className={styles.labelTooltip}>
+								<h3>{l10n?.enableAiModels}</h3>
+								<Tooltip
+									title={l10n.enableAiModelsTooltip}
+									position='right'
+								>
+									<InfoIcon />
+								</Tooltip>
+							</div>
+							<span>
+								{aiModelsForCore.map(model => model.Name).join(', ')}
+							</span>
+						</div>
+					</CheckBox>
+				</div>
+			)}
+
 			<div slot='end' className={styles.endSlot}>
 				<ValidStatus
 					errorsNumber={errorExists}
@@ -137,7 +174,8 @@ function ProjectItem({
 							memory: 0,
 							peripheral: errors.peripheralAllocErr,
 							pin: errors.pinConfigErr,
-							clock: errors.clockConfigErr
+							clock: errors.clockConfigErr,
+							dfg: errors.dfgErr
 						}
 					}}
 				/>

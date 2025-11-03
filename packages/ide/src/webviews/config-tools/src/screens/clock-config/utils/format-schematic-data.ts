@@ -225,7 +225,7 @@ export function formatDiagramData(
 						typeof targetControls[key]?.Condition === 'string'
 							? evaluateClockCondition(
 									currentConfig,
-									targetControls[key].Condition
+									targetControls[key]?.Condition ?? ''
 								)
 							: true;
 

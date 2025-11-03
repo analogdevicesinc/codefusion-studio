@@ -52,6 +52,7 @@ export default function QueryFilterInput({
 				placeholder='Filter using SQL query. eg: SELECT * FROM symbols WHERE size > 0'
 				name='query-filter'
 				value={query}
+				data-test='symbols:filter:query-input'
 				onInput={event => {
 					onInput(event as ChangeEvent<HTMLInputElement>);
 				}}
@@ -67,6 +68,7 @@ export default function QueryFilterInput({
 					<Button
 						appearance='icon'
 						className={styles.icon}
+						dataTest='symbols:filter:on-query-clear'
 						onClick={onClear}
 					>
 						<CloseIcon />
@@ -74,6 +76,7 @@ export default function QueryFilterInput({
 					<Button
 						appearance='icon'
 						className={styles.icon}
+						dataTest='symbols:filter:on-query-save'
 						onClick={onSave}
 					>
 						<SaveIcon />

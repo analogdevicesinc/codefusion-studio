@@ -37,9 +37,26 @@
 	counter-increment: page;
 
 	@bottom-center {
-		content: string(chapter);
+		content: "Copyright © 2024–2025 Analog Devices Inc. All Rights Reserved.";
+		font-size: 10pt;
+		font-family: var(--md-text-font-family, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif);
 	}
+
+	/* @bottom-center {
+		content: string(chapter);
+	} */
 	@bottom-right {
 		content: "Page " counter(page);
+        font-size: 10pt;
+        font-family: var(--md-text-font-family, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif);
 	}
 }
+
+/* Remove dotted underlines from abbreviations/glossary items for cleaner PDF appearance */
+
+abbr {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  cursor: auto !important;
+}
+

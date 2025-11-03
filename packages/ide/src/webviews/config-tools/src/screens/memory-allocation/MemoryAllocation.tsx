@@ -13,14 +13,12 @@
  *
  */
 import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
-import {Button} from 'cfs-react-library';
 import {useEffect, useState} from 'react';
 import styles from './MemoryAllocation.module.scss';
 import {type MemoryBlock} from '../../../../common/types/soc';
 import MemoryAccordion from './memory-accordion/memory-accordion';
 import {useSidebarState} from '../../state/slices/partitions/partitions.selector';
 import {PartitionSidebar} from './partition-sidebar/partition-sidebar';
-import UserCreatedPartitions from './user-created-partitions/user-created-partitions';
 import PartitionAssignmentDetails from './partition-assignment-details/partition-assignment-details';
 import {useAppDispatch} from '../../state/store';
 import {MemoryFiltering} from './memory-filtering/memory-filtering';
@@ -29,6 +27,7 @@ import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 import {setSideBarState} from '../../state/slices/partitions/partitions.reducer';
 import {useFilteredMemoryBlocks} from '../../state/slices/app-context/appContext.selector';
 import EightColumnLayout from '../../components/eight-column-layout/EightColumnLayout';
+import {Button} from 'cfs-react-library';
 
 function MemoryAllocation() {
 	// We need to keep the sidebar in the DOM for the animation to work.
@@ -105,10 +104,21 @@ function MemoryAllocation() {
 				<MemoryFiltering />
 				<PartitionSidebar
 					isFormTouched={isPartitionFormTouched}
-					partition={sidebarPartition}
 					onClose={closeSlider}
 					onFormTouched={setIsPartitionFormTouched}
 				/>
+				<div className={styles.btnContainer}>
+					<Button
+						className={styles.btn}
+						dataTest='create-partition-btn'
+						disabled={!isSidebarMinimised}
+						onClick={() => {
+							openSlider();
+						}}
+					>
+						{i10n?.partition.createPartBtn}
+					</Button>
+				</div>
 			</div>
 			<div slot='side-panel'>
 				<div>
@@ -133,19 +143,6 @@ function MemoryAllocation() {
 						</div>
 					)}
 				</div>
-				<div className={styles.btnContainer}>
-					<Button
-						className={styles.btn}
-						dataTest='create-partition-btn'
-						disabled={!isSidebarMinimised}
-						onClick={() => {
-							openSlider();
-						}}
-					>
-						{i10n?.partition.create}
-					</Button>
-				</div>
-				<UserCreatedPartitions />
 			</div>
 
 			<div slot='center' className={styles.partitionDetailsContainer}>

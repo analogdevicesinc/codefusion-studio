@@ -12,21 +12,24 @@
  * limitations under the License.
  *
  */
-import {configureStore} from '@reduxjs/toolkit';
-import {rootReducer} from '../../../state/store';
+
 import PeripheralBlock from './PeripheralBlock';
 import type {
 	FormattedPeripheral,
-	FormattedPeripheralSignal
+	FormattedPeripheralSignal,
+	Soc
 } from '@common/types/soc';
+import {configurePreloadedStore} from '../../../state/store';
+import type {CfsConfig} from 'cfs-plugins-api';
 
-const reduxStore = configureStore({reducer: rootReducer});
+const soc = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			CoreNum: 0,
 			Description: 'ARM Cortex-M4',
@@ -52,20 +55,15 @@ const mockedConfigDict = {
 			CoreId: 'RV'
 		}
 	]
-};
-
-beforeEach(() => {
-	window.localStorage.setItem(
-		'configDict',
-		JSON.stringify(mockedConfigDict)
-	);
-});
+} as unknown as CfsConfig;
 
 describe('Peripheral block container', () => {
-	it('should display individual signals and omit group title, if SignalGroup is undefined', () => {
+	it('should display individual signals and omit group title, if Assignable is FALSE', () => {
+		const reduxStore = configurePreloadedStore(soc, mockedConfigDict);
 		const mock: FormattedPeripheral<FormattedPeripheralSignal> = {
 			name: 'PERIPHERAL NAME',
 			description: '',
+			assignable: false,
 			signals: {
 				SIGNAL_1: {
 					name: 'SIGNAL 1',
@@ -95,7 +93,7 @@ describe('Peripheral block container', () => {
 		// Open the accordion by simulating a click on the header
 		cy.dataTest(`accordion:${mock.name}`).should('exist').click();
 
-		cy.dataTest(`peripheral-signal-${mock.signalGroup}`).should(
+		cy.dataTest(`peripheral-signal-${mock.group}`).should(
 			'not.exist'
 		);
 
@@ -112,7 +110,8 @@ describe('Peripheral block container', () => {
 		});
 	});
 
-	it('should group signals and show group title, if SignalGroup is defined', () => {
+	it('should not show accordion when peripheral has signals and assignable is TRUE', () => {
+		const reduxStore = configurePreloadedStore(soc, mockedConfigDict);
 		const mock: FormattedPeripheral<FormattedPeripheralSignal> = {
 			name: 'PERIPHERAL NAME',
 			description: '',
@@ -138,177 +137,35 @@ describe('Peripheral block container', () => {
 					pins: []
 				}
 			},
-			signalGroup: 'SIGNAL GROUP'
+			assignable: true
 		};
 
 		cy.mount(<PeripheralBlock {...mock} />, reduxStore);
 
-		// Open the accordion by simulating a click on the header
-		cy.dataTest(`accordion:${mock.signalGroup}`)
+		cy.dataTest(`peripheral-block-${mock.name}`)
 			.should('exist')
 			.click();
 
-		cy.dataTest(`peripheral-signal-${mock.signalGroup}`)
-			.should('exist')
-			.should('have.text', mock.signalGroup);
+		cy.dataTest(`peripheral-signal-${mock.name}`).should('not.exist');
 
-		cy.dataTest(
-			`peripheral-signal-${mock.signalGroup}-chevron`
-		).should('exist');
-
-		Object.entries(mock.signals).forEach(([_, signal]) => {
-			cy.dataTest(`peripheral-signal-${signal.name}`)
-				.should('exist')
-				.should('have.text', signal.name)
-				.invoke('attr', 'class')
-				.should('include', '_groupedSignal_');
-
-			cy.dataTest(`peripheral-signal-${signal.name}-chevron`).should(
-				'not.exist'
-			);
-		});
+		cy.dataTest(`allocate-${mock.name}-button`).should('exist');
 	});
 
-	it('should show group title if SignalGroup is defined and no signals', () => {
+	it('should not show accordion when peripheral has no signal and assignable is TRUE', () => {
+		const reduxStore = configurePreloadedStore(soc, mockedConfigDict);
 		const mock: FormattedPeripheral<FormattedPeripheralSignal> = {
 			name: 'PERIPHERAL NAME',
 			description: '',
 			signals: {},
-			signalGroup: 'SIGNAL GROUP'
+			assignable: true
 		};
 
 		cy.mount(<PeripheralBlock {...mock} />, reduxStore);
 
-		// Open the accordion by simulating a click on the header
-		cy.dataTest(`accordion:${mock.signalGroup}`)
+		cy.dataTest(`peripheral-block-${mock.name}`)
 			.should('exist')
 			.click();
 
-		cy.dataTest(`peripheral-signal-${mock.signalGroup}`)
-			.should('exist')
-			.should('have.text', mock.signalGroup);
-
-		cy.dataTest(
-			`peripheral-signal-${mock.signalGroup}-chevron`
-		).should('exist');
-
-		cy.get('[data-test="peripheral-signal-"]').should('not.exist');
-	});
-
-	it('should select core', () => {
-		const mock: FormattedPeripheral<FormattedPeripheralSignal> = {
-			name: 'PERIPHERAL NAME',
-			description: '',
-			signals: {
-				SIGNAL_1: {
-					name: 'SIGNAL 1',
-					description: '',
-					pins: []
-				},
-				SIGNAL_2: {
-					name: 'SIGNAL 2',
-					description: '',
-					pins: []
-				},
-				SIGNAL_3: {
-					name: 'SIGNAL 3',
-					description: '',
-					pins: []
-				},
-				SIGNAL_4: {
-					name: 'SIGNAL 4',
-					description: '',
-					pins: []
-				}
-			},
-			signalGroup: 'SIGNAL GROUP',
-			cores: ['CM4', 'RV']
-		};
-
-		cy.mount(<PeripheralBlock {...mock} />, reduxStore);
-
-		// Open the accordion by simulating a click on the header
-		cy.dataTest(`accordion:${mock.signalGroup}`)
-			.should('exist')
-			.click();
-
-		cy.dataTest(`peripheral-signal-${mock.signalGroup}`)
-			.should('exist')
-			.click();
-
-		if (!mock.cores) return;
-
-		Object.entries(mock.cores).forEach(([_, coreId]) => {
-			cy.dataTest(`core-${coreId}-proj-container`).should('exist');
-		});
-
-		cy.dataTest(`core-${mock.cores[0]}-proj-container`).click();
-
-		Object.entries(mock.cores).forEach(([_, coreId]) => {
-			cy.dataTest(`core-${coreId}-proj-container`).should(
-				'not.exist'
-			);
-		});
-	});
-
-	it('should cancel core allocation', () => {
-		const mock: FormattedPeripheral<FormattedPeripheralSignal> = {
-			name: 'PERIPHERAL NAME',
-			description: '',
-			signals: {
-				SIGNAL_1: {
-					name: 'SIGNAL 1',
-					description: '',
-					pins: []
-				},
-				SIGNAL_2: {
-					name: 'SIGNAL 2',
-					description: '',
-					pins: []
-				},
-				SIGNAL_3: {
-					name: 'SIGNAL 3',
-					description: '',
-					pins: []
-				},
-				SIGNAL_4: {
-					name: 'SIGNAL 4',
-					description: '',
-					pins: []
-				}
-			},
-			signalGroup: 'SIGNAL GROUP',
-			cores: ['CM4', 'RV']
-		};
-
-		cy.mount(
-			<PeripheralBlock {...mock} security='Non-Secure' />,
-			reduxStore
-		);
-
-		// Open the accordion by simulating a click on the header
-		cy.dataTest(`accordion:${mock.signalGroup}`)
-			.should('exist')
-			.click();
-
-		cy.dataTest(`peripheral-signal-${mock.signalGroup}`)
-			.should('exist')
-			.click();
-
-		if (!mock.cores) return;
-
-		Object.entries(mock.cores).forEach(([_, coreId]) => {
-			cy.dataTest(`core-${coreId}-proj-container`).should('exist');
-		});
-
-		cy.dataTest(`core-selector-cancel-btn`).click();
-
-		Object.entries(mock.cores).forEach(([_, coreId]) => {
-			cy.dataTest(`core-${coreId}-proj`).should('not.exist');
-		});
-
-		cy.dataTest(
-			`peripheral-signal-${mock.signalGroup}-checkmark`
-		).should('not.exist');
+		cy.dataTest(`allocate-${mock.name}-button`).should('exist');
 	});
 });

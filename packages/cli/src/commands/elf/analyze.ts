@@ -74,17 +74,20 @@ export default class Analyze extends Command {
         const heuristics = md.getHeuristics();
 
         if (flags.json) {
-          let jsonString = `{\n\t"FirmwarePlatform":"${heuristics.getTargetOs()}",\n`;
+          const jsonObject: Record<string, number | string> = {
+            FirmwarePlatform: heuristics.getTargetOs(),
+            DetectedCompiler: heuristics.getCompilerDetected()
+          };
+
+          // Add all symbol entries to the object
           for (const [k, v] of heuristics.getSymbolEntries()) {
             const unit = v.stringValue.split(' ').pop();
-            jsonString += `\t"${capitalizeAndRemoveSeparators(k, unit)}": ${JSON.stringify(v.value)},\n`;
+            jsonObject[capitalizeAndRemoveSeparators(k, unit)] =
+              v.value;
           }
 
-          jsonString += `\t"DetectedCompiler":"${heuristics.getCompilerDetected()}"\n`;
-
-          jsonString = jsonString.slice(0, -2); // remove last comma
-          jsonString += '\n}';
-          console.log(jsonString);
+          // Convert to JSON with proper formatting (2 spaces indentation)
+          console.log(JSON.stringify(jsonObject, null, 2));
         } else {
           console.log(
             `Firmware Platform: ${heuristics.getTargetOs()}`

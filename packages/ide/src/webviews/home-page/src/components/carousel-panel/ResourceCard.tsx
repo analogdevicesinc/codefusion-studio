@@ -14,6 +14,8 @@
  */
 
 import './resource-card.scss';
+import {useState} from 'react';
+import {GlobeIcon as Placeholder} from '../top-panel/icons';
 
 export type ResourceProps = {
 	readonly link: string;
@@ -23,9 +25,19 @@ export type ResourceProps = {
 };
 
 export function ResourceCard(props: ResourceProps) {
+	// Handle image load error
+	const [imgError, setImgError] = useState(false);
 	return (
 		<a className='resource-card' href={props.link}>
-			<img src={props.img} />
+			{imgError ? (
+				<Placeholder />
+			) : (
+				<img
+					src={props.img}
+					alt={props.title}
+					onError={() => setImgError(true)}
+				/>
+			)}
 			<p className='title'>{props.title}</p>
 			<p className='description'>{props.description}</p>
 		</a>

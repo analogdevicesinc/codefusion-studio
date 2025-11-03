@@ -27,7 +27,7 @@ import {useAppDispatch} from '../../../state/store';
 import ClockDetails from '../clock-details/ClockDetails';
 import type {ClockNodeState} from '@common/types/soc';
 import ConflictIcon from '../../../../../common/icons/Conflict';
-import {getClockTypeDictionary} from '../../../utils/clock-nodes';
+import {getSortedClockTypeList} from '../../../utils/clock-nodes';
 
 import styles from '@common/components/accordion/Accordion.module.scss';
 import {getControlsForProjectIds} from '../../../utils/api';
@@ -35,18 +35,8 @@ import {CfsSuspense} from 'cfs-react-library';
 import {useMemo} from 'react';
 import {getPrimaryProjectId} from '../../../utils/config';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
-
-function getIsNodeError(clockNode: ClockNodeState, diagramData: any) {
-	const isNodeEnabled = diagramData[clockNode.Name]?.enabled;
-
-	return (
-		isNodeEnabled &&
-		(Object.values(clockNode.Errors ?? {}).length ||
-			Object.values(clockNode.controlValues ?? {}).some(
-				controlValue => controlValue === ''
-			))
-	);
-}
+import {useEvaluateClockCondition} from '../../../hooks/use-evaluate-clock-condition';
+import {getCurrentNodeError} from '../../../utils/node-error';
 
 export default function ClockConfigSideContainer() {
 	const dispatch = useAppDispatch();
@@ -54,7 +44,8 @@ export default function ClockConfigSideContainer() {
 	const activeClockNodeType = useActiveClockNodeType();
 	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
 	const diagramData = useDiagramData();
-	const nodeTypeDictionary = getClockTypeDictionary();
+	const clockNodeTypes = getSortedClockTypeList();
+	const computeEnabledState = useEvaluateClockCondition();
 
 	const controlsPromise = useMemo(
 		async () =>
@@ -75,6 +66,19 @@ export default function ClockConfigSideContainer() {
 		dispatch(setClockNodeDetailsTargetNode(clockNode));
 	};
 
+	function getIsNodeError(
+		clockNode: ClockNodeState,
+		diagramData: any
+	) {
+		const isNodeEnabled = diagramData[clockNode.Name]?.enabled;
+
+		return (
+			isNodeEnabled &&
+			(Object.values(clockNode.Errors ?? {}).length ||
+				getCurrentNodeError(clockNode, computeEnabledState))
+		);
+	}
+
 	if (clockNodeDetailsTargetNode) {
 		return (
 			<CfsSuspense>
@@ -85,66 +89,64 @@ export default function ClockConfigSideContainer() {
 
 	return (
 		<>
-			{Object.entries(nodeTypeDictionary).map(
-				([clockNodeType, clockNodesForType]) => (
-					<Accordion
-						key={clockNodeType}
-						id={clockNodeType}
-						title={clockNodeType.toUpperCase()}
-						icon={
-							Object.values(clockNodesForType).some(({Name}) =>
-								getIsNodeError(clockNodesState[Name], diagramData)
-							) ? (
-								<div
-									data-test={`accordion:conflict:${clockNodeType}`}
-									id={`${clockNodeType}-conflict`}
-									className={styles.conflictIcon}
-								>
-									<ConflictIcon />
-								</div>
-							) : null
-						}
-						body={
-							activeClockNodeType === clockNodeType
-								? Object.values(clockNodesForType).map(clockNode => (
+			{clockNodeTypes.map(([clockNodeType, clockNodesForType]) => (
+				<Accordion
+					key={clockNodeType}
+					id={clockNodeType}
+					title={clockNodeType.toUpperCase()}
+					icon={
+						Object.values(clockNodesForType).some(({Name}) =>
+							getIsNodeError(clockNodesState[Name], diagramData)
+						) ? (
+							<div
+								data-test={`accordion:conflict:${clockNodeType}`}
+								id={`${clockNodeType}-conflict`}
+								className={styles.conflictIcon}
+							>
+								<ConflictIcon />
+							</div>
+						) : null
+					}
+					body={
+						activeClockNodeType === clockNodeType
+							? Object.values(clockNodesForType).map(clockNode => (
+									<div
+										key={clockNode.Name}
+										style={{cursor: 'pointer'}}
+										data-test={clockNode.Name}
+										onClick={() => {
+											handleClockClick(clockNode.Name);
+										}}
+									>
 										<div
-											key={clockNode.Name}
-											style={{cursor: 'pointer'}}
-											data-test={clockNode.Name}
-											onClick={() => {
-												handleClockClick(clockNode.Name);
+											style={{
+												display: 'flex',
+												alignItems: 'center'
 											}}
 										>
-											<div
-												style={{
-													display: 'flex',
-													alignItems: 'center'
-												}}
-											>
-												{clockNode.Name}
-												<div style={{flex: 1}} />
-												{getIsNodeError(
-													clockNodesState[clockNode.Name],
-													diagramData
-												) && (
-													<div
-														data-test={`accordion-item:conflict:${clockNode.Name}`}
-														id={`${clockNode.Name}-conflict`}
-														className={styles.conflictIcon}
-													>
-														<ConflictIcon />
-													</div>
-												)}
-											</div>
+											{clockNode.Name}
+											<div style={{flex: 1}} />
+											{getIsNodeError(
+												clockNodesState[clockNode.Name],
+												diagramData
+											) && (
+												<div
+													data-test={`accordion-item:conflict:${clockNode.Name}`}
+													id={`${clockNode.Name}-conflict`}
+													className={styles.conflictIcon}
+												>
+													<ConflictIcon />
+												</div>
+											)}
 										</div>
-									))
-								: null
-						}
-						isOpen={activeClockNodeType === clockNodeType}
-						toggleExpand={toggleExpandMenu}
-					/>
-				)
-			)}
+									</div>
+								))
+							: null
+					}
+					isOpen={activeClockNodeType === clockNodeType}
+					toggleExpand={toggleExpandMenu}
+				/>
+			))}
 		</>
 	);
 }

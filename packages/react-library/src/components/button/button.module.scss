@@ -13,6 +13,17 @@
  *
  */
 
+@use '../../styles/colors';
+
 .button {
 	--contrast-active-border: transparent;
+	&[appearance='secondary'] {
+		&::part(control) {
+			color: colors.$button-secondary-foreground;
+			background: colors.$button-secondary-background;
+			&:hover {
+				background-color: colors.$button-secondary-hover-background;
+			}
+		}
+	}
 }

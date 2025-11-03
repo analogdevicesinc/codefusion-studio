@@ -19,6 +19,7 @@ import styles from './checkbox.module.scss';
 
 type CheckBoxProps = {
 	readonly checked?: boolean;
+	readonly indeterminate?: boolean;
 	readonly dataTest?: string;
 	readonly isDisabled?: boolean;
 	readonly onChange?: ((e: Event) => unknown) &
@@ -30,6 +31,7 @@ type CheckBoxProps = {
 
 export default function CheckBox({
 	checked,
+	indeterminate,
 	dataTest,
 	isDisabled = false,
 	onChange,
@@ -42,6 +44,7 @@ export default function CheckBox({
 			<VSCodeCheckbox
 				{...(dataTest ? {'data-test': dataTest} : {})}
 				checked={checked}
+				indeterminate={indeterminate}
 				value={String(checked)}
 				disabled={isDisabled}
 				onChange={onChange}

@@ -1,0 +1,3 @@
+# the auth config doesn't get committed
+# see ../../DEVELOPMENT.md
+auth.json

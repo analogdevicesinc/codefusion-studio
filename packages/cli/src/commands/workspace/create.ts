@@ -1,10 +1,26 @@
-import {Command, Flags} from '@oclif/core';
-import {CfsWorkspace} from 'cfs-lib';
-import fs from 'node:fs';
-import path from 'node:path';
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
+import {Command, Flags} from '@oclif/core';
+import {CfsDataModelManager, CfsWorkspace} from 'cfs-lib';
+
+import {getDataModelManager} from '../../utils/data-model-manager.js';
+import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 import {
+  checkIfFileExists,
   lowercaseFirstLetterProps,
   readJsonFile
 } from '../../utils/utils.js';
@@ -18,7 +34,8 @@ export default class WorkspaceCreate extends Command {
       char: 's',
       summary:
         'Specify additional directory paths to search for plugins and data models. Can be used multiple times.',
-      multiple: true
+      multiple: true,
+      required: false
     }),
     'workspace-file-path': Flags.string({
       char: 'w',
@@ -27,24 +44,11 @@ export default class WorkspaceCreate extends Command {
     })
   };
 
-  checkIfFileExists(filename: string | undefined) {
-    if (!filename) {
-      this.log('Provided filename is undefined.');
-      return false;
-    }
-
-    const filepath = path.isAbsolute(filename)
-      ? filename
-      : path.resolve(process.cwd(), filename);
-
-    return fs.existsSync(filepath);
-  }
-
   async run() {
     const {flags} = await this.parse(WorkspaceCreate);
     const cfsWorkspaceFile = flags['workspace-file-path'];
 
-    if (!this.checkIfFileExists(cfsWorkspaceFile)) {
+    if (!checkIfFileExists(cfsWorkspaceFile)) {
       this.error(
         `Workspace file: ${cfsWorkspaceFile} does not exist.`
       );
@@ -61,7 +65,21 @@ export default class WorkspaceCreate extends Command {
 
     cfsWorkspace.projects = formattedProjects;
 
-    const pluginManager = getPluginManager(flags['search-path']);
+    const pkgManager = await getPackageManager({
+      acceptUndefined: true
+    });
+
+    const dmManager: CfsDataModelManager = await getDataModelManager(
+      this.config,
+      pkgManager,
+      flags['search-path']
+    );
+
+    const pluginManager = getPluginManager(
+      flags['search-path'],
+      pkgManager,
+      dmManager
+    );
 
     await pluginManager.generateWorkspace(cfsWorkspace);
   }

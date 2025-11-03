@@ -20,8 +20,6 @@
 import { expect } from "chai";
 import { existsSync } from "fs";
 import { InputBox, Workbench } from "vscode-extension-tester";
-
-import { configureWorkspace } from "../../ui-test-utils/activation-utils";
 import {
   closeFolder,
   closeWindows,
@@ -40,14 +38,14 @@ describe("Zephyr Build Task Test", () => {
   before(async () => {
     await closeFolder();
 
-    // delete the .vscode folder to remove any settings
+    // Delete the .vscode folder to remove any settings
     deleteFolder(testDirectory + "/.vscode");
 
     await openFolder(process.cwd() + "/" + testDirectory);
 
     workbench = new Workbench();
 
-    // give the extension some time to activate
+    // Give the extension some time to activate
     await workbench.getDriver().sleep(15000);
     await closeWindows();
   });
@@ -56,12 +54,11 @@ describe("Zephyr Build Task Test", () => {
     await closeWindows();
   });
 
-  it 
   it("Zephyr Build Project Test", async () => {
     await workbench.executeCommand("Tasks: Run Build Task");
     await workbench.getDriver().sleep(5000);
     let input = await InputBox.create();
-    let picks = await input.getQuickPicks();
+    const picks = await input.getQuickPicks();
     await workbench.getDriver().sleep(5000);
 
     // These are the expected options when there aren't any cmake extensions installed
@@ -73,8 +70,8 @@ describe("Zephyr Build Task Test", () => {
     ];
 
     // Checking if the Zephyr related build tasks are loaded
-    for (const [i, item] of picks.entries()) {
-      const text = await item.getText();
+    const texts = await Promise.all(picks.map((item) => item.getText()));
+    for (const [i, text] of texts.entries()) {
       expect(text).to.contains(expected[i]);
     }
 
@@ -82,19 +79,22 @@ describe("Zephyr Build Task Test", () => {
     await workbench.executeCommand("Tasks: Run Build Task");
     await workbench.getDriver().sleep(5000);
     input = await InputBox.create();
-    
-    //Select Build task
+
+    // Select Build task
     await input.selectQuickPick("CFS (Zephyr): build");
-    // wait for the task to complete
+    // Wait for the task to complete
     await workbench.getDriver().sleep(30000);
 
-    // verify the build succeeded
+    // Verify the build succeeded
     const text = await getTerminalViewText();
-    expect(text).to.not.be.empty;
-    const error = text.match("^([Ee]rror|[Ff]atal\s[Ee]rror)$");
-    expect(error, `Error while running task 'CFS (Zephyr): build'.\n${text}`).to.be.null;
-    
-    //verifying the build folder exists
-    expect(existsSync(testDirectory + "/build")).to.be.true;
+    expect(text).to.not.equal("");
+    const error = text.match(/^([Ee]rror|[Ff]atal\s[Ee]rror)$/);
+    expect(
+      error,
+      `Error while running task 'CFS (Zephyr): build'.\n${text}`,
+    ).to.equal(null);
+
+    // Verifying the build folder exists
+    expect(existsSync(testDirectory + "/build")).to.equal(true);
   });
 });

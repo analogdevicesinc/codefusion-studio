@@ -18,6 +18,8 @@ import {useActiveScreen} from '../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../state/store';
 import {navigationItems} from '../common/constants/navigation';
 import {
+	useCoresToPersist,
+	useCurrentCoreConfigStep,
 	useSelectedBoardPackage,
 	useSelectedCores,
 	useSelectedCoreToConfigId,
@@ -30,7 +32,10 @@ import {
 	removeSelectedCores,
 	setConfigErrors,
 	setWorkspaceTemplate,
-	setCoreConfig
+	setCoreConfig,
+	setCoreToConfigId,
+	setCurrentCoreConfigStep,
+	toggleCoreEnabled
 } from '../state/slices/workspace-config/workspace-config.reducer';
 import {
 	configErrors,
@@ -44,6 +49,8 @@ import type {StatePlatformConfig} from '../common/types/state';
 import useCoreValidation from './useCoreValidation';
 import {createWorkspace} from '../utils/api';
 import {
+	getEnabledCores,
+	getTrustZoneIds,
 	isPathInvalid,
 	isWorkspaceNameInvalid
 } from '../utils/workspace-config';
@@ -59,7 +66,75 @@ export default function useScreenNavigation() {
 	const {packageId, boardId} = useSelectedBoardPackage();
 	const selectedCores = useSelectedCores();
 	const currentlyConfiguredCoreId = useSelectedCoreToConfigId();
-	const {isCoreInErrorState} = useCoreValidation();
+	const {getPrimaryCoreError} = useCoreValidation();
+
+	const enabledCores = getEnabledCores(selectedCores);
+	const coresToPersist = useCoresToPersist();
+
+	const totalEnabledCores = enabledCores.length;
+
+	const currentStep = useCurrentCoreConfigStep();
+
+	const goToNextCoreConfigStep = () => {
+		if (currentStep + 1 < totalEnabledCores) {
+			// if trustzone cores are enabled they take precedence, so disable the base core
+			Object.values(selectedCores)
+				.filter(
+					core =>
+						!core.id.endsWith('-secure') &&
+						!core.id.endsWith('-nonsecure')
+				)
+				.forEach(core => {
+					const baseId = core.id;
+					const {secureCoreId, nonSecureCoreId} =
+						getTrustZoneIds(baseId);
+					// Check if TrustZone cores are enabled
+					if (
+						(selectedCores[secureCoreId]?.isEnabled ||
+							selectedCores[nonSecureCoreId]?.isEnabled) &&
+						core.isEnabled
+					) {
+						dispatch(toggleCoreEnabled(baseId));
+					}
+				});
+			const nextCore = enabledCores[currentStep + 1];
+			dispatch(setCoreToConfigId(nextCore.id));
+
+			dispatch(setCurrentCoreConfigStep(currentStep + 1));
+		} else {
+			dispatch(setActiveScreen(navigationItems.pathSelection));
+		}
+	};
+
+	const goToPrevCoreConfigStep = () => {
+		if (currentStep > 0) {
+			dispatch(setCurrentCoreConfigStep(currentStep - 1));
+			const prevCore = enabledCores[currentStep - 1];
+
+			dispatch(setCoreToConfigId(prevCore.id));
+		} else {
+			// Reset base core isEnabled to true on core config step if TrustZone core exist and base core is disabled
+			Object.values(selectedCores)
+				.filter(
+					core =>
+						!core.id.endsWith('-secure') &&
+						!core.id.endsWith('-nonsecure')
+				)
+				.forEach(core => {
+					const baseId = core.id;
+					const {secureCoreId, nonSecureCoreId} =
+						getTrustZoneIds(baseId);
+					if (
+						(selectedCores[secureCoreId]?.isEnabled ||
+							selectedCores[nonSecureCoreId]?.isEnabled) &&
+						!core.isEnabled
+					) {
+						dispatch(toggleCoreEnabled(baseId));
+					}
+				});
+			dispatch(setActiveScreen(navigationItems.coresSelection));
+		}
+	};
 
 	const selectedCoresIds = Object.values(selectedCores).map(
 		core => core.id
@@ -113,52 +188,52 @@ export default function useScreenNavigation() {
 			forwardLabel: CONTINUE_LABEL,
 			forwardAction() {
 				// Detect if there has been a change in path from predefined template flow to custom path flow.
-				// If there is a change, we reset the cores selection.
+				// If there is a change, we reset the cores selection
+
 				if (
 					selectedWorkspaceCreationPath === 'custom' &&
 					selectedTemplate?.pluginId
 				) {
 					dispatch(removeSelectedCores(selectedCoresIds));
 					dispatch(setWorkspaceTemplate(undefined));
+
+					dispatch(setActiveScreen(navigationItems.coresSelection));
+				} else {
+					// If the user is changing from custom path to predefined path, we don't reset cores as that will happen on template selection.
+					dispatch(
+						setActiveScreen(
+							selectedWorkspaceCreationPath === 'custom'
+								? navigationItems.coresSelection
+								: navigationItems.workspaceOptions
+						)
+					);
+				}
+
+				if (selectedWorkspaceCreationPath === 'predefined') {
+					const {pluginId, pluginVersion} = selectedTemplate ?? {};
+
+					if (pluginId && pluginVersion) {
+						dispatch(setActiveScreen(navigationItems.pathSelection));
+					} else {
+						dispatch(
+							setConfigErrors({
+								id: configErrors.multiCoreTemplate,
+								notifications: [ERROR_TYPES.noSelection]
+							})
+						);
+					}
 				}
 
 				// If the user is changing from custom path to predefined path, we don't reset cores as that will happen on template selection.
-				dispatch(
-					setActiveScreen(
-						selectedWorkspaceCreationPath === 'custom'
-							? navigationItems.coresSelection
-							: navigationItems.templateSelection
-					)
-				);
 			},
 			backAction() {
 				dispatch(setActiveScreen(navigationItems.boardSelection));
 			}
 		},
-		[navigationItems.templateSelection]: {
-			forwardLabel: CONTINUE_LABEL,
-			forwardAction() {
-				const {pluginId, pluginVersion} = selectedTemplate ?? {};
-
-				if (pluginId && pluginVersion) {
-					dispatch(setActiveScreen(navigationItems.pathSelection));
-				} else {
-					dispatch(
-						setConfigErrors({
-							id: configErrors.multiCoreTemplate,
-							notifications: [ERROR_TYPES.noSelection]
-						})
-					);
-				}
-			},
-			backAction() {
-				dispatch(setActiveScreen(navigationItems.workspaceOptions));
-			}
-		},
 		[navigationItems.coresSelection]: {
 			forwardLabel: CONTINUE_LABEL,
 			forwardAction() {
-				const errorTypes = isCoreInErrorState(selectedCores);
+				const errorTypes = getPrimaryCoreError(selectedCores);
 
 				dispatch(
 					setConfigErrors({
@@ -167,16 +242,20 @@ export default function useScreenNavigation() {
 					})
 				);
 
-				if (!errorTypes.length)
-					dispatch(setActiveScreen(navigationItems.pathSelection));
+				if (!errorTypes.length) {
+					dispatch(setActiveScreen(navigationItems.coreConfig));
+
+					const currentCore = enabledCores[currentStep];
+					dispatch(setCoreToConfigId(currentCore.id));
+				}
 			},
 			backAction() {
 				dispatch(setActiveScreen(navigationItems.workspaceOptions));
 			}
 		},
 		[navigationItems.coreConfig]: {
-			forwardLabel: 'Apply',
-			backLabel: 'Cancel',
+			forwardLabel: 'Continue',
+			backLabel: 'Back',
 			forwardAction() {
 				const storedConfig = localStorage.getItem(
 					LOCAL_STORAGE_CORE_CONFIG
@@ -217,8 +296,7 @@ export default function useScreenNavigation() {
 							notifications: []
 						})
 					);
-
-					dispatch(setActiveScreen(navigationItems.coresSelection));
+					goToNextCoreConfigStep();
 				} else {
 					dispatch(
 						setConfigErrors({
@@ -229,7 +307,7 @@ export default function useScreenNavigation() {
 				}
 			},
 			backAction() {
-				dispatch(setActiveScreen(navigationItems.coresSelection));
+				goToPrevCoreConfigStep();
 			}
 		},
 		[navigationItems.pathSelection]: {
@@ -252,7 +330,7 @@ export default function useScreenNavigation() {
 						workspaceName,
 						location: path,
 						board: boardId,
-						projects: Object.values(selectedCores ?? {})
+						projects: coresToPersist
 					}).catch(error => {
 						dispatch(
 							setConfigErrors({
@@ -278,11 +356,9 @@ export default function useScreenNavigation() {
 			},
 			backAction() {
 				if (selectedWorkspaceCreationPath === 'custom') {
-					dispatch(setActiveScreen(navigationItems.coresSelection));
+					dispatch(setActiveScreen(navigationItems.coreConfig));
 				} else {
-					dispatch(
-						setActiveScreen(navigationItems.templateSelection)
-					);
+					dispatch(setActiveScreen(navigationItems.workspaceOptions));
 				}
 			}
 		}

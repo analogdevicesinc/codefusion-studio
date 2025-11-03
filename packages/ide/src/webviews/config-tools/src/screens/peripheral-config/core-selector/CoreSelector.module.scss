@@ -13,17 +13,25 @@
  *
  */
 @use '#colors' as colors;
+@use '#fonts' as fonts;
 
 .container {
 	display: flex;
 	flex-direction: column;
-	padding: 2px 0 6px 0;
+	padding: 10px 0 10px 0;
 	gap: 8px;
 }
 
 .allocateText {
+	display: flex;
+	padding: 12px 20px 4px 20px;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 10px;
+	align-self: stretch;
 	height: 16px;
 	align-content: center;
+	@include fonts.heading-h4;
 }
 
 .core {
@@ -32,13 +40,22 @@
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
-	.chevron {
-		rotate: 90;
-	}
+	padding: 10px 10px 10px 0px;
 }
 
 .disabled > div {
 	color: colors.$disabled-foreground;
+	cursor: not-allowed;
+}
+
+.coreSection {
+	display: flex;
+	padding: 8px 20px;
+	width: 220px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	align-self: stretch;
 }
 
 .cursorPointer {
@@ -46,8 +63,25 @@
 }
 
 .cancelButton {
+	display: flex;
+	padding: 4px;
+	align-items: flex-start;
+	align-self: stretch;
 	height: 16px;
 	width: fit-content;
 	align-content: center;
 	cursor: pointer;
+	.cancelIcon {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+}
+
+.coreCard {
+	width: 100%;
+
+	&:hover {
+		background-color: transparent;
+	}
 }

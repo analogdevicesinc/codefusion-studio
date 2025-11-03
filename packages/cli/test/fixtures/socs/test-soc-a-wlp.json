@@ -1,0 +1,37 @@
+{
+  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.  All rights reserved.",
+  "Version": "1.1.44",
+  "Schema": "1.1.0",
+  "Timestamp": "2025-01-15T10:30:00.000Z",
+  "Name": "TEST_SOC_A",
+  "Description": "Test fixture for TEST_SOC_A",
+  "Parts": [
+    {
+      "Name": "TEST_SOC_A",
+      "Package": "WLP"
+    }
+  ],
+  "Cores": [
+    {
+      "Id": "CM4",
+      "Name": "ARM Cortex-M4",
+      "CoreNum": 0,
+      "IsPrimary": true
+    }
+  ],
+  "Controls": {},
+  "ClockNodes": [],
+  "Peripherals": [],
+  "Registers": [],
+  "Packages": [
+    {
+      "Name": "WLP",
+      "Description": "Wafer Level Package",
+      "NumPins": 36,
+      "Pins": [],
+      "PinCanvas": {},
+      "CoprogrammedSignals": [],
+      "ClockCanvas": {}
+    }
+  ]
+}

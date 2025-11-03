@@ -1,0 +1,13 @@
+{
+ "remotes": [
+  {
+   "name": "cfs-restricted",
+   "url": "https://conan.cloudsmith.io/adi/codefusion-restricted",
+   "provider": "myAnalog"
+  },
+  {
+   "name": "cfs-public",
+   "url": "https://conan.cloudsmith.io/adi/codefusion-public"
+  }
+ ]
+}

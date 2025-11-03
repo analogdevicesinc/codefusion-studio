@@ -22,7 +22,7 @@ import { platform } from "node:process";
 import { InputBox, Workbench } from "vscode-extension-tester";
 import { CFS_IDE_VERSION } from "../../ui-test-utils/settings-utils";
 import { configureWorkspace } from "../../ui-test-utils/activation-utils";
-import {SELECT_SDK_PATH_COMMAND_ID} from "../../../commands/constants";
+import { SELECT_SDK_PATH_COMMAND_ID } from "../../../commands/constants";
 import {
   closeFolder,
   closeWindows,
@@ -30,18 +30,17 @@ import {
   openFolder,
 } from "../../ui-test-utils/file-utils";
 
-
 describe("Command Tests", () => {
   const testDirectory = "src/tests/ui-test/data/Hello_World";
   let workbench: Workbench;
 
   beforeEach(async () => {
     await closeFolder();
-    // delete the .vscode folder to remove any settings
+    // Delete the .vscode folder to remove any settings
     deleteFolder(testDirectory + "/.vscode");
     await openFolder(process.cwd() + "/" + testDirectory);
     workbench = new Workbench();
-    await workbench.getDriver().sleep(30000);
+    await workbench.getDriver().sleep(25000);
     await configureWorkspace("Yes");
     await workbench.getDriver().sleep(20000);
     await closeWindows();
@@ -59,13 +58,14 @@ describe("Command Tests", () => {
     const picks = await input.getQuickPicks();
     expect(picks).not.equal(undefined);
     let sdkPath;
-    for (const item of picks) {
-      const text = await item.getText();
-      if (text.match(".*"+ CFS_IDE_VERSION)) {
+    const texts = await Promise.all(picks.map((item) => item.getText()));
+    for (const text of texts) {
+      if (text.match(".*" + CFS_IDE_VERSION)) {
         sdkPath = text;
         break;
       }
     }
+
     expect(sdkPath).not.equal(undefined);
     if (sdkPath !== undefined) {
       await input.selectQuickPick(sdkPath);
@@ -76,6 +76,7 @@ describe("Command Tests", () => {
       if (platform === "win32") {
         value = value.toString();
       }
+
       expect(value).to.equal(sdkPath);
     }
   });

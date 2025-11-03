@@ -15,6 +15,7 @@
 
 @use '#fonts' as fonts;
 @use '#colors' as colors;
+@use '#layout' as layout;
 
 .coreListContainer {
 	display: flex;
@@ -42,6 +43,35 @@
 		flex-direction: row;
 		color: colors.$description-foreground;
 		gap: 2px;
+	}
+
+	.aiModels {
+		display: flex;
+		align-items: flex-start;
+		gap: layout.$spacing-3;
+
+		vscode-checkbox {
+			align-items: start;
+		}
+
+		.aiModelsLabel {
+			display: flex;
+			flex-direction: column;
+			gap: layout.$spacing-2;
+
+			h3 {
+				@include fonts.body-b1;
+			}
+			span {
+				@include fonts.body-b3;
+				color: colors.$description-foreground;
+			}
+
+			.labelTooltip {
+				display: flex;
+				gap: 4px;
+			}
+		}
 	}
 
 	.endSlot {

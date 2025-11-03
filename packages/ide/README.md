@@ -1,35 +1,66 @@
 # Overview
 
-CodeFusion Studio (CFS) is an embedded software development platform based on Microsoft's Visual Studio Code (VS Code). It provides best-in-class development tooling for ADI's embedded processors and MCUs, and includes intuitive tools for newcomers while enabling advanced features for expert embedded developers.
+CodeFusion Studio (CFS) is a modern embedded software development ecosystem that integrates with Microsoft Visual Studio Code.  
+Designed for Analog Devices’ embedded processors and microcontrollers, it provides a unified environment that combines system configuration, AI integration, code generation, and advanced debugging within a single workspace.
 
-## Prerequisites
+## Key Features
 
-The Visual Studio Code extension requires CodeFusion Studio to be present. Download and install the [CFS SDK and VS Code extension](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/). This installs the required toolchains, SDK components, and command line tools of CodeFusion Studio.
+### Workspace Creation Wizard
 
-## Features
+Create single- or multi-core projects in seconds with guided setup, example templates, and Arm® TrustZone®-ready configurations.
 
-- A new Workspace Creation wizard for quickly creating per-core projects as well as example applications to jumpstart your development.
+![Workspace Creation wizard](./gifs/ide-workspace.gif)
 
-    ![Workspace Creation wizard](./gifs/ide-workspace.gif)
+### System Planner
 
-- Toolchains that support building for Arm Cortex-M, RISC-V, and other architectures available in supported ADI products.
-- System Planner with tools for allocating peripherals and memory per core, assigning signals to pins, configuring pin and clock behavior, viewing registers, and generating source code to include in your project.
+Visually configure every aspect of your system — from memory and peripheral allocation to pin and clock behavior — and generate ready-to-build source code in one step.
 
-    ![System Planner](./gifs/ide-system-planner.gif)
+![System Planner](./gifs/ide-system-planner.gif)
 
-- Essential debugging tools including heterogeneous multi-core debugging, breakpoints, disassembly, cross-core debugging, and RTOS thread awareness.
-- An extensible plugin architecture that separates config choice capture from code generation, giving developers the freedom to choose RTOS, middleware, and firmware platforms.
+### Embedded AI Tools
+
+Build and optimize AI models directly inside your embedded workflow.  
+Use the Embedded AI Tools in System Planner to import models, assign cores, validate compatibility, and generate deployment-ready source code.
+
+![Embedded AI Tools](./gifs/ide-ai-tools.gif)
+
+### Advanced Debugging
+
+- Extended debugging ecosystem for multi-core systems with breakpoints, disassembly, cross-core support, and RTOS thread awareness.  
+- Core Dump Analysis Tool — inspect captured dumps to identify crash causes.  
+- GDB Toolbox — automate inspection and debugging with custom GDB or Python-based scripts.  
+
+### SDK & Toolchain Management
+
+- Download SDKs, toolchains, and plugins as needed with the integrated Package Manager to keep your environment up to date.  
+- Toolchains that support building for Arm® Cortex-M, RISC-V, SHARC-FX, and other architectures available in supported ADI products.
+
+### Secure & Extensible
+
+- Integrates with Analog Devices’ Trusted Edge Security Architecture (TESA), providing flexible root-of-trust services and compliance with mbedTLS, wolfSSL, and PSA Crypto API standards.  
+- Extensible plugin architecture separates configuration and design capture from code generation, allowing you to choose RTOS, middleware, and firmware platforms.
+
+## Requirements
+
+- Visual Studio Code 1.100 or later  
+- CodeFusion Studio SDK 2.0.0 or later — download the [CFS SDK](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/).  
+- Supported platforms:  
+  - Windows 11 (64-bit)  
+  - macOS 15 and macOS 26 (ARM64)
+  - Ubuntu 22.04 and 24.04 (64-bit)
 
 ## Product Details
 
-- Permissive open-source license
-- Integrated support for Zephyr RTOS (Zephyr 4.1)
-- Native support for ADI's MAX Software Development Kit (MSDK)
-- Modern UI with a CI-friendly command-line utility
-- Integration with ADI’s Trusted Edge Security Architecture (TESA), providing flexible root-of-trust services, and compliance with mbedTLS, wolfSSL, and PSA Crypto API standards.  
-- ELF file visualization tools for analyzing compiled applications and binary structures with powerful visualization tools, including an ELF File Explorer with SQL queries for symbol selection and a graphical memory map.
-- Roadmap of new features to streamline embedded development and give engineers greater control in solving difficult design challenges
+- Permissive open-source license.  
+- Integrated support for Zephyr RTOS 4.2.  
+- Native support for ADI’s MAX Software Development Kit (MSDK).  
+- Support for the ADSP-2183x / SC83x SHARC-FX family (Windows only).  
+- Beta support for Zephelin profiling, providing real-time insight into runtime behavior and AI inference performance on supported processors.
+- Compiler and debugger support for Zephyr (Arm Cortex-M), MSDK (Arm Cortex-M and RISC-V), and SHARC-FX (ADSP-2183x / SC83x), including heterogeneous multicore debugging where applicable.  
+- Modern UI with a CI-friendly command-line interface.  
+- ELF visualization tools for analyzing compiled applications and memory layouts, including an ELF File Explorer with SQL queries for symbol selection and a graphical memory map.  
+- Continuous roadmap of new features to streamline embedded development and give engineers greater control over complex system design.
 
 ## Documentation
 
-See the [User documentation](https://developer.analog.com/docs/codefusion-studio/latest) for the user guide and other resources for CodeFusion Studio.
+See the [User Documentation](https://developer.analog.com/docs/codefusion-studio/latest) for installation instructions, tutorials, and detailed guides for CodeFusion Studio.

@@ -21,6 +21,7 @@ import CheckBox from '../checkbox/checkbox';
 export interface MultiSelectOption {
 	label: string | React.ReactNode;
 	value: string;
+	disabled?: boolean;
 }
 interface MultiSelectProps {
 	disabled?: boolean;
@@ -28,9 +29,12 @@ interface MultiSelectProps {
 	error?: string;
 	initialSelectedOptions?: MultiSelectOption[];
 	options: MultiSelectOption[];
+	allowClear?: boolean;
+	className?: string;
 	dataTest?: string;
 	variant?: 'default' | 'round' | 'filter';
 	chipText?: string;
+	size?: 'md' | 'lg';
 	onSelection: (
 		options: MultiSelectOption[]
 	) => void | MultiSelectOption[];
@@ -45,6 +49,9 @@ export default function MultiSelect({
 	dataTest = '',
 	variant = 'default',
 	chipText,
+	allowClear,
+	size = 'md',
+	className,
 	onSelection
 }: MultiSelectProps): JSX.Element {
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -108,9 +115,14 @@ export default function MultiSelect({
 		onSelection(newOptions);
 	};
 
+	const clearAll = () => {
+		setSelectedOptions([]);
+		onSelection([]);
+	};
+
 	return (
 		<div
-			className={`${styles.container} ${disabled ? styles.disabled : ''}`}
+			className={`${styles.container} ${disabled ? styles.disabled : ''} ${className ? className : ''}`}
 			ref={containerRef}
 			data-test={dataTest}
 		>
@@ -138,16 +150,21 @@ export default function MultiSelect({
 				</div>
 			</button>
 			{isExpanded && (
-				<div className={styles.optionsContainer}>
+				<div
+					className={`${styles.optionsContainer} ${
+						size === 'lg' ? styles.largeOptionsContainer : ''
+					}`}
+				>
 					{options.map((option, index) => {
 						return (
 							<CheckBox
+								isDisabled={option.disabled}
 								className={styles.checkbox}
 								key={index}
 								checked={selectedOptions.some(
 									opt => option.value === opt.value
 								)}
-								onChange={() => {
+								onClick={() => {
 									handleOptionSelection(option);
 								}}
 							>
@@ -159,6 +176,11 @@ export default function MultiSelect({
 							</CheckBox>
 						);
 					})}
+					{allowClear && (
+						<button className={styles.clearButton} onClick={clearAll}>
+							Clear
+						</button>
+					)}
 				</div>
 			)}
 			<div

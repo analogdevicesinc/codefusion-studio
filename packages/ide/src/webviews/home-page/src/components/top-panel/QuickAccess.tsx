@@ -47,6 +47,10 @@ export function QuickAccess() {
 		request('openElfFile').catch(console.error);
 	};
 
+	const browseExamples = () => {
+		request('browseExamples').catch(console.error);
+	};
+
 	return (
 		<div className='quick-access-frame'>
 			<div className='quick-access-title'>
@@ -72,6 +76,17 @@ export function QuickAccess() {
 						<span className='icon-link-span'>
 							<OpenWorkspaceIcon />
 							{l10n?.quickAccess?.openWorkspace?.title}
+						</span>
+					</VSCodeLink>
+				</div>
+				<div className='quick-access-links'>
+					<VSCodeLink
+						className='quick-access-text'
+						onClick={browseExamples}
+					>
+						<span className='icon-link-span'>
+							<OpenWorkspaceIcon />
+							{l10n?.quickAccess?.browseExamples?.title}
 						</span>
 					</VSCodeLink>
 				</div>

@@ -21,20 +21,12 @@ export default function BoardSelection() {
 	const selectedSoc = useSelectedSoc();
 
 	return (
-		<div
-			style={
-				{'--cfs-layout-mainpanel-overflow': 'auto'} as Record<
-					string,
-					unknown
-				>
-			}
+		<WorkspaceCreationLayout
+			testId='board-selection'
+			title='Board and Package Options'
+			description={`Select one option for ${selectedSoc}.`}
 		>
-			<WorkspaceCreationLayout
-				title='Select your Board and Package'
-				description={`Choose an option for your ${selectedSoc}.`}
-			>
-				<BoardSelectionContainer />
-			</WorkspaceCreationLayout>
-		</div>
+			<BoardSelectionContainer />
+		</WorkspaceCreationLayout>
 	);
 }

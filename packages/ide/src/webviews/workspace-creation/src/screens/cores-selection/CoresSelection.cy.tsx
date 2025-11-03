@@ -41,11 +41,10 @@ describe('WrkspFooter', () => {
 
 	it('Should have a Primary core', () => {
 		const testStore = {...store};
-
+		testStore.dispatch(setSelectedSoc('MAX32690'));
 		testStore.dispatch(
 			setActiveScreen(navigationItems.coresSelection)
 		);
-		testStore.dispatch(setSelectedSoc('MAX32690'));
 
 		cy.mount(<TestComponent />, testStore).then(() => {
 			cy.dataTest('cores-selection:container').should(
@@ -57,13 +56,19 @@ describe('WrkspFooter', () => {
 
 	it('Should display NotificationError on click Continue button', () => {
 		const testStore = {...store};
-
+		testStore.dispatch(setSelectedSoc('MAX32690'));
 		testStore.dispatch(
 			setActiveScreen(navigationItems.coresSelection)
 		);
-		testStore.dispatch(setSelectedSoc('MAX32690'));
 
 		cy.mount(<TestComponent />, testStore).then(() => {
+			// By default the primary core is auto selected so we need to disable it
+			cy.dataTest(`${primaryCoreCard}`).click();
+			cy.dataTest(`${primaryCoreCard}`).should(
+				'have.attr',
+				'data-active',
+				'false'
+			);
 			// Initially the error is not displayed
 			cy.dataTest('cores-selection:notification-error').should(
 				'not.exist'
@@ -76,7 +81,7 @@ describe('WrkspFooter', () => {
 			);
 			cy.dataTest('cores-selection:notification-error').should(
 				'contain.text',
-				'Primary core should be enabled and configured.'
+				'Primary core should be enabled.'
 			);
 
 			// Selecting a core should hide the error message
@@ -92,77 +97,17 @@ describe('WrkspFooter', () => {
 		});
 	});
 
-	it('Should display 2 NotificationError components on click Continue button when enabling 2 cores', () => {
-		const testStore = {...store};
-
-		testStore.dispatch(
-			setActiveScreen(navigationItems.coresSelection)
-		);
-		testStore.dispatch(setSelectedSoc('MAX32690'));
-
-		cy.mount(<TestComponent />, testStore).then(() => {
-			cy.dataTest('cores-selection:notification-error').should(
-				'not.exist'
-			);
-
-			cy.dataTest(`${primaryCoreCard}`).click();
-			cy.dataTest(`${defaultCoreCard}`).click();
-
-			cy.dataTest(`${primaryCoreCard}`).should(
-				'have.attr',
-				'data-active',
-				'true'
-			);
-
-			cy.dataTest(`${defaultCoreCard}`).should(
-				'have.attr',
-				'data-active',
-				'true'
-			);
-
-			// Click the Continue should show the correct error messages
-			cy.dataTest('wrksp-footer:continue-btn').click();
-			cy.dataTest('cores-selection:notification-error').should(
-				'exist'
-			);
-			cy.dataTest(
-				'cores-selection:notification-error--noPrimaryCore'
-			).should(
-				'contain.text',
-				'Primary core should be enabled and configured.'
-			);
-
-			cy.dataTest(
-				'cores-selection:notification-error--unconfiguredCore'
-			).should('contain.text', 'Configure your selected core(s).');
-
-			// Deselecting a core should hide all the error messages
-			cy.dataTest(`${primaryCoreCard}`).click();
-			cy.dataTest(`${primaryCoreCard}`).should(
-				'have.attr',
-				'data-active',
-				'false'
-			);
-			cy.dataTest('cores-selection:notification-error').should(
-				'not.exist'
-			);
-		});
-	});
-
 	it('Should display NotificationError based on the validation rules', () => {
 		// The business rules are found in useCoreValidation hook
 		const testStore = {...store};
-
+		testStore.dispatch(setSelectedSoc('MAX32690'));
 		testStore.dispatch(
 			setActiveScreen(navigationItems.coresSelection)
 		);
-
-		testStore.dispatch(setSelectedSoc('MAX32690'));
 
 		cy.mount(<TestComponent />, testStore)
 			.then(() => {
 				// Configure the selected core (primary)
-				cy.dataTest(`${primaryCoreCard}`).click();
 				cy.dataTest(`${primaryCoreCard}`).should(
 					'have.attr',
 					'data-active',
@@ -186,13 +131,6 @@ describe('WrkspFooter', () => {
 					)
 				)
 					.then(() => {
-						// Check if the core is configured
-						cy.dataTest(`${primaryCoreCard}`).should(
-							'contain.text',
-							'Configured'
-						);
-					})
-					.then(() => {
 						// De select the selected core
 						cy.dataTest(`${primaryCoreCard}`).click();
 						cy.dataTest(`${primaryCoreCard}`).should(
@@ -207,10 +145,10 @@ describe('WrkspFooter', () => {
 							'exist'
 						);
 						cy.dataTest(
-							'cores-selection:notification-error--noPrimaryCore'
+							'cores-selection:notification-error--noPrimaryCoreEnabled'
 						).should(
 							'contain.text',
-							'Primary core should be enabled and configured.'
+							'Primary core should be enabled.'
 						);
 
 						// Enabling back the configured core
@@ -221,18 +159,10 @@ describe('WrkspFooter', () => {
 						cy.dataTest('cores-selection:notification-error').should(
 							'not.exist'
 						);
-						// Clicking again on the Continue button should display the correct error message
-						cy.dataTest('wrksp-footer:continue-btn').click();
-						cy.dataTest(
-							'cores-selection:notification-error--unconfiguredCore'
-						).should(
-							'contain.text',
-							'Configure your selected core(s).'
-						);
 					})
 					.then(() => {
 						// Select and configure the default core, then de select it and press Continue, it should display the correct error message
-						// cy.dataTest(`${defaultCoreCard}`).click();
+
 						cy.wrap(
 							testStore.dispatch(
 								setCoreConfig({
@@ -248,13 +178,6 @@ describe('WrkspFooter', () => {
 								})
 							)
 						)
-
-							.then(() => {
-								cy.dataTest(`${defaultCoreCard}`).should(
-									'contain.text',
-									'Configured'
-								);
-							})
 
 							.then(() => {
 								// De select the default core
@@ -275,5 +198,88 @@ describe('WrkspFooter', () => {
 							});
 					});
 			});
+	});
+
+	it('Should render toggle and secure core options for Arm Cortex-M33 with TrustZone support', () => {
+		const testStore = {...store};
+		testStore.dispatch(setSelectedSoc('MAX32657'));
+		testStore.dispatch(
+			setActiveScreen(navigationItems.coresSelection)
+		);
+
+		const primaryCore = 'Arm Cortex-M33';
+		const primaryCoreCard = `coresSelection:card:${primaryCore}`;
+		const TrustZoneToggleContainer = `toggle:trustzone-container-${primaryCore}`;
+		const TrustZoneToggle = `toggle:trustzone-${primaryCore}-span`;
+		const secureCore = `core-secure-${primaryCore}`;
+		const nonSecureCore = `core-non-secure-${primaryCore}`;
+
+		cy.mount(<TestComponent />, testStore).then(() => {
+			// Configure the selected core (primary)
+			cy.dataTest(primaryCoreCard).should('exist');
+
+			cy.dataTest(TrustZoneToggleContainer).should('exist');
+
+			cy.dataTest(TrustZoneToggle)
+				.click()
+				.then(() => {
+					cy.dataTest(TrustZoneToggle).should(
+						'have.attr',
+						'data-checked',
+						'true'
+					);
+
+					cy.dataTest(secureCore).should('exist');
+					cy.dataTest(nonSecureCore).should('exist');
+
+					cy.dataTest(primaryCoreCard).should(
+						'have.attr',
+						'data-active',
+						'true'
+					);
+
+					cy.dataTest(nonSecureCore).should(
+						'have.attr',
+						'data-active',
+						'true'
+					);
+
+					cy.dataTest(secureCore).should(
+						'have.attr',
+						'data-active',
+						'true'
+					);
+
+					// Deselecting one of secure and non-secure cores should make the primary core card in
+
+					cy.dataTest(secureCore).click();
+
+					cy.dataTest(secureCore).should(
+						'have.attr',
+						'data-active',
+						'false'
+					);
+
+					cy.dataTest(primaryCoreCard).within(() => {
+						cy.dataTest(
+							'cores-selection:Arm Cortex-M33-card:checkbox'
+						).should('have.class', 'indeterminate');
+					});
+
+					cy.dataTest(nonSecureCore).click();
+
+					cy.dataTest(nonSecureCore).should(
+						'have.attr',
+						'data-active',
+						'false'
+					);
+
+					cy.dataTest(primaryCoreCard).within(() => {
+						cy.dataTest(
+							'cores-selection:Arm Cortex-M33-card:checkbox'
+						).should('not.have.class', 'indeterminate');
+					});
+				});
+		});
 	});
 });

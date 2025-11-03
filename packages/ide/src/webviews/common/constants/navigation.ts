@@ -17,8 +17,13 @@ export const navigationItems = {
 	pinmux: 'pinmux',
 	pinconfig: 'config',
 	clockConfig: 'clockconfig',
+	dfg: 'dfg',
+	dfgStreamList: 'dfgStreamList',
+	dfgVisualisation: 'dfgVisualisation',
 	registers: 'registers',
 	memory: 'memory',
 	peripherals: 'peripherals',
+	aiTools: 'aitools',
+	profiling: 'profiling',
 	generate: 'generate'
 } as const;

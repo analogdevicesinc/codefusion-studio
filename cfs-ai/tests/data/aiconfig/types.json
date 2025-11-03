@@ -1,0 +1,50 @@
+{
+    "testsDescription": "Check that types are correct",
+    "fail": [
+        {
+            "testDescription": "Check that model must be object",
+            "Soc": "testSoc",
+            "AiConfig" : {
+            },
+            "Projects" : [
+                {
+                    "CoreId" : "testcore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject1"
+                    },
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Model" : "/path/to/my/model.tflite",
+                        "Target":{"Core": "testcore"},
+                        "Enabled": true
+                    }]
+                }
+            ]
+        }, 
+        {
+            "testDescription": "Check that a core array fails",
+            "Soc": "testSoc",
+            "AiConfig" : {
+            },
+            "Projects" : [
+                {
+                    "CoreId" : "testcore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject2"
+                    },
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                            "Model": "/path/to/my/model.tflite"
+                        },
+                        "Target":{"Core": ["testcore"]},
+                        "Enabled": true
+                }]
+                }
+            ]
+        }
+    ],
+    "pass": []
+}

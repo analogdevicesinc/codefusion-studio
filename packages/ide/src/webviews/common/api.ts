@@ -51,6 +51,10 @@ if ((window as any).acquireVsCodeApi instanceof Function) {
 	vscode = (window as any).acquireVsCodeApi?.();
 }
 
+export function mockVsCodeApi(mockImplementation: WebviewApi<any>) {
+	vscode = mockImplementation;
+}
+
 // Unique message id for each request-response message pair, used to match the response to a specific request
 let currentMessageId = 0;
 
@@ -156,4 +160,50 @@ export async function showSaveDialog() {
 
 export async function closeWebviewPanel() {
 	return request('close-webview-panel') as Promise<void>;
+}
+
+export async function exportCSV(
+	csvContent: string,
+	defaultFileName?: string
+) {
+	return request('export-csv', {
+		csvContent,
+		defaultFileName
+	}) as Promise<string | undefined>;
+}
+
+export async function openFile(filePath: string) {
+	return request('open-file', {filePath}) as Promise<void>;
+}
+
+export async function selectFile(
+	options: {
+		canSelectFolders?: boolean;
+		title?: string;
+		filters?: Record<string, string[]>;
+		relativeToWorkspaceRoot?: boolean;
+	} = {}
+) {
+	return request('select-file', options) as Promise<
+		string | undefined
+	>;
+}
+
+export async function getPreference(id: string) {
+	return request('get-preference', {id});
+}
+
+/**
+ * Sets a vscode preference in the cfs scope
+ * @param scope correlates to vscode.ConfigurationTarget
+ * - 1: Global
+ * - 2: Workspace
+ * - 3: Workspace Folder
+ */
+export async function setPreference(
+	id: string,
+	value: any,
+	scope?: number
+) {
+	return request('set-preference', {id, value, scope});
 }

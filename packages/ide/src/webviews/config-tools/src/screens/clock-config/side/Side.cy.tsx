@@ -21,17 +21,16 @@ import {
 import {configurePreloadedStore} from '../../../state/store';
 import ClockConfigSideContainer from './Side';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
-import {resetPinDictionary} from '../../../utils/soc-pins';
+import type {CfsConfig} from 'cfs-plugins-api';
 
-const mock = await import(
-	`../../../../../../../../cli/src/socs/${Cypress.env('CLOCK_CONFIG_DEV_SOC_ID')}.json`
-);
+const mock = (await import(`@socs/max32690-wlp.json`))
+	.default as unknown as Soc;
 
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -42,25 +41,13 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Clock config side component', () => {
-	const reduxStore = configurePreloadedStore(mock as Soc);
+	const reduxStore = configurePreloadedStore(mock, configDict);
 
 	beforeEach(() => {
 		cy.clearLocalStorage().then(() => {
-			resetPinDictionary();
-
-			window.localStorage.setItem(
-				'ClockNodes',
-				JSON.stringify(mock.ClockNodes)
-			);
-
-			window.localStorage.setItem(
-				'configDict',
-				JSON.stringify(configDict)
-			);
-
 			cy.fixture('clock-config-plugin-controls.json').then(
 				controls => {
 					window.localStorage.setItem(
@@ -68,11 +55,6 @@ describe('Clock config side component', () => {
 						JSON.stringify(controls)
 					);
 				}
-			);
-
-			window.localStorage.setItem(
-				'Package',
-				JSON.stringify(mock.Packages[0])
 			);
 		});
 	});
@@ -132,7 +114,7 @@ describe('Clock config side component', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const store = configurePreloadedStore(
 				mock,
-				undefined,
+				configDict,
 				controls
 			);
 
@@ -171,7 +153,7 @@ describe('Clock config side component', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const store = configurePreloadedStore(
 				mock,
-				undefined,
+				configDict,
 				controls
 			);
 
@@ -206,5 +188,26 @@ describe('Clock config side component', () => {
 				'not.exist'
 			);
 		});
+	});
+
+	it('Does not display an error icon for disabled control values', async () => {
+		const store = {...reduxStore};
+
+		store.dispatch(
+			setAppliedSignal({
+				Pin: 'G5',
+				Peripheral: 'OSC',
+				Name: 'ERFO_CLK_OUT',
+				PinCfg: {PWR: 'VDDIO'}
+			})
+		);
+
+		cy.mount(<ClockConfigSideContainer />, store);
+
+		cy.dataTest('accordion:OSCILLATOR')
+			.should('exist')
+			.then(() => {
+				cy.dataTest('accordion:conflict:Divider').should('not.exist');
+			});
 	});
 });

@@ -13,7 +13,7 @@
  *
  */
 import {createContext, useContext, useMemo, useState} from 'react';
-
+import {DEFAULT_QUERY} from '../constants/symbols';
 import type {TAppContext, TMemLayoutContext} from '../types/context';
 
 const AppContext = createContext<TAppContext | undefined>(undefined);
@@ -33,9 +33,7 @@ type TAContext = {
 };
 
 export function AppProvider({children}: TAContext) {
-	const [query, setQuery] = useState<string>(
-		'SELECT * FROM symbols WHERE size > 0'
-	);
+	const [query, setQuery] = useState<string>(DEFAULT_QUERY);
 	const [memLayout, setMemLayout] = useState<TMemLayoutContext>({
 		layer: 1,
 		selectedItemName: 'All segments',

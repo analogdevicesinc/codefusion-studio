@@ -1,0 +1,27 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "1.0.0",
+  "Timestamp": "2024-03-12T13:09:29.484Z",
+  "Soc": "ADSP-21835W",
+  "Package": "BGA_ED",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "EV-SOMCRR-EZKIT",
+  "Projects": [
+    {
+      "CoreId": "FX",
+      "ProjectId": "FX",
+      "FirmwarePlatform": "SHARC-FX",
+      "PluginId": "com.analog.project.sharcfx.plugin",
+      "PluginVersion": "1.0.0",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [],
+      "PlatformConfig": {
+        "ProjectName": "fx"
+      }
+    }
+  ],
+  "BoardName": "EvKit_V1"
+}

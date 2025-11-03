@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,13 @@
 
 import * as fs from "fs";
 import * as vscode from "vscode";
-import { execSync } from "node:child_process";
 import { platform } from "node:process";
 
 import {
   ADI_CONFIGURE_WORKSPACE_SETTING,
   BOARD,
-  EXTENSION_ID,
   FIRMWARE_PLATFORM,
+  MSDK,
   OPENOCD,
   OPENOCD_INTERFACE,
   OPENOCD_RISCV_INTERFACE,
@@ -30,108 +29,20 @@ import {
   OPENOCD_TARGET,
   PROGRAM_FILE,
   PROJECT,
-  SDK_PATH,
   TARGET,
 } from "../../constants";
 import { getPropertyName } from "../../properties";
 import { Utils } from "../../utils/utils";
 import { default as launch } from "./resources/launch";
 import { default as oldSettings } from "./resources/settings-old";
+import { default as msdkTasksSubset } from "./resources/tasks-subset";
 import { default as msdkTasks } from "./resources/tasks";
 
-import { ToolManager } from "../toolManager";
+import type { IDEShellEnvProvider } from "../shell-env-provider";
 import path from "path";
 
 // Globals
 let msdkTaskProvider: vscode.Disposable | undefined;
-
-const MAXIM_SDK_PATH = "/SDK/MAX";
-
-function filterSdkPath(input: string): string {
-  // The root SDK path settings may not have been passed
-  // through VS Code's Uri API.  As a result we have to run it
-  // through a conversion here in order to get string comparisons
-  // to work.  Otherwise we get a mismatch between c:/... and C:/...
-  const conf = vscode.workspace.getConfiguration();
-  const sdkPathValue: string = conf.get(EXTENSION_ID + "." + SDK_PATH) ?? " ";
-  const sdkFsPath = vscode.Uri.file(sdkPathValue).fsPath;
-  const normalizedSdkPath = Utils.normalizePath(sdkFsPath);
-  const inputFsPath = vscode.Uri.file(input).fsPath;
-  const normalizedInput = Utils.normalizePath(inputFsPath);
-
-  return normalizedInput.replace(normalizedSdkPath, getPropertyName(SDK_PATH));
-}
-
-// Filter the input path string.  This performs backslash replacement (\ -> /),
-// path normalization, and replaces MAXIM_PATH/SDK_PATH with ${config:} variables.
-// In general, any path this is written to a VS Code config file or setting should
-// be filtered with this function to ensure everything is cleanly based off of the
-// MAXIM_PATH variable and SDK_PATH variables.
-function filterPath(input: string): string {
-  return filterSdkPath(Utils.normalizePath(input));
-}
-
-export class MSDKToolchain {
-  private static instance: MSDKToolchain;
-
-  targets: string[] = [];
-
-  /**
-   * @returns the singleton instance
-   */
-  public static getInstance(): MSDKToolchain {
-    if (!MSDKToolchain.instance) {
-      MSDKToolchain.instance = new MSDKToolchain();
-    }
-
-    return MSDKToolchain.instance;
-  }
-
-  async getMaximPath() {
-    const sdkPath = await Utils.getSdkPath();
-    return sdkPath + MAXIM_SDK_PATH;
-  }
-
-  async getTargets(): Promise<string[]> {
-    if (this.targets.length === 0) {
-      await vscode.workspace.fs
-        .readDirectory(
-          vscode.Uri.joinPath(
-            vscode.Uri.file(await this.getMaximPath()),
-            "/Examples",
-          ),
-        )
-        .then((result) => {
-          for (const dir of result) {
-            this.targets.push(path.parse(dir[0]).name); // filepath will be the first entry in each result
-          }
-          this.targets.push("MAX32666");
-          this.targets.push("MAX32667");
-          this.targets.push("MAX32668");
-
-          this.targets.sort();
-        });
-    }
-    return this.targets;
-  }
-
-  async getEnvironment() {
-    const toolManager = await ToolManager.getInstance();
-    return await toolManager.getShellEnvironment();
-  }
-
-  async getSVDFilePath(target: string): Promise<string> {
-    return Utils.normalizePath(
-      path.join(
-        "${config:cfs.sdk.path}",
-        "/Libraries/CMSIS/Device/Maxim",
-        target.toUpperCase(),
-        "Include",
-        `${target.toLowerCase()}.svd`,
-      ),
-    );
-  }
-}
 
 export function parseMaximPath(uri: vscode.Uri): string {
   const expected = vscode.Uri.joinPath(uri, "Tools"); // Look for Tools directory - it exists on both the Github repo and MaintenanceTool install
@@ -145,12 +56,20 @@ export function parseMaximPath(uri: vscode.Uri): string {
   }
 }
 
-class MsdkTaskProvider implements vscode.TaskProvider {
+export class MsdkTaskProvider implements vscode.TaskProvider {
+  private shellEnvProvider: IDEShellEnvProvider;
+  private resolvedTasks: vscode.Task[] | undefined;
+
+  constructor(shellEnvProvider: IDEShellEnvProvider) {
+    this.shellEnvProvider = shellEnvProvider;
+  }
+
   provideTasks(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _token: vscode.CancellationToken,
   ): vscode.ProviderResult<vscode.Task[]> {
-    return this.getMsdkTasks();
+    // Return cached tasks only
+    return this.resolvedTasks || [];
   }
 
   resolveTask(
@@ -163,37 +82,53 @@ class MsdkTaskProvider implements vscode.TaskProvider {
     return undefined;
   }
 
+  /**
+   * Initializes the resolved tasks cache
+   */
+  async initializeTasks(): Promise<void> {
+    try {
+      this.resolvedTasks = await this.getMsdkTasks();
+    } catch (error) {
+      console.error(`Error initializing MSDK tasks: ${error}`);
+      this.resolvedTasks = [];
+    }
+  }
+
   async getMsdkTasks(): Promise<vscode.Task[]> {
     const result: vscode.Task[] = [];
+    type Settings = {
+      [key: string]: any;
+    };
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
       return result;
     }
 
+    let environment: vscode.ShellExecutionOptions["env"] =
+      await this.shellEnvProvider.getShellEnvironment();
+
     for (const workspaceFolder of workspaceFolders) {
-      const makefiles = await Utils.findFilesInWorkspaceFolder(
-        workspaceFolder,
-        "Makefile",
-      );
-      const projectmks = await Utils.findFilesInWorkspaceFolder(
-        workspaceFolder,
-        "project.mk",
-      );
-      // Only contribute build tasks if there's a Makefile and a project.mk
-      // file in the root of the workspace folder.
-      if (makefiles.length < 1 || projectmks.length < 1) {
+      if (
+        workspaceFolder.name === ".cfs" ||
+        Utils.getProjectFirmwarePlatform(workspaceFolder) !== MSDK
+      ) {
         continue;
       }
+
+      const cfsEnvVars =
+        this.shellEnvProvider.getCfsEnvironmentVariables(workspaceFolder);
+      environment = {
+        ...environment,
+        ...cfsEnvVars,
+      };
 
       // Load an environment dictionary from the MSDK class.
       // This is provided to each task's ShellExecution object
       // to set its Path and environment variables correctly.
       // Loading it via the class allows the toolchain to change dynamically.
-      let environment: vscode.ShellExecutionOptions["env"] = {};
-      environment = await MSDKToolchain.getInstance().getEnvironment();
 
-      const cwd = path.dirname(makefiles[0]);
+      const cwd = workspaceFolder.uri.fsPath;
       const relDirPath = path.relative(workspaceFolder.uri.fsPath, cwd);
 
       const shellOptions: vscode.ShellExecutionOptions = {
@@ -203,11 +138,35 @@ class MsdkTaskProvider implements vscode.TaskProvider {
         shellArgs: Utils.getShellArgs(platform),
       };
 
+      const workspaceTasksPath = path.join(cwd, ".vscode", "cfs.tasks.json");
+
+      // Additional tasks that are specific to the workspace
+      let workspaceTasks;
+
+      if (fs.existsSync(workspaceTasksPath)) {
+        try {
+          const workspaceTasksContent = fs.readFileSync(
+            workspaceTasksPath,
+            "utf-8",
+          );
+          workspaceTasks = JSON.parse(workspaceTasksContent);
+        } catch (error) {
+          console.error(
+            `Error reading or parsing workspace cfs.tasks.json: ${error}`,
+          );
+        }
+      }
+
       // Iterate across the resources/tasks.json file to load definitions.
       // This reduces maintenance overhead and enables easy testing of tasks.json files.
       // New tasks should be added to the json file as opposed to manually creating them inside
       // this provider.
-      for (const taskDef of msdkTasks.tasks) {
+
+      // Always loop over subset tasks. If we have a cfs.tasks.json file, append those tasks as well otherwise use the full set.
+      for (const taskDef of [
+        ...msdkTasksSubset.tasks,
+        ...(workspaceTasks?.tasks || msdkTasks.tasks),
+      ]) {
         let command = taskDef.command;
         if (command === undefined) {
           switch (platform) {
@@ -540,7 +499,7 @@ async function refresh() {
 function openUserGuide(): void {
   vscode.commands.executeCommand(
     "simpleBrowser.show",
-    "https://analog-devices-msdk.github.io/msdk/USERGUIDE/",
+    "https://analogdevicesinc.github.io/msdk/USERGUIDE/",
   );
 }
 
@@ -552,7 +511,7 @@ function openInstallationInstructions() {
   // Additionally, the analog.com site does not open with VS Code's simple browser, which needs pure HTML/CSS
   vscode.env.openExternal(
     vscode.Uri.parse(
-      "https://analog-devices-msdk.github.io/msdk/USERGUIDE/#installation",
+      "https://analogdevicesinc.github.io/msdk/USERGUIDE/#installation",
     ),
   );
 }
@@ -578,13 +537,16 @@ export function activate(context: vscode.ExtensionContext): void {
 /**
  * Called when the workspace has been configured as a CFS project
  */
-export async function configureWorkspace() {
-  msdkTaskProvider = vscode.tasks.registerTaskProvider(
-    "shell",
-    new MsdkTaskProvider(),
-  );
+export async function registerTaskProvider(
+  context: vscode.ExtensionContext,
+  shellEnvProvider: IDEShellEnvProvider,
+) {
+  const provider = new MsdkTaskProvider(shellEnvProvider);
 
-  await refresh();
+  msdkTaskProvider = vscode.tasks.registerTaskProvider("shell", provider);
+  context.subscriptions.push(msdkTaskProvider);
+
+  return provider;
 }
 
 /**

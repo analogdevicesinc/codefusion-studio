@@ -13,14 +13,16 @@
  *
  */
 
-import {DynamicForm} from 'cfs-react-library';
-import type {
-	TFormControl,
-	TFormData,
-	TFormFieldValue
+import {
+	DynamicForm,
+	type TFormControl,
+	type TFormData,
+	type TFormFieldValue
 } from 'cfs-react-library';
 import {memo, useMemo} from 'react';
 import styles from './PeripheralConfigForm.module.scss';
+import BooleanControl from '../../../components/boolean-control/BooleanControl';
+import {HexInputField} from 'cfs-react-library';
 
 type ConfigurationFormProps = Readonly<{
 	controls: TFormControl[];
@@ -53,6 +55,38 @@ function ConfigurationForm({
 		[data, resetValues, controls]
 	);
 
+	const components = useMemo(() => {
+		const map: Record<string, React.ReactNode> = {};
+
+		controls.forEach(control => {
+			if (control.type === 'boolean') {
+				map[control.id] = (
+					<BooleanControl
+						key={control.id}
+						control={control}
+						data={data}
+						onControlChange={onControlChange}
+					/>
+				);
+			}
+
+			if ((control.type === 'integer') && (control.base === 'Hexadecimal')) {
+				map[control.id] = (
+					<HexInputField
+						dataTest={`${control.id}-hex-input`}
+						value={data[control.id] as string}
+						error={errors?.[control.id]}
+						onValueChange={(hexValue) => {
+								onControlChange(control.id, hexValue);
+						}}
+					/>
+				);
+			}
+		});
+
+		return map;
+	}, [controls, data, errors, onControlChange]);
+
 	return (
 		<section
 			className={styles.controlsContainer}
@@ -67,35 +101,39 @@ function ConfigurationForm({
 				</div>
 			)}
 
-			{controls.length ? (
-				<DynamicForm
-					controls={controls}
-					data={data}
-					errors={errors ?? undefined}
-					testId={testId}
-					onControlChange={onControlChange}
-				/>
+			{controls.length > 0 ? (
+				<div
+					className={styles.dynamicFormContainer}
+					data-testid={testId}
+				>
+					<DynamicForm
+						controls={controls}
+						data={data}
+						errors={errors}
+						testId={testId}
+						components={components}
+						onControlChange={onControlChange}
+					/>
+				</div>
 			) : (
 				<label data-test={`${testId}:no-settings`}>
 					{emptyMessage}
 				</label>
 			)}
 
-			<div>
-				{Boolean(controls.length) &&
-					didDefaultValuesChange &&
-					onReset && (
-						<label
-							className={styles.reset}
-							data-test={`${testId}:reset-to-default`}
-							onClick={() => {
-								onReset(controls);
-							}}
-						>
-							Reset to default
-						</label>
-					)}
-			</div>
+			{Boolean(controls.length) &&
+				didDefaultValuesChange &&
+				onReset && (
+					<label
+						className={styles.reset}
+						data-test={`${testId}:reset-to-default`}
+						onClick={() => {
+							onReset(controls);
+						}}
+					>
+						Reset to default
+					</label>
+				)}
 		</section>
 	);
 }

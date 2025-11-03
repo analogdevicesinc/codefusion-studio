@@ -193,11 +193,14 @@ export default function PinconfigDisplay({
 		['integer', 'text'].includes(pinConfigControls[controlId]?.Type);
 
 	const handleReset = () => {
+		if (!controls?.PinConfig.length) return;
+
 		dispatch(
 			setResetControlValues({
 				Peripheral: activePeripheral,
 				Name: activeSignal,
 				pinId: activePin?.pinId,
+				controls: controls?.PinConfig,
 				// Preserve current plugin options values if available
 				resetValues: {...userSelections, ...resetValues}
 			})

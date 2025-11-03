@@ -16,6 +16,7 @@
 import {useMemo} from 'react';
 import {computeFieldValue} from '../../../utils/compute-register-value';
 import {
+	type RegisterConfigField,
 	type ConfigField,
 	type FieldDictionary
 } from '../../../../../common/types/soc';
@@ -25,14 +26,11 @@ type BitGroupProps = {
 	readonly registerDetails: FieldDictionary[];
 	readonly registerName: string;
 	readonly assignedPinsRegisterConfigs: Array<{
-		pinConfig: Array<ConfigField | undefined>;
+		pinConfig: Array<RegisterConfigField | undefined>;
 		signalConfig: ConfigField[] | undefined;
 	}>;
-	readonly modifiedClockNodesConfigs: Array<
-		Record<string, ConfigField[] | undefined>
-	>;
-	readonly allocatedPeripheralRegisterConfigs: Array<
-		Record<string, ConfigField[] | undefined>
+	readonly registersConfigs: Array<
+		Record<string, RegisterConfigField[] | undefined>
 	>;
 	readonly hoveredField: string | undefined;
 	readonly setHoveredField: (id: string | undefined) => void;
@@ -43,8 +41,7 @@ export function BitGroup({
 	registerDetails,
 	registerName,
 	assignedPinsRegisterConfigs,
-	modifiedClockNodesConfigs,
-	allocatedPeripheralRegisterConfigs,
+	registersConfigs,
 	hoveredField,
 	setHoveredField,
 	scrollToRow
@@ -55,8 +52,7 @@ export function BitGroup({
 				const value = Number(
 					computeFieldValue(
 						assignedPinsRegisterConfigs,
-						modifiedClockNodesConfigs,
-						allocatedPeripheralRegisterConfigs,
+						registersConfigs,
 						registerName,
 						field,
 						field.reset
@@ -84,8 +80,7 @@ export function BitGroup({
 		return bitWords;
 	}, [
 		assignedPinsRegisterConfigs,
-		modifiedClockNodesConfigs,
-		allocatedPeripheralRegisterConfigs,
+		registersConfigs,
 		registerDetails,
 		registerName
 	]);

@@ -16,6 +16,13 @@ import {memo} from 'react';
 import styles from './Core.module.scss';
 import {Badge} from 'cfs-react-library';
 import {getProjectInfoList} from '../../../utils/config';
+import useIsPrimaryMultipleProjects from '../../../hooks/use-is-primary-multiple-projects';
+import {
+	EX_MANAGED_ABBR as EM,
+	PRIMARY_ABBR as P,
+	SECURE_ABBR as S,
+	NON_SECURE_ABBR as NS
+} from '../../../../../common/constants/core-properties';
 
 export type CoreProps = Readonly<{
 	projectId: string;
@@ -25,18 +32,21 @@ function Core({projectId}: CoreProps) {
 	const projectConfig = getProjectInfoList()?.find(
 		p => p.ProjectId === projectId
 	);
+	const shouldShowPrimaryBadge = useIsPrimaryMultipleProjects(
+		projectConfig?.IsPrimary ?? false
+	);
 
 	return (
 		<div className={styles.container} data-test={`core-${projectId}`}>
 			{projectConfig?.Name}
 			<div className={styles.badgeContainer}>
-				{projectConfig?.IsPrimary && (
+				{shouldShowPrimaryBadge && (
 					<Badge
 						dataTest={`core-${projectId}-badge-primary`}
 						className={styles.badge}
 						appearance='secondary'
 					>
-						P
+						{P}
 					</Badge>
 				)}
 				{projectConfig && projectConfig.ExternallyManaged && (
@@ -45,7 +55,7 @@ function Core({projectId}: CoreProps) {
 						className={styles.badge}
 						appearance='secondary'
 					>
-						EM
+						{EM}
 					</Badge>
 				)}
 				{projectConfig && projectConfig?.Secure && (
@@ -54,7 +64,7 @@ function Core({projectId}: CoreProps) {
 						className={styles.badge}
 						appearance='secondary'
 					>
-						S
+						{S}
 					</Badge>
 				)}
 				{projectConfig && projectConfig?.Secure === false && (
@@ -63,7 +73,7 @@ function Core({projectId}: CoreProps) {
 						className={styles.badge}
 						appearance='secondary'
 					>
-						NS
+						{NS}
 					</Badge>
 				)}
 			</div>

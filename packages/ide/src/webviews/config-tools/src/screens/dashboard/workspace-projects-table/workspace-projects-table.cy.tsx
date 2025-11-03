@@ -25,15 +25,16 @@ import {MemoryFiltering} from '../../memory-allocation/memory-filtering/memory-f
 import CoreSummaryFilters from '../../peripheral-config/core-summary/CoreSummaryFilters';
 import {fn} from '@storybook/test';
 
-const mock = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const mock = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
+import type {CfsConfig} from 'cfs-plugins-api';
+import CoreSummary from '../../peripheral-config/core-summary/CoreSummary';
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			CoreNum: 1,
 			Description: 'RISC-V (RV32)',
@@ -43,32 +44,29 @@ const mockedConfigDict = {
 			ProjectId: 'RV-proj',
 			Name: 'RISC-V (RV32)',
 			PluginId: ''
+		},
+		{
+			CoreNum: 2,
+			Description: 'CM4 (ARM)',
+			ExternallyManaged: false,
+			FirmwarePlatform: '',
+			CoreId: 'CM4',
+			ProjectId: 'CM4-proj',
+			Name: 'ARM Cortex-M4',
+			PluginId: ''
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Workspace Projects Table', () => {
 	beforeEach(() => {
-		localStorage.setItem('Package', JSON.stringify(mock.Packages[0]));
-
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
-
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockedConfigDict)
-		);
-
-		localStorage.setItem('Cores', JSON.stringify(mock.Cores));
-
 		cy.viewport(1920, 1080);
 	});
 
 	it('should render the workspace table', () => {
 		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+			mock,
+			mockedConfigDict
 		);
 		cy.mount(<WorksProjectsTable />, reduxStore);
 
@@ -77,7 +75,8 @@ describe('Workspace Projects Table', () => {
 
 	it('should not render the conflict icon when there is no pin errors', () => {
 		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+			mock,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -106,7 +105,8 @@ describe('Workspace Projects Table', () => {
 
 	it('should render the conflict icon when there is a pin error', () => {
 		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+			mock,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -141,7 +141,8 @@ describe('Workspace Projects Table', () => {
 
 	it('should filter memory allocation by core when assigned memory is clicked', () => {
 		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+			mock,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -161,7 +162,7 @@ describe('Workspace Projects Table', () => {
 		);
 
 		cy.mount(<WorksProjectsTable />, reduxStore).then(() => {
-			cy.get('[data-test="assigned-memory-button"]').click();
+			cy.get('[data-test="assigned-memory-button"]').first().click();
 
 			cy.mount(<MemoryFiltering />, reduxStore).then(() => {
 				expect(
@@ -179,9 +180,10 @@ describe('Workspace Projects Table', () => {
 		).to.deep.equal([]);
 	});
 
-	it('should filter peripherals by core when assigned peripheral is clicked', () => {
+	it('should expand core project card when assigned peripheral is clicked', () => {
 		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
+			mock,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -200,36 +202,34 @@ describe('Workspace Projects Table', () => {
 			})
 		);
 
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: 'F3',
+				Peripheral: 'GPIO1',
+				Name: 'P0.11'
+			})
+		);
+
+		reduxStore.dispatch(
+			setSignalAssignment({
+				peripheral: 'GPIO1',
+				signalName: 'P0.11',
+				projectId: 'CM4-proj'
+			})
+		);
+
 		cy.mount(<WorksProjectsTable />, reduxStore).then(() => {
-			cy.get('[data-test="assigned-peripherals-button"]').click();
+			cy.get('[data-test="assigned-peripherals-button"]')
+				.first()
+				.click();
 
-			const core = {
-				Name: 'RISC_V',
-				Description: 'RISC_V',
-				Id: 'RV',
-				CoreNum: 0,
-				IsPrimary: true,
-				Memory: []
-			};
+			cy.mount(<CoreSummary />, reduxStore);
 
-			cy.mount(
-				<CoreSummaryFilters
-					cores={[core]}
-					activeCore={core}
-					onFilterCores={fn()}
-				/>,
-				reduxStore
-			).then(() => {
-				expect(
-					reduxStore.getState().appContextReducer.coresFilter
-				).to.deep.equal(['RISC-V (RV32)']);
-			});
+			// Check if expected project card is expanded
+			cy.dataTest('accordion:GPIO0').should('exist');
+
+			// Check if other project card is collapsed
+			cy.dataTest('accordion:GPIO1').should('not.exist');
 		});
-
-		cy.mount(<WorksProjectsTable />, reduxStore);
-
-		expect(
-			reduxStore.getState().appContextReducer.coresFilter
-		).to.deep.equal([]);
 	});
 });

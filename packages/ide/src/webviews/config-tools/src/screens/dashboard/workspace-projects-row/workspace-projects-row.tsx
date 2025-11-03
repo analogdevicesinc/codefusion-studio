@@ -32,7 +32,8 @@ import {useAssignedPartitions} from '../../../state/slices/partitions/partitions
 import {useAppDispatch} from '../../../state/store';
 import {
 	setActiveScreen,
-	setCoresFilter
+	setCoresFilter,
+	setPeripheralScreenOpenProjectCards
 } from '../../../state/slices/app-context/appContext.reducer';
 import {type NavigationItem} from '../../../../../common/types/navigation';
 import Tooltip from '../../../../../common/components/tooltip/Tooltip';
@@ -40,6 +41,16 @@ import {usePinErrors} from '../../../hooks/use-pin-errors';
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import ErrorIcon from './error-icon';
 import {usePeripheralControls} from '../../../hooks/use-peripheral-controls';
+import useIsPrimaryMultipleProjects from '../../../hooks/use-is-primary-multiple-projects';
+
+import {
+	PRIMARY_ABBR as P,
+	SECURE_ABBR as S,
+	NON_SECURE_ABBR as NS,
+	EX_MANAGED_ABBR as EM
+} from '@common/constants/core-properties';
+import {updateProjectCardOpenState} from '../../../utils/peripheral';
+import {useCallback} from 'react';
 
 type WorkspaceProjectsRowProps = {
 	readonly project: ProjectInfo;
@@ -55,12 +66,26 @@ function WorkspaceProjectsRow({project}: WorkspaceProjectsRowProps) {
 	const hasCorePinErrors =
 		(usePinErrors().get(project.ProjectId) ?? 0) >= 1;
 	const allocations = usePeripheralAllocations();
-
+	const shouldShowPrimaryBadge = useIsPrimaryMultipleProjects(
+		project?.IsPrimary ?? false
+	);
 	const controlsPromise = usePeripheralControls(project.ProjectId);
 
 	const navigateToScreen = (id: NavigationItem) => {
 		dispatch(setActiveScreen(id));
 	};
+
+	const handlePeripheralClicked = useCallback(() => {
+		// NOTE Expand only selected project.
+		const updatedProjects = updateProjectCardOpenState(
+			[],
+			project.ProjectId,
+			true
+		);
+		dispatch(setPeripheralScreenOpenProjectCards(updatedProjects));
+
+		navigateToScreen('peripherals');
+	}, [dispatch]);
 
 	return (
 		<DataGridRow
@@ -69,24 +94,24 @@ function WorkspaceProjectsRow({project}: WorkspaceProjectsRowProps) {
 		>
 			<DataGridCell gridColumn='1' className={styles.coreCol}>
 				{project.Name}
-				{project.IsPrimary && (
+				{shouldShowPrimaryBadge && (
 					<Tooltip type='long' title='Primary'>
-						<Badge appearance='secondary'>P</Badge>
+						<Badge appearance='secondary'>{P}</Badge>
 					</Tooltip>
 				)}
 				{project.Secure && (
 					<Tooltip type='long' title='Secure'>
-						<Badge appearance='secondary'>S</Badge>
+						<Badge appearance='secondary'>{S}</Badge>
 					</Tooltip>
 				)}
 				{project.Secure === false && (
 					<Tooltip type='long' title='Non Secure'>
-						<Badge appearance='secondary'>NS</Badge>
+						<Badge appearance='secondary'>{NS}</Badge>
 					</Tooltip>
 				)}
 				{project.ExternallyManaged && (
 					<Tooltip type='long' title='Externally Managed'>
-						<Badge appearance='secondary'>EM</Badge>
+						<Badge appearance='secondary'>{EM}</Badge>
 					</Tooltip>
 				)}
 			</DataGridCell>
@@ -98,10 +123,7 @@ function WorkspaceProjectsRow({project}: WorkspaceProjectsRowProps) {
 					<Button
 						appearance='icon'
 						dataTest='assigned-peripherals-button'
-						onClick={() => {
-							dispatch(setCoresFilter([project.Name]));
-							navigateToScreen('peripherals');
-						}}
+						onClick={handlePeripheralClicked}
 					>
 						<div className={`${styles.btn} ${styles.suspenseLoader}`}>
 							{assignedPeripherals.length}

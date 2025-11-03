@@ -1,48 +1,53 @@
-import {memo, useEffect, useMemo, useReducer} from 'react';
-import {DynamicForm} from 'cfs-react-library';
+import {memo, useEffect, useMemo, useState} from 'react';
+import {DynamicForm, use} from 'cfs-react-library';
 import ConfigSection from './layout-components/config-section/ConfigSection';
 import ConfigCard from './layout-components/config-card/ConfigCard';
 import BrowseFile from './core-config-components/browse-file/BrowseFile';
-import {
-	coreConfigReducer,
-	coreConfigReducerActions
-} from './utils/core-config';
-import {
-	useConfiguredCore,
-	useSelectedCoreToConfigId
-} from '../../state/slices/workspace-config/workspace-config.selector';
+import {useConfiguredCore} from '../../state/slices/workspace-config/workspace-config.selector';
 import {
 	LOCAL_STORAGE_CORE_CONFIG,
 	LOCAL_STORAGE_CORE_CONFIG_ERRORS
 } from '../../common/constants/identifiers';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo, CfsPluginProperty} from 'cfs-lib';
 
 type PlatformOptionsProps = Readonly<{
 	pluginInfo: CfsPluginInfo | undefined;
+	coreId: string;
+	propertiesPromise: Promise<CfsPluginProperty[]>;
 }>;
 
-function PluginProperties({pluginInfo}: PlatformOptionsProps) {
-	const coreId = useSelectedCoreToConfigId();
+function PluginProperties({
+	pluginInfo,
+	coreId,
+	propertiesPromise
+}: PlatformOptionsProps) {
 	const coreState = useConfiguredCore(coreId ?? '');
-	const controls = useMemo(
-		() => pluginInfo?.properties?.project ?? [],
-		[pluginInfo]
-	);
+	const controls = use(propertiesPromise);
 
-	const [platformConfig, setPlatformConfig] = useReducer(
-		coreConfigReducer,
-		{},
+	const [config, setConfig] = useState<
+		Record<string, string | number | boolean>
+	>({});
+
+	const defaultConfig = useMemo(
 		() =>
 			Object.keys(coreState?.platformConfig ?? {}).length
-				? coreState.platformConfig
+				? (coreState!.platformConfig as Record<
+						string,
+						string | number | boolean
+					>)
 				: controls.reduce<Record<string, string | number | boolean>>(
 						(acc, prop) => {
 							acc[prop.id] = prop.default ?? '';
-
 							return acc;
 						},
 						{}
-					)
+					),
+		[controls, coreState]
+	);
+
+	const platformConfig = useMemo(
+		() => ({...defaultConfig, ...config}),
+		[defaultConfig, config]
 	);
 
 	const platformConfigErrors = useMemo(() => {
@@ -53,19 +58,22 @@ function PluginProperties({pluginInfo}: PlatformOptionsProps) {
 			}
 		});
 
+		if (
+			platformConfig.ProjectName &&
+			(platformConfig.ProjectName as string).length > 0 &&
+			(platformConfig.ProjectName as string).includes(' ')
+		) {
+			errors.ProjectName = `Project Name cannot contain spaces.`;
+		}
+
 		return errors;
 	}, [controls, platformConfig]);
 
 	const handleConfigChange = (
 		fieldId: string,
-		data: string | boolean | number
+		value: string | boolean | number
 	) => {
-		setPlatformConfig({
-			type: coreConfigReducerActions.setFormData,
-			payload: {
-				[fieldId]: data
-			}
-		});
+		setConfig(prev => ({...prev, [fieldId]: value}));
 	};
 
 	useEffect(() => {
@@ -98,15 +106,20 @@ function PluginProperties({pluginInfo}: PlatformOptionsProps) {
 
 	if (!pluginInfo) return null;
 
-	if (!controls.length)
-		return 'No configurable properties found for the selected plugin.';
+	if (!controls.length) {
+		return (
+			<span>
+				No configurable properties found for the selected plugin.
+			</span>
+		);
+	}
 
 	return (
 		<ConfigSection>
 			<span slot='title'>Platform Options</span>
 			<ConfigCard>
 				<DynamicForm
-					testId='core-config-dynamic-form'
+					testId='core-config:dynamic-form'
 					controls={controls}
 					data={platformConfig}
 					components={{

@@ -13,24 +13,31 @@
  *
  */
 
-import {type Soc} from '../../../../../common/types/soc';
+import type {Soc} from '../../../../../common/types/soc';
+import {
+	setMemoryScreenActiveView,
+	setOpenProjectCards,
+	setOpenTypeCards
+} from '../../../state/slices/app-context/appContext.reducer';
 import {
 	createPartition,
 	editPartition,
 	type Partition
 } from '../../../state/slices/partitions/partitions.reducer';
 import {configurePreloadedStore} from '../../../state/store';
+import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
 import PartitionAssignmentDetails from './partition-assignment-details';
 
-const mock = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+const mock = formatSocCoreMemoryBlocks(
+	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
+);
 
+import type {CfsConfig} from 'cfs-plugins-api';
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			CoreNum: 0,
 			Description: 'ARM Cortex-M4',
@@ -53,12 +60,12 @@ const mockedConfigDict = {
 			PluginId: ''
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 const createMockPartition = (
 	partition: Partial<Partition>
 ): Partition => ({
-	displayName: partition.displayName ?? 'Test Partition',
+	displayName: partition.displayName ?? 'TestPartition',
 	type: partition.type ?? 'Flash',
 	baseBlock: partition.baseBlock ?? {
 		Name: '',
@@ -77,23 +84,7 @@ const createMockPartition = (
 });
 
 describe('Partition-assignment-details-card', () => {
-	before(() => {
-		window.localStorage.setItem('Cores', JSON.stringify(mock.Cores));
-		window.localStorage.setItem(
-			'MemoryBlocks',
-			JSON.stringify(mock.Cores[0].Memory)
-		);
-		localStorage.setItem(
-			'MemoryTypes',
-			JSON.stringify(mock.MemoryTypes)
-		);
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockedConfigDict)
-		);
-	});
-
-	const reduxStore = configurePreloadedStore(mock as unknown as Soc);
+	const reduxStore = configurePreloadedStore(mock, mockedConfigDict);
 
 	describe('Partition Details Page', () => {
 		before(() => {
@@ -119,36 +110,73 @@ describe('Partition-assignment-details-card', () => {
 			cy.mount(<PartitionAssignmentDetails />, reduxStore);
 		});
 
-		it('should be able to create a partition', () => {
-			cy.dataTest('non-volatile-memory-card-container').should(
+		it('should be able to create a partition and have Project view and Type View', () => {
+			cy.dataTest('partition-project-view-button').should('exist');
+
+			cy.dataTest('partition-type-view-button').should('exist');
+
+			cy.dataTest('partition-project-view').should('exist');
+
+			cy.dataTest('partition-type-view').should('not.exist');
+
+			cy.dataTest('project-view-memory-card-container').should(
 				'exist'
 			);
 
-			cy.dataTest('non-volatile-memory-card-container').should(
-				'exist'
-			);
+			cy.dataTest('project-view-memory-card-container')
+				.eq(0)
+				.find('h3')
+				.should('have.text', 'ARM Cortex-M4');
 
-			cy.dataTest('volatile-memory-card-container').should(
-				'not.exist'
-			);
+			cy.dataTest('project-view-memory-card-container')
+				.eq(0)
+				.find('span')
+				.should('have.text', 'No memory partitions allocated yet.');
+
+			cy.dataTest('project-view-memory-card-container')
+				.eq(1)
+				.find('h3')
+				.should('have.text', 'RISC-V (RV32)');
 
 			cy.dataTest('partition-details-chevron')
 				.should('exist')
 				.click();
 
-			cy.dataTest('non-volatile-partition 0').should('exist');
-			cy.dataTest('non-volatile-partition 0')
+			cy.dataTest('partition-details-project-view-cards')
+				.should('exist')
+				.children()
+				.should('have.length', 1);
+
+			cy.dataTest('partition 0').should('exist');
+			cy.dataTest('partition 0')
 				.find('vscode-badge')
 				.should('be.visible');
 
-			cy.dataTest('non-volatile-partition 0')
-				.find('vscode-badge')
+			cy.dataTest('partition-type-view-button').click();
+
+			cy.dataTest('partition-project-view').should('not.exist');
+
+			cy.dataTest('partition-type-view').should('exist');
+
+			cy.dataTest('type-view-memory-card-container').should('exist');
+
+			cy.dataTest('type-view-memory-card-container')
+				.find('h3')
 				.should('have.text', 'Flash');
 
-			cy.dataTest('non-volatile-partition-details-card-list')
+			cy.dataTest('partition-details-chevron')
+				.should('exist')
+				.click();
+
+			cy.dataTest('partition-details-type-view-cards')
 				.should('exist')
 				.children()
-				.should('have.length', 2);
+				.should('have.length', 1);
+
+			cy.dataTest('partition 0').should('exist');
+			cy.dataTest('partition 0')
+				.find('vscode-badge')
+				.should('be.visible');
 		});
 	});
 
@@ -173,19 +201,35 @@ describe('Partition-assignment-details-card', () => {
 					})
 				})
 			);
+
+			reduxStore.dispatch(setMemoryScreenActiveView('project'));
+			reduxStore.dispatch(setOpenProjectCards([]));
+
 			cy.mount(<PartitionAssignmentDetails />, reduxStore);
 		});
 
 		it('should be able to delete partition', () => {
-			cy.dataTest('volatile-memory-card-container').should('exist');
+			cy.dataTest('project-view-memory-card-container').should(
+				'exist'
+			);
 			cy.dataTest('partition-details-chevron')
 				.eq(0)
 				.should('exist')
 				.click();
-			cy.dataTest('delete-partition-btn').should('exist').click();
-			cy.dataTest('volatile-memory-card-container').should(
-				'not.exist'
-			);
+			cy.dataTest('partition-details-project-view-cards')
+				.should('exist')
+				.children()
+				.should('have.length', 2);
+			cy.dataTest('delete-partition-btn')
+				.eq(0)
+				.should('exist')
+				.click();
+
+			cy.dataTest('partition 1').should('not.exist');
+			cy.dataTest('partition-details-project-view-cards')
+				.should('exist')
+				.children()
+				.should('have.length', 1);
 		});
 
 		it('should edit the partition', () => {
@@ -201,7 +245,7 @@ describe('Partition-assignment-details-card', () => {
 						...createMockPartition({
 							type: 'RAM',
 							startAddress: '0x20000000',
-							displayName: 'Test Partition 2',
+							displayName: 'TestPartition2',
 							blockNames: ['sysram0'],
 							size: 1,
 							projects: [
@@ -219,9 +263,21 @@ describe('Partition-assignment-details-card', () => {
 				})
 			);
 
-			cy.dataTest('volatile-partition 0')
+			cy.dataTest('partition 0')
 				.find('h3')
-				.should('have.text', 'Test Partition 2');
+				.should('have.text', 'TestPartition2');
+		});
+
+		it('should retain view type and expanded cards', () => {
+			reduxStore.dispatch(setMemoryScreenActiveView('type'));
+			reduxStore.dispatch(setOpenProjectCards(['RV-proj']));
+			reduxStore.dispatch(setOpenTypeCards(['RAM']));
+
+			cy.dataTest('partition-type-view').should('exist');
+			cy.dataTest('partition 0').should('exist');
+
+			cy.dataTest('partition-project-view-button').click();
+			cy.dataTest('partition 0').should('exist');
 		});
 	});
 });

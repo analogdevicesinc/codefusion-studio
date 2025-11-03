@@ -13,19 +13,9 @@
  *
  */
 import "./commands";
-import type { Soc } from "../../src/webviews/common/types/soc";
-import { configurePreloadedStore } from "../../src/webviews/config-tools/src/state/store";
 import { type MountReturn, mount } from "cypress/react18";
-import { getSuspendedWrapped, getWrapped } from "./getWrapped";
-const mock = await import(
-  `../../../cli/src/socs/${Cypress.env("DEV_SOC_ID")}.json`
-);
-
-type ResolvedType<T> = T extends Promise<infer R> ? R : T;
-
-function getPreloadedStateStore() {
-  return configurePreloadedStore(mock as Soc);
-}
+import { getWrapped } from "./getWrapped";
+import { configurePreloadedStore } from "../../src/webviews/config-tools/src/state/store";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -34,11 +24,11 @@ declare global {
     interface Chainable {
       mount(
         component: React.ReactNode,
-        reduxStore?: ResolvedType<ReturnType<typeof getPreloadedStateStore>>,
+        reduxStore?: ReturnType<typeof configurePreloadedStore>,
       ): Chainable<MountReturn>;
       lazyMount(
         componentPath: string,
-        reduxStore: ResolvedType<ReturnType<typeof getPreloadedStateStore>>,
+        reduxStore: ReturnType<typeof configurePreloadedStore>,
       ): Chainable<MountReturn>;
     }
   }

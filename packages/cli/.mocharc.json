@@ -1,12 +1,8 @@
 {
-  "require": [
-    "ts-node/register"
-  ],
-  "watch-extensions": [
-    "ts"
-  ],
+  "require": ["ts-node/register", "./test/setup.js"],
+  "watch-extensions": ["ts"],
   "recursive": true,
-  "reporter": "spec",
+  "reporter": "../../custom-mocha-reporter.cjs",
   "timeout": 60000,
   "node-option": [
     "loader=ts-node/esm",

@@ -87,7 +87,9 @@ export default function SaveEditQueryModal({
 
 	return (
 		<section className={styles.fields}>
-			<h1>{title}</h1>
+			<h1 data-test='symbols:filter:save-query-modal:title'>
+				{title}
+			</h1>
 			<p>
 				If you would like to save your query for future use, fill in
 				the field below to be able to easily identify it.
@@ -102,6 +104,7 @@ export default function SaveEditQueryModal({
 					type='text'
 					name='query'
 					value={queryForm.value ?? ''}
+					data-test='symbols:filter:save-query-modal:query-input'
 					onInput={event => {
 						handleQueryValueChange(
 							event as ChangeEvent<HTMLInputElement>

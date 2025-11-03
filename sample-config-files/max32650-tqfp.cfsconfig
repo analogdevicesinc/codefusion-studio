@@ -2,19 +2,36 @@
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "0.0.25",
   "DataModelSchemaVersion": "1.0.0",
-  "Timestamp": "2024-03-12T13:09:29.484Z",
+  "Timestamp": "2025-09-02T10:37:03.074Z",
   "Soc": "MAX32650",
   "Package": "TQFP",
-  "Pins": [],
-  "ClockNodes": [],
+  "Pins": [
+    {
+      "Pin": "2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.1"
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Name": "32KCAL",
+      "Control": "32KCAL",
+      "Value": "1HZ",
+      "Enabled": true
+    }
+  ],
   "Projects": [
     {
       "CoreId": "CM4",
       "ProjectId": "CM4",
       "FirmwarePlatform": "msdk",
       "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginVersion": "1.1.0",
       "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4"
+      },
+      "Family": "Cortex-M",
       "Partitions": [],
       "Peripherals": [
         {
@@ -24,11 +41,25 @@
             "ENABLE": "FALSE"
           }
         }
-      ],
-      "PlatformConfig": {
-        "ProjectName": "m4"
-      }
+      ]
     }
   ],
-  "BoardName": "EvKit_V1"
+  "BoardName": "EvKit_V1",
+  "ClockFrequencies": {
+    "HSCLK": 120000000,
+    "INRO": 8000,
+    "APBCLK": 60000000,
+    "ERTCO_CLK": 32768,
+    "32KOUT": 32768,
+    "WDT0": 60000000,
+    "WDT1": 60000000,
+    "Cortex-M4": 120000000,
+    "ERTCO_OSC": 32768,
+    "ERTCO_OUT": 32768,
+    "SYS_OSC": 120000000,
+    "SYS_CLK": 120000000,
+    "ERTCO": 32768,
+    "32KCAL": 1,
+    "POWER SEQ": 8000
+  }
 }

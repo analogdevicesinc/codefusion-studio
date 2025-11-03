@@ -1,5 +1,5 @@
 {
-	"extends": "@tsconfig/node18/tsconfig.json",
+	"extends": "@tsconfig/node20/tsconfig.json",
 	"references": [
 		{
 			"path": "packages/ide"
@@ -15,6 +15,9 @@
 		},
 		{
 			"path": "packages/react-library"
+		},
+		{
+			"path": "packages/cfs-package-manager"
 		}
 	]
 }

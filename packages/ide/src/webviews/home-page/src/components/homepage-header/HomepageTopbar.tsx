@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-/* eslint-disable new-cap */
 
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import {Modal} from '@common/components/modal/Modal';
@@ -22,8 +21,13 @@ import {Direction} from '@common/components/tooltip/Tooltip';
 import {useState} from 'react';
 import {type TLocaleContext} from '../../../../common/types/l10n';
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
-import {LocalizedMessage} from '../../../../common/components/l10n/LocalizedMessage';
-import { GlobeIcon, EngineerZoneIcon, GitHubIcon, MailIcon } from '../top-panel/icons';
+import {LocalizedMessage as t} from '../../../../common/components/l10n/LocalizedMessage';
+import {
+	GlobeIcon,
+	EngineerZoneIcon,
+	GitHubIcon,
+	MailIcon
+} from '../top-panel/icons';
 
 export default function HomepageHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
@@ -38,7 +42,7 @@ export default function HomepageHeader() {
 	return (
 		<CfsTopBar>
 			<div slot='end'>
-				<a href='https://developer.analog.com/docs/codefusion-studio/1.1.0/'>
+				<a href='https://developer.analog.com/docs/codefusion-studio/latest/'>
 					<TopbarButton
 						title={l10n?.onlineHelp?.title}
 						icon={<GlobeIcon />}
@@ -93,12 +97,14 @@ export default function HomepageHeader() {
 				>
 					<div style={{textAlign: 'left'}}>
 						<h1>
-							<LocalizedMessage id={l10n?.help?.title} />
+							{t({
+								id: `${l10n?.help?.title}`
+							})}
 						</h1>
-						<LocalizedMessage
-							parseHtml
-							id={l10n?.help?.description}
-						/>
+						{t({
+							id: `${l10n?.help?.description}`,
+							parseHtml: true
+						})}
 					</div>
 				</Modal>
 			</div>

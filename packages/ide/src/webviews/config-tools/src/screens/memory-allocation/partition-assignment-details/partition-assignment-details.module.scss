@@ -62,25 +62,12 @@
 	top: 4px;
 }
 
-.memoryField {
-	height: 20px;
-	flex: 1 0 0;
-	border-radius: 4px;
-	border: 2px solid colors.$list-inactive-selection-background;
-}
-
 .coreSection {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 32px;
 	align-self: stretch;
-
-	h2 {
-		@include fonts.heading-h2;
-		color: colors.$default-foreground;
-		margin: 0;
-	}
 
 	.coreEntry {
 		display: flex;
@@ -115,16 +102,72 @@
 	display: flex;
 }
 
-.coreHeaderBadge {
+.partitionHeader {
 	display: flex;
+	justify-content: space-between;
 	align-items: center;
-	gap: 10px;
-	border-radius: 20px;
-	border: 1px solid colors.$editor-widget-background;
-	opacity: 0.9;
+	align-self: stretch;
 }
 
-.noPartitions {
-	@include fonts.label-l3;
-	color: colors.$description-foreground;
+.partitionCount {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 3px;
+	h2 {
+		@include fonts.heading-h2;
+		color: colors.$default-foreground;
+	}
+}
+
+.partitionViewBy {
+	display: flex;
+	gap: 2px;
+	width: 250px;
+	align-items: center;
+}
+
+.viewBy {
+	display: inline-block;
+	padding: 0px 16px;
+	align-items: center;
+	white-space: nowrap;
+	h5 {
+		@include fonts.heading-h6;
+		text-transform: uppercase;
+		color: colors.$default-foreground;
+	}
+}
+
+.viewByOption {
+	display: flex;
+	padding: 8px 12px;
+	align-items: center;
+	cursor: pointer;
+	gap: 4px;
+	text-transform: uppercase;
+	h5 {
+		@include fonts.heading-h6;
+		text-transform: uppercase;
+		color: colors.$default-foreground;
+	}
+}
+
+.selected {
+	border-radius: 4px;
+	background: colors.$list-inactive-selection-background;
+	& svg {
+		path {
+			fill: colors.$default-foreground;
+			fill-opacity: 1;
+		}
+	}
+}
+
+.partitionViewByCards {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
 }

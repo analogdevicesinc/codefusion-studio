@@ -13,6 +13,5 @@
  *
  */
 
-export { SocCatalog } from '../sdk/soc/soc-catalog.js';
 export type { StorageOptions, CatalogMetadata } from './catalog.js';
 export { CatalogError, DataStoreError } from './types.js';

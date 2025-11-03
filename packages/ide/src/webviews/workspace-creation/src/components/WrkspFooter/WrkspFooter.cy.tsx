@@ -54,10 +54,10 @@ describe('WrkspFooter', () => {
 				).then(() => {
 					cy.dataTest('wrksp-footer:back-btn')
 						.should('be.visible')
-						.and('have.text', 'Cancel');
+						.and('have.text', 'Back');
 					cy.dataTest('wrksp-footer:continue-btn').should(
 						'have.text',
-						'Apply'
+						'Continue'
 					);
 				});
 			});

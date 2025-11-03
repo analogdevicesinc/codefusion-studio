@@ -1,7 +1,7 @@
 ---
 description: Memory Allocation for CodeFusion Studio
 author: Analog Devices
-date: "2025-01-13"
+date: "2025-07-29"
 ---
 
 # Memory Allocation
@@ -13,20 +13,23 @@ The Memory Allocation feature enables partitioning of internal and external SoC 
 ![Memory Allocation Overview](./images/memory-allocation-overview-dark.png#only-dark) ![Memory Allocation Overview](./images/memory-allocation-overview-light.png#only-light)
 
 1. **Filter options**: Filter memory blocks by type or core to locate partitions.
-1. **Memory blocks list**: List of base memory blocks, derived from the devices datasheet.
-1. **Create partition**: Click to define a new memory partition.
-1. **User created partitions**: Lists created partitions.
-1. **Memory allocation bars**: Visual representation of partition details, including size, assigned core, and memory address range.
-1. **Partitions grouped by core**: Displays grouped by core, showing key details such as size, memory type, and range.
-1. **Modify and delete partitions**: Click configure to edit a partition or click delete to remove it.
+2. **Memory blocks list**: List of base memory blocks, derived from the devices datasheet. Expand a block to view details such as start or end addresses, minimum alignment, and usage.
+3. **Memory allocation bar**: Visual overview of memory usage. Hover to view partition size, assigned core, and memory address range.
+4. **Create partition**: Hover over a free region in the memory allocation bar, then click add (➕) to define a new memory partition. Alternatively, click **Create partition**.
+5. **View by**: View partitions grouped by project or memory type.
+6. **Modify and delete partitions**: Click configure to edit a partition or click delete to remove it.
 
 ## Create a partition
 
 !!! Note
-    - Partitions must use a single block of memory. If you need multiple separate blocks, create them as individual partitions.
-    - Partitions cannot overlap or extend into occupied memory. If the selected memory is already in use, an error message will appear. Modify or delete existing partitions to proceed.
+    Partitions cannot overlap or extend into occupied memory. If the selected memory is already in use, an error message will appear. Modify or delete existing partitions to proceed.
 
-Click **Create Partition** to define a new memory partition and enter the following details:
+Hover over a free region in the memory bar, then click add (➕) to create a partition. Alternatively, you can click **Create Partition**.
+
+!!! tip
+    Using the interactive memory bar streamlines the setup process by automatically prepopulating fields, including core, memory type, starting address, and size.
+
+The partition form includes the following fields:
 
 - **Memory Type**: The type of memory (e.g., RAM, FLASH).
 - **Partition Name**: A unique name for the partition.
@@ -39,12 +42,20 @@ Click **Create Partition** to define a new memory partition and enter the follow
 
 ## Edit a partition
 
-1. Locate the target core in the central view.
-2. Expand the core card to view its assigned partitions.
+To edit a partition, click the partition directly in the interactive memory bar.
+
+Alternatively, you can:
+
+1. Locate the target core or memory type in the central view.
+2. Expand the partition card to view its assigned partitions.
 3. Click configure ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to modify a partition.
 
 ## Delete a partition
 
-1. Locate the target core in the central view.
-2. Expand the core card to view its assigned partitions.
+To delete a partition, click the partition directly in the interactive memory bar, then click Delete ![Delete](./images/icon-delete-dark.png#only-dark) ![Delete](./images/icon-delete-light.png#only-light) at the top of the **Edit Partition** form.
+
+Alternatively, you can:
+
+1. Locate the target core or memory type in the central view.
+2. Expand the partition card to view its assigned partitions.
 3. Click delete ![Delete](./images/icon-delete-dark.png#only-dark) ![Delete](./images/icon-delete-light.png#only-light) to remove a partition.

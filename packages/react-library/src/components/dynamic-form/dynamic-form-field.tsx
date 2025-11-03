@@ -24,6 +24,8 @@ import type {
 } from '../../types/dynamic-form.ts';
 
 import styles from './dynamic-form-field.module.scss';
+import Tooltip from '../tooltip/tooltip.tsx';
+import InfoIcon from '../icons/info-icon.tsx';
 
 const computeReceivedValue = (input: string): number | string => {
 	if (isNaN(parseFloat(input))) {
@@ -49,7 +51,8 @@ export default function DynamicFormField({
 		enum: enumOptions,
 		required,
 		description,
-		name
+		name,
+		info
 	},
 	value,
 	testId,
@@ -185,9 +188,14 @@ export default function DynamicFormField({
 
 	return (
 		<section className={styles.formFieldContainer}>
-			<div className={styles.fieldHeader}>
+			<div className={styles.fieldHeader} data-control-type={type}>
 				<label htmlFor={id} className={styles.fieldTitle}>
 					{name}
+					{info && (
+						<Tooltip title={info} width={150}>
+							<InfoIcon />
+						</Tooltip>
+					)}
 				</label>
 				{!required && (
 					<span className={styles.fieldOptional}>Optional</span>

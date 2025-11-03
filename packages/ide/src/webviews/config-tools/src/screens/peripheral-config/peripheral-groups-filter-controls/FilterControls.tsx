@@ -31,7 +31,10 @@ export type FilterControlsProps = Readonly<{
 
 function FilterControls({options, onSelect}: FilterControlsProps) {
 	return (
-		<div className={styles.filterControlsContainer}>
+		<div
+			className={styles.filterControlsContainer}
+			id='side-peripheral-list:filterControlsContainer'
+		>
 			{Object.entries(options).map(([key, option]) => (
 				<div
 					key={`filterControl-${key}`}

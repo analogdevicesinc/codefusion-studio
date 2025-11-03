@@ -12,11 +12,13 @@
  * limitations under the License.
  *
  */
+import {memo, useCallback, useEffect} from 'react';
 import {useAppDispatch} from '../../state/store';
 import {setActivePeripheral} from '../../state/slices/peripherals/peripherals.reducer';
-import {memo, useCallback, useEffect} from 'react';
 import Function from '../../screens/pinmux/function/Function';
+import PinCfgPeripheralTooltip from '../../screens/pinmux/peripheral-navigation-sidebar/pincfg-peripheral-tooltip/pincfg-peripheral-tooltip';
 import {focusPinSet} from '../../state/slices/pins/pins.reducer';
+import {useTooltipDebouncedHover} from '../../hooks/use-tooltip-debounced-hover';
 import type {FormattedPeripheralSignal} from '@common/types/soc';
 import ConflictIcon from '../../../../common/icons/Conflict';
 import Accordion from '@common/components/accordion/Accordion';
@@ -29,6 +31,7 @@ type PeripheralProps = Readonly<{
 		FormattedPeripheralSignal & {currentTarget?: string}
 	>;
 	title: string;
+	description: string;
 	isLastPeripheralGroup: boolean;
 }>;
 
@@ -37,9 +40,12 @@ function Peripheral({
 	hasPinConflict,
 	signals,
 	title,
+	description,
 	isLastPeripheralGroup
 }: PeripheralProps) {
 	const dispatch = useAppDispatch();
+	const {isHovered, displayTooltip, hideTooltip} =
+		useTooltipDebouncedHover(800);
 
 	const targetPinsIds = signals
 		.map(signal => signal.currentTarget ?? '')
@@ -66,42 +72,67 @@ function Peripheral({
 	}, [dispatch, isOpen, targetPinsIds]);
 
 	return (
-		<Accordion
-			title={title}
-			icon={
-				hasPinConflict ? (
-					<div
-						data-test={`accordion:conflict:${title}`}
-						id={`${title}-conflict`}
-						className={styles.conflictIcon}
-					>
-						<ConflictIcon />
-					</div>
-				) : null
-			}
-			body={
-				isOpen ? (
-					<>
-						{sortedSignals.map(signal => {
-							if (signal.pins.length === 0) return null;
+		<>
+			<div
+				id={`pincfg-peripheral-${title}`}
+				onMouseEnter={() => {
+					if (!isOpen) displayTooltip();
+				}}
+				onMouseLeave={() => {
+					hideTooltip();
+				}}
+				onClick={() => {
+					hideTooltip();
+				}}
+			>
+				<Accordion
+					title={title}
+					icon={
+						hasPinConflict ? (
+							<div
+								data-test={`accordion:conflict:${title}`}
+								id={`${title}-conflict`}
+								className={styles.conflictIcon}
+							>
+								<ConflictIcon />
+							</div>
+						) : null
+					}
+					body={
+						isOpen ? (
+							<section
+								style={{position: 'relative'}}
+								id={`function-container-${title}`}
+							>
+								{sortedSignals.map(signal => {
+									if (signal.pins.length === 0) return null;
 
-							return (
-								<Function
-									key={signal.name}
-									peripheralGroup={title}
-									name={signal.name}
-									pins={signal.pins}
-									isLastIndex={isLastPeripheralGroup}
-								/>
-							);
-						})}
-					</>
-				) : null
-			}
-			isOpen={isOpen}
-			variant='no-gap'
-			toggleExpand={toggleExpandMenu}
-		/>
+									return (
+										<Function
+											key={signal.name}
+											peripheralGroup={title}
+											name={signal.name}
+											pins={signal.pins}
+											isLastIndex={isLastPeripheralGroup}
+											signalDesc={signal.description}
+										/>
+									);
+								})}
+							</section>
+						) : null
+					}
+					isOpen={isOpen}
+					variant='no-gap'
+					toggleExpand={toggleExpandMenu}
+				/>
+			</div>
+			{isHovered && !isOpen && (
+				<PinCfgPeripheralTooltip
+					title={title}
+					description={description}
+				/>
+			)}
+		</>
 	);
 }
 

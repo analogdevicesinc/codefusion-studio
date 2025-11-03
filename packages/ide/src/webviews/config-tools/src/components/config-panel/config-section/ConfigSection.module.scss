@@ -45,6 +45,13 @@
 		cursor: pointer;
 		text-transform: uppercase;
 
+		.manage {
+			display: flex;
+			align-items: center;
+			text-transform: none;
+			gap: 8px;
+		}
+
 		svg {
 			transform: rotate(90deg);
 			transition: transform 0.3s ease;
@@ -59,7 +66,10 @@
 			svg {
 				opacity: 0;
 			}
-			cursor: default;
+
+			& {
+				cursor: default;
+			}
 		}
 
 		&.navigate {

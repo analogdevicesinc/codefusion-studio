@@ -14,7 +14,6 @@
  */
 import {
   By,
-  CustomEditor,
   ModalDialog,
   TextEditor,
   VSBrowser,
@@ -23,7 +22,16 @@ import {
   Workbench,
 } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { pinTab } from "../page-objects/main-menu";
+import {
+  pinDetailsContainer,
+  mainPanelPinOnLineAndColumn,
+  signalToggleWithIndex,
+  configButton,
+  searchField,
+} from "../page-objects/pin-config-section/pin-config-screen";
 
 type Pin = {
   Pin: string;
@@ -38,72 +46,44 @@ describe("Reset to Default", () => {
 
   before(async function () {
     this.timeout(60000);
-
     browser = VSBrowser.instance;
     driver = browser.driver;
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await UIUtils.sleep(3000);
   });
 
   it.skip(
     "Correctly resets function config to the default values - also in document",
     async () => {
-      await VSBrowser.instance.openResources(
-        path.join(
-          "src",
-          "tests",
-          "ui-test-config-tools",
-          "fixtures",
-          "max32690-tqfn.cfsconfig",
-        ),
-      );
+      const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+      await VSBrowser.instance.openResources(configPath);
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
+      await UIUtils.sleep(3000);
       const view = new WebView();
-
       await view.switchToFrame();
 
-      const nav = await view.findWebElement(By.css(`#pinmux`));
-
-      await nav.click().then(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-
+      await (await view.findWebElement(pinTab)).click().then(async () => {
+        await UIUtils.sleep(3000);
         const pin = await view.findWebElement(
-          By.css(
-            "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
-          ),
+          await mainPanelPinOnLineAndColumn(1, 2),
         );
 
         await pin.click();
+        await UIUtils.sleep(1500);
 
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        expect(await view.findWebElement(By.css("#details-container"))).to
-          .exist;
+        expect(await view.findWebElement(pinDetailsContainer)).to.exist;
 
         const firstSignalToggle = await view.findWebElement(
-          By.css(
-            "#pin-details-signals-container > div:nth-child(1) > section > label",
-          ),
+          await signalToggleWithIndex(1),
         );
-
         await firstSignalToggle.click();
+        await UIUtils.sleep(1500);
 
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        const navItem = await view.findWebElement(By.css("#config"));
-
+        const navItem = await view.findWebElement(configButton);
         await navItem.click();
-
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await UIUtils.sleep(1500);
 
         await view
-          .findWebElement(
-            By.xpath(
-              "/html/body/div/div/div[3]/div[3]/div/section/div[6]/div[2]/vscode-text-field",
-            ),
-          )
+          .findWebElement(searchField)
           .then(async (dtNameInputField) => {
             expect(dtNameInputField).to.exist;
 
@@ -134,11 +114,11 @@ describe("Reset to Default", () => {
             let activeEditor = new TextEditor();
 
             await activeEditor.getText().then((documentContent) => {
-              let jsonObject: {
+              const jsonObject: {
                 Pins: Pin[];
               } = JSON.parse(documentContent);
 
-              expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal("Invalid!");
+              expect(jsonObject.Pins[0].Config.DT_NAME).to.equal("Invalid!");
             });
 
             const extensionTab = await driver.findElement(
@@ -193,7 +173,6 @@ describe("Reset to Default", () => {
                 );
 
                 await quickAccess.click();
-
                 await new Promise((res) => {
                   setTimeout(res, 3000);
                 });
@@ -202,15 +181,13 @@ describe("Reset to Default", () => {
 
                 await activeEditor.getText().then(async (documentContent) => {
                   const jsonObject = JSON.parse(documentContent);
-                  expect(jsonObject.Pins[0].Config["DT_NAME"]).to.equal(
+                  expect(jsonObject.Pins[0].Config.DT_NAME).to.equal(
                     "gpio_p2_26",
                   );
                 });
 
                 const wb = new Workbench();
-
                 await wb.wait();
-
                 await wb.executeCommand("view: close all editors");
 
                 await new Promise((res) => {
@@ -218,7 +195,6 @@ describe("Reset to Default", () => {
                 });
 
                 const dialog = new ModalDialog();
-
                 await dialog.pushButton("Don't Save");
               });
           });

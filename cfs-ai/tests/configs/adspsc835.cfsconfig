@@ -1,0 +1,76 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.1.0",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-09-13T14:09:23.115Z",
+  "Soc": "ADSP-SC835",
+  "Package": "BGA_ED",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "ev_som",
+  "Projects": [
+    {
+      "CoreId": "FX",
+      "ProjectId": "FX",
+      "PluginId": "com.analog.project.sharcfx.plugin",
+      "PluginVersion": "1.0.0",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [],
+      "PlatformConfig": {
+        "ProjectName": "sfx"
+      },
+      "AIModels" : [
+        {
+          "Name": "Hello with Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_f32.tflite"
+          },
+          "Target": {
+            "Core": "FX"
+          },
+          "Backend" : {
+            "Name" : "tflm",
+            "Extensions" : {
+              "Symbol" : "hello_world_model_f32",
+              "Section" : ".data"
+            }
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "Hello no Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_i8.tflite"
+          },
+          "Target": {
+            "Core": "FX"
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "Denoiser Remote",
+          "Files" : {
+              "Model" : "https://raw.githubusercontent.com/breizhn/DTLN/master/pretrained_model/model_1.tflite"
+          },
+          "Target": { 
+              "Core": "FX"
+          },
+          "Enabled": true
+       }
+      ]
+    },
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33",
+      "PluginId": "com.analog.project.sharcfx.plugin",
+      "PluginVersion": "1.0.0",
+      "ExternallyManaged": true,
+      "Partitions": [],
+      "Peripherals": [],
+      "PlatformConfig": {
+        "ProjectName": "m33"
+      }
+    }
+  ]
+}

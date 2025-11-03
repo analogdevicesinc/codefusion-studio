@@ -4,6 +4,6 @@
     "forbid-only": true,
     "watch-extensions": ["ts"],
     "recursive": true,
-    "reporter": "spec",
+    "reporter": "./custom-mocha-reporter.cjs",
     "timeout": 60000
 }

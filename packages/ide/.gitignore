@@ -39,6 +39,7 @@ src/tests/ui-test-config-tools/.vscode/*
 src/tests/ui-test-config-tools/build/
 src/tests/ui-test-config-tools/.vscode/*
 src/tests/ui-test/.vscode/*
+!src/tests/ui-test/.vscode/extensions.json
 src/tests/ui-test-utils/*.js
 src/tests/ui-test/analog*/
 src/tests/ui-test/.obsolete
@@ -48,3 +49,6 @@ src/tests/ui-test-workspace-creation/build/
 src/tests/ui-test-workspace-creation/.vscode/*
 !src/tests/ui-test-workspace-creation/.vscode/extensions.json
 
+# the auth config doesn't get committed
+# see ./DEVELOPMENT.md
+auth.json

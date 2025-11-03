@@ -27,15 +27,14 @@ export const WORKSPACE_CONTEXT = "Workspace";
 export const WORKSPACE_CREATION_EDITOR_ID = "cfs.workspaceCreation";
 export const MCU_EDITOR_ID = "cfgtools.editor";
 export const ELF_EDITOR_ID = "elf.fileEditor";
+export const SIGMA_STUDIO_PLUS_PROJECT_EDITOR_ID =
+  "cfs.editor.sigmaStudioPlusProject";
 
 // Settings
 export const ADI_CONFIGURE_WORKSPACE_SETTING = "configureWorkspace";
 export const C_CPP = "C_Cpp.default";
 export const CFS_IDE_OPEN_HOME_PAGE_AT_STARTUP = "home.openAtStartup";
 export const OPEN_SYSTEM_PLANNER_AT_STARTUP = "systemPlanner.openAtStartup";
-
-export const CLI_ID = "cfsutil";
-export const CFS_UTIL_PATH = `${CLI_ID}.path`;
 export const SDK_PATH = "sdk.path";
 
 export const PROGRAM_FILE = "programFile";
@@ -74,10 +73,13 @@ export const BOARD = "board";
 export const FIRMWARE_PLATFORM = "firmwarePlatform";
 export const SYMBOL_FILE = "symbolFile";
 export const DEBUGGER_SWD = "debugger.SWD";
+export const TOOLCHAIN_ID = "toolchain.id";
 
 export const ZEPHYR = "zephyr";
 export const ZEPHYR_WORKSPACE = `${ZEPHYR}.workspace.path`;
-export const ZEPHYR_SDK = `${ZEPHYR}.sdk.path`;
+
+export const MSDK = "MSDK";
+export const MAXIM_SDK_PATH = "/SDK/MAX";
 
 export const BROWSE_STRING = "Browse...";
 export const CFS_PREFIX = "CFS: ";
@@ -104,6 +106,7 @@ export const OPEN_WALKTHROUGH = "openWalkthrough";
 export const SHOW_HOME_PAGE_AT_STARTUP_CHECKBOX =
   "showHomePageAtStartupCheckbox";
 export const REQUEST_HOME_PAGE_CHECKBOX_STATE = "requestHomePageCheckboxState";
+export const GET_SOC_DOCUMENTATION_LINKS = "getSocDocumentationLinks";
 export const GET_DEFAULT_LOCATION = "getDefaultLocation";
 export const CHECK_FILE_EXISTS = "checkFileExists";
 export const CHECK_CUSTOM_BOARD = "checkCustomBoard";
@@ -111,12 +114,18 @@ export const GET_SOC_DATA = "getSocData";
 export const DOWNLOAD_SDK = "downloadSdk";
 export const SET_SDK_PATH = "setSdkPath";
 export const ACTIVE_CONTEXT = "activeContext";
+export const CFS_TELEMETRY_ENABLE = "telemetry.enable";
+export const CFS_TELEMETRY_USER_ID = "telemetry.userId";
+export const ENVIRONMENT = "environment";
 
-//Component Manager
+// Catalog Manager
 export const CATALOG_MANAGER = "catalogManager";
-export const CM_URL = "url";
 export const CATALOG_LOCATION = "catalogLocation";
 export const CHECK_FOR_UPDATES = "checkForUpdates";
+export const CATALOG_API_URL = "https://ccm.codefusion.app.analog.com";
+
+// Package Manager
+export const PACKAGE_MANAGER_CREDENTIAL_PROVIDER = "myAnalog";
 
 // Action Panel Actions
 //TODO: export the following in an ACTION_PANEL object
@@ -127,6 +136,7 @@ export const ERASE_ACTION = "Erase";
 export const FLASH_ACTION = "Flash";
 export const DEBUG_ACTION = "Debug";
 export const SECURITY_ACTION = "Security";
+export const PROFILING_ACTION = "Profiling";
 export const OZONE_DEBUG_ACTION = "Debug with Ozone";
 export const JLINK_ACTION = "(JLink)";
 export const OPENOCD_ACTION = "(OpenOCD)";
@@ -145,10 +155,13 @@ export const TOOLS = "tools";
 export const BEAKER = "beaker";
 export const TRASH = "trash";
 export const ZAP = "zap";
+export const GRAPH = "graph";
+export const LOCK = "lock";
 
 export const PIN_CONFIG_USER_GUIDE_URL =
-  "https://developer.analog.com/docs/codefusion-studio/1.1.0/";
+  "https://developer.analog.com/docs/codefusion-studio/latest/";
 
 export enum SECURITY_TASKS_SEARCH_STRING {
   generateKey = "generate mcuboot key",
+  generateEnvelopedPackage = "generate enveloped package",
 }

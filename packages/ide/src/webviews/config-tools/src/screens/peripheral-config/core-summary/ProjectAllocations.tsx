@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,23 @@ import type {ProjectInfo} from '../../../utils/config';
 
 export default function ProjectAllocations({
 	allocations,
-	project
+	project,
+	projectControls
 }: Readonly<{
 	allocations: PeripheralConfig[];
 	project: ProjectInfo;
+	projectControls: Record<string, any[]> | undefined;
 }>) {
-	return allocations.map(peripheral => (
-		<PeripheralAllocationCard
-			key={peripheral.name}
-			projectId={project.ProjectId}
-			peripheral={peripheral}
-		/>
-	));
+	return (
+		<>
+			{allocations.map(peripheral => (
+				<PeripheralAllocationCard
+					key={peripheral.name}
+					projectId={project.ProjectId}
+					peripheral={peripheral}
+					projectControls={projectControls}
+				/>
+			))}
+		</>
+	);
 }

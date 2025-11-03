@@ -31,6 +31,7 @@ function BadgeFilter({selectedFilter, onFilterClick}: FiltersProps) {
 					label={label}
 					isDisabled={false}
 					isActive={selectedFilter === label}
+					dataTest={`stats:badge-filters-${label.toLowerCase()}`}
 					onClick={() => {
 						onFilterClick(label);
 					}}

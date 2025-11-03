@@ -13,30 +13,27 @@
  *
  */
 import { defineConfig } from "cypress";
-import { defineConfig as defineViteConfig, loadEnv } from "vite";
+import { defineConfig as defineViteConfig } from "vite";
 import path from "node:path";
-import { readFile } from "node:fs/promises";
 import react from "@vitejs/plugin-react-swc";
 
-const viteConfig = defineViteConfig(async () => {
-  const devSocId = loadEnv("development", process.cwd(), "").DEV_SOC_ID;
-
-  const devSoc = await readFile(
-    path.resolve(process.cwd(), `../cli/src/socs/${devSocId}.json`),
-    'utf-8'
-  ).then((data) => JSON.parse(data));
-
+const viteConfig = defineViteConfig(() => {
   return {
     root: path.resolve(process.cwd(), "./src/webviews/config-tools"),
     plugins: [react()],
     resolve: {
       alias: {
         "@common": path.resolve(process.cwd(), "./src/webviews/common/"),
+        "@wrksp-common": path.resolve(
+          __dirname,
+          "./src/webviews/workspace-creation/src/common/",
+        ),
         "@adi-ctx/harmonic-core-components-react": path.resolve(
           process.cwd(),
           "./src/webviews/config-tools",
           "./src/lib/drawing-engine/HarmonicPolyfill.js",
         ),
+        "@socs": path.resolve(process.cwd(), `../cfs-data-models/socs/`),
       },
     },
     build: {
@@ -57,9 +54,6 @@ const viteConfig = defineViteConfig(async () => {
         ],
       },
     },
-    define: {
-      __DEV_SOC__: JSON.stringify(devSoc),
-    },
   };
 });
 
@@ -79,11 +73,6 @@ export default defineConfig({
         },
       });
     },
-  },
-  env: {
-    DEV_SOC_ID: "max32690-tqfn",
-    CLOCK_CONFIG_DEV_SOC_ID: "max32690-wlp",
-    VITE_FIRMWARE_PLATFORM: "MSDK",
   },
   fileServerFolder: path.resolve(process.cwd(), "src/webviews/"),
 });

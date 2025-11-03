@@ -19,6 +19,7 @@ import DownFilledArrow from '../../../../../common/icons/DownFilledArrow';
 import DownArrow from '../../../../../common/icons/DownArrow';
 import {useMemo, useState} from 'react';
 import {
+	RegisterConfigField,
 	type ConfigField,
 	type FieldDictionary
 } from '../../../../../common/types/soc';
@@ -31,14 +32,11 @@ import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export type RegisterDetailsTableProps = {
 	readonly assignedPinsRegisterConfigs: Array<{
-		pinConfig: Array<ConfigField | undefined>;
+		pinConfig: Array<RegisterConfigField | undefined>;
 		signalConfig: ConfigField[] | undefined;
 	}>;
-	readonly modifiedClockNodesConfigs: Array<
-		Record<string, ConfigField[] | undefined>
-	>;
-	readonly allocatedPeripheralRegisterConfigs: Array<
-		Record<string, ConfigField[] | undefined>
+	readonly registerConfigs: Array<
+		Record<string, RegisterConfigField[] | undefined>
 	>;
 	readonly registerDetails: FieldDictionary[];
 	readonly registerName: string;
@@ -47,8 +45,7 @@ export type RegisterDetailsTableProps = {
 
 export function RegisterDetailsTable({
 	assignedPinsRegisterConfigs,
-	modifiedClockNodesConfigs,
-	allocatedPeripheralRegisterConfigs,
+	registerConfigs,
 	registerDetails,
 	registerName,
 	modifiedRegisterDetails
@@ -134,10 +131,7 @@ export function RegisterDetailsTable({
 				registerDetails={searchResults}
 				registerName={registerName}
 				assignedPinsRegisterConfigs={assignedPinsRegisterConfigs}
-				modifiedClockNodesConfigs={modifiedClockNodesConfigs}
-				allocatedPeripheralRegisterConfigs={
-					allocatedPeripheralRegisterConfigs
-				}
+				registersConfigs={registerConfigs}
 				hoveredField={hoveredField}
 				setHoveredField={setHoveredField}
 				scrollToRow={id => {
@@ -194,8 +188,7 @@ export function RegisterDetailsTable({
 							field={field}
 							value={computeFieldValue(
 								assignedPinsRegisterConfigs,
-								modifiedClockNodesConfigs,
-								allocatedPeripheralRegisterConfigs,
+								registerConfigs,
 								registerName,
 								field,
 								field.reset

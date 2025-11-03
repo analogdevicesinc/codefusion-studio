@@ -43,7 +43,10 @@ export default function SymbolTypes({symbols}: TSymbolTypesProps) {
 	}, [selectedFilter, symbols]);
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='stats:symbol-types-container'
+		>
 			<article className={styles.filtersWrap}>
 				<div className={styles.title}>
 					<HeaderWithTooltip title={i10n?.title} i10n={i10n} />

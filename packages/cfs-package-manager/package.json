@@ -1,0 +1,37 @@
+{
+	"name": "cfs-package-manager",
+	"publisher": "adi",
+	"description": "Reusable utilities for CFS components",
+	"author": "Analog Devices",
+	"version": "2.0.0",
+	"dependencies": {
+		"env-paths": "^3"
+	},
+	"devDependencies": {
+		"@types/chai": "^5.2.0",
+		"@types/chai-as-promised": "^8.0.2",
+		"@types/node": "^22.13.10",
+		"chai": "^5.2.0",
+		"chai-as-promised": "^8.0.1",
+		"mocha": "11.1.0",
+		"shx": "^0.4.0",
+		"sinon": "^19.0.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.8.2"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist/",
+		"!tsconfig.tsbuildinfo"
+	],
+	"type": "module",
+	"license": "Apache-2.0",
+	"scripts": {
+		"postbuild": "shx cp -r src/conan-backend/config dist/conan-backend/",
+		"clean": "shx rm -rf dist",
+		"build": "yarn lint && tsc -b && yarn postbuild",
+		"lint": "eslint . --ext .ts",
+		"test": "mocha test/**/*.test.ts"
+	}
+}

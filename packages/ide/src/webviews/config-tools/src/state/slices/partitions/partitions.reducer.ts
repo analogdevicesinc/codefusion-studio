@@ -14,6 +14,7 @@
  */
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type MemoryBlock} from '../../../../../common/types/soc';
+import {type ByteUnit} from '../../../types/memory';
 
 export type Partition = {
 	displayName: string;
@@ -24,6 +25,7 @@ export type Partition = {
 	size: number;
 	projects: PartitionCore[];
 	config?: Record<string, Record<string, string | number | boolean>>;
+	displayUnit?: ByteUnit;
 };
 
 export type PartitionCore = {
@@ -38,6 +40,7 @@ type PartitionsState = {
 	partitions: Partition[];
 	isSidebarMinimised: boolean;
 	sidebarPartition: Partition;
+	activePartition: Partition | undefined;
 };
 
 export const partitionsInitialState: PartitionsState = {
@@ -59,8 +62,10 @@ export const partitionsInitialState: PartitionsState = {
 		blockNames: [],
 		startAddress: '',
 		size: 0,
+		displayUnit: undefined,
 		projects: []
-	}
+	},
+	activePartition: undefined
 };
 
 const partitionsSlice = createSlice({
@@ -94,6 +99,56 @@ const partitionsSlice = createSlice({
 		) {
 			state.isSidebarMinimised = payload.isSidebarMinimised;
 			state.sidebarPartition = payload.sidebarPartition;
+			state.activePartition = payload.isSidebarMinimised
+				? undefined
+				: structuredClone(payload.sidebarPartition);
+		},
+		updateActivePartition(
+			state,
+			{payload}: PayloadAction<Partition | undefined>
+		) {
+			if (!payload) {
+				state.activePartition = undefined;
+				return;
+			}
+			state.activePartition = {
+				...state.activePartition,
+				...payload
+			};
+		},
+		updateActivePartitionConfig(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				projectId: string;
+				key: string;
+				value: string | number | boolean;
+			}>
+		) {
+			if (!state.activePartition) {
+				return;
+			}
+
+			state.activePartition.config = {
+				...state.activePartition.config,
+				[payload.projectId]: {
+					...state.activePartition.config?.[payload.projectId],
+					[payload.key]: payload.value
+				}
+			};
+		},
+		updateActivePartitionDisplayName(
+			state,
+			{payload}: PayloadAction<string>
+		) {
+			if (!state.activePartition) {
+				return;
+			}
+			state.activePartition = {
+				...state.activePartition,
+				displayName: payload
+			};
 		},
 		editPartition(
 			state,
@@ -104,11 +159,11 @@ const partitionsSlice = createSlice({
 				startAddress: string;
 			}>
 		) {
+			const startAddress = parseInt(payload.startAddress, 16);
 			return {
 				...state,
 				partitions: state.partitions.map(partition =>
-					parseInt(partition.startAddress, 16) ===
-					parseInt(payload.startAddress, 16)
+					parseInt(partition.startAddress, 16) === startAddress
 						? {...partition, ...payload.sidebarPartition}
 						: partition
 				)
@@ -121,7 +176,10 @@ export const {
 	createPartition,
 	removePartition,
 	setSideBarState,
-	editPartition
+	editPartition,
+	updateActivePartition,
+	updateActivePartitionDisplayName,
+	updateActivePartitionConfig
 } = partitionsSlice.actions;
 
 export const partitionsReducer = partitionsSlice.reducer;

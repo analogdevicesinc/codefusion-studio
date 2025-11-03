@@ -1,23 +1,25 @@
 import { describe, before } from "mocha";
 import * as path from "path";
-import {
-  By,
-  EditorView,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, EditorView, VSBrowser, Workbench } from "vscode-extension-tester";
+import { UIUtils } from "../utility-workspace/workspace-utils";
 
-describe("Setup test environment", function () {
+let workbench: Workbench;
+
+describe("Setup test environment", () => {
   before(async function () {
     this.timeout(60000);
 
     const editorView = new EditorView();
+    workbench = new Workbench();
+
+    console.log(
+      `Closing ${(await editorView.getOpenEditorTitles()).toString()}`,
+    );
 
     await editorView.closeAllEditors();
   });
 
-  it("should dismiss toast notifications", async function () {
+  it("should dismiss toast notifications @smoke", async function () {
     this.timeout(60000);
 
     const browser = VSBrowser.instance;
@@ -32,9 +34,13 @@ describe("Setup test environment", function () {
       ),
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await UIUtils.sleep(6000);
 
-    await new Workbench().getNotifications().then(async (notifications) => {
+    console.log(
+      `Dismissing notifications: ${(await workbench.getNotifications()).toString()}`,
+    );
+
+    await workbench.getNotifications().then(async (notifications) => {
       await Promise.all(
         notifications.map(async (notification) => {
           await new Promise((resolve) => {
@@ -58,8 +64,11 @@ describe("Setup test environment", function () {
       } else {
         console.log("No C Extension toast found");
       }
-    } catch (error) {
+    } catch (_) {
       console.log("No C Extension toast to dismiss");
+    } finally {
+      const editor = new EditorView();
+      await editor.closeAllEditors();
     }
   });
 });

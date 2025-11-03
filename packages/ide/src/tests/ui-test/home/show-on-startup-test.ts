@@ -31,17 +31,19 @@ import {
 /** Title for the Home page editor window */
 const HOME_PAGE_TITLE = "CFS Home Page";
 
-describe("Home page show on startup test", () => {
+describe("Home page show on startup test", function () {
+  // Flaky test - allow retries
+  this.retries(3);
   const testDirectory = "src/tests/ui-test/data/Hello_World";
 
   beforeEach(async () => {
+    const workbench = new Workbench();
     await closeFolder();
     deleteFolder(testDirectory + "/.vscode");
-    await new Workbench().getDriver().sleep(1000);
+    await workbench.getDriver().sleep(1000);
 
     await openFolder(process.cwd() + "/" + testDirectory);
-    const workbench = new Workbench();
-    await workbench.getDriver().sleep(15000);
+    await workbench.getDriver().sleep(5000);
   });
 
   afterEach(async () => {

@@ -13,14 +13,69 @@
  *
  */
 
-import {type Soc} from '../../../../common/types/soc';
-import {createPartition} from '../../state/slices/partitions/partitions.reducer';
+import type {CfsConfig} from 'cfs-plugins-api';
+import type {Soc} from '../../../../common/types/soc';
+import {
+	createPartition,
+	type Partition
+} from '../../state/slices/partitions/partitions.reducer';
 import {configurePreloadedStore} from '../../state/store';
 import MemoryAllocation from './MemoryAllocation';
+import {formatSocCoreMemoryBlocks} from '../../utils/json-formatter';
 
-const mock = await import(
-	'../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+const mock = formatSocCoreMemoryBlocks(
+	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
+);
+
+const mockedConfigDict = {
+	BoardName: 'AD-APARD32690-SL',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	Projects: [
+		{
+			CoreNum: 0,
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: '',
+			CoreId: 'CM4',
+			ProjectId: 'CM4-proj',
+			IsPrimary: true,
+			Name: 'ARM Cortex-M4',
+			PluginId: ''
+		},
+		{
+			CoreNum: 1,
+			Description: 'RISC-V (RV32)',
+			ExternallyManaged: false,
+			FirmwarePlatform: '',
+			CoreId: 'RV',
+			ProjectId: 'RV-proj',
+			Name: 'RISC-V (RV32)',
+			PluginId: ''
+		}
+	]
+} as unknown as CfsConfig;
+
+const createMockPartition = (
+	partition: Partial<Partition>
+): Partition => ({
+	displayName: partition.displayName ?? 'Test Partition',
+	type: partition.type ?? 'Flash',
+	baseBlock: partition.baseBlock ?? {
+		Name: '',
+		Description: '',
+		AddressStart: '',
+		AddressEnd: '',
+		Width: 0,
+		Access: '',
+		Location: '',
+		Type: ''
+	},
+	blockNames: partition.blockNames ?? [],
+	startAddress: partition.startAddress ?? '',
+	size: partition.size ?? 0,
+	projects: partition.projects ?? []
+});
 
 const memoryBlocks = mock.Cores.flatMap(core => core.Memory).filter(
 	(block, index, self) =>
@@ -32,34 +87,53 @@ const blocksByType = memoryBlocks.filter(
 	block => block.Type === memoryType
 );
 
-describe.skip('Memory Allocation', () => {
-	describe('when filtering the memory screen', () => {
+describe('Memory Allocation', () => {
+	beforeEach(() => {
+		cy.viewport(1920, 1080);
+
+		const reduxStore = configurePreloadedStore(
+			mock as unknown as Soc,
+			mockedConfigDict
+		);
+
+		reduxStore.dispatch(
+			createPartition({
+				...createMockPartition({
+					type: 'Flash',
+					startAddress: '0x10400000',
+					blockNames: ['flash0', 'flash1'],
+					size: 1,
+					projects: [
+						{
+							label: mock.Cores[1].Name,
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					]
+				})
+			})
+		);
+
+		cy.mount(<MemoryAllocation />, reduxStore);
+	});
+	describe('when filtering when no memory blocks match the filter', () => {
 		before(() => {
 			localStorage.setItem('MemoryBlocks', JSON.stringify([]));
-			localStorage.setItem('Cores', JSON.stringify(mock.Cores));
-			localStorage.setItem(
-				'MemoryTypes',
-				JSON.stringify(mock.MemoryTypes)
-			);
-		});
-		beforeEach(() => {
-			cy.viewport(1920, 1080);
-			const reduxStore = configurePreloadedStore(
-				mock as unknown as Soc
-			);
-			cy.mount(<MemoryAllocation />, reduxStore);
 		});
 
 		it('should display a message to the user when no memory blocks match the filter', () => {
 			cy.get('[data-test="memory-type-filter"]').click();
 
-			cy.get(
-				`[data-test="multiselect-option-${mock.MemoryTypes[0].Name}"]`
-			).click();
+			cy.get(`[data-test="multiselect-option-${memoryType}"]`)
+				.should('be.visible')
+				.click();
 
 			cy.get('[data-test="no-memory-blocks"]').should('be.visible');
 		});
-
+	});
+	describe('when filtering the memory screen', () => {
 		it('should correctly filter the memory blocks by type', () => {
 			cy.get('[data-test="memory-type-filter"]').click();
 
@@ -111,10 +185,9 @@ describe.skip('Memory Allocation', () => {
 		it('should correctly filter the core and the corresponding memory blocks', () => {
 			cy.get('[data-test="core-filter"]').click();
 
-			cy.get(`[data-test="core-name"]`).should(
-				'have.length.at.least',
-				2
-			);
+			cy.get(
+				`[data-test="project-view-memory-card-container"]`
+			).should('exist');
 
 			cy.get(`[data-test="multiselect-option-${core.Name}"]`).click();
 
@@ -132,36 +205,21 @@ describe.skip('Memory Allocation', () => {
 						.should('not.exist')
 				);
 
-			cy.get(`[data-test="core-name"]`).should('have.length', 1);
-			cy.get(`[data-test="core-name"]`).should('contain', core.Name);
+			cy.dataTest('project-view-memory-card-container')
+				.eq(0)
+				.find('h3')
+				.should('have.text', 'ARM Cortex-M4');
 		});
 	});
 
 	describe('when allocating memory', () => {
-		before(() => {
-			window.localStorage.setItem(
-				'Cores',
-				JSON.stringify(mock.Cores)
-			);
-			window.localStorage.setItem(
-				'MemoryBlocks',
-				JSON.stringify([
-					...mock.Cores[0].Memory,
-					...mock.Cores[1].Memory
-				])
-			);
-			localStorage.setItem(
-				'MemoryTypes',
-				JSON.stringify(mock.MemoryTypes)
-			);
-		});
 		beforeEach(() => {
 			cy.viewport(1920, 1080);
 		});
-
 		it('should create the partition', () => {
 			const reduxStore = configurePreloadedStore(
-				mock as unknown as Soc
+				mock,
+				mockedConfigDict
 			);
 			cy.mount(<MemoryAllocation />, reduxStore);
 
@@ -172,7 +230,7 @@ describe.skip('Memory Allocation', () => {
 			cy.dataTest('partition-name-control-input')
 				.shadow()
 				.within(() => {
-					cy.get('#control').type('Test Partition');
+					cy.get('#control').type('TestPartition');
 				});
 
 			cy.dataTest('memory-type-dropdown').click();
@@ -182,7 +240,7 @@ describe.skip('Memory Allocation', () => {
 				.get('button')
 				.eq(2)
 				.click();
-			cy.dataTest('multiselect-option-RISC-V (RV32)')
+			cy.dataTest('multiselect-option-RV-proj')
 				.should('be.visible')
 				.click();
 
@@ -193,28 +251,29 @@ describe.skip('Memory Allocation', () => {
 
 			cy.dataTest('create-partition-button').click();
 
-			// User created partitions should be updated
-			cy.dataTest('accordion:Test Partition').should('exist');
 			// Memory blocks should be updated
 			cy.get(`[data-test="accordion:sysram8"]`)
 				.should('exist')
 				.click()
-				.dataTest('partition-accordion-Test Partition')
+				.dataTest('partition-accordion-TestPartition')
 				.should('exist');
 			// Memory graph should be updated
-			cy.dataTest(
-				'memory-graph-RAM-multiblock-Test Partition'
-			).should('exist');
+			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
+				'exist'
+			);
 			// Partition cards should be updated
-			cy.dataTest('volatile-memory-card-container').should('exist');
+			cy.dataTest('project-view-memory-card-container').should(
+				'exist'
+			);
 		});
 		it('should edit the partition', () => {
 			const reduxStore = configurePreloadedStore(
-				mock as unknown as Soc
+				mock,
+				mockedConfigDict
 			);
 			reduxStore.dispatch(
 				createPartition({
-					displayName: 'Test Partition',
+					displayName: 'TestPartition',
 					type: 'RAM',
 					baseBlock: memoryBlocks[0],
 					blockNames: [memoryBlocks[0].Name],
@@ -240,29 +299,29 @@ describe.skip('Memory Allocation', () => {
 			cy.dataTest('partition-name-control-input')
 				.shadow()
 				.within(() => {
-					cy.get('#control').clear().type('Changed Partition');
+					cy.get('#control').clear().type('ChangedPartition');
 				});
 			cy.dataTest('create-partition-button').click();
-			// User created partitions should be updated
-			cy.dataTest('accordion:Changed Partition').should('exist');
+
 			// Memory blocks should be updated
 			cy.get(`[data-test="accordion:sysram0"]`)
 				.should('exist')
 				.click()
-				.dataTest('partition-accordion-Changed Partition')
+				.dataTest('partition-accordion-ChangedPartition')
 				.should('exist');
 			// Memory graph should be updated
 			cy.dataTest(
-				'memory-graph-RAM-multiblock-Changed Partition'
+				'memory-graph-RAM-multiblock-ChangedPartition'
 			).should('exist');
 		});
-		it('should delete the partition', () => {
+		it('should delete the partition via partition card', () => {
 			const reduxStore = configurePreloadedStore(
-				mock as unknown as Soc
+				mock,
+				mockedConfigDict
 			);
 			reduxStore.dispatch(
 				createPartition({
-					displayName: 'Test Partition',
+					displayName: 'TestPartition',
 					type: 'RAM',
 					baseBlock: memoryBlocks[0],
 					blockNames: [memoryBlocks[0].Name],
@@ -285,18 +344,223 @@ describe.skip('Memory Allocation', () => {
 			cy.dataTest('delete-partition-btn')
 				.should('be.visible')
 				.click();
-			// User created partitions should be updated
-			cy.dataTest('accordion:Test Partition').should('not.exist');
+
 			// Memory blocks should be updated
 			cy.get(`[data-test="accordion:sysram0"]`)
 				.should('exist')
 				.click()
-				.dataTest('partition-accordion-Test Partition')
+				.dataTest('partition-accordion-TestPartition')
 				.should('not.exist');
 			// Memory graph should be updated
+			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
+				'not.exist'
+			);
+		});
+		it('should delete the partition via sidebar', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+			reduxStore.dispatch(
+				createPartition({
+					displayName: 'TestPartition',
+					type: 'RAM',
+					baseBlock: memoryBlocks[0],
+					blockNames: [memoryBlocks[0].Name],
+					startAddress: memoryBlocks[0].AddressStart,
+					size: 1000,
+					projects: [
+						{
+							label: mock.Cores[0].Name,
+							access: 'R/W',
+							coreId: mock.Cores[0].Id,
+							projectId: mock.Cores[0].Id + '-proj',
+							owner: true
+						}
+					]
+				})
+			);
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.dataTest('partition-details-chevron').click();
+			cy.dataTest('edit-partition-btn').click();
+			cy.dataTest('delete-partition-button').click();
+		});
+		it('should select partition directly from graph', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.wait(100);
+
+			cy.dataTest('sysram3-537264128-add-button').click();
+
+			cy.dataTest('base-block-dropdown').should('contain', 'sysram3');
+			cy.dataTest('start-address')
+				.find('input')
+				.should('have.value', '20060000');
+		});
+	});
+
+	describe('when allocating memory', () => {
+		beforeEach(() => {
+			cy.viewport(1920, 1080);
+		});
+
+		it('should create the partition', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			// Open the sidebar
+			cy.get('[data-test="create-partition-btn"]').click();
+			cy.get('[data-test="partition-sidebar"]').should('be.visible');
+			// Fill in the form
+			cy.dataTest('partition-name-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').type('TestPartition');
+				});
+
+			cy.dataTest('memory-type-dropdown').click();
+			cy.dataTest('RAM').click();
+
+			cy.dataTest('assigned-cores-multiselect')
+				.get('button')
+				.eq(2)
+				.click();
+			cy.dataTest('multiselect-option-RV-proj')
+				.should('be.visible')
+				.click();
+
+			cy.dataTest('size-stepper').type('80');
+
+			cy.dataTest('base-block-dropdown').click();
+			cy.dataTest('sysram8').click();
+
+			cy.dataTest('create-partition-button').click();
+
+			// Memory blocks should be updated
+			cy.get(`[data-test="accordion:sysram8"]`)
+				.should('exist')
+				.click()
+				.dataTest('partition-accordion-TestPartition')
+				.should('exist');
+			// Memory graph should be updated
+			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
+				'exist'
+			);
+		});
+		it('should edit the partition', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+			reduxStore.dispatch(
+				createPartition({
+					displayName: 'TestPartition',
+					type: 'RAM',
+					baseBlock: memoryBlocks[0],
+					blockNames: [memoryBlocks[0].Name],
+					startAddress: memoryBlocks[0].AddressStart,
+					size: 1000,
+					projects: [
+						{
+							label: mock.Cores[0].Name,
+							access: 'R/W',
+							coreId: mock.Cores[0].Id,
+							projectId: mock.Cores[0].Id + '-proj',
+							owner: true
+						}
+					]
+				})
+			);
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.dataTest('partition-details-chevron').click();
+			cy.dataTest('edit-partition-btn').should('be.visible').click();
+			cy.get('[data-test="partition-sidebar"]').should('be.visible');
+
+			cy.dataTest('partition-name-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').clear().type('ChangedPartition');
+				});
+			cy.dataTest('create-partition-button').click();
+			// Memory blocks should be updated
+			cy.get(`[data-test="accordion:sysram0"]`)
+				.should('exist')
+				.click()
+				.dataTest('partition-accordion-ChangedPartition')
+				.should('exist');
+			// Memory graph should be updated
 			cy.dataTest(
-				'memory-graph-RAM-multiblock-Test Partition'
-			).should('not.exist');
+				'memory-graph-RAM-multiblock-ChangedPartition'
+			).should('exist');
+		});
+		it('should delete the partition', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+			reduxStore.dispatch(
+				createPartition({
+					displayName: 'TestPartition',
+					type: 'RAM',
+					baseBlock: memoryBlocks[0],
+					blockNames: [memoryBlocks[0].Name],
+					startAddress: memoryBlocks[0].AddressStart,
+					size: 1000,
+					projects: [
+						{
+							label: mock.Cores[0].Name,
+							access: 'R/W',
+							coreId: mock.Cores[0].Id,
+							projectId: mock.Cores[0].Id + '-proj',
+							owner: true
+						}
+					]
+				})
+			);
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.dataTest('partition-details-chevron').click();
+			cy.dataTest('delete-partition-btn')
+				.should('be.visible')
+				.click();
+
+			// Memory blocks should be updated
+			cy.get(`[data-test="accordion:sysram0"]`)
+				.should('exist')
+				.click()
+				.dataTest('partition-accordion-TestPartition')
+				.should('not.exist');
+			// Memory graph should be updated
+			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
+				'not.exist'
+			);
+		});
+		it('should select partition directly from graph', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.wait(100);
+
+			cy.dataTest('sysram3-537264128-add-button').click();
+
+			cy.dataTest('base-block-dropdown').should('contain', 'sysram3');
+			cy.dataTest('start-address')
+				.find('input')
+				.should('have.value', '20060000');
 		});
 	});
 });

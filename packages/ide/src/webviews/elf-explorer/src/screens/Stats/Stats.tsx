@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 // API
 import {
@@ -53,59 +53,61 @@ export default function Stats() {
 		TSavedTableOptions | undefined
 	>(undefined);
 
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				const metadataResponse = await getElfMetadata();
-				setMetadata(metadataResponse);
-			} catch (err) {
-				console.log('Error fetching metadata:', err);
+	const fetchData = useCallback(async () => {
+		try {
+			const [
+				metadataResponse,
+				sectionsResponse,
+				savedOptionsResponse
+			] = await Promise.all([
+				getElfMetadata(),
+				getSections(),
+				getSavedOptionsForTableFormat()
+			]);
+
+			setMetadata(metadataResponse);
+			setSavedOptions(savedOptionsResponse);
+
+			if (sectionsResponse?.length) {
+				const formattedSections = formatSections(
+					sectionsResponse,
+					true
+				);
+				setSymbols(extractAllSymbols(formattedSections));
+				setSections(formattedSections);
 			}
-
-			try {
-				const sectionsResponse = await getSections();
-
-				if (sectionsResponse?.length) {
-					const formattedSections = formatSections(
-						sectionsResponse,
-						true
-					);
-					setSymbols(extractAllSymbols(formattedSections));
-					setSections(formattedSections);
-				}
-			} catch (err) {
-				console.log('Error fetching sections:', err);
+		} catch (err) {
+			if (err instanceof Error) {
+				throw new Error(`Error fetching data: ${err.message}`);
+			} else {
+				throw new Error('Error fetching data');
 			}
-		};
-
-		void fetchData();
-
-		getSavedOptionsForTableFormat()
-			.then(response => {
-				setSavedOptions(response);
-			})
-			.catch((err: string) => {
-				console.error(err);
-				throw new Error(err);
-			});
+		}
 	}, []);
 
-	const updateSavedOptions = (newOptions: TSavedTableOptions) => {
-		updateSavedOptionsForTableFormat(newOptions)
-			.then((response: TSavedTableOptions) => {
-				setSavedOptions(response);
-			})
-			.catch((err: string) => {
-				console.error(err);
-				throw new Error(err);
-			});
-	};
+	useEffect(() => {
+		void fetchData();
+	}, [fetchData]);
+
+	const updateSavedOptions = useCallback(
+		(newOptions: TSavedTableOptions) => {
+			updateSavedOptionsForTableFormat(newOptions)
+				.then((response: TSavedTableOptions) => {
+					setSavedOptions(response);
+				})
+				.catch((err: string) => {
+					console.error(err);
+					throw new Error(err);
+				});
+		},
+		[]
+	);
 
 	return (
 		<ScreenLayout>
 			<MetadataOverview data={metadata.header} sections={sections} />
 
-			<div className={styles.container}>
+			<div className={styles.container} data-test='stats:container'>
 				{symbols?.length && sections.length ? (
 					<>
 						<MainSectionChart sections={sections} />

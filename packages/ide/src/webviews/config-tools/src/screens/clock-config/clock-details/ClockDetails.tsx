@@ -32,7 +32,10 @@ import {
 	generateOutputValueErrorString,
 	getCurrentNodeError
 } from '../../../utils/node-error';
-import {ShortDescErrors} from '../../../types/errorTypes';
+import {
+	ShortDescErrors,
+	TControlTypes
+} from '@common/types/errorTypes';
 import {useEvaluateClockCondition} from '../../../hooks/use-evaluate-clock-condition';
 import {memo, useMemo} from 'react';
 import {getClockNodeConfig} from '../../../utils/clock-nodes';
@@ -108,7 +111,7 @@ function ClockDetails({
 
 			return {
 				key: controlId,
-				type: currentClockControls.Type,
+				type: currentClockControls.Type as TControlTypes,
 				label: currentClockControls.Description,
 				condition: currentClockControls.Condition,
 				minVal: currentClockControls.MinimumValue,

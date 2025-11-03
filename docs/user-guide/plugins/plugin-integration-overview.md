@@ -1,7 +1,7 @@
 ---
 description: How plugins are used in CodeFusion Studio.
 author: Analog Devices
-date: 2025-03-28
+date: 2025-10-30
 ---
 
 # Plugin integration overview
@@ -41,7 +41,7 @@ CFS plugins are surfaced at key stages in the development workflow:
 
 Plugins define the configuration options available in the System Planner. These options are specified in two key sections of the plugin’s `.cfsplugin` file: `supportedSocs` and `properties`.
 
-**supportedSocs:** Declares which SoCs and boards the plugin supports. This data is managed by the [Catalog Manager](../workspaces/catalog-manager.md) and sourced from local JSON files in `${config:cfs.sdk.path}/Utils/cfsutil/dist/socs`. It provides the baseline hardware configuration used by the System Planner.
+**supportedSocs:** Declares which SoCs and boards the plugin supports. SoC data models are distributed through the [Package Manager](../installation/package-manager/index.md), ensuring engineers always have access to the latest hardware data. These data models provide the baseline hardware configuration used by the System Planner.
 
 ```json
 "supportedSocs": [

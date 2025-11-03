@@ -35,7 +35,7 @@ import type {TSymbol} from '../../../../common/types/symbols';
 import styles from './MainStack.module.scss';
 
 type TMainStackProps = {
-	readonly segments: TSegment[] | TSection[];
+	readonly segments: Array<TSegment | TSection>;
 	readonly hoveredItem: TSegment | TSection | TSymbol | undefined;
 	readonly hoverSource: 'MemoryTable' | 'MemoryVisual' | undefined;
 	readonly emitValue: (segment: TSegment | TSection) => void;
@@ -178,7 +178,7 @@ export default function MainStack({
 			hoveredPartInfo.id.toString()
 		);
 		const segment = segments.find(
-			segm => segm.id === hoveredPartInfo.id
+			(segm: TSegment | TSection) => segm.id === hoveredPartInfo.id
 		) as TSegment;
 
 		const {top: containerTop = 0, bottom: containerBottom = 0} =
@@ -239,6 +239,7 @@ export default function MainStack({
 				<li
 					ref={containerRef}
 					key={segment.id}
+					data-test={`main-stack:item:${segment.label}-${segment.id}`}
 					id={segment.id.toString()}
 					className={getCssClasses(segment as TSegment)}
 					style={getStylesForSegment(segment as TSegment)}

@@ -1,0 +1,42 @@
+{
+  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.  All rights reserved.",
+  "Version": "1.1.44",
+  "Schema": "1.1.0",
+  "Timestamp": "2025-01-15T10:35:00.000Z",
+  "Name": "TEST_SOC_B",
+  "Description": "Test fixture for TEST_SOC_B",
+  "Parts": [
+    {
+      "Name": "TEST_SOC_B",
+      "Package": "TQFN"
+    }
+  ],
+  "Cores": [
+    {
+      "Id": "CM4",
+      "Name": "ARM Cortex-M4",
+      "CoreNum": 0,
+      "IsPrimary": true
+    },
+    {
+      "Id": "RV",
+      "Name": "RISC-V",
+      "CoreNum": 1
+    }
+  ],
+  "Controls": {},
+  "ClockNodes": [],
+  "Peripherals": [],
+  "Registers": [],
+  "Packages": [
+    {
+      "Name": "TQFN",
+      "Description": "Thin Quad Flat No Leads",
+      "NumPins": 68,
+      "Pins": [],
+      "PinCanvas": {},
+      "CoprogrammedSignals": [],
+      "ClockCanvas": {}
+    }
+  ]
+}

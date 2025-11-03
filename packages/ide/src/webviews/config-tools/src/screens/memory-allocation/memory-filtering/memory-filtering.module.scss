@@ -15,7 +15,10 @@
 
 .container {
 	display: flex;
+	position: absolute;
+	top: 22px;
 	gap: 4px;
+	z-index: 1000;
 
 	.memoryType,
 	.cores {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,8 @@ import {
 	removeAppliedCoprogrammedSignals,
 	removeAppliedSignal,
 	setAppliedSignal,
-	setIsPinFocused
+	setIsPinFocused,
+	updateAppliedSignal
 } from '../../../state/slices/pins/pins.reducer';
 import {useAppDispatch, useAppSelector} from '../../../state/store';
 import Config from '@common/icons/Config';
@@ -56,10 +57,13 @@ import {Button} from 'cfs-react-library';
 import {computeInitialPinConfig} from '../../../utils/pin-reset-controls';
 import {getConfigurablePeripherals} from '../../../utils/soc-peripherals';
 import {getPrimaryProjectId} from '../../../utils/config';
+import {pinInConflict} from '../../../utils/pin-error';
+import PinCfgSignalLabel from './pincfg-signal-label/pincfg-signal-label';
 
 type FunctionProps = {
 	readonly peripheralGroup: string;
 	readonly name: string;
+	readonly signalDesc?: string;
 	readonly pins: Pin[];
 	readonly isLastIndex?: boolean;
 };
@@ -67,6 +71,7 @@ type FunctionProps = {
 function Function({
 	peripheralGroup,
 	name: signalName,
+	signalDesc,
 	pins,
 	isLastIndex = false
 }: FunctionProps) {
@@ -88,12 +93,9 @@ function Function({
 	const assignedPins = useAssignedPins();
 	const peripheral = assignedPeripherals[peripheralGroup];
 
-	const currentTargetForSignal =
+	const targetPinId =
 		useCurrentSignalTarget(peripheralGroup, signalName) ??
 		pins[0].Name;
-
-	const targetPinId =
-		pins.length === 1 ? pins[0].Name : currentTargetForSignal;
 
 	const signalsForTargetPin = usePinAppliedSignals(targetPinId) ?? [];
 
@@ -131,7 +133,7 @@ function Function({
 
 	const shouldRenderConflict =
 		isToggledOn &&
-		(signalsForTargetPin.length > 1 ||
+		(pinInConflict(signalsForTargetPin) ||
 			Object.keys(assignedPin?.Errors ?? {}).length);
 
 	const handlePanelOpen = () => {
@@ -271,23 +273,6 @@ function Function({
 					setAppliedSignal({...payload, PinCfg: initialPinConfig})
 				);
 			}
-
-			if (targetPinId !== currentTargetForSignal) {
-				dispatch(
-					removeAppliedSignal({
-						...payload,
-						Pin: currentTargetForSignal
-					})
-				);
-
-				dispatch(
-					setCurrentTarget({
-						peripheralGroup,
-						signalName,
-						dropdownVal: targetPinId
-					})
-				);
-			}
 		}
 	};
 
@@ -309,7 +294,15 @@ function Function({
 		);
 
 		if (isToggledOn) {
-			dispatch(removeAppliedSignal({...payload, Pin: targetPinId}));
+			dispatch(
+				updateAppliedSignal({
+					removeSignal: {...payload, Pin: targetPinId},
+					addSignal: {
+						...payload,
+						PinCfg: assignedPin?.PinCfg ?? {}
+					}
+				})
+			);
 
 			if (
 				activeConfiguredPin === targetPinId &&
@@ -317,17 +310,21 @@ function Function({
 			) {
 				dispatch(setActiveConfiguredSignal({})); // Removes pinconfig selection
 			}
-
-			dispatch(
-				setAppliedSignal({
-					...payload,
-					PinCfg: assignedPin?.PinCfg ?? {}
-				})
-			);
+		} else {
+			dispatch(setIsPinFocused({id: targetPinId, isFocused: false}));
 		}
-
-		dispatch(setIsPinFocused({id: targetPinId, isFocused: false}));
 	};
+
+	function getPinLabel(pin: Pin): string {
+		return (
+			pin.Name +
+			(pin.Signals?.find(
+				s => s.Peripheral === peripheralGroup && s.Name === signalName
+			)?.IsInputTap
+				? '+'
+				: '')
+		);
+	}
 
 	return (
 		<section
@@ -335,10 +332,18 @@ function Function({
 			className={styles.container}
 			data-test={`${peripheralGroup}-${signalName}`}
 		>
-			<div>{signalName}</div>
+			{signalDesc ? (
+				<PinCfgSignalLabel
+					containerId={`function-container-${peripheralGroup}`}
+					label={signalName}
+					description={signalDesc || ''}
+				/>
+			) : (
+				<div>{signalName}</div>
+			)}
 			<div className={styles.divider} />
 			{pins.length === 1 ? (
-				<div>{pins[0].Name}</div>
+				<div>{getPinLabel(pins[0])}</div>
 			) : (
 				<VSCodeDropdown
 					position={isLastIndex ? 'above' : 'below'}
@@ -363,7 +368,7 @@ function Function({
 							onClick={handleDropdown}
 						>
 							<div className={styles.dropdownPinLabel}>
-								{pin.Name}
+								{getPinLabel(pin)}
 								<div className={styles.checkmarkIcon}>
 									{pin.Name === targetPinId && <CheckmarkIcon />}
 								</div>

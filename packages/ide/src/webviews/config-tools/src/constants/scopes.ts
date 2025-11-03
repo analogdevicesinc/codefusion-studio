@@ -21,7 +21,8 @@ export const CONTROL_SCOPES = {
 	PIN_CONFIG: 'pinConfig',
 	CLOCK_CONFIG: 'clockConfig',
 	PERIPHERAL: 'peripheral',
-	MEMORY: 'memory'
+	MEMORY: 'memory',
+	DFG: 'dfg'
 } as const;
 
 /**

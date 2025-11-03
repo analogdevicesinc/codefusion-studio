@@ -60,6 +60,7 @@ export type CatalogCoreInfo = {
 	plugins: CfsPluginInfo[];
 	isPrimary?: boolean;
 	coreType: CoreType;
+	supportsTrustZone?: boolean;
 };
 
 export type CorePlatform = {

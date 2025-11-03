@@ -283,8 +283,8 @@ export const useGetAllocatedProjectId = (
 	return useMemo(() => {
 		const peripheralDict = getSocPeripheralDictionary();
 		const peripheralDefinition = peripheralDict[peripheral];
-		const hasSignalGroup =
-			Boolean(peripheralDefinition?.signalGroup) ||
+		const isSignalGroup =
+			Boolean(peripheralDefinition?.assignable) ||
 			Object.values(peripheralDefinition?.signals ?? {}).length === 0;
 
 		for (const projectId in peripheralAllocations) {
@@ -299,7 +299,7 @@ export const useGetAllocatedProjectId = (
 
 				if (!peripheralConfig) continue;
 
-				if (hasSignalGroup) {
+				if (isSignalGroup) {
 					return projectId;
 				}
 
@@ -356,4 +356,32 @@ export function useProjectPeripheralAllocations(projectId: string) {
 	return useAppSelector(state =>
 		selectProjectPeripheralAllocations(state, projectId)
 	);
+}
+
+export function useAllocatedTarget() {
+	return useAppSelector(
+		state => state.peripheralsReducer.allocatedTarget
+	);
+}
+
+export function usePeripheralTitle() {
+	return useAppSelector(state => state.peripheralsReducer.title);
+}
+
+export function useSignals() {
+	return useAppSelector(state => state.peripheralsReducer.signals);
+}
+
+export function usePeripheralProjects() {
+	return useAppSelector(state => state.peripheralsReducer.projects);
+}
+
+export function useIsPeripheralSecure() {
+	return useAppSelector(
+		state => state.peripheralsReducer.isPeripheralSecure
+	);
+}
+
+export function useSignalName() {
+	return useAppSelector(state => state.peripheralsReducer.signalName);
 }

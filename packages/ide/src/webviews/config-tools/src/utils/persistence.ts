@@ -142,6 +142,7 @@ export function formatProjectPersistencePayload(
 					parseInt(partition.startAddress, 16)
 				),
 				Size: partition.size,
+				DisplayUnit: partition.displayUnit,
 				IsOwner: project.owner,
 				Access: project.access,
 				Config: partition.config?.[project.projectId] ?? {}
@@ -186,7 +187,13 @@ export function formatProjectPersistencePayload(
 				Signals,
 				Config: Object.fromEntries(
 					Object.entries(peripheralConfig.config).map(
-						([key, value]) => [key, String(value)]
+						([key, value]) => {
+							const numericBase = peripheralConfig.configFormat?.numericBase?.[key];
+							if (numericBase === 'Hexadecimal' && typeof value === 'string') {
+								return [key, convertDecimalToHex(parseInt(value, 16))];
+							}
+							return [key, String(value)];
+						}
 					)
 				)
 			});
@@ -239,7 +246,13 @@ export function formatProjectPersistencePayload(
 					],
 					Config: Object.fromEntries(
 						Object.entries(peripheralConfig.config).map(
-							([key, value]) => [key, String(value)]
+							([key, value]) => {
+								const numericBase = peripheralConfig.configFormat?.numericBase?.[key];
+								if (numericBase === 'Hexadecimal' && typeof value === 'string') {
+									return [key, convertDecimalToHex(parseInt(value, 16))];
+								}
+								return [key, String(value)];
+							}
 						)
 					)
 				});

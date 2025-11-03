@@ -23,6 +23,7 @@ import type {
 
 import {workspaceConfigInitialState} from '../../constants/workspace-config';
 import {getCatalogCoreInfo} from '../../../utils/core-list';
+import {getTrustZoneIds} from '../../../utils/workspace-config';
 import type {CfsPluginInfo} from 'cfs-lib';
 
 const WorkspaceConfigSlice = createSlice({
@@ -82,8 +83,12 @@ const WorkspaceConfigSlice = createSlice({
 		setCoresInitialState(state, action: PayloadAction<string[]>) {
 			action.payload.forEach(id => {
 				if (!state.cores[id]) {
-					const {name, isPrimary, dataModelCoreID} =
-						getCatalogCoreInfo(state.socId, id) ?? {};
+					const {
+						name,
+						isPrimary,
+						dataModelCoreID,
+						supportsTrustZone
+					} = getCatalogCoreInfo(state.socId, id) ?? {};
 
 					state.cores[id] = {
 						id,
@@ -92,7 +97,9 @@ const WorkspaceConfigSlice = createSlice({
 						pluginVersion: '',
 						name,
 						isPrimary,
-						isEnabled: false,
+						supportsTrustZone,
+						// enable primary core by default
+						isEnabled: Boolean(isPrimary),
 						platformConfig: {}
 					};
 				}
@@ -107,12 +114,49 @@ const WorkspaceConfigSlice = createSlice({
 			}
 
 			state.cores[coreId].isEnabled = !state.cores[coreId].isEnabled;
+
+			// Handles TrustZone core and base core syncing (when both the secure/non-secure is unchecked, base core should be disabled))
+			const isTrustZoneCore =
+				coreId.endsWith('-secure') || coreId.endsWith('-nonsecure');
+
+			if (isTrustZoneCore) {
+				const baseId = coreId.replace(/-(secure|nonsecure)$/, '');
+				const {secureCoreId, nonSecureCoreId} =
+					getTrustZoneIds(baseId);
+
+				// Check if TrustZone is enabled for this base core
+				const isTrustZoneEnabled =
+					state.isTrustZoneEnabled?.[baseId] || false;
+
+				if (isTrustZoneEnabled) {
+					const isSecureEnabled =
+						state.cores[secureCoreId]?.isEnabled || false;
+					const isNonSecureEnabled =
+						state.cores[nonSecureCoreId]?.isEnabled || false;
+					const shouldBaseBeEnabled =
+						isSecureEnabled || isNonSecureEnabled;
+
+					if (
+						state.cores[baseId] &&
+						state.cores[baseId].isEnabled !== shouldBaseBeEnabled
+					) {
+						state.cores[baseId].isEnabled = shouldBaseBeEnabled;
+					}
+				}
+			}
 		},
 		removeSelectedCores(state, action: PayloadAction<string[]>) {
-			action.payload.forEach(coreId => {
-				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-				delete state.cores[coreId];
-			});
+			const coreIdsToRemove = new Set(action.payload);
+
+			state.cores = Object.keys(state.cores).reduce(
+				(acc, coreId) => {
+					if (!coreIdsToRemove.has(coreId)) {
+						acc[coreId] = state.cores[coreId];
+					}
+					return acc;
+				},
+				{} as typeof state.cores
+			);
 		},
 		setWorkspaceTemplateType(
 			state,
@@ -154,6 +198,85 @@ const WorkspaceConfigSlice = createSlice({
 				notifications: payload.notifications ?? [],
 				form: payload?.form
 			};
+		},
+		setCurrentCoreConfigStep(state, action: PayloadAction<number>) {
+			state.currentCoreConfigStep = action.payload;
+		},
+		addOrUpdateTrustZoneCores(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				baseId: string;
+				secureEnabled: boolean;
+				nonSecureEnabled: boolean;
+			}>
+		) {
+			const {baseId, secureEnabled, nonSecureEnabled} = payload;
+			const baseCore = state.cores[baseId];
+			if (!baseCore) return;
+
+			const secureId = `${baseId}-secure`;
+			const nonSecureId = `${baseId}-nonsecure`;
+
+			// Add or update secure core
+			const secureCore = {
+				...baseCore,
+				id: secureId,
+				name: `${baseCore.name} (Secure)`,
+				Secure: true,
+				isEnabled: secureEnabled
+			};
+
+			// Add or update non-secure core
+			const nonSecureCore = {
+				...baseCore,
+				id: nonSecureId,
+				name: `${baseCore.name} (Non-Secure)`,
+				Secure: false,
+				isEnabled: nonSecureEnabled
+			};
+
+			// Rebuild the cores object with secure/non-secure inserted after baseId
+			const newCores: typeof state.cores = {};
+
+			for (const key of Object.keys(state.cores)) {
+				newCores[key] = state.cores[key];
+
+				if (key === baseId) {
+					newCores[secureId] = secureCore;
+					newCores[nonSecureId] = nonSecureCore;
+				}
+			}
+
+			state.cores = newCores;
+		},
+		removeTrustZoneCores(
+			state,
+			{payload}: PayloadAction<{baseId: string}>
+		) {
+			const {baseId} = payload;
+			const {secureCoreId, nonSecureCoreId} = getTrustZoneIds(baseId);
+
+			const {
+				[secureCoreId]: _secure,
+				[nonSecureCoreId]: _nonSecure,
+				...remainingCores
+			} = state.cores;
+
+			state.cores = remainingCores;
+		},
+		setIsTrustZoneEnabled(
+			state,
+			action: PayloadAction<{id: string; enabled: boolean}>
+		) {
+			const {id, enabled} = action.payload;
+			state.isTrustZoneEnabled[id] = enabled;
+
+			// When TrustZone is enabled, ensure the base core is enabled
+			if (enabled && state.cores[id]) {
+				state.cores[id].isEnabled = true;
+			}
 		}
 	}
 });
@@ -171,7 +294,11 @@ export const {
 	setWorkspaceTemplateType,
 	setConfigErrors,
 	setWorkspaceName,
-	setWorkspacePath
+	setWorkspacePath,
+	setCurrentCoreConfigStep,
+	addOrUpdateTrustZoneCores,
+	removeTrustZoneCores,
+	setIsTrustZoneEnabled
 } = WorkspaceConfigSlice.actions;
 
 export const workspaceConfigReducer = WorkspaceConfigSlice.reducer;

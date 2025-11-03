@@ -14,21 +14,11 @@
  */
 import { Provider } from "react-redux";
 import { configurePreloadedStore } from "../../src/webviews/config-tools/src/state/store";
-import type { Soc } from "../../src/webviews/common/types/soc";
 import { Suspense } from "react";
-const mock = await import(
-  `../../../cli/src/socs/${Cypress.env("DEV_SOC_ID")}.json`
-);
-
-type ResolvedType<T> = T extends Promise<infer R> ? R : T;
-
-function getPreloadedStateStore() {
-  return configurePreloadedStore(mock as Soc);
-}
 
 type getWrappedProps = {
   readonly component: React.ReactNode;
-  readonly reduxStore: ResolvedType<ReturnType<typeof getPreloadedStateStore>>;
+  readonly reduxStore: ReturnType<typeof configurePreloadedStore>;
 };
 
 export function getWrapped({ component, reduxStore }: getWrappedProps) {

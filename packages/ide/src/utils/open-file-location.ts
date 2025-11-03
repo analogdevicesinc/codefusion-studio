@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,23 @@ export const openFileAtLocation = (filePath: string, content: string) => {
       editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
     });
   });
+};
+
+/**
+ * Opens a file at a particular line
+ *
+ * @param filePath path of file to open
+ * @param line the line which the file should be opened at
+ */
+export const openFileAtLine = async (filePath: string, line: number) => {
+  const uri = vscode.Uri.file(filePath);
+
+  const doc = await vscode.workspace.openTextDocument(uri);
+  const editor = await vscode.window.showTextDocument(doc);
+  const pos = new vscode.Position(Math.max(0, line - 1), 0);
+
+  editor.selection = new vscode.Selection(pos, pos);
+  editor.revealRange(new vscode.Range(pos, pos));
 };
 
 /**

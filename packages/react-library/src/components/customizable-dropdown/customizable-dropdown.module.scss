@@ -1,0 +1,100 @@
+/**
+ *
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '../../styles/colors';
+@use '../../styles/fonts';
+
+.container {
+	@include fonts.body-b1;
+	font-family: fonts.$default-font-family;
+
+	.dropdownField {
+		display: flex;
+		width: 100%;
+		border: 1px solid colors.$input-border;
+		background-color: colors.$input-background;
+		color: colors.$default-foreground;
+		font-family: fonts.$default-font-family;
+		height: var(--multiselect-height, 28px);
+		justify-content: space-between;
+		gap: 8px;
+		align-items: center;
+		cursor: pointer;
+		max-width: 100%;
+		&.error {
+			border-color: #{colors.$error};
+		}
+
+		&:focus {
+			border: 0.5px solid colors.$focus-border;
+		}
+
+		span {
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+
+		.startSlot {
+			font-size: fonts.$font-size-small;
+		}
+
+		.valueSlot {
+			flex-grow: 1;
+			text-align: start;
+		}
+	}
+
+	.dropdownContainer {
+		position: relative;
+	}
+
+	.dropdownPanel {
+		display: flex;
+		position: absolute;
+		z-index: 1000;
+		width: var(--multiselect-options-width, 222px);
+		border: 0.5px solid colors.$editor-widget-border;
+		background-color: colors.$editor-widget-background;
+		border-top: 0;
+		padding: 8px 0;
+		margin-top: 1px;
+		border-radius: 4px;
+		box-shadow: 0px 2px 16px 0px colors.$default-shadow;
+	}
+
+	.upwardsDropdown {
+		transform: translateY(
+			calc(-100% - var(--multiselect-height, 28px) - 2px)
+		);
+		border-top: 0.5px solid colors.$editor-widget-border;
+		border-bottom: 0;
+	}
+
+	svg {
+		width: 16px;
+		transition: transform 0.3s ease;
+
+		path {
+			fill: colors.$default-foreground;
+		}
+	}
+
+	.expanded {
+		svg {
+			transform: rotate(180deg);
+		}
+	}
+}

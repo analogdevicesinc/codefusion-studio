@@ -6,7 +6,7 @@ date: 2024-09-09
 
 # User guide
 
-Codefusion Studio (CFS) is an embedded software development platform based on Microsoft's Visual Studio Code (VS Code). Codefusion Studio provides best in class development tooling for embedded processors and MCUs by providing intuitive tools for newcomers while enabling advanced features for expert embedded developers.
+CodeFusion Studio (CFS) is an embedded software development platform based on Microsoft's Visual Studio Code (VS Code). CodeFusion Studio provides best in class development tooling for embedded processors and MCUs by providing intuitive tools for newcomers while enabling advanced features for expert embedded developers.
 
 - [About](about/index.md) CFS
 - The [Installation](installation/index.md) process

@@ -13,7 +13,7 @@
  *
  */
 
-import type {ReactNode} from 'react';
+import {type ReactNode} from 'react';
 import CloseIcon from '../icons/close-icon';
 import styles from './sliding-panel.module.scss';
 import Button from '../button/button';
@@ -21,6 +21,7 @@ import Button from '../button/button';
 interface SlidingPanelProps {
 	title: string | React.ReactElement;
 	description?: string;
+	errorHeader?: ReactNode;
 	children?: ReactNode;
 	isCloseable?: boolean;
 	isMinimised?: boolean;
@@ -32,6 +33,7 @@ interface SlidingPanelProps {
 export const SlidingPanel = ({
 	title,
 	description,
+	errorHeader,
 	children,
 	isCloseable = true,
 	isMinimised = true,
@@ -44,6 +46,10 @@ export const SlidingPanel = ({
 			<div
 				className={`${styles.container} ${isMinimised ? styles.minimised : styles.opening}`}
 				data-test={dataTest}
+				tabIndex={0}
+				onKeyDown={e =>
+					e.key === 'Escape' && closeSlider && closeSlider()
+				}
 			>
 				<div className={styles.header}>
 					<div className={styles.title}>
@@ -60,6 +66,7 @@ export const SlidingPanel = ({
 					{description && (
 						<div className={styles.description}>{description}</div>
 					)}
+					{errorHeader}
 				</div>
 				{children && <div className={styles.content}>{children}</div>}
 				{footer && <div className={styles.footer}>{footer}</div>}

@@ -1,9 +1,14 @@
-import {CfsPluginManager} from 'cfs-lib';
+import {type CfsDataModelManager, CfsPluginManager} from 'cfs-lib';
+import {CfsPackageManagerProvider} from 'cfs-package-manager';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export function getPluginManager(dirs?: string[]) {
+export function getPluginManager(
+  dirs?: string[],
+  pkgManager?: CfsPackageManagerProvider,
+  dmManager?: CfsDataModelManager
+): CfsPluginManager {
   // default search paths
   const searchPaths = new Set([
     `${os.homedir()}/cfs/plugins`,
@@ -25,7 +30,11 @@ export function getPluginManager(dirs?: string[]) {
   let pluginManager;
 
   try {
-    pluginManager = new CfsPluginManager(existingSearchPaths);
+    pluginManager = new CfsPluginManager(
+      existingSearchPaths,
+      pkgManager,
+      dmManager
+    );
   } catch (error) {
     throw new Error(
       `CfsPluginManager could not be instantiated.\n${error}`

@@ -35,6 +35,43 @@
 		width: 100%;
 		box-sizing: border-box;
 
+		.coreSectionHeader {
+			display: flex;
+			max-width: 566px;
+			width: 100%;
+			align-items: center;
+			gap: 24px;
+			justify-content: space-between;
+			gap: 1rem;
+			h1 {
+				@include fonts.heading-h1;
+				color: colors.$default-foreground;
+				margin: 0;
+			}
+			.headerIcons {
+				display: flex;
+				align-items: flex-start;
+
+				svg {
+					width: 18px;
+					height: 18px;
+					padding: 4px;
+				}
+				.icon {
+					cursor: pointer;
+					border: 1px solid colors.$default-border;
+					border-radius: 2px;
+					&[disabled] {
+						pointer-events: none;
+					}
+				}
+			}
+		}
+
+		.icon:hover {
+			border-color: colors.$default-foreground;
+		}
+
 		.coreSection {
 			display: flex;
 			flex-direction: column;

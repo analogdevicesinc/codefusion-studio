@@ -13,120 +13,217 @@
  *
  */
 
-export default {
-  version: "2.0.0",
-  type: "shell",
-  tasks: [
-    {
-      label: "build",
-      id: "build",
-      type: "shell",
-      command: "west build -b ${config:cfs.project.board}",
-      group: {
-        kind: "build",
-        isDefault: true,
-      },
-      problemMatcher: ["$gcc"],
-    },
-    {
-      label: "pristine build",
-      id: "pristine build",
-      type: "shell",
-      command: "west build -b ${config:cfs.project.board} --pristine=always",
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: ["$gcc"],
-    },
-    {
-      label: "clean",
-      id: "clean",
-      type: "shell",
-      command: "rm -rf build",
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: ["$gcc"],
-    },
-    {
-      label: "flash (OpenOCD)",
-      id: "flash-openocd",
-      type: "shell",
-      command: "west flash",
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: ["$gcc"],
-    },
-    {
-      label: "flash (JLink)",
-      type: "shell",
-      windows: {
-        command:
-          '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      osx: {
-        command:
-          '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      linux: {
-        command:
-          '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: [],
-      dependsOn: ["build"],
-    },
-    {
-      label: "flash & run (JLink)",
-      type: "shell",
-      windows: {
-        command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      osx: {
-        command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      linux: {
-        command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: [],
-      dependsOn: ["build"],
-    },
-    {
-      label: "erase (JLink)",
-      id: "erase-jlink",
-      type: "shell",
-      windows: {
-        command:
-          '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      osx: {
-        command:
-          '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      linux: {
-        command:
-          '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
-      },
-      group: {
-        kind: "build",
-        isDefault: false,
-      },
-      problemMatcher: [],
-      dependsOn: [],
-    },
-  ],
+const computeBuildCommand = (
+  buildSystem: "make" | "ninja",
+  isPristine = false,
+) => {
+  const pristine = isPristine ? " --pristine=always" : "";
+  const buildCmd = `west build -b \${config:cfs.project.board}${pristine}`;
+  if (buildSystem === "ninja" || typeof buildSystem === "undefined") {
+    return buildCmd;
+  }
+
+  return `${buildCmd} -- -G'Unix Makefiles'`;
 };
+
+export default function (platformConfig?: Record<string, any>) {
+  return {
+    version: "2.0.0",
+    type: "shell",
+    tasks: [
+      {
+        label: "build",
+        id: "build",
+        type: "shell",
+        command: computeBuildCommand(platformConfig?.BuildSystem),
+        group: {
+          kind: "build",
+          isDefault: true,
+        },
+        problemMatcher: ["$gcc"],
+      },
+      {
+        label: "pristine build",
+        id: "pristine build",
+        type: "shell",
+        command: computeBuildCommand(platformConfig?.BuildSystem, true),
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: ["$gcc"],
+      },
+      {
+        label: "clean",
+        id: "clean",
+        type: "shell",
+        command: "rm -rf build",
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: ["$gcc"],
+      },
+      {
+        label: "flash (OpenOCD)",
+        id: "flash-openocd",
+        type: "shell",
+        command: "west flash",
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: ["$gcc"],
+      },
+      {
+        label: "flash (JLink)",
+        type: "shell",
+        windows: {
+          command:
+            '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        osx: {
+          command:
+            '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        linux: {
+          command:
+            '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: ["build"],
+      },
+      {
+        label: "flash & run (JLink)",
+        type: "shell",
+        windows: {
+          command:
+            '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        osx: {
+          command:
+            '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        linux: {
+          command:
+            '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: ["build"],
+      },
+      {
+        label: "erase (OpenOCD)",
+        type: "shell",
+        command:
+          'openocd -s ${config:cfs.openocd.path}/share/openocd/scripts -f ${config:cfs.openocd.interface} -f ${config:cfs.openocd.target} -c "init; reset halt; max32xxx mass_erase 0;" -c exit',
+        group: "build",
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "erase (JLink)",
+        id: "erase-jlink",
+        type: "shell",
+        windows: {
+          command:
+            '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        osx: {
+          command:
+            '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        linux: {
+          command:
+            '(echo erase && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "retrieve core dump (JLink)",
+        id: "retrieve-core-dump-jlink",
+        type: "shell",
+        windows: {
+          command:
+            '(echo savebin ${config:cfs.coreDump.binFile} ${config:cfs.coreDump.address} ${config:cfs.coreDump.size} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        osx: {
+          command:
+            '(echo savebin ${config:cfs.coreDump.binFile} ${config:cfs.coreDump.address} ${config:cfs.coreDump.size} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        linux: {
+          command:
+            '(echo savebin ${config:cfs.coreDump.binFile} ${config:cfs.coreDump.address} ${config:cfs.coreDump.size} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+        },
+        group: {
+          kind: "analyze",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "start Zephyr core dump GDB server",
+        id: "start-zephyr-core-dump-gdb-server",
+        type: "shell",
+        command:
+          'python "${config:cfs.zephyrCoreDumpScriptsPath}/coredump_gdbserver.py" "${config:cfs.coreDump.elfFile}" "${config:cfs.coreDump.binFile}" --port ${config:cfs.coreDump.gdbServerPort} -v',
+        group: {
+          kind: "analyze",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "start Zephyr core dump log parser",
+        id: "coredump-serial-log-parser",
+        type: "shell",
+        command:
+          'python "${config:cfs.zephyrCoreDumpScriptsPath}/coredump_serial_log_parser.py" "${config:cfs.coreDump.logFile}" "${config:cfs.coreDump.binFile}"',
+        group: {
+          kind: "analyze",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "capture profiler trace (Zephelin)",
+        id: "zephelin-capture-profiler-trace",
+        type: "shell",
+        command: "${command:cfs.zephelin.captureProfilerTrace}",
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+      {
+        label: "Prepare CTF trace for visualization (Zephelin)",
+        id: "zephelin-convert-trace-ctf-to-tef",
+        type: "shell",
+        command: "${command:cfs.zephelin.convertTraceCtfToTef}",
+        group: {
+          kind: "build",
+          isDefault: false,
+        },
+        problemMatcher: [],
+        dependsOn: [],
+      },
+    ],
+  };
+}

@@ -23,6 +23,7 @@ import type {
 import {type PeripheralConfig} from '../types/peripherals';
 import {getFormErrors} from './soc-controls';
 import {getIsPeripheralSignalRequired} from './soc-peripherals';
+import {pinInConflict} from './pin-error';
 
 /**
  * Retrieves the error messages for a given set of controls and their corresponding data.
@@ -126,4 +127,37 @@ export function getPeripheralError(
 	});
 
 	return count;
+}
+
+/**
+ * Return True if pins has conflict across all peripherals.
+ *
+ * This function iterates through all peripheral configurations and their signals,
+ * checking if signals assigned to pins have conflict.
+ *
+ * @param assignedPins - Array of pins that have been assigned to peripheral signals
+ * @param allocations - Record mapping peripheral names to their configuration
+ * @returns True/false if any peripheral signal has pin conflict
+ */
+
+export function hasPeripheralPinConflicts(
+	assignedPins: AssignedPin[],
+	allocations: Record<string, PeripheralConfig>
+): boolean {
+	return Object.values(allocations).some(peripheral => {
+		// Filter pins that have at least one signal assigned to this peripheral
+		const pinsForPeripheral = assignedPins.filter(pin =>
+			pin.appliedSignals.some(
+				appliedSignal => appliedSignal.Peripheral === peripheral.name
+			)
+		);
+		// Check for conflicts only among those pins
+		return pinsForPeripheral.some(
+			targetPin =>
+				pinInConflict(targetPin.appliedSignals) ||
+				targetPin.appliedSignals.some(
+					item => Object.keys(item?.Errors ?? {}).length
+				)
+		);
+	});
 }

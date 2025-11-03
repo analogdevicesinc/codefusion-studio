@@ -14,10 +14,10 @@
  */
 
 import envPaths from 'env-paths';
+import { CfsCcmError } from '../error/error.js';
 import { Authorizer } from '../auth/index.js';
-import { PublicAuthorizer } from '../auth/index.js';
 import { OpenApiClient } from './openapi-client.js';
-import { LIB_NAME } from '../config/constants.js';
+import { LIB_NAME } from '../config/constants.cjs';
 import createClient from 'openapi-fetch';
 import { paths } from '../gen/api-types.js';
 import { RestClient } from '../gen/rest.js';
@@ -36,13 +36,17 @@ let NodeFetchRequest: Awaited<
         await getNodeFetch());
 })();
 
+type CfsApiErrorType = 'AUTHN_REQUIRED' | 'FORBIDDEN';
+
+export class CfsApiError extends CfsCcmError<CfsApiErrorType> {}
+
 export interface ApiOptions {
     // base URL for all API requests
     baseUrl: string | URL;
 
-    // use API Key or Auth Code auth, etc.
-    // if not specified, uses public / anonymous access to the API
-    authorizer?: Authorizer;
+    // specify an authorizer to use for authentication (e.g ApiKeyAuthorizer, TokenAuthorizer, etc).
+    // or the PublicAuthorizer for no authentication.
+    authorizer: Authorizer;
 
     // whether or not to cache and where to store the cache file;
     // defaults to true, with cache file in OS-appropriate location
@@ -54,8 +58,6 @@ const defaultApiOptions: RequireOptional<ApiOptions> = {
     isCache: false, // disable for interim release
     // default cache db file in OS-appropriate location
     cacheDir: envPaths(LIB_NAME, { suffix: '' }).cache,
-    // default to public access
-    authorizer: new PublicAuthorizer(),
 };
 
 // These are the methods of the openapi-client that we want to expose
@@ -126,7 +128,7 @@ export class CfsApiClient {
      */
     public async isOnline(timeout = 0): Promise<boolean> {
         try {
-            const { error } = await this.openapiClient.GET('/ping', {
+            const { error } = await this.fetch.GET('/ping', {
                 parseAs: 'text',
                 signal:
                     timeout > 0

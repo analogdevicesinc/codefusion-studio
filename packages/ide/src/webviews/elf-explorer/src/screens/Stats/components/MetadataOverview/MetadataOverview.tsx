@@ -29,45 +29,48 @@ export default function MetadataOverview({
 	data,
 	sections
 }: TMetadataOverviewProps) {
-	const dataToDisplay = [
-		`ELF ${data
-			.find(item => item.label === 'Class')
-			?.value.toString()
-			.replace('ELF', '')}-bit`,
-		data
-			.find(item => item.label === 'Data')
-			?.value?.toString()
-			?.includes('little')
-			? 'LSB'
-			: 'MSB',
-		data
-			.find(item => item.label === 'Type')
-			?.value?.toString()
-			?.match(/\((.*?)\)/)?.[1]
-			.replace('file', ''),
-		data.find(item => item.label === 'Machine')?.value,
-		`${data.find(item => item.label === 'OS ABI')?.value} version ${
-			data.find(item => item.label === 'ABI Version')?.value
-		}`,
-		`${
-			Number(
-				data.find(item => item.label === 'ABI Version')?.value
-			) === 0
-				? 'statically linked'
-				: ''
-		}`,
-		`${
-			sections.find(item => item.name === '.debug_info')
-				? 'with debug_info'
-				: 'with no debug_info'
-		}`,
-		`${
-			(sections.find(item => item.name === '.debug_info') ??
-			sections.find(item => Number(item.type) === 2))
-				? 'not stripped'
-				: 'stripped'
-		}`
-	];
+	const dataToDisplay =
+		data.length && sections.length
+			? [
+					`ELF ${data
+						.find(item => item.label === 'Class')
+						?.value.toString()
+						.replace('ELF', '')}-bit`,
+					data
+						.find(item => item.label === 'Data')
+						?.value?.toString()
+						?.includes('little')
+						? 'LSB'
+						: 'MSB',
+					data
+						.find(item => item.label === 'Type')
+						?.value?.toString()
+						?.match(/\((.*?)\)/)?.[1]
+						.replace('file', ''),
+					data.find(item => item.label === 'Machine')?.value,
+					`${data.find(item => item.label === 'OS ABI')?.value} version ${
+						data.find(item => item.label === 'ABI Version')?.value
+					}`,
+					`${
+						Number(
+							data.find(item => item.label === 'ABI Version')?.value
+						) === 0
+							? 'statically linked'
+							: ''
+					}`,
+					`${
+						sections.find(item => item.name === '.debug_info')
+							? 'with debug_info'
+							: 'with no debug_info'
+					}`,
+					`${
+						(sections.find(item => item.name === '.debug_info') ??
+						sections.find(item => Number(item.type) === 2))
+							? 'not stripped'
+							: 'stripped'
+					}`
+				]
+			: [];
 
 	const filteredDataToDisplay = convertArray(
 		dataToDisplay.filter(Boolean) as string[]
@@ -75,7 +78,7 @@ export default function MetadataOverview({
 
 	return (
 		// prettier-ignore
-		<div className={styles.container}>
+		<div className={styles.container} data-test="stats:overview-container">
 			<div className={styles.overviewWrapper}>
 				<h1 className={styles.title}>File overview</h1>
 				{filteredDataToDisplay.map((item, index) => (
@@ -87,7 +90,7 @@ export default function MetadataOverview({
 							}}
 							containerPosition='relative'
 						>
-							<span className={styles.underlined}>{item}</span>
+							<span className={styles.underlined} data-test="stats:overview-container:item">{item}</span>
 						</Tooltip>
 						{index < filteredDataToDisplay.length - 1 && (
 							<span>&nbsp;&nbsp;|&nbsp;&nbsp;</span>

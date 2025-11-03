@@ -41,7 +41,7 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 	const columns: string[] = getColumns(data);
 
 	return (
-		<>
+		<section data-test='memory-list:about:container'>
 			<div className={styles.header}>About this section</div>
 			<VSCodeDataGrid
 				aria-label='Memory List'
@@ -133,7 +133,7 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 					</React.Fragment>
 				))}
 			</VSCodeDataGrid>
-		</>
+		</section>
 	);
 }
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,66 +14,58 @@
  */
 import {useCallback} from 'react';
 
-import type {NavigationItem} from '../../../../common/types/navigation';
-import CfsNavigation from '../../../../common/components/cfs-navigation/CfsNavigation';
+import type {NavigationItem} from '@common/types/navigation';
+import CfsNavigation from '@common/components/cfs-navigation/CfsNavigation';
 
+import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../../state/store';
-import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
-
-// SVGs
-
-import PinMUX from '@common/icons/PinMUX';
-import Registers from '@common/icons/Registers';
-import Generate from '@common/icons/Generate';
-import ClockIcon from '@common/icons/Clock';
-import Home from '../../../../common/icons/Home';
-
-import {navigationItems} from '@common/constants/navigation';
-
-import {MemoryLayoutIcon, PeripheralsIcon} from 'cfs-react-library';
-
-const availableSVG = [
-	{
-		icon: <Home />,
-		id: navigationItems.dashboard,
-		tooltipLabel: 'Dashboard'
-	},
-	{
-		icon: <PeripheralsIcon />,
-		id: navigationItems.peripherals,
-		tooltipLabel: 'Peripheral Allocation'
-	},
-	{
-		icon: <PinMUX />,
-		id: navigationItems.pinmux,
-		tooltipLabel: 'Pin Config'
-	},
-	{
-		icon: <ClockIcon />,
-		id: navigationItems.clockConfig,
-		tooltipLabel: 'Clock Config'
-	},
-	{
-		icon: <MemoryLayoutIcon width={24} height={24} />,
-		id: navigationItems.memory,
-		tooltipLabel: 'Memory Allocation'
-	},
-	{
-		icon: <Registers />,
-		id: navigationItems.registers,
-		tooltipLabel: 'Registers'
-	},
-	{
-		icon: <Generate />,
-		id: navigationItems.generate,
-		tooltipLabel: 'Generate Code'
-	}
-];
+import {availableIcons} from '../../constants/navigation-icons';
+import {navigationItems} from '../../../../common/constants/navigation';
+import {getClockNodeDictionary} from '../../utils/clock-nodes';
+import {getGasketDictionary} from '../../utils/dfg';
+import {getCoreMemoryDictionary} from '../../utils/memory';
+import {getSocPinDictionary} from '../../utils/soc-pins';
+import {getAICores} from '../../utils/ai-tools';
+import {getProjectInfoList} from '../../utils/config';
 
 export default function Navigation() {
 	const dispatch = useAppDispatch();
 	const activeScreen = useActiveScreen();
+	const aiCores = getAICores();
+	const projects = getProjectInfoList();
+
+	const displayedIcons = availableIcons.filter(icon => {
+		if (icon.id === navigationItems.dfg) {
+			return Object.keys(getGasketDictionary()).length > 0;
+		}
+
+		if (icon.id === navigationItems.clockConfig) {
+			return Object.keys(getClockNodeDictionary()).length > 0;
+		}
+
+		if (icon.id === navigationItems.memory) {
+			return Object.keys(getCoreMemoryDictionary()).length > 0;
+		}
+
+		if (icon.id === navigationItems.pinmux) {
+			// Only show pinmux if there is more than one pin in the SoC package.
+			// Sometimes to keep Yoda/Soc Schema happy, we populate one dummy pin but the package is still unsupported.
+			return Object.keys(getSocPinDictionary()).length > 1;
+		}
+
+		if (icon.id === navigationItems.aiTools) {
+			return aiCores.length > 0;
+		}
+
+		if (icon.id === navigationItems.profiling) {
+			return (
+				projects?.some(p => p.FirmwarePlatform === 'zephyr') ?? false
+			);
+		}
+
+		return true;
+	});
 
 	const handleNavItemClick = useCallback(
 		async (id: NavigationItem) => {
@@ -85,7 +77,7 @@ export default function Navigation() {
 	return (
 		<CfsNavigation
 			activeScreen={activeScreen}
-			availableIcons={availableSVG}
+			availableIcons={displayedIcons}
 			onNavItemClick={handleNavItemClick}
 		/>
 	);

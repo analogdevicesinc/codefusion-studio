@@ -1,8 +1,9 @@
+import type {Soc} from '../../../common/types/soc';
 import {isPinReserved} from './is-pin-reserved';
+import {sysPlannerDataInit} from './sys-planner-data-init';
 
-const wlp = await import(
-	'../../../../../../cli/src/socs/max32690-wlp.json'
-);
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 function TestComponent({pinId}: {readonly pinId: string}) {
 	const isReserved = isPinReserved(pinId);
@@ -19,10 +20,7 @@ function TestComponent({pinId}: {readonly pinId: string}) {
 
 describe('Is Pin Reserved utility fn', () => {
 	before(() => {
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(wlp.Packages[0])
-		);
+		sysPlannerDataInit(wlp);
 	});
 
 	it('Should evaluate signal with PinMuxConfig as non-reserved', () => {

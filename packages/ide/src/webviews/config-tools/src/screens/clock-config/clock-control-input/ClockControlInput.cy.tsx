@@ -19,21 +19,14 @@ import {
 	setClockNodeControlValue,
 	setClockNodeDetailsTargetNode
 } from '../../../state/slices/clock-nodes/clockNodes.reducer';
-import {controlErrorTypes} from '../../../utils/control-errors';
+import {controlErrorTypes} from '@common/utils/control-errors';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
-const wlp = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+const wlp = await import('@socs/max32690-wlp.json').then(
+	module => module.default
+);
 
 describe('Clock Control Input', () => {
-	beforeEach(() => {
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(wlp.Packages[0])
-		);
-	});
-
 	it('Should format correctly the error message when the input value is greater than the maximum value', () => {
 		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
 

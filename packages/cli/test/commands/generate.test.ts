@@ -16,6 +16,10 @@ import {expect, test} from '@oclif/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {
+  CFS_DATA_MODELS_PATH,
+  CFS_PLUGINS_PATH
+} from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +33,11 @@ describe('generate', () => {
 
   const outputDirectoryPath = path.resolve(__dirname, 'output');
 
-  const pluginsPath = path.resolve(__dirname, 'utils/plugins');
+  const pluginsPath = path.resolve(__dirname, CFS_PLUGINS_PATH);
+  const dataModelsPath = path.resolve(
+    __dirname,
+    CFS_DATA_MODELS_PATH
+  );
 
   afterEach(async () => {
     fs.rmSync(outputDirectoryPath, {recursive: true, force: true});
@@ -46,7 +54,9 @@ describe('generate', () => {
         '--output',
         `${outputDirectoryPath}`,
         '-s',
-        `${pluginsPath}`
+        `${pluginsPath}`,
+        '-s',
+        `${dataModelsPath}`
       ],
       {root: '..'}
     )
@@ -89,7 +99,7 @@ describe('generate', () => {
         '--search-path',
         `${pluginsPath}`,
         '-s',
-        'testPath'
+        `${dataModelsPath}`
       ],
       {root: '..'}
     )
@@ -128,6 +138,8 @@ describe('generate', () => {
         `${outputDirectoryPath}`,
         '-s',
         `${pluginsPath}`,
+        '-s',
+        `${dataModelsPath}`,
         '--verbose'
       ],
       {root: '..'}

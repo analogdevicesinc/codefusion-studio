@@ -13,47 +13,104 @@
  *
  */
 
-import {memo} from 'react';
-import {Badge, Card} from 'cfs-react-library';
+import {memo, useMemo} from 'react';
+import styles from './CoreSummaryEntry.module.scss';
+import {type ProjectInfo} from '../../../utils/config';
+import ProjectAllocations from './ProjectAllocations';
+import {useProjectPeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
+import {filterOutNonConfigurableAllocations} from '../../../utils/soc-peripherals';
+import PeripheralCard from '../peripheral-card/peripheral-card';
+import {Badge, CoreIcon} from 'cfs-react-library';
 import {
 	EXTERNALLY_MANAGED,
 	NON_SECURE,
 	PRIMARY,
 	SECURE
-} from '@common/constants/core-properties';
-import styles from './CoreSummaryEntry.module.scss';
-import {type ProjectInfo} from '../../../utils/config';
-import ProjectAllocations from './ProjectAllocations';
-import {useProjectPeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
+} from '../../../../../common/constants/core-properties';
+import {getControlsFromCache} from '../../../utils/api';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
+import {
+	getPeripheralError,
+	hasPeripheralPinConflicts
+} from '../../../utils/peripheral-errors';
+import ConflictIcon from '../../../../../common/icons/Conflict';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../../common/contexts/LocaleContext';
+import useIsPrimaryMultipleProjects from '../../../hooks/use-is-primary-multiple-projects';
 
-type CoreSummaryEntryProps = Readonly<{
+type CoreSummaryCardProps = Readonly<{
 	project: ProjectInfo;
 }>;
 
-function CoreSummaryEntry({project}: CoreSummaryEntryProps) {
+function naturalCompare(a: string, b: string) {
+	return a.localeCompare(b, 'en', {
+		numeric: true,
+		sensitivity: 'base'
+	});
+}
+
+function CoreSummaryCard({project}: CoreSummaryCardProps) {
 	const allocations = useProjectPeripheralAllocations(
 		project.ProjectId
 	);
-	const sortedAllocations = Object.values(allocations ?? {}).sort(
-		(a, b) =>
-			a.name.toLowerCase().localeCompare(b.name.toLowerCase(), 'en', {
-				sensitivity: 'base'
-			})
+	const shouldShowPrimaryBadge = useIsPrimaryMultipleProjects(
+		project?.IsPrimary ?? false
 	);
+
+	const i10n: TLocaleContext | undefined =
+		useLocaleContext()?.peripherals;
+
+	const pins = useAssignedPins();
+
+	const filteredAllocations = useMemo(
+		() =>
+			filterOutNonConfigurableAllocations(
+				project.ProjectId,
+				allocations
+			),
+		[allocations, project.ProjectId]
+	);
+
+	const sortedAllocations = Object.values(filteredAllocations ?? {})
+		.map(allocation => ({
+			...allocation,
+			signals: Object.fromEntries(
+				Object.values(allocation.signals ?? {})
+					.sort((a, b) => naturalCompare(a.name, b.name))
+					.map(signal => [signal.name, signal])
+			)
+		}))
+		.sort((a, b) => naturalCompare(a.name, b.name));
 	const hasAllocations = sortedAllocations.length > 0;
 
-	return (
-		<div
-			key={project.ProjectId}
-			data-test={`core:${project.ProjectId}`}
-			className={styles.coreEntry}
-		>
-			<div className={styles.coreHeader}>
+	const projectControls = getControlsFromCache(
+		CONTROL_SCOPES.PERIPHERAL,
+		project.ProjectId
+	);
+
+	const hasPeripheralUnnasignedPinError = getPeripheralError(
+		pins,
+		allocations,
+		projectControls ?? {}
+	);
+
+	const hasPeripheralPinConflictError = hasPeripheralPinConflicts(
+		pins,
+		allocations
+	);
+
+	const title = useMemo(
+		() => (
+			<div className={styles.peripheralCardHeader}>
+				<CoreIcon />
 				<h2 data-test={`core:${project.ProjectId}:label`}>
 					{project.Name}
 				</h2>
 				<div className={styles.badgeContainer}>
-					{project.IsPrimary ? (
+					{shouldShowPrimaryBadge ? (
 						<Badge
 							dataTest={`core:${project.ProjectId}:primary-tag`}
 							appearance='secondary'
@@ -79,28 +136,49 @@ function CoreSummaryEntry({project}: CoreSummaryEntryProps) {
 					) : null}
 				</div>
 			</div>
+		),
+		[project]
+	);
+
+	const end = (
+		<div className={styles.peripheralCardEnd}>
 			{hasAllocations ? (
-				<ProjectAllocations
-					allocations={sortedAllocations}
-					project={project}
-				/>
+				<>
+					<span>{`${sortedAllocations.length} ${
+						sortedAllocations.length === 1
+							? i10n?.num_peripherals?.one?.label?.title
+							: i10n?.num_peripherals?.other?.label?.title
+					}`}</span>
+					{(Boolean(hasPeripheralUnnasignedPinError) ||
+						hasPeripheralPinConflictError) && <ConflictIcon />}
+				</>
 			) : (
-				<Card
-					disableHoverEffects
-					id={`no-allocations-${project.ProjectId}`}
-				>
-					<div
-						data-test={`core:${project.ProjectId}:no-allocations`}
-						className={styles.cardContent}
-					>
-						<p className={styles.noPeripheralsLabel}>
-							No peripherals allocated.
-						</p>
-					</div>
-				</Card>
+				<span className={styles.noPeripherals}>No peripherals</span>
 			)}
 		</div>
 	);
+
+	const content = hasAllocations && (
+		<div className={styles.peripheralCardContent}>
+			<ProjectAllocations
+				allocations={sortedAllocations}
+				project={project}
+				projectControls={projectControls}
+			/>
+		</div>
+	);
+
+	return (
+		<PeripheralCard
+			id={project.ProjectId}
+			title={title}
+			end={end}
+			hasAllocatedPeripherals={Boolean(sortedAllocations.length)}
+			content={content}
+			data-test={`core:${project.ProjectId}`}
+			isExpandable={hasAllocations}
+		/>
+	);
 }
 
-export default memo(CoreSummaryEntry);
+export default memo(CoreSummaryCard);

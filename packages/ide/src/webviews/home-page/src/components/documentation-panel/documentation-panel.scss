@@ -21,14 +21,27 @@
 	align-items: flex-start;
 }
 
-.documentation-links {
+.documentation-container {
+	max-width: 950px;
 	display: flex;
-	width: 75%;
-	justify-content: space-between;
-	margin: 12px 0;
-	.column {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-	}
+	overflow-x: auto; /* Enable horizontal scroll */
+	gap: 24px; /* Space between columns */
+	padding: 1rem;
+	white-space: nowrap; /* Prevent wrapping */
+	scroll-behavior: smooth;
+}
+
+.documentation-column {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 auto; /* Prevent shrinking, keep width to content */
+	width: 260px;
+}
+
+.documentation-column vscode-link {
+	padding: 4px;
+}
+
+.documentation-more {
+	margin-top: 40px;
 }

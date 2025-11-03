@@ -29,11 +29,16 @@
 		@include fonts.heading-h3;
 		font-weight: 800;
 		color: colors.$default-foreground;
+		text-overflow: ellipsis;
+		text-wrap: nowrap;
+		white-space: nowrap;
+		overflow: hidden;
 	}
 	.size {
 		@include fonts.label-l3;
 		color: colors.$description-foreground;
 		padding-top: 2px;
+		text-wrap: nowrap;
 	}
 }
 

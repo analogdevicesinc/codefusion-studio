@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+			"name": "codefusion-studio",
+			"path": "."
+		},
+		{
+			"path": "./cfs-ai"
+		}
+  ]
+}

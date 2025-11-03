@@ -189,6 +189,7 @@ export default function SavedQueriesDropdown({
 		<>
 			<section
 				ref={dropdownRef}
+				data-test='symbols:dropdown-container'
 				className={styles.container}
 				onKeyDown={e => {
 					if (e.key === 'Escape') {

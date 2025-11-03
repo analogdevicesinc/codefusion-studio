@@ -13,14 +13,13 @@
  *
  */
 
-import {memo, useCallback, useMemo, useState} from 'react';
+import {memo, useMemo} from 'react';
 import CfsSelectionCard from '@common/components/cfs-selection-card/CfsSelectionCard';
-import {Chip, Radio} from 'cfs-react-library';
+import {InfoIcon, Radio} from 'cfs-react-library';
 import ConfigSection from '../../layout-components/config-section/ConfigSection';
 import type {CatalogCoreInfo} from '../../../../common/types/catalog';
 
 import styles from './CodeGenPlugin.module.scss';
-import {capitalizeWord} from '../../../../../../common/utils/string';
 
 type TCodeGenPlugin = Readonly<{
 	selectedPluginId: string;
@@ -35,39 +34,14 @@ function CodeGenPlugin({
 	plugins,
 	onPluginChange
 }: TCodeGenPlugin) {
-	const [filterId, setFilterId] = useState('');
-
-	const availablePlatforms = useMemo(() => {
-		const platforms = new Set<string>();
-
-		plugins.forEach(plugin => platforms.add(plugin.firmwarePlatform));
-
-		return Array.from(platforms);
-	}, [plugins]);
-
-	const filteredPlugins = useMemo(
-		() =>
-			plugins.filter(
-				plugin => !filterId || plugin.firmwarePlatform === filterId
-			),
-		[plugins, filterId]
-	);
-
-	const handleChipClick = useCallback(
-		(itemId: string) => {
-			setFilterId(prev => (prev === itemId ? '' : itemId));
-		},
-		[setFilterId]
-	);
-
 	const displayPlugins = useMemo(() => {
-		if (!filteredPlugins.length) {
+		if (!plugins.length) {
 			return <div>No data</div>;
 		}
 
 		return (
 			<div className={styles.plugins}>
-				{filteredPlugins.map(item => (
+				{plugins.map(item => (
 					<CfsSelectionCard
 						key={item.pluginId}
 						id={item.pluginId}
@@ -91,52 +65,26 @@ function CodeGenPlugin({
 							}}
 						/>
 						<h3 slot='title'>{item.pluginName}</h3>
-						<div slot='content' className={styles['card-body']}>
-							<span>Summary:</span>{' '}
-							<span>{item.pluginDescription}</span>
-							<span>Author:</span> <span>{item.author}</span>
-							<span>Plugin path:</span> <span>{item.pluginPath}</span>
-						</div>
 						<span className={styles.version} slot='end'>
-							{item.pluginVersion}
+							<InfoIcon />
+							{`v${item.pluginVersion}`}
 						</span>
 					</CfsSelectionCard>
 				))}
 			</div>
 		);
 	}, [
-		filteredPlugins,
+		plugins,
 		onPluginChange,
 		selectedPluginId,
 		selectedPluginVersion
 	]);
-
-	const displayFilters = useMemo(
-		() => (
-			<div className={styles.filters}>
-				{availablePlatforms.map(item => (
-					<Chip
-						key={item}
-						id={item}
-						label={capitalizeWord(item)}
-						isDisabled={false}
-						isActive={filterId === item}
-						onClick={() => {
-							handleChipClick(item);
-						}}
-					/>
-				))}
-			</div>
-		),
-		[handleChipClick, availablePlatforms, filterId]
-	);
 
 	return (
 		<ConfigSection>
 			<span slot='title'>Code Generation Plugin</span>
 
 			<div className={styles['code-gen-plugin-content']}>
-				{displayFilters}
 				{displayPlugins}
 			</div>
 		</ConfigSection>

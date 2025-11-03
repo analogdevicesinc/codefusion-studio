@@ -636,10 +636,10 @@ export async function elfMessageHandler(
         type: "api-response",
         id: message.id,
         body: undefined,
-        error: err?.message,
+        error: (err as Error)?.message || "Unknown error",
       });
 
-      await vscode.window.showErrorMessage(`Error: ${err?.message}`);
+      await vscode.window.showErrorMessage(`Error: ${(err as Error)?.message}`);
     }
   }
 }

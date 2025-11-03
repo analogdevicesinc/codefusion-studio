@@ -1,0 +1,102 @@
+{
+    "testsDescription": "Tests related to backend targets",
+    "fail": [
+        {
+            "testDescription": "Check that soc has to exist",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "nonExistentSoc", "Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }, 
+        {
+            "testDescription": "Check that core has to exist",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "nonExistentCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        },
+        {
+            "testDescription": "Check that soc must be specified",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        },
+        {
+            "testDescription": "Check that core must be specified",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }
+    ],
+    "pass": [
+        {
+            "testDescription": "Check that you can target soc and core",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }
+    ]
+}

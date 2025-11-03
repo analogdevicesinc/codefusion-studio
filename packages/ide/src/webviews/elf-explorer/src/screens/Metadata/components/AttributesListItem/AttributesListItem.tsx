@@ -43,6 +43,7 @@ export default function AttributesListItem({
 		<>
 			<li
 				className={styles.item}
+				data-test='metadata:list:item'
 				onMouseEnter={() => {
 					setHoveredItem(item);
 				}}

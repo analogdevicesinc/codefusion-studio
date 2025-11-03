@@ -18,7 +18,7 @@ import { InputBox, Workbench } from "vscode-extension-tester";
 
 import { SELECT_SDK_PATH_COMMAND_ID } from "../../commands/constants";
 
-export const CFS_IDE_VERSION = "1.1.0";
+export const CFS_IDE_VERSION = "2.0.0";
 
 /**
  * Select the SDK path using the quick pick option
@@ -26,7 +26,7 @@ export const CFS_IDE_VERSION = "1.1.0";
  */
 export async function selectSdkPath(): Promise<string> {
   await new Workbench().executeCommand(SELECT_SDK_PATH_COMMAND_ID);
-  return await selectQuickPick(`.*${CFS_IDE_VERSION}`);
+  return selectQuickPick(`.*${CFS_IDE_VERSION}`);
 }
 
 /**
@@ -38,16 +38,18 @@ export async function selectQuickPick(pattern: string): Promise<string> {
   const input = await InputBox.create();
   const picks = await input.getQuickPicks();
   let value;
-  for (const item of picks) {
-    const text = await item.getText();
+  const texts = await Promise.all(picks.map((item) => item.getText()));
+  for (const text of texts) {
     if (text.match(pattern)) {
       value = text;
       break;
     }
   }
+
   expect(value).not.equal(undefined);
   if (value !== undefined) {
     await input.selectQuickPick(value);
   }
+
   return value ? value : "";
 }

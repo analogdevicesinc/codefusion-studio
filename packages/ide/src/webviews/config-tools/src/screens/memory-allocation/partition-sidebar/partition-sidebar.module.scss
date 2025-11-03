@@ -39,3 +39,11 @@
 	flex-direction: column;
 	gap: 8px;
 }
+
+.titleContainer {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 7px;
+	text-transform: capitalize;
+}

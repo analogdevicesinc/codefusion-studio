@@ -260,11 +260,7 @@ export const validatePartitionForm = (
 		size: ''
 	};
 	let valid = true;
-
-	const parsedStartAddress = parseInt(
-		activePartition.startAddress,
-		16
-	);
+	const nameRegex = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
 
 	if (!activePartition.type) {
 		errors.type = 'Type is required';
@@ -281,6 +277,22 @@ export const validatePartitionForm = (
 		activePartition.displayName.trim() === ''
 	) {
 		errors.displayName = 'Partition name is required';
+		valid = false;
+	}
+
+	if (
+		activePartition.displayName &&
+		/\d/.test(activePartition.displayName[0])
+	) {
+		errors.displayName =
+			'First character must be a letter or underscore';
+		valid = false;
+	} else if (
+		activePartition.displayName &&
+		!nameRegex.test(activePartition.displayName)
+	) {
+		errors.displayName =
+			'Only alphanumeric and underscore characters are allowed';
 		valid = false;
 	}
 

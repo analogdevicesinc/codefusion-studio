@@ -18,7 +18,8 @@ import {createPortal} from 'react-dom';
 import type {
 	TFormControl,
 	TFormData,
-	TFormFieldValue
+	TFormFieldValue,
+	TFormNumericBase
 } from 'cfs-react-library';
 import {usePeripheralConfig} from '../../../state/slices/peripherals/peripherals.selector';
 import {useAppDispatch} from '../../../state/store';
@@ -63,10 +64,14 @@ function PeripheralConfigForm({
 		Object.keys(data).forEach(key => {
 			if (
 				formattedControls.find(control => control.id === key)
-					?.type === 'boolean' &&
-				typeof data[key] === 'string'
+					?.type === 'boolean'
 			) {
-				data[key] = data[key].toUpperCase() === 'TRUE';
+				if (typeof data[key] === 'string') {
+					data[key] = (data[key] as string).toUpperCase() === 'TRUE';
+				} else if (typeof data[key] === 'number') {
+					/* Treat 0 as false, any other number as true. */
+					data[key] = data[key] !== 0;
+				}
 			}
 		});
 
@@ -159,10 +164,21 @@ function PeripheralConfigForm({
 			}
 		}
 
+		// Prepare the numeric base dictionary
+		const numericBase: Record<string, TFormNumericBase> = {};
+		formattedControls.forEach(control => {
+			if (control.base) {
+				numericBase[control.id] = control.base;
+			}
+		});
+
+		const configFormat = Object.keys(numericBase).length > 0 ? { numericBase } : undefined;
+
 		dispatch(
 			setPeripheralConfig({
-				config: newConfig,
-				peripheralId: activePeripheral
+        config: newConfig,
+        peripheralId: activePeripheral,
+        ...(configFormat && { configFormat })
 			})
 		);
 	};

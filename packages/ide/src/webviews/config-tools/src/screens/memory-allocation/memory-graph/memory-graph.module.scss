@@ -28,7 +28,12 @@
 	width: 98%;
 	height: 20px;
 	padding: 0 1px;
+
+	&.highlighted {
+		border: 2px solid colors.$default-foreground;
+	}
 }
+
 .section {
 	height: 100%;
 	width: 100%;
@@ -57,22 +62,29 @@
 		right: 0px;
 	}
 	.partition {
-		background-color: colors.$list-inactive-selection-background;
+		background-color: colors.$default-foreground;
 	}
 	.hashedPartition {
 		background-image: repeating-linear-gradient(
-			120deg,
-			colors.$list-inactive-selection-background 12px,
-			transparent 18px
+			45deg,
+			colors.$default-background 0px,
+			colors.$default-background 2px,
+			colors.$default-foreground 0,
+			colors.$default-foreground 50%
 		);
+		background-size: 6px 6px;
 	}
+
 	.hashedHoveredPartition {
 		cursor: pointer;
 		background-image: repeating-linear-gradient(
-			120deg,
-			colors.$list-active-selection-background 12px,
-			transparent 18px
+			45deg,
+			colors.$default-background 0px,
+			colors.$default-background 2px,
+			colors.$list-active-selection-background 0,
+			colors.$list-active-selection-background 50%
 		);
+		background-size: 6px 6px;
 	}
 	.hoveredPartition {
 		cursor: pointer;
@@ -83,6 +95,7 @@
 		position: relative;
 	}
 }
+
 .startingPartition {
 	border-radius: 2px 0 0 2px;
 }
@@ -99,4 +112,13 @@
 	background: colors.$list-inactive-selection-background;
 	top: 0;
 	left: -1px;
+}
+
+.block.highlighted:not(:first-child)::after {
+	background: colors.$default-foreground;
+}
+
+.selectedPartition {
+	outline: 2px solid colors.$button-primary-background;
+	outline-offset: 2px;
 }

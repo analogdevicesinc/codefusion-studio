@@ -15,7 +15,7 @@
 
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 import {type TLocaleContext} from '../../common/types/context';
-import SingleColumnLayout from '../../components/secondary-layout/SecondaryLayout';
+import SingleColumnLayout from '@common/components/single-column-layout/single-column-layout';
 import {getCfsConfigDict} from '../../utils/config';
 import styles from './Dashboard.module.scss';
 import SystemPlannerConfigToolsList from './system-planner-config-tools-list/system-planner-config-tools-list';

@@ -12,12 +12,16 @@
  * limitations under the License.
  *
  */
+
+@use '#colors' as colors;
+
 .filterControlsContainer {
 	display: flex;
 	gap: 4px;
 	padding: 16px;
 	height: 21px;
 	width: inherit;
+	border-bottom: 1px solid colors.$default-border;
 }
 
 .filterChipContainer {

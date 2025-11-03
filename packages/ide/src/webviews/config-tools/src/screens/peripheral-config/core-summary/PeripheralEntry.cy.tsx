@@ -12,53 +12,23 @@
  * limitations under the License.
  *
  */
-import type {ControlCfg, Soc} from '@common/types/soc';
+import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import PeripheralEntry from './PeripheralEntry';
 import {setSignalAssignment} from '../../../state/slices/peripherals/peripherals.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
-const max32690wlp = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
-
-async function getControlsPromise(): Promise<
-	Record<string, ControlCfg[]>
-> {
-	return new Promise(resolve => {
-		resolve({});
-	});
-}
+const max32690wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('Peripheral Entry', () => {
 	context('MAX32690-WLP', () => {
 		beforeEach(() => {
 			cy.viewport(1920, 1080);
-
-			localStorage.setItem(
-				'Cores',
-				JSON.stringify(max32690wlp.Cores)
-			);
-
-			localStorage.setItem(
-				'Peripherals',
-				JSON.stringify(max32690wlp.Peripherals)
-			);
-
-			localStorage.setItem(
-				'Package',
-				JSON.stringify(max32690wlp.Packages[0])
-			);
-
-			localStorage.setItem(
-				'Controls',
-				JSON.stringify(max32690wlp.Controls)
-			);
 		});
 
 		it('should show peripheral error when the peripherals signal is missing pin assignment', () => {
 			const reduxStore = configurePreloadedStore(max32690wlp);
-			const controlsPromise = getControlsPromise();
 
 			reduxStore.dispatch(
 				setSignalAssignment({
@@ -73,7 +43,7 @@ describe('Peripheral Entry', () => {
 					projectId='CM4-proj'
 					peripheralName='GPIO0'
 					preassigned={false}
-					controlsPromise={controlsPromise}
+					controls={{}}
 				/>,
 				reduxStore
 			);
@@ -85,14 +55,13 @@ describe('Peripheral Entry', () => {
 
 		it('should not show peripheral error when the peripheral has no signals', () => {
 			const reduxStore = configurePreloadedStore(max32690wlp);
-			const controlsPromise = getControlsPromise();
 
 			cy.mount(
 				<PeripheralEntry
 					projectId='CM4-proj'
 					peripheralName='GPIO0'
 					preassigned={false}
-					controlsPromise={controlsPromise}
+					controls={{}}
 				/>,
 				reduxStore
 			);
@@ -105,7 +74,6 @@ describe('Peripheral Entry', () => {
 
 	describe('when the peripheral signal has a pin assigned', () => {
 		const reduxStore = configurePreloadedStore(max32690wlp);
-		const controlsPromise = getControlsPromise();
 		const peripheral = 'GPIO0';
 		const signalName = 'P0.1';
 		const pinId = 'J2';
@@ -120,7 +88,7 @@ describe('Peripheral Entry', () => {
 			);
 		});
 
-		it('should not show peripheral error', () => {
+		it('Should not show peripheral error', () => {
 			reduxStore.dispatch(
 				setSignalAssignment({
 					peripheral,
@@ -141,7 +109,7 @@ describe('Peripheral Entry', () => {
 					projectId='CM4-proj'
 					peripheralName='GPIO0'
 					preassigned={false}
-					controlsPromise={controlsPromise}
+					controls={{}}
 				/>,
 				reduxStore
 			);

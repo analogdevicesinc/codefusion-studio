@@ -256,7 +256,10 @@ export default function SymbolsFilters({
 	};
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='symbols:filters-container'
+		>
 			<QueryFilterInput
 				error={error}
 				query={query}

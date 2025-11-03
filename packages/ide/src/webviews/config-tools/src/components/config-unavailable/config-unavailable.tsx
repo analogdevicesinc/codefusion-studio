@@ -25,7 +25,12 @@ export default function ConfigUnavailable({
 }: ConfigUnavailableProps) {
 	return (
 		<div className={styles.container}>
-			<div className={styles.unavailableText}>{message}</div>
+			<div
+				data-test='config-unavailable:message'
+				className={styles.unavailableText}
+			>
+				{message}
+			</div>
 			<div>
 				<Lock />
 			</div>

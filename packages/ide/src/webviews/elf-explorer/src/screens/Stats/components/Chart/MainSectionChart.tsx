@@ -159,7 +159,10 @@ export default function MainSectionChart({
 	});
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='stats:chart-container'
+		>
 			<div className={styles.title}>
 				<HeaderWithTooltip
 					title={`${i10n?.title} ${transformBtoKB(totalSize, true)}`}

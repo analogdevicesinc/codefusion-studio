@@ -21,15 +21,15 @@ import type {
 import Peripheral from '../../../components/peripheral/Peripheral';
 import {configurePreloadedStore} from '../../../state/store';
 import {getSocPeripheralDictionary} from '../../../utils/soc-peripherals';
-const mock = await import(
-	`../../../../../../../../cli/src/socs/max32690-tqfn.json`
-);
+const mock = (await import('@socs/max32690-tqfn.json'))
+	.default as unknown as Soc;
 
+import type {CfsConfig} from 'cfs-plugins-api';
 const configDict = {
 	BoardName: '',
 	Package: 'TQFN',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -40,27 +40,17 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Function component', () => {
 	beforeEach(() => {
-		localStorage.setItem('Package', JSON.stringify(mock.Packages[0]));
-
-		localStorage.setItem('configDict', JSON.stringify(configDict));
-
-		localStorage.setItem('Cores', JSON.stringify(mock.Cores));
-
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
 		localStorage.setItem(
 			'pluginControls:CM4-proj',
 			JSON.stringify(mock.Controls)
 		);
 	});
 
-	const reduxStore = configurePreloadedStore(mock as unknown as Soc);
+	const reduxStore = configurePreloadedStore(mock, configDict);
 
 	it('Assigns coprogrammed signals correctly', () => {
 		const socPeripheralDictionary: Array<

@@ -6,6 +6,8 @@ export type TFormControl = {
 	name: string;
 	/** Property type; it tells the component what UI element to render */
 	type: TFormControlType;
+	/** Property numeric base */
+	base?: TFormNumericBase;
 	/** Property description; only used for checkbox label */
 	description?: string;
 	/** Default value */
@@ -20,6 +22,8 @@ export type TFormControl = {
 	required?: boolean;
 	/** Category of the control. Used for filtering purposes */
 	pluginOption?: boolean;
+	/** adds an info icon to the title with a tooltip showing the given text */
+	info?: string;
 };
 
 export type TFormControlType =
@@ -33,3 +37,9 @@ export type TFormControlType =
 export type TFormData = Record<string, boolean | string | number>;
 
 export type TFormFieldValue = TFormData[string];
+
+export type TFormNumericBase =
+	| 'Binary'
+	| 'Decimal'
+	| 'Octal'
+	| 'Hexadecimal';

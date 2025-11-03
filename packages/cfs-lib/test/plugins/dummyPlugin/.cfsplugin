@@ -1,0 +1,22 @@
+{
+	"pluginName": "Dummy Plugin",
+	"pluginId": "1",
+	"pluginDescription": "A dummy plugin for testing",
+	"pluginVersion": "1",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"features": {
+		"workspace": {
+			"files": [],
+			"templates": []
+		},
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

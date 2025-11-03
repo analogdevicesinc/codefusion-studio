@@ -35,6 +35,7 @@ export default function HeaderWithTooltip({
 	return (
 		<div
 			className={styles.header}
+			data-test='header-tooltip:container'
 			onMouseEnter={() => {
 				setIsHovered(true);
 			}}
@@ -52,7 +53,11 @@ export default function HeaderWithTooltip({
 					}}
 					containerPosition='relative'
 				>
-					<Button appearance='icon' className={styles.icon}>
+					<Button
+						appearance='icon'
+						className={styles.icon}
+						dataTest='header-tooltip:icon'
+					>
 						<Info />
 					</Button>
 				</Tooltip>

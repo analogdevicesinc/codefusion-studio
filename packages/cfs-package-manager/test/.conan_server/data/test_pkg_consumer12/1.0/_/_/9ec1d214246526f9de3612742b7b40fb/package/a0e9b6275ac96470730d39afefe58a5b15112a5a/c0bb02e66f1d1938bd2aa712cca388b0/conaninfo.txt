@@ -1,0 +1,4 @@
+[requires]
+test_pkg_dep1/1.Y.Z
+test_pkg_dep1dep/1.Y.Z
+test_pkg_dep2/1.Y.Z

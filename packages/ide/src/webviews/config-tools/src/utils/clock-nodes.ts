@@ -17,58 +17,47 @@ import type {
 	ClockNode,
 	ControlCfg
 } from '@common/types/soc';
-import {getClockNodes, getControlsFromCache} from './api';
+import {getControlsFromCache} from './api';
 
 let clockNodes: ClockNode[] | undefined;
 const clockDictionary: ClockDictionary = {};
 const clockNodeDictionary: Record<string, ClockNode> = {};
 const clockTypeDictionary: Record<string, ClockNode[]> = {};
+let sortedClockTypeList: Array<[string, ClockNode[]]> = [];
 
-if (import.meta.env.MODE === 'development') {
-	clockNodes = (window as any).__DEV_SOC__?.ClockNodes ?? [];
-} else {
-	clockNodes = await getClockNodes();
-}
+/**
+ * Initializes the clock nodes and related dictionaries.
+ * Should be called once at app startup.
+ */
+export function initializeClockNodes(nodes: ClockNode[] | undefined) {
+	clockNodes = nodes ?? [];
 
-if (Array.isArray(clockNodes)) {
-	clockNodes.forEach(node => {
-		clockNodeDictionary[node.Name] = node;
+	if (Array.isArray(clockNodes)) {
+		clockNodes.forEach(node => {
+			clockNodeDictionary[node.Name] = node;
 
-		if (!clockTypeDictionary[node.Type]) {
-			clockTypeDictionary[node.Type] = [];
-		}
+			if (!clockTypeDictionary[node.Type]) {
+				clockTypeDictionary[node.Type] = [];
+			}
 
-		clockTypeDictionary[node.Type].push(node);
+			clockTypeDictionary[node.Type].push(node);
 
-		node.Outputs.forEach(output => {
-			clockDictionary[output.Name] = output;
+			node.Outputs.forEach(output => {
+				clockDictionary[output.Name] = output;
+			});
 		});
-	});
 
-	sortClockNodes();
+		sortClockNodes();
+
+		sortClockNodeTypes();
+	}
 }
 
 export function getClockNodeDictionary() {
 	if (Object.keys(clockNodeDictionary).length === 0) {
-		// Attempt to populate the clock nodes from local storage (for testing purposes)
-		const localStorageClockNodes = localStorage.getItem('ClockNodes');
-
-		if (localStorageClockNodes) {
-			const parsedNodes: ClockNode[] = JSON.parse(
-				localStorageClockNodes
-			);
-
-			Object.values(parsedNodes).forEach(node => {
-				clockNodeDictionary[node.Name] = node;
-			});
-		} else {
-			// If a test is not overriding the clock nodes, use the default dev soc in the window object
-			((window as any).__DEV_SOC__?.ClockNodes ?? []).forEach(
-				(node: ClockNode) => {
-					clockNodeDictionary[node.Name] = node;
-				}
-			);
-		}
+		Object.values(clockNodes ?? []).forEach(node => {
+			clockNodeDictionary[node.Name] = node;
+		});
 	}
 
 	return clockNodeDictionary;
@@ -76,22 +65,15 @@ export function getClockNodeDictionary() {
 
 export function getClockTypeDictionary() {
 	if (Object.keys(clockTypeDictionary).length === 0) {
-		// Attempt to populate the clock type dictionary from local storage (for testing purposes)
-		const localStorageClockNodes = localStorage.getItem('ClockNodes');
+		const nodes = clockNodes ?? [];
 
-		if (localStorageClockNodes) {
-			const parsedNodes: ClockNode[] = JSON.parse(
-				localStorageClockNodes
-			);
+		Object.values(nodes).forEach(node => {
+			if (!clockTypeDictionary[node.Type]) {
+				clockTypeDictionary[node.Type] = [];
+			}
 
-			Object.values(parsedNodes).forEach(node => {
-				if (!clockTypeDictionary[node.Type]) {
-					clockTypeDictionary[node.Type] = [];
-				}
-
-				clockTypeDictionary[node.Type].push(node);
-			});
-		}
+			clockTypeDictionary[node.Type].push(node);
+		});
 
 		sortClockNodes();
 	}
@@ -132,6 +114,25 @@ export function getTargetControls(
 	}, {});
 }
 
+export function getSortedClockTypeList(): Array<
+	[string, ClockNode[]]
+> {
+	return sortedClockTypeList;
+}
+
+function sortClockNodeTypes() {
+	const sortedClockNodeType = Object.entries(
+		clockTypeDictionary
+	).sort(([a, _], [b, __]) =>
+		a.localeCompare(b, 'en-US', {
+			numeric: true,
+			sensitivity: 'base'
+		})
+	);
+
+	sortedClockTypeList = sortedClockNodeType;
+}
+
 function sortClockNodes() {
 	// Sort the clock type dictionary by name
 	Object.keys(clockTypeDictionary).forEach(clockType => {
@@ -144,4 +145,20 @@ function sortClockNodes() {
 			})
 		);
 	});
+}
+
+// For Cypress Tests.
+// Should be called in tests to ensure clean state.
+export function resetClockNodes() {
+	clockNodes = [];
+
+	// Clear the dictionary by removing all keys
+	for (const key in clockNodeDictionary) {
+		if (
+			Object.prototype.hasOwnProperty.call(clockNodeDictionary, key)
+		) {
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+			delete clockNodeDictionary[key];
+		}
+	}
 }

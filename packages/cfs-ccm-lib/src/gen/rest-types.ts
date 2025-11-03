@@ -54,6 +54,7 @@ export type CorePart = {
     name: string;
     primary: boolean;
     socID: string;
+    supportsTrustZone?: boolean;
 };
 
 export type CoreType = {
@@ -79,6 +80,7 @@ export type CreateInputCore = {
     extensions: string[];
     name: string;
     primary?: boolean;
+    supportsTrustZone?: boolean;
 };
 
 export type CreateInputCoreType = {
@@ -97,7 +99,13 @@ export type CreateInputPackage = {
     accessTag?: AccessTag;
     description: string;
     name: string;
-    packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+    packageType:
+        | 'WLP'
+        | 'TQFN'
+        | 'TQFP'
+        | 'CTBGA'
+        | 'CSBGA'
+        | 'BGAED';
 };
 
 export type Documentation = {
@@ -118,7 +126,13 @@ export type Package = {
     description: string;
     id: string;
     name: string;
-    packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+    packageType:
+        | 'WLP'
+        | 'TQFN'
+        | 'TQFP'
+        | 'CTBGA'
+        | 'CSBGA'
+        | 'BGAED';
     socID: string;
 };
 
@@ -158,9 +172,9 @@ export type SoCSummary = {
 };
 
 export type User = {
-    email: string;
+    accessTag: AccessTag;
+    email?: string;
     id: string;
-    read?: string[];
+    maskedEmail: string;
     userType: 'user' | 'admin';
-    write?: string[];
 };

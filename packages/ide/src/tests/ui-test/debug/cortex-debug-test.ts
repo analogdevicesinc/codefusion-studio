@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 /**
  *
  * Copyright (c) 2023-2024 Analog Devices, Inc.
@@ -44,10 +45,10 @@ describe("Cortex Debug Configuration Test", () => {
   before(async () => {
     await closeFolder();
     await openFolder(process.cwd() + "/" + testDirectory);
-    // delete the .vscode folder to remove any settings
+    // Delete the .vscode folder to remove any settings
     deleteFolder(testDirectory + "/.vscode");
     workbench = new Workbench();
-    // give the extension some time to activate
+    // Give the extension some time to activate
     await workbench.getDriver().sleep(10000);
     await configureWorkspace("Yes");
     await workbench.getDriver().sleep(10000);
@@ -59,7 +60,7 @@ describe("Cortex Debug Configuration Test", () => {
   });
 
   it("Checking for CFS Cortex Debug Configuration", async () => {
-    // delete the .vscode folder to remove any settings
+    // Delete the .vscode folder to remove any settings
     await deleteFile(testDirectory + "/.vscode/launch.json");
     await workbench.getDriver().sleep(10000);
     // Select "Add Configuration"
@@ -67,7 +68,7 @@ describe("Cortex Debug Configuration Test", () => {
     const input = await InputBox.create();
     // Select Cortex Debug Configuration
     await input.selectQuickPick("Cortex Debug");
-    // wait for the task to complete
+    // Wait for the task to complete
     await setTimeout(10000);
     // Get json launch file text containing cortex debug configuration
     const jsonFileLocation = testDirectory + "/.vscode/launch.json";
@@ -75,8 +76,9 @@ describe("Cortex Debug Configuration Test", () => {
     if (!fs.existsSync(jsonFileLocation)) {
       console.error("File not found");
     }
+
     const rawLaunchJsonContent = fs.readFileSync(jsonFileLocation, "utf8");
-    //Remove comments from JSON file
+    // Remove comments from JSON file
     const filteredLaunchJsonContent = rawLaunchJsonContent.replace(
       /\/\/.*/g,
       "",
@@ -109,13 +111,13 @@ describe("Cortex Debug Configuration Test", () => {
     expect(
       isJsonEqual,
       "Launch configuration does not match the expected results.",
-    ).to.be.true;
+    ).to.equal(true);
   });
 });
 
 const CortexDebugConfig = {
   name: "CFS: Debug with GDB and OpenOCD (Arm Embedded)",
-  executable: "${command:cfs.selectProgramFile}",
+  executable: "${config:cfs.programFile}",
   cwd: "${command:cfs.setDebugPath}",
   request: "launch",
   type: "cortex-debug",

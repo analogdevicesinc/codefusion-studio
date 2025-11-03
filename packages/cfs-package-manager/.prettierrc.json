@@ -1,0 +1,13 @@
+{
+	"trailingComma": "none",
+	"printWidth": 70,
+	"overrides": [
+		{
+			"files": "src/conan-backend/config/*.json",
+			"options": {
+				"useTabs": false,
+				"tabWidth": 1
+			}
+		}
+	]
+}

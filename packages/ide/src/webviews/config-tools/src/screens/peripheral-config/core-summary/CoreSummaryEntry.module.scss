@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,155 +19,200 @@
 @use '#fonts' as fonts;
 @use '#colors' as colors;
 
-.coreEntry {
+.peripheralCardHeader {
 	display: flex;
-	flex-direction: column;
-	gap: 4px;
+	align-items: center;
+	gap: 8px;
+	flex: 1 0 0;
+}
+
+.peripheralCardEnd {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	text-wrap: nowrap;
+	color: colors.$description-foreground;
+}
+
+.accordionWrapper {
+	&.titleContainer {
+		span {
+			@include fonts.body-b2;
+		}
+	}
+}
+
+.sectionHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 2px 8px;
+	border-bottom: 1px solid colors.$default-border;
+	transition: background-color 0.3s;
+	box-sizing: border-box;
 	width: 100%;
-	max-width: 566px;
+	&:hover {
+		background-color: colors.$list-hover-background;
+		cursor: default;
+	}
+}
 
-	.coreHeader {
+.highlight {
+	background-color: colors.$list-hover-background;
+	transition: background-color 0.8s ease;
+}
+
+.nameSection {
+	display: flex;
+	padding-right: 4px;
+	min-height: 32px;
+	align-items: center;
+	gap: 8px;
+	align-self: stretch;
+}
+
+.cardNamePlaceholder {
+	width: 16px;
+	height: 16px;
+}
+
+.peripheralCard {
+	padding: 0px 8px 0px 20px;
+}
+
+.accordionWrapper {
+	> div {
+		> section:first-of-type {
+			padding-right: 8px;
+			&:hover {
+				background-color: colors.$list-hover-background;
+			}
+		}
+
+		section:nth-child(2) {
+			padding-left: 0px;
+			padding-right: 0px;
+			margin-top: 0px;
+		}
+	}
+	span {
+		font-size: fonts.$font-size-m;
+	}
+}
+
+.actionButtons {
+	padding-right: 1px;
+	padding-bottom: 1px;
+}
+
+.accordionHeaderIcon {
+	display: flex;
+	position: relative;
+	align-items: center;
+	justify-content: center;
+}
+
+section.header:hover {
+	background-color: colors.$list-hover-background;
+}
+
+.accordionWrapper.lasthovered {
+	> div {
+		> section:first-of-type {
+			background-color: colors.$list-hover-background;
+		}
+	}
+}
+
+.signalRowWrapper {
+	padding-left: 15px;
+}
+
+.signalRow {
+	display: flex;
+	min-height: 24px;
+	padding: 0 9px 0 16px;
+	align-items: center;
+	gap: 12px;
+	border-left: 1px solid colors.$default-foreground;
+	.signalRowHeader {
 		display: flex;
+		padding: 4px 0px;
 		align-items: center;
-		gap: 8px;
-		margin-bottom: 8px;
-
-		.badgeContainer {
-			display: flex;
-			align-items: center;
-			gap: 4px;
-
-			.badge {
-				--type-ramp-minus1-font-size: 11px;
-
-				&::part(control) {
-					padding: 4px 8px;
-					height: 20px;
-					font-weight: 500;
-					gap: 10px;
-				}
-			}
-		}
-	}
-
-	.cardContent {
-		width: 100%;
-		padding: 16px;
-		display: flex;
-		align-items: center;
-
-		&:has(.iconOpen) {
-			padding-bottom: 8px;
-		}
-
-		.cardHeader {
-			display: flex;
-			position: relative;
-			width: 100%;
-			height: 100%;
-
-			> div:first-child {
-				flex-grow: 1;
-			}
-		}
-
-		.chevron {
-			position: absolute;
-			right: 0;
-			transition: transform 0.3s ease-in-out;
-			height: 16px;
-			width: 16px;
-			transform: rotate(90deg);
-			cursor: pointer;
-
-			&.iconOpen {
-				transform: rotate(270deg);
-			}
-		}
-	}
-
-	.cardContentColumn {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.sectionHeader {
-		display: flex;
 		justify-content: space-between;
-		width: 100%;
-
-		.nameSection {
-			display: flex;
-			flex-shrink: 1;
-			gap: 8px;
-			align-items: center;
-
-			.badge {
-				--type-ramp-minus1-font-size: 9px;
-				--design-unit: 3;
-
-				&::part(control) {
-					padding: 2px 6px;
-					height: 16px;
-					font-weight: 700;
-					gap: 10px;
-				}
-			}
-		}
-	}
-
-	.signalsSection {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-	}
-
-	.signalRow {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		width: 100%;
-		padding: 8px 0;
-		border-top: 1px solid colors.$default-border;
-
-		& span {
+		gap: 4px;
+		flex: 1 0 0;
+		span {
 			@include fonts.body-b3;
 		}
+	}
+}
 
-		&:first-child {
-			margin-top: 16px;
+.peripheralCard:last-child .accordionWrapper > div {
+	border-bottom: none;
+}
+
+.signalsSection {
+	display: flex;
+	flex-direction: column;
+	div {
+		&:hover {
+			background-color: colors.$list-hover-background;
+			cursor: default;
 		}
 	}
+}
 
-	.nameHeader {
-		flex: 1;
+.iconWrapper {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	flex-shrink: 0;
+
+	.deleteIcon {
+		border-radius: 2px;
 	}
 
-	.iconWrapper {
-		display: flex;
-		gap: 8px;
+	.lockIcon {
+		width: 22px;
+	}
 
-		.configIcon {
-			cursor: pointer;
-
-			&:hover {
-				background: colors.$list-inactive-selection-background;
-				border-radius: 4px;
-			}
-
-			&[data-active='true'] {
-				outline: 1px solid colors.$focus-border;
-				border-radius: 4px;
-			}
+	.configIcon {
+		svg {
+			width: 16px;
+			height: 16px;
 		}
 	}
+}
 
-	.iconPlaceholder {
-		width: 16px;
-		height: 16px;
-	}
+.iconPlaceholder {
+	width: 22px;
+	height: 22px;
+}
 
-	.noPeripheralsLabel {
-		color: colors.$description-foreground;
+.conflictIconWrapper {
+	display: flex;
+	width: 22px;
+	height: 22px;
+	align-items: center;
+	justify-content: center;
+}
+
+.deleteIcon,
+.configIcon {
+	cursor: pointer;
+	&:hover {
+		background-color: colors.$default-background;
 	}
+}
+
+.peripheralCard:last-child .sectionHeader {
+	border-bottom: none;
+}
+.peripheralCard:first-child > section {
+	border-top: 1px solid colors.$default-border;
+}
+
+.isActive {
+	background-color: colors.$default-background;
 }

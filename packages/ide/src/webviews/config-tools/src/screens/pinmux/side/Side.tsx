@@ -32,7 +32,7 @@ export default function PinmuxSideContainer() {
 				`[data-test="accordion:${peripheral}"]`
 			);
 			element?.scrollIntoView({
-				behavior: 'instant',
+				behavior: 'instant' as ScrollBehavior,
 				block: 'start'
 			});
 		}

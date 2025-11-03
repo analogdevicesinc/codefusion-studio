@@ -3,13 +3,14 @@
     "compilerOptions": {
         "declaration": true,
         "outDir": "dist",
+        "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
         "rootDir": "src",
         "strict": true,
         "noUncheckedIndexedAccess": true,
         "allowSyntheticDefaultImports": true,
         "sourceMap": true,
         "composite": true,
-        "resolveJsonModule": true,
+        "resolveJsonModule": false,
         "module": "nodenext"
     },
     "include": ["src/**/*"]

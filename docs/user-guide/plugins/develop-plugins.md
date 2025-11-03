@@ -1,7 +1,7 @@
 ---
 description: Learn how to develop custom plugins for CodeFusion Studio.
 author: Analog Devices
-date: 2025-04-08
+date: 2025-10-30
 ---
 
 # Develop plugins
@@ -22,26 +22,17 @@ The `CfsPluginManager` is part of the [cfs-lib](https://github.com/analogdevices
 
 ## Plugin activation
 
-After building and testing your plugin, activate it in CFS by placing it into one of the following directories, defined in your VS Code `settings.json`:
-
-- `${userHome}/cfs/plugins`: Recommended for active development.
-- `${config:cfs.sdk.path}/Plugins`: Used for the default plugins shipped with CFS.
+After building and testing your plugin, make it available in CFS by adding the path to the plugin `dist` directory to your VS Code `settings.json` file.
 
 ### Updating your plugin search path
 
 1. Open the `settings.json` file in your CFS workspace.
-2. Add the path to your plugin directory under the `cfs.plugins.searchDirectories` setting:
+2. Add the path to your plugin's output directory under the `cfs.plugins.searchDirectories` setting:
 
 ```json
 "cfs.plugins.searchDirectories": [
-    "${userHome}/cfs/plugins/dist",    // Recommended for active development
-    "${config:cfs.sdk.path}/Plugins", // Existing plugin directory
+    "/path/to/your/plugins/dist",    // Must point directly to the plugin's dist folder
 ]
 ```
 
-Alternatively, copy your plugin into the existing plugin directory (`${config:cfs.sdk.path}/Plugins`). This directory is automatically scanned at startup.
-
 Once placed, restart CFS to detect the new plugin and create a workspace.
-
-!!! Tip
-    You can also use the cfsutil command line utility to automate plugin creation from the terminal. For more details, refer to [CFS command line utility](../tools/cfsutil.md).

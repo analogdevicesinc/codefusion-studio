@@ -1,0 +1,376 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '../../../styles/layout';
+
+.bridgeContainer {
+	display: flex;
+	width: 60px;
+	padding: 24px 28px;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+	border-radius: layout.$default-border-radius;
+	border: 2px solid colors.$editor-widget-border;
+	box-sizing: border-box;
+	margin: 24px 0;
+	min-height: 166px;
+	&.hovered {
+		border-color: colors.$button-foreground !important;
+	}
+	&.selected {
+		border-color: colors.$focus-border !important;
+	}
+}
+
+.bridgeLabel {
+	transform: rotate(90deg);
+	display: flex;
+	justify-content: center;
+	width: 150px;
+	@include fonts.body-b1;
+}
+
+.gasketSection {
+	display: flex;
+	width: 100%;
+}
+
+.gasketStreamsToBridge {
+	display: flex;
+	flex-direction: column;
+	width: 32px;
+	height: 100%;
+}
+
+.gasketStreamsToBridgeInner {
+	width: 100%;
+	display: flex;
+	flex: 1;
+}
+
+@mixin arrowHead {
+	position: absolute;
+	border-bottom: 2px solid colors.$editor-widget-border;
+	border-right: 2px solid colors.$editor-widget-border;
+	width: 6px;
+	height: 6px;
+	transform: rotate(90deg);
+	pointer-events: none;
+	&.right {
+		transform: rotate(180deg);
+		bottom: -5px;
+	}
+	&.left {
+		transform: rotate(0deg);
+		bottom: -5px;
+		right: 0;
+	}
+	&.input {
+		&.left {
+			right: 3px;
+			bottom: 2px;
+		}
+		&.right {
+			left: 3px;
+			bottom: 2px;
+		}
+	}
+}
+
+.arrowHead {
+	&.input {
+		border-top: none !important;
+	}
+}
+
+.selected {
+	position: relative;
+	border-color: colors.$focus-border !important;
+	&:before {
+		border-color: colors.$focus-border !important;
+	}
+	& .arrowHead.focused {
+		border-color: colors.$focus-border !important;
+		@include arrowHead;
+	}
+	&.hovered {
+		border-color: colors.$button-foreground !important;
+		& .arrowHead.focused {
+			border-color: colors.$button-foreground !important;
+			@include arrowHead;
+		}
+	}
+}
+
+.hovered {
+	position: relative;
+	border-color: colors.$button-foreground !important;
+	&:before {
+		border-color: colors.$button-foreground !important;
+	}
+	& .arrowHead {
+		border-color: colors.$button-foreground !important;
+		@include arrowHead;
+	}
+}
+
+.gasketStreamsToBridgeVerticalLine {
+	width: 8px;
+	height: 100%;
+	&.left.active {
+		border-right: 2px solid colors.$editor-widget-border;
+	}
+	&.right.active {
+		border-left: 2px solid colors.$editor-widget-border;
+	}
+	&.input.active {
+		border-top: 2px solid colors.$editor-widget-border;
+	}
+	&.output.active {
+		border-bottom: 2px solid colors.$editor-widget-border;
+	}
+}
+
+.gasketStreamsToBridgeHorizontalLine {
+	flex: 1;
+	height: 100%;
+	position: relative;
+	&.active {
+		border-bottom: 2px solid colors.$editor-widget-border;
+	}
+}
+
+.gasketContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	align-self: stretch;
+	flex: 1;
+	&.left {
+		align-items: flex-end;
+	}
+	&.right {
+		align-items: flex-start;
+	}
+}
+
+.gasketBoxContainer {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+.gasketPhysicalConnections {
+	display: flex;
+	width: 100%;
+	height: 8px;
+	justify-content: flex-end;
+	&.left {
+		& .gasketPhysicalConnection {
+			position: relative;
+			cursor: pointer;
+			&::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 2px;
+				height: 100%;
+				border-left: 2px solid colors.$editor-widget-border;
+			}
+		}
+	}
+	&.right {
+		flex-direction: row-reverse;
+		& .gasketPhysicalConnection {
+			position: relative;
+			cursor: pointer;
+			&::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				right: 0;
+				width: 2px;
+				height: 100%;
+				border-right: 2px solid colors.$editor-widget-border;
+			}
+		}
+	}
+	& .input {
+		border-top: 2px solid colors.$editor-widget-border;
+		&.openOnSelect {
+			border-top-color: colors.$focus-border !important;
+		}
+		&.openOnHover {
+			border-top-color: colors.$button-foreground !important;
+		}
+	}
+	& .output {
+		border-bottom: 2px solid colors.$editor-widget-border;
+		&.openOnSelect {
+			border-bottom-color: colors.$focus-border !important;
+		}
+		&.openOnHover {
+			border-bottom-color: colors.$button-foreground !important;
+		}
+	}
+	.gasketPhysicalConnection {
+		width: 8px;
+		height: 8px;
+		position: relative;
+	}
+	.gasketEmptyConnection {
+		width: 8px;
+		height: 8px;
+	}
+	.gasketPhysicalConnectionTooltip {
+		width: 350px;
+		position: relative;
+	}
+	.gasketPhysicalConnectionTooltipGaskets {
+		@include fonts.label-l3;
+		color: colors.$description-foreground;
+		margin-left: 4px;
+		white-space: nowrap;
+	}
+	.gasketPhysicalConnectionTooltipContentItem {
+		display: flex;
+		gap: 16px;
+		.gasketPhysicalConnectionTooltipContentItemLabel {
+			@include fonts.label-l3;
+			color: colors.$description-foreground;
+			width: 110px;
+		}
+		.gasketPhysicalConnectionTooltipContentItemValue {
+			@include fonts.label-l3;
+			color: colors.$editor-widget-foreground;
+		}
+	}
+}
+
+.gasketBox {
+	display: flex;
+	height: 60px;
+	padding: 24px 16px 24px 24px;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+	align-self: stretch;
+	border-radius: layout.$default-border-radius;
+	border: 2px solid colors.$editor-widget-border;
+	box-sizing: border-box;
+	position: relative;
+	cursor: pointer;
+	&.hovered {
+		border-color: colors.$button-foreground !important;
+	}
+}
+
+.gasketInfoContainer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	align-self: stretch;
+	font-family: var(fonts.$default-font-family, 'Segoe UI Variable');
+}
+
+.gasketName {
+	width: 80px;
+	color: colors.$editor-widget-foreground;
+	@include fonts.heading-h3;
+}
+
+.gasketNumbers {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	@include fonts.label-l3;
+}
+
+.gasketBufferSizeContainer {
+	flex: 2;
+	display: flex;
+	gap: 4px;
+	flex-direction: column;
+}
+
+.gasketBufferSize {
+	position: relative;
+	display: flex;
+	height: 16px;
+	padding: 4px 8px 3px 8px;
+	justify-content: center;
+	align-items: center;
+	gap: 4px;
+	border-radius: layout.$default-border-radius;
+	border: 1px solid colors.$editor-widget-border;
+	color: colors.$editor-widget-foreground;
+	box-sizing: border-box;
+	min-width: 96px;
+	&.invalid {
+		border: 1px solid colors.$error-border;
+		color: colors.$error-foreground;
+	}
+}
+
+.gasketBufferSizeBar {
+	background: colors.$editor-widget-border;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: -1;
+	border-radius: layout.$default-border-radius;
+	&.invalid {
+		background: colors.$error-background !important;
+	}
+}
+
+.gasketStreamCountContainer {
+	flex: 1;
+}
+
+.gasketStreamCount {
+	display: flex;
+	height: 16px;
+	min-width: 32px;
+	padding: 3px 0 3px 8px;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 4px;
+	color: colors.$description-foreground;
+}
+
+.gasketErrorsContainer {
+	display: flex;
+	flex-direction: column;
+	padding-top: 8px;
+	gap: 4px;
+	align-self: stretch;
+	p {
+		@include fonts.body-b2;
+		color: colors.$error;
+	}
+}
+
+.gasketError {
+	color: colors.$error;
+	@include fonts.label-l3;
+}

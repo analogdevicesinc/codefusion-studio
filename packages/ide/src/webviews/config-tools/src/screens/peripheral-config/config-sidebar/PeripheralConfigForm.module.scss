@@ -43,3 +43,13 @@
 		color: colors.$disabled-foreground;
 	}
 }
+
+.dynamicFormContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+
+	:global([data-control-type='boolean']) {
+		display: none;
+	}
+}

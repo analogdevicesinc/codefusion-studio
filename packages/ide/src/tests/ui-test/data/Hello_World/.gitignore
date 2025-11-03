@@ -9,7 +9,7 @@
 flash.log
 
 # VS Code Files
-.vscode
+.vscode/launch.json
 
 # Build Files
 build/

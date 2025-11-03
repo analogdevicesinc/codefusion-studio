@@ -15,43 +15,86 @@
 
 import {VSCodeLink} from '@vscode/webview-ui-toolkit/react';
 
-import {default as DocumentLinks} from './documentation.json';
-
 import './documentation-panel.scss';
 import {
 	type TLocaleContext,
 	useLocaleContext
 } from '../../../../common/contexts/LocaleContext';
+import {useEffect, useMemo, useState} from 'react';
+import {request} from '../../../../common/api';
+import {type Documentation} from 'cfs-ccm-lib';
+
+const ITEMS_PER_COLUMN = 12;
 
 export function DocumentationPanel() {
+	const [isLoaded, setIsLoaded] = useState(false);
+	const [documentLinks, setDocumentLinks] = useState<Documentation[]>(
+		[]
+	);
+
+	useEffect(() => {
+		request('getSocDocumentationLinks')
+			.then(result => {
+				setDocumentLinks(result as Documentation[]);
+			})
+			.catch(err => {
+				setDocumentLinks([
+					{
+						name: 'Unable to retrieve documentation links. Reopen home-page',
+						categories: [],
+						url: ''
+					}
+				]);
+				console.error('Error fetching document links', err);
+			})
+			.finally(() => {
+				setIsLoaded(true);
+			});
+	}, []);
+
 	const l10n: TLocaleContext | undefined = useLocaleContext();
 
-	const renderLinks = (links: typeof DocumentLinks) =>
-		links.map(document => (
-			<VSCodeLink key={document.title} href={document.link}>
-				{document.title}
-			</VSCodeLink>
-		));
+	const groupedLinks = useMemo(
+		() =>
+			documentLinks.reduce<JSX.Element[][]>((chunks, link, index) => {
+				const computedLink = (
+					<VSCodeLink key={link.name} href={link.url}>
+						{link.name}
+					</VSCodeLink>
+				);
+
+				if (index % ITEMS_PER_COLUMN === 0) {
+					chunks.push([computedLink]);
+				} else {
+					chunks[chunks.length - 1].push(computedLink);
+				}
+
+				return chunks;
+			}, []),
+		[documentLinks]
+	);
 
 	return (
-		<div className='documentation-panel'>
+		<div>
 			<h2>{l10n?.documentation?.title}</h2>
-			<div className='documentation-links'>
-				<div className='column'>
-					{renderLinks(
-						DocumentLinks.slice(
-							0,
-							Math.ceil(DocumentLinks.length / 2)
-						)
-					)}
+			{!isLoaded && <div>Loading...</div>}
+			{isLoaded && (
+				<div className='documentation-container'>
+					{groupedLinks.map((group, index) => (
+						<div
+							// eslint-disable-next-line react/no-array-index-key
+							key={`group-${index}`}
+							className='documentation-column'
+						>
+							{group}
+						</div>
+					))}
 				</div>
-				<div className='column'>
-					{renderLinks(
-						DocumentLinks.slice(Math.ceil(DocumentLinks.length / 2))
-					)}
-				</div>
-			</div>
-			<VSCodeLink href='https://www.analog.com/'>
+			)}
+			<VSCodeLink
+				className='documentation-more'
+				href='https://www.analog.com/'
+			>
 				{l10n?.documentation?.seeMore?.title}
 			</VSCodeLink>
 		</div>

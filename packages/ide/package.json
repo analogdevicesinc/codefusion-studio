@@ -13,10 +13,10 @@
     "name": "Analog Devices Inc"
   },
   "license": "See LICENSE",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "engines": {
-    "vscode": "^1.89.0",
-    "node": "^18.x"
+    "vscode": "^1.90.0",
+    "node": "^20.x"
   },
   "keywords": [
     "Analog Devices",
@@ -61,7 +61,7 @@
       },
       {
         "viewType": "cfgtools.editor",
-        "displayName": "Package Editor",
+        "displayName": "System Planner",
         "selector": [
           {
             "filenamePattern": "*.cfsconfig"
@@ -105,6 +105,15 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "cfs.editor.sigmaStudioPlusProject",
+        "displayName": "SigmaStudio+ Project",
+        "selector": [
+          {
+            "filenamePattern": "*.ssprj"
+          }
+        ]
       }
     ],
     "viewsContainers": {
@@ -140,6 +149,18 @@
           "type": "tree",
           "contextualTitle": "DeviceTree"
         }
+      ],
+      "debug": [
+        {
+          "id": "cfs.gdbToolboxView",
+          "name": "GDB Toolbox",
+          "type": "tree"
+        },
+        {
+          "id": "cfs.coreDumpTreeView",
+          "name": "Core Dump Analysis",
+          "type": "tree"
+        }
       ]
     },
     "viewsWelcome": [
@@ -158,6 +179,14 @@
       {
         "view": "cfs.deviceTreeView",
         "contents": "Select a Zephyr project in the Context View or open a DTS file"
+      },
+      {
+        "view": "cfs.gdbToolboxView",
+        "contents": "Loading GDB Toolbox..."
+      },
+      {
+        "view": "cfs.coreDumpTreeView",
+        "contents": "Loading Core Dump Analysis..."
       }
     ],
     "terminal": {
@@ -192,14 +221,6 @@
       {
         "command": "cfs.openWalkthrough",
         "title": "(CFS) Open CodeFusion Studio Walkthrough"
-      },
-      {
-        "command": "cfs.selectProgramFile",
-        "title": "(CFS) Select the program to debug"
-      },
-      {
-        "command": "cfs.selectRiscvProgramFile",
-        "title": "(CFS) Select the RISCV program to debug"
       },
       {
         "command": "cfs.debug.start",
@@ -275,7 +296,7 @@
       },
       {
         "command": "cfs.viewWorkspaceConfigFileSource",
-        "title": "(CFSworkspace) View Config File Source (JSON)",
+        "title": "(CFS) View Workspace File Source (JSON)",
         "category": "Workspace Creation",
         "icon": {
           "light": "resources/assets/view-source-file.svg",
@@ -289,19 +310,180 @@
         "icon": "$(go-to-file)"
       },
       {
+        "command": "cfs.newWorkspace",
+        "title": "(CFS) Create Workspace",
+        "category": "Workspace Creation"
+      },
+      {
+        "command": "cfs.browseMsdkExamples",
+        "title": "Browse MSDK Examples",
+        "category": "CFS",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "cfs.runDefaultBuildTasks",
         "title": "Run Default Build Tasks"
+      },
+      {
+        "command": "cfs.refreshActionsPanel",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cfs.installPackage",
+        "title": "(CFS) Install Package"
+      },
+      {
+        "command": "cfs.uninstallPackage",
+        "title": "(CFS) Uninstall Package"
+      },
+      {
+        "command": "cfs.manageRemotes",
+        "title": "(CFS) Manage Package Remotes"
+      },
+      {
+        "command": "cfs.addRemote",
+        "title": "(CFS) Add Custom Package Remote"
+      },
+      {
+        "command": "cfs.removeRemote",
+        "title": "(CFS) Remove Custom Package Remote"
+      },
+      {
+        "command": "cfs.logoutRemote",
+        "title": "(CFS) Logout Custom Package Remote"
+      },
+      {
+        "command": "cfs.loginRemote",
+        "title": "(CFS) Login Custom Package Remote"
+      },
+      {
+        "command": "cfs.zephelin.captureProfilerTrace",
+        "title": "Capture Profiler Trace (Zephelin)",
+        "category": "Zephelin"
+      },
+      {
+        "command": "cfs.zephelin.convertTraceCtfToTef",
+        "title": "Prepare CTF Trace for Visualization (Zephelin)",
+        "category": "Zephelin"
+      },
+      {
+        "command": "cfs.runGdbToolboxScript",
+        "title": "Run GDB Toolbox Script"
+      },
+      {
+        "command": "cfs.editGdbScript",
+        "title": "Edit Script",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "cfs.filterGdbToolboxScripts",
+        "title": "Filter Scripts",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "cfs.createGdbUserScript",
+        "title": "Create Script",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "cfs.clearGdbToolboxFilter",
+        "title": "Clear Filter",
+        "icon": "$(close)"
+      },
+      {
+        "command": "cfs.retrieveCoreDump",
+        "title": "Retrieve Core Dump (JLink)",
+        "icon": "resources/assets/retrieve-core-dump.svg"
+      },
+      {
+        "command": "cfs.retrieveAndAnalyzeCoreDump",
+        "title": "Retrieve and Analyze Core Dump",
+        "icon": "resources/assets/retrieve-and-analyze-core-dump.svg"
+      },
+      {
+        "command": "cfs.analyzeExistingCoreDump",
+        "title": "Analyze Existing Core Dump",
+        "icon": "resources/assets/analyze-existing-core-dump.svg"
+      },
+      {
+        "command": "cfs.downloadCoreDumpReport",
+        "title": "Export Core Dump Report",
+        "icon": "resources/assets/extract-core-dump-report.svg"
+      },
+      {
+        "command": "cfs.explorer.openWithSSPlus",
+        "title": "Open with SigmaStudio+",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "cfs.ccm.myanalog.login",
+        "title": "(CFS) myAnalog Login"
+      },
+      {
+        "command": "cfs.ccm.myanalog.logout",
+        "title": "(CFS) myAnalog Logout"
+      },
+      {
+        "command": "cfs.ccm.myanalog.status",
+        "title": "(CFS) myAnalog Status"
+      },
+      {
+        "command": "cfs.coreDumpCopyAddress",
+        "title": "Copy Address",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "cfs.coreDumpCopyFilePath",
+        "title": "Copy File Path",
+        "icon": "$(copy)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "submenu": "CodeFusionStudioMenu",
+          "command": "cfs.explorer.openWithSSPlus",
           "group": "navigation",
-          "when": "explorerResourceIsFolder"
+          "when": "resourceExtname == '.ssprj'"
         }
       ],
-      "CodeFusionStudioMenu": [],
+      "view/title": [
+        {
+          "command": "cfs.refreshActionsPanel",
+          "when": "view == cfs.actionsView",
+          "group": "navigation"
+        },
+        {
+          "command": "cfs.filterGdbToolboxScripts",
+          "when": "view == cfs.gdbToolboxView && cfs.gdbToolbox.hasScripts",
+          "group": "navigation"
+        },
+        {
+          "command": "cfs.createGdbUserScript",
+          "when": "view == cfs.gdbToolboxView && cfs.gdbToolbox.hasScripts",
+          "group": "navigation"
+        },
+        {
+          "command": "cfs.retrieveAndAnalyzeCoreDump",
+          "when": "view == cfs.coreDumpTreeView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cfs.analyzeExistingCoreDump",
+          "when": "view == cfs.coreDumpTreeView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cfs.retrieveCoreDump",
+          "when": "view == cfs.coreDumpTreeView",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cfs.downloadCoreDumpReport",
+          "when": "view == cfs.coreDumpTreeView && cfs.coreDumpViewsVisible",
+          "group": "navigation@4"
+        }
+      ],
       "view/item/context": [
         {
           "command": "cfs.debug.start",
@@ -327,6 +509,26 @@
           "command": "cfs.copyAndEditTask",
           "when": "view == cfs.actionsView && viewItem == copy-and-edit-task",
           "group": "inline"
+        },
+        {
+          "command": "cfs.editGdbScript",
+          "when": "view == cfs.gdbToolboxView && viewItem == gdbScript",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.clearGdbToolboxFilter",
+          "when": "view == cfs.gdbToolboxView && viewItem == gdbToolboxFilterBanner",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.coreDumpCopyAddress",
+          "when": "view == cfs.coreDumpTreeView && viewItem == crash-address",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.coreDumpCopyFilePath",
+          "when": "view == cfs.coreDumpTreeView && viewItem == crash-location",
+          "group": "inline"
         }
       ],
       "editor/title": [
@@ -336,18 +538,12 @@
           "group": "navigation"
         },
         {
-          "when": "resourceScheme == 'file' && resourceExtname == '.cfsworkspace'",
+          "when": "resourceScheme == 'file' && resourceFilename =~ /.*\\.cfsworkspace/",
           "command": "cfs.viewWorkspaceConfigFileSource",
           "group": "navigation"
         }
       ]
     },
-    "submenus": [
-      {
-        "id": "CodeFusionStudioMenu",
-        "label": "CodeFusion Studio"
-      }
-    ],
     "configuration": [
       {
         "title": "General",
@@ -390,6 +586,33 @@
             "scope": "machine-overridable",
             "order": 0
           },
+          "cfs.telemetry.enable": {
+            "type": "boolean",
+            "default": null,
+            "markdownDescription": "Enable telemetry for CodeFusion Studio. Reporting will also respect the global telemetry.telemetryLevel setting. Read more about the [data we collect](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/about/telemetry/) and our [privacy statement](https://www.analog.com/en/who-we-are/legal-and-risk-oversight/data-privacy/privacy-policy.html).",
+            "scope": "machine-overridable"
+          },
+          "cfs.telemetry.userId": {
+            "type": "string",
+            "default": "",
+            "description": "Unique user ID for telemetry. This is generated on first run and should not be changed.",
+            "scope": "machine-overridable"
+          },
+          "cfs.environment": {
+            "type": "object",
+            "default": {},
+            "description": "Environment variables to set for CodeFusion Studio.",
+            "scope": "machine-overridable",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "cfs.xtensa.core": {
+            "type": "string",
+            "default": "",
+            "description": "Xtensa core config used for building and debugging Xtensa applications.",
+            "scope": "resource"
+          },
           "cfs.programFile": {
             "type": "string",
             "default": null,
@@ -428,21 +651,14 @@
           "cfs.catalogManager.checkForUpdates": {
             "type": "boolean",
             "order": 0,
-            "default": false,
+            "default": true,
             "description": "Automatically check for updates",
-            "scope": "machine-overridable"
-          },
-          "cfs.catalogManager.url": {
-            "type": "string",
-            "order": 1,
-            "default": "https://ccm.codefusion.app.analog.com",
-            "description": "URL for the catalog manager service.",
             "scope": "machine-overridable"
           },
           "cfs.catalogManager.catalogLocation": {
             "type": "string",
             "order": 2,
-            "default": "${userHome}/cfs/1.1.0/.catalog",
+            "default": "${userHome}/cfs/2.0.0/.catalog",
             "description": "Path to the directory where the catalog catalog will be stored.",
             "scope": "machine-overridable"
           }
@@ -474,11 +690,17 @@
       {
         "title": "Config Tools",
         "properties": {
-          "cfgtools.cfsutil.path": {
-            "type": "string",
-            "default": null,
-            "description": "Path to the cfsutil CLI command.",
-            "scope": "machine"
+          "cfs.cfgtools.views.aiTools.showDeleteConfirmDialog": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the confirm dialog for AI models be shown when deleting a model?",
+            "scope": "resource"
+          },
+          "cfs.cfgtools.views.aiTools.showNeuroweaveCodegenTimeWarning": {
+            "type": "boolean",
+            "default": true,
+            "description": "Should the confirm dialog for long generation time when using the neuroweave backend be shown when pressing generate code?",
+            "scope": "resource"
           }
         }
       },
@@ -553,7 +775,6 @@
           "cfs.plugins.searchDirectories": {
             "type": "array",
             "default": [
-              "${config:cfs.sdk.path}/Plugins",
               "${userHome}/cfs/plugins"
             ],
             "description": "Paths to search for plugins.",
@@ -564,9 +785,6 @@
           },
           "cfs.plugins.dataModelSearchDirectories": {
             "type": "array",
-            "default": [
-              "${config:cfs.sdk.path}/Utils/cfsutil/dist/socs"
-            ],
             "description": "Paths to search for SoC data models.",
             "items": {
               "type": "string"
@@ -608,6 +826,11 @@
               "Baremetal"
             ],
             "scope": "resource"
+          },
+          "cfs.project.toolchain.id": {
+            "type": "string",
+            "description": "Toolchain ID for the project. Used to resolve toolchain paths dynamically",
+            "scope": "resource"
           }
         }
       },
@@ -623,7 +846,7 @@
           "cfs.jlink.device": {
             "type": "string",
             "default": null,
-            "description": "Device used for JLink debug sessions",
+            "description": "Device used for JLink debug sessions.",
             "scope": "resource"
           },
           "cfs.ozone.executable": {
@@ -668,7 +891,6 @@
           "cfs.toolchain.xtensa.path": {
             "type": "string",
             "order": 4,
-            "default": "${config:cfs.sdk.path}/Tools/xtensa/RJ-2024.4/XtensaTools",
             "description": "Path to the Xtensa toolchain",
             "scope": "resource"
           }
@@ -681,7 +903,8 @@
             "type": "array",
             "default": [
               "${config:cfs.sdk.path}/Utils",
-              "${config:cfs.sdk.path}/Tools"
+              "${config:cfs.sdk.path}/Tools",
+              "${config:cfs.sdk.path}/SDK"
             ],
             "description": "Paths to search for tools and toolchains.",
             "items": {
@@ -704,8 +927,71 @@
           "cfs.zephyr.workspace.path": {
             "type": "string",
             "order": 2,
-            "default": "${config:cfs.sdk.path}/SDK/zephyr/zephyr",
             "description": "Path to the Zephyr workspace.",
+            "scope": "machine-overridable"
+          }
+        }
+      },
+      {
+        "title": "Core Dump Analysis",
+        "properties": {
+          "cfs.coreDump.binFile": {
+            "type": "string",
+            "default": "core-dump.bin",
+            "description": "Path to the binary file to use for Zephyr core dump retrieval and analysis.",
+            "scope": "resource"
+          },
+          "cfs.coreDump.address": {
+            "type": "string",
+            "default": "0x102F0000",
+            "description": "Start address in flash where the Zephyr core dump is stored.",
+            "scope": "resource"
+          },
+          "cfs.coreDump.size": {
+            "type": "string",
+            "default": "0x10000",
+            "description": "Size of the Zephyr core dump to retrieve from flash.",
+            "scope": "resource"
+          },
+          "cfs.coreDump.elfFile": {
+            "type": "string",
+            "default": "${config:cfs.programFile}",
+            "description": "Path to the ELF file to use for Zephyr core dump analysis.",
+            "scope": "resource"
+          },
+          "cfs.coreDump.logFile": {
+            "type": "string",
+            "default": "",
+            "description": "Path to the log file to use for Zephyr core dump analysis.",
+            "scope": "resource"
+          },
+          "cfs.coreDump.projectFolder": {
+            "type": "string",
+            "default": "${workspaceFolder}",
+            "description": "Project folder for core dump analysis. Used for multi-project workspaces.",
+            "scope": "resource"
+          },
+          "cfs.zephyrCoreDumpScriptsPath": {
+            "type": "string",
+            "default": "${config:cfs.sdk.path}/SDK/zephyr/zephyr/scripts/coredump",
+            "description": "Path to Zephyr Python utilities/scripts for core dump analysis.",
+            "scope": "machine-overridable"
+          },
+          "cfs.coreDump.gdbServerPort": {
+            "type": "string",
+            "default": "1234",
+            "description": "GDB Server port used for core dump analysis.",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "SigmaStudio+",
+        "properties": {
+          "cfs.sigmaStudioPlus.path": {
+            "type": "string",
+            "default": "C:/Analog Devices/SigmaStudioPlus-Rel2.4.0/",
+            "description": "Path to your SigmaStudio+ installation.",
             "scope": "machine-overridable"
           }
         }
@@ -888,6 +1174,83 @@
                 "continue"
               ]
             }
+          },
+          {
+            "label": "CFS: Debug with JlinkGDBServer and JLink (Xtensa)",
+            "description": "Launch JLink and debug an Xtensa application using JlinkGDBServer and Cortex Debug.",
+            "body": {
+              "name": "CFS: Debug with JlinkGDBServer and JLink (Xtensa)",
+              "executable": "^\"\\${config:cfs.programFile}\"",
+              "cwd": "^\"\\${config:cfs.debugPath}\"",
+              "request": "attach",
+              "type": "cortex-debug",
+              "showDevDebugOutput": "both",
+              "servertype": "jlink",
+              "windows": {
+                "serverpath": "^\"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCL.exe\"",
+                "gdbPath": "^\"\\${config:cfs.sdk.path}/Tools/xtensa/RJ-2024.4/XtensaTools/bin/xt-gdb.exe\""
+              },
+              "linux": {
+                "serverpath": "^\"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCLExe\"",
+                "gdbPath": "^\"\\${config:cfs.sdk.path}/Tools/xtensa/RJ-2024.4/XtensaTools/bin/xt-gdb\""
+              },
+              "device": "^\"\\${config:cfs.jlink.device}\"",
+              "interface": "swd",
+              "svdPath": "^\"\\${config:cfs.cmsis.svdFile}\"",
+              "gdbTarget": "localhost:3334",
+              "preAttachCommands": [
+                "set logging overwrite on",
+                "set logging file debug-xtensa.log",
+                "set logging on",
+                "set remotetimeout 60",
+                "tbreak main"
+              ],
+              "postAttachCommands": [
+                "continue"
+              ],
+              "preLaunchTask": "CFS: build",
+              "overrideAttachCommands": [
+                "monitor halt",
+                "monitor reset",
+                "-target-download"
+              ],
+              "overrideResetCommands": [
+                "monitor reset"
+              ],
+              "overrideRestartCommands": [
+                "monitor reset"
+              ],
+              "debuggerArgs": [
+                "--xtensa-core=${config:cfs.xtensa.core}"
+              ]
+            }
+          },
+          {
+            "label": "CFS: Launch Core Dump Analysis",
+            "description": "Launch a post-mortem core dump analysis using Cortex-Debug.",
+            "body": {
+              "name": "CFS: Launch Core Dump Analysis",
+              "type": "cortex-debug",
+              "request": "launch",
+              "servertype": "external",
+              "linux": {
+                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
+                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump"
+              },
+              "windows": {
+                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py.exe",
+                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe"
+              },
+              "osx": {
+                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
+                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump"
+              },
+              "gdbTarget": "localhost:${config:cfs.coreDump.gdbServerPort}",
+              "svdPath": "${config:cfs.cmsis.svdFile}",
+              "executable": "^\"\\${workspaceFolder}/build/zephyr/zephyr.elf\"",
+              "cwd": "^\"\\${workspaceFolder}\"",
+              "overrideLaunchCommands": []
+            }
           }
         ]
       }
@@ -918,36 +1281,39 @@
     "useYarn": false
   },
   "scripts": {
-    "cfgtools:dev": "vite --config ./vite.config.config-tools.ts",
-    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.ts ./src/webviews/config-tools/**/*.tsx",
+    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.ts ./src/webviews/config-tools/**/*.tsx && tsc --noEmit -p ./src/webviews/config-tools.tsconfig.json",
     "cfgtools:open-cypress": "cypress open --component",
     "cfgtools:run-cypress": "cypress run --component --browser electron --spec './src/webviews/config-tools/**/*.cy.ts*'",
     "cfgtools:run-extester": "yarn cfgtools:compile-tests && node out/tests/ui-test-config-tools/runTest.js",
-    "cfgtools:build": "vite build --config ./vite.config.config-tools.ts",
-    "cfgtools:compile-tests": "tsc -p src/tests/ui-test-config-tools/tsconfig.json",
-    "ide:build": "vite build --config ./vite.config.config-tools.ts",
-    "ide:dev": "vite --config ./vite.config.config-tools.ts",
+    "cfgtools:build": "vite build --config ./vite.config.config-tools.mts",
+    "cfgtools:build-dev": "vite build --mode development --config ./vite.config.config-tools.mts --watch",
+    "cfgtools:compile-tests": "tsc -p src/tests/ui-test-config-tools/tsconfig.json && yarn ws:data-models generate-index",
+    "ide:build": "vite build --config ./vite.config.config-tools.mts && copyfiles .env out/",
+    "ide:dev": "vite --config ./vite.config.config-tools.mts",
     "ide:run-extester": "yarn ide:compile-tests && node out/tests/ui-test/tests/ui-test/runTest.js",
     "ide:compile-tests": "tsc -p src/tests/ui-test/tsconfig.json",
-    "elf:dev": "vite --config ./vite.config.elf-explorer.ts",
-    "elf:build": "vite build --config ./vite.config.elf-explorer.ts",
-    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.ts src/webviews/elf-explorer/**/*.tsx",
-    "home-page:dev": "vite --config ./vite.config.home-page.ts",
-    "home-page:build": "vite build --config ./vite.config.home-page.ts",
-    "home-page:lint": "eslint ./src/webviews/home-page/**/*.ts ./src/webviews/home-page/**/*.tsx",
-    "wrksp:dev": "vite --config ./vite.config.workspace-creation.ts",
-    "wrksp:build": "vite build --config ./vite.config.workspace-creation.ts",
-    "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.ts src/webviews/workspace-creation/**/*.tsx",
+    "elf:dev": "vite --config ./vite.config.elf-explorer.mts",
+    "elf:build": "vite build --config ./vite.config.elf-explorer.mts",
+    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.ts src/webviews/elf-explorer/**/*.tsx && tsc --noEmit -p ./src/webviews/elf.tsconfig.json",
+    "elf:run-cypress": "cypress run --component --browser electron --spec './src/webviews/elf-explorer/**/*.cy.ts*'",
+    "home-page:dev": "vite --config ./vite.config.home-page.mts",
+    "home-page:build": "vite build --config ./vite.config.home-page.mts",
+    "home-page:build-dev": "vite build --mode development --config ./vite.config.home-page.mts --watch",
+    "home-page:lint": "eslint ./src/webviews/home-page/**/*.ts ./src/webviews/home-page/**/*.tsx && tsc --noEmit -p ./src/webviews/home.tsconfig.json",
+    "wrksp:build": "vite build --config ./vite.config.workspace-creation.mts",
+    "wrksp:build-dev": "vite build --mode development --config ./vite.config.workspace-creation.mts --watch",
+    "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.ts ./src/webviews/workspace-creation/**/*.tsx && tsc --noEmit -p ./src/webviews/workspace.tsconfig.json",
     "wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/workspace-creation/**/*.cy.tsx'",
     "wrksp:run-extester": "yarn wrksp:compile-tests && node out/tests/ui-test-workspace-creation/runTest.js",
-    "wrksp:compile-tests": "tsc -p src/tests/ui-test-workspace-creation/tsconfig.json",
-    "webviews:lint-common": "eslint src/webviews/common/**/*.ts src/webviews/common/**/*.tsx",
+    "wrksp:compile-tests": "tsc -p src/tests/ui-test-workspace-creation/tsconfig.json && yarn ws:data-models generate-index",
+    "ssplus:build": "vite build --config ./vite.config.sigma-studio-plus-project.mts",
+    "ssplus:lint": "eslint ./src/webviews/sigma-studio-plus-project/**/*.tsx && tsc --noEmit -p ./src/webviews/sigma-studio-plus-project.tsconfig.json",
+    "webviews:lint-common": "eslint src/webviews/common/**/*.ts src/webviews/common/**/*.tsx && tsc --noEmit -p src/webviews/common/tsconfig.json",
     "build-local-deps": "yarn ws:react-lib build && yarn ws:elf-parser build && yarn ws:lib build && yarn ws:ccm-lib build",
     "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests",
     "vite:extension": "vite build --mode extension",
-    "vite:webview": "vite build --mode webview",
     "vite:watch": "vite build --watch",
-    "dev:config-tools": "vite --config ./vite.config.config-tools.ts",
+    "dev:config-tools": "vite --config ./vite.config.config-tools.mts",
     "pretest": "yarn run build:extension",
     "lint": "yarn run stylelint && yarn run eslint && yarn run markdownlint",
     "stylelint": "npx stylelint \"**/src/**/*.{scss,css}\" --fix",
@@ -957,10 +1323,12 @@
     "test:ui": "extest setup-and-run \"out/tests/ui-test/**/*-test.js\" -c 1.85.2 -u --mocha_config .mocharc.js",
     "test:unit": "yarn run pretest && vscode-test --code-version 1.85.2",
     "package": "vsce package --baseImagesUrl https://github.com/analogdevicesinc/codefusion-studio/raw/HEAD/packages/ide",
-    "build:extension": "yarn vite:extension && yarn vite:webview && yarn cfgtools:build && yarn elf:build && yarn home-page:build && yarn wrksp:build && yarn ide:build"
+    "auth-cfg": "node build-scripts/auth-config.js > auth.json",
+    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn home-page:build && yarn wrksp:build && yarn ssplus:build && yarn ide:build && yarn auth-cfg"
   },
   "devDependencies": {
     "@types/chai": "^4.3.10",
+    "@types/jexl": "^2",
     "@types/lodash.debounce": "^4.0.8",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.27",
@@ -968,7 +1336,7 @@
     "@types/react": "^18.2.62",
     "@types/react-dom": "^18.2.19",
     "@types/styled-components": "^5.1.29",
-    "@types/vscode": "^1.73.0",
+    "@types/vscode": "^1.90.0",
     "@types/vscode-webview": "^1.57.3",
     "@typescript-eslint/eslint-plugin": "^6.18.0",
     "@typescript-eslint/parser": "^6.19.1",
@@ -979,10 +1347,13 @@
     "@vscode/test-electron": "2.3.8",
     "@vscode/vsce": "^3.2.2",
     "chai": "^4.3.7",
+    "clipboardy": "2.3.0",
     "concurrently": "^8.2.2",
+    "copyfiles": "^2.4.1",
     "css-loader": "^6.8.1",
     "cypress": "^13.8.1",
     "cypress-real-events": "^1.13.0",
+    "dotenv": "16.5.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-standard-with-typescript": "^34.0.1",
@@ -1004,6 +1375,7 @@
     "eslint-plugin-unused-imports": "^3.0.0",
     "eslint-plugin-yml": "^1.11.0",
     "focus-trap-react": "^10.2.3",
+    "jexl": "^2.3.0",
     "markdownlint-cli": "^0.40.0",
     "mocha": "^10.1.0",
     "prettier": "^2.8.8",
@@ -1012,6 +1384,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.69.5",
+    "shx": "^0.4.0",
     "stylelint": "^16.2.1",
     "stylelint-config-recess-order": "^4.4.0",
     "stylelint-config-standard": "^36.0.0",
@@ -1027,13 +1400,14 @@
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "cfs-ccm-lib": "workspace:*",
     "cfs-lib": "workspace:*",
+    "cfs-package-manager": "workspace:^",
     "cfs-react-library": "workspace:^",
-    "clipboardy": "2.3.0",
     "echarts": "^5.5.0",
     "echarts-for-react": "^3.0.2",
     "elf-parser": "workspace:^",
     "glob": "^10.4.1",
     "htmlparser2": "^9.1.0",
+    "jsonc-parser": "^3.3.1",
     "lodash.debounce": "^4.0.8",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
@@ -1055,6 +1429,5 @@
     "#fonts": "../../packages/react-library/src/styles/_fonts.scss",
     "#layout": "../../packages/react-library/src/styles/_layout.scss",
     "#table": "../../packages/react-library/src/styles/_table.scss"
-  },
-  "stableVersion": "1.1.0-38"
+  }
 }

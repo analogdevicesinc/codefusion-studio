@@ -17,23 +17,10 @@ import {type Soc} from '../../../../../common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import SignalEntry from './SignalEntry';
 
-const mock = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const mock = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('Signal Entry', () => {
-	beforeEach(() => {
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(mock.Packages[0])
-		);
-
-		window.localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
-	});
-
 	it('should not allow signal configuration when there is a signal group', () => {
 		const mockSignal = 'CTS';
 		const mockPeripheral = 'UART0';

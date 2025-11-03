@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./elf-explorer/**/*.ts",
+		"./elf-explorer/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./custom.d.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

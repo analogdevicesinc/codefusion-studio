@@ -26,7 +26,7 @@ abstract class CfsCustomEditor implements vscode.CustomTextEditorProvider {
 
   constructor(context: vscode.ExtensionContext) {}
 
-  static register(context: vscode.ExtensionContext): vscode.Disposable {
+  static register(...args: any[]): vscode.Disposable {
     throw new Error("Method not implemented.");
   }
 

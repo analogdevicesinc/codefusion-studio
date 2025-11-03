@@ -13,7 +13,7 @@
  *
  */
 import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
-import PeripheralListSide from './side/Side';
+import SideListContainer from './side-list-container/side-list-container';
 import styles from './PeripheralConfig.module.scss';
 import CoreSummary from './core-summary/CoreSummary';
 import ConfigSidebar from './config-sidebar/ConfigSidebar';
@@ -78,7 +78,7 @@ function PeripheralConfig() {
 					id='peripheral-navigation'
 					style={{height: '100%'}}
 				>
-					<PeripheralListSide />
+					<SideListContainer />
 				</div>
 
 				<CoreSummary />

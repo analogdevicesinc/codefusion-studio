@@ -1,5 +1,4 @@
 import type {Register, RegisterDictionary} from '@common/types/soc';
-import {getRegisters} from './api';
 
 export let registers: Register[] | undefined;
 export let registerDictionary: RegisterDictionary[] = [];
@@ -17,7 +16,6 @@ function populateRegisterDictionary(
 			0
 		),
 		size: register.Size,
-		svg: `${(window as any).__DEV_SOC__?.Name}-${(window as any).__DEV_SOC__?.Packages?.[0]?.Name}/${register.Svg}`,
 		fields: register.Fields.map((field, fieldIdx) => ({
 			id: `${field.Name}-${fieldIdx}`,
 			name: field.Name,
@@ -38,39 +36,26 @@ function populateRegisterDictionary(
 	}));
 }
 
-if (import.meta.env.MODE === 'development') {
-	registers = (window as any).__DEV_SOC__?.Registers ?? [];
+/**
+ * Initializes the register dictionary with the provided registers.
+ * Should be called once at app startup.
+ */
+export function initializeRegisterDictionary(
+	registersData: Register[] | undefined
+) {
+	resetRegisterDictionary();
 
-	if ((window as any).Cypress) {
-		// Cypress is running, so we can use the mock data
-		const localStorageRegisters = localStorage.getItem('Registers');
+	registers = registersData;
 
-		if (localStorageRegisters) {
-			registers = JSON.parse(localStorageRegisters);
-		}
-	}
-} else {
-	registers = await getRegisters();
-}
-
-if (Array.isArray(registers)) {
-	registerDictionary = populateRegisterDictionary(registers);
+	registerDictionary = Array.isArray(registers)
+		? populateRegisterDictionary(registers)
+		: [];
 }
 
 // Function to get registerDictionary, with fallback to localStorage
 export function getRegisterDictionary() {
 	if (registerDictionary.length === 0) {
-		// Attempt to populate the register dictionary from localStorage (for testing purposes)
-		const localStorageRegisters = localStorage.getItem('Registers');
-
-		if (localStorageRegisters) {
-			const parsedRegisters: Register[] = JSON.parse(
-				localStorageRegisters
-			);
-
-			registerDictionary =
-				populateRegisterDictionary(parsedRegisters);
-		}
+		registerDictionary = populateRegisterDictionary(registers ?? []);
 	}
 
 	return registerDictionary;

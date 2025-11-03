@@ -1,15 +1,16 @@
 import {test, expect} from '@oclif/test';
-import {CfsWorkspace} from 'cfs-plugins-api';
+import type {CfsWorkspace} from 'cfs-lib';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {CFS_PLUGINS_PATH} from '../../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('workspace:create', () => {
   let cfsworkspace: CfsWorkspace;
-  const pluginsPath = path.resolve(__dirname, '../utils/plugins');
+  const pluginsPath = path.resolve(__dirname, '..', CFS_PLUGINS_PATH);
   const workspacePath = path.resolve(
     __dirname,
     'sample.cfsworkspace'

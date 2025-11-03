@@ -1,7 +1,6 @@
 const path = require('path');
 
 module.exports = {
-	root: true,
 	reportUnusedDisableDirectives: true,
 	overrides: [
 		{

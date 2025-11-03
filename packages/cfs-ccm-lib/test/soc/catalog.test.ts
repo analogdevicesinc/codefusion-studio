@@ -24,9 +24,14 @@ import _ from 'lodash';
 import path from 'node:path';
 import { promises as fs, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { RequestOptions } from 'node:http';
 import { ZodError } from 'zod';
 
-import { CfsApiClient, SocCatalog } from '../../src/index.js';
+import {
+    CfsApiClient,
+    PublicAuthorizer,
+    SocCatalog,
+} from '../../src/index.js';
 import {
     CatalogError,
     DataStoreError,
@@ -34,7 +39,10 @@ import {
     StoreItem,
 } from '../../src/catalog/types.js';
 
-import { LIB_NAME, LIB_VERSION } from '../../src/config/constants.js';
+import {
+    LIB_NAME,
+    LIB_VERSION,
+} from '../../src/config/constants.cjs';
 
 use(chaiAsPromised);
 
@@ -133,7 +141,7 @@ let tempCatalogStore: () => MockDataStore;
 
 // Mock implementation of DataStore
 class MockDataStore implements DataStore {
-    itemTag: string;
+    readonly itemTag = 'MockItem';
     private data: Map<string, StoreItem>;
     private metadata?: Record<string, unknown> = undefined;
     #closeCalled = false;
@@ -258,6 +266,7 @@ class MockDataStore implements DataStore {
 
 class ErroringDataStore implements DataStore {
     errorType: DataStoreError['type'];
+    readonly itemTag = 'MockItem';
     constructor(dirname: string) {
         const parentDir = path
             .relative(process.cwd(), dirname)
@@ -271,7 +280,6 @@ class ErroringDataStore implements DataStore {
         this.errorType =
             parentDir === 'invalidData' ? 'INVALID_DATA' : 'IO_ERROR';
     }
-    itemTag: string;
 
     private _err(): DataStoreError {
         return new DataStoreError({
@@ -671,6 +679,74 @@ const setupTestData = () => {
                                 },
                                 extensions: ['ext'],
                                 dataModelCoreID: 'CM0',
+                            },
+                        ],
+                        boards: [],
+                        packages: [],
+                        documentation: [],
+                        media: [],
+                    },
+                ],
+            ],
+        ],
+        [
+            'deep_optional_prop', // deep optional props included/excluded
+            [
+                [
+                    'soc1Id',
+                    {
+                        id: 'soc1Id',
+                        name: 'soc1Name',
+                        description: 'soc1Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc1Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                                supportsTrustZone: true,
+                            },
+                            {
+                                id: 'core1',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc1Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                                supportsTrustZone: false,
+                            },
+                            {
+                                id: 'core2',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc1Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                                // nil supportsTrustZone
                             },
                         ],
                         boards: [],
@@ -1258,7 +1334,7 @@ const mockApiData = (response: string): StoreItem[] => {
 // setup the nock scope routes/methods to list and get SoCs
 const setupNockMocks = (scope: nock.Scope, socData: StoreItem[]) => {
     scope
-        .get('/socs') // get list of SoCs
+        .get(`/socs?cfsVersion=${LIB_VERSION}`) // get list of SoCs
         .reply(200, {
             items: socData.map((soc) => ({
                 id: soc.id,
@@ -1268,7 +1344,7 @@ const setupNockMocks = (scope: nock.Scope, socData: StoreItem[]) => {
         });
     socData.forEach((soc: StoreItem) => {
         scope
-            .get(`/socs/${soc.id}`) // get a specific SoC
+            .get(`/socs/${soc.id}?cfsVersion=${LIB_VERSION}`) // get a specific SoC
             .reply(200, { item: soc });
     });
 };
@@ -1282,6 +1358,7 @@ describe('SocCatalog tests', async () => {
         // (using default public auth and no cache)
         baseUrl: API_URL,
         isCache: false,
+        authorizer: new PublicAuthorizer(),
     } as const;
 
     // catalog defaults
@@ -1322,9 +1399,9 @@ describe('SocCatalog tests', async () => {
     let updatedOfflineCatalogStore: () => MockDataStore;
 
     let nockScope: nock.Scope;
-    const nockListener = (req) => {
+    const nockListener = (req: { options: RequestOptions }) => {
         // Fail the test if any un-mocked API call is made
-        expect(req.hostname).to.not.equal(
+        expect(req.options.hostname).to.not.equal(
             API_URL.hostname,
             `no matching mocks for hostname ${API_URL.hostname}`,
         );
@@ -1602,7 +1679,7 @@ describe('SocCatalog tests', async () => {
 
                 // now throw an error from the API
                 nockScope
-                    .get('/socs')
+                    .get(`/socs?cfsVersion=${LIB_VERSION}`)
                     .replyWithError('Error from API');
 
                 await expect(populatedOnlineCatalog.updateAvailable())
@@ -1666,7 +1743,7 @@ describe('SocCatalog tests', async () => {
 
                 // now throw an error from the API
                 nockScope
-                    .get('/socs')
+                    .get(`/socs?cfsVersion=${LIB_VERSION}`)
                     .replyWithError('Error from API');
 
                 await expect(populatedOnlineCatalog.refresh())
@@ -1693,7 +1770,7 @@ describe('SocCatalog tests', async () => {
 
                 // now throw an error from the API
                 nockScope
-                    .get('/socs')
+                    .get(`/socs?cfsVersion=${LIB_VERSION}`)
                     .replyWithError('Error from API');
 
                 await expect(populatedOnlineCatalog.refresh())
@@ -1787,14 +1864,21 @@ describe('SocCatalog tests', async () => {
                 await emptyOnlineCatalog.refresh();
                 await expect(emptyOnlineCatalog.getMetadata())
                     .to.eventually.have.property('data')
-                    .that.satisfies((obj) => {
+                    .that.satisfies((obj: unknown) => {
                         expect(obj).to.be.an('object');
                         expect(obj)
                             .to.have.property('fetchedAt')
                             .that.is.a('string');
                         // check that the fetchedAt date is a valid date
-                        expect(Date.parse(obj.fetchedAt)).not.to.be
-                            .NaN;
+                        expect(
+                            Date.parse(
+                                (
+                                    obj as unknown & {
+                                        fetchedAt: string;
+                                    }
+                                ).fetchedAt,
+                            ),
+                        ).not.to.be.NaN;
                         expect(obj)
                             .to.have.property('libName')
                             .that.equals(LIB_NAME);
@@ -1834,7 +1918,7 @@ describe('SocCatalog tests', async () => {
 
                 // throw an error from the API
                 nockScope
-                    .get('/socs')
+                    .get(`/socs?cfsVersion=${LIB_VERSION}`)
                     .replyWithError('Error from API');
 
                 await expect(populatedOnlineCatalog.refresh())
@@ -2167,13 +2251,20 @@ describe('SocCatalog tests', async () => {
                 // should not throw an error, but the extra property should be stripped
                 await expect(catalog.getMetadata())
                     .to.eventually.have.property('data')
-                    .that.satisfies((data) => {
+                    .that.satisfies((data: unknown) => {
                         expect(data).to.be.an('object');
                         expect(data)
                             .to.have.property('fetchedAt')
                             .that.is.a('string');
-                        expect(Date.parse(data.fetchedAt)).not.to.be
-                            .NaN;
+                        expect(
+                            Date.parse(
+                                (
+                                    data as unknown & {
+                                        fetchedAt: string;
+                                    }
+                                ).fetchedAt,
+                            ),
+                        ).not.to.be.NaN;
                         expect(data)
                             .to.have.property('libName')
                             .that.equals(LIB_NAME);
@@ -2305,6 +2396,95 @@ describe('SocCatalog tests', async () => {
                     );
                 });
 
+                it('should update the catalog in an existing zip file', async function () {
+                    const catalog = online
+                        ? populatedOnlineCatalog
+                        : populatedOfflineCatalog;
+
+                    const socs = mockApiData('extra_entry');
+                    const zipFilePath: string = path.join(
+                        testStorageDir!,
+                        'existing.zip',
+                    );
+
+                    // create a zip file with the SoC test data that has an extra entry
+                    const zip = new JSZip();
+                    const data = JSON.stringify({
+                        soc: socs,
+                    });
+                    zip.file(catalog.ZIP_FILE_MEMBER, data);
+                    const zipData = await zip.generateAsync({
+                        type: 'nodebuffer',
+                        streamFiles: true,
+                    });
+                    await fs.writeFile(zipFilePath, zipData);
+                    await verifyZip(
+                        zipFilePath,
+                        catalog.ZIP_FILE_MEMBER,
+                        mockApiData('extra_entry'),
+                        mockMetaData.get('extra_entry'),
+                    );
+
+                    // export the catalog and verify the zip file
+                    // has the default valid catalog data, not the previous zip contents
+                    await catalog.export(zipFilePath);
+                    await verifyZip(
+                        zipFilePath,
+                        catalog.ZIP_FILE_MEMBER,
+                        mockApiData('valid'),
+                        mockMetaData.get('valid'),
+                    );
+                });
+
+                it('should leave other files in an existing zip file alone', async function () {
+                    const catalog = online
+                        ? populatedOnlineCatalog
+                        : populatedOfflineCatalog;
+
+                    const zipFilePath: string = path.join(
+                        testStorageDir!,
+                        'existing.zip',
+                    );
+
+                    // create a zip file with the SoC test data that has an extra entry
+                    const zip = new JSZip();
+                    const data = JSON.stringify({
+                        something_else: [{ data: 'test' }],
+                    });
+                    zip.file('another_file.json', data);
+                    const zipData = await zip.generateAsync({
+                        type: 'nodebuffer',
+                        streamFiles: true,
+                    });
+                    await fs.writeFile(zipFilePath, zipData);
+
+                    // export the catalog and verify the zip file
+                    // has the default valid catalog data ...
+                    await catalog.export(zipFilePath);
+                    await verifyZip(
+                        zipFilePath,
+                        catalog.ZIP_FILE_MEMBER,
+                        mockApiData('valid'),
+                        mockMetaData.get('valid'),
+                    );
+                    // ... and the previous zip contents
+                    const readZip = await zip.loadAsync(
+                        fs.readFile(zipFilePath),
+                    );
+                    expect(readZip.files).to.have.property(
+                        'another_file.json',
+                    );
+                    const readData: unknown = JSON.parse(
+                        await readZip.files[
+                            'another_file.json'
+                        ].async('string'),
+                    );
+                    expect(
+                        readData,
+                        'zip file contents not as expected',
+                    ).to.deep.equals(JSON.parse(data));
+                });
+
                 it('should successfully export an empty catalog', async function () {
                     const catalog = online
                         ? emptyOnlineCatalog
@@ -2356,14 +2536,21 @@ describe('SocCatalog tests', async () => {
                     expect(zipContents)
                         .to.be.an('object')
                         .with.property('export')
-                        .that.satisfies((obj) => {
+                        .that.satisfies((obj: unknown) => {
                             expect(obj).to.be.an('object');
                             expect(obj)
                                 .to.have.property('exportedAt')
                                 .that.is.a('string');
                             // check that the export date is a valid date
-                            expect(Date.parse(obj.exportedAt)).not.to
-                                .be.NaN;
+                            expect(
+                                Date.parse(
+                                    (
+                                        obj as unknown & {
+                                            exportedAt: string;
+                                        }
+                                    ).exportedAt,
+                                ),
+                            ).not.to.be.NaN;
                             expect(obj)
                                 .to.have.property('libName')
                                 .that.equals(LIB_NAME);

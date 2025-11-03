@@ -45,5 +45,5 @@
     }
   ],
   "WorkspaceName": "test-workspace-name",
-  "Location": "test/workspace/path"
+  "Location": "test"
 }

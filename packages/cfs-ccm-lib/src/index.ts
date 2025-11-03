@@ -15,6 +15,5 @@
 
 export * from './gen/index.js';
 export * from './auth/index.js';
-export { CfsApiClient } from './sdk/cfsapi-client.js';
-export type { ApiOptions } from './sdk/cfsapi-client.js';
 export * from './catalog/index.js';
+export * from './sdk/index.js';

@@ -1,0 +1,62 @@
+{
+  "Copyright": "Copyright (c) undefined Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.0.0",
+  "DataModelSchemaVersion": "1.0.0",
+  "Soc": "MAX32657",
+  "Package": "WLP",
+  "BoardName": "EvKit_V1",
+  "Timestamp": "2025-03-24T08:05:55.198Z",
+  "Pins": [
+  ],
+  "ClockNodes": [
+  ],
+  "Projects": [
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33-NS",
+      "PluginId": "com.analog.project.zephyr.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "Secure": false,
+      "PlatformConfig": {
+        "ProjectName": "m33-ns",
+        "ZephyrVersion": "4.2.0",
+        "ZephyrBoardName": "max32657evkit/max32657/ns"
+      },
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "CM33 SysTick (NS)",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        }
+      ]
+    },
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33-S",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.1.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "Secure": true,
+      "PlatformConfig": {
+        "ProjectName": "m33-s"
+      },
+      "Partitions": [
+      ],
+      "Peripherals": [
+        {
+          "Name": "CM33 SysTick (S)",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        }
+      ]
+    }
+  ]
+}

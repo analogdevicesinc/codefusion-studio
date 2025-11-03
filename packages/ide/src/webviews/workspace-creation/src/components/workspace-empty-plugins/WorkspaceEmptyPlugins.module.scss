@@ -1,0 +1,59 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+
+.emptyMessageContainer {
+	display: flex;
+	padding: 8px;
+	align-items: flex-start;
+	gap: 8px;
+	align-self: stretch;
+	border-radius: 2px;
+	border: 0.5px solid colors.$button-secondary-background;
+
+	.emptyMessage {
+		@include fonts.body-b2;
+		color: colors.$description-foreground;
+	}
+}
+
+.warningIcon {
+	display: flex;
+	width: 16px;
+	height: 16px;
+	justify-content: center;
+	align-items: center;
+}
+
+.documentationLink {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	a {
+		color: colors.$active-cta;
+		text-decoration: none;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		white-space: nowrap;
+		&:hover {
+			text-decoration: underline;
+			cursor: pointer;
+		}
+	}
+}

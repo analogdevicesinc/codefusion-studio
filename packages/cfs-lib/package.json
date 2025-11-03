@@ -3,22 +3,26 @@
 	"publisher": "adi",
 	"description": "Reusable utilities for CFS components",
 	"author": "Analog Devices, Inc.",
-	"version": "1.1.0-18",
+	"version": "2.0.0",
 	"scripts": {
-		"build": "yarn build-local-deps && shx rm -rf dist && tsc -b && yarn run cfslib:copy-templates-dist",
-		"cfslib:copy-templates-dist": "node copyTemplatesCfsLib.mjs",
-		"build-local-deps": "yarn workspace elf-parser build && yarn workspace cfs-plugins-api install --immutable && yarn workspace cfs-plugins-api build",
+		"build": "yarn build-local-deps && shx rm -rf dist && tsc -b",
+		"build-dev": "yarn workspace cfs-plugins-api build && tsc -b --watch",
+		"build-local-deps": "yarn workspace elf-parser build && yarn workspace cfs-plugins-api install --immutable && yarn workspace cfs-plugins-api build && yarn ws:pkg-mgr build && yarn ws:ccm-lib build",
 		"lint": "eslint . --ext .ts",
-		"test": "mocha --require ts-node/register --recursive test/**/*.test.ts"
+		"test": "c8 mocha test/**/*.test.ts --reporter-option output=coverage/test-results.json"
 	},
 	"dependencies": {
+		"cfs-ccm-lib": "workspace:^",
+		"cfs-package-manager": "workspace:^",
 		"cfs-plugins-api": "workspace:^",
-		"elf-parser": "workspace:^"
+		"dotenv": "16.4.1",
+		"elf-parser": "workspace:^",
+		"fast-glob": "^3.3.3"
 	},
 	"devDependencies": {
 		"@types/chai-as-promised": "^8.0.1",
 		"@types/mocha": "^10.0.1",
-		"@types/node": "^18.19.8",
+		"@types/node": "^20",
 		"@typescript-eslint/eslint-plugin": "^7.8.0",
 		"@typescript-eslint/parser": "^7.8.0",
 		"chai": "^5",

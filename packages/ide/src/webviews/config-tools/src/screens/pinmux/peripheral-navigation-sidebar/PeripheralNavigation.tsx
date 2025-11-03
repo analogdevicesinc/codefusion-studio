@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import {useAppDispatch} from '../../../state/store';
 import {getFixedFuntionPins} from '../../../utils/soc-pins';
 import {filterSignals} from '../utils/filters';
 import {getPeripheralList} from '../../../utils/soc-peripherals';
+import {pinInConflict} from '../../../utils/pin-error';
 
 const emptySignals = [] as Array<
 	FormattedPeripheralSignal & {
@@ -61,7 +62,8 @@ function PeripheralNavigation() {
 							name: peripheral.name,
 							description: peripheral.description || '',
 							signals: {},
-							security: peripheral.security
+							security: peripheral.security,
+							assignable: false
 						};
 					}
 
@@ -172,7 +174,7 @@ function PeripheralNavigation() {
 	]);
 
 	return (
-		<>
+		<section style={{height: '100%', overflowY: 'auto'}}>
 			{sortedPeripherals.map((peripheral, idx) => {
 				const isOpen = activePeripheral === peripheral.name;
 
@@ -190,7 +192,7 @@ function PeripheralNavigation() {
 							appliedSignal =>
 								appliedSignal.Peripheral === peripheral.name
 						) &&
-						(targetPin.appliedSignals.length > 1 ||
+						(pinInConflict(targetPin.appliedSignals) ||
 							targetPin.appliedSignals.some(
 								item => Object.keys(item?.Errors ?? {}).length
 							))
@@ -204,6 +206,7 @@ function PeripheralNavigation() {
 					<Peripheral
 						key={peripheral.name}
 						title={peripheral.name}
+						description={peripheral.description}
 						isOpen={isOpen}
 						hasPinConflict={shouldRenderConflictIcon}
 						signals={signals}
@@ -214,7 +217,7 @@ function PeripheralNavigation() {
 					/>
 				);
 			})}
-		</>
+		</section>
 	);
 }
 

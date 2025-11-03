@@ -132,13 +132,13 @@ export default function Charts({sections}: TMainSectionChartProps) {
 	});
 
 	return (
-		<div className={styles.container}>
+		<div className={styles.container} data-test='metadata:chart'>
 			<HeaderWithTooltip
 				title={`${i10n?.title} (${transformBtoKB(totalSize, false)})`}
 				i10n={i10n}
 			/>
 
-			<div className={styles.chartWrapper}>
+			<div className={styles['chart-wrapper']}>
 				<ReactECharts
 					option={getOption()}
 					style={{height: '100%', width: '100%'}}

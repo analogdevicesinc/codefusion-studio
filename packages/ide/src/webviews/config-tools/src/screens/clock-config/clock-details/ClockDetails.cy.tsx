@@ -13,7 +13,7 @@
  *
  */
 /* eslint-disable max-nested-callbacks */
-import type {Soc} from '@common/types/soc';
+import type {ControlCfg, Soc} from '@common/types/soc';
 import {
 	setClockNodeDetailsTargetNode,
 	setClockNodeControlValue
@@ -21,20 +21,19 @@ import {
 import {configurePreloadedStore} from '../../../state/store';
 import ClockDetails from './ClockDetails';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
-import type {CfsConfig, SocControl} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-plugins-api';
 
-const mock = await import(
-	`../../../../../../../../cli/src/socs/${Cypress.env('CLOCK_CONFIG_DEV_SOC_ID')}.json`
-);
+const mock = (await import(`@socs/max32690-wlp.json`))
+	.default as unknown as Soc;
 
 // Helper function to convert Cypress fixture to a standard Promise
 async function getControlsPromise(): Promise<
-	Record<string, SocControl[]>
+	Record<string, ControlCfg[]>
 > {
 	return new Promise(resolve => {
 		cy.fixture('clock-config-plugin-controls-msdk.json').then(
 			data => {
-				resolve(data as Record<string, SocControl[]>);
+				resolve(data as Record<string, ControlCfg[]>);
 			}
 		);
 	});
@@ -44,7 +43,7 @@ const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -55,7 +54,7 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Clock details component', () => {
 	beforeEach(() => {
@@ -67,34 +66,14 @@ describe('Clock details component', () => {
 				);
 			})
 			.catch(() => null);
-
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(configDict)
-		);
-
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(mock.Packages[0])
-		);
-
-		window.localStorage.setItem(
-			'Registers',
-			JSON.stringify(mock.Registers)
-		);
-
-		window.localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
 	});
 
 	it('Adds a non-valid integer value and checks for errors', () => {
 		getControlsPromise()
 			.then(controls => {
 				const store = configurePreloadedStore(
-					mock as Soc,
-					undefined,
+					mock,
+					configDict,
 					controls
 				);
 
@@ -181,9 +160,9 @@ describe('Clock details component', () => {
 	it('Checks that controls are disabled when clock conditions are not met', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const store = configurePreloadedStore(
-				mock as Soc,
-				{} as CfsConfig,
-				controls as Record<string, SocControl[]>
+				mock,
+				configDict,
+				controls as Record<string, ControlCfg[]>
 			);
 			const controlsPromise = getControlsPromise();
 
@@ -213,35 +192,35 @@ describe('Clock details component', () => {
 	});
 
 	it('Checks that controls are disabled when pinmux conditions are not met', () => {
-		cy.fixture('clock-config-plugin-controls.json').then(
-			cfsconfig => {
-				const store = configurePreloadedStore(
-					mock as Soc,
-					cfsconfig as CfsConfig
-				);
-				const controlsPromise = getControlsPromise();
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(
+				mock,
+				configDict,
+				controls as Record<string, ControlCfg[]>
+			);
+			const controlsPromise = getControlsPromise();
 
-				store.dispatch(setClockNodeDetailsTargetNode('P0.27'));
+			store.dispatch(setClockNodeDetailsTargetNode('P0.27'));
 
-				cy.mount(
-					<ClockDetails controlsPromise={controlsPromise} />,
-					store
-				);
+			cy.mount(
+				<ClockDetails controlsPromise={controlsPromise} />,
+				store
+			);
 
-				cy.dataTest('P0_27_FREQ-P0.27-control-input').should(
-					'have.attr',
-					'disabled'
-				);
-			}
-		);
+			cy.dataTest('P0_27_FREQ-P0.27-control-input').should(
+				'have.attr',
+				'disabled'
+			);
+		});
 	});
 
 	it('Checks that input controls are persisted', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			// Renamed to avoid conflict
 			const store = configurePreloadedStore(
-				mock as Soc,
-				{} as CfsConfig,
-				controls as Record<string, SocControl[]>
+				mock,
+				configDict,
+				controls as Record<string, ControlCfg[]>
 			);
 			const controlsPromise = getControlsPromise();
 

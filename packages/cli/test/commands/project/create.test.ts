@@ -1,14 +1,22 @@
 import {test, expect} from '@oclif/test';
-import {CfsWorkspace} from 'cfs-plugins-api';
+import type {CfsWorkspace} from 'cfs-lib';
 import fs, {promises as fsp} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {
+  CFS_DATA_MODELS_PATH,
+  CFS_PLUGINS_PATH
+} from '../../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('project:create', () => {
-  const pluginsPath = path.resolve(__dirname, '../utils/plugins');
+  const pluginsPath = path.resolve(__dirname, '..', CFS_PLUGINS_PATH);
+  const dataModelsPath = path.resolve(
+    __dirname,
+    CFS_DATA_MODELS_PATH
+  );
   const workspacePath = path.resolve(
     __dirname,
     'sample.cfsworkspace'
@@ -51,6 +59,8 @@ describe('project:create', () => {
         workspacePath,
         '--search-path',
         pluginsPath,
+        '--search-path',
+        dataModelsPath,
         '--project-name',
         'test-project'
       ],
@@ -97,6 +107,8 @@ describe('project:create', () => {
         workspacePath,
         '--search-path',
         pluginsPath,
+        '--search-path',
+        dataModelsPath,
         '--project-name',
         invalidProject
       ],

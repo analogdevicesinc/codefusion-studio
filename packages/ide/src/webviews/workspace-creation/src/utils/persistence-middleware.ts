@@ -67,6 +67,7 @@ export function getPersistenceListenerMiddleware(
 						CoreId: core.coreId,
 						Name: core.name ?? '',
 						IsPrimary: core.isPrimary ?? false,
+						Secure: core.Secure,
 						IsEnabled: core.isEnabled,
 						PluginId: core.pluginId ?? '',
 						PluginVersion: core.pluginVersion ?? '',

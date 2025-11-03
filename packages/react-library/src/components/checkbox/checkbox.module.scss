@@ -17,4 +17,11 @@
 	display: contents;
 	--checkbox-background: var(--vscode-checkbox-background);
 	--checkbox-border: var(--vscode-checkbox-border);
+
+	vscode-checkbox {
+		&::part(indeterminate-indicator) {
+			width: 80%;
+			height: 10%;
+		}
+	}
 }

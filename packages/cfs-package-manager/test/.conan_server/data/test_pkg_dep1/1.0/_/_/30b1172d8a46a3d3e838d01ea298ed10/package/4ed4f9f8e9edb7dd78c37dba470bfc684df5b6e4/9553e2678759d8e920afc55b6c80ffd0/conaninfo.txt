@@ -1,0 +1,2 @@
+[requires]
+test_pkg_dep1dep/1.Y.Z

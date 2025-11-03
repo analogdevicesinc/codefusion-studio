@@ -13,6 +13,8 @@
  *
  */
 @use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
 
 .container {
 	width: 100%;
@@ -27,10 +29,6 @@
 	&:has(.signal) {
 		border-top: 1px solid
 			var(--vscode-commandCenter-inactiveBorder, #cccccc);
-	}
-
-	&:has(.chevron) {
-		cursor: pointer;
 	}
 
 	&:has(.groupedSignal) {
@@ -82,5 +80,52 @@
 
 	.chevron {
 		rotate: 90;
+		padding-right: 5px;
+
+		& svg:hover {
+			background-color: colors.$default-background;
+			cursor: pointer;
+			border-radius: 4px;
+		}
 	}
+
+	.actionButton {
+		position: relative;
+		display: flex;
+		gap: 6px;
+		padding-right: 5px;
+		cursor: pointer;
+		.configureButton {
+			svg {
+				width: 14px;
+				height: 14px;
+			}
+		}
+		& svg {
+			visibility: hidden;
+			width: 10px;
+			height: 12px;
+			padding: 2px;
+		}
+		& svg:hover {
+			background-color: colors.$default-background;
+			cursor: pointer;
+			border-radius: 4px;
+		}
+	}
+}
+
+.tooltip {
+	position: absolute;
+	display: flex;
+	padding: 5px 8px;
+	top: 100%;
+	right: 3px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	border: 0.5px solid colors.$default-border;
+	border-radius: 2px;
+	background-color: colors.$default-background;
+	box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.36);
 }

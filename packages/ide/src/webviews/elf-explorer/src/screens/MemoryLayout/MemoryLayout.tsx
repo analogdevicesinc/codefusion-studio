@@ -131,7 +131,10 @@ export default function MemoryLayout() {
 					);
 				}}
 			/>
-			<section className={styles.container}>
+			<section
+				className={styles.container}
+				data-test='memory-layout:container'
+			>
 				<article className={styles.left}>
 					{loading ? (
 						<Loader />
@@ -140,6 +143,9 @@ export default function MemoryLayout() {
 						<>
 							{memLayout.layer < 3 ? (
 								<MemoryVisual
+									testId={
+										memLayout.layer === 1 ? 'segments' : 'sections'
+									}
 									segments={
 										memLayout.currentData as TSegment[] | TSection[]
 									}

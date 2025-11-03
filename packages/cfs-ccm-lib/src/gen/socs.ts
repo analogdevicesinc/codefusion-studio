@@ -16,6 +16,7 @@
 /* This file is generated automatically ! Manual edits will be overwritten */
 
 import { OpenApiClient } from '../sdk/openapi-client.js';
+import { LIB_VERSION } from '../config/constants.cjs';
 import {
     AccessTag,
     CreateInputBoard,
@@ -111,6 +112,9 @@ export class Socs {
                     path: {
                         socID,
                     },
+                    query: {
+                        cfsVersion: LIB_VERSION,
+                    },
                 },
             },
         );
@@ -152,6 +156,7 @@ export class Socs {
                 {
                     params: {
                         query: {
+                            cfsVersion: LIB_VERSION,
                             continue: continuationToken,
                         },
                     },

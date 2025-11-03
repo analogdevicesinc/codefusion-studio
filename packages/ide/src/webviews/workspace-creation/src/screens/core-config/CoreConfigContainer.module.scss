@@ -46,3 +46,24 @@
 		}
 	}
 }
+
+.coreConfigHeader {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	flex: 1 0 0;
+	.coreStepCount {
+		@include fonts.heading-h3;
+		color: colors.$description-foreground;
+	}
+	.coreDetails {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		.coreName {
+			@include fonts.heading-h1;
+			color: colors.$default-foreground;
+		}
+	}
+}

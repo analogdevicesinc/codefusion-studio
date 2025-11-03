@@ -18,3 +18,8 @@
 	// Account for height of header and filter panel
 	--sliding-panel-vertical-offset: calc(75px + 40px);
 }
+
+.pincfgPeripheralSidePanelContainer {
+	position: relative;
+	height: inherit;
+}

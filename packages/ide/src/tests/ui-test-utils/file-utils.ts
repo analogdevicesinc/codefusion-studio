@@ -13,7 +13,14 @@
  *
  */
 import { PathLike, rmSync, unlinkSync } from "fs";
-import { EditorView, InputBox, Key, TitleBar,VSBrowser } from "vscode-extension-tester";
+import {
+  EditorView,
+  InputBox,
+  Key,
+  TitleBar,
+  VSBrowser,
+  Workbench,
+} from "vscode-extension-tester";
 const isMac = process.platform === "darwin";
 
 /**
@@ -22,13 +29,18 @@ const isMac = process.platform === "darwin";
  */
 
 export async function openFolder(folder: string): Promise<void> {
-  const titleBar = new TitleBar();
-  await titleBar.select("File", "Open Folder...");
-  const input = await InputBox.create();
-  await input.setText(folder);
-  await input.confirm();
   if (isMac) {
     await VSBrowser.instance.openResources(folder);
+  } else {
+    const titleBar = new TitleBar();
+    await titleBar.select("File", "Open Folder...");
+    const input = await InputBox.create();
+    await input.setText(folder);
+    console.log(`Opening folder:`);
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((res) => setTimeout(res, 1000)); // Wait before confirm
+    await input.confirm();
+    console.log(`Confirmed`);
   }
 }
 
@@ -36,13 +48,18 @@ export async function openFolder(folder: string): Promise<void> {
  * Close the currently open folder, if any
  */
 export async function closeFolder() {
-  const titleBar = new TitleBar();
-  const fileMenu = await titleBar.select("File");
-  if (fileMenu !== undefined) {
-    if (await fileMenu.hasItem("Close Folder")) {
-      await fileMenu.select("Close Folder");
-    } else {
-      fileMenu.sendKeys(Key.ESCAPE);
+  if (isMac) {
+    const workbench = new Workbench();
+    await workbench.executeCommand("workbench.action.closeFolder");
+  } else {
+    const titleBar = new TitleBar();
+    const fileMenu = await titleBar.select("File");
+    if (fileMenu !== undefined) {
+      if (await fileMenu.hasItem("Close Folder")) {
+        await fileMenu.select("Close Folder");
+      } else {
+        fileMenu.sendKeys(Key.ESCAPE);
+      }
     }
   }
 }
@@ -68,7 +85,7 @@ export async function deleteFile(file: PathLike) {
  */
 
 export async function closeWindows() {
-  //Closes initial welcome page which is present when extension is activated
+  // Closes initial welcome page which is present when extension is activated
   const editorView = new EditorView();
   const titles = await editorView.getOpenEditorTitles();
   if (titles.includes("Welcome")) {
@@ -82,8 +99,8 @@ export async function closeWindows() {
   if (titles.includes("Settings")) {
     await editorView.closeEditor("Settings");
   }
+
   if (titles.includes("launch.json")) {
     await editorView.closeEditor("launch.json");
   }
 }
-

@@ -1,0 +1,78 @@
+[project]
+requires-python = ">= 3.10,<4.0"
+name = "publish-devdocs"
+version = "2.0.0"
+description = "Documentation build environment for CodeFusion Studio"
+dependencies = [
+    "adi-mkdocs-harmonic>=0.7.0",
+    "Babel==2.15.0",
+    "beautifulsoup4==4.12.3",
+    "Brotli==1.1.0",
+    "certifi==2024.6.2",
+    "cffi==1.16.0",
+    "charset-normalizer==3.3.2",
+    "click==8.1.7",
+    "colorama==0.4.6",
+    "cssselect2==0.7.0",
+    "fonttools==4.53.1",
+    "ghp-import==2.1.0",
+    "HTMLArk==1.0.0",
+    "html5lib==1.1",
+    "idna==3.7",
+    "importlib_metadata==8.4.0",
+    "importlib_resources==6.4.4",
+    "Jinja2==3.1.4",
+    "libsass==0.23.0",
+    "lxml==5.3.0",
+    "Markdown",
+    "MarkupSafe==2.1.5",
+    "mergedeep==1.3.4",
+    "mike>=0.3.2",
+    "mkdocs-awesome-pages-plugin>=2.10.1",
+    "mkdocs-get-deps==0.2.0",
+    "mkdocs-glightbox==0.4.0",
+    "mkdocs-material",
+    "mkdocs-material-extensions==1.3.1",
+    "mkdocs-monorepo-plugin>=1.1.0",
+    "mkdocs-print-site-plugin==2.8",
+    "mkdocs-redirects>=1.2.2",
+    "mkdocs-redoc-tag>=0.1.0",
+    "mkdocs-techdocs-core==1.5.4",
+    "mkdocs-with-pdf==0.9.3",
+    "mkdocs>=1.6.0",
+    "packaging>=24.2",
+    "paginate==0.5.6",
+    "pathspec==0.12.1",
+    "pillow==10.4.0",
+    "platformdirs==4.2.2",
+    "pycparser==2.22",
+    "pydyf==0.11.0",
+    "Pygments==2.19.1",
+    "pymdown-extensions==10.14.3",
+    "pyparsing==3.1.4",
+    "pyphen==0.15.0",
+    "python-dateutil==2.9.0.post0",
+    "PyYAML==6.0.1",
+    "pyyaml_env_tag==0.1",
+    "regex==2024.5.15",
+    "requests==2.32.3",
+    "setuptools==70.0.0",
+    "six==1.16.0",
+    "soupsieve==2.5",
+    "tinycss2==1.3.0",
+    "urllib3==2.2.2",
+    "verspec==0.1.0",
+    "watchdog==4.0.1",
+    "weasyprint==62.3",
+    "webencodings==0.5.1",
+    "zipp==3.20.1",
+    "zopfli==0.2.3"
+]
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

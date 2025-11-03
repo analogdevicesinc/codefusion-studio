@@ -22,8 +22,33 @@ export function usePartitions() {
 export function useSidebarState() {
 	return useAppSelector(state => ({
 		isSidebarMinimised: state.partitionsReducer.isSidebarMinimised,
-		sidebarPartition: state.partitionsReducer.sidebarPartition
+		sidebarPartition: state.partitionsReducer.sidebarPartition,
+		activePartition: state.partitionsReducer.activePartition
 	}));
+}
+
+export function useActivePartitionDisplayName() {
+	return useAppSelector(
+		state => state.partitionsReducer.activePartition?.displayName
+	);
+}
+
+export function useActivePartitionType() {
+	return useAppSelector(
+		state => state.partitionsReducer.activePartition?.type
+	);
+}
+
+export function useActivePartitionProjects() {
+	return useAppSelector(
+		state => state.partitionsReducer.activePartition?.projects
+	);
+}
+
+export function useActivePartitionConfig() {
+	return useAppSelector(
+		state => state.partitionsReducer.activePartition?.config
+	);
 }
 
 /**

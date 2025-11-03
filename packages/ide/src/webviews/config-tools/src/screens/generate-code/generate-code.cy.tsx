@@ -15,6 +15,7 @@
  */
 
 import type {Soc} from '@common/types/soc';
+import type {CfsConfig} from 'cfs-plugins-api';
 import {configurePreloadedStore} from '../../state/store';
 import GenerateCode from './GenerateCode';
 import {setAppliedSignal} from '../../state/slices/pins/pins.reducer';
@@ -22,26 +23,25 @@ import {
 	setClockNodeControlValue,
 	setDiagramData
 } from '../../state/slices/clock-nodes/clockNodes.reducer';
-import {resetSocPeripherals} from '../../utils/soc-peripherals';
-import {resetPinDictionary} from '../../utils/soc-pins';
 import {setSignalGroupAssignment} from '../../state/slices/peripherals/peripherals.reducer';
-import {resetConfigDict} from '../../utils/config';
 
-const wlp = (await import(
-	'../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
+
+const projectRvId = 'RV-proj';
+const projectCm4Id = 'CM4-proj';
 
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
 			FirmwarePlatform: '',
 			CoreId: 'CM4',
-			ProjectId: 'CM4-proj',
+			ProjectId: projectCm4Id,
 			IsPrimary: true,
 			Name: 'ARM Cortex-M4',
 			PluginId: 'zephyr'
@@ -51,17 +51,17 @@ const mockedConfigDict = {
 			ExternallyManaged: false,
 			FirmwarePlatform: 'msdk',
 			CoreId: 'RV',
-			ProjectId: 'RV-proj',
+			ProjectId: projectRvId,
 			Name: 'RISC-V (RV32)',
 			PluginId: 'msdk'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 const externallyManagedConfigDict = {
 	...mockedConfigDict,
-	projects: [
-		{...mockedConfigDict.projects[0]},
+	Projects: [
+		{...mockedConfigDict.Projects[0]},
 		{
 			Description: 'Externally Managed Core',
 			ExternallyManaged: true,
@@ -73,30 +73,13 @@ const externallyManagedConfigDict = {
 			PluginVersion: '1.0.0'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Generate Screen', () => {
-	afterEach(() => {
-		cy.clearLocalStorage();
-		resetPinDictionary();
-		resetSocPeripherals();
-		resetConfigDict();
-	});
-
 	context('MAX32690-WLP', () => {
 		beforeEach(() => {
 			cy.viewport(1920, 1080);
 			cy.window().then(win => {
-				win.localStorage.setItem(
-					'configDict',
-					JSON.stringify(mockedConfigDict)
-				);
-
-				win.localStorage.setItem(
-					'Package',
-					JSON.stringify(wlp.Packages[0])
-				);
-
 				cy.fixture('clock-config-plugin-controls.json').then(
 					controls => {
 						win.localStorage.setItem(
@@ -107,21 +90,27 @@ describe('Generate Screen', () => {
 				);
 
 				win.localStorage.setItem(
-					'ClockNodes',
-					JSON.stringify(wlp.ClockNodes)
-				);
-
-				win.localStorage.setItem('Cores', JSON.stringify(wlp.Cores));
-
-				win.localStorage.setItem(
-					'Peripherals',
-					JSON.stringify(wlp.Peripherals)
+					'pluginControls:RV-proj',
+					JSON.stringify({
+						I2C0: [
+							{
+								Description: 'Bus Error SCL Timeout Period',
+								Id: 'SCL_TIMEOUT',
+								MaximumValue: 65535,
+								MinimumValue: 0,
+								Type: 'integer'
+							}
+						]
+					})
 				);
 			});
 		});
 
 		it('Should display core list with no errors', () => {
-			const reduxStore = configurePreloadedStore(wlp);
+			const reduxStore = configurePreloadedStore(
+				wlp,
+				mockedConfigDict
+			);
 
 			cy.mount(<GenerateCode />, reduxStore).then(() => {
 				cy.dataTest('generate-code:container').should('exist');
@@ -145,8 +134,11 @@ describe('Generate Screen', () => {
 			});
 		});
 
-		it('Should display an error message in all core card, if clock nodes are in error state', () => {
-			const reduxStore = configurePreloadedStore(wlp);
+		it('Should display an error message of type "clock nodes", in both cards', () => {
+			const reduxStore = configurePreloadedStore(
+				wlp,
+				mockedConfigDict
+			);
 
 			reduxStore.dispatch(
 				setAppliedSignal({
@@ -183,7 +175,7 @@ describe('Generate Screen', () => {
 			);
 
 			cy.mount(<GenerateCode />, reduxStore).then(() => {
-				['CM4-proj', 'RV-proj'].forEach(projectId => {
+				[projectCm4Id, projectRvId].forEach(projectId => {
 					cy.dataTest(
 						`generate-code:core:${projectId}:endSlot:icon`
 					).click();
@@ -204,13 +196,16 @@ describe('Generate Screen', () => {
 		});
 
 		it('Displays peripheral allocations errors for CM4', () => {
-			const reduxStore = configurePreloadedStore(wlp);
+			const reduxStore = configurePreloadedStore(
+				wlp,
+				mockedConfigDict
+			);
 
 			// Allocate SPI0 to CM4
 			reduxStore.dispatch(
 				setSignalGroupAssignment({
 					peripheral: 'SPI0',
-					projectId: 'CM4-proj',
+					projectId: projectCm4Id,
 					config: {
 						MODE: 'FOUR_WIRE',
 						DIRECTION: 'TARGET',
@@ -227,59 +222,428 @@ describe('Generate Screen', () => {
 			);
 
 			cy.mount(<GenerateCode />, reduxStore).then(() => {
-				cy.dataTest('generate-code:core:CM4-proj').should('exist');
-				cy.dataTest('generate-code:core:RV-proj').should('exist');
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
 
 				// Core CM4
 				cy.dataTest(
-					`generate-code:core:CM4-proj:endSlot:icon`
+					`generate-code:core:${projectCm4Id}:endSlot:icon`
 				).click();
 				// Core card should be in error state
 				cy.dataTest(
-					'cfsSelectionCard:CM4-proj:content:errors-container'
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
 				).should('exist');
-				cy.dataTest(`valid-status:CM4-proj:error-state`).should(
-					'contain.text',
-					'3 Issues'
-				);
 				cy.dataTest(
-					`cfsSelectionCard:CM4-proj:content:errors-container`
+					`valid-status:${projectCm4Id}:error-state`
+				).should('contain.text', '3 Issues');
+				cy.dataTest(
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
 				).should(
 					'contain.text',
 					'3 errors in Peripheral Allocation.'
 				);
 				// The card should be inactive
-				cy.dataTest('generate-code:core:CM4-proj').should(
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
 					'have.attr',
 					'data-active',
 					'false'
 				);
 				// And the checkbox should be unchecked
-				cy.dataTest('generate-code:core:CM4-proj:checkbox').should(
-					'have.attr',
-					'current-value',
-					'false'
-				);
+				cy.dataTest(
+					`generate-code:core:${projectCm4Id}:checkbox`
+				).should('have.attr', 'current-value', 'false');
 
 				// Core RV card should not be in error state
-				cy.dataTest('generate-code:core:RV-proj').within(() => {
-					cy.dataTest(`valid-status:RV-proj:ready-state`).should(
-						'have.text',
-						'Ready'
-					);
-				});
+				cy.dataTest(`generate-code:core:${projectRvId}`).within(
+					() => {
+						cy.dataTest(
+							`valid-status:${projectRvId}:ready-state`
+						).should('have.text', 'Ready');
+					}
+				);
 				// The card should be active
-				cy.dataTest('generate-code:core:RV-proj').should(
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
 					'have.attr',
 					'data-active',
 					'true'
 				);
-				// And the checkbox should be checked
-				cy.dataTest('generate-code:core:RV-proj:checkbox').should(
+				// And the checkbox and "Generate" button should be checked
+				cy.dataTest(
+					`generate-code:core:${projectRvId}:checkbox`
+				).should('have.attr', 'current-value', 'true');
+
+				cy.dataTest('generate-code:generate-btn')
+					.should('exist')
+					.should('not.have.attr', 'disabled', 'disabled');
+			});
+		});
+
+		it('Should disable the "Generate" button if the project is deselected', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			// Allocate SPI0 to CM4
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'SPI0',
+					projectId: projectCm4Id,
+					config: {
+						MODE: 'FOUR_WIRE',
+						DIRECTION: 'TARGET',
+						WORD_SIZE: '16',
+						PHASE_POL_MODE: '0',
+						CS0_POLARITY: 'ACTIVE_LOW',
+						CS1_POLARITY: 'ACTIVE_LOW',
+						CS2_POLARITY: 'ACTIVE_LOW',
+						RECEIVE_DMA_ENABLE: 'TRUE',
+						TRANSMIT_DMA_ENABLE: 'FALSE',
+						FREQ: '15000000'
+					}
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
+
+				// Core RV card should not be in error state
+				cy.dataTest(`generate-code:core:${projectRvId}`).within(
+					() => {
+						cy.dataTest(
+							`valid-status:${projectRvId}:ready-state`
+						).should('have.text', 'Ready');
+					}
+				);
+				// The card should be active
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
 					'have.attr',
-					'current-value',
+					'data-active',
 					'true'
 				);
+				// And the checkbox and "Generate" button should be checked
+				cy.dataTest(
+					`generate-code:core:${projectRvId}:checkbox`
+				).should('have.attr', 'current-value', 'true');
+
+				// Click to deselected the project
+				cy.dataTest('generate-code:core:RV-proj').click();
+
+				// "Generate" button should be disabled
+				cy.dataTest('generate-code:generate-btn')
+					.should('exist')
+					.should('have.attr', 'disabled', 'disabled');
+			});
+		});
+
+		it('Should display an error message of type "peripheral allocation", for invalid form', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'I2C0',
+					projectId: projectRvId,
+					config: {SCL_TIMEOUT: '10000000000'}
+				})
+			);
+
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F6',
+					Peripheral: 'I2C0',
+					Name: 'SCL',
+					PinCfg: {
+						PS: 'DIS',
+						PWR: 'VDDIO'
+					}
+				})
+			);
+
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'G6',
+					Peripheral: 'I2C0',
+					Name: 'SDA',
+					PinCfg: {
+						PS: 'DIS',
+						PWR: 'VDDIO'
+					}
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
+
+				// Project RV-proj
+				cy.dataTest(
+					`generate-code:core:${projectRvId}:endSlot:icon`
+				).click();
+				// Card should be in error state
+				cy.dataTest(
+					`cfsSelectionCard:${projectRvId}:content:errors-container`
+				).should('exist');
+				cy.dataTest(`valid-status:${projectRvId}:error-state`).should(
+					'contain.text',
+					'1 Issues'
+				);
+				// Should display 1 error in Peripheral Allocation, which is generated due to invalid SCL_TIMEOUT value
+				cy.dataTest(
+					`cfsSelectionCard:${projectRvId}:content:errors-container`
+				).should(
+					'contain.text',
+					'1 errors in Peripheral Allocation.'
+				);
+
+				cy.dataTest('generate-code:generate-btn')
+					.should('exist')
+					.should('not.have.attr', 'disabled', 'disabled');
+			});
+		});
+
+		it('Should have at least 1 project valid and selected to enable the "Generate" button', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			// Allocate SPI0 to CM4
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'SPI0',
+					projectId: projectCm4Id,
+					config: {
+						MODE: 'FOUR_WIRE',
+						DIRECTION: 'TARGET',
+						WORD_SIZE: '16',
+						PHASE_POL_MODE: '0',
+						CS0_POLARITY: 'ACTIVE_LOW',
+						CS1_POLARITY: 'ACTIVE_LOW',
+						CS2_POLARITY: 'ACTIVE_LOW',
+						RECEIVE_DMA_ENABLE: 'TRUE',
+						TRANSMIT_DMA_ENABLE: 'FALSE',
+						FREQ: '15000000'
+					}
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				// CM4 project should be in error state
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				// RV project should be valid
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
+
+				cy.dataTest(
+					`valid-status:${projectCm4Id}:error-state`
+				).should('contain.text', '3 Issues');
+
+				cy.dataTest(`generate-code:core:${projectRvId}`).within(
+					() => {
+						cy.dataTest(
+							`valid-status:${projectRvId}:ready-state`
+						).should('have.text', 'Ready');
+					}
+				);
+
+				cy.dataTest('generate-code:generate-btn')
+					.should('exist')
+					.should('not.have.attr', 'disabled', 'disabled');
+			});
+		});
+
+		it('Should disable the "Generate" button if both project are in error state', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			// Allocate SPI0 to CM4
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'SPI0',
+					projectId: projectCm4Id,
+					config: {
+						MODE: 'FOUR_WIRE',
+						DIRECTION: 'TARGET',
+						WORD_SIZE: '16',
+						PHASE_POL_MODE: '0',
+						CS0_POLARITY: 'ACTIVE_LOW',
+						CS1_POLARITY: 'ACTIVE_LOW',
+						CS2_POLARITY: 'ACTIVE_LOW',
+						RECEIVE_DMA_ENABLE: 'TRUE',
+						TRANSMIT_DMA_ENABLE: 'FALSE',
+						FREQ: '15000000'
+					}
+				})
+			);
+
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'I2C0',
+					projectId: projectRvId,
+					config: {SCL_TIMEOUT: '10000000000'}
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				// CM4 project should be in error state
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				// RV project should be valid
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
+
+				cy.dataTest(
+					`valid-status:${projectCm4Id}:error-state`
+				).should('contain.text', '3 Issues');
+
+				cy.dataTest(`valid-status:${projectRvId}:error-state`).should(
+					'contain.text',
+					'3 Issues'
+				);
+
+				cy.dataTest('generate-code:generate-btn')
+					.should('exist')
+					.should('have.attr', 'disabled', 'disabled');
+			});
+		});
+
+		it('Should display all 3 types of error messages: Peripheral, Pin Config, Clock Config', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			// Create a pin conflict
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'A2',
+					Peripheral: 'GPIO1',
+					Name: 'P1.8'
+				})
+			);
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'A2',
+					Peripheral: 'I2C2',
+					Name: 'SCL'
+				})
+			);
+
+			// Create a Peripheral allocation error
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'SPI0',
+					projectId: projectCm4Id,
+					config: {
+						MODE: 'FOUR_WIRE',
+						DIRECTION: 'TARGET',
+						WORD_SIZE: '16',
+						PHASE_POL_MODE: '0',
+						CS0_POLARITY: 'ACTIVE_LOW',
+						CS1_POLARITY: 'ACTIVE_LOW',
+						CS2_POLARITY: 'ACTIVE_LOW',
+						RECEIVE_DMA_ENABLE: 'TRUE',
+						TRANSMIT_DMA_ENABLE: 'FALSE',
+						FREQ: '15000000'
+					}
+				})
+			);
+
+			// Create a Clock node error
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
+				})
+			);
+			reduxStore.dispatch(
+				setDiagramData({
+					'P0.23': {
+						enabled: true,
+						error: true
+					}
+				})
+			);
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'P0.23',
+					key: 'P0_23_FREQ',
+					value: '100000000',
+					error: 'INVALID_MAX_VAL'
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				cy.dataTest(`generate-code:core:${projectCm4Id}`).should(
+					'exist'
+				);
+				cy.dataTest(`generate-code:core:${projectRvId}`).should(
+					'exist'
+				);
+
+				cy.dataTest(
+					`generate-code:core:${projectCm4Id}:endSlot:icon`
+				).click();
+				cy.dataTest(
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+				).should('exist');
+				cy.dataTest(
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+				).should(
+					'contain.text',
+					'3 errors in Peripheral Allocation.'
+				);
+				cy.dataTest(
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+				).should('contain.text', '1 errors in Pin Config.');
+				cy.dataTest(
+					`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+				).should('contain.text', '1 errors in Clock Config.');
+			});
+		});
+
+		it('Should auto select valid projects', () => {
+			const reduxStore = configurePreloadedStore(wlp);
+
+			// Allocate SPI0 to CM4
+			reduxStore.dispatch(
+				setSignalGroupAssignment({
+					peripheral: 'SPI0',
+					projectId: projectCm4Id,
+					config: {
+						MODE: 'FOUR_WIRE',
+						DIRECTION: 'TARGET',
+						WORD_SIZE: '16',
+						PHASE_POL_MODE: '0',
+						CS0_POLARITY: 'ACTIVE_LOW',
+						CS1_POLARITY: 'ACTIVE_LOW',
+						CS2_POLARITY: 'ACTIVE_LOW',
+						RECEIVE_DMA_ENABLE: 'TRUE',
+						TRANSMIT_DMA_ENABLE: 'FALSE',
+						FREQ: '15000000'
+					}
+				})
+			);
+
+			cy.mount(<GenerateCode />, reduxStore).then(() => {
+				// CM4 project should NOT be checked
+				cy.dataTest(
+					`generate-code:core:${projectCm4Id}:checkbox`
+				).should('have.attr', 'aria-checked', 'false');
+
+				// RV project should be checked
+				cy.dataTest(
+					`generate-code:core:${projectRvId}:checkbox`
+				).should('have.attr', 'aria-checked', 'true');
 			});
 		});
 	});
@@ -287,22 +651,13 @@ describe('Generate Screen', () => {
 	context('Externally managed project', () => {
 		beforeEach(() => {
 			cy.viewport(1280, 720);
-
-			cy.window().then(window => {
-				window.localStorage.setItem(
-					'configDict',
-					JSON.stringify(externallyManagedConfigDict)
-				);
-
-				window.localStorage.setItem(
-					'Cores',
-					JSON.stringify(wlp.Cores)
-				);
-			});
 		});
 
 		it('Should not allow selection of externally managed project', () => {
-			const reduxStore = configurePreloadedStore(wlp);
+			const reduxStore = configurePreloadedStore(
+				wlp,
+				externallyManagedConfigDict
+			);
 
 			cy.mount(<GenerateCode />, reduxStore).then(() => {
 				cy.dataTest('generate-code:core:RV:checkbox')

@@ -1,0 +1,249 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.2.127",
+  "DataModelSchemaVersion": "1.2.0",
+  "Soc": "MAX78002",
+  "Package": "CSBGA",
+  "BoardName": "EvKit_V1",
+  "Timestamp": "2025-09-13T14:00:51.913Z",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.1.0",
+      "FirmwarePlatform": "MSDK",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4",
+        "MsdkBoardName": "EvKit_V1"
+      },
+      "Partitions": [
+        {
+          "Name": "FLASH",
+          "StartAddress": "0x10000000",
+          "Size": 2621440,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {}
+        },
+        {
+          "Name": "SRAM",
+          "StartAddress": "0x20000000",
+          "Size": 393216,
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {}
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "CM4 SysTick",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        },
+        {
+          "Name": "UART0",
+          "Signals": [
+            {
+              "Name": "CTS",
+              "Config": {}
+            },
+            {
+              "Name": "RTS",
+              "Config": {}
+            },
+            {
+              "Name": "RX",
+              "Config": {
+                "PWR": "VDDIO",
+                "PS": "WEAK_PU"
+              }
+            },
+            {
+              "Name": "TX",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            }
+          ],
+          "Config": {
+            "PARITY": "DISABLED",
+            "CHAR_SIZE": "8",
+            "STOP_BITS": "1",
+            "HW_FLOW_CTRL": "DISABLED",
+            "RX_FRAME_ERROR_IE": "FALSE",
+            "CTS_IE": "FALSE",
+            "RX_OVERRUN_IE": "FALSE",
+            "RX_THD_IE": "FALSE",
+            "TX_ONE_BYTE_IE": "FALSE",
+            "TX_HALF_EMPTY_IE": "FALSE",
+            "BAUD": "115200"
+          }
+        },
+        {
+          "Name": "GPIO2",
+          "Signals": [
+            {
+              "Name": "P2.4",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            },
+            {
+              "Name": "P2.5",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            },
+            {
+              "Name": "P2.6",
+              "Config": {
+                "MODE": "IN",
+                "PWR": "VDDIO",
+                "PS": "STRONG_PU"
+              }
+            },
+            {
+              "Name": "P2.7",
+              "Config": {
+                "MODE": "IN",
+                "PWR": "VDDIO",
+                "PS": "STRONG_PU"
+              }
+            }
+          ],
+          "Config": {}
+        }
+      ],
+      "AIModels" : [
+        {
+          "Name": "TFLM Hello with Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_f32.tflite"
+          },
+          "Target": {
+            "Core": "cm4"
+          },
+          "Backend" : {
+            "Name" : "tflm",
+            "Extensions" : {
+              "Symbol" : "hello_world_model_f32",
+              "Section" : ".data"
+            }
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "TFLM Hello no Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_i8.tflite"
+          },
+          "Target": {
+            "Core": "cm4"
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "TFLM Denoiser Remote",
+          "Files" : {
+              "Model" : "https://raw.githubusercontent.com/breizhn/DTLN/master/pretrained_model/model_1.tflite"
+          },
+          "Target": { 
+              "Core": "cm4"
+          },
+          "Enabled": true
+        },
+        {
+          "Name": "CNN with Backend",
+          "Files" : {
+            "NetworkConfig": "https://raw.githubusercontent.com/analogdevicesinc/ai8x-synthesis/refs/heads/develop/networks/cats-dogs-hwc-no-fifo.yaml",
+            "Model" : "https://raw.githubusercontent.com/analogdevicesinc/ai8x-synthesis/refs/heads/develop/trained/ai85-catsdogs-qat8-q.pth.tar"
+          },
+          "Target": { 
+            "Core": "cm4",
+            "Accelerator": "cnn"
+          },
+          "Backend" : {
+             "Name" : "izer"
+          },
+          "Enabled": true
+        }
+      ]
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "",
+      "PluginVersion": "",
+      "FirmwarePlatform": "undefined",
+      "ExternallyManaged": true,
+      "PlatformConfig": {},
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ],
+  "Pins": [
+    {
+      "Pin": "C3",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.7"
+    },
+    {
+      "Pin": "D3",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.6"
+    },
+    {
+      "Pin": "E3",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.5"
+    },
+    {
+      "Pin": "F3",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.4"
+    },
+    {
+      "Pin": "K6",
+      "Peripheral": "UART0",
+      "Signal": "RX"
+    },
+    {
+      "Pin": "L6",
+      "Peripheral": "UART0",
+      "Signal": "TX"
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Name": "UART0/1/2",
+      "Control": "UART0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "UART0/1/2",
+      "Control": "UART0_MUX",
+      "Value": "IBRO",
+      "Enabled": true
+    }
+  ],
+  "ClockFrequencies": {
+    "IBRO": 7372800,
+    "ISO": 60000000,
+    "SYS_OSC": 60000000,
+    "SYS_CLK": 60000000,
+    "Cortex-M4": 60000000,
+    "FLC0": 1000000,
+    "UART0": 7372800,
+    "UART1": 30000000,
+    "UART2": 30000000
+  }
+}

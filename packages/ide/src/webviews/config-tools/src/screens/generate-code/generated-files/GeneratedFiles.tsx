@@ -17,10 +17,13 @@ import {use} from 'cfs-react-library';
 import FileItem from '../file-item/FileItem';
 import {memo} from 'react';
 import styles from './GeneratedFile.module.scss';
+import type {CodeGenerationResult} from 'cfs-lib/dist/types/code-generation';
 
 function GeneratedFiles({
 	promise
-}: Readonly<{promise: Promise<string[] | string>}>) {
+}: Readonly<{
+	promise: Promise<CodeGenerationResult | string>;
+}>) {
 	const generatedCodeFiles = use(promise);
 
 	if (typeof generatedCodeFiles === 'string') {
@@ -41,7 +44,10 @@ function GeneratedFiles({
 				? generatedCodeFiles
 				: []
 			).map(item => (
-				<FileItem key={item} name={item} />
+				<FileItem
+					key={typeof item === 'string' ? item : item.name}
+					item={item}
+				/>
 			))}
 		</ul>
 	);

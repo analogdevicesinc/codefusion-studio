@@ -29,14 +29,16 @@ import {
 	removeAppliedCoprogrammedSignals,
 	removeAppliedSignal,
 	setAppliedSignal,
-	setAppliedSignalControlValue
+	updateAppliedSignal,
+	setAppliedSignalControlValue,
+	setResetControlValues
 } from '../slices/pins/pins.reducer';
 import {
 	type ClockNodeSet,
 	setClockNodeControlValue,
 	setDiagramData
 } from '../slices/clock-nodes/clockNodes.reducer';
-import {getClockCanvas, updatePersistedConfig} from '../../utils/api';
+import {updatePersistedConfig} from '../../utils/api';
 import {getPrimaryProjectId} from '../../utils/config';
 import {getTargetControls} from '../../utils/clock-nodes';
 import {
@@ -64,13 +66,16 @@ import type {
 	PinDictionary,
 	ClockNodesDictionary
 } from '../../../../common/types/soc';
-import type {ControlErrorTypes} from '../../types/errorTypes';
+import type {ControlErrorTypes} from '@common/types/errorTypes';
+import {getClockCanvas} from '../../utils/clock-canvas';
 
 export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 	[
 		setAppliedSignal,
 		removeAppliedSignal,
+		updateAppliedSignal,
 		setAppliedSignalControlValue,
+		setResetControlValues,
 		setClockNodeControlValue,
 		assignCoprogrammedSignal,
 		removeAppliedCoprogrammedSignals,
@@ -97,7 +102,7 @@ let lastModifiedClockNode:
 	  }
 	| undefined;
 
-async function getModifiedClockNodes(
+function getModifiedClockNodes(
 	clockNodes: ClockNodesDictionary,
 	pins: PinDictionary,
 	diagramData: Record<
@@ -110,7 +115,7 @@ async function getModifiedClockNodes(
 	);
 
 	const projectId = getPrimaryProjectId();
-	const canvas = await getClockCanvas();
+	const canvas = getClockCanvas();
 
 	return Object.values(clockNodes)
 		.filter(clockNode =>
@@ -175,7 +180,7 @@ export function getPersistenceListenerMiddleware(
 
 		listenerMiddleware.startListening({
 			actionCreator: action,
-			async effect(action, listenerApi) {
+			effect(action, listenerApi) {
 				if (
 					(action.payload as Record<string, unknown>)
 						?.discardPersistence
@@ -194,7 +199,7 @@ export function getPersistenceListenerMiddleware(
 					action.type.includes('Pins') ||
 					action.type.includes('ClockConfig')
 				) {
-					modifiedClockNodes = await getModifiedClockNodes(
+					modifiedClockNodes = getModifiedClockNodes(
 						state.clockNodesReducer.clockNodes,
 						state.pinsReducer.pins,
 						state.clockNodesReducer.diagramData
@@ -239,6 +244,7 @@ export function getPersistenceListenerMiddleware(
 					action.type.includes('Partitions') ||
 					action.type.includes('Peripherals') ||
 					action.type === 'Pins/setAppliedSignalControlValue' ||
+					action.type === 'Pins/setResetControlValues' ||
 					action.type === 'Pins/setAppliedSignal' // NOTE we need this as a newly enabled pin gets configs assigned in this step.
 				) {
 					updatedProjects = formatProjectPersistencePayload(

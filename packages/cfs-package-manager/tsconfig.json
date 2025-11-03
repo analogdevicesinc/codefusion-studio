@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"declaration": true,
+		"module": "NodeNext",
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": true,
+		"target": "ES2022",
+		"moduleResolution": "NodeNext",
+		"tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+		"skipLibCheck": true,
+		"strictPropertyInitialization": false,
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"ts-node": {
+		"esm": true
+	},
+	"include": ["./src/**/*"]
+}

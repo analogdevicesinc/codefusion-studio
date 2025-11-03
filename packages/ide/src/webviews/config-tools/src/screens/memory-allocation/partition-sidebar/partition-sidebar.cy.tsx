@@ -19,22 +19,22 @@ import {
 	type Partition
 } from '../../../state/slices/partitions/partitions.reducer';
 import {PartitionSidebar} from './partition-sidebar';
-import {
-	type MemoryBlock,
-	type Soc
-} from '../../../../../common/types/soc';
-import {configurePreloadedStore} from '../../../state/store';
+import {type Soc} from '../../../../../common/types/soc';
 import {getBlockMinAlignment} from '../../../utils/memory';
 
-const mock = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+const mock = formatSocCoreMemoryBlocks(
+	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
+);
+
+import type {CfsConfig} from 'cfs-plugins-api';
+import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
+import {configurePreloadedStore} from '../../../state/store';
 
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			CoreNum: 0,
 			Description: 'ARM Cortex-M4',
@@ -57,9 +57,9 @@ const mockedConfigDict = {
 			PluginId: ''
 		}
 	]
-};
+} as unknown as CfsConfig;
 
-const createMockPartition = (
+export const createMockPartition = (
 	partition: Partial<Partition>
 ): Partition => ({
 	displayName: partition.displayName ?? 'TestPartition',
@@ -77,25 +77,17 @@ const createMockPartition = (
 	blockNames: partition.blockNames ?? [],
 	startAddress: partition.startAddress ?? '',
 	size: partition.size ?? 0,
+	displayUnit: partition.displayUnit ?? undefined,
 	projects: partition.projects ?? []
 });
 
 describe('Partition Sidebar', () => {
-	const reduxStore = configurePreloadedStore(mock as unknown as Soc);
+	const reduxStore = configurePreloadedStore(
+		mock as unknown as Soc,
+		mockedConfigDict
+	);
 
 	before(() => {
-		window.localStorage.setItem('Cores', JSON.stringify(mock.Cores));
-		window.localStorage.setItem(
-			'MemoryBlocks',
-			JSON.stringify([
-				...mock.Cores[0].Memory,
-				...mock.Cores[1].Memory
-			])
-		);
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockedConfigDict)
-		);
 		reduxStore.dispatch(
 			setSideBarState({
 				isSidebarMinimised: false,
@@ -111,8 +103,7 @@ describe('Partition Sidebar', () => {
 						MinimumAlignment: undefined,
 						Access: '',
 						Location: '',
-						Type: '',
-						TrustZone: undefined
+						Type: ''
 					},
 					blockNames: [],
 					startAddress: '',
@@ -130,11 +121,17 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({type: '', displayName: ''})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: '',
+					displayName: ''
+				})
 			);
 
 			cy.dataTest('memory-type-dropdown').click();
@@ -157,27 +154,31 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({
-						type: 'Flash',
-						displayName: 'Partition1',
-						startAddress: '0x10300000',
-						size: 8192,
-						projects: [
-							{
-								label: 'RISC-V (RV32)',
-								access: 'R',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						],
-						blockNames: ['flash1']
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					displayName: 'Partition1',
+					startAddress: '0x10300000',
+					size: 8192,
+					projects: [
+						{
+							label: 'RISC-V (RV32)',
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					],
+					blockNames: ['flash1']
+				})
+			);
+
 			cy.dataTest('assigned-cores-multiselect')
 				.get('button')
 				.should('have.text', 'RISC-V (RV32)');
@@ -195,6 +196,40 @@ describe('Partition Sidebar', () => {
 			// Size should be reset
 			cy.get('input').eq(1).should('have.value', '0');
 		});
+		it('should respect DisplayUnit field', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					displayName: 'Partition1',
+					startAddress: '0x10300000',
+					size: 81920,
+					displayUnit: 'KB',
+					projects: [
+						{
+							label: 'RISC-V (RV32)',
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					],
+					blockNames: ['flash1']
+				})
+			);
+
+			cy.dataTest('size-stepper')
+				.find('input')
+				.should('have.value', '80');
+		});
 	});
 
 	describe('Assigned Cores Section', () => {
@@ -202,14 +237,18 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
 
+			setSideBarPartition(createMockPartition({}));
+
 			cy.dataTest('assigned-cores-multiselect').get('button').click();
+			cy.dataTest('assigned-cores-multiselect')
+				.find('vscode-badge')
+				.should('not.exist');
 
 			cy.dataTest('multiselect-option-RV-proj')
 				.should('be.visible')
@@ -217,7 +256,10 @@ describe('Partition Sidebar', () => {
 
 			cy.dataTest('assigned-cores-multiselect').get('button').click();
 
-			cy.dataTest('permission-label-RV-proj').should('be.visible');
+			cy.dataTest('permission-label-RV-proj')
+				.should('be.visible')
+				.get('vscode-badge') // Don't show any secure/non-secure badge
+				.should('not.exist');
 
 			cy.dataTest('remove-core-RV-proj').should('be.visible').click();
 
@@ -230,12 +272,13 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
+
+			setSideBarPartition(createMockPartition({}));
 
 			cy.dataTest('base-block-dropdown').click();
 
@@ -248,12 +291,13 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
+
+			setSideBarPartition(createMockPartition({}));
 
 			cy.dataTest('base-block-dropdown').click();
 
@@ -277,12 +321,13 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
+
+			setSideBarPartition(createMockPartition({}));
 
 			cy.dataTest('base-block-dropdown').click();
 
@@ -300,25 +345,28 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						],
-						type: 'Flash',
-						blockNames: ['flash0'],
-						size: 16384,
-						startAddress: '0x10200000'
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					],
+					type: 'Flash',
+					blockNames: ['flash0'],
+					size: 16384,
+					startAddress: '0x10200000'
+				})
 			);
 
 			cy.dataTest('block-item-section').should('not.exist');
@@ -328,28 +376,242 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						],
-						type: 'Flash',
-						blockNames: ['flash1'],
-						size: 100,
-						startAddress: '0x10300000'
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
 
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					],
+					type: 'Flash',
+					blockNames: ['flash1'],
+					size: 100,
+					startAddress: '0x10300000'
+				})
+			);
+
 			cy.dataTest('block-item-section').should('not.exist');
+		});
+	});
+
+	describe('Plugin Options Section', () => {
+		const pluginControls = {
+			memory: [
+				{
+					Id: 'CHOSEN',
+					Description:
+						'Chosen. Multiple values can be separated by commas.',
+					Type: 'text',
+					Pattern: '([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*',
+					PluginOption: true
+				}
+			]
+		};
+
+		it('should render the plugin options when the appropriate controls supplied', () => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(pluginControls)
+			);
+
+			window.localStorage.setItem(
+				'configDict',
+				JSON.stringify(mockedConfigDict)
+			);
+
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'ARM Cortex-M4',
+							access: 'R',
+							coreId: 'M4',
+							projectId: 'CM4-proj',
+							owner: false
+						}
+					]
+				})
+			);
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			).should('exist');
+		});
+
+		it('should NOT render the plugin options when there are no controls supplied', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'ARM Cortex-M4',
+							access: 'R',
+							coreId: 'M4',
+							projectId: 'CM4-proj',
+							owner: false
+						}
+					]
+				})
+			);
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			).should('not.exist');
+		});
+
+		it('should not update the chosen field when other fields change', () => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(pluginControls)
+			);
+
+			window.localStorage.setItem(
+				'configDict',
+				JSON.stringify(mockedConfigDict)
+			);
+
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'ARM Cortex-M4',
+							access: 'R',
+							coreId: 'M4',
+							projectId: 'CM4-proj',
+							owner: false
+						}
+					]
+				})
+			);
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			const chosenInput = 'test';
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').type(chosenInput);
+				});
+
+			cy.dataTest('partition-name-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').clear().type('Partition Name');
+				});
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').should('have.value', chosenInput);
+				});
+		});
+
+		it('should not clear the plugin options when base block is selected', () => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(pluginControls)
+			);
+
+			window.localStorage.setItem(
+				'configDict',
+				JSON.stringify(mockedConfigDict)
+			);
+
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(createMockPartition({}));
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			cy.dataTest('assigned-cores-multiselect').get('button').click();
+
+			cy.dataTest('multiselect-option-CM4-proj')
+				.should('be.visible')
+				.click();
+
+			cy.dataTest('assigned-cores-multiselect').get('button').click();
+
+			const chosenInput = 'test';
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').type(chosenInput);
+				});
+
+			cy.dataTest('base-block-dropdown').should('be.visible').click();
+
+			cy.dataTest('flash0').should('be.visible').click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').should('have.value', chosenInput);
+				});
 		});
 	});
 
@@ -360,12 +622,13 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
-					partition={createMockPartition({type: ''})}
 					onClose={cy.stub}
 					onFormTouched={onFormTouchedSpy}
 				/>,
 				reduxStore
 			);
+
+			setSideBarPartition(createMockPartition({type: ''}));
 
 			cy.dataTest('create-partition-button').click();
 
@@ -377,27 +640,31 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({type: ''})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
+			setSideBarPartition(createMockPartition({type: ''}));
+
 			cy.dataTest('memory-type-dropdown-error').should('exist');
 		});
 		it('should display errors when the required fields are missing', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: '',
-						displayName: '',
-						startAddress: ''
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: '',
+					displayName: '',
+					startAddress: ''
+				})
 			);
 
 			cy.dataTest('memory-type-dropdown-error').should(
@@ -420,32 +687,128 @@ describe('Partition Sidebar', () => {
 				'Size must be greater than 0'
 			);
 		});
-		it('should display an error when no core is an owner', () => {
+		it('should display an error when partition name starts with a number', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R/W/X',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: false
-							},
-							{
-								label: 'ARM',
-								access: 'R/W/X',
-								coreId: 'M4',
-								projectId: 'M4-proj',
-								owner: false
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+			setSideBarPartition(
+				createMockPartition({
+					displayName: '2isIllegal'
+				})
+			);
+
+			cy.dataTest('partition-name-error').should(
+				'have.text',
+				'First character must be a letter or underscore'
+			);
+		});
+
+		it('should display error when partition names contains illegal characters', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					displayName: 'illegal name%'
+				})
+			);
+
+			cy.dataTest('partition-name-error').should(
+				'have.text',
+				'Only alphanumeric and underscore characters are allowed'
+			);
+		});
+
+		it('should not display error when parition name is valid', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+			setSideBarPartition(
+				createMockPartition({
+					displayName: 'legal_name'
+				})
+			);
+
+			cy.dataTest('partition-name-error').should('not.exist');
+		});
+
+		it('should allow to toggle owner if only one core is selected', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					]
+				})
+			);
+
+			cy.get('input[type="checkbox"]').should('be.checked');
+			cy.get('input[type="checkbox"]').click({force: true});
+
+			cy.get('input[type="checkbox"]').should('not.be.checked');
+			cy.get('input[type="checkbox"]').click({force: true});
+
+			cy.get('input[type="checkbox"]').should('be.checked');
+		});
+		it('should display an error when no core is an owner', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: false
+						},
+						{
+							label: 'ARM',
+							access: 'R/W/X',
+							coreId: 'M4',
+							projectId: 'M4-proj',
+							owner: false
+						}
+					]
+				})
 			);
 
 			cy.dataTest('assigned-cores-multiselect-error').should(
@@ -457,13 +820,16 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Unknown Memory Type'
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Unknown Memory Type'
+				})
 			);
 
 			cy.dataTest('memory-type-dropdown-error').should(
@@ -480,30 +846,33 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'RAM',
-						size: 8,
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							},
-							{
-								label: 'ARM',
-								access: 'R',
-								coreId: 'M4',
-								projectId: 'M4-proj',
-								owner: false
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'RAM',
+					size: 8,
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						},
+						{
+							label: 'ARM',
+							access: 'R',
+							coreId: 'M4',
+							projectId: 'M4-proj',
+							owner: false
+						}
+					]
+				})
 			);
 
 			cy.dataTest('base-block-dropdown-error').should(
@@ -516,14 +885,17 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x100000'
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x100000'
+				})
 			);
 
 			cy.dataTest('start-address-error').should(
@@ -535,30 +907,33 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x1030000f',
-						blockNames: ['flash1'],
-						size: 100,
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R/W/X',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
 			);
 
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x1030000f',
+					blockNames: ['flash1'],
+					size: 100,
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					]
+				})
+			);
+
 			const block = mock.Cores[0].Memory.find(
 				block => block.Name === 'flash1'
-			) as MemoryBlock;
+			)!;
 
 			const minimumAlignment = getBlockMinAlignment(block);
 
@@ -576,25 +951,28 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'RAM',
-						startAddress: '0x20100000',
-						blockNames: [''],
-						size: 8,
-						projects: [
-							{
-								label: 'ARM Cortex-M4',
-								access: 'R',
-								coreId: 'M4',
-								projectId: 'M4-proj',
-								owner: false
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'RAM',
+					startAddress: '0x20100000',
+					blockNames: [''],
+					size: 8,
+					projects: [
+						{
+							label: 'ARM Cortex-M4',
+							access: 'R',
+							coreId: 'M4',
+							projectId: 'M4-proj',
+							owner: false
+						}
+					]
+				})
 			);
 
 			cy.dataTest('start-address-error').should(
@@ -606,15 +984,18 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x10000000',
-						size: 4 * 1024 * 1024
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x10000000',
+					size: 4 * 1024 * 1024
+				})
 			);
 
 			cy.dataTest('size-stepper-error').should(
@@ -634,15 +1015,18 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x100000f5',
-						size: 16384
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x100000f5',
+					size: 16384
+				})
 			);
 
 			cy.dataTest('start-address-error').should(
@@ -659,15 +1043,18 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x10000000',
-						size: 32768
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x10000000',
+					size: 32768
+				})
 			);
 
 			cy.dataTest('size-stepper-error').should(
@@ -680,13 +1067,16 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						displayName: 'TestPartition'
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					displayName: 'TestPartition'
+				})
 			);
 
 			cy.dataTest('partition-name-error').should(
@@ -698,25 +1088,28 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x10300000',
-						blockNames: ['flash1'],
-						size: 8192,
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R/W/X',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x10300000',
+					blockNames: ['flash1'],
+					size: 8192,
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					]
+				})
 			);
 
 			cy.dataTest('size-stepper-error').should(
@@ -729,25 +1122,28 @@ describe('Partition Sidebar', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
-					partition={createMockPartition({
-						type: 'Flash',
-						startAddress: '0x10100000',
-						blockNames: ['flash0', 'flash1'],
-						size: 16384,
-						projects: [
-							{
-								label: 'RISC-V',
-								access: 'R/W/X',
-								coreId: 'RV',
-								projectId: 'RV-proj',
-								owner: true
-							}
-						]
-					})}
 					onClose={cy.stub}
 					onFormTouched={cy.stub}
 				/>,
 				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					type: 'Flash',
+					startAddress: '0x10100000',
+					blockNames: ['flash0', 'flash1'],
+					size: 16384,
+					projects: [
+						{
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
+						}
+					]
+				})
 			);
 
 			cy.dataTest('size-stepper-error').should(
@@ -755,5 +1151,99 @@ describe('Partition Sidebar', () => {
 				'Core RISC-V (RV32) does not have access to all memory blocks.'
 			);
 		});
+
+		it('should display next available start address in the memory block', () => {
+			const mockBaseBlock = {
+				Name: 'flash1',
+				Description: '',
+				AddressStart: '0x10300000',
+				AddressEnd: '',
+				Width: 0,
+				Access: '',
+				Location: '',
+				Type: 'Flash'
+			};
+
+			const mockProjects = [
+				{
+					label: 'RISC-V',
+					access: 'R/W/X',
+					coreId: 'RV',
+					projectId: 'RV-proj',
+					owner: true
+				}
+			];
+
+			[
+				{
+					type: 'Flash',
+					displayName: 'Test1',
+					startAddress: '0x10300000',
+					blockNames: ['flash1'],
+					size: 32768
+				},
+				{
+					type: 'Flash',
+					displayName: 'Test2',
+					startAddress: '0x10308000',
+					blockNames: ['flash1'],
+					size: 32768
+				},
+				{
+					type: 'Flash',
+					displayName: 'Test4',
+					startAddress: '0x10330000',
+					blockNames: ['flash1'],
+					size: 32768
+				}
+			].forEach(cfg => {
+				reduxStore.dispatch(
+					createPartition({
+						...createMockPartition({
+							...cfg,
+							projects: mockProjects,
+							baseBlock: mockBaseBlock
+						})
+					})
+				);
+			});
+
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({type: '', displayName: ''})
+			);
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			cy.dataTest('base-block-dropdown').click();
+
+			cy.dataTest('flash1').eq(0).click();
+
+			cy.dataTest('start-address')
+				.get('input')
+				.eq(0)
+				.should('have.value', '10310000');
+		});
 	});
+
+	function setSideBarPartition(mockPartition: Partition) {
+		cy.wrap(
+			reduxStore.dispatch(
+				setSideBarState({
+					isSidebarMinimised: false,
+					sidebarPartition: mockPartition
+				})
+			)
+		);
+	}
 });

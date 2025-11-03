@@ -18,38 +18,9 @@ import * as vscode from "vscode";
 import { EXTENSION_ID } from "../constants";
 import { ADI_SELECTED_TOOLCHAIN_SETTING } from "../utils/constants";
 
-import { Tool } from "./tool";
-import { ToolchainInfo } from "./toolchainInfo";
-
-export enum ToolchainNames {
+enum ToolchainNames {
   ARM_NONE_EABI = "arm-none-eabi",
   RISCV_NONE_ELF = "riscv-none-elf",
-}
-
-/**
- * The Toolchain class extends the {@link Tool} class to include additional descriptors for
- * external toolchains supported by the extension, such as the compiler and debugger paths.
- *
- * The Toolchain objects are handled by the {@link ToolManager} class.
- */
-export class Toolchain extends Tool {
-  /**
-   * Get the absolute resolved file path to the toolchain compiler binary such as gcc.
-   * @returns The resolved file path
-   */
-  getCompilerPath(): string {
-    const toolchainInfo = this.info as ToolchainInfo;
-    return this.getExecutablePath(toolchainInfo.compilerPath);
-  }
-
-  /**
-   * Get the absolute resolved file path to the toolchain debugger binary, such as gdb.
-   * @returns The resolved file path
-   */
-  getDebuggerPath(): string {
-    const toolchainInfo = this.info as ToolchainInfo;
-    return this.getExecutablePath(toolchainInfo.debuggerPath);
-  }
 }
 
 /**
@@ -64,7 +35,7 @@ export function getPreferredToolchain(): Promise<string | undefined> {
   return new Promise<string | undefined>(async (resolve) => {
     const conf = vscode.workspace.getConfiguration(EXTENSION_ID);
     let selectedToolchain: string | undefined = conf.get(
-      ADI_SELECTED_TOOLCHAIN_SETTING
+      ADI_SELECTED_TOOLCHAIN_SETTING,
     );
     if (selectedToolchain === undefined || selectedToolchain.length === 0) {
       await askUserToSetPreferredToolchain().then((userSelectedToolchain) => {

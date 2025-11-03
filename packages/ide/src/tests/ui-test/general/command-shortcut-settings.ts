@@ -14,14 +14,7 @@
  */
 
 import { expect } from "chai";
-import { existsSync } from "fs";
-import {
-  By,
-  WebView,
-  Workbench,
-  EditorView,
-  InputBox,
-} from "vscode-extension-tester";
+import { Workbench, EditorView, InputBox } from "vscode-extension-tester";
 
 import {
   OPEN_SDK_SETTINGS_COMMAND_ID,
@@ -40,9 +33,6 @@ import { CFS_IDE_VERSION } from "../../ui-test-utils/settings-utils";
 
 describe("Settings shortcut tests", () => {
   const testDirectory = "src/tests/ui-test/data/Hello_World";
-  let projectPath: string;
-  let webview: WebView;
-  let editorView: EditorView;
   const locatorspath = new Locatorspaths();
   const actualtitle = "Settings";
 
@@ -71,7 +61,7 @@ describe("Settings shortcut tests", () => {
       .findElement(locatorspath.settingstext);
     await workbench.getDriver().sleep(10000);
     const iselementdisp = await homestartup.isDisplayed();
-    expect(iselementdisp).to.be.true;
+    expect(iselementdisp).to.equal(true);
   });
 
   it("Settings shortcut command, verifying title of the page", async () => {
@@ -91,13 +81,14 @@ describe("Settings shortcut tests", () => {
     const picks = await input.getQuickPicks();
     expect(picks).not.equal(undefined);
     let sdkpath;
-    for (const item of picks) {
-      const text = await item.getText();
+    const texts = await Promise.all(picks.map((item) => item.getText()));
+    for (const text of texts) {
       if (text.match(".*" + CFS_IDE_VERSION)) {
         sdkpath = text;
         break;
       }
     }
+
     expect(sdkpath).not.equal(undefined);
   });
 });

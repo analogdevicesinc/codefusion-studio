@@ -12,11 +12,12 @@
  * limitations under the License.
  *
  */
+
+// The order of the entries matter for wizzard stepper
 export const navigationItems = {
 	socSelection: 'soc-selection',
-	workspaceOptions: 'workspace-options',
-	templateSelection: 'template-selection',
 	boardSelection: 'board-selection',
+	workspaceOptions: 'workspace-options',
 	coresSelection: 'cores-selection',
 	coreConfig: 'core-config',
 	pathSelection: 'path-selection'

@@ -8,17 +8,22 @@ date: 2024-09-26
 
 ## Software dependencies
 
-Tools VS Code extensions depend on:
+The CodeFusion Studio VS Code extension depends on:
 
-- [Microsoft's Visual Studio Code](https://code.visualstudio.com/) version 1.89.0 or later.
+- [**Microsoft Visual Studio Code**](https://code.visualstudio.com/) version **1.100** or later (recommended).
+
+!!! note
+    Older versions of VS Code (such as 1.98 and earlier) are not supported due to known layout issues in the **System Planner > Pin Config** canvas.
 
 ## Host OS support
 
- CodeFusion Studio and extensions are supported on the following host operating systems:
+CodeFusion Studio and its extension are supported on the following host operating systems:
 
-- Windows 10 or 11 (64-bit)
-- macOS (ARM64)
-- Ubuntu 22.04 and later (64-bit)
+- Windows 11 (64-bit)  
+- macOS 15 and macOS 26 (ARM64)
+- Ubuntu 22.04 and 24.04 (64-bit)
+
+*Earlier or newer OS versions may work but are not officially supported.*
 
 ## Linux support
 

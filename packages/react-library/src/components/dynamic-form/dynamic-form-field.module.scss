@@ -13,6 +13,7 @@
  *
  */
 @use '../../styles/colors';
+@use '../../styles/layout';
 
 .formFieldContainer {
 	display: flex;
@@ -25,6 +26,8 @@
 		justify-content: space-between;
 
 		.fieldTitle {
+			display: flex;
+			gap: layout.$spacing-2;
 			font-size: 11px;
 			margin: 0;
 		}

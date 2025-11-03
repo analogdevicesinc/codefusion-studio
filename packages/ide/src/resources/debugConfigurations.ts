@@ -162,8 +162,76 @@ export const CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
     postAttachCommands: ["continue"],
   };
 
+export const CORTEX_DEBUG_XTENSA_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
+  {
+    type: "cortex-debug",
+    name: "CFS: Debug with JlinkGDBServer and JLink (Xtensa)",
+    request: "attach",
+    executable: '^"\\${config:cfs.programFile}"',
+    cwd: '^"\\${config:cfs.debugPath}"',
+    showDevDebugOutput: "both",
+    servertype: "jlink",
+    windows: {
+      serverpath: '^"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCL.exe"',
+      gdbPath:
+        '^"\\${config:cfs.sdk.path}/Tools/xtensa/RJ-2024.4/XtensaTools/bin/xt-gdb.exe"',
+    },
+    linux: {
+      serverpath: '^"\\${command:cfs.jlink.setJlinkPath}/JLinkGDBServerCLExe"',
+      gdbPath:
+        '^"\\${config:cfs.sdk.path}/Tools/xtensa/RJ-2024.4/XtensaTools/bin/xt-gdb"',
+    },
+    device: '^"\\${config:cfs.jlink.device}"',
+    interface: "swd",
+    svdPath: '^"\\${config:cfs.cmsis.svdFile}"',
+    gdbTarget: "localhost:3334",
+    preAttachCommands: [
+      "set logging overwrite on",
+      "set logging file debug-xtensa.log",
+      "set logging on",
+      "set remotetimeout 60",
+      "tbreak main",
+    ],
+    postAttachCommands: ["continue"],
+    preLaunchTask: "CFS: build",
+    overrideAttachCommands: [
+      "monitor halt",
+      "monitor reset",
+      "-target-download",
+    ],
+    overrideResetCommands: ["monitor reset"],
+    overrideRestartCommands: ["monitor reset"],
+    debuggerArgs: ["--xtensa-core=${config:cfs.xtensa.core}"],
+  };
+
+export const CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION: vscode.DebugConfiguration =
+  {
+    name: "CFS: Launch Core Dump Analysis",
+    type: "cortex-debug",
+    request: "launch",
+    servertype: "external",
+    linux: {
+      gdbPath:
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+    },
+    windows: {
+      gdbPath:
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb.exe",
+    },
+    osx: {
+      gdbPath:
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+    },
+    gdbTarget: "localhost:1234",
+    executable: "${workspaceFolder}/build/zephyr/zephyr.elf",
+    cwd: "${workspaceFolder}",
+    overrideLaunchCommands: [],
+  };
+
 export const CORTEX_DEBUG_CONFIGURATIONS = [
   CORTEX_DEBUG_ARM_EMBEDDED_DEBUG_CONFIGURATION,
   CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION,
   CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION,
+  CORTEX_DEBUG_XTENSA_DEBUG_CONFIGURATION,
+  CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION,
 ];

@@ -1,10 +1,10 @@
 ---
 description: Tasks available in a configured CFS workspace.
 author: Analog Devices
-date: 2025-04-28
+date: 2025-05-12
 ---
 
-# Tasks to build, clean, flash and debug
+# Build, clean, flash, and debug tasks
 
 After [creating a workspace](./create-new-workspace.md) and configuring it, you can run various tasks to create, flash, clean, and run applications.
 
@@ -76,6 +76,15 @@ Using the activity view you can select a debug session to launch. See [Debugging
     The clean task is available with the shortcut on the left-hand side of the status bar.  
     ![CFS Clean Task Status Bar](images/status-bar-debug-dark.png#only-dark)
     ![CFS Clean Task Status Bar](images/status-bar-debug-light.png#only-light)
+
+### Profiling
+
+The **Profiling** task provides two tasks for capturing and visualizing performance data from your Zephyr application.
+
+- **Capture Profiler Trace (Zephelin)** – Collects trace data streamed from the target board over UART. This task captures system-level and AI operator-level events and saves them to an output file in your project directory.
+- **Prepare CTF Trace for Visualization** – Converts a captured binary trace file (CTF format) into a Trace Event Format (TEF) file. This file can then be viewed using the [:octicons-link-external-24: Zephelin Trace Viewer](https://antmicro.github.io/zephelin-trace-viewer/). Use this option after capturing a trace in CTF mode to visualize execution flow and timing information.
+
+For detailed setup and usage instructions, see [Profiler Configuration](../tools/config-tool/profiling.md).
 
 ## Create custom tasks
 

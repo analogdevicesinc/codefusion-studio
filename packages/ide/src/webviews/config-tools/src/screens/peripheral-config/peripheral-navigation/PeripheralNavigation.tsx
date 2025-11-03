@@ -12,31 +12,48 @@
  * limitations under the License.
  *
  */
-import {memo} from 'react';
+import {memo, useMemo} from 'react';
 import type {
 	FormattedPeripheral,
 	FormattedPeripheralSignal
 } from '../../../../../common/types/soc';
 import PeripheralBlock from '../peripheral-block/PeripheralBlock';
+import PeripheralGroup from '../peripheral-group/peripheral-group';
+import {groupPeripherals} from '../../../utils/peripheral';
 
 function PeripheralNavigation({
 	peripherals
-}: {
-	readonly peripherals: Array<
-		FormattedPeripheral<FormattedPeripheralSignal>
-	>;
-}) {
+}: Readonly<{
+	peripherals: Array<FormattedPeripheral<FormattedPeripheralSignal>>;
+}>) {
+	const orderedPeripherals = useMemo(() => {
+		return groupPeripherals(peripherals);
+	}, [peripherals]);
+
 	return (
 		<div>
-			{peripherals.map(peripheral => (
-				<PeripheralBlock
-					key={
-						'peripheral-group-' +
-						(peripheral.signalGroup ?? peripheral.name)
-					}
-					{...peripheral}
-				/>
-			))}
+			{orderedPeripherals.map(p => {
+				if (p.group) {
+					return (
+						<div key={`group-${p.group}`}>
+							<PeripheralGroup
+								group={p.group}
+								peripherals={p.peripherals}
+							/>
+						</div>
+					);
+				}
+
+				// NOTE peripherals without a group will only have 1 item.
+				const peripheral = p.peripherals[0];
+
+				return (
+					<PeripheralBlock
+						key={`peripheral-${peripheral.name}`}
+						{...peripheral}
+					/>
+				);
+			})}
 		</div>
 	);
 }

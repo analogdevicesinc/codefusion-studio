@@ -12,7 +12,10 @@
  * limitations under the License.
  *
  */
-import type {TFormFieldValue} from 'cfs-react-library';
+import type {
+	TFormFieldValue,
+	TFormNumericBase
+} from 'cfs-react-library';
 
 export type SignalConfig = {
 	name: string;
@@ -21,11 +24,16 @@ export type SignalConfig = {
 	config: Record<string, string>;
 };
 
+export type PeripheralSecurity = 'Secure' | 'Non-Secure' | 'Any';
+
 export type PeripheralConfig = {
 	name: string;
 	description?: string;
 	projectId?: string; // Should be defined for peripherals with signal groups or no signals.
 	signals: Record<string, SignalConfig>;
 	config: Record<string, TFormFieldValue>;
+	configFormat?: {
+		numericBase?: Record<string, TFormNumericBase>;
+	};
 	security?: string;
 };

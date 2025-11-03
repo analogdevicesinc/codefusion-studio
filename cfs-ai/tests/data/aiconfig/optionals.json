@@ -1,0 +1,131 @@
+{
+    "testsDescription": "Check that optional configs are optional",
+    "fail": [
+        {
+            "testDescription": "Check that not giving soc fails",
+            "Projects" : [
+                {
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                           "Model": "/path/to/my/model.tflite"
+                        },
+                       "Target":{"Core": "testCore"},
+                       "Enabled": true
+                    }],
+                    "CoreId" : "testCore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject1"
+                    }
+                }
+            ]
+        }, 
+        {
+            "testDescription": "Check that not giving core fails",
+            "Soc": "testSoc",
+            "Projects" : [
+                {
+                    "AIModels":[{
+                        "Name": "testName",
+                        "OutDir": "./data",
+			                        "Model" : {
+                            "File": "/path/to/my/model.tflite",
+                            "Name": "testModel"
+                        },
+                        "Enabled": true
+                    }],
+                    "CoreId" : "testCore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject2"
+                    }
+                }
+            ]
+        },
+        {
+            "testDescription": "Check that not giving model path fails",
+            "Soc": "testSoc",
+            "Projects" : [
+                {
+                    "AIModels":[{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                            "Input": "/path/to/my/model.tflite"
+                        },
+                        "Enabled": true
+                    }],
+                    "CoreId" : "testCore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject3"
+                    }
+                }
+            ]
+        } 
+    ],
+    "pass": [
+        {
+            "testDescription": "Check that not giving accelerator, runtime, exec mode and backend works",
+            "Soc": "testSoc",
+            "Projects" : [
+                {
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                            "Model": "/path/to/my/model.tflite"
+                        },
+                        "Target":{"Core": "testcore"},
+                        "Enabled": true
+                    }],
+                    "CoreId" : "testcore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject"
+                    }
+                }
+            ]
+        }, 
+        {
+            "testDescription": "Check that not giving runtime, exec mode and backend works",
+            "Soc": "testSoc",
+            "Projects" : [
+                {
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                            "Model": "/path/to/my/model.tflite"
+                        },
+                        "Target":{"Core": "testcore", "Accelerator": "testaccelerator"},
+                        "Enabled": true
+                    }],
+                    "CoreId" : "testcore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject"
+                    }
+                }
+            ]
+        },
+        {
+            "testDescription": "Check that not giving exec mode and backend works",
+            "Soc": "testSoc",
+            "Projects" : [
+                    {
+                    "AIModels": [{
+                        "Name": "testName",
+                        "OutDir": "./data",
+                        "Files" : {
+                            "Model": "/path/to/my/model.tflite"
+                        },
+                        "Target":{"Core": "testcore", "Accelerator": "testaccelerator","Runtime": "testRuntime"},
+                        "Enabled": true
+                    }],
+                    "CoreId" : "testcore",
+                    "PlatformConfig": {
+                        "ProjectName": "testProject"
+                    }
+                }
+            ]
+        }
+    ]
+}

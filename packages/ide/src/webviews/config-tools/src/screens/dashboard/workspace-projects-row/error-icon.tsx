@@ -36,7 +36,7 @@ export default function ErrorIcon({
 		controls
 	);
 
-	return (
-		Boolean(peripheralErr) && <ConflictIcon className={styles.icon} />
-	);
+	return peripheralErr ? (
+		<ConflictIcon className={styles.icon} />
+	) : null;
 }

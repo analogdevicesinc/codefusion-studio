@@ -21,6 +21,7 @@ import {
   CHANGE_CONTEXT,
   EXECUTE_TASK,
   WORKSPACE_CREATION_COMMANDS,
+  ZEPHELIN_COMMANDS,
 } from "./constants";
 import { Utils } from "../utils/utils";
 import {
@@ -29,6 +30,10 @@ import {
   openVscodeWorkspace,
 } from "../custom-editors/cfs-custom-editor";
 import { ContextPanelProvider } from "../view-container";
+import {
+  convertTraceCtfToTef,
+  captureProfilerTrace,
+} from "./zephelin-commands";
 /**
  * Executes a specified task by its name or as a vscode.Task within the given workspace folder.
  *
@@ -149,6 +154,8 @@ export function registerAllCommands(context: vscode.ExtensionContext) {
     ContextPanelProvider.setActiveContext(context);
   });
 
+  registerZephelinCommands(context);
+
   registerQuickAccessPanelCommands(context);
 }
 
@@ -189,5 +196,20 @@ export function registerCommand(
 ) {
   context.subscriptions.push(
     vscode.commands.registerCommand(command, callback, thisArg),
+  );
+}
+
+function registerZephelinCommands(context: vscode.ExtensionContext) {
+  // Zephelin commands
+  registerCommand(
+    context,
+    ZEPHELIN_COMMANDS.CAPTURE_PROFILER_TRACE,
+    captureProfilerTrace,
+  );
+
+  registerCommand(
+    context,
+    ZEPHELIN_COMMANDS.CONVERT_TRACE_CTF_TO_TEF,
+    convertTraceCtfToTef,
   );
 }

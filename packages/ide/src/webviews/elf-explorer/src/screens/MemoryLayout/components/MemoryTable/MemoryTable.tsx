@@ -364,7 +364,10 @@ function MemoryTable({
 
 	return (
 		<>
-			<div className={styles['footer-container']}>
+			<div
+				className={styles['footer-container']}
+				data-test='memory-layout:table-container'
+			>
 				<DataGrid
 					ariaLabel='Memory Table'
 					className={`${styles.table} ${styles['min-height']} ${styles['highlight-table']}`}
@@ -406,6 +409,7 @@ function MemoryTable({
 							return (
 								<DataGridRow
 									key={row.id}
+									dataTest={`memory-table:row:${row.id}`}
 									className={`${
 										hasNextLayer
 											? styles.enabledRow
@@ -450,18 +454,19 @@ function MemoryTable({
 						})}
 				</DataGrid>
 				<DataGridRow className={styles['sticky-grid-footer']}>
-					<>
+					<div data-test='memory-table:footer'>
 						<strong>{sortedData.length}</strong>
 						{layer === 1
 							? ' Segments'
 							: layer === 2
 								? ' Sections'
 								: ' Symbols'}
-					</>
+					</div>
 				</DataGridRow>
 			</div>
 
 			<ContextMenuPanel
+				testId='memory-table'
 				isVisible={isMenuVisible}
 				x={contextMenuPosition.x}
 				y={contextMenuPosition.y}

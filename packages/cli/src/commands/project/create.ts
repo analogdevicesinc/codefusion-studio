@@ -1,6 +1,8 @@
 import {Command, Flags} from '@oclif/core';
 import {CfsWorkspace} from 'cfs-lib';
 
+import {getDataModelManager} from '../../utils/data-model-manager.js';
+import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 import {
   checkIfFileExists,
@@ -54,7 +56,20 @@ export default class ProjectCreate extends Command {
 
     cfsWorkspace.projects = formattedProjects;
 
-    const pluginManager = getPluginManager(flags['search-path']);
+    const packageManager = await getPackageManager({
+      acceptUndefined: true
+    });
+
+    const dmManager = await getDataModelManager(
+      this.config,
+      packageManager
+    );
+
+    const pluginManager = getPluginManager(
+      flags['search-path'],
+      packageManager,
+      dmManager
+    );
 
     await pluginManager.generateProject(cfsWorkspace, projectName);
   }

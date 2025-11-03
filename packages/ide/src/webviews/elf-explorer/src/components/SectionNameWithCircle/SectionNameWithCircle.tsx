@@ -43,10 +43,14 @@ export default function SectionNameWithCircle({
 
 	return (
 		<div
+			data-test='section-name-with-circle:container'
 			className={styles.container}
 			style={align ? {justifyContent: align} : undefined}
 		>
-			<span className={setBucketStyling()} />
+			<span
+				data-test='section-name-with-circle:style'
+				className={setBucketStyling()}
+			/>
 			<span className={styles.name}>{value}</span>
 		</div>
 	);

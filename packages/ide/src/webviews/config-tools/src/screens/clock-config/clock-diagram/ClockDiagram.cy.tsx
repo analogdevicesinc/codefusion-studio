@@ -13,6 +13,7 @@
  * limitations under the License.
  *
  */
+
 /* eslint-disable max-nested-callbacks */
 /* eslint-disable @typescript-eslint/no-empty-function */
 import type {Soc} from '@common/types/soc';
@@ -22,18 +23,29 @@ import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockN
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import type {CfsConfig} from 'cfs-plugins-api';
 
-const soc = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default as unknown as Soc);
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	Projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'zephyr',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+} as unknown as CfsConfig;
+
+const soc = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('Clock Diagram', () => {
 	beforeEach(() => {
 		cy.clearLocalStorage().then(() => {
-			localStorage.setItem(
-				'ClockNodes',
-				JSON.stringify(soc.ClockNodes)
-			);
-
 			cy.fixture('clock-config-plugin-controls.json').then(
 				controls => {
 					window.localStorage.setItem(
@@ -42,40 +54,7 @@ describe('Clock Diagram', () => {
 					);
 				}
 			);
-
-			window.localStorage.setItem(
-				'configDict',
-				JSON.stringify({
-					BoardName: '',
-					Package: 'WLP',
-					Soc: 'MAX32690',
-					projects: [
-						{
-							Description: 'ARM Cortex-M4',
-							ExternallyManaged: false,
-							FirmwarePlatform: 'zephyr',
-							CoreId: 'CM4',
-							Name: 'ARM Cortex-M4',
-							PluginId: '',
-							ProjectId: 'CM4-proj'
-						}
-					]
-				})
-			);
-
-			localStorage.setItem(
-				'Package',
-				JSON.stringify(soc.Packages[0])
-			);
-
-			localStorage.setItem(
-				'Registers',
-				JSON.stringify(soc.Registers)
-			);
-
-			localStorage.setItem('Cores', JSON.stringify(soc.Cores));
 		});
-
 		cy.viewport(1068, 688);
 	});
 
@@ -83,7 +62,7 @@ describe('Clock Diagram', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const reduxStore = configurePreloadedStore(
 				soc,
-				{} as CfsConfig,
+				configDict,
 				controls
 			);
 
@@ -205,7 +184,7 @@ describe('Clock Diagram', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const reduxStore = configurePreloadedStore(
 				soc,
-				{} as CfsConfig,
+				configDict,
 				controls
 			);
 

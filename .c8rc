@@ -1,0 +1,10 @@
+{
+	"exclude": [
+		"test/**/*.ts",
+		"dist/**",
+		"coverage/**",
+		"**/*.d.ts",
+		"src/**/.vscode"
+	],
+	"reporter": ["text", "lcov"]
+}

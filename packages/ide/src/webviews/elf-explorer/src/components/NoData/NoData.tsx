@@ -22,7 +22,7 @@ export default function NoData({
 	content = 'No information available'
 }: NoDataProps) {
 	return (
-		<div>
+		<div data-test='no-data:container'>
 			<Divider />
 			<div className={styles.content}>{content}</div>
 		</div>

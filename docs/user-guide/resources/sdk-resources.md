@@ -1,7 +1,7 @@
 ---
 description: Links to SDK resources
 author: Analog Devices
-date: 2025-04-25
+date: 2025-09-24
 ---
 
 # SDK resources
@@ -16,4 +16,4 @@ The ADI MSDK contains the necessary software and tools to develop firmware for t
 
 A small-footprint kernel designed for use on resource-constrained and embedded systems: from simple embedded environmental sensors and LED wearables to sophisticated embedded controllers, smart watches, and IoT wireless applications.
 
- [:octicons-link-external-24: Zephyr 4.1.0 Documentation (Online)](https://docs.zephyrproject.org/4.1.0/){:target="_blank"} or [:octicons-link-external-24: Zephyr 4.1.0 Documentation (PDF)](https://docs.zephyrproject.org/4.1.0/zephyr.pdf){:target="_blank"}
+ [:octicons-link-external-24: Zephyr 4.2.0 Documentation (Online)](https://docs.zephyrproject.org/4.2.0/){:target="_blank"} or [:octicons-link-external-24: Zephyr 4.2.0 Documentation (PDF)](https://docs.zephyrproject.org/4.2.0/zephyr.pdf){:target="_blank"}

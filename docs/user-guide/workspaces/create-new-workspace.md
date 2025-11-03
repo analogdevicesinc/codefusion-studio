@@ -1,7 +1,7 @@
 ---
 description: Create a new workspace in CodeFusion Studio.
 author: Analog Devices
-date: 2025-04-26
+date: 2025-10-11
 ---
 
 # Create a new workspace
@@ -29,38 +29,34 @@ New workspaces are created with the Workspace Creation Wizard.
 
 Choose this option to set up your system configuration step by step.
 
-1. Select the cores to include in your workspace. Start by selecting your primary core (mandatory).  
-1. Click **Config Options** ![Config Options](../tools/config-tool/images/icon-config-dark.png#only-dark) ![Config Options](../tools/config-tool/images/icon-config-light.png#only-light) next to the core name.
-1. Select a **Code Generation Plugin**. Each plugin provides configuration options for project generation.
+1. Select one or more cores to include in your workspace. The primary core is mandatory and must be enabled to proceed.
+1. Select a **Code Generation Plugin**. Choose one of the following options:
 
-    !!! note
-        The Registers-only (bare-metal) plugin is intended as a reference for advanced workflows. It enables code generation for platforms that do not use Zephyr or MSDK. The generated code references registers directly using MMR access. Build or debug support is not included as the generated register definitions are intended to be integrated into custom toolchains or external workflows.
+      - MSDK: Generates projects for MSDK platforms.
+      - Registers-only (bare-metal) Plugin: This is intended as a reference for advanced workflows. It enables code generation for platforms that do not use Zephyr or MSDK. The generated code references registers directly using MMR access. Build or debug support is not included as the generated register definitions are intended to be integrated into custom toolchains or external workflows.
+      - Zephyr: Generates projects based on the Zephyr RTOS.
 
-1. For the **Project Name**, it is important to use a unique name for each core to avoid issues during project generation. For example, use the core ID, such as `CM4` or `RV`, to clearly distinguish projects associated with different cores.
-1. For the **Board Name**, we recommend the following formats:
+1. Define the **Platform Options** for each core as described below.
 
-    - **Zephyr**:  
-        Use the format `<platform>/<soc>/<core>`, as defined by the `identifier` in your Zephyr board's yaml file. For example, the board name for the MAX32690 FTHR board can be found in `<CFS-Install>/SDK/zephyr/zephyr/boards/adi/max32690fthr/max32690fthr_max32690_m4.yaml`:
-          ```
-          identifier: max32690fthr/max32690/m4
-          ```
-          In this case, the Zephyr Board Name should be set to `max32690fthr/max32690/m4`.
+    | Option                         | Description |
+    |---------------------------------|-------------|
+    | **Project Name**                | Enter a unique name for each core to avoid issues during project generation. For example, use a core ID such as `CM4` or `RV` to clearly distinguish projects associated with different cores. |
+    | **Zephyr Version**              | Select the Zephyr release version to target. The available versions depend on the installed packages. |
+    | **Build System**                | Choose a build system such as **Ninja** or **Make**. **Ninja** is recommended and selected by default. |
+    | **Board Name**           | Specify the board name. For MSDK projects, use standard board names such as `EvKit_V1`, `APARD`, or `FTHR`. For Zephyr projects, use the format `<platform>/<soc>/<core>` as defined by the `identifier` field in your Zephyr board’s YAML file. For example, the board name for the MAX32690 FTHR board is defined in `<CFS-Install>/SDK/zephyr/zephyr/boards/adi/max32690fthr/max32690fthr_max32690_m4.yaml` under `identifier: max32690fthr/max32690/m4`.  |
+    | **Zephyr KConfig Flags**        | Add optional Zephyr configuration flags. |
+    | **Enable Core Dump**            | Enables generation of debug metadata for post-mortem crash analysis. Required for use with the [Core Dump Analysis Tool](../debugging/debug-tools/core-dump-analysis/core-dump-overview.md). |
+    | **Zephyr Additional CMake Arguments** | Provide extra compiler or linker options. |
 
-    - **MSDK**:  
-        Use board names such as:  
-        - `EvKit_V1`  
-        - `APARD`  
-        - `FTHR`
-
-1. Click **Apply** to save your configuration.
-1. Repeat the steps above for other cores as required.
+1. Click **Continue** to move to the next core configuration.
+1. Repeat until all cores are configured.
 
     ![Workspace Cores](./images/workspace-cores-dark.png#only-dark)
     ![Workspace Cores](./images/workspace-cores-light.png#only-light)
 
 ### Select a workspace template
 
-Choose a pre-defined SoC template with ADI-recommended configuration options. Type or filter to select a firmware platform, such as MSDK or Zephyr. You can choose from single or multi-core options.
+Choose a pre-defined SoC template with ADI-recommended configuration options. You can choose from single or multi-core options.
 
 ### Complete workspace setup
 

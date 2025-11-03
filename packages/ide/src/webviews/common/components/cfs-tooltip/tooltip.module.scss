@@ -25,7 +25,7 @@
 
 	.tooltipLayout {
 		display: flex;
-		min-width: 160px;
+		min-width: var(--cfs-tooltip-layout-min-width, 160px);
 		flex-direction: column;
 		justify-content: center;
 		align-items: flex-start;

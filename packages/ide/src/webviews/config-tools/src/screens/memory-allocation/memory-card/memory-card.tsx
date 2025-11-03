@@ -14,8 +14,7 @@
  */
 
 import {Card} from 'cfs-react-library';
-import React, {useState} from 'react';
-import {memo, type ReactNode} from 'react';
+import React, {useState, memo, type ReactNode} from 'react';
 import {isReactElement} from '../../../../../common/utils';
 import styles from './memory-card.module.scss';
 import DownArrow from '../../../../../common/icons/DownArrow';
@@ -25,16 +24,21 @@ type MemoryCardProps = Readonly<{
 	children?: ReactNode;
 	dataTest?: string;
 	isExpandable?: boolean;
+	isOpen?: boolean;
+	setOpen?: (open: boolean) => void;
 }>;
 
 function MemoryCard({
 	key,
 	children,
 	dataTest,
-	isExpandable = true
+	isExpandable = true,
+	isOpen: controlledIsOpen,
+	setOpen: controlledSetOpen
 }: MemoryCardProps) {
-	const [isExpanded, setIsExpanded] = useState(false);
-	const [isOpen, setIsOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+	const isOpen = controlledIsOpen ?? internalOpen;
+	const setOpen = controlledSetOpen ?? setInternalOpen;
 
 	const endSlot: ReactNode[] = [];
 	const titleSlot: ReactNode[] = [];
@@ -55,8 +59,7 @@ function MemoryCard({
 	});
 
 	const handleCardEndClick = () => {
-		setIsExpanded(prevIsExpanded => !prevIsExpanded);
-		setIsOpen(prevIsOpen => !prevIsOpen);
+		setOpen(!isOpen);
 	};
 
 	return (
@@ -93,7 +96,7 @@ function MemoryCard({
 						</div>
 					)}
 				</section>
-				{isExpanded && (
+				{isOpen && (
 					<section className={styles.body}>
 						<div className={styles.content}>{contentSlot}</div>
 					</section>

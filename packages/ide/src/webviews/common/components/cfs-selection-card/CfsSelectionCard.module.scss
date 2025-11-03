@@ -13,6 +13,7 @@
  *
  */
 @use '#colors' as colors;
+@use '#layout' as layout;
 
 .cardContainer {
 	display: flex;
@@ -95,6 +96,14 @@
 		.content {
 			width: 100%;
 			margin: 0 16px 16px 16px;
+
+			.horizontalDivider {
+				border-bottom: 1px solid colors.$default-border;
+			}
+
+			.subHeaderContent {
+				padding-top: layout.$spacing-5;
+			}
 		}
 	}
 }

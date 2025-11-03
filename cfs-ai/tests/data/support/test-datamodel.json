@@ -1,0 +1,112 @@
+{
+    "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+    "Version": "1.2.0",
+    "Schema": "1.2.0",
+    "Timestamp": "2025-07-18 19:14:11.569598",
+    "Name": "TESTPART",
+    "Description": "Test datamodel",
+    "Endianness": "Little",
+    "Parts": [
+      {
+        "Name": "TESTPART",
+        "Package": "TEST_PKG",
+        "MemoryDescription": "Testing part"
+      }
+    ],
+    "Peripherals": [{
+        "Name": "FakePeripheral",
+        "Description": "A fake peripheral for testing",
+        "Cores": [
+          "fakecore"
+        ],
+        "Ai": {}
+    }],
+    "Registers" : [{
+        "Name": "FAKEREGISTER0",
+        "Description": "Fake register",
+        "Address": "0xFFFF",
+        "Size": 8,
+        "Svg": "/path/to/svg/file.svg"
+    }],
+    "Packages": [{
+        "Name" : "FakePackage",
+        "Description": "Fake package for testing",
+        "NumPins": 8,
+        "Pins": [{
+            "Name": "FakePin",
+            "Label":"FP1",
+            "Description": "Fake pin for testing",
+            "Position": {"X":0, "Y":0},
+            "Shape": "Ball",
+            "Signals": [{
+                "Peripheral": "FakePeripheral",
+                "Name": "FakeSignal"
+            }]
+        }],
+        "PinCanvas" : {
+            "Width": 10,
+            "Height": 10
+        }
+    }],
+    "MemoryTypes": [
+      {
+        "Name": "RAM",
+        "Description": "Random Access Memory",
+        "IsVolatile": true
+      },
+      {
+        "Name": "Flash",
+        "Description": "Flash Memory",
+        "IsVolatile": false
+      }
+    ],
+    "SystemMemory" : [
+        {
+            "Name": "sysram0",
+            "Description": "System RAM Block 0",
+            "AddressStart": "0x20000000",
+            "AddressEnd": "0x20007fff",
+            "Width": 8,
+            "Access": "R/W",
+            "Type": "RAM",
+            "Location": "Internal",
+            "MinimumAlignment": 4
+
+        }
+    ],
+    "Cores": [
+      {
+        "Id": "fakecore",
+        "Name": "FakeCore",
+        "Description": "A fake core for testing purposes",
+        "CoreNum": 0,
+        "IsPrimary": true,
+        "Family": "testing",
+        "Memory": [
+          {
+            "Name": "sysram0",
+            "Description": "System RAM Block 0",
+            "AddressStart": "0x20000000",
+            "AddressEnd": "0x20007fff",
+            "Width": 8,
+            "Access": "R/W",
+            "Type": "RAM",
+            "Location": "Internal",
+            "MinimumAlignment": 4
+          },
+          {
+            "Name": "flash0",
+            "Description": "Flash Memory Region 0",
+            "AddressStart": "0x10000000",
+            "AddressEnd": "0x1027ffff",
+            "Width": 8,
+            "Access": "R/W",
+            "Type": "Flash",
+            "Location": "Internal",
+            "MinimumAlignment": 16384
+          }
+        ],
+        "Ai": {}
+      }
+    ]
+  }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,12 @@ export default function SocSelectionContainer() {
 			<div className={styles.searchBox}>
 				<SearchInput
 					inputVal={search}
-					placeholder={`Search SoCs (${catalogItemsCount.toLocaleString('en-US')} available)`}
+					placeholder='Search SoCs'
+					rightAdornment={
+						<span
+							className={styles.rightAdornment}
+						>{`${catalogItemsCount.toLocaleString('en-US')} available`}</span>
+					}
 					onClear={() => {
 						setSearch('');
 					}}

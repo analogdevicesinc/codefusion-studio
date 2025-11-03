@@ -22,7 +22,7 @@ dependencies: {
 
 Some helpful links for developing UI components:
 
-* [ADI's UI/UX Documentation Hub](https://harmonic.app.analog.com/1816b7bc5/p/187bc5-harmonic-design-system#)
-* [VS Code UX Guidelines for Extension Developers](https://code.visualstudio.com/api/ux-guidelines/overview)
-* [Component Gallery - A collection of many design systems and open source components](https://component.gallery/)
-* [WAI Guidelines and Code Examples for UI Patterns](https://www.w3.org/WAI/ARIA/apg/patterns/)
+- [ADI's UI/UX Documentation Hub](https://harmonic.app.analog.com/1816b7bc5/p/187bc5-harmonic-design-system#)
+- [VS Code UX Guidelines for Extension Developers](https://code.visualstudio.com/api/ux-guidelines/overview)
+- [Component Gallery - A collection of many design systems and open source components](https://component.gallery/)
+- [WAI Guidelines and Code Examples for UI Patterns](https://www.w3.org/WAI/ARIA/apg/patterns/)

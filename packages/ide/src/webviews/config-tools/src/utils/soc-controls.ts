@@ -17,17 +17,20 @@ import type {
 	ControlDictionary,
 	Controls
 } from '@common/types/soc';
-import {getSocControls} from './api';
 import type {
 	TFormControl,
 	TFormControlType,
-	TFormFieldValue
+	TFormFieldValue,
+	TFormNumericBase
 } from 'cfs-react-library';
 import type {SocControl} from 'cfs-plugins-api';
 
 import {evaluateCondition} from './rpn-expression-resolver';
-import {computeErrorPerControl} from '@common/services/dynamic-form-svc';
-import type {TControlTypes} from '../types/errorTypes';
+import {computeErrorPerControl} from '@common/utils/dynamic-form-svc';
+import type {
+	TControlTypes,
+	TNumericBase
+} from '@common/types/errorTypes';
 
 let socControls: Controls = {};
 
@@ -39,33 +42,12 @@ const socControlsDictionary: Record<
 	ControlDictionary | undefined
 > = {};
 
-// Initialize SoC controls
-if (import.meta.env.MODE === 'development') {
-	initializeSocControls();
-} else {
-	socControls = await getSocControls();
-}
-
 /**
- * Initializes the SOC controls either from Cypress test environment, dev environment, or default empty object
- * Populates the SOC controls dictionary after initialization
+ * Initializes the SoC controls.
+ * Should be called once at app startup.
  */
-function initializeSocControls() {
-	socControls = (window as any).__DEV_SOC__?.Controls ?? {};
-
-	if ((window as any).Cypress) {
-		socControls = JSON.parse(
-			window.localStorage.getItem('Controls') ?? '{}'
-		);
-	}
-}
-
-function getCachedSocControls() {
-	if (!Object.keys(socControls).length) {
-		initializeSocControls();
-	}
-
-	return socControls;
+export function initializeSocControls(controls: Controls) {
+	socControls = controls ?? {};
 }
 
 /**
@@ -79,13 +61,11 @@ export function getSocControlsDictionary(
 ): ControlDictionary {
 	if (
 		socControlsDictionary[type] &&
-		Object.keys(socControlsDictionary[type]).length
+		Object.keys(socControlsDictionary[type] ?? {}).length
 	)
-		return socControlsDictionary[type];
+		return socControlsDictionary[type] ?? {};
 
-	const controls = getCachedSocControls();
-
-	socControlsDictionary[type] = controls[type]?.reduce(
+	socControlsDictionary[type] = socControls[type]?.reduce(
 		(obj, control) => ({
 			...obj,
 			[control.Id]: control
@@ -126,6 +106,7 @@ export function formatControlsForDynamicForm(
 				modifiedFields?.[control.Id] ? ' *' : ''
 			}`,
 			type: control.Type as TFormControlType,
+			base: control.NumericBase as TFormNumericBase,
 			description: control.Description,
 			pluginOption: control.PluginOption,
 			default: control.Type === 'integer' ? control.Hint : '',
@@ -138,6 +119,7 @@ export function formatControlsForDynamicForm(
 							})) ?? []
 					}
 				: {}),
+			info: control.Tooltip,
 			required: true
 		});
 	}
@@ -189,6 +171,7 @@ export const getFormErrors = (
 			value,
 			minVal: control?.MinimumValue ?? undefined,
 			maxVal: control?.MaximumValue ?? undefined,
+			base: control?.NumericBase as TNumericBase,
 			pattern: control?.Pattern ?? undefined
 		});
 

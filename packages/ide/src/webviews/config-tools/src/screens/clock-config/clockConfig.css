@@ -61,6 +61,10 @@ rect[data-selector='icon-background'] {
 	fill: none;
 }
 
+.adi_diagram_content_node {
+	cursor: pointer;
+}
+
 .adi_diagram_content_node_highlight {
 	rx: 8;
 }

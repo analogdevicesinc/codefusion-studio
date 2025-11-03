@@ -1,16 +1,15 @@
 ---
 description: Installation and set up instructions for CodeFusion Studio
 author: Analog Devices
-date: 2024-12-09
+date: 2025-09-05
 ---
 
 # Installation
 
-This section provides instructions for installing and setting up CodeFusion Studio for [supported processors](../about/supported-processors.md).
+To install and set up CodeFusion Studio for [supported processors](../about/supported-processors.md), complete the following steps:
 
-- Software [Requirements](software-requirements.md) needed to install CodeFusion Studio
-- How to [Install CFS](install-cfs.md)
-- How to [Set up CFS](set-up-cfs.md)
-- Optional: How to [Install the VS Code extension manually](install-extensions.md)
-- Optional: [Install Olimex Arm JTAG Drivers](install-olimex-drivers.md) for RISC-V debugging
-- Optional: [Install Segger J-Link Drivers](install-jlink-drivers.md)
+1. Review the [software requirements](software-requirements.md).
+2. [Run the CodeFusion Studio SDK installer](install-cfs.md) to set up the SDKs and toolchains. Follow the prompts to complete setup.
+3. [Install the VS Code extension](install-extensions.md) to integrate CodeFusion Studio into VS Code.
+4. [Set up CFS](set-up-cfs.md) SDK and tool paths.
+5. Use the [Package Manager](./package-manager/index.md) to apply updates or install additional components.

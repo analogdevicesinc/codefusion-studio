@@ -11,7 +11,8 @@
 		"rootDir": ".",
 		"baseUrl": ".",
 		"paths": {
-			"@common/*": ["./common/*"]
+			"@common/*": ["./common/*"],
+			"@socs/*": ["../../../cfs-data-models/socs/*"]
 		},
 		/* Bundler mode */
 		"moduleResolution": "bundler",

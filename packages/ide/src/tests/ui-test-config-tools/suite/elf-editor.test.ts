@@ -13,28 +13,24 @@
  *
  */
 import { expect } from "chai";
-import * as path from "path";
 import {
   By,
   CustomEditor,
   EditorView,
   VSBrowser,
-  WebDriver,
   WebView,
   Workbench,
 } from "vscode-extension-tester";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
 
 describe("Elf file custom editor", () => {
   let browser: VSBrowser;
-  let driver: WebDriver;
   let view: WebView;
 
   before(async function () {
     this.timeout(60000);
 
     browser = VSBrowser.instance;
-    driver = browser.driver;
-
     await browser.waitForWorkbench();
   });
 
@@ -60,20 +56,11 @@ describe("Elf file custom editor", () => {
   });
 
   it("Should open the elf viewer panel when opening a file with *.elf extension", async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "hello_world.elf",
-      ),
-    );
+    const configPath = getConfigPathForFile("hello_world.elf");
+    await browser.openResources(configPath);
 
     const editor = new CustomEditor();
-
     view = editor.getWebView();
-
     await view.switchToFrame();
 
     const title = await view.findWebElement(

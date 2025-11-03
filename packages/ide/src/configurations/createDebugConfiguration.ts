@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ import * as vscode from "vscode";
 
 import {
   SET_JLINK_PATH_COMMAND_ID,
-  SET_JLINK_DEVICE_COMMAND_ID,
   VSCODE_OPEN_SETTINGS_COMMAND_ID,
 } from "../commands/constants";
 import {
@@ -25,7 +24,6 @@ import {
   DEBUG_PATH,
   EXTENSION_ID,
   JLINK_PATH,
-  JLINK_DEVICE,
   OPENOCD,
   OPENOCD_INTERFACE,
   OPENOCD_PATH,
@@ -55,16 +53,14 @@ import { resolveVariables } from "../utils/resolveVariables";
 import { Utils } from "../utils/utils";
 
 import { SELECT_TOOLCHAIN } from "./constants";
-import { MSDKToolchain } from "../toolchains/msdk/msdk";
 import path from "path";
-import { SocDataType } from "../webview/common/types/soc-data";
-import { SocDataObj } from "../panels/data/soc-data-obj";
+import { CfsPackageManagerProvider } from "cfs-package-manager";
+import type { CfsToolManager } from "cfs-lib";
 
 const BROWSE_STRING = "Browse...";
 const NONE_STRING = "None";
 const SELECT_SVD_FILE = "Choose an SVD file";
 const SET_JLINK_PATH = "Set Jlink path";
-const SET_JLINK_DEVICE = "Set JLink device";
 
 export class CreateDebugConfiguration {
   resolveDebugConfiguration(
@@ -138,7 +134,9 @@ export class CreateDebugConfiguration {
   /**
    * Searches for svd file and adds it to the config:cfs.cmsis.svdFile
    */
-  static async selectSvdFileForCortexDebug() {
+  static async selectSvdFileForCortexDebug(
+    toolManager: CfsToolManager
+  ) {
     const searchDirectories: Set<string> = new Set<string>();
 
     // Start with an empty scope (null), which uses the current workspace
@@ -166,9 +164,11 @@ export class CreateDebugConfiguration {
         }
 
         // check the SDK/MAX directory for SVD files
+        const maximPath = await toolManager.getToolPath("msdk");
+
         searchDirectories.add(
           Utils.normalizePath(
-            `${await MSDKToolchain.getInstance().getMaximPath()}/Libraries/CMSIS/Device/Maxim/${target}/Include`,
+            `${maximPath}/Libraries/CMSIS/Device/Maxim/${target}/Include`,
           ),
         );
       }
@@ -217,19 +217,6 @@ export class CreateDebugConfiguration {
       const jlinkExecutablePath = conf.get(JLINK_PATH);
       if (jlinkExecutablePath === "" || jlinkExecutablePath === null) {
         await CreateDebugConfiguration.setJlinkPathQuickPick(conf);
-      }
-    }
-  }
-
-  /**
-   * Sets the jlink device for Cortex JLink debug configuration.
-   */
-  static async setTargetForCortexJlinkDebug() {
-    const conf = vscode.workspace.getConfiguration(`${EXTENSION_ID}`);
-    if (conf) {
-      const device = conf.get(JLINK_DEVICE);
-      if (device === "" || device === null) {
-        await CreateDebugConfiguration.setProjectTargetFromQuickPick(conf);
       }
     }
   }
@@ -295,38 +282,6 @@ export class CreateDebugConfiguration {
       }
     } else {
       CreateDebugConfiguration.showErrorMessageForJlinkServerExecutablePath();
-    }
-  }
-
-  /**
-   * Function to set the project target from a quick pick list.
-   * @param conf - cfs.project.target configuration
-   */
-  static async setProjectTargetFromQuickPick(
-    conf: vscode.WorkspaceConfiguration,
-  ) {
-    const socDataObj = SocDataObj.getInstance();
-    const socs = socDataObj.getSocData();
-    const socOptions: SocDataType.Data = socs;
-    const targets = socOptions.data.soc.filter(
-      (soc: { displayName: string }) => soc.displayName,
-    );
-    const targetOptions: vscode.QuickPickItem[] = targets.map(
-      (target: { displayName: string }) => ({
-        label: target.displayName,
-      }),
-    );
-    const result = await vscode.window.showQuickPick(targetOptions, {
-      placeHolder: "Select the JLink target device",
-    });
-    if (result) {
-      if (result.label === "MAX78002") {
-        await conf.update(JLINK_DEVICE, "MAX78000", false);
-      } else {
-        await conf.update(JLINK_DEVICE, result.label, false);
-      }
-    } else {
-      CreateDebugConfiguration.showErrorMessageForProjectTarget();
     }
   }
 
@@ -399,22 +354,6 @@ export class CreateDebugConfiguration {
       .then((choice) => {
         if (choice === SET_JLINK_PATH) {
           vscode.commands.executeCommand(SET_JLINK_PATH_COMMAND_ID);
-        }
-      });
-  }
-
-  /**
-   * Prompts an error message and gives the user an option to update the project target.
-   */
-  static showErrorMessageForProjectTarget() {
-    vscode.window
-      .showErrorMessage(
-        "CFS: JLink device not set. Please set the JLink device to debug with JLink.",
-        SET_JLINK_DEVICE,
-      )
-      .then((choice) => {
-        if (choice === SET_JLINK_DEVICE) {
-          vscode.commands.executeCommand(SET_JLINK_DEVICE_COMMAND_ID);
         }
       });
   }

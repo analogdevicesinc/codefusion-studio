@@ -13,7 +13,7 @@
  *
  */
 
-import {Button, DropDown} from 'cfs-react-library';
+import {Badge, Button, DropDown} from 'cfs-react-library';
 import {getSocCoreList} from '../../../utils/soc-cores';
 import {type PartitionCore} from '../../../state/slices/partitions/partitions.reducer';
 import styles from './core-permissions.module.scss';
@@ -23,6 +23,8 @@ import {
 	type TLocaleContext,
 	useLocaleContext
 } from '@common/contexts/LocaleContext';
+import {getProjectInfoList} from '../../../utils/config';
+import {memo, useMemo} from 'react';
 
 type CorePermissionsProps = {
 	readonly core: PartitionCore;
@@ -39,7 +41,7 @@ const permissions = {
 	readWriteExecute: 'R/W/X'
 };
 
-export function CorePermissions({
+export const CorePermissions = memo(function CorePermissions({
 	core,
 	memoryType,
 	onRemoveCore,
@@ -47,6 +49,7 @@ export function CorePermissions({
 	onUpdateOwner
 }: CorePermissionsProps) {
 	const i10n: TLocaleContext | undefined = useLocaleContext()?.memory;
+	const projects = getProjectInfoList();
 
 	const dataModelCore = getSocCoreList().find(
 		socCore => socCore.Id === core.coreId
@@ -54,7 +57,7 @@ export function CorePermissions({
 	const permissionOptions = dataModelCore
 		? Object.values(permissions).filter(permission =>
 				dataModelCore.Memory.filter(
-					block => block.Type === memoryType
+					block => 'Type' in block && block.Type === memoryType
 				).some(block =>
 					permission
 						.split('/')
@@ -63,11 +66,26 @@ export function CorePermissions({
 			)
 		: [];
 
+	const secure = useMemo(() => {
+		const project = projects?.find(
+			p => p.ProjectId === core.projectId
+		);
+
+		return project?.Secure;
+	}, [projects, core.projectId]);
+
 	return (
 		<div className={styles.container}>
 			<div className={styles.row}>
 				<div data-test={`permission-label-${core.projectId}`}>
-					{core.label}
+					{core.label}{' '}
+					{secure !== undefined && (
+						<Badge appearance='secondary' className={styles.badge}>
+							{secure
+								? (i10n?.partition.badge.secure ?? 'Secure')
+								: (i10n?.partition.badge.non_secure ?? 'Non-Secure')}
+						</Badge>
+					)}
 				</div>
 				<Button
 					appearance='icon'
@@ -103,4 +121,4 @@ export function CorePermissions({
 			</div>
 		</div>
 	);
-}
+});

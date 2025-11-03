@@ -11,11 +11,16 @@ import {computeClockNodeErr} from '../utils/node-error';
 import {getProjectInfoList} from '../utils/config';
 import type {ProjectInfo} from '../utils/config';
 import type {ControlCfg} from '../../../common/types/soc';
+import {
+	useGasketErrors,
+	useStreamErrors
+} from '../state/slices/gaskets/gasket.selector';
 
 export type TCodeGenError = {
 	peripheralAllocErr: number;
 	pinConfigErr: number;
 	clockConfigErr: number;
+	dfgErr: number;
 };
 
 export function useSystemErrorsCount({
@@ -29,6 +34,8 @@ export function useSystemErrorsCount({
 	const computeEnabledState = useEvaluateClockCondition();
 	const allocations = usePeripheralAllocations();
 	const pinErrors = usePinErrors();
+	const gasketErrors = useGasketErrors();
+	const streamErrors = useStreamErrors();
 
 	const peripheralErrorsByProject =
 		useProjectsPeripheralAssignmentsErrors(
@@ -54,11 +61,25 @@ export function useSystemErrorsCount({
 				peripheralErrorsByProject[project.ProjectId] ?? 0;
 			const pinConfigErr = pinErrors.get(project.ProjectId) ?? 0;
 			const clockConfigErr = clockConfigError;
+			let dfgErrorCount = 0;
+
+			// DFG errors are only counted on the primary project
+			if (project.IsPrimary) {
+				dfgErrorCount = Object.values(gasketErrors).reduce(
+					(acc, curr) => acc + curr.length,
+					0
+				);
+				dfgErrorCount += Object.values(streamErrors).reduce(
+					(acc, curr) => acc + curr.length,
+					0
+				);
+			}
 
 			map.set(project.ProjectId, {
 				peripheralAllocErr,
 				pinConfigErr,
-				clockConfigErr
+				clockConfigErr,
+				dfgErr: dfgErrorCount
 			});
 		});
 
@@ -67,7 +88,9 @@ export function useSystemErrorsCount({
 		projects,
 		peripheralErrorsByProject,
 		pinErrors,
-		clockConfigError
+		clockConfigError,
+		gasketErrors,
+		streamErrors
 	]);
 
 	return errorsMap;

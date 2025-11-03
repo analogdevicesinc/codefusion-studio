@@ -24,6 +24,7 @@ export type SearchInputProps = Readonly<{
 	label?: string;
 	disabled?: boolean;
 	dataTest?: string;
+	rightAdornment?: JSX.Element;
 	placeholder?: string;
 	onClear: () => void;
 	onInputChange: (value: string) => void;
@@ -39,6 +40,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
 			label,
 			disabled = false,
 			dataTest,
+			rightAdornment,
 			placeholder = 'Type to search...',
 			onClear,
 			onInputChange,
@@ -73,6 +75,8 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
 						>
 							<CloseIcon />
 						</Button>
+					) : rightAdornment ? (
+						rightAdornment
 					) : undefined
 				}
 			/>

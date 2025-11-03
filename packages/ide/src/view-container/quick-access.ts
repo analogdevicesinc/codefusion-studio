@@ -22,15 +22,16 @@ import {
   OPEN_WALKTHROUGH_COMMAND_ID,
   CONFIG_TOOLS_COMMANDS,
   WORKSPACE_CREATION_COMMANDS,
+  BROWSE_MSDK_EXAMPLES_COMMAND_ID,
 } from "../commands/constants";
 import {
   HOME as HOMEPAGE,
   CONFIG_TOOLS,
-  PROJECTS,
   ELF_FILE_EXPLORER,
   CFS_WORKSPACE,
   CONFIGURE_WORKSPACE,
   OPEN_WORKSPACE,
+  BROWSE_EXAMPLES,
 } from "./constants";
 import { ViewContainerItem } from "./view-container-item";
 
@@ -69,6 +70,13 @@ export class QuickAccessProvider
       label: OPEN_WORKSPACE.label,
       tooltip: OPEN_WORKSPACE.tooltip,
       commandId: WORKSPACE_CREATION_COMMANDS.OPEN_CFS_WORKSPACE_COMMAND_ID,
+      icon: new vscode.ThemeIcon("go-to-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+    new ViewContainerItem({
+      label: BROWSE_EXAMPLES.label,
+      tooltip: BROWSE_EXAMPLES.tooltip,
+      commandId: BROWSE_MSDK_EXAMPLES_COMMAND_ID,
       icon: new vscode.ThemeIcon("go-to-file"),
       collapsible: vscode.TreeItemCollapsibleState.None,
     }),

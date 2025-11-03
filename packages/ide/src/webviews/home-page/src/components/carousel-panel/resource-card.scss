@@ -25,6 +25,13 @@
 		user-select: none;
 		object-fit: cover;
 	}
+
+	svg {
+		width: 100%;
+		height: variables.$carousel-image-height;
+		user-select: none;
+		object-fit: cover;
+	}
 }
 
 .title {

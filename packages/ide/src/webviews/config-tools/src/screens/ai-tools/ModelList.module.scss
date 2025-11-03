@@ -1,0 +1,175 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.aiToolsContainer {
+	position: relative;
+	overflow-x: hidden;
+}
+
+.page {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-9;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.emptyComponentContainer {
+	padding-bottom: layout.$common-padding;
+	height: 100%;
+}
+
+.tableTitle {
+	padding-bottom: layout.$spacing-4;
+}
+
+.table {
+	border-top: 1px solid colors.$default-border;
+
+	& > * {
+		border-bottom: 1px solid colors.$default-border;
+	}
+
+	.sortable-title {
+		display: flex;
+		gap: layout.$spacing-3;
+		align-items: center;
+		cursor: pointer;
+	}
+
+	.asc,
+	.desc {
+		font-weight: bolder;
+	}
+
+	.desc {
+		svg {
+			transform: rotate(180deg);
+		}
+	}
+
+	.truncatedCell {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.headerCellWithInfo {
+		display: flex;
+		gap: layout.$spacing-2;
+		justify-items: center;
+	}
+}
+
+.headerRow {
+	vscode-data-grid-cell {
+		padding: 9px 8px;
+	}
+}
+.row {
+	vscode-data-grid-cell {
+		padding: layout.$spacing-3;
+		display: flex;
+		align-items: center;
+	}
+
+	.tableText {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
+.includeHeader {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-1;
+}
+
+.actions {
+	display: flex;
+	justify-content: end;
+	gap: layout.$spacing-4;
+}
+
+.compileButton {
+	margin: 10px 20px;
+}
+
+.spinner {
+	width: 12px;
+	height: 12px;
+	border: 2px solid colors.$default-foreground;
+	border-bottom-color: transparent;
+	border-radius: 50%;
+	display: inline-block;
+	box-sizing: border-box;
+	animation: rotation 1s linear infinite;
+	margin: 0 10px;
+}
+
+@keyframes rotation {
+	to {
+		transform: rotate(1turn);
+	}
+}
+
+.emptyPackageError {
+	margin: layout.$spacing-9;
+	width: auto;
+	height: auto;
+}
+
+.compatibilityState {
+	display: flex;
+	gap: layout.$spacing-3;
+}
+
+.zephyrProfilingContainer {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: layout.$spacing-7;
+	width: fit-content;
+
+	vscode-checkbox {
+		margin-bottom: layout.$spacing-4;
+	}
+
+	.labelWithTooltip {
+		display: flex;
+		gap: layout.$spacing-3;
+	}
+
+	.label {
+		@include fonts.label-l1;
+		padding-bottom: layout.$spacing-2;
+	}
+
+	vscode-dropdown {
+		max-width: unset;
+
+		&::part(selected-value) {
+			@include fonts.label-l3;
+		}
+	}
+}

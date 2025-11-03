@@ -63,13 +63,19 @@ export default function HeaderInfoListItem({
 						}}
 						containerPosition='relative'
 					>
-						<Button appearance='icon' className={styles.icon}>
+						<Button
+							appearance='icon'
+							className={styles.icon}
+							dataTest='list-item:button'
+						>
 							<Info />
 						</Button>
 					</Tooltip>
 				)}
 			</div>
-			<div className={styles.value}>{getDisplayValue(item)}</div>
+			<div data-test='list-item:value' className={styles.value}>
+				{getDisplayValue(item)}
+			</div>
 		</li>
 	);
 }

@@ -13,8 +13,14 @@
  *
  */
 
-import {useCallback, useState, useMemo} from 'react';
-import {use} from 'cfs-react-library';
+import {
+	useCallback,
+	useState,
+	useMemo,
+	useEffect,
+	Suspense
+} from 'react';
+import {ProgressRing, use} from 'cfs-react-library';
 import CodeGenPlugin from './core-config-components/code-gen-plugin/CodeGenPlugin';
 import NotificationError from '../../components/notification-error/NotificationError';
 import PluginProperties from './PluginProperties';
@@ -35,10 +41,9 @@ import {
 } from '../../state/slices/workspace-config/workspace-config.reducer';
 
 import styles from './CoreConfigContainer.module.scss';
-import {
-	getMsdkBoardName,
-	getZephyrBoardName
-} from './utils/core-config';
+import {fetchPluginProperties} from '../../utils/api';
+import {findPluginInfo} from '../../utils/workspace-config';
+import WorkspaceEmptyPlugins from '../../components/workspace-empty-plugins/WorkspaceEmptyPlugins';
 
 type CoreConfigContainerProps = Readonly<{
 	pluginsPromise: Promise<CfsPluginInfo[]>;
@@ -61,25 +66,27 @@ function CoreConfigContainer({
 		CfsPluginInfo | undefined
 	>(() => {
 		if (persistedPluginId) {
-			return pluginsList.find(
-				p =>
-					p.pluginId === persistedPluginId &&
-					p.pluginVersion === persistedPluginVersion
+			return findPluginInfo(
+				pluginsList,
+				persistedPluginId,
+				persistedPluginVersion
 			);
 		}
 
 		return undefined;
 	});
 
-	selectedPluginInfo?.properties?.project?.forEach(property => {
-		if (property.default !== '') return;
-
-		if (property.id === 'MsdkBoardName') {
-			property.default = getMsdkBoardName(boardId, selectedSocId);
-		} else if (property.id === 'ZephyrBoardName') {
-			property.default = getZephyrBoardName(boardId, selectedSocId);
+	const propertiesPromise = useMemo(async () => {
+		if (selectedPluginInfo) {
+			return fetchPluginProperties(selectedPluginInfo, {
+				soc: selectedSocId,
+				coreId: core.coreId,
+				boardId
+			});
 		}
-	});
+
+		return [];
+	}, [selectedPluginInfo, selectedSocId, boardId, core]);
 
 	const filteredPluginList = useMemo(() => {
 		const filter = (plugin: CfsPluginInfo) => {
@@ -93,7 +100,9 @@ function CoreConfigContainer({
 							selectedSocId?.toLowerCase() &&
 						soc.package?.toLowerCase() ===
 							normalizedPackageId.toLowerCase() &&
-						(boardId === "" || (soc.board?.toLowerCase() ?? "") === boardId.toLowerCase()),
+						(boardId === '' ||
+							(soc.board?.toLowerCase() ?? '') ===
+								boardId.toLowerCase())
 				) ??
 					false)
 			);
@@ -137,6 +146,25 @@ function CoreConfigContainer({
 		]
 	);
 
+	useEffect(() => {
+		if (persistedPluginId) {
+			setSelectedPluginInfo(
+				findPluginInfo(
+					pluginsList,
+					persistedPluginId,
+					persistedPluginVersion
+				)
+			);
+		} else {
+			setSelectedPluginInfo(undefined);
+		}
+	}, [
+		coreId,
+		persistedPluginId,
+		persistedPluginVersion,
+		pluginsList
+	]);
+
 	return (
 		<div
 			data-test='core-config:container'
@@ -157,12 +185,20 @@ function CoreConfigContainer({
 						onPluginChange={handlePluginChange}
 					/>
 				) : (
-					'No applicable plugins found for the selected SoC.'
+					<WorkspaceEmptyPlugins
+						selectedWorkspaceCreationPath='manual'
+						coreName={core.name}
+						socName={selectedSocId}
+					/>
 				)}
-				<PluginProperties
-					key={selectedPluginInfo?.pluginId ?? ''}
-					pluginInfo={selectedPluginInfo}
-				/>
+				<Suspense fallback={<ProgressRing />}>
+					<PluginProperties
+						key={`${coreId}|${selectedPluginInfo?.pluginId}`}
+						coreId={coreId ?? ''}
+						propertiesPromise={propertiesPromise}
+						pluginInfo={selectedPluginInfo}
+					/>
+				</Suspense>
 			</div>
 		</div>
 	);

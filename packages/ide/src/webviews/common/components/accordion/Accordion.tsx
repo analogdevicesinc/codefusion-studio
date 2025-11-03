@@ -19,10 +19,13 @@ import styles from './Accordion.module.scss';
 type AccordionProps = Readonly<{
 	title: string;
 	body: React.ReactNode;
+	subTitle?: React.ReactNode;
 	caption?: React.ReactNode;
 	isOpen: boolean;
 	id?: string;
+	highlight?: boolean;
 	icon?: React.ReactNode;
+	disableBorderOnHover?: boolean;
 	variant?: 'default' | 'no-gap';
 	toggleExpand: (title: string) => void;
 }>;
@@ -31,9 +34,12 @@ export default function Accordion({
 	id,
 	title,
 	body,
+	subTitle,
 	caption,
+	highlight,
 	isOpen,
 	variant = 'default',
+	disableBorderOnHover,
 	icon,
 	toggleExpand
 }: AccordionProps) {
@@ -71,13 +77,13 @@ export default function Accordion({
 	return (
 		<div
 			ref={peripheralRef}
-			className={`${styles.container} ${isOpen && styles.hasBorder} ${
+			className={`${styles.container} ${isOpen && !disableBorderOnHover && styles.hasBorder} ${
 				styles[variant]
-			}`}
+			} ${disableBorderOnHover ? styles.disableBorder : ''}`}
 			data-test={`accordion:${title}`}
 		>
 			<section
-				className={styles.header}
+				className={`${styles.header} ${highlight ? styles.highlight : ''}`}
 				onClick={() => {
 					toggleExpand(id ?? title);
 				}}
@@ -88,7 +94,12 @@ export default function Accordion({
 					>
 						<ChevronRight />
 					</div>
-					<span className={styles.title}>{title}</span>
+					<div className={styles.titleContainer}>
+						<span className={styles.title}>{title}</span>
+						{subTitle && (
+							<div className={styles.subTitle}>{subTitle}</div>
+						)}
+					</div>
 					{icon && (
 						<>
 							<div className={styles.divider} />

@@ -1,0 +1,40 @@
+{
+  "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "0.0.25",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-03-11T13:38:31.790Z",
+  "Soc": "MAX32657",
+  "Package": "WLP",
+  "FirmwarePlatform": "zephyr-4.0",
+  "ZephyrId": "apard32690/max32690/m4",
+  "Pins": [],
+  "ClockNodes": [],
+  "Projects": [
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33-secure",
+      "PluginId": "com.analog.project.zephyr.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "Zephyr",
+      "ZephyrId": "max32657evkit/max32657/ns",
+      "PlatformConfig": {},
+      "ExternallyManaged": false,
+      "Secure": true,
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33-nonsecure",
+      "PluginId": "com.analog.project.zephyr.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "Zephyr",
+      "ZephyrId": "max32657evkit/max32657/ns",
+      "PlatformConfig": {},
+      "ExternallyManaged": false,
+      "Secure": false,
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ]
+}

@@ -23,6 +23,9 @@ export type WorkspaceConfigState = {
 	workspaceTemplate: Partial<CfsPluginInfo> | undefined;
 	workspaceConfig: WorkspaceConfig;
 	configErrors: ConfigErrors;
+	currentCoreConfigStep: number;
+	supportsTrustZone?: boolean;
+	isTrustZoneEnabled: Record<string, boolean>;
 };
 
 type WorkspaceConfig = {
@@ -58,8 +61,9 @@ export type StateProject = {
 	pluginVersion: string;
 	firmwarePlatform?: string;
 	isPrimary?: boolean;
-	isTrusted?: boolean;
+	Secure?: boolean;
 	isEnabled: boolean;
+	supportsTrustZone?: boolean;
 	platformConfig: Record<string, string | boolean | number>;
 };
 

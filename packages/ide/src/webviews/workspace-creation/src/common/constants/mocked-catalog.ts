@@ -30,8 +30,8 @@ export const mockedCatalog: SoC[] = [
 
 				id: 'FTHR',
 
-				name: 'EvKit_V1',
-				packageIDs: ['TQFN'],
+				name: 'FTHR',
+				packageIDs: ['FTHR'],
 				socID: 'max32690',
 
 				productUrl: 'https://wwww.analog.com'
@@ -400,5 +400,55 @@ export const mockedCatalog: SoC[] = [
 			name: 'MAX32XXX'
 		},
 		packages: []
+	},
+	{
+		boards: [
+			{
+				description:
+					'The MAX32657 evaluation kit (EV kit) provides a platform for evaluating the MAX32657 microcontroller. It includes an Arm® Cortex®-M33 with FPU and DSP extensions, 1MB dual-bank flash with ECC, 256kb SRAM, and Bluetooth® 5 Low Energy (Bluetooth LE) radio.',
+
+				id: 'EvKit_V1',
+
+				name: 'EvKit_V1',
+				packageIDs: ['TQFN'],
+				socID: 'max32657',
+
+				productUrl: '/'
+			}
+		],
+		cores: [
+			{
+				dataModelCoreID: 'CM4',
+				id: 'Arm Cortex-M33',
+				name: 'Arm Cortex-M33',
+				socID: 'MAX32657',
+				description: 'Some sort of description.',
+				coreType: {
+					architecture: 'Armv7E-M',
+					id: 'armv7e-m_thumb-/-thumb-2',
+					isa: 'Thumb / Thumb-2'
+				},
+				extensions: ['ext1', 'ex2'],
+				primary: true,
+				supportsTrustZone: true
+			}
+		],
+		description:
+			'The MAX32657 microcontroller (MCU) is an advanced system-on-chip (SoC) featuring an Arm® Cortex®-M4F CPU, large flash and SRAM memories, and the latest generation Bluetooth® 5.2 Low Energy (LE) radio. This device unites processing horsepower with the connectivity required for IoT applications.',
+		id: 'MAX32657',
+		name: 'MAX32657',
+		family: {
+			id: 'max32xxx',
+			name: 'MAX32XXX'
+		},
+		packages: [
+			{
+				description: '',
+				id: 'WLP',
+				name: 'WLP',
+				socID: 'MAX32657',
+				packageType: 'WLP'
+			}
+		]
 	}
 ];

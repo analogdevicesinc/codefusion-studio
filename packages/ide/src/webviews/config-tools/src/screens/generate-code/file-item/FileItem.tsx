@@ -13,9 +13,12 @@
  *
  */
 
+import type {CodeGenerationFailure} from 'cfs-lib/dist/types/code-generation';
 import styles from './FileItem.module.scss';
 
-export default function FileItem({name}: Readonly<{name: string}>) {
+export default function FileItem({
+	item
+}: Readonly<{item: string | CodeGenerationFailure}>) {
 	return (
 		<li className={styles.itemContainer}>
 			<span className={styles.generating}>Generating</span>
@@ -25,12 +28,18 @@ export default function FileItem({name}: Readonly<{name: string}>) {
 					data-test='generated-files:file'
 					className={styles.fileName}
 				>
-					{name}
+					{typeof item === 'string' ? item : item.name}
 				</span>
 				<span className={styles.loading} />
 			</span>
 
-			<span className={styles.done}>OK</span>
+			{typeof item === 'string' ? (
+				<span className={styles.done}>OK</span>
+			) : (
+				<span className={styles.error} title={item.error}>
+					Error
+				</span>
+			)}
 		</li>
 	);
 }

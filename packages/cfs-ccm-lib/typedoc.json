@@ -11,7 +11,7 @@
         "typedoc-plugin-markdown",
         "typedoc-plugin-missing-exports"
     ],
-    "out": "docs",
+    "out": "./dist/docs",
     "readme": "none",
     "sourceLinkTemplate": "#",
     "basePath": "./",

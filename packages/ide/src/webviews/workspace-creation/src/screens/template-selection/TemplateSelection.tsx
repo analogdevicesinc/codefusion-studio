@@ -17,7 +17,10 @@ import {Suspense, useMemo} from 'react';
 import WorkspaceCreationLayout from '../../common/components/WorkspaceCreationLayout';
 import TemplateSelectionContainer from './TemplateSelectionContainer';
 import {ProgressRing} from 'cfs-react-library';
-import {generateMulticoreTemplatesPromise} from '../../utils/api';
+import {
+	generateMulticoreTemplatesPromise,
+	getHostPlatform
+} from '../../utils/api';
 import {
 	useSelectedBoardPackage,
 	useSelectedSoc
@@ -37,14 +40,17 @@ function TemplateSelection() {
 		[packageId, selectedSoc, boardId]
 	);
 
+	const hostPlatformPromise = getHostPlatform();
+	
 	return (
 		<WorkspaceCreationLayout
 			title='Browse templates'
-			description='Choose a template for your selected SoC'
+			description='Choose a template for your selected SoC.'
 		>
 			<Suspense fallback={<ProgressRing />}>
 				<TemplateSelectionContainer
 					templateListPromise={templateListPromise}
+					hostPlatformPromise={hostPlatformPromise}
 				/>
 			</Suspense>
 		</WorkspaceCreationLayout>

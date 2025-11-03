@@ -15,12 +15,11 @@
 .labelsContainer {
 	display: flex;
 	gap: 8px;
-	width: fit-content;
 }
 
 .verticalLabelsContainer {
 	@extend .labelsContainer;
-	justify-content: 'center';
+	justify-content: center;
 }
 
 .horizontalLabelsContainer {

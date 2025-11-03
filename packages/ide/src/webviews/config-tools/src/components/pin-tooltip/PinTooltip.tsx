@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import {
 } from '../../screens/clock-config/constants/tooltip';
 import {getSocPinDetails} from '../../utils/soc-pins';
 import {isPinReserved} from '../../utils/is-pin-reserved';
+import {pinInConflict} from '../../utils/pin-error';
 
 type PinTooltipProps = {
 	readonly pinId: string;
@@ -96,7 +97,7 @@ export default function PinTooltip({pinId}: PinTooltipProps) {
 					</div>
 				) : (
 					<>
-						{appliedSignals.length > 1 && (
+						{pinInConflict(appliedSignals) && (
 							<div
 								className={styles['conflict-container']}
 								data-test='pin:tooltip:conflictMarker'
@@ -121,7 +122,7 @@ export default function PinTooltip({pinId}: PinTooltipProps) {
 								))}
 							</div>
 						)}
-						{appliedSignals.length < 2 && (
+						{!pinInConflict(appliedSignals) && (
 							<div
 								data-test='pin:tooltip:available'
 								className={styles.tooltipSection}

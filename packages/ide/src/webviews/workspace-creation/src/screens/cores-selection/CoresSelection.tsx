@@ -1,18 +1,17 @@
 import CoresSelectionContainer from './CoresSelectionContainer';
 import WorkspaceCreationLayout from '../../common/components/WorkspaceCreationLayout';
 import {
-	useSelectedBoardPackage,
-	useSelectedSoc
-} from '../../state/slices/workspace-config/workspace-config.selector';
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../common/contexts/LocaleContext';
 
 export default function CoresSelection() {
-	const selectedSoc = useSelectedSoc();
-	const {boardId, packageId} = useSelectedBoardPackage();
+	const l10n: TLocaleContext | undefined = useLocaleContext();
 
 	return (
 		<WorkspaceCreationLayout
-			title='Cores and Configuration'
-			description={`${selectedSoc} | ${boardId} ${packageId}. Select the cores to add to your workspace.`}
+			title={l10n?.['cores-config']?.title}
+			description={l10n?.['cores-config']?.description}
 		>
 			<CoresSelectionContainer />
 		</WorkspaceCreationLayout>

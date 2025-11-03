@@ -12,83 +12,54 @@
  * limitations under the License.
  *
  */
-import { By, EditorView, VSBrowser, WebView } from "vscode-extension-tester";
+import { EditorView, VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { clockTab } from "../page-objects/main-menu";
+import {
+  accordion,
+  clockDiagram,
+  diagramContentNode,
+  formContainer,
+  muxType,
+} from "../page-objects/clock-config-section/clock-config-screen";
 
 describe("Clock Diagram", () => {
   it("Renders the clock diagram inside vscode", async () => {
     const browser = VSBrowser.instance;
+    const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-wlp.cfsconfig",
-      ),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
+    await browser.openResources(configPath);
+    await UIUtils.sleep(5000);
     const view = new WebView();
-
     await view.wait(60000);
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css("#clockconfig"));
+    await UIUtils.clickElement(view, clockTab);
+    await UIUtils.sleep(6000);
 
-    await navItem.click();
+    // Assert diagram rendered
+    expect(await view.findWebElement(clockDiagram)).to.exist;
 
-    await new Promise((resolve) => setTimeout(resolve, 6000));
-
-    // assert diagram rendered
-    expect(await view.findWebElement(By.css("#adi_diagram"))).to.exist;
-
-    const muxAccordion = await view.findWebElement(
-      By.css("[data-test='accordion:MUX']"),
-    );
-
+    const muxAccordion = await UIUtils.findWebElement(view, accordion("MUX"));
     await muxAccordion.click();
+    await UIUtils.sleep(1500);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const sysMux = await view.findWebElement(
-      By.css("[data-test='SYS_OSC Mux']"),
-    );
-
+    const sysMux = await UIUtils.findWebElement(view, muxType("SYS_OSC"));
     await sysMux.click();
+    await UIUtils.sleep(1500);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const container = await UIUtils.findWebElement(view, formContainer);
+    expect(container).to.exist;
 
-    const formContainer = await view.findWebElement(
-      By.css("[data-test='clock-details:options']"),
-    );
-
-    expect(formContainer).to.exist;
-
-    const option = formContainer.findElement(
-      By.css("[data-test='MUX-SYS_OSC Mux']"),
-    );
-
+    const option = container.findElement(muxType("MUX-SYS_OSC"));
     expect(option).to.exist;
+    expect(await UIUtils.findWebElement(view, diagramContentNode)).to.exist;
 
-    expect(
-      await view.findWebElement(
-        By.css(
-          "#a86d8eb0-1766-11ef-a073-695fa460553d > rect.adi_diagram_content_node",
-        ),
-      ),
-    ).to.exist;
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
+    await UIUtils.sleep(3000);
     await view.switchBack();
-
     const ev = new EditorView();
-
     await ev.closeAllEditors();
   }).timeout(60000);
 });

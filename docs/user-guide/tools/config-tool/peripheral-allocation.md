@@ -1,70 +1,83 @@
 ---
 description: "Peripheral Allocation for CodeFusion Studio"
 author: "Analog Devices"
-date: "2025-04-07"
+date: "2025-09-15"
 ---
 
 # Peripheral Allocation
 
-The Peripheral Allocation feature allows you to assign SoC peripheral blocks to specific cores. This ensures efficient resource utilization, prevents conflicts, and enhances overall hardware performance.
+The Peripheral Allocation feature allows you to assign SoC peripherals to projects. This ensures efficient resource utilization, prevents conflicts, and enhances overall hardware performance.
 
 ## Peripheral Allocation overview
 
 ![Peripheral Allocation overview](./images/peripheral-allocation-overview-dark.png#only-dark) ![Peripheral Allocation overview](./images/peripheral-allocation-overview-light.png#only-light)
 
-1. **Filter options**: Filter partitions by allocated or available memory.
-1. **Peripheral list**: Displays available peripherals. Click to expand and view assignable blocks or signals.
-1. **Assigned cores section**: Lists cores with their assigned peripherals, signals, or pins.
-1. **Configure peripheral**: Click to open the peripheral settings sidebar for configuration.
-1. **Peripheral settings sidebar**: Modify or delete pin assignments and configure peripheral parameters.
+1. **Filter options**: Filter peripherals by allocation status (all, allocated, or available).
+2. **Peripheral list**: Displays available peripherals. Use this panel to allocate peripherals to a project.
+3. **Core Projects section**: Shows each project with its assigned peripherals, signals, and pins. Use the **Expand All** and **Collapse All** arrows to control the view.
+
+    !!! note
+        Each project corresponds to a core in the device—for example, ARM Cortex-M4 or RISC-V.
+
+4. **Configure peripheral**: Click **Configure** next to a peripheral in the Peripheral List or Core Projects section to open the Peripheral Settings Sidebar.
+5. **Peripheral Settings Sidebar**: Configure settings such as pin assignments, parameters, and plugin options.
 
 ## Peripheral assignment types
 
 There are two types of assignments:
 
-- **Peripheral Block Assignment**: An entire peripheral block (such as UART0 or I2S2) is allocated to a single core. The core has full responsibility for initializing the peripheral, handling its interrupts, and managing its resources.
-- **Signal Assignment**: Peripherals such as GPIO ports allow assignment at the signal level. The assigned core configures and manages interrupt handling for those signals.
+- **Peripheral assignments**: An entire peripheral (such as UART0 or I²C2) is assigned to a single project. That project has full responsibility for initializing the peripheral, handling its interrupts, and managing its resources.
+- **Pin assignments**: Some peripherals, such as GPIO, allow assignment at the pin level. Even though the pins belong to the same peripheral, they can be assigned and managed independently by multiple projects.  
 
-## Allocating a peripheral block to a core
+## Allocate a peripheral to a project
 
 ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-dark.png#only-dark) ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-light.png#only-light)
 
-1. In the peripheral list, click a peripheral to expand it and view available blocks or pins.
-2. Click the chevron (**>**) to see available cores.
-3. Select a core from the list to complete allocation, or click **Cancel** to exit the process.
+1. In the Peripheral List, click **Allocate** (**+**) to allocate a peripheral to a project.
+2. If there is more than one project, select the project from the list to complete the allocation.
 
-!!! Note
-    - For GPIO peripherals, individual pins are assigned instead of the entire port.
+![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-allocate-dark.png#only-dark) ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-allocate-light.png#only-light)
+
+!!! note
+    For GPIO peripherals, individual pins are assigned instead of the entire peripheral.
 
 ### Limitations
 
-- After a peripheral block is assigned to a core, it must be unassigned before it can be reassigned to another core. See [Unassigning a Peripheral](#unassigning-a-peripheral).
-- Certain peripherals can only be assigned to specific cores due to hardware constraints.
-- If a peripheral is shared across multiple cores (such as GPIO0), the primary core is responsible for system-wide initialization, including configuring clock sources and frequencies.
+- After a peripheral is allocated to a project, it must be removed before it can be allocated to another project. See [Remove a Peripheral](#remove-a-peripheral).
+- Certain peripherals can only be allocated to specific projects due to hardware constraints.
+- If a peripheral is shared across multiple projects (such as GPIO0), the primary project is responsible for system-wide initialization, including configuring clock sources and frequencies.
 
-## Configuring a peripheral
+## Enter peripheral settings
 
-Signals assigned to a core requiring pin assignment are labeled **required** and display a red X ![Conflict](images/icon-conflict-dark.png#only-dark)
-![Conflict](images/icon-conflict-light.png#only-light)
+When you allocate a peripheral, the Peripheral Settings sidebar opens. In this sidebar, you can complete the following actions:
 
-![Configuring a peripheral](./images/peripheral-allocation-assigned-cores-light.png#only-light) ![Configuring a peripheral](./images/peripheral-allocation-assigned-cores-dark.png#only-dark)
+### Add details
 
-To assign or modify pin assignments, complete the following steps:
+Use the **Description** field to capture optional notes about the role of the peripheral in the project, for example: *“UART0 – Used for debug console output”.*
 
-1. Locate the target peripheral in the assigned cores section.
-2. Click configure ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the peripheral settings sidebar.
-3. (Optional) Enter a **Description** to capture useful information about the peripheral.
-4. In the **Manage Pin Assignments** section, click the chevron (**>**) to open the **Pin Config** tab.
-5. Assign and adjust pins as needed.
-6. Return to the **Peripheral Allocation** page to review peripheral parameters and assignments.
+### Assign pins
 
-### Configuring parameters
+You can manage basic pin settings directly from the Peripheral Allocation page. This reduces navigation, while the full set of configuration options remains available in the dedicated **Pin Config** tab. If you need advanced settings or encounter issues, open **Pin Config** to complete the configuration. For more details, see [Pin Config](pin-config.md).
 
-The **Configuration** section in the peripheral settings sidebar allows you to set parameters for any assigned peripheral that supports configuration. Configuration field labels are dynamically generated from the **Control's Description** in the SoC’s data model. Some fields may appear or become mandatory based on the selected configuration options. If a required signal pin assignment is missing, a conflict icon will indicate that the assignment must be completed before proceeding with code generation.
+!!! note
+    Signals that require pin assignment or are in conflict display an error ![Error](images/icon-conflict-dark.png#only-dark) ![Error](images/icon-conflict-light.png#only-light).  
+
+To assign pins:
+
+1. In the **Pin Assignments** section, review the available signals.
+2. Toggle the pin to **on** ![Toggle](images/icon-toggle-dark.png#only-dark) ![Toggle](images/icon-toggle-light.png#only-light) to assign it. This enables the signal in generated code and updates the pin map in the **Pin Config** page.
+3. If multiple pins are available, select one from the dropdown, then toggle it to **on**.
+4. If a conflict appears when a pin is enabled, click the **Manage** chevron (**>**) to open the **Pin Config** tab.  
+      1. To resolve the conflict, disable one of the functions assigned to that pin.  
+      2. After resolving the issue, return to the **Peripheral Allocation** page to review configuration.  
+
+### Set configuration parameters
+
+The **Configuration** section in the Peripheral Settings Sidebar allows you to set parameters for any assigned peripheral that supports configuration. Configuration fields are defined in the SoC’s data model and can be extended or overridden by the code generation plugin.
 
 Use the **Reset to Default** option to restore all settings to their default values.
 
-### Code Generation plugin options
+### Specify code generation plugin options
 
 The **Code Generation Plugin** section allows you to pass additional configuration to the code generation plugin for the selected peripheral. The available options depend on the firmware platform.
 
@@ -76,20 +89,37 @@ Examples of plugin options for Zephyr include:
 
 Fields marked with an asterisk indicate that a non-default value has been selected.
 
-## Unassigning a peripheral
+## Configure a peripheral
 
-To remove a peripheral assignment from a core:
+1. Locate the peripheral in the Core Projects section or in the Peripheral List.
+2. Click **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar.
 
-1. Locate the target peripheral in the assigned cores section.
-1. Click configure ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the peripheral settings sidebar.
-1. Click delete ![Delete](./images/icon-delete-dark.png#only-dark) ![Delete](./images/icon-delete-light.png#only-light) to remove the peripheral assignment.
+!!! note
+    For GPIO peripherals, you can configure either the entire GPIO peripheral (for example, GPIO1) or individual pins (for example, P1.8).  
+    Peripheral-level configuration and per-pin configuration are independent: configuring the peripheral does not override or duplicate individual pin settings.
+
+## Remove a Peripheral
+
+When you remove a peripheral, its configuration is permanently discarded. If you add the peripheral again later, you must reconfigure it from scratch.
+
+To remove a peripheral:
+
+1. Locate the peripheral in the Core Projects section or in the Peripheral List.
+2. Click **Remove** ![Remove](./images/icon-delete-dark.png#only-dark) ![Remove](./images/icon-delete-light.png#only-light). Removed peripherals and pins return to the Peripheral List and can be reallocated to any supported project.
+
+!!! note
+    For GPIO peripherals:  
+
+    - You can only remove **individual pins**.
+    - To remove the entire peripheral (for example, GPIO1), click **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar, then click **Remove** ![Remove](./images/icon-delete-dark.png#only-dark) ![Remove](./images/icon-delete-light.png#only-light).
 
 ## Review peripheral assignment
 
-Each peripheral entry includes the following:
+You can review peripheral assignments in the Core Projects section. Only peripherals with assigned signals appear here.
 
-- **Signals**: All signals managed by the peripheral. For example MISO and MOSI for SPI.
-- **Assigned Pins**: The physical package pin where the signals are mapped. For example P2.11 (5) indicates GPIO pin P2.11 on package pin 5.
-- **Allocation Status**: Each peripheral displays an allocation count to show how many signals have been assigned to pins out of the total available. For example, if SPIO displays (2/4), 2 out of 4 signals have been assigned to pins.
+Each listed peripheral includes the following:
+
+- **Signals**: All signals assigned to a peripheral. For example, RX and TX for UART0.  
+- **Assigned Pins**: The physical package pin where the signals are mapped. For example, `P0.14 (14)` indicates GPIO pin P0.14 on package pin 14.
 
 ![Review peripheral assignment](./images/peripheral-allocation-dark.png#only-dark) ![Review peripheral assignment](./images/peripheral-allocation-light.png#only-light)

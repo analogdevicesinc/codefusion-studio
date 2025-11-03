@@ -21,20 +21,12 @@ import {
 } from '../../state/slices/pins/pins.reducer';
 import PinTooltip from './PinTooltip';
 
-const wlp = await import(
-	'../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(m => m.default);
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('Pin Grid Elemment', () => {
-	beforeEach(() => {
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(wlp.Packages[0])
-		);
-	});
-
 	it('Should display a tooltip on hover with the assigned functions information', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		const store = configurePreloadedStore(wlp);
 
 		store.dispatch(setHoveredPin('F4'));
 
@@ -79,7 +71,7 @@ describe('Pin Grid Elemment', () => {
 	});
 
 	it('Should display a tooltip with conflict information when pin is in conflict', () => {
-		const store = configurePreloadedStore(wlp as unknown as Soc);
+		const store = configurePreloadedStore(wlp);
 
 		store.dispatch(setHoveredPin('F4'));
 

@@ -23,6 +23,7 @@ import NotificationError from '../../components/notification-error/NotificationE
 import {getBoardList} from '../../utils/board-list';
 
 import styles from './BoardSelectionContainer.module.scss';
+import {Divider} from 'cfs-react-library';
 
 export default function BoardSelectionContainer() {
 	const selectedSoc = useSelectedSoc();
@@ -46,6 +47,11 @@ export default function BoardSelectionContainer() {
 
 						<BoardList list={boardList.standard} />
 					</section>
+					<div className={styles.separator}>
+						<Divider />
+						<span>OR</span>
+						<Divider />
+					</div>
 
 					<section className={styles.list}>
 						<h2>Custom Board Packages</h2>

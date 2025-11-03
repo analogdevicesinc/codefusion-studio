@@ -42,7 +42,7 @@ export class SocCatalog extends Catalog<SoC> {
      * @example const catalogWithClient = new SocCatalog({ directory: '/path/to/data' }, cfsApiClient);
      * @example const catalogWithoutClient = new SocCatalog({ directory: '/path/to/data' });
      * @example const catalogWithDifferentStore = new SocCatalog({ directory: '/path/to/data', storage: MyCustomStoreClass });
-     * @example const catalogWithDifferentStore = new SocCatalog({ directory: '/path/to/data', cleanTmp: false });
+     * @example const catalogThatKeepsTmpData = new SocCatalog({ directory: '/path/to/data', cleanTmp: false });
      */
     public constructor(
         options: StorageOptions,
@@ -55,7 +55,7 @@ export class SocCatalog extends Catalog<SoC> {
      * Returns the parser for SoC objects.
      * @returns The parser for SoC objects.
      */
-    get itemParser(): ReturnType<typeof zSoC.refine> {
+    protected get itemParser(): ReturnType<typeof zSoC.refine> {
         this.#socParser ??= zSoC
             // remove unknown properties
             .strip()

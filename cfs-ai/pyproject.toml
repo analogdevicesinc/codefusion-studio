@@ -1,0 +1,162 @@
+[project]
+name = "cfsai"
+version = "2.0.0"
+description = "A tool to help you put your AI model on hardware"
+readme = "README.md"
+authors = [
+    { name = "Codefusion Studio Team", email = "processor.tools.support@analog.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "cfsai-backend-max7800x",
+    "cfsai-compatibility-analyzer",
+    "cfsai-resource-profiler",
+    "cfsai-model-parser",
+    "cfsai-tflite",
+    "cfsai-types",
+    "docker>=7.1.0",
+    "dotenv>=0.9.9",
+    "fastapi[standard]>=0.115.12",
+    "httpx>=0.28.1",
+    "pydantic==2.11.3",
+    "typer>=0.15.3",
+]
+
+[tool.uv.sources]
+cfsai-tflite = { workspace = true }
+cfsai-backend-max7800x = { workspace = true }
+cfsai-types = { workspace = true }
+
+torch = [
+    { index = "pytorch-cpu" }
+]
+torchvision = [
+    { index = "pytorch-cpu"}
+]
+cfsai-model-parser = { workspace = true }
+cfsai-compatibility-analyzer = { workspace = true }
+cfsai-resource-profiler = { workspace = true }
+
+[project.scripts]
+cfsai = "cfsai.cli:cli"
+
+[dependency-groups]
+dev = [
+    "adi-mkdocs-harmonic>=0.7.0",
+    "datamodel-code-generator>=0.31.2",
+    "flit>=3.12.0",
+    "griffe-pydantic>=1.1.4",
+    "hypothesis>=6.131.21",
+    "mkdocstrings[python]>=0.30.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.6",
+    "tensorflow>=2.0",
+    "types-requests>=2.32.0.20250328",
+]
+
+[build-system]
+requires = ["flit-core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.mypy]
+ignore_missing_imports = true
+files = [
+    "src/", 
+    "packages/cfsai-types/src", 
+    "packages/cfsai-tflite/src",
+    "platforms/max7800x/cfsai-backend-max7800x/src/",
+]
+exclude = [
+    "scripts/",
+    "packages/cfsai-tflite/build_hook.py",
+    "packages/cfsai-model-parser",
+    "packages/cfsai-resource-profiler",
+    "packages/cfsai-compatibility-analyzer",
+    "platforms/max7800x/cfsai-backend-max7800x/src/cfsai_backend_max7800x/izer/"
+]
+
+[tool.ruff.lint]
+select = [
+    "D", # pydocstyle
+    "E", # pycodestyle (Error)
+    "F", # pyflakes
+    "B", # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I", # isort (import sorting)
+    "UP", # pyupgrade (upgrade suggestions)
+    "ANN", # Type annotations,
+    "YTT", # flake8-2020
+    "S", # flake8-bandit
+    "PYI", # flake8-pyi
+    "PIE", # flake8-pie
+    "Q", # flake8-quotes
+    "PERF", # Peflint
+    "W", # pycodestyle (Warning)
+    "RUF", # Ruff specific rules
+    "ERA001", # Commented out code
+    #"TRY", # Possibly implement this in the future after exception refactoring
+]
+ignore = [
+    "D100", # Allow undocumented public modules
+    "D212", # Allow docstring summary not on first line
+    "D205", # Allow missing blank line after summary (doc strings)
+    "D104", # Allow undocumented public packages
+    "B904", # Allow raise with `from` inside an except block
+    "UP045", # Allow the use of `Optional`
+    "UP007", # Allow use of `Union`
+    "UP038", # Allow tuples instead of X|Y syntax where applicable
+    "ANN002", # Allow no annotations for *args
+    "ANN003", # Allow no annotations for **kwargs,
+    "ANN401", # Allowing typing.Any. This is just required in certain areas.
+    "S606", # Allow starting a process without a shell
+    "S603", # Same as S606 reasoning
+    "S104", # Bind to all interfaces inside the container
+    "Q000", # Allow single quotes
+    "W293", # Allow a blank line with whitespace
+    "W291", # Allow trailing whitespace
+]
+pydocstyle.convention = "google"
+
+[tool.ruff]
+src = [
+    "src/", 
+    "packages/cfsai-types/src", 
+    "packages/cfsai-tflite/src",
+    "platforms/max7800x/cfsai-backend-max7800x/src/"
+]
+exclude = [
+    "scripts", 
+    "dist", 
+    "**/demos", 
+    "tests",
+    "packages/cfsai-tflite/build_hook.py",
+    "packages/cfsai-tflite/src/cfsai_tflite/schema",
+    "packages/cfsai-types/src/cfsai_types/datamodel/_internal",
+    "platforms/max7800x/cfsai-backend-max7800x/src/cfsai_backend_max7800x/izer/"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/core"]
+markers = [
+    "integration: mark a test as an integration test",
+    "fuzzing: marks a test as fuzzing (not run by default)"
+]
+addopts = '-m "not fuzzing"'
+
+[tool.uv.workspace]
+members = [
+    "packages/cfsai-tflite",
+    "packages/cfsai-types",
+    "platforms/max7800x/cfsai-backend-max7800x",
+
+    # Advanced AI Tools
+    "packages/cfsai-resource-profiler",
+    "packages/cfsai-compatibility-analyzer",
+    "packages/cfsai-model-parser"
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

@@ -1,0 +1,88 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "CFSAI: Debug MAX7800x Backend ",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cfsai",
+            "console": "integratedTerminal",
+            "args": [
+                "--verbose",
+                "build",
+                "-t",
+                "max78002.cm4.cnn",
+                "-m",
+                "platforms/max7800x/models/pytorch/ai85-camvid-unet-large-fakept-q.pth.tar",
+                "--izer-network-config",
+                "platforms/max7800x/models/networks/camvid-unet-large-fakept.yaml",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "CFSAI: Debug TFLM Backend",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cfsai",
+            "console": "integratedTerminal",
+            "args": [
+                "build",
+                "--target",
+                "max32690.cm4",
+                "--model",
+                "./examples/hello_world_f32.tflite",
+                "--backend",
+                "tflm",
+                "--extension",
+                "Symbol=CLI-Debug-Symbol",
+                "--extension",
+                "Section=.cli.debug.section"
+
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "CFSAI: Debug model-compat",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cfsai",
+            "console": "integratedTerminal",
+            "args": [
+                "model-compat",
+                "--target",
+                "max32690.cm4",
+                "--model",
+                "./examples/hello_world_f32.tflite",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "CFSAI: Debug list-extensions",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cfsai",
+            "console": "integratedTerminal",
+            "args": [
+                "list-extensions",
+                "izer"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "CFSAI: Debug list-targets",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "cfsai",
+            "console": "integratedTerminal",
+            "args": [
+                "list-targets",
+                "--packages"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+    ]
+}

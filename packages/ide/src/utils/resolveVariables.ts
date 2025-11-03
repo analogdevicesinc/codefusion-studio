@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * MIT License
  * Copyright (c) 2021 Dominic Vonk
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -8,10 +8,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -56,7 +56,7 @@ export function resolveVariables(string: string, recursive = false): string {
     }
   }
   if (string.includes("${userHome}")) {
-    string = string.replace(/\${userHome}/g, os.homedir());
+    string = resolveUserHomePath(string);
   }
   if (vscode.workspace.workspaceFolders) {
     const workspaces = vscode.workspace.workspaceFolders;
@@ -154,4 +154,13 @@ export function resolveVariables(string: string, recursive = false): string {
     string = resolveVariables(string, recursive);
   }
   return string;
+}
+
+/**
+ * Resolves user home path variables in the format ${userHome}
+ * @param string - Input string that may contain user home variables
+ * @returns String with user home paths resolved
+ */
+export function resolveUserHomePath(string: string): string {
+  return string.replace(/\${userHome}/g, os.homedir());
 }

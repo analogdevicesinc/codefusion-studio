@@ -43,12 +43,10 @@ declare global {
 				>
 			): Chainable<MountReturn>;
 			/**
-			 * Custom command to import an soc based on a provided soc id
-			 * @example cy.soc('max32690-tqfn')
-			 * @param {string} socId - The soc id to import
-			 * @returns {Chainable} - The imported soc
+			 * Custom command to import the mocked elf parser model (fixture)
+			 * @returns {Chainable} - ELF data model
 			 */
-			soc(socId: string): Chainable<Soc>;
+			mockElfParser(): Chainable<unknown>;
 		}
 	}
 }

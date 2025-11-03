@@ -33,12 +33,12 @@ export const transformBtoKB = (
 		: `${size} B`;
 
 export const convertBytesToKbOrMb = (value: number) => {
-	if (value > 1024) {
-		return `${(value / 1024).toFixed(2)} KB`;
-	}
-
 	if (value > 1024 * 1024) {
 		return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+	} 
+
+	if (value > 1024) {
+		return `${(value / 1024).toFixed(2)} KB`;
 	}
 
 	return `${value} B`;

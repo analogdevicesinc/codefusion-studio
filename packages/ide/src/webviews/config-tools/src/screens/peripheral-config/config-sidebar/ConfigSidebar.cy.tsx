@@ -1,4 +1,3 @@
-/* eslint-disable max-nested-callbacks */
 /**
  *
  * Copyright (c) 2024-2025 Analog Devices, Inc.
@@ -14,6 +13,7 @@
  *
  */
 
+/* eslint-disable max-nested-callbacks */
 import type {ControlCfg, Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import ConfigSidebar from './ConfigSidebar';
@@ -27,19 +27,8 @@ import {
 import {capitalizeWord} from '../../../../../common/utils/string';
 import type {CfsConfig} from 'cfs-plugins-api';
 
-const max32690wlp = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
-
-const cm4PreassignedPeripheral = [
-	{
-		Name: 'CM4 SysTick',
-		Signals: [],
-		Config: {
-			ENABLE: 'FALSE'
-		}
-	}
-];
+const max32690wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 const GPIO0 = 'GPIO0';
 const DMA = 'DMA';
@@ -66,7 +55,7 @@ const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: SoC,
-	projects: [
+	Projects: [
 		{...mockedCm4Project},
 		{
 			Description: 'Risc-V (RV32)',
@@ -78,10 +67,15 @@ const mockedConfigDict = {
 			ProjectId: RV + '-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
-const controlsMock: Record<string, ControlCfg[]> = {
+const controlsMockCM4: Record<string, ControlCfg[]> = {
 	'CM4 SysTick': [
+		{
+			Id: 'ENABLE',
+			Description: 'Enable the SysTick Timer',
+			Type: 'boolean'
+		},
 		{
 			Id: 'PARITY',
 			Description: 'Parity',
@@ -190,31 +184,114 @@ const controlsMock: Record<string, ControlCfg[]> = {
 			Type: 'integer',
 			PluginOption: true
 		}
+	],
+	I2C0: [
+		{
+			Id: 'FREQ',
+			Description: 'Frequency',
+			Hint: '10000',
+			Type: 'integer',
+			PluginOption: true
+		}
+	]
+};
+
+const controlsMockRV: Record<string, ControlCfg[]> = {
+	I2C2: [
+		{
+			Id: 'FREQ',
+			Description: 'Frequency',
+			Hint: '20000',
+			Type: 'integer',
+			PluginOption: true
+		}
 	]
 };
 
 describe('Peripheral Allocation - Config Sidebar', () => {
 	beforeEach(() => {
 		cy.viewport(262, 688);
+	});
 
-		window.localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(max32690wlp.Peripherals)
+	it('Should allow to switch between active peripherals', () => {
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(controlsMockCM4)
+			);
+			win.localStorage.setItem(
+				`pluginControls:${RV}-proj`,
+				JSON.stringify(controlsMockRV)
+			);
+		});
+		const reduxStore = configurePreloadedStore(
+			max32690wlp,
+			mockedConfigDict
 		);
 
-		window.localStorage.setItem(
-			'Cores',
-			JSON.stringify(max32690wlp.Cores)
+		reduxStore.dispatch(setActivePeripheral(`I2C0:${CM4}-proj`));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
+			() => {
+				cy.dataTest(
+					'plugin-options:plugin-form:control-FREQ-control-input'
+				)
+					.shadow()
+					.find('input')
+					.should('have.value', '10000');
+
+				cy.then(() => {
+					reduxStore.dispatch(setActivePeripheral(`I2C2:${RV}-proj`));
+				});
+
+				cy.dataTest(
+					'plugin-options:plugin-form:control-FREQ-control-input'
+				)
+					.shadow()
+					.find('input')
+					.should('have.value', '20000')
+					.then($input => {
+						const input = $input[0];
+						input.value = '7000';
+						input.dispatchEvent(new Event('input', {bubbles: true}));
+						input.dispatchEvent(new Event('change', {bubbles: true}));
+					})
+					.should('have.value', '7000');
+
+				cy.then(() => {
+					reduxStore.dispatch(
+						setActivePeripheral(`I2C0:${CM4}-proj`)
+					);
+				});
+
+				cy.dataTest(
+					'plugin-options:plugin-form:control-FREQ-control-input'
+				)
+					.shadow()
+					.find('input')
+					.should('have.value', '10000');
+			}
+		);
+	});
+
+	it('Should render toggles in configuration form for boolean types', () => {
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(controlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(
+			max32690wlp,
+			mockedConfigDict
 		);
 
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(max32690wlp.Packages[0])
-		);
+		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockedConfigDict)
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
+			() => {
+				cy.dataTest('boolean-control:ENABLE-span').should('exist');
+			}
 		);
 	});
 
@@ -222,30 +299,30 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		cy.window().then(win => {
 			win.localStorage.setItem(
 				`pluginControls:${CM4}-proj`,
-				JSON.stringify(controlsMock)
+				JSON.stringify(controlsMockCM4)
 			);
 		});
-		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc,
-			{
-				Projects: [
-					{
-						...mockedCm4Project,
-						Peripherals: [
-							{
-								Name: 'CM4 SysTick',
-								Signals: [],
-								Config: {
-									ENABLE: 'FALSE'
-								}
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'CM4 SysTick',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
 							}
-						],
-						Partitions: [],
-						PlatformConfig: {}
-					}
-				]
-			} as unknown as CfsConfig
-		);
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
@@ -263,7 +340,7 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		cy.dataTest(
 			`allocated-core-card:${CM4}-proj:primary-badge`
-		).should('exist');
+		).should('not.exist');
 
 		cy.dataTest(`allocated-core-card:${CM4}-proj:lock-icon`).should(
 			'exist'
@@ -279,13 +356,9 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 	});
 
 	it('Should display "Allocated to multiple cores." label when the peripheral is assigned to multiple cores', () => {
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(max32690wlp.Packages[0])
-		);
-
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -325,7 +398,8 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 	it('Should display the signal config task sidebar when a the user chooses to configure a signal', () => {
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		const signalName = 'P0.1';
@@ -366,7 +440,8 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 	it('Should display the peripheral config task sidebar when a the user chooses to configure a peripheral', () => {
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(
@@ -393,11 +468,16 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		cy.dataTest('details-section:alias-control-input').should(
 			'exist'
 		);
+
+		// Should show error sidebar header
+		cy.dataTest('peripheral:error').should('exist');
+		cy.dataTest('signal-assignment:conflict').should('be.visible');
 	});
 
 	it('Should dynamically update the sidebar when the user switches between peripheral and signal configuration task', () => {
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		const targetSignalFromGroup = 'SDIO2';
@@ -467,11 +547,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		cy.window().then(win => {
 			win.localStorage.setItem(
 				`pluginControls:${CM4}-proj`,
-				JSON.stringify(controlsMock)
+				JSON.stringify(controlsMockCM4)
 			);
 		});
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
@@ -527,7 +608,8 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 			);
 		});
 		const reduxStore = configurePreloadedStore(
-			max32690wlp as unknown as Soc
+			max32690wlp,
+			mockedConfigDict
 		);
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
@@ -554,6 +636,82 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 					'be.visible'
 				);
 			}
+		);
+	});
+
+	it('Should show "PIN ASSIGNMENTS" when the peripheral has signals', () => {
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(controlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'GPIO0',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
+							}
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('GPIO0:CM4-proj'));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		cy.dataTest(`config-section:manage-pin-assignments`).should(
+			'exist'
+		);
+	});
+
+	it('Should hide "PIN ASSIGNMENTS" when the peripheral has no signals', () => {
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(controlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'CM4 SysTick',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
+							}
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		cy.dataTest(`config-section:manage-pin-assignments`).should(
+			'not.exist'
 		);
 	});
 });

@@ -31,6 +31,9 @@ import {
 import {useMemo} from 'react';
 import {getControlsForProjectIds} from '../../../utils/api';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {getIsExternallyManagedProyect} from '../../../utils/config';
+import PeripheralError from '../peripheral-error/peripheral-error';
+import {usePeripheralErrorCount} from '../../../state/slices/app-context/appContext.selector';
 
 type ConfigSidebarProps = {
 	readonly isMinimised: boolean;
@@ -45,6 +48,8 @@ function ConfigSidebar({isMinimised}: ConfigSidebarProps) {
 	const peripheralName = activeSignal?.split(' ')[0] ?? '';
 	// If both are active, signal takes precedence
 	const activeConfig = activeSignal ?? activePeripheral;
+	const errorCount =
+		usePeripheralErrorCount(peripheralName || activePeripheral) || 0;
 
 	const description =
 		activePeripheral && !signalName
@@ -53,21 +58,29 @@ function ConfigSidebar({isMinimised}: ConfigSidebarProps) {
 			: getPeripheralSignals(peripheralName ?? '')[signalName]
 					?.description;
 
+	const isExternalllyManagedProject =
+		getIsExternallyManagedProyect(projectId);
+
 	const controlsPromise = useMemo(
 		async () =>
-			projectId
+			projectId && !isExternalllyManagedProject
 				? getControlsForProjectIds(
 						[projectId],
 						CONTROL_SCOPES.PERIPHERAL
 					)
 				: Promise.resolve({}),
-		[projectId]
+		[projectId, isExternalllyManagedProject]
 	);
 
 	return (
 		<SlidingPanel
 			title={(activeConfig ?? '').toUpperCase()}
 			description={description}
+			errorHeader={
+				errorCount ? (
+					<PeripheralError errorCount={errorCount} />
+				) : null
+			}
 			isMinimised={isMinimised}
 			closeSlider={() => {
 				if (activeSignal) {

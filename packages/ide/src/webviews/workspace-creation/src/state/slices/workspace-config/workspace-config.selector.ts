@@ -76,3 +76,24 @@ export const useCorePluginVersion = (coreId: string) =>
 	useAppSelector(
 		state => state.workspaceConfigReducer.cores[coreId]?.pluginVersion
 	);
+
+export const useCurrentCoreConfigStep = () =>
+	useAppSelector(
+		state => state.workspaceConfigReducer.currentCoreConfigStep
+	);
+
+export const useIsTrustZoneEnabled = (id: string) =>
+	useAppSelector(state =>
+		Boolean(state.workspaceConfigReducer.isTrustZoneEnabled[id])
+	);
+
+export const useCoresToPersist = () =>
+	useAppSelector(state => {
+		const cores = state.workspaceConfigReducer.cores;
+		return Object.keys(cores)
+			.filter(
+				coreId =>
+					!state.workspaceConfigReducer.isTrustZoneEnabled[coreId]
+			)
+			.map(coreId => cores[coreId]);
+	});

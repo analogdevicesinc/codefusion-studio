@@ -1,3 +1,5 @@
+import type {Config} from '@oclif/core';
+
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -43,4 +45,46 @@ export function lowercaseFirstLetterProps<
   }
 
   return result as T;
+}
+
+/**
+ * Get data model search paths included in user custom configuration.
+ * @param config - The configuration object from oclif
+ * @returns Array containing all data model search paths
+ */
+export function getDataModelSearchPaths(config: Config): string[] {
+  const searchPaths: Set<string> = new Set<string>();
+
+  try {
+    const configPath = path.join(config.configDir, 'config.json');
+
+    if (fs.existsSync(configPath)) {
+      const configContent = fs.readFileSync(configPath, 'utf8');
+      const userConfig = JSON.parse(configContent);
+      if (
+        userConfig.dataModelSearchPaths &&
+        Array.isArray(userConfig.dataModelSearchPaths)
+      ) {
+        // validate each path before adding
+        for (const p of userConfig.dataModelSearchPaths as string[]) {
+          if (typeof p === 'string' && p.trim() !== '') {
+            const resolvedPath = path.isAbsolute(p)
+              ? p
+              : path.resolve(process.cwd(), p);
+            if (fs.existsSync(resolvedPath)) {
+              searchPaths.add(resolvedPath);
+            } else {
+              console.warn(
+                `Warning: Search path "${resolvedPath}" does not exist.`
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Silently continue if config file doesn't exist or can't be read
+  }
+
+  return [...searchPaths];
 }

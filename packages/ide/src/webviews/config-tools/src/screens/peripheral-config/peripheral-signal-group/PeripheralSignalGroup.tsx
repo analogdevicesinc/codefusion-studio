@@ -20,7 +20,11 @@ import PeripheralSignal, {
 
 function PeripheralSignalGroup({
 	name,
+	peripheral,
 	isSelected,
+	signals,
+	isSignalAssigned,
+	projects,
 	allocatedCoreId,
 	onClick
 }: PeripheralSignalProps) {
@@ -28,6 +32,10 @@ function PeripheralSignalGroup({
 		<div className={styles.container}>
 			<PeripheralSignal
 				name={name}
+				peripheral={peripheral}
+				isSignalAssigned={isSignalAssigned}
+				projects={projects}
+				signals={signals}
 				isSelected={isSelected}
 				allocatedCoreId={allocatedCoreId}
 				onClick={onClick}

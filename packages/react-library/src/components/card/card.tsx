@@ -18,21 +18,25 @@ import styles from './card.module.scss';
 type CardProps = Readonly<{
 	id?: string;
 	ariaLabel?: string;
+	interactive?: boolean;
 	isActive?: boolean;
 	testId?: string;
 	hasError?: boolean;
 	isDisabled?: boolean;
 	disableHoverEffects?: boolean;
+	isExpanded?: boolean;
 	children?: ReactNode;
 }>;
 
 export default function Card({
 	ariaLabel,
+	interactive = true,
 	isActive,
 	id,
 	testId,
 	hasError,
 	isDisabled,
+	isExpanded,
 	disableHoverEffects,
 	children
 }: CardProps) {
@@ -41,7 +45,7 @@ export default function Card({
 		<div
 			data-test={testId}
 			data-active={isActive}
-			className={`${styles['card']} ${isActive ? styles.active : ''} ${hasError ? styles.error : ''} ${disableHoverEffects || isDisabled ? styles.noHover : ''} ${isDisabled ? styles.disabled : ''}`}
+			className={`${styles['card']} ${interactive && isActive ? styles.active : ''} ${interactive && hasError ? styles.error : ''} ${interactive && (disableHoverEffects || isDisabled) ? styles.noHover : ''} ${interactive && isExpanded ? styles.expanded : ''} ${isDisabled ? styles.disabled : ''}`}
 			id={id ? id : baseId}
 			aria-label={ariaLabel}
 		>

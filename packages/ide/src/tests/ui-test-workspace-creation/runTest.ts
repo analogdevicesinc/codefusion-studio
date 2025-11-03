@@ -23,33 +23,55 @@ const EXTENSIONS_DIR = path.resolve(
   "ui-test-workspace-creation",
   ".vscode",
 );
+process.env.SKIP_OPEN_WORKSPACE = "true"; // Skip opening workspace in tests
 
 async function main() {
   const settingsPath =
     process.env.SETTINGS_PATH ?? path.join(EXTENSIONS_DIR, "settings.json");
 
+  const isWin = process.platform === "win32";
+
+  // @TODO: Create dedicated fixtures for extester runs.
+  const socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+
   try {
-    await fs.promises.writeFile(settingsPath, "{}", "utf-8");
+    let pluginsPath = path.resolve(
+      process.cwd(),
+      "..",
+      "..",
+      "submodules",
+      "cfs-plugins",
+      "plugins",
+      "dist",
+    );
+
+    if (isWin) {
+      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
+    }
+
+    const settingsObj = {
+      "cfs.plugins.searchDirectories": [pluginsPath],
+      "cfs.plugins.dataModelSearchDirectories": [socsPath],
+      "cfs.catalogManager.checkForUpdates": false,
+      "cfs.catalogManager.catalogLocation": path.join(
+        path.dirname(EXTENSIONS_DIR),
+        ".catalog",
+      ),
+    };
 
     await fs.promises.writeFile(
       settingsPath,
-      JSON.stringify({
-        "cfs.catalogManager.checkForUpdates": false,
-        "cfs.catalogManager.catalogLocation": path.join(
-          path.dirname(EXTENSIONS_DIR),
-          ".catalog",
-        ),
-      }),
+      JSON.stringify(settingsObj, null, 2),
       "utf-8",
     );
 
-    const settings = await fs.promises.readFile(settingsPath, "utf-8");
-    console.debug("Settings", settings);
+    console.log("Generated path to plugins:", pluginsPath);
 
     const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
 
     await tester.setupAndRunTests(
       path.resolve(__dirname, "suite/*.test.js"),
+
       "max",
       {
         useYarn: false,

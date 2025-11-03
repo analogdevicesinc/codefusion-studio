@@ -91,9 +91,73 @@ export class Users {
 
     /**
      *
+     * @param args0
+     * @param args0.stored
+     * @param args0.id
+     * @returns
      */
-    async *list(): AsyncGenerator<User[]> {
-        const { data, error } = await this.apiClient.GET('/users');
+    async get({
+        stored,
+        id: userID,
+    }: {
+        stored?: boolean;
+        id: string;
+    }): Promise<User> {
+        const { data, error } = await this.apiClient.GET(
+            '/users/{userID}',
+            {
+                params: {
+                    path: {
+                        userID,
+                    },
+                    query: {
+                        stored,
+                    },
+                },
+            },
+        );
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        if (data.item) {
+            return data.item;
+        } else {
+            throw new Error('Unhandled exception');
+        }
+    }
+
+    /**
+     *
+     * @returns
+     */
+    async getAll(): Promise<User[]> {
+        const results: User[] = [];
+        for await (const items of this.list()) {
+            results.push(...items);
+        }
+
+        return results;
+    }
+
+    /**
+     *
+     * @param args0
+     * @param args0.stored
+     */
+    async *list({
+        stored,
+    }: {
+        stored?: boolean;
+    } = {}): AsyncGenerator<User[]> {
+        const { data, error } = await this.apiClient.GET('/users', {
+            params: {
+                query: {
+                    stored,
+                },
+            },
+        });
 
         if (error) {
             throw new Error(error.message);
@@ -121,9 +185,9 @@ export class Users {
         writeTags,
     }: {
         userID: string;
-        readTags?: string[];
-        userType?: 'user' | 'admin';
-        writeTags?: string[];
+        readTags: string[];
+        userType: 'user' | 'admin';
+        writeTags: string[];
     }): Promise<void> {
         const { error } = await this.apiClient.PUT(
             '/users/{userID}',

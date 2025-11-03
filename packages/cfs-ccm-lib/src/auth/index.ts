@@ -16,7 +16,19 @@
 export type { Authorizer } from './authorizer.js';
 export { ApiKeyAuthorizer } from './key/api-key.js';
 export type { ApiKeyAuthConfig } from './key/api-key.js';
-export { TokenAuthorizer } from './token/token.js';
-export type { TokenAuthConfig } from './token/token.js';
+export {
+    TokenAuthorizer,
+    TokenAuthSession,
+    TokenCodeExchangeFlows,
+    TokenSessionFileStorage,
+} from './token/token.js';
+export type {
+    BrowserResponse,
+    TokenAuthConfig,
+    TokenAuthSessionConfig,
+    TokenCodeExchangeInitiator,
+    TokenCodeExchangeReporter,
+} from './token/token.js';
 export { PublicAuthorizer } from './public/public.js';
 export type { PublicAuthConfig } from './public/public.js';
+export type { SessionInfo } from './session.js';

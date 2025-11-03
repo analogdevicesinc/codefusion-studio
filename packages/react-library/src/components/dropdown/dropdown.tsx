@@ -33,6 +33,7 @@ type DropDownProps = {
 	readonly currentControlValue: string | undefined;
 	readonly options: DropDownOptions;
 	readonly dataTest?: string;
+	readonly size?: 'large' | 'small';
 	readonly error?: string;
 	readonly onHandleDropdown: (value: string) => void;
 };
@@ -43,6 +44,7 @@ export default function DropDown({
 	currentControlValue,
 	options,
 	dataTest,
+	size = 'large',
 	error,
 	onHandleDropdown
 }: DropDownProps) {
@@ -80,7 +82,7 @@ export default function DropDown({
 				id={`${controlId}-controlDropdown`}
 				data-test={dataTest}
 				disabled={isDisabled}
-				className={`${styles.dropdown} ${error ? styles.error : ''}`}
+				className={`${styles.dropdown} ${error ? styles.error : ''} ${styles[size]}`}
 				value={currentControlValue}
 				onClick={() => {
 					setIsExpanded(!isExpanded);

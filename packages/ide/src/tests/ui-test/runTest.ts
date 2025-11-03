@@ -21,8 +21,7 @@ const EXTENSIONS_DIR = path.resolve(
   "src",
   "tests",
   "ui-test",
-  //".vscode",
-  // TODO - .vscode folder was needed so everytime extension is downloaded in same folder and updated everytime
+  ".vscode",
 );
 
 async function main() {
@@ -32,42 +31,42 @@ async function main() {
   const isWin = process.platform === "win32";
 
   try {
-    // Create settings file to set the path to cfsutil
-    await fs.promises.writeFile(settingsPath, "{}", "utf-8");
-
-    console.log("Settings file successfully created at", settingsPath);
-
-    let cfsutilPath = path.resolve(
+    let pluginsPath = path.resolve(
       process.cwd(),
       "..",
-      "cli", // update this path when moving
-      "bin",
-      `run${isWin ? ".cmd" : ".js"}`,
+      "..",
+      "submodules",
+      "cfs-plugins",
+      "plugins",
+      "dist",
     );
 
+    let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+
     if (isWin) {
-      cfsutilPath = cfsutilPath.replace(/\\/g, "\\\\");
+      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
+      socsPath = socsPath.replace(/\\/g, "\\\\");
     }
 
     await fs.promises.writeFile(
       settingsPath,
-      `{"cfgtools.cfsutil.path": "${cfsutilPath}"}`,
+      `{"cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"]}`,
       "utf-8",
     );
 
-    console.log("Generated path to cfsutil:", cfsutilPath);
+    console.log("Settings file successfully created at", settingsPath);
 
     const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
 
     await tester.setupAndRunTests(
       [
+        // TODO: Use wildcard to run all tests, some tests are not being run now.
         path.resolve(__dirname, "general/command-test.js"),
         path.resolve(__dirname, "general/activation-test.js"),
         path.resolve(__dirname, "home/show-on-startup-test.js"),
         path.resolve(__dirname, "build/adi-sdkpath-prompt-test.js"),
         path.resolve(__dirname, "general/command-shortcut-settings.js"),
       ],
-      // TODO - New folder made along with duplicate test to test the test case.
       "max",
       {
         useYarn: false,

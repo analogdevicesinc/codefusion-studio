@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,14 @@
  *
  */
 import {type PinStatus} from '../../../types/pins';
-import type {
-	PinSignal,
-	PinCanvas,
-	Pin
-} from '@common/types/soc';
+import type {AppliedSignal, PinCanvas, Pin} from '@common/types/soc';
 import {
 	LEFT_LABEL_GROUP_IDX,
 	RIGHT_LABEL_GROUP_IDX,
 	TOP_LABEL_GROUP_IDX,
 	BOTTOM_LABEL_GROUP_IDX
 } from '../constants/package-display';
+import {pinInConflict} from '../../../utils/pin-error';
 
 export function generateLabelGroups(canvas: PinCanvas | undefined) {
 	if (canvas === undefined) {
@@ -86,13 +83,13 @@ export function createPinGridDataStructure(
 }
 
 export function getPinStatus(
-	signals: PinSignal[] | undefined
+	signals: AppliedSignal[] | undefined
 ): PinStatus {
 	if (signals?.length === 0 || signals === undefined) {
 		return 'unassigned';
 	}
 
-	if (signals?.length > 1) {
+	if (pinInConflict(signals)) {
 		return 'conflict';
 	}
 

@@ -18,6 +18,7 @@ import type {TContextMenuOption} from '../../../common/types/generic';
 import styles from './ContextMenuPanel.module.scss';
 
 type ContextMenuProps = {
+	readonly testId?: string;
 	readonly isVisible: boolean;
 	readonly x: number;
 	readonly y: number;
@@ -27,6 +28,7 @@ type ContextMenuProps = {
 };
 
 export default function ContextMenuPanel({
+	testId,
 	isVisible,
 	x,
 	y,
@@ -99,6 +101,7 @@ export default function ContextMenuPanel({
 			ref={contextMenuRef}
 			className={styles.contextMenu}
 			style={style}
+			data-test={`context-menu:${testId}`}
 		>
 			{options.map(
 				(option: TContextMenuOption) =>

@@ -31,7 +31,8 @@ import type {TSymbol} from '../../../../common/types/symbols';
 import styles from './MemoryVisual.module.scss';
 
 type TMemoryVisualProps = {
-	readonly segments: TSegment[] | TSection[];
+	readonly testId?: string;
+	readonly segments: Array<TSegment | TSection>;
 	readonly hoveredItem: TSegment | TSection | TSymbol | undefined;
 	readonly hoverSource: 'MemoryTable' | 'MemoryVisual' | undefined;
 	readonly onClick: (segment: TSegment | TSection) => void;
@@ -43,6 +44,7 @@ type TMemoryVisualProps = {
 };
 
 export default function MemoryVisual({
+	testId,
 	segments,
 	hoveredItem,
 	hoverSource,
@@ -77,9 +79,11 @@ export default function MemoryVisual({
 	};
 
 	const isLengthAndSegmWithSize = (
-		segments: TSegment[] | TSection[]
+		segments: Array<TSegment | TSection>
 	): boolean => {
-		const segmWithSizeZero = segments.filter(segm => segm.size === 0);
+		const segmWithSizeZero = segments.filter(
+			(segm): segm is TSegment => (segm as TSegment).size === 0
+		);
 
 		if (!segments.length) return false;
 
@@ -127,7 +131,10 @@ export default function MemoryVisual({
 	);
 
 	const displaySegments = () => (
-		<section className={styles.container}>
+		<section
+			className={styles.container}
+			data-test={`memory-layout:visual-container:${testId}`}
+		>
 			<div className={styles['visual-container']}>
 				{/* first in list are always the main stack segments */}
 				{computedSegments?.map((stackOfSegments, index) =>

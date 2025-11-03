@@ -14,28 +14,30 @@
  */
 
 import type {Core} from '@common/types/soc';
-import {getCores} from './api';
-
+import type {PartitionCore} from '../state/slices/partitions/partitions.reducer';
+import {getProjectInfoList} from './config';
 export type SocCoreDictionary = Record<string, Core>;
 export type SocCoreList = Core[];
 
 let socCores: Core[] = [];
 const socCoreDictionary: Record<string, Core> = {};
 
-if (import.meta.env.MODE === 'development') {
-	// Allow overriding the soc controls in test mode
-	if (
-		(window as any).Cypress &&
-		window.localStorage.getItem('Cores')
-	) {
-		socCores = JSON.parse(
-			window.localStorage.getItem('Cores') ?? '[]'
-		);
-	} else {
-		socCores = (window as any).__DEV_SOC__?.Cores ?? [];
-	}
-} else {
-	socCores = await getCores();
+/**
+ * Initializes socCores and socCoreDictionary with the provided SoC data.
+ * Should be called once at app startup with the SoC data model.
+ */
+export function initializeSocCores(cores: Core[]) {
+	resetCoreDict();
+
+	socCores = cores ?? [];
+
+	Object.keys(socCoreDictionary).forEach(key => {
+		Reflect.deleteProperty(socCoreDictionary, key);
+	});
+
+	socCores.forEach(core => {
+		socCoreDictionary[core.Id] = core;
+	});
 }
 
 /**
@@ -43,13 +45,12 @@ if (import.meta.env.MODE === 'development') {
  * @returns {SocCoreDictionary} A dictionary where the key is the core ID and the value is the core object.
  */
 export function getSocCoreDictionary(): SocCoreDictionary {
-	const cores = getSocCoreList();
-
-	if (Object.values(socCoreDictionary).length === 0) {
-		cores.forEach(core => {
-			if (!(core.Name in socCoreDictionary)) {
-				socCoreDictionary[core.Id] = core;
-			}
+	if (
+		Object.values(socCoreDictionary).length === 0 &&
+		socCores.length > 0
+	) {
+		socCores.forEach(core => {
+			socCoreDictionary[core.Id] = core;
 		});
 	}
 
@@ -61,15 +62,6 @@ export function getSocCoreDictionary(): SocCoreDictionary {
  * @returns {SocCoreList} An array of core objects.
  */
 export function getSocCoreList(): SocCoreList {
-	if (socCores.length === 0) {
-		// Attempt to populate the pin dictionary from localStorage (for testing purposes)
-		const localStorageCores = localStorage.getItem('Cores');
-
-		if (localStorageCores) {
-			socCores = JSON.parse(localStorageCores);
-		}
-	}
-
 	return socCores;
 }
 
@@ -113,4 +105,25 @@ export function resetCoreDict() {
 	Object.keys(socCoreDictionary).forEach(key => {
 		Reflect.deleteProperty(socCoreDictionary, key);
 	});
+}
+
+export function isCoreSecure(core: PartitionCore): boolean {
+	const projects = getProjectInfoList();
+
+	return (
+		projects?.some(
+			project =>
+				project.ProjectId === core.projectId && project.Secure
+		) ?? false
+	);
+}
+
+export function isProjectSecure(projectId: string): boolean {
+	const projects = getProjectInfoList();
+
+	return (
+		projects?.some(
+			project => project.ProjectId === projectId && project.Secure
+		) ?? false
+	);
 }

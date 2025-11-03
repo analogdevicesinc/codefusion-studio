@@ -26,31 +26,33 @@ export default function WrkspFooter() {
 		navigationSpecs;
 
 	return (
-		<CfsFooter>
-			<div
-				className={styles['wrksp-footer']}
-				data-test='wrksp-footer:container'
-			>
-				<Button
-					className={backAction ? '' : styles.hide}
-					type='button'
-					appearance='secondary'
-					dataTest='wrksp-footer:back-btn'
-					onClick={() => {
-						backAction?.();
-					}}
+		<div className={styles.wrkspFooterContainer}>
+			<CfsFooter>
+				<div
+					className={styles.wrkspFooter}
+					data-test='wrksp-footer:container'
 				>
-					{backLabel ?? 'Back'}
-				</Button>
+					<Button
+						className={backAction ? '' : styles.hide}
+						type='button'
+						appearance='secondary'
+						dataTest='wrksp-footer:back-btn'
+						onClick={() => {
+							backAction?.();
+						}}
+					>
+						{backLabel ?? 'Back'}
+					</Button>
 
-				<Button
-					type='button'
-					dataTest='wrksp-footer:continue-btn'
-					onClick={forwardAction}
-				>
-					{forwardLabel}
-				</Button>
-			</div>
-		</CfsFooter>
+					<Button
+						type='button'
+						dataTest='wrksp-footer:continue-btn'
+						onClick={forwardAction}
+					>
+						{forwardLabel}
+					</Button>
+				</div>
+			</CfsFooter>
+		</div>
 	);
 }

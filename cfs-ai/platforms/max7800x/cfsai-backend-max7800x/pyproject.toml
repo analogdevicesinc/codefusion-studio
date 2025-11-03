@@ -1,0 +1,39 @@
+[project]
+name = "cfsai-backend-max7800x"
+version = "2.0.0"
+description = "Code generation backend for the MAX7800x CNN"
+readme = "README.md"
+authors = [
+    { name = "Codefusion Studio Team", email = "processor.tools.support@analog.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "cfsai-types",
+    "numpy==1.26.4",
+    "onnx==1.16.1",
+    "pydantic>=2.11.3",
+    "pyyaml>=6.0.2",
+    "rich>=14.1.0",
+    "torch==2.3.1 ; sys_platform == 'darwin'",
+    "torch==2.3.1+cpu ; sys_platform != 'darwin'",
+    "xxhash==3.4.1",
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+cfsai-types = { workspace = true }
+torch = [
+    { index = "pytorch-cpu" }
+]
+torchvision = [
+    { index = "pytorch-cpu"}
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

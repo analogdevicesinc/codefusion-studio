@@ -1,0 +1,487 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "CFSConfig Schema",
+	"description": "Schema for the CFSConfig files",
+	"type": "object",
+	"properties": {
+		"Copyright": {
+			"type": "string",
+			"description": "Copyright notice for this file"
+		},
+		"DataModelVersion": {
+			"type": "string",
+			"description": "Version of the data model used for this file"
+		},
+		"DataModelSchemaVersion": {
+			"type": "string",
+			"description": "Version of the schema of the data model"
+		},
+		"Soc": {
+			"type": "string",
+			"description": "System on Chip (SoC) name"
+		},
+		"Package": {
+			"type": "string",
+			"description": "Package type of the SoC"
+		},
+		"BoardName": {
+			"type": "string",
+			"description": "Name of the hardware board"
+		},
+		"Timestamp": {
+			"type": "string",
+			"description": "Timestamp when this file was created or last modified"
+		},
+		"Projects": {
+			"type": "array",
+			"description": "List of projects associated with this file",
+			"items": {
+				"type": "object",
+				"properties": {
+					"CoreId": {
+						"type": "string",
+						"description": "Identifier for the core"
+					},
+					"ProjectId": {
+						"type": "string",
+						"description": "Identifier for the project"
+					},
+					"PluginId": {
+						"type": "string",
+						"description": "Identifier for the plugin, if any"
+					},
+					"PluginVersion": {
+						"type": "string",
+						"description": "Version of the plugin, if any"
+					},
+					"FirmwarePlatform": {
+						"type": "string",
+						"description": "Firmware platform for the project"
+					},
+					"ExternallyManaged": {
+						"type": "boolean",
+						"description": "Indicates if the project is externally managed"
+					},
+					"PlatformConfig": {
+						"type": "object",
+						"description": "Configuration options for the platform"
+					},
+					"Partitions": {
+						"type": "array",
+						"description": "List of partitions for the project",
+						"items": {
+							"type": "object",
+							"properties": {
+								"Name": {
+									"type": "string",
+									"description": "Name of the partition"
+								},
+								"StartAddress": {
+									"$ref": "#/$defs/Address",
+									"description": "Start address of the partition"
+								},
+								"Size": {
+									"type": "integer",
+									"description": "Size of the partition in bytes"
+								},
+								"IsOwner": {
+									"type": "boolean",
+									"description": "Indicates if the partition is owned by this project"
+								},
+								"Access": {
+									"type": "string",
+									"description": "Access type for the partition (e.g., read, write, execute)",
+									"enum": [
+										"R",
+										"R/W"
+									]
+								},
+								"Config": {
+									"$ref": "#/$defs/ConfigOptions",
+									"description": "Additional configuration options for the partition"
+								}
+							},
+							"additionalProperties": false,
+							"required": [
+								"Name",
+								"StartAddress",
+								"Size",
+								"IsOwner",
+								"Access",
+								"Config"
+							]
+						}
+					},
+					"Peripherals": {
+						"type": "array",
+						"description": "List of peripherals for the project",
+						"items": {
+							"type": "object",
+							"properties": {
+								"Name": {
+									"type": "string",
+									"description": "Name of the peripheral"
+								},
+								"Signals": {
+									"type": "array",
+									"description": "List of signals associated with the peripheral",
+									"items": {
+										"type": "object",
+										"properties": {
+											"Name": {
+												"type": "string",
+												"description": "Name of the signal"
+											},
+											"Config": {
+												"$ref": "#/$defs/ConfigOptions",
+												"description": "Additional configuration options for the signal"
+											}
+										}
+									}
+								},
+								"Config": {
+									"$ref": "#/$defs/ConfigOptions",
+									"description": "Additional configuration options for the peripheral"
+								}
+							},
+							"additionalProperties": false,
+							"required": [
+								"Name",
+								"Signals",
+								"Config"
+							]
+						}
+					},
+					"Profiling": {
+						"type": "object",
+						"description": "Configuration options for the platform",
+						"properties": {
+							"Zephelin": {
+								"description": "Configuration for Zephelin profiling for Zephyr",
+								"type": "object",
+								"properties": {
+									"Enabled": {
+										"type": "boolean",
+										"description": "Profiling is enabled"
+									},
+									"AIEnabled": {
+										"type": "boolean",
+										"description": "AI profiling is enabled"
+									},
+									"Interface": {
+										"type": "string",
+										"description": "Interface used to transfer profiling data i.e. UART",
+										"enum": [
+											"UART"
+										]
+									},
+									"Port": {
+										"type": "number",
+										"description": "Instance of the interface used to transfer profiling data i.e. 0"
+									},
+									"Format": {
+										"type": "string",
+										"description": "Format for profiling (CTF or text)",
+										"enum": [
+											"CTF",
+											"TEXT"
+										]
+									}
+								},
+								"additionalProperties": false,
+								"required": [
+									"Enabled",
+									"AIEnabled",
+									"Interface",
+									"Port",
+									"Format"
+								]
+							}
+						}
+					},
+					"AIModels": {
+						"type": "array",
+						"description": "List of AI models for the project",
+						"items": {
+							"type": "object",
+							"properties": {
+								"Name": {
+									"type": "string",
+									"description": "Name of the AI module"
+								},
+								"Model": {
+									"type": "object",
+									"description": "Configuration for the AI model",
+									"properties": {
+										"File": {
+											"type": "string",
+											"description": "Path to the AI model file"
+										},
+										"Name": {
+											"type": "string",
+											"description": "Name of the AI model"
+										}
+									},
+									"additionalProperties": false,
+									"required": [
+										"File",
+										"Name"
+									]
+								},
+								"Target": {
+									"type": "object",
+									"description": "Target hardware for the AI model",
+									"properties": {
+										"Core": {
+											"type": "string",
+											"description": "Identifier of the target core"
+										},
+										"Accelerator": {
+											"type": "string",
+											"description": "Identifier of the target accelerator"
+										}
+									}
+								},
+								"Backend": {
+									"type": "object",
+									"description": "Configuration for the AI backend",
+									"properties": {
+										"Name": {
+											"type": "string",
+											"description": "Name of the backend"
+										},
+										"Extensions": {
+											"type": "object",
+											"description": "Configuration for backend"
+										}
+									}
+								},
+								"Enabled": {
+									"type": "boolean",
+									"description": "Indicates if the AI module is enabled"
+								}
+							},
+							"additionalProperties": false,
+							"required": [
+								"Name",
+								"Model",
+								"Target",
+								"Backend",
+								"Enabled"
+							]
+						}
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"CoreId",
+					"ProjectId",
+					"PluginId",
+					"PluginVersion",
+					"FirmwarePlatform",
+					"ExternallyManaged",
+					"Partitions",
+					"Peripherals"
+				]
+			},
+			"minItems": 1,
+			"uniqueItems": true
+		},
+		"Pins": {
+			"type": "array",
+			"description": "List of pin configurations",
+			"items": {
+				"type": "object",
+				"properties": {
+					"Pin": {
+						"type": "string",
+						"description": "The pin name"
+					},
+					"Peripheral": {
+						"type": "string",
+						"description": "The peripheral for the assigned signal"
+					},
+					"Signal": {
+						"type": "string",
+						"description": "The signal assigned to the pin"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"Pin",
+					"Peripheral",
+					"Signal"
+				]
+			}
+		},
+		"ClockNodes": {
+			"type": "array",
+			"description": "List of clock nodes configuration options",
+			"items": {
+				"type": "object",
+				"properties": {
+					"Name": {
+						"type": "string",
+						"description": "Name of the clock node"
+					},
+					"Control": {
+						"type": "string",
+						"description": "The ID of the configuration control"
+					},
+					"Value": {
+						"type": "string",
+						"description": "The value taken by the control"
+					},
+					"Enabled": {
+						"type": "boolean",
+						"description": "Indicates if the clock node is enabled"
+					}
+				},
+				"additionalProperties": false,
+				"required": [
+					"Name",
+					"Control",
+					"Value",
+					"Enabled"
+				]
+			}
+		},
+		"DFG": {
+			"type": "object",
+			"description": "DFG configuration options",
+			"properties": {
+				"Streams": {
+					"description": "Array of streams that link source and destination endpoints",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"StreamId": {
+								"type": "integer",
+								"description": "Id of the stream used to link source and destination endpoints"
+							},
+							"Description": {
+								"type": "string",
+								"description": "Description of the stream"
+							},
+							"Source": {
+								"$ref": "#/$defs/DFGEndpoint",
+								"description": "Configuration at the source gasket"
+							},
+							"Destinations": {
+								"type": "array",
+								"description": "List of destination endpoints for the stream",
+								"items": {
+									"$ref": "#/$defs/DFGEndpoint",
+									"description": "Configuration at the destination gasket"
+								}
+							},
+							"Group": {
+								"type": "string",
+								"description": "Group the stream is assigned to"
+							}
+						},
+						"additionalProperties": false,
+						"required": [
+								"StreamId",
+								"Source",
+								"Destinations"
+						]
+					}
+				},
+				"Gaskets": {
+					"description": "Array of configuration options for each gasket",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"Name": {
+								"type": "string",
+								"description": "Name of the gasket"
+							},
+							"Config": {
+								"$ref": "#/$defs/ConfigOptions",
+								"description": "Additional configuration options for the gasket"
+							}
+						}
+					},
+					"additionalProperties": false,
+					"required": [
+						"Name"
+					]
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Streams",
+				"Gaskets"
+			]
+		},
+		"ClockFrequencies": {
+			"type": "object",
+			"description": "List of calculated clock frequencies in Hz",
+			"additionalProperties": {
+				"type": "integer"
+			}
+		}
+	},
+	"additionalProperties": false,
+	"required": [
+		"Copyright",
+		"DataModelVersion",
+		"Soc",
+		"Package",
+		"BoardName",
+		"Timestamp",
+		"Projects",
+		"Pins",
+		"ClockNodes",
+		"ClockFrequencies"
+	],
+	"$defs": {
+		"ConfigOptions": {
+			"additionalProperties": {
+				"type": "string"
+			}
+		},
+		"Address": {
+			"type": "string",
+			"pattern": "^0[xX][0-9a-fA-F]+$",
+			"minLength": 1,
+			"maxLength": 10
+		},
+		"DFGEndpoint": {
+			"type": "object",
+			"properties": {
+				"Gasket": {
+					"type": "string",
+					"description": "Name of the gasket these options apply to"
+				},
+				"Index": {
+					"type": "integer",
+					"description": "Index of the endpoint in this gasket"
+				},
+				"BufferSize": {
+					"type": "integer",
+					"description": "Size of the buffer for this endpoint in bytes"
+				},
+				"BufferAddress": {
+					"type": "integer",
+					"description": "Start address of the buffer for this endpoint"
+				},
+				"Config": {
+					"$ref": "#/$defs/ConfigOptions",
+					"description": "Additional configuration options for this endpoint"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Gasket",
+				"BufferSize",
+				"BufferAddress",
+				"Index",
+				"Config"
+			]
+		}
+	}
+}

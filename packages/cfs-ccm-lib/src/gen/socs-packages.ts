@@ -42,7 +42,13 @@ export class SocsPackages {
     }: {
         description: string;
         name: string;
-        packageType: 'WLP' | 'TQFN' | 'TQFP' | 'CTBGA' | 'CSBGA';
+        packageType:
+            | 'WLP'
+            | 'TQFN'
+            | 'TQFP'
+            | 'CTBGA'
+            | 'CSBGA'
+            | 'BGAED';
     }): Promise<Package> {
         const { data, error } = await this.apiClient.POST(
             '/socs/{socID}/packages',

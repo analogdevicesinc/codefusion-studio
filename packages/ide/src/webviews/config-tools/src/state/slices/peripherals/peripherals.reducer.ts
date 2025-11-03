@@ -19,13 +19,23 @@ import type {
 	SignalConfig
 } from '../../../types/peripherals';
 import {getPeripheralSignals} from '../../../utils/soc-peripherals';
-import type {TFormFieldValue} from 'cfs-react-library';
+import type {
+	TFormFieldValue,
+	TFormNumericBase
+} from 'cfs-react-library';
+import {type FormattedPeripheralSignal} from '../../../../../common/types/soc';
 
 type PeripheralsState = {
 	peripheralSignalsTargets: Record<string, PeripheralSignalsTargets>;
 	activePeripheral: string | undefined;
 	activeSignal: string | undefined;
 	assignments: Record<string, PeripheralConfig>;
+	allocatedTarget: string | undefined;
+	title: string;
+	signals: Record<string, FormattedPeripheralSignal>;
+	projects: string[] | undefined;
+	isPeripheralSecure: string | undefined;
+	signalName: string;
 };
 
 export const peripheralsInitialState: PeripheralsState = {
@@ -35,7 +45,13 @@ export const peripheralsInitialState: PeripheralsState = {
 	>,
 	activePeripheral: undefined,
 	activeSignal: undefined,
-	assignments: {} satisfies Record<string, PeripheralConfig>
+	assignments: {} satisfies Record<string, PeripheralConfig>,
+	allocatedTarget: undefined,
+	title: '',
+	signals: {} satisfies Record<string, FormattedPeripheralSignal>,
+	projects: undefined,
+	isPeripheralSecure: undefined,
+	signalName: ''
 };
 
 /**
@@ -43,6 +59,7 @@ export const peripheralsInitialState: PeripheralsState = {
  *
  * @param peripheralId - The ID of the peripheral.
  * @param projectId - The ID of the project.
+ * @param config - Peripheral control configurations and their values.
  * @returns {PeripheralConfig} The initialized peripheral configuration.
  */
 function initializePeripheral(
@@ -251,10 +268,14 @@ const peripheralsSlice = createSlice({
 			}: PayloadAction<{
 				peripheralId: string;
 				config: Record<string, TFormFieldValue>;
+				configFormat?: {
+					numericBase?: Record<string, TFormNumericBase>;
+				};
 			}>
 		) {
-			const {peripheralId, config} = payload;
+			const {peripheralId, config, configFormat} = payload;
 			state.assignments[peripheralId].config = config;
+			state.assignments[peripheralId].configFormat = configFormat;
 		},
 		setPeripheralDescription(
 			state,
@@ -285,6 +306,28 @@ const peripheralsSlice = createSlice({
 			if (signal) {
 				signal.description = payload.description;
 			}
+		},
+		setAllocationConfig(
+			state,
+			{
+				payload
+			}: PayloadAction<{
+				// Requires refactoring. Will be done as part of CFSIO-7001
+
+				peripheralTitle: string;
+				allocationTarget: string;
+				projects: string[];
+				signals: Record<string, FormattedPeripheralSignal>;
+				isPeripheralSecure: string;
+				signalName: string;
+			}>
+		) {
+			state.title = payload.peripheralTitle;
+			state.allocatedTarget = payload.allocationTarget;
+			state.projects = payload.projects;
+			state.signals = payload.signals;
+			state.isPeripheralSecure = payload.isPeripheralSecure;
+			state.signalName = payload.signalName;
 		}
 	}
 });
@@ -301,7 +344,8 @@ export const {
 	setSignalConfig,
 	setPeripheralConfig,
 	setPeripheralDescription,
-	setSignalDescription
+	setSignalDescription,
+	setAllocationConfig
 } = peripheralsSlice.actions;
 
 export const peripheralsReducer = peripheralsSlice.reducer;

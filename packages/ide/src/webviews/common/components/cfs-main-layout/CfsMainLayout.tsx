@@ -13,17 +13,13 @@
  *
  */
 import React from 'react';
-import {memo, type ReactNode, type ReactElement} from 'react';
+import {memo, type ReactNode} from 'react';
+import {isReactElement} from '../../utils';
 import styles from './CfsMainLayout.module.scss';
 
 type LayoutProps = {
 	readonly children: ReactNode;
 };
-
-// TO DO: Detele this from here and use isReactElement from utils within /common
-const isReactElement = (
-	child: ReactNode
-): child is ReactElement<any, string> => React.isValidElement(child);
 
 function CfsTwoColumnLayout({children}: LayoutProps) {
 	const headerSlot: ReactNode[] = [];

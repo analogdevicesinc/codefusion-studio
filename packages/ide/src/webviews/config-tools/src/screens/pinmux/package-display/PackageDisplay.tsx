@@ -14,7 +14,7 @@
  */
 import LabelsFrame from './labels-frame/LabelsFrame';
 import PinGrid from './pin-grid/PinGrid';
-import ZoomableAreaControl from './zoomable-area/ZoomableAreaControl';
+import ZoomableAreaControl from '../../../components/zoomable-area/ZoomableAreaControl';
 import {
 	createPinGridDataStructure,
 	generateLabelGroups

@@ -19,24 +19,13 @@ import {
 	setAppliedSignal
 } from '../../state/slices/pins/pins.reducer';
 import FilterControls from './FilterControls';
-import {resetPinDictionary} from '../../utils/soc-pins';
 
-const mock = await import(
-	`../../../../../../../cli/src/socs/${Cypress.env('DEV_SOC_ID')}.json`
-);
+const mock = (await import(`@socs/max32690-tqfn.json`))
+	.default as unknown as Soc;
 
 describe('Filter Controls', () => {
-	before(() => {
-		resetPinDictionary();
-
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(mock.Packages[0])
-		);
-	});
-
 	it('Selects/deselects filters correctly', () => {
-		const reduxStore = configurePreloadedStore(mock as Soc);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -62,7 +51,7 @@ describe('Filter Controls', () => {
 	});
 
 	it('Does pin assignment and checks chip filters numbers', () => {
-		const reduxStore = configurePreloadedStore(mock as Soc);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -84,7 +73,7 @@ describe('Filter Controls', () => {
 	});
 
 	it('Does pin conflict and checks chip filter numbers', () => {
-		const reduxStore = configurePreloadedStore(mock as Soc);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -110,7 +99,7 @@ describe('Filter Controls', () => {
 	});
 
 	it('Removes pin conflict and disables conflict chip', () => {
-		const reduxStore = configurePreloadedStore(mock as Soc);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({

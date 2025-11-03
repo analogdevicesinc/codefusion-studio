@@ -12,144 +12,59 @@
  * limitations under the License.
  *
  */
-import type {SocControl} from 'cfs-plugins-api';
 import type {
-	ControlErrorTypes,
-	TControlTypes
-} from '../../config-tools/src/types/errorTypes';
+	CfsSocDataModel,
+	SocClock,
+	SocClockOutput,
+	SocControl,
+	SocControlValue,
+	SocCoreMemory,
+	SocCoreMemoryType,
+	SocPin,
+	SocPinSignal,
+	SocConfigFields,
+	SocConfigField,
+	SocPeripheral,
+	SocRegister,
+	SocPackage,
+	SocPinCanvas,
+	SocDiagramData,
+	SocCanvasClockCoordinates,
+	SocDiagramClocks,
+	SocDiagramNode,
+	SocDiagramStyles,
+	SocCore,
+	SocGasketInputStream,
+	SocGasketOutputStream,
+	SocGasket
+} from 'cfs-plugins-api';
+import type {ControlErrorTypes} from '@common/types/errorTypes';
 
-export type Soc = {
-	Copyright: string;
-	Version: string;
-	Schema: string;
-	Timestamp: string;
-	Name: string;
-	Description: string;
-	Controls: Controls;
-	ClockNodes: ClockNode[];
-	Peripherals: Peripheral[];
-	Registers: Register[];
-	Packages: Package[];
-	Endianness: string;
-	Parts: Array<{
-		Name: string;
-		Package: string;
-		MemoryDescription: string;
-	}>;
-	Cores: Core[];
-	MemoryTypes: MemoryType[];
+export type Soc = CfsSocDataModel;
+
+export type SystemMemory = SocCoreMemory;
+
+export type ClockNode = SocClock & {
+	Outputs: ClockOutput[];
 };
 
-export type ClockNode = {
-	Name: string;
-	Description: string;
-	Type: string;
-	Signpost?: string;
-	Outputs: NodeOutput[];
-	Inputs?: NodeInput[];
-	Config: ConfigFields;
-	ConfigUIOrder: string[];
-};
-
-export type NodeOutput = {
-	Name: string;
-	Description: string;
-	Value: string;
-	MinimumValue?: number;
-	MaximumValue?: number;
-	Condition?: string;
-};
-
-export type NodeInput = {
-	Name: string;
-};
+export type ClockOutput = SocClockOutput;
 
 export type Controls = Record<string, ControlCfg[]>;
 
-export type EnumValue = {
-	Id: string;
-	Description: string;
-	Value: number;
+export type EnumValue = SocControlValue;
+
+export type ControlCfg = SocControl & {
+	Tooltip?: string;
 };
 
-export type ControlCfg = SocControl & {Type: TControlTypes};
+export type Package = SocPackage;
 
-export type Expression = string;
+export type PinCanvas = SocPinCanvas;
 
-export type Package = {
-	Name: string;
-	Description: string;
-	NumPins: number;
-	Pins: Pin[];
-	PinCanvas: PinCanvas;
-	ClockCanvas: DiagramData;
-	CoprogrammedSignals?: Array<
-		Array<{
-			Pin: string;
-			Peripheral: string;
-			Signal: string;
-		}>
-	>;
-};
+export type Pin = SocPin;
 
-export type PinCanvas = {
-	Width: number;
-	Height: number;
-	Labels: Label[];
-};
-
-export type Label = {
-	Text: string;
-	X: number;
-	Y: number;
-};
-
-export type Pin = {
-	Name: string;
-	Description: string;
-	Label: string;
-	Position: Position;
-	Signals?: PinSignal[];
-};
-
-export type Signal = {
-	name: string;
-	description: string;
-	pins: Pin[];
-	currentTarget: string | undefined;
-	invalid?: Record<string, string[]>;
-};
-
-export type ConfigFields = Record<
-	string,
-	Record<string, ConfigField[]>
->;
-
-export type ConfigField = {
-	Register?: string;
-	Field: string;
-	Value?: Expression;
-	InverseValue?: Expression;
-	Operation: string;
-	ControlValue?: number; // Filled in at runtime depending on control value.
-};
-
-export type Position = {
-	X: number;
-	Y: number;
-};
-
-export type PinSignal = {
-	Peripheral?: string;
-	Name: string;
-	PinMuxConfig?: ConfigField[];
-	PinConfig?: ConfigFields;
-	coprogrammedSignals?: Array<{
-		Pin: string;
-		Peripheral: string;
-		Signal: string;
-	}>;
-};
+export type PinSignal = SocPinSignal;
 
 export type AssignedPin = {
 	Name: string;
@@ -165,28 +80,14 @@ export type AppliedSignal = PinSignal & {
 	Errors?: Record<string, ControlErrorTypes | undefined>;
 };
 
-export type Peripheral = {
-	Name: string;
-	Description: string;
-	Cores: string[];
-	Signals: PeripheralSignal[];
-	SignalGroup?: string;
-	Preassigned?: boolean;
-	Config?: ConfigFields;
-	Security?: 'Any' | 'Secure' | 'Non-Secure';
-};
-
-export type PeripheralSignal = {
-	Name: string;
-	Description: string;
-	Required?: string; // Requires evaluating a condition using the expression parser
-};
+export type Peripheral = SocPeripheral;
 
 export type FormattedPeripheralSignal = {
 	name: string;
 	description: string;
 	pins: Pin[];
 	required?: string;
+	group?: string;
 };
 
 export type FormattedPeripheral<T> = {
@@ -194,11 +95,14 @@ export type FormattedPeripheral<T> = {
 	description: string;
 	signals: Record<string, T>;
 	preassigned?: boolean;
-	config?: ConfigFields;
+	config?: SocConfigFields;
 	pluginConfig?: Record<string, string>;
 	cores?: string[];
-	signalGroup?: string;
+	group?: string;
+	assignable: boolean;
+	required?: string[];
 	security?: string;
+	initialization?: SocConfigField[];
 };
 
 export type UnifiedPeripherals = Record<
@@ -208,30 +112,7 @@ export type UnifiedPeripherals = Record<
 	>
 >;
 
-export type Register = {
-	Name: string;
-	Description: string;
-	Address: string;
-	Size: number;
-	Fields: Field[];
-	Svg: string;
-};
-
-export type Field = {
-	Name: string;
-	Description: string;
-	Documentation?: string;
-	Position: number;
-	Length: number;
-	Reset: string | number;
-	Access: 'R' | 'R/W';
-	Enum?: Array<{
-		Name: string;
-		Description: string;
-		Value: string | number;
-		Documentation: string;
-	}>;
-};
+export type Register = SocRegister;
 
 export type PinState = {
 	pinId: string;
@@ -268,7 +149,10 @@ export type RegisterDictionary = {
 	size: number;
 	fields: FieldDictionary[];
 	reset: number;
-	svg: string;
+};
+
+export type RegisterConfigField = SocConfigField & {
+	ControlValue: number;
 };
 
 export type NodeErrors =
@@ -284,103 +168,30 @@ export type ClockNodeState = {
 
 export type ClockNodesDictionary = Record<string, ClockNodeState>;
 
-export type ClockDictionary = Record<string, NodeOutput>;
+export type ClockDictionary = Record<string, ClockOutput>;
 
-export type DiagramStyles = {
-	backgroundColor: string;
-	fontColor: string;
-	circleColor: string;
-	borderColor: string;
-	icon?: string;
-};
+export type DiagramStyles = SocDiagramStyles;
 
-type NodeTerminal = {
-	shape: string;
-	x: number;
-	y: number;
-	radius: number;
-	position: string;
-	id: string;
-	type: string;
-	netID: string;
-};
+export type DiagramNode = SocDiagramNode;
+export type DiagramClocks = SocDiagramClocks;
 
-export type DiagramNode = {
-	name: string;
-	id: string;
-	styles: DiagramStyles;
-	icon: string;
-	background: string;
-	group: string;
-	clockReference?: string;
-	metadata: {
-		name?: string;
-		group: string;
-		description?: string;
-		type?: string;
-		inputTerminals?: NodeTerminal[];
-		outputTerminals?: NodeTerminal[];
-	};
-	condition?: string;
-	mount?: string;
-	enabled?: boolean;
-	error?: boolean;
-	outputTerminals?: Record<string, NodeTerminal>;
-};
+export type CanvasClockCoordinates = SocCanvasClockCoordinates;
 
-export type DiagramClocks = {
-	id: string;
-	netID: string;
-	type: string;
-	clock: string;
-	condition?: string;
-	enabled?: boolean;
-	mount?: string;
-	startPoint: CanvasClockCoordinates;
-	endPoint: CanvasClockCoordinates;
-};
+export type DiagramData = SocDiagramData;
 
-export type CanvasClockCoordinates = {
-	id: string;
-	x: number;
-	y: number;
-};
+export type Core = SocCore;
 
-export type DiagramData = {
-	meta: Record<string, string>;
-	parts: Record<string, DiagramNode>;
-	wires: Record<string, DiagramClocks>;
-	junctions: unknown;
-	annotations: unknown;
-	symbols: unknown;
-};
+export type MemoryBlock = SocCoreMemory;
 
-export type Core = {
-	Name: string;
-	Description: string;
-	Id: string;
-	CoreNum: number;
-	IsPrimary: boolean;
-	Memory: MemoryBlock[];
-};
+export type MemoryType = SocCoreMemoryType;
 
-export type MemoryBlock = {
-	Name: string;
-	Description: string;
-	AddressStart: string;
-	AddressEnd: string;
-	Width: number;
-	MinimumAlignment?: number;
-	Access: string;
-	Location: string;
-	Type: string;
-	TrustZone?: {
-		SecureAddressOffset: string;
-	};
-};
+export type GasketInputStream = SocGasketInputStream;
 
-export type MemoryType = {
-	Name: string;
-	Description: string;
-	IsVolatile: boolean;
-};
+export type GasketOutputStream = SocGasketOutputStream;
+
+export type Gasket = SocGasket;
+
+export type ConfigFields = SocConfigFields;
+export type ConfigField = SocConfigField;
+
+export type Expression = string;

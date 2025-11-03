@@ -66,10 +66,15 @@ function PinMUX() {
 		/>
 	) : (
 		<CfsTwoColumnLayout>
-			<div slot='header'>
+			<div slot='header' data-test='pinmux:header'>
 				<PinmuxHeader />
 			</div>
-			<div slot='side-panel' id='peripheral-navigation'>
+			<div
+				slot='side-panel'
+				id='peripheral-navigation'
+				data-test='pinmux:peripheral-navigation'
+				className={styles.pincfgPeripheralSidePanelContainer}
+			>
 				<PinmuxSide />
 			</div>
 

@@ -1,0 +1,15 @@
+**/*.o
+**/*.objs
+**/*.d
+**/*.doj
+**/*.swp
+**/build
+__pycache__/
+.venv/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+target/
+*.egg-info/

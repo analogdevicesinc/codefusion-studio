@@ -2,7 +2,7 @@ export default {
   configurations: [
     {
       name: "CFS: Debug with GDB and OpenOCD (ARM Embedded)",
-      executable: "${command:cfs.selectProgramFile}",
+      executable: "${config:cfs.programFile}",
       cwd: "${command:cfs.setDebugPath}",
       request: "launch",
       type: "cortex-debug",
@@ -39,7 +39,7 @@ export default {
     },
     {
       name: "CFS: Debug with JlinkGDBServer and JLink (Arm Embedded)",
-      executable: "${command:cfs.selectProgramFile}",
+      executable: "${config:cfs.programFile}",
       cwd: "${command:cfs.setDebugPath}",
       request: "launch",
       type: "cortex-debug",
@@ -60,7 +60,7 @@ export default {
         gdbPath:
           "${config:cfs.toolchain.armAArch32GCC.path}/bin/arm-none-eabi-gdb",
       },
-      device: "${command:cfs.jlink.setDevice}",
+      device: "${config:cfs.jlink.device}",
       interface: "swd",
       svdPath: "${command:cfs.cmsis.selectSvdFile}",
       gdbTarget: "localhost:2331",
@@ -83,8 +83,8 @@ export default {
     },
     {
       name: "CFS: Debug with GDB and OpenOCD (RISC-V)",
-      executable: "${command:cfs.selectRiscvProgramFile}",
-      cwd: "${command:cfs.setRiscvDebugPath}",
+      executable: "${command:cfs.programFile}",
+      cwd: "${command:cfs.setDebugPath}",
       request: "attach",
       type: "cortex-debug",
       runToEntryPoint: "main",

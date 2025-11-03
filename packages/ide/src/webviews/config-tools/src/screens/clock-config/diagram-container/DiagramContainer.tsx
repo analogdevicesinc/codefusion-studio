@@ -13,19 +13,12 @@
  *
  */
 import ClockDiagram from '../clock-diagram/ClockDiagram';
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState
-} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import debounce from 'lodash.debounce';
 import type {HoveredClockInfo} from '../types/canvas';
 import NodeTooltip from '../node-tooltip/NodeTooltip';
 import ClockTooltip from '../clock-tooltip/ClockTooltip';
 import type {DiagramNode} from '@common/types/soc';
-import {showInformationMessage} from '@common/api';
 import {getClockCanvas} from '../../../utils/clock-canvas';
 
 function ClockDiagramContainer() {
@@ -68,14 +61,6 @@ function ClockDiagramContainer() {
 				mousePosition.current.y = event.clientY;
 			}
 		}, []);
-
-	useEffect(() => {
-		if (!canvas) {
-			void showInformationMessage(
-				'There is no clock canvas provided for the current soc.'
-			);
-		}
-	}, [canvas]);
 
 	return (
 		<div

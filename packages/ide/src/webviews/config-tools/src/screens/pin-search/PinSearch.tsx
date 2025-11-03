@@ -21,11 +21,14 @@ import {useAppDispatch} from '../../state/store';
 import SideDetailsView from '../pinmux/side-details-view/SideDetailsView';
 import {focusPinSet} from '../../state/slices/pins/pins.reducer';
 import {getConfigurablePins} from '../../utils/soc-pins';
+import {getPeripheralList} from '../../utils/soc-peripherals';
+import {usePinsGroupByPeripheralSignalPair} from '../../hooks/use-pins-groupBy-peripherial-signal';
 
 function PinSearch() {
 	const dispatch = useAppDispatch();
 	const searchString = useSearchString('pinconfig');
 	const configurablePins = useMemo(() => getConfigurablePins(), []);
+	const peripherals = getPeripheralList();
 
 	const assignedPins = useAssignedPins().map(
 		assignedPin => assignedPin.Name
@@ -142,6 +145,11 @@ function PinSearch() {
 		}, {})
 	);
 
+	const peripheralPinsDict = usePinsGroupByPeripheralSignalPair(
+		searchedForTarget,
+		peripherals
+	);
+
 	const handleBackClick = () => {
 		dispatch(
 			setActiveSearchString({searchContext: 'pinconfig', value: ''})
@@ -185,6 +193,7 @@ function PinSearch() {
 		<SideDetailsView
 			errorMsg={errorMsg}
 			targetPins={searchResults}
+			peripheralPins={peripheralPinsDict}
 			handleBackClick={handleBackClick}
 		/>
 	);

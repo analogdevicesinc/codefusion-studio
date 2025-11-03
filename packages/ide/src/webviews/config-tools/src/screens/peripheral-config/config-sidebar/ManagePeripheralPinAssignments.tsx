@@ -25,9 +25,7 @@ import SignalAssignment from './SignalAssignment';
 function ManagePeripheralPinAssignments() {
 	const peripheralString =
 		useActivePeripheral(Boolean('withCoreInfo')) ?? '';
-
 	const [activePeripheral, coreId] = peripheralString.split(':');
-
 	const assignedSignals = usePeripheralSignalAssignments(
 		activePeripheral ?? '',
 		coreId

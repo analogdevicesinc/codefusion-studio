@@ -13,11 +13,12 @@
  *
  */
 
+import {isCypressEnvironment} from '@common/utils/env';
 import {getUserDefaultPath} from './api';
 
 let userDefaultLocation = 'No default location found';
 
-if (!import.meta.env.DEV) {
+if (!isCypressEnvironment()) {
 	userDefaultLocation = await getUserDefaultPath();
 }
 

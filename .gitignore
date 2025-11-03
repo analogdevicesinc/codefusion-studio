@@ -1,5 +1,7 @@
 **/*.tsbuildinfo
 node_modules
+dist
+out
 
 # package manager files
 .yarn/*
@@ -14,8 +16,7 @@ node_modules
 **/*.bkp
 
 # python files
-/.venv
-/site
+*venv
 
 # OS Generated
 .DS_STORE
@@ -24,3 +25,9 @@ packages/ide/cypress/screenshots
 # Profile
 *.cpuprofile
 *.heapprofile
+
+# Coverage
+**/coverage
+
+# environment files
+.env

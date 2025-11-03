@@ -20,17 +20,10 @@ import {type Store, getPreloadedStateStore} from './state/store';
 import styles from './App.module.scss';
 import CfgtoolsTopBar from './components/cfgtools-header/CfgtoolsTopbar';
 import {LocalizationProvider} from '../../common/contexts/LocaleContext';
+import ScreenLoader from './components/screen-loader/screen-loader';
 
 function App() {
 	const [store, setStore] = useState<Store | undefined>();
-
-	// Disabling the event listener until we can implement undo/redo on all screens
-	// const updateStateHandler = useCallback(
-	// 	(event: MessageEvent) => {
-	// 		handleConfigDocumentUpdates(event, store!);
-	// 	},
-	// 	[store]
-	// );
 
 	useEffect(() => {
 		if (store === undefined) {
@@ -50,18 +43,9 @@ function App() {
 		}
 	}, [store]);
 
-	// Disabling the event listener until we can implement undo/redo on all screens
-	// useEffect(() => {
-	// 	if (store === undefined) return;
-
-	// 	window.addEventListener('message', updateStateHandler);
-
-	// 	return () => {
-	// 		window.removeEventListener('message', updateStateHandler);
-	// 	};
-	// }, [store, updateStateHandler]);
-
-	if (store === undefined) return null;
+	if (store === undefined) {
+		return <ScreenLoader />;
+	}
 
 	return (
 		<Provider store={store}>

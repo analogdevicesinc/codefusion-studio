@@ -20,9 +20,9 @@ import {
 	EMPTY_CLOCK_VALUE,
 	UNDEFINED_MARKER
 } from '../screens/clock-config/constants/clocks';
-import type {NodeErrorTypes} from '../types/errorTypes';
+import type {NodeErrorTypes} from '@common/types/errorTypes';
 import {getClockNodeConfig, getTargetControls} from './clock-nodes';
-import {nodeErrorTypes} from './control-errors';
+import {nodeErrorTypes} from '@common/utils/control-errors';
 import {getValueFromClockDictionary} from './rpn-expression-resolver';
 import {getPrimaryProjectId} from './config';
 import {CONTROL_SCOPES} from '../constants/scopes';
@@ -49,7 +49,7 @@ export function getCurrentNodeError(
 		const isControlEnabled =
 			typeof targetControls[key]?.Condition === 'string'
 				? computeEnabledState(
-						targetControls[key].Condition,
+						targetControls[key]?.Condition ?? '',
 						nodeState.Name
 					)
 				: true;
@@ -63,7 +63,7 @@ export function getCurrentNodeError(
 		const isControlEnabled =
 			typeof targetControls[key]?.Condition === 'string'
 				? computeEnabledState(
-						targetControls[key].Condition,
+						targetControls[key]?.Condition ?? '',
 						nodeState?.Name ?? ''
 					)
 				: true;

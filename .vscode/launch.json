@@ -2,16 +2,16 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Debug config tools webview",
+			"name": "Debug System Planner",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
 			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
-			"preLaunchTask": "cfgtools: build"
+			"preLaunchTask": "system-planner: build"
 		},
 		{
-			"name": "Run IDE Extension",
+			"name": "Launch IDE Extension (Production)",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
@@ -29,21 +29,16 @@
 			"preLaunchTask": "elf: build"
 		},
 		{
-			"name": "Debug workspace creation webview",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}/packages/ide"],
-			"outFiles": ["${workspaceFolder}/packages/ide/out/**/*.js"],
-			"preLaunchTask": "wrksp: build"
-		},
-		{
 			"type": "node",
 			"request": "launch",
 			"name": "Execute CLI Dev Command",
 			"skipFiles": ["<node_internals>/**"],
-			"program": "${workspaceFolder}/packages/pinconfig-cli/bin/dev.js",
-			"args": ["hello", "world"],
+			"program": "${workspaceFolder}/packages/cli/bin/dev.js",
+			"args": ["topic", "--someFlag"],
+			"env": {
+				"CFSUTIL_CONFIG_HOME": "${workspaceFolder}/packages/cli/config",
+				"XDG_CONFIG_HOME": "${workspaceFolder}/packages/cli/config"
+			},
 			"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/tsx",
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen"

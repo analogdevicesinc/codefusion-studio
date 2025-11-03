@@ -22,6 +22,9 @@ import NavigationPanel from '../navigation-panel/NavigationPanel';
 import PeripheralConfig from '../../screens/peripheral-config/PeripheralConfig';
 import MemoryAllocation from '../../screens/memory-allocation/MemoryAllocation';
 import Dashboard from '../../screens/dashboard/Dashboard';
+import {Dfg} from '../../screens/dfg/DFG';
+import {AiTools} from '../../screens/ai-tools/ai-tools';
+import {Profiling} from '../../screens/profiling/profiling';
 
 function AppPanel() {
 	const activeScreen = useActiveScreen();
@@ -31,9 +34,12 @@ function AppPanel() {
 			<Dashboard key={navigationItems.dashboard} />
 			<PinMuxScreen key={navigationItems.pinmux} />
 			<ClockConfig key={navigationItems.clockConfig} />
+			<Dfg key={navigationItems.dfg} />
 			<PeripheralConfig key={navigationItems.peripherals} />
 			<MemoryAllocation key={navigationItems.memory} />
 			<Registers key={navigationItems.registers} />
+			<AiTools key={navigationItems.aiTools} />
+			<Profiling key={navigationItems.profiling} />
 			<GenerateCode key={navigationItems.generate} />
 		</NavigationPanel>
 	);

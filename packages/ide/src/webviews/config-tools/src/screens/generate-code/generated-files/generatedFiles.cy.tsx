@@ -14,15 +14,21 @@
  */
 import GeneratedFiles from './GeneratedFiles';
 import {formatGeneratedFilePaths} from '../../../utils/api';
+import {sysPlannerDataInit} from '../../../utils/sys-planner-data-init';
+import type {CfsConfig} from 'cfs-plugins-api';
+import type {Soc} from '@common/types/soc';
+
+const max32690Wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('GeneratedFiles component', () => {
-	beforeEach(() => {
+	before(() => {
 		// Mock config dictionary based on the max32690-wlp-dual-core-blinky.cfsconfig file
 		const mockConfigDict = {
 			Soc: 'MAX32690',
 			BoardName: 'AD-APARD32690-SL',
 			Package: 'WLP',
-			projects: [
+			Projects: [
 				{
 					CoreId: 'CM4',
 					ProjectId: 'CM4',
@@ -43,7 +49,7 @@ describe('GeneratedFiles component', () => {
 					CoreId: 'RV',
 					ProjectId: 'RV',
 					PluginId: 'com.analog.project.msdk.plugin',
-					PluginVersion: '1.0.0',
+					PluginVersion: '1.1.0',
 					FirmwarePlatform: 'msdk',
 					ExternallyManaged: false,
 					Description: 'RISC-V Core',
@@ -55,7 +61,7 @@ describe('GeneratedFiles component', () => {
 					}
 				}
 			]
-		};
+		} as unknown as CfsConfig;
 
 		// Mock generated file paths that include the ProjectName from PlatformConfig
 		const mockGeneratedFiles = [
@@ -67,15 +73,12 @@ describe('GeneratedFiles component', () => {
 			'/tmp/unknown/path/file.c' // A path that doesn't match any project name
 		];
 
-		// Set localStorage mock values
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockConfigDict)
-		);
 		window.localStorage.setItem(
 			'generatedFiles',
 			JSON.stringify(mockGeneratedFiles)
 		);
+
+		sysPlannerDataInit(max32690Wlp, mockConfigDict);
 	});
 
 	it('should format and display generated file paths correctly', () => {

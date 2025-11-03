@@ -16,7 +16,6 @@
 import type {CfsConfig} from 'cfs-plugins-api';
 import {type ConfiguredProject} from '../../../common/api';
 import {type Core} from '../../../common/types/soc';
-import {getSocAndCfsconfigData} from './api';
 import {getPrimaryCoreId} from './soc-cores';
 
 export type ProjectInfo = Omit<
@@ -31,14 +30,15 @@ let configDict:
 	  })
 	| undefined;
 
-if (import.meta.env.MODE === 'development') {
-	if ((window as any).Cypress) {
-		configDict = JSON.parse(
-			localStorage.getItem('configDict') ?? '{}'
-		);
-	}
-} else {
-	const {configOptions, dataModel} = await getSocAndCfsconfigData();
+/**
+ * Initializes configDict with the provided persisted config and dataModel.
+ * Should be called once at app startup.
+ */
+export function initializeConfigDict(
+	configOptions: CfsConfig | undefined,
+	dataModel: {Cores: Core[]} | undefined
+) {
+	resetConfigDict();
 
 	if (configOptions && dataModel) {
 		configDict = {
@@ -58,7 +58,8 @@ if (import.meta.env.MODE === 'development') {
 						Description: '',
 						CoreNum: 0,
 						IsPrimary: false,
-						Name: ''
+						Name: '',
+						Family: ''
 					};
 
 					return {
@@ -67,6 +68,8 @@ if (import.meta.env.MODE === 'development') {
 					};
 				}) ?? []
 		};
+	} else {
+		configDict = undefined;
 	}
 }
 
@@ -75,24 +78,10 @@ export function getProjectInfoList(): ProjectInfo[] | undefined {
 		return configDict.projects;
 	}
 
-	const localStorageConfig = localStorage.getItem('configDict');
-
-	if (localStorageConfig) {
-		configDict = JSON.parse(localStorageConfig);
-
-		return configDict?.projects;
-	}
+	return undefined;
 }
 
 export function getCfsConfigDict() {
-	if (!configDict || Object.keys(configDict).length === 0) {
-		const localStorageConfig = localStorage.getItem('configDict');
-
-		if (localStorageConfig) {
-			configDict = JSON.parse(localStorageConfig);
-		}
-	}
-
 	return configDict;
 }
 
@@ -144,9 +133,18 @@ export function getProjectProperty(
 	return undefined;
 }
 
-export function getPrimaryProjectId(): string | undefined {
+/**
+ * Retrieves the primary project ID associated with a given core ID.
+ *
+ * @param coreId - (Optional) Primary core ID. To be used in cases where the core dictionary has not been initialized.
+ *                 If not provided, the function will use the primary core ID from `getPrimaryCoreId()`.
+ * @returns The project ID of the primary project if found, otherwise `undefined`.
+ **/
+export function getPrimaryProjectId(
+	coreId?: string
+): string | undefined {
 	const projects = getProjectInfoList();
-	const primaryCoreId = getPrimaryCoreId();
+	const primaryCoreId = coreId ?? getPrimaryCoreId();
 
 	const primaryProject = projects?.find(
 		project =>

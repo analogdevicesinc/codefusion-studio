@@ -25,7 +25,7 @@ export default function DetailsView({
 	handleBackClick
 }: DetailsViewProps) {
 	return (
-		<div id='details-container'>
+		<div id='details-container' data-test='details-view:container'>
 			<div
 				className={styles.navigationControl}
 				onClick={handleBackClick}

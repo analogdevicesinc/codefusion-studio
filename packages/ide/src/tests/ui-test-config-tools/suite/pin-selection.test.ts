@@ -12,9 +12,12 @@
  * limitations under the License.
  *
  */
-import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { pinTab } from "../page-objects/main-menu";
+import { focusedPinBackdrop, mainPanelPinOnLineAndColumn, pinDetailsContainer, pinTooltipTitle } from "../page-objects/pin-config-section/pin-config-screen";
 
 describe("Pin Selection", () => {
   let browser: VSBrowser;
@@ -31,52 +34,39 @@ describe("Pin Selection", () => {
     await view.switchBack();
 
     const wb = new Workbench();
-
     await wb.wait();
-
     await wb.executeCommand("workbench.action.closeAllEditors");
   });
 
   it("Displays the pin details sidebar when a pin is clicked", async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-tqfn.cfsconfig",
-      ),
-    );
+    const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+    await browser.openResources(configPath);
 
     view = new WebView();
-
     await view.wait();
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css(`#pinmux`));
-
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    await UIUtils.clickElement(view, pinTab).then(async () => {
+      await UIUtils.sleep(3000);
 
       const pin = await view.findWebElement(
-        By.css("#pin-rows-container > div:nth-child(1) > div:nth-child(2)"),
+        await mainPanelPinOnLineAndColumn(1, 2),
       );
 
       expect(await pin.getText()).to.contain("P2.26");
 
       await pin.click().then(async () => {
-        expect(await view.findWebElement(By.css("#details-container"))).to
+        expect(await view.findWebElement(pinDetailsContainer)).to
           .exist;
 
         const title = await view.findWebElement(
-          By.xpath('//*[@id="pin-details-title"]/div[1]/h3[1]'),
+         pinTooltipTitle,
         );
 
         expect(await title.getText()).to.contain("P2.26");
 
-        // assert backdrop exists
-        expect(await view.findWebElement(By.css("#focused-pin-backdrop"))).to
+        // Assert backdrop exists
+        expect(await view.findWebElement(focusedPinBackdrop)).to
           .exist;
       });
     });

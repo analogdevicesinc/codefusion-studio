@@ -13,39 +13,26 @@
  *
  */
 
-import { ToolManager } from "../toolManager";
+import type { IDEShellEnvProvider } from "../shell-env-provider";
 import * as vscode from "vscode";
 import { ZephyrTaskProvider } from "./tasks-provider";
+import type { CfsToolManager } from "cfs-lib";
 
 // Globals
 let zephyrTasksProvider: vscode.Disposable | undefined;
 
-export class ZephyrToolchain {
-  private static instance: ZephyrToolchain;
+export function registerZephyrTaskProvider(
+  context: vscode.ExtensionContext,
+  shellEnvProvider: IDEShellEnvProvider,
+  toolManager: CfsToolManager,
+) {
+  const provider = new ZephyrTaskProvider(shellEnvProvider, toolManager);
 
-  /**
-   * Implementation of a Singleton ZephyrToolchain class
-   * @returns The ZephyrToolchain instance
-   */
-  public static getInstance(): ZephyrToolchain {
-    if (!ZephyrToolchain.instance) {
-      ZephyrToolchain.instance = new ZephyrToolchain();
-    }
 
-    return ZephyrToolchain.instance;
-  }
+  zephyrTasksProvider = vscode.tasks.registerTaskProvider("shell", provider);
+  context.subscriptions.push(zephyrTasksProvider);
 
-  async getEnvironment() {
-    const toolManager = await ToolManager.getInstance();
-    return await toolManager.getShellEnvironment();
-  }
-}
-
-export async function configureWorkspaceForZephyr() {
-  zephyrTasksProvider = vscode.tasks.registerTaskProvider(
-    "shell",
-    new ZephyrTaskProvider(),
-  );
+  return provider;
 }
 
 export function deactivate(): void {

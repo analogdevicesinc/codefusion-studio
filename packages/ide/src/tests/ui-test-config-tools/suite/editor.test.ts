@@ -14,7 +14,8 @@
  */
 import { By, EditorView, VSBrowser, WebDriver } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
 
 describe("Editor Customization", () => {
   let browser: VSBrowser;
@@ -29,22 +30,13 @@ describe("Editor Customization", () => {
     editor = new EditorView();
 
     await editor.closeAllEditors();
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await UIUtils.sleep(3000);
   });
 
   it('Should display the "Show Source" quick access button when opening *.cfsconfig files', async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "test.cfsconfig",
-      ),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    const configPath = getConfigPathForFile("test.cfsconfig");
+    await browser.openResources(configPath);
+    await UIUtils.sleep(3000);
 
     const quickAccess = await driver.findElement(
       By.xpath(

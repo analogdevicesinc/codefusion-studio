@@ -14,16 +14,22 @@
  */
 
 @use '#layout' as layout;
+@use '@wrksp-common/styles/wrksp-variables.scss' as vars;
 
-.wrksp-footer {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	height: 100%;
-	width: layout.$main-width;
-	margin: auto;
+.wrkspFooterContainer {
+	--cfs-footer-margin: 0 0 0 261px;
+	--cfs-footer-width: auto;
 
-	.hide {
-		visibility: hidden;
+	.wrkspFooter {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
+		padding: 0 vars.$main-layout-padding;
+		box-sizing: border-box;
+
+		.hide {
+			visibility: hidden;
+		}
 	}
 }

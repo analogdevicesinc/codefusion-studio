@@ -28,12 +28,14 @@ export enum ERROR_TYPES {
 	noSelection = 'noSelection',
 	noPrimaryCore = 'noPrimaryCore',
 	unconfiguredCore = 'unconfiguredCore',
-	noCoreConfig = 'noCoreConfig'
+	noCoreConfig = 'noCoreConfig',
+	noPrimaryCoreEnabled = 'noPrimaryCoreEnabled'
 }
 
 export const ERROR_MESSAGES: Record<string, string> = {
 	noSelection: 'Please make a selection.',
 	noPrimaryCore: 'Primary core should be enabled and configured.',
+	noPrimaryCoreEnabled: 'Primary core should be enabled.',
 	unconfiguredCore: 'Configure your selected core(s).',
 	noCoreConfig: 'Please provide a value for all required fields.'
 };

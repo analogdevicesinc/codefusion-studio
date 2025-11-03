@@ -18,7 +18,7 @@ import {
 	appContextReducer,
 	appContextInitialState
 } from './slices/app-context/appContext.reducer';
-
+import {gasketsReducer} from './slices/gaskets/gasket.reducer';
 import {
 	pinsReducer,
 	pinsInitialState
@@ -41,7 +41,8 @@ import {
 	formatPinDictionary,
 	formatPeripheralSignalsTargets,
 	formatPartitions,
-	formatPeripheralAllocations
+	formatPeripheralAllocations,
+	formatSocCoreMemoryBlocks
 } from '../utils/json-formatter';
 import type {
 	ClockNode,
@@ -68,8 +69,33 @@ import {
 } from './slices/partitions/partitions.reducer';
 import {getCoreMemoryBlocks} from '../utils/memory';
 import {type PeripheralConfig} from '../types/peripherals';
-import {getPrimaryProjectId} from '../utils/config';
 import {CONTROL_SCOPES} from '../constants/scopes';
+import {sysPlannerDataInit} from '../utils/sys-planner-data-init';
+import {
+	getPrimaryProjectId,
+	initializeConfigDict
+} from '../utils/config';
+import {
+	getDFGPersistenceListenerMiddleware,
+	persistedDfgActions
+} from './utils/dfg-persistence-middleware';
+import {initializeGasketState} from './slices/gaskets/gasket.initializer';
+import {
+	aiModelReducer,
+	type AIModelState
+} from './slices/ai-tools/aiModel.reducer';
+import {
+	persistedAIToolsActions,
+	getAiToolsPersistenceListenerMiddleware
+} from './utils/ai-tools-persistence-middleware';
+import {
+	profilingReducer,
+	ProfilingState
+} from './slices/profiling/profiling.reducer';
+import {
+	getProfilingPersistenceListenerMiddleware,
+	persistedProfilingActions
+} from './utils/profiling-persistence-middleware';
 
 type ResolvedType<T> = T extends Promise<infer R> ? R : T;
 
@@ -98,7 +124,10 @@ export const rootReducer = combineReducers({
 	pinsReducer,
 	peripheralsReducer,
 	clockNodesReducer,
-	partitionsReducer
+	partitionsReducer,
+	gasketsReducer,
+	aiModelReducer,
+	profilingReducer
 });
 
 export const useAppSelector: TypedUseSelectorHook<RootState> =
@@ -112,7 +141,7 @@ function computeDefaultClockNodeValues(
 ) {
 	/* Work out the default from the reset values of the registers. */
 	const defaults: Record<string, string> = computeDefaultValues(
-		clockNode.Config,
+		clockNode.Config ?? {},
 		controls
 	);
 
@@ -124,17 +153,24 @@ export function configurePreloadedStore(
 	persistedConfig?: ConfigOptionsReturn['configOptions'],
 	clockControls?: Record<string, ControlCfg[]>
 ) {
+	// Unified initialization for all SoC-related data structures
+	sysPlannerDataInit(soc, persistedConfig);
+
 	const {
 		Pins: persistedPinConfig,
 		ClockNodes: persistedClockNodes,
-		Projects: persistedCores
+		Projects: persistedCores,
+		DFG: persistedDfgConfig
 	} = persistedConfig ?? {};
 
 	const peripheralsReducerInitialState = {
 		...peripheralsInitialState,
-		peripheralSignalsTargets: formatPeripheralSignalsTargets(soc),
+		peripheralSignalsTargets: formatPeripheralSignalsTargets(
+			soc,
+			persistedPinConfig ?? []
+		),
 		assignments: persistedCores
-			? formatPeripheralAllocations(persistedCores)
+			? formatPeripheralAllocations(persistedCores, soc)
 			: ({} satisfies Record<string, PeripheralConfig>)
 	};
 
@@ -146,6 +182,11 @@ export function configurePreloadedStore(
 				}
 			: {})
 	};
+
+	const gasketsReducerInitialState = initializeGasketState(
+		soc,
+		persistedDfgConfig
+	);
 
 	const clockNodesReducerInitialState = {
 		...clockNodesInitialState,
@@ -203,11 +244,43 @@ export function configurePreloadedStore(
 		);
 	}
 
+	const defaultAiToolsState: AIModelState = {
+		aiModels:
+			persistedConfig?.Projects?.flatMap(p => p.AIModels ?? []).map(
+				model => ({
+					...model,
+					id: crypto.randomUUID()
+				})
+			) ?? [],
+		compatibilityState: {}
+	};
+
+	const defaultProfilingState: ProfilingState = {
+		zephelin:
+			persistedConfig?.Projects?.filter(
+				p => p.FirmwarePlatform === 'zephyr'
+			).reduce<ProfilingState['zephelin']>((acc, project) => {
+				acc[project.ProjectId] = {
+					Enabled: project.Profiling?.Zephelin?.Enabled ?? false,
+					AIEnabled: project.Profiling?.Zephelin?.AIEnabled ?? false,
+					Port: project.Profiling?.Zephelin?.Port ?? 0
+				};
+				return acc;
+			}, {}) ?? {}
+	};
+
 	return configureStore({
 		reducer: rootReducer,
 		middleware: getDefaultMiddleware =>
 			getDefaultMiddleware().prepend(
-				...getPersistenceListenerMiddleware(persistedActions)
+				...getPersistenceListenerMiddleware(persistedActions),
+				...getDFGPersistenceListenerMiddleware(persistedDfgActions),
+				...getAiToolsPersistenceListenerMiddleware(
+					persistedAIToolsActions
+				),
+				...getProfilingPersistenceListenerMiddleware(
+					persistedProfilingActions
+				)
 			),
 		preloadedState: {
 			pinsReducer: pinReducerInitialState,
@@ -219,38 +292,39 @@ export function configurePreloadedStore(
 				}
 			},
 			clockNodesReducer: clockNodesReducerInitialState,
-			partitionsReducer: partitionReducerInitialState
+			partitionsReducer: partitionReducerInitialState,
+			gasketsReducer: gasketsReducerInitialState,
+			aiModelReducer: defaultAiToolsState,
+			profilingReducer: defaultProfilingState
 		}
 	});
 }
 
 export async function getPreloadedStateStore() {
-	let persistedSocData: ConfigOptionsReturn;
-
-	if (import.meta.env.MODE === 'development') {
-		persistedSocData = {
-			dataModel: (window as any).__DEV_SOC__,
-			configOptions: undefined
-		};
-	} else {
-		persistedSocData = await getSocAndCfsconfigData();
-	}
+	const persistedSocData = await getSocAndCfsconfigData();
 
 	const {dataModel, configOptions} = persistedSocData ?? {};
+	const formattedDataModel = formatSocCoreMemoryBlocks(dataModel);
+
+	initializeConfigDict(configOptions, formattedDataModel);
+
+	const primaryCoreId = formattedDataModel?.Cores.find(
+		core => core.IsPrimary
+	)?.Id;
 
 	const clockControls = await getControlsForProjectIds(
-		[getPrimaryProjectId() ?? ''],
+		[getPrimaryProjectId(primaryCoreId) ?? ''],
 		CONTROL_SCOPES.CLOCK_CONFIG
 	);
 
-	if (!dataModel) {
+	if (!formattedDataModel || !configOptions) {
 		throw new Error(
 			'There was an error loading your configuration data.'
 		);
 	}
 
 	const store = configurePreloadedStore(
-		dataModel,
+		formattedDataModel,
 		configOptions,
 		clockControls
 	);

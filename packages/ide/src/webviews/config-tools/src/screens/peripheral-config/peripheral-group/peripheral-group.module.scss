@@ -1,0 +1,71 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+
+.accordionContainer {
+	--accordion-body-padding: 0;
+	--accordion-body-margin: 0 0 4px 0;
+	--accordion-body-gap: 0;
+
+	section:first-child {
+		&:hover {
+			background-color: colors.$list-hover-background;
+
+			& svg {
+				visibility: visible;
+			}
+		}
+	}
+
+	&.selected {
+		// add top border on the first item
+		section:last-of-type > div > div:first-child {
+			border-top: 1px solid colors.$default-border !important;
+		}
+
+		// remove bottom border from the last item
+		section:last-of-type > div > div:last-child > div {
+			border-bottom: none !important;
+		}
+
+		// disable left border on hover
+		section:last-of-type > div > div > div:hover {
+			border-left: 2px solid transparent !important;
+		}
+
+		// visual adjustments for peripherals
+		section:last-of-type > div > div {
+			padding-left: 30px;
+			padding-right: 7px;
+
+			> div {
+				padding: 0;
+
+				> div:first-child {
+					min-height: 27px;
+
+					> div {
+						font-weight: unset;
+					}
+				}
+
+				> div {
+					padding-left: 0;
+					padding-right: 5px;
+				}
+			}
+		}
+	}
+}

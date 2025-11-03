@@ -1,0 +1,41 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+.sidePanelContainer {
+	--sliding-panel-vertical-offset: 40px;
+	margin-top: 40px;
+}
+
+.headerItems {
+	width: 100%;
+	display: flex;
+}
+
+.headerleft {
+	display: flex;
+	align-items: start;
+	gap: 16px;
+	flex-grow: 1;
+}
+
+.headerRight {
+	display: flex;
+	align-items: end;
+	gap: 8px;
+}
+
+.dfgVisualisation {
+	overflow: hidden;
+}

@@ -22,11 +22,15 @@ import {getSocPinDetails} from '../../../utils/soc-pins';
 type PinAssignmentInfoProps = Readonly<{
 	signal: string;
 	peripheral: string;
+	showRequiredLabel?: boolean;
+	showDash?: boolean;
 }>;
 
 function PinAssignmentInfo({
 	signal,
-	peripheral
+	peripheral,
+	showRequiredLabel = true,
+	showDash = true
 }: PinAssignmentInfoProps) {
 	const assignedPin = useAssignedPin({signal, peripheral});
 	const isRequired = useIsPinAssignmentRequired(signal, peripheral);
@@ -37,8 +41,14 @@ function PinAssignmentInfo({
 			data-test='pin-assignment-info'
 			className={styles.assignmentLabel}
 		>
-			{assignedPin ? `${Label} (${Name})` : <span>--</span>}
-			{isRequired ? <span>(required)</span> : null}
+			{assignedPin ? (
+				`${Label} (${Name})`
+			) : showDash ? (
+				<span>—</span>
+			) : null}
+			{isRequired && showRequiredLabel ? (
+				<span>(required)</span>
+			) : null}
 		</p>
 	);
 }

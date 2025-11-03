@@ -1,0 +1,67 @@
+{
+    "testsDescription": "Tests related to runtime information",
+    "fail": [
+        {
+            "testDescription": "Check that its an error if a backend targets an unsupported runtime",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}, "Runtime": "myUnsupportedRuntime"}
+                    ]
+                }
+            }
+        },
+        {
+            "testDescription": "Check that its an error if runtime is not a string",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Runtimes" : ["mySupportedRuntime"],
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}, "Runtime": ["mySupportedRuntime"]}
+                    ]
+                }
+            }
+        }
+    ],
+    "pass": [
+        {
+            "testDescription": "Check that a backend can target a supported runtime",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Runtimes" : ["mySupportedRuntime"],
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}, "Runtime": "mySupportedRuntime"}
+                    ]
+                }
+            }
+        }
+    ]
+    
+}

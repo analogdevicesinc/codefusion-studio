@@ -93,7 +93,11 @@ export class ElfEditor
 
       return elfDocument;
     } catch (error) {
-      throw new Error(`Error opening custom document: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Error opening custom document: ${error.message}`);
+      } else {
+        throw new Error("Error opening custom document: Unknown error");
+      }
     }
   }
 

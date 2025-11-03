@@ -28,12 +28,12 @@ import {
  * @returns a promise containing the text
  */
 export async function copyText(): Promise<string> {
-  // copy the text to the clipboard
+  // Copy the text to the clipboard
   const titleBar = new TitleBar();
   await titleBar.select("Edit", "Copy");
-  // read the text from the clipboard
+  // Read the text from the clipboard
   const text = clipboard.read();
-  // clear the clipboard
+  // Clear the clipboard
   clipboard.write("");
   return text;
 }
@@ -43,11 +43,11 @@ export async function copyText(): Promise<string> {
  * @returns a promise containing the Terminal View's text
  */
 export async function getTerminalViewText(): Promise<string> {
-  // open the terminal view
+  // Open the terminal view
   const terminalView = await new BottomBarPanel();
   if (platform === "win32") {
     const workbench = new Workbench();
-    // select all text
+    // Select all text
     await workbench.executeCommand("terminal select all");
     await workbench.getDriver().sleep(500);
     const text = await copyText();
@@ -64,14 +64,15 @@ export async function getTerminalViewText(): Promise<string> {
  * @returns A promise containing the Notification, or null if not found.
  */
 export async function getNotificationByMessage(
-  message: string
+  message: string,
 ): Promise<Notification | null> {
   const notificationCenter = await new Workbench().openNotificationsCenter();
   const notifications = await notificationCenter.getNotifications(
-    NotificationType.Info
+    NotificationType.Info,
   );
 
   for (const notification of notifications) {
+    // eslint-disable-next-line no-await-in-loop
     const foundMessage = await notification.getMessage();
     if (foundMessage === message) {
       return notification;

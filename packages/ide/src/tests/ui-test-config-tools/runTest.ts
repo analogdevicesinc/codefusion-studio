@@ -31,19 +31,6 @@ async function main() {
   const isWin = process.platform === "win32";
 
   try {
-    // Create settings file to set the path to cfsutil
-    await fs.promises.writeFile(settingsPath, "{}", "utf-8");
-
-    console.log("Settings file successfully created at", settingsPath);
-
-    let cfsutilPath = path.resolve(
-      process.cwd(),
-      "..",
-      "cli", // update this path when moving
-      "bin",
-      `run${isWin ? ".cmd" : ".js"}`,
-    );
-
     let pluginsPath = path.resolve(
       process.cwd(),
       "..",
@@ -54,26 +41,25 @@ async function main() {
       "dist",
     );
 
-    let socsPath = path.resolve(process.cwd(), "..", "cli", "src", "socs");
+    let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
 
     if (isWin) {
-      cfsutilPath = cfsutilPath.replace(/\\/g, "\\\\");
       pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
+      socsPath = socsPath.replace(/\\/g, "\\\\");
     }
 
     await fs.promises.writeFile(
       settingsPath,
-      `{"cfgtools.cfsutil.path": "${cfsutilPath}", "cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"]}`,
+      `{"cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"], "cfs.sdk.path": "some/fake/path", "cfs.telemetry.enable": false}`,
       "utf-8",
     );
 
-    console.log("Generated path to cfsutil:", cfsutilPath);
     console.log("Generated path to plugins:", pluginsPath);
 
     const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
 
     await tester.setupAndRunTests(
-      path.resolve(__dirname, "suite/*.test.js"),
+      path.resolve(__dirname, "**/*.test.js"),
       "max",
       {
         useYarn: false,
@@ -87,6 +73,28 @@ async function main() {
         logLevel: "debug" as any,
       },
     );
+    const reportPath = path.resolve(
+      process.cwd(),
+      "coverage",
+      "test-results.json",
+    );
+
+    try {
+      if (fs.existsSync(reportPath)) {
+        const reportRaw = await fs.promises.readFile(reportPath, "utf-8");
+        const report = JSON.parse(reportRaw);
+
+        console.log("\n\n🎯 Test Summary:");
+        console.log(`✔ Passed:   ${report.passes?.length || 0}`);
+        console.log(`✖ Failed:   ${report.failures?.length || 0}`);
+        console.log(`⏳ Pending:  ${report.pending?.length || 0}`);
+        console.log(`⏱ Duration: ${report.stats?.duration || 0}ms`);
+      } else {
+        console.warn("⚠️  No report found at:", reportPath);
+      }
+    } catch (e) {
+      console.error("❌ Failed to parse test summary report:", e);
+    }
   } catch (err) {
     console.error("Failed to run tests", err);
     process.exit(1);

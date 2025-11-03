@@ -1,0 +1,20 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y git
+
+COPY --from=ghcr.io/astral-sh/uv:0.6.17 /uv /uvx /bin/
+
+WORKDIR /ai-fusion
+COPY pyproject.toml uv.lock .python-version README.md ./
+COPY src/ src/
+COPY packages/ packages/
+COPY platforms/max7800x/cfsai-backend-max7800x/ platforms/max7800x/cfsai-backend-max7800x/
+
+RUN uv python install 3.11 && uv sync --locked --no-dev
+
+RUN git clone --branch 20240705 --depth 1 \
+    https://github.com/analogdevicesinc/ai8x-synthesis.git /ai8x-synthesis
+WORKDIR /ai8x-synthesis
+RUN uv python install && uv venv .venv && uv pip install -r requirements.txt
+
+ENTRYPOINT ["/ai-fusion/.venv/bin/cfsai", "container", "execute", "izer"]

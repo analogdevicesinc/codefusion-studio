@@ -43,9 +43,9 @@ export class UsersKeys {
         writeTags,
     }: {
         description?: string;
-        readTags?: string[];
-        role?: 'user' | 'admin';
-        writeTags?: string[];
+        readTags: string[];
+        role: 'user' | 'admin';
+        writeTags: string[];
     }): Promise<APIKey> {
         const { data, error } = await this.apiClient.POST(
             '/users/keys',
@@ -101,7 +101,7 @@ export class UsersKeys {
         userID,
     }: {
         userID?: string;
-    }): AsyncGenerator<APIKey[]> {
+    } = {}): AsyncGenerator<APIKey[]> {
         const { data, error } = await this.apiClient.GET(
             '/users/keys',
             {

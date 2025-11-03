@@ -81,6 +81,7 @@ export const zCreateInputPackage = z.object({
         z.literal('TQFP'),
         z.literal('CTBGA'),
         z.literal('CSBGA'),
+        z.literal('BGAED'),
     ]),
 });
 
@@ -114,6 +115,7 @@ export const zPackage = z.object({
         z.literal('TQFP'),
         z.literal('CTBGA'),
         z.literal('CSBGA'),
+        z.literal('BGAED'),
     ]),
     socID: z.string(),
 });
@@ -142,6 +144,7 @@ export const zCorePart = z.object({
     name: z.string(),
     primary: z.boolean(),
     socID: z.string(),
+    supportsTrustZone: z.boolean().optional(),
 });
 
 export const zSoCFamily = z.object({
@@ -157,11 +160,11 @@ export const zSoCSummary = z.object({
 });
 
 export const zUser = z.object({
-    email: z.string(),
+    accessTag: zAccessTag,
+    email: z.string().optional(),
     id: z.string(),
-    read: z.array(z.string()).optional(),
+    maskedEmail: z.string(),
     userType: z.union([z.literal('user'), z.literal('admin')]),
-    write: z.array(z.string()).optional(),
 });
 
 export const zCreateInputCore = z.object({
@@ -172,6 +175,7 @@ export const zCreateInputCore = z.object({
     extensions: z.array(z.string()),
     name: z.string(),
     primary: z.boolean().optional(),
+    supportsTrustZone: z.boolean().optional(),
 });
 
 export const zSoC = z.object({

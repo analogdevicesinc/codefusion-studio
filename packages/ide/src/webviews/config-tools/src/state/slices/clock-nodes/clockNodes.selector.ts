@@ -14,7 +14,10 @@
  */
 import {createSelector} from '@reduxjs/toolkit';
 import {type RootState, useAppSelector} from '../../store';
-import {type ClockNodeState} from '@common/types/soc';
+import type {
+	ClockNodesDictionary,
+	ClockNodeState
+} from '@common/types/soc';
 
 export function useClockNodeDetailsTargetNode() {
 	return useAppSelector(
@@ -40,20 +43,59 @@ const selectClockNodesConfig = createSelector(
 export const useClockNodesConfig = () =>
 	useAppSelector(selectClockNodesConfig);
 
+function getDisabledNodeNames(nodes: ClockNodesDictionary): string[] {
+	const disabled = new Set<string>();
+
+	Object.values(nodes).forEach(node => {
+		const controlValues = node.controlValues ?? {};
+
+		Object.entries(controlValues).forEach(([key, value]) => {
+			if (key.endsWith('_ENABLE') && value === 'FALSE') {
+				disabled.add(key.replace('_ENABLE', ''));
+			}
+		});
+	});
+
+	return Array.from(disabled);
+}
+
 export const useModifiedClockNodes = () => {
 	const nodes = useAppSelector(selectAllClockNodes);
+	const disabledNodeNames = getDisabledNodeNames(nodes);
 
 	return Object.entries(nodes).reduce<Record<string, ClockNodeState>>(
 		(acc, [nodeName, nodeState]) => {
-			if (
-				Object.entries(nodeState.controlValues ?? {}).some(
-					([key, val]) =>
-						val !== undefined &&
-						val !== '' &&
-						val !== nodeState.initialControlValues?.[key]
-				)
-			) {
-				acc[nodeName] = nodeState;
+			const controlValues = nodeState.controlValues ?? {};
+			const initialValues = nodeState.initialControlValues ?? {};
+
+			const filteredControlValues = Object.entries(
+				controlValues
+			).reduce<Record<string, any>>((filtered, [key, val]) => {
+				// Some nodes like UART have ENABLE propreties which need to be considered.
+				// The ones that don't are treatet as enabled.
+				const isDisabled = disabledNodeNames.some(name =>
+					key.startsWith(name)
+				);
+
+				if (
+					!isDisabled &&
+					val !== undefined &&
+					val !== '' &&
+					val !== initialValues[key]
+				) {
+					filtered[key] = val;
+				}
+
+				return filtered;
+			}, {});
+
+			// Some nodes are grouped like UART0/2,
+			// so we must add only the control values that changed.
+			if (Object.keys(filteredControlValues).length > 0) {
+				acc[nodeName] = {
+					...nodeState,
+					controlValues: filteredControlValues
+				};
 			}
 
 			return acc;

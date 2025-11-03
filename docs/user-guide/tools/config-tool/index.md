@@ -1,7 +1,7 @@
 ---
 description: Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2025-04-28
+date: 2025-08-29
 ---
 
 # System Planner Configuration Tools
@@ -43,13 +43,21 @@ Manage memory allocation and partitioning for different cores. See [Memory Alloc
 
 View and manage register values used by the configuration code. Filter to view modified or default values. See [Registers](registers.md) for details.
 
+### Embedded AI Tools
+
+Import and configure supported AI models for specific cores. See [Embedded AI Tools](manage-ai-models.md) for details on assigning models and applying engine-specific options before code generation.
+
+### Profiling
+
+Supports capturing runtime and inference-level traces from the target and preparing captured CTF traces for visualization. See [Profiling](./profiling.md) for details.
+
 ### Generate Code
 
 After setting all configurations, such as pin multiplexing, clock settings, and memory allocation, you can generate the necessary source files for your application. See [Generate Code](generate-code.md) for details.
 
 ### Workspace Projects table
 
-The Workspace Projects table provides an overview of the cores in the workspace and their assigned resources.  
+The Workspace Projects table provides an overview of the cores in the workspace and their assigned resources.
 
 Use this table to track resource allocation across cores and ensure proper configuration before code generation. Click the chevron (**>**) in a relevant cell to open the corresponding page, where you can modify assignments or resolve any detected issues.
 

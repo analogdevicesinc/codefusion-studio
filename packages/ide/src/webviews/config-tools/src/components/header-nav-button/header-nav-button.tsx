@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-/* eslint-disable new-cap */
-import {LocalizedMessage} from '@common/components/l10n/LocalizedMessage';
+import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 import {useAppDispatch} from '../../state/store';
 import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
 import {type NavigationItem} from '@common/types/navigation';
@@ -39,7 +38,7 @@ export default function HeaderNavButton({id}: HeaderNavButtonProps) {
 				testId={`header-nav-tab:${id}`}
 				onClick={() => dispatch(setActiveScreen(id))}
 			>
-				{LocalizedMessage({id: `${id}.title`})}
+				{t({id: `${id}.title`})}
 			</PanelTab>
 		</div>
 	);

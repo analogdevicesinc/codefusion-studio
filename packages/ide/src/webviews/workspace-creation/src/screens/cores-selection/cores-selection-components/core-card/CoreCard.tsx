@@ -13,34 +13,54 @@
  *
  */
 
-import {CheckBox} from 'cfs-react-library';
-import {memo, useCallback} from 'react';
+import {Badge, CheckBox} from 'cfs-react-library';
+import {memo, useCallback, useMemo} from 'react';
 import CfsSelectionCard from '../../../../../../common/components/cfs-selection-card/CfsSelectionCard';
 import type {CatalogCoreInfo} from '../../../../common/types/catalog';
-import {configErrors} from '../../../../common/constants/validation-errors';
 import {
 	setConfigErrors,
 	toggleCoreEnabled
 } from '../../../../state/slices/workspace-config/workspace-config.reducer';
 import {
 	useConfiguredCore,
-	useIsCoreEnabled
+	useIsCoreEnabled,
+	useIsTrustZoneEnabled
 } from '../../../../state/slices/workspace-config/workspace-config.selector';
 import {useAppDispatch} from '../../../../state/store';
-import CoreContentItem from '../core-content-item/CoreContentItem';
-import CoreFooter from '../core-footer/CoreFooter';
 import {PRIMARY} from '@common/constants/core-properties';
 import useCoreValidation from '../../../../hooks/useCoreValidation';
+import useIsPrimaryMultipleProjects from '../../../../hooks/use-is-primary-multiple-projects';
 
 import styles from './CoreCard.module.scss';
+import {configErrors} from '../../../../common/constants/validation-errors';
+import TrustZoneToggle from '../core-content-trustzone/TrustZoneToggle';
+import CoreContentTrustZoneItems from '../core-content-trustzone/CoreContentTrustZoneItems';
+import {getTrustZoneIds} from '../../../../utils/workspace-config';
 
 function CoreCard({core}: Readonly<{core: CatalogCoreInfo}>) {
 	const dispatch = useAppDispatch();
-	const {id, name, isPrimary} = core;
+	const {id, name} = core;
 	const coreState = useConfiguredCore(id);
+	const shouldShowPrimaryBadge = useIsPrimaryMultipleProjects(
+		core?.isPrimary ?? false
+	);
+
 	const isCoreEnabled = useIsCoreEnabled(id);
 	const {isCoreCardErrorState} = useCoreValidation();
 	const isError = isCoreCardErrorState(coreState);
+	const isTrustZoneEnabled = useIsTrustZoneEnabled(id);
+	const {secureCoreId, nonSecureCoreId} = getTrustZoneIds(core.id);
+
+	const isSecureEnabled = useIsCoreEnabled(secureCoreId);
+	const isNonSecureEnabled = useIsCoreEnabled(nonSecureCoreId);
+
+	// Calculate indeterminate state: true only for partial selection (one enabled, one disabled)
+	const isIndeterminate = useMemo(() => {
+		if (!isTrustZoneEnabled) return false;
+
+		// Indeterminate only when we have partial selection (one true, one false)
+		return isSecureEnabled !== isNonSecureEnabled;
+	}, [isTrustZoneEnabled, isSecureEnabled, isNonSecureEnabled]);
 
 	const handleCheckboxSelection = useCallback(
 		(id: string) => {
@@ -62,36 +82,35 @@ function CoreCard({core}: Readonly<{core: CatalogCoreInfo}>) {
 			id={id}
 			hasError={coreState ? isError : false}
 			isChecked={isCoreEnabled}
-			onChange={handleCheckboxSelection}
+			alwaysShowContent={isTrustZoneEnabled}
+			onChange={() => {
+				handleCheckboxSelection(id);
+			}}
 		>
 			<div slot='start'>
-				<CheckBox checked={isCoreEnabled} />
+				<CheckBox
+					checked={isCoreEnabled}
+					indeterminate={isIndeterminate}
+					dataTest={`cores-selection:${id}-card:checkbox`}
+				/>
 			</div>
 			<section className={styles.collapsedContainer} slot='title'>
-				<div>
+				<div className={styles.projectHeader}>
 					<h3 className={styles.coreTitle}>{name}</h3>
-					{isPrimary && <span className={styles.tag}>{PRIMARY}</span>}
+					{shouldShowPrimaryBadge && (
+						<Badge appearance='secondary'>{PRIMARY}</Badge>
+					)}
 				</div>
-				<div>
-					<CoreContentItem
-						label='Platform'
-						value={String(coreState?.firmwarePlatform ?? '')}
-					/>
+
+				{coreState?.supportsTrustZone && (
+					<TrustZoneToggle coreId={id} />
+				)}
+			</section>
+			{isTrustZoneEnabled && (
+				<div slot='content'>
+					<CoreContentTrustZoneItems coreId={id} />
 				</div>
-			</section>
-			<section className={styles.expandedContainer} slot='content'>
-				<CoreContentItem
-					label='Plugin'
-					value={coreState?.pluginId ?? ''}
-				/>
-				<CoreContentItem
-					label='Secure'
-					value={(coreState?.isTrusted ? 'Yes' : '').toString()}
-				/>
-			</section>
-			<div className={styles.coreFooter} slot='end'>
-				<CoreFooter coreId={id} />
-			</div>
+			)}
 		</CfsSelectionCard>
 	);
 }

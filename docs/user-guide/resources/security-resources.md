@@ -1,31 +1,29 @@
 ---
 description: The Trusted Edge Security Architecture installer from ADI.
 author: Analog Devices
-date: 2025-05-01
+date: 2025-10-14
 ---
 
 # Trusted Edge Security Architecture (TESA)
 
-ADI's security for the Intelligent Edge is seamlessly bundled into CodeFusion Studio through **Trusted Edge**.
+ADI’s security for the Intelligent Edge is seamlessly integrated into CodeFusion Studio through Trusted Edge.
 
-The Trusted Edge provides a foundational layer of security for customers by melding industry-standard crypto APIs with the capabilities of our hardware security solutions.
+Trusted Edge provides the foundational layer of security within the Trusted Edge Security Architecture (TESA), combining industry-standard cryptographic APIs with the hardware-based security capabilities of ADI platforms.
 
 ## Features
 
-- **Flexibility** – Choose the crypto library that best fits your application. The Trusted Edge supports industry-standard crypto APIs.
-
-- **Simplicity** – Access the hardware security capabilities of the complete ADI digital portfolio.
-
-- **Reduced time-to-market** – The Trusted Edge provides foundational security for your application, reducing the time required to implement security.
+- **Flexibility** – Choose from multiple industry-standard crypto libraries that best fit your application.
+- **Simplicity** – Access hardware security features across ADI’s complete digital portfolio.
+- **Reduced time-to-market** – Reduce time-to-market with foundational security services that simplify implementation.
 
 ## Installation
 
 ### Complete the software request form
 
-The security installer for CodeFusion Studio is distributed under a non-disclosure agreement (NDA) through myAnalog.
+The TESA security package is distributed under a non-disclosure agreement (NDA) through myAnalog.
 
 !!! note
-    A **myAnalog** account is required. Login or sign up at [analog.com](https://www.analog.com/en/index.html)
+    A **myAnalog** account is required. Login or sign up at [:octicons-link-external-24: analog.com](https://www.analog.com/en/index.html){:target="_blank"}
 
 1. Access the [:octicons-link-external-24: Software Request Form](https://analog.com/srf){:target="_blank"}.
 2. Log in or sign up for a myAnalog account.
@@ -38,86 +36,90 @@ The security installer for CodeFusion Studio is distributed under a non-disclosu
 
     ![Software requested](./images/software-requested-security.png)
 
-6. Check the box for your preferred opperating system: Windows, macOS, or Linux.
+6. Check the box for your preferred operating system: Windows, macOS, or Linux.
 7. Review the privacy settings and check the applicable boxes.
 8. Click **Submit**.
 
-A confirmation is sent to the email address provided in the software request form. Allow 10 business days for ADI to review the request. When the request is approved, an email is sent with a link to download the installer. The installer will also be accessible on your myAnalog account under **Resources** -> **Software Downloads**.
+You will receive a confirmation at the email address you provided in the software request form. Allow 10 business days for ADI to review your request. Once your NDA is approved, you will be granted access to the TESA package through the CodeFusion Studio Package Manager. This package provides the security toolchain and components required for developing trusted applications.
 
-### Download the installer
+### Install the TESA package
 
-Click the link received in your email or follow these steps to download the installer from myAnalog.
+After your NDA is approved, you can install the TESA package directly from the CodeFusion Studio [Package Manager](../installation/package-manager/index.md).
 
-1. Access [:octicons-link-external-24: analog.com](https://www.analog.com/en/index.html){:target="_blank"}.
+To install:
 
-2. Log in to your **myAnalog** account.
-
-    ![myAnalog](./images/myanalog.png)
-
-3. Click **Your Account**.
-4. Select **Resources** from the left navigation panel.
-
-    ![Resources](./images/resources-nav.png)
-
-5. Select **Software Downloads**.
-6. Click on the latest version of the CodeFusion Studio Trusted Edge Security Architecture Installer.
-
-    ![Software Downloads](./images/software-downloads.png)
-
-7. Check the box to indicate that you have read and agree to the software license agreement and click **I Accept**.
-
-    ![Accept license agreement](./images/accept-license.png)
-
-The installer is downloaded to your computer.
+1. Configure partner access. Complete the setup steps provided with your NDA approval to enable access to restricted repositories.
+2. Install the TESA package using one of the following methods:  
+      - [Command Palette](../installation/package-manager/manage-packages-command-palette.md)  
+      - [Command line (`cfsutil`)](../installation/package-manager/manage-packages-cfsutil.md)
 
 !!! note
-    You'll receive an email notification with a download link anytime a new version of the installer becomes available.
+    The TESA package is only available to NDA-approved partners. For repository setup details, refer to your internal installation guide or contact your ADI representative.
 
 ## Security Foundation Layer
 
+The Security Foundation Layer provides the core building blocks of TESA. It defines the middleware, frameworks, and tools that implement trusted execution, cryptographic operations, secure boot, and lifecycle management across supported ADI MCUs.
+
 ### TESA middleware
 
+TESA middleware implements the foundational security stack for the Trusted Edge architecture, integrating cryptographic libraries, APIs, and MCU-level frameworks such as Trusted Firmware-M and MCUboot.
+
 #### Cryptographic libraries and APIs
+
+TESA supports multiple cryptographic backends and APIs, including:
 
 - Crypto library options
     - mbedTLS
     - wolfSSL
     - PSA Crypto API
-- ADI USS API
-- Root of Trust Services
-- Unified Security Software
+
+- ADI extensions
+    - ADI USS API
+    - Root of Trust Services
+
+- Unified Security Software (USS)
     - Secure Storage
     - Crypto Toolbox
     - Secure Communication
-    - Universal Crypto Library
-- Hardware Crypto Accelerators and Security Features
-- MCU Support
-    - Trusted Firmware-M
-    - MCUBoot
+    - Universal Crypto Library (UCL)
 
-### MCU Support
+#### MCU framework integration
 
-#### Trusted Firmware-M (TF-M)
+TESA integrates with multiple MCU-level security frameworks to deliver trusted boot, firmware validation, and lifecycle management.
 
-Trusted Firmware-M (TF-M) is the reference functional PSA implementation provided by[:octicons-link-external-24: TrustedFirmware.org](https://www.trustedfirmware.org/){:target="_blank"}. It provides trusted execution environment functionality for Armv8 microcontrollers with TrustZone extensions.
+##### Trusted Firmware-M (TF-M)
 
-ADI's security offering for the Intelligent Edge is called **Trusted Edge Security Architecture** (TESA). The list of devices supported by ADI’s TESA is available at [:octicons-link-external-24: TF-M ADI](https://trustedfirmware-m.readthedocs.io/en/latest/platform/adi/index.html){:target="_blank"}
+[:octicons-link-external-24: Trusted Firmware-M (TF-M)](https://www.trustedfirmware.org/projects/tf-m){:target="_blank"} is the platform security architecture reference implementation aligning with PSA Certified guidelines.
 
-TESA provides out-of-the-box support for the open source generic TF-M implementation using mbedTLS for cryptographic functionality. It also provides a premium security configuration that enhances the performance of security services through Unified Security Software.
+ADI’s implementation, delivered through TESA, provides out-of-the-box support for the open source TF-M build using mbedTLS, as well as a premium configuration that enhances security performance through Universal Crypto Library (UCL).
 
-#### MCUBoot
+For a list of supported devices, see [:octicons-link-external-24: TF-M ADI platforms](https://trustedfirmware-m.readthedocs.io/en/latest/platform/adi/index.html){:target="_blank"}.
 
-MCUBoot is included in TF-M to provide Level 2 bootloader functionality within the boot chain, as part of the open source offering. TESA enhances the performance of security services through Unified Security Software, which is available as a configuration option.
+For information on setting up and using TF-M in CFS, see [Arm&reg; TrustZone&reg;](../workspaces/targets/trustzone.md).
+
+##### MCUboot
+
+MCUboot is included with TF-M to provide Level-2 bootloader functionality within the boot chain. TESA enhances MCUboot with UCL, enabling secure boot and improved cryptographic performance.
 
 ### Unified Security Software
 
-ADI Unified Security Software (USS) interfaces with the standard PSA API and ADI’s own USS API extensions through a backend that provides **Secure Boot**, **Secure Channel**, **Lifecycle Management**, **Secure Storage**, **Cryptographic Toolbox**, and **Attestation**. It includes standalone, MCU-only software security emulations for ADI MCUs.
+USS extends standard PSA and ADI APIs through a backend that delivers:
 
-The PSA Crypto implementation within USS is called the ADI Universal Crypto Library (UCL). UCL contains state-of-the-art implementations of cryptographic algorithms for ADI MCUs. It supports hashing, encryption/decryption, signature/verification, key exchange, and random number generation. It also implements countermeasures against side-channel attacks and utilizes the hardware accelerator of the target ADI platform whenever applicable.
+- Secure Boot  
+- Secure Channel  
+- Lifecycle Management  
+- Secure Storage  
+- Cryptographic Toolbox  
+- Attestation  
+
+USS includes standalone MCU-only software security emulations for ADI devices.
+
+The PSA Crypto implementation within USS is called the ADI Universal Crypto Library (UCL). UCL provides high-performance cryptographic algorithms for ADI MCUs, supporting hashing, encryption/decryption, signature verification, key exchange, and random number generation.  
+It also includes countermeasures against side-channel attacks and leverages the hardware accelerator of the target ADI platform whenever applicable.
 
 #### TESA Driver
 
-Unified Security Software provides rich, hardware-independent, industry-standard APIs for:
+USS provides rich, hardware-independent APIs for:
 
 - Crypto  
 - Life cycle management  
@@ -125,12 +127,12 @@ Unified Security Software provides rich, hardware-independent, industry-standard
 
 ### TESA Toolkit
 
-The TESA toolkit includes utility scripts and firmware to:
+The TESA toolkit includes utility scripts and firmware for:
 
-- Generate signatures
-- Enable Secure Boot ROM
+- Generating signatures  
+- Enabling Secure Boot ROM  
 
-The TESA toolkit is available at [:octicons-link-external-24: TESA-Toolkit](https://github.com/analogdevicesinc/tesa-toolkit){:target="_blank"}
+The TESA toolkit is available on GitHub at [:octicons-link-external-24: TESA-Toolkit](https://github.com/analogdevicesinc/tesa-toolkit){:target="_blank"}
 
 ### USS Supported boards
 
@@ -138,6 +140,8 @@ The TESA toolkit is available at [:octicons-link-external-24: TESA-Toolkit](http
     - [:octicons-link-external-24: EVKit V1](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650-evkit.html){:target="_blank"}
     - [:octicons-link-external-24: FTHR](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32650fthr.html){:target="_blank"}
     - [:octicons-link-external-24: AD-SWIOT1L-SL](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-swiot1l-sl.html){:target="_blank"}
+- **MAX32657**
+    - EVKit
 - **MAX32670**
     - [:octicons-link-external-24: EVKit V1](https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32670evkit.html){:target="_blank"}
 - **MAX32690**

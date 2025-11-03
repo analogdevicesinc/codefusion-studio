@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-/* eslint-disable new-cap */
 
 // Components
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
@@ -22,7 +21,7 @@ import TopbarButton from '../../../../common/components/cfs-top-bar/TopbarButton
 import Help from '../../../../common/icons/Help';
 import {Direction} from '../../../../common/components/tooltip/Tooltip';
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
-import {LocalizedMessage} from '../../../../common/components/l10n/LocalizedMessage';
+import {LocalizedMessage as t} from '../../../../common/components/l10n/LocalizedMessage';
 
 export default function WrkspHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
@@ -39,9 +38,9 @@ export default function WrkspHeader() {
 			<div slot='end'>
 				<TopbarButton
 					title={
-						LocalizedMessage({
+						t({
 							id: `${id}.help.title`
-						}) as string
+						}) as unknown as string
 					}
 					icon={<Help />}
 					tooltipType='long'
@@ -56,10 +55,8 @@ export default function WrkspHeader() {
 					handleModalClose={onToggleHelpModal}
 				>
 					<div style={{textAlign: 'left'}}>
-						<h1>
-							<LocalizedMessage id={`${id}.help.title`} />
-						</h1>
-						<LocalizedMessage parseHtml id={`${id}.description`} />
+						<h1>{t({id: `${id}.help.title`})}</h1>
+						{t({id: `${id}.description`, parseHtml: true})}
 					</div>
 				</Modal>
 			</div>

@@ -20,10 +20,27 @@ import {
 	setActivePeripheral,
 	setPeripheralAssignment
 } from '../../../state/slices/peripherals/peripherals.reducer';
+import {PERIPHERAL_PLUGIN_OPTIONS_FORM_ID} from './PeripheralConfigTask';
 
-const max32690 = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const max32690 = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
+
+const configDict = {
+	BoardName: '',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	projects: [
+		{
+			Description: 'ARM Cortex-M4',
+			ExternallyManaged: false,
+			FirmwarePlatform: 'msdk',
+			CoreId: 'CM4',
+			Name: 'ARM Cortex-M4',
+			PluginId: '',
+			ProjectId: 'CM4-proj'
+		}
+	]
+};
 
 const controlsMock: Record<string, ControlCfg[]> = {
 	UART0: [
@@ -118,6 +135,7 @@ const controlsMock: Record<string, ControlCfg[]> = {
 		{
 			Id: 'CHOSEN',
 			Description: 'Chosen',
+			Pattern: '([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*',
 			Type: 'text',
 			PluginOption: true
 		},
@@ -215,8 +233,9 @@ const controlsMock: Record<string, ControlCfg[]> = {
 		{
 			Id: 'TARGET0_ADDR',
 			Description: 'Target Address 0',
-			MinimumValue: 0,
-			MaximumValue: 1023,
+			MinimumValue: "0x0",
+			MaximumValue: "0x3ff",
+			NumericBase: "Hexadecimal",
 			Type: 'integer',
 			Condition: ''
 		},
@@ -230,19 +249,10 @@ const controlsMock: Record<string, ControlCfg[]> = {
 	]
 };
 
+const projectRvId = 'RV-proj';
+const projectCm4Id = 'CM4-proj';
+
 describe('Peripheral Config Form', () => {
-	beforeEach(() => {
-		localStorage.setItem(
-			'Controls',
-			JSON.stringify(max32690.Controls)
-		);
-
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(max32690.Peripherals)
-		);
-	});
-
 	const mockFormattedData = {
 		BAUD: '115200',
 		CHAR_SIZE: '5',
@@ -392,9 +402,7 @@ describe('Peripheral Config Form', () => {
 	];
 
 	it('Renders a form when the loaded SoC provides valid peripheral configuration', () => {
-		const reduxStore = configurePreloadedStore(
-			max32690 as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(max32690);
 
 		reduxStore.dispatch(
 			setPeripheralAssignment({
@@ -413,6 +421,7 @@ describe('Peripheral Config Form', () => {
 
 		cy.mount(
 			<PeripheralConfigForm
+				projectId='CM4-proj'
 				activePeripheral='UART0'
 				formattedControls={mockFormattedControls}
 				formattedData={mockFormattedData}
@@ -442,14 +451,13 @@ describe('Peripheral Config Form', () => {
 	});
 
 	it('Shows "no settings" message for peripherals without configuration', () => {
-		const reduxStore = configurePreloadedStore(
-			max32690 as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(max32690);
 
 		reduxStore.dispatch(setActivePeripheral('SysTick'));
 
 		cy.mount(
 			<PeripheralConfigForm
+				projectId='CM4-proj'
 				activePeripheral='SysTick'
 				formattedControls={mockFormattedControls}
 				formattedData={mockFormattedData}
@@ -469,14 +477,12 @@ describe('Peripheral Config Form', () => {
 	});
 
 	it('Should display error message if input control has invalid value ', () => {
-		const reduxStore = configurePreloadedStore(
-			max32690 as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(max32690);
 
 		reduxStore.dispatch(
 			setPeripheralAssignment({
 				peripheral: 'SPI0',
-				projectId: 'RV',
+				projectId: `${projectRvId}`,
 				config: {
 					RECEIVE_FIFO_THRESHOLD: '1000000',
 					FREQ: '15000000',
@@ -487,6 +493,7 @@ describe('Peripheral Config Form', () => {
 
 		cy.mount(
 			<PeripheralConfigForm
+				projectId={`${projectRvId}`}
 				activePeripheral='SPI0'
 				formattedControls={[
 					{
@@ -599,7 +606,7 @@ describe('Peripheral Config Form', () => {
 					SCL_TIMEOUT: '0',
 					TRANSMIT_DMA_ENABLE: false,
 					RECEIVE_DMA_ENABLE: false,
-					TARGET0_ADDR: '10000000',
+					TARGET0_ADDR: '0x989680',
 					FREQ: '100000'
 				}}
 				peripheralControls={controlsMock.SPI0}
@@ -728,6 +735,141 @@ describe('Peripheral Config Form', () => {
 
 		cy.dataTest(
 			'peripheral-config:form:control-TARGET0_ADDR-error'
+		).should('exist');
+	});
+
+	it('Should display error message for Code Generation Plugin section for "Chosen" field', () => {
+		const reduxStore = configurePreloadedStore(
+			max32690 as unknown as Soc
+		);
+
+		reduxStore.dispatch(
+			setPeripheralAssignment({
+				peripheral: 'UART0',
+				projectId: `${projectCm4Id}`,
+				config: {
+					PARITY: 'DISABLED',
+					BAUD: '',
+					CHOSEN: 'alias_'
+				}
+			})
+		);
+
+		cy.mount(
+			<div
+				data-test='peripheral-config:plugin-section'
+				id={PERIPHERAL_PLUGIN_OPTIONS_FORM_ID}
+			>
+				<PeripheralConfigForm
+					projectId='CM4-proj'
+					activePeripheral='UART0'
+					formattedControls={[
+						{
+							default: '',
+							description: 'Parity',
+							enum: [
+								{
+									label: 'Even Parity',
+									value: 'EVEN'
+								},
+								{
+									label: 'Odd Parity',
+									value: 'ODD'
+								},
+								{
+									label: 'Disabled',
+									value: 'DISABLED'
+								}
+							],
+							id: 'PARITY',
+							name: 'Parity',
+							pluginOption: undefined,
+							required: true,
+							type: 'enum'
+						},
+						{
+							default: '',
+							description:
+								'Chosen. Multiple values can be separated by commas.',
+							id: 'CHOSEN',
+							name: 'Chosen. Multiple values can be separated by commas. *',
+							pluginOption: true,
+							required: true,
+							type: 'text'
+						},
+						{
+							default: '115200',
+							description: 'Baud Rate',
+							id: 'BAUD',
+							name: 'Baud Rate *',
+							pluginOption: true,
+							required: true,
+							type: 'integer'
+						}
+					]}
+					formattedData={{
+						PARITY: 'DISABLED',
+						BAUD: '',
+						CHOSEN: 'alias_'
+					}}
+					peripheralControls={controlsMock.UART0}
+					resetValues={{
+						BAUD: '115200',
+						CHOSEN: ''
+					}}
+					peripheralOptions={[
+						{
+							default: '',
+							description: 'Parity',
+							enum: [
+								{
+									label: 'Even Parity',
+									value: 'EVEN'
+								},
+								{
+									label: 'Odd Parity',
+									value: 'ODD'
+								},
+								{
+									label: 'Disabled',
+									value: 'DISABLED'
+								}
+							],
+							id: 'PARITY',
+							name: 'Parity',
+							pluginOption: undefined,
+							required: true,
+							type: 'enum'
+						}
+					]}
+					pluginOptions={[
+						{
+							default: '',
+							description:
+								'Chosen. Multiple values can be separated by commas.',
+							id: 'CHOSEN',
+							name: 'Chosen. Multiple values can be separated by commas. *',
+							pluginOption: true,
+							required: true,
+							type: 'text'
+						},
+						{
+							default: '115200',
+							description: 'Baud Rate',
+							id: 'BAUD',
+							name: 'Baud Rate *',
+							pluginOption: true,
+							required: true,
+							type: 'integer'
+						}
+					]}
+				/>
+			</div>,
+			reduxStore
+		);
+
+		cy.dataTest(
+			'plugin-options:plugin-form:control-CHOSEN-error'
 		).should('exist');
 	});
 });

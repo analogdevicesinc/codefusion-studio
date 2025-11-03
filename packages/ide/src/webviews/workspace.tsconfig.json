@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./workspace-creation/**/*.ts",
+		"./workspace-creation/**/*.tsx",
+		"./custom.d.ts",
+		"./common/**/*.ts",
+		"./common/**/*.tsx"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

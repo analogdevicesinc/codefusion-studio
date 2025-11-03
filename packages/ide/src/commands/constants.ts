@@ -24,11 +24,21 @@ export const VSCODE_OPEN_WALKTHROUGH_COMMAND_ID =
 export const VSCODE_START_DEBUG_COMMAND_ID = "workbench.action.debug.start";
 export const VSCODE_SELECT_START_DEBUG_COMMAND_ID =
   "workbench.action.debug.selectandstart";
+export const VSCODE_OPEN_DISASSEMBLY_COMMAND_ID =
+  "debug.action.openDisassemblyView";
 
 // ADI commands
 
+export const REFRESH_ACTIONS_PANEL_COMMAND_ID = "cfs.refreshActionsPanel";
 export const ACTIONS_TREE_COMMAND_ID = "cfs.actionsView";
-export const BROWSE_MAXIM_EXAMPLES_COMMAND_ID = "cfs.browseMaximExamples";
+export const GDB_TOOLBOX_VIEW_COMMAND_ID = "cfs.gdbToolboxView";
+export const EXECUTE_GDB_SCRIPT_COMMAND_ID = "cfs.executeGdbScript";
+export const CREATE_GDB_USER_SCRIPT_COMMAND_ID = "cfs.createGdbUserScript";
+export const COPY_GDB_DEFAULT_SCRIPT_COMMAND_ID = "cfs.copyDefaultGdbScript";
+export const EDIT_GDB_SCRIPT_COMMAND_ID = "cfs.editGdbScript";
+export const FILTER_GDB_SCRIPTS_COMMAND_ID = "cfs.filterGdbToolboxScripts";
+export const CLEAR_FILTER_GDB_SCRIPTS_COMMAND_ID = "cfs.clearGdbToolboxFilter";
+export const BROWSE_MSDK_EXAMPLES_COMMAND_ID = "cfs.browseMsdkExamples";
 export const EXECUTE_TASK = "cfs.executeTask";
 export const CHANGE_CONTEXT = "cfs.changeContext";
 export const GET_CONTEXT_COMMAND_ID = "cfs.getContext";
@@ -48,9 +58,6 @@ export const RUN_BUILD_TASK_COMMAND_ID = "cfs.runBuildTask";
 export const RUN_CLEAN_TASK_COMMAND_ID = "cfs.runCleanTask";
 export const RUN_OPENOCD_FLASH_TASK_COMMAND_ID = "cfs.runOpenocdFlashTask";
 export const RUN_JLINK_FLASH_TASK_COMMAND_ID = "cfs.runJlinkFlashTask";
-export const SELECT_PROGRAM_FILE_COMMAND_ID = "cfs.selectProgramFile";
-export const SELECT_RISCV_PROGRAM_FILE_COMMAND_ID =
-  "cfs.selectRiscvProgramFile";
 export const SELECT_START_DEBUG_ARM_COMMAND_ID = "cfs.selectStartDebuggingArm";
 export const SELECT_START_DEBUG_ARM_JLINK_COMMAND_ID =
   "cfs.selectStartDebuggingArmJlink";
@@ -62,6 +69,8 @@ export const SET_RISCV_DEBUG_PATH_COMMAND_ID = "cfs.setRiscvDebugPath";
 export const SHOW_HOME_PAGE_AT_STARTUP_COMMAND_ID = "cfs.showHomePageAtStartup";
 export const SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID =
   "cfs.systemPlanner.showAtStartup";
+export const OPEN_DISASSEMBLY_COMMAND_ID = "cfs.openDisassemblyView";
+export const OPEN_WITH_SSPLUS_COMMAND_ID = "cfs.explorer.openWithSSPlus";
 
 // ADI SDK commands
 export const BROWSE_SDK_PATH_COMMAND_ID = "cfs.SDK.browseSdkPath";
@@ -84,18 +93,14 @@ export const SELECT_OPENOCD_RISCV_TARGET_COMMAND_ID =
   "cfs.openocd.selectRiscvTarget";
 export const SELECT_OPENOCD_TARGET_COMMAND_ID = "cfs.openocd.selectTarget";
 export const SELECT_SVD_FILE_COMMAND_ID = "cfs.cmsis.selectSvdFile";
+export const RUN_GDB_TOOLBOX_SCRIPT_COMMAND_ID = "cfs.runGdbToolboxScript";
 
 // Jlink commands
-export const SET_JLINK_DEVICE_COMMAND_ID = "cfs.jlink.setDevice";
 export const SET_JLINK_PATH_COMMAND_ID = "cfs.jlink.setJlinkPath";
 
 // ADI Project commands
 export const OPEN_PROJECT_BOARD_SETTING_COMMAND_ID =
   "cfs.project.openBoardSetting";
-
-// ADI cfsutil commands
-export const OPEN_CFS_UTIL_PATH_SETTING_COMMAND_ID =
-  "cfs.cfsUtil.openPathSetting";
 
 export const DEBUG_CONFIGURE_COMMAND_ID = "workbench.action.debug.configure";
 export const TASK_CONFIGURE_COMMAND_ID =
@@ -118,3 +123,31 @@ export const WORKSPACE_CREATION_COMMANDS = {
   LOAD_CONFIG_FILE: "cfs.loadWorkspaceConfig",
   VIEW_CONFIG_FILE_SOURCE: "cfs.viewWorkspaceConfigFileSource",
 } as const;
+
+//Package Manager Commands
+export const PACKAGE_MANAGER_COMMANDS = {
+  INSTALL_PACKAGE: "cfs.installPackage",
+  UNINSTALL_PACKAGE: "cfs.uninstallPackage",
+  MANAGE_REMOTES: "cfs.manageRemotes",
+  ADD_REMOTE: "cfs.addRemote",
+  REMOVE_REMOTE: "cfs.removeRemote",
+  LOGOUT_REMOTE: "cfs.logoutRemote",
+  LOGIN_REMOTE: "cfs.loginRemote",
+};
+
+// Zephelin Commands
+export const ZEPHELIN_COMMANDS = {
+  CAPTURE_PROFILER_TRACE: "cfs.zephelin.captureProfilerTrace",
+  CONVERT_TRACE_CTF_TO_TEF: "cfs.zephelin.convertTraceCtfToTef",
+} as const;
+
+// Cloud Catalog Auth
+export const CLOUD_CATALOG_AUTH = {
+  LOGIN: "cfs.ccm.myanalog.login",
+  LOGOUT: "cfs.ccm.myanalog.logout",
+  STATUS: "cfs.ccm.myanalog.status",
+};
+
+// Tool Manager Commands
+export const ZEPHYR_PACKAGE_PATH_COMMAND_ID = "cfs.tool.path.zephyr";
+export const MSDK_PACKAGE_PATH_COMMAND_ID = "cfs.tool.path.msdk";

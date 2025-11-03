@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,9 @@ import {
   SELECT_OPENOCD_RISCV_INTERFACE_COMMAND_ID,
   SELECT_OPENOCD_RISCV_TARGET_COMMAND_ID,
   SELECT_OPENOCD_TARGET_COMMAND_ID,
-  SELECT_PROGRAM_FILE_COMMAND_ID,
-  SELECT_RISCV_PROGRAM_FILE_COMMAND_ID,
   SELECT_SVD_FILE_COMMAND_ID,
   SET_DEBUG_PATH_COMMAND_ID,
   SET_JLINK_PATH_COMMAND_ID,
-  SET_JLINK_DEVICE_COMMAND_ID,
   SET_RISCV_DEBUG_PATH_COMMAND_ID,
 } from "../commands/constants";
 import {
@@ -37,17 +34,17 @@ import {
   DEBUG_PATH,
   EXTENSION_ID,
   JLINK_PATH,
-  JLINK_DEVICE,
   OPENOCD,
   OPENOCD_INTERFACE,
   OPENOCD_RISCV_INTERFACE,
   OPENOCD_RISCV_TARGET,
   OPENOCD_TARGET,
   PACK,
-  PROGRAM_FILE,
+  PROJECT,
   RISCV_DEBUG_PATH,
-  RISCV_PROGRAM_FILE,
   SVD_FILE,
+  TOOLCHAIN_ID,
+  ZEPHYR_WORKSPACE,
 } from "../constants";
 import { INFO } from "../messages";
 import {
@@ -55,13 +52,14 @@ import {
   getPropertyName,
   PropertyNode,
 } from "../properties";
-import { CORTEX_DEBUG_CONFIGURATIONS } from "../resources/debugConfigurations";
-import * as msdk from "../toolchains/msdk/msdk";
-import { configureWorkspaceForZephyr } from "../toolchains/zephyr/zephyr";
 import { Utils } from "../utils/utils";
+import { resolveVariables } from "../utils/resolveVariables";
 
 import { CreateDebugConfiguration } from "./createDebugConfiguration";
-import { resolveVariables } from "../utils/resolveVariables";
+import { CfsToolManager } from "cfs-lib";
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+import path from "node:path";
 
 export enum ConfigureWorkspaceOptionEnum {
   Yes = 0,
@@ -77,7 +75,9 @@ export enum YesNoEnum {
 /**
  * Command handler for configureWorkspace command.
  */
-export async function configureWorkspaceCommandHandler() {
+export async function configureWorkspaceCommandHandler(
+  toolManager: CfsToolManager,
+) {
   const conf = vscode.workspace.getConfiguration(EXTENSION_ID);
   // Skip configuration if we are already configured as a CFS project
   if (
@@ -98,7 +98,7 @@ export async function configureWorkspaceCommandHandler() {
     GET_CONTEXT_COMMAND_ID,
   );
 
-  configureWorkspace(context);
+  configureWorkspace(context, toolManager);
 }
 
 /**
@@ -107,22 +107,12 @@ export async function configureWorkspaceCommandHandler() {
  */
 export function configureWorkspace(
   context: vscode.ExtensionContext,
+  toolManager: CfsToolManager,
   silent = false,
 ) {
-  //Adding Debug Configuration for Cortex
-  context.subscriptions.push(
-    vscode.debug.registerDebugConfigurationProvider("cortex-debug", {
-      provideDebugConfigurations(): vscode.ProviderResult<
-        vscode.DebugConfiguration[]
-      > {
-        return CORTEX_DEBUG_CONFIGURATIONS;
-      },
-    }),
-  );
-
   context.subscriptions.push(
     vscode.commands.registerCommand(SELECT_SVD_FILE_COMMAND_ID, async () => {
-      await CreateDebugConfiguration.selectSvdFileForCortexDebug();
+      await CreateDebugConfiguration.selectSvdFileForCortexDebug(toolManager);
       return getPropertyName(CMSIS, SVD_FILE);
     }),
   );
@@ -131,13 +121,6 @@ export function configureWorkspace(
     vscode.commands.registerCommand(SET_JLINK_PATH_COMMAND_ID, async () => {
       await CreateDebugConfiguration.setJlinkServerExecutablePathForCortex();
       return resolveVariables(getPropertyName(JLINK_PATH), true);
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand(SET_JLINK_DEVICE_COMMAND_ID, async () => {
-      await CreateDebugConfiguration.setTargetForCortexJlinkDebug();
-      return resolveVariables(getPropertyName(JLINK_DEVICE), true);
     }),
   );
 
@@ -233,44 +216,6 @@ export function configureWorkspace(
     ),
   );
 
-  // Adding command for Program File selection
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      SELECT_PROGRAM_FILE_COMMAND_ID,
-      async () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders) {
-          for (let i = 0; i < workspaceFolders.length; i++) {
-            await CreateDebugConfiguration.selectSetting(
-              PROGRAM_FILE,
-              workspaceFolders[i],
-            );
-          }
-        }
-        return getPropertyName(PROGRAM_FILE);
-      },
-    ),
-  );
-
-  // Adding command for RISCV Program File selection
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      SELECT_RISCV_PROGRAM_FILE_COMMAND_ID,
-      async () => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders) {
-          for (let i = 0; i < workspaceFolders.length; i++) {
-            await CreateDebugConfiguration.selectSetting(
-              RISCV_PROGRAM_FILE,
-              workspaceFolders[i],
-            );
-          }
-        }
-        return getPropertyName(RISCV_PROGRAM_FILE);
-      },
-    ),
-  );
-
   // Adding command for debug path selection
   context.subscriptions.push(
     vscode.commands.registerCommand(SET_DEBUG_PATH_COMMAND_ID, async () => {
@@ -301,10 +246,6 @@ export function configureWorkspace(
     ),
   );
 
-  msdk.configureWorkspace();
-
-  configureWorkspaceForZephyr();
-
   if (!silent) {
     Utils.displayAndLogMessage(INFO.workspaceConfigured);
   }
@@ -332,3 +273,134 @@ export const updatePropertyPath = (event: vscode.ConfigurationChangeEvent) => {
     }
   }
 };
+
+/**
+ * Updates the paths in c_cpp_properties.json to reflect the toolchain path
+ * provided by the Tool Manager.
+ */
+export const updateCppProperties = async (toolManager: CfsToolManager) => {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders) {
+    for (const workspaceFolder of workspaceFolders) {
+      const config = vscode.workspace.getConfiguration(
+        EXTENSION_ID,
+        workspaceFolder,
+      );
+
+      const configureWorkspace =
+        config.get<string>(ADI_CONFIGURE_WORKSPACE_SETTING) === "Yes";
+
+      if (!configureWorkspace) {
+        continue;
+      }
+
+      const cppProperties = path.join(
+        workspaceFolder.uri.fsPath,
+        ".vscode",
+        "c_cpp_properties.json",
+      );
+
+      if (!existsSync(cppProperties)) {
+        continue;
+      }
+
+      const cppPropertiesUri = vscode.Uri.file(cppProperties);
+
+      await vscode.workspace.fs
+        .readFile(cppPropertiesUri)
+        .then(async (data) => {
+          const jsonContents = JSON.parse(data.toString());
+
+          if (!jsonContents["env"]) {
+            return;
+          }
+
+          let updated = false;
+
+          // Resolve cfs.project.toolchain.path
+          if ("cfs.project.toolchain.path" in jsonContents["env"]) {
+            const toolchainPath = await getProjectToolchainPath(
+              toolManager,
+              workspaceFolder,
+            );
+            if (toolchainPath) {
+              jsonContents["env"]["cfs.project.toolchain.path"] = toolchainPath;
+              updated = true;
+            }
+          }
+
+          // Resolve cfs.zephyr.workspace.path
+          if ("cfs.zephyr.workspace.path" in jsonContents["env"]) {
+            const zephyrWorkspacePath = await getZephyrWorkspacePath(
+              toolManager,
+              workspaceFolder,
+            );
+
+            if (zephyrWorkspacePath) {
+              jsonContents["env"]["cfs.zephyr.workspace.path"] =
+                zephyrWorkspacePath;
+              updated = true;
+            }
+          }
+
+          // Resolve cfs.msdk.path
+          if ("cfs.msdk.path" in jsonContents["env"]) {
+            const msdkPath = await toolManager.getToolPath("msdk");
+
+            if (msdkPath) {
+              jsonContents["env"]["cfs.msdk.path"] = msdkPath;
+              updated = true;
+            }
+          }
+
+          if (updated) {
+            const updatedData = JSON.stringify(jsonContents, null, 2);
+
+            await vscode.workspace.fs.writeFile(
+              cppPropertiesUri,
+              Buffer.from(updatedData, "utf8"),
+            );
+          }
+        });
+    }
+  }
+};
+
+async function getProjectToolchainPath(
+  toolManager: CfsToolManager,
+  workspaceFolder: vscode.WorkspaceFolder,
+): Promise<string | undefined> {
+  const config = vscode.workspace.getConfiguration(
+    EXTENSION_ID,
+    workspaceFolder,
+  );
+  const toolchainId = config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`);
+
+  if (!toolchainId) {
+    console.warn(
+      "Property cfs.project.toolchain.id not defined in project's settings file.",
+    );
+
+    return undefined;
+  }
+
+  return await toolManager.getToolPath(toolchainId);
+}
+
+async function getZephyrWorkspacePath(
+  toolManager: CfsToolManager,
+  workspaceFolder: vscode.WorkspaceFolder,
+): Promise<string | undefined> {
+  const config = vscode.workspace.getConfiguration(
+    EXTENSION_ID,
+    workspaceFolder,
+  );
+  const userDefinedZephyrWorkspace = config.get<string>(ZEPHYR_WORKSPACE);
+
+  if (userDefinedZephyrWorkspace) {
+    return userDefinedZephyrWorkspace;
+  }
+
+  const zephyrPath = await toolManager.getToolPath("zephyr");
+  return zephyrPath ? `${zephyrPath}/zephyr` : undefined;
+}

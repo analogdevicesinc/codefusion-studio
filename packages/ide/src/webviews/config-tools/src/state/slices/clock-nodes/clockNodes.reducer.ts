@@ -14,7 +14,7 @@
  */
 import {type PayloadAction, createSlice} from '@reduxjs/toolkit';
 import type {ClockNodesDictionary} from '@common/types/soc';
-import type {ControlErrorTypes} from '../../../types/errorTypes';
+import type {ControlErrorTypes} from '@common/types/errorTypes';
 
 export type ClockNodeSet = {
 	name: string;

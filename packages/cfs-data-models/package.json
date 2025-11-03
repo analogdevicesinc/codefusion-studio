@@ -1,0 +1,13 @@
+{
+	"name": "cfs-data-models",
+	"version": "2.0.0",
+	"private": true,
+	"description": "Data models for CodeFusion Studio.",
+	"type": "module",
+	"scripts": {
+		"generate-index": "node ./build-scripts/generate-data-model-index.js"
+	},
+	"files": [
+		"socs/"
+	]
+}

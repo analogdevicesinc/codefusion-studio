@@ -18,6 +18,7 @@
 import * as vscode from "vscode";
 import { platform } from "node:process";
 import {
+  ACTIVE_CONTEXT,
   BROWSE_STRING,
   BUILD,
   EXTENSION_ID,
@@ -45,9 +46,14 @@ export class OzoneDebugConfiguration {
      * Command handler to launch the Ozone debug session
      */
     await OzoneDebugConfiguration.setOzoneInstallationDirectory();
+    const config = vscode.workspace.getConfiguration(EXTENSION_ID);
+    const context = config.get(ACTIVE_CONTEXT) as string;
+    const workspaceFolder = vscode.workspace.workspaceFolders?.find(
+      (folder) => folder.name === context,
+    );
     vscode.window.setStatusBarMessage(
       "CFS: Launching Ozone Debug...",
-      OzoneDebugConfiguration.launchOzoneConfiguration(),
+      OzoneDebugConfiguration.launchOzoneConfiguration(workspaceFolder),
     );
   }
 
@@ -55,15 +61,24 @@ export class OzoneDebugConfiguration {
    * Searches for Ozone exe, .jdebug file and launches a Ozone debug session.
    * @returns Resolves after successful launch of Ozone debug
    */
-  static async launchOzoneConfiguration(): Promise<void> {
+  static async launchOzoneConfiguration(
+    selectedFolder?: vscode.WorkspaceFolder,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       //Get the configuration
       const conf = vscode.workspace.getConfiguration(`${EXTENSION_ID}`);
       let launchJDebugFile: vscode.Uri | undefined = undefined;
 
       //Get the Ozone jdebug file
-      OzoneDebugConfiguration.getJdebugFileToLaunch()
+      OzoneDebugConfiguration.getJdebugFileToLaunch(selectedFolder)
         .then((launchJDebugFileLocal) => {
+          if (!selectedFolder) {
+            vscode.window.showErrorMessage(
+              "CFS: Failed to Launch Ozone Debug. No project folder selected.",
+            );
+            return;
+          }
+
           launchJDebugFile = launchJDebugFileLocal;
           if (launchJDebugFileLocal === undefined) {
             vscode.window.showErrorMessage(
@@ -72,25 +87,17 @@ export class OzoneDebugConfiguration {
             return;
           }
 
-          //Check if build folder exists
-          const workspaceFolders = vscode.workspace.workspaceFolders;
-          if (!workspaceFolders) {
+          const buildFolderPath = vscode.Uri.joinPath(
+            selectedFolder.uri,
+            "build",
+          ).fsPath;
+
+          //If the build folder does not exist run a build task
+          if (!existsSync(buildFolderPath)) {
             vscode.window.showErrorMessage(
-              "CFS: Failed to Launch Ozone Debug. Workspace folders not found. Open a CFS Project.",
+              "CFS: Please build project before running Ozone Debug",
             );
             return;
-          }
-          for (const folder of workspaceFolders) {
-            const folderName = folder.name;
-            const buildFolderPath = vscode.Uri.joinPath(
-              folder.uri,
-              "build",
-            ).fsPath;
-
-            //If the build folder does not exist run a build task
-            if (folderName === "m4" && !existsSync(buildFolderPath)) {
-              vscode.commands.executeCommand(RUN_BUILD_TASK_COMMAND_ID);
-            }
           }
         })
         .then(() => {
@@ -125,28 +132,34 @@ export class OzoneDebugConfiguration {
 
   /**
    * Searches for Ozone debug file and returns them
+   * @param selectedFolder The workspace folder representing the selected project context
    * @returns Ozone debug file preferably the one present in m4 folder
    */
-  static async getJdebugFileToLaunch() {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
+  static async getJdebugFileToLaunch(selectedFolder?: vscode.WorkspaceFolder) {
     let launchJDebugFile: vscode.Uri | undefined = undefined;
-    if (!workspaceFolders) {
+    if (!selectedFolder) {
       vscode.window.showErrorMessage(
-        "CFS: Failed to Launch Ozone Debug. Workspace folders not found. Open a CFS Project.",
+        "CFS: Failed to Launch Ozone Debug. No project folder selected.",
       );
       return;
     }
 
-    for (const folder of workspaceFolders) {
-      const debugFiles = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(folder, "*.jdebug"),
-      );
+    // Search for .jdebug files, prefer one with 'cm4', 'cm33', or 'cm55' in its path (case-insensitive)
+    const debugFiles = await vscode.workspace.findFiles(
+      new vscode.RelativePattern(selectedFolder, "*.jdebug"),
+    );
+
+    if (debugFiles.length === 0) return undefined;
+
+    const preferredNames = ["CM4", "CM33", "CM55"];
+    const preferredDebugFile = debugFiles.find((f) =>
+      preferredNames.some((name) => f.fsPath.toLowerCase().includes(name)),
+    );
+    if (preferredDebugFile) {
+      launchJDebugFile = preferredDebugFile;
+    } else {
       launchJDebugFile = debugFiles[0];
-
-      //Break if the debug file is for m4 core
-      if (launchJDebugFile.fsPath.includes("m4")) break;
     }
-
     return launchJDebugFile;
   }
 

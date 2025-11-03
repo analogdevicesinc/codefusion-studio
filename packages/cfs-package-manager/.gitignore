@@ -1,0 +1,6 @@
+*-debug.log
+*-error.log
+dist/
+node_modules/
+test_cache*/
+test_config*/

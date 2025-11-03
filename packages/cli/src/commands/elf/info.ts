@@ -32,7 +32,7 @@ import * as Enums from 'elf-parser/dist/enums.js';
 
 import {Logger} from '../../logger.js';
 
-const formaHeaderInfoIntoJsonStringData = (
+const formatHeaderInfoIntoJsonStringData = (
   data: HeaderInfo[],
   separator: string = ' '
 ) => {
@@ -64,7 +64,7 @@ const getMetadataHeaderInfo = (
   // Remove FA object after mapping the data
   const elfHeaderArray = mapHeaderInfoData(elfHeaderObject).slice(1);
   if (isJson) {
-    formaHeaderInfoIntoJsonStringData(elfHeaderArray);
+    formatHeaderInfoIntoJsonStringData(elfHeaderArray);
   } else {
     formatHeaderInfoIntoCliStringData(elfHeaderArray);
   }
@@ -149,8 +149,6 @@ export default class Info extends Command {
     const {args, flags} = await this.parse(Info);
 
     if (args.filePath) {
-      // this.log(`Input file path: ${args.filePath}`)
-
       let isActionSet: boolean = false;
 
       try {
@@ -226,7 +224,7 @@ export default class Info extends Command {
             );
 
             if (flags.json) {
-              formaHeaderInfoIntoJsonStringData(
+              formatHeaderInfoIntoJsonStringData(
                 attrNotNull as HeaderInfo[],
                 '_'
               );
@@ -298,17 +296,14 @@ export default class Info extends Command {
               ?.value === 0
               ? 'statically linked'
               : '',
-            md.elfSymbols.some(
-              (item) => item.sectionTable.shName === '.debug_info'
+            md.elfSectionHeaders.some(
+              (item) => item.shName === '.debug_info'
             )
               ? 'with debug_info'
               : 'with no debug_info',
-            (md.elfSymbols.some(
-              (item) => item.sectionTable.shName === '.debug_info'
-            ) ??
-            md.elfSymbols.some(
-              (item) => item.sectionTable.type === 2
-            ))
+            (md.elfSectionHeaders.some(
+              (item) => item.shName === '.debug_info'
+            ) ?? md.elfSectionHeaders.some((item) => item.type === 2))
               ? 'not stripped'
               : 'stripped'
           ];

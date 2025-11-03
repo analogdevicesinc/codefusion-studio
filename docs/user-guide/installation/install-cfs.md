@@ -1,22 +1,22 @@
 ---
 description: Download and installation instructions for CodeFusion Studio
 author: Analog Devices
-date: 2025-01-27
+date: 2025-10-23
 ---
 
 # Install CodeFusion Studio
 
-The CodeFusion Studio installation consists of two steps: [installing the SDK](#install-the-codefusion-studio-sdk) and the [VS Code Extension](#install-the-codefusion-studio-vs-code-extension).
+To get started with CodeFusion Studio, first install the SDK using the CodeFusion Studio installer.
 
 ## Install the CodeFusion Studio SDK
 
 ### Download
 
-The CodeFusion Studio SDK version 1.1.0 can be downloaded from the following links.
+The CodeFusion Studio installer (version 2.0.0) can be downloaded from the following links.
 
-- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.run){:target="_blank"}
-- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.dmg){:target="_blank"}
-- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/1.1.0/CodeFusionStudio_1.1.0.exe){:target="_blank"}
+- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.0.0/CodeFusionStudio_2.0.0.run){:target="_blank"}
+- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.0.0/CodeFusionStudio_2.0.0.dmg){:target="_blank"}
+- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.0.0/CodeFusionStudio_2.0.0.exe){:target="_blank"}
 
 ### Install
 
@@ -24,10 +24,16 @@ The CodeFusion Studio SDK version 1.1.0 can be downloaded from the following lin
      The Linux installer downloads without execute permissions. Run `chmod a+x <installer>` to grant execute permissions before continuing.
      The CodeFusion Studio installer doesn't require elevated `sudo` permissions to run.
 
-1. Double click the SDK (`.exe`, `.dmg`, `.run`) to launch the setup wizard. ![Installer Setup](images/installer-setup.png)
+1. Double click the installer (`.exe`, `.dmg`, `.run`) to launch the setup wizard. ![Installer Setup](images/installer-setup.png)
 2. Follow the on-screen instructions to begin setup.
 3. Specify the installation folder when prompted. We recommend using the default location.
 4. Select the default or desired components to install, then proceed to the next step.
+
+    !!! note "Install ICE drivers for SHARC-FX (Windows only)"
+        To enable debugging for SHARC-FX processors, select the checkbox **ADI ICE Drivers (Requires Administrator)** during installation. When prompted, approve the Windows elevation dialog to complete driver installation. This installs the USB drivers required for ICE-1000, ICE-1500, and ICE-2000 emulators.  
+
+        If you skip this option, you can install the drivers later. For details, see [Install ICE drivers manually](../debugging/install-ice-drivers.md).
+
 5. Review and accept the license agreement to continue.
 6. (Windows only). Choose the Start Menu folder for the shortcut.
 7. Review your selections and start the installation.
@@ -55,26 +61,23 @@ To run the installer from the command line, use the following:
 **macOS:**
 
 ``` bash
-hdiutil mount CodeFusionStudio_1.1.0.dmg -mountpoint cfs
-cfs/CodeFusionStudio_1.1.0.app/Contents/MacOS/CodeFusionStudio_1.1.0 install --am --al -c
+hdiutil mount CodeFusionStudio_2.0.0.dmg -mountpoint cfs
+cfs/CodeFusionStudio_2.0.0.app/Contents/MacOS/CodeFusionStudio_2.0.0 install --am --al -c
 hdiutil unmount cfs
 ```
 
 **Windows:**
 
 ``` bash
-CodeFusionStudio_1.1.0.exe install --am --al -c
+CodeFusionStudio_2.0.0.exe install --am --al -c
 ```
 
 **Linux:**
 
 ``` bash
-./CodeFusionStudio_1.1.0.run install --am --al -c
+./CodeFusionStudio_2.0.0.run install --am --al -c
 ```
 
-## Install the CodeFusion Studio VS Code extension
+## Next steps
 
-Install the [:octicons-link-external-24: CodeFusion Studio VS Code extension](https://marketplace.visualstudio.com/items?itemName=AnalogDevices.cfs-ide){:target="_blank"} from the Visual Studio Code Marketplace.
-
-!!! note
-    If you are unable to install the extension directly from the marketplace due to firewall restrictions or an offline environment, you can install it manually. For more information, see [Manually install the VS Code Extension](./install-extensions.md).
+Next, [install the CodeFusion Studio VS Code extension](install-extensions.md).

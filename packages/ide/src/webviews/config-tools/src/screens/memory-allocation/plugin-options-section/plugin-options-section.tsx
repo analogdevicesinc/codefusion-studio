@@ -16,32 +16,27 @@
 import React, {memo} from 'react';
 import {type TLocaleContext} from '../../../common/types/context';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
-import {use, type TFormFieldValue} from 'cfs-react-library';
 import {type ControlCfg} from '../../../../../common/types/soc';
 
 import styles from './plugin-options-section.module.scss';
 import {PluginOptions} from '../plugin-options/PluginOptions';
 import {getProjectInfoList} from '../../../utils/config';
+import {
+	useActivePartitionConfig,
+	useActivePartitionProjects
+} from '../../../state/slices/partitions/partitions.selector';
+import {useAppDispatch} from '../../../state/store';
+import {updateActivePartitionConfig} from '../../../state/slices/partitions/partitions.reducer';
 
 type PluginOptionsSectionProps = Readonly<{
-	config?: Record<string, any>;
-	pluginOptionsPromise: Promise<
-		Array<{controls: Record<string, ControlCfg[]>; projectId: string}>
-	>;
-	onChange: (
-		projectId: string,
-		controlId: string,
-		value: TFormFieldValue
-	) => void;
+	pluginOptions: Record<string, Record<string, ControlCfg[]>>;
 }>;
 
 export const PluginOptionsSection = memo(
-	({
-		config = {},
-		pluginOptionsPromise,
-		onChange
-	}: PluginOptionsSectionProps) => {
-		const pluginOptions = use(pluginOptionsPromise);
+	({pluginOptions}: PluginOptionsSectionProps) => {
+		const dispatch = useAppDispatch();
+		const config = useActivePartitionConfig() ?? {};
+		const partitionCores = useActivePartitionProjects();
 
 		const i10n: TLocaleContext | undefined =
 			useLocaleContext()?.memory;
@@ -51,25 +46,34 @@ export const PluginOptionsSection = memo(
 		return (
 			<div className={styles.section}>
 				<h3>{i10n?.partition['plugin-options']}</h3>
-				{pluginOptions.map(pluginOption => {
-					const project = projects?.find(
-						project => project.ProjectId === pluginOption.projectId
-					);
+				{partitionCores
+					?.filter(({projectId}) => Boolean(pluginOptions[projectId]))
+					.map(({projectId}) => {
+						const project = projects?.find(
+							project => project.ProjectId === projectId
+						);
+						const controls = pluginOptions[projectId];
 
-					return (
-						<React.Fragment key={pluginOption.projectId}>
-							<h5>{project?.Description ?? ''}</h5>
-							<PluginOptions
-								key={pluginOption.projectId}
-								config={config[pluginOption.projectId] ?? {}}
-								pluginControls={pluginOption.controls.memory ?? []}
-								onChange={(controlId, value) => {
-									onChange(pluginOption.projectId, controlId, value);
-								}}
-							/>
-						</React.Fragment>
-					);
-				})}
+						return (
+							<React.Fragment key={projectId}>
+								<h5>{project?.Description ?? ''}</h5>
+								<PluginOptions
+									key={projectId}
+									config={config[projectId] ?? {}}
+									pluginControls={controls.memory ?? []}
+									onChange={(controlId, value) => {
+										dispatch(
+											updateActivePartitionConfig({
+												projectId: projectId,
+												key: controlId,
+												value: value
+											})
+										);
+									}}
+								/>
+							</React.Fragment>
+						);
+					})}
 			</div>
 		);
 	}

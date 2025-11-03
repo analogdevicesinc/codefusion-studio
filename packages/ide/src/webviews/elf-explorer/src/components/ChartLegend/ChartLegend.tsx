@@ -24,6 +24,7 @@ export default function ChartLegend({
 }: ChartLegendProps) {
 	return (
 		<div
+			data-test='metadata:chart:legend'
 			className={`${styles.chartLegendWrapper} ${
 				direction === 'row' ? styles.row : ''
 			}`}
@@ -33,7 +34,10 @@ export default function ChartLegend({
 					<div
 						className={`${styles.legendDot} ${styles[key?.toLowerCase()]}`}
 					/>
-					<div className={styles.legendLabel}>
+					<div
+						className={styles.legendLabel}
+						data-test={`metadata:chart:legend:label-${key}`}
+					>
 						{key} {value}
 					</div>
 				</div>

@@ -15,10 +15,13 @@
 
 import {getWorkspaceConfig} from './api';
 import type {WorkspaceConfig} from '../common/types/config';
+import {isCypressEnvironment} from '@common/utils/env';
+import type {CfsPluginInfo} from 'cfs-lib';
+import {type StateProject} from '../common/types/state';
 
 export let workspaceConfig: WorkspaceConfig;
 
-if (import.meta.env.MODE === 'development') {
+if (isCypressEnvironment()) {
 	workspaceConfig = {
 		Soc: '',
 		WorkspacePluginId: '',
@@ -43,4 +46,52 @@ export function isWorkspaceNameInvalid(wrkspName: string) {
 
 export function isPathInvalid(path: string) {
 	return /[ !"$%&'()*+,;<=>?@[\]^{|}~\s]/.test(path ?? '');
+}
+
+export function findPluginInfo(
+	pluginsList: CfsPluginInfo[],
+	pluginId: string,
+	pluginVersion: string
+) {
+	return pluginsList.find(
+		p => p.pluginId === pluginId && p.pluginVersion === pluginVersion
+	);
+}
+function hasSecureAndNonSecure(
+	baseId: string,
+	selectedCores: Record<string, StateProject>
+) {
+	return (
+		selectedCores[`${baseId}-secure`]?.isEnabled ||
+		selectedCores[`${baseId}-nonsecure`]?.isEnabled
+	);
+}
+
+export function getEnabledCores(
+	selectedCores: Record<string, StateProject>
+) {
+	const enabledCores = Object.values(selectedCores).filter(core => {
+		// If this is a base core and both secure/non-secure are enabled, filter it out
+		const isBase =
+			!core.id.endsWith('-secure') && !core.id.endsWith('-nonsecure');
+
+		if (isBase && hasSecureAndNonSecure(core.id, selectedCores)) {
+			return false;
+		}
+
+		return core.isEnabled;
+	});
+
+	return enabledCores;
+}
+
+export function getBaseCoreName(name?: string) {
+	return name?.replace(/\s*\(.*\)$/, '') ?? '';
+}
+
+export function getTrustZoneIds(coreId: string) {
+	return {
+		secureCoreId: `${coreId}-secure`,
+		nonSecureCoreId: `${coreId}-nonsecure`
+	};
 }

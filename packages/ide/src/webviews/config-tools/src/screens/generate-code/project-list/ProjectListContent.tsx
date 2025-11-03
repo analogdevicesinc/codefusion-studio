@@ -13,11 +13,11 @@
  *
  */
 
-import {Fragment} from 'react/jsx-runtime';
-import {navigationItems as navItems} from '@common/constants/navigation';
+import { Fragment } from 'react/jsx-runtime';
+import { navigationItems as navItems } from '@common/constants/navigation';
 
 import ProjectListContentItem from './ProjectListContentItem';
-import type {ProjectInfo} from '../../../utils/config';
+import type { ProjectInfo } from '../../../utils/config';
 
 import styles from './ProjectListContent.module.scss';
 
@@ -33,10 +33,11 @@ export default function ProjectListContent({
 			peripheral: number;
 			pin: number;
 			clock: number;
+			dfg: number;
 		};
 	};
 }>) {
-	const {memory, peripheral, pin, clock} = errors?.param || {};
+	const { memory, peripheral, pin, clock, dfg } = errors?.param || {};
 
 	return (
 		<>
@@ -82,6 +83,13 @@ export default function ProjectListContent({
 							error={clock}
 							path={navItems.clockConfig}
 							label='Clock Config.'
+						/>
+					)}
+					{Boolean(dfg) && (
+						<ProjectListContentItem
+							error={dfg}
+							path={navItems.dfg}
+							label='DFG.'
 						/>
 					)}
 				</div>

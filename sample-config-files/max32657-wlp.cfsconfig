@@ -1,0 +1,42 @@
+{
+  "Copyright": "Copyright (c) undefined Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.0.0",
+  "DataModelSchemaVersion": "1.0.0",
+  "Soc": "MAX32657",
+  "Package": "WLP",
+  "BoardName": "EvKit_V1",
+  "Timestamp": "2025-03-12T16:02:30.998Z",
+  "Pins": [
+  ],
+  "ClockNodes": [
+  ],
+  "Projects": [
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33",
+      "PluginId": "com.analog.project.zephyr.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m33",
+        "ZephyrVersion": "4.2.0",
+        "ZephyrBoardName": "max32657evkit/max32657/ns"
+      },
+      "Name": "ARM Cortex-M33",
+      "Description": "ARM Cortex-M33",
+      "CoreNum": 0,
+      "IsPrimary": true,
+      "Partitions": [],
+      "Peripherals": [
+        {
+          "Name": "CM33 SysTick (S)",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        }
+      ]
+    }
+  ]
+}

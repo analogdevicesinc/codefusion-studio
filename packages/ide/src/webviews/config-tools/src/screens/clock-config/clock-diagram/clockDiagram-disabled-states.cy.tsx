@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /**
  *
  * Copyright (c) 2024 Analog Devices, Inc.
@@ -15,20 +14,21 @@
  */
 /* eslint-disable max-nested-callbacks */
 /* eslint-disable @typescript-eslint/no-empty-function */
-import type {Soc} from '@common/types/soc';
+import type {ControlCfg, Soc} from '@common/types/soc';
 import ClockDiagram from './ClockDiagram';
 import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
+import type {CfsConfig} from 'cfs-plugins-api';
 
-const soc = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default as unknown as Soc);
+const soc = (await import('@socs/max32690-wlp.json').then(
+	module => module.default
+)) as Soc;
 
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -39,35 +39,27 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Clock Diagram disabled states', () => {
-	beforeEach(() => {
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(soc.Packages[0])
-		);
-
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(configDict)
-		);
-
-		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
-			controls => {
+	before(() => {
+		cy.fixture('clock-config-plugin-controls-baremetal.json')
+			.as('controls')
+			.then(controls => {
 				window.localStorage.setItem(
 					'pluginControls:CM4-proj',
 					JSON.stringify(controls)
 				);
-			}
-		);
+			});
+
+		cy.viewport(1920, 1080);
 	});
 	it('Should enable and disable nodes and clocks in the diagram', () => {
-		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
+		cy.get<Record<string, ControlCfg[]>>('@controls').then(
 			controls => {
 				const reduxStore = configurePreloadedStore(
 					soc,
-					undefined,
+					configDict,
 					controls
 				);
 
@@ -80,13 +72,13 @@ describe('Clock Diagram disabled states', () => {
 					'496384e6-3fa4-11ef-b175-05083d74e1b4',
 					'd0e0e8e0-1c40-11ef-8079-f382b26e79a7',
 					'de0d75d0-ce59-11ef-8762-074fe3ac9b96',
-					'd424c482-c44d-11ef-a69d-a35a325d3daf',
+					'e057056c-c44d-11ef-a69d-a35a325d3daf',
 					'3629a4e6-3fa4-11ef-b175-05083d74e1b4',
 					'd52ea2b5-175f-11ef-bfcc-eff1a86f1e4c'
 				];
 
 				cy.mount(
-					<div style={{width: '100%', height: '400px'}}>
+					<div style={{width: '100vw', height: '100vh'}}>
 						<ClockDiagram
 							canvas={soc.Packages[0].ClockCanvas}
 							handleNodeHover={() => {}}
@@ -121,64 +113,64 @@ describe('Clock Diagram disabled states', () => {
 							);
 						})
 						.then(() => {
-							const enableClock = reduxStore.dispatch(
-								setClockNodeControlValue({
-									name: 'TMR0/1/2/3',
-									key: 'TMR0_ENABLE',
-									value: 'TRUE'
-								})
-							);
-
-							cy.log(JSON.stringify(enableClock.payload));
-
-							cy.wait(1000);
-
 							cy.wrap(
-								targetClocks.map(clock =>
-									cy.get(`g#${clock} > g > path`)
+								reduxStore.dispatch(
+									setClockNodeControlValue({
+										name: 'TMR0/1/2/3',
+										key: 'TMR0_ENABLE',
+										value: 'TRUE'
+									})
 								)
-							)
-								.then($ => {
-									$.forEach(line =>
-										line.should(
-											'not.have.class',
-											'segment-highlight-disabled'
-										)
-									);
-								})
-								.then(() => {
-									const disableClock = reduxStore.dispatch(
-										setClockNodeControlValue({
-											name: 'TMR0/1/2/3',
-											key: 'TMR0_ENABLE',
-											value: 'FALSE'
-										})
-									);
+							).then(() => {
+								cy.wait(1000);
 
-									cy.log(JSON.stringify(disableClock.payload));
-
-									cy.wait(1000);
-
-									cy.wrap(
-										targetClocks.map(clock =>
-											cy.get(`g#${clock} > g > path`)
-										)
+								cy.wrap(
+									targetClocks.map(clock =>
+										cy.get(`g#${clock} > g > path`)
 									)
-										.then($ => {
-											$.forEach(line =>
-												line.should(
-													'have.class',
-													'segment-highlight-disabled'
+								)
+									.then($ => {
+										$.forEach(line =>
+											line.should(
+												'not.have.class',
+												'segment-highlight-disabled'
+											)
+										);
+									})
+									.then(() => {
+										cy.wrap(
+											reduxStore.dispatch(
+												setClockNodeControlValue({
+													name: 'TMR0/1/2/3',
+													key: 'TMR0_ENABLE',
+													value: 'FALSE'
+												})
+											)
+										).then(() => {
+											cy.wait(1000);
+
+											cy.wrap(
+												targetClocks.map(clock =>
+													cy.get(`g#${clock} > g > path`)
 												)
-											);
-										})
-										.then(() => {
-											cy.get('circle.schematic_dot').should(
-												'have.length',
-												47
-											);
+											)
+												.then($ => {
+													$.forEach(line =>
+														line.should(
+															'have.class',
+															'segment-highlight-disabled'
+														)
+													);
+												})
+												.then(() => {
+													cy.get('circle.schematic_dot').should(
+														'have.length',
+														47
+													);
+												});
 										});
-								});
+									});
+							});
 						});
 				});
 			}

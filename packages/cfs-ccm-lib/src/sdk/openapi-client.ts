@@ -16,6 +16,7 @@
 // Override the global Request and Response types seen by the openapi-fetch module to those
 // provided by node-fetch, this lets use node-fetch-cache with the openapi-fetch client
 import { getNodeFetch } from 'node-fetch-cache';
+import { Middleware } from 'openapi-fetch';
 type NodeFetchRequest = Awaited<
     ReturnType<typeof getNodeFetch>
 >['Request'];
@@ -28,6 +29,10 @@ declare module 'openapi-fetch' {
     let Request: NodeFetchRequest;
     interface Response extends InstanceType<NodeFetchResponse> {}
     let Response: NodeFetchResponse;
+    export type MiddlewareOnRequest =
+        Required<Middleware>['onRequest'];
+    export type MiddlewareOnResponse =
+        Required<Middleware>['onResponse'];
 }
 
 import { paths } from '../gen/api-types.js';

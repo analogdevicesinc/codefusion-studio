@@ -17,11 +17,20 @@ The underlying shell depends on your host operating system:
 
 ## Launch new terminal
 
-To launch a new CFS Terminal, click the **Terminal** menu and select **New Terminal**.
-You can also select the expansion arrow next to the **+** icon in the top right corner of the terminal window and select **CFS Terminal**.
+1. Open the terminal:
 
-![New CFS Terminal](./images/terminal-new-dark.png#only-dark)
-![New CFS Terminal](./images/terminal-new-light.png#only-light)
+    - On macOS/Linux, select **Terminal > New Terminal**.
+    - On Windows, select **View > Terminal**.
+    - Use the ``Ctrl + Shift + ` `` keyboard shortcut.
+
+2. In the terminal panel, click the dropdown arrow next to the **+** icon in the top right corner.
+
+3. Choose **CFS Terminal** from the list.
+
+    ![New CFS Terminal](./images/terminal-new-dark.png#only-dark)  
+    ![New CFS Terminal](./images/terminal-new-light.png#only-light)
+
+4. Run `cfsutil` or `cfsai` in the terminal to confirm it's working correctly.
 
 ## Clear the terminal
 

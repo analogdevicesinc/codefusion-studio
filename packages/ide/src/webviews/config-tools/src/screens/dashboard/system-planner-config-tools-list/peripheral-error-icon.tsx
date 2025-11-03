@@ -30,20 +30,16 @@ export default function PeripheralErrorIcon({
 		Record<string, ControlCfg[]>
 	> = {};
 
-	controlsPromises.forEach(
-		(promise: Promise<Record<string, ControlCfg[]>>, index) => {
-			controlDict[projectIds[index]] = use(promise);
-		}
-	);
+	controlsPromises.forEach((promise, index) => {
+		controlDict[projectIds[index]] = use(promise);
+	});
 
 	const hasPeripheralError = usePeripheralError(
 		controlDict,
 		projectIds
 	);
 
-	return (
-		hasPeripheralError && (
-			<ConflictIcon data-test='peripheral-allocation-error' />
-		)
-	);
+	return hasPeripheralError ? (
+		<ConflictIcon data-test='peripheral-allocation-error' />
+	) : null;
 }

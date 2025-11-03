@@ -1,5 +1,4 @@
 import { describe, before } from "mocha";
-import * as path from "path";
 import {
   By,
   EditorView,
@@ -7,13 +6,13 @@ import {
   WebView,
   Workbench,
 } from "vscode-extension-tester";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
 
-describe("Setup test environment", function () {
+describe("Setup test environment", () => {
   before(async function () {
     this.timeout(60000);
-
     const editorView = new EditorView();
-
     await editorView.closeAllEditors();
   });
 
@@ -22,22 +21,13 @@ describe("Setup test environment", function () {
 
     const browser = VSBrowser.instance;
     const view = new WebView();
+    const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-wlp.cfsconfig",
-      ),
-    );
+    await browser.openResources(configPath);
 
     await view.wait();
-
     await view.switchBack();
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await UIUtils.sleep(3000);
 
     await new Workbench().getNotifications().then(async (notifications) => {
       await Promise.all(
@@ -66,7 +56,7 @@ describe("Setup test environment", function () {
         } else {
           console.log("No C Extension toast found");
         }
-      } catch (error) {
+      } catch (_) {
         // Element not found or other error
         console.log("No C Extension toast to dismiss");
       }

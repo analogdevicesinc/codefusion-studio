@@ -13,19 +13,42 @@
  *
  */
 
+import type {CfsConfig} from 'cfs-plugins-api';
 import type {Soc} from '../../../common/types/soc';
-import {getPrimaryProjectId, resetConfigDict} from './config';
-import {resetCoreDict} from './soc-cores';
+import {getPrimaryProjectId} from './config';
+import {sysPlannerDataInit} from './sys-planner-data-init';
 
-const max32690wlp = (await import(
-	'../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+const max32657wlp = (await import('@socs/max32657-wlp.json').then(
+	module => module.default
+)) as Soc;
+
+const max32690wlp = (await import('@socs/max32690-wlp.json').then(
+	module => module.default
+)) as Soc;
+
+const secureProjectDict = {
+	Soc: 'MAX32657',
+	BoardName: '',
+	Package: 'WLP',
+	Projects: [
+		{
+			CoreId: 'CM33',
+			ProjectId: 'Project2',
+			Secure: false
+		},
+		{
+			CoreId: 'CM33',
+			ProjectId: 'primary',
+			Secure: true
+		}
+	]
+} as unknown as CfsConfig;
 
 const normalProjectDict = {
 	Soc: 'MAX32690',
 	BoardName: '',
 	Package: 'WLP',
-	projects: [
+	Projects: [
 		{
 			CoreId: 'RV',
 			ProjectId: 'Project2'
@@ -35,25 +58,19 @@ const normalProjectDict = {
 			ProjectId: 'primary'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('Config Utilities', () => {
-	beforeEach(() => {
-		cy.clearLocalStorage();
-	});
+	it('getPrimaryProjectId should return the primary project id for configuration with secure projects', () => {
+		sysPlannerDataInit(max32657wlp, secureProjectDict);
 
-	afterEach(() => {
-		resetConfigDict();
-		resetCoreDict();
+		const primaryProjectId = getPrimaryProjectId();
+
+		expect(primaryProjectId).to.equal('primary');
 	});
 
 	it('getPrimaryProjectId should return the primary project id for configuration without secure projects', () => {
-		localStorage.setItem(
-			'configDict',
-			JSON.stringify(normalProjectDict)
-		);
-
-		localStorage.setItem('Cores', JSON.stringify(max32690wlp.Cores));
+		sysPlannerDataInit(max32690wlp, normalProjectDict);
 
 		const primaryProjectId = getPrimaryProjectId();
 

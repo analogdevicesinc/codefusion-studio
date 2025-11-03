@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 /**
  *
  * Copyright (c) 2023-2025 Analog Devices, Inc.

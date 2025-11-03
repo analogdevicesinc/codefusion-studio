@@ -12,17 +12,31 @@
  * limitations under the License.
  *
  */
+/* eslint-disable react/boolean-prop-naming */
 import {useLocaleContext} from '../../contexts/LocaleContext';
 import type {TLocaleContext} from '../../types/l10n';
+import type {ReactElement} from 'react';
 
-export function LocalizedMessage({
-	id,
-	parseHtml
-}: {
-	readonly id: string;
-	// eslint-disable-next-line react/boolean-prop-naming
-	readonly parseHtml?: boolean;
-}) {
+export function LocalizedMessage(
+	props: Readonly<{
+		id: string;
+		parseHtml: true;
+	}>
+): ReactElement;
+export function LocalizedMessage(
+	props: Readonly<{
+		id: string;
+		parseHtml?: false | undefined;
+	}>
+): string;
+
+export function LocalizedMessage(
+	props: Readonly<{
+		id: string;
+		parseHtml?: boolean;
+	}>
+): ReactElement | string {
+	const {id, parseHtml} = props;
 	const translations: TLocaleContext | undefined = useLocaleContext();
 
 	if (translations === undefined) {

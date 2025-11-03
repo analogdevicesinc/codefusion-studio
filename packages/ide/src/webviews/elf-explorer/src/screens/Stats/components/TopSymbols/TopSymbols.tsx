@@ -48,7 +48,10 @@ export default function TopSymbols({
 	}, [selectedFilter, symbols]);
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={styles.container}
+			data-test='stats:top-symbols-container'
+		>
 			<article className={styles.filtersWrap}>
 				<div className={styles.title}>
 					<HeaderWithTooltip title={i10n?.title} i10n={i10n} />

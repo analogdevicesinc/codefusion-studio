@@ -78,3 +78,10 @@
 	color: colors.$error;
 	width: 100%;
 }
+
+.small {
+	--input-min-width: 60px;
+	--input-max-width: 120px;
+	--input-height: 16;
+	--corner-radius-round: 5;
+}

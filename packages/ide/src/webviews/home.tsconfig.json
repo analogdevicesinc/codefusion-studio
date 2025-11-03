@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./home-page/**/*.ts",
+		"./home-page/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./home-page/**/*.json",
+		"./custom.d.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

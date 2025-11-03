@@ -44,4 +44,8 @@
 	.done {
 		color: colors.$description-foreground;
 	}
+
+	.error {
+		color: colors.$error;
+	}
 }

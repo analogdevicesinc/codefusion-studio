@@ -20,24 +20,25 @@ import {
 	type ConfiguredProject
 } from '@common/api';
 import type {
-	ClockNode,
 	ClockNodeState,
-	Controls,
-	Core,
-	DiagramData,
 	Package,
 	Peripheral,
 	PinCanvas,
-	Register,
-	MemoryType,
 	ControlCfg
 } from '@common/types/soc';
-import type {ExportEngine} from '@common/types/engines';
 import {
 	getAssignedPlugin,
 	getIsExternallyManagedProyect,
 	getProjectProperty
 } from './config';
+import {isCypressEnvironment} from '@common/utils/env';
+import type {AIModel, DFGStream, GasketConfig} from 'cfs-plugins-api';
+import type {
+	CodeGenerationProject,
+	CodeGenerationResult
+} from 'cfs-lib/dist/types/code-generation';
+import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
+import {Profiling} from 'cfs-plugins-api';
 
 export async function getSocAndCfsconfigData(): Promise<ConfigOptionsReturn> {
 	return request(
@@ -45,36 +46,12 @@ export async function getSocAndCfsconfigData(): Promise<ConfigOptionsReturn> {
 	) as Promise<ConfigOptionsReturn>;
 }
 
-export async function getExportEngines() {
-	return request('get-export-engines') as Promise<ExportEngine[]>;
-}
-
-export async function generateCode(selectedProjectIds?: string[]) {
-	return request('generate-code', {selectedProjectIds}) as Promise<
-		string[]
-	>;
-}
-
-export async function getCores() {
-	return request('get-cores') as Promise<Core[]>;
-}
-
-export async function getSocMemoryTypes() {
-	return request('get-memory-types') as Promise<MemoryType[]>;
-}
-
-export async function getSocControls() {
-	return request('get-soc-controls') as Promise<Controls>;
-}
-
-export async function getClockCanvas() {
-	return request('get-clock-canvas') as Promise<
-		DiagramData | undefined
-	>;
-}
-
-export async function getClockNodes() {
-	return request('get-clock-nodes') as Promise<ClockNode[]>;
+export async function generateCode(
+	selectedProjects?: CodeGenerationProject[]
+) {
+	return request('generate-code', {
+		selectedProjects
+	}) as Promise<CodeGenerationResult>;
 }
 
 export async function updatePersistedConfig(updatedConfig: {
@@ -86,14 +63,39 @@ export async function updatePersistedConfig(updatedConfig: {
 	>;
 	updatedProjects?: ConfiguredProject[];
 	clockFrequencies?: Record<string, string | number>;
+	aiModels?: AIModel[];
 }) {
 	return request('update-persisted-config', {
 		updatedConfig
 	}) as Promise<void>;
 }
 
-export async function getRegisters() {
-	return request('get-registers') as Promise<Register[]>;
+export type GasketStreamDelta = {
+	changed?: DFGStream[];
+	removed?: number[]; // Stream IDs
+	added?: DFGStream[];
+};
+
+export async function updatePersistedDfgConfig(
+	streams: DFGStream[],
+	gaskets: GasketConfig[]
+) {
+	return request('update-persisted-dfg-config', {
+		streams,
+		gaskets
+	}) as Promise<void>;
+}
+
+export async function updateProfilingConfig(
+	config: Partial<Profiling[keyof Profiling]>,
+	type: keyof Profiling,
+	projectId: string
+) {
+	return request('update-profiling-config', {
+		config,
+		type,
+		projectId
+	}) as Promise<void>;
 }
 
 export async function getSocPackage() {
@@ -150,6 +152,35 @@ export async function getGenerateCodeWarning() {
 	return request('get-generate-code-warning') as Promise<boolean>;
 }
 
+export async function getAiBackends() {
+	return request('get-ai-backends') as Promise<
+		Record<string, AiSupportingBackend>
+	>;
+}
+
+export async function getAiProperties(
+	scope: string
+): Promise<ControlCfg[]> {
+	return request('get-ai-backend-properties', {
+		scope
+	}) as Promise<ControlCfg[]>;
+}
+
+export async function analyzeAIModel(aiModel: AIModel) {
+	return request('analyze-ai-model', {
+		aiModel
+	}) as Promise<string>;
+}
+
+export async function validateAIModel(aiModel: AIModel) {
+	return request('validate-ai-model', {
+		aiModel
+	}) as Promise<{
+		isValid: boolean;
+		reportPath?: string;
+	}>;
+}
+
 /**
  * Cache for storing previously fetched control configurations
  * Key format: `${scope}:${pluginId}:${pluginVersion}`
@@ -191,7 +222,7 @@ export function getControlsFromCache(
 		return {};
 	}
 
-	if ((window as any).Cypress) {
+	if (isCypressEnvironment()) {
 		const storageControls = localStorage.getItem(
 			`pluginControls:${projectId}`
 		);
@@ -220,14 +251,18 @@ export function getControlsFromCache(
  * @returns Array of formatted file paths
  */
 export function formatGeneratedFilePaths(
-	files: string[],
+	files: CodeGenerationResult,
 	projectNames: string[]
-): string[] {
+): CodeGenerationResult {
 	if (!files.length || !projectNames.length) {
 		return files;
 	}
 
 	return files.map(file => {
+		if (typeof file !== 'string') {
+			return file;
+		}
+
 		const pathSegments = file.split('/');
 
 		for (const projectName of projectNames) {
@@ -247,15 +282,15 @@ export function formatGeneratedFilePaths(
  * Creates a promise that generates code and processes the results.
  * This function calls the generateCode API and extracts the file names from the paths.
  *
- * @param {string[]} selectedProjectIds - Optional array of project IDs to generate code for. If not provided, all projects will be included.
+ * @param {string[]} selectedProjects - Optional array of project IDs to generate code for. If not provided, all projects will be included.
  * @returns {Promise<string[] | string>} A promise that resolves to either:
  *   - An array of file names (last two path segments) on successful code generation
  *   - An error message string if code generation fails
  */
 export async function createCodeGenerationPromise(
-	selectedProjectIds?: string[]
+	selectedProjects?: CodeGenerationProject[]
 ) {
-	if ((window as any).Cypress) {
+	if (isCypressEnvironment()) {
 		return new Promise<string[]>(resolve => {
 			setTimeout(() => {
 				const mockedFiles = JSON.parse(
@@ -267,8 +302,8 @@ export async function createCodeGenerationPromise(
 		});
 	}
 
-	return new Promise<string[] | string>(resolve => {
-		generateCode(selectedProjectIds)
+	return new Promise<CodeGenerationResult | string>(resolve => {
+		generateCode(selectedProjects)
 			.then(files => {
 				if (!Array.isArray(files) || files.length === 0) {
 					resolve(
@@ -279,8 +314,8 @@ export async function createCodeGenerationPromise(
 				}
 
 				const availableProjectNames =
-					selectedProjectIds?.map(
-						projectId =>
+					selectedProjects?.map(
+						({projectId}) =>
 							(
 								getProjectProperty(
 									projectId,
@@ -301,7 +336,11 @@ export async function createCodeGenerationPromise(
 				);
 
 				// Resolve the promise with the formatted files
-				resolve(formattedFiles.filter(fileName => fileName !== ''));
+				resolve(
+					formattedFiles.filter(
+						result => typeof result !== 'string' || result !== ''
+					)
+				);
 			})
 			.catch(error => {
 				console.error('Error generating code:', error);
@@ -324,7 +363,7 @@ export async function getControlsForProjectIds(
 	scope: string
 ): Promise<Record<string, ControlCfg[]>> {
 	try {
-		if ((window as any).Cypress || !projectIds.length) {
+		if (isCypressEnvironment() || !projectIds.length) {
 			const projectId = projectIds?.[0] || '';
 			const storageControls = localStorage.getItem(
 				`pluginControls:${projectId}`

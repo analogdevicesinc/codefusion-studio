@@ -17,18 +17,24 @@ import {
 	DropDown,
 	Stepper,
 	HexInputField,
-	type DropDownOptions,
-	InfoIcon
+	type DropDownOptions
 } from 'cfs-react-library';
 import styles from './MemoryBlocks.module.scss';
-import {useEffect, useMemo, useState} from 'react';
+import {memo, useCallback, useEffect, useMemo, useState} from 'react';
 import {type MemoryBlock} from '@common/types/soc';
 import {
-	convertBytesToKbOrMb,
 	convertMemoryBetweenUnits,
+	getFirstAvailableAddressFromBlock,
+	getAddressOffset,
 	getBaseblockFromAddress,
+	getCleanDivisibleSizeUnit,
+	getCoreMemoryAliases,
 	getCoreMemoryBlocks,
-	getPartitionBlockNames
+	getPartitionBlockNames,
+	getSizeStepValue,
+	isBlockDisabled,
+	isBlockOccupied,
+	offsetAddress
 } from '../../../utils/memory';
 import BlockItem from '../block/block-item';
 import {type Partition} from '../../../state/slices/partitions/partitions.reducer';
@@ -42,20 +48,25 @@ import {
 	usePartitions,
 	useSidebarState
 } from '../../../state/slices/partitions/partitions.selector';
-import {getSocCoreList} from '../../../utils/soc-cores';
 import {type TLocaleContext} from '../../../common/types/context';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
-import CfsTooltip from '../../../../../common/components/cfs-tooltip/CfsTooltip';
+import {isCoreSecure} from '../../../utils/soc-cores';
 
-type MemoryBlockProps = {
-	readonly partition: Partition;
-	readonly errors?: PartitionFormErrors;
-	readonly isFormTouched: boolean;
-	readonly blocksForType: MemoryBlock[];
-	readonly onChange: (value: Partial<Partition>) => void;
-};
+type MemoryBlockProps = Readonly<{
+	partition: Partition;
+	errors?: PartitionFormErrors;
+	isFormTouched: boolean;
+	blocksForType: MemoryBlock[];
+	onChange: (value: Partial<Partition>) => void;
+}>;
 
-export function MemoryBlocks({
+const sizeOptions: DropDownOptions = [
+	{value: 'KB', label: 'KB'},
+	{value: 'MB', label: 'MB'},
+	{value: 'bytes', label: 'bytes'}
+];
+
+export const MemoryBlocks = memo(function MemoryBlocks({
 	blocksForType,
 	errors,
 	partition,
@@ -80,73 +91,6 @@ export function MemoryBlocks({
 	const [displaySize, setDisplaySize] = useState(
 		convertMemoryBetweenUnits(size, 'bytes', localUnit)
 	);
-	const [isHovered, setIsHovered] = useState<boolean>(false);
-
-	useEffect(() => {
-		setDisplaySize(
-			convertMemoryBetweenUnits(size, 'bytes', localUnit)
-		);
-	}, [localUnit, size]);
-
-	// To reset the local unit in edit mode when user changes localunit  without editing the partition
-	useEffect(() => {
-		if (sidebarPartition.size) {
-			const units = convertBytesToKbOrMb(sidebarPartition.size);
-
-			if (units.split(' ')[1] === 'B') {
-				setLocalUnit('bytes');
-			} else if (units.split(' ')[1] === 'KB') {
-				setLocalUnit('KB');
-			} else setLocalUnit('MB');
-		}
-	}, [sidebarPartition]);
-
-	const handleSizeChange = (value: number) => {
-		setDisplaySize(value);
-		handleMemoryChange(value, localUnit);
-	};
-
-	const handleUnitChange = (newUnit: ByteUnit) => {
-		handleMemoryChange(displaySize, newUnit);
-		setLocalUnit(newUnit);
-	};
-
-	const handleMemoryChange = (dSize: number, unit: ByteUnit) => {
-		const value = dSize * ByteUnitMap[unit];
-
-		const blocksRangeItems = getPartitionBlockNames(
-			memoryBlocks,
-			parseInt(address, 16),
-			value
-		);
-		onChange({
-			size: value,
-			blockNames: blocksRangeItems
-		});
-	};
-
-	const getAddressFromBlock = (block: MemoryBlock): number =>
-		parseInt(block.AddressStart, 16);
-
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const isBlockDisabled = (block: MemoryBlock): boolean =>
-		// Check if each core has access to the block
-		cores.reduce((acc, core) => {
-			const socCore = getSocCoreList().find(
-				c => c.Id === core.coreId
-			);
-
-			if (
-				socCore?.Memory.find(
-					memory =>
-						memory.Type === memoryType && memory.Name === block.Name
-				)
-			) {
-				return acc;
-			}
-
-			return true;
-		}, false);
 
 	const blockOptions: DropDownOptions = [
 		{label: 'Select value', value: ''},
@@ -156,57 +100,31 @@ export function MemoryBlocks({
 				label: block.Name,
 				value: block.Name,
 				dataTest: block.Name,
-				disabled: isBlockDisabled(block)
+				disabled:
+					isBlockOccupied(block, sidebarPartition, partitions) ||
+					isBlockDisabled(block, cores, memoryType)
 			}))
 	];
 
-	const sizeOptions: DropDownOptions = [
-		{value: 'KB', label: 'KB'},
-		{value: 'MB', label: 'MB'},
-		{value: 'bytes', label: 'bytes'}
-	];
+	const memoryAliases = useMemo(() => {
+		const coreIds = cores
+			.filter(c => isCoreSecure(c))
+			.map(c => c.coreId);
 
-	const handleDropdown = (value: string): void => {
-		const baseBlock = memoryBlocks.find(
-			block => block.Name === value
+		return getCoreMemoryAliases(baseBlock.Name, coreIds) ?? [];
+	}, [baseBlock.Name, cores]);
+
+	const offsetMemoryAliases = useMemo(() => {
+		const baseOffset = getAddressOffset(
+			baseBlock.AddressStart,
+			address
 		);
 
-		const addressFromBlockSelected = baseBlock
-			? getAddressFromBlock(baseBlock)
-			: undefined;
-
-		if (addressFromBlockSelected !== undefined && baseBlock) {
-			const blocksRangeItems = getPartitionBlockNames(
-				memoryBlocks,
-				addressFromBlockSelected,
-				size
-			);
-			onChange({
-				baseBlock,
-				startAddress: addressFromBlockSelected.toString(16),
-				blockNames: blocksRangeItems
-			});
-		}
-	};
-
-	const isSecureBlock = useMemo(() => {
-		const filteredBlocks = memoryBlocks?.filter(
-			block => block.Type === memoryType && !isBlockDisabled(block)
-		);
-
-		return Boolean(filteredBlocks?.[0]?.TrustZone);
-	}, [isBlockDisabled, memoryBlocks, memoryType]);
-
-	const getSizeStepValue = (
-		minAlignment: number | undefined,
-		unit: ByteUnit
-	): number => {
-		if (minAlignment && minAlignment > ByteUnitMap[unit]) {
-			return minAlignment / ByteUnitMap[unit];
-		}
-
-		return 1;
-	};
+		return memoryAliases.map(alias => ({
+			...alias,
+			OffsetAddress: offsetAddress(alias.AliasBaseAddress, baseOffset)
+		}));
+	}, [memoryAliases, address, baseBlock.AddressStart]);
 
 	const displayMemoryBlocks = useMemo(() => {
 		if (!address || !size) {
@@ -240,34 +158,122 @@ export function MemoryBlocks({
 		size
 	]);
 
-	const onAddressChange = (value: string): void => {
-		const address = parseInt(value, 16);
+	const handleSizeChange = (value: number) => {
+		setDisplaySize(value);
+		handleMemoryChange(value, localUnit);
+	};
 
-		const blockFromAddress = getBaseblockFromAddress(
+	const handleUnitChange = (newUnit: ByteUnit) => {
+		handleMemoryChange(displaySize, newUnit);
+		setLocalUnit(newUnit);
+	};
+
+	const handleMemoryChange = (dSize: number, unit: ByteUnit) => {
+		const value = dSize * ByteUnitMap[unit];
+
+		const blocksRangeItems = getPartitionBlockNames(
 			memoryBlocks,
-			address
+			parseInt(address, 16),
+			value
+		);
+		onChange({
+			size: value,
+			displayUnit: unit,
+			blockNames: blocksRangeItems
+		});
+	};
+
+	const handleDropdown = (value: string): void => {
+		const baseBlock = memoryBlocks.find(
+			block => block.Name === value
 		);
 
-		if (blockFromAddress && !isBlockDisabled(blockFromAddress)) {
+		const addressFromBlockSelected = baseBlock
+			? getFirstAvailableAddressFromBlock(baseBlock, partitions)
+			: undefined;
+
+		if (addressFromBlockSelected !== undefined && baseBlock) {
 			const blocksRangeItems = getPartitionBlockNames(
 				memoryBlocks,
-				address,
+				addressFromBlockSelected,
 				size
 			);
-
 			onChange({
-				startAddress: value,
-				baseBlock: blockFromAddress,
-				blockNames: blocksRangeItems
-			});
-		} else {
-			onChange({
-				startAddress: value,
 				baseBlock,
-				blockNames: []
+				startAddress: addressFromBlockSelected.toString(16),
+				blockNames: blocksRangeItems
 			});
 		}
 	};
+
+	const onAddressChange = useCallback(
+		(value: string): void => {
+			const address = parseInt(value, 16);
+
+			const blockFromAddress = getBaseblockFromAddress(
+				memoryBlocks,
+				address
+			);
+
+			if (
+				blockFromAddress &&
+				!isBlockDisabled(blockFromAddress, cores, memoryType)
+			) {
+				const blocksRangeItems = getPartitionBlockNames(
+					memoryBlocks,
+					address,
+					size
+				);
+
+				onChange({
+					startAddress: value,
+					baseBlock: blockFromAddress,
+					blockNames: blocksRangeItems
+				});
+			} else {
+				onChange({
+					startAddress: value,
+					baseBlock,
+					blockNames: []
+				});
+			}
+		},
+		[baseBlock, cores, memoryBlocks, memoryType, onChange, size]
+	);
+
+	const onSoftwareAddressChange = useCallback(
+		(aliasBase: string, newAliasAddress: string): void => {
+			const aliasBaseDec = parseInt(aliasBase, 16);
+			const newAliasDec = parseInt(newAliasAddress, 16);
+			const baseBlockStart = parseInt(baseBlock.AddressStart, 16);
+			const newPhysicalAddress =
+				newAliasDec - aliasBaseDec + baseBlockStart;
+
+			onAddressChange(newPhysicalAddress.toString(16));
+		},
+		[baseBlock.AddressStart, onAddressChange]
+	);
+
+	useEffect(() => {
+		setDisplaySize(
+			convertMemoryBetweenUnits(size, 'bytes', localUnit)
+		);
+	}, [localUnit, size]);
+
+	// To reset the local unit in edit mode when user changes localunit without editing the partition
+	useEffect(() => {
+		// We use DisplayUnit if present
+		if (sidebarPartition.displayUnit) {
+			setLocalUnit(sidebarPartition.displayUnit);
+
+			return;
+		}
+
+		// Fallback for when DisplayUnit isn't present
+		if (sidebarPartition.size) {
+			setLocalUnit(getCleanDivisibleSizeUnit(sidebarPartition.size));
+		}
+	}, [sidebarPartition]);
 
 	return (
 		<div className={styles.container}>
@@ -290,34 +296,10 @@ export function MemoryBlocks({
 			<div className={`${styles.section} ${styles.addressSection}`}>
 				<div className={styles.startAddressheader}>
 					<span className={styles.label}>
-						{i10n?.['starting-address']}
+						{memoryAliases.length > 0
+							? i10n?.['physical-starting-address']
+							: i10n?.['starting-address']}
 					</span>
-					{isSecureBlock && (
-						<div>
-							<div
-								onMouseEnter={() => {
-									setIsHovered(true);
-								}}
-								onMouseLeave={() => {
-									setIsHovered(false);
-								}}
-							>
-								<InfoIcon />
-							</div>
-							{isHovered && (
-								<CfsTooltip
-									id='start-address'
-									left={10}
-									isShowingNotch={false}
-								>
-									<div>
-										Please specify the address using the non-secure
-										alias.
-									</div>
-								</CfsTooltip>
-							)}
-						</div>
-					)}
 				</div>
 				<div className={styles.stepperGap}>
 					<HexInputField
@@ -327,6 +309,31 @@ export function MemoryBlocks({
 						onValueChange={onAddressChange}
 					/>
 				</div>
+				{offsetMemoryAliases?.map(memoryAlias => (
+					<div
+						key={`${memoryAlias.CoreId}${memoryAlias.Name}${memoryAlias.AliasBaseAddress}`}
+						className={styles.memoryAliasContainer}
+					>
+						<div className={styles.startAddressheader}>
+							<span className={styles.label}>
+								{`${memoryAlias.CoreId} ${memoryAlias.AliasType} ${i10n?.['starting-address']}`}
+							</span>
+						</div>
+						<div className={styles.stepperGap}>
+							<HexInputField
+								dataTest={`software-start-address-${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`}
+								value={memoryAlias.OffsetAddress}
+								error={errors?.startAddress}
+								onValueChange={value => {
+									onSoftwareAddressChange(
+										memoryAlias.AliasBaseAddress,
+										value
+									);
+								}}
+							/>
+						</div>
+					</div>
+				))}
 			</div>
 			<div className={`${styles.section} ${styles.sizeSection}`}>
 				<span className={styles.label}>{i10n?.size}</span>
@@ -376,4 +383,4 @@ export function MemoryBlocks({
 			</div>
 		</div>
 	);
-}
+});

@@ -19,7 +19,8 @@ import styles from './AllocatedCore.module.scss';
 import Lock from '@common/icons/Lock';
 import {
 	useActivePeripheral,
-	useActiveSignal
+	useActiveSignal,
+	useCurrentSignalTarget
 } from '../../../state/slices/peripherals/peripherals.selector';
 import {
 	removePeripheralAssignment,
@@ -29,6 +30,13 @@ import {
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {useAppDispatch} from '../../../state/store';
 import {getProjectInfoList} from '../../../utils/config';
+import useIsPrimaryMultipleProjects from '../../../hooks/use-is-primary-multiple-projects';
+import {
+	PRIMARY_ABBR as P,
+	SECURE_ABBR as S,
+	NON_SECURE_ABBR as NS
+} from '@common/constants/core-properties';
+import {removeAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
 function AllocatedCore({
 	projectId,
@@ -40,17 +48,40 @@ function AllocatedCore({
 	);
 	const activeSignal = useActiveSignal();
 	const activePeripheral = useActivePeripheral();
+	const shouldShowPrimaryBadge = useIsPrimaryMultipleProjects(
+		project?.IsPrimary ?? false
+	);
+
+	const [peripheral, signalName] = activeSignal?.split(' ') ?? [];
+
+	const currentSignalTarget = activeSignal
+		? useCurrentSignalTarget(peripheral, signalName)
+		: null;
+
+	const clearAppliedSignal = () => {
+		const targetPinId = currentSignalTarget ?? '';
+
+		const payload = {
+			Pin: targetPinId,
+			Peripheral: peripheral,
+			Name: signalName
+		};
+
+		dispatch(removeAppliedSignal(payload));
+	};
 
 	const handleDelete = async () => {
 		if (activeSignal) {
 			// Delete individual signal allocation
-			const [peripheral, signalName] = activeSignal.split(' ');
+
 			dispatch(
 				removeSignalAssignment({
 					peripheral,
 					signalName
 				})
 			);
+			//to remove applied signal
+			clearAppliedSignal();
 			dispatch(setActiveSignal(undefined));
 		} else if (activePeripheral) {
 			// Delete entire peripheral allocation
@@ -75,13 +106,13 @@ function AllocatedCore({
 			>
 				<div className={styles.labelContainer}>
 					<p>{project?.Name}</p>
-					{project?.IsPrimary ? (
+					{shouldShowPrimaryBadge ? (
 						<Badge
 							appearance='secondary'
 							dataTest={`allocated-core-card:${projectId}:primary-badge`}
 							className={styles.badge}
 						>
-							P
+							{P}
 						</Badge>
 					) : null}
 					{project?.Secure ? (
@@ -90,7 +121,7 @@ function AllocatedCore({
 							dataTest={`allocated-core-card:${projectId}:primary-badge`}
 							className={styles.badge}
 						>
-							S
+							{S}
 						</Badge>
 					) : null}
 					{project?.Secure === false ? (
@@ -99,7 +130,7 @@ function AllocatedCore({
 							dataTest={`allocated-core-card:${projectId}:primary-badge`}
 							className={styles.badge}
 						>
-							N/S
+							{NS}
 						</Badge>
 					) : null}
 				</div>

@@ -1,37 +1,45 @@
-import {type ConfiguredProject} from '../../../common/api';
-import {type PinDictionary} from '../../../common/types/soc';
+import {type ConfiguredProject} from '@common/api';
+import type {Soc, PinDictionary} from '@common/types/soc';
 import {type Partition} from '../state/slices/partitions/partitions.reducer';
 import {type PeripheralConfig} from '../types/peripherals';
 import {formatProjectPersistencePayload} from './persistence';
+import {sysPlannerDataInit} from './sys-planner-data-init';
+import type {CfsConfig} from 'cfs-plugins-api';
+import {formatPeripheralSignalsTargets} from './json-formatter';
+
+const MAX32690wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
+
+const MAX32655ctbga = (await import('@socs/max32655-ctbga.json'))
+	.default as unknown as Soc;
+
+const mockedConfig = {
+	Soc: 'MAX32690',
+	BoardName: 'Cypress',
+	Package: 'WLP',
+	Projects: [
+		{
+			CoreId: 'CM4',
+			ProjectId: 'CM4-proj',
+			PluginId: '',
+			PluginVersion: '',
+			ExternallyManaged: false,
+			FirmwarePlatform: '',
+			PlatformConfig: {
+				test: 'test'
+			},
+			Partitions: [],
+			Peripherals: []
+		}
+	]
+} as unknown as CfsConfig;
 
 describe('Persistance', () => {
-	beforeEach(() => {
-		localStorage.setItem(
-			'configDict',
-			JSON.stringify({
-				Soc: 'Cypress',
-				BoardName: 'Cypress',
-				Package: 'Cypress',
-				projects: [
-					{
-						CoreId: 'CM4',
-						ProjectId: 'CM4-proj',
-						PluginId: '',
-						PluginVersion: '',
-						ExternallyManaged: false,
-						FirmwarePlatform: '',
-						PlatformConfig: {
-							test: 'test'
-						},
-						Partitions: [],
-						Peripherals: []
-					}
-				]
-			})
-		);
+	before(() => {
+		sysPlannerDataInit(MAX32690wlp, mockedConfig);
 	});
 
-	it('formatCorePersistencePayload should correctly format data', () => {
+	it('formatProjectPersistencePayload should correctly format data', () => {
 		const peripheralName = 'ADC';
 		const peripheralDescription = 'Some description';
 		const gpioSignalName = 'P0.1';
@@ -76,7 +84,7 @@ describe('Persistance', () => {
 						owner: false
 					}
 				],
-				config: partitionPluginConfig
+				config: {[projectId]: partitionPluginConfig}
 			}
 		];
 		const peripheralAssigments: Record<string, PeripheralConfig> = {
@@ -177,6 +185,39 @@ describe('Persistance', () => {
 
 		expect(result[0].Peripherals).to.deep.equal(
 			expectedResult[0].Peripherals
+		);
+	});
+
+	it('Should load the correct signal-pin assignment from the file', () => {
+		const persistedPins = [
+			{
+				Peripheral: 'OWM',
+				Pin: 'H5',
+				Signal: 'IO'
+			},
+			{
+				Peripheral: 'OWM',
+				Pin: 'H9',
+				Signal: 'PE'
+			}
+		];
+
+		const defaultConfig = formatPeripheralSignalsTargets(
+			MAX32655ctbga,
+			[]
+		);
+		expect(defaultConfig['OWM'].signalsTargets['IO']).to.equal('G7');
+		expect(defaultConfig['OWM'].signalsTargets['PE']).to.equal('G4');
+
+		const persistedPinsConfig = formatPeripheralSignalsTargets(
+			MAX32655ctbga,
+			persistedPins
+		);
+		expect(persistedPinsConfig['OWM'].signalsTargets['IO']).to.equal(
+			'H5'
+		);
+		expect(persistedPinsConfig['OWM'].signalsTargets['PE']).to.equal(
+			'H9'
 		);
 	});
 });

@@ -13,26 +13,28 @@
  *
  */
 
-import {
-	CfsDataProvider,
-	CfsServiceType,
-	CfsFeatureScope,
-	CfsWorkspaceGenerator,
-	CfsProjectGenerator,
-	CfsCodeGenerator
-} from "cfs-plugins-api";
 import type {
 	CfsConfig,
 	CfsPluginInfo,
 	CfsPluginProperty,
 	CfsProject,
-	CfsProjectConfigService,
 	CfsSocDataModel,
-	CfsSystemConfigService,
 	CfsWorkspace,
-	SocControl
+	SocControl,
+	CfsFeatureScope,
+	CfsWorkspaceGenerationService,
+	CfsProjectGenerationService,
+	CfsPlugin,
+	CfsPropertyProviderService,
+	CfsSystemConfigService,
+	CfsProjectConfigService,
+	CfsCodeGenerationService,
+	CfsSocControlsOverrideService
 } from "cfs-plugins-api";
+import { GenericPlugin } from "cfs-plugins-api";
 
+import type { CfsPackageManagerProvider } from "cfs-package-manager";
+import type { CfsDataModelManager } from "../managers/cfs-data-model-manager.js";
 import {
 	promises as fs,
 	statSync,
@@ -43,21 +45,8 @@ import {
 } from "node:fs";
 import path, { dirname } from "node:path";
 import { createRequire } from "node:module";
-
-// @TODO: migrate to cfs-plugins
-export interface ICfsPlugin {
-	getProperties(
-		scope: string,
-		soc?: CfsSocDataModel
-	): CfsPluginProperty[];
-	setEnvironmentVariables(env: Record<string, string>[]): void;
-	getEnvironmentVariables(scope: string): Record<string, string>[];
-	log(message: string): void;
-	warn(message: string): void;
-	error(message: string): void;
-	getGenerator<T>(generator: string): T;
-	getService<T>(service: string): T | undefined;
-}
+import { getHostPlatform } from "../utils/node-utils.js";
+import fg from "fast-glob";
 
 const DEFAULT_WORKSPACE_PLUGIN_ID =
 	"com.analog.workspace.default.plugin";
@@ -79,29 +68,43 @@ export class CfsPluginManager {
 	private searchPaths: PathLike[] = [];
 
 	/**
-	 * Constructor
-	 * @param searchPaths - Array of paths/directories to search for plugins and data models
+	 * Package manager provider for retrieving packages, including plugins
 	 */
-	constructor(searchPaths: PathLike[]) {
-		const validSearchPaths = searchPaths.filter((dir) => {
-			try {
-				return existsSync(dir) && statSync(dir).isDirectory();
-			} catch (error) {
-				console.error(
-					`Invalid plugin directory: ${String(dir)}`,
-					error
-				);
-				return false;
-			}
-		});
+	private pkgManager?: CfsPackageManagerProvider;
 
-		if (validSearchPaths.length === 0) {
-			throw new Error(
-				"No valid plugin directories provided. Please check your configuration and provide an existing directory."
-			);
-		}
+	/**
+	 * Data model manager for retrieving SoC data models
+	 */
+	private dataModelManager?: CfsDataModelManager;
+
+	/**
+	 * Constructor
+	 * @param pluginsCustomSearchPaths - Array of paths/directories to search for plugins
+	 * @param pkgManager - Package manager provider
+	 * @param dataModelManager - Data model manager for retrieving SoC data models
+	 */
+	constructor(
+		pluginsCustomSearchPaths: PathLike[],
+		pkgManager?: CfsPackageManagerProvider,
+		dataModelManager?: CfsDataModelManager
+	) {
+		const validSearchPaths = pluginsCustomSearchPaths.filter(
+			(dir) => {
+				try {
+					return existsSync(dir) && statSync(dir).isDirectory();
+				} catch (error) {
+					console.error(
+						`Invalid plugin directory: ${String(dir)}`,
+						error
+					);
+					return false;
+				}
+			}
+		);
 
 		this.searchPaths = validSearchPaths;
+		this.pkgManager = pkgManager;
+		this.dataModelManager = dataModelManager;
 	}
 
 	/**
@@ -135,55 +138,65 @@ export class CfsPluginManager {
 
 	/**
 	 * Dynamically load a plugin
-	 * @param cfsPluginInfo - The plugin info for the plugin to load.
+	 * @param info - The plugin info for the plugin to load.
 	 * @returns The loaded CfsPlugin instance.
 	 */
-	public static async loadPlugin<PluginClass = ICfsPlugin>(
-		info: CfsPluginInfo,
-		context?: CfsWorkspace | CfsProject | CfsConfig
-	): Promise<PluginClass> {
-		return new Promise<PluginClass>((resolve, reject) => {
-			try {
-				const require = createRequire(import.meta.url);
+	public static async loadPlugin<T>(
+		info: CfsPluginInfo
+	): Promise<Partial<T>> {
+		return new Promise<Partial<T>>((resolve, reject) => {
+			const pluginPath = path.resolve(
+				dirname(info.pluginPath),
+				"index.cjs"
+			);
 
-				const pluginPath = path.resolve(
-					dirname(info.pluginPath),
-					"index.cjs"
-				);
+			if (existsSync(pluginPath)) {
+				try {
+					const require = createRequire(import.meta.url);
 
-				// Clear the require cache for this plugin, so we always import the latest plugin
-				const resolvedPath = require.resolve(pluginPath);
-				if (require.cache[resolvedPath]) {
-					// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-					delete require.cache[resolvedPath];
+					// Clear the require cache for this plugin, so we always import the latest plugin
+					const resolvedPath = require.resolve(pluginPath);
+					if (require.cache[resolvedPath]) {
+						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+						delete require.cache[resolvedPath];
+					}
+
+					const pluginModule = require(pluginPath) as CfsPlugin<T>;
+
+					const instance = new pluginModule(info);
+
+					resolve(instance);
+				} catch (error) {
+					reject(
+						new Error(
+							`Failed to load plugin from ${pluginPath}: ${(error as Error).message}`
+						)
+					);
 				}
-
-				const pluginModule = require(pluginPath) as new (
-					info: CfsPluginInfo,
-					context?: CfsWorkspace | CfsProject | CfsConfig
-				) => PluginClass;
-
-				const instance = new pluginModule(info, context);
+			} else {
+				const instance = new GenericPlugin(
+					info
+				) as unknown as Partial<T>;
 
 				resolve(instance);
-			} catch (error) {
-				reject(error as Error);
 			}
 		});
 	}
 
 	/**
 	 * Get all properties supported by the specified plugin for the given scope.
-	 * @param cfsPluginInfo - The plugin info for the plugin to retrieve the properties from.
+	 * @param pluginId - The ID of the plugin to retrieve properties from.
+	 * @param pluginVersion - The version of the plugin to retrieve properties from.
 	 * @param scope - The scope of the properties to retrieve, such as "workspace", "project", "code", or "memory".
+	 * @param context - Context the plugin will use to parse defaults and conditions
 	 * @returns The properties supported by the plugin.
 	 */
 	public async getProperties(
 		pluginId: string,
 		pluginVersion: string,
 		scope: CfsFeatureScope,
-		soc?: CfsSocDataModel
-	): Promise<CfsPluginProperty[] | Record<string, SocControl[]>> {
+		context?: Record<string, unknown>
+	): Promise<CfsPluginProperty[]> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
 		const pluginInfo = this.pluginInfo.find(
@@ -198,9 +211,68 @@ export class CfsPluginManager {
 			);
 		}
 
-		const plugin = await CfsPluginManager.loadPlugin(pluginInfo);
+		const pluginData = structuredClone(pluginInfo);
 
-		return plugin.getProperties(scope, soc);
+		if (context) {
+			context.hostPlatform = getHostPlatform();
+		}
+
+		const plugin =
+			await CfsPluginManager.loadPlugin<CfsPropertyProviderService>(
+				pluginData
+			);
+
+		if (typeof plugin.getProperties === "function") {
+			return plugin.getProperties(scope, context);
+		}
+
+		throw new Error(
+			`Plugin ${pluginId} does not provide a property provider service.`
+		);
+	}
+
+	/**
+	 * Get all properties supported by the specified plugin for the given scope.
+	 * @param pluginId - The ID of the plugin to retrieve properties from.
+	 * @param pluginVersion - The version of the plugin to retrieve properties from.
+	 * @param scope - The scope of the properties to retrieve, such as "workspace", "project", "code", or "memory".
+	 * @param soc - Soc data used to override controls
+	 * @returns The properties supported by the plugin.
+	 */
+	public async overrideSocControls(
+		pluginId: string,
+		pluginVersion: string,
+		scope: CfsFeatureScope,
+		soc: CfsSocDataModel
+	): Promise<Record<string, SocControl[]>> {
+		if (this.pluginInfo.length === 0) await this.refresh();
+
+		const pluginInfo = this.pluginInfo.find(
+			(info) =>
+				info.pluginId === pluginId &&
+				info.pluginVersion === pluginVersion
+		);
+
+		if (!pluginInfo) {
+			throw new Error(
+				`Plugin ${pluginId} not found in plugin directories`
+			);
+		}
+
+		const pluginData = structuredClone(pluginInfo);
+
+		const plugin =
+			await CfsPluginManager.loadPlugin<CfsSocControlsOverrideService>(
+				pluginData
+			);
+
+		if (typeof plugin.overrideControls === "function") {
+			return plugin.overrideControls(scope, soc);
+		}
+
+		throw new Error(
+			`Plugin ${pluginId} does not provide a SoC controls provider service.`
+		);
 	}
 
 	/**
@@ -222,9 +294,13 @@ export class CfsPluginManager {
 
 		// Generate the workspace
 		if (cfsWorkspace.soc && cfsWorkspace.package) {
-			dataModel = this.getDataModel(
-				`${cfsWorkspace.soc.toLowerCase()}-${cfsWorkspace.package.toLowerCase()}.json`
-			);
+			const { soc, package: socPackage } = cfsWorkspace;
+
+			dataModel = await this.getDataModel({
+				soc,
+				socPackage,
+				fileName: `${soc.toLowerCase()}-${socPackage.toLowerCase()}.json`
+			});
 		}
 
 		const extendedCfsWorkspace = {
@@ -236,16 +312,17 @@ export class CfsPluginManager {
 			extendedCfsWorkspace.dataModelSchemaVersion = dataModel.Schema;
 		}
 
-		const plugin = await this.getPlugin(
-			workspacePluginId,
-			workspacePluginVersion,
-			extendedCfsWorkspace
-		);
-
 		const workspaceGenerator =
-			plugin.getGenerator<CfsWorkspaceGenerator>(
-				CfsFeatureScope.Workspace
+			await this.getPlugin<CfsWorkspaceGenerationService>(
+				workspacePluginId,
+				workspacePluginVersion
 			);
+
+		if (typeof workspaceGenerator.generateWorkspace !== "function") {
+			throw new Error(
+				`Plugin ${workspacePluginId} does not provide a workspace generator service.`
+			);
+		}
 
 		const workspacePath = path.join(
 			cfsWorkspace.location,
@@ -280,23 +357,20 @@ export class CfsPluginManager {
 
 		// Allow primary core to configure system
 		if (Array.isArray(cfsWorkspace.projects) && cfsConfig) {
-			const primaryProject = cfsWorkspace.projects.find((p) => p.IsPrimary);
+			const primaryProject = cfsWorkspace.projects.find(
+				(p) => p.IsPrimary
+			);
 			if (primaryProject) {
 				const primaryPluginId = primaryProject.pluginId;
 				const primaryPluginVersion = primaryProject.pluginVersion;
-				const primaryPlugin = await this.getPlugin(
-					primaryPluginId,
-					primaryPluginVersion,
-					primaryProject as CfsProject
-				);
-	
-				const systemConfigurator =
-					primaryPlugin.getService<CfsSystemConfigService>(
-						CfsServiceType.SystemConfig
+				const primaryPlugin =
+					await this.getPlugin<CfsSystemConfigService>(
+						primaryPluginId,
+						primaryPluginVersion
 					);
-				if (systemConfigurator !== undefined) {
-					cfsConfig =
-						await systemConfigurator.configureSystem(cfsConfig);
+
+				if (typeof primaryPlugin.configureSystem === "function") {
+					cfsConfig = await primaryPlugin.configureSystem(cfsConfig);
 				}
 			}
 		}
@@ -312,11 +386,9 @@ export class CfsPluginManager {
 				augmentedProject.soc = cfsWorkspace.soc;
 				augmentedProject.package = cfsWorkspace.package;
 
-				const projectPlugin = await this.getPlugin(
-					project.pluginId,
-					project.pluginVersion,
-					augmentedProject
-				);
+				const projectPlugin = await this.getPlugin<
+					CfsProjectConfigService & CfsProjectGenerationService
+				>(project.pluginId, project.pluginVersion);
 
 				// Consult plugins for contributions to .cfsconfig
 				if (cfsConfig !== undefined) {
@@ -325,13 +397,11 @@ export class CfsPluginManager {
 					);
 
 					if (cfsProjectIndex != -1) {
-						const projectConfigurator =
-							projectPlugin.getService<CfsProjectConfigService>(
-								CfsServiceType.ProjectConfig
-							);
-						if (projectConfigurator !== undefined) {
+						if (
+							typeof projectPlugin.configureProject === "function"
+						) {
 							cfsConfig.Projects[cfsProjectIndex] =
-								await projectConfigurator.configureProject(
+								await projectPlugin.configureProject(
 									cfsConfig.Soc,
 									cfsConfig.Projects[cfsProjectIndex]
 								);
@@ -340,19 +410,21 @@ export class CfsPluginManager {
 					}
 				}
 
-				const projectGenerator =
-					projectPlugin.getGenerator<CfsProjectGenerator>(
-						CfsFeatureScope.Project
+				if (typeof projectPlugin.generateProject !== "function") {
+					throw new Error(
+						`Plugin ${String(project.pluginId)} does not provide a project generator service.`
 					);
+				}
 
-				await projectGenerator.generateProject(
+				await projectPlugin.generateProject(
 					path
 						.join(
 							workspacePath,
 							(project.platformConfig as { ProjectName?: string })
 								.ProjectName ?? ""
 						)
-						.replace(/\\/g, "/")
+						.replace(/\\/g, "/"),
+					augmentedProject
 				);
 			}
 		}
@@ -398,21 +470,23 @@ export class CfsPluginManager {
 				);
 			}
 
-			const projectPlugin = await this.getPlugin(
-				projectToBeGenerated.pluginId,
-				projectToBeGenerated.pluginVersion,
-				projectToBeGenerated as CfsProject
-			);
-
 			const projectGenerator =
-				projectPlugin.getGenerator<CfsProjectGenerator>(
-					CfsFeatureScope.Project
+				await this.getPlugin<CfsProjectGenerationService>(
+					projectToBeGenerated.pluginId,
+					projectToBeGenerated.pluginVersion
 				);
+
+			if (typeof projectGenerator.generateProject !== "function") {
+				throw new Error(
+					`Plugin ${String(projectToBeGenerated.pluginId)} does not provide a project generator service.`
+				);
+			}
 
 			await projectGenerator.generateProject(
 				path
 					.join(workspacePath, projectToBeGenerated.name ?? "")
-					.replace(/\\/g, "/")
+					.replace(/\\/g, "/"),
+				projectToBeGenerated as CfsProject
 			);
 		} else {
 			throw new Error(
@@ -436,9 +510,13 @@ export class CfsPluginManager {
 		}
 
 		if (cfsWorkspace.soc && cfsWorkspace.package) {
-			const dataModel = this.getDataModel(
-				`${cfsWorkspace.soc.toLowerCase()}-${cfsWorkspace.package.toLowerCase()}.json`
-			);
+			const { soc, package: socPackage } = cfsWorkspace;
+
+			const dataModel = await this.getDataModel({
+				soc,
+				socPackage,
+				fileName: `${soc.toLowerCase()}-${socPackage.toLowerCase()}.json`
+			});
 
 			if (cfsConfig && dataModel) {
 				await this.generateConfigCode(
@@ -474,50 +552,41 @@ export class CfsPluginManager {
 			)
 				continue;
 
-			const plugin: ICfsPlugin = await this.getPlugin(
+			const plugin = await this.getPlugin<CfsCodeGenerationService>(
 				project.PluginId,
 				project.PluginVersion
 			);
 
-			const codeGenerator = plugin.getGenerator<CfsCodeGenerator>(
-				CfsFeatureScope.CodeGen
-			);
-
-			await codeGenerator
-				.generateCode(
-					{
-						...data,
-						coreId: project.CoreId,
-						projectId: project.ProjectId
-					},
-					baseDir
-				)
-				.then((generatedFiles) => {
-					result.push(...generatedFiles);
-				});
+			if (typeof plugin.generateCode === "function") {
+				await plugin
+					.generateCode(
+						{
+							...data,
+							coreId: project.CoreId,
+							projectId: project.ProjectId
+						},
+						baseDir
+					)
+					.then((generatedFiles) => {
+						result.push(...generatedFiles);
+					});
+			}
 		}
 
 		return result;
 	}
 
-	/**
-	 * Get the SoC data model from the specified plugin with changes applied
-	 * @param soc - The SoC name to retrieve the data model for
-	 * @param socPackage - The SoC package to retrieve the data model for
-	 * @param cfsPluginId - The plugin ID to retrieve the SoC data model from
-	 * @param cfsPluginVersion - The plugin version
-	 */
-	public async getSocDataModel(
-		soc: string,
-		socPackage: string,
-		cfsPluginId: string,
-		cfsPluginVersion: string
-	): Promise<CfsSocDataModel> {
-		const dataProvider = await this.getPlugin<CfsDataProvider>(
-			cfsPluginId,
-			cfsPluginVersion
-		);
-		return dataProvider.getSocDataModel(soc, socPackage);
+	private async getPluginPackagePaths(): Promise<string[]> {
+		if (!this.pkgManager) {
+			return [];
+		}
+
+		const pluginPackages =
+			await this.pkgManager.getInstalledPackageInfo({
+				type: "plugin"
+			});
+
+		return pluginPackages.map((pkg) => pkg.path);
 	}
 
 	/**
@@ -525,21 +594,42 @@ export class CfsPluginManager {
 	 */
 	private async refresh() {
 		const parsedPlugins: CfsPluginInfo[] = [];
-		for (const dir of this.searchPaths) {
-			const fileList: string[] = [];
-			await this.findFiles(dir.toString(), [".cfsplugin"], fileList);
-			for (const file of fileList) {
-				try {
-					const info = await CfsPluginManager.loadPluginInfo(file);
-					info.pluginPath = file;
-					parsedPlugins.push(info);
-				} catch (err) {
-					console.error(
-						`CfsPluginManager: Error parsing ${file}: ${(err as Error).message}`
-					);
-				}
+		const allSearchPaths = this.searchPaths.concat(
+			await this.getPluginPackagePaths()
+		);
+
+		const searchPromises = allSearchPaths.map(async (dir) => {
+			try {
+				// The pattern ensures we only search for .cfsplugin files
+				// either at the root or in the immediate subdirectories of the search path
+				return await fg("{.cfsplugin,*/.cfsplugin}", {
+					cwd: dir.toString(),
+					absolute: true,
+					onlyFiles: true
+				});
+			} catch (error) {
+				console.error(
+					`CfsPluginManager: Error searching directory ${dir.toString()}: ${(error as Error).message}`
+				);
+				return [];
+			}
+		});
+
+		const searchResults = await Promise.all(searchPromises);
+		const fileList = searchResults.flat();
+
+		for (const file of fileList) {
+			try {
+				const info = await CfsPluginManager.loadPluginInfo(file);
+				info.pluginPath = file;
+				parsedPlugins.push(info);
+			} catch (err) {
+				console.error(
+					`CfsPluginManager: Error parsing ${file}: ${(err as Error).message}`
+				);
 			}
 		}
+
 		this.pluginInfo = parsedPlugins;
 	}
 
@@ -556,56 +646,9 @@ export class CfsPluginManager {
 		}
 	}
 
-	// Recursively searches for files in a directory and its subdirectories
-	private async findFiles(
-		rootDir: string,
-		extensions: string[],
-		fileList: PathLike[]
-	): Promise<void> {
-		try {
-			await fs.access(rootDir, fs.constants.R_OK);
-		} catch (error) {
-			console.error(
-				`CfsPluginManager: No read access to directory ${rootDir}.`
-			);
-			return;
-		}
-
-		try {
-			if (!existsSync(rootDir)) {
-				console.error(
-					`CfsPluginManager: Directory ${rootDir} does not exist.`
-				);
-				return;
-			}
-
-			const files = await fs.readdir(rootDir, {
-				withFileTypes: true
-			});
-
-			for (const f of files) {
-				const fullPath = path.join(rootDir, f.name);
-
-				if (f.isDirectory()) {
-					await this.findFiles(fullPath, extensions, fileList);
-				} else {
-					if (extensions.some((ext) => f.name.endsWith(ext))) {
-						fileList.push(fullPath);
-					}
-				}
-			}
-		} catch (error) {
-			console.error(
-				"CfsManager.findFiles: Error finding files:",
-				error
-			);
-		}
-	}
-
-	private async getPlugin<PluginClass = ICfsPlugin>(
+	private async getPlugin<T>(
 		pluginId?: string,
-		pluginVersion?: string,
-		context?: CfsWorkspace | CfsProject | CfsConfig
+		pluginVersion?: string
 	) {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
@@ -619,10 +662,7 @@ export class CfsPluginManager {
 				(pluginVersion === "undefined" ||
 					pluginVersion === info.pluginVersion)
 			) {
-				return CfsPluginManager.loadPlugin<PluginClass>(
-					info,
-					context
-				);
+				return CfsPluginManager.loadPlugin<T>(info);
 			}
 		}
 
@@ -675,13 +715,27 @@ export class CfsPluginManager {
 	}
 
 	/**
-	 * Retrieve the data model from the data model search directories, if found
-	 * @param fileName - The file name of the data model
+	 * Retrieve the data model using the injected CfsDataModelManager
+	 * @param soc - The SoC name
+	 * @param socPackage - The SoC package
+	 * @param schemaVersion - The schema version
 	 * @returns The data model if found, otherwise undefined
 	 */
-	private getDataModel(
-		fileName: string
-	): CfsSocDataModel | undefined {
+	private async getDataModel({
+		soc,
+		socPackage,
+		fileName
+	}: {
+		soc: string;
+		socPackage: string;
+		fileName: string;
+	}): Promise<CfsSocDataModel | undefined> {
+		if (this.dataModelManager && soc && socPackage) {
+			return this.dataModelManager.getDataModel(soc, socPackage);
+		}
+
+		// Temporarily offer backwards compatibility for data model discovery
+		// until data model manager is fully integrated in cfsutil
 		for (const dir of this.searchPaths) {
 			const dataModelPath = path.join(dir.toString(), fileName);
 			if (existsSync(dataModelPath)) {

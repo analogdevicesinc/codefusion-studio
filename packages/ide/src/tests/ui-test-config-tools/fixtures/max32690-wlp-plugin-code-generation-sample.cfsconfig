@@ -1,7 +1,7 @@
 {
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "0.0.25",
-  "DataModelSchemaVersion": "0.0.1",
+  "DataModelSchemaVersion": "1.1.0",
   "Timestamp": "2025-03-05T10:35:03.091Z",
   "Soc": "MAX32690",
   "Package": "WLP",
@@ -165,7 +165,7 @@
     {
       "CoreId": "CM4",
       "ProjectId": "CM4",
-      "PluginId": "com.analog.project.zephyr41.plugin",
+      "PluginId": "com.analog.project.zephyr.plugin",
       "PluginVersion": "1.0.0",
       "FirmwarePlatform": "zephyr",
       "ExternallyManaged": false,
@@ -360,9 +360,9 @@
     {
       "CoreId": "RV",
       "ProjectId": "RV",
-      "PluginId": "",
-      "PluginVersion": "",
-      "FirmwarePlatform": "",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.1.0",
+      "FirmwarePlatform": "msdk",
       "ExternallyManaged": false,
       "Partitions": [],
       "Peripherals": [

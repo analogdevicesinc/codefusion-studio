@@ -1,0 +1,85 @@
+{
+    "testsDescription": "Tests related to execution mode",
+    "fail": [
+        {
+            "testDescription": "Check that its an error if a backend targets a non-existent execution mode",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"},"ExecutionMode" : "doesNotExist"}
+                    ]
+                }
+            }
+        }, 
+        {
+            "testDescription": "Check that its an error if a backend does not specify an execution mode when an soc has some",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch","ExecutionModes" : ["execMode"]}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }
+    ],
+    "pass": [
+        {
+            "testDescription": "Check that you don't need to specify an exec mode if its not defined",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch"}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"}}
+                    ]
+                }
+            }
+        }, 
+        {
+            "testDescription": "Check that targeting an existing exec mode works",
+            "SupportedArchs": {"testArch": {}},
+            "SupportedPlatforms" : {
+                "testSoc" : {
+                    "Cores" : {
+                        "testCore" : {"Arch":"testArch", "ExecutionModes" : ["execMode"]}
+                    }
+                }
+            },
+        
+            "SupportedBackends" : {
+                "testBackend" : {
+                    "Targets" : [
+                        {"Hardware":{"Soc": "testSoc", "Core": "testCore", "Kind": "explicit"},"ExecutionMode" : "execMode"}
+                    ]
+                }
+            }
+        }
+    ]
+    
+}

@@ -15,43 +15,33 @@
 
 import { default as zephyrTasks } from "./resources/tasks";
 import * as vscode from "vscode";
-import { ZephyrToolchain } from "./zephyr";
 import fs from "fs";
 
 import { Utils } from "../../utils/utils";
-import { resolveVariables } from "../../utils/resolveVariables";
 import { platform } from "node:process";
-
-/**
- * This function detects if the project is a Zephyr project based on presence of file CMaskeLists.txt
- * and if the file exists and has a string "ZEPHYR_BASE".
- * @param workspaceFolder -  workspaceFolder to check
- * @returns Promise that resolves to true if the project is zephyr project and to false if it is not a zephyr project
- */
-export async function detectZephyrProject(
-  workspaceFolder: vscode.WorkspaceFolder,
-): Promise<boolean> {
-  return Utils.findFilesInWorkspaceFolder(workspaceFolder, "CMakeLists.txt")
-    .then((cMakeListsFiles) => {
-      for (const cMakeListFile of cMakeListsFiles) {
-        return Promise.resolve(
-          fs.readFileSync(cMakeListFile).includes("ZEPHYR_BASE"),
-        );
-      }
-      return Promise.resolve(false);
-    })
-    .catch((err) => {
-      console.error(`Error trying to detect Zephyr toolchain:\n${err}`);
-      return Promise.resolve(false);
-    });
-}
+import type { IDEShellEnvProvider } from "../shell-env-provider";
+import { type CfsToolManager } from "cfs-lib";
+import { EXTENSION_ID, ZEPHYR_WORKSPACE } from "../../constants";
+import { workspace } from "vscode";
 
 export class ZephyrTaskProvider implements vscode.TaskProvider {
+  private shellEnvProvider: IDEShellEnvProvider;
+  private toolManager: CfsToolManager;
+  private resolvedTasks: vscode.Task[] | undefined;
+
+  constructor(
+    shellEnvProvider: IDEShellEnvProvider,
+    toolManager: CfsToolManager,
+  ) {
+    this.shellEnvProvider = shellEnvProvider;
+    this.toolManager = toolManager;
+  }
+
   provideTasks(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _token: vscode.CancellationToken,
   ): vscode.ProviderResult<vscode.Task[]> {
-    return this.getTasks();
+    return this.resolvedTasks || [];
   }
 
   resolveTask(
@@ -64,23 +54,74 @@ export class ZephyrTaskProvider implements vscode.TaskProvider {
     return undefined;
   }
 
+  /**
+   * Initializes the resolved tasks cache
+   */
+  async initializeTasks(): Promise<void> {
+    try {
+      this.resolvedTasks = await this.getTasks();
+    } catch (error) {
+      console.error(`Error initializing Zephyr tasks: ${error}`);
+      this.resolvedTasks = [];
+    }
+  }
+
   async getTasks(): Promise<vscode.Task[]> {
     const result: vscode.Task[] = [];
 
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
+    if (
+      !vscode.workspace.workspaceFolders ||
+      vscode.workspace.workspaceFolders.length === 0
+    ) {
       return result;
     }
 
+    const { cfs, workspaceFolders } = vscode.workspace.workspaceFolders.reduce(
+      (acc, folder) => {
+        if (folder.name === ".cfs") {
+          acc.cfs = folder;
+        } else {
+          if (!Array.isArray(acc.workspaceFolders)) {
+            acc.workspaceFolders = [];
+          }
+          acc.workspaceFolders.push(folder);
+        }
+        return acc;
+      },
+      {} as {
+        cfs: vscode.WorkspaceFolder;
+        workspaceFolders: vscode.WorkspaceFolder[];
+      },
+    );
+    const cfsWorkspace = JSON.parse(
+      (
+        await vscode.workspace.openTextDocument(
+          cfs.uri?.path + "/.cfsworkspace",
+        )
+      ).getText(),
+    );
+    const zephyrPath = await this.toolManager.getToolPath("zephyr");
+
+    let environment: vscode.ShellExecutionOptions["env"] =
+      await this.shellEnvProvider.getShellEnvironment();
+
     for (const workspaceFolder of workspaceFolders) {
-      const isZephyrProject = await detectZephyrProject(workspaceFolder);
+      const isZephyrProject =
+        Utils.getProjectFirmwarePlatform(workspaceFolder) === "Zephyr";
       if (!isZephyrProject) {
         continue;
       }
 
-      let environment: vscode.ShellExecutionOptions["env"] = {};
-      environment = await ZephyrToolchain.getInstance().getEnvironment();
-
+      const cfsEnvVars =
+        this.shellEnvProvider.getCfsEnvironmentVariables(workspaceFolder);
+      const config = workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
+      const customZephyrWrksp = config.get<string>(ZEPHYR_WORKSPACE);
+      const zephyrBase = customZephyrWrksp || `${zephyrPath}/zephyr`;
+      environment = {
+        ...environment,
+        ...cfsEnvVars,
+        ZEPHYR_BASE: zephyrBase,
+      };
       const cwd = workspaceFolder.uri.fsPath;
       const shellOptions: vscode.ShellExecutionOptions = {
         cwd: cwd,
@@ -89,19 +130,25 @@ export class ZephyrTaskProvider implements vscode.TaskProvider {
         shellArgs: Utils.getShellArgs(platform),
       };
 
-      // Running through tasks in task.ts
-      for (const taskDef of zephyrTasks.tasks) {
-        //Adding a command to setup the zephyr env
-        let addZephyrEnv: string;
+      const projectConfig = cfsWorkspace.Projects?.find(
+        (proj: Record<string, any>) =>
+          proj.PlatformConfig?.ProjectName === workspaceFolder.name,
+      );
 
-        //Running the cmd
-        if (platform === "win32") {
-          addZephyrEnv = "${config:cfs.zephyr.workspace.path}/zephyr-env.cmd";
-        } else {
-          addZephyrEnv =
-            "source ${config:cfs.zephyr.workspace.path}/zephyr-env.sh";
-        }
+      const tasksResource = zephyrTasks(projectConfig?.PlatformConfig);
 
+      const userDefinedZephyrWorkspace = config.get<string>(ZEPHYR_WORKSPACE);
+      const zephyrWrkspPath =
+        userDefinedZephyrWorkspace || `${zephyrPath}/zephyr`;
+
+      let addZephyrEnv: string;
+      if (platform === "win32") {
+        addZephyrEnv = `${zephyrWrkspPath}/zephyr-env.cmd`;
+      } else {
+        addZephyrEnv = `source ${zephyrWrkspPath}/zephyr-env.sh`;
+      }
+
+      for (const taskDef of tasksResource.tasks) {
         let command = taskDef.command;
         if (command === undefined) {
           switch (platform) {

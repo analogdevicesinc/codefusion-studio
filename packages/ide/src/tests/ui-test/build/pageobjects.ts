@@ -19,4 +19,8 @@ export class Locatorspaths {
   public settingstext: By = By.xpath(
     "//span[@class='setting-item-label' and contains(text(),'Open At Startup')]",
   );
+
+  public CFSNotification: By = By.xpath(
+    "//*[contains(@class, 'monaco-list') and contains(@aria-label, 'CFS: Configure workspace as a CodeFusion Studio project?')]",
+  );
 }

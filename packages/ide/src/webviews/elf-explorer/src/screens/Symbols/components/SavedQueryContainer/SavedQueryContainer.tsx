@@ -12,9 +12,7 @@
  * limitations under the License.
  *
  */
-import {
-	VSCodeTextField
-} from '@vscode/webview-ui-toolkit/react';
+import {VSCodeTextField} from '@vscode/webview-ui-toolkit/react';
 import type {ChangeEvent} from 'react';
 
 import SearchIcon from '@common/icons/Search';
@@ -92,6 +90,7 @@ export default function SavedQueryContainer({
 						<div className={styles['action-buttons']}>
 							<Button
 								appearance='icon'
+								dataTest='symbols:saved-query-container:edit-query'
 								className={styles.icon}
 								onClick={() => {
 									onActionClick(item, 'edit');
@@ -102,6 +101,7 @@ export default function SavedQueryContainer({
 							<Button
 								appearance='icon'
 								className={styles.icon}
+								dataTest='symbols:saved-query-container:delete-query'
 								onClick={() => {
 									onActionClick(item, 'delete');
 								}}

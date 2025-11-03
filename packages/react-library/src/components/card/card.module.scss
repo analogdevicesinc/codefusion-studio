@@ -22,8 +22,12 @@
 	border-radius: 4px;
 
 	&:hover {
-		border: 1px solid colors.$active-cta;
+		border: 1px solid colors.$hover-border;
 	}
+}
+
+.expanded {
+	border: 1px solid colors.$hover-border;
 }
 
 .active {

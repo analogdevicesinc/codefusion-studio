@@ -2,7 +2,7 @@
   "elf": {
     "stats": {
       "title": "Statistics",
-      "description": "<p>This screen offers a high-level summary of the ELF file's structure and contents.</p><h3 style='margin-bottom: 5px;'><strong>File Overview</strong></h3>Displays the basic properties of the ELF file.<ul><li><strong>Format</strong>: ELF 32-bit or 64-bit.</li><li><strong>Data Encoding</strong>: Indicates the endianness (little or big endian).</li><li><strong>File Type</strong>: Executable, relocatable, shared object, or core file.</li><li><strong>Architecture</strong>: Target architecture, e.g., ARM, x86.</li><li><strong>ABI Version</strong>: Application Binary Interface version.</li><li><strong>Debug Info</strong>: Whether the file contains debugging information.</li><li><strong>Stripping</strong>: Whether the file has been stripped of symbol information.</li></ul><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-orange);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-blue);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-green);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: #d28716;'>&#9679;</span>.text, <span style='color: #d28716;'>&#9679;</span>.init, <span style='color: #d28716;'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Symbol Types</strong></h3>Categorizes functions and variables based on their binding. <br>Global and weak symbols are accessible outside of their defining component, while local symbols remain hidden. Additionally, global and weak symbols can be preempted, meaning they can be overridden by definitions with the same name in another component.<h3 style='margin-bottom: 5px;'><strong>Sections</strong></h3>Detailed breakdown of each section within the ELF file:<ul><li><strong>Num</strong>: Section number.</li><li><strong>Name</strong>: Name of the section.</li><li><strong>Size</strong>: Size of the section in bytes.</li><li><strong>Functions</strong>: Number of functions within the section.</li><li><strong>Variables</strong>: Number of variables within the section.</li></ul><h3 style='margin-bottom: 5px;'><strong>Largest Symbols</strong></h3>Lists the largest symbols in the ELF file, including:<ul><li><strong>Name</strong>: Name of the symbol.</li><li><strong>Section</strong>: Section where the symbol is located.</li><li><strong>Size</strong>: Size of the symbol in bytes.</li></ul>",
+      "description": "<p>This screen offers a high-level summary of the ELF file's structure and contents.</p><h3 style='margin-bottom: 5px;'><strong>File Overview</strong></h3>Displays the basic properties of the ELF file.<ul><li><strong>Format</strong>: ELF 32-bit or 64-bit.</li><li><strong>Data Encoding</strong>: Indicates the endianness (little or big endian).</li><li><strong>File Type</strong>: Executable, relocatable, shared object, or core file.</li><li><strong>Architecture</strong>: Target architecture, e.g., ARM, x86.</li><li><strong>ABI Version</strong>: Application Binary Interface version.</li><li><strong>Debug Info</strong>: Whether the file contains debugging information.</li><li><strong>Stripping</strong>: Whether the file has been stripped of symbol information.</li></ul><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-blue);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-green);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-orange);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: #d28716;'>&#9679;</span>.text, <span style='color: #d28716;'>&#9679;</span>.init, <span style='color: #d28716;'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Symbol Types</strong></h3>Categorizes functions and variables based on their binding. <br>Global and weak symbols are accessible outside of their defining component, while local symbols remain hidden. Additionally, global and weak symbols can be preempted, meaning they can be overridden by definitions with the same name in another component.<h3 style='margin-bottom: 5px;'><strong>Sections</strong></h3>Detailed breakdown of each section within the ELF file:<ul><li><strong>Num</strong>: Section number.</li><li><strong>Name</strong>: Name of the section.</li><li><strong>Size</strong>: Size of the section in bytes.</li><li><strong>Functions</strong>: Number of functions within the section.</li><li><strong>Variables</strong>: Number of variables within the section.</li></ul><h3 style='margin-bottom: 5px;'><strong>Largest Symbols</strong></h3>Lists the largest symbols in the ELF file, including:<ul><li><strong>Name</strong>: Name of the symbol.</li><li><strong>Section</strong>: Section where the symbol is located.</li><li><strong>Size</strong>: Size of the symbol in bytes.</li></ul>",
       "chart": {
         "title": "Main section sizes",
         "tooltips": {
@@ -34,7 +34,7 @@
     },
     "metadata": {
       "title": "Metadata",
-      "description": "<p>This screen displays detailed information about the ELF file, including its size distribution, header, attributes and inferred characteristics.</p><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-orange);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-blue);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-green);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.text, <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.init, <span style='color: var(--vscode-charts-orange);'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Header Info</strong></h3>The ELF file header contains metadata about the ELF file, including its type, architecture, entry point, program headers, and section headers.<br>This information is essential for the operating system to correctly load and execute the file.<h3 style='margin-bottom: 5px;'><strong>AEABI Attributes</strong></h3>The AEABI (ARM Embedded Application Binary Interface) attributes in an ELF file provide important metadata about the binary, such as the target architecture, floating-point configuration, and optimization level.<br>These attributes ensure compatibility and optimize performance by conveying specific details about how the binary was built, allowing tools and runtime environments to correctly interpret and execute the code.<h3 style='margin-bottom: 5px;'><strong>Heuristic Information</strong></h3>Indicates the presence of any heuristic information detected in the ELF file related to the Zephyr and MSDK toolchains.<br>It can provide information regarding Flash and RAM sizes, among other available data.",
+      "description": "<p>This screen displays detailed information about the ELF file, including its size distribution, header, attributes and inferred characteristics.</p><h3 style='margin-bottom: 5px;'><strong>Main Section Sizes</strong></h3>Chart showing the sizes of the main sections of the ELF file:<ul><li><strong><span style='color: var(--vscode-charts-blue);'>text</span></strong>: Executable code.</li><li><strong><span style='color: var(--vscode-charts-green);'>data</span></strong>: Initialized global and static variables.</li><li><strong><span style='color: var(--vscode-charts-orange);'>bss</span></strong>: Uninitialized global and static variables (which are initialized to zero).</li></ul><p><i>Note: ELF sections are grouped into 'Main Sections.' You will find small circles with the color corresponding to the 'Main Section' next to the names of specific ELF sections. </br>For example, the main section 'text' may contain ELF sections like <span style='color: var(--vscode-charts-blue);'>&#9679;</span>.text, <span style='color: var(--vscode-charts-blue);'>&#9679;</span>.init, <span style='color: var(--vscode-charts-blue);'>&#9679;</span>.plt, etc., all sharing the same circle color.</i></p><h3 style='margin-bottom: 5px;'><strong>Header Info</strong></h3>The ELF file header contains metadata about the ELF file, including its type, architecture, entry point, program headers, and section headers.<br>This information is essential for the operating system to correctly load and execute the file.<h3 style='margin-bottom: 5px;'><strong>AEABI Attributes</strong></h3>The AEABI (ARM Embedded Application Binary Interface) attributes in an ELF file provide important metadata about the binary, such as the target architecture, floating-point configuration, and optimization level.<br>These attributes ensure compatibility and optimize performance by conveying specific details about how the binary was built, allowing tools and runtime environments to correctly interpret and execute the code.<h3 style='margin-bottom: 5px;'><strong>Heuristic Information</strong></h3>Indicates the presence of any heuristic information detected in the ELF file related to the Zephyr and MSDK toolchains.<br>It can provide information regarding Flash and RAM sizes, among other available data.",
       "sizes": {
         "title": "Main Section Sizes",
         "tooltips": {
@@ -327,8 +327,11 @@
         "allocate-peripherals": "Allocate and Configure Peripherals",
         "assign-pins": "Assign and Configure Pins",
         "configure-clocks": "Configure Clocks",
+        "configure-dfg": "Configure DFG",
         "partition-memory": "Allocate and Partition Memory",
         "registers": "View Registers",
+        "ai-tools": "Manage AI Models",
+        "profiling": "Profiler Configuration",
         "generate-code": "Generate Code"
       }
     },
@@ -348,21 +351,77 @@
     },
     "clockconfig": {
       "title": "Clock Config",
-      "description": "<p>This screen allows you easily configure the clock frequencies that are used by each of the peripherals and cores on the processor. It includes error checking to ensure that the frequencies user are within the constraints of the processor specification. After configuring your clock tree using this screen, you can then generate code that will configure the hardware to the desired configuration.</p><p>The main part of the screen is a visual representation of the clock tree, similar to that which can be found in the processor User Guide. The diagram contains nodes which represent the cores, peripherals, pins, multiplexers and clock scalers present in the processor. The frequencies used at each node are shown within the node, or in the case where a single node is associated with multiple frequencies (for example, a single node represents multiple peripheral instances), the frequencies can be seen by hovering your mouse over the node. Likewise, frequency and other information can be seen by hovering over the lines in the diagrams, which represent clocks. Nodes and clock lines on the diagram are grayed when they are not in use.</p><p>In the left panel, the nodes from the diagram are listed, grouped by the type of the node. These comprise:<ul><li><strong>Core</strong>: One of the cores on the processor.</li><li><strong>Divider</strong>: A frequency step-down scaler node.</li><li><strong>Multiplier</strong>: A frequency step-up scaler node</li><li><strong>Mux</strong>: A multiplexer that selects one of its inputs. In some cases, a mux can also direct a single input to one of its outputs.</li><li><strong>Oscillator</strong>: One of the internal oscillators present in the processor.</li><li><strong>Peripheral</strong>: A peripheral of the processor that is fed by one of the clocks. A peripheral can often be enabled or disabled.</li><li><strong>Pin Input</strong>: A pin that can be attached to an external oscillator. Usually, to use a pin input you will need to assign it using the <strong>Pin Mux</strong> tool first.</li><li><strong>Pin Output</strong>: A pin that can send a clock out externally. Usually, to use a pin output you will need to assign it using the <strong>Pin Mux</strong> tool first.</li></ul></p><p>To configure your clocks, the easiest way is to click on the nodes you want to configure on the diagram, and then use the left-hand panel to modify the settings of that node. After changing a setting, verify using the diagram that the frequencies at each peripheral and core are as desired. Also, look on the diagram to see if any of the nodes are shown in red, indicating an error. By clicking on or hovering over a node you can find out the cause of the error. The cause might be:<ul><li>A frequency out of range: The error will indicate whether the frequency is above or below the limits of operability of the peripheral.</li><li>Unconfigured value: This error usually means that you have not specified the frequency at a pin input. It can also mean that you have not set the pin mux to direct the clock signal to the peripheral.</li></ul>After fixing errors and ensuring you have the desired frequencies at your enabled periphrerals, you can proceed to generate code using the <strong>Generate Code</strong> screen.</p>",
+      "description": "<p>This screen allows you to configure the clock frequencies used by each peripheral and core on the processor. It automatically checks for errors to ensure all frequencies remain within the processor’s specification limits.</p><br/><h2>Clock Tree Diagram</h2><p>The main part of the screen displays a visual representation of the clock tree, similar to that shown in the processor User Guide. Each node represents a core, peripheral, pin, multiplexer, or clock scaler present in the processor.</p><p>The frequency for each node appears inside it. If a single node represents multiple frequencies (such as multiple peripheral instances), hover your cursor over it to view all associated frequencies.</p><p>Hovering over clock lines also reveals their frequency and other details. Nodes and clock lines appear grayed out when they are not in use.</p><br/><h2>Left Panel</h2><p>In the left panel, the nodes from the diagram are listed and grouped by node type. These include:</p><ul>  <li><strong>Core</strong>: One of the cores on the processor.</li>  <li><strong>Divider</strong>: A frequency step-down scaler node.</li>  <li><strong>Multiplier</strong>: A frequency step-up scaler node.</li>  <li><strong>Mux</strong>: A multiplexer that selects one of its inputs. In some cases, a mux can also direct a single input to one of its outputs.</li>  <li><strong>Oscillator</strong>: One of the internal oscillators present in the processor.</li>  <li><strong>Peripheral</strong>: A peripheral of the processor that is fed by one of the clocks. A peripheral can often be enabled or disabled.</li>  <li><strong>Pin Input</strong>: A pin that can be attached to an external oscillator. Usually, to use a pin input, you must first assign it in the <strong>Pin Config</strong> tab.</li>  <li><strong>Pin Output</strong>: A pin that can send a clock out externally. Usually, to use a pin output, you must first assign it in the <strong>Pin Config</strong> tab.</li></ul><h2>Configuring Your Clocks</h2><p>To configure your clocks, click the nodes you want to modify in the diagram or in the left panel node list, then use the left panel to adjust their settings.</p><p>After making changes, verify in the diagram that each peripheral and core has the desired frequency. Check whether any nodes appear in red, indicating an error. Click or hover over a node to view the cause of the error. Possible causes include:</p><ul>  <li><strong>Frequency out of range</strong>: Indicates whether the frequency is above or below the operational limits of the peripheral.</li>  <li><strong>Unconfigured value</strong>: Indicates that you have not specified the frequency at a pin input, or you have not set the pin mux to direct the clock signal to the peripheral.</li></ul><h2>Next Steps</h2><p>After fixing all errors and ensuring each enabled peripheral has the desired frequency, generate code using the <strong>Generate Code</strong> screen.</p>",
       "help": {
         "title": "Clock Config Help"
       }
     },
+    "dfg": {
+      "title": "DFG",
+      "description": "<p>This screen allows you to view the Data Flow Gaskets.</p>",
+      "help": {
+        "title": "Data Flow Gaskets Help"
+      },
+      "createStream": "Create Stream",
+      "deleteConfirmation": {
+        "deleteButton": "Delete",
+        "cancelButton": "Cancel",
+        "title": "Are you sure you want to delete this stream?",
+        "errorTitle": "Error: Cannot delete stream",
+        "tiedErrorMessage": "Another stream is tied to the stream you are trying to delete. Please remove the tied stream before deleting this stream."
+      }
+    },
+    "dfgStreamList": {
+      "title": "Stream List",
+      "description": "<p>This screen allows you to view the Data Flow Streams.</p>",
+      "help": {
+        "title": "Data Flow Streams Help"
+      },
+      "exportAsCsv": "Export as CSV"
+    },
+    "dfgVisualisation": {
+      "title": "DFG Visualization",
+      "description": "<p>This screen allows you to view the Data Flow Gaskets.</p>",
+      "help": {
+        "title": "Data Flow Gaskets Help"
+      }
+    },
     "peripherals": {
       "title": "Peripheral Allocation",
-      "description": "<p>The peripheral allocation feature allows you to assign peripherals and GPIO pins to cores. The left panel lists available peripherals, while the main screen displays cores.</p><br /><h2>Assigning a peripheral to a core</h2><ol><li>In the left panel, find the peripheral and click the chevron to expand it.</li><li>Click <strong>Assign (>)</strong> to see available cores.<ul><li>For GPIO peripherals, individual pins can be assigned instead of the entire peripheral. The process remains the same—just select the specific pin instead.</li></ul></li><li>Select a core to manage the peripheral.</li><li>The peripheral appears under the selected core in the main screen.</li></ol><br /><h2>Configuring a peripheral</h2><p>Click the configure icon next to an assigned peripheral or signal. This opens the <strong>Details</strong> section in the right-hand sidebar. From here, you can:</p><ul><li>Click the delete icon to remove the allocation.</li><li>Add a <strong>Description</strong> to give the peripheral or signal a meaningful name.</li><li>View signals used by the peripheral and manage pin assignments.</li><li>Configure the peripheral for its intended use.</li></ul>",
+      "description": "<p>The Peripheral Allocation feature lets you assign peripherals and GPIO pins to projects. Use the left panel to allocate available peripherals, and review assigned peripherals in the <strong>Core Projects</strong> section.</p><br /><h2>Allocating a peripheral</h2><p>To allocate a peripheral to a project, click <strong>Allocate (+)</strong>.</p><ul><li>If more than one project is available, select the target project from the list.</li><li>Each project corresponds to a core in the device—for example, ARM Cortex-M4 or RISC-V.</li></ul><p><i><strong>Note:</strong> For GPIO peripherals, individual pins are assigned instead of the entire peripheral.</i></p><br/><h2>Configuring a peripheral</h2><p>When you allocate a peripheral, the Peripheral Settings sidebar opens. In this sidebar, you can complete the following actions:</p><ul><li>Click <strong>Remove</strong> to remove the peripheral or pin.</li><li>Add a <strong>Description</strong> to describe the peripheral’s role in your project.</li><li>View signals and manage pin assignments.</li><li>Configure peripheral parameters and plugin options.</li></ul><p>Assigned peripherals appear in the <strong>Core Projects</strong> section for easy review and management.</p><br /><h2>Managing a peripheral</h2><p>You can manage an assigned peripheral or pin from either the <strong>Core Projects</strong> section or the left panel.</p><ul><li>Click <strong>Configure</strong> next to an assigned peripheral or pin to reopen the sidebar and update settings.</li><li>Click <strong>Remove</strong> next to an assigned peripheral or pin to remove it from the project. When you remove a peripheral, its configuration is  <strong>permanently discarded</strong>, and the peripheral returns to the list for reallocation.</li></ul><p><i><strong>Note:</strong> For GPIO peripherals, use <strong>Configure</strong> to open the right-hand sidebar, then click <strong>Remove</strong> to unassign the entire peripheral.</i></p>",
       "help": {
         "title": "Peripheral Allocation Help"
+      },
+      "num_peripherals": {
+        "zero": "No peripherals allocated yet.",
+        "one": {
+          "label": {
+            "title": "peripheral"
+          }
+        },
+        "other": {
+          "label": {
+            "title": "peripherals"
+          }
+        }
+      },
+      "error": {
+        "one": "error",
+        "other": "errors"
+      },
+      "pin-assignment": {
+        "manage": "Manage"
+      },
+      "expand-action": {
+        "tooltips": {
+          "expand": "Expand All",
+          "collapse": "Collapse All"
+        }
       }
     },
     "memory": {
       "title": "Memory Allocation",
-      "description": "<p>The memory allocation feature allows you to partition SoC memory across different cores. The left panel lists available memory banks and existing memory partitions, while the central area displays memory partitions grouped by core.</p><br /><h2><strong>Creating a partition</strong></h2><br /><p>To create a new partition, click <strong>Create Partition</strong> in the left panel and supply the following information:</p><ul><li><strong>Details</strong><ul><li><strong>Memory Type</strong>: The type of memory (e.g., RAM, FLASH).</li><li><strong>Partition Name</strong>: A unique name for the partition.</li></ul></li><br/><li><strong>Assigned Core(s)</strong><ul><li><strong>Core(s)</strong>: Choose one or more cores that require access.</li><li><strong>Access Permissions</strong>: Configure access permissions (e.g., read, read/write) for each assigned core.</li><li><strong>Owner</strong>: If multiple cores are assigned, designate one as the owner. The owner core is responsible for initializing the memory. Other cores may access the memory but do not manage it.</li></ul></li><br/><li><strong>Plugin Options</strong><p>Use these fields to pass additional configuration to the code generation plugin for the selected core. The available options depend on the firmware platform. For example, for a Zephyr-based core, you might enter <code>sram</code> or <code>flash</code> into chosen field to assign a specific role (such as system SRAM or flash storage) to the memory region. Multiple values can be entered as a comma-separated list.</p></li><br /><li><strong>Memory Blocks</strong><ul><li><strong>Base Block</strong>: Select a base memory block. If left blank, this value is auto-determined based on the starting address.</li><li><strong>Starting Address</strong>: Specify a hexadecimal address for the start of the partition. This field updates automatically if a base block is selected.</li><li><strong>Size</strong>: Enter the size of the partition (KB, MB, or bytes).</li></ul></li></ul><h2><strong>Managing existing partitions</strong></h2><br /><p>Created partitions appear under their assigned cores in the central view. Expand the memory panel to view partitions. You can click the configure icon to update partition details, or use the delete icon to remove the partition.</p>",
+      "description": "<p>The memory allocation feature allows you to partition SoC memory across different cores. The left panel lists available memory banks, while the central area displays created partitions.</p><br /><h2><strong>Creating a partition</strong></h2><br /><p>To create a new partition, hover over a free region in the memory allocation bar and click add (➕). Alternatively, click <strong>Create Partition</strong>. The partition form includes the following sections:</p><ul><li><strong>Details</strong><ul><li><strong>Memory Type</strong>: The type of memory (e.g., RAM, FLASH).</li><li><strong>Partition Name</strong>: A unique name for the partition.</li></ul></li><br/><li><strong>Assigned Core(s)</strong><ul><li><strong>Core(s)</strong>: Choose one or more cores that require access.</li><li><strong>Access Permissions</strong>: Configure access permissions (e.g., read, read/write) for each assigned core.</li><li><strong>Owner</strong>: If multiple cores are assigned, designate one as the owner. The owner core is responsible for initializing the memory. Other cores may access the memory but do not manage it.</li></ul></li><br/><li><strong>Plugin Options</strong><p>Use these fields to pass additional configuration to the code generation plugin for the selected core. The available options depend on the firmware platform. For example, for a Zephyr-based core, you might enter <code>sram</code> or <code>flash</code> into chosen field to assign a specific role (such as system SRAM or flash storage) to the memory region. Multiple values can be entered as a comma-separated list.</p></li><br /><li><strong>Memory Blocks</strong><ul><li><strong>Base Block</strong>: Select a base memory block. If left blank, this value is auto-determined based on the starting address.</li><li><strong>Starting Address</strong>: Specify a hexadecimal address for the start of the partition. This field updates automatically if a base block is selected.</li><li><strong>Size</strong>: Enter the size of the partition (KB, MB, or bytes).</li></ul></li></ul><h2><strong>Managing existing partitions</strong></h2><br /><p>You can manage existing partitions in two ways:</p><ul><li><strong>Using the memory allocation bar</strong>: Click a partition directly in the bar to open the <strong>Edit Partition</strong> form. From there, you can update or delete it.</li></br><li><strong>Using the memory panel</strong>: Expand the relevant memory section, then click the configure icon to edit or the delete icon to remove the partition.</li></ul></p>",
       "help": {
         "title": "Memory Allocation Help"
       },
@@ -373,7 +432,10 @@
         "memory-blocks": "Memory Blocks",
         "available-total": "Available / Total",
         "base": "Base Block",
+        "address": "Address",
         "starting-address": "Starting Address",
+        "physical-starting-address": "Physical Starting Address",
+        "physical-address": "Physical Address",
         "size": "Size"
       },
       "access": {
@@ -394,8 +456,11 @@
         "owner": "Owner"
       },
       "partition": {
-        "create": "Create Partition",
-        "edit": "Edit Partition",
+        "createTitle": "Create partition",
+        "editTitle": "Edit partition",
+        "createPartBtn": "Create partition",
+        "createBtn": "Save",
+        "updateBtn": "Update",
         "details": "Details",
         "type": "Memory Type",
         "name": "Partition Name",
@@ -458,7 +523,7 @@
     },
     "registers": {
       "title": "Registers",
-      "description": "<p>This screen allows you to view information on the registers used by the configuration code. It also highlights registers that are modified due to changes in peripheral or signal configurations. For each register, you can see: <ul><li><strong>Name</strong>: The name of the register.</li><li><strong>Address</strong>: The address of the memory-mapped register.</li><li><strong>Description</strong>: A description of what the register is used for.</li><li><strong>Value</strong>: The value the register will have after execution of the configuration code.</li></ul></p><p>The registers can be sorted on each column, and the filters at the top of the screen allow you to view only those registers that have changed from their default values.</p><p>If you click on a register, you can see information on the fields within the register, including:<ul><li>The name of the bit field.</li><li>The description of the bit field.</li><li>The meaning of the values the bit field can take.</li><li><strong>Bits</strong>: The position of the field within the register.</li><li><strong>Access</strong>: The read-write permissions for the field.</li><li><strong>Value</strong>: The value of the field after completion of the configuration code.</li><li><strong>Reset value</strong>: The value of the field at processor reset.</li></ul></p>",
+      "description": "<p>This screen allows you to view information about the registers used by the configuration code. It also highlights registers that are modified due to changes in peripheral or signal configurations. For each register, you can see: <ul><li><strong>Name</strong>: The name of the register.</li><li><strong>Address</strong>: The address of the memory-mapped register.</li><li><strong>Description</strong>: A description of what the register is used for.</li><li><strong>Value</strong>: The value the register will hold after execution of the configuration code.</li></ul></p><p>The registers can be sorted by each column, and the filters at the top of the screen allow you to view only those registers that have changed from their default values.</p></br><p>If you click on a register, you can see information about the fields within the register, including:<ul><li><strong>Name:</strong> The name of the bit field.</li><li><strong>Bits</strong>: The bit positions of the field within the register.</li><li><strong>Access</strong>: The read/write permissions of the field.</li><li><strong>Value</strong>: The value of the field after configuration code execution.</li><li><strong>Reset value</strong>: The value of the field at processor reset.</li><li><strong>Description:</strong> A description of the bit field's purpose.</li><li><strong>Possible values:</strong> The meaning of the values that the bit field can take.</li></ul></p>",
       "help": {
         "title": "Registers Help"
       },
@@ -471,6 +536,80 @@
         "description": "Description"
       }
     },
+    "aitools": {
+      "title": "Manage AI Models",
+      "description": "<p>The Embedded AI Tools feature lets you add and manage AI model configurations for each core.</p><br /><h2><strong>Adding a model</strong></h2><br /><p>Click <strong>Add Model</strong> to add a model configuration. Each configuration requires the following:</p><ul><li><strong>Target Core</strong>: The processor core where the model will run.</li><li><strong>Model Name</strong>: A unique name to identify the configuration.</li><li><strong>Model File</strong>: The path or URL of the model file.</li><li><strong>Memory Section for Data</strong> (optional, TFLM only): The partition used to store model data, as defined in the <strong>Memory Allocation</strong> tab. </li><li><strong>Symbol for Data</strong> (optional, TFLM only): The C variable name used in the generated code for referencing the model.</li></ul><h2><strong>Reviewing models</strong></h2><br /><p>Added models appear in the list view. From here you can:</p><ul><li>Use the <strong>Include</strong> toggle to enable or disable a model for code generation without deleting its configuration.</li><li>Open compatibility or profiling reports to review performance and device support. Reports do not block code generation, but they may highlight issues that could affect runtime behavior.</li><li>Configure or delete models using the action icons.</li></ul><p><i><strong>Note:</strong> Disabling a model keeps its configuration but excludes it from generated files. Deleting removes it from the panel but does not affect previously generated code.</i></p>",
+      "help": {
+        "title": "Manage AI Models Help"
+      },
+      "modelConfig": {
+        "configureModel": "Configure Model",
+        "addModel": "Add Model",
+        "update": "Update",
+        "add": "Add",
+        "fields": {
+          "target": "Target",
+          "modelName": "Model Name",
+          "modelNameTooltip": "Name of the C++ file and symbol name generated for model",
+          "file": "Model File"
+        },
+        "errors": {
+          "targetRequired": "Target is required",
+          "modelNameRequired": "Name is required",
+          "modelNameExists": "A model with this name already exists",
+          "invalidCIdentifier": "Enter a valid C identifier. Only letters, numbers and underscores are allowed.",
+          "modelFileRequired": "Model file is required"
+        }
+      },
+      "modelList": {
+        "title": "Manage AI Models",
+        "description": "Add and configure multiple models for each core.",
+        "emptyListTitle": "No AI Models Added Yet",
+        "emptyListDescription": "Add and configure your AI models to get started. You can manage models for each core and enable source file generation for your projects here.",
+        "addModelButton": "Add Model",
+        "tableColumns": {
+          "modelName": "Model Name",
+          "include": "Include",
+          "includeTooltip": "Enable source file generation for this model.",
+          "file": "Model File",
+          "symbol": "Symbol Name",
+          "symbolTooltip": "Name of the C++ file and symbol name generated for model",
+          "memory": "Memory Section",
+          "compatibility": "Compatibility"
+        },
+        "compatibility": {
+          "compatible": "Compatible",
+          "incompatible": "Incompatible",
+          "checking": "Checking",
+          "error": "Error"
+        },
+        "actions": {
+          "openCompatReport": "Open Compatibility Report"
+        },
+        "deleteConfirmDialog": {
+          "title": "Are you sure you want to remove this model configuration?",
+          "message": "Generated files will remain in your project."
+        },
+        "missingPackageTitle": "Error loading cfsai package",
+        "missingPackageDescription": "Could not find or parse <a href=\"vscode://settings/@cfs.sdk.path\">SDK-Path</a>/Tools/cfsai/ui.json. Please verify the CodeFusion Studio SDK is at the expected path.",
+        "zephelin": {
+          "enableProfiling": "Enable Zephelin AI Profiling",
+          "enableProfilingTooltip": "This will configure Zephyr to produce a profiling trace of the AI models via the specified UART port"
+        }
+      }
+    },
+    "profiling": {
+      "title": "Profiler Configuration",
+      "subtitle": "Configure profiling for supported cores in your workspace",
+      "description": "<p>Configure profiling for supported cores in your workspace. The Zephelin Profiler records runtime events from Zephyr applications and, optionally, TensorFlow Lite Micro (TFLM) inference activity for AI workloads.</p><p>To enable profiling, turn on <strong>Enable Zephelin Profiler</strong> for each applicable core. Then select the <strong>Trace Interface</strong> used to stream trace data (for example, UART1 or UART2).</p><p>Enable <strong>AI Model Profiling</strong> to capture operator-level performance data from TensorFlow Lite Micro models.</p><p>After configuring profiling options, generate code, build, and flash your project to apply the changes. Finally, run the <strong>Capture Profiler Trace</strong> task to collect trace data.</p><p><em>Note: Profiling is currently in beta.</em></p>",
+      "help": {
+        "title": "Profiling Code Help"
+      },
+      "zephelin": "Zephelin",
+      "enableProfiling": "Enable Zephelin Profiler",
+      "selectPort": "Select Trace Interface",
+      "enableAIProfiling": "Enable AI Model Profiling"
+    },
     "generate": {
       "title": "Generate Code",
       "description": "<p>This screen allows you to generate the configuration code for your project. If your configuration contains any errors, such as pin mux conflicts or clock configuration errors, you must correct these errors before you can generate code.</p></br><h2>Generating Code</h2><p>To generate code, select all the available cores (recommended) and click <strong>Generate</strong>. If your configuration is not saved, you will be prompted to save it before you can continue.</p> </br><p>The generated filenames and locations are chosen so that the code is automatically picked up and built in your project. There is no need to explicitly call the generated functions as the start-up code will automatically do this for you.</p></br><p><strong>Important:</strong> Generated files will overwrite any existing versions.</p>",
@@ -481,6 +620,38 @@
         "title": "Overwrite existing files",
         "description": "Choosing to continue with your selection will overwrite any existing changes you have made to the generated files.",
         "dismiss": "Don't show this message again."
+      },
+      "codeGenerationTimeModal": {
+        "title": "Code Generation",
+        "description": "Code generation may require significant processing time, with progress displayed in the Output panel. Please allow the process to complete to ensure all files are created successfully.",
+        "confirm": "Continue Generation"
+      },
+      "enableAiModels": "Generate AI Models",
+      "enableAiModelsTooltip": "Existing files won't be removed before generating"
+    },
+    "errors": {
+      "missingPlugins": {
+        "single": {
+          "title": "Missing Plugin Required",
+          "descriptionBegin": "It looks like you don't have the required plugin installed to access System Planner.\nPlease install",
+          "descriptionEnd": "in order to continue."
+        },
+        "multiple": {
+          "title": "Missing Plugins Required",
+          "description": "It looks like you don't have the required plugins installed to access System Planner.\nPlease install the following plugins to continue:"
+        },
+        "linkText": "View Documentation"
+      },
+      "dataModel": {
+        "title": "Missing SoC Data Model",
+        "descriptionBegin": "It looks like you don't have the required SoC Data Model installed to access System Planner.\nPlease install",
+        "descriptionMid": "data model",
+        "descriptionEnd": "in order to continue.",
+        "linkText": "View Documentation"
+      },
+      "unknown": {
+        "title": "Error Occurred",
+        "description": "System Planner cannot be started."
       }
     }
   },
@@ -675,6 +846,9 @@
       "openWorkspace": {
         "title": "Open Workspace"
       },
+      "browseExamples": {
+        "title": "Browse MSDK Examples"
+      },
       "openConfigFile": {
         "title": "Open Config File"
       },
@@ -715,13 +889,13 @@
       }
     },
     "cores-selection": {
-      "description": "<p>Select the cores for your workspace. Start with the primary core, which must be configured before you can continue. You can then add and configure additional cores as needed.<ol><li><strong>Select a core:</strong> Check the box next to the core you want to configure, starting with the primary core.</li><li><strong>Configure the core:</strong> With the core selected, click <strong>Config Options</strong> (to the right of the configuration status) to open the <strong>Core Configuration</strong> page.</li><li><strong>Apply configuration:</strong> On the configuration page, set options such as the firmware platform. Click <strong>Apply</strong> to save settings and return to the page.</li><li><strong>Review configuration:</strong> After applying settings, you can expand the configured core to review details before proceeding.</li></ol>Repeat these steps for any other cores you wish to configure.</p>",
+      "description": "<p>Choose which cores to include in your workspace. The primary core is always enabled and required. Select any additional cores you want to configure, then click <strong>Continue</strong> to configure them on the next screen.</p>",
       "help": {
         "title": "Select Cores for your Workspace"
       }
     },
     "core-config": {
-      "description": "<p>Select a firmware platform and configure its options for your core. <ol><li><strong>Select a platform:</strong> Browse or use filters to select a specific firmware platform.</li><li><strong>Configure platform options:</strong> Set up the available options. These options vary depending on the selected platform.</li> <li><strong>Apply configuration:</strong> Click <strong>Apply</strong> to save your settings and return to the previous page.</li> </ol></p>",
+      "description": "<p>Choose a code generation plugin for this core, adjust its platform options, and click <strong>Continue</strong> to apply the configuration. Repeat for any other cores you’ve selected.</p>",
       "help": {
         "title": "Configure the Core"
       }
@@ -742,6 +916,35 @@
       "description": "<p>Choose a workspace creation option. <ul> <li><strong>Select a workspace template:</strong> Choose from SoC predefined templates that come pre-populated with ADI recommended configurations. These templates provide a quick start with settings optimized for your SoC.</li> <li><strong>Manually configure the workspace:</strong> Continue setting up your system configuration manually for full control over every detail.</li></ul></p>",
       "help": {
         "title": "Choose a Workspace Creation Option"
+      },
+      "workspace-template": {
+        "title": "Workspace Template",
+        "description": "Choose from SoC predefined templates pre-populated with ADI recommended configuration options",
+        "no-templates": "No plugins available for your current SoC/Package/Board selection."
+      }
+    },
+    "cores-config": {
+      "title": "Set up your core projects",
+      "description": "Select a minimum of one core to add to your workspace.",
+      "trustZone": {
+        "title": "Enable TrustZone",
+        "secure": {
+          "title": "Secure",
+          "description": "Protected Execution Environment"
+        },
+        "non-secure": {
+          "title": "Non-secure",
+          "description": "Standard Execution Environment"
+        }
+      }
+    },
+    "platform-option": {
+      "description": "Please choose your configuration settings."
+    },
+    "plugin-option": {
+      "empty": {
+        "documentation": "View Documentation",
+        "description": "There are no plugins installed that offer Workspace Templates. You can install compatible plugins to start using templates in your workspace."
       }
     }
   }

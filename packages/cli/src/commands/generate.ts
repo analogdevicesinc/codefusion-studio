@@ -12,11 +12,14 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
-import {CfsConfig, CfsSocDataModel} from 'cfs-plugins-api';
-import {promises as fsp} from 'node:fs';
 
-import {getSoc} from '../lib/socs.js';
+import {Command, Flags} from '@oclif/core';
+import {type CfsConfig, getAiToolsPlugin} from 'cfs-lib';
+import {promises as fsp} from 'node:fs';
+import path from 'node:path';
+
+import {getDataModelManager} from '../utils/data-model-manager.js';
+import {getPackageManager} from '../utils/package-manager.js';
 import {getPluginManager} from '../utils/plugin-manager.js';
 
 export default class PinconfigGenerate extends Command {
@@ -75,28 +78,25 @@ export default class PinconfigGenerate extends Command {
 
   async run() {
     const {flags} = await this.parse(PinconfigGenerate);
-    const pluginManager = getPluginManager(flags['search-path']);
+    let configdata: CfsConfig;
 
-    // read input file
-    const inputJson = await fsp
-      .readFile(flags.input, 'utf8')
-      .catch((error) => {
-        throw new Error(
-          `Could not read input file "${flags.input}".\n${error}`
-        );
-      });
-
-    // parse input file
-    let input;
     try {
-      input = JSON.parse(inputJson);
+      // read input file
+      const inputJson = await fsp
+        .readFile(flags.input, 'utf8')
+        .catch((error) => {
+          throw new Error(
+            `Could not read input file "${flags.input}".\n${error}`
+          );
+        });
+
+      // parse input file
+      configdata = JSON.parse(inputJson) as CfsConfig;
     } catch (error) {
       throw new Error(
-        `Could not parse input file "${flags.input}", maybe not json?\n${error}`
+        `Parsing input file "${flags.input}" failed with error:\n${error}`
       );
     }
-
-    const configdata = input as unknown as CfsConfig;
 
     // ensure there are no pin conflicts
     const isPinUsed = {} as Record<string, boolean>;
@@ -110,14 +110,35 @@ export default class PinconfigGenerate extends Command {
       isPinUsed[pin.Pin] = true;
     }
 
-    const soc = (await getSoc(
-      this.config,
-      configdata.Soc.toLowerCase() +
-        '-' +
-        configdata.Package.toLowerCase()
-    )) as unknown as CfsSocDataModel;
+    const packageManager = await getPackageManager({
+      acceptUndefined: true
+    });
 
-    let generatedFiles;
+    const dmManager = await getDataModelManager(
+      this.config,
+      packageManager,
+      flags['search-path']
+    );
+
+    // get the plugin manager
+    const pluginManager = getPluginManager(
+      flags['search-path'],
+      packageManager,
+      dmManager
+    );
+
+    const soc = await dmManager.getDataModel(
+      configdata.Soc,
+      configdata.Package
+    );
+
+    if (!soc) {
+      this.error(
+        `SoC data model not found for "${configdata.Soc}" with package "${configdata.Package}"`
+      );
+    }
+
+    let generatedFiles: string[];
 
     try {
       generatedFiles = await pluginManager.generateConfigCode(
@@ -131,13 +152,36 @@ export default class PinconfigGenerate extends Command {
       throw new Error(`Failed to generate the files.\n${error}`);
     }
 
+    // TODO change to use the Package Manager later on when cfsai is available as a package
+    const cfsaiPath = path.resolve('../../Tools/cfsai');
+
+    const aiPlugin = await getAiToolsPlugin(cfsaiPath);
+    if (
+      configdata.Projects.some(
+        (p) => p.AIModels && p.AIModels.length > 0
+      )
+    ) {
+      const aiFiles = await aiPlugin.generateCode(
+        {
+          cfsconfig: configdata,
+          datamodel: soc
+        },
+        flags.output
+      );
+      generatedFiles.push(
+        ...aiFiles.map((file) =>
+          typeof file === 'string' ? file : file.name
+        )
+      );
+    }
+
     if (!generatedFiles) {
       this.error(`No files were generated.`);
     }
 
     if (flags.verbose && Array.isArray(generatedFiles)) {
       for (const file of generatedFiles) {
-        console.log(file);
+        this.log(file);
       }
     }
   }

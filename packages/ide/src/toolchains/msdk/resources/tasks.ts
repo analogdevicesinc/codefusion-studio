@@ -21,23 +21,7 @@ export default {
       label: "build",
       type: "shell",
       command:
-        "make -r -j 8 --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
-      group: "build",
-      problemMatcher: [],
-    },
-    {
-      label: "clean",
-      type: "shell",
-      command:
-        "make -j 8 clean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
-      group: "build",
-      problemMatcher: [],
-    },
-    {
-      label: "clean-periph",
-      type: "shell",
-      command:
-        "make -j 8 distclean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAXIM_PATH=${config:cfs.sdk.path}/SDK/MAX MAKE=make PROJECT=${config:cfs.project.name}",
+        "make -r -j 8 --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAKE=make PROJECT=${config:cfs.project.name}",
       group: "build",
       problemMatcher: [],
     },
@@ -63,7 +47,7 @@ export default {
       },
       linux: {
         command:
-          '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+          '(echo loadfile ${config:cfs.programFile} && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:``cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
       },
       group: "build",
       problemMatcher: [],
@@ -84,15 +68,15 @@ export default {
       type: "shell",
       windows: {
         command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLink.exe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
       },
       osx: {
         command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
       },
       linux: {
         command:
-          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
+          '(echo rst 0 && echo loadfile ${config:cfs.programFile} && echo r && echo g && echo q) | "${command:cfs.jlink.setJlinkPath}/JLinkExe" -device ${config:cfs.jlink.device} -if SWD -speed 4000 -autoconnect 1 -NoGui 1 -ExitOnError 1',
       },
       group: "build",
       problemMatcher: [],

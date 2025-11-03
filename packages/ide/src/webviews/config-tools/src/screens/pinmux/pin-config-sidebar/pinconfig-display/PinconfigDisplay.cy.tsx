@@ -13,7 +13,7 @@
  *
  */
 import type {ConfiguredPin} from '@common/api';
-import type {Soc} from '@common/types/soc';
+import type {ControlCfg, Soc} from '@common/types/soc';
 import {setActiveConfiguredSignal} from '../../../../state/slices/app-context/appContext.reducer';
 import {setAppliedSignal} from '../../../../state/slices/pins/pins.reducer';
 import {configurePreloadedStore} from '../../../../state/store';
@@ -25,12 +25,10 @@ import {
 	setSignalAssignment
 } from '../../../../state/slices/peripherals/peripherals.reducer';
 import type {CfsConfig} from 'cfs-plugins-api';
-import {resetPinDictionary} from '../../../../utils/soc-pins';
 import {computeInitialPinConfig} from '../../../../utils/pin-reset-controls';
 
-const mock = (await import(
-	`../../../../../../../../../cli/src/socs/max32690-tqfn.json`
-).then(module => module.default)) as unknown as Soc;
+const mock = (await import(`@socs/max32690-tqfn.json`))
+	.default as unknown as Soc;
 
 const mockControlsPromise = Promise.resolve({
 	PinConfig: mock.Controls?.PinConfig || []
@@ -40,7 +38,7 @@ const configDict = {
 	BoardName: '',
 	Package: 'TQFN',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -51,20 +49,10 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('PinconfigDisplay component', () => {
 	beforeEach(() => {
-		resetPinDictionary();
-
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
-		localStorage.setItem('Registers', JSON.stringify(mock.Registers));
-		localStorage.setItem('Package', JSON.stringify(mock.Packages[0]));
-		localStorage.setItem('configDict', JSON.stringify(configDict));
-
 		localStorage.setItem(
 			'pluginControls:CM4-proj',
 			JSON.stringify(mock.Controls)
@@ -72,76 +60,77 @@ describe('PinconfigDisplay component', () => {
 	});
 
 	it('Checks for correctly computed defaults', () => {
-		computeInitialPinConfig({
-			Pin: '41',
-			Peripheral: 'LPTMR0',
-			Signal: 'IOA',
-			ProjectId: 'CM4-proj'
-		})
-			.then(result => {
-				const reduxStore = configurePreloadedStore(mock);
+		const reduxStore = configurePreloadedStore(mock, configDict);
 
-				reduxStore.dispatch(
-					setPeripheralAssignment({
-						peripheral: 'LPTMR0',
-						projectId: 'CM4-proj',
-						config: {}
-					})
-				);
-
-				reduxStore.dispatch(setActivePeripheral('LPTMR0'));
-
-				reduxStore.dispatch(
-					setActiveSignal({
-						peripheral: 'LPTMR0',
-						signal: 'IOA',
-						keepActivePeripheral: true
-					})
-				);
-				reduxStore.dispatch(
-					setAppliedSignal({
-						Pin: '41',
-						Peripheral: 'LPTMR0',
-						Name: 'IOA',
-						PinCfg: result
-					})
-				);
-				reduxStore.dispatch(
-					setActiveConfiguredSignal({
-						peripheralName: 'LPTMR0',
-						signalName: 'IOA',
-						pinId: '41'
-					})
-				);
-
-				cy.mount(
-					<PinconfigDisplay
-						controlsPromise={mockControlsPromise}
-						projectId='CM4-proj'
-					/>,
-					reduxStore
-				);
-
-				cy.dataTest('TMR_SIGNAL_TYPE-IOA-control-dropdown').should(
-					'have.value',
-					'IN'
-				);
-				cy.dataTest('PWR-IOA-control-dropdown').should(
-					'have.value',
-					'VDDIO'
-				);
-				cy.dataTest('PS-IOA-control-dropdown').should(
-					'have.value',
-					'DIS'
-				);
+		cy.wrap(
+			computeInitialPinConfig({
+				Pin: '41',
+				Peripheral: 'LPTMR0',
+				Signal: 'IOA',
+				ProjectId: 'CM4-proj'
 			})
-			.catch(error => {
-				throw new Error(`Error computing default value: ${error}`);
-			});
+		).then(result => {
+			reduxStore.dispatch(
+				setPeripheralAssignment({
+					peripheral: 'LPTMR0',
+					projectId: 'CM4-proj',
+					config: {}
+				})
+			);
+
+			reduxStore.dispatch(setActivePeripheral('LPTMR0'));
+
+			reduxStore.dispatch(
+				setActiveSignal({
+					peripheral: 'LPTMR0',
+					signal: 'IOA',
+					keepActivePeripheral: true
+				})
+			);
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: '41',
+					Peripheral: 'LPTMR0',
+					Name: 'IOA',
+					PinCfg: result as Record<string, string>
+				})
+			);
+			reduxStore.dispatch(
+				setActiveConfiguredSignal({
+					peripheralName: 'LPTMR0',
+					signalName: 'IOA',
+					pinId: '41'
+				})
+			);
+
+			cy.mount(
+				<PinconfigDisplay
+					controlsPromise={mockControlsPromise}
+					projectId='CM4-proj'
+				/>,
+				reduxStore
+			);
+
+			cy.dataTest('TMR_SIGNAL_TYPE-IOA-control-dropdown').should(
+				'have.value',
+				'IN'
+			);
+			cy.dataTest('PWR-IOA-control-dropdown').should(
+				'have.value',
+				'VDDIO'
+			);
+			cy.dataTest('PS-IOA-control-dropdown').should(
+				'have.value',
+				'DIS'
+			);
+		});
+		// .catch(error => {
+		// 	throw new Error(`Error computing default value: ${error}`);
+		// });
 	});
 
 	it('Changes dropdown values and verifies for correct recomputations', () => {
-		const reduxStore = configurePreloadedStore(mock);
+		const reduxStore = configurePreloadedStore(mock, configDict);
 
 		reduxStore.dispatch(
 			setSignalAssignment({
@@ -279,5 +268,98 @@ describe('PinconfigDisplay component', () => {
 						cy.dataTest('package-display-info').should('not.exist');
 					});
 			});
+	});
+
+	it('should validate the field based on the pattern property', () => {
+		cy.document().then(doc => {
+			const elem = doc.createElement('div');
+			elem.setAttribute('id', 'pin-config-plugin-options-form');
+			doc.body.appendChild(elem);
+		});
+
+		const reduxStore = configurePreloadedStore(mock);
+		reduxStore.dispatch(setActivePeripheral('GPIO0'));
+
+		reduxStore.dispatch(
+			setActiveSignal({
+				peripheral: 'GPIO0',
+				signal: 'P0.7',
+				keepActivePeripheral: true
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '7',
+				Peripheral: 'GPIO0',
+				Name: 'P0.7',
+				PinCfg: {
+					MODE: 'IN',
+					PWR: 'VDDIO',
+					PS: 'DIS'
+				}
+			})
+		);
+		reduxStore.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'GPIO0',
+				signalName: 'P0.7',
+				pinId: '7'
+			})
+		);
+		const controls = [
+			{
+				Id: 'ALIAS',
+				Description: 'Alias',
+				Hint: '',
+				Type: 'text',
+				Pattern: '([a-z][a-z0-9-]*)?',
+				Condition: '',
+				PluginOption: true
+			},
+			...(mock.Controls?.PinConfig || [])
+		];
+
+		const mockControls = Promise.resolve({
+			PinConfig: controls as ControlCfg[]
+		});
+
+		cy.mount(
+			<PinconfigDisplay
+				controlsPromise={mockControls}
+				projectId='CM4-proj'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('ALIAS-P0.7-control-input').should('exist');
+
+		const input = cy
+			.dataTest('ALIAS-P0.7-control-input')
+			.shadow()
+			.find('input');
+
+		input.type('test ');
+
+		cy.dataTest('ALIAS-P0.7-error').should('exist');
+
+		input.clear();
+		input.type('123');
+
+		cy.dataTest('ALIAS-P0.7-error').should('exist');
+
+		input.clear();
+		input.type('test$');
+
+		cy.dataTest('ALIAS-P0.7-error')
+			.should('exist')
+			.then(errorMessage =>
+				expect(errorMessage).to.contain('Invalid format for field')
+			);
+
+		input.clear();
+		input.type('test');
+
+		cy.dataTest('ALIAS-P0.7-error').should('not.exist');
 	});
 });

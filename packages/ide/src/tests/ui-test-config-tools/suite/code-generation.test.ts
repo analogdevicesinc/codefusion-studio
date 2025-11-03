@@ -14,180 +14,105 @@
  */
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import * as path from "path";
-import { By, EditorView, VSBrowser, WebView } from "vscode-extension-tester";
+import { EditorView, VSBrowser, WebView } from "vscode-extension-tester";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { generateCodeTab } from "../page-objects/main-menu";
+import {
+  dismissOverwriteModal,
+  generateCodeButton,
+  generatedFilesList,
+  rVCheckbox,
+} from "../page-objects/generate-code-section/generate-code-screen";
 
-// Helper function to dismiss the overwrite modal if it appears
-async function dismissOverwriteModal(view: WebView): Promise<void> {
-  try {
-    const dismissBtn = await view
-      .findWebElement(By.css('[data-test="generate-code:modal:overwrite"]'))
-      .catch(() => null);
+describe("Config tools code generation", () => {
+  let view: WebView;
+  let editorView: EditorView;
 
-    if (dismissBtn) {
-      await dismissBtn.click();
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      console.log("Dismissed overwrite modal");
-    }
-  } catch (error) {
-    console.warn("no dismiss button found");
-  }
-}
-
-describe("Config tools code generation", function () {
   before(async function () {
     this.timeout(60000);
-
-    const editorView = new EditorView();
-
+    editorView = new EditorView();
     await editorView.closeAllEditors();
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await UIUtils.sleep(500);
   });
 
-  it("Should call generateConfigCode only with selected projects", async function () {
+  afterEach(async () => {
+    await view.switchBack();
+    editorView = new EditorView();
+    await editorView.closeAllEditors();
+  });
+
+  it("Should call generateConfigCode only with selected projects", async () => {
     const browser = VSBrowser.instance;
-
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-wlp-dual-core-blinky.cfsconfig",
-      ),
+    const configPath = getConfigPathForFile(
+      "max32690-wlp-dual-core-blinky.cfsconfig",
     );
+    await browser.openResources(configPath);
+    await UIUtils.sleep(5000);
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    const view = new WebView();
-
+    view = new WebView();
     await view.wait();
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css("#generate"));
+    UIUtils.clickElement(view, generateCodeTab);
+    await UIUtils.sleep(1000);
 
-    await navItem.click();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const projectRVCheckbox = await view.findWebElement(
-      By.css('[data-test="generate-code:core:RV:checkbox"]'),
-    );
-
-    await projectRVCheckbox.click();
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
+    await UIUtils.clickElement(view, rVCheckbox);
+    await UIUtils.sleep(1500);
     console.log("Clicked on RV checkbox");
 
-    const generateBtn = await view.findWebElement(
-      By.xpath('//*[@id="root"]/div/section/div[2]/vscode-button'),
-    );
-
-    console.log("Found generate button");
-
-    await generateBtn.click();
-
+    UIUtils.clickElement(view, generateCodeButton);
     console.log("Clicked generate button");
 
     await dismissOverwriteModal(view);
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
+    await UIUtils.sleep(3000);
     await dismissOverwriteModal(view);
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
+    await UIUtils.sleep(3000);
     await browser.takeScreenshot("disabled-project-skip-test-generate-click");
 
-    const generatedFilesList = await view.findWebElement(
-      By.css('[data-test="generated-files:list-container"]'),
+    const listItems: string[] = await UIUtils.getTextFromWebElements(
+      view,
+      generatedFilesList,
     );
 
-    const listItems = await generatedFilesList.findElements(By.css("li"));
-
-    await Promise.all(
-      listItems.map(async (child) => {
-        const text = await child.getText();
-
-        expect(text.toLowerCase()).to.include("m4");
-      }),
+    const hasM4 = listItems.some((text) =>
+      text.trim().toLowerCase().includes("m4"),
     );
-
-    await view.switchBack();
-
-    const ev = new EditorView();
-
-    await ev.closeAllEditors();
+    expect(hasM4, listItems.join(", ")).to.be.true;
   }).timeout(120000);
 
   it("Should not include externally managed projects in code generation", async function () {
     this.timeout(60000);
 
     const browser = VSBrowser.instance;
-
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-wlp-with-external-project.cfsconfig",
-      ),
+    const configPath = getConfigPathForFile(
+      "max32690-wlp-with-external-project.cfsconfig",
     );
+    await browser.openResources(configPath);
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    const view = new WebView();
-
+    await UIUtils.sleep(5000);
     await view.wait();
-
     await view.switchToFrame();
 
-    expect(await view.findWebElement(By.css("#generate"))).to.exist;
-
-    const navItem = await view.findWebElement(By.css("#generate"));
-
-    await navItem.click();
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    UIUtils.clickElement(view, generateCodeTab);
+    await UIUtils.sleep(3000);
 
     // Generate code with only RV project (externally managed CM4 should be excluded)
-    const generateBtn = await view.findWebElement(
-      By.xpath('//*[@id="root"]/div/section/div[2]/vscode-button'),
-    );
-
-    console.log("Found generate button");
-
-    await generateBtn.click();
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
+    UIUtils.clickElement(view, generateCodeButton);
+    await UIUtils.sleep(1500);
     await dismissOverwriteModal(view);
 
-    // take a snapshot of the screen to debug any issues
+    // Take a snapshot of the screen to debug any issues
     await browser.takeScreenshot("external-project-test-generate-click");
 
-    const generatedFilesList = await view.findWebElement(
-      By.css('[data-test="generated-files:list-container"]'),
+    const listItems: string[] = await UIUtils.getTextFromWebElements(
+      view,
+      generatedFilesList,
     );
 
-    const listItems = await generatedFilesList.findElements(By.css("li"));
-
-    await Promise.all(
-      listItems.map(async (child) => {
-        const text = await child.getText();
-
-        expect(text.toLowerCase()).to.include("riscv");
-      }),
+    const hasRiscV = listItems.some((text) =>
+      text.trim().toLowerCase().includes("riscv"),
     );
-
-    await view.switchBack();
-
-    const ev = new EditorView();
-
-    await ev.closeAllEditors();
+    expect(hasRiscV, listItems.join(", ")).to.be.true;
   }).timeout(120000);
 });

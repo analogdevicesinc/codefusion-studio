@@ -16,11 +16,16 @@ import {memo, useEffect, useCallback} from 'react';
 import ProjectItem from './ProjectItem';
 import styles from './ProjectList.module.scss';
 import {useDispatch} from 'react-redux';
-import {setSelectedProjects} from '../../../state/slices/app-context/appContext.reducer';
+import {
+	removeSelectedProject,
+	setSelectedProject
+} from '../../../state/slices/app-context/appContext.reducer';
 import {useSelectedProjects} from '../../../state/slices/app-context/appContext.selector';
 import {useSystemErrorsCount} from '../../../hooks/useSystemErrorsCount';
 import type {ProjectInfo} from '../../../utils/config';
 import type {ControlCfg} from '../../../../../common/types/soc';
+import {useAIModels} from '../../../state/slices/ai-tools/aiModel.selector';
+import type {AIModel} from 'cfs-plugins-api';
 
 function ProjectList({
 	projects,
@@ -31,6 +36,7 @@ function ProjectList({
 }>) {
 	const dispatch = useDispatch();
 	const selectedProjectIds = useSelectedProjects();
+	const aiModels = useAIModels();
 
 	const errorsMap = useSystemErrorsCount({projectsControls});
 
@@ -52,28 +58,51 @@ function ProjectList({
 				return;
 			}
 
-			const newSelectedIds = selected
-				? [...selectedProjectIds, projectId]
-				: selectedProjectIds.filter(id => id !== projectId);
-
-			dispatch(setSelectedProjects(newSelectedIds));
+			dispatch(
+				selected
+					? setSelectedProject({
+							projectId,
+							includeAI: aiModelExistsForProject(aiModels, project)
+						})
+					: removeSelectedProject(projectId)
+			);
 		},
-		[projects, selectedProjectIds, dispatch, errorsMap]
+		[projects, dispatch, errorsMap, aiModels]
 	);
 
-	// Initialize selected projects on first render
-	useEffect(() => {
-		const validProjectIds = projects
-			.filter(
-				project =>
-					!project.ExternallyManaged &&
-					!Object.values(errorsMap.get(project.ProjectId) ?? {}).some(
-						errorCount => errorCount > 0
-					)
-			)
-			.map(project => project.ProjectId);
+	const handleAiProjectSelect = useCallback(
+		(projectId: string, selected: boolean) => {
+			dispatch(setSelectedProject({projectId, includeAI: selected}));
+		},
+		[dispatch]
+	);
 
-		dispatch(setSelectedProjects(validProjectIds));
+	useEffect(() => {
+		const validIds = new Set(
+			projects
+				.filter(
+					p =>
+						!p.ExternallyManaged &&
+						!Object.values(errorsMap.get(p.ProjectId) ?? {}).some(
+							count => count > 0
+						)
+				)
+				.map(p => p.ProjectId)
+		);
+
+		for (const project of projects) {
+			if (validIds.has(project.ProjectId)) {
+				dispatch(
+					setSelectedProject({
+						projectId: project.ProjectId,
+						includeAI: aiModelExistsForProject(aiModels, project)
+					})
+				);
+			} else {
+				// Deselect invalid projects
+				dispatch(removeSelectedProject(project.ProjectId));
+			}
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -87,22 +116,30 @@ function ProjectList({
 					const errors = errorsMap.get(project.ProjectId) ?? {
 						peripheralAllocErr: 0,
 						pinConfigErr: 0,
-						clockConfigErr: 0
+						clockConfigErr: 0,
+						dfgErr: 0
 					};
 
-					const isSelected =
-						!(
-							errors &&
-							Object.values(errors).some(errorCount => errorCount > 0)
-						) && selectedProjectIds.includes(project.ProjectId);
+					const isValid = !(
+						errors &&
+						Object.values(errors).some(errorCount => errorCount > 0)
+					);
+
+					const selectedProject = isValid
+						? selectedProjectIds.find(
+								p => p.projectId === project.ProjectId
+							)
+						: undefined;
 
 					return (
 						<ProjectItem
 							key={project.ProjectId}
 							project={project}
-							isSelected={isSelected}
+							isSelected={Boolean(selectedProject)}
+							isAiSelected={Boolean(selectedProject?.includeAI)}
 							errors={errors}
 							onProjectSelect={handleProjectSelect}
+							onAiProjectSelect={handleAiProjectSelect}
 						/>
 					);
 				})
@@ -114,3 +151,14 @@ function ProjectList({
 }
 
 export default memo(ProjectList);
+
+function aiModelExistsForProject(
+	aiModels: AIModel[],
+	project: ProjectInfo
+) {
+	return aiModels.some(
+		model =>
+			model.Enabled &&
+			model.Target.Core.toUpperCase() === project.CoreId.toUpperCase()
+	);
+}

@@ -1,0 +1,101 @@
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
+.sidebarHeader {
+	display: flex;
+	justify-content: space-between;
+	padding: 20px;
+	align-items: center;
+	border-bottom: 1px solid colors.$default-border;
+
+	& p {
+		@include fonts.label-l3;
+		color: colors.$description-foreground;
+	}
+}
+
+.streamItem {
+	display: flex;
+	justify-content: space-between;
+	padding: 8px 12px 8px 8px;
+}
+
+.inOutDisplay {
+	display: flex;
+	gap: 8px;
+}
+
+.inOutBubble {
+	display: flex;
+	gap: 2px;
+	background-color: colors.$editor-widget-background;
+	padding: 4px 8px;
+	border-radius: 16px;
+	@include fonts.label-l3;
+	line-height: 14px;
+	min-width: 16px;
+	justify-content: center;
+	align-items: center;
+	& span {
+		color: colors.$description-foreground;
+		line-height: 110%;
+	}
+}
+
+.streamList {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	overflow-y: auto;
+
+	.sectionTitle {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.streamListItem {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 0;
+		border-top: 0.5px solid colors.$default-border;
+	}
+
+	.streamListItemGroup {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 0;
+		border-top: 0.5px solid colors.$default-border;
+	}
+
+	.streamListItemDescription {
+		flex-grow: 1;
+		color: colors.$description-foreground;
+		@include fonts.body-b3;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+.captionContainer {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.streamErrorIconPlaceholder {
+	width: 16px;
+}
+
+.streamErrorIcon {
+	display: flex;
+	width: 16px;
+	height: 16px;
+
+	path {
+		fill: #{colors.$error};
+	}
+}

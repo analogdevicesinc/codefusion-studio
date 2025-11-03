@@ -42,5 +42,7 @@ export const workspaceConfigInitialState: WorkspaceConfigState = {
 				isEmptyPath: false
 			}
 		}
-	}
+	},
+	currentCoreConfigStep: 0,
+	isTrustZoneEnabled: {}
 };

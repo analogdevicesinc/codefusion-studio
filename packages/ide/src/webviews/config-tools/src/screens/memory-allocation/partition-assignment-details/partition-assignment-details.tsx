@@ -15,32 +15,70 @@
 
 import {MemoryGraph} from '../memory-graph/memory-graph';
 import styles from './partition-assignment-details.module.scss';
-import {Badge} from 'cfs-react-library';
-import PartitionAssignmentDetailsCard from '../partition-assignment-details-card/partition-assignment-details-card';
-import {type TLocaleContext} from '../../../common/types/context';
-import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {
 	useFilteredBlockTypes,
-	useFilteredCores,
 	useFilteredMemoryBlocks,
-	useFilteredPartitions
+	useFilteredCores,
+	useFilteredPartitions,
+	useMemoryScreenActiveView,
+	useOpenProjectCards,
+	useOpenTypeCards
 } from '../../../state/slices/app-context/appContext.selector';
-import {type ProjectInfo} from '../../../utils/config';
+import {Button, HamburgerIcon, MemoryIcon} from 'cfs-react-library';
+import {useDispatch} from 'react-redux';
+import PartitionProjectView from './partition-project-view';
+import PartitionTypeView from './partition-type-view';
+import {type Partition} from '../../../state/slices/partitions/partitions.reducer';
+import {
+	setMemoryScreenActiveView,
+	setOpenProjectCards,
+	setOpenTypeCards
+} from '../../../state/slices/app-context/appContext.reducer';
+import {useCallback} from 'react';
 
 export default function PartitionAssignmentDetails() {
-	const i10n: TLocaleContext | undefined =
-		useLocaleContext()?.memory.partition;
+	const dispatch = useDispatch();
 	const partitions = useFilteredPartitions();
 	const filteredBlocks = useFilteredMemoryBlocks();
+	const activeView = useMemoryScreenActiveView();
+	const openProjectCards = useOpenProjectCards();
+	const openTypeCards = useOpenTypeCards();
 
-	const isProjectAssignedPartitions = (
-		project: ProjectInfo
-	): boolean =>
-		partitions.some(partition =>
-			partition.projects.some(
-				memoryProject => memoryProject.projectId === project.ProjectId
-			)
-		);
+	const handleProjectCardOpenChange = useCallback(
+		(projectId: string, open: boolean) => {
+			const next = open
+				? [...openProjectCards, projectId].filter(
+						(id, idx, arr) => arr.indexOf(id) === idx
+					)
+				: openProjectCards.filter(id => id !== projectId);
+
+			dispatch(setOpenProjectCards(next));
+		},
+		[openProjectCards, dispatch]
+	);
+
+	const handleTypeCardOpenChange = useCallback(
+		(projectId: string, open: boolean) => {
+			const next = open
+				? [...openTypeCards, projectId].filter(
+						(id, idx, arr) => arr.indexOf(id) === idx
+					)
+				: openTypeCards.filter(id => id !== projectId);
+
+			dispatch(setOpenTypeCards(next));
+		},
+		[openTypeCards, dispatch]
+	);
+
+	const partitionByType: Record<string, Partition[]> =
+		partitions.reduce<Record<string, Partition[]>>((acc, item) => {
+			if (!acc[item.type]) acc[item.type] = [];
+			acc[item.type].push(item);
+
+			return acc;
+		}, {});
+
+	const types = Object.keys(partitionByType);
 
 	return (
 		<div className={styles.sectionContainer}>
@@ -60,45 +98,59 @@ export default function PartitionAssignmentDetails() {
 				))}
 			</div>
 			<div className={styles.coreSection}>
-				{useFilteredCores().map((project: ProjectInfo) => (
-					<div key={project.CoreId} className={styles.coreEntry}>
-						<div className={styles.coreHeader}>
-							<h2 data-test='core-name'>{project.Name}</h2>
-							<div className={styles.badgeContainer}>
-								{project.IsPrimary ? (
-									<Badge appearance='secondary'>
-										{i10n?.badge.primary}
-									</Badge>
-								) : null}
-								{project.Secure && (
-									<Badge appearance='secondary'>
-										{i10n?.badge.secure}
-									</Badge>
-								)}
-								{project.Secure === false && (
-									<Badge appearance='secondary'>
-										{i10n?.badge.non_secure}
-									</Badge>
-								)}
-								{project.ExternallyManaged && (
-									<Badge appearance='secondary'>
-										{i10n?.badge.external_managed}
-									</Badge>
-								)}
-							</div>
-						</div>
-						{isProjectAssignedPartitions(project) ? (
-							<PartitionAssignmentDetailsCard
-								partitions={partitions}
-								project={project}
-							/>
-						) : (
-							<div className={styles.noPartitions}>
-								{i10n?.num_partitions.zero}
-							</div>
-						)}
+				<div className={styles.partitionHeader}>
+					<div className={styles.partitionCount}>
+						<h2>Partitions</h2>
+						<h2>{`(${partitions.length})`}</h2>
 					</div>
-				))}
+					<div className={styles.partitionViewBy}>
+						<div className={styles.viewBy}>
+							<h5>View By</h5>
+						</div>
+						<Button
+							appearance='icon'
+							dataTest='partition-project-view-button'
+							className={`${activeView === 'project' ? styles.selected : ''}`}
+							onClick={() => {
+								dispatch(setMemoryScreenActiveView('project'));
+							}}
+						>
+							<div className={styles.viewByOption}>
+								<MemoryIcon />
+								<h5>Project</h5>
+							</div>
+						</Button>
+						<Button
+							appearance='icon'
+							dataTest='partition-type-view-button'
+							className={`${activeView === 'type' ? styles.selected : ''}`}
+							onClick={() => {
+								dispatch(setMemoryScreenActiveView('type'));
+							}}
+						>
+							<div className={styles.viewByOption}>
+								<HamburgerIcon />
+								<h5>Type</h5>
+							</div>
+						</Button>
+					</div>
+				</div>
+				{activeView === 'project' ? (
+					<PartitionProjectView
+						filteredCores={useFilteredCores}
+						partitions={partitions}
+						types={types}
+						openCards={openProjectCards}
+						onCardOpen={handleProjectCardOpenChange}
+					/>
+				) : (
+					<PartitionTypeView
+						partitionByType={partitionByType}
+						types={types}
+						openCards={openTypeCards}
+						onCardOpen={handleTypeCardOpenChange}
+					/>
+				)}
 			</div>
 		</div>
 	);

@@ -12,9 +12,18 @@
  * limitations under the License.
  *
  */
-import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { pinTab } from "../page-objects/main-menu";
+import {
+  configButton,
+  mainPanelPinOnLineAndColumn,
+  pinDetailsContainer,
+  signalControlDropdown,
+  signalToggleWithIndex,
+} from "../page-objects/pin-config-section/pin-config-screen";
 
 describe("Zephyr Firmware Platform", () => {
   let browser: VSBrowser;
@@ -22,55 +31,36 @@ describe("Zephyr Firmware Platform", () => {
 
   before(function () {
     this.timeout(60000);
-
     browser = VSBrowser.instance;
   });
 
   after(async function () {
     this.timeout(60000);
-
     await view.switchBack();
-
     const wb = new Workbench();
-
     await wb.wait();
-
     await wb.executeCommand("revert and close editor");
   });
 
   it("Should only allow Zephyr specific controls", async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-tqfn.cfsconfig",
-      ),
-    );
+    const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+    await browser.openResources(configPath);
 
     view = new WebView();
-
     await view.wait();
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css(`#pinmux`));
-
-    await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    await UIUtils.clickElement(view, pinTab).then(async () => {
+      await UIUtils.sleep(3000);
       const pin = await view.findWebElement(
-        By.css(
-          "#pin-rows-container > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
-        ),
+        await mainPanelPinOnLineAndColumn(1, 2),
       );
 
       expect(await pin.getAttribute("class")).to.contain("unassigned");
 
       await pin.click().then(async () => {
-        // assert pin details sidebar is rendered
-        expect(await view.findWebElement(By.css("#details-container"))).to
-          .exist;
+        // Assert pin details sidebar is rendered
+        expect(await view.findWebElement(pinDetailsContainer)).to.exist;
 
         await new Promise((res) => {
           setTimeout(res, 500);
@@ -78,24 +68,24 @@ describe("Zephyr Firmware Platform", () => {
       });
 
       const firstSignalToggle = await view.findWebElement(
-        By.css(
-          "#pin-details-signals-container > div:nth-child(1) > section > label",
-        ),
+        await signalToggleWithIndex(1),
       );
 
       firstSignalToggle.click().then(async () => {
-        const navItem = await view.findWebElement(By.css("#config"));
+        const navItem = await view.findWebElement(configButton);
 
         await navItem.click().then(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await UIUtils.sleep(1000);
 
           expect(
-            await view.findWebElement(By.css("#MODE-P0.19-control-dropdown")),
+            await view.findWebElement(
+              await signalControlDropdown("MODE-P0.19"),
+            ),
           ).to.not.exist;
 
           expect(
             await view.findWebElement(
-              By.css("#GPIO_TYPE-P2.26-control-dropdown"),
+              await signalControlDropdown("GPIO_TYPE-P2.26"),
             ),
           ).to.exist;
         });

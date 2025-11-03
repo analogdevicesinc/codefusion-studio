@@ -20,12 +20,22 @@ import computeRegisterValue, {
 	computeFieldValue,
 	getNamespacedControlIntegerValue
 } from '../../../utils/compute-register-value';
-import type {ConfigField, FieldDictionary} from '@common/types/soc';
+import type {
+	ConfigFields,
+	RegisterConfigField,
+	FieldDictionary
+} from '@common/types/soc';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {Chip, Badge} from 'cfs-react-library';
 import ContextSearchInput from '../../../components/context-search-input/context-search-input';
-import {useModifiedClockNodes} from '../../../state/slices/clock-nodes/clockNodes.selector';
-import {getClockNodeConfig} from '../../../utils/clock-nodes';
+import {
+	useDiagramData,
+	useModifiedClockNodes
+} from '../../../state/slices/clock-nodes/clockNodes.selector';
+import {
+	getClockNodeConfig,
+	getClockNodeDictionary
+} from '../../../utils/clock-nodes';
 import {
 	getRegisterDetails,
 	getRegisterDictionary
@@ -36,6 +46,15 @@ import {setActiveSearchString} from '../../../state/slices/app-context/appContex
 import {useDispatch} from 'react-redux';
 import {usePeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
 import {getSocPeripheralDictionary} from '../../../utils/soc-peripherals';
+import {
+	useGasketOptions,
+	useStreams
+} from '../../../state/slices/gaskets/gasket.selector';
+import type {DFGStream, GasketConfig} from 'cfs-plugins-api';
+import {getGasketDictionary} from '../../../utils/dfg';
+import {getClockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
+import {filterClockFrequencies} from '../../../utils/persistence';
+import {getSocPinDetails} from '../../../utils/soc-pins';
 
 export type ComputedRegisters = Array<{
 	name: string;
@@ -49,10 +68,47 @@ function getRegistersCount(amount: number) {
 	return Boolean(amount) && <Badge>{amount}</Badge>;
 }
 
+// eslint-disable-next-line max-params
+function addToRegisterConfigs(
+	configs: Record<
+		string,
+		Record<string, RegisterConfigField[] | undefined>
+	>,
+	configNamespace: string,
+	controlNamespace: string,
+	dmConfig: ConfigFields | undefined,
+	key: string,
+	value: string
+) {
+	if (dmConfig?.[key] && value !== undefined && value !== '') {
+		// If we can't find the value, try "VALUE" as it is most likely an entry box.
+		const cfg = dmConfig[key][value] ?? dmConfig[key].VALUE;
+
+		configs[configNamespace] = configs[configNamespace] ?? {};
+		configs[configNamespace][key] =
+			configs[configNamespace][key] ?? [];
+
+		cfg?.forEach(s => {
+			configs[configNamespace][key]?.push({
+				...s,
+				ControlValue: getNamespacedControlIntegerValue(
+					controlNamespace,
+					key,
+					value
+				)
+			});
+		});
+	}
+}
+
 export default function RegisterBody() {
 	const assignedPins = useAssignedPins();
 	const modifiedClockNodes = useModifiedClockNodes();
+	const diagramData = useDiagramData();
 	const allocatedPeripherals = usePeripheralAllocations();
+	const dfgGaskets = useGasketOptions();
+	const dfgStreams = useStreams();
+	const dmGaskets = getGasketDictionary();
 
 	const [activeRegister, setActiveRegister] = useState<
 		string | undefined
@@ -72,6 +128,14 @@ export default function RegisterBody() {
 								signal.Peripheral === appliedSignal.Peripheral
 						);
 
+						const peripheral = appliedSignal.Peripheral
+							? getSocPeripheralDictionary()[
+									getSocPinDetails(assignedPin.pinId ?? 'not found')
+										?.GPIOName ?? 'not found'
+								]
+							: undefined;
+						const initCfg = peripheral?.initialization;
+
 						// @TODO: Review if we actually need to decouple the pin config and signal config.
 						return {
 							pinConfig: Object.entries(appliedSignal.PinCfg ?? {})
@@ -81,19 +145,21 @@ export default function RegisterBody() {
 											controlValue
 										];
 									// eslint-disable-next-line max-nested-callbacks
-									cfg?.forEach(s => {
-										s.ControlValue = getNamespacedControlIntegerValue(
+									return cfg?.map(s => ({
+										...s,
+										ControlValue: getNamespacedControlIntegerValue(
 											'PinConfig',
 											controlKey,
 											controlValue
-										);
-									});
-
-									return cfg;
+										)
+									}));
 								})
 								.flat(),
-							// The ControlValue is not used in PinMux sequences.
-							signalConfig: pinSignal?.PinMuxConfig
+							// The ControlValue is not used in PinMux and initialization sequences.
+							signalConfig: [
+								...(pinSignal?.PinMuxConfig ?? []),
+								...(initCfg ?? [])
+							]
 						};
 					})
 				)
@@ -101,107 +167,252 @@ export default function RegisterBody() {
 		[assignedPins]
 	);
 
-	const modifiedClockNodesRegisterConfigs = useMemo(
-		() =>
-			Object.values(modifiedClockNodes).map(node => {
-				const targetConfigs = Object.entries(
-					node.controlValues ?? {}
-				).reduce<Record<string, ConfigField[] | undefined>>(
-					(acc, [key, value]) => {
-						const nodeConfig = getClockNodeConfig(node.Name);
+	const registerConfigs = useMemo(() => {
+		const configs: Record<
+			string,
+			Record<string, RegisterConfigField[] | undefined>
+		> = {};
 
-						if (
-							nodeConfig.Config[key] &&
-							(value !== undefined || value !== '')
-						) {
-							let cfg = nodeConfig.Config[key][value];
-							cfg?.forEach(s => {
-								s.ControlValue = getNamespacedControlIntegerValue(
-									'ClockConfig',
-									key,
-									value
-								);
-							});
+		configs.ClockConfig = {};
 
-							if (!cfg) {
-								// It is most likely an entry box. Try "VALUE".
-								cfg = nodeConfig.Config[key].VALUE;
-								cfg?.forEach(s => {
-									s.ControlValue = getNamespacedControlIntegerValue(
-										'ClockConfig',
-										key,
-										value
-									);
-								});
-							}
+		Object.values(modifiedClockNodes).forEach(node => {
+			Object.entries(node.controlValues ?? {}).forEach(
+				([key, value]) => {
+					const nodeConfig = getClockNodeConfig(node.Name);
+					const configNamespace = node.Name + ' ClockConfig';
 
-							acc[key] = cfg;
-						}
+					addToRegisterConfigs(
+						configs,
+						configNamespace,
+						'ClockConfig',
+						nodeConfig.Config,
+						key,
+						value
+					);
+				}
+			);
+		});
 
-						return acc;
-					},
-					{}
-				);
+		// Add Initialization sequences for any enabled clock nodes.
+		const clockFreqs = filterClockFrequencies(
+			diagramData,
+			getClockFrequencyDictionary()
+		);
+		Object.keys(clockFreqs).forEach(key => {
+			const node = Object.values(getClockNodeDictionary()).find(c =>
+				c.Outputs.find(o => o.Name === key)
+			);
 
-				return targetConfigs;
-			}),
-		[modifiedClockNodes]
-	);
+			if (node?.Initialization) {
+				const configNamespace = node.Name + ' ClockConfig';
+				configs[configNamespace] = configs[configNamespace] ?? {};
+				configs[configNamespace].Initialization = [
+					...(configs[configNamespace].Initialization ?? []),
+					...node.Initialization?.map(s => ({...s, ControlValue: 0}))
+				];
+			}
+		});
 
-	const peripheralRegisterConfig = Object.values(
-		allocatedPeripherals
-	).map(peripheralDict =>
-		Object.entries(peripheralDict)
-			.filter(([peripheralName]) =>
-				Boolean(getSocPeripheralDictionary()[peripheralName].config)
-			)
-			.reduce<Record<string, ConfigField[]>>(
-				(acc, [peripheralName, peripheral]) => {
+		Object.values(allocatedPeripherals).forEach(peripheralDict => {
+			Object.entries(peripheralDict)
+				.filter(([peripheralName]) =>
+					Boolean(
+						getSocPeripheralDictionary()[peripheralName]?.config
+					)
+				)
+				.forEach(([peripheralName, peripheral]) => {
 					const peripheralConfigFields =
 						getSocPeripheralDictionary()[peripheralName].config;
 
+					configs[peripheralName] = configs[peripheralName] || {};
+
 					Object.entries(peripheral.config).forEach(
 						([key, value]) => {
-							if (peripheralConfigFields?.[key]) {
-								let cfg = peripheralConfigFields[key][String(value)];
-								cfg?.forEach(s => {
-									s.ControlValue = getNamespacedControlIntegerValue(
-										peripheralName,
-										key,
-										String(value)
-									);
-								});
-
-								if (!cfg) {
-									// It is most likely an entry box. Try "VALUE".
-									cfg = peripheralConfigFields[key].VALUE;
-									cfg?.forEach(s => {
-										s.ControlValue = getNamespacedControlIntegerValue(
-											peripheralName,
-											key,
-											String(value)
-										);
-									});
-								}
-
-								acc[key] = cfg;
-							}
+							addToRegisterConfigs(
+								configs,
+								peripheralName,
+								peripheralName,
+								peripheralConfigFields,
+								key,
+								String(value)
+							);
 						}
 					);
+				});
+		});
 
-					return acc;
-				},
-				{}
-			)
-	);
+		dfgGaskets.forEach((gasket: GasketConfig) => {
+			const controlNamespace = gasket.Name + ' DFGGasketConfig';
+
+			if (gasket.Config) {
+				const dmGasket = dmGaskets[gasket.Name];
+				Object.entries(gasket.Config).forEach(([key, value]) => {
+					addToRegisterConfigs(
+						configs,
+						controlNamespace,
+						controlNamespace,
+						dmGasket?.Config,
+						key,
+						String(value)
+					);
+				});
+			}
+		});
+
+		dfgStreams.forEach((stream: DFGStream) => {
+			const srcNamespace = stream.Source.Gasket + ' DFGStreamConfig';
+			const srcGasket = dmGaskets[stream.Source.Gasket];
+			const srcIdx = stream.Source.Index;
+
+			if (stream.Source.Config) {
+				Object.entries(stream.Source.Config).forEach(
+					([key, value]) => {
+						addToRegisterConfigs(
+							configs,
+							srcNamespace,
+							srcNamespace,
+							srcGasket?.OutputStreams[srcIdx].Config,
+							key,
+							String(value)
+						);
+					}
+				);
+			}
+
+			// Add setting for stream ID
+			addToRegisterConfigs(
+				configs,
+				srcNamespace,
+				srcNamespace,
+				srcGasket?.OutputStreams[srcIdx].BuiltInConfig,
+				'STREAM_ID',
+				String(stream.StreamId)
+			);
+
+			// Add setting for buffer start address
+			addToRegisterConfigs(
+				configs,
+				srcNamespace,
+				srcNamespace,
+				srcGasket?.OutputStreams[srcIdx].BuiltInConfig,
+				'START_ADDR',
+				String(stream.Source.BufferAddress)
+			);
+
+			// Add setting for buffer end address
+			addToRegisterConfigs(
+				configs,
+				srcNamespace,
+				srcNamespace,
+				srcGasket?.OutputStreams[srcIdx].BuiltInConfig,
+				'END_ADDR',
+				String(
+					stream.Source.BufferAddress + stream.Source.BufferSize - 1
+				)
+			);
+
+			// Add destination gasket ID
+			const destGasket = dmGaskets[stream.Destinations[0].Gasket];
+			addToRegisterConfigs(
+				configs,
+				srcNamespace,
+				srcNamespace,
+				srcGasket?.OutputStreams[srcIdx].BuiltInConfig,
+				'DEST_ID',
+				String(destGasket?.Id)
+			);
+
+			if (stream.Destinations?.length > 1) {
+				// Set up the multi-cast mask
+				addToRegisterConfigs(
+					configs,
+					srcNamespace,
+					srcNamespace,
+					srcGasket?.OutputStreams[srcIdx].BuiltInConfig,
+					'MCAST',
+					String(
+						stream.Destinations.reduce(
+							(acc, dest) =>
+								// eslint-disable-next-line no-bitwise
+								acc |
+								// eslint-disable-next-line no-bitwise
+								(1 << ((dmGaskets[dest.Gasket]?.Id ?? 1) - 1)),
+							0
+						)
+					)
+				);
+			}
+
+			for (const destination of stream.Destinations) {
+				const destNamespace = destination.Gasket + ' DFGStreamConfig';
+				const destGasket = dmGaskets[destination.Gasket];
+				const destIdx = destination.Index;
+
+				if (destination.Config) {
+					Object.entries(destination.Config).forEach(
+						([key, value]) => {
+							addToRegisterConfigs(
+								configs,
+								destNamespace,
+								destNamespace,
+								destGasket?.InputStreams[destIdx].Config,
+								key,
+								String(value)
+							);
+						}
+					);
+				}
+
+				// Add setting for stream ID
+				addToRegisterConfigs(
+					configs,
+					destNamespace,
+					destNamespace,
+					destGasket?.InputStreams[destIdx].BuiltInConfig,
+					'STREAM_ID',
+					String(stream.StreamId)
+				);
+
+				// Add setting for buffer start address
+				addToRegisterConfigs(
+					configs,
+					destNamespace,
+					destNamespace,
+					destGasket?.InputStreams[destIdx].BuiltInConfig,
+					'START_ADDR',
+					String(stream.Source.BufferAddress)
+				);
+
+				// Add setting for buffer end address
+				addToRegisterConfigs(
+					configs,
+					destNamespace,
+					destNamespace,
+					destGasket?.InputStreams[destIdx].BuiltInConfig,
+					'END_ADDR',
+					String(
+						destination.BufferAddress + destination.BufferSize - 1
+					)
+				);
+			}
+		});
+
+		return configs;
+	}, [
+		dfgStreams,
+		dfgGaskets,
+		dmGaskets,
+		allocatedPeripherals,
+		modifiedClockNodes,
+		diagramData
+	]);
 
 	const computedRegisters: ComputedRegisters = useMemo(
 		() =>
 			registerDictionary.map(register => {
 				const {value, isResetValue} = computeRegisterValue(
 					AssignedPinsRegisterConfigs,
-					modifiedClockNodesRegisterConfigs,
-					peripheralRegisterConfig,
+					Object.values(registerConfigs),
 					register
 				);
 
@@ -213,28 +424,32 @@ export default function RegisterBody() {
 					isResetValue
 				};
 			}),
-		[
-			AssignedPinsRegisterConfigs,
-			modifiedClockNodesRegisterConfigs,
-			peripheralRegisterConfig,
-			registerDictionary
-		]
+		[AssignedPinsRegisterConfigs, registerConfigs, registerDictionary]
 	);
-
-	const clearSearch = () => {
-		dispatch(
-			setActiveSearchString({
-				searchContext: 'register',
-				value: ''
-			})
-		);
-	};
 
 	const [filterState, setFilterState] = useState<{
 		filter: 'modified' | 'unmodified' | undefined;
 		filteredRegisters: ComputedRegisters;
 		filteredDetails: FieldDictionary[];
 	}>({filter: undefined, filteredRegisters: [], filteredDetails: []});
+
+	const getFilteredRegisters = useCallback(
+		(isResetValue: boolean) =>
+			computedRegisters.filter(
+				register => register.isResetValue === isResetValue
+			),
+		[computedRegisters]
+	);
+
+	const modifiedRegisters = useMemo(
+		() => getFilteredRegisters(false),
+		[getFilteredRegisters]
+	);
+
+	const unmodifiedRegisters = useMemo(
+		() => getFilteredRegisters(true),
+		[getFilteredRegisters]
+	);
 
 	const filterRegistersBySearch = (
 		registers: ComputedRegisters,
@@ -258,23 +473,68 @@ export default function RegisterBody() {
 			)
 		: filterRegistersBySearch(computedRegisters, searchString);
 
-	const getFilteredRegisters = useCallback(
-		(isResetValue: boolean) =>
-			computedRegisters.filter(
-				register => register.isResetValue === isResetValue
-			),
-		[computedRegisters]
+	const getModifiedRegisterFields = () =>
+		activeRegisterDetails?.fields.filter(field => {
+			const value = Number(
+				computeFieldValue(
+					AssignedPinsRegisterConfigs,
+					Object.values(registerConfigs),
+					activeRegisterDetails.name,
+					field,
+					field.reset
+				)
+			);
+
+			return value !== Number(field.reset);
+		});
+
+	const getModifiedRegisters = () => {
+		if (activeRegisterDetails) {
+			return getModifiedRegisterFields() ?? [];
+		}
+
+		return filterState.filter === 'modified' && searchString
+			? searchResults.filter(register => !register.isResetValue)
+			: modifiedRegisters;
+	};
+
+	const getUnmodifiedRegisters = () => {
+		if (activeRegisterDetails) {
+			return activeRegisterDetails.fields.filter(
+				field => !getModifiedRegisterFields()?.includes(field)
+			);
+		}
+
+		return filterState.filter === 'unmodified' && searchString
+			? searchResults.filter(register => register.isResetValue)
+			: unmodifiedRegisters;
+	};
+
+	const filteredRegFields = (
+		activeRegisterDetails?.fields ?? [
+			...getUnmodifiedRegisters(),
+			...getModifiedRegisters()
+		]
+	).filter(r =>
+		r.name.toLowerCase().includes(searchString.toLowerCase())
 	);
 
-	const modifiedRegisters = useMemo(
-		() => getFilteredRegisters(false),
-		[getFilteredRegisters]
-	);
+	const unmodifiedRegCnt = filteredRegFields.filter(r =>
+		getUnmodifiedRegisters().some(m => m.name === r.name)
+	).length;
 
-	const unmodifiedRegisters = useMemo(
-		() => getFilteredRegisters(true),
-		[getFilteredRegisters]
-	);
+	const modifiedRegCnt = filteredRegFields.filter(r =>
+		getModifiedRegisters().some(m => m.name === r.name)
+	).length;
+
+	const clearSearch = () => {
+		dispatch(
+			setActiveSearchString({
+				searchContext: 'register',
+				value: ''
+			})
+		);
+	};
 
 	const chipClickHandler = (newFilter: 'modified' | 'unmodified') => {
 		if (newFilter === filterState.filter) {
@@ -311,44 +571,6 @@ export default function RegisterBody() {
 		setActiveRegister(undefined);
 	};
 
-	const getModifiedRegisterFields = () =>
-		activeRegisterDetails?.fields.filter(field => {
-			const value = Number(
-				computeFieldValue(
-					AssignedPinsRegisterConfigs,
-					modifiedClockNodesRegisterConfigs,
-					peripheralRegisterConfig,
-					activeRegisterDetails.name,
-					field,
-					field.reset
-				)
-			);
-
-			return value !== Number(field.reset);
-		});
-
-	const getModifiedRegisters = () => {
-		if (activeRegisterDetails) {
-			return getModifiedRegisterFields() ?? [];
-		}
-
-		return filterState.filter === 'modified' && searchString
-			? searchResults.filter(register => !register.isResetValue)
-			: modifiedRegisters;
-	};
-
-	const getUnmodifiedRegisters = () => {
-		if (activeRegisterDetails) {
-			return activeRegisterDetails.fields.filter(
-				field => !getModifiedRegisterFields()?.includes(field)
-			);
-		}
-
-		return filterState.filter === 'unmodified' && searchString
-			? searchResults.filter(register => register.isResetValue)
-			: unmodifiedRegisters;
-	};
-
 	return (
 		<>
 			{activeRegisterDetails ? (
@@ -374,26 +596,26 @@ export default function RegisterBody() {
 				<Chip
 					isActive={filterState.filter === 'modified'}
 					label='Modified'
-					isDisabled={getModifiedRegisters()?.length === 0}
-					dataValue={getModifiedRegisters()?.length}
+					isDisabled={modifiedRegCnt === 0}
+					dataValue={modifiedRegCnt}
 					dataTest='Modified'
 					onClick={() => {
 						chipClickHandler('modified');
 					}}
 				>
-					{getRegistersCount(getModifiedRegisters()?.length ?? 0)}
+					{getRegistersCount(modifiedRegCnt)}
 				</Chip>
 				<Chip
 					isActive={filterState.filter === 'unmodified'}
 					label='Unmodified'
-					isDisabled={getUnmodifiedRegisters().length === 0}
-					dataValue={getUnmodifiedRegisters().length}
+					isDisabled={unmodifiedRegCnt === 0}
+					dataValue={unmodifiedRegCnt}
 					dataTest='Unmodified'
 					onClick={() => {
 						chipClickHandler('unmodified');
 					}}
 				>
-					{getRegistersCount(getUnmodifiedRegisters().length)}
+					{getRegistersCount(unmodifiedRegCnt)}
 				</Chip>
 				<div className={styles.divider} />
 				<div className={styles.info}>
@@ -418,24 +640,24 @@ export default function RegisterBody() {
 					)}
 				</div>
 			)}
-			{activeRegisterDetails && (
-				<RegisterDetailsTable
-					assignedPinsRegisterConfigs={AssignedPinsRegisterConfigs}
-					modifiedClockNodesConfigs={
-						modifiedClockNodesRegisterConfigs
-					}
-					allocatedPeripheralRegisterConfigs={
-						peripheralRegisterConfig
-					}
-					registerDetails={
-						filterState.filteredDetails.length
-							? filterState.filteredDetails
-							: activeRegisterDetails.fields
-					}
-					registerName={activeRegisterDetails.name}
-					modifiedRegisterDetails={getModifiedRegisterFields() ?? []}
-				/>
-			)}
+			{activeRegisterDetails &&
+				(modifiedRegCnt + unmodifiedRegCnt > 0 ? (
+					<RegisterDetailsTable
+						assignedPinsRegisterConfigs={AssignedPinsRegisterConfigs}
+						registerConfigs={Object.values(registerConfigs)}
+						registerDetails={
+							filterState.filteredDetails.length
+								? filterState.filteredDetails
+								: activeRegisterDetails.fields
+						}
+						registerName={activeRegisterDetails.name}
+						modifiedRegisterDetails={
+							getModifiedRegisterFields() ?? []
+						}
+					/>
+				) : (
+					<div style={{textAlign: 'center'}}>No results found</div>
+				))}
 		</>
 	);
 }

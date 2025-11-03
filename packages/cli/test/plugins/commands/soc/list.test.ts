@@ -13,14 +13,15 @@
  *
  */
 import {expect, test} from '@oclif/test';
-
-describe('socs list (with add-soc plugin)', () => {
+// @TODO: skiping until cli plugins are removed as they will be deprecated now.
+describe.skip('socs list (with add-soc plugin)', () => {
   test
     .stdout()
     .command(['socs:list'], {
       root: '..'
     })
     .it('returns an example custom SoC', (ctx) => {
-      expect(ctx.stdout).to.contain('max32690-tqfn');
+      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
+      expect(ctx.stdout).to.contain('soc1234');
     });
 });

@@ -45,7 +45,8 @@
     {
       "CoreId": "RV",
       "ProjectId": "RV",
-      "PluginId": "max32xxx_78xxx-msdk",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.1.0",
       "FirmwarePlatform": "MSDK 3.0",
       "ExternallyManaged": false,
       "Partitions": [
@@ -102,7 +103,8 @@
     {
       "CoreId": "CM4",
       "ProjectId": "CM4",
-      "PluginId": "max32xxx_78xxx-zephry37",
+      "PluginId": "com.analog.project.zephyr.plugin",
+      "PluginVersion": "1.0.0",
       "FirmwarePlatform": "Zephyr 3.7",
       "ExternallyManaged": false,
       "Partitions": [

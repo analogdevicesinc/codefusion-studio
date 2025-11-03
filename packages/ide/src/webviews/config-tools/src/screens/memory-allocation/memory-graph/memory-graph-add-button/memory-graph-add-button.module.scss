@@ -1,0 +1,53 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+
+.buttonContainer {
+	position: absolute;
+	display: flex;
+	height: 26px;
+	transform: translate(0px, -6px);
+	cursor: pointer;
+	z-index: 10;
+	min-width: 1px; // ensures button is available even if gap is small
+
+	.addButton {
+		height: 100%;
+		width: 40px;
+		flex: 0 0 auto;
+		font-size: 16px;
+		z-index: 11;
+		text-align: center;
+		transform: translate(-2px, 1px);
+		border-radius: 4px;
+		border: 2px solid colors.$list-active-selection-background;
+		color: colors.$editor-widget-foreground;
+		background-color: color-mix(
+			in srgb,
+			colors.$editor-widget-background 80%,
+			transparent
+		);
+		cursor: pointer;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	// show button when hovering container
+	&:hover .addButton {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}

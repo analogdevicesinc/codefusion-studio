@@ -22,10 +22,12 @@ export type ViewProviderOptions = {
 };
 
 export abstract class AbstractViewProvider {
+  public static defaultTranslations: string = "";
   static WEBVIEW_INJECT_IN_MARK = "__webview_public_path__";
   static WEBVIEW_INJECT_RESOURCES_PATH = "__webview_resources_path__";
   static WEBVIEW_COMMAND_ARGS = "__command_args__";
   static WEBVIEW_LOCALE_TRANSLATION = "__webview_localization_resources__";
+  private static htmlCache = new Map<string, string>();
 
   /**
    * @param context vscode.ExtensionContext
@@ -62,36 +64,43 @@ export abstract class AbstractViewProvider {
       .asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "resources"))
       .toString();
 
-    let translations = vscode.l10n.bundle;
+    let translations = vscode.l10n.bundle
+      ? JSON.stringify(vscode.l10n.bundle)
+      : "default";
 
-    if (!translations) {
-      const fileUri = vscode.Uri.joinPath(
-        this.context.extensionUri,
-        "l10n/bundle.l10n.en.json",
-      );
-      const enJSON = await vscode.workspace.fs.readFile(fileUri);
-      translations = JSON.parse(Buffer.from(enJSON).toString("utf8"));
+    const commandArgsString = JSON.stringify(commandArgs);
+
+    const cacheKey = `${webviewUri}|${translations}|${commandArgsString}`;
+
+    if (AbstractViewProvider.htmlCache.has(cacheKey)) {
+      return AbstractViewProvider.htmlCache.get(cacheKey)!;
+    }
+
+    if (!vscode.l10n.bundle) {
+      translations = AbstractViewProvider.defaultTranslations;
     }
 
     const injectInContent = `
 		<script>
 			window.${AbstractViewProvider.WEBVIEW_INJECT_IN_MARK} = "${webviewUri}";
 			window.${AbstractViewProvider.WEBVIEW_INJECT_RESOURCES_PATH} = "${resourcesUri}";
-      window.${AbstractViewProvider.WEBVIEW_LOCALE_TRANSLATION} = ${JSON.stringify(translations)};
+      window.${AbstractViewProvider.WEBVIEW_LOCALE_TRANSLATION} = ${translations};
 		</script>
 		`;
 
-    const injectCommandArgs = `<script> window.__command_args__ = ${JSON.stringify(commandArgs)}</script>`;
+    const injectCommandArgs = `<script> window.${AbstractViewProvider.WEBVIEW_COMMAND_ARGS} = ${commandArgsString}</script>`;
 
     const htmlPath = `${this.context.extensionPath}/${indexPath}`;
-
     const htmlText = fs.readFileSync(htmlPath).toString();
 
-    return modifyHtml(htmlText, {
+    const modifiedHtml = await modifyHtml(htmlText, {
       onopentag(name, attribs) {
-        if (name === "script") attribs.src = `${webviewUri}/${attribs.src}`;
-        if (name === "link") attribs.href = `${webviewUri}/${attribs.href}`;
-
+        if (name === "script" && attribs.src) {
+          attribs.src = `${webviewUri}/${attribs.src}`;
+        }
+        if (name === "link" && attribs.href) {
+          attribs.href = `${webviewUri}/${attribs.href}`;
+        }
         return { name, attribs };
       },
       oncomment(data) {
@@ -108,5 +117,8 @@ export abstract class AbstractViewProvider {
           : { data };
       },
     });
+
+    AbstractViewProvider.htmlCache.set(cacheKey, modifiedHtml);
+    return modifiedHtml;
   }
 }

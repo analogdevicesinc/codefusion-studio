@@ -12,34 +12,57 @@
  * limitations under the License.
  *
  */
-import type * as vscode from 'vscode';
-import {AbstractViewProvider} from './view-provider-abstract';
+import type * as vscode from "vscode";
+import { AbstractViewProvider } from "./view-provider-abstract";
+import { WebviewErrorPayload } from "../utils/webview-error";
 
 export class ViewProviderPanel extends AbstractViewProvider {
-	constructor(
-		context: vscode.ExtensionContext,
-		options?: {
-			distDir: string;
-			indexPath: string;
-		}
-	) {
-		super(context, {
-			distDir: options?.distDir ?? 'build/ui',
-			indexPath: options?.indexPath ?? 'build/ui/index.html'
-		});
-	}
+  constructor(
+    context: vscode.ExtensionContext,
+    options?: {
+      distDir: string;
+      indexPath: string;
+    },
+  ) {
+    super(context, {
+      distDir: options?.distDir ?? "build/ui",
+      indexPath: options?.indexPath ?? "build/ui/index.html",
+    });
+  }
 
-	async resolveWebviewView(
-		webviewView: vscode.WebviewPanel,
-		commandArgs?: Record<string, unknown>
-	) {
-		const {webview} = webviewView;
+  async resolveWebviewView(
+    webviewView: vscode.WebviewPanel,
+    commandArgs?: Record<string, unknown>,
+  ) {
+    const { webview } = webviewView;
 
-		webview.options = {
-			enableScripts: true,
-			localResourceRoots: [this.context.extensionUri]
-		};
+    webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.context.extensionUri],
+    };
 
-		webview.html = await this.getWebviewHtml(webview, commandArgs);
-	}
+    webview.html = await this.getWebviewHtml(webview, commandArgs);
+  }
+
+  async resolveWebviewErrorView(
+    webviewView: vscode.WebviewPanel,
+    error: WebviewErrorPayload,
+  ) {
+    const { webview } = webviewView;
+
+    webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this.context.extensionUri],
+    };
+
+    let html = await this.getWebviewHtml(webview);
+    const payload = JSON.stringify(error);
+
+    html = html.replace(
+      '<div id="root"></div>',
+      `<div id="error" data-error='${payload}'></div>`,
+    );
+
+    webview.html = html;
+  }
 }

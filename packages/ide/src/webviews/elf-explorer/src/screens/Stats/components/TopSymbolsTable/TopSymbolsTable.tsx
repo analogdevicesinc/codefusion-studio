@@ -190,6 +190,7 @@ export default function TopSymbolsTable({
 	return (
 		<>
 			<DataGrid
+				dataTest='stats:top-symbols-table'
 				ariaLabel='Top Symbols Table'
 				className={`${styles.table} ${styles.topTable}`}
 				gridTemplateColumns='9fr 1fr 1fr 80px 2fr'

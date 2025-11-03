@@ -20,7 +20,6 @@ import type {
 	FormattedPeripheralSignal,
 	Peripheral
 } from '../../../common/types/soc';
-import {getSocPeripherals} from './api';
 import {isPinReserved} from './is-pin-reserved';
 import {evaluateCondition} from './rpn-expression-resolver';
 import {type PeripheralConfig} from '../types/peripherals';
@@ -43,29 +42,14 @@ let preallocatedPeripherals: Record<
 	Array<FormattedPeripheral<FormattedPeripheralSignal>>
 > = {};
 
-if (import.meta.env.MODE === 'development') {
-	initSocPeripherals();
-} else {
-	socPeripherals = await getSocPeripherals();
-}
+/**
+ * Initializes the SoC peripherals.
+ * Should be called once at app startup.
+ */
+export function initializeSocPeripherals(peripherals: Peripheral[]) {
+	resetSocPeripherals();
 
-function initSocPeripherals() {
-	socPeripherals = (window as any).__DEV_SOC__?.Peripherals ?? [];
-
-	if ((window as any).Cypress) {
-		const storagePeripherals =
-			localStorage.getItem('Peripherals') ?? '[]';
-
-		socPeripherals = JSON.parse(storagePeripherals);
-	}
-}
-
-function getCachedSocPeripherals() {
-	if (socPeripherals.length === 0) {
-		initSocPeripherals();
-	}
-
-	return socPeripherals;
+	socPeripherals = peripherals ?? [];
 }
 
 export function formatSocPeripheralDictionary(
@@ -80,14 +64,17 @@ export function formatSocPeripheralDictionary(
 				signals: {},
 				description: peripheral.Description,
 				security: peripheral.Security ?? 'Any',
+				initialization: peripheral.Initialization,
 				cores: peripheral.Cores ?? [],
+				assignable: peripheral.Assignable ?? true,
 				...(peripheral.Preassigned && {
 					preassigned: peripheral.Preassigned
 				}),
-				...(peripheral.SignalGroup && {
-					signalGroup: peripheral.SignalGroup
+				...(peripheral.Group && {
+					group: peripheral.Group
 				}),
-				...(peripheral.Config && {config: peripheral.Config})
+				...(peripheral.Config && {config: peripheral.Config}),
+				...(peripheral.Required && {required: peripheral.Required})
 			};
 
 		if (peripheral.Signals) {
@@ -96,7 +83,8 @@ export function formatSocPeripheralDictionary(
 					name: signal.Name,
 					description: signal.Description,
 					...(signal.Required && {required: signal.Required}),
-					pins: []
+					pins: [],
+					...(signal.Group && {group: signal.Group})
 				};
 
 				newPeripheral.signals[newSignal.name] = newSignal;
@@ -122,7 +110,7 @@ export function formatSocPeripheralDictionary(
 						signal.Name
 					];
 
-				targetSignal.pins.push(newPin);
+				targetSignal?.pins.push(newPin);
 			}
 		}
 	}
@@ -148,14 +136,14 @@ export function categorizeAllocationsByName(
 }
 
 export function filterAvailablePeripherals(
-	perihperals: Array<FormattedPeripheral<FormattedPeripheralSignal>>,
+	peripherals: Array<FormattedPeripheral<FormattedPeripheralSignal>>,
 	allocations: Record<string, Record<string, PeripheralConfig>>
 ) {
 	const allocationMap = categorizeAllocationsByName(allocations);
-	const list = perihperals.flatMap(peripheral => {
+	const list = peripherals.flatMap(peripheral => {
 		// Scenario with signal grouping
-		if (peripheral.signalGroup) {
-			if (allocationMap.get(peripheral.signalGroup)) {
+		if (peripheral.assignable) {
+			if (allocationMap.get(peripheral.name)) {
 				return [];
 			}
 
@@ -220,8 +208,6 @@ export function resetSocPeripherals() {
 
 export function getSocPeripheralDictionary() {
 	if (Object.keys(peripheralDict).length === 0) {
-		const socPeripherals = getCachedSocPeripherals();
-
 		peripheralDict = formatSocPeripheralDictionary(socPeripherals);
 	}
 
@@ -336,7 +322,7 @@ export function getIsPeripheralSignalRequired(
 	// Non configurable peripherals are also not required.
 	if (!condition) {
 		return (
-			!peripherals[peripheral]?.signalGroup &&
+			!peripherals[peripheral]?.assignable &&
 			isPeripheralConfigurable(peripherals[peripheral])
 		);
 	}
@@ -395,11 +381,40 @@ export function computePeripheralResetValues(
 	// If the control has a "Hint" property, use that value instead.
 	if (availableControls?.length) {
 		availableControls.forEach(control => {
-			if (!computedDefaultValues[control.Id]) {
-				computedDefaultValues[control.Id] = control.Hint ?? '';
-			}
+			computedDefaultValues[control.Id] =
+				control.Hint ?? computedDefaultValues[control.Id] ?? '';
 		});
 	}
 
 	return computedDefaultValues;
+}
+
+/**
+ * It covers a corner case for `MISC` peripheral, which is not configurable, but it is assigned to the project
+ * because we need to store the config, which in the .cfsconfig file is stored in the peripheral.
+ * @param projectId - The ID of the project to filter preallocated peripherals.
+ * @param allocations - The record of peripheral allocations to filter.
+ * @return A filtered record of peripheral allocations that are either configurable or preallocated to the project.
+ */
+export function filterOutNonConfigurableAllocations(
+	projectId: string,
+	allocations: Record<string, PeripheralConfig>
+) {
+	const configurablePeripherals = getConfigurablePeripherals();
+	const preallocatedPeripherals = getPreallocatedPeripherals();
+
+	return Object.fromEntries(
+		Object.entries(allocations ?? {}).filter(([peripheralName]) => {
+			const isPeripheralConfigurable = configurablePeripherals.some(
+				item => item.name === peripheralName
+			);
+			const isPreassigned =
+				preallocatedPeripherals[projectId]?.some(
+					preallocatedPeripheral =>
+						preallocatedPeripheral.name === peripheralName
+				) ?? false;
+
+			return isPeripheralConfigurable || isPreassigned;
+		})
+	);
 }

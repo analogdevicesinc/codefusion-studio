@@ -33,7 +33,7 @@ export default function AttributesList({
 	i10n
 }: AttributesListProps) {
 	return (
-		<div className={styles.container}>
+		<div className={styles.container} data-test='metadata:list'>
 			<HeaderWithTooltip title={i10n?.title} i10n={i10n} />
 
 			{list.length ? (

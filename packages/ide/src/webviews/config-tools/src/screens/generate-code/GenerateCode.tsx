@@ -32,6 +32,10 @@ import {Modal} from '@common/components/modal/Modal';
 
 import styles from './GenerateCode.module.scss';
 import ResolvedProjectControl from './project-list/ResolvedProjectControls';
+import {ConfirmDialog} from '../../../../common/components/confirm-dialog/ConfirmDialog';
+import {useAIModels} from '../../state/slices/ai-tools/aiModel.selector';
+import type {CodeGenerationResult} from 'cfs-lib/dist/types/code-generation';
+import {getAiBackends} from '../../utils/ai-tools';
 
 const TEXTS = [
 	{
@@ -48,8 +52,14 @@ const TEXTS = [
 function GenerateCode() {
 	const [isFirstScreen, setIsFirstScreen] = useState<boolean>(true);
 	const selectedProjects = useSelectedProjects();
+	const aiModels = useAIModels();
+	const aiBackends = getAiBackends();
 	const [isWarningModalOpen, setIsWarningModalOpen] =
 		useState<boolean>(false);
+	const [
+		isCodeGenerationTimeModalOpen,
+		setIsCodeGenerationTimeModalOpen
+	] = useState<boolean>(false);
 	const [shouldShowWarning, setShouldShowWarning] =
 		useState<boolean>();
 	const i10n: TLocaleContext | undefined =
@@ -64,8 +74,29 @@ function GenerateCode() {
 		[]
 	);
 
+	// Check if any enabled AI model is using a Slow backend
+	const shouldShowGenTimeWarning = useMemo(
+		() =>
+			selectedProjects.some(({projectId, includeAI}) => {
+				if (!includeAI) return false;
+
+				const coreId = projects.find(
+					project => project.ProjectId === projectId
+				)?.CoreId;
+
+				return aiModels.some(
+					model =>
+						model.Enabled &&
+						model.Target.Core.toUpperCase() ===
+							coreId?.toUpperCase() &&
+						aiBackends[model.Backend.Name]?.Slow
+				);
+			}),
+		[aiModels, selectedProjects, projects, aiBackends]
+	);
+
 	const [codeGenerationPromise, setCodeGenerationPromise] = useState<
-		Promise<string[] | string>
+		Promise<CodeGenerationResult | string>
 	>(Promise.resolve(['']));
 
 	const controlsPromises = usePeripheralControlsPerProjects(
@@ -199,7 +230,13 @@ function GenerateCode() {
 										appearance='primary'
 										dataTest='generate-code:modal:overwrite'
 										onClick={async () => {
-											setIsFirstScreen(false);
+											if (shouldShowGenTimeWarning) {
+												setIsCodeGenerationTimeModalOpen(true);
+												setIsWarningModalOpen(false);
+											} else {
+												setIsFirstScreen(false);
+											}
+
 											if (shouldShowWarning)
 												await showGenerateCodeWarning(false);
 										}}
@@ -228,6 +265,22 @@ function GenerateCode() {
 								</div>
 							</div>
 						</Modal>
+						<ConfirmDialog
+							isOpen={isCodeGenerationTimeModalOpen}
+							message={i10n?.codeGenerationTimeModal.description}
+							title={i10n?.codeGenerationTimeModal.title}
+							showDialogPreferenceId='cfgtools.views.aiTools.showNeuroweaveCodegenTimeWarning'
+							confirmButtonText={
+								i10n?.codeGenerationTimeModal.confirm
+							}
+							onCancel={() => {
+								setIsCodeGenerationTimeModalOpen(false);
+							}}
+							onConfirm={() => {
+								setIsCodeGenerationTimeModalOpen(false);
+								setIsFirstScreen(false);
+							}}
+						/>
 					</>
 				) : (
 					<CfsSuspense>
@@ -242,6 +295,7 @@ function GenerateCode() {
 							{i10n?.warningModal?.description}
 						</span>
 						<Button
+							dataTest='generate-code:generate-btn'
 							disabled={!selectedProjects.length}
 							onClick={handleGenerateClick}
 						>

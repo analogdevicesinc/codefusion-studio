@@ -31,3 +31,7 @@ export const OPEN_WORKSPACE = {
   label: "Open Workspace",
   tooltip: "Open CFS Workspace",
 };
+export const BROWSE_EXAMPLES = {
+  label: "Browse MSDK Examples",
+  tooltip: "Browse CFS MSDK Examples",
+};

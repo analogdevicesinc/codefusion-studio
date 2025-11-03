@@ -27,6 +27,7 @@ export const WARNING = {
   sdkPathNotSelected: "CFS: Please select the SDK path",
   toolchainNotSupported: "CFS: Toolchain not supported",
   duplicateToolFound: "CFS: Duplicate tool found:\n",
+  packageManagerInitError: "CFS: Package manager failed to initialize",
 };
 
 export const ERROR = {

@@ -36,7 +36,7 @@
 }
 
 .btn {
-	width: 222px;
+	width: 142px;
 	margin: 16px 20px;
 
 	svg {
@@ -53,7 +53,10 @@
 .btnContainer {
 	width: 100%;
 	display: flex;
-	justify-content: center;
+	position: absolute;
+	top: 7px;
+	left: 0px;
+	justify-content: end;
 	align-items: center;
 }
 
@@ -63,5 +66,6 @@
 
 .partitionDetailsContainer {
 	height: 100%;
+	overflow-x: hidden;
 	overflow-y: auto;
 }

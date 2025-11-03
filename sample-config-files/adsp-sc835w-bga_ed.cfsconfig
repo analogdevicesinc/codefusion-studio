@@ -1,0 +1,39 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.1.0",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-08-08T14:37:32.686Z",
+  "Soc": "ADSP-SC835W",
+  "Package": "BGA_ED",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "EV-SOMCRR-EZKIT",
+  "Projects": [
+    {
+      "CoreId": "FX",
+      "ProjectId": "FX",
+      "PluginId": "com.analog.project.sharcfx.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "SHARC-FX",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "fx"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33",
+      "PluginId": "com.analog.project.sharcfx.plugin",
+      "PluginVersion": "1.0.0",
+      "FirmwarePlatform": "SHARC-FX",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "cm33"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ]
+}

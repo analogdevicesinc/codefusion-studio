@@ -1,27 +1,31 @@
 import {type ConfiguredProject} from '../../../common/api';
+import type {Soc} from '../../../common/types/soc';
 import {type PeripheralConfig} from '../types/peripherals';
 import {formatPeripheralAllocations} from './json-formatter';
+import {sysPlannerDataInit} from './sys-planner-data-init';
+
+const mock = (await import('@socs/max32690-tqfn.json').then(
+	module => module.default
+)) as Soc;
 
 describe('Json formatter', () => {
-	beforeEach(() => {
-		localStorage.setItem(
-			'Peripherals',
-			JSON.stringify([
-				{
-					Name: 'GPIO0',
-					Description: 'GPIO Port 0',
-					Cores: ['CM4', 'RV'],
-					Signals: []
-				},
-				{
-					Name: 'ADC',
-					Description: 'Analog Digital Converter',
-					Cores: ['CM4', 'RV'],
-					Signals: [],
-					SignalGroup: 'ADC'
-				}
-			])
-		);
+	before(() => {
+		mock.Peripherals = [
+			{
+				Name: 'GPIO0',
+				Description: 'GPIO Port 0',
+				Cores: ['CM4', 'RV'],
+				Signals: []
+			},
+			{
+				Name: 'ADC',
+				Description: 'Analog Digital Converter',
+				Cores: ['CM4', 'RV'],
+				Signals: []
+			}
+		];
+
+		sysPlannerDataInit(mock);
 	});
 
 	it('formatPeripheralAllocations should correctly format data', () => {
@@ -100,7 +104,7 @@ describe('Json formatter', () => {
 			}
 		};
 
-		const result = formatPeripheralAllocations(projects);
+		const result = formatPeripheralAllocations(projects, mock);
 
 		cy.log('result', JSON.stringify(result));
 

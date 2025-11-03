@@ -96,7 +96,10 @@ It can provide information regarding Flash and RAM sizes, among other available 
 
 ## Symbols Explorer
 
-The Symbol explorer provides a table of all of the symbols within the ELF file. This table can be sorted by clicking the title of any column and can be filtered using an SQL query allowing you to access the data in any way you require.  
+The Symbol explorer provides a table of all of the symbols within the ELF file. This table can be sorted by clicking the title of any column and can be filtered using SQL queries for flexible data access.
+
+!!! note
+    The Symbol Explorer query engine is based on AlaSQL. As a result, supported syntax and functions are limited to what AlaSQL provides. See the [AlaSQL](https://github.com/alasql/alasql) documentation for the full set of supported features and limitations.
 
 ![ELF Symbol Explorer](images/elf-explorer-symbol-explorer-dark.png#only-dark)
 ![ELF Symbol Explorer](images/elf-explorer-symbol-explorer-light.png#only-light)

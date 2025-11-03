@@ -21,7 +21,7 @@ import {
 } from 'react';
 import {TextField} from 'cfs-react-library';
 import {useAppDispatch} from '../../../state/store';
-import {generateValidationErrorType} from '../../../utils/validate-inputs';
+import {generateValidationErrorType} from '@common/utils/validate-inputs';
 import {
 	setClockNodeControlValue,
 	type ClockNodeSet
@@ -34,14 +34,14 @@ import {
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import debounce from 'lodash.debounce';
 import type {ClockNodeState} from '@common/types/soc';
-import type {TControlTypes} from '../../../types/errorTypes';
-import {generateControlErrorMessage} from '../../../utils/control-errors';
+import type {TControlTypes} from '@common/types/errorTypes';
+import {generateControlErrorMessage} from '@common/utils/control-errors';
 
 type ControlConfig = {
 	key: string;
 	type: TControlTypes;
-	minVal?: number;
-	maxVal?: number;
+	minVal?: string | number;
+	maxVal?: string | number;
 	unit?: string;
 	default?: string | number;
 };

@@ -14,6 +14,8 @@
  */
 import type {TContextMenuOption} from '../types/generic';
 
+export const DEFAULT_QUERY = 'SELECT * FROM symbols WHERE size > 0';
+
 export const CONTEXT_MENU_SYMOLS_OPTIONS: TContextMenuOption[] = [
 	{
 		id: 0,

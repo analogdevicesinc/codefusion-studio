@@ -6,10 +6,31 @@
   },
   "ignorePatterns": [
     "node_modules/**/*",
-    "src/**/*",
     "vite.config.*.ts",
     "vite.config.ts",
     "vite-*.ts",
-    "out/**/*"
+    "vite.plugin.*.ts",
+    "out/**/*",
+    "cypress/**/*",
+    "cypress.config.ts",
+    "src/**/*",
+    "!src/tests/",
+    "!src/tests/**/",
+    "!src/tests/**/*.ts",
+    "!src/tests/**/*.tsx",
+    "src/tests/**/.vscode/**/*",
+    "build-scripts"
+  ],
+  "overrides": [
+    {
+      "files": ["src/tests/**/*.ts", "src/tests/**/*.tsx"],
+      "extends": ["plugin:cypress/recommended"]
+    },
+    {
+      "files": ["*.test.ts"],
+      "rules": {
+        "no-unused-expressions": "off"
+      }
+    }
   ]
 }

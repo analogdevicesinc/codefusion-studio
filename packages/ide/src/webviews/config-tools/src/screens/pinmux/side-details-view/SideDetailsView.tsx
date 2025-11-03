@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,18 @@ import styles from './SideDetailsView.module.scss';
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {isPinReserved} from '../../../utils/is-pin-reserved';
+import {pinInConflict} from '../../../utils/pin-error';
 
 type PinDetailsProps = {
 	readonly targetPins: Array<Pin[] | undefined>;
+	readonly peripheralPins?: Record<string, Pin[]> | undefined;
 	readonly handleBackClick: () => void;
 	readonly errorMsg?: string;
 };
 
 export default function SideDetailsView({
 	targetPins,
+	peripheralPins = {},
 	handleBackClick,
 	errorMsg
 }: PinDetailsProps) {
@@ -95,7 +98,7 @@ export default function SideDetailsView({
 											</h3>
 										</div>
 										{targetPin.appliedSignals &&
-											targetPin.appliedSignals.length > 1 && (
+											pinInConflict(targetPin.appliedSignals) && (
 												<div
 													className={styles.conflictContainer}
 													data-test='pin:tooltip:conflictMarker'
@@ -128,7 +131,11 @@ export default function SideDetailsView({
 													<Function
 														peripheralGroup={signal.Peripheral ?? ''}
 														name={signal.Name}
-														pins={pinArray}
+														pins={
+															peripheralPins[
+																`${signal?.Peripheral}__${signal?.Name}`
+															] ?? []
+														}
 													/>
 												</div>
 											))

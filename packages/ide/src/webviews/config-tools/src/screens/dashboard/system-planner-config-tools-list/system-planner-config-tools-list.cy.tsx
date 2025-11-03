@@ -24,17 +24,21 @@ import {
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import {configurePreloadedStore} from '../../../state/store';
+import {resetClockNodes} from '../../../utils/clock-nodes';
+import {resetDfg} from '../../../utils/dfg';
+import {resetCoreMemoryDictionary} from '../../../utils/memory';
+import {resetPinDictionary} from '../../../utils/soc-pins';
 import SystemPlannerConfigToolsList from './system-planner-config-tools-list';
 
-const wlp = (await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default)) as Soc;
+import type {CfsConfig} from 'cfs-plugins-api';
+const wlp = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			CoreNum: 0,
 			Description: 'ARM Cortex-M4',
@@ -57,29 +61,11 @@ const mockedConfigDict = {
 			ProjectId: 'RV-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 describe('System config tools', () => {
 	beforeEach(() => {
 		cy.viewport(1280, 720);
-
-		window.localStorage.setItem(
-			'configDict',
-			JSON.stringify(mockedConfigDict)
-		);
-
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(wlp.Packages[0])
-		);
-
-		window.localStorage.setItem('Cores', JSON.stringify(wlp.Cores));
-
-		window.localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(wlp.Peripherals)
-		);
-
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			window.localStorage.setItem(
 				'pluginControls:CM4-proj',
@@ -89,7 +75,7 @@ describe('System config tools', () => {
 	});
 
 	it('should render config tools cards', () => {
-		const reduxStore = configurePreloadedStore(wlp);
+		const reduxStore = configurePreloadedStore(wlp, mockedConfigDict);
 		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
 		cy.get('[data-test="peripheral-card"]').should('be.visible');
 		cy.get('[data-test="pinmux-card"]').should('be.visible');
@@ -100,7 +86,10 @@ describe('System config tools', () => {
 	});
 
 	it('should not render the conflict icon when there is no pin errors', () => {
-		const reduxStore = configurePreloadedStore(wlp);
+		const reduxStore = configurePreloadedStore(
+			wlp as unknown as Soc,
+			mockedConfigDict
+		);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -115,8 +104,49 @@ describe('System config tools', () => {
 		cy.get('[data-test="pinmux-error"]').should('not.exist');
 	});
 
-	it('should render the conflict icon when there is a clock error', () => {
+	it('should not render the conflict icon when there is no clock errors', () => {
 		const reduxStore = configurePreloadedStore(wlp);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: 'F4',
+				Peripheral: 'MISC',
+				Name: 'CLKEXT'
+			})
+		);
+
+		reduxStore.dispatch(
+			setDiagramData({
+				'P0.23': {
+					enabled: true,
+					error: true
+				}
+			})
+		);
+
+		reduxStore.dispatch(
+			setClockNodeControlValue({
+				name: 'SYS_OSC Mux',
+				key: 'MUX',
+				value: 'CLKEXT'
+			})
+		);
+
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore).then(
+			() => {
+				cy.get('[data-test="clock-card"]').should('be.visible');
+				cy.get('[data-test="clock-config-error"]').should(
+					'not.exist'
+				);
+			}
+		);
+	});
+
+	it('should render the conflict icon when there is a clock error', () => {
+		const reduxStore = configurePreloadedStore(
+			wlp as unknown as Soc,
+			mockedConfigDict
+		);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -225,5 +255,41 @@ describe('System config tools', () => {
 				);
 			}
 		);
+	});
+
+	it('should not render the DFG card when the Gaskets are not available', () => {
+		resetClockNodes();
+		resetCoreMemoryDictionary();
+		resetDfg();
+		const reduxStore = configurePreloadedStore(wlp);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="dfg-card"]').should('not.exist');
+	});
+
+	it('should render the Clock Config card when the ClockNodes are available', () => {
+		resetClockNodes();
+		resetCoreMemoryDictionary();
+		resetDfg();
+		const reduxStore = configurePreloadedStore(wlp);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="clock-card"]').should('exist');
+	});
+
+	it('should render the Memory card when the Memory are available', () => {
+		resetClockNodes();
+		resetCoreMemoryDictionary();
+		resetDfg();
+		const reduxStore = configurePreloadedStore(wlp);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="memory-card"]').should('exist');
+	});
+
+	it('should render the Pinmux card when the pins are available', () => {
+		resetClockNodes();
+		resetPinDictionary();
+		resetDfg();
+		const reduxStore = configurePreloadedStore(wlp);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="pinmux-card"]').should('exist');
 	});
 });

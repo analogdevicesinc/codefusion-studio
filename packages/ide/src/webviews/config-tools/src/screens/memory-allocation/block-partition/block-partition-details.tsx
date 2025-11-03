@@ -36,7 +36,9 @@ export function BlockPartitionDetails({
 		<Card disableHoverEffects>
 			<div className={styles.container}>
 				<section>
-					<div className={styles.title}>{title.toUpperCase()}</div>
+					<div className={styles.title} title={title.toUpperCase()}>
+						{title.toUpperCase()}
+					</div>
 					<div className={styles.size}>{size}</div>
 				</section>
 				<section>

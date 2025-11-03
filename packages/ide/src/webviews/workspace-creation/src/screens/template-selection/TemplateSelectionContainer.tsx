@@ -13,78 +13,56 @@
  *
  */
 
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback} from 'react';
 import {
 	useConfigurationErrors,
-	useWorkspaceTemplate
+	useWorkspaceTemplate,
+	useWorkspaceTemplateType
 } from '../../state/slices/workspace-config/workspace-config.selector';
-import {Chip, Radio, SearchInput, use} from 'cfs-react-library';
+import {Radio, use} from 'cfs-react-library';
 import styles from './TemplateSelectionContainer.module.scss';
-import NotificationError from '../../components/notification-error/NotificationError';
 import CfsSelectionCard from '@common/components/cfs-selection-card/CfsSelectionCard';
 import {useAppDispatch} from '../../state/store';
 import {
 	setWorkspaceTemplate,
-	setConfigErrors
+	setConfigErrors,
+	setWorkspaceTemplateType
 } from '../../state/slices/workspace-config/workspace-config.reducer';
-import {capitalizeWord} from '@common/utils/string';
 import {configErrors} from '../../common/constants/validation-errors';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo as BaseCfsPluginInfo} from 'cfs-lib';
+
+type CfsPluginInfo = BaseCfsPluginInfo & {
+	supportedHostPlatforms?: string[];
+};
+
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../common/contexts/LocaleContext';
+import WorkspaceEmptyPlugins from '../../components/workspace-empty-plugins/WorkspaceEmptyPlugins';
 
 export default function TemplateSelectionContainer({
-	templateListPromise
-}: Readonly<{templateListPromise: Promise<CfsPluginInfo[]>}>) {
-	const [search, setSearch] = useState<string>('');
-	const [selectedPlatform, setSelectedPlatform] = useState('');
+	templateListPromise,
+	hostPlatformPromise
+}: Readonly<{
+	templateListPromise: Promise<CfsPluginInfo[]>;
+	hostPlatformPromise: Promise<string>;
+}>) {
+	const l10n: TLocaleContext | undefined = useLocaleContext();
 
 	const dispatch = useAppDispatch();
 	const {pluginId: templateId} = useWorkspaceTemplate() ?? {};
-
-	const templateList = use(templateListPromise);
+	const os = use(hostPlatformPromise);
+	// Filter templates based on host platform
+	const templateList = use(templateListPromise).filter(
+		template =>
+			!template.supportedHostPlatforms ||
+			template.supportedHostPlatforms.includes(os)
+	);
 
 	const errors = useConfigurationErrors('multiCoreTemplate');
 
-	const availableSocPlatforms = useMemo(() => {
-		const platforms = new Set<string>();
-
-		templateList.forEach(template => {
-			if (template.firmwarePlatform) {
-				platforms.add(template.firmwarePlatform);
-			}
-		});
-
-		return Array.from(platforms);
-	}, [templateList]);
-
-	const isSearchFound = useCallback(
-		(item: string) =>
-			item.toLowerCase().includes(search.toLowerCase()),
-		[search]
-	);
-
-	const filteredTemplateList = templateList.filter(
-		({pluginName, pluginDescription, firmwarePlatform}) =>
-			(isSearchFound(pluginName) ||
-				isSearchFound(pluginDescription)) &&
-			(!selectedPlatform ||
-				firmwarePlatform?.toLowerCase() ===
-					selectedPlatform?.toLowerCase())
-	);
-
-	const handleSearchChange = useCallback((newInput: string) => {
-		setSearch(newInput);
-	}, []);
-
-	const handlePlatformChange = useCallback(
-		(newPlatform: string) => {
-			if (selectedPlatform && selectedPlatform === newPlatform) {
-				setSelectedPlatform('');
-			} else {
-				setSelectedPlatform(newPlatform);
-			}
-		},
-		[selectedPlatform]
-	);
+	const workspaceTemplateType = useWorkspaceTemplateType();
 
 	const handleTemplateChange = useCallback(
 		({
@@ -117,50 +95,28 @@ export default function TemplateSelectionContainer({
 	if (templateList.length === 0) {
 		return (
 			<div className={styles.templatesContainer}>
-				<p>
-					No plugins available for your current SoC/Package/Board
-					selection.
-				</p>
+				<WorkspaceEmptyPlugins selectedWorkspaceCreationPath='predefined' />
 			</div>
 		);
 	}
 
 	return (
-		<section data-test='template-selection:container'>
+		<section data-test='workspace-options:template-selection:container'>
 			<header className={styles.templateHeader}>
-				<SearchInput
-					inputVal={search}
-					placeholder='Search Templates'
-					onClear={() => {
-						setSearch('');
-					}}
-					onInputChange={handleSearchChange}
-				/>
-				<div className={styles.chipsContainer}>
-					{availableSocPlatforms.map(platform => (
-						<Chip
-							key={platform}
-							id={platform}
-							dataTest={`${platform.toLowerCase()}-chip`}
-							label={capitalizeWord(platform)}
-							isDisabled={false}
-							isActive={selectedPlatform === platform}
-							onClick={() => {
-								handlePlatformChange(platform);
-							}}
-						/>
-					))}
-				</div>
+				<h2>
+					{l10n?.['workspace-options']?.['workspace-template']?.title}
+				</h2>
+				<span>
+					{
+						l10n?.['workspace-options']?.['workspace-template']
+							?.description
+					}
+				</span>
 			</header>
 
-			<NotificationError
-				error={errors}
-				testId='multicore-template-selection-error'
-			/>
-
 			<main className={styles.templatesContainer}>
-				{filteredTemplateList.length ? (
-					filteredTemplateList.map(
+				{templateList.length ? (
+					templateList.map(
 						({
 							pluginId,
 							pluginName,
@@ -171,8 +127,12 @@ export default function TemplateSelectionContainer({
 								key={pluginId}
 								testId={`templateSelection:card:${pluginId}`}
 								id={pluginId}
-								isChecked={templateId === pluginId}
+								isChecked={
+									templateId === pluginId &&
+									workspaceTemplateType === 'predefined'
+								}
 								onChange={() => {
+									dispatch(setWorkspaceTemplateType('predefined'));
 									handleTemplateChange({
 										pluginId,
 										pluginVersion,
@@ -181,7 +141,12 @@ export default function TemplateSelectionContainer({
 								}}
 							>
 								<div slot='start'>
-									<Radio checked={templateId === pluginId} />
+									<Radio
+										checked={
+											templateId === pluginId &&
+											workspaceTemplateType === 'predefined'
+										}
+									/>
 								</div>
 								<div slot='title' className={styles.template}>
 									<h3>{pluginName}</h3>

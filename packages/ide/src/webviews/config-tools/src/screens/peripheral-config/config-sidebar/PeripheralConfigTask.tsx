@@ -42,6 +42,7 @@ import {
 } from '../../../utils/soc-controls';
 import {useMemo} from 'react';
 import {computePeripheralResetValues} from '../../../utils/soc-peripherals';
+import {useActivePeripheralHasSignals} from '../../../hooks/useActivePeripheralHasSignals';
 
 export const PERIPHERAL_PLUGIN_OPTIONS_FORM_ID =
 	'peripheral-plugin-options-form';
@@ -128,17 +129,29 @@ function PeripheralConfigTask({
 		return unavailable;
 	};
 
+	const showManagePinAssignments = useActivePeripheralHasSignals(
+		Boolean('withCoreInfo')
+	);
+
 	return (
 		<div data-test='config-sidebar:peripheral-config'>
 			<ConfigPanel
 				details={<PeripheralDetails />}
 				variant={isExternallyManaged ? 'noChevron' : 'default'}
-				managePinAssignments={<ManagePeripheralPinAssignments />}
+				managePinAssignments={
+					showManagePinAssignments ? (
+						<ManagePeripheralPinAssignments />
+					) : undefined
+				}
 				configuration={
 					isExternallyManaged ? (
 						<ConfigUnavailable message='This peripheral is allocated to a core that is externally managed' />
 					) : (
 						<PeripheralConfigForm
+							/* NOTE rerender is intentionally triggered to allow switching
+							 * between peripherals without closing the sidebar first.
+							 */
+							key={`${activePeripheral}:${projectId}`}
 							formattedData={formattedData}
 							formattedControls={formattedControls}
 							peripheralControls={controls[activePeripheral] ?? []}

@@ -14,32 +14,49 @@
  */
 import {expect, test} from '@oclif/test';
 
-import { parseJson } from '../../utils/parse-json.js';
+import {parseJson} from '../../utils/parse-json.js';
 
 describe('soc list', () => {
   test
     .stdout()
-    .command(['socs:list'], {root: '..',})
+    .command(['socs:list'], {
+      root: '..'
+    })
     .it('text, no verbose', (ctx) => {
-      expect(ctx.stdout).to.contain('max32690-tqfn');
+      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
       expect(ctx.stdout).not.to.contain('soc1234');
     });
 
   test
     .stdout()
-    .command(['socs:list', '--format', 'json'], {root: '..'})
+    .command(
+      [
+        'socs:list',
+        '--format',
+        'json',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    )
     .it('json, no verbose', (ctx) => {
       expect(parseJson(ctx.stdout)).to.be.an('array');
-      expect(parseJson(ctx.stdout)).to.include('max32690-tqfn');
+      expect(parseJson(ctx.stdout)).to.include('test_soc_b-tqfn');
     });
 
   test
     .stdout()
-    .command(['socs:list', '--verbose'], {root: '..'})
+    .command(
+      [
+        'socs:list',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    )
     .it('text, verbose', (ctx) => {
-      expect(parseJson(ctx.stdout)).to.equal(null);
-      expect(ctx.stdout).to.contain('max32690-tqfn');
-      expect(ctx.stdout).to.contain('Copyright');
+      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
       expect(ctx.stdout).to.contain('Version');
       expect(ctx.stdout).to.contain('Timestamp');
       expect(ctx.stdout).to.contain('Name');
@@ -47,11 +64,25 @@ describe('soc list', () => {
       expect(ctx.stdout).to.contain('Schema');
     });
 
-    test
+  test
     .stdout()
-    .command(['socs:list', '--format', 'json', '--verbose'], {root: '..'})
+    .command(
+      [
+        'socs:list',
+        '--format',
+        'json',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {
+        root: '..'
+      }
+    )
     .it('json, verbose', (ctx) => {
       expect(parseJson(ctx.stdout)).to.be.an('object');
-      expect(Object.keys(parseJson(ctx.stdout))).to.include("max32690-tqfn");
+      expect(Object.keys(parseJson(ctx.stdout))).to.include(
+        'test_soc_b-tqfn'
+      );
     });
 });

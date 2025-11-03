@@ -1,0 +1,275 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "1.2.127",
+  "DataModelSchemaVersion": "1.2.0",
+  "Soc": "MAX32690",
+  "Package": "TQFN",
+  "BoardName": "EvKit_V1",
+  "Timestamp": "2025-09-12T21:42:44.313Z",
+  "Pins": [
+    {
+      "Pin": "7",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.7"
+    },
+    {
+      "Pin": "8",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.8"
+    },
+    {
+      "Pin": "9",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.9"
+    },
+    {
+      "Pin": "14",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.14"
+    },
+    {
+      "Pin": "15",
+      "Peripheral": "UART2",
+      "Signal": "RX"
+    },
+    {
+      "Pin": "16",
+      "Peripheral": "UART2",
+      "Signal": "TX"
+    },
+    {
+      "Pin": "60",
+      "Peripheral": "GPIO4",
+      "Signal": "P4.0"
+    },
+    {
+      "Pin": "67",
+      "Peripheral": "GPIO2",
+      "Signal": "P2.12"
+    }
+  ],
+  "ClockNodes": [
+    {
+      "Name": "UART0/2",
+      "Control": "UART2_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    },
+    {
+      "Name": "UART0/2",
+      "Control": "UART2_MUX",
+      "Value": "IBRO",
+      "Enabled": true
+    },
+    {
+      "Name": "SYS_OSC Mux",
+      "Control": "MUX",
+      "Value": "IPO",
+      "Enabled": true
+    }
+  ],
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.msdk.plugin",
+      "PluginVersion": "1.1.0",
+      "FirmwarePlatform": "msdk",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4"
+      },
+      "Name": "ARM Cortex-M4",
+      "Description": "ARM Cortex-M4",
+      "CoreNum": 0,
+      "IsPrimary": true,
+      "Partitions": [
+        {
+          "Name": "FLASH",
+          "StartAddress": "0x10000000",
+          "Size": 3407872,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+          }
+        },
+        {
+          "Name": "SRAM",
+          "StartAddress": "0x20000000",
+          "Size": 1048576,
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {
+          }
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "CM4 SysTick",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "FALSE"
+          }
+        },
+        {
+          "Name": "UART2",
+          "Signals": [
+            {
+              "Name": "CTS",
+              "Config": {}
+            },
+            {
+              "Name": "RTS",
+              "Config": {}
+            },
+            {
+              "Name": "RX",
+              "Config": {
+                "PWR": "VDDIO",
+                "PS": "WEAK_PU"
+              }
+            },
+            {
+              "Name": "TX",
+              "Config": {
+                "PWR": "VDDIO"
+              }
+            }
+          ],
+          "Config": {
+            "PARITY": "DISABLED",
+            "PARITY_MD": "MARK",
+            "CHAR_SIZE": "8",
+            "STOP_BITS": "1",
+            "HW_FLOW_CTRL": "DISABLED",
+            "BAUD": "115200"
+          }
+        },
+        {
+          "Name": "GPIO0",
+          "Signals": [
+            {
+              "Name": "P0.7",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            },
+            {
+              "Name": "P0.8",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            },
+            {
+              "Name": "P0.9",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            },
+            {
+              "Name": "P0.14",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "GPIO2",
+          "Signals": [
+            {
+              "Name": "P2.12",
+              "Config": {
+                "MODE": "OUT",
+                "PWR": "VDDIO",
+                "DS": "0"
+              }
+            }
+          ],
+          "Config": {}
+        },
+        {
+          "Name": "GPIO4",
+          "Signals": [
+            {
+              "Name": "P4.0",
+              "Config": {
+                "MODE": "IN",
+                "PS": "PU"
+              }
+            }
+          ],
+          "Config": {}
+        }
+      ],
+      "AIModels" : [
+        {
+          "Name": "Hello with Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_f32.tflite"
+          },
+          "Target": {
+            "Core": "cm4"
+          },
+          "Backend" : {
+            "Name" : "tflm",
+            "Extensions" : {
+              "Symbol" : "hello_world_model_f32",
+              "Section" : ".data"
+            }
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "Hello no Backend",
+          "Files" : {
+            "Model" : "./examples/hello_world_i8.tflite"
+          },
+          "Target": {
+            "Core": "cm4"
+          },
+          "Enabled": "true"
+        },
+        {
+          "Name": "Denoiser Remote",
+          "Files" : {
+              "Model" : "https://raw.githubusercontent.com/breizhn/DTLN/master/pretrained_model/model_1.tflite"
+          },
+          "Target": { 
+              "Core": "cm4"
+          },
+          "Enabled": true
+     }
+      ]
+    },
+    {
+      "CoreId": "RV",
+      "ProjectId": "RV",
+      "PluginId": "",
+      "PluginVersion": "",
+      "FirmwarePlatform": "",
+      "ExternallyManaged": true,
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ],
+  "ClockFrequencies": {
+    "Cortex-M4": 120000000,
+    "FLC0/1": 120000000,
+    "SYS_OSC": 120000000,
+    "IBRO": 7372800,
+    "SYS_CLK": 120000000,
+    "IPO": 120000000,
+    "UART0": 60000000,
+    "UART2": 7372800
+  }
+}

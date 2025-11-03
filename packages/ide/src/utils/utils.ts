@@ -24,14 +24,13 @@ import {
   SELECT_OPENOCD_RISCV_INTERFACE_COMMAND_ID,
   SELECT_OPENOCD_RISCV_TARGET_COMMAND_ID,
   SELECT_OPENOCD_TARGET_COMMAND_ID,
-  SELECT_PROGRAM_FILE_COMMAND_ID,
-  SELECT_RISCV_PROGRAM_FILE_COMMAND_ID,
   SELECT_SDK_PATH_COMMAND_ID,
   SET_JLINK_PATH_COMMAND_ID,
   SET_SDK_PATH_COMMAND_ID,
 } from "../commands/constants";
 import {
   EXTENSION_ID,
+  FIRMWARE_PLATFORM,
   JLINK_PATH,
   OPENOCD_INTERFACE,
   OPENOCD_RISCV_INTERFACE,
@@ -39,12 +38,13 @@ import {
   OPENOCD_TARGET,
   PACK,
   PROGRAM_FILE,
+  PROJECT,
   RISCV_PROGRAM_FILE,
   SDK_PATH,
 } from "../constants";
 import { ERROR } from "../messages";
 import { PropertyNode } from "../properties";
-import { resolveVariables } from "./resolveVariables";
+import { resolveUserHomePath } from "./resolveVariables";
 
 import {
   DOWNLOAD_SDK,
@@ -68,7 +68,22 @@ export enum ToolchainType {
   RISCV = "riscv.none.elf",
 }
 
+// Utility to robustly extract a session ID from any input
+export function extractSessionId(input: any): string | undefined {
+  if (!input) return undefined;
+  if (typeof input === "string") return input;
+  if (typeof input === "object") {
+    // Direct id property
+    if (typeof input.id === "string") return input.id;
+    // Nested session object
+    if (input.session && typeof input.session.id === "string")
+      return input.session.id;
+  }
+  return undefined;
+}
+
 import { executeTask } from "../commands/commands";
+import { SoC } from "cfs-ccm-lib";
 export class Utils {
   /**
    * Find files within the current workspace
@@ -312,16 +327,6 @@ export class Utils {
         settingsCommand = SELECT_CMSIS_PACK_COMMAND_ID;
         break;
 
-      case PROGRAM_FILE:
-        settingsMessage = SELECT_PROGRAM_FILE;
-        settingsCommand = SELECT_PROGRAM_FILE_COMMAND_ID;
-        break;
-
-      case RISCV_PROGRAM_FILE:
-        settingsMessage = SELECT_RISCV_PROGRAM_FILE;
-        settingsCommand = SELECT_RISCV_PROGRAM_FILE_COMMAND_ID;
-        break;
-
       default:
         break;
     }
@@ -353,7 +358,7 @@ export class Utils {
     }
 
     if (!sdkPath) {
-      await vscode.window
+      vscode.window
         .showWarningMessage(
           "The path to the CFS SDK is missing or not valid and this prevented the extension from loading correctly. Please download and install the CFS SDK, or set the path to the CFS SDK through the CodeFusion Studio extension settings.",
           DOWNLOAD_SDK,
@@ -448,11 +453,12 @@ export class Utils {
       return vscode.tasks.executeTask(selectedTask);
     } else {
       console.error(`Error: Task '${taskName}' not found`);
+      return undefined;
     }
   }
 
   static getDefaultLocation() {
-    const userHome = resolveVariables("${userHome}");
+    const userHome = resolveUserHomePath("${userHome}");
     const version = this.getExtensionVersion();
 
     const defaultLocation = Utils.normalizePath(
@@ -778,5 +784,55 @@ export class Utils {
         `Task '${taskName}' not found in project '${folderName}'.`,
       );
     }
+  }
+
+  /**
+   * Determines if the given board is an ADI board based on the provided SoC information.
+   * @param board - the board name to check
+   * @param soc - the SoC information containing the list of ADI boards
+   * @returns true if the board is an ADI board, false otherwise
+   */
+  static isAdiBoard(board: string, soc: SoC): boolean {
+    if (board === "") return false;
+
+    const socBoardNames = soc.boards.map((b) => b.name);
+
+    return socBoardNames.includes(board);
+  }
+
+  /**
+   * Joins workspace path segments, ensuring the first segment is the workspace root
+   * and all subsequent segments are relative. Strips any accidental absolute path
+   * from subsequent segments.
+   */
+  static joinWorkspacePath(...segments: string[]): string {
+    if (segments.length === 0) return "";
+    const [root, ...rest] = segments;
+    const joined = path.join(root, ...rest);
+    return Utils.normalizePath(joined);
+  }
+
+  /**
+   * Determines if a plugin is developed by ADI based on its plugin ID.
+   * @param pluginId - the plugin ID to check
+   * @returns true if the plugin starts with com.analog, false otherwise
+   */
+  static isAdiDevelopedPlugin(pluginId: string): boolean {
+    return pluginId.startsWith("com.analog");
+  }
+
+  /**
+   * Retrieves the firmware platform for the given workspace folder from the folder settings.
+   * @param workspaceFolder - the workspace folder to get the firmware platform from
+   * @returns The firmware platform as a string, or an empty string if not set
+   */
+  static getProjectFirmwarePlatform(
+    workspaceFolder: vscode.WorkspaceFolder,
+  ): string {
+    const configuration = vscode.workspace.getConfiguration(
+      EXTENSION_ID,
+      workspaceFolder,
+    );
+    return configuration.get<string>(`${PROJECT}.${FIRMWARE_PLATFORM}`) ?? "";
   }
 }

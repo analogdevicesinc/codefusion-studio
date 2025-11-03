@@ -26,7 +26,6 @@
 
 .memoryCardDetails {
 	@include fonts.body-b3;
-	text-transform: uppercase;
 	color: colors.$description-foreground;
 }
 
@@ -34,6 +33,7 @@
 	display: flex;
 	align-items: center;
 	gap: 4px;
+	min-height: 24px;
 	@include fonts.heading-h3;
 }
 .memoryCardTitleInfo {
@@ -48,6 +48,7 @@
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 4px;
+	max-width: 100%;
 	flex: 1 0 0;
 }
 
@@ -55,7 +56,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: 4px;
+	gap: 8px;
 	flex: 1 0 0;
 }
 
@@ -64,12 +65,6 @@
 	display: inline-block;
 	width: 100%;
 	padding: 10px 5px 10px 10px;
-}
-
-.partitionHeading {
-	@include fonts.heading-h5;
-	color: colors.$default-foreground;
-	text-transform: uppercase;
 }
 
 .partitionsCards {
@@ -85,4 +80,18 @@
 	align-items: flex-start;
 	gap: 8px;
 	align-self: stretch;
+}
+
+.projectViewTitle {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	align-self: stretch;
+	@include fonts.body-b3;
+	color: colors.$description-foreground;
+}
+
+.noPartition {
+	@include fonts.body-b2;
+	color: colors.$disabled-foreground;
 }

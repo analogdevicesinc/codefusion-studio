@@ -88,7 +88,10 @@ function PinConfigTask({peripheral, signal}: PinConfigTaskProps) {
 				pluginConfiguration={
 					projectsForSignal.length > 0 &&
 					!isExternallyManagedProject ? (
-						<div id={PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID} />
+						<div
+							data-test='config-sidebar:plugin-options'
+							id={PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID}
+						/>
 					) : null
 				}
 			/>

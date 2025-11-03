@@ -26,6 +26,8 @@ $disabled-foreground: var(--vscode-disabledForeground, #808080);
 
 $default-border: var(--vscode-commandCenter-inactiveBorder, #cccccc);
 
+$hover-border: var(--vscode-commandCenter-activeBorder, #cccccc);
+
 // Charts
 $chart-red: var(--vscode-charts-red, #f14c4c);
 $chart-green: var(--vscode-charts-green, #89d185);
@@ -86,7 +88,7 @@ $editor-widget-border: var(--vscode-editorWidget-border, #454545);
 // Input
 $input-background: var(--vscode-input-background, #1e1e1e);
 $input-foreground: var(--vscode-input-foreground, #d4d4d4);
-$input-border: var(--vscode-settings-dropdownBorder, #d4d4d4);
+$input-border: var(--vscode-input-border, #3c3c3c);
 $input-focus-border: var(--vscode-focusBorder, #3c3c3c);
 
 $dropdown-border: var(--vscode-panelInput-border, #454545);
@@ -100,6 +102,12 @@ $badge-background: color-mix(
 $icon-foreground: var(--vscode-icon-foreground, #c5c5c5);
 
 $error: var(--vscode-notificationsErrorIcon-foreground, #f14c4c);
+$error-foreground: var(--vscode-errorForeground, #ffeaea);
+$error-background: var(
+	--vscode-inputValidation-errorBackground,
+	#5a1d1d
+);
+$error-border: var(--vscode-inputValidation-errorBorder, #be1100);
 
 $default-shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
 

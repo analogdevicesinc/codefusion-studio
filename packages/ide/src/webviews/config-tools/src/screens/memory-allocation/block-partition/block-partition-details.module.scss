@@ -18,6 +18,8 @@
 
 .container {
 	padding: 8px 12px;
+	width: 100%;
+	box-sizing: border-box;
 
 	section {
 		display: flex;
@@ -25,6 +27,10 @@
 		.title {
 			@include fonts.label-l2;
 			color: colors.$default-foreground;
+			text-overflow: ellipsis;
+			text-wrap: nowrap;
+			white-space: nowrap;
+			overflow: hidden;
 		}
 		.size,
 		.occupiedMemory {

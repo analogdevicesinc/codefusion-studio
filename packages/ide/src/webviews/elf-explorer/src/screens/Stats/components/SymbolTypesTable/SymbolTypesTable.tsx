@@ -28,6 +28,7 @@ function SymbolTypeTable({data}: TSymbolsSizeTableProps) {
 	return (
 		<DataGrid
 			ariaLabel='Top Symbols Table'
+			dataTest='stats:symbol-types-table'
 			className={`${styles.table} ${styles.topSymbols}`}
 		>
 			{data.map(row => (

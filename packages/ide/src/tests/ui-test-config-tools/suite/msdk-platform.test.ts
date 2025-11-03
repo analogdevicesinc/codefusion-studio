@@ -12,9 +12,18 @@
  * limitations under the License.
  *
  */
-import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { expect } from "chai";
-import * as path from "path";
+import { UIUtils } from "../config-tools-utility/config-utils";
+import { getConfigPathForFile } from "../config-tools-utility/cfsconfig-utils";
+import { pinTab } from "../page-objects/main-menu";
+import {
+  configButton,
+  mainPanelPinOnLineAndColumn,
+  pinDetailsContainer,
+  signalControlDropdown,
+  signalToggleWithIndex,
+} from "../page-objects/pin-config-section/pin-config-screen";
 
 describe("MSDK Firmware Platform", () => {
   let browser: VSBrowser;
@@ -22,79 +31,65 @@ describe("MSDK Firmware Platform", () => {
 
   before(function () {
     this.timeout(60000);
-
     browser = VSBrowser.instance;
   });
 
   after(async function () {
     this.timeout(60000);
-
     await view.switchBack();
-
     const wb = new Workbench();
-
     await wb.wait();
-
     await wb.executeCommand("revert and close editor");
   });
 
   it("Should only allow MSDK specific controls", async () => {
-    await browser.openResources(
-      path.join(
-        "src",
-        "tests",
-        "ui-test-config-tools",
-        "fixtures",
-        "max32690-wlp.cfsconfig",
-      ),
-    );
+    await browser.openResources(getConfigPathForFile("max32690-wlp.cfsconfig"));
 
     view = new WebView();
     await view.wait();
-
     await view.switchToFrame();
 
-    const navItem = await view.findWebElement(By.css(`#pinmux`));
+    const navItem = await view.findWebElement(pinTab);
     await navItem.click().then(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      const pin = await view.findWebElement(
-        By.css(
-          "#pin-rows-container > div:nth-child(1) > div:nth-child(3) > div:nth-child(1)",
-        ),
+      await UIUtils.sleep(3000);
+      const pin = await UIUtils.findWebElement(
+        view,
+        await mainPanelPinOnLineAndColumn(1, 3),
       );
 
       expect(await pin.getAttribute("class")).to.contain("unassigned");
 
       await pin.click().then(async () => {
-        // assert pin details sidebar is rendered
-        expect(await view.findWebElement(By.css("#details-container"))).to
-          .exist;
+        // Assert pin details sidebar is rendered
+        expect(await view.findWebElement(pinDetailsContainer)).to.exist;
 
         await new Promise((res) => {
           setTimeout(res, 500);
         });
       });
 
-      const firstSignalToggle = await view.findWebElement(
-        By.css(
-          "#pin-details-signals-container > div:nth-child(1) > section > label",
-        ),
+      const firstSignalToggle = await UIUtils.findWebElement(
+        view,
+        await signalToggleWithIndex(1),
       );
-
       firstSignalToggle.click().then(async () => {
-        const navItem = await view.findWebElement(By.css("#config"));
+        const navItem = await UIUtils.findWebElement(view, configButton);
 
         await navItem.click().then(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await UIUtils.sleep(1000);
 
           expect(
-            await view.findWebElement(
-              By.css("#GPIO_TYPE-P2.26-control-dropdown"),
+            await UIUtils.findWebElement(
+              view,
+              await signalControlDropdown("GPIO_TYPE-P2.26"),
             ),
           ).to.not.exist;
 
           expect(
-            await view.findWebElement(By.css("#MODE-P0.19-control-dropdown")),
+            await UIUtils.findWebElement(
+              view,
+              await signalControlDropdown("MODE-P0.19"),
+            ),
           ).to.exist;
         });
       });

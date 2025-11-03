@@ -103,9 +103,9 @@ function SymbolsTable({
 	const [path, setPath] = useState('');
 	const [menuOptions, setMenuOptions] = useState(MENU_OPTIONS);
 	const [clickedCol, setClickedCol] = useState<string>('');
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const observer = useRef<IntersectionObserver | null>(null);
-	const lastItemRef = useRef<any>(null);
+	const observer = useRef<IntersectionObserver>(
+		{} as IntersectionObserver
+	);
 
 	const columns: Array<`${SYMBOL_COLUMNS}` | string> =
 		getColumns(data);
@@ -144,9 +144,9 @@ function SymbolsTable({
 	}, [clonedData, nextIndex]);
 
 	useEffect(() => {
-		if (symbols.length === data.length) return;
+		const lastRow = document.querySelector('#symbol-last-row');
 
-		if (observer.current) observer.current.disconnect();
+		if (symbols.length === data.length) return;
 
 		observer.current = new IntersectionObserver(entries => {
 			if (entries[0].isIntersecting) {
@@ -154,10 +154,14 @@ function SymbolsTable({
 			}
 		});
 
-		if (lastItemRef.current)
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-			observer.current.observe(lastItemRef.current);
-	}, [data, lastItemRef, loadMoreSymbols, symbols]);
+		if (lastRow) observer.current.observe(lastRow);
+
+		return () => {
+			if (observer.current) {
+				observer.current.disconnect();
+			}
+		};
+	}, [data, loadMoreSymbols, symbols]);
 
 	const goToSourceCodeCallback = useCallback(
 		async (path: string, position: number[]) => {
@@ -345,8 +349,15 @@ function SymbolsTable({
 						))}
 					</DataGridRow>
 
-					{symbols.map(row => (
-						<DataGridRow ref={lastItemRef} key={row.id}>
+					{symbols.map((row, index) => (
+						<DataGridRow
+							key={row.id}
+							id={
+								index === symbols.length - 1
+									? 'symbol-last-row'
+									: `symbol-row-${index}`
+							}
+						>
 							{headerColumns.map((column, index) => (
 								<DataGridCell
 									key={`${row.id}-${column}`}

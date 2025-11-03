@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,11 +37,7 @@ export {
 	getBucket,
 	getMachineFlags
 } from "./utils/elf-flags-handler.js";
-export {
-	ProjectGenerator,
-	ProjectGeneratorTypes
-} from "./project-generation/project-generator.js";
-export { ProjectGeneratorFactory } from "./project-generation/project-generator-factory.js";
+export * from "./utils/file-utils.js";
 export * from "./types/soc.js";
 export { DtParser } from "./dt-parser/DtParser.js";
 export { CfsFeatureScope } from "cfs-plugins-api";
@@ -51,7 +47,39 @@ export type {
 	CfsPluginInfo,
 	CfsPluginProperty,
 	CfsWorkspace,
-	CfsCodeGenerationContext
+	CfsCodeGenerationContext,
+	CfsConfig,
+	CfsSocDataModel
 } from "cfs-plugins-api";
 
+// Managers
 export { CfsPluginManager } from "./plugins/cfs-plugin-manager.js";
+export { CfsDataModelManager } from "./managers/cfs-data-model-manager.js";
+export { CfsToolManager } from "./managers/cfs-tool-manager.js";
+
+// Utilities
+export { CfsVariableResolver } from "./utils/cfs-variable-resolver.js";
+
+// Manager type definitions
+export type { DataModelMetaData } from "./managers/cfs-data-model-manager.d.ts";
+export type {
+	Tool,
+	ToolInfo
+} from "./managers/cfs-tool-manager.d.ts";
+
+export type { TokenAuthSession } from "cfs-ccm-lib";
+export { CfsApiClient } from "cfs-ccm-lib";
+export type { AuthConfig } from "./auth/session-manager.js";
+export { SessionManager } from "./auth/session-manager.js";
+export { MyAnalogCloudsmithCredentialProvider } from "./auth/cloudsmith-credentials.js";
+
+// Telemetry
+export { TelemetryManager } from "./telemetry/telemetry-manager.js";
+export type { SingleTelemetryMessage } from "./types/single-telemetry-message.js";
+export type { MultipleTelemetryMessages } from "./types/multiple-telemetry-messages.js";
+export {
+	getAiToolsPlugin,
+	type AiToolsUiData
+} from "./ai-tools/index.js";
+
+export { getHostPlatform } from "./utils/node-utils.js";

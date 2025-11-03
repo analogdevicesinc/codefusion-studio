@@ -17,8 +17,9 @@
 .switch {
 	position: relative;
 	display: block;
-	width: 28px;
-	height: 16px;
+	flex: 0 0 auto;
+	width: 30px;
+	height: 18px;
 
 	&:focus .slider {
 		outline: 1px solid colors.$focus-border;
@@ -56,6 +57,7 @@
 		right: 0;
 		bottom: 0;
 		background-color: colors.$button-secondary-background;
+		border: 1px solid colors.$input-border;
 		transition: 0.4s;
 
 		&:before {
@@ -65,7 +67,7 @@
 			width: 12px;
 			top: 2px;
 			left: 2px;
-			background-color: colors.$checkbox-foreground;
+			background-color: colors.$button-secondary-foreground;
 			transition: 0.4s;
 		}
 

@@ -21,15 +21,15 @@ import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 
-const soc = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default as unknown as Soc);
+const soc = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
+import type {CfsConfig} from 'cfs-plugins-api';
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
 	Soc: 'MAX32690',
-	projects: [
+	Projects: [
 		{
 			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
@@ -40,31 +40,12 @@ const configDict = {
 			ProjectId: 'CM4-proj'
 		}
 	]
-};
+} as unknown as CfsConfig;
 
 // @TODO: This test is similar to the one in ClockDiagram.cy.tsx. Consider covering another error case.
 describe('Clock Diagram error states', () => {
 	beforeEach(() => {
 		cy.clearLocalStorage().then(() => {
-			localStorage.setItem(
-				'ClockNodes',
-				JSON.stringify(soc.ClockNodes)
-			);
-
-			localStorage.setItem(
-				'Package',
-				JSON.stringify(soc.Packages[0])
-			);
-
-			localStorage.setItem(
-				'Registers',
-				JSON.stringify(soc.Registers)
-			);
-
-			localStorage.setItem('Cores', JSON.stringify(soc.Cores));
-
-			localStorage.setItem('configDict', JSON.stringify(configDict));
-
 			cy.fixture('clock-config-plugin-controls.json').then(
 				controls => {
 					window.localStorage.setItem(
@@ -80,7 +61,7 @@ describe('Clock Diagram error states', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const reduxStore = configurePreloadedStore(
 				soc,
-				undefined,
+				configDict,
 				controls
 			);
 
@@ -104,6 +85,16 @@ describe('Clock Diagram error states', () => {
 			).then(() => {
 				cy.wait(1000);
 
+				// We also need to check grouped peripherals.
+				reduxStore.dispatch(
+					setClockNodeControlValue({
+						name: 'UART0/1/2',
+						key: 'UART2_ENABLE',
+						value: 'TRUE',
+						error: undefined
+					})
+				);
+
 				const setError = reduxStore.dispatch(
 					setClockNodeControlValue({
 						name: 'P0.23',
@@ -125,11 +116,26 @@ describe('Clock Diagram error states', () => {
 				cy.log(JSON.stringify(setError.payload));
 
 				cy.wait(1000).then(() => {
+					// UART0/1/2 block has ERROR
+					cy.get(
+						'#\\34 28eb510-1761-11ef-a073-695fa460553d > .adi_diagram_content_node_highlight.error'
+					).should('exist');
+
+					// P0.23 block has ERROR
 					cy.get(
 						'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
 					)
 						.should('exist')
 						.then(() => {
+							reduxStore.dispatch(
+								setClockNodeControlValue({
+									name: 'UART0/1/2',
+									key: 'UART2_MUX',
+									value: 'IBRO',
+									error: undefined
+								})
+							);
+
 							const revert = reduxStore.dispatch(
 								setClockNodeControlValue({
 									name: 'P0.23',
@@ -142,6 +148,12 @@ describe('Clock Diagram error states', () => {
 							cy.log(JSON.stringify(revert.payload));
 
 							cy.wait(1000).then(() => {
+								// UART0/1/2 block no ERROR
+								cy.get(
+									'#\\34 28eb510-1761-11ef-a073-695fa460553d > .adi_diagram_content_node_highlight.error'
+								).should('not.exist');
+
+								// P0.23 block  no ERROR
 								cy.get(
 									'#\\32 22bd4f0-175d-11ef-a773-0da4986d92e7 > rect.adi_diagram_content_node_highlight.error'
 								).should('not.exist');

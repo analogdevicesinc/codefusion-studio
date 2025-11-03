@@ -19,6 +19,7 @@ import {
 	getSymbols,
 	updateSavedOptionsForTableFormat
 } from '../../common/api';
+
 // Components
 import SymbolsTable from './components/Table/SymbolsTable';
 import SymbolsFilters from './components/Filters/SymbolsFilters';
@@ -59,7 +60,7 @@ export default function Symbols() {
 
 	useEffect(() => {
 		getSavedOptionsForTableFormat()
-			.then(response => {
+			.then((response: TSavedTableOptions | undefined) => {
 				setSavedOptions(response);
 			})
 			.catch((err: string) => {
@@ -169,7 +170,10 @@ export default function Symbols() {
 
 		if (!data.symbols.length && !data.error) {
 			return (
-				<div className={styles['no-data']}>
+				<div
+					className={styles['no-data']}
+					data-test='symbols:no-data'
+				>
 					No items matching your query were found.
 				</div>
 			);
@@ -180,7 +184,7 @@ export default function Symbols() {
 
 	return (
 		<ScreenLayout>
-			<div className={styles.header}>
+			<div className={styles.header} data-test='symbols:header'>
 				<div className={styles.search}>
 					<SymbolsSearch
 						emitValue={search}
@@ -188,7 +192,10 @@ export default function Symbols() {
 					/>
 				</div>
 			</div>
-			<section className={styles['table-section']}>
+			<section
+				className={styles.container}
+				data-test='symbols:container'
+			>
 				<div className={styles['sticky-search']}>
 					<SymbolsFilters
 						queryToSet={query}

@@ -8,36 +8,13 @@ import {
 	setPinDetailsTargetPin
 } from '../../../state/slices/pins/pins.reducer';
 import {setActiveSearchString} from '../../../state/slices/app-context/appContext.reducer';
-import {resetPinDictionary} from '../../../utils/soc-pins';
 
-const mock = await import(
-	'../../../../../../../../cli/src/socs/max32690-wlp.json'
-).then(module => module.default);
+const mock = (await import('@socs/max32690-wlp.json'))
+	.default as unknown as Soc;
 
 describe('Pin mux side component', () => {
-	before(() => {
-		resetPinDictionary();
-
-		window.localStorage.setItem(
-			'Registers',
-			JSON.stringify(mock.Registers)
-		);
-
-		window.localStorage.setItem(
-			'Package',
-			JSON.stringify(mock.Packages[0])
-		);
-
-		window.localStorage.setItem(
-			'Peripherals',
-			JSON.stringify(mock.Peripherals)
-		);
-	});
-
 	it('Displays a conflict icon when pins are conflicting in peripheral navigation', () => {
-		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -67,9 +44,7 @@ describe('Pin mux side component', () => {
 	});
 
 	it('Displays a conflict icon when pins are conflicting in pin details', () => {
-		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({
@@ -95,9 +70,7 @@ describe('Pin mux side component', () => {
 	});
 
 	it('Displays a conflict icon when pins are conflicting in pin search', () => {
-		const reduxStore = configurePreloadedStore(
-			mock as unknown as Soc
-		);
+		const reduxStore = configurePreloadedStore(mock);
 
 		reduxStore.dispatch(
 			setAppliedSignal({

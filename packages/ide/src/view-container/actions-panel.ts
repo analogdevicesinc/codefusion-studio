@@ -26,14 +26,19 @@ import {
   BUILD_ALL_ACTION,
   CLEAN_ACTION,
   COPY_AND_EDIT_TASK_CONTEXT,
-  DEBUG,
   DEBUG_ACTION,
   DEBUG_ALT,
   DEBUG_LAUNCH_CONTEXT,
   DEBUG_TASK_CONTEXT,
   ERASE_ACTION,
+  EXTENSION_ID,
+  FIRMWARE_PLATFORM,
   FLASH_ACTION,
+  GRAPH,
+  LOCK,
   OZONE_DEBUG_ACTION,
+  PROFILING_ACTION,
+  PROJECT,
   SECURITY_ACTION,
   SECURITY_TASKS_SEARCH_STRING,
   TOOLS,
@@ -42,7 +47,10 @@ import {
 } from "../constants";
 import { ViewContainerItem } from "./view-container-item";
 import { ContextBase } from "./context-base";
-import { Utils } from "../utils/utils";
+import { OzoneDebugConfiguration } from "../configurations/externalDebugConfiguration";
+import type { CfsIDETaskProvider } from "../providers/cfs-ide-task-provider";
+import type { ZephyrTaskProvider } from "../toolchains/zephyr/tasks-provider";
+import type { MsdkTaskProvider } from "../toolchains/msdk/msdk";
 
 /**
  * The ActionTree class extends the vscode.TreeItem class and is used to create action trees for the viewContainer Actions panel.
@@ -75,18 +83,60 @@ export class ActionsViewProvider
 
   refreshEvent = new vscode.EventEmitter<ViewContainerItem | null>();
 
+  private cfsTaskProvider: CfsIDETaskProvider;
+  // @TODO: consolidate generic tasks into the cfsTaskProvider
+  private zephyrTaskProvider?: ZephyrTaskProvider;
+
+  private msdkTaskProvider?: MsdkTaskProvider;
+
   onDidChangeTreeData: vscode.Event<ViewContainerItem | null> =
     this.refreshEvent.event;
 
-  constructor() {
+  constructor(
+    cfsTaskProvider: CfsIDETaskProvider,
+    zephyrTaskProvider?: ZephyrTaskProvider,
+    msdkTaskProvider?: MsdkTaskProvider,
+  ) {
     super();
-    this.initializeFileSystemWatcher();
+    this.cfsTaskProvider = cfsTaskProvider;
+    this.zephyrTaskProvider = zephyrTaskProvider;
+    this.msdkTaskProvider = msdkTaskProvider;
   }
 
   onContextChanged(): void {
+    if (!this.hasInitialized) {
+      return;
+    }
     this.initializeActionItems().then(() => {
       this.refreshEvent.fire(null);
     });
+  }
+
+  /**
+   * Initializes all task providers and action items in a deferred manner.
+   * @param refresh - If true, re-initializes even if already initialized
+   */
+  async taskActionsInit(refresh = false): Promise<void> {
+    if (this.hasInitialized && !refresh) {
+      return;
+    }
+
+    this.refreshEvent.fire(null);
+
+    try {
+      // Initialize all task providers in parallel for better performance
+      await Promise.all([
+        this.cfsTaskProvider.initializeTasks(),
+        this.zephyrTaskProvider?.initializeTasks(),
+        this.msdkTaskProvider?.initializeTasks(),
+      ]);
+
+      // Now initialize the action items
+      await this.initializeActionItems();
+    } catch (error) {
+      console.error(`Error during deferred task initialization: ${error}`);
+      this.refreshEvent.fire(null);
+    }
   }
 
   /**
@@ -106,24 +156,13 @@ export class ActionsViewProvider
       new ActionTree(ERASE_ACTION, vscode.TreeItemCollapsibleState.Expanded),
       new ActionTree(FLASH_ACTION, vscode.TreeItemCollapsibleState.Expanded),
       new ActionTree(DEBUG_ACTION, vscode.TreeItemCollapsibleState.Expanded),
+      new ActionTree(
+        PROFILING_ACTION,
+        vscode.TreeItemCollapsibleState.Expanded,
+      ),
     );
 
-    /**
-     * Show `Debug with ozone` only when a project is selected
-     */
-    if (this.activeContext !== WORKSPACE_CONTEXT) {
-      this.actionItems.push(
-        new ViewContainerItem({
-          icon: new vscode.ThemeIcon(DEBUG),
-          label: OZONE_DEBUG_ACTION,
-          commandId: LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
-          commandArgs: [],
-          collapsible: vscode.TreeItemCollapsibleState.None,
-        }),
-      );
-    }
-
-    const tasks = await Utils.retryWithDelay(this.getVscodeTasks);
+    const tasks = await vscode.tasks.fetchTasks({ type: "shell" });
 
     this.localTasks = await this.getUserDefinedTasks();
     this.allTasks = [...this.localTasks, ...tasks].filter((task) =>
@@ -157,8 +196,11 @@ export class ActionsViewProvider
       return (
         task.name
           .toLowerCase()
-          .includes(SECURITY_TASKS_SEARCH_STRING.generateKey) &&
-        (task.source === "CFS" || task.source === "Workspace")
+          .includes(SECURITY_TASKS_SEARCH_STRING.generateKey) ||
+        (task.name
+          .toLocaleLowerCase()
+          .includes(SECURITY_TASKS_SEARCH_STRING.generateEnvelopedPackage) &&
+          (task.source === "CFS" || task.source === "Workspace"))
       );
     });
   }
@@ -206,30 +248,20 @@ export class ActionsViewProvider
       ];
     }
 
-    if (!this.hasInitialized) {
-      await this.initializeActionItems();
-      return;
-    }
-
     if (this.hasInitialized && this.allTasks.length === 0) {
-      const settingsJsonFiles =
-        await Utils.findFilesInWorkspace("**/settings.json");
-
-      for (const file of settingsJsonFiles) {
-        const settingsContent = await vscode.workspace.fs.readFile(
-          vscode.Uri.file(file),
+      // Check if all workspace folders are baremetal projects using VS Code's configuration API
+      const allBaremetal = workspaceFolders.every((folder) => {
+        const config = vscode.workspace.getConfiguration(EXTENSION_ID, folder);
+        const firmwarePlatform = config.get<string>(
+          `${PROJECT}.${FIRMWARE_PLATFORM}`,
         );
-        const settingsString = settingsContent.toString();
+        return firmwarePlatform === "Baremetal";
+      });
 
-        if (
-          settingsString.includes('"cfs.project.firmwarePlatform": "Baremetal"')
-        ) {
-          return [
-            new vscode.TreeItem(
-              "No tasks provided for registers-only projects.",
-            ),
-          ];
-        }
+      if (allBaremetal) {
+        return [
+          new vscode.TreeItem("No tasks provided for registers-only projects."),
+        ];
       }
 
       return [new vscode.TreeItem("No tasks found in CFS Workspace.")];
@@ -255,9 +287,11 @@ export class ActionsViewProvider
         return await this.getActionItemsForTasks("flash");
       case DEBUG_ACTION:
         return await this.getDebugActions(workspaceFolders);
+      case PROFILING_ACTION:
+        return await this.getActionItemsForTasks("(zephelin)", GRAPH);
       case SECURITY_ACTION:
         return this.getActionItemsForSecurityTasks(
-          SECURITY_TASKS_SEARCH_STRING.generateKey,
+          [SECURITY_TASKS_SEARCH_STRING.generateKey, SECURITY_TASKS_SEARCH_STRING.generateEnvelopedPackage],
         );
       default:
         return [];
@@ -276,52 +310,43 @@ export class ActionsViewProvider
     ) as ViewContainerItem;
   }
 
-  getVscodeTasks(): Promise<vscode.Task[]> {
-    return new Promise((resolve, reject) => {
-      vscode.tasks.fetchTasks({ type: "shell" }).then(
-        (tasks) => {
-          if (tasks.length === 0) {
-            resolve([]);
-          } else {
-            resolve(tasks);
-          }
-        },
-        (error) => {
-          console.log(error);
-          reject();
-        },
-      );
-    });
-  }
-
   /**
    * Returns all user defined tasks
    *
    * @returns A list of all tasks from tasks.json files
    */
   async getUserDefinedTasks(): Promise<vscode.Task[]> {
-    const tasksJsonFiles = await Utils.findFilesInWorkspace("**/tasks.json");
-    const localTasks = (
-      await Promise.all(
-        tasksJsonFiles
-          .map((filePath) => vscode.Uri.file(filePath))
-          .map(async (uri) => vscode.workspace.fs.readFile(uri)),
-      )
-    )
-      .map((fileBuffer) => Buffer.from(fileBuffer).toString("utf8"))
-      .map((encodedJson) => JSON.parse(encodedJson) as Record<string, any>)
-      .map((jsonContent) => jsonContent.tasks)
-      .flatMap((tasks, index) =>
-        tasks.map((task: any) => ({
-          ...task,
-          name: task.label,
-          source: "Workspace",
-          scope: {
-            name: Utils.getContextFromFullPath(tasksJsonFiles[index]),
-          },
-          type: "shell",
-        })),
-      );
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      return [];
+    }
+
+    const localTasks: any[] = [];
+
+    for (const folder of workspaceFolders) {
+      const tasksUri = vscode.Uri.joinPath(folder.uri, ".vscode", "tasks.json");
+
+      try {
+        const fileBuffer = await vscode.workspace.fs.readFile(tasksUri);
+        const encodedJson = Buffer.from(fileBuffer).toString("utf8");
+        const jsonContent = JSON.parse(encodedJson) as Record<string, any>;
+
+        if (jsonContent.tasks && Array.isArray(jsonContent.tasks)) {
+          jsonContent.tasks.forEach((task: any) => {
+            localTasks.push({
+              ...task,
+              name: task.label,
+              source: "Workspace",
+              scope: folder,
+              type: "shell",
+            });
+          });
+        }
+      } catch (error) {
+        // tasks.json doesn't exist or couldn't be read for this workspace folder
+        continue;
+      }
+    }
 
     return localTasks;
   }
@@ -332,7 +357,7 @@ export class ActionsViewProvider
    * @param workspaceFolders - An array of workspace folders or undefined.
    * @returns A promise that resolves to an array of ActionItem objects representing debug actions.
    */
-  getDebugActions(
+  async getDebugActions(
     workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined,
   ) {
     let actions: ViewContainerItem[] = [];
@@ -351,18 +376,42 @@ export class ActionsViewProvider
           "configurations",
         ) as vscode.DebugConfiguration[];
         launchConfigs.forEach((launchConfig: vscode.DebugConfiguration) => {
+          if (launchConfig.name !== "CFS: Launch Core Dump Analysis") {
+            actions.push(
+              new ViewContainerItem({
+                icon: new vscode.ThemeIcon(DEBUG_ALT),
+                label: launchConfig.name,
+                commandId: undefined,
+                commandArgs: [workspaceFolder, launchConfig.name],
+                collapsible: vscode.TreeItemCollapsibleState.None,
+                contextValue: DEBUG_LAUNCH_CONTEXT,
+              }),
+            );
+          }
+        });
+      });
+
+    // Add Ozone debug action if applicable
+    if (this.activeContext !== WORKSPACE_CONTEXT) {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.find(
+        (folder) => folder.name === this.activeContext,
+      );
+      if (workspaceFolder) {
+        const jdebugFile =
+          await OzoneDebugConfiguration.getJdebugFileToLaunch(workspaceFolder);
+        if (jdebugFile) {
           actions.push(
             new ViewContainerItem({
               icon: new vscode.ThemeIcon(DEBUG_ALT),
-              label: launchConfig.name,
-              commandId: undefined,
-              commandArgs: [workspaceFolder, launchConfig.name],
+              label: OZONE_DEBUG_ACTION,
+              commandId: LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
+              commandArgs: [],
               collapsible: vscode.TreeItemCollapsibleState.None,
-              contextValue: DEBUG_LAUNCH_CONTEXT,
             }),
           );
-        });
-      });
+        }
+      }
+    }
 
     actions.push(
       new ViewContainerItem({
@@ -374,7 +423,7 @@ export class ActionsViewProvider
       }),
     );
 
-    return Promise.resolve(actions);
+    return actions;
   }
 
   /**
@@ -383,10 +432,9 @@ export class ActionsViewProvider
    * @param taskNameSubstring - The substring to filter task names.
    * @param icon - The icon to be used for the action items. Defaults to `ZAP`.
    * @param exactMatch - Whether to match the task names exactly. Defaults to `false`.
-   * @returns A promise that resolves to an array of `vscode.TreeItem` representing the action items.
+   * @returns An array of `vscode.TreeItem` representing the action items.
    */
-  //TODO: Remove async as it is redundant
-  async getActionItemsForTasks(
+  getActionItemsForTasks(
     taskNameSubstring: string,
     icon = ZAP,
     exactMatch = false,
@@ -452,51 +500,53 @@ export class ActionsViewProvider
    * and an optional icon. Filters tasks by their name and source, and formats their display
    * names based on their scope.
    *
-   * @param taskNameSubstring - A substring to filter task names. Only tasks whose names
+   * @param securityTasks - Array of substrings to filter task names. Only tasks whose names
    *                             include this substring (case-insensitive) will be included.
-   * @param icon - An optional icon to associate with each action item. Defaults to `ZAP`.
+   * @param icon - An optional icon to associate with each action item. Defaults to `LOCK`.
    * @returns An array of `ViewContainerItem` objects representing the filtered tasks,
    *          each with a label, icon, and associated command for execution.
    */
-  getActionItemsForSecurityTasks(taskNameSubstring: string, icon = ZAP) {
+  getActionItemsForSecurityTasks(securityTasks: string[], icon = LOCK) {
     const actionItems: ViewContainerItem[] = [];
     let filteredTasks: vscode.Task[];
 
-    filteredTasks = this.allTasks.filter((task) => {
-      return (
-        task.name.toLowerCase().includes(taskNameSubstring) &&
-        (task.source === "CFS" || task.source === "Workspace")
-      );
-    });
+    for (const securityTask of securityTasks) {
+      filteredTasks = this.allTasks.filter((task) => {
+        return (
+          task.name.toLowerCase().includes(securityTask) &&
+          (task.source === "CFS" || task.source === "Workspace")
+        );
+      });
 
-    filteredTasks.forEach((task) => {
-      let displayName = this.getDisplayName(task.name);
+      filteredTasks.forEach((task) => {
+        let displayName = this.getDisplayName(task.name);
 
-      // Check if task.scope is an instance of vscode.WorkspaceFolder
-      if ((task.scope as vscode.WorkspaceFolder)?.name !== undefined) {
-        displayName = `${displayName} (${(task.scope as vscode.WorkspaceFolder).name})`;
-      }
-      // Check if task.scope is equal to vscode.TaskScope.Workspace
-      else if (task.scope === vscode.TaskScope.Workspace) {
-        displayName = `${displayName} (Workspace)`;
-      }
+        // Check if task.scope is an instance of vscode.WorkspaceFolder
+        if ((task.scope as vscode.WorkspaceFolder)?.name !== undefined) {
+          displayName = `${displayName} (${(task.scope as vscode.WorkspaceFolder).name})`;
+        }
+        // Check if task.scope is equal to vscode.TaskScope.Workspace
+        else if (task.scope === vscode.TaskScope.Workspace) {
+          displayName = `${displayName} (Workspace)`;
+        }
 
-      let contextValue = COPY_AND_EDIT_TASK_CONTEXT;
-      if (this.isTaskSourceJson(task.name)) {
-        contextValue = DEBUG_TASK_CONTEXT;
-      }
+        let contextValue = COPY_AND_EDIT_TASK_CONTEXT;
+        if (this.isTaskSourceJson(task.name)) {
+          contextValue = DEBUG_TASK_CONTEXT;
+        }
 
-      actionItems.push(
-        new ViewContainerItem({
-          icon: new vscode.ThemeIcon(icon),
-          label: displayName,
-          commandId: EXECUTE_TASK,
-          commandArgs: [task],
-          collapsible: vscode.TreeItemCollapsibleState.None,
-          contextValue: contextValue,
-        }),
-      );
-    });
+        actionItems.push(
+          new ViewContainerItem({
+            icon: new vscode.ThemeIcon(icon),
+            label: displayName,
+            commandId: EXECUTE_TASK,
+            commandArgs: [task],
+            collapsible: vscode.TreeItemCollapsibleState.None,
+            contextValue: contextValue,
+          }),
+        );
+      });
+    }
 
     return actionItems;
   }
@@ -515,11 +565,7 @@ export class ActionsViewProvider
           collapsible: vscode.TreeItemCollapsibleState.None,
         });
 
-        let buildTasks = await this.getActionItemsForTasks(
-          "build",
-          TOOLS,
-          false,
-        );
+        const buildTasks = this.getActionItemsForTasks("build", TOOLS, false);
 
         return [buildAllTask, ...buildTasks];
       }
@@ -666,25 +712,6 @@ export class ActionsViewProvider
     }
 
     return false;
-  }
-
-  /**
-   * Initializes a file system watcher to monitor changes to tasks.json files.
-   */
-  private initializeFileSystemWatcher() {
-    const tasksJsonWatcher =
-      vscode.workspace.createFileSystemWatcher("**/tasks.json");
-
-    tasksJsonWatcher.onDidCreate(this.handleTasksJsonChange.bind(this));
-    tasksJsonWatcher.onDidChange(this.handleTasksJsonChange.bind(this));
-    tasksJsonWatcher.onDidDelete(this.handleTasksJsonChange.bind(this));
-  }
-
-  /**
-   * Handles changes to tasks.json files by refreshing the action items.
-   */
-  private handleTasksJsonChange() {
-    this.refreshEvent.fire(null);
   }
 
   isTaskSourceJson(taskLabel: string): boolean {

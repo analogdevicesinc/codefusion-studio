@@ -15,7 +15,7 @@
 import * as chai from "chai";
 import { expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { CfsPluginManager } from "./test-plugin-manager.js";
+import { CfsPluginManager } from "../../src/plugins/cfs-plugin-manager.js";
 import type { CfsPluginInfo } from "cfs-plugins-api";
 import path, { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,7 +30,7 @@ const pluginDirs = [
 const dataModelDirs = [
 	path.resolve(
 		fileURLToPath(import.meta.url),
-		"../../../../cli/src/socs"
+		"../../../../cfs-data-models/socs"
 	)
 ];
 
@@ -77,13 +77,8 @@ describe("CfsPluginManager", () => {
 			],
 			platformConfig: {
 				ProjectName: "riscv",
-				Cflags: [
-					"-fdump-rtl-expand",
-					"-fdump-rtl-dfinish",
-					"-fdump-ipa-cgraph",
-					"-fstack-usage",
-					"-gdwarf-4"
-				]
+				Cflags:
+					"-fdump-rtl-expand\n-fdump-rtl-dfinish\n-fdump-ipa-cgraph\n-fstack-usage\n-gdwarf-4"
 			}
 		}
 	];
@@ -132,25 +127,6 @@ describe("CfsPluginManager", () => {
 				projects: undefined
 			})
 		).to.be.rejected;
-	});
-
-	it("getSocDataModel", async () => {
-		const manager = new CfsPluginManager([
-			...pluginDirs,
-			...dataModelDirs
-		]);
-		try {
-			await manager.getSocDataModel(
-				"soc", // soc
-				"socPackage", // socPackage
-				"1", // pluginId
-				"1" // pluginVersion
-			);
-		} catch (ex) {
-			expect((ex as TypeError).message).to.contain(
-				"getSocDataModel is not a function"
-			);
-		}
 	});
 
 	it("generateProject", async () => {

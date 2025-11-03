@@ -43,6 +43,7 @@ export default function Metadata() {
 		const fetchData = async () => {
 			try {
 				const metadataResponse = await getElfMetadata();
+
 				setMetadata(metadataResponse);
 			} catch (err) {
 				console.log('Error fetching metadata:', err);
@@ -65,7 +66,10 @@ export default function Metadata() {
 
 	return (
 		<ScreenLayout>
-			<div className={styles.container}>
+			<div
+				className={styles.container}
+				data-test='metadata:container'
+			>
 				<Charts sections={sections} />
 				<HeaderInfo data={metadata.header ?? []} />
 				<section className={styles['lists-container']}>

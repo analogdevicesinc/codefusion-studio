@@ -33,6 +33,7 @@ type CfsSelectionProps = Readonly<{
 	hasError?: boolean;
 	isDisabled?: boolean;
 	children?: ReactNode;
+	alwaysShowContent?: boolean;
 	onChange?: (selectedId: string) => void;
 }>;
 
@@ -44,6 +45,7 @@ function CfsSelectionCard({
 	hasError,
 	isDisabled,
 	children,
+	alwaysShowContent = false,
 	onChange
 }: CfsSelectionProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -51,6 +53,7 @@ function CfsSelectionCard({
 	const startSlot: ReactNode[] = [];
 	const endSlot: ReactNode[] = [];
 	const titleSlot: ReactNode[] = [];
+	const subHeaderSlot: ReactNode[] = [];
 	const contentSlot: ReactNode[] = [];
 
 	React.Children.forEach(children, child => {
@@ -65,6 +68,8 @@ function CfsSelectionCard({
 				titleSlot.push(child);
 			} else if (slot === 'content') {
 				contentSlot.push(child);
+			} else if (slot === 'subHeader') {
+				subHeaderSlot.push(child);
 			}
 		}
 	});
@@ -122,12 +127,24 @@ function CfsSelectionCard({
 						</div>
 					)}
 				</section>
-				{isExpanded && (
+				{Boolean(subHeaderSlot.length) && (
 					<section className={styles.body}>
 						<div className={styles.divider} />
-						<div className={styles.content}>{contentSlot}</div>
+						<div className={styles.content}>
+							<div className={styles.horizontalDivider} />
+							<div className={styles.subHeaderContent}>
+								{subHeaderSlot}
+							</div>
+						</div>
 					</section>
 				)}
+				{(isExpanded || alwaysShowContent) &&
+					contentSlot.length > 0 && (
+						<section className={styles.body}>
+							<div className={styles.divider} />
+							<div className={styles.content}>{contentSlot}</div>
+						</section>
+					)}
 			</section>
 		</Card>
 	);

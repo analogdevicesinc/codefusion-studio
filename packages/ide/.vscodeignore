@@ -30,3 +30,9 @@ test-resources/**
 **/tsconfig.webview.json
 .github
 mkdocs.yml
+
+# re-include the default scripts for gdb toolbox
+!src/debug-tools/gdb-toolbox/scripts/configs/*.json
+!src/debug-tools/gdb-toolbox/scripts/gdb/*.gdb
+
+build-scripts

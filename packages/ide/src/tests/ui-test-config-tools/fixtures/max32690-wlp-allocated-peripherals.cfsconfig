@@ -1,20 +1,57 @@
 {
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "DataModelVersion": "0.0.25",
-  "DataModelSchemaVersion": "1.1.0",
-  "Timestamp": "2025-02-25T13:51:53.871Z",
+  "DataModelVersion": "^1.0.0",
+  "SchemaVersion": "2.1.0",
+  "Timestamp": "2026-01-22T08:02:30.507Z",
   "Soc": "MAX32690",
   "Package": "WLP",
-  "Pins": [],
+  "Pins": [
+    {
+      "Pin": "H9",
+      "Peripheral": "GPIO4",
+      "Signal": "P4.1"
+    },
+    {
+      "Pin": "J2",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.1"
+    },
+    {
+      "Pin": "J3",
+      "Peripheral": "GPIO0",
+      "Signal": "P0.2"
+    },
+    {
+      "Pin": "J9",
+      "Peripheral": "GPIO4",
+      "Signal": "P4.0"
+    }
+  ],
   "ClockNodes": [],
   "Projects": [
     {
       "CoreId": "CM4",
       "ProjectId": "CM4-proj",
-      "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.1.0",
+      "PluginId": "com.analog.project.msdk.mock.plugin",
+      "PluginVersion": "^1.1.0",
       "FirmwarePlatform": "msdk",
       "ExternallyManaged": false,
+      "Family": "Cortex-M",
+      "Ai": {
+        "FlashSize": 3072,
+        "RamSize": 1024,
+        "CoreClock": 120,
+        "SupportedOps": [],
+        "AccelOps": [],
+        "OperatorInfos": [
+          {
+            "Name": "MAC",
+            "Cycles": 2,
+            "Energy": 0.17
+          }
+        ],
+        "SupportedDataTypes": []
+      },
       "Partitions": [],
       "Peripherals": [
         {
@@ -76,11 +113,19 @@
           "Signals": [
             {
               "Name": "P0.1",
-              "Config": {}
+              "Config": {
+                "MODE": "IN",
+                "PWR": "VDDIO",
+                "PS": "DIS"
+              }
             },
             {
               "Name": "P0.2",
-              "Config": {}
+              "Config": {
+                "MODE": "IN",
+                "PWR": "VDDIO",
+                "PS": "DIS"
+              }
             }
           ],
           "Config": {}
@@ -90,10 +135,11 @@
     {
       "CoreId": "RV",
       "ProjectId": "RV-proj",
-      "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.1.0",
+      "PluginId": "com.analog.project.msdk.mock.plugin",
+      "PluginVersion": "^1.1.0",
       "FirmwarePlatform": "msdk",
       "ExternallyManaged": false,
+      "Family": "RISC-V",
       "Partitions": [],
       "Peripherals": [
         {
@@ -106,11 +152,17 @@
           "Signals": [
             {
               "Name": "P4.0",
-              "Config": {}
+              "Config": {
+                "MODE": "IN",
+                "PS": "DIS"
+              }
             },
             {
               "Name": "P4.1",
-              "Config": {}
+              "Config": {
+                "MODE": "IN",
+                "PS": "DIS"
+              }
             }
           ],
           "Config": {}

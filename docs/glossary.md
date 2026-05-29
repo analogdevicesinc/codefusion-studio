@@ -10,6 +10,8 @@
 
 *[API]: Application Programming Interface
 
+*[arena]: The working memory buffer used by TensorFlow Lite Micro during model inference. The arena size can be specified manually or estimated automatically.
+
 *[Arm]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings. In CodeFusion Studio, ARM refers to an ARM Cortex-M core, such as the Cortex-M4 used in MAX32xxx and MAX78xxx microcontrollers.
 
 *[ARM]: Advanced RISC machine. A number of related instruction set architectures (ISAs) maintained and licensed by Arm Holdings. In CodeFusion Studio, ARM refers to an ARM Cortex-M core, such as the Cortex-M4 used in MAX32xxx and MAX78xxx microcontrollers.
@@ -46,6 +48,8 @@
 
 *[FFT]: Fast Fourier Transform
 
+*[FIFO]: First In, First Out. A data buffer management technique that processes data in the order it was received. In AI model deployment, FIFOs can be used when reading layer data, which is particularly useful for larger models.
+
 *[FPGA]: Field-Programmable Gate Array
 
 *[GCC]: GNU Compiler Collection. A compiler system produced by the GNU Project supporting various programming languages.
@@ -55,6 +59,8 @@
 *[GNU]: GNU's Not Unix. A free software operating system.
 
 *[GPIO]: General-Purpose Input/Output peripheral.
+
+*[hardware acceleration]: Execution of supported model operations on dedicated hardware blocks instead of the CPU to improve performance or efficiency.
 
 *[HALs]: Hardware Abstraction Layers. A conceptual interface between software and hardware that simplifies hardware access and improves portability.
 
@@ -66,11 +72,19 @@
 
 *[IRQ]: Interrupt Request
 
+*[Layer]: A structural unit in a machine learning model’s architecture that receives input from previous layers, applies a computation, and passes the result to subsequent layers.
+
+*[Layerwise]: Analysis or optimization that is performed separately for each layer in a machine learning model.
+
+*[MACs]: Multiply–accumulate counts. The total number of combined multiplication and addition operations required to execute a model or layer.
+
 *[MCP]: Model Context Protocol. An open standard created by Anthropic that enables AI models to securely connect to external tools and data sources.
 
 *[MCU]: Microcontroller Unit
 
 *[MCUboot]: MCU Bootloader. An open-source bootloader for microcontrollers that supports verified and secure firmware updates.
+
+*[memory pooling]: A memory management technique that reuses allocated memory buffers to reduce fragmentation and peak RAM usage.
 
 *[ML]: Machine Learning
 
@@ -82,6 +96,8 @@
 
 *[NSS]: Neural Subsystem
 
+*[Network configuration file]: A YAML file that describes the neural network architecture, layer parameters, and hardware mapping for PyTorch models deployed on the MAX78002 CNN accelerator. Required for the izer backend.
+
 *[NVIC]: Nested Vectored Interrupt Controller
 
 *[Oclif]: Open Command Line Interface Framework. A tool used to build your own command line interface (CLI).
@@ -89,6 +105,12 @@
 *[OpenOCD]: Open On-Chip Debugger. A software that provides debugging and in-system programming for embedded target devices.
 
 *[PSA]: Platform Security Architecture. An Arm-defined framework that standardizes trusted firmware, hardware isolation, and cryptographic service implementation in embedded systems.
+
+*[pruning]: A model optimization technique that removes unnecessary weights or neurons from a neural network to reduce model size and computational requirements while maintaining accuracy.
+
+*[PyTorch]: An open-source machine learning framework developed by Meta AI. In CodeFusion Studio, PyTorch models can be deployed on the MAX78002 CNN accelerator using the izer backend.
+
+*[quantization]: A model optimization technique that reduces numerical precision (for example, from float32 to int8) to lower memory usage and computational cost, often with minimal impact on accuracy.
 
 *[R]: Read-only access. Refers to the capability of a component to perform read-only operations.
 
@@ -108,13 +130,19 @@
 
 *[SigmaStudio+]: A graphical development tool from Analog Devices for configuring, tuning, and debugging DSP algorithms. 
 
+*[softmax]: An activation function commonly used in the output layer of neural networks for multi-class classification. It converts raw model outputs into a probability distribution across multiple classes.
+
 *[SoC]: System on Chip. A combination of processors and peripherals within a single chip.
+
+*[sparsity]: A property of a model where many parameters are zero, enabling reduced memory usage, faster inference times, and lower energy consumption.
 
 *[SVD]: System View Description. A file format used to describe the hardware of a microcontroller.
 
 *[SWD]: Serial Wire Debug. A 2-pin debug interface from Arm. An alternative to JTAG.
 
 *[TEF]: Trace Event Format. A JSON-based, timestamped trace data representation that can be converted from CTF.
+
+*[tensor lifecycle optimization]: A memory optimization technique that reduces peak RAM usage by shortening the lifetime of intermediate tensors and reusing memory buffers during model execution.
 
 *[TESA]: Trusted Edge Security Architecture. Analog Devices’ security framework that integrates cryptographic libraries, trusted firmware, and hardware-backed protection mechanisms within CodeFusion Studio.
 

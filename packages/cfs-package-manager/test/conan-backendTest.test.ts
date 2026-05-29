@@ -14,12 +14,18 @@
  */
 
 import { expect } from "chai";
+import sinon from "sinon";
 
 import { ConanPkgManager } from "../src/conan-backend/conan-backend.js";
 import { existsSync } from "fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { CfsPackageReference } from "../src/index.js";
+import semver from "semver";
+import type {
+	CfsPackageLicenseReporter,
+	CfsPackageReference,
+	CfsPackageFilter
+} from "../src/index.js";
 
 describe("ConanPkgManager", function () {
 	const testCacheDir = path.join(process.cwd(), "test_cache");
@@ -63,9 +69,33 @@ describe("ConanPkgManager", function () {
 		await fs.rm(path.join(testConfigDir, ".conanignore"), {
 			force: true
 		});
-
 		// Ensure test manifest directory exists
 		await fs.mkdir(testManifestDir, { recursive: true });
+	}
+
+	// Shared helper to create a manifest file for testing
+	const tempManifestPath = path.join(
+		testManifestDir,
+		"test-manifest.json"
+	);
+	async function createManifestFile(
+		packages: CfsPackageReference[]
+	): Promise<string> {
+		const manifest = {
+			version: 1,
+			packages
+		};
+		await fs.mkdir(testManifestDir, { recursive: true });
+		await fs.writeFile(tempManifestPath, JSON.stringify(manifest));
+		return tempManifestPath;
+	}
+
+	async function cleanupManifestFile(): Promise<void> {
+		try {
+			await fs.unlink(tempManifestPath);
+		} catch {
+			// Ignore errors if file doesn't exist
+		}
 	}
 
 	const api = new ConanPkgManager({
@@ -73,19 +103,6 @@ describe("ConanPkgManager", function () {
 		indexDir: testCacheDir,
 		conanConfigPath: testConfigDir
 	});
-
-	// Helper to create a manifest file for testing with proper typing
-	async function createManifestFile(
-		tempManifestPath: string,
-		packages: CfsPackageReference[]
-	): Promise<string> {
-		const manifest = {
-			version: 1,
-			packages
-		};
-		await fs.writeFile(tempManifestPath, JSON.stringify(manifest));
-		return tempManifestPath;
-	}
 
 	before(cleanCache);
 	after(cleanCache);
@@ -395,6 +412,33 @@ describe("ConanPkgManager", function () {
 			});
 		});
 
+		it("should cache only resolved version for normal semver install and never the literal range", async function () {
+			// Ensure package cache starts empty for this package.
+			try {
+				await api.delete("test_pkg2/*");
+			} catch {
+				// Ignore if not present in cache
+			}
+
+			const result = await api.install({
+				name: "test_pkg2",
+				version: "^1.0.0"
+			});
+
+			expect(result).to.deep.include({
+				name: "test_pkg2",
+				version: "1.3.4"
+			});
+
+			const cachedPackages = await api.listCache("test_pkg2/*");
+			expect(cachedPackages).to.be.an("array").with.lengthOf(1);
+			expect(cachedPackages[0].reference.name).to.equal("test_pkg2");
+			expect(cachedPackages[0].reference.version).to.equal("1.3.4");
+			expect(cachedPackages[0].reference.version).to.not.equal(
+				"^1.0.0"
+			);
+		});
+
 		it("should install package with tilde version ~1.2 (latest patch in 1.2.x)", async function () {
 			const result = await api.install({
 				name: "test_pkg2",
@@ -416,6 +460,47 @@ describe("ConanPkgManager", function () {
 			expect(result).to.deep.include({
 				name: "test_pkg2",
 				version: "1.2.3"
+			});
+		});
+
+		it("should install latest satisfying semver after uninstall even if an older version is cached", async function () {
+			// Install an older exact version first.
+			const firstInstall = await api.install({
+				name: "test_pkg2",
+				version: "1.0"
+			});
+			expect(firstInstall).to.deep.include({
+				name: "test_pkg2",
+				version: "1.0"
+			});
+
+			// Uninstall should remove from installed set, but keep package in cache.
+			await api.uninstall("test_pkg2");
+
+			const installedAfterUninstall = await api.list();
+			expect(
+				installedAfterUninstall.some((p) => p.name === "test_pkg2")
+			).to.be.false;
+
+			// Reinstall with semver range should resolve to latest satisfying version,
+			// not necessarily the old cached one.
+			const secondInstall = await api.install({
+				name: "test_pkg2",
+				version: "^1.0"
+			});
+			expect(secondInstall).to.deep.include({
+				name: "test_pkg2",
+				version: "1.3.4"
+			});
+
+			const installedAfterReinstall = await api.list();
+			expect(installedAfterReinstall).to.deep.include({
+				name: "test_pkg2",
+				version: "1.3.4"
+			});
+			expect(installedAfterReinstall).to.not.deep.include({
+				name: "test_pkg2",
+				version: "1.0"
 			});
 		});
 
@@ -471,7 +556,9 @@ describe("ConanPkgManager", function () {
 				expect.fail("Should have thrown an error");
 			} catch (error) {
 				expect(error).to.be.an("Error");
-				expect((error as Error).message).to.include("nonexistent_pkg");
+				expect((error as Error).message).to.include(
+					"nonexistent_pkg"
+				);
 			}
 		});
 
@@ -516,6 +603,111 @@ describe("ConanPkgManager", function () {
 					{ name: "test_pkg_dep1", version: "1.0" },
 					{ name: "test_pkg_dep2", version: "1.0" }
 				]);
+		});
+	});
+
+	describe("searchInfo method", function () {
+		it("Returns all packages with type=plugin", async function () {
+			const pluginPackages = await api.searchInfo("test_pkg*", {
+				type: "plugin"
+			});
+			expect(pluginPackages.map((pkg) => pkg.reference))
+				.to.be.an("array")
+				.that.include.deep.members([
+					{ name: "test_pkg_plugin1", version: "1.0" },
+					{ name: "test_pkg_plugin2", version: "1.0" }
+				]);
+
+			expect(pluginPackages.every((pkg) => pkg.type === "plugin")).to
+				.be.true;
+		});
+
+		it("Returns all packages with soc=plugin1Soc", async function () {
+			const pluginSoc1Packages = await api.searchInfo("test_pkg*", {
+				soc: "plugin1Soc"
+			});
+			expect(pluginSoc1Packages.map((pkg) => pkg.reference))
+				.to.be.an("array")
+				.that.include.deep.members([
+					{ name: "test_pkg_plugin1", version: "1.0" },
+					{ name: "test_pkg_component_plugin1", version: "1.0" },
+					{ name: "test_pkg_component_composite", version: "1.0" }
+				]);
+			expect(
+				pluginSoc1Packages.every((pkg) =>
+					pkg.soc?.includes("plugin1Soc")
+				)
+			).to.be.true;
+		});
+
+		it("Returns all packages with component.name=plugin1", async function () {
+			const plugin1Packages = await api.searchInfo("test_pkg*", {
+				component: { name: "plugin1" }
+			});
+			expect(plugin1Packages.map((pkg) => pkg.reference))
+				.to.be.an("array")
+				.that.include.deep.members([
+					{ name: "test_pkg_component_plugin1", version: "1.0" },
+					{ name: "test_pkg_component_composite", version: "1.0" }
+				]);
+			expect(
+				plugin1Packages.every((pkg) =>
+					pkg.components?.some(
+						(component) => component.name === "plugin1"
+					)
+				)
+			).to.be.true;
+		});
+
+		it("Returns all packages with component.name=plugin1 and component.version=2.1.0", async function () {
+			const plugin1V210Packages = await api.searchInfo("test_pkg*", {
+				component: { name: "plugin1", version: "2.1.0" }
+			});
+			expect(plugin1V210Packages.map((pkg) => pkg.reference))
+				.to.be.an("array")
+				.that.include.deep.members([
+					{
+						name: "test_pkg_component_composite",
+						version: "1.0"
+					}
+				]);
+			expect(
+				plugin1V210Packages.every((pkg) =>
+					pkg.components?.some(
+						(component) =>
+							component.name === "plugin1" &&
+							component.version === "2.1.0"
+					)
+				)
+			).to.be.true;
+		});
+
+		it("Returns all packages with component.type=plugin", async function () {
+			const pluginComponentPackages = await api.searchInfo(
+				"test_pkg*",
+				{
+					component: { type: "plugin" }
+				}
+			);
+			expect(pluginComponentPackages.map((pkg) => pkg.reference))
+				.to.be.an("array")
+				.that.include.deep.members([
+					{
+						name: "test_pkg_component_plugin1",
+						version: "1.0"
+					},
+					{
+						name: "test_pkg_component_plugin2",
+						version: "1.0"
+					}
+				]);
+			expect(
+				pluginComponentPackages.every((pkg) =>
+					pkg.components?.some(
+						(component) => component.type === "plugin"
+					)
+				)
+			).to.be.true;
 		});
 	});
 
@@ -647,7 +839,7 @@ describe("ConanPkgManager", function () {
 		});
 
 		const filtersToTest: {
-			filter: Record<string, string | string[]>;
+			filter: CfsPackageFilter;
 			expectedOutput: { name: string; version: string }[];
 		}[] = [
 			{
@@ -716,11 +908,6 @@ describe("ConanPkgManager", function () {
 	});
 
 	describe("Manifest handling", function () {
-		const tempManifestPath = path.join(
-			testManifestDir,
-			"test-manifest.json"
-		);
-
 		before(async function () {
 			this.timeout(20000); // Increase timeout for installation
 			// Ensure the test directory exists before each test
@@ -733,49 +920,36 @@ describe("ConanPkgManager", function () {
 		after(async function () {
 			try {
 				await api.uninstall("test_pkg1");
-			} catch (error) {
-				// Ignore errors if package is not installed
+			} catch {
+				// Ignore if not installed
 			}
 			try {
 				await api.uninstall("test_pkg2");
-			} catch (error) {
-				// Ignore errors if package is not installed
+			} catch {
+				// Ignore if not installed
 			}
 		});
 
-		afterEach(function (done) {
-			// Clean up the manifest file after each test
-			fs.unlink(tempManifestPath)
-				.then(() => {
-					done();
-				})
-				.catch(() => {
-					done();
-				}); // Ignore errors if file doesn't exist
+		afterEach(async function () {
+			await cleanupManifestFile();
 		});
 
 		describe("checkManifest", function () {
 			it("should return empty array when all packages are installed", async function () {
 				// Create a manifest with packages that are already installed
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{ name: "test_pkg1", version: "1.0" },
-						{ name: "test_pkg2", version: "1.0" }
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" }
+				]);
 				const result = await api.checkManifest(manifestPath);
 				expect(result).to.be.an("array").that.is.empty;
 			});
 			it("should return missing packages when some packages are not installed", async function () {
 				// Create a manifest with one installed and one not installed package
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{ name: "test_pkg1", version: "1.0" }, // installed
-						{ name: "test_pkg_consumer1", version: "1.0" } // not installed
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "1.0" }, // installed
+					{ name: "test_pkg_consumer1", version: "1.0" } // not installed
+				]);
 				const result = await api.checkManifest(manifestPath);
 				expect(result).to.be.an("array").with.lengthOf(1);
 				expect(result[0]).to.deep.equal({
@@ -817,33 +991,410 @@ describe("ConanPkgManager", function () {
 			});
 		});
 
+		describe("getInstallPlan", function () {
+			// Shared cleanup helper for getInstallPlan tests
+			async function cleanupGetInstallPlanPackages(
+				deleteFromCache = false
+			): Promise<void> {
+				const packagesToClean = [
+					"test_pkg_with_license1",
+					"test_pkg_with_license2",
+					"test_pkg_consumer1"
+				];
+				for (const pkg of packagesToClean) {
+					try {
+						await api.uninstall(pkg);
+					} catch {
+						// Ignore if not installed
+					}
+					if (deleteFromCache) {
+						try {
+							await api.delete(`${pkg}/*`);
+						} catch {
+							// Ignore if not in cache
+						}
+					}
+				}
+			}
+
+			describe("with manifest input", function () {
+				it("should return all packages as alreadyInstalled when all are installed", async function () {
+					// Ensure packages are installed
+					await api.install({ name: "test_pkg1", version: "1.0" });
+					await api.install({ name: "test_pkg2", version: "1.0" });
+
+					const manifestPath = await createManifestFile([
+						{ name: "test_pkg1", version: "1.0" },
+						{ name: "test_pkg2", version: "1.0" }
+					]);
+					const plan = await api.getInstallPlan(manifestPath);
+
+					expect(plan.toInstall).to.be.an("array").that.is.empty;
+					expect(plan.alreadyInstalled)
+						.to.be.an("array")
+						.with.lengthOf(2);
+					expect(plan.alreadyInstalled).to.deep.include({
+						name: "test_pkg1",
+						version: "1.0"
+					});
+					expect(plan.alreadyInstalled).to.deep.include({
+						name: "test_pkg2",
+						version: "1.0"
+					});
+				});
+
+				it("should return packages not installed in toInstall", async function () {
+					const manifestPath = await createManifestFile([
+						{ name: "test_pkg1", version: "1.0" }, // installed
+						{ name: "test_pkg_consumer1", version: "1.0" } // not installed
+					]);
+					const plan = await api.getInstallPlan(manifestPath);
+
+					expect(plan.toInstall).to.be.an("array").with.lengthOf(1);
+					expect(plan.toInstall[0]).to.deep.equal({
+						name: "test_pkg_consumer1",
+						version: "1.0"
+					});
+					expect(plan.alreadyInstalled)
+						.to.be.an("array")
+						.with.lengthOf(1);
+					expect(plan.alreadyInstalled[0]).to.deep.equal({
+						name: "test_pkg1",
+						version: "1.0"
+					});
+				});
+
+				it("should treat semver range as alreadyInstalled when installed version satisfies it", async function () {
+					const manifestPath = await createManifestFile([
+						{ name: "test_pkg2", version: "^1.0" } // test setup installs 1.0
+					]);
+
+					const checkResult = await api.checkManifest(manifestPath);
+					expect(checkResult).to.be.an("array").that.is.empty;
+
+					const plan = await api.getInstallPlan(manifestPath);
+
+					expect(plan.toInstall).to.be.an("array").that.is.empty;
+					expect(plan.alreadyInstalled)
+						.to.be.an("array")
+						.with.lengthOf(1);
+					expect(plan.alreadyInstalled[0]).to.deep.equal({
+						name: "test_pkg2",
+						version: "1.0"
+					});
+				});
+
+				describe("license acceptance requirements", function () {
+					beforeEach(async function () {
+						// Clean state: remove licensed packages from install and cache
+						await cleanupGetInstallPlanPackages(true);
+					});
+
+					afterEach(async function () {
+						// Clean up after each test
+						await cleanupGetInstallPlanPackages(true);
+					});
+
+					it("should include requiresLicenseAcceptance for packages with license", async function () {
+						// Use test_pkg_with_license1 which has a license file
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "1.0.0" }
+						]);
+						const plan = await api.getInstallPlan(manifestPath);
+
+						expect(plan.requiresLicenseAcceptance)
+							.to.be.an("array")
+							.with.lengthOf(1);
+						expect(
+							plan.requiresLicenseAcceptance[0].reference
+						).to.deep.equal({
+							name: "test_pkg_with_license1",
+							version: "1.0.0"
+						});
+						expect(plan.requiresLicenseAcceptance[0].license).to.be.a(
+							"string"
+						).that.is.not.empty;
+					});
+
+					it("should still require license on repeated range planning when package was never installed", async function () {
+						// Ensure explicit clean state for this test case.
+						await cleanupGetInstallPlanPackages(true);
+
+						const installedBefore = await api.list();
+						expect(
+							installedBefore.some(
+								(p) => p.name === "test_pkg_with_license1"
+							)
+						).to.be.false;
+
+						const cachedBefore = await api.listCache(
+							"test_pkg_with_license1/*"
+						);
+						expect(cachedBefore).to.be.an("array").that.is.empty;
+
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "^1.0.0" }
+						]);
+
+						// First plan should require license.
+						const firstPlan = await api.getInstallPlan(manifestPath);
+						expect(firstPlan.toInstall).to.deep.include({
+							name: "test_pkg_with_license1",
+							version: "^1.0.0"
+						});
+						expect(firstPlan.requiresLicenseAcceptance)
+							.to.be.an("array")
+							.with.length.greaterThan(0);
+
+						// Without installation, second plan should still require license.
+						const secondPlan = await api.getInstallPlan(manifestPath);
+						expect(secondPlan.toInstall).to.deep.include({
+							name: "test_pkg_with_license1",
+							version: "^1.0.0"
+						});
+						expect(secondPlan.requiresLicenseAcceptance)
+							.to.be.an("array")
+							.with.length.greaterThan(0);
+
+						// Sanity check: package should still not be installed.
+						const installedPackages = await api.list();
+						expect(
+							installedPackages.some(
+								(p) => p.name === "test_pkg_with_license1"
+							)
+						).to.be.false;
+					});
+					it("should not leave package in cache after install plan when license was not accepted", async function () {
+						// A getInstallPlan call downloads the recipe to inspect the license.
+						// If the user never accepts and never installs, the recipe must
+						// be removed from cache so future plans still show the license prompt.
+						await cleanupGetInstallPlanPackages(true);
+
+						const cachedBefore = await api.listCache(
+							"test_pkg_with_license1/*"
+						);
+						expect(cachedBefore).to.be.an("array").that.is.empty;
+
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "^1.0.0" }
+						]);
+						const plan = await api.getInstallPlan(manifestPath);
+
+						// License must have been detected.
+						expect(plan.requiresLicenseAcceptance)
+							.to.be.an("array")
+							.with.length.greaterThan(0);
+
+						// Cache must be clean after the plan — recipe downloaded for
+						// inspection must have been removed so the next plan still
+						// prompts for license acceptance.
+						const cachedAfter = await api.listCache(
+							"test_pkg_with_license1/*"
+						);
+						expect(cachedAfter).to.be.an("array").that.is.empty;
+					});
+
+					it("should clean all downloaded recipe refs after install plan for multiple licensed packages", async function () {
+						// When multiple packages are checked in one plan, each downloaded
+						// recipe must be removed from cache to avoid false license acceptance.
+						await cleanupGetInstallPlanPackages(true);
+
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "1.0.0" },
+							{ name: "test_pkg_with_license2", version: "1.0.0" }
+						]);
+
+						const plan = await api.getInstallPlan(manifestPath);
+						expect(plan.requiresLicenseAcceptance)
+							.to.be.an("array")
+							.with.lengthOf(2);
+
+						const cachedAfterPkg1 = await api.listCache(
+							"test_pkg_with_license1/*"
+						);
+						const cachedAfterPkg2 = await api.listCache(
+							"test_pkg_with_license2/*"
+						);
+
+						expect(cachedAfterPkg1).to.be.an("array").that.is.empty;
+						expect(cachedAfterPkg2).to.be.an("array").that.is.empty;
+					});
+
+					it("should not include requiresLicenseAcceptance for packages already installed", async function () {
+						// Install the licensed package first
+						await api.install(
+							{ name: "test_pkg_with_license1", version: "1.0.0" },
+							{ acceptLicense: true }
+						);
+
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "1.0.0" }
+						]);
+						const plan = await api.getInstallPlan(manifestPath);
+
+						expect(plan.requiresLicenseAcceptance).to.be.an("array")
+							.that.is.empty;
+						expect(plan.alreadyInstalled)
+							.to.be.an("array")
+							.with.lengthOf(1);
+					});
+
+					it("should not include requiresLicenseAcceptance when licensed package is cached and requested with version range", async function () {
+						// First install with explicit version to accept license and populate cache.
+						await api.install(
+							{ name: "test_pkg_with_license1", version: "1.0.0" },
+							{ acceptLicense: true }
+						);
+
+						// Uninstall should remove from installed set but keep it cached.
+						await api.uninstall("test_pkg_with_license1");
+
+						const manifestPath = await createManifestFile([
+							{ name: "test_pkg_with_license1", version: "^1.0.0" }
+						]);
+						const plan = await api.getInstallPlan(manifestPath);
+
+						expect(plan.toInstall).to.deep.include({
+							name: "test_pkg_with_license1",
+							version: "^1.0.0"
+						});
+						expect(plan.alreadyInstalled).to.be.an("array").that.is
+							.empty;
+						expect(plan.requiresLicenseAcceptance).to.be.an("array")
+							.that.is.empty;
+					});
+				});
+			});
+
+			describe("with single package reference input", function () {
+				it("should return package as alreadyInstalled when installed", async function () {
+					const plan = await api.getInstallPlan({
+						name: "test_pkg1",
+						version: "1.0"
+					});
+
+					expect(plan.toInstall).to.be.an("array").that.is.empty;
+					expect(plan.alreadyInstalled)
+						.to.be.an("array")
+						.with.lengthOf(1);
+					expect(plan.alreadyInstalled[0]).to.deep.equal({
+						name: "test_pkg1",
+						version: "1.0"
+					});
+				});
+
+				it("should return package in toInstall when not installed", async function () {
+					const plan = await api.getInstallPlan({
+						name: "test_pkg_consumer1",
+						version: "1.0"
+					});
+
+					expect(plan.toInstall).to.be.an("array").with.lengthOf(1);
+					expect(plan.toInstall[0]).to.deep.equal({
+						name: "test_pkg_consumer1",
+						version: "1.0"
+					});
+					expect(plan.alreadyInstalled).to.be.an("array").that.is
+						.empty;
+				});
+			});
+
+			describe("with array of package references input", function () {
+				it("should handle multiple packages correctly", async function () {
+					const plan = await api.getInstallPlan([
+						{ name: "test_pkg1", version: "1.0" }, // installed
+						{ name: "test_pkg_consumer1", version: "1.0" } // not installed
+					]);
+
+					expect(plan.toInstall).to.be.an("array").with.lengthOf(1);
+					expect(plan.toInstall[0]).to.deep.equal({
+						name: "test_pkg_consumer1",
+						version: "1.0"
+					});
+					expect(plan.alreadyInstalled)
+						.to.be.an("array")
+						.with.lengthOf(1);
+					expect(plan.alreadyInstalled[0]).to.deep.equal({
+						name: "test_pkg1",
+						version: "1.0"
+					});
+				});
+			});
+
+			describe("error handling", function () {
+				it("should handle invalid manifest format", async function () {
+					const invalidManifestPath = path.join(
+						testManifestDir,
+						"invalid-plan-manifest.json"
+					);
+					await fs.writeFile(
+						invalidManifestPath,
+						JSON.stringify({ version: 1 })
+					);
+
+					return api
+						.getInstallPlan(invalidManifestPath)
+						.then(
+							() => {
+								expect.fail("Should not succeed with invalid format");
+							},
+							(error: Error) => {
+								expect(error).to.be.an("Error");
+								expect(error.message).to.include(
+									"Invalid manifest format"
+								);
+							}
+						)
+						.finally(() => {
+							fs.unlink(invalidManifestPath).catch(() => {
+								// Ignore errors during cleanup
+							});
+						});
+				});
+
+				it("should handle invalid package reference format", async function () {
+					// TypeScript types prevent this at compile time, but test runtime behavior
+					// by calling the underlying command indirectly
+					// This test verifies the Python validation works
+					const invalidRef = {
+						name: "invalid-no-version"
+					} as unknown as CfsPackageReference;
+
+					try {
+						await api.getInstallPlan(invalidRef);
+						expect.fail("Should not succeed with invalid reference");
+					} catch (error) {
+						expect(error).to.be.an("Error");
+					}
+				});
+			});
+		});
+
 		describe("installFromManifest", function () {
 			it("should not install anything when all packages are already installed", async function () {
 				// Create a manifest with packages that are already installed
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{ name: "test_pkg1", version: "1.0" },
-						{ name: "test_pkg2", version: "1.0" }
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" }
+				]);
 				const result = await api.installFromManifest(manifestPath);
-				expect(result).to.be.an("array").that.is.empty;
+
+				expect(result.installed).to.be.an("array").that.is.empty;
+				expect(result.skipped).to.be.an("array").that.is.empty;
 			});
 			it("should install only packages that are not already installed", async function () {
 				// Create a manifest with one installed and one not installed packages
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{ name: "test_pkg1", version: "1.0" }, // installed
-						{ name: "test_pkg_consumer1", version: "1.0" } // not installed
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "1.0" }, // installed
+					{ name: "test_pkg_consumer1", version: "1.0" } // not installed
+				]);
 
 				try {
 					const result = await api.installFromManifest(manifestPath);
-					expect(result).to.be.an("array").with.length.greaterThan(0);
-					expect(result).to.deep.include({
+					expect(result.installed)
+						.to.be.an("array")
+						.with.length.greaterThan(0);
+					expect(result.installed).to.deep.include({
 						name: "test_pkg_consumer1",
 						version: "1.0"
 					});
@@ -908,27 +1459,26 @@ describe("ConanPkgManager", function () {
 
 			it("should handle manifest with version ranges", async function () {
 				// Create a manifest with various version range formats
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{ name: "test_pkg1", version: "~1.0" }, // tilde range (1.0.x patch range)
-						{ name: "test_pkg2", version: "^1.0" } // caret range (should get 1.3.4)
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "~1.0" }, // tilde range (1.0.x patch range)
+					{ name: "test_pkg2", version: "^1.0" } // caret range (should get 1.3.4)
+				]);
 
 				try {
 					const result = await api.installFromManifest(manifestPath);
-					expect(result).to.be.an("array").with.length.greaterThan(0);
+					expect(result.installed)
+						.to.be.an("array")
+						.with.length.greaterThan(0);
 
 					// Verify the packages are now installed
 					const installedPackages = await api.list();
 
 					// Verify both packages were installed
-					expect(result).to.deep.include({
+					expect(result.installed).to.deep.include({
 						name: "test_pkg1",
 						version: "1.0"
 					});
-					expect(result).to.deep.include({
+					expect(result.installed).to.deep.include({
 						name: "test_pkg2",
 						version: "1.3.4"
 					});
@@ -957,16 +1507,17 @@ describe("ConanPkgManager", function () {
 			it("should handle manifest with explicit version range syntax", async function () {
 				// Create a manifest with explicit range syntax using test_pkg2
 				// >=1.2.0 <1.3.0 should match 1.2.0-1.2.3 and select 1.2.3
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[{ name: "test_pkg2", version: ">=1.2.0 <1.3.0" }]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg2", version: ">=1.2.0 <1.3.0" }
+				]);
 
 				const result = await api.installFromManifest(manifestPath);
-				expect(result).to.be.an("array").with.length.greaterThan(0);
+				expect(result.installed)
+					.to.be.an("array")
+					.with.length.greaterThan(0);
 
 				// Verify package was installed with version 1.2.3 (latest in range)
-				expect(result).to.deep.include({
+				expect(result.installed).to.deep.include({
 					name: "test_pkg2",
 					version: "1.2.3"
 				});
@@ -994,15 +1545,14 @@ describe("ConanPkgManager", function () {
 				// Step 2: Apply a manifest with ~1.3 (meaning >=1.3.0 <1.4.0)
 				// The installed version 1.3.1 satisfies this range, so the manifest
 				// should not trigger a re-install.
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[{ name: "test_pkg2", version: "~1.3" }]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg2", version: "~1.3" }
+				]);
 
 				const result = await api.installFromManifest(manifestPath);
 
 				// No packages should be installed since 1.3.1 satisfies ~1.3
-				expect(result).to.be.an("array").with.lengthOf(0);
+				expect(result.installed).to.be.an("array").with.lengthOf(0);
 
 				// The version should remain 1.3.1
 				installedPackages = await api.list();
@@ -1030,15 +1580,16 @@ describe("ConanPkgManager", function () {
 				).to.be.true;
 
 				// Step 2: Apply a manifest with range >=1.2 <1.3 which excludes the installed 1.3.4
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[{ name: "test_pkg2", version: ">=1.2 <1.3" }]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg2", version: ">=1.2 <1.3" }
+				]);
 
 				const result = await api.installFromManifest(manifestPath);
 
 				// The manifest overrides the explicitly installed version
-				expect(result).to.be.an("array").with.length.greaterThan(0);
+				expect(result.installed)
+					.to.be.an("array")
+					.with.length.greaterThan(0);
 
 				// Package is downgraded to 1.2.3 (latest matching >=1.2 <1.3)
 				installedPackages = await api.list();
@@ -1193,16 +1744,15 @@ describe("ConanPkgManager", function () {
 
 				// Step 4: Install from manifest with localOnly flag using a version range
 				// ^1.0 means >=1.0.0 <2.0.0, so it should resolve from cached versions
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[{ name: "test_pkg2", version: "^1.0" }]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg2", version: "^1.0" }
+				]);
 
 				const result = await api.installFromManifest(manifestPath, {
 					localOnly: true
 				});
 
-				expect(result).to.be.an("array").that.is.not.empty;
+				expect(result.installed).to.be.an("array").that.is.not.empty;
 
 				// Verify the best cached version matching ^1.0 is installed
 				installedPackages = await api.list();
@@ -1219,10 +1769,9 @@ describe("ConanPkgManager", function () {
 
 				// Create a manifest referencing a version range that has no cached versions
 				// We use an impossible version to ensure nothing is in cache
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[{ name: "test_pkg2", version: "^99.0" }]
-				);
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg2", version: "^99.0" }
+				]);
 
 				return api
 					.installFromManifest(manifestPath, {
@@ -1245,18 +1794,17 @@ describe("ConanPkgManager", function () {
 
 			it("should resolve version with | in version range", async function () {
 				// Create a manifest with a version range that includes an OR condition
-				const manifestPath = await createManifestFile(
-					tempManifestPath,
-					[
-						{
-							name: "test_pkg2",
-							version: ">=1.2.0 <1.3.0 || >=1.3.4 <1.4.0"
-						}
-					]
-				);
+				const manifestPath = await createManifestFile([
+					{
+						name: "test_pkg2",
+						version: ">=1.2.0 <1.3.0 || >=1.3.4 <1.4.0"
+					}
+				]);
 
 				const result = await api.installFromManifest(manifestPath);
-				expect(result).to.be.an("array").with.length.greaterThan(0);
+				expect(result.installed)
+					.to.be.an("array")
+					.with.length.greaterThan(0);
 
 				// Verify the version installed is 1.3.4 (latest matching the first range)
 				const installedPackages = await api.list();
@@ -1287,28 +1835,23 @@ describe("ConanPkgManager", function () {
 	describe("Pre-release version handling", function () {
 		afterEach(async function () {
 			try {
-				await api.uninstall("test_pkg_prerelease");
+				await api.uninstall("test_pkg_prerelease1");
 			} catch {
 				// Ignore if not installed
 			}
+			await cleanupManifestFile();
 		});
 
-		after(async function () {
-			await fs
-				.unlink(
-					path.join(testManifestDir, "test-prerelease-manifest.json")
-				)
-				.catch(() => undefined);
-		});
+		const latestPreReleaseCandidates = ["1.2.0-b.2", "1.2.0-b.2+1"];
 
 		it("should install a package with a pre-release version via install", async function () {
 			const result = await api.install({
-				name: "test_pkg_prerelease",
-				version: "1.0.0-beta.1+1"
+				name: "test_pkg_prerelease1",
+				version: "1.2.0-b.1"
 			});
 			expect(result).to.be.an("array").that.deep.includes({
-				name: "test_pkg_prerelease",
-				version: "1.0.0-beta.1+1"
+				name: "test_pkg_prerelease1",
+				version: "1.2.0-b.1"
 			});
 
 			// Verify the package is listed as installed
@@ -1316,54 +1859,296 @@ describe("ConanPkgManager", function () {
 			expect(
 				installedPackages.some(
 					(p) =>
-						p.name === "test_pkg_prerelease" &&
-						p.version === "1.0.0-beta.1+1"
+						p.name === "test_pkg_prerelease1" &&
+						p.version === "1.2.0-b.1"
 				)
 			).to.be.true;
 		});
 
-		it("should install a package with a pre-release version via installFromManifest", async function () {
-			const tempManifestPath = path.join(
-				testManifestDir,
-				"test-prerelease-manifest.json"
-			);
-			const manifestPath = await createManifestFile(
-				tempManifestPath,
-				[
-					{
-						name: "test_pkg_prerelease",
-						version: "1.0.0-beta.1+1"
-					}
-				]
-			);
+		it("should install latest matching prerelease when using tilde prerelease range", async function () {
+			const result = await api.install({
+				name: "test_pkg_prerelease1",
+				version: "~1.2.0-b.1"
+			});
+
+			expect(result).to.be.an("array");
+			expect(
+				result.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
+				)
+			).to.be.true;
+		});
+
+		it("should install latest matching prerelease from manifest using tilde prerelease range", async function () {
+			const manifestPath = await createManifestFile([
+				{
+					name: "test_pkg_prerelease1",
+					version: "~1.2.0-b.1"
+				}
+			]);
 
 			const result = await api.installFromManifest(manifestPath);
-			expect(result).to.be.an("array").that.deep.includes({
-				name: "test_pkg_prerelease",
-				version: "1.0.0-beta.1+1"
-			});
-
-			// Verify the package is listed as installed
-			const installedPackages = await api.list();
+			expect(result.installed).to.be.an("array");
 			expect(
-				installedPackages.some(
+				result.installed.some(
 					(p) =>
-						p.name === "test_pkg_prerelease" &&
-						p.version === "1.0.0-beta.1+1"
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
 				)
 			).to.be.true;
 		});
 
-		it("should fail to install a pre-release package when explicit version is not defined", async function () {
+		// Caret range tests (common case)
+		it("should install latest matching prerelease when using caret prerelease range", async function () {
+			const result = await api.install({
+				name: "test_pkg_prerelease1",
+				version: "^1.2.0-b.1"
+			});
+
+			expect(result).to.be.an("array");
+			expect(
+				result.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
+				)
+			).to.be.true;
+
+			// Verify the resolved installed version is the highest matching prerelease.
+			const installedPackages = await api.list();
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
+				)
+			).to.be.true;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" && p.version === "1.0.0"
+				)
+			).to.be.false;
+		});
+
+		it("should cache only resolved version for prerelease semver install and never the literal range", async function () {
+			// Ensure package cache starts empty for this package.
+			try {
+				await api.delete("test_pkg_prerelease1/*");
+			} catch {
+				// Ignore if not present in cache
+			}
+
+			const result = await api.install({
+				name: "test_pkg_prerelease1",
+				version: "^1.2.0-b.1"
+			});
+
+			expect(result).to.be.an("array");
+			expect(
+				result.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
+				)
+			).to.be.true;
+
+			const cachedPackages = await api.listCache(
+				"test_pkg_prerelease1/*"
+			);
+			expect(cachedPackages).to.be.an("array").with.lengthOf(1);
+			expect(cachedPackages[0].reference.name).to.equal(
+				"test_pkg_prerelease1"
+			);
+			expect(
+				latestPreReleaseCandidates.includes(
+					cachedPackages[0].reference.version
+				)
+			).to.be.true;
+			expect(cachedPackages[0].reference.version).to.not.equal(
+				"^1.2.0-b.1"
+			);
+		});
+
+		it("should treat prerelease range as already satisfied when installed prerelease matches", async function () {
+			await api.install({
+				name: "test_pkg_prerelease1",
+				version: "1.2.0-b.1"
+			});
+
+			const manifestPath = await createManifestFile([
+				{
+					name: "test_pkg_prerelease1",
+					version: "^1.2.0-b.1"
+				}
+			]);
+
+			const checkResult = await api.checkManifest(manifestPath);
+			expect(checkResult).to.be.an("array").that.is.empty;
+
+			const plan = await api.getInstallPlan(manifestPath);
+			expect(plan.toInstall).to.be.an("array").that.is.empty;
+			expect(plan.alreadyInstalled)
+				.to.be.an("array")
+				.with.lengthOf(1);
+			expect(plan.alreadyInstalled[0]).to.deep.equal({
+				name: "test_pkg_prerelease1",
+				version: "1.2.0-b.1"
+			});
+		});
+
+		it("should install latest matching prerelease from manifest using caret prerelease range", async function () {
+			const manifestPath = await createManifestFile([
+				{
+					name: "test_pkg_prerelease1",
+					version: "^1.2.0-b.1"
+				}
+			]);
+
+			const result = await api.installFromManifest(manifestPath);
+			expect(result.installed).to.be.an("array");
+			expect(
+				result.installed.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						latestPreReleaseCandidates.includes(p.version)
+				)
+			).to.be.true;
+		});
+
+		it("should not create a deletable dangling cache entry with range literal after install from manifest", async function () {
+			const manifestPath = await createManifestFile([
+				{
+					name: "test_pkg_prerelease1",
+					version: "^1.2.0-b.1"
+				}
+			]);
+
+			const result = await api.installFromManifest(manifestPath);
+			expect(result.installed).to.be.an("array").that.is.not.empty;
+
+			// Deleting the range-literal reference should fail because it should
+			// never exist as a concrete cache package reference.
+			return api.delete("test_pkg_prerelease1/^1.2.0-b.1").then(
+				() => {
+					expect.fail(
+						"Unexpected dangling cache entry: test_pkg_prerelease1/^1.2.0-b.1"
+					);
+				},
+				(error) => {
+					expect(error).to.be.an("Error");
+					expect((error as Error).message).to.include(
+						"No local packages found matching pattern"
+					);
+				}
+			);
+		});
+
+		// Negative test cases
+		it("should install stable version when prerelease is not explicitly requested", async function () {
+			const installed = await api.install({
+				name: "test_pkg_prerelease1",
+				version: "1.0.0"
+			});
+			expect(installed).to.be.an("array").that.deep.includes({
+				name: "test_pkg_prerelease1",
+				version: "1.0.0"
+			});
+
+			// Verify stable version is installed and prerelease versions are not selected implicitly.
+			const installedPackages = await api.list();
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" && p.version === "1.0.0"
+				)
+			).to.be.true;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						p.version === "1.2.0-b.1"
+				)
+			).to.be.false;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						p.version === "1.2.0-b.1+1"
+				)
+			).to.be.false;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						p.version === "1.2.0-b.2"
+				)
+			).to.be.false;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						p.version === "1.2.0-b.2+1"
+				)
+			).to.be.false;
+		});
+
+		it("should not install a prerelease when explicit prerelease version is not defined", async function () {
+			const installed = await api.install({
+				name: "test_pkg_prerelease1",
+				version: "~1.0.0"
+			});
+			expect(installed).to.be.an("array").that.deep.includes({
+				name: "test_pkg_prerelease1",
+				version: "1.0.0"
+			});
+
+			const installedPackages = await api.list();
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" && p.version === "1.0.0"
+				)
+			).to.be.true;
+			expect(
+				installedPackages.some(
+					(p) =>
+						p.name === "test_pkg_prerelease1" &&
+						p.version.startsWith("1.2.0-b")
+				)
+			).to.be.false;
+		});
+
+		it("should fail when pre-release range does not match any versions", async function () {
 			return api
 				.install({
-					name: "test_pkg_prerelease",
-					version: "~1.0.0"
+					name: "test_pkg_prerelease1",
+					version: ">=1.2.0-rc.1 <1.2.0"
 				})
 				.then(
 					() => {
 						expect.fail(
-							"Should not succeed without explicit pre-release version"
+							"Should not succeed when no available pre-release satisfies the requested range"
+						);
+					},
+					(error) => {
+						expect(error).to.be.an("Error");
+					}
+				);
+		});
+
+		it("should fail when pre-release version does not exist", async function () {
+			return api
+				.install({
+					name: "test_pkg_prerelease1",
+					version: "^2.0.0-rc.1"
+				})
+				.then(
+					() => {
+						expect.fail(
+							"Should not succeed when pre-release version does not exist"
 						);
 					},
 					(error) => {
@@ -1378,7 +2163,10 @@ describe("ConanPkgManager", function () {
 			{ name: "test_pkg_plugin1", version: "1.0" },
 			{ name: "test_pkg_plugin2", version: "1.0" },
 			{ name: "test_pkg1", version: "1.0" },
-			{ name: "test_pkg_consumer12", version: "1.0" }
+			{ name: "test_pkg_consumer12", version: "1.0" },
+			{ name: "test_pkg_component_composite", version: "1.0" },
+			{ name: "test_pkg_component_plugin1", version: "1.0" },
+			{ name: "test_pkg_component_plugin2", version: "1.0" }
 		];
 
 		before(async function () {
@@ -1415,6 +2203,9 @@ describe("ConanPkgManager", function () {
 			expect(names).to.include("test_pkg_plugin2");
 			expect(names).to.include("test_pkg1");
 			expect(names).to.include("test_pkg_consumer12");
+			expect(names).to.include("test_pkg_component_composite");
+			expect(names).to.include("test_pkg_component_plugin1");
+			expect(names).to.include("test_pkg_component_plugin2");
 		});
 
 		describe("with filter", function () {
@@ -1442,8 +2233,12 @@ describe("ConanPkgManager", function () {
 					soc: "plugin1Soc"
 				});
 				expect(result).to.be.an("array");
-				expect(result.length).to.equal(1);
-				expect(result[0].name).to.equal("test_pkg_plugin1");
+				expect(result.length).to.equal(3);
+				expect(result.map((pkg) => pkg.name)).to.include.members([
+					"test_pkg_plugin1",
+					"test_pkg_component_plugin1",
+					"test_pkg_component_composite"
+				]);
 			});
 
 			it("should return packages matching any value in array filter", async function () {
@@ -1451,12 +2246,15 @@ describe("ConanPkgManager", function () {
 					soc: ["plugin1Soc", "plugin2Soc1"]
 				});
 				expect(result).to.be.an("array");
-				expect(result.length).to.equal(2);
+				expect(result.length).to.equal(5);
 
 				const names = result.map((pkg) => pkg.name);
 				expect(names).to.include.members([
 					"test_pkg_plugin1",
-					"test_pkg_plugin2"
+					"test_pkg_plugin2",
+					"test_pkg_component_plugin1",
+					"test_pkg_component_plugin2",
+					"test_pkg_component_composite"
 				]);
 			});
 
@@ -1492,6 +2290,1184 @@ describe("ConanPkgManager", function () {
 					"test_pkg_plugin1",
 					"test_pkg_plugin2"
 				]);
+			});
+
+			it("should filter by component name", async function () {
+				const result = await api.getInstalledPackageInfo({
+					component: { name: "plugin1" }
+				});
+				expect(result).to.be.an("array");
+				expect(result.length).to.equal(2);
+
+				const names = result.map((pkg) => pkg.name);
+				expect(names).to.include.members([
+					"test_pkg_component_plugin1",
+					"test_pkg_component_composite"
+				]);
+
+				for (const pkg of result) {
+					expect(pkg.components).to.be.an("array").that.is.not.empty;
+					expect(pkg.components?.some((c) => c.name === "plugin1")).to
+						.be.true;
+				}
+			});
+
+			it("should filter by component name and version", async function () {
+				const result = await api.getInstalledPackageInfo({
+					component: { name: "plugin1", version: "2.1.0" }
+				});
+				expect(result).to.be.an("array");
+				expect(result.length).to.equal(1);
+
+				expect(result[0].name).to.equal(
+					"test_pkg_component_composite"
+				);
+				for (const pkg of result) {
+					expect(pkg.components).to.be.an("array").that.is.not.empty;
+
+					expect(
+						pkg.components?.some(
+							(c) => c.name === "plugin1" && c.version === "2.1.0"
+						)
+					).to.be.true;
+				}
+			});
+
+			describe("Filtering by component version with semver ranges", function () {
+				it("Should return multiple packages that satisfy the version range", async function () {
+					const result = await api.getInstalledPackageInfo({
+						component: { name: "plugin1", version: "^2.0.0" }
+					});
+					expect(result).to.be.an("array");
+					expect(result.length).to.equal(2);
+
+					const names = result.map((pkg) => pkg.name);
+					expect(names).to.include.members([
+						"test_pkg_component_plugin1",
+						"test_pkg_component_composite"
+					]);
+					for (const pkg of result) {
+						expect(pkg.components).to.be.an("array").that.is.not
+							.empty;
+						expect(pkg.components?.some((c) => c.name === "plugin1"))
+							.to.be.true;
+						expect(
+							pkg.components?.some((c) =>
+								semver.satisfies(c.version, "^2.0.0")
+							)
+						).to.be.true;
+					}
+				});
+
+				it("Should not return packages that do not satisfy the version range", async function () {
+					const result = await api.getInstalledPackageInfo({
+						component: { name: "plugin1", version: "^2.1.0" }
+					});
+					expect(result).to.be.an("array");
+					expect(result.length).to.equal(1);
+
+					const names = result.map((pkg) => pkg.name);
+					expect(names).to.include.members([
+						"test_pkg_component_composite"
+					]);
+					for (const pkg of result) {
+						expect(pkg.components).to.be.an("array").that.is.not
+							.empty;
+						expect(pkg.components?.some((c) => c.name === "plugin1"))
+							.to.be.true;
+						expect(
+							pkg.components?.some((c) =>
+								semver.satisfies(c.version, "^2.1.0")
+							)
+						).to.be.true;
+					}
+				});
+			});
+
+			it("should filter by component type (plugin)", async function () {
+				const result = await api.getInstalledPackageInfo({
+					component: { type: "plugin" }
+				});
+				expect(result).to.be.an("array");
+				expect(result.length).to.equal(3);
+
+				const names = result.map((pkg) => pkg.name);
+				expect(names).to.include.members([
+					"test_pkg_component_plugin1",
+					"test_pkg_component_plugin2",
+					"test_pkg_component_composite"
+				]);
+				for (const pkg of result) {
+					expect(pkg.components).to.be.an("array").that.is.not.empty;
+					expect(pkg.components?.some((c) => c.type === "plugin")).to
+						.be.true;
+				}
+			});
+
+			it("should filter by component type (data-model)", async function () {
+				const result = await api.getInstalledPackageInfo({
+					component: { type: "data-model" }
+				});
+				expect(result).to.be.an("array");
+				expect(result.length).to.equal(1);
+
+				const names = result.map((pkg) => pkg.name);
+				expect(names).to.include.members([
+					"test_pkg_component_composite"
+				]);
+				for (const pkg of result) {
+					expect(pkg.components).to.be.an("array").that.is.not.empty;
+					expect(pkg.components?.some((c) => c.type === "data-model"))
+						.to.be.true;
+				}
+			});
+		});
+	});
+
+	describe("License acceptance", function () {
+		// Test packages with license requirements
+		const licensedPackages = [
+			{ name: "test_pkg_with_license1", version: "1.0.0" },
+			{ name: "test_pkg_with_license2", version: "1.0.0" }
+		];
+
+		it("does not treat recipe-only metadata as license acceptance", async function () {
+			const licensedPkgName = "test_pkg_with_license1";
+
+			try {
+				await api.uninstall(licensedPkgName);
+			} catch {
+				// ignore if not installed
+			}
+
+			for (const pattern of [
+				`${licensedPkgName}/1.0.0`,
+				`${licensedPkgName}/1.0.0+1`,
+				`${licensedPkgName}/1.0.0*`,
+				`${licensedPkgName}/*`
+			]) {
+				try {
+					await api.delete(pattern);
+				} catch {
+					// ignore if not in cache
+				}
+			}
+
+			const cachedBefore = await api.listCache(
+				`${licensedPkgName}/*`
+			);
+			expect(cachedBefore).to.be.an("array").that.is.empty;
+
+			const searchResults = await api.searchInfo(
+				`${licensedPkgName}/*`
+			);
+			expect(
+				searchResults.some(
+					(pkg) => pkg.reference.name === licensedPkgName
+				)
+			).to.be.true;
+
+			const manifestPath = await createManifestFile([
+				{ name: licensedPkgName, version: "1.0.0" }
+			]);
+			try {
+				const plan = await api.getInstallPlan(manifestPath);
+				expect(plan.requiresLicenseAcceptance)
+					.to.be.an("array")
+					.with.length.greaterThan(0);
+			} finally {
+				await cleanupManifestFile();
+			}
+		});
+
+		it("finds licensed packages via searchInfo and rejects install without license acceptance", async function () {
+			const licensedPkgName = "test_pkg_with_license1";
+
+			// Clean up before test
+			try {
+				await api.uninstall(licensedPkgName);
+			} catch {
+				// ignore if not installed
+			}
+
+			for (const pattern of [
+				`${licensedPkgName}/1.0.0`,
+				`${licensedPkgName}/1.0.0+1`,
+				`${licensedPkgName}/1.0.0*`,
+				`${licensedPkgName}/*`
+			]) {
+				try {
+					await api.delete(pattern);
+				} catch {
+					// ignore if not in cache
+				}
+			}
+
+			// Use searchInfo to find the licensed package
+			const searchResults = await api.searchInfo(
+				`${licensedPkgName}/*`
+			);
+			expect(
+				searchResults.some(
+					(pkg) => pkg.reference.name === licensedPkgName
+				)
+			).to.be.true;
+
+			const licensedPkg: CfsPackageReference = {
+				name: licensedPkgName,
+				version: "1.0.0"
+			};
+
+			// Try to install without accepting license
+			const manifestPath = await createManifestFile([licensedPkg]);
+			try {
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: false
+				});
+
+				// Package should be skipped (not installed)
+				expect(result.skipped).to.be.an("array").with.lengthOf(1);
+				expect(result.skipped[0]).to.deep.equal(licensedPkg);
+				expect(result.installed).to.be.an("array").that.is.empty;
+
+				// Verify package is not actually installed
+				const installedPackages = await api.list();
+				expect(
+					installedPackages.some((p) => p.name === licensedPkgName)
+				).to.be.false;
+			} finally {
+				await cleanupManifestFile();
+				// Clean up
+				try {
+					await api.uninstall(licensedPkgName);
+				} catch {
+					// ignore
+				}
+			}
+		});
+
+		// Shared cleanup helper for licensed packages
+		async function cleanupLicensedPackages(
+			deleteFromCache = false
+		): Promise<void> {
+			const allPackagesToClean = [
+				...licensedPackages.map((p) => p.name),
+				"test_pkg1",
+				"test_pkg2"
+			];
+			for (const pkg of allPackagesToClean) {
+				try {
+					await api.uninstall(pkg);
+				} catch {
+					// Ignore if not installed
+				}
+				if (deleteFromCache) {
+					try {
+						// Also delete from cache to ensure clean state for license tests
+						await api.delete(`${pkg}/*`);
+					} catch {
+						// Ignore if not in cache
+					}
+				}
+			}
+		}
+
+		afterEach(async function () {
+			await cleanupManifestFile();
+		});
+
+		describe("license reporter integration", function () {
+			afterEach(async function () {
+				await api.unregisterLicenseReporter();
+				await cleanupLicensedPackages(true);
+				sinon.restore();
+			});
+
+			it("should report accepted licensed packages during install", async function () {
+				const pkg = licensedPackages[0];
+				const reporterCalls: CfsPackageReference[][] = [];
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance(packages) {
+						reporterCalls.push(
+							Array.isArray(packages) ? packages : [packages]
+						);
+						return Promise.resolve();
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+				await api.install(pkg, { acceptLicense: true });
+
+				expect(reporterCalls).to.deep.equal([[pkg]]);
+			});
+
+			it("should fail install when the registered reporter throws", async function () {
+				const pkg = licensedPackages[0];
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance() {
+						return Promise.reject(new Error("report failed"));
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+
+				await expect(
+					api.install(pkg, { acceptLicense: true })
+				).to.eventually.be.rejectedWith("report failed");
+
+				const installedPackages = await api.list();
+				expect(installedPackages.some((p) => p.name === pkg.name)).to
+					.be.false;
+			});
+
+			it("should stop reporting after unregistering the reporter", async function () {
+				const pkg = licensedPackages[0];
+				let reportCallCount = 0;
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance() {
+						reportCallCount += 1;
+						return Promise.resolve();
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+				await api.unregisterLicenseReporter();
+				await api.install(pkg, { acceptLicense: true });
+
+				expect(reportCallCount).to.equal(0);
+			});
+
+			it("should not report when acceptLicense is false", async function () {
+				let reportCallCount = 0;
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance() {
+						reportCallCount += 1;
+						return Promise.resolve();
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+				await api.install(
+					{ name: "test_pkg1", version: "1.0" },
+					{ acceptLicense: false }
+				);
+
+				expect(reportCallCount).to.equal(0);
+			});
+
+			it("should not report when no accepted licenses are required", async function () {
+				let reportCallCount = 0;
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance() {
+						reportCallCount += 1;
+						return Promise.resolve();
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+				await api.install(
+					{ name: "test_pkg1", version: "1.0" },
+					{ acceptLicense: true }
+				);
+
+				expect(reportCallCount).to.equal(0);
+			});
+
+			it("should only report licensed packages that are actually being installed", async function () {
+				const reporterCalls: CfsPackageReference[][] = [];
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance(packages) {
+						reporterCalls.push(
+							Array.isArray(packages) ? packages : [packages]
+						);
+						return Promise.resolve();
+					}
+				};
+
+				await api.registerLicenseReporter(reporter);
+				await api.install(licensedPackages[0], {
+					acceptLicense: true
+				});
+
+				expect(reporterCalls).to.deep.equal([[licensedPackages[0]]]);
+			});
+
+			it("should reuse a provided installPlan during install", async function () {
+				const pkg = licensedPackages[0];
+				const reporterCalls: CfsPackageReference[][] = [];
+				const reporter: CfsPackageLicenseReporter = {
+					reportLicenseAcceptance(packages) {
+						reporterCalls.push(
+							Array.isArray(packages) ? packages : [packages]
+						);
+						return Promise.resolve();
+					}
+				};
+				const plan = await api.getInstallPlan(pkg);
+				const getInstallPlanStub = sinon.stub(api, "getInstallPlan");
+				getInstallPlanStub.rejects(
+					new Error("getInstallPlan should not be called")
+				);
+
+				await api.registerLicenseReporter(reporter);
+				await api.install(plan, {
+					acceptLicense: true
+				});
+
+				expect(reporterCalls).to.deep.equal([[pkg]]);
+				expect(getInstallPlanStub.called).to.be.false;
+			});
+		});
+
+		describe("installFromManifest with license acceptance", function () {
+			beforeEach(async function () {
+				await cleanupLicensedPackages(true);
+			});
+
+			afterEach(async function () {
+				await cleanupLicensedPackages(true);
+			});
+
+			it("should skip packages requiring license when acceptLicense is false", async function () {
+				const manifestPath = await createManifestFile([
+					licensedPackages[0]
+				]);
+
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: false
+				});
+
+				expect(result.installed).to.be.an("array").that.is.empty;
+				expect(result.skipped).to.be.an("array").with.lengthOf(1);
+				expect(result.skipped[0]).to.deep.equal(licensedPackages[0]);
+
+				// Verify the package is NOT installed
+				const installedPackages = await api.list();
+				expect(
+					installedPackages.some(
+						(p) => p.name === licensedPackages[0].name
+					)
+				).to.be.false;
+			});
+
+			it("should skip packages requiring license when acceptLicense is undefined (default behavior)", async function () {
+				const manifestPath = await createManifestFile([
+					licensedPackages[0]
+				]);
+
+				// Call without acceptLicense option to test default behavior
+				const result = await api.installFromManifest(manifestPath);
+
+				expect(result.installed).to.be.an("array").that.is.empty;
+				expect(result.skipped).to.be.an("array").with.lengthOf(1);
+				expect(result.skipped[0]).to.deep.equal(licensedPackages[0]);
+
+				// Verify the package is NOT installed
+				const installedPackages = await api.list();
+				expect(
+					installedPackages.some(
+						(p) => p.name === licensedPackages[0].name
+					)
+				).to.be.false;
+			});
+
+			it("should install packages when acceptLicense is true", async function () {
+				const manifestPath = await createManifestFile([
+					licensedPackages[0]
+				]);
+
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: true
+				});
+
+				expect(result.installed).to.be.an("array").with.lengthOf(1);
+				expect(result.installed[0]).to.deep.equal(
+					licensedPackages[0]
+				);
+				expect(result.skipped).to.be.an("array").that.is.empty;
+
+				// Verify the package is installed
+				const installedPackages = await api.list();
+				expect(
+					installedPackages.some(
+						(p) => p.name === licensedPackages[0].name
+					)
+				).to.be.true;
+			});
+
+			it("should install multiple licensed packages when acceptLicense is true", async function () {
+				const manifestPath =
+					await createManifestFile(licensedPackages);
+
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: true
+				});
+
+				expect(result.installed)
+					.to.be.an("array")
+					.with.lengthOf(licensedPackages.length);
+				expect(result.skipped).to.be.an("array").that.is.empty;
+
+				// Verify all packages are installed
+				const installedPackages = await api.list();
+				for (const pkg of licensedPackages) {
+					expect(installedPackages.some((p) => p.name === pkg.name))
+						.to.be.true;
+				}
+			});
+
+			it("should skip multiple licensed packages when acceptLicense is false", async function () {
+				const manifestPath =
+					await createManifestFile(licensedPackages);
+
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: false
+				});
+
+				expect(result.installed).to.be.an("array").that.is.empty;
+				expect(result.skipped)
+					.to.be.an("array")
+					.with.lengthOf(licensedPackages.length);
+
+				const skippedNames = result.skipped.map((p) => p.name);
+				expect(skippedNames).to.include.members(
+					licensedPackages.map((p) => p.name)
+				);
+
+				// Verify no packages are installed
+				const installedPackages = await api.list();
+				for (const pkg of licensedPackages) {
+					expect(installedPackages.some((p) => p.name === pkg.name))
+						.to.be.false;
+				}
+			});
+
+			it("should return empty arrays when all packages are already installed", async function () {
+				// First install a package
+				await api.install(licensedPackages[0], {
+					acceptLicense: true
+				});
+
+				// Now try to install it again via manifest
+				const manifestPath = await createManifestFile([
+					licensedPackages[0]
+				]);
+
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: true
+				});
+
+				expect(result.installed).to.be.an("array").that.is.empty;
+				expect(result.skipped).to.be.an("array").that.is.empty;
+			});
+		});
+
+		describe("mixed manifest with licensed and unlicensed packages", function () {
+			beforeEach(async function () {
+				await cleanupLicensedPackages(true);
+			});
+			afterEach(async function () {
+				await cleanupLicensedPackages(true);
+			});
+
+			it("should install unlicensed packages and skip licensed packages when acceptLicense is false", async function () {
+				// Create manifest with mixed packages:
+				// - 2 unlicensed packages (test_pkg1, test_pkg2)
+				// - 2 licensed packages
+				const manifestPath = await createManifestFile([
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" },
+					...licensedPackages
+				]);
+
+				// Install without accepting license
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: false
+				});
+
+				// Unlicensed packages should be installed
+				expect(result.installed).to.be.an("array").with.lengthOf(2);
+				const installedNames = result.installed.map((p) => p.name);
+				expect(installedNames).to.include.members([
+					"test_pkg1",
+					"test_pkg2"
+				]);
+
+				// Licensed packages should be skipped
+				expect(result.skipped)
+					.to.be.an("array")
+					.with.lengthOf(licensedPackages.length);
+				const skippedNames = result.skipped.map((p) => p.name);
+				expect(skippedNames).to.include.members(
+					licensedPackages.map((p) => p.name)
+				);
+
+				// Verify only unlicensed packages are installed
+				const installedPackages = await api.list();
+				expect(installedPackages.some((p) => p.name === "test_pkg1"))
+					.to.be.true;
+				expect(installedPackages.some((p) => p.name === "test_pkg2"))
+					.to.be.true;
+				for (const pkg of licensedPackages) {
+					expect(installedPackages.some((p) => p.name === pkg.name))
+						.to.be.false;
+				}
+			});
+
+			it("should install all packages including licensed ones when acceptLicense is true", async function () {
+				// Create manifest with mixed packages
+				const allPackages = [
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" },
+					...licensedPackages
+				];
+				const manifestPath = await createManifestFile(allPackages);
+
+				// Install WITH license acceptance
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: true
+				});
+
+				// All packages should be installed
+				expect(result.installed)
+					.to.be.an("array")
+					.with.lengthOf(allPackages.length);
+				expect(result.skipped).to.be.an("array").that.is.empty;
+
+				const installedNames = result.installed.map((p) => p.name);
+				expect(installedNames).to.include.members(
+					allPackages.map((p) => p.name)
+				);
+
+				// Verify all packages are installed
+				const finalPackages = await api.list();
+				for (const pkg of allPackages) {
+					expect(finalPackages.some((p) => p.name === pkg.name)).to.be
+						.true;
+				}
+			});
+		});
+
+		describe("install single package with license acceptance", function () {
+			afterEach(async function () {
+				await cleanupLicensedPackages(false);
+			});
+
+			after(async function () {
+				// Final cleanup: delete from cache after all tests in this suite
+				await cleanupLicensedPackages(true);
+			});
+
+			it("should install a licensed package when acceptLicense is true", async function () {
+				const pkg = licensedPackages[0];
+				const result = await api.install(pkg, {
+					acceptLicense: true
+				});
+
+				expect(result).to.be.an("array").with.lengthOf(1);
+				expect(result[0]).to.deep.equal(pkg);
+
+				const installedPackages = await api.list();
+				expect(installedPackages.some((p) => p.name === pkg.name)).to
+					.be.true;
+			});
+
+			it("should install different licensed packages independently", async function () {
+				// Install first package
+				const pkg1 = licensedPackages[0];
+				await api.install(pkg1, { acceptLicense: true });
+
+				// Install second package
+				const pkg2 = licensedPackages[1];
+				const result = await api.install(pkg2, {
+					acceptLicense: true
+				});
+
+				expect(result).to.be.an("array").with.lengthOf(1);
+				expect(result[0]).to.deep.equal(pkg2);
+
+				// Verify both packages are installed
+				const installedPackages = await api.list();
+				expect(installedPackages.some((p) => p.name === pkg1.name)).to
+					.be.true;
+				expect(installedPackages.some((p) => p.name === pkg2.name)).to
+					.be.true;
+			});
+
+			describe("Cache-based license skipping", function () {
+				beforeEach(async function () {
+					// Ensure clean cache state before each cache test
+					// This deletes from cache AND uninstalls any installed packages
+					await cleanupLicensedPackages(true);
+				});
+
+				afterEach(async function () {
+					// Clean up after each test
+					await cleanupLicensedPackages(false);
+				});
+
+				it("should not require license acceptance for packages already in cache", async function () {
+					this.timeout(30000);
+
+					// First, download the package (which requires license acceptance)
+					const pkg = licensedPackages[0];
+					await api.install(pkg, { acceptLicense: true });
+
+					// Uninstall the package (but keep it in cache)
+					await api.uninstall(pkg.name);
+
+					// Now try to install again - should not require license because it's cached
+					const manifestPath = await createManifestFile([pkg]);
+					const result = await api.installFromManifest(manifestPath);
+
+					// Should install successfully because package is in cache
+					expect(result.installed).to.be.an("array").with.lengthOf(1);
+					expect(result.installed[0]).to.deep.equal(pkg);
+					expect(result.skipped).to.be.an("array").that.is.empty;
+				});
+
+				it("should require license again after cache deletion for exact and range installs", async function () {
+					const pkg = {
+						name: "test_pkg_with_license1",
+						version: "^1.0.0"
+					};
+
+					// 1-2) Install then uninstall to ensure it is known and can be cached.
+					await api.install(pkg, { acceptLicense: true });
+					await api.uninstall(pkg.name);
+
+					// 3) Delete from cache (handle exact and metadata variants).
+					for (const pattern of [
+						`${pkg.name}/1.0.0`,
+						`${pkg.name}/1.0.0+1`,
+						`${pkg.name}/1.0.0*`,
+						`${pkg.name}/*`
+					]) {
+						try {
+							await api.delete(pattern);
+						} catch {
+							// Ignore if this pattern does not exist in cache
+						}
+					}
+
+					// 4) Exact install without license acceptance should require license.
+					const exactResult = await api.getInstallPlan(
+						await createManifestFile([
+							{ name: pkg.name, version: "1.0.0" }
+						])
+					);
+					expect(exactResult.requiresLicenseAcceptance).to.be.an(
+						"array"
+					).that.is.not.empty;
+
+					// 5) Repeat steps 3-4 for range install path: ensure cache is cleared again.
+					await cleanupLicensedPackages(true);
+
+					const rangeResult = await api.getInstallPlan(
+						await createManifestFile([
+							{ name: pkg.name, version: "^1.0.0" }
+						])
+					);
+					expect(rangeResult.requiresLicenseAcceptance).to.be.an(
+						"array"
+					).that.is.not.empty;
+				});
+
+				it("should require license for packages not in cache even if other packages are cached", async function () {
+					this.timeout(30000);
+
+					// Explicitly clean everything first
+					await cleanupLicensedPackages(true);
+
+					// Install first package (gets cached)
+					const pkg1 = licensedPackages[0];
+					await api.install(pkg1, { acceptLicense: true });
+					await api.uninstall(pkg1.name);
+
+					// Second package is NOT cached (ensure it's deleted if it exists)
+					const pkg2 = licensedPackages[1];
+					try {
+						await api.delete(`${pkg2.name}/*`);
+					} catch {
+						// Ignore if not in cache
+					}
+
+					// Try to install both without accepting license
+					const manifestPath = await createManifestFile([pkg1, pkg2]);
+					const result = await api.installFromManifest(manifestPath, {
+						acceptLicense: false
+					});
+
+					// First package should install (cached), second should be skipped (not cached)
+					expect(result.installed).to.be.an("array").with.lengthOf(1);
+					expect(result.installed[0]).to.deep.equal(pkg1);
+					expect(result.skipped).to.be.an("array").with.lengthOf(1);
+					expect(result.skipped[0]).to.deep.equal(pkg2);
+				});
+
+				it("should skip cache check and prompt for license if cache listing fails", async function () {
+					this.timeout(30000);
+
+					// Explicitly clean everything first
+					await cleanupLicensedPackages(true);
+
+					// This test verifies graceful degradation when cache cannot be queried
+					// In this case, the function should fall back to checking all packages
+					const pkg = licensedPackages[0];
+					const manifestPath = await createManifestFile([pkg]);
+
+					// Without accepting license, should be skipped (no cache to check)
+					const result = await api.installFromManifest(manifestPath, {
+						acceptLicense: false
+					});
+
+					expect(result.skipped).to.be.an("array").with.lengthOf(1);
+					expect(result.installed).to.be.an("array").that.is.empty;
+				});
+
+				it("should handle mixed scenario with cached and uncached packages correctly", async function () {
+					this.timeout(30000);
+
+					// Explicitly clean everything first
+					await cleanupLicensedPackages(true);
+
+					// Setup: Cache first package, leave second uncached, third is unlicensed
+					const pkg1 = licensedPackages[0];
+					await api.install(pkg1, { acceptLicense: true });
+					await api.uninstall(pkg1.name);
+
+					const pkg2 = licensedPackages[1]; // Not cached
+					const pkg3 = { name: "test_pkg1", version: "1.0" }; // Unlicensed
+
+					// Install with acceptLicense=false
+					const manifestPath = await createManifestFile([
+						pkg1,
+						pkg2,
+						pkg3
+					]);
+					const result = await api.installFromManifest(manifestPath, {
+						acceptLicense: false
+					});
+
+					// pkg1 should install (cached), pkg3 should install (no license), pkg2 should skip
+					expect(result.installed).to.be.an("array").with.lengthOf(2);
+					const installedNames = result.installed.map((p) => p.name);
+					expect(installedNames).to.include.members([
+						pkg1.name,
+						pkg3.name
+					]);
+
+					expect(result.skipped).to.be.an("array").with.lengthOf(1);
+					expect(result.skipped[0]).to.deep.equal(pkg2);
+				});
+
+				it("should accept license and cache package for future use", async function () {
+					this.timeout(30000);
+
+					const pkg = licensedPackages[0];
+
+					// First install with license acceptance
+					await api.install(pkg, { acceptLicense: true });
+					await api.uninstall(pkg.name);
+
+					// Second install without license acceptance should work (cached)
+					const result = await api.install(pkg);
+
+					expect(result).to.be.an("array").with.lengthOf(1);
+					expect(result[0]).to.deep.equal(pkg);
+				});
+
+				it("should not prompt for license when reinstalling a cached package via single install", async function () {
+					this.timeout(30000);
+
+					const pkg = licensedPackages[0];
+
+					// Install with license acceptance
+					await api.install(pkg, { acceptLicense: true });
+					await api.uninstall(pkg.name);
+
+					// Try to install the same package again without accepting license
+					// Should succeed because it's cached
+					await expect(api.install(pkg)).to.eventually.be.fulfilled;
+				});
+			});
+		});
+
+		describe("install with array of packages", function () {
+			const packagesToInstall = [
+				{ name: "test_pkg_consumer1", version: "1.0" },
+				{ name: "test_pkg_consumer2", version: "1.0" }
+			];
+
+			beforeEach(async function () {
+				// Clean up packages before each test
+				for (const pkg of packagesToInstall) {
+					try {
+						await api.uninstall(pkg.name);
+					} catch {
+						// Ignore if not installed
+					}
+				}
+			});
+
+			afterEach(async function () {
+				// Clean up packages after each test
+				for (const pkg of packagesToInstall) {
+					try {
+						await api.uninstall(pkg.name);
+					} catch {
+						// Ignore if not installed
+					}
+				}
+			});
+
+			it("should install multiple packages when given an array", async function () {
+				const result = await api.install(packagesToInstall);
+
+				expect(result).to.be.an("array").that.is.not.empty;
+				expect(result).to.deep.include.members(packagesToInstall);
+
+				// Verify packages are actually installed
+				const installedPackages = await api.list();
+				for (const pkg of packagesToInstall) {
+					expect(installedPackages.some((p) => p.name === pkg.name))
+						.to.be.true;
+				}
+			});
+
+			it("should handle a single package in an array", async function () {
+				const result = await api.install([packagesToInstall[0]]);
+
+				expect(result).to.be.an("array").with.lengthOf(1);
+				expect(result[0]).to.deep.equal(packagesToInstall[0]);
+			});
+
+			it("should handle an empty array gracefully", async function () {
+				const result = await api.install([]);
+
+				expect(result).to.be.an("array").that.is.empty;
+			});
+
+			it("should install licensed packages in array with acceptLicense", async function () {
+				// Clean up licensed packages first
+				await cleanupLicensedPackages(true);
+
+				const result = await api.install(licensedPackages, {
+					acceptLicense: true
+				});
+
+				expect(result).to.be.an("array").with.lengthOf(2);
+				expect(result).to.deep.include.members(licensedPackages);
+
+				// Clean up
+				await cleanupLicensedPackages(true);
+			});
+		});
+	});
+
+	describe("listCache", function () {
+		this.timeout(300000); // 5 minutes for integration tests
+
+		describe("when cache is empty", function () {
+			before(async function () {
+				// Uninstall all packages and delete them from cache
+				const installedPackages = await api.list();
+				for (const pkg of installedPackages) {
+					try {
+						await api.uninstall(pkg.name);
+					} catch (error) {
+						// Ignore errors during cleanup
+					}
+				}
+
+				const cachedPackages = await api.listCache();
+				for (const pkg of cachedPackages) {
+					try {
+						await api.delete(
+							`${pkg.reference.name}/${pkg.reference.version}`
+						);
+					} catch (error) {
+						// Ignore errors during cleanup
+					}
+				}
+			});
+
+			it("should return an empty array", async function () {
+				const cachedPackages = await api.listCache();
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages).to.have.length(0);
+			});
+		});
+
+		describe("when packages exist in cache", function () {
+			before(async function () {
+				// Install test packages to populate cache
+				const testPackages: CfsPackageReference[] = [
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" }
+				];
+
+				for (const pkg of testPackages) {
+					await api.install(pkg);
+				}
+			});
+
+			it("should return all cached packages (installed and uninstalled)", async function () {
+				const cachedPackages = await api.listCache();
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages.length).to.be.at.least(2);
+
+				// Check that test packages are in the cache
+				const packageNames = cachedPackages.map(
+					(pkg) => pkg.reference.name
+				);
+				expect(packageNames).to.include("test_pkg1");
+				expect(packageNames).to.include("test_pkg2");
+			});
+
+			it("should indicate installed status correctly", async function () {
+				const cachedPackages = await api.listCache();
+
+				// All packages should be installed at this point
+				for (const pkg of cachedPackages) {
+					if (
+						pkg.reference.name === "test_pkg1" ||
+						pkg.reference.name === "test_pkg2"
+					) {
+						expect(pkg.isInstalled).to.be.true;
+					}
+				}
+			});
+
+			describe("when a package is uninstalled", function () {
+				before(async function () {
+					// Uninstall one package
+					await api.uninstall("test_pkg1");
+				});
+
+				after(async function () {
+					// Re-install for other tests
+					await api.install({ name: "test_pkg1", version: "1.0" });
+				});
+
+				it("should include both installed and uninstalled packages with correct status", async function () {
+					const cachedPackages = await api.listCache();
+
+					// Cache should still have test_pkg1
+					const cachedNames = cachedPackages.map(
+						(pkg) => pkg.reference.name
+					);
+					expect(cachedNames).to.include("test_pkg1");
+					expect(cachedNames).to.include("test_pkg2");
+
+					// test_pkg1 should be marked as not installed
+					const pkg1 = cachedPackages.find(
+						(p) => p.reference.name === "test_pkg1"
+					);
+					expect(pkg1).to.not.be.undefined;
+					expect(pkg1?.isInstalled).to.be.false;
+
+					// test_pkg2 should still be marked as installed
+					const pkg2 = cachedPackages.find(
+						(p) => p.reference.name === "test_pkg2"
+					);
+					expect(pkg2).to.not.be.undefined;
+					expect(pkg2?.isInstalled).to.be.true;
+				});
+			});
+
+			it("should return packages with correct structure", async function () {
+				const cachedPackages = await api.listCache();
+
+				for (const pkg of cachedPackages) {
+					expect(pkg).to.have.property("reference");
+					expect(pkg).to.have.property("isInstalled");
+					expect(pkg.reference).to.have.property("name");
+					expect(pkg.reference).to.have.property("version");
+					expect(pkg.reference.name).to.be.a("string");
+					expect(pkg.reference.version).to.be.a("string");
+					expect(pkg.isInstalled).to.be.a("boolean");
+				}
+			});
+		});
+
+		describe("with pattern parameter", function () {
+			before(async function () {
+				// Ensure we have test packages with different naming patterns
+				// Install known available test packages
+				await api.install({ name: "test_pkg1", version: "1.0" });
+				await api.install({ name: "test_pkg2", version: "1.0" });
+				await api.install({ name: "test_pkg2", version: "1.2.0" });
+				await api.install({ name: "test_pkg2", version: "1.3.4" });
+			});
+
+			it("should return only packages matching wildcard pattern", async function () {
+				const cachedPackages = await api.listCache("test_pkg*");
+
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages.length).to.be.at.least(2);
+
+				// All returned packages should match the pattern
+				for (const pkg of cachedPackages) {
+					expect(pkg.reference.name).to.match(/^test_pkg/);
+				}
+			});
+
+			it("should handle pattern for specific package name", async function () {
+				const cachedPackages = await api.listCache("test_pkg2");
+
+				expect(cachedPackages).to.be.an("array");
+
+				// All returned packages should be test_pkg2
+				for (const pkg of cachedPackages) {
+					expect(pkg.reference.name).to.equal("test_pkg2");
+				}
+			});
+
+			it("should return multiple versions of the same package", async function () {
+				const cachedPackages = await api.listCache("test_pkg2");
+
+				// At least one version should be present in cache for the package.
+				// Remote test data can vary across environments.
+				const versions = cachedPackages.map(
+					(pkg) => pkg.reference.version
+				);
+				expect(versions.length).to.be.greaterThan(1);
+			});
+
+			it("should return empty array when pattern matches no packages", async function () {
+				const cachedPackages = await api.listCache("non_existent_*");
+
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages).to.have.length(0);
+			});
+
+			it("should return only specific package version when pattern includes version", async function () {
+				const cachedPackages = await api.listCache("test_pkg2/1.0");
+
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages).to.have.length(1);
+				expect(cachedPackages[0].reference).to.deep.equal({
+					name: "test_pkg2",
+					version: "1.0"
+				});
+				expect(cachedPackages[0].isInstalled).to.be.a("boolean");
+			});
+		});
+
+		describe("default behavior without pattern", function () {
+			it('should default to "*" pattern when no pattern provided', async function () {
+				const allPackages = await api.listCache();
+				const wildcardPackages = await api.listCache("*");
+
+				expect(allPackages).to.deep.equal(wildcardPackages);
+			});
+
+			it("should return all cached packages when called without arguments", async function () {
+				const cachedPackages = await api.listCache();
+
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages.length).to.be.greaterThan(0);
 			});
 		});
 	});

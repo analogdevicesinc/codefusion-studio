@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,11 +11,12 @@
 
 
 import logging
-from enum import Enum
+import sys
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, FieldSerializationInfo, field_serializer
 
 
 def cfsai_log_message_filter(record: logging.LogRecord) -> bool:
@@ -30,7 +31,20 @@ def cfsai_log_message_filter(record: logging.LogRecord) -> bool:
     """
     return record.name.startswith('cfsai') or record.name == 'root'
 
-class FileGenerationStatus(str, Enum):
+
+class EventType(StrEnum):
+    """
+    Type of a logging event.
+
+    Attributes:
+        FILE: A file has been created.
+        MODEL: A model has been created.
+    """
+    FILE='Created file'
+    MODEL='Created model'
+
+
+class EventStatus(StrEnum):
     """
     Status of a generated file.
 
@@ -45,7 +59,7 @@ class FileGenerationStatus(str, Enum):
     FAIL = 'Failed'
     SKIP = 'Skipped'
 
-class FileGenerationMetadata(BaseModel):
+class LogEvent(BaseModel):
     """
     File generation metadata to make external program parsing easier. This allows
     the placement of inline rich styling tags directly in the log message output
@@ -55,13 +69,15 @@ class FileGenerationMetadata(BaseModel):
         status: Status of the file generation.
         path: Path to the generation file.
     """
-    status: FileGenerationStatus
-    path: Path
+    status: EventStatus
+    type: EventType
+    value: str | Path
 
-    @field_serializer('path', when_used='json')
-    def serialize_path(self, path: Path) -> str:
-        """Use unix path styling."""
-        return path.as_posix()
+    @field_serializer('status', 'type')
+    def _enum_name(self, e: StrEnum, _info: FieldSerializationInfo) -> str:
+        return e.name
+
+
 
 
 class LogMessage(BaseModel):
@@ -74,7 +90,7 @@ class LogMessage(BaseModel):
     """
     level: str
     msg: str
-    file_created_event: Optional[FileGenerationMetadata] = None
+    event: Optional[LogEvent] = None
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -90,31 +106,67 @@ class JsonLogFormatter(logging.Formatter):
             Formatted string.
         """
         msg = str(record.exc_info[1]) if record.exc_info else record.getMessage()
-        file_created_event: Optional[FileGenerationMetadata] = \
-            getattr(record, 'file_created_event', None)
+        event: Optional[LogEvent] = \
+            getattr(record, 'event', None)
         
         return LogMessage(
             level=record.levelname,
             msg=msg,
-            file_created_event=file_created_event
+            event=event
         ).model_dump_json()
 
-
-def file_created_event(
+def log_event(
         logger: logging.Logger, 
-        file: Path, 
-        status: FileGenerationStatus = FileGenerationStatus.OK
+        type: EventType,
+        val: str | Path, 
+        status: EventStatus = EventStatus.OK
     ) -> None:
     """
     Log a file creation event with correct metadata.
 
     Args:
         logger: Logger object to use.
-        file: File to log.
+        type: Enum indicating the event type
+        val: string (or Path) associated with the event.
         status: Generated file status.
     """
-    metadata = FileGenerationMetadata(status=status, path=file)
+    # If value is a path, normalize to posix
+    try:
+        p = Path(val)
+        val = p.as_posix()
+    except Exception: # noqa: S110
+        pass
+    metadata = LogEvent(status=status, type=type, value=val)
     logger.info(
-        f'Created file "{file.as_posix()}"',
-        extra={'file_created_event' : metadata}
+        f'{type.value} "{val}"',
+        extra={'event' : metadata}
     )
+
+def setup_logger(
+        debug_level: bool = False,
+) -> None:
+    """
+    Setup the logger based on the mode.
+
+    Args:
+        json_format: Enable JSON mode.
+        debug_level: Enable DEBUG mode.
+    """
+    logger = logging.getLogger()
+    logger.handlers.clear()
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stderr_handler = logging.StreamHandler(sys.stderr)
+
+    stdout_handler.setFormatter(JsonLogFormatter())
+    stderr_handler.setFormatter(JsonLogFormatter())
+
+    stdout_handler.addFilter(lambda record: record.levelno < logging.ERROR)
+    stdout_handler.addFilter(cfsai_log_message_filter)
+    logger.addHandler(stdout_handler)
+
+    stderr_handler.addFilter(lambda record: record.levelno >= logging.ERROR)
+    stderr_handler.addFilter(cfsai_log_message_filter)
+    logger.addHandler(stderr_handler)
+
+    level = logging.DEBUG if debug_level else logging.INFO
+    logger.setLevel(level)

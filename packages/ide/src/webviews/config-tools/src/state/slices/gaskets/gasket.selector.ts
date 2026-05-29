@@ -13,9 +13,9 @@
  *
  */
 import {useAppSelector} from '../../store';
-import type {DFGStream} from 'cfs-plugins-api';
+import {type DFGStreamUI} from './gasket.reducer';
 
-export function useStreams(): DFGStream[] {
+export function useStreams(): DFGStreamUI[] {
 	return useAppSelector(state => state.gasketsReducer.Streams || []);
 }
 

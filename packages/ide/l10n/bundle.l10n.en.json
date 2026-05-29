@@ -331,6 +331,7 @@
         "partition-memory": "Allocate and Partition Memory",
         "registers": "View Registers",
         "ai-tools": "Manage AI Models",
+        "mcuboot-config": "MCUboot Config",
         "profiling": "Profiler Configuration",
         "generate-code": "Generate Code"
       }
@@ -340,6 +341,12 @@
       "description": "<p>This screen allows you to configure the pin multiplexing for your project. It also allows you to configure GPIO pins with settings such as drive strength and use pull-up or pull-down resistors to avoid floating inputs.</p><br /><h2>Main canvas overview</h2><p>The main canvas depicts the footprint of your project processor, showing the layout of the pins on the package. Each pin is color-coded according to whether it has a fixed-function, has a signal already assigned, or is available for use.</p><ul>  <li>Pins with multiple signals assigned are shown in <span style='color: var(--vscode-charts-red);'>red</span> to indicate a conflict error.</li>  <li>You can save a project with conflicts, but code generation is blocked until errors are fixed.</li></ul><h2>Assigning signals to pins</h2><p>To assign signals to pins, find the signal you wish to assign in the left-hand side panel. Signals are grouped by the peripheral they belong to. </p><ul>  <li>Expand the peripheral to view signals.</li> <li>Enable available signals using the toggle.</li><li>If a signal can be mapped to multiple pins, select your desired pin.</li>  <li>Conflicts during assignment will be marked with a red cross in the side panel.</li>  <li>You can also navigate around the footprint and click directly on pins to assign signals.</li></ul><h2>Modifying signal configuration</h2><p>Once a signal is assigned to a pin, you can click the icon to the right of the signal's toggle in the side panel to modify its configuration. A separate side panel will open on the right where you can adjust the signal's settings.</p><br /><p><strong>Important:</strong> Before configuring a signal, ensure its peripheral is assigned to a core in the <strong>Peripheral Allocation</strong> screen.</p>",
       "help": {
         "title": "Pin Config Help"
+      },
+      "search": {
+        "noResults": "No results found.",
+        "minLength": "A minimum of {minLength} characters is required to start searching.",
+        "allPinsReserved": "All pins associated with this peripheral are reserved and cannot be configured.",
+        "signalPinReserved": "The {signalName} signal uses a reserved pin and cannot be configured."
       }
     },
     "config": {
@@ -362,6 +369,8 @@
       "help": {
         "title": "Data Flow Gasket Help"
       },
+      "selectValuePlaceholder": "Select value",
+      "startTypingPlaceholder": "Start typing...",
       "createStream": "Create Stream",
       "deleteConfirmation": {
         "deleteButton": "Delete",
@@ -369,6 +378,35 @@
         "title": "Are you sure you want to delete this stream?",
         "errorTitle": "Error: Cannot delete stream",
         "tiedErrorMessage": "Another stream is tied to the stream you are trying to delete. Please remove the tied stream before deleting this stream."
+      },
+      "noGasketPluginSettings": "No settings found for this gasket.",
+      "streamConfigSidePanel": {
+        "createStreamTitle": "Create Stream",
+        "editStreamTitle": "Edit Stream",
+        "updateButton": "Update",
+        "createButton": "Create",
+        "streamOptionsTitle": "STREAM OPTIONS",
+        "sourceLabel": "Source",
+        "destinationLabel": "Destination",
+        "streamDescriptionLabel": "Stream Description",
+        "groupTitle": "GROUP",
+        "groupLabel": "Group",
+        "sourceStreamLabel": "Source Stream",
+        "bufferSizeLabel": "Buffer Size (Bytes)",
+        "sourceOptionsTitle": "SOURCE OPTIONS",
+        "destinationOptionsTitle": "DESTINATION OPTIONS",
+        "selectDestinationDFG": "Select Destination DFG",
+        "oneDestinationSelected": "1 destination selected",
+        "multipleDestinationsSelected": "{destinationsCount} destinations selected",
+        "validationErrors": {
+          "sourceGasketRequired": "Source gasket is required",
+          "sourceBufferSizeRequired": "Source buffer size is required",
+          "sourceTiedStreamRequired": "The corresponding input stream must be selected for this gasket. Please create it first if necessary.",
+          "destinationGasketRequired": "At least one destination gasket is required",
+          "destinationBufferSizeRequired": "Destination buffer size is required",
+          "destinationBufferSizeRequired_01": "Destination {destinationIndex} buffer size is required",
+          "additionalStreamConfig": "Additional stream options have errors"
+        }
       }
     },
     "dfgStreamList": {
@@ -410,7 +448,9 @@
         "other": "errors"
       },
       "pin-assignment": {
-        "manage": "Manage"
+        "title": "PIN ASSIGNMENTS",
+        "manage": "Manage",
+        "notAvailable": "No pin assignments available."
       },
       "expand-action": {
         "tooltips": {
@@ -452,6 +492,7 @@
           "title": "Read/Execute"
         }
       },
+      "noPermissions": "Permissions handled in Plugin options",
       "core": {
         "owner": "Owner"
       },
@@ -551,7 +592,10 @@
           "target": "Target",
           "modelName": "Model Name",
           "modelNameTooltip": "Name of the C++ file and symbol name generated for model",
-          "file": "Model File"
+          "file": "Model File",
+          "calibrationFiles": "Calibration file(s)",
+          "validationFiles": "Validation file(s)",
+          "expectedReturn": "Expected return"
         },
         "errors": {
           "targetRequired": "Target is required",
@@ -593,24 +637,210 @@
         "corruptModelConfigTitle": "Error loading model configuration",
         "corruptModelConfigDescription": "AI Model configuration is corrupt.",
         "missingPackageTitle": "Error loading cfsai package",
-        "missingPackageDescription": "Could not find or parse <a href=\"vscode://settings/@cfs.sdk.path\">SDK-Path</a>/Tools/cfsai/ui.json. Please verify the CodeFusion Studio SDK is at the expected path.",
+        "missingPackageDescription": "Could not find or parse <a href=\"vscode://settings/@cfs.sdk.path\">SDK-Path</a>/Tools/cfsai/backends/*.json. Please verify the CodeFusion Studio SDK is at the expected path.",
         "zephelin": {
           "enableProfiling": "Enable Zephelin AI Profiling",
           "enableProfilingTooltip": "This will configure Zephyr to produce a profiling trace of the AI models via the specified UART port"
         }
       }
     },
+    "mcubootConfig": {
+      "title": "MCUboot Config",
+      "description": "<p> TBD.</p>",
+      "banner": {
+        "disabled": "MCUboot configuration is disabled. System Planner will not generate any App Packs.",
+        "default": "MCUboot configuration is set to default. System Planner will use the default Zephyr configuration.",
+        "settingsLink": "MCUboot Settings"
+      },
+      "help": {
+        "title": "MCUboot Config Help"
+      },
+      "help-banner": {
+        "title": "Getting Started with MCUboot Config",
+        "description": "Add or select an Application Package in the sidebar to manage and configure it. You can click to edit names and descriptions of Application Packages, Images and Custom TLVs in the main view."
+      },
+      "applicationPackage": {
+        "title": "Application Packages",
+        "enableAppPack": "Enable App Pack",
+        "disableAppPack": "Disable App Pack",
+        "deleteAppPack": "Delete App Pack",
+        "addImage": "Add Image",
+        "empty-content": {
+          "title": "No Application Packages",
+          "description": "Add an App Pack using the + button in the sidebar, or the button below to get started.",
+          "addButton": "Add an App Pack"
+        },
+        "empty-sidebar": {
+          "title": "No Application Packages",
+          "description": "Add an App Pack to get started."
+        },
+        "new-package": {
+          "title": "No Images",
+          "description": "There are no images in this package, please add one",
+          "addImageButton": "Add Image"
+        },
+        "sign-key": {
+          "title": "Sign Key",
+          "description": "Key used to sign the application package. Generate and manage keys in",
+          "imageDescription": "Key used to sign the image. Generate and manage keys in",
+          "settingslinkText": "Security Settings",
+          "optional": "Optional",
+          "emptyKey": "No Available Keys",
+          "emptyKeyDescription": "Generate and manage Keys in",
+          "noKey": "No key",
+          "inheritFromParent": "Inherit from parent"
+        },
+        "fields": {
+          "core": "Core",
+          "version": "Version",
+          "optional": "Optional",
+          "securityCounter": "Security Counter",
+          "placeholders": {
+            "cores": "Make a selection",
+            "securityCounter": "Auto",
+            "startTypingPlaceholder": "Start typing..."
+          },
+          "validation": {
+            "coreIdRequired": "Core is required."
+          }
+        },
+        "warningModal": {
+          "description": "Deleting an App Pack will lose all images related to it. ",
+          "dismiss": "Don't show this message again.",
+          "deleteButton": "Delete",
+          "cancelButton": "Cancel"
+        },
+        "disabledApplicationPackage": {
+          "title": "App Pack Disabled"
+        },
+        "applicationPackageError": {
+          "title": "This App Pack has error(s)"
+        },
+        "customTlv": {
+          "title": "Custom TLV",
+          "delete": "Delete TLV",
+          "fields": {
+            "tag": "Tag",
+            "tagPlaceholder": "Enter tag",
+            "value": "Value",
+            "valuePlaceholder": "Enter value"
+          },
+          "descriptionPlaceholder": "Click to add a description",
+          "info": {
+            "description": "Prefixing this with 0x will mean it's treated as an integer instead of a string."
+          },
+          "validation": {
+            "invalidHex": "Invalid hexadecimal value. Only digits and A-F are allowed after 0x.",
+            "oddHexLength": "Hex value must have an even number of digits (e.g. 0x01, not 0x1).",
+            "hexValueExceedsMax": "Hex value exceeds the maximum allowed (0xFFFF).",
+            "valueTooLong": "Value exceeds the maximum length of 65535 characters.",
+            "tagExceedsMax": "Tag exceeds the maximum allowed value (0xFFFF).",
+            "tagRequired": "Tag is required.",
+            "tagDuplicate": "Tag already in use by another TLV.",
+            "valueRequired": "Value is required."
+          },
+          "warningModal": {
+            "description": "Deleting a Custom TLV will discard all configurations related to it. ",
+            "dismiss": "Don't show this message again.",
+            "deleteButton": "Delete",
+            "cancelButton": "Cancel"
+          }
+        },
+        "image": {
+          "title": "Image",
+          "badge": "Image",
+          "descriptionPlaceholder": "Click to add a description",
+          "bootable": "Bootable",
+          "nonBootable": "Non-bootable",
+          "delete": "Delete Image",
+          "fields": {
+            "chooseLocation": "Choose Location",
+            "hexAddress": "Hex Address",
+            "startAddress": "Start Address",
+            "endAddress": "End Address",
+            "locationAddress": "Location Address",
+            "slotSize": "Slot Size",
+            "headerSize": "Header Size",
+            "path": "Binary Path",
+            "project": "Select Project",
+            "optional": "Optional",
+            "imageVersion": "Image Version",
+            "customTlvs": "Custom TLVs",
+            "swapAlignment": "Swap Alignment",
+            "bootable": "Bootable",
+            "padHeader": "Pad Header",
+            "publicKeyFormat": "Public Key Format",
+            "securityCounter": "Security Counter",
+            "aesKwKey": "AES KW Key",
+            "aesGcmKey": "AES GCM Key",
+            "customArguments": "Custom Arguments"
+          },
+          "placeholders": {
+            "name": "Enter image name",
+            "description": "Enter description",
+            "locationAddress": "Enter location address",
+            "path": "Choose path",
+            "startTypingPlaceholder": "Start typing...",
+            "securityCounter": "Auto",
+            "aesKwKeyPath": "Path to the AES Key Wrap key",
+            "aesGcmKeyPath": "Path to the AES Galois/Counter Mode key"
+          },
+          "tooltips": {
+            "addCustomTlv": "Add a Custom TLV"
+          },
+          "validation": {
+            "startAddressRequired": "Start address is required.",
+            "endAddressRequired": "End address is required.",
+            "locationAddressRequired": "Location address is required.",
+
+            "slotSizeRequired": "Slot size is required.",
+            "headerSizeRequired": "Header size is required.",
+            "pathRequired": "Path is required.",
+            "imageVersionRequired": "Image version is required.",
+            "publicKeyFormatRequired": "Public key format is required.",
+            "nameRequired": "Name is required.",
+            "securityCounterInvalid": "Security counter must be a non-negative integer.",
+            "aesKwKeyPathInvalid": "Path must point to a valid binary file (.bin).",
+            "aesGcmKeyPathInvalid": "Path must point to a valid binary file (.bin)."
+          }
+        }
+      }
+    },
     "profiling": {
       "title": "Profiler Configuration",
       "subtitle": "Configure profiling for supported cores in your workspace",
-      "description": "<p>Configure profiling for supported cores in your workspace. The Zephelin Profiler records runtime events from Zephyr applications and, optionally, TensorFlow Lite Micro (TFLM) inference activity for AI workloads.</p><p>To enable profiling, turn on <strong>Enable Zephelin Profiler</strong> for each applicable core. Then select the <strong>Trace Interface</strong> used to stream trace data (for example, UART1 or UART2).</p><p>Enable <strong>AI Model Profiling</strong> to capture operator-level performance data from TensorFlow Lite Micro models.</p><p>After configuring profiling options, generate code, build, and flash your project to apply the changes. Finally, run the <strong>Capture Profiler Trace</strong> task to collect trace data.</p><p><em>Note: Profiling is currently in beta.</em></p>",
+      "externallyManaged": "Externally managed",
       "help": {
         "title": "Profiling Code Help"
       },
       "zephelin": "Zephelin",
       "enableProfiling": "Enable Zephelin Profiler",
       "selectPort": "Select Trace Interface",
-      "enableAIProfiling": "Enable AI Model Profiling"
+      "enableAIProfiling": "Enable AI Model Profiling",
+      "profiling": {
+        "title": "Profiling Options",
+        "rtos-events": "RTOS Kernel Events",
+        "cpu-load": "CPU Load",
+        "memory-usage": "Memory Usage",
+        "profiling-interval": "Profiling Interval",
+        "ai-profiling": "AI Model Profiling",
+        "application-callgraph": "Application Callgraph"
+      },
+      "interface": {
+        "title": "Interface Options",
+        "interface-type": "Select Trace Interface Type",
+        "interface-port": "Trace Interface",
+        "interface-port-description": "To manage Trace Interface UART settings, go to",
+        "peripheral-allocation": "Peripheral Allocation",
+        "baud-rate": "Baud Rate",
+        "baud-rate-description": "To manage Baud Rate for the selected Trace Interface, go to",
+        "baud-rate-error": "Baud rate is currently undefined"
+      },
+      "errors": {
+        "invalid-input": "Please enter a valid {fieldName}.",
+        "value-too-low": "Value is too low - the minimum value is {minValue} {unit}.",
+        "value-too-high": "Value is too high - the maximum value is {maxValue} {unit}."
+      }
     },
     "generate": {
       "title": "Generate Code",
@@ -625,7 +855,7 @@
       },
       "codeGenerationTimeModal": {
         "title": "Code Generation",
-        "description": "Code generation may require significant processing time, with progress displayed in the Output panel. Please allow the process to complete to ensure all files are created successfully.",
+        "description": "Code generation may require significant processing time due to the following AI models: {models}. Please allow the process to complete to ensure all files are created successfully.",
         "confirm": "Continue Generation"
       },
       "enableAiModels": "Generate AI Models",
@@ -633,27 +863,118 @@
     },
     "errors": {
       "missingPlugins": {
+        "title": "Missing Plugin${s} Required",
+        "description": "It looks like you don't have the required plugin${s} installed to access System Planner.\nPlease install the required plugin${s} or update your configuration file to match the following plugin version${s}:"
+      },
+      "missingComponents": {
         "single": {
-          "title": "Missing Plugin Required",
-          "descriptionBegin": "It looks like you don't have the required plugin installed to access System Planner.\nPlease install",
-          "descriptionEnd": "in order to continue."
+          "title": "System Planner Critical Error"
         },
         "multiple": {
-          "title": "Missing Plugins Required",
-          "description": "It looks like you don't have the required plugins installed to access System Planner.\nPlease install the following plugins to continue:"
+          "title": "System Planner Critical Errors"
         },
-        "linkText": "View Documentation"
+        "linkText": "Troubleshooting Guide",
+        "requestedVersionOption": "Install requested version {version}",
+        "locallyAvailableOption": "Upgrade to compatible locally-available version {version}",
+        "downloadableOption": "Upgrade to latest compatible downloadable version {version}",
+        "errorItem": {
+          "missingPluginTitle": "Missing Plugin",
+          "missingDataModelTitle": "Missing Data Model",
+          "missingDataModelDescription": "System Planner requires {componentName} data model version {componentVersion} which is not available.",
+          "missingPluginDescription": "System Planner requires {componentName} version {componentVersion} which is not available.",
+          "resolutionOptionsLabel": "Resolution Options",
+          "allowFutureVersions": "Allow all future compatible versions"
+        }
       },
-      "dataModel": {
+      "missingDataModel": {
         "title": "Missing SoC Data Model",
-        "descriptionBegin": "It looks like you don't have the required SoC Data Model installed to access System Planner.\nPlease install",
-        "descriptionMid": "data model",
-        "descriptionEnd": "in order to continue.",
-        "linkText": "View Documentation"
+        "description": "It looks like you don't have the required SoC Data Model installed to access System Planner.\nPlease install ${socName} ${packageId} version ${requestedVersion} or update the data model version in your configuration file in order to continue.${availableVersions}"
       },
       "unknown": {
         "title": "Error Occurred",
         "description": "System Planner cannot be started."
+      }
+    },
+    "settings": {
+      "title": "Workspace Settings",
+      "description": "<p>TBD</p>",
+      "help": {
+        "title": "Workspace Settings Help"
+      },
+      "security": {
+        "title": "Security",
+        "mcuboot-settings": {
+          "title": "MCUboot Settings",
+          "config-mcuboot": "Configure MCUboot",
+          "enable-mcuboot": {
+            "title": "Enable MCUboot",
+            "enabled": "System Planner will generate the necessary build flags to build and configure MCUboot using the user settings specified by the MCUboot Config UI.",
+            "default": "System Planner will not generate any MCUboot flags or collateral, and will use the default Zephyr configuration.",
+            "disabled": "Default app pack generation will be explicitly disabled by System Planner."
+          }
+        },
+        "sign-key-management": {
+          "title": "Sign Key Management",
+          "noKey": "No key available",
+          "noKeyDescription": "Add an existing key or generate a new one.",
+          "keyPathPlaceholder": "Choose path",
+          "addExistingKey": "Add Existing Key",
+          "generateNewKey": "Generate New Key",
+          "generate": "Generate",
+          "cancel": "Cancel",
+          "apply": "Apply",
+          "duplicateKey": "A key with this name already exists. Please choose a different name.",
+          "destinationPathRequired": "Destination path is required.",
+          "invalidPath": "Destination path must be an existing directory."
+        }
+      }
+    }
+  },
+  "trace-capture": {
+    "sidePanel": {
+      "setupRequired": "Setup required",
+      "setupRequiredDescription": "Some settings need to be selected before you can start the capture.",
+      "configureCapture": "Configure capture",
+      "sourceNotAvailable": "Source not available",
+      "sourceNotAvailableDescription": "The previously selected source cannot be found.",
+      "selectSource": "Select source",
+      "captureInterrupted": "Capture interrupted",
+      "captureInterruptedDescription": "The connection was lost during capture.",
+      "reconnectAndRetry": "Reconnect and retry",
+      "configurationFor": "Configuration for {source}",
+      "configure": "Configure",
+      "serialPort": "Serial Port",
+      "baudRate": "Baud Rate",
+      "output": "Output",
+      "startCapture": "Start Capture",
+      "stopCapture": "Stop Capture"
+    },
+    "configurationView": {
+      "title": "Trace Configuration",
+      "activeRecording": "Configuration is disabled while trace capture is running. Stop the capture to make changes.",
+      "stopCapture": "Stop Capture",
+      "sourceOptions": {
+        "title": "Trace Source Options",
+        "interfaceType": "Trace Interface Type",
+        "interfaceTypePlaceholder": "Select Interface",
+        "serialPort": "Serial Port",
+        "serialPortPlaceholder": "Select Port",
+        "selectPort": "Select Port",
+        "baudRate": "Baud Rate"
+      },
+      "generalSettings": {
+        "title": "General Settings",
+        "outputDirectory": "Output Directory",
+        "elfFile": "ELF File",
+        "elfFileWarning": "ELF not set. Trace conversion may fail depending on your configuration.",
+        "buildDir": "Build Directory",
+        "aiModels": "AI Models",
+        "autoResetOption": "Auto-reset device on capture start",
+        "selectOutputDirectory": "Select trace output directory",
+        "selectBuildDirectory": "Select the build directory for your project",
+        "selectElfFile": "Select the ELF file for your project",
+        "selectAiModels": "Select AI models to include in capture (optional)",
+        "aiModelsTooltip": "Only supports TFLM models at this time"
       }
     }
   },
@@ -877,7 +1198,57 @@
       }
     }
   },
+  "mem-viewer": {
+    "addressError": {
+      "invalidAddress": "Enter a valid hex or decimal address (e.g., 0x2000 or 1024).",
+      "loadingData": "Already reading memory data. Please wait.",
+      "noSessions": "No active debug session. Start a debug session to view memory.",
+      "notHalted": "Target not halted / Cannot execute this command while the target is running.",
+      "readFailed": "Memory read failed. Check the address and try again."
+    },
+    "empty": {
+      "noSessions": {
+        "title": "No active debug session",
+        "description": "Start a debug session to view memory."
+      },
+      "notHalted": {
+        "title": "Execution is running",
+        "description": "Halt execution to read memory. Memory can only be read when the target is halted."
+      },
+      "noData": {
+        "title": "No memory loaded",
+        "description": "Enter an address in 'Go to' (e.g., 0x20000000) to inspect target memory."
+      },
+      "readError": {
+        "title": "Memory read failed",
+        "description": "Could not read memory at the requested address. Check the address and try again."
+      }
+    },
+    "toolbar": {
+      "controls": {
+        "copy": "Copy",
+        "refresh": "Refresh"
+      },
+      "status": {
+        "session": "Session",
+        "live": "LIVE",
+        "stale": "Stale",
+        "halted": "Halted",
+        "postMortem": "POST-MORTEM"
+      },
+      "addressInput": {
+        "placeholder": "Go to"
+      }
+    }
+  },
   "wrksp": {
+    "search": {
+      "matchesAvailable": "{matchesCount} matches available",
+      "matchesAvailableSingular": "1 match available",
+      "noResults": "No Search Results",
+      "couldntFindResults": "We couldn't find any results for",
+      "pleaseChangeQuery": "please change your search query and try again."
+    },
     "soc-selection": {
       "description": "<p>Select the System on Chip (SoC) for your workspace from the list. Use the search bar to quickly find a specific SoC by name.",
       "help": {
@@ -947,6 +1318,185 @@
       "empty": {
         "documentation": "View Documentation",
         "description": "There are no plugins installed that offer Workspace Templates. You can install compatible plugins to start using templates in your workspace."
+      }
+    }
+  },
+  "report-viewer": {
+    "errors": {
+      "report-load-error": "Error loading report:",
+      "unknown-report-type": "Error: Unknown report type"
+    },
+    "profiling": {
+      "title": "Resource Profile Report",
+      "summary": {
+        "title": "Summary",
+        "recommendationsAvailable": "Optimization recommendations are available"
+      },
+      "estimatedRunTimePerformance": "Estimated Run-Time Performance",
+      "recommendations": "Recommendations",
+      "suggestedActions": "Suggested Actions",
+      "viewMemoryRecommendations": "View recommendations",
+      "modelLayers": {
+        "title": "Model Layers",
+        "sqlHint": "You can search the models layers using SQL syntax."
+      },
+      "sidepanel": {
+        "suggestedActions": "Suggested Actions",
+        "memoryRecommendations": "Memory Recommendations",
+        "layerOpportunities": "Layer Optimization Opportunities",
+        "macsOpportunities": "MACs Optimization Opportunities",
+        "noRecommendations": "No recommendations available",
+        "layer": "Layer"
+      },
+      "tableDetail": {
+        "layerRecommendations": "Layerwise Memory Recommendation",
+        "macRecommendations": "Layerwise MAC Recommendation",
+        "inputShape": "Input Shape",
+        "bias": "Bias",
+        "model": "Model",
+        "modelPath": "Model Path",
+        "framework": "Framework",
+        "modelSize": "Model Size",
+        "dataType": "Data Type",
+        "layerCount": "Layer Count",
+        "cycles": "Cycles",
+        "power": "Power",
+        "latency": "Latency",
+        "layers": "Layers"
+      },
+      "tableLegend": {
+        "availableMemory": "Available Memory {value}KB",
+        "model": "Model {value}KB",
+        "runtimeMemory": "Run-time Memory {value}KB"
+      }
+    },
+    "compatibility": {
+      "title": "Compatibility Report",
+      "affected-layers": "Affected Layers",
+      "data-type": "Type",
+      "memory": {
+        "title": "Memory Issues",
+        "no-issues": "No memory issues found",
+        "recommended-actions": "Recommended Actions",
+        "reference": "Reference",
+        "issues": {
+          "memory-overflow": "Model storage Memory overflow",
+          "flash-overflow": "Model storage Flash overflow",
+          "ram-overflow": "Model storage RAM overflow"
+        }
+      },
+      "operator": {
+        "title": "Operator check",
+        "no-issues": "No operator issues found",
+        "suggested-alternative": "Suggested Alternative"
+      },
+      "type": {
+        "title": "Unsupported type checks",
+        "no-issues": "No unsupported types found",
+        "operation-uses": "operation uses"
+      },
+      "severity": {
+        "warning": "Warning",
+        "critical": "Critical"
+      }
+    }
+  },
+  "model-wrksp": {
+    "title": "Evaluate model compatibility & performance",
+    "loadingMessage": "Loading...",
+    "filesSection": {
+      "title": "Files",
+      "modelFile": "Model File",
+      "modelFileTooltip": "The file containing the AI model you want to evaluate.",
+      "sampleData": "Sample Data",
+      "fileFieldPlaceholder": "No file chosen",
+      "sampleDataTooltip": "Optional input data for model inference.",
+      "workspaceName": "Workspace Name",
+      "workspaceNamePlaceholder": "Give your workspace a name"
+    },
+    "socSection": {
+      "title": "SoCs",
+      "selectBoard": "Select a board",
+      "cores": "Cores",
+      "selectBoardPlaceholder": "Please select a value",
+      "runModelOnCore": "Run model on core",
+      "unsupported": "Unsupported",
+      "testingCompatibility": "Testing compatibility",
+      "compatibilityTestError": "Error during testing",
+      "compatible": "Compatible",
+      "incompatible": "Incompatible",
+      "error": "Error"
+    },
+    "footer": {
+      "create": "Create Workspace"
+    },
+    "search": {
+      "matchesAvailable": "{matchesCount} matches available",
+      "matchesAvailableSingular": "1 match available",
+      "noResults": "No Search Results",
+      "couldntFindResults": "We couldn't find any results for",
+      "pleaseChangeQuery": "Please change your search query and try again."
+    },
+    "validationErrors": {
+      "pleaseSelectFile": "Please select a file.",
+      "selectSocRequired": "Please select a SoC.",
+      "selectBoardRequired": "Please select a board.",
+      "invalidFilenameCharacters": "Workspace name contains invalid filename characters."
+    }
+  },
+  "model-profiling": {
+    "title": "Model Instructions",
+    "howToTitle": "How to run",
+    "howToDescription1": "Your workspace has been created and building has started.",
+    "howToDescription2": "In order to run the application on hardware you will need to connect a debugger to port {portNumber} of the board.",
+    "captureOutputTitle": "Capture Output",
+    "captureOutputDescription": "In order to capture the runtime output, you will need to connect the USB/UART port {portNumber} to a USB port on your host and identify the serial port designation.",
+    "readMore": "Read more",
+
+    "usefullLinks": {
+      "title": "Useful links",
+      "compat": "AI Model Insight Viewer - Compatibility Report",
+      "profiling": "AI Model Insight Viewer - Resource profiling Report",
+      "openWorkspace": "Open Workspace in CodeFusion Studio"
+    },
+
+    "config": {
+      "description": "Once you are ready, select the serial port from the drop-down below.",
+      "usbPortLabel": "Host USB port designation",
+      "usbPortTooltip": "Select the serial port on your host computer that you connected to the board's UART port to receive the profiling output.",
+      "usbPortPlaceholder": "Please select an option",
+      "runWithLabel": "Run with",
+      "runWithPlaceholder": "Please select a debugger",
+      "run": "Run",
+      "stop": "Stop"
+    },
+    "header": {
+      "building": "Building",
+      "built": "Built",
+      "notDeployed": "Application not deployed",
+      "running": "Running",
+      "stopped": "Running stopped"
+    }
+  },
+  "common": {
+    "multiFileSelect": {
+      "browse": "Browse",
+      "noFileChosen": "No file chosen"
+    }
+  },
+  "sev": {
+    "timeline": {
+      "title": "Event Timeline",
+      "description": "Timeline description",
+      "help": {
+        "title": "Timeline Help"
+      }
+    },
+    "list": {
+      "title": "Event List",
+      "description": "List description",
+      "help": {
+        "title": "List Help"
       }
     }
   }

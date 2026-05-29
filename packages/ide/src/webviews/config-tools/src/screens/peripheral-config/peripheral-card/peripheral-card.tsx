@@ -13,19 +13,19 @@
  *
  */
 
-import {Button, Card} from 'cfs-react-library';
-import {useCallback, useMemo} from 'react';
+import {Button, Card, Tooltip} from 'cfs-react-library';
+import {useCallback, useEffect, useMemo} from 'react';
 import {memo, type ReactNode} from 'react';
 import styles from './peripheral-card.module.scss';
 import DownArrow from '../../../../../common/icons/DownArrow';
 import {useDispatch} from 'react-redux';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
 import {
 	useNewPeripheralAssignment,
 	usePeripheralScreenOpenProjectCards
 } from '../../../state/slices/app-context/appContext.selector';
 import {setPeripheralScreenOpenProjectCards} from '../../../state/slices/app-context/appContext.reducer';
 import {updateProjectCardOpenState} from '../../../utils/peripheral';
+import {getProjectInfoList} from '../../../utils/config';
 
 type PeripheralCardProps = Readonly<{
 	id?: string;
@@ -47,19 +47,15 @@ function PeripheralCard({
 }: PeripheralCardProps) {
 	const dispatch = useDispatch();
 	const openProjectCards = usePeripheralScreenOpenProjectCards();
+	const projects = getProjectInfoList();
 
-	const {projectId} = useNewPeripheralAssignment() ?? {};
+	const {projectId: projectWithNewAssignment} =
+		useNewPeripheralAssignment() ?? {};
 
-	const isExpanded = useMemo(() => {
-		// If there are no allocated peripherals, do not allow expansion
-		if (!hasAllocatedPeripherals) return false;
-
-		// If the project is the active one, open the card
-		if (projectId === id) return true;
-
-		// Otherwise, check if the card is in the list of open cards
-		return openProjectCards.includes(id ?? '');
-	}, [id, openProjectCards, projectId, hasAllocatedPeripherals]);
+	const isExpanded = useMemo(
+		() => Boolean(id) && openProjectCards.includes(id!),
+		[id, openProjectCards]
+	);
 
 	const projectCardOpenChange = useCallback(
 		(projectId: string, open: boolean) => {
@@ -79,6 +75,34 @@ function PeripheralCard({
 		}
 	}, [id, isExpanded, projectCardOpenChange]);
 
+	useEffect(() => {
+		if (
+			projects?.length === 1 &&
+			id &&
+			!openProjectCards.includes(id)
+		) {
+			projectCardOpenChange(id, true);
+		}
+
+		if (!projectWithNewAssignment || !id) return;
+
+		const shouldBeOpen =
+			Boolean(hasAllocatedPeripherals) &&
+			projectWithNewAssignment === id;
+		const isOpen = openProjectCards.includes(id);
+
+		if (!isOpen && shouldBeOpen) {
+			projectCardOpenChange(id, shouldBeOpen);
+		}
+	}, [
+		id,
+		hasAllocatedPeripherals,
+		projectWithNewAssignment,
+		openProjectCards,
+		projectCardOpenChange,
+		projects
+	]);
+
 	return (
 		<Card
 			disableHoverEffects={!hasAllocatedPeripherals}
@@ -90,7 +114,11 @@ function PeripheralCard({
 				id='peripheralCardContainer'
 				data-test={dataTest}
 				onClick={() => {
-					if (hasAllocatedPeripherals) {
+					if (
+						hasAllocatedPeripherals &&
+						Array.isArray(projects) &&
+						projects.length > 1
+					) {
 						handleCardEndClick();
 					}
 				}}
@@ -99,15 +127,18 @@ function PeripheralCard({
 					<div className={styles.title}>{title}</div>
 					{end && (
 						<div
-							className={`${styles.end} ${hasAllocatedPeripherals ? styles.expandable : ''}`}
+							className={`${styles.end} ${hasAllocatedPeripherals && Array.isArray(projects) && projects.length > 1 ? styles.expandable : ''}`}
 							data-test='allocation-details-chevron'
 						>
-							{content ? (
+							{content &&
+							Array.isArray(projects) &&
+							projects.length > 1 ? (
 								<>
 									{end}
 									<Tooltip
 										title={`${isExpanded ? 'Collapse' : 'Expand'}`}
-										type='long'
+										type='short'
+										position='bottom'
 									>
 										<Button
 											className={`${styles.downArrow}${isExpanded ? ` ${styles.iconOpen}` : ''}`}

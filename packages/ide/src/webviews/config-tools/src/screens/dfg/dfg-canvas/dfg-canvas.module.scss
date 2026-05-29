@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 	margin: 24px 0;
 	min-height: 166px;
 	&.hovered {
-		border-color: colors.$button-foreground !important;
+		border-color: colors.$foreground !important;
 	}
 	&.selected {
 		border-color: colors.$focus-border !important;
@@ -109,9 +109,9 @@
 		@include arrowHead;
 	}
 	&.hovered {
-		border-color: colors.$button-foreground !important;
+		border-color: colors.$foreground !important;
 		& .arrowHead.focused {
-			border-color: colors.$button-foreground !important;
+			border-color: colors.$foreground !important;
 			@include arrowHead;
 		}
 	}
@@ -119,12 +119,12 @@
 
 .hovered {
 	position: relative;
-	border-color: colors.$button-foreground !important;
+	border-color: colors.$foreground !important;
 	&:before {
-		border-color: colors.$button-foreground !important;
+		border-color: colors.$foreground !important;
 	}
 	& .arrowHead {
-		border-color: colors.$button-foreground !important;
+		border-color: colors.$foreground !important;
 		@include arrowHead;
 	}
 }
@@ -217,7 +217,7 @@
 			border-top-color: colors.$focus-border !important;
 		}
 		&.openOnHover {
-			border-top-color: colors.$button-foreground !important;
+			border-top-color: colors.$foreground !important;
 		}
 	}
 	& .output {
@@ -226,7 +226,7 @@
 			border-bottom-color: colors.$focus-border !important;
 		}
 		&.openOnHover {
-			border-bottom-color: colors.$button-foreground !important;
+			border-bottom-color: colors.$foreground !important;
 		}
 	}
 	.gasketPhysicalConnection {
@@ -278,7 +278,7 @@
 	position: relative;
 	cursor: pointer;
 	&.hovered {
-		border-color: colors.$button-foreground !important;
+		border-color: colors.$foreground !important;
 	}
 }
 

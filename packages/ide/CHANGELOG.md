@@ -2,6 +2,42 @@
 
 # Release Notes
 
+## 2.2.0
+
+### ✨ New Features
+
+- **CLI-first workspace workflows:** It is now possible to set up a workspace, build, and flash a project entirely from the command line without opening the IDE. New commands include `cfsutil socs list`, `cfsutil socs info`, `cfsutil workspace configure`, `cfsutil workspace create`, `cfsutil tasks list`, and `cfsutil tasks run`.
+- **`cfsutil ai` command group:** The `cfsai` command-line tool has been migrated into `cfsutil` as the `cfsutil ai` command group, enabling end-to-end AI model workflows from the command line. Includes `cfsutil ai build`, `cfsutil ai compat`, `cfsutil ai profile`, `cfsutil ai model` (add, list, update, remove models), and `cfsutil ai backends list` (optionally with `--name`). `cfsai` remains available as a compatibility wrapper.
+- **Memory Viewer:** A new debug tool that lets you inspect device memory during live and retrospective debug sessions. Features configurable display options (byte grouping, column count, endianness, format), auto-refresh on debugger halt, multi-core session tracking, and read-only support for core dump sessions.
+- **Package Manager enhancements:** Some packages require license acceptance before installation. When installing packages using the VS Code Command Palette, a license acceptance prompt appears during installation. For automated workflows, the new `--acceptLicense` flag on `cfsutil pkg install` allows you to accept the license upfront, enabling installation in scripts and CI pipelines without interactive prompts. Added **(CFS) Delete Package from Cache** command in the Command Palette for bulk deletion of cached packages.
+- **Embedded AI Tools enhancements:** Improved UX for Compatibility and Resource Profiling report outputs with better visualization and interpretation. Added **Open Report** option on the CFS Home page for accessing previously generated reports.
+- **System Planner improvements:** Enhanced Pin Config search with categorized results and navigation in the Pin Mux view for faster pin, signal, and peripheral identification.
+- **Expanded System Planner support:** Added full System Planner support (Memory Allocation, Peripheral Allocation, Pin Config, and Registers) for MAX32660, MAX32662, MAX32666, MAX32672, and MAX32675C microcontrollers.
+- **Expanded RTOS support:** Added support for Zephyr 4.3.0 across all supported MAX32xxx and MAX78xxx microcontrollers.
+- **Profiling - streamlined Zephelin trace capture workflow:** New **Trace Capture** panel in CFS Home Page sidebar for one-click profiling trace capture with automatic `.ctf` and `.tef` generation. Includes Zephelin Trace Viewer extension for visualizing traces directly in VS Code and new profiling options for CPU Load, Memory Usage, and function call graphs.
+- **Workspace from AI Model:** Create AI-ready workspaces directly from a model file with automatic compatibility checking, guided wizard for SoC/board selection, and pre-configured AI application with model integration and one-click hardware deployment.
+- **Core Dump Analysis - expanded SoC support:** Core dump support expanded to nine additional MAX devices (MAX32650, MAX32655, MAX32660, MAX32662, MAX32666, MAX32670, MAX32672, MAX78000, and MAX78002), bringing total support to 12 SoCs.
+
+### 📦 Workspace Templates
+- Added new MSDK templates including Library generation, Library usage, and Watchdog.
+- Added new Zephyr templates including Basic threading, Button handling, POSIX philosophers, and UART echo.
+- Extended existing MSDK templates (DMA, Hello World (C++), I2C scan, RTC, UART Loopback) to support MAX78000.
+- Extended existing Zephyr templates (ADC sequence, I2C custom target, LittleFS, Watchdog) to support MAX32666 and MAX78000.
+
+### ⛔ Breaking Changes
+
+- **`cfsutil socs` command format changes:** The default output format of `cfsutil socs list` (text and JSON) and the usage of `cfsutil socs export` have changed to support SoC names containing hyphens (e.g., `adsp-21836`). For `socs export`, pass the SoC name as a positional argument and specify the package with `--package` (for example, `cfsutil socs export adsp-21836 --package <package-name>`). Use the `--legacy` flag for `socs list` or the deprecated `-n, --name` flag for `socs export` while migrating. Both legacy options will be removed in a future release.
+- **`--json` flag deprecated:** The `--json` flag has been deprecated across all `cfsutil ai`, `cfsutil elf`, and `cfsutil socs` commands. Use `--format json` instead. The `--json` flag continues to work but displays a deprecation warning and will be removed in a future release.
+
+### 🐞 Bug fixes, Minor Improvements
+
+- **Workspace Creation Wizard:** Improved SoC selection page with expandable family cards, sticky search with match count and highlighting, and responsive layout enhancements.
+- Removed manual TrustZone configuration option for MAX32657 and MAX32658 in the Workspace Creation Wizard. TrustZone support remains available through the verified TF-M Secure Partition template.
+- System Planner displays automated version resolution options when opening a `.cfsconfig` file with missing data models or plugins.
+- **AI Debug Assistant:** General bug fixes and stability improvements. We recommend using the MCP server for production workflows for maximum portability and future compatibility.
+- **Plugins SDK:** The Plugins SDK has been reorganized as the `cfs-plugins-sdk` package in the CodeFusion Studio repository, providing better version alignment with CFS releases and clearer dependency tracking. For complete documentation on developing plugins, including API reference and templating guide, see the [CFS Plugins SDK README](https://github.com/analogdevicesinc/codefusion-studio/blob/main/packages/cfs-plugins-sdk/README.md).
+- General stability and performance improvements across workspace creation, AI Tools, System Planner, and Package Manager workflows.
+
 ## 2.1.0
 
 ### ✨ New Features

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 import * as path from "path";
 import { ShellExecutionOptions, workspace, WorkspaceFolder } from "vscode";
+import { CfsShellEnvProvider } from "cfs-lib";
 
 import {
   ENVIRONMENT,
@@ -27,7 +28,7 @@ import { Utils } from "../utils/utils";
 
 import { platform } from "node:process";
 import { getPropertyName } from "../properties";
-import type { CfsToolManager, Tool } from "cfs-lib";
+import type { CfsToolManager, ToolInfo } from "cfs-lib";
 
 /**
  * The IDEShellEnvManager class manages environment and shell configuration
@@ -37,6 +38,9 @@ export class IDEShellEnvProvider {
   /** Internal tool manager for handling tool operations */
   private toolManager: CfsToolManager;
 
+  /** Shared shell env composition provider (stateless) */
+  private cfsShellEnvProvider: CfsShellEnvProvider;
+
   /** Cache for tool environment variables */
   private toolEnvVarsCache: Record<string, string> | null = null;
 
@@ -45,6 +49,7 @@ export class IDEShellEnvProvider {
    */
   constructor(toolManager: CfsToolManager) {
     this.toolManager = toolManager;
+    this.cfsShellEnvProvider = new CfsShellEnvProvider();
   }
 
   /**
@@ -58,26 +63,14 @@ export class IDEShellEnvProvider {
    * Get the envVars for each tool.json
    * @returns an object containing all envVars for each tool.json
    */
-  public getToolEnvVars(installedTools: Tool[]): Record<string, string> {
+  public getToolEnvVars(installedTools: ToolInfo[]): Record<string, string> {
     // Return cached env vars if available
     if (this.toolEnvVarsCache) {
       return this.toolEnvVarsCache;
     }
 
     // Cache miss - populate the cache
-    const envVars: Record<string, string> = {};
-
-    installedTools?.forEach((tool) => {
-      const toolInfo = tool.getInfo();
-      if (toolInfo.envVars && toolInfo.envVars.length > 0) {
-        toolInfo.envVars.forEach((envVar) => {
-          const value = envVar.isPath
-            ? path.join(tool.getPath(), envVar.value)
-            : envVar.value;
-          envVars[envVar.name] = value;
-        });
-      }
-    });
+    const envVars = this.cfsShellEnvProvider.getToolEnvVars(installedTools);
 
     this.toolEnvVarsCache = { ...envVars };
 
@@ -101,32 +94,19 @@ export class IDEShellEnvProvider {
    * binary path for each installed tool
    * @returns the shell path
    */
-  public getShellPath(sdkPath: string, installedTools: Tool[]): string {
+  public getShellPath(sdkPath: string, installedTools: ToolInfo[]): string {
     const jlinkExecutablePath = resolveVariables(
       getPropertyName(JLINK_PATH),
       true,
     );
-    const shellPath: (string | undefined)[] = [];
 
-    if (jlinkExecutablePath && jlinkExecutablePath !== "null") {
-      shellPath.push(jlinkExecutablePath);
-    }
-
-    installedTools?.forEach((tool) => {
-      const toolPaths = tool.getPaths();
-      // if the tool doesn't define any paths, assume the bin path
-      if (toolPaths.length == 0) {
-        shellPath.push(tool.getBinaryPath());
-      } else {
-        toolPaths.forEach((path) => {
-          shellPath.push(path);
-        });
-      }
+    return this.cfsShellEnvProvider.getShellPath(installedTools, {
+      jlinkPath:
+        jlinkExecutablePath && jlinkExecutablePath !== "null"
+          ? jlinkExecutablePath
+          : undefined,
+      sdkPath,
     });
-    shellPath.push(sdkPath);
-    shellPath.push(process.env.PATH);
-
-    return shellPath.join(path.delimiter);
   }
 
   /**
@@ -195,7 +175,7 @@ export class IDEShellEnvProvider {
       ZEPHYR_SDK_INSTALL_DIR: `${sdkPath}/Tools/zephyr-sdk`,
       GIT_EXEC_PATH: gitExecPath,
       CFSAI_PATH: cfsaiPath.replace(/\\/g, "/"), // Replace backslashes with forward slashes for cross platform compatibility
-      ZEPHYR_BASE: zephyrBase,
+      ...(zephyrBase ? { ZEPHYR_BASE: zephyrBase } : {}),
     };
   }
 }

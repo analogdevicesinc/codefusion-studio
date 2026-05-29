@@ -17,7 +17,7 @@ Before analyzing a core dump, ensure your board and toolchain are correctly conf
 ### JTAG debug setup
 
 - Connect your board to your PC using a JLink debugger.  
-- [Install Segger J-Link drivers](../../install-jlink-drivers.md) if you haven't already.  
+- [Install Segger J-Link drivers](../../debug-drivers/install-jlink-drivers.md) if you haven't already.  
 - Review your project's `.vscode/launch.json` file to confirm your J-Link debugger settings are correct. Make sure the following values are properly configured:
 
       - `"device"`: should match your target device. For example, `MAX32690`.

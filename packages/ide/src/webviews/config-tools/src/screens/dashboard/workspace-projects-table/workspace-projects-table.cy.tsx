@@ -27,7 +27,7 @@ import {MemoryFiltering} from '../../memory-allocation/memory-filtering/memory-f
 const mock = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import CoreSummary from '../../peripheral-config/core-summary/CoreSummary';
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',

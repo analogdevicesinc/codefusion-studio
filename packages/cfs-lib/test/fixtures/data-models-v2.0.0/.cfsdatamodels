@@ -1,0 +1,11 @@
+{
+	"VERSIONED_SOC": {
+		"TEST_PKG": {
+			"version": "2.0.0",
+			"schema": "2.0.0",
+			"timestamp": "2024-06-01T00:00:00.000Z",
+			"description": "Version 2.0.0 - major update",
+			"path": "versioned-soc-2.0.0.json"
+		}
+	}
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ export const backButton: By = By.css(
 );
 
 export const pinInputBox: By = By.css(
-  "[data-test='P0_27_FREQ-P0.27-control-input']",
+  "[data-test='P3_5_FREQ-P3.5-control-input']",
 );
 
 export function accordion(name: string): By {
@@ -54,6 +54,10 @@ export function option(value: string): By {
 export function toggle(peripheral: string): By {
   return By.css(`[data-test='ENABLE-${peripheral}-span']`);
 }
+
+export const clockErrorSign: By = By.css("[data-test='clock-config-error']");
+
+export const clockConfig: By = By.css("[data-test='nav-item:clockconfig']");
 
 /**
  * Configures a clock MUX node in the UI by selecting the specified input and source option,

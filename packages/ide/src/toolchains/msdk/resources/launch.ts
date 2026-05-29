@@ -73,13 +73,6 @@ export default {
         "tbreak _exit",
       ],
       preLaunchTask: "CFS: build",
-      overrideLaunchCommands: [
-        "monitor halt",
-        "monitor reset",
-        "-target-download",
-      ],
-      overrideResetCommands: ["monitor reset"],
-      overrideRestartCommands: ["monitor reset"],
     },
     {
       name: "CFS: Debug with GDB and OpenOCD (RISC-V)",

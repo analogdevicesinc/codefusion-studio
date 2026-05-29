@@ -29,7 +29,7 @@ import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {Chip, Badge} from 'cfs-react-library';
 import ContextSearchInput from '../../../components/context-search-input/context-search-input';
 import {
-	useDiagramData,
+	useClockNodesStatus,
 	useModifiedClockNodes
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {
@@ -50,11 +50,12 @@ import {
 	useGasketOptions,
 	useStreams
 } from '../../../state/slices/gaskets/gasket.selector';
-import type {DFGStream, GasketConfig} from 'cfs-plugins-api';
+import type {GasketConfig} from 'cfs-types';
 import {getGasketDictionary} from '../../../utils/dfg';
 import {getClockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
 import {filterClockFrequencies} from '../../../utils/persistence';
 import {getSocPinDetails} from '../../../utils/soc-pins';
+import {type DFGStreamUI} from '../../../state/slices/gaskets/gasket.reducer';
 
 export type ComputedRegisters = Array<{
 	name: string;
@@ -104,7 +105,7 @@ function addToRegisterConfigs(
 export default function RegisterBody() {
 	const assignedPins = useAssignedPins();
 	const modifiedClockNodes = useModifiedClockNodes();
-	const diagramData = useDiagramData();
+	const clockNodesStatus = useClockNodesStatus();
 	const allocatedPeripherals = usePeripheralAllocations();
 	const dfgGaskets = useGasketOptions();
 	const dfgStreams = useStreams();
@@ -196,9 +197,10 @@ export default function RegisterBody() {
 
 		// Add Initialization sequences for any enabled clock nodes.
 		const clockFreqs = filterClockFrequencies(
-			diagramData,
+			clockNodesStatus,
 			getClockFrequencyDictionary()
 		);
+
 		Object.keys(clockFreqs).forEach(key => {
 			const node = Object.values(getClockNodeDictionary()).find(c =>
 				c.Outputs.find(o => o.Name === key)
@@ -260,7 +262,7 @@ export default function RegisterBody() {
 			}
 		});
 
-		dfgStreams.forEach((stream: DFGStream) => {
+		dfgStreams.forEach((stream: DFGStreamUI) => {
 			const srcNamespace = stream.Source.Gasket + ' DFGStreamConfig';
 			const srcGasket = dmGaskets[stream.Source.Gasket];
 			const srcIdx = stream.Source.Index;
@@ -405,7 +407,7 @@ export default function RegisterBody() {
 		dmGaskets,
 		allocatedPeripherals,
 		modifiedClockNodes,
-		diagramData
+		clockNodesStatus
 	]);
 
 	const computedRegisters: ComputedRegisters = useMemo(
@@ -528,14 +530,14 @@ export default function RegisterBody() {
 		getModifiedRegisters().some(m => m.name === r.name)
 	).length;
 
-	const clearSearch = () => {
+	const clearSearch = useCallback(() => {
 		dispatch(
 			setActiveSearchString({
 				searchContext: 'register',
 				value: ''
 			})
 		);
-	};
+	}, [dispatch]);
 
 	const chipClickHandler = (newFilter: 'modified' | 'unmodified') => {
 		if (newFilter === filterState.filter) {
@@ -558,19 +560,19 @@ export default function RegisterBody() {
 		}
 	};
 
-	const clearFilters = (): void => {
+	const clearFilters = useCallback((): void => {
 		setFilterState({
 			filter: undefined,
 			filteredRegisters: [],
 			filteredDetails: []
 		});
-	};
+	}, []);
 
-	const closeDetailsTable = (): void => {
+	const closeDetailsTable = useCallback((): void => {
 		clearFilters();
 		clearSearch();
 		setActiveRegister(undefined);
-	};
+	}, [clearFilters, clearSearch]);
 
 	return (
 		<>

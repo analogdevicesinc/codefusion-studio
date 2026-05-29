@@ -1,0 +1,150 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+@use '#layout' as layout;
+
+.formContainer {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-6;
+	width: 100%;
+}
+
+.formField {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	align-self: stretch;
+	border: none;
+	padding: 0;
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	--cfs-dropdown-max-width: 100%;
+	> div {
+		width: 100%;
+	}
+
+	.header {
+		display: flex;
+		gap: layout.$spacing-2;
+		align-items: center;
+		align-self: stretch;
+	}
+	.title {
+		display: flex;
+		flex: 1;
+		@include fonts.label-l2;
+		color: colors.$input-foreground;
+	}
+	.locationTitle {
+		@include fonts.label-l3;
+		color: colors.$input-foreground;
+	}
+	.optionalText {
+		@include fonts.label-l4;
+		color: colors.$description-foreground;
+	}
+	vscode-button[appearance='icon'] {
+		&::part(control) {
+			color: colors.$button-foreground;
+			background: colors.$button-background;
+			&:hover {
+				background-color: colors.$button-primary-hover-background;
+			}
+		}
+	}
+}
+
+.sizeFieldContainer {
+	display: flex;
+	width: 100%;
+
+	.sizeStepper {
+		flex: 3;
+		min-width: 0;
+
+		vscode-button[appearance='icon'] {
+			&::part(control) {
+				color: inherit;
+				background: transparent;
+				&:hover {
+					background-color: transparent;
+				}
+			}
+		}
+	}
+
+	.sizeDropdown {
+		flex: 1;
+		margin-left: 4px;
+		min-width: 0;
+		vscode-dropdown {
+			min-width: 0;
+		}
+	}
+}
+
+.radioGroupContainer {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+
+	.radioGroupLabel {
+		@include fonts.label-l2;
+		color: colors.$input-foreground;
+	}
+
+	.radioOptions {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		vscode-radio {
+			font-size: fonts.$font-size-small;
+		}
+	}
+}
+
+.customTlvSection {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-2;
+	margin-top: layout.$spacing-2;
+
+	.customTlvHeader {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+
+		.customTlvTitle {
+			@include fonts.body-b2;
+			color: colors.$input-foreground;
+		}
+	}
+}
+
+.checkboxField {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-2;
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	vscode-checkbox {
+		font-size: fonts.$font-size-m;
+	}
+}

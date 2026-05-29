@@ -7,7 +7,7 @@ export const Logger = {
     console.warn(`Warning: ${message}`);
   },
 
-  logError(message: string): void {
+  logError(message: string): never {
     throw new Error(
       `\n› The following error occurred\n› ${message}\n› See more help with --help`
     );

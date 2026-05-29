@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -10,7 +10,11 @@
 # limitations under the License.
 
 
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
+
+from cfsai_types.config.targets import UserTarget
 
 
 class OperatorInfo(BaseModel):
@@ -27,8 +31,8 @@ class OperatorInfo(BaseModel):
         description='The estimated number of cycles to perform 1 operation'
     )
     energy: float = Field(
-        alias='Energy', gt=0,
-        description='The estimated power consumption to perform 1 operation (nJ)'
+        alias='Energy', ge=0,
+        description='The estimated energy consumption to perform 1 operation (nJ)'
     )
     model_config = ConfigDict(validate_by_name=True, serialize_by_alias=True)
 
@@ -61,6 +65,11 @@ class HardwareProfile(BaseModel):
     operator_infos: list[OperatorInfo] = Field(
         alias='OperatorInfos',
         description='List of Operator descriptions'
+    )
+    target: Optional[UserTarget] = Field(
+        default=None,
+        alias='Target',
+        description='SoC, core and accelerator for target (optional family)'
     )
 
     model_config = ConfigDict(validate_by_name=True, serialize_by_alias=True)

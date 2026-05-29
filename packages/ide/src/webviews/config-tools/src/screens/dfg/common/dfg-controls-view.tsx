@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,20 +41,21 @@ export function DFGControlsView({
 	socConfig,
 	testId,
 	gasketName,
+	emptyMessage,
+	onHasErrorsChange,
 	onControlChange
-}: {
-	readonly controlsPrms: Promise<Record<string, ControlCfg[]>>;
-	readonly propertyName: string;
-	readonly fieldName?: 'Source' | 'Destinations';
-	readonly data: Record<string, string | number | boolean>;
-	readonly socConfig: ConfigFields;
-	readonly testId: string;
-	readonly gasketName?: string;
-	readonly onControlChange: (
-		field: string,
-		value: TFormFieldValue
-	) => void;
-}) {
+}: Readonly<{
+	controlsPrms: Promise<Record<string, ControlCfg[]>>;
+	propertyName: string;
+	fieldName?: 'Source' | 'Destinations';
+	data: Record<string, string | number | boolean>;
+	socConfig: ConfigFields;
+	testId: string;
+	gasketName?: string;
+	emptyMessage?: string;
+	onHasErrorsChange?: (hasErrors: boolean) => void;
+	onControlChange: (field: string, value: TFormFieldValue) => void;
+}>) {
 	const controls = use(controlsPrms);
 
 	const controlFields: ControlCfg[] = useMemo(
@@ -87,6 +88,38 @@ export function DFGControlsView({
 		[data]
 	);
 
+	const controlErrors = useMemo(
+		() =>
+			controlFields
+				.filter(control => data[control.Id] !== undefined)
+				.reduce(
+					(acc, control) =>
+						getFormErrors(acc, control, data[control.Id]),
+					{}
+				),
+		[controlFields, data]
+	);
+
+	const pluginControlErrors = useMemo(
+		() =>
+			pluginControlFields
+				.filter(control => data[control.Id] !== undefined)
+				.reduce(
+					(acc, control) =>
+						getFormErrors(acc, control, data[control.Id]),
+					{}
+				),
+		[pluginControlFields, data]
+	);
+
+	const hasErrors =
+		Object.keys(controlErrors).length > 0 ||
+		Object.keys(pluginControlErrors).length > 0;
+
+	if (hasErrors) {
+		onHasErrorsChange?.(true);
+	}
+
 	const handleControlChange = useCallback(
 		(field: string, value: TFormFieldValue) => {
 			const ctrlVal =
@@ -100,16 +133,21 @@ export function DFGControlsView({
 		[onControlChange]
 	);
 
+	if (controlFields.length === 0 && pluginControlFields.length === 0) {
+		return <div>{emptyMessage ?? ''}</div>;
+	}
+
 	return (
 		<div className={styles.dynamicFormContainer}>
-			<ControlsForm
+			{controlFields.length > 0 && <ControlsForm
 				controlFields={controlFields}
 				data={data}
 				modifiedFields={modifiedFields}
+				controlErrors={controlErrors}
 				socConfig={socConfig}
 				testId={testId}
 				onControlChange={handleControlChange}
-			/>
+			/>}
 			{pluginControlFields.length > 0 && (
 				<>
 					<Divider />
@@ -129,6 +167,7 @@ export function DFGControlsView({
 								fieldName === 'Source' ? 'SOURCE' : 'DESTINATION'
 						}}
 						modifiedFields={modifiedFields}
+						controlErrors={pluginControlErrors}
 						socConfig={socConfig}
 						testId={testId}
 						onControlChange={handleControlChange}
@@ -143,20 +182,19 @@ function ControlsForm({
 	controlFields,
 	data,
 	modifiedFields,
+	controlErrors,
 	testId,
 	socConfig,
 	onControlChange
-}: {
-	readonly controlFields: ControlCfg[];
-	readonly data: TFormData;
-	readonly modifiedFields: Record<string, boolean>;
-	readonly testId: string;
-	readonly socConfig: ConfigFields;
-	readonly onControlChange: (
-		field: string,
-		value: TFormFieldValue
-	) => void;
-}) {
+}: Readonly<{
+	controlFields: ControlCfg[];
+	data: TFormData;
+	modifiedFields: Record<string, boolean>;
+	controlErrors: Record<string, string>;
+	testId: string;
+	socConfig: ConfigFields;
+	onControlChange: (field: string, value: TFormFieldValue) => void;
+}>) {
 	const controlResetValues = useMemo(
 		() => computeDefaultValues(socConfig, controlFields),
 		[socConfig, controlFields]
@@ -172,8 +210,7 @@ function ControlsForm({
 				'boolean'
 			) {
 				if (typeof frmtdata[key] === 'string') {
-					frmtdata[key] =
-						(frmtdata[key] as string).toUpperCase() === 'TRUE';
+					frmtdata[key] = frmtdata[key].toUpperCase() === 'TRUE';
 				}
 			}
 		});
@@ -203,18 +240,6 @@ function ControlsForm({
 				modifiedFields
 			),
 		[controlFields, data, modifiedFields]
-	);
-
-	const controlErrors = useMemo(
-		() =>
-			controlFields
-				.filter(control => data[control.Id] !== undefined)
-				.reduce(
-					(acc, control) =>
-						getFormErrors(acc, control, data[control.Id]),
-					{}
-				),
-		[controlFields, data]
 	);
 
 	const components = useMemo(() => {

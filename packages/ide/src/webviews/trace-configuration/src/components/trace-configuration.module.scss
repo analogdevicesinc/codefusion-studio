@@ -1,0 +1,58 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.container {
+	height: 100vh;
+}
+
+.main {
+	padding: layout.$spacing-9 layout.$spacing-9 0 layout.$spacing-9;
+}
+
+.configurationWrapper {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-9;
+	max-width: layout.$main-width;
+	margin: 0 auto;
+}
+
+.activeRecordingBox {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+	padding: layout.$spacing-3;
+	border: 0.5px solid colors.$default-border;
+	border-radius: layout.$border-radius-1;
+
+	.warningIcon {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.activeRecordingText {
+		@include fonts.body-b2;
+	}
+
+	.stopTraceButton {
+		white-space: nowrap;
+		min-width: max-content;
+	}
+}

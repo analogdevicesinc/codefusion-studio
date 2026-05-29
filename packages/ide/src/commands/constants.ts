@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ export const GET_CONTEXT_COMMAND_ID = "cfs.getContext";
 export const OPEN_CONFIG_TOOLS_GETTING_STARTED_COMMAND_ID =
   "cfs.openConfigToolsGettingStarted";
 export const OPEN_HOME_PAGE_COMMAND_ID = "cfs.openHomePage";
+export const OPEN_TRACE_CONFIGURATION_COMMAND_ID = "cfs.openTraceConfiguration";
 export const OPEN_SYSTEM_PLANNER_COMMAND_ID = "cfs.openSystemPlanner";
 export const OPEN_ONLINE_DOCUMENTATION_COMMAND_ID =
   "cfs.openOnlineDocumentation";
@@ -71,6 +72,9 @@ export const SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID =
   "cfs.systemPlanner.showAtStartup";
 export const OPEN_DISASSEMBLY_COMMAND_ID = "cfs.openDisassemblyView";
 export const OPEN_WITH_SSPLUS_COMMAND_ID = "cfs.explorer.openWithSSPlus";
+export const OPEN_REPORT_FILE_COMMAND_ID = "cfs.openAIReportFile";
+export const SHOW_AI_PROFILING_VIEW_AT_STARTUP_COMMAND_ID =
+  "cfs.showAiProfilingViewAtStartup";
 
 // MCP Server Commands
 export const START_MCP_SERVER_COMMAND_ID = "cfs.mcp.startServer";
@@ -108,7 +112,7 @@ export const DEBUG_CONFIGURE_COMMAND_ID = "workbench.action.debug.configure";
 export const TASK_CONFIGURE_COMMAND_ID =
   "workbench.action.tasks.configureTaskRunner";
 export const RUN_DEFAULT_BUILD_TASKS_COMMAND_ID = "cfs.runDefaultBuildTasks";
-
+export const PROJECT_TOOLCHAIN_PATH_COMMAND_ID = "cfs.getToolchainPath";
 export const CONFIG_TOOLS_COMMANDS = {
   LOAD_CONFIG_FILE: "cfgtools.loadConfig",
   VIEW_CONFIG_FILE_SOURCE: "cfgtools.viewConfigFileSource",
@@ -120,6 +124,7 @@ export const ELF_EXPLORER_COMMANDS = {
 
 export const WORKSPACE_CREATION_COMMANDS = {
   NEW_WORKSPACE: "cfs.newWorkspace",
+  NEW_MODEL_WORKSPACE: "cfs.newModelWorkspace",
   OPEN_CFS_WORKSPACE_COMMAND_ID: "cfs.openCfsWorkspace",
   CONFIG_CFS_WORKSPACE_COMMAND_ID: "cfs.configCfsWorkspace",
   LOAD_CONFIG_FILE: "cfs.loadWorkspaceConfig",
@@ -130,17 +135,12 @@ export const WORKSPACE_CREATION_COMMANDS = {
 export const PACKAGE_MANAGER_COMMANDS = {
   INSTALL_PACKAGE: "cfs.installPackage",
   UNINSTALL_PACKAGE: "cfs.uninstallPackage",
+  DELETE_PACKAGE: "cfs.deletePackage",
   MANAGE_REMOTES: "cfs.manageRemotes",
   ADD_REMOTE: "cfs.addRemote",
   REMOVE_REMOTE: "cfs.removeRemote",
   AUTH_REMOTE: "cfs.authRemote",
 };
-
-// Zephelin Commands
-export const ZEPHELIN_COMMANDS = {
-  CAPTURE_PROFILER_TRACE: "cfs.zephelin.captureProfilerTrace",
-  CONVERT_TRACE_CTF_TO_TEF: "cfs.zephelin.convertTraceCtfToTef",
-} as const;
 
 // Cloud Catalog Auth
 export const CLOUD_CATALOG_AUTH = {

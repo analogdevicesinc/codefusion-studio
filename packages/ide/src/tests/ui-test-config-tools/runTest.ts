@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,28 +29,37 @@ async function main() {
     process.env.SETTINGS_PATH ?? path.join(EXTENSIONS_DIR, "settings.json");
 
   const isWin = process.platform === "win32";
+  const projectPluginFixturesPath = path.resolve(
+    process.cwd(),
+    "src",
+    "tests",
+    "fixtures",
+    "plugins",
+    "project",
+  );
 
   try {
-    let pluginsPath = path.resolve(
+    let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+    let dfgsocsPath = path.resolve(
       process.cwd(),
-      "..",
-      "..",
-      "submodules",
-      "cfs-plugins",
-      "plugins",
-      "dist",
+      "src",
+      "tests",
+      "ui-test-config-tools",
+      "dfg-data-model",
+      "socs",
     );
 
-    let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+    let pluginsPath = projectPluginFixturesPath;
 
     if (isWin) {
       pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
       socsPath = socsPath.replace(/\\/g, "\\\\");
+      dfgsocsPath = dfgsocsPath.replace(/\\/g, "\\\\");
     }
 
     await fs.promises.writeFile(
       settingsPath,
-      `{"cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"], "cfs.sdk.path": "some/fake/path", "cfs.telemetry.enable": false}`,
+      `{"cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}","${dfgsocsPath}"], "cfs.sdk.path": "some/fake/path", "cfs.telemetry.enable": false}`,
       "utf-8",
     );
 
@@ -60,6 +69,7 @@ async function main() {
 
     await tester.setupAndRunTests(
       path.resolve(__dirname, "**/*.test.js"),
+
       "max",
       {
         useYarn: false,

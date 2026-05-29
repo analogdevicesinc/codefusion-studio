@@ -37,34 +37,26 @@ To render available SoCs in the Workspace Creation Wizard, the IDE requires a va
 
 You can configure the catalog in one of two ways:
 
-1. [Extract the catalog from the CodeFusion Studio SDK](#extract-the-catalog-from-the-codefusion-studio-sdk).
-2. [Build the catalog manually](#build-the-catalog-manually).
+1. [Online: the catalog is downloaded from the server](#online-the-catalog-is-downloaded-from-the-server).
+2. [Offline: the catalog is extracted from a zip file](#offline-the-catalog-is-extracted-from-a-zip-file).
 
-#### Extract the catalog from the CodeFusion Studio SDK
+#### Online: the catalog is downloaded from the server
+
+[Update the catalog settings in VS Code](#update-the-catalog-settings-in-vs-code) and make sure checking online for updates is enabled. The URL specified in `CFS_API_URL` will be used to download the catalog.  Some catalog content is only available while authenticated.
+
+#### Offline: the catalog is extracted from a zip file
 
 - Download the [VS Code SDK](../../docs/user-guide/installation/install-cfs.md).
-- The catalog is available at: `CFS_INSTALL_DIR/Data/Soc/catalog.zip`.
+- The zip file is available at: `CFS_INSTALL_DIR/Data/Soc/catalog.zip`.
 - At runtime, the IDE extracts this archive to: `<userHome>/cfs/<version>/.catalog`.
 
-To use a local version, extract `catalog.zip` manually and [update the catalog settings in VS Code](#update-the-catalog-settings-in-vs-code).
-
-#### Build the catalog manually
-
-You can build the SoC catalog from source using the following command:
-
-```bash
-yarn ws:ccm-lib build
-```
-
-The output is located at `packages/cfs-ccm-lib/dist/catalog`.
-
-To ensure the IDE uses your local build, [update the catalog settings in VS Code](#update-the-catalog-settings-in-vs-code).
+To use a local version, replace `CFS_INSTALL_DIR/Data/Soc/catalog.zip` with a zip file provided to you (or extracted from another SDK) and [update the catalog settings in VS Code](#update-the-catalog-settings-in-vs-code) to disable checking for updates online.  Then delete the directory `<userHome>/cfs/<version>/.catalog` and restart the IDE.
 
 #### Update the catalog settings in VS Code
 
 1. Open VS Code Settings (`Cmd+,` on macOS, or `Ctrl+,` on Windows/Linux).
 2. Search for `catalogManager`.
-3. Set `catalogManager.catalogLocation` to the extracted or built directory.
+3. Set `catalogManager.catalogLocation` to change the location the catalog is downloaded or extracted to.
 4. Disable `checkForUpdates` to avoid errors when working offline or with local `.catalog` copies.
 5. Verify the following settings:
 
@@ -79,37 +71,13 @@ To load workspace templates, CodeFusion Studio must discover valid plugins. Thes
 
 #### Clone and build plugins
 
-##### Option 1: Use the `submodules/` directory
-
-1. From the root of the CFS repository, initialize the submodule:
-
-```bash
-git submodule update --init --recursive
-```
-
-2. Install dependencies:
-
-```bash
-cd submodules/cfs-plugins
-yarn install
-```
-
-3. Build the plugins:
-
-```bash
-yarn build
-```
-
-##### Option 2: Clone the CFS plugin repository
-
-If you're not using submodules:
+Clone the CFS plugin repository to a location of your choice:
 
 ```bash
 git clone https://github.com/analogdevicesinc/cfs-plugins.git ~/cfs-plugins
 cd ~/cfs-plugins
 yarn install
 yarn build
-
 ```
 
 > To learn about creating or modifying plugins, see the [CFS Plugins development guide](https://github.com/analogdevicesinc/cfs-plugins/blob/main/DEVELOPMENT.md).
@@ -122,7 +90,7 @@ In VS Code **Settings**, search for `cfs.plugins.searchDirectories` and update t
 
 ```json
 "cfs.plugins.searchDirectories": [
-  "/your/path/to/cfs-plugins/dist"
+  "/your/path/to/cfs-plugins/plugins/dist"
 ]
 ```
 

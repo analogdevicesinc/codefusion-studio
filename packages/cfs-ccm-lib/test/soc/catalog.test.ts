@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,11 @@ import {
     LIB_NAME,
     LIB_VERSION,
 } from '../../src/config/constants.cjs';
+
+import {
+    verifyZip,
+    getAndVerifyCatalog,
+} from '../catalog-test-utils.js';
 
 use(chaiAsPromised);
 
@@ -373,8 +378,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -405,8 +435,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -442,8 +489,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -474,8 +538,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -511,8 +600,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -543,8 +657,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -580,8 +711,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -612,8 +768,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -681,8 +854,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -749,8 +939,33 @@ const setupTestData = () => {
                                 // nil supportsTrustZone
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -790,8 +1005,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                         myNewProperty: 'myNewValue',
@@ -823,11 +1063,294 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                         myNewProperty: 'myNewValue',
+                    },
+                ],
+            ],
+        ],
+        [
+            'with_access_tags', // data with accessTag fields
+            [
+                [
+                    'soc1Id',
+                    {
+                        id: 'soc1Id',
+                        name: 'soc1Name',
+                        description: 'soc1Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc1Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                            },
+                        ],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        documentation: [],
+                        media: [],
+                        accessTag: {
+                            read: ['foo'],
+                            write: ['bar', 'baz'],
+                        },
+                    },
+                ],
+                [
+                    'soc2Id',
+                    {
+                        id: 'soc2Id',
+                        name: 'soc2Name',
+                        description: 'soc2Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc2Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                            },
+                        ],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        documentation: [],
+                        media: [],
+                        accessTag: {
+                            read: ['foo', 'bar'],
+                            write: ['baz'],
+                        },
+                    },
+                ],
+            ],
+        ],
+        [
+            'with_deep_access_tags', // data with accessTag fields in nested objects
+            [
+                [
+                    'soc1Id',
+                    {
+                        id: 'soc1Id',
+                        name: 'soc1Name',
+                        description: 'soc1Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc1Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                                accessTag: {
+                                    read: ['abc'],
+                                    write: [],
+                                },
+                            },
+                        ],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                                accessTag: {
+                                    read: ['foo', 'bar'],
+                                    write: ['baz'],
+                                },
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                                accessTag: {
+                                    read: ['foo', 'bar'],
+                                    write: ['baz'],
+                                },
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                                accessTag: {
+                                    read: ['foo', 'bar'],
+                                    write: ['baz'],
+                                },
+                            },
+                        ],
+                        documentation: [],
+                        media: [],
+                        accessTag: {
+                            read: ['foo'],
+                            write: ['bar', 'baz'],
+                        },
+                    },
+                ],
+                [
+                    'soc2Id',
+                    {
+                        id: 'soc2Id',
+                        name: 'soc2Name',
+                        description: 'soc2Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc2Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                                accessTag: {
+                                    read: [],
+                                    write: ['def'],
+                                },
+                            },
+                        ],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                                accessTag: {
+                                    read: ['foo', 'bar'],
+                                    write: ['baz'],
+                                },
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                                accessTag: {
+                                    read: ['foo', 'bar'],
+                                    write: ['baz'],
+                                },
+                            },
+                        ],
+                        documentation: [],
+                        media: [],
+                        accessTag: {
+                            read: ['foo', 'bar'],
+                            write: ['baz'],
+                        },
                     },
                 ],
             ],
@@ -861,8 +1384,82 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        documentation: [],
+                        media: [],
+                    },
+                ],
+                [
+                    'soc2Id',
+                    {
+                        id: 'soc2Id',
+                        name: 'soc2Name',
+                        description: 'soc2Desc',
+                        family: {
+                            id: 'familyId',
+                            name: 'familyName',
+                        },
+                        cores: [
+                            {
+                                id: 'core0',
+                                name: 'coreName',
+                                primary: false,
+                                socID: 'soc2Id',
+                                coreType: {
+                                    architecture: 'arch',
+                                    description: 'desc',
+                                    id: 'id',
+                                    isa: 'isa',
+                                },
+                                extensions: ['ext'],
+                                dataModelCoreID: 'CM0',
+                            },
+                        ],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -893,8 +1490,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -930,8 +1552,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -962,8 +1609,25 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1'],
+                                socID: 'soc2Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc2Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1031,8 +1695,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1068,8 +1757,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1105,8 +1819,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1142,8 +1881,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1179,8 +1943,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1216,8 +2005,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                     },
@@ -1253,8 +2067,33 @@ const setupTestData = () => {
                                 dataModelCoreID: 'CM0',
                             },
                         ],
-                        boards: [],
-                        packages: [],
+                        boards: [
+                            {
+                                description: 'board1Desc',
+                                id: 'board1',
+                                name: 'board1Name',
+                                packageIDs: ['package1', 'package2'],
+                                socID: 'soc1Id',
+                            },
+                        ],
+                        packages: [
+                            {
+                                dataModelPackageID: `DMPID1`,
+                                description: 'package1Desc',
+                                id: 'package1',
+                                name: 'package1Name',
+                                packageType: 'WLP',
+                                socID: 'soc1Id',
+                            },
+                            {
+                                dataModelPackageID: `DMPID2`,
+                                description: 'package2Desc',
+                                id: 'package2',
+                                name: 'package2Name',
+                                packageType: 'CSBGA',
+                                socID: 'soc1Id',
+                            },
+                        ],
                         documentation: [],
                         media: [],
                         foo: {
@@ -1331,22 +2170,13 @@ const mockApiData = (response: string): StoreItem[] => {
     return _.cloneDeep(data).map(([, itm]) => itm);
 };
 
-// setup the nock scope routes/methods to list and get SoCs
+// setup the nock scope routes/methods to list SoCs
 const setupNockMocks = (scope: nock.Scope, socData: StoreItem[]) => {
     scope
         .get(`/socs?cfsVersion=${LIB_VERSION}`) // get list of SoCs
         .reply(200, {
-            items: socData.map((soc) => ({
-                id: soc.id,
-                name: soc.name,
-                description: soc.description,
-            })),
+            items: socData,
         });
-    socData.forEach((soc: StoreItem) => {
-        scope
-            .get(`/socs/${soc.id}?cfsVersion=${LIB_VERSION}`) // get a specific SoC
-            .reply(200, { item: soc });
-    });
 };
 
 describe('SocCatalog tests', async () => {
@@ -1397,6 +2227,10 @@ describe('SocCatalog tests', async () => {
     let updatedOnlineCatalogStore: () => MockDataStore;
     let updatedOfflineCatalog: SocCatalog;
     let updatedOfflineCatalogStore: () => MockDataStore;
+    let updatedOnlineCatalogWithAccessTags: SocCatalog;
+    let updatedOnlineCatalogWithAccessTagsStore: () => MockDataStore;
+    let updatedOfflineCatalogWithAccessTags: SocCatalog;
+    let updatedOfflineCatalogWithAccessTagsStore: () => MockDataStore;
 
     let nockScope: nock.Scope;
     const nockListener = (req: { options: RequestOptions }) => {
@@ -1476,6 +2310,22 @@ describe('SocCatalog tests', async () => {
             directory: 'extra_prop',
         }); // no api client for offline
         updatedOfflineCatalogStore = primaryCatalogStore; // closure to call later to get the data from the MockDataStore
+
+        updatedOnlineCatalogWithAccessTags = new SocCatalog(
+            {
+                ...catalogDefaults,
+                directory: 'with_deep_access_tags',
+            },
+            new CfsApiClient(apiOptions),
+        );
+        updatedOnlineCatalogWithAccessTagsStore = primaryCatalogStore;
+
+        updatedOfflineCatalogWithAccessTags = new SocCatalog({
+            ...catalogDefaults,
+            directory: 'with_deep_access_tags',
+        }); // no api client for offline
+        updatedOfflineCatalogWithAccessTagsStore =
+            primaryCatalogStore;
 
         // Check the catalogs are setup correctly
         await expect(
@@ -1796,18 +2646,46 @@ describe('SocCatalog tests', async () => {
                             mockApiData(test.dataKey),
                         );
 
-                        await expect(populatedOnlineCatalog.refresh())
-                            .to.eventually.be.rejectedWith(
-                                CatalogError,
-                            )
-                            .that.satisfies((err: CatalogError) =>
-                                err.type === 'INVALID_CONTENTS' &&
-                                test.zodErrors > 0
-                                    ? err.cause instanceof ZodError &&
-                                      err.cause.errors.length ===
-                                          test.zodErrors
-                                    : true,
+                        if (test.dataKey === 'duplicate_id') {
+                            // the rest client will de-duplicate entries from the server with the same ID
+                            // so this should not cause an error
+                            await expect(
+                                populatedOnlineCatalog.refresh(),
+                            ).to.eventually.be.fulfilled;
+
+                            // and the catalog should contain the (valid) de-duplicated data
+                            await getAndVerifyCatalog(
+                                populatedOnlineCatalog,
+                                mockApiData('valid'),
                             );
+                        } else {
+                            await expect(
+                                populatedOnlineCatalog.refresh(),
+                            )
+                                .to.eventually.be.rejectedWith(
+                                    CatalogError,
+                                )
+                                .that.satisfies(
+                                    (err: CatalogError) => {
+                                        if (
+                                            err.type !==
+                                            'INVALID_CONTENTS'
+                                        ) {
+                                            return false;
+                                        }
+                                        if (test.zodErrors > 0) {
+                                            return (
+                                                err.cause instanceof
+                                                    ZodError &&
+                                                err.cause.errors
+                                                    .length ===
+                                                    test.zodErrors
+                                            );
+                                        }
+                                        return true;
+                                    },
+                                );
+                        }
                     });
                 });
             });
@@ -1847,6 +2725,42 @@ describe('SocCatalog tests', async () => {
                 ).to.deep.equal(mockApiData('extra_prop'));
 
                 // but output should not have the unknown key
+                await getAndVerifyCatalog(
+                    populatedOnlineCatalog,
+                    mockApiData('valid'),
+                );
+            });
+
+            it('should strip accessTag fields', async function () {
+                await expect(populatedOnlineCatalog.updateAvailable())
+                    .to.eventually.be.false;
+
+                setupNockMocks(
+                    nockScope,
+                    mockApiData('with_access_tags'),
+                );
+
+                await populatedOnlineCatalog.refresh();
+
+                // output should not have accessTag fields
+                await getAndVerifyCatalog(
+                    populatedOnlineCatalog,
+                    mockApiData('valid'),
+                );
+            });
+
+            it('should strip accessTag fields in nested objects', async function () {
+                await expect(populatedOnlineCatalog.updateAvailable())
+                    .to.eventually.be.false;
+
+                setupNockMocks(
+                    nockScope,
+                    mockApiData('with_deep_access_tags'),
+                );
+
+                await populatedOnlineCatalog.refresh();
+
+                // output should not have accessTag fields
                 await getAndVerifyCatalog(
                     populatedOnlineCatalog,
                     mockApiData('valid'),
@@ -2053,17 +2967,28 @@ describe('SocCatalog tests', async () => {
                                             .that.satisfies(
                                                 (
                                                     err: CatalogError,
-                                                ) =>
-                                                    err.type ===
-                                                        'INVALID_CONTENTS' &&
-                                                    test.zodErrors > 0
-                                                        ? err.cause instanceof
-                                                              ZodError &&
-                                                          err.cause
-                                                              .errors
-                                                              .length ===
-                                                              test.zodErrors
-                                                        : true,
+                                                ) => {
+                                                    if (
+                                                        err.type !==
+                                                        'INVALID_CONTENTS'
+                                                    ) {
+                                                        return false;
+                                                    }
+                                                    if (
+                                                        test.zodErrors >
+                                                        0
+                                                    ) {
+                                                        return (
+                                                            err.cause instanceof
+                                                                ZodError &&
+                                                            err.cause
+                                                                .errors
+                                                                .length ===
+                                                                test.zodErrors
+                                                        );
+                                                    }
+                                                    return true;
+                                                },
                                             );
                                     });
                                 },
@@ -2099,6 +3024,16 @@ describe('SocCatalog tests', async () => {
                     const soc = await catalog.get('soc1Id');
                     expect(soc).to.not.have.property('myNewProperty');
                 });
+
+                it('should not output accessTags', async function () {
+                    const catalog = online
+                        ? updatedOnlineCatalogWithAccessTags
+                        : updatedOfflineCatalogWithAccessTags;
+                    const soc = await catalog.get('soc1Id');
+                    expect(soc).to.not.have.deep.property(
+                        'accessTag',
+                    );
+                });
             });
 
             describe('getAll', function () {
@@ -2125,8 +3060,21 @@ describe('SocCatalog tests', async () => {
                     const socs = await catalog.getAll();
                     expect(socs).to.be.an('array').that.is.not.empty;
                     socs.forEach((soc) => {
-                        expect(soc).to.not.have.property(
+                        expect(soc).to.not.have.deep.property(
                             'myNewProperty',
+                        );
+                    });
+                });
+
+                it('should not output accessTags', async function () {
+                    const catalog = online
+                        ? updatedOnlineCatalogWithAccessTags
+                        : updatedOfflineCatalogWithAccessTags;
+                    const socs = await catalog.getAll();
+                    expect(socs).to.be.an('array').that.is.not.empty;
+                    socs.forEach((soc) => {
+                        expect(soc).to.not.have.deep.property(
+                            'accessTag',
                         );
                     });
                 });
@@ -2321,14 +3269,20 @@ describe('SocCatalog tests', async () => {
                             .to.eventually.be.rejectedWith(
                                 CatalogError,
                             )
-                            .that.satisfies((err: CatalogError) =>
-                                err.type === 'INVALID_CONTENTS' &&
-                                test.zodErrors > 0
-                                    ? err.cause instanceof ZodError &&
-                                      err.cause.errors.length ===
-                                          test.zodErrors
-                                    : true,
-                            );
+                            .that.satisfies((err: CatalogError) => {
+                                if (err.type !== 'INVALID_CONTENTS') {
+                                    return false;
+                                }
+                                if (test.zodErrors > 0) {
+                                    return (
+                                        err.cause instanceof
+                                            ZodError &&
+                                        err.cause.errors.length ===
+                                            test.zodErrors
+                                    );
+                                }
+                                return true;
+                            });
                     });
                 });
             });
@@ -2389,8 +3343,8 @@ describe('SocCatalog tests', async () => {
                     // export the catalog and verify the zip file
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'),
                         mockMetaData.get('valid'),
                     );
@@ -2419,8 +3373,8 @@ describe('SocCatalog tests', async () => {
                     });
                     await fs.writeFile(zipFilePath, zipData);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('extra_entry'),
                         mockMetaData.get('extra_entry'),
                     );
@@ -2429,8 +3383,8 @@ describe('SocCatalog tests', async () => {
                     // has the default valid catalog data, not the previous zip contents
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'),
                         mockMetaData.get('valid'),
                     );
@@ -2462,8 +3416,8 @@ describe('SocCatalog tests', async () => {
                     // has the default valid catalog data ...
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'),
                         mockMetaData.get('valid'),
                     );
@@ -2498,8 +3452,8 @@ describe('SocCatalog tests', async () => {
                     await getAndVerifyCatalog(catalog, []); // make sure the catalog is empty
                     await verifyZip(
                         // make sure the exported catalog is empty
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         [],
                         undefined, // no metadata
                     );
@@ -2517,8 +3471,8 @@ describe('SocCatalog tests', async () => {
                     // export the catalog and verify the zip file
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'),
                         mockMetaData.get('valid'),
                     );
@@ -2602,9 +3556,38 @@ describe('SocCatalog tests', async () => {
                     // export the catalog and verify the zip file
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'), // zip file should not have the extra keys
+                        mockMetaData.get('valid'),
+                    );
+                });
+
+                it('should not export accessTags', async function () {
+                    const catalog = online
+                        ? updatedOnlineCatalogWithAccessTags
+                        : updatedOfflineCatalogWithAccessTags;
+                    const zipFilePath: string = path.join(
+                        testStorageDir!,
+                        'export.zip',
+                    );
+                    // verify catalog data store contains the access tags
+                    expect(
+                        await (
+                            online
+                                ? updatedOnlineCatalogWithAccessTagsStore()
+                                : updatedOfflineCatalogWithAccessTagsStore()
+                        ).list(),
+                    ).to.deep.equal(
+                        mockApiData('with_deep_access_tags'), // catalog contains accessTags
+                        'data store does not contain expected access tags',
+                    );
+                    // export the catalog and verify the zip file
+                    await catalog.export(zipFilePath);
+                    await verifyZip(
+                        catalog,
+                        zipFilePath,
+                        mockApiData('valid'), // zip file should not have accessTags
                         mockMetaData.get('valid'),
                     );
                 });
@@ -2627,8 +3610,8 @@ describe('SocCatalog tests', async () => {
                     // export the catalog and verify the zip file
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         [], // empty catalog
                         mockMetaData.get('valid'), // zip file should not have the extra key
                     );
@@ -2656,16 +3639,24 @@ describe('SocCatalog tests', async () => {
                                     CatalogError,
                                 )
                                 .that.satisfies(
-                                    (err: CatalogError) =>
-                                        err.type ===
-                                            'INVALID_CONTENTS' &&
-                                        test.zodErrors > 0
-                                            ? err.cause instanceof
-                                                  ZodError &&
-                                              err.cause.errors
-                                                  .length ===
-                                                  test.zodErrors
-                                            : true,
+                                    (err: CatalogError) => {
+                                        if (
+                                            err.type !==
+                                            'INVALID_CONTENTS'
+                                        ) {
+                                            return false;
+                                        }
+                                        if (test.zodErrors > 0) {
+                                            return (
+                                                err.cause instanceof
+                                                    ZodError &&
+                                                err.cause.errors
+                                                    .length ===
+                                                    test.zodErrors
+                                            );
+                                        }
+                                        return true;
+                                    },
                                 );
                             expect(existsSync(zipFilePath)).to.be
                                 .false;
@@ -2757,8 +3748,8 @@ describe('SocCatalog tests', async () => {
                     await fs.writeFile(zipFilePath, zipData);
 
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         [],
                         mockMetaData.get('updated'),
                     );
@@ -2793,8 +3784,8 @@ describe('SocCatalog tests', async () => {
                     // export the catalog
                     await catalog.export(zipFilePath);
                     await verifyZip(
+                        catalog,
                         zipFilePath,
-                        catalog.ZIP_FILE_MEMBER,
                         mockApiData('valid'),
                         mockMetaData.get('valid'),
                     );
@@ -3035,16 +4026,24 @@ describe('SocCatalog tests', async () => {
                                         CatalogError,
                                     )
                                     .that.satisfies(
-                                        (err: CatalogError) =>
-                                            err.type ===
-                                                'INVALID_CONTENTS' &&
-                                            test.zodErrors > 0
-                                                ? err.cause instanceof
-                                                      ZodError &&
-                                                  err.cause.errors
-                                                      .length ===
-                                                      test.zodErrors
-                                                : true,
+                                        (err: CatalogError) => {
+                                            if (
+                                                err.type !==
+                                                'INVALID_CONTENTS'
+                                            ) {
+                                                return false;
+                                            }
+                                            if (test.zodErrors > 0) {
+                                                return (
+                                                    err.cause instanceof
+                                                        ZodError &&
+                                                    err.cause.errors
+                                                        .length ===
+                                                        test.zodErrors
+                                                );
+                                            }
+                                            return true;
+                                        },
                                     );
                             });
                         },
@@ -3243,6 +4242,48 @@ describe('SocCatalog tests', async () => {
                         'data store does not contain extra keys',
                     );
                     // although the extra keys are not returned in the output
+                    await getAndVerifyCatalog(
+                        catalog,
+                        mockApiData('valid'),
+                    );
+                });
+
+                it('should not import accessTags', async function () {
+                    const catalog = online
+                        ? emptyOnlineCatalog
+                        : emptyOfflineCatalog;
+
+                    const zipFilePath: string = path.join(
+                        testStorageDir!,
+                        'import.zip',
+                    );
+
+                    // create a zip file with the SoC test data
+                    const zip = new JSZip();
+                    const data = JSON.stringify({
+                        soc: mockApiData('with_deep_access_tags'),
+                    });
+                    zip.file(catalog.ZIP_FILE_MEMBER, data);
+                    const zipData = await zip.generateAsync({
+                        type: 'nodebuffer',
+                        streamFiles: true,
+                    });
+                    await fs.writeFile(zipFilePath, zipData);
+
+                    // import the zip file
+                    await catalog.import(zipFilePath);
+
+                    expect(
+                        await (
+                            online
+                                ? emptyOnlineCatalogStore()
+                                : emptyOfflineCatalogStore()
+                        ).list(),
+                    ).to.deep.equal(
+                        mockApiData('with_deep_access_tags'), // catalog data store contains accessTags
+                        'data store does not contain expected access tags',
+                    );
+                    // although the accessTags are not returned in the output
                     await getAndVerifyCatalog(
                         catalog,
                         mockApiData('valid'),
@@ -3470,45 +4511,4 @@ describe('SocCatalog tests', async () => {
             runTests(false);
         });
     });
-
-    /*
-     * Helper functions
-     */
-    async function verifyZip(
-        zipFilePath: string,
-        zipFileMember: string,
-        expectedSocs: unknown[],
-        expectedMetadata?: unknown,
-    ): Promise<void> {
-        // check that the zipfile entry contains what we expect
-        const zip = new JSZip();
-        const zipData = await zip.loadAsync(fs.readFile(zipFilePath));
-
-        expect(zipData.files).to.have.property(zipFileMember);
-        const data: unknown = JSON.parse(
-            await zipData.files[zipFileMember].async('string'),
-        );
-        expect(data, 'zip file contents not as expected')
-            .to.have.property('soc')
-            .that.deep.equals(expectedSocs);
-
-        if (expectedMetadata) {
-            expect(data, 'zip file metadata not as expected')
-                .to.have.property('metadata')
-                .that.deep.equals(expectedMetadata);
-        } else {
-            expect(data).to.not.have.property('metadata');
-        }
-    }
-
-    async function getAndVerifyCatalog(
-        socCatalog: SocCatalog,
-        expectedSocs: unknown[],
-    ): Promise<void> {
-        const socList = await socCatalog.getAll();
-        expect(
-            socList,
-            'catalog did not return expected contents',
-        ).to.deep.equal(expectedSocs);
-    }
 });

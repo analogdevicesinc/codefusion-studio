@@ -13,7 +13,7 @@
  *
  */
 
-import {
+import type {
     MiddlewareCallbackParams,
     MiddlewareOnRequest,
     MiddlewareOnResponse,

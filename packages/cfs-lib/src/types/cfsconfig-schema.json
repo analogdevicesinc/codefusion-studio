@@ -8,13 +8,14 @@
 			"type": "string",
 			"description": "Copyright notice for this file"
 		},
+		"SchemaVersion" : {
+			"description" : "The version number of this cfsconfig schema.",
+			"type" : "string",
+			"const" : "2.1.0"
+		},
 		"DataModelVersion": {
 			"type": "string",
 			"description": "Version of the data model used for this file"
-		},
-		"DataModelSchemaVersion": {
-			"type": "string",
-			"description": "Version of the schema of the data model"
 		},
 		"Soc": {
 			"type": "string",
@@ -428,6 +429,7 @@
 	"additionalProperties": false,
 	"required": [
 		"Copyright",
+		"SchemaVersion",
 		"DataModelVersion",
 		"Soc",
 		"Package",

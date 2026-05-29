@@ -13,11 +13,13 @@
  *
  */
 
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 
 import {Command, Flags} from '@oclif/core';
-import {CfsFeatureScope} from 'cfs-lib';
+import {CfsFeatureScopeValues} from 'cfs-lib';
 
+import {getDataModelManager} from '../../utils/data-model-manager.js';
+import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 
@@ -79,7 +81,7 @@ export default class PluginList extends Command {
     service: Flags.string({
       summary: 'Filter results by service type',
       helpValue: 'service',
-      options: Object.values(CfsFeatureScope)
+      options: [...CfsFeatureScopeValues]
     }),
     'config-options': Flags.boolean({
       summary:
@@ -92,7 +94,15 @@ export default class PluginList extends Command {
     const packageManager = await getPackageManager({
       acceptUndefined: true
     });
+
+    const dmManager = await getDataModelManager(
+      this.config,
+      packageManager,
+      flags['search-path']
+    );
+
     const pluginManager = getPluginManager(
+      dmManager,
       flags['search-path'],
       packageManager
     );
@@ -128,8 +138,14 @@ export default class PluginList extends Command {
       return true;
     };
 
-    const pluginListInfo =
-      await pluginManager.getPluginsInfoList(filter);
+    let pluginListInfo;
+
+    try {
+      pluginListInfo = await pluginManager.getPluginsInfoList(filter);
+    } catch (error) {
+      handleMissingDependencyError(error);
+      throw error;
+    }
 
     if (Array.isArray(pluginListInfo) && pluginListInfo.length > 0) {
       for (let index = 0; index < pluginListInfo.length; index++) {

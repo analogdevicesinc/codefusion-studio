@@ -42,7 +42,8 @@ describe("Workspace MAX32690 creation", () => {
     try {
       if (view) await view.switchBack();
       await UIUtils.sleep(2000);
-      if (workbench) await workbench.executeCommand("view: close all editors");
+      if (workbench)
+        await workbench.executeCommand("View: Revert and Close Editor");
       await UIUtils.sleep(2000);
     } catch (error) {
       console.error("Error in after() hook:", error);
@@ -88,11 +89,7 @@ describe("Workspace MAX32690 creation", () => {
 
     expect(socName).to.include(TextData.socNameSelect);
 
-    console.log("Clicked on radiobuttonsoc");
-
     await UIUtils.clickElement(view, locatorspath.continueButton);
-
-    console.log("Clicked on continue button");
 
     // EVKit Selection Screen
 
@@ -110,23 +107,20 @@ describe("Workspace MAX32690 creation", () => {
     expect(kitName).to.include(TextData.evKitText);
 
     await UIUtils.clickElement(view, locatorspath.kitSelect("EvKit_V1___TQFN"));
-    console.log("Clicked on kitselect");
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
-    console.log("Clicked on continue button");
 
     // Predefined template option already selected TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE
     console.log("TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE");
     await UIUtils.sleep(2000);
 
     await UIUtils.clickElement(view, locatorspath.continueButton, 5000);
-    console.log("Clicked on continue button for predefined template");
 
     // Plugin Selection Screen
     console.log("PLUGIN SELECTION SCREEN");
     const blinkyTemplate = await UIUtils.dataTest(
       view,
-      "templateSelection:card:com.analog.zephyr.workspace.blinky",
+      "templateSelection:card:mock.workspace.blinky",
     );
     console.log("Found blinky template");
     // Scroll plugins cards into view
@@ -136,17 +130,12 @@ describe("Workspace MAX32690 creation", () => {
     );
     const templateName = await blinkyTemplate.getAttribute("id");
     console.log("Template name:", templateName);
-    expect(templateName).to.include("com.analog.zephyr.workspace.blinky");
+    expect(templateName).to.include("mock.workspace.blinky");
 
     await UIUtils.clickElement(view, blinkyTemplate);
-    console.log("Clicked on blinky template");
     await UIUtils.sleep(3000);
 
-    await UIUtils.clickElement(
-      view,
-      By.xpath('//*[@id="root"]/div/div[3]/div/div/vscode-button[2]'),
-    );
-    console.log("Clicked on continue button for template");
+    await UIUtils.clickElement(view, locatorspath.continueButton);
 
     const pluginDescription = await UIUtils.dataTest(
       view,
@@ -184,13 +173,8 @@ describe("Workspace MAX32690 creation", () => {
 
     console.log("Sent workspace name to input element");
 
-    const createwsBtn = await UIUtils.findWebElement(view,
-      By.xpath('//*[@id="root"]/div/div[3]/div/div/vscode-button[2]'),
-    );
-
     console.log("Found create workspace button");
-    await UIUtils.clickElement(view, createwsBtn);
-    console.log("Clicked on create workspace button");
+    await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
     await UIUtils.sleep(5000);
 
     // Assert that the workspace is created successfully
@@ -200,6 +184,11 @@ describe("Workspace MAX32690 creation", () => {
     const workspacePath = `${location}/${workspaceName}`;
     await UIUtils.sleep(5000);
     console.log(`workspacePath is ${workspacePath}`);
+    await VSBrowser.instance.driver.wait(
+      () => existsSync(workspacePath),
+      10000,
+      `Workspace was not created at expected location: ${workspacePath}`,
+    );
     expect(existsSync(workspacePath)).to.be.true;
     console.log(`Workspace created at: ${workspacePath}`);
     const cfsWorkspaceFile = path.join(workspacePath, ".cfs", ".cfsworkspace");

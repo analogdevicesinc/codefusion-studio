@@ -49,12 +49,11 @@ export function showHelp(stream: vscode.ChatResponseStream): void {
 ## GDB Commands
 | Command | Description |
 |---------|-------------|
-| \`gdb: <command>\` | Execute any GDB command |
+| \`gdb: <command>\` | Execute a GDB command in the active debug session |
 | \`run gdb command: <cmd>\` | Execute a GDB command |
 | \`info registers\` | Show CPU registers |
 | \`info locals\` | Show local variables |
 | \`print <expr>\` | Print expression value |
-| \`x/16xw 0x20000000\` | Examine memory (16 words in hex) |
 
 ## Inspection & Analysis
 | Command | Description |

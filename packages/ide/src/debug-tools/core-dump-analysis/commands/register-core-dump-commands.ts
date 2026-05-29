@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,14 +51,18 @@ import {
 } from "./utils";
 import { SessionManager } from "../services/core-dump-session-manager";
 import { openFileAtLine } from "../../../utils/open-file-location";
+import { CfsDebugManager } from "../../debug-manager";
 
 /**
  * Registers all core dump related commands for the extension.
  * Handles retrieval, analysis, and UI context for Zephyr core dumps.
  */
-export function registerCoreDumpCommands(context: vscode.ExtensionContext) {
+export function registerCoreDumpCommands(
+  context: vscode.ExtensionContext,
+  debugManager: CfsDebugManager,
+) {
   const sessionManager = new SessionManager();
-  const treeProvider = new CoreDumpTreeProvider(sessionManager);
+  const treeProvider = new CoreDumpTreeProvider(sessionManager, debugManager);
   CoreDumpManager.instance.setTreeProvider(treeProvider);
   vscode.window.registerTreeDataProvider(
     CORE_DUMP_TREE_VIEW_COMMAND_ID,
@@ -119,7 +123,7 @@ export function registerCoreDumpCommands(context: vscode.ExtensionContext) {
         binFile,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
-      await ZephyrLogCoreDumpParser.parse(file, binFile);
+      await ZephyrLogCoreDumpParser.parse(folder);
       const maxWaitMs = 10000,
         pollIntervalMs = 200;
       let waited = 0;

@@ -1,0 +1,59 @@
+{
+  "pluginName": "CLI MSDK Project Fixture",
+  "pluginId": "com.analog.project.msdk.mock.plugin",
+  "pluginDescription": "Fixture MSDK project and code generation plugin for CLI tests.",
+  "pluginVersion": "1.1.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "msdk",
+  "supportedSocs": [
+    {
+      "name": "MAX32690",
+      "board": "EvKit_V1",
+      "package": "wlp"
+    },
+    {
+      "name": "MAX78002",
+      "board": "EvKit_V1",
+      "package": "csbga"
+    }
+  ],
+  "features": {
+    "project": {
+      "templates": [],
+      "files": []
+    },
+    "codegen": {
+      "templates": [
+        {
+          "src": "templates/memory.ld.eta",
+          "dst": "memory.ld"
+        },
+        {
+          "src": "templates/soc_init.c.eta",
+          "dst": "soc_init.c"
+        }
+      ],
+      "files": []
+    }
+  },
+  "properties": {
+    "project": [
+      {
+        "id": "ProjectName",
+        "name": "Project Name",
+        "default": "${context.coreId}",
+        "type": "string",
+        "required": true
+      },
+      {
+        "id": "MsdkBoardName",
+        "name": "MSDK Board Name",
+        "default": "EvKit_V1",
+        "type": "string",
+        "required": false
+      }
+    ]
+  }
+}

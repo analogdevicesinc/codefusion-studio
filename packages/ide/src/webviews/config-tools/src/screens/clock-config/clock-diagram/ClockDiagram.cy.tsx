@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024- 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import ClockDiagram from './ClockDiagram';
 import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const configDict = {
 	BoardName: '',
@@ -201,7 +201,7 @@ describe('Clock Diagram', () => {
 
 				// Assert High-Speed USB initializes in disabled state
 				cy.get(
-					'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+					'#e5d75740-074c-11f1-a821-27c772fcbb7f > rect.adi_diagram_content_node_highlight.disabled'
 				)
 					.should('be.visible')
 					.then(() => {
@@ -230,7 +230,7 @@ describe('Clock Diagram', () => {
 
 								// Assert High-Speed USB enables with error state
 								cy.get(
-									'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.error'
+									'#e5d75740-074c-11f1-a821-27c772fcbb7f > rect.adi_diagram_content_node_highlight.error'
 								)
 									.should('be.visible')
 									.then(() => {
@@ -247,7 +247,7 @@ describe('Clock Diagram', () => {
 
 											// Assert High-Speed USB returns to disabled state
 											cy.get(
-												'#b2dd6340-1c41-11ef-8079-f382b26e79a7 > rect.adi_diagram_content_node_highlight.disabled'
+												'#e5d75740-074c-11f1-a821-27c772fcbb7f > rect.adi_diagram_content_node_highlight.disabled'
 											).should('be.visible');
 										});
 									});

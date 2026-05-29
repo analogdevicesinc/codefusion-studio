@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"tasks": [
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "make -r -j 8 TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board}",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "flash (JLink)",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-1}/JLinkExe -device ${config:cfs.jlink.device} -if SWD",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["build"]
+		}
+	]
+}

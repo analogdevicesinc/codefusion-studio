@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import type {
 	CfsPluginInfo,
 	CfsPluginProperty,
 	CfsWorkspace
-} from 'cfs-lib';
+} from 'cfs-types';
 import type {SoC} from 'cfs-ccm-lib';
 import {isCypressEnvironment} from '@common/utils/env';
 
@@ -59,9 +59,11 @@ export async function getUserDefaultPath() {
  * @throws Error if plugin retrieval fails
  */
 export async function getPluginsInfoList(
-	filter?: (cfsPluginInfo: CfsPluginInfo) => boolean
+	socId?: string,
+	packageId?: string,
+	boardId?: string
 ) {
-	return request('get-plugins', {filter}) as Promise<CfsPluginInfo[]>;
+	return request('get-plugins', {socId, packageId, boardId}) as Promise<CfsPluginInfo[]>;
 }
 
 export async function getHostPlatform() {
@@ -137,7 +139,11 @@ export async function fetchPluginProperties(
  * @returns Promise that resolves to an array of plugins
  * @throws Error with a user-friendly message if plugin retrieval fails
  */
-export async function fetchPlugins() {
+export async function fetchPlugins(
+	socId?: string,
+	packageId?: string,
+	boardId?: string
+) {
 	return new Promise<CfsPluginInfo[]>(resolve => {
 		if (isCypressEnvironment()) {
 			setTimeout(() => {
@@ -148,7 +154,7 @@ export async function fetchPlugins() {
 				);
 			}, 1000);
 		} else {
-			getPluginsInfoList()
+			getPluginsInfoList(socId, packageId, boardId)
 				.then(plugins => {
 					resolve(plugins);
 				})

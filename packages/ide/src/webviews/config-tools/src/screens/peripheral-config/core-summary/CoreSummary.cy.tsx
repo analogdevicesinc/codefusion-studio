@@ -17,7 +17,7 @@
 import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import CoreSummary from './CoreSummary';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {
 	setPeripheralAssignment,
 	setSignalAssignment,
@@ -92,6 +92,17 @@ const mockedConfigDict = {
 		},
 		{
 			...rvProject
+		}
+	]
+} as unknown as CfsConfig;
+
+const mockedSingleProjectConfigDict = {
+	BoardName: 'AD-APARD32690-SL',
+	Package: 'WLP',
+	Soc: 'MAX32690',
+	Projects: [
+		{
+			...cm4Project
 		}
 	]
 } as unknown as CfsConfig;
@@ -599,6 +610,32 @@ describe(
 									});
 							});
 					});
+			});
+
+			it('expandAll/CollapseAll button should be visible for multiple projects', () => {
+				const reduxStore = configurePreloadedStore(
+					max32690wlp,
+					mockedConfigDict
+				);
+
+				cy.mount(<CoreSummary />, reduxStore);
+
+				cy.dataTest('core-summary:expand-collapse-actions').should(
+					'exist'
+				);
+			});
+
+			it('expandAll/CollapseAll button should not be visible when there is only one project', () => {
+				const reduxStore = configurePreloadedStore(
+					max32690wlp,
+					mockedSingleProjectConfigDict
+				);
+
+				cy.mount(<CoreSummary />, reduxStore);
+
+				cy.dataTest('core-summary:expand-collapse-actions').should(
+					'not.exist'
+				);
 			});
 		});
 	}

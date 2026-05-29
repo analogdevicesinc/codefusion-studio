@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,7 +40,9 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from cfsai_types.hardware_profile import HardwareProfile
+from cfsai_types.report import ReportInfo
+
+PROFILE_REPORT_VERSION = "2.2.0"
 
 # Visualization Constants for Report Formatting
 CRITICAL_RAM_UTILIZATION_THRESHOLD = 95.0  # Threshold for critical RAM status
@@ -50,6 +52,7 @@ MODERATE_CYCLE_COUNT_THRESHOLD = 100_000   # Threshold for moderate computation 
 
 # Optional dependency for enhanced table formatting
 try:
+    from rich import box
     from rich.console import Console
     from rich.table import Table
     from rich.text import Text
@@ -76,7 +79,6 @@ class LayerPerformance(BaseModel):
         latency_ms: Execution time in milliseconds
         energy_uj: Energy consumption in microjoules
         power_mw: Power consumption in milliwatts
-        power_w: Power consumption in watts (derived from power_mw)
         is_accelerated: Whether layer execution uses hardware acceleration
         macs: Multiply-accumulate operations count
         memory_kb: Memory footprint in kilobytes
@@ -102,9 +104,6 @@ class LayerPerformance(BaseModel):
     )
     power_mw: Optional[float] = Field(
         default=None, ge=0, description="Power consumption in milliwatts"
-    )
-    power_w: Optional[float] = Field(
-        default=None, ge=0, description="Power consumption in watts"
     )
     is_accelerated: bool = Field(
         default=False, description="Hardware acceleration utilization flag"
@@ -171,7 +170,6 @@ class HardwareMetrics(BaseModel):
         estimated_latency_ms: End-to-end inference latency in milliseconds
         estimated_power_mw: Average power consumption during inference
             (milliwatts)
-        estimated_power_w: Average power consumption during inference (watts)
         peak_memory_kb: Maximum memory usage during inference (kilobytes)
         peak_memory_mb: Maximum memory usage during inference (megabytes)
         available_ram_kb: Total available system RAM (kilobytes)
@@ -187,9 +185,6 @@ class HardwareMetrics(BaseModel):
     )
     estimated_power_mw: Optional[float] = Field(
         default=None, ge=0, description="Power consumption in milliwatts"
-    )
-    estimated_power_w: Optional[float] = Field(
-        default=None, ge=0, description="Power consumption in watts"
     )
     peak_memory_kb: Optional[float] = Field(
         default=None, ge=0, description="Peak memory usage in kilobytes"
@@ -292,7 +287,6 @@ class OptimizationOpportunities(BaseModel):
         total_macs: Total multiply-accumulate operations across the model
         layerwise_opportunities: Layer-specific memory optimization targets
         macs_opportunities: Layer-specific computational optimization targets
-        notes: Additional context or implementation guidance
     """
 
     total_parameter_memory_kb: float = Field(
@@ -308,30 +302,6 @@ class OptimizationOpportunities(BaseModel):
     macs_opportunities: list[LayerwiseOptimizationOpportunity] = Field(
         default_factory=list,
         description="Layer-specific computational optimization opportunities"
-    )
-    notes: Optional[str] = Field(
-        default=None, description="Additional optimization context or guidance"
-    )
-
-
-class AnalysisNote(BaseModel):
-    """
-    Informational note or observation from the profiling analysis.
-
-    Captures non-critical information, warnings, or insights discovered
-    during the resource profiling process that may be relevant for
-    optimization decisions or deployment planning.
-
-    Attributes:
-        message: The informational content or observation
-        category: Note classification (e.g., 'info', 'warning', 'optimization')
-    """
-
-    message: str = Field(
-        description="Analysis observation or informational message"
-    )
-    category: Optional[str] = Field(
-        default=None, description="Note category or classification"
     )
 
 
@@ -424,10 +394,8 @@ class ResourceProfileReport(BaseModel):
         layer_performance: Per-layer performance metrics
         optimization_suggestions: High-level optimization recommendations
         optimization_opportunities: Detailed layer-specific optimization analysis
-        analysis_notes: Informational observations from profiling process
         errors: Error details encountered during analysis
-        timestamp: Analysis execution timestamp
-        hardware_profile_used: Hardware configuration used for profiling
+        info: Metadata for the report
     """
 
     model_summary: Optional[ModelSummary] = Field(
@@ -448,17 +416,11 @@ class ResourceProfileReport(BaseModel):
     optimization_opportunities: Optional[OptimizationOpportunities] = Field(
         default=None, description="Detailed optimization analysis"
     )
-    analysis_notes: Optional[list[AnalysisNote]] = Field(
-        default=None, description="Analysis observations and notes"
-    )
     errors: Optional[list[ErrorNote]] = Field(
         default=None, description="Errors encountered during analysis"
     )
-    timestamp: Optional[str] = Field(
-        default=None, description="Analysis execution timestamp"
-    )
-    hardware_profile_used: Optional[HardwareProfile] = Field(
-        default=None, description="Hardware configuration used"
+    info: Optional[ReportInfo] = Field(
+        default=None, description="Metadata about the generated report"
     )
     
 
@@ -498,15 +460,15 @@ class ResourceProfileReport(BaseModel):
             console = Console()
 
         # Main header
-        console.print("=== RESOURCE PROFILING REPORT ===", style="bold blue")
+        console.print("=== RESOURCE PROFILING REPORT ===")
 
         # Model Summary Section
         if self.model_summary:
-            console.print("\n=== MODEL SUMMARY ===", style="bold green")
+            console.print("\n=== MODEL SUMMARY ===")
 
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Metric", style="cyan")
-            table.add_column("Value", style="white")
+            table = Table(show_header=True, box=box.ASCII)
+            table.add_column("Metric")
+            table.add_column("Value")
 
             model = self.model_summary
             if model.model_name:
@@ -530,12 +492,12 @@ class ResourceProfileReport(BaseModel):
 
         # Memory Analysis Section
         if self.memory_analysis:
-            console.print("\n=== MEMORY ANALYSIS ===", style="bold green")
+            console.print("\n=== MEMORY ANALYSIS ===")
             mem = self.memory_analysis
 
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Memory Metric", style="cyan")
-            table.add_column("Value", style="white")
+            table = Table(show_header=True, box=box.ASCII)
+            table.add_column("Memory Metric")
+            table.add_column("Value")
 
             # Peak RAM with color coding
             peak_ram_text = Text(
@@ -543,15 +505,7 @@ class ResourceProfileReport(BaseModel):
             )
             table.add_row("Peak RAM Required", peak_ram_text)
 
-            # Status with color coding
-            status_text = Text(mem.ram_status)
-            if mem.ram_status == "CRITICAL":
-                status_text.stylize("bold red")
-            elif mem.ram_status == "WARNING":
-                status_text.stylize("bold yellow")
-            else:
-                status_text.stylize("bold green")
-            table.add_row("RAM Status", status_text)
+            table.add_row("RAM Status", mem.ram_status)
 
             if mem.available_ram_kb:
                 table.add_row(
@@ -561,33 +515,28 @@ class ResourceProfileReport(BaseModel):
                 )
 
             if mem.ram_utilization_percent:
-                util_text = Text(f"{mem.ram_utilization_percent:.1f}%")
-                if mem.ram_utilization_percent > CRITICAL_RAM_UTILIZATION_THRESHOLD:
-                    util_text.stylize("bold red")
-                elif mem.ram_utilization_percent > WARNING_RAM_UTILIZATION_THRESHOLD:
-                    util_text.stylize("bold yellow")
-                table.add_row("RAM Utilization", util_text)
+                table.add_row("RAM Utilization", f"{mem.ram_utilization_percent:.1f}%")
 
             console.print(table)
 
             # Memory issues and recommendations
             if mem.memory_issues:
-                console.print("\n  Memory Issues:", style="bold red")
+                console.print("\n  Memory Issues:")
                 for issue in mem.memory_issues:
-                    console.print(f"    • {issue}", style="red")
+                    console.print(f"    • {issue}")
 
             if mem.memory_recommendations:
-                console.print("\n  Memory Recommendations:", style="bold blue")
+                console.print("\n  Memory Recommendations:")
                 for rec in mem.memory_recommendations:
-                    console.print(f"    • {rec}", style="blue")
+                    console.print(f"    • {rec}")
 
         # Hardware Performance Section
         if self.hardware_metrics:
-            console.print("\n=== HARDWARE PERFORMANCE ===", style="bold green")
+            console.print("\n=== HARDWARE PERFORMANCE ===")
 
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Metric", style="cyan")
-            table.add_column("Value", style="white")
+            table = Table(show_header=True, box=box.ASCII)
+            table.add_column("Metric")
+            table.add_column("Value")
 
             hw = self.hardware_metrics
             if hw.total_cycles:
@@ -599,8 +548,7 @@ class ResourceProfileReport(BaseModel):
             if hw.estimated_power_mw:
                 table.add_row(
                     "Estimated Power",
-                    f"{hw.estimated_power_mw:.2f} mW "
-                    f"({hw.estimated_power_w:.4f} W)"
+                    f"{hw.estimated_power_mw:.2f} mW"
                 )
             if hw.peak_memory_kb:
                 table.add_row("Peak Memory", f"{hw.peak_memory_kb:.2f} KB")
@@ -613,91 +561,64 @@ class ResourceProfileReport(BaseModel):
 
         # Layer Performance Section
         if self.layer_performance:
-            console.print(
-                "\n=== PER-LAYER PERFORMANCE ===", style="bold green"
-            )
+            console.print("\n=== PER-LAYER PERFORMANCE ===")
 
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Layer", style="cyan")
-            table.add_column("Operator", style="blue")
-            table.add_column("Cycles", style="green", justify="right")
-            table.add_column("Latency (ms)", style="yellow", justify="right")
-            table.add_column("Energy (uJ)", style="magenta", justify="right")
-            table.add_column("Power (mW)", style="red", justify="right")
-            table.add_column("MACs", style="white", justify="right")
-            table.add_column("Memory (KB)", style="cyan", justify="right")
-            table.add_column("Accel", style="green", justify="center")
+            table = Table(show_header=True, box=box.ASCII)
+            table.add_column("Layer")
+            table.add_column("Operator")
+            table.add_column("Cycles", justify="right")
+            table.add_column("Latency (ms)", justify="right")
+            table.add_column("Energy (uJ)", justify="right")
+            table.add_column("Power (mW)", justify="right")
+            table.add_column("MACs", justify="right")
+            table.add_column("Memory (KB)", justify="right")
+            table.add_column("Accel", justify="center")
 
             for layer in self.layer_performance:
                 layer_name_display = f"{layer.layer_idx}"
 
-                # Color code based on performance characteristics
-                cycles_text = Text(f"{layer.cycles:,}" if layer.cycles else "-")
-                if layer.cycles and layer.cycles > HIGH_CYCLE_COUNT_THRESHOLD:
-                    cycles_text.stylize("bold red")
-                elif layer.cycles and layer.cycles > MODERATE_CYCLE_COUNT_THRESHOLD:
-                    cycles_text.stylize("bold yellow")
-
-                accel_text = Text("Yes" if layer.is_accelerated else "No")
-                if layer.is_accelerated:
-                    accel_text.stylize("bold green")
-
                 table.add_row(
                     layer_name_display,
                     layer.layer_name or "-",
-                    cycles_text,
+                    f"{layer.cycles:,}" if layer.cycles else "-",
                     f"{layer.latency_ms:.2f}" if layer.latency_ms else "-",
                     f"{layer.energy_uj:.2f}" if layer.energy_uj else "-",
                     f"{layer.power_mw:.2f}" if layer.power_mw else "-",
                     f"{layer.macs:,}" if layer.macs else "-",
                     f"{layer.memory_kb:.2f}" if layer.memory_kb else "-",
-                    accel_text
+                    "Yes" if layer.is_accelerated else "No"
                 )
 
             console.print(table)
 
         # Optimization Suggestions Section
         if self.optimization_suggestions:
-            console.print(
-                "\n=== OPTIMIZATION SUGGESTIONS ===", style="bold green"
-            )
-
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Category", style="cyan")
-            table.add_column("Description", style="white")
-            table.add_column("Est. Improvement", style="green")
-            table.add_column("Complexity", style="yellow")
+            console.print( "\n=== OPTIMIZATION SUGGESTIONS ===")
+            table = Table(show_header=True, box=box.ASCII)
+            table.add_column("Category")
+            table.add_column("Description")
+            table.add_column("Est. Improvement")
+            table.add_column("Complexity")
 
             for suggestion in self.optimization_suggestions:
-                # Color code priority/complexity
-                complexity_text = Text(suggestion.complexity or "-")
-                if suggestion.complexity == "high":
-                    complexity_text.stylize("bold red")
-                elif suggestion.complexity == "medium":
-                    complexity_text.stylize("bold yellow")
-                else:
-                    complexity_text.stylize("bold green")
-
                 table.add_row(
                     suggestion.category.title(),
                     suggestion.description,
                     suggestion.estimated_improvement or "-",
-                    complexity_text
+                    suggestion.complexity or "-"
                 )
 
             console.print(table)
 
         # Optimization Opportunities Section
         if self.optimization_opportunities:
-            console.print(
-                "\n=== OPTIMIZATION OPPORTUNITIES ===", style="bold green"
-            )
+            console.print( "\n=== OPTIMIZATION OPPORTUNITIES ===")
             opp = self.optimization_opportunities
 
             # Summary table
-            summary_table = Table(show_header=True, header_style="bold magenta")
-            summary_table.add_column("Metric", style="cyan")
-            summary_table.add_column("Value", style="white")
+            summary_table = Table(show_header=True, box=box.ASCII)
+            summary_table.add_column("Metric")
+            summary_table.add_column("Value")
 
             summary_table.add_row(
                 "Total Parameter Memory",
@@ -709,35 +630,22 @@ class ResourceProfileReport(BaseModel):
 
             # Layer-wise memory optimization opportunities
             if opp.layerwise_opportunities:
-                console.print(
-                    "\n  Layerwise Memory Optimization Opportunities:",
-                    style="bold blue"
-                )
+                console.print( "\n=== Layerwise Memory Optimization Opportunities ===")
 
-                mem_table = Table(
-                    show_header=True, header_style="bold magenta"
-                )
-                mem_table.add_column("Layer", style="cyan")
-                mem_table.add_column("Op Type", style="blue")
-                mem_table.add_column("Param Mem (KB)", style="yellow", justify="right")
-                mem_table.add_column( "MACs", style="green", justify="right")
-                mem_table.add_column("Kernel Info", style="white")
-                mem_table.add_column("Suggestion", style="magenta")
+                mem_table = Table( show_header=True, box=box.ASCII)
+                mem_table.add_column("Layer")
+                mem_table.add_column("Op Type")
+                mem_table.add_column("Param Mem (KB)", justify="right")
+                mem_table.add_column( "MACs", justify="right")
+                mem_table.add_column("Kernel Info")
+                mem_table.add_column("Suggestion")
 
                 for layer_opp in opp.layerwise_opportunities:
-                    # Color code based on memory usage
-                    mem_text = Text(f"{layer_opp.parameter_memory_kb:.2f}")
-                    if layer_opp.parameter_memory_kb > 100:
-                        mem_text.stylize("bold red")
-                    elif layer_opp.parameter_memory_kb > 10:
-                        mem_text.stylize("bold yellow")
-
                     mem_table.add_row(
                         str(layer_opp.layer_index),
                         layer_opp.op_type,
-                        mem_text,
-                        f"{layer_opp.macs:,}"
-                        if layer_opp.macs is not None else "-",
+                        f"{layer_opp.parameter_memory_kb:.2f}",
+                        f"{layer_opp.macs:,}",
                         layer_opp.kernel_info or "-",
                         layer_opp.suggestion or "-"
                     )
@@ -746,79 +654,36 @@ class ResourceProfileReport(BaseModel):
 
             # Layer-wise computational optimization opportunities
             if opp.macs_opportunities:
-                console.print(
-                    "\n  Layerwise MAC Optimization Opportunities:",
-                    style="bold blue"
-                )
+                console.print( "\n=== Layerwise MAC Optimization Opportunities ===")
 
-                mac_table = Table(
-                    show_header=True, header_style="bold magenta"
-                )
-                mac_table.add_column("Layer", style="cyan")
-                mac_table.add_column("Op Type", style="blue")
-                mac_table.add_column("Param Mem (KB)", style="yellow", justify="right")
-                mac_table.add_column("MACs", style="green", justify="right")
-                mac_table.add_column("Kernel Info", style="white")
-                mac_table.add_column("Suggestion", style="magenta")
+                mac_table = Table( show_header=True, box=box.ASCII)
+                mac_table.add_column("Layer")
+                mac_table.add_column("Op Type")
+                mac_table.add_column("Param Mem (KB)", justify="right")
+                mac_table.add_column("MACs", justify="right")
+                mac_table.add_column("Kernel Info")
+                mac_table.add_column("Suggestion")
 
                 for layer_opp in opp.macs_opportunities:
-                    # Color code based on MAC count
-                    mac_text = Text(
-                        f"{layer_opp.macs:,}"
-                        if layer_opp.macs is not None else "-"
-                    )
-                    if layer_opp.macs and layer_opp.macs > HIGH_CYCLE_COUNT_THRESHOLD:
-                        mac_text.stylize("bold red")
-                    elif (layer_opp.macs and 
-                          layer_opp.macs > MODERATE_CYCLE_COUNT_THRESHOLD):
-                        mac_text.stylize("bold yellow")
-
                     mac_table.add_row(
                         str(layer_opp.layer_index),
                         layer_opp.op_type,
                         f"{layer_opp.parameter_memory_kb:.2f}",
-                        mac_text,
+                        f"{layer_opp.macs:,}",
                         layer_opp.kernel_info or "-",
                         layer_opp.suggestion or "-"
                     )
 
                 console.print(mac_table)
 
-            if opp.notes:
-                console.print(
-                    f"\n  Optimization Notes: {opp.notes}", style="italic blue"
-                )
-
-        # Analysis Notes Section
-        if self.analysis_notes:
-            console.print("\n=== ANALYSIS NOTES ===", style="bold green")
-            for note in self.analysis_notes:
-                category_tag = f"[{note.category}] " if note.category else ""
-                if note.category == "warning":
-                    console.print(
-                        f"  {category_tag}{note.message}", style="yellow"
-                    )
-                elif note.category == "error":
-                    console.print(
-                        f"  {category_tag}{note.message}", style="red"
-                    )
-                else:
-                    console.print(
-                        f"  {category_tag}{note.message}", style="white"
-                    )
-
         # Error Notes Section
         if self.errors:
-            console.print("\n=== ERRORS ===", style="bold red")
+            console.print("\n=== ERRORS ===")
             for error in self.errors:
                 error_code = f" (Code: {error.code})" if error.code else ""
-                console.print(
-                    f"  • {error.message}{error_code}", style="red"
-                )
+                logger.info( f"  • {error.message}{error_code}")
                 if error.details:
-                    console.print(
-                        f"    Details: {error.details}", style="dim red"
-                    )
+                    logger.info( f"    Details: {error.details}")
 
         if to_buffer:
             return buffer.getvalue()
@@ -837,12 +702,14 @@ class ResourceProfileReport(BaseModel):
         try:
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
             with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(self.model_dump(), f, indent=2)
-            logger.info(f"Resource Profiler JSON report saved to {filepath}")
+                json.dump(self.model_dump(), f, indent=2, default=str)
+            logger.debug(f"Resource Profiler JSON report saved to {filepath}")
             return True
-        except Exception:
-            logger.info(f"Failed to save resource profiler JSON report to {filepath}: "\
-                         "{e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to save resource profiler JSON report to {filepath}: "\
+                f"{e}"
+            )
             return False
 
     def save_as_text(self, filepath: str) -> bool:
@@ -859,9 +726,11 @@ class ResourceProfileReport(BaseModel):
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(self.visualize_resource_profile(to_buffer=True))
-            logger.info(f"Resource Profiler text report saved to {filepath}")
+            logger.debug(f"Resource Profiler text report saved to {filepath}")
             return True
-        except Exception:
-            logger.info(f"Failed to save resource profiler text report to {filepath}: "\
-                         "{e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to save resource profiler text report to {filepath}: "\
+                f"{e}"
+            )
             return False

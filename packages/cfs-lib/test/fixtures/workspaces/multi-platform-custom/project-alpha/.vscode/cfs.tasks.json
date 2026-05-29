@@ -1,0 +1,59 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"tasks": [
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "make -r -j 8 TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board}",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "flash (OpenOCD)",
+			"type": "shell",
+			"command": "arm-none-eabi-gdb --cd=\"${workspaceFolder}\" --se=\"${config:cfs.programFile}\" -x=\"${workspaceFolder}/.vscode/flash.gdb\"",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["build"]
+		},
+		{
+			"label": "flash (JLink)",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-1}/JLinkExe -device ${config:cfs.jlink.device} -if SWD",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["build"]
+		},
+		{
+			"label": "flash & run (OpenOCD)",
+			"type": "shell",
+			"command": "arm-none-eabi-gdb --cd=\"${workspaceFolder}\" --se=\"${config:cfs.programFile}\" --ex=\"run\"",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["build"]
+		},
+		{
+			"label": "flash & run (JLink)",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-1}/JLinkExe -device ${config:cfs.jlink.device} -if SWD --run",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["build"]
+		},
+		{
+			"label": "erase (OpenOCD)",
+			"type": "shell",
+			"command": "openocd -s ${config:cfs.openocd.path}/share/openocd/scripts -f ${config:cfs.openocd.interface}",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "erase (JLink)",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-1}/JLinkExe -device ${config:cfs.jlink.device} --erase",
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

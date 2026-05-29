@@ -9,7 +9,7 @@ import {
 	LOCAL_STORAGE_CORE_CONFIG_ERRORS,
 	PROJECT_NAME_PROPERTY_ID as PROJECT_NAME_ID
 } from '../../common/constants/identifiers';
-import type {CfsPluginInfo, CfsPluginProperty} from 'cfs-lib';
+import type {CfsPluginInfo, CfsPluginProperty} from 'cfs-types';
 import {addSuffixToProjectName} from '../../utils/workspace-config';
 
 type PlatformOptionsProps = Readonly<{

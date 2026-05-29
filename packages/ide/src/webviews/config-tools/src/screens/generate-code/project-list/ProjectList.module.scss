@@ -52,6 +52,9 @@
 
 		vscode-checkbox {
 			align-items: start;
+			&::part(control) {
+				min-width: 18px;
+			}
 		}
 
 		.aiModelsLabel {
@@ -65,6 +68,7 @@
 			span {
 				@include fonts.body-b3;
 				color: colors.$description-foreground;
+				word-break: break-word;
 			}
 
 			.labelTooltip {

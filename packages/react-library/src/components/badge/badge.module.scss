@@ -14,10 +14,17 @@
  */
 
 @use '../../styles/colors';
+@use '../../styles/fonts' as fonts;
 
 .secondary {
 	--badge-background: #{colors.$editor-widget-background};
 	--badge-foreground: #{colors.$editor-widget-foreground};
-	--button-border: #{colors.$editor-widget-border};
+	--button-border: #{colors.$default-border};
 	--design-unit: 5;
+	&.small {
+		--design-unit: 3;
+		&::part(control) {
+			@include fonts.label-l4;
+		}
+	}
 }

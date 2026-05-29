@@ -1,14 +1,14 @@
 ---
 description: Software Requirements for CodeFusion Studio
 author: Analog Devices
-date: 2025-11-06
+date: 2026-05-23
 ---
 
 # Software requirements
 
 ## Software dependencies
 
-The CodeFusion Studio VS Code extension depends on:
+Before installing CodeFusion Studio, install:
 
 - [**Microsoft Visual Studio Code**](https://code.visualstudio.com/) version **1.100** or later (recommended).
 
@@ -38,6 +38,6 @@ sudo apt install libfontconfig1 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-k
 
 ## Windows support
 
-The AI Tools (including the [Embedded AI Tools](../tools/manage-ai-models.md) panel and the [`cfsai`](../ai-tools/cli/index.md) command-line utility) require the [:octicons-link-external-24: Visual C++ Redistributable for Visual Studio 2015](https://aka.ms/vs/16/release/vc_redist.x64.exe){:target="_blank"} to be installed.
+The AI Tools (including the [Embedded AI Tools](../tools/manage-ai-models.md) panel and the [`cfsutil ai`](../cfsutil/ai/index.md) command-line utility) require the [:octicons-link-external-24: Visual C++ Redistributable for Visual Studio 2015](https://aka.ms/vs/16/release/vc_redist.x64.exe){:target="_blank"} to be installed.
 
 Install this redistributable manually before running the AI Tools.

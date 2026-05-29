@@ -19,10 +19,15 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 import react from "@vitejs/plugin-react";
 import { copyConanFiles } from "./vite.plugin.cfs-package-manager";
+import { copySerialport } from "./vite.plugin.copy-serialport";
 
 // Bundle the extension and all it's depencencies to CJS
 const extensionConfig = {
-  plugins: [tsconfigPaths({ projects: ["./tsconfig.json"] }), copyConanFiles()],
+  plugins: [
+    tsconfigPaths({ projects: ["./tsconfig.json"] }),
+    copyConanFiles(),
+    copySerialport(),
+  ],
   build: {
     ssr: true, // the server side rendering preset uses rollup settings that support node modules properly
     commonjsOptions: {

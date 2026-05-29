@@ -26,7 +26,7 @@
 //   | DisplayUnit  | KB            |
 //   | IsOwner      | true          |
 //   | Access       | R             |
-//   | Config       |               |
+//   | Config       | Default (empty) settings |
 
 //   | Name         | testpartition |
 //   | StartAddress | 0x20008000    |
@@ -34,7 +34,7 @@
 //   | DisplayUnit  | KB            |
 //   | IsOwner      | false         |
 //   | Access       | R             |
-//   | Config       |               |
+//   | Config       | Default (empty) settings |
 // When I open the cfsconfig file
 // And I navigate to the Memory Menu in the UI
 // And I edit the partition address
@@ -47,7 +47,7 @@
 //   | DisplayUnit  | KB            |
 //   | IsOwner      | true          |
 //   | Access       | R             |
-//   | Config       |               |
+//   | Config       | Default (empty) settings |
 
 //   | Name         | testpartition |
 //   | StartAddress | 0x20009000    |
@@ -55,7 +55,7 @@
 //   | DisplayUnit  | KB            |
 //   | IsOwner      | false         |
 //   | Access       | R             |
-//   | Config       |               |
+//   | Config       | Default (empty) settings |
 
 import { expect } from "chai";
 import {
@@ -72,7 +72,6 @@ import {
   parseJSONFile,
 } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../../ui-test-utils/exec-utils";
 import { memoryAllocationTab } from "../../page-objects/main-menu";
 import {
   assignCores,
@@ -114,7 +113,9 @@ describe("Partition creation and validation", () => {
   afterEach(async () => {
     // Teardown - reset cfsconfig files
     if (configPath) {
-      await asyncExecFile("git", "checkout", configPath);
+      // Teardown - reset cfsconfig files
+      await UIUtils.restoreFixtureFileFromGit(configPath);
+
       configPath = undefined;
     }
   });
@@ -243,7 +244,7 @@ describe("Partition creation and validation", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: false,
-        Access: "R",
+        Access: "R/W/X",
         Config: { NAME_OVERRIDE: "RVTest" },
       },
     ];
@@ -336,14 +337,14 @@ describe("Partition creation and validation", () => {
     console.log("Saved the configuration file");
     await UIUtils.sleep(300);
 
-    // Then the CM33 project should contain two partition with:
+    // Then the CM33 project should contain two partitions with:
     //   | Name         | testpartition |
     //   | StartAddress | 0x20008000    |
     //   | Size         | 32768         |
     //   | DisplayUnit  | KB            |
     //   | IsOwner      | true          |
     //   | Access       | R             |
-    //   | Config       |               |
+    //   | Config       | Default (empty) settings |
     //
     //   | Name         | testpartition |
     //   | StartAddress | 0x20008000    |
@@ -351,7 +352,7 @@ describe("Partition creation and validation", () => {
     //   | DisplayUnit  | KB            |
     //   | IsOwner      | false         |
     //   | Access       | R             |
-    //   | Config       |               |
+    //   | Config       | Default (empty) settings |
     let peripheralData = parseJSONFile(configPath);
     let actualCm33Partitions = getPartitionsByCoreId(peripheralData, "CM33");
     let expectedCM33Partitions = [
@@ -361,8 +362,11 @@ describe("Partition creation and validation", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: true,
-        Access: "R",
-        Config: {},
+        Access: "R/W/X",
+        Config: {
+          CHOSEN: "",
+          LABEL: "",
+        },
       },
       {
         Name: "testpartition",
@@ -370,8 +374,11 @@ describe("Partition creation and validation", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: false,
-        Access: "R",
-        Config: {},
+        Access: "R/W/X",
+        Config: {
+          CHOSEN: "",
+          LABEL: "",
+        },
       },
     ];
 
@@ -415,14 +422,14 @@ describe("Partition creation and validation", () => {
     console.log("Saved the configuration file");
     await UIUtils.sleep(300);
 
-    // Then the CM33 project should contain two partition with:
+    // Then the CM33 project should contain two partitions with:
     //   | Name         | testpartition |
     //   | StartAddress | 0x20009000    |
     //   | Size         | 32768         |
     //   | DisplayUnit  | KB            |
     //   | IsOwner      | true          |
     //   | Access       | R             |
-    //   | Config       |               |
+    //   | Config       | Default (empty) settings |
     //
     //   | Name         | testpartition |
     //   | StartAddress | 0x20009000    |
@@ -430,7 +437,7 @@ describe("Partition creation and validation", () => {
     //   | DisplayUnit  | KB            |
     //   | IsOwner      | false         |
     //   | Access       | R             |
-    //   | Config       |               |
+    //   | Config       | Default (empty) settings |
     peripheralData = parseJSONFile(configPath);
     actualCm33Partitions = getPartitionsByCoreId(peripheralData, "CM33");
     expectedCM33Partitions = [
@@ -440,8 +447,11 @@ describe("Partition creation and validation", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: true,
-        Access: "R",
-        Config: {},
+        Access: "R/W/X",
+        Config: {
+          CHOSEN: "",
+          LABEL: "",
+        },
       },
       {
         Name: "testpartition",
@@ -449,8 +459,11 @@ describe("Partition creation and validation", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: false,
-        Access: "R",
-        Config: {},
+        Access: "R/W/X",
+        Config: {
+          CHOSEN: "",
+          LABEL: "",
+        },
       },
     ];
 

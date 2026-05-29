@@ -22,6 +22,7 @@ import PeripheralBlock from '../peripheral-block/PeripheralBlock';
 import {usePeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
 import {categorizeAllocationsByName} from '../../../utils/soc-peripherals';
 import {useNewPeripheralAssignment} from '../../../state/slices/app-context/appContext.selector';
+import {usePeripheralHighlight} from '../../../hooks/use-peripheral-highlight';
 import styles from './peripheral-group.module.scss';
 
 type PeripheralGroupProps = Readonly<{
@@ -31,7 +32,6 @@ type PeripheralGroupProps = Readonly<{
 
 function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [highlighted, setHighlighted] = useState(false);
 
 	const allocations = usePeripheralAllocations();
 	const categorizedAllocations = useMemo(
@@ -47,13 +47,11 @@ function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 	const {peripheral: peripheralName} =
 		useNewPeripheralAssignment() ?? {};
 
-	const triggerHighlight = useCallback(() => {
-		setHighlighted(true);
-		setTimeout(() => {
-			setHighlighted(false);
-		}, 800);
-		setIsOpen(true);
-	}, []);
+	const {highlighted, triggerHighlight} = usePeripheralHighlight(
+		() => {
+			setIsOpen(true);
+		}
+	);
 
 	const toggleExpand = useCallback(() => {
 		setIsOpen(prev => !prev);
@@ -61,10 +59,7 @@ function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 
 	const peripheralBlocks = useMemo(
 		() => (
-			<div
-				onMouseEnter={() => { setHighlighted(true); }}
-				onMouseLeave={() => { setHighlighted(false); }}
-			>
+			<div>
 				{peripherals.map(p => (
 					<PeripheralBlock
 						key={`grouped-peripheral-${p.name}`}

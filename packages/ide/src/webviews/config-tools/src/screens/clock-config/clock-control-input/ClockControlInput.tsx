@@ -12,14 +12,8 @@
  * limitations under the License.
  *
  */
-import {
-	useMemo,
-	memo,
-	useEffect,
-	useState,
-	type FormEvent
-} from 'react';
-import {TextField} from 'cfs-react-library';
+import {useMemo, memo, useEffect, useState} from 'react';
+import {IntegerField} from 'cfs-react-library';
 import {useAppDispatch} from '../../../state/store';
 import {generateValidationErrorType} from '@common/utils/validate-inputs';
 import {
@@ -52,12 +46,6 @@ type ClockControlInputProps = Readonly<{
 	label: string;
 }>;
 
-function testInputValue(e: FormEvent<HTMLInputElement>) {
-	if (!/^\d+$/.test((e as unknown as InputEvent).data!)) {
-		e.preventDefault();
-	}
-}
-
 function ClockControlInput({
 	controlCfg,
 	isDisabled,
@@ -83,7 +71,7 @@ function ClockControlInput({
 	// Use default value if storeInput is empty and default is provided
 	const currentValue =
 		!storeInput && defaultValue !== undefined
-			? String(defaultValue)
+			? Number(defaultValue)
 			: storeInput;
 
 	let desc: string | undefined;
@@ -100,8 +88,8 @@ function ClockControlInput({
 			`Value must be an integer less than ${maxVal} ${unit}.`.trimEnd() +
 			'.';
 
-	const [input, setInput] = useState<string | undefined>(
-		currentValue
+	const [input, setInput] = useState<number>(
+		currentValue ? Number(currentValue) : 0
 	);
 
 	const errType = useClockConfigError(
@@ -112,11 +100,14 @@ function ClockControlInput({
 	const handleInputChange = useMemo(
 		() =>
 			debounce(
-				(value: string, nodeDetails: ClockNodeState) => {
+				(value: number | undefined, nodeDetails: ClockNodeState) => {
 					// Clock inputs should only accept numbers to process correctly the clock frequencies.
 
+					const formattedValue =
+						value === undefined ? '' : String(value);
+
 					const inputData = {
-						content: value,
+						content: formattedValue,
 						controlType,
 						minVal,
 						maxVal
@@ -125,7 +116,7 @@ function ClockControlInput({
 					const changedClockNode: ClockNodeSet = {
 						name: nodeDetails.Name,
 						key: control,
-						value,
+						value: formattedValue,
 						error: generateValidationErrorType(inputData)
 					};
 
@@ -175,18 +166,10 @@ function ClockControlInput({
 		activeClockNodeDetails.Name
 	]);
 
-	useEffect(() => {
-		if (storeInput === input) return;
-
-		// Synchronizes local and store state to cover undo-redo scenarios
-		setInput(storeInput);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [storeInput]);
-
 	return (
-		<TextField
+		<IntegerField
 			dataTest={`${control}-${activeClockNodeDetails.Name}`}
-			inputVal={input}
+			value={input}
 			isDisabled={isDisabled}
 			error={
 				errType && !isDisabled
@@ -201,10 +184,9 @@ function ClockControlInput({
 			}
 			endSlot={unit}
 			direction='vertical'
-			onBeforeInput={testInputValue}
-			onInputChange={inputValue => {
-				setInput(inputValue);
-				handleInputChange(inputValue, activeClockNodeDetails);
+			onValueChange={newVal => {
+				setInput(newVal);
+				handleInputChange(newVal, activeClockNodeDetails);
 			}}
 		/>
 	);

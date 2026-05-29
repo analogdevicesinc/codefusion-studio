@@ -12,22 +12,27 @@
  * limitations under the License.
  *
  */
-import {useState, useCallback, useEffect, memo} from 'react';
+import {useState, useCallback, memo} from 'react';
 import Accordion from '@common/components/accordion/Accordion';
 import styles from './PeripheralBlock.module.scss';
-import PeripheralSignal from '../peripheral-signal/PeripheralSignal';
-import PeripheralSignalGroup from '../peripheral-signal-group/PeripheralSignalGroup';
-import PeripheralAllocTooltip from './peripheral-alloc-tooltip/peripheral-alloc-tooltip';
 import ConfigIcon16px from '../../../../../common/icons/Config16px';
+import AssignableItem from '../assignable-item/assignable-item';
+import SignalBlock from './signal-block';
 import {useAppDispatch} from '../../../state/store';
-import {setActivePeripheral} from '../../../state/slices/peripherals/peripherals.reducer';
+import {
+	setActivePeripheral,
+	removePeripheralAssignment
+} from '../../../state/slices/peripherals/peripherals.reducer';
+import {useSignalGroupAssignmentHandler} from '../../../hooks/use-signal-group-assignment-handler';
+import {useAllocationHandler} from '../../../hooks/use-allocation-handler';
 import {findProjectIdBySignalName} from '../../../utils/peripheral';
-import {useTooltipDebouncedHover} from '../../../hooks/use-tooltip-debounced-hover';
 import type {
 	FormattedPeripheral,
 	FormattedPeripheralSignal
 } from '../../../../../common/types/soc';
 import type {PeripheralConfig} from '../../../types/peripherals';
+import {Tooltip} from 'cfs-react-library';
+import {PERIPHERAL_LIST_CONTAINER_ID} from '../constants';
 
 type Props = Readonly<{
 	allocatedCore?: string;
@@ -43,8 +48,6 @@ function GroupedPeripheralSignals({
 	name,
 	description,
 	signals,
-	cores,
-	security,
 	allocatedCore,
 	categorizedAllocations,
 	isOpen,
@@ -54,45 +57,52 @@ function GroupedPeripheralSignals({
 	assignable
 }: Props) {
 	const dispatch = useAppDispatch();
-	const {isHovered, displayTooltip, hideTooltip} =
-		useTooltipDebouncedHover(800);
-	const [editHovered, setEditHovered] = useState(false);
-	const [lastHovered, setLastHovered] = useState(false);
 	// eslint-disable-next-line react/hook-use-state
 	const [allocatedTarget] = useState<string | undefined>(undefined);
 
-	const getTooltipPosition = useCallback(() => {
-		const parent = document.getElementById(`peripheral-${name}`);
-		const tooltip = document.getElementById('tooltipText');
-		const rect = parent?.getBoundingClientRect();
+	const handleSignalGroupAssignment =
+		useSignalGroupAssignmentHandler(name);
 
-		if (parent && tooltip && rect) {
-			tooltip.style.top = `${rect.top + 30}px`;
-		}
-	}, [name]);
+	// Peripheral-level handlers (for assignable peripheral in accordion)
+	const handlePeripheralConfigure = useCallback(() => {
+		dispatch(setActivePeripheral(`${name}:${allocatedCore}`));
+	}, [dispatch, name, allocatedCore]);
 
-	useEffect(() => {
-		if (editHovered) {
-			getTooltipPosition();
-		}
-	}, [editHovered, getTooltipPosition]);
+	const handlePeripheralDelete = useCallback(async () => {
+		dispatch(
+			removePeripheralAssignment({
+				peripheral: name
+			})
+		);
+		dispatch(setActivePeripheral(undefined));
+	}, [dispatch, name]);
+
+	const handlePeripheralAllocate = useAllocationHandler(
+		{
+			peripheral: name,
+			signal: ''
+		},
+		handleSignalGroupAssignment
+	);
 
 	const bodyContent = assignable ? (
 		<div className={allocatedTarget ? styles.focused : ''}>
-			<PeripheralSignalGroup
+			<AssignableItem
 				name={name}
-				peripheral={name}
-				projects={cores ?? []}
-				isSignalAssigned={false}
-				signals={signals}
 				isSelected={Boolean(allocatedTarget)}
-				allocatedCoreId={allocatedCore}
+				allocatedProjectId={allocatedCore}
+				className={styles.peripheralItem}
+				description={description}
+				isAssignmentEnabled={!allocatedTarget}
+				onConfigure={handlePeripheralConfigure}
+				onDelete={handlePeripheralDelete}
+				onAllocate={handlePeripheralAllocate}
 			/>
 		</div>
 	) : (
 		Object.values(signals).map(signal => {
 			const isSelected = allocatedTarget === signal.name;
-			const allocatedCoreId = findProjectIdBySignalName(
+			const allocatedProject = findProjectIdBySignalName(
 				signal.name,
 				categorizedAllocations
 			);
@@ -102,16 +112,14 @@ function GroupedPeripheralSignals({
 					key={`peripheral-signal-${signal.name}`}
 					className={`${isSelected ? styles.focused : ''} ${signal.name === signalName && isHighlighted ? styles.highlight : ''}`}
 				>
-					<PeripheralSignal
-						{...signal}
-						isSignalAssigned
-						peripheral={name}
-						signal={signal.name}
-						signals={signals}
-						isSecure={security}
-						projects={cores ?? []}
+					<SignalBlock
+						signal={signal}
+						peripheralName={name}
 						isSelected={isSelected}
-						allocatedCoreId={allocatedCoreId}
+						allocatedProjectId={allocatedProject}
+						isHighlighted={
+							signal.name === signalName && isHighlighted
+						}
 					/>
 				</div>
 			);
@@ -121,17 +129,8 @@ function GroupedPeripheralSignals({
 	return (
 		<div
 			data-test={`peripheral-block-${name}`}
-			className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''} ${lastHovered ? styles.lasthovered : ''}`}
+			className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
 			id={`peripheral-${name}`}
-			onMouseEnter={() => {
-				if (!isOpen) displayTooltip();
-			}}
-			onMouseLeave={() => {
-				hideTooltip();
-			}}
-			onClick={() => {
-				hideTooltip();
-			}}
 		>
 			<Accordion
 				highlight={isHighlighted}
@@ -141,33 +140,29 @@ function GroupedPeripheralSignals({
 							data-test={`accordion:allocated:${name}`}
 							id={`${name}-allocated`}
 							className={styles.config}
-							onMouseEnter={() => {
-								setEditHovered(true);
-							}}
-							onMouseLeave={() => {
-								setEditHovered(false);
-							}}
 						>
-							<ConfigIcon16px
-								onClick={e => {
-									e.stopPropagation();
-									const projectId =
-										categorizedAllocations.get(name)?.projectId;
+							<Tooltip
+								title='Configure'
+								position='bottom'
+								type='short'
+								containerId={PERIPHERAL_LIST_CONTAINER_ID}
+							>
+								<ConfigIcon16px
+									onClick={e => {
+										e.stopPropagation();
+										const projectId =
+											categorizedAllocations.get(name)?.projectId;
 
-									if (projectId) {
-										dispatch(
-											setActivePeripheral(`${name}:${projectId}`)
-										);
-									} else {
-										dispatch(setActivePeripheral(name));
-									}
-								}}
-							/>
-							{editHovered && (
-								<div className={styles.tooltip} id='tooltipText'>
-									Configure
-								</div>
-							)}
+										if (projectId) {
+											dispatch(
+												setActivePeripheral(`${name}:${projectId}`)
+											);
+										} else {
+											dispatch(setActivePeripheral(name));
+										}
+									}}
+								/>
+							</Tooltip>
 						</div>
 					) : null
 				}
@@ -181,15 +176,7 @@ function GroupedPeripheralSignals({
 					</span>
 				}
 				body={
-					<div
-						className={styles.peripheralSignalsContainer}
-						onMouseEnter={() => {
-							setLastHovered(true);
-						}}
-						onMouseLeave={() => {
-							setLastHovered(false);
-						}}
-					>
+					<div className={styles.peripheralSignalsContainer}>
 						{bodyContent}
 					</div>
 				}
@@ -197,12 +184,6 @@ function GroupedPeripheralSignals({
 					setIsOpen(!isOpen);
 				}}
 			/>
-			{isHovered && !isOpen && (
-				<PeripheralAllocTooltip
-					title={name}
-					description={description}
-				/>
-			)}
 		</div>
 	);
 }

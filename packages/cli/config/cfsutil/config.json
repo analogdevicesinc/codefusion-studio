@@ -1,0 +1,6 @@
+{
+  "dataModelSearchPaths": ["/absolute/path/to/data/models"],
+  "toolSearchPaths": ["/absolute/path/to/cfs/tools"],
+  "cfsInstallPath": "/absolute/path/to/cfs/install",
+  "catalogStorePath": "/absolute/path/to/catalog/store"
+}

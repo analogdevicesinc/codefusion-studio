@@ -34,7 +34,11 @@ import {
 	mapDisplayUnit
 } from './memory';
 import {type PeripheralConfig} from '../types/peripherals';
-import {getSocPeripheralDictionary} from './soc-peripherals';
+import {formatPeripheralConfigValues} from './peripheral';
+import {
+	getSocPeripheralDictionary,
+	getConfigFormatFromSocControls,
+} from './soc-peripherals';
 
 export type PeripheralSignalsTargets = {
 	signalsTargets: Record<string, string | undefined>;
@@ -236,22 +240,13 @@ export const formatPeripheralAllocations = (
 ) => {
 	const peripheralAllocations: Record<string, PeripheralConfig> = {};
 	const socPeripheralDict = getSocPeripheralDictionary();
-	const numericBaseMap: Record<string, Record<string, string>> = {};
-	json.Peripherals.forEach(socPeripheral => {
-		if (json.Controls[socPeripheral.Name]) {
-			numericBaseMap[socPeripheral.Name] = {};
-			json.Controls[socPeripheral.Name].forEach(control => {
-				if (control.NumericBase) {
-					numericBaseMap[socPeripheral.Name][control.Id] =
-						control.NumericBase;
-				}
-			});
-		}
-	});
 
 	projects.forEach(project => {
 		project.Peripherals?.forEach(peripheral => {
 			if (!peripheralAllocations[peripheral.Name]) {
+				const configFormat = getConfigFormatFromSocControls(
+					json.Controls[peripheral.Name]
+				);
 				peripheralAllocations[peripheral.Name] = {
 					name: peripheral.Name,
 					...(peripheral.Description
@@ -266,25 +261,11 @@ export const formatPeripheralAllocations = (
 						? {projectId: project.ProjectId}
 						: {}),
 					signals: {},
-					config: peripheral.Config
-						? Object.fromEntries(
-								Object.entries(peripheral.Config).map(
-									([key, value]) => {
-										const numericBase =
-											numericBaseMap[peripheral.Name]?.[key];
-
-										if (numericBase === 'Hexadecimal') {
-											return [
-												key,
-												value.toUpperCase().replace(/^0X/i, '')
-											];
-										}
-
-										return [key, value];
-									}
-								)
-							)
-						: {}
+					config: formatPeripheralConfigValues(
+						peripheral.Config,
+						configFormat
+					),
+          ...(configFormat && {configFormat})
 				};
 			}
 

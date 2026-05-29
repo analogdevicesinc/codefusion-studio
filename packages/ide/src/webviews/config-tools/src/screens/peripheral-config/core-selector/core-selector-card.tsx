@@ -46,6 +46,7 @@ function CoreSelectorCard({
 			>
 				<Button
 					id={`core-selector-button-${project.ProjectId}`}
+					dataTest={`core-selector-button-${project.ProjectId}`}
 					appearance='icon'
 					className={`${styles.coreCard} ${isDisabled ? styles.disabled : {}}`}
 					disabled={isDisabled}

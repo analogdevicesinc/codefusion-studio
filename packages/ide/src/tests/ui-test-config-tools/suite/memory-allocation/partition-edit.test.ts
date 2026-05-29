@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,6 @@
 
 import { expect } from "chai";
 import {
-  ModalDialog,
-  EditorView,
   VSBrowser,
   WebDriver,
   WebView,
@@ -68,7 +66,6 @@ import {
 } from "vscode-extension-tester";
 import { Locatorspaths } from "../../pageObjectsConfig/memory-page-objects";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../../ui-test-utils/exec-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import * as fs from "node:fs";
 import {
@@ -85,29 +82,28 @@ describe("CFSIO-6338 Partition editing", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-
   let driver: WebDriver;
-  let editor: EditorView;
 
   browser = VSBrowser.instance;
   before(async function () {
     this.timeout(10000);
     browser = VSBrowser.instance;
     driver = browser.driver;
-    editor = new EditorView();
-    await editor.closeAllEditors();
-    await UIUtils.sleep(3000);
+
+    workbench = new Workbench();
+    await workbench.waitForStable(10000);
   });
 
-  after(async () => {
+  afterEach(async () => {
     // Teardown - reset cfsconfig file
-    await asyncExecFile("git", "checkout", configPath);
+    await UIUtils.restoreFixtureFileFromGit(configPath);
+
+    await view.switchBack();
+    await workbench.executeCommand("view: close all editors");
   });
 
   it("Partition editing", async () => {
     await browser.openResources(configPath);
-
-    workbench = new Workbench();
     console.log("Opened the cfsconfig file");
 
     await UIUtils.dismissAllNotifications(workbench, browser);
@@ -131,22 +127,21 @@ describe("CFSIO-6338 Partition editing", () => {
     const locators = new Locatorspaths();
     await locators.setPartitionName(driver, "testEditPartition");
 
-    await UIUtils.clickElement(view, locatorspath.assignedCoresDropdown);
-    await UIUtils.clickElement(
+    await UIUtils.selectOptionFromDropdown(
       view,
+      locatorspath.assignedCoresDropdown,
       locatorspath.assignedCoresSelector("multiselect-option-CM4"),
     );
-    await UIUtils.clickElement(view, locatorspath.assignedCoresDropdown);
 
     await UIUtils.sendKeysToElements(
       view,
       locatorspath.chosenControlInput,
-      "editPartition",
+      "editpartition",
     );
     await UIUtils.sendKeysToElements(
       view,
       locatorspath.labelControlInput,
-      "editPartition2",
+      "editpartition2",
     );
 
     await UIUtils.clickElement(view, locatorspath.startAddress);
@@ -160,25 +155,24 @@ describe("CFSIO-6338 Partition editing", () => {
     await UIUtils.sendKeysToElements(view, locatorspath.sizeStepper, "32");
     await UIUtils.clickElement(view, locatorspath.createConfiguredPartition);
 
-    console.log("Save the configuration file changes");
-    await view.switchBack();
-    await workbench.executeCommand("view: close all editors");
-    const dialog = new ModalDialog();
-    await dialog.pushButton("Save");
-    console.log("Saved the configuration file");
-    await UIUtils.sleep(300);
-
-    console.log("Config path:", configPath);
-    if (!fs.existsSync(configPath)) {
-      throw new Error(`Config file not found at: ${configPath}`);
+    try {
+      // save document
+      await view.switchBack();
+      await workbench.executeCommand("File: Save without formatting");
+      await UIUtils.sleep(1000);
+      console.log("Saved the file");
+    } catch {
+      console.error("Error saving the file");
     }
 
-    const fileContent = fs.readFileSync(configPath, "utf-8");
+    // Assert the file content.
+    const fileContent = await fs.promises.readFile(configPath, "utf-8");
     const peripheralData = JSON.parse(fileContent);
 
     const cm4Project = peripheralData.Projects.find(
       (proj: any) => proj.CoreId === "CM4",
     );
+
     const cm4Partitions = cm4Project.Partitions;
     console.log(cm4Partitions);
 
@@ -199,10 +193,10 @@ describe("CFSIO-6338 Partition editing", () => {
         Size: 32768,
         DisplayUnit: "KB",
         IsOwner: true,
-        Access: "R",
+        Access: "R/W/X",
         Config: {
-          CHOSEN: "editPartition",
-          LABEL: "editPartition2",
+          CHOSEN: "editpartition",
+          LABEL: "editpartition2",
         },
       },
       {

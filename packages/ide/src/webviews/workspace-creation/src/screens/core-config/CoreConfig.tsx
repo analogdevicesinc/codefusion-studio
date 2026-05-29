@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import {fetchPlugins} from '../../utils/api';
 import CoreConfigHeader from './core-config-header/CoreConfigHeader';
 import {
 	useConfiguredCore,
-	useSelectedCoreToConfigId
+	useSelectedBoardPackage,
+	useSelectedCoreToConfigId,
+	useSelectedSoc
 } from '../../state/slices/workspace-config/workspace-config.selector';
 import {
 	type TLocaleContext,
@@ -30,7 +32,9 @@ import {
 
 export default function CoreConfig() {
 	const l10n: TLocaleContext | undefined = useLocaleContext();
-	const pluginsPromise = useMemo(async () => fetchPlugins(), []);
+	const socId = useSelectedSoc();
+	const {packageId, boardId} = useSelectedBoardPackage();
+	const pluginsPromise = useMemo(async () => fetchPlugins(socId, packageId, boardId), [socId, packageId, boardId]);
 	const coreId = useSelectedCoreToConfigId();
 	const core = useConfiguredCore(coreId ?? '');
 

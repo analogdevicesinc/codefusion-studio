@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,44 @@ import styles from './textfield.module.scss';
 import React, {forwardRef, type ChangeEvent} from 'react';
 
 type TextFieldProps = Readonly<{
+	/** The current value of the text input */
 	inputVal: string | undefined;
+	/** Label text or element to display above or beside the input field */
 	label?: string | JSX.Element;
+	/** Whether to display an "Optional" badge next to the label */
 	optional?: boolean;
+	/** Whether the input field is disabled */
 	isDisabled?: boolean;
+	/** Error message to display below the input field. Overrides status */
 	error?: string;
+	/** Placeholder text to display when the input is empty */
 	placeholder?: string;
+	/** Content to display at the start of the input field */
 	startSlot?: JSX.Element | string;
+	/** Content to display at the end of the input field */
 	endSlot?: JSX.Element | string;
+	/** Layout direction for the label and input field. Defaults to 'vertical' */
 	direction?: 'vertical' | 'horizontal';
+	/** Whether the component should take up the full width of its container */
 	fullWidth?: boolean;
+	/** Base string for data-test attributes, useful for testing */
 	dataTest?: string;
-	onInputChange: (value: string) => void;
+	/** Size variant of the input field. Defaults to 'large' */
+	size?: 'small' | 'large';
+	/** Visual status of the input field. Defaults to 'normal' */
+	status?: 'error' | 'normal';
+	/** Callback invoked when the input value changes. Maps to the native input event */
+	onInputChange?: (value: string) => void;
+	/** Callback invoked when a key is released */
 	onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+	/** Callback invoked when a key is pressed down */
 	onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+	/** Callback invoked before input is processed */
 	onBeforeInput?: React.FormEventHandler<HTMLInputElement>;
+	/** Callback invoked when the input receives focus */
 	onFocus?: React.FormEventHandler;
+	/** Maximum number of characters allowed in the input */
+	maxLength?: number;
 }>;
 
 const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
@@ -47,19 +69,22 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 			startSlot,
 			endSlot,
 			direction = 'vertical',
+			size = 'large',
+			status = 'normal',
 			fullWidth,
 			dataTest,
 			onBeforeInput,
 			onKeyUp,
 			onKeyDown,
 			onInputChange,
-			onFocus
+			onFocus,
+			maxLength
 		},
 		ref
 	) {
 		return (
 			<div
-				className={`${styles.container} ${direction === 'vertical' ? styles.vertical : styles.horizontal} ${fullWidth ? styles['full-width'] : undefined} ${inputVal ? '' : styles.empty}`}
+				className={`${styles.container} ${direction === 'vertical' ? styles.vertical : styles.horizontal} ${fullWidth ? styles['full-width'] : undefined} ${inputVal ? '' : styles.empty} ${styles[size]}`}
 			>
 				{label && (
 					<div className={styles.labelContainer}>
@@ -68,9 +93,6 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 							<span className={styles.optionalLabel}>Optional</span>
 						)}
 					</div>
-				)}
-				{direction === 'horizontal' && (
-					<div className={styles.divider} />
 				)}
 				<div>
 					<VSCodeTextField
@@ -83,11 +105,12 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 							dataTest ? `${dataTest}-control-input` : undefined
 						}
 						disabled={isDisabled}
-						className={`${styles.textField} ${error ? styles.errorBorder : undefined}`}
+						className={`${styles.textField} ${status === 'error' || error ? styles.errorBorder : undefined}`}
 						value={inputVal ?? ''}
+						maxlength={maxLength}
 						onBeforeInput={onBeforeInput}
 						onInput={e => {
-							onInputChange(
+							onInputChange?.(
 								(e as ChangeEvent<HTMLInputElement>).target.value
 							);
 						}}

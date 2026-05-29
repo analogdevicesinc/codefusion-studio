@@ -19,7 +19,7 @@ import type {
 	WorkspaceCore
 } from '../common/types/config';
 import {isCypressEnvironment} from '@common/utils/env';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 import type {StateProject} from '../common/types/state';
 
 import {

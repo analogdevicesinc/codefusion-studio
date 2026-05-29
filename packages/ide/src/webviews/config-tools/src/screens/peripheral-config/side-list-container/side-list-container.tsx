@@ -15,58 +15,27 @@
 import {useState, useMemo, useCallback} from 'react';
 import PeripheralGroupsFilterControls, {
 	type FilterOption
-} from '../peripheral-groups-filter-controls/FilterControls';
+} from '../../../components/filter-controls/filter-controls';
 import PeripheralNavigation from '../peripheral-navigation/PeripheralNavigation';
 import {
 	getConfigurablePeripherals,
 	filterAvailablePeripherals,
-	filterAllocatedPeripherals,
-	computePeripheralResetValues
+	filterAllocatedPeripherals
 } from '../../../utils/soc-peripherals';
 import type {
 	FormattedPeripheral,
 	FormattedPeripheralSignal
 } from '../../../../../common/types/soc';
 import styles from './side-list-container.module.scss';
-import {useIsProjectSelectionView} from '../../../state/slices/app-context/appContext.selector';
-import {
-	useAllocatedTarget,
-	useIsPeripheralSecure,
-	usePeripheralAllocations,
-	usePeripheralProjects,
-	usePeripheralTitle,
-	useSignalName,
-	useSignals
-} from '../../../state/slices/peripherals/peripherals.selector';
+import {useProjectSelectionConfig} from '../../../state/slices/app-context/appContext.selector';
+import {usePeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
 import {useAppDispatch} from '../../../state/store';
-import {
-	setIsAllocatingCore,
-	setProjectSelectionView
-} from '../../../state/slices/app-context/appContext.reducer';
+import {setProjectSelectionConfig} from '../../../state/slices/app-context/appContext.reducer';
 import CoreSelector from '../core-selector/CoreSelector';
-import {computeInitialPinConfig} from '../../../utils/pin-reset-controls';
-import {
-	setMultiSignalConfig,
-	updateSignalConfig
-} from '../../../state/slices/pins/pins.reducer';
-import {
-	setPeripheralAssignment,
-	setSignalAssignment,
-	setSignalGroupAssignment
-} from '../../../state/slices/peripherals/peripherals.reducer';
-import {
-	getIsExternallyManagedProyect,
-	getProjectInfoList
-} from '../../../utils/config';
-import {getControlsForProjectIds} from '../../../utils/api';
-import {CONTROL_SCOPES} from '../../../constants/scopes';
-import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
-import {usePinsByPeripheral} from '../../../state/slices/pins/pins.selector';
-import {
-	handleSignalAssignment,
-	handleSignalGroupSelected
-} from './side-list-container.handlers';
-import {type PeripheralSecurity} from '../../../types/peripherals';
+import {getProjectInfoList} from '../../../utils/config';
+import {useSignalGroupAssignmentHandler} from '../../../hooks/use-signal-group-assignment-handler';
+import {useSignalAssignmentHandler} from '../../../hooks/use-signal-assignment-handler';
+import {PERIPHERAL_LIST_CONTAINER_ID} from '../constants';
 
 const defaultFilterOptions: Record<string, FilterOption> =
 	Object.freeze({
@@ -77,27 +46,21 @@ const defaultFilterOptions: Record<string, FilterOption> =
 
 export default function SideListContainer() {
 	const dispatch = useAppDispatch();
+	const projects = getProjectInfoList();
 
-	const projectConfig = getProjectInfoList();
-
-	const coreSelectionView = useIsProjectSelectionView();
-
-	const allocatedTarget = useAllocatedTarget();
-
-	const title = usePeripheralTitle();
-
-	const peripheralPins = usePinsByPeripheral(title);
-
-	const signals = useSignals();
-
-	const cores = usePeripheralProjects();
-
-	const signalName = useSignalName();
-
-	const security = useIsPeripheralSecure();
-	const projects = projectConfig?.filter(project =>
-		cores?.includes(project.CoreId)
+	const isProjectSelectionViewActive = Boolean(
+		useProjectSelectionConfig()
 	);
+	const {peripheral = '', signal = ''} =
+		useProjectSelectionConfig() ?? {};
+
+	const handleSignalAssignment = useSignalAssignmentHandler(
+		peripheral,
+		signal
+	);
+
+	const handleSignalGroupAssignment =
+		useSignalGroupAssignmentHandler(peripheral);
 
 	const configurablePeripheralList: Array<
 		FormattedPeripheral<FormattedPeripheralSignal>
@@ -169,86 +132,35 @@ export default function SideListContainer() {
 	};
 
 	const handleCoreSelectionDone = useCallback(() => {
-		dispatch(setIsAllocatingCore(false));
-		dispatch(setProjectSelectionView(false));
+		dispatch(setProjectSelectionConfig(undefined));
 	}, [dispatch]);
 
-	const onSignalGroupSelected = useCallback(
-		(projectId: string) => {
-			if (!allocatedTarget) {
-				console.warn('allocatedTarget is undefined');
-
-				return;
+	const onSelectHandler = useCallback(
+		async (projectId: string) => {
+			if (signal) {
+				await handleSignalAssignment(projectId);
+			} else {
+				await handleSignalGroupAssignment(projectId);
 			}
 
-			void handleSignalGroupSelected({
-				projectId,
-				allocatedTarget,
-				dispatch,
-				getIsExternallyManagedProyect,
-				getControlsForProjectIds,
-				CONTROL_SCOPES,
-				computePeripheralResetValues,
-				evaluateCondition,
-				computeInitialPinConfig,
-				setMultiSignalConfig,
-				setPeripheralAssignment,
-				setSignalGroupAssignment,
-				handleCoreSelectionDone,
-				peripheralPins,
-				signals,
-				title
-			});
+			handleCoreSelectionDone();
 		},
 		[
-			allocatedTarget,
-			dispatch,
-			handleCoreSelectionDone,
-			peripheralPins,
-			signals,
-			title
+			signal,
+			handleSignalAssignment,
+			handleSignalGroupAssignment,
+			handleCoreSelectionDone
 		]
 	);
-
-	const onSignalAssignment = useCallback(
-		async (args: {
-			peripheral: string;
-			signalName: string;
-			projectId: string;
-		}) => {
-			await handleSignalAssignment({
-				args,
-				peripheralPins,
-				computeInitialPinConfig,
-				dispatch,
-				updateSignalConfig,
-				setSignalAssignment,
-				handleCoreSelectionDone
-			});
-		},
-		[peripheralPins, dispatch, handleCoreSelectionDone]
-	);
-
-	const onSelectHandler = signalName
-		? (projectId: string) => {
-				void onSignalAssignment({
-					peripheral: title,
-					signalName,
-					projectId
-				});
-			}
-		: onSignalGroupSelected;
 
 	return (
 		<div className={styles.peripheralSidebarContainer}>
 			<div className={styles.sidebarWrapper}>
-				{coreSelectionView ? (
+				{isProjectSelectionViewActive ? (
 					<CoreSelector
-						title={title}
+						title={peripheral}
 						projects={projects ?? []}
-						projectConfig={projectConfig}
-						signalName={signalName}
-						peripheralSecurity={security as PeripheralSecurity}
+						signalName={signal}
 						onSelect={onSelectHandler}
 						onCancel={handleCoreSelectionDone}
 					/>
@@ -258,8 +170,9 @@ export default function SideListContainer() {
 							options={filterOptions}
 							onSelect={onFilterSelectionChange}
 						/>
+						<div className={styles.horizontalDivider} />
 						<div
-							id='peripheral-list-container'
+							id={PERIPHERAL_LIST_CONTAINER_ID}
 							className={styles.listWrapper}
 							data-test='Peripheral-List'
 						>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import {
 	type Partition
 } from '../../../state/slices/partitions/partitions.reducer';
 import {PartitionDetails} from '../partition-details/PartitionDetails';
-import {AssignedCoresSection} from '../assigned-cores/AssignedCores';
+import {AssignedCoresSelector} from '../assigned-cores/assigned-cores-selector';
 import {MemoryBlocks} from '../memory-blocks/MemoryBlocks';
 import type {ControlCfg, MemoryBlock} from '@common/types/soc';
 import {getCoreMemoryBlocks} from '../../../utils/memory';
 import {
+	useActivePartitionConfig,
 	useActivePartitionProjects,
 	usePartitions,
 	useSidebarState
@@ -42,12 +43,54 @@ import {PluginOptionsSection} from '../plugin-options-section/plugin-options-sec
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
 import DeleteIcon from '../../../../../common/icons/Delete';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
+import {validatePluginOptions} from '../../../utils/plugin-options-validation';
+import {getAllPluginOptions} from '../../../utils/plugin-options';
 
 type PartitionSidebarProps = {
 	readonly isFormTouched: boolean;
 	readonly onClose: () => void;
 	readonly onFormTouched: (touched: boolean) => void;
 };
+
+function addDefaultPluginOptionValues(
+	activePartition: Partition,
+	pluginOptions: Record<string, Record<string, ControlCfg[]>>
+) {
+	// Any missing properties in config should be added from pluginOptions with default values.
+	const partition = {
+		...activePartition
+	};
+
+	Object.entries(pluginOptions).forEach(([projectId, controls]) => {
+		if (partition.projects.find(p => p.projectId === projectId)) {
+			partition.config = {...(partition.config ?? {})};
+			partition.config[projectId] = {
+				...(partition.config[projectId] ?? {})
+			};
+
+			controls.memory?.forEach(control => {
+				if (
+					!control.Condition ||
+					evaluateCondition(
+						{projectId, ...partition.config![projectId]},
+						control.Condition
+					)
+				) {
+					if (
+						partition.config![projectId][control.Id] === undefined
+					) {
+						partition.config![projectId][control.Id] =
+							control.Hint ??
+							(control.Type === 'boolean' ? 'FALSE' : '');
+					}
+				}
+			});
+		}
+	});
+
+	return partition;
+}
 
 export function PartitionSidebar({
 	isFormTouched,
@@ -61,8 +104,11 @@ export function PartitionSidebar({
 	const {sidebarPartition, isSidebarMinimised, activePartition} =
 		useSidebarState();
 	const projects = useActivePartitionProjects();
+	const config = useActivePartitionConfig();
+
 	// Existing partitions have a name.
 	const existingPartition = Boolean(sidebarPartition.displayName);
+	// Plugin options metadata.
 	const [pluginOptions, setPluginOptions] = useState<
 		Record<string, Record<string, ControlCfg[]>>
 	>({});
@@ -131,6 +177,30 @@ export function PartitionSidebar({
 		}
 	}, [projects, pluginOptions]);
 
+	const allPluginOptions = useMemo(
+		() => getAllPluginOptions(config, pluginOptions, projects),
+		[config, pluginOptions, projects]
+	);
+
+	const pluginOptionsAreValid = useMemo(() => {
+		const projectIdList = Object.keys(pluginOptions);
+
+		for (const projectId of projectIdList) {
+			const config = allPluginOptions[projectId];
+			const pluginControls = pluginOptions[projectId].memory ?? [];
+			const pluginOptionsErrors = validatePluginOptions(
+				config,
+				pluginControls
+			);
+
+			if (Object.keys(pluginOptionsErrors).length > 0) {
+				return false;
+			}
+		}
+
+		return true;
+	}, [allPluginOptions, pluginOptions]);
+
 	const partitionTitle = useMemo(
 		() => (
 			<div
@@ -194,7 +264,8 @@ export function PartitionSidebar({
 												parseInt(sidebarPartition.startAddress, 16)
 										),
 										blocksForType
-									).valid
+									).valid &&
+									pluginOptionsAreValid
 								) {
 									if (existingPartition) {
 										dispatch(
@@ -204,14 +275,21 @@ export function PartitionSidebar({
 											})
 										);
 									} else {
-										dispatch(createPartition(activePartition));
+										const partition = addDefaultPluginOptionValues(
+											activePartition,
+											pluginOptions
+										);
+										dispatch(createPartition(partition));
 									}
 
 									onClose();
 								} else {
 									onFormTouched(true);
 								}
-							} else if (formValidationState.valid) {
+							} else if (
+								formValidationState.valid &&
+								pluginOptionsAreValid
+							) {
 								if (existingPartition) {
 									dispatch(
 										editPartition({
@@ -220,7 +298,11 @@ export function PartitionSidebar({
 										})
 									);
 								} else {
-									dispatch(createPartition(activePartition));
+									const partition = addDefaultPluginOptionValues(
+										activePartition,
+										pluginOptions
+									);
+									dispatch(createPartition(partition));
 								}
 
 								onClose();
@@ -237,18 +319,21 @@ export function PartitionSidebar({
 			{activePartition && (
 				<>
 					<PartitionDetails errors={formValidationState.errors} />
-					<AssignedCoresSection
+					<AssignedCoresSelector
 						errors={formValidationState.errors}
 						onCoreChange={cores => {
 							updateActivePartitionDetails({
 								...activePartition,
-								projects: cores.length === 1 ? [cores[0]] : cores
+								projects: cores
 							});
 						}}
 					/>
 					{activePartition.projects.length > 0 ? (
 						<CfsSuspense fallbackPosition='center'>
-							<PluginOptionsSection pluginOptions={pluginOptions} />
+							<PluginOptionsSection
+								pluginOptions={pluginOptions}
+								allOptions={allPluginOptions}
+							/>
 						</CfsSuspense>
 					) : (
 						<div className={styles.section}>

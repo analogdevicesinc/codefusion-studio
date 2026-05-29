@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,11 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {MemoryAliasTooltip} from './memory-alias-tooltip/memory-alias-tooltip';
 import {isProjectSecure} from '../../../utils/soc-cores';
 import Tooltip from '../../../../../common/components/tooltip/Tooltip';
+import {
+	NON_SECURE_ABBR,
+	SECURE_ABBR
+} from '../../../../../common/constants/core-properties';
+import {getMemoryAccessOverrideForProject} from '../../../utils/memory-access';
 
 type PartitionDetailsProjectViewCardProp = Readonly<{
 	partition: Partition;
@@ -66,11 +71,16 @@ export default function PartitionDetailsProjectViewCard({
 	const filteredCores = useFilteredCores();
 	const assignedProjects = useMemo(
 		() =>
-			partition.projects.filter(core =>
-				filteredCores.some(
-					project => core.projectId === project.ProjectId
+			partition.projects
+				.filter(core =>
+					filteredCores.some(c => c.ProjectId === core.projectId)
 				)
-			),
+				.map(core => ({
+					...core,
+					secure: filteredCores.find(
+						c => c.ProjectId === core.projectId
+					)?.Secure
+				})),
 		[partition.projects, filteredCores]
 	);
 
@@ -100,6 +110,24 @@ export default function PartitionDetailsProjectViewCard({
 	);
 
 	if (!currentProject) return null;
+
+	/** NOTE If no override exists for this project and memory type,
+	 * default to showing the project's access permissions.
+	 * If an override exists but has no defined access (aka Plugin options handle this),
+	 * default to no access (undefined) which hides the badge.
+	 * So we have those three scenarios:
+	 * - No overrides -> Default behavior
+	 * - Override but no options -> Show message aka managed in plugins
+	 * - Multiple overrides -> Show in dropdown
+	 **/
+	const overriddenAccess = getMemoryAccessOverrideForProject(
+		currentProject.projectId,
+		partition.type
+	);
+	const projectAccess =
+		overriddenAccess?.length === 0
+			? undefined
+			: currentProject.access;
 
 	const secureCoreId = isProjectSecure(currentProject.projectId)
 		? currentProject.coreId
@@ -180,21 +208,33 @@ export default function PartitionDetailsProjectViewCard({
 				<div slot='end'>
 					<div className={styles.partitionEnd}>
 						<div className={styles.partitionAccessBadge}>
-							{assignedProjects?.map(project => (
+							{assignedProjects?.map(assignedProject => (
 								<Badge
-									key={project.projectId}
+									key={assignedProject.projectId}
 									appearance='secondary'
 									className={styles.partitionCardInfoBadge}
 								>
-									{project.label}
+									{assignedProject.label}
+									{assignedProject.secure !== undefined && (
+										<>
+											{' '}
+											(
+											{assignedProject.secure
+												? SECURE_ABBR
+												: NON_SECURE_ABBR}
+											)
+										</>
+									)}
 								</Badge>
 							))}
-							<Badge
-								appearance='secondary'
-								className={styles.partitionCardInfoBadge}
-							>
-								{i10n?.[currentProject.access]?.title ?? ''}
-							</Badge>
+							{projectAccess && (
+								<Badge
+									appearance='secondary'
+									className={styles.partitionCardInfoBadge}
+								>
+									{i10n?.[projectAccess]?.title ?? projectAccess}
+								</Badge>
+							)}
 						</div>
 						<div className={styles.actionButton}>
 							<Tooltip title='Configure' type='long'>

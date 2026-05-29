@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,8 +124,10 @@ export function getPeripheralErrorCount(
 					)
 				: {};
 
+		// Include only controls listed in the peripheral config
 		const formErrorCount = Object.keys(controlsErrors).filter(
-			controlId => Boolean(peripheral?.config?.[controlId])
+			controlId =>
+				peripheral?.config && controlId in peripheral.config
 		).length;
 		count += formErrorCount;
 	});

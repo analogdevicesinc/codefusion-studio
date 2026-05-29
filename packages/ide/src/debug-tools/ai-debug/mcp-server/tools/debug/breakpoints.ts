@@ -40,8 +40,16 @@ export function registerBreakpointTools(
       title: "Set Breakpoint",
       description: "Set a breakpoint at the specified file and line",
       inputSchema: {
-        file: z.string().describe("File path or name"),
-        line: z.coerce.number().describe("Line number"),
+        file: z
+          .string()
+          .describe(
+            "Absolute file path. Relative file paths are not supported.",
+          ),
+        line: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .describe("Line number, with first line being 1"),
         condition: z
           .string()
           .optional()
@@ -69,8 +77,22 @@ export function registerBreakpointTools(
       title: "Remove Breakpoints",
       description: "Remove breakpoints from a file or remove all breakpoints",
       inputSchema: {
-        file: z.string().optional().describe("File path or name (optional)"),
-        line: z.coerce.number().optional().describe("Line number (optional)"),
+        file: z
+          .string()
+          .optional()
+          .describe(
+            "Absolute file path. Relative file paths are not supported. If omitted, all breakpoints will be removed.",
+          ),
+        line: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe(
+            "Line number, with first line being 1. Can only be provided if file argument is also provided.\n" +
+              "If omitted, and file is provided, all breakpoints of the file will be removed.\n" +
+              "If omitted, and file is not provided, all breakpoints will be removed.",
+          ),
       },
     },
     async (params) => {

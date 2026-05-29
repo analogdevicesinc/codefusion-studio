@@ -1,0 +1,2 @@
+Not a real tflite file, but we need at least 100 bytes in here for the
+static analysis tools to think it might be real.

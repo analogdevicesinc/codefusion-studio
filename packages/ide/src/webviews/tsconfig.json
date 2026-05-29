@@ -2,16 +2,17 @@
 	"compilerOptions": {
 		"composite": true,
 		"noEmit": true,
-		"target": "ES2020",
+		"target": "es2020",
 		"useDefineForClassFields": true,
 		"lib": ["ES2020", "DOM", "DOM.Iterable"],
 		"types": ["cypress", "cypress-real-events"],
 		"module": "ESNext",
 		"skipLibCheck": true,
-		"rootDir": ".",
 		"baseUrl": ".",
 		"paths": {
 			"@common/*": ["./common/*"],
+			"@ide-types/*": ["../types/*"],
+			"@constants/*": ["../constants/*"],
 			"@socs/*": ["../../../cfs-data-models/socs/*"]
 		},
 		/* Bundler mode */
@@ -27,5 +28,11 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true
 	},
-	"include": ["./**/*.ts", "./**/*.tsx", "./cypress.d.ts"]
+	"include": [
+		"./**/*.ts",
+		"./**/*.tsx",
+		"./cypress.d.ts",
+		"../types/**/*.ts",
+		"../constants/**/*.ts"
+	]
 }

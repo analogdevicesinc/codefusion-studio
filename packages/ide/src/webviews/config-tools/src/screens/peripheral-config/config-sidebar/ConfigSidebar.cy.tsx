@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import {
 	setSignalGroupAssignment
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {capitalizeWord} from '../../../../../common/utils/string';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const max32690wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -639,6 +639,49 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		);
 	});
 
+	it('Should correctly set target pin when clicking "Manage" in "PIN ASSIGNMENTS"', () => {
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(controlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'GPIO0',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
+							}
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('GPIO0:CM4-proj'));
+		reduxStore.dispatch(
+			setActiveSignal({peripheral: 'GPIO0', signal: 'P0.1'})
+		);
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		cy.dataTest(`config-section:manage-pin-assignments`).click();
+
+		reduxStore
+			.getState()
+			.pinsReducer.pinDetailsTargetPin?.should('equal', 'P0.1');
+	});
+
 	it('Should show "PIN ASSIGNMENTS" when the peripheral has signals', () => {
 		cy.window().then(win => {
 			win.localStorage.setItem(
@@ -761,6 +804,164 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 					.within(() => {
 						cy.get('p').first().invoke('text').should('match', /^2/);
 					});
+			});
+	});
+
+	it('Should count errors correctly when field is not mandatory, has defined pattern', () => {
+		const optionalTextPatternControlsMockCM4 =
+			structuredClone(controlsMockCM4);
+
+		const controlIndex = optionalTextPatternControlsMockCM4[
+			'CM4 SysTick'
+		].findIndex(c => c.Id === 'CHOSEN');
+
+		optionalTextPatternControlsMockCM4['CM4 SysTick'][
+			controlIndex
+		].Pattern = '([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*';
+
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(optionalTextPatternControlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'CM4 SysTick',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
+							}
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		// Not mandatory, it passes validation.
+		cy.dataTest('peripheral:error').should('not.exist');
+
+		// Invalid input, do not pass validation.
+		cy.dataTest(
+			'plugin-options:plugin-form:control-CHOSEN-control-input'
+		)
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('some,');
+			});
+
+		cy.dataTest('peripheral:error')
+			.should('exist')
+			.within(() => {
+				cy.get('p').first().invoke('text').should('match', /^1/);
+			})
+			.then(() => {
+				// Valid input, passes validation.
+				cy.dataTest(
+					'plugin-options:plugin-form:control-CHOSEN-control-input'
+				)
+					.shadow()
+					.within(() => {
+						cy.get('#control').clear().type('some,other');
+					});
+
+				cy.dataTest('peripheral:error').should('not.exist');
+			});
+	});
+
+	it('Should count errors correctly when field is mandatory, has defined pattern', () => {
+		const optionalTextPatternControlsMockCM4 =
+			structuredClone(controlsMockCM4);
+
+		const controlIndex = optionalTextPatternControlsMockCM4[
+			'CM4 SysTick'
+		].findIndex(c => c.Id === 'CHOSEN');
+
+		optionalTextPatternControlsMockCM4['CM4 SysTick'][
+			controlIndex
+		].Pattern = '[a-z][a-z0-9-]*';
+
+		cy.window().then(win => {
+			win.localStorage.setItem(
+				`pluginControls:${CM4}-proj`,
+				JSON.stringify(optionalTextPatternControlsMockCM4)
+			);
+		});
+		const reduxStore = configurePreloadedStore(max32690wlp, {
+			BoardName: 'AD-APARD32690-SL',
+			Package: 'WLP',
+			Soc: SoC,
+			Projects: [
+				{
+					...mockedCm4Project,
+					Peripherals: [
+						{
+							Name: 'CM4 SysTick',
+							Signals: [],
+							Config: {
+								ENABLE: 'FALSE'
+							}
+						}
+					],
+					Partitions: [],
+					PlatformConfig: {}
+				}
+			]
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		// Mandatory, do not pass validation when set it empty
+		cy.dataTest(
+			'plugin-options:plugin-form:control-CHOSEN-control-input'
+		)
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('initial').clear();
+			});
+
+		cy.dataTest('peripheral:error').should('exist');
+
+		// Not valid, to not pass validation
+		cy.dataTest(
+			'plugin-options:plugin-form:control-CHOSEN-control-input'
+		)
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('some,');
+			});
+
+		cy.dataTest('peripheral:error')
+			.should('exist')
+			.within(() => {
+				cy.get('p').first().invoke('text').should('match', /^1/);
+			})
+			.then(() => {
+				// Valid input, passes validation
+				cy.dataTest(
+					'plugin-options:plugin-form:control-CHOSEN-control-input'
+				)
+					.shadow()
+					.within(() => {
+						cy.get('#control').clear().type('some');
+					});
+
+				cy.dataTest('peripheral:error').should('not.exist');
 			});
 	});
 });

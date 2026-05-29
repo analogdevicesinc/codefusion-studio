@@ -27,6 +27,10 @@
 		flex-direction: inherit;
 		height: inherit;
 
+		.horizontalDivider {
+			border-bottom: 1px solid colors.$default-border;
+		}
+
 		.listWrapper {
 			overflow-y: auto;
 			height: 100%;

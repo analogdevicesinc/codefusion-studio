@@ -12,53 +12,60 @@
  * limitations under the License.
  *
  */
- 
+
 import {useLocaleContext} from '../../contexts/LocaleContext';
 import type {TLocaleContext} from '../../types/l10n';
 import type {ReactElement} from 'react';
+import {localizeMessage} from '../../utils/localization';
 
+/**
+ * A component that renders a localized message based on the provided message ID and optional parameters.
+ * If parseHtml is set to true, the message will be rendered as HTML.
+ * Note that parseHtml should not be used when params are provided, as this could lead to XSS vulnerabilities.
+ */
 export function LocalizedMessage(
 	props: Readonly<{
 		id: string;
-		parseHtml: true;
-	}>
-): ReactElement;
-export function LocalizedMessage(
-	props: Readonly<{
-		id: string;
-		parseHtml?: false | undefined;
+		params?: Record<string, string>;
+		parseHtml?: false;
 	}>
 ): string;
-
 export function LocalizedMessage(
 	props: Readonly<{
 		id: string;
-		parseHtml?: boolean;
+		params?: never;
+		parseHtml: true;
 	}>
-): ReactElement | string {
-	const {id, parseHtml} = props;
+): ReactElement<any, any>;
+
+export function LocalizedMessage(
+	props: Readonly<
+		| {
+				id: string;
+				params?: Record<string, string>;
+				parseHtml?: false;
+		  }
+		| {
+				id: string;
+				params?: never;
+				parseHtml: true;
+		  }
+	>
+): ReactElement<any, any> | string {
+	const {id, params, parseHtml} = props;
 	const translations: TLocaleContext | undefined = useLocaleContext();
 
-	if (translations === undefined) {
-		return id;
-	}
+	const message = localizeMessage(translations, id, params);
 
-	const path = id.split('.');
-	let message = id;
-	let currentPath = translations;
-
-	for (const key of path) {
-		if (typeof currentPath[key] === 'string') {
-			message = currentPath[key];
-			break;
-		} else {
-			currentPath = currentPath[key];
-		}
-	}
-
-	if (parseHtml) {
+	if (parseHtml && !params) {
 		// eslint-disable-next-line react/no-danger
 		return <div dangerouslySetInnerHTML={{__html: message}} />;
+	}
+
+	if (parseHtml && params) {
+		console.warn(
+			`Message ID: ${id as string}: parseHtml is not supported when params are provided. This could otherwise lead to xss vulnerabilities.`
+		);
 	}
 
 	return message;

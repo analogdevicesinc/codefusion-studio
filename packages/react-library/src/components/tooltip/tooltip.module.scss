@@ -21,7 +21,7 @@
 
 	.tooltip {
 		position: absolute;
-		display: none;
+		display: block;
 		z-index: 1001;
 		padding: 5px 8px;
 		border-radius: layout.$border-radius-1;
@@ -37,6 +37,7 @@
 	.short {
 		width: fit-content;
 		text-align: center;
+		white-space: nowrap;
 	}
 
 	.long {
@@ -50,7 +51,7 @@
 	}
 
 	.bottom {
-		bottom: 0;
+		bottom: -7px;
 		left: 50%;
 		transform: translate(-50%, 100%);
 	}
@@ -110,33 +111,27 @@
 			colors.$default-border;
 	}
 
-	.leftAlgin.top {
+	.leftAlign.top {
 		transform: translate(-10px, -100%);
 	}
 
-	.leftAlgin.bottom {
+	.leftAlign.bottom {
 		transform: translate(-10px, 100%);
 	}
 
-	.leftAlgin:after {
+	.leftAlign:after {
 		left: 10px;
 	}
 
-	.rightAlgin.top {
+	.rightAlign.top {
 		transform: translate(calc(-100% + 10px), -100%);
 	}
 
-	.rightAlgin.bottom {
+	.rightAlign.bottom {
 		transform: translate(calc(-100% + 10px), 100%);
 	}
 
-	.rightAlgin:after {
+	.rightAlign:after {
 		left: calc(100% - 10px);
-	}
-}
-
-.tooltipContainer:hover {
-	.tooltip {
-		display: block;
 	}
 }

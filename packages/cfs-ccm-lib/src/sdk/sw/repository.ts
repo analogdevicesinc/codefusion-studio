@@ -16,6 +16,8 @@
 import { CfsApiClient, CfsApiError } from '../cfsapi-client.js';
 import { CfsCcmError } from '../../error/error.js';
 
+import type { SWPackageRepo } from 'cfs-ccm-api/rest-types';
+
 type PackageRepositoryErrorType =
     | 'SERVICE_ERROR'
     | 'UNHANDLED_ERROR'
@@ -47,6 +49,29 @@ export class RepositoryClient {
         );
         await repo.getToken();
         return repo;
+    }
+
+    /**
+     * Fetches all available package repository URLs.
+     * @returns Promise<string[]>
+     */
+    public async getRepositoryUrls(): Promise<string[]> {
+        const repos =
+            await this.cfsApiClient.rest.swPackagesRepos.getAll();
+        return repos.map((repo: SWPackageRepo) => repo.repoUrl);
+    }
+
+    /**
+     * Fetches all available package repositories
+     * @returns Promise<PackageRepository[]>
+     */
+    public async getRepositories(): Promise<PackageRepository[]> {
+        const repoUrls = await this.getRepositoryUrls();
+        return Promise.all(
+            repoUrls.map((repoUrl: string) =>
+                this.getRepository(repoUrl),
+            ),
+        );
     }
 }
 

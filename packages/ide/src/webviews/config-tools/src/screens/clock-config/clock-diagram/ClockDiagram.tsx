@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,16 +31,14 @@ import {
 	colorVariablesIds,
 	fallbackColors
 } from '../constants/color-variables';
-import {
-	setClockNodeDetailsTargetNode,
-	setDiagramData
-} from '../../../state/slices/clock-nodes/clockNodes.reducer';
+import {setClockNodeDetailsTargetNode} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import ZoomInIcon from '../../../../../common/icons/ZoomIn';
 import ZoomOutIcon from '../../../../../common/icons/ZoomOut';
 import ResetZoomIcon from '../../../../../common/icons/ZoomReset';
 import {ProgressRing} from 'cfs-react-library';
-import {useClockNodesConfig} from '../../../state/slices/clock-nodes/clockNodes.selector';
-import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
+import {
+	useClockNodesStatus
+} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import type {
 	DiagramClocks,
 	DiagramData,
@@ -49,6 +47,7 @@ import type {
 import type {HoveredClockInfo} from '../types/canvas';
 import {computeFrequencies} from '../../../utils/rpn-expression-resolver';
 import '../clockConfig.css';
+import {useGlobalConfig} from '../../../hooks/use-global-config';
 
 type ClockDiagramProps = {
 	readonly canvas: DiagramData | undefined;
@@ -97,8 +96,8 @@ function ClockDiagram({
 }: ClockDiagramProps) {
 	const engineApi = useRef<EngineApi>({} as EngineApi);
 	const dispatch = useAppDispatch();
-	const assignedPins = useAssignedPins();
-	const nodesConfig = useClockNodesConfig();
+	const globalConfig = useGlobalConfig();
+	const nodesStatus = useClockNodesStatus();
 
 	// Controls diagram loader display
 	const [shouldRender, setShouldRender] = useState(false);
@@ -229,35 +228,13 @@ function ClockDiagram({
 		const formattedData = formatDiagramData(
 			canvas,
 			getColorsRecord(),
-			{
-				clockconfig: nodesConfig,
-				assignedPins
-			},
-			computeFrequencies(nodesConfig, assignedPins)
+			globalConfig,
+			computeFrequencies(globalConfig),
+			nodesStatus
 		);
 
 		// Load new computed values
 		loadContent(formattedData);
-
-		// Error is technically not used, though we need it for correct re-rendering in ClockDetails component
-		const parts = Object.values(formattedData.parts).reduce(
-			(
-				acc: Record<
-					string,
-					{enabled: boolean | undefined; error: boolean | undefined}
-				>,
-				part
-			) => ({
-				...acc,
-				[part.name]: {
-					enabled: part.enabled,
-					error: part.error
-				}
-			}),
-			{}
-		);
-
-		dispatch(setDiagramData(parts));
 
 		const newDisabledNodes = Object.values(formattedData.parts)
 			.filter(part => !part.enabled)
@@ -292,7 +269,13 @@ function ClockDiagram({
 		highlightWires(newDisabledWires, 'disabled');
 
 		rerenderContent?.();
-	}, [assignedPins, canvas, nodesConfig, shouldRender, dispatch]);
+	}, [
+		globalConfig,
+		canvas,
+		nodesStatus,
+		shouldRender,
+		dispatch
+	]);
 
 	if (shouldRecreateSchematic || !canvas) return null;
 

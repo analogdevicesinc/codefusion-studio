@@ -5,6 +5,9 @@
     "oclif-typescript",
     "prettier"
   ],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
   "rules": {
     "no-await-in-loop": "off",
     "no-bitwise": "off",
@@ -27,7 +30,13 @@
     "@typescript-eslint/consistent-type-imports": "off",
     "@typescript-eslint/no-unused-expressions": "off",
     "@typescript-eslint/no-unsafe-argument": "off",
-    "no-warning-comments": "off"
+    "no-warning-comments": "off",
+    "n/no-missing-import": [
+      "error",
+      {
+        "allowModules": ["cfs-types"]
+      }
+    ]
   },
   "ignorePatterns": ["test/**/*"]
 }

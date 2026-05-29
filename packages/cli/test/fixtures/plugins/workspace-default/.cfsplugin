@@ -1,0 +1,15 @@
+{
+  "pluginName": "CLI Default Workspace Fixture",
+  "pluginId": "com.analog.workspace.default.plugin",
+  "pluginDescription": "Fixture default workspace plugin for CLI tests.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "features": {
+    "workspace": {
+      "templates": [],
+      "files": []
+    }
+  }
+}

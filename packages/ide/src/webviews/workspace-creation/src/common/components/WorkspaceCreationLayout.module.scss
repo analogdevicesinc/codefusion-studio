@@ -16,23 +16,25 @@
 @use '#fonts' as fonts;
 @use '#layout' as layout;
 @use '#colors' as colors;
-@use '@wrksp-common/styles/wrksp-variables.scss' as vars;
 
 .workspaceLayoutSidePanel {
 	padding: 16px;
 }
 
+:has(> .workspaceLayoutMainPanel) {
+	padding: layout.$spacing-9 layout.$spacing-9 0 layout.$spacing-9;
+}
+
 .workspaceLayoutMainPanel {
-	min-width: calc(
-		vars.$panel-min-width - vars.$main-layout-padding * 2
-	);
-	padding: 40px vars.$main-layout-padding;
+	min-width: 400px;
+	max-width: 800px;
+	margin: 0 auto;
 
 	.layoutHeader {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;
-		margin: 0 0 40px;
+		margin: 0 0 layout.$spacing-6;
 
 		& > h1 {
 			@include fonts.heading-h1;

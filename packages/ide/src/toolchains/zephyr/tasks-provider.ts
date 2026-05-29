@@ -13,13 +13,12 @@
  *
  */
 
-import { default as zephyrTasks } from "./resources/tasks";
 import * as vscode from "vscode";
 
 import { Utils } from "../../utils/utils";
 import { platform } from "node:process";
 import type { IDEShellEnvProvider } from "../shell-env-provider";
-import { type CfsToolManager } from "cfs-lib";
+import { type CfsToolManager, zephyrTasks } from "cfs-lib";
 import { EXTENSION_ID, ZEPHYR_WORKSPACE } from "../../constants";
 import { workspace } from "vscode";
 
@@ -195,8 +194,9 @@ export class ZephyrTaskProvider implements vscode.TaskProvider {
 
         //Setting the group as build
         if (
+          taskDef.group &&
           typeof taskDef.group !== "string" &&
-          taskDef.group.kind === "build"
+          taskDef.group?.kind === "build"
         ) {
           task.group = vscode.TaskGroup.Build;
         }

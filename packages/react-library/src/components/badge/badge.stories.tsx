@@ -19,7 +19,13 @@ import Badge from './badge';
 
 const meta: Meta<typeof Badge> = {
 	component: Badge,
-	title: 'Badge'
+	title: 'Badge',
+	argTypes: {
+		size: {
+			control: {type: 'select'},
+			options: ['small', 'medium']
+		}
+	}
 };
 
 export default meta;
@@ -35,7 +41,8 @@ export function Default(args: React.ComponentProps<typeof Badge>) {
 Default.args = {
 	id: 'badge',
 	className: 'custom-badge-class',
-	dataTest: 'badge-test'
+	dataTest: 'badge-test',
+	size: 'medium'
 };
 
 export function Secondary(args: React.ComponentProps<typeof Badge>) {
@@ -44,5 +51,6 @@ export function Secondary(args: React.ComponentProps<typeof Badge>) {
 
 Secondary.args = {
 	id: 'secondaryBadgeId',
-	appearance: 'secondary'
+	appearance: 'secondary',
+	size: 'medium'
 };

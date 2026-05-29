@@ -36,6 +36,13 @@
 	}
 }
 
+.groupItem [data-test^='group-name'] {
+	max-width: 170px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
 .divider {
 	height: 1px;
 	background-color: colors.$editor-widget-border;

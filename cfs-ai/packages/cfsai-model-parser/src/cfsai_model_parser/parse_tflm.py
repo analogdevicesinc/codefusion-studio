@@ -127,7 +127,7 @@ class TFLiteParser:
         )
         self._opcode_map = self._build_opcode_map()
         self._tensor_type_map = self._build_tensor_type_map()
-        self.logger.info(f"Initialized: {self.__class__.__name__}")
+        self.logger.debug(f"Initialized: {self.__class__.__name__}")
 
         
     def _build_opcode_map(self) -> dict[int, str]:
@@ -191,10 +191,6 @@ class TFLiteParser:
                     byte_size = self._TENSOR_TYPE_SIZES.get(attr_name.upper(), 0)
                     if byte_size > 0:
                         type_map[enum_value] = byte_size
-                        self.logger.debug(
-                            f"Mapped tensor type {attr_name} "
-                            f"(enum={enum_value}) to {byte_size} bytes"
-                        )
                     else:
                         # Log unsupported types but continue processing
                         unsupported_types.append(attr_name)
@@ -206,7 +202,7 @@ class TFLiteParser:
             self.logger.warning(f"Unsupported tensor data types: "
                                f"{', '.join(unsupported_types)}")
                 
-        self.logger.info(f"Built tensor type mapping with {len(type_map)} "
+        self.logger.debug(f"Built tensor type mapping with {len(type_map)} "
                         f"supported types")
         return type_map
     

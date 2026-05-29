@@ -16,7 +16,6 @@
 import {memo, useMemo} from 'react';
 import styles from './CoreSummaryEntry.module.scss';
 import {type ProjectInfo} from '../../../utils/config';
-import ProjectAllocations from './ProjectAllocations';
 import {useProjectPeripheralAllocations} from '../../../state/slices/peripherals/peripherals.selector';
 import {filterOutNonConfigurableAllocations} from '../../../utils/soc-peripherals';
 import PeripheralCard from '../peripheral-card/peripheral-card';
@@ -36,6 +35,7 @@ import {
 } from '../../../../../common/contexts/LocaleContext';
 import useIsPrimaryMultipleProjects from '../../../hooks/use-is-primary-multiple-projects';
 import useProjectHasPeripheralError from '../../../hooks/use-project-has-peripheral-error';
+import PeripheralAllocationCard from './PeripheralAllocationCard';
 
 type CoreSummaryCardProps = Readonly<{
 	project: ProjectInfo;
@@ -129,35 +129,53 @@ function CoreSummaryCard({project}: CoreSummaryCardProps) {
 		[project, shouldShowPrimaryBadge]
 	);
 
-	const end = (
-		<div className={styles.peripheralCardEnd}>
-			{hasAllocations ? (
-				<>
-					<span>{`${sortedAllocations.length} ${
-						sortedAllocations.length === 1
-							? i10n?.num_peripherals?.one?.label?.title
-							: i10n?.num_peripherals?.other?.label?.title
-					}`}</span>
-					{(projectHasPeripheralError ||
-						hasPeripheralPinConflictError) && (
-						<ConflictIcon
-							dataTest={project.ProjectId + '-error-icon'}
-						/>
-					)}
-				</>
-			) : (
-				<span className={styles.noPeripherals}>No peripherals</span>
-			)}
-		</div>
+	const end = useMemo(
+		() => (
+			<div className={styles.peripheralCardEnd}>
+				{hasAllocations ? (
+					<>
+						<span>{`${sortedAllocations.length} ${
+							sortedAllocations.length === 1
+								? i10n?.num_peripherals?.one?.label?.title
+								: i10n?.num_peripherals?.other?.label?.title
+						}`}</span>
+						{(projectHasPeripheralError ||
+							hasPeripheralPinConflictError) && (
+							<ConflictIcon
+								dataTest={project.ProjectId + '-error-icon'}
+							/>
+						)}
+					</>
+				) : (
+					<span className={styles.noPeripherals}>No peripherals</span>
+				)}
+			</div>
+		),
+		[
+			hasAllocations,
+			hasPeripheralPinConflictError,
+			i10n?.num_peripherals?.one?.label?.title,
+			i10n?.num_peripherals?.other?.label?.title,
+			project.ProjectId,
+			projectHasPeripheralError,
+			sortedAllocations.length
+		]
 	);
 
-	const content = hasAllocations && (
-		<div className={styles.peripheralCardContent}>
-			<ProjectAllocations
-				allocations={sortedAllocations}
-				project={project}
-			/>
-		</div>
+	const content = useMemo(
+		() =>
+			hasAllocations && (
+				<div className={styles.peripheralCardContent}>
+					{sortedAllocations.map(peripheral => (
+						<PeripheralAllocationCard
+							key={peripheral.name}
+							projectId={project.ProjectId}
+							peripheral={peripheral}
+						/>
+					))}
+				</div>
+			),
+		[hasAllocations, project.ProjectId, sortedAllocations]
 	);
 
 	return (

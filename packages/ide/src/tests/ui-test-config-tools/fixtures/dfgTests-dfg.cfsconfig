@@ -1,0 +1,47 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "^1.1.0",
+  "DataModelSchemaVersion": "1.1.0",
+  "Timestamp": "2025-02-28T12:29:03.185Z",
+  "Soc": "DFGTESTS",
+  "Package": "DFG",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "DFGBoard",
+  "Projects": [
+    {
+      "CoreId": "CMxx",
+      "ProjectId": "CMxx",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m55",
+        "ZephyrVersion": "4.2.0",
+        "ZephyrBoardName": "granite_fpga/adau2042/css"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "AUXCORE",
+      "ProjectId": "Aux",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "hifi",
+        "ZephyrVersion": "4.2.0",
+        "ZephyrBoardName": "granite_fpga/adau2042/dss"
+      },
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ],
+  "DFG": {
+    "Streams": [],
+    "Gaskets": []
+  }
+}

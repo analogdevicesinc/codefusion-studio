@@ -25,12 +25,14 @@ type RadioProps = {
 	readonly onChange?: ((e: Event) => unknown) &
 		React.FormEventHandler<HTMLElement>;
 	readonly children?: ReactNode;
+	readonly className?: string;
 };
 
 export default function Radio({
 	checked,
 	slot,
 	value,
+	className,
 	onClick,
 	onChange,
 	children
@@ -42,7 +44,7 @@ export default function Radio({
 			checked={checked}
 			onChange={onChange}
 			onClick={onClick}
-			className={styles.radio}
+			className={`${styles.radio} ${className ?? ''}`}
 		>
 			{children}
 		</VSCodeRadio>

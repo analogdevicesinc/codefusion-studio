@@ -33,11 +33,8 @@ describe('generate', () => {
 
   const outputDirectoryPath = path.resolve(__dirname, 'output');
 
-  const pluginsPath = path.resolve(__dirname, CFS_PLUGINS_PATH);
-  const dataModelsPath = path.resolve(
-    __dirname,
-    CFS_DATA_MODELS_PATH
-  );
+  const pluginsPath = CFS_PLUGINS_PATH;
+  const dataModelsPath = CFS_DATA_MODELS_PATH;
 
   afterEach(async () => {
     fs.rmSync(outputDirectoryPath, {recursive: true, force: true});

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import type {
 	CfsSystemConfigService,
 	CfsProjectConfigService,
 	CfsCodeGenerationService,
-	CfsSocControlsOverrideService
-} from "cfs-plugins-api";
-import { GenericPlugin } from "cfs-plugins-api";
+	CfsSocControlsOverrideService,
+	CfsMemoryAccessOverrideService
+} from "cfs-types";
+import { GenericPlugin } from "cfs-plugins-sdk";
 
 import type { CfsPackageManagerProvider } from "cfs-package-manager";
-import type { CfsDataModelManager } from "../managers/cfs-data-model-manager.js";
+import { CfsDataModelManager } from "../managers/cfs-data-model-manager.js";
+import { MissingDependencyError } from "../utils/missing-dependency-error.js";
 import {
 	promises as fs,
 	statSync,
@@ -46,10 +48,18 @@ import {
 import path, { dirname } from "node:path";
 import { createRequire } from "node:module";
 import { getHostPlatform } from "../utils/node-utils.js";
+import { findMatchingVersion } from "../utils/semantic-versioning.js";
 import fg from "fast-glob";
 
 const DEFAULT_WORKSPACE_PLUGIN_ID =
 	"com.analog.workspace.default.plugin";
+
+interface PluginManagerOptions {
+	/**
+	 * List of paths to be searched by the plugin manager
+	 */
+	pluginsCustomSearchPaths?: PathLike[];
+}
 
 /*
  * The CfsPluginManager is provided by the `cfs-lib` package in
@@ -75,35 +85,36 @@ export class CfsPluginManager {
 	/**
 	 * Data model manager for retrieving SoC data models
 	 */
-	private dataModelManager?: CfsDataModelManager;
+	private dataModelManager: CfsDataModelManager;
 
 	/**
 	 * Constructor
-	 * @param pluginsCustomSearchPaths - Array of paths/directories to search for plugins
-	 * @param pkgManager - Package manager provider
-	 * @param dataModelManager - Data model manager for retrieving SoC data models
+	 * @param {CfsDataModelManager} dataModelManager - Data model manager for retrieving SoC data models
+	 * @param {CfsPackageManagerProvider|undefined} packageManager - Package manager provider
+	 * @param {PluginManagerOptions} options - Options for plugins
 	 */
 	constructor(
-		pluginsCustomSearchPaths: PathLike[],
-		pkgManager?: CfsPackageManagerProvider,
-		dataModelManager?: CfsDataModelManager
+		dataModelManager: CfsDataModelManager,
+		packageManager: CfsPackageManagerProvider | undefined,
+		options?: PluginManagerOptions
 	) {
-		const validSearchPaths = pluginsCustomSearchPaths.filter(
-			(dir) => {
-				try {
-					return existsSync(dir) && statSync(dir).isDirectory();
-				} catch (error) {
-					console.error(
-						`Invalid plugin directory: ${String(dir)}`,
-						error
-					);
-					return false;
-				}
-			}
-		);
+		if (options?.pluginsCustomSearchPaths) {
+			const validSearchPaths =
+				options.pluginsCustomSearchPaths.filter((dir) => {
+					try {
+						return existsSync(dir) && statSync(dir).isDirectory();
+					} catch (error) {
+						console.error(
+							`Invalid plugin directory: ${String(dir)}`,
+							error
+						);
+						return false;
+					}
+				});
 
-		this.searchPaths = validSearchPaths;
-		this.pkgManager = pkgManager;
+			this.searchPaths = validSearchPaths;
+		}
+		this.pkgManager = packageManager;
 		this.dataModelManager = dataModelManager;
 	}
 
@@ -184,6 +195,68 @@ export class CfsPluginManager {
 	}
 
 	/**
+	 * Validate that all plugins required by the configuration are available.
+	 * Throws MissingDependencyError if any plugins are missing.
+	 * @param cfsConfig - The configuration to validate
+	 */
+	public async validateConfigPlugins(
+		cfsConfig: CfsConfig
+	): Promise<void> {
+		if (this.pluginInfo.length === 0) await this.refresh();
+
+		const missingPlugins: {
+			id: string;
+			version: string | undefined;
+			availableVersions: string[] | undefined;
+		}[] = [];
+
+		for (const project of cfsConfig.Projects) {
+			if (
+				!project.PluginId ||
+				project.PluginId.trim() === "" ||
+				project.ExternallyManaged
+			) {
+				continue;
+			}
+
+			const pluginInfo = this.findPluginByVersionOrRange(
+				project.PluginId,
+				project.PluginVersion
+			);
+
+			if (!pluginInfo) {
+				const availableVersions = this.getAvailableVersions(
+					project.PluginId
+				);
+
+				// Check if already in missing list to avoid duplicates
+				const alreadyAdded = missingPlugins.some(
+					(p) =>
+						p.id === project.PluginId &&
+						p.version === project.PluginVersion
+				);
+
+				if (!alreadyAdded) {
+					missingPlugins.push({
+						id: project.PluginId,
+						version: project.PluginVersion,
+						availableVersions:
+							availableVersions.length > 0
+								? availableVersions
+								: undefined
+					});
+				}
+			}
+		}
+
+		if (missingPlugins.length > 0) {
+			throw new MissingDependencyError("plugin", {
+				plugins: missingPlugins
+			});
+		}
+	}
+
+	/**
 	 * Get all properties supported by the specified plugin for the given scope.
 	 * @param pluginId - The ID of the plugin to retrieve properties from.
 	 * @param pluginVersion - The version of the plugin to retrieve properties from.
@@ -199,16 +272,26 @@ export class CfsPluginManager {
 	): Promise<CfsPluginProperty[]> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
-		const pluginInfo = this.pluginInfo.find(
-			(info) =>
-				info.pluginId === pluginId &&
-				info.pluginVersion === pluginVersion
+		const pluginInfo = this.findPluginByVersionOrRange(
+			pluginId,
+			pluginVersion
 		);
 
 		if (!pluginInfo) {
-			throw new Error(
-				`Plugin ${pluginId} not found in plugin directories`
-			);
+			const availableVersions = this.getAvailableVersions(pluginId);
+
+			throw new MissingDependencyError("plugin", {
+				plugins: [
+					{
+						id: pluginId,
+						version: pluginVersion,
+						availableVersions:
+							availableVersions.length > 0
+								? availableVersions
+								: undefined
+					}
+				]
+			});
 		}
 
 		const pluginData = structuredClone(pluginInfo);
@@ -247,16 +330,25 @@ export class CfsPluginManager {
 	): Promise<Record<string, SocControl[]>> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
-		const pluginInfo = this.pluginInfo.find(
-			(info) =>
-				info.pluginId === pluginId &&
-				info.pluginVersion === pluginVersion
+		const pluginInfo = this.findPluginByVersionOrRange(
+			pluginId,
+			pluginVersion
 		);
 
 		if (!pluginInfo) {
-			throw new Error(
-				`Plugin ${pluginId} not found in plugin directories`
-			);
+			const availableVersions = this.getAvailableVersions(pluginId);
+			throw new MissingDependencyError("plugin", {
+				plugins: [
+					{
+						id: pluginId,
+						version: pluginVersion,
+						availableVersions:
+							availableVersions.length > 0
+								? availableVersions
+								: undefined
+					}
+				]
+			});
 		}
 
 		const pluginData = structuredClone(pluginInfo);
@@ -276,6 +368,45 @@ export class CfsPluginManager {
 	}
 
 	/**
+	 * Retrieves the memory access permissions that need to be overridden
+	 * for a specific dataModel and core combination.
+	 * @param dataModelName - The name of the data model
+	 * @param coreId - The ID of the core
+	 * @returns An object mapping plugins to arrays of permissions to override memory access.
+	 */
+	public async getMemoryAccessOverrides(
+		dataModelName: string,
+		coreId: string
+	) {
+		if (this.pluginInfo.length === 0) await this.refresh();
+
+		const overrideTable:
+			| Record<string, Record<string, string[] | undefined>>
+			| undefined = {};
+
+		for (const info of this.pluginInfo) {
+			const pluginData = structuredClone(info);
+
+			const plugin =
+				await CfsPluginManager.loadPlugin<CfsMemoryAccessOverrideService>(
+					pluginData
+				);
+
+			if (typeof plugin.getMemoryAccessOverrides === "function") {
+				const result = plugin.getMemoryAccessOverrides(
+					dataModelName,
+					coreId
+				);
+
+				if (!result) continue;
+
+				overrideTable[info.pluginId] = result;
+			}
+		}
+
+		return overrideTable;
+	}
+	/**
 	 * Generate a workspace using the specified plugin
 	 * @param cfsWorkspace - The CfsWorkspace to generate the workspace from
 	 */
@@ -283,7 +414,7 @@ export class CfsPluginManager {
 		cfsWorkspace: CfsWorkspace
 	): Promise<void> {
 		let workspacePluginId = cfsWorkspace.workspacePluginId;
-		let dataModel;
+		let dataModel: CfsSocDataModel | undefined;
 		if (!workspacePluginId) {
 			// Use the default workspace plugin if no workspace plugin is specified
 			workspacePluginId = DEFAULT_WORKSPACE_PLUGIN_ID;
@@ -296,11 +427,14 @@ export class CfsPluginManager {
 		if (cfsWorkspace.soc && cfsWorkspace.package) {
 			const { soc, package: socPackage } = cfsWorkspace;
 
-			dataModel = await this.getDataModel({
-				soc,
-				socPackage,
-				fileName: `${soc.toLowerCase()}-${socPackage.toLowerCase()}.json`
-			});
+			try {
+				dataModel = await this.dataModelManager.getDataModel(
+					soc,
+					socPackage
+				);
+			} catch {
+				/* Throw error later if needed */
+			}
 		}
 
 		const extendedCfsWorkspace = {
@@ -358,7 +492,7 @@ export class CfsPluginManager {
 		// Allow primary core to configure system
 		if (Array.isArray(cfsWorkspace.projects) && cfsConfig) {
 			const primaryProject = cfsWorkspace.projects.find(
-				(p) => p.IsPrimary
+				(p) => p.isPrimary
 			);
 			if (primaryProject) {
 				const primaryPluginId = primaryProject.pluginId;
@@ -443,6 +577,10 @@ export class CfsPluginManager {
 				{ cfsconfig: cfsConfig, datamodel: dataModel },
 				workspacePath
 			);
+		} else if (cfsConfig && !dataModel) {
+			throw new Error(
+				`Could not generate code. Data model for ${cfsWorkspace.soc} ${cfsWorkspace.package} not found.`
+			);
 		}
 	}
 
@@ -513,13 +651,13 @@ export class CfsPluginManager {
 		if (cfsWorkspace.soc && cfsWorkspace.package) {
 			const { soc, package: socPackage } = cfsWorkspace;
 
-			const dataModel = await this.getDataModel({
+			const dataModel = await this.dataModelManager.getDataModel(
 				soc,
 				socPackage,
-				fileName: `${soc.toLowerCase()}-${socPackage.toLowerCase()}.json`
-			});
+				cfsConfig?.DataModelVersion
+			);
 
-			if (cfsConfig && dataModel) {
+			if (cfsConfig) {
 				await this.generateConfigCode(
 					{ cfsconfig: cfsConfig, datamodel: dataModel },
 					workspacePath
@@ -653,99 +791,92 @@ export class CfsPluginManager {
 	) {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
-		if (pluginId && !pluginVersion) {
-			pluginVersion = this.getLatestPluginVersion(pluginId);
-		}
-
-		for (const info of this.pluginInfo) {
-			if (
-				(pluginId === "undefined" || pluginId === info.pluginId) &&
-				(pluginVersion === "undefined" ||
-					pluginVersion === info.pluginVersion)
-			) {
-				return CfsPluginManager.loadPlugin<T>(info);
+		if (!pluginId) {
+			for (const info of this.pluginInfo) {
+				if (
+					pluginVersion === "undefined" ||
+					!pluginVersion ||
+					pluginVersion === info.pluginVersion
+				) {
+					return CfsPluginManager.loadPlugin<T>(info);
+				}
 			}
+			throw new Error(`Plugin not found in plugin directories`);
 		}
 
-		throw new Error(
-			`Plugin ${pluginId ?? ""} version ${pluginVersion ?? ""} not found in plugin directories`
+		// Use semver-aware version matching (undefined/"undefined" treated as "*" for latest)
+		const normalizedVersion =
+			!pluginVersion || pluginVersion === "undefined"
+				? undefined
+				: pluginVersion;
+
+		const pluginInfo = this.findPluginByVersionOrRange(
+			pluginId,
+			normalizedVersion
+		);
+
+		if (pluginInfo) {
+			return CfsPluginManager.loadPlugin<T>(pluginInfo);
+		}
+
+		const availableVersions = this.getAvailableVersions(pluginId);
+		throw new MissingDependencyError("plugin", {
+			plugins: [
+				{
+					id: pluginId,
+					version: normalizedVersion,
+					availableVersions:
+						availableVersions.length > 0
+							? availableVersions
+							: undefined
+				}
+			]
+		});
+	}
+
+	/**
+	 * Find a plugin by ID and version or semver range.
+	 * If versionOrRange is undefined, returns the latest version (uses "*" range).
+	 * @param pluginId - The plugin ID
+	 * @param versionOrRange - Exact version, semver range (e.g., "^1.0.0", "~1.2.0"), or undefined for latest
+	 * @returns The matching plugin info, or undefined if not found
+	 */
+	private findPluginByVersionOrRange(
+		pluginId: string,
+		versionOrRange?: string
+	): CfsPluginInfo | undefined {
+		const matchingPlugins = this.pluginInfo.filter(
+			(info) => info.pluginId === pluginId
+		);
+
+		if (matchingPlugins.length === 0) {
+			return undefined;
+		}
+
+		const availableVersions = matchingPlugins.map(
+			(info) => info.pluginVersion
+		);
+
+		// Treat undefined as "*" (match any, returns highest)
+		const range = versionOrRange ?? "*";
+		const matchedVersion = findMatchingVersion(
+			range,
+			availableVersions
+		);
+
+		return matchingPlugins.find(
+			(info) => info.pluginVersion === matchedVersion
 		);
 	}
 
 	/**
-	 * Retrieve the latest installed version of a plugin
-	 * @param pluginId - The plugin ID to get the latest version for
-	 * @returns The latest installed version of the plugin
+	 * Get all available versions for a plugin ID.
+	 * @param pluginId - The plugin ID
+	 * @returns Array of available version strings
 	 */
-	private getLatestPluginVersion(pluginId: string) {
-		let pluginVersion: string | undefined;
-		for (const info of this.pluginInfo) {
-			if (info.pluginId === pluginId) {
-				if (pluginVersion === undefined) {
-					pluginVersion = info.pluginVersion;
-					continue;
-				}
-
-				const majorVersion = parseInt(pluginVersion.split(".")[0]);
-
-				if (
-					majorVersion < parseInt(info.pluginVersion.split(".")[0])
-				) {
-					continue;
-				}
-
-				const minorVersion = parseInt(pluginVersion.split(".")[1]);
-				if (
-					minorVersion < parseInt(info.pluginVersion.split(".")[1])
-				) {
-					continue;
-				}
-
-				const patchVersion = parseInt(pluginVersion.split(".")[2]);
-				if (
-					patchVersion < parseInt(info.pluginVersion.split(".")[2])
-				) {
-					continue;
-				}
-
-				pluginVersion = info.pluginVersion;
-			}
-		}
-
-		return pluginVersion;
-	}
-
-	/**
-	 * Retrieve the data model using the injected CfsDataModelManager
-	 * @param soc - The SoC name
-	 * @param socPackage - The SoC package
-	 * @param schemaVersion - The schema version
-	 * @returns The data model if found, otherwise undefined
-	 */
-	private async getDataModel({
-		soc,
-		socPackage,
-		fileName
-	}: {
-		soc: string;
-		socPackage: string;
-		fileName: string;
-	}): Promise<CfsSocDataModel | undefined> {
-		if (this.dataModelManager && soc && socPackage) {
-			return this.dataModelManager.getDataModel(soc, socPackage);
-		}
-
-		// Temporarily offer backwards compatibility for data model discovery
-		// until data model manager is fully integrated in cfsutil
-		for (const dir of this.searchPaths) {
-			const dataModelPath = path.join(dir.toString(), fileName);
-			if (existsSync(dataModelPath)) {
-				const content = readFileSync(dataModelPath, "utf8");
-				const json = JSON.parse(content) as CfsSocDataModel;
-				return json;
-			}
-		}
-
-		return undefined;
+	private getAvailableVersions(pluginId: string): string[] {
+		return this.pluginInfo
+			.filter((info) => info.pluginId === pluginId)
+			.map((info) => info.pluginVersion);
 	}
 }

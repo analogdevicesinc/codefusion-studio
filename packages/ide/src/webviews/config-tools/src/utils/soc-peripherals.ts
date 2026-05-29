@@ -26,6 +26,8 @@ import {type PeripheralConfig} from '../types/peripherals';
 import {getCachedSocPackage} from './soc-pins';
 import {computeDefaultValues} from './compute-register-value';
 import {getProjectInfoList} from './config';
+import type {TNumericBase} from '../../../common/types/errorTypes';
+import type {CfsSocDataModel} from 'cfs-types';
 
 let peripheralDict: Record<
 	string,
@@ -178,11 +180,11 @@ export function filterAvailablePeripherals(
 }
 
 export function filterAllocatedPeripherals(
-	perihperals: Array<FormattedPeripheral<FormattedPeripheralSignal>>,
+	peripherals: Array<FormattedPeripheral<FormattedPeripheralSignal>>,
 	allocations: Record<string, Record<string, PeripheralConfig>>
 ) {
 	const allocationMap = categorizeAllocationsByName(allocations);
-	const list = perihperals.filter(perihperal =>
+	const list = peripherals.filter(perihperal =>
 		allocationMap.has(perihperal.name)
 	);
 
@@ -418,4 +420,38 @@ export function filterOutNonConfigurableAllocations(
 			return isPeripheralConfigurable || isPreassigned;
 		})
 	);
+}
+
+/**
+ * Builds a numeric base mapping from data model control configurations
+ * @param controls - Array of data model control configurations (can be undefined)
+ * @returns - Record mapping control IDs to their numeric bases
+ */
+export function buildNumericBaseMapFromSoc(
+	controls: CfsSocDataModel['Controls'][string] | undefined
+): Record<string, TNumericBase> {
+	const numericBase: Record<string, TNumericBase> = {};
+
+	controls?.forEach(control => {
+		if (control.NumericBase) {
+			numericBase[control.Id] = control.NumericBase as TNumericBase;
+		}
+	});
+
+	return numericBase;
+}
+
+/**
+ * Gets configuration format from data model control configurations
+ * @param controls - Array of data model control configurations (can be undefined)
+ * @returns - Configuration format object or undefined
+ */
+export function getConfigFormatFromSocControls(
+	controls: CfsSocDataModel['Controls'][string] | undefined
+): PeripheralConfig['configFormat'] | undefined {
+	const numericBase = buildNumericBaseMapFromSoc(controls);
+
+	return Object.keys(numericBase).length > 0
+		? {numericBase}
+		: undefined;
 }

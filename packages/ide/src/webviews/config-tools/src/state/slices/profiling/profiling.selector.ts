@@ -16,7 +16,33 @@
 import {useAppSelector} from '../../store';
 
 export function useProfilingConfig(projectId: string) {
-	return useAppSelector(
-		state => state.profilingReducer.zephelin[projectId]
-	);
+	return useAppSelector(state => {
+		const zephelin = state.profilingReducer.zephelin[projectId] ?? {};
+		const errors = state.profilingReducer.errors[projectId] ?? {};
+
+		return {
+			zephelin,
+			errors
+		};
+	});
+}
+
+export function usePeripheralAllocationBaudRate(
+	uartPort: string | undefined
+): number | undefined {
+	return useAppSelector(state => {
+		if (!uartPort) {
+			return undefined;
+		}
+
+		const baudRate = Number(
+			state.peripheralsReducer.assignments[uartPort]?.config.BAUD
+		);
+
+		if (isNaN(baudRate)) {
+			return undefined;
+		}
+
+		return baudRate;
+	});
 }

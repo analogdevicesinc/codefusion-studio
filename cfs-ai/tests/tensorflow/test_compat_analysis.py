@@ -283,7 +283,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         custom_op_issue = next((issue for issue in report.operator_issues 
                                if issue.operator == "CUSTOM_OP"), None)
         self.assertIsNotNone(custom_op_issue)
-        self.assertEqual(custom_op_issue.layer_index, 1)
+        self.assertEqual(custom_op_issue.layers[0], 1)
         self.assertEqual(custom_op_issue.severity, "critical")
     
     @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
@@ -319,7 +319,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         self.assertIn("overflow", memory_issue.type)
 
         self.assertEqual(memory_issue.severity, "critical")
-        self.assertIsNotNone(memory_issue.primary_recommendation)
+        self.assertGreater(len(memory_issue.recommendations), 0)
     
     @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
     def test_analyze_model_data_type_issues(self, mock_parser_class):

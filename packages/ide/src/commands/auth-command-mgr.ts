@@ -24,6 +24,7 @@ import {
 import { registerCommand } from "./commands";
 import {
   AuthConfig,
+  PackageLicenseReporter,
   SessionManager,
   MyAnalogCloudsmithCredentialProvider,
 } from "cfs-lib";
@@ -33,6 +34,7 @@ import { AuthConfigParser } from "../utils/auth-config";
 import { CfsApiClient, TokenCodeExchangeInitiator } from "cfs-ccm-lib";
 import { PACKAGE_MANAGER_CREDENTIAL_PROVIDER } from "../constants";
 import {
+  CfsPackageLicenseReporter,
   CfsPackageManagerProvider,
   CfsPackageRemoteCredentialProvider,
 } from "cfs-package-manager";
@@ -44,6 +46,7 @@ import {
 export class AuthCommandManager {
   private sessionManager: SessionManager;
   private credentialProvider: CfsPackageRemoteCredentialProvider | undefined;
+  private licenseReporter: CfsPackageLicenseReporter | undefined;
 
   static registerAllCommands(
     context: ExtensionContext,
@@ -166,6 +169,8 @@ export class AuthCommandManager {
         await this.packageManager.registerCredentialProvider(
           this.credentialProvider,
         );
+        this.licenseReporter = new PackageLicenseReporter(client);
+        await this.packageManager.registerLicenseReporter(this.licenseReporter);
       }
 
       window.showInformationMessage(
@@ -209,9 +214,12 @@ export class AuthCommandManager {
 
       // Remove package manager credentials
       if (this.packageManager) {
+        await this.packageManager.unregisterLicenseReporter();
+        this.licenseReporter = undefined;
         await this.packageManager.unregisterCredentialProvider(
           this.credentialProvider ?? PACKAGE_MANAGER_CREDENTIAL_PROVIDER,
         );
+        this.credentialProvider = undefined;
       }
 
       await session.endSession();

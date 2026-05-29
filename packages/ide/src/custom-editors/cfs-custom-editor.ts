@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,11 @@ import { Utils } from "../utils/utils";
 
 abstract class CfsCustomEditor implements vscode.CustomTextEditorProvider {
   static viewType: string;
+  protected readonly context: vscode.ExtensionContext;
 
-  constructor(_context: vscode.ExtensionContext) {}
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+  }
 
   static register(..._args: any[]): vscode.Disposable {
     throw new Error("Method not implemented.");
@@ -95,8 +98,8 @@ function getDefaultWorkspace() {
   const currentYear = new Date().getFullYear();
   return {
     Copyright: `Copyright (c) ${currentYear} Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.`,
+    SchemaVersion: "2.1.0",
     DataModelVersion: "0.0.1",
-    DataModelSchemaVersion: "0.0.1",
     Timestamp: new Date().toISOString(),
     Soc: "",
     Template: "",
@@ -114,7 +117,9 @@ function getDefaultWorkspace() {
  * Create a temporary file in the system's temporary directory
  * and open it with the workspace creation editor.
  */
-export async function openTempDocumentInWorkspaceEditor() {
+export async function openTempDocumentInWorkspaceEditor(
+  editor: string = WORKSPACE_CREATION_EDITOR_ID,
+) {
   const uri = Utils.getTempCfsWorkspacePath();
 
   const content = JSON.stringify(getDefaultWorkspace(), null, 2);
@@ -128,11 +133,7 @@ export async function openTempDocumentInWorkspaceEditor() {
     throw error;
   }
 
-  await vscode.commands.executeCommand(
-    "vscode.openWith",
-    uri,
-    WORKSPACE_CREATION_EDITOR_ID,
-  );
+  await vscode.commands.executeCommand("vscode.openWith", uri, editor);
 }
 
 /**

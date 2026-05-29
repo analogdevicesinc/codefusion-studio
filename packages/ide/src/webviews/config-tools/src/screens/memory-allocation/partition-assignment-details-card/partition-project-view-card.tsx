@@ -75,20 +75,22 @@ export default function PartitionProjectViewCard({
 				<div slot='title' className={styles.memoryCardTitleSlot}>
 					<div className={styles.memoryCardTitle}>
 						<h3>{project.Name}</h3>
-						{shouldShowPrimary ? (
-							<Badge appearance='secondary'>{PRIMARY}</Badge>
-						) : null}
-						{project.Secure && (
-							<Badge appearance='secondary'>{SECURE}</Badge>
-						)}
-						{project.Secure === false && (
-							<Badge appearance='secondary'>{NON_SECURE}</Badge>
-						)}
-						{project.ExternallyManaged && (
-							<Badge appearance='secondary'>
-								{EXTERNALLY_MANAGED}
-							</Badge>
-						)}
+						<div className={styles.badges}>
+							{shouldShowPrimary ? (
+								<Badge appearance='secondary'>{PRIMARY}</Badge>
+							) : null}
+							{project.Secure && (
+								<Badge appearance='secondary'>{SECURE}</Badge>
+							)}
+							{project.Secure === false && (
+								<Badge appearance='secondary'>{NON_SECURE}</Badge>
+							)}
+							{project.ExternallyManaged && (
+								<Badge appearance='secondary'>
+									{EXTERNALLY_MANAGED}
+								</Badge>
+							)}
+						</div>
 					</div>
 					<div className={styles.projectViewTitle}>
 						{memoryTypes?.map(type => (

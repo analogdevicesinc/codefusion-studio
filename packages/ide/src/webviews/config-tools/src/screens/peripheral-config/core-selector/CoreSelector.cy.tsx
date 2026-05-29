@@ -16,7 +16,7 @@
 import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import CoreSelector from './CoreSelector';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import type {ProjectInfo} from '../../../utils/config';
 
 const max32690Wlp = (await import('@socs/max32690-wlp.json'))
@@ -85,23 +85,43 @@ describe('Core selector', () => {
 		const onCancel = cy.stub();
 		const {Projects} = mockedConfigDict;
 
+		const mockedSoc = {
+			...max32690Wlp,
+			Peripherals: [
+				...max32690Wlp.Peripherals,
+				{
+					Name: 'PERIPHERAL_NAME',
+					Description: 'Peripheral Description',
+					Security: 'Any',
+					Cores: ['CM4', 'RV'],
+					Config: {},
+					Signals: [],
+					ClockNode: ''
+				}
+			]
+		} satisfies Soc;
+
+		const store = configurePreloadedStore(
+			mockedSoc,
+			mockedConfigDict
+		);
+
 		cy.mount(
 			<CoreSelector
 				title='PERIPHERAL_NAME'
-				projectConfig={Projects as unknown as ProjectInfo[]}
 				projects={Projects as unknown as ProjectInfo[]}
 				peripheralSecurity='Any'
 				onSelect={onSelect}
 				onCancel={onCancel}
 			/>,
-			reduxStore
+			store
 		);
 
 		cy.dataTest('allocate-PERIPHERAL_NAME-title').should('exist');
 
 		cy.dataTest('allocate-PERIPHERAL_NAME-title').should(
 			'contain.text',
-			'Allocate PERIPHERAL_NAME  to: '
+			'Allocate PERIPHERAL_NAME to: '
 		);
 
 		cy.dataTest('core-CM4-proj-container').should('exist');
@@ -129,7 +149,6 @@ describe('Core selector', () => {
 			<CoreSelector
 				title='PERIPHERAL_NAME'
 				peripheralSecurity='Non-Secure'
-				projectConfig={Projects as unknown as ProjectInfo[]}
 				projects={Projects as unknown as ProjectInfo[]}
 				onSelect={onSelect}
 				onCancel={() => undefined}
@@ -162,15 +181,31 @@ describe('Core selector', () => {
 
 	it('should mark project.Secure=FALSE disabled for peripheralSecurity=Secure', () => {
 		const {Projects} = mockedConfigDict;
+
+		const mockedSoc = {
+			...max32690Wlp,
+			Peripherals: [
+				...max32690Wlp.Peripherals,
+				{
+					Name: 'PERIPHERAL_Secure',
+					Description: 'Peripheral Description',
+					Security: 'Secure',
+					Cores: ['CM4', 'RV'],
+					Config: {},
+					Signals: [],
+					ClockNode: ''
+				}
+			]
+		} satisfies Soc;
+
 		const reduxStoreCustom = configurePreloadedStore(
-			max32690Wlp,
+			mockedSoc as Soc,
 			mockedConfigDict
 		);
 
 		cy.mount(
 			<CoreSelector
 				title='PERIPHERAL_Secure'
-				projectConfig={Projects as unknown as ProjectInfo[]}
 				projects={Projects as unknown as ProjectInfo[]}
 				peripheralSecurity='Secure'
 				onSelect={cy.stub()}
@@ -195,15 +230,31 @@ describe('Core selector', () => {
 
 	it('should mark project.Secure=TRUE and project.Secure=undefined disabled for peripheralSecurity=Non-Secure', () => {
 		const {Projects} = mockedConfigDict;
+
+		const mockedSoc = {
+			...max32690Wlp,
+			Peripherals: [
+				...max32690Wlp.Peripherals,
+				{
+					Name: 'PERIPHERAL_NonSecure',
+					Description: 'Peripheral Description',
+					Security: 'Non-Secure',
+					Cores: ['CM4', 'RV'],
+					Config: {},
+					Signals: [],
+					ClockNode: ''
+				}
+			]
+		} satisfies Soc;
+
 		const reduxStoreCustom = configurePreloadedStore(
-			max32690Wlp,
+			mockedSoc,
 			mockedConfigDict
 		);
 
 		cy.mount(
 			<CoreSelector
 				title='PERIPHERAL_NonSecure'
-				projectConfig={Projects as unknown as ProjectInfo[]}
 				projects={Projects as unknown as ProjectInfo[]}
 				peripheralSecurity='Non-Secure'
 				onSelect={cy.stub()}
@@ -228,15 +279,31 @@ describe('Core selector', () => {
 
 	it('should mark all projects enabled for peripheralSecurity=Any', () => {
 		const {Projects} = mockedConfigDict;
+
+		const mockedSoc = {
+			...max32690Wlp,
+			Peripherals: [
+				...max32690Wlp.Peripherals,
+				{
+					Name: 'PERIPHERAL_Any',
+					Description: 'Peripheral Description',
+					Security: 'Any',
+					Cores: ['CM4', 'RV'],
+					Config: {},
+					Signals: [],
+					ClockNode: ''
+				}
+			]
+		} satisfies Soc;
+
 		const reduxStoreCustom = configurePreloadedStore(
-			max32690Wlp,
+			mockedSoc,
 			mockedConfigDict
 		);
 
 		cy.mount(
 			<CoreSelector
 				title='PERIPHERAL_Any'
-				projectConfig={Projects as unknown as ProjectInfo[]}
 				projects={Projects as unknown as ProjectInfo[]}
 				peripheralSecurity='Any'
 				onSelect={cy.stub()}

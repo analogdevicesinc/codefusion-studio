@@ -20,8 +20,9 @@ import type {
 	CfsPackageManagerProvider,
 	CfsPackageReference
 } from "cfs-package-manager";
-import { CfsSocDataModel } from "cfs-plugins-api";
-import { findLatestVersion } from "../utils/semantic-versioning.js";
+import type { CfsSocDataModel } from "cfs-types";
+import { findMatchingVersion } from "../utils/semantic-versioning.js";
+import { MissingDependencyError } from "../utils/missing-dependency-error.js";
 
 const DATA_MODEL_INDEX_FILENAME = ".cfsdatamodels";
 
@@ -31,6 +32,7 @@ interface DataModelIndexEntry {
 	timestamp: string;
 	description: string;
 	path: string;
+	traceInfo?: boolean;
 }
 
 type DataModelIndex = Record<
@@ -48,11 +50,7 @@ export interface DataModelMetaData {
 	path: string;
 	pkgPath: string;
 	pkgName?: string; // custom search paths will not have this field.
-}
-
-interface SearchLocation {
-	packageRef?: CfsPackageReference;
-	path: string;
+	traceInfo?: boolean;
 }
 
 interface SearchLocation {
@@ -99,43 +97,113 @@ export class CfsDataModelManager {
 	}
 
 	/**
-	 * Get a data model by name, packageId, and optional dataModelVersion.
+	 * Validate that a data model exists without loading it.
+	 * Checks cache and index without reading/parsing the actual JSON file.
 	 * @param name - SoC name
 	 * @param packageId - Package identifier
-	 * @param dataModelVersion - optional data model version (latest if undefined)
+	 * @param dataModelVersion - optional data model version or semver range
+	 * @throws {MissingDependencyError} if no matching data model is found
+	 */
+	public async validateDataModel(
+		name: string,
+		packageId: string,
+		dataModelVersion: string
+	): Promise<void> {
+		const normalizedName = name.toLowerCase();
+		const normalizedPackageId = packageId.toLowerCase();
+
+		// 1) Check if already cached (fully loaded)
+		const cachedModel = this.findCachedDataModelByVersionOrRange(
+			normalizedName,
+			normalizedPackageId,
+			dataModelVersion
+		);
+
+		if (cachedModel) {
+			return; // Already loaded, validation successful
+		}
+
+		// 2) Check if exists in index cache (metadata only, no file read)
+		const cachedMeta = this.resolveDataModelMetadata(
+			normalizedName,
+			normalizedPackageId,
+			dataModelVersion
+		);
+
+		if (cachedMeta) {
+			return; // Exists in index, validation successful
+		}
+
+		// 3) Not in index, refresh from package manager and custom paths
+		await this.discoverDataModelPackages();
+
+		// 4) Check index again after discovery
+		const discoveredMeta = this.resolveDataModelMetadata(
+			normalizedName,
+			normalizedPackageId,
+			dataModelVersion
+		);
+
+		if (discoveredMeta) {
+			return; // Found after discovery, validation successful
+		}
+
+		// 5) Still not found - throw error with available versions
+		const availableVersions = this.getAvailableVersionsFromCache(
+			normalizedName,
+			normalizedPackageId
+		);
+
+		throw new MissingDependencyError("data-model", {
+			socName: name,
+			packageId,
+			requestedVersion: dataModelVersion,
+			availableVersions
+		});
+	}
+
+	/**
+	 * Get a data model by name, packageId, and optional dataModelVersion.
+	 * Supports semver ranges (e.g., "^1.0.0", "~1.2.0", "1.x") in addition to exact versions.
+	 * @param name - SoC name
+	 * @param packageId - Package identifier
+	 * @param dataModelVersion - optional data model version or semver range (latest if undefined)
 	 * @returns Parsed data model object
+	 * @throws {MissingDependencyError} if no matching data model is found
 	 */
 	public async getDataModel(
 		name: string,
 		packageId: string,
 		dataModelVersion?: string
-	): Promise<CfsSocDataModel | undefined> {
+	): Promise<CfsSocDataModel> {
 		const normalizedName = name.toLowerCase();
 		const normalizedPackageId = packageId.toLowerCase();
 
 		let result: CfsSocDataModel | undefined;
 
-		// 1) Check cache for either specific or latest version
-		if (dataModelVersion) {
-			result =
-				this.dataModelCache[normalizedName]?.[normalizedPackageId]?.[
-					dataModelVersion
-				];
-		} else {
-			result = this.findLatestCachedDataModel(
-				normalizedName,
-				normalizedPackageId
-			);
-		}
-
-		if (result) return result;
-
-		// 2) Not found in cache, look in index and parse if found
-		result = this.findDataModelInCachedIndex(
+		// 1) Check cache for either specific or latest version (undefined treated as "*")
+		result = this.findCachedDataModelByVersionOrRange(
 			normalizedName,
 			normalizedPackageId,
 			dataModelVersion
 		);
+
+		if (result) return result;
+
+		// 2) Not found in cache, look in index and parse if found
+		const cachedMeta = this.resolveDataModelMetadata(
+			normalizedName,
+			normalizedPackageId,
+			dataModelVersion
+		);
+
+		if (cachedMeta) {
+			result = this.loadDataModelFromMetadata(
+				normalizedName,
+				normalizedPackageId,
+				cachedMeta
+			);
+		}
 
 		if (result) return result;
 
@@ -143,13 +211,56 @@ export class CfsDataModelManager {
 		// with the latest data from package manager and custom search paths
 		await this.discoverDataModelPackages();
 
-		result = this.findDataModelInCachedIndex(
+		const discoveredMeta = this.resolveDataModelMetadata(
 			normalizedName,
 			normalizedPackageId,
 			dataModelVersion
 		);
 
-		return result;
+		if (discoveredMeta) {
+			result = this.loadDataModelFromMetadata(
+				normalizedName,
+				normalizedPackageId,
+				discoveredMeta
+			);
+		}
+
+		if (result) return result;
+
+		// 4) Still not found - throw typed error with available versions
+		const availableVersions = this.getAvailableVersionsFromCache(
+			normalizedName,
+			normalizedPackageId
+		);
+
+		throw new MissingDependencyError("data-model", {
+			socName: name,
+			packageId,
+			requestedVersion: dataModelVersion,
+			availableVersions
+		});
+	}
+
+	/**
+	 * Get a packageID for a given SoC.
+	 * @param name - SoC name
+	 * @returns First packageId associated with the SoC
+	 */
+	public async getFirstPackageIdForSoc(
+		name: string
+	): Promise<string | undefined> {
+		// Always fetch fresh data
+		await this.discoverDataModelPackages();
+
+		const socEntry = this.dataModelIndexCache[name];
+		if (socEntry) {
+			const packageIds = Object.keys(socEntry);
+			if (packageIds.length) {
+				return packageIds[0];
+			}
+		}
+		// No soc or packages
+		return undefined;
 	}
 
 	/**
@@ -165,13 +276,11 @@ export class CfsDataModelManager {
 
 		for (const socName in this.dataModelIndexCache) {
 			for (const packageId in this.dataModelIndexCache[socName]) {
-				for (const schemaVersion in this.dataModelIndexCache[socName][
+				for (const version in this.dataModelIndexCache[socName][
 					packageId
 				]) {
 					allDataModels.push(
-						this.dataModelIndexCache[socName][packageId][
-							schemaVersion
-						]
+						this.dataModelIndexCache[socName][packageId][version]
 					);
 				}
 			}
@@ -271,7 +380,7 @@ export class CfsDataModelManager {
 
 							newDataModelIndexCache[normalizedSocName][
 								normalizedPackageName
-							][entry.schema] = {
+							][entry.version] = {
 								name: socName,
 								version: entry.version,
 								schema: entry.schema,
@@ -280,7 +389,8 @@ export class CfsDataModelManager {
 								description: entry.description,
 								path: entry.path,
 								pkgPath: location.path,
-								pkgName: location.packageRef?.name
+								pkgName: location.packageRef?.name,
+								traceInfo: entry.traceInfo ?? false
 							};
 						}
 					}
@@ -310,20 +420,20 @@ export class CfsDataModelManager {
 	private invalidateStaleDataModelCacheEntries(): void {
 		for (const socName in this.dataModelCache) {
 			for (const packageId in this.dataModelCache[socName]) {
-				for (const schemaVersion in this.dataModelCache[socName][
+				for (const version in this.dataModelCache[socName][
 					packageId
 				]) {
 					// Check if this entry still exists in the index cache
 					const existsInIndex =
 						this.dataModelIndexCache[socName]?.[packageId]?.[
-							schemaVersion
+							version
 						] !== undefined;
 
 					if (!existsInIndex) {
 						// Remove the stale cache entry
 						Reflect.deleteProperty(
 							this.dataModelCache[socName][packageId],
-							schemaVersion
+							version
 						);
 
 						// Clean up empty nested objects
@@ -347,63 +457,84 @@ export class CfsDataModelManager {
 		}
 	}
 
-	private findDataModelInCachedIndex(
+	/**
+	 * Check if a data model exists in the index cache without loading the file.
+	 * @param normalizedName - Normalized SoC name (lowercase)
+	 * @param normalizedPackageId - Normalized package ID (lowercase)
+	 * @param dataModelVersion - optional data model version or semver range
+	 * @returns true if the data model exists in the index, false otherwise
+	 */
+	private dataModelExistsInIndex(
 		normalizedName: string,
 		normalizedPackageId: string,
 		dataModelVersion?: string
-	): CfsSocDataModel | undefined {
+	): boolean {
+		return (
+			this.resolveDataModelMetadata(
+				normalizedName,
+				normalizedPackageId,
+				dataModelVersion
+			) !== undefined
+		);
+	}
+
+	private resolveDataModelMetadata(
+		normalizedName: string,
+		normalizedPackageId: string,
+		dataModelVersion?: string
+	): DataModelMetaData | undefined {
 		const indexedSocForPackage =
 			this.dataModelIndexCache[normalizedName]?.[normalizedPackageId];
 
 		if (!indexedSocForPackage) return undefined;
 
-		let versionToUse = dataModelVersion;
+		// Use semver matching (undefined treated as "*" which returns highest version)
+		const versions = Object.keys(indexedSocForPackage);
+
+		const versionToUse = findMatchingVersion(
+			dataModelVersion ?? "*",
+			versions
+		);
 
 		if (!versionToUse) {
-			const versions = Object.keys(indexedSocForPackage);
-
-			if (versions.length === 0) return undefined;
-
-			if (versions.length === 1) {
-				versionToUse = versions[0];
-			} else {
-				versionToUse = findLatestVersion(versions);
-			}
-		}
-
-		const dmMetaData = indexedSocForPackage[versionToUse];
-
-		if (dmMetaData === undefined) {
 			return undefined;
 		}
 
+		return indexedSocForPackage[versionToUse];
+	}
+
+	private loadDataModelFromMetadata(
+		normalizedName: string,
+		normalizedPackageId: string,
+		metadata: DataModelMetaData
+	): CfsSocDataModel | undefined {
 		// Found matching data model in index - read and cache the file
 		const dataModelFilePath = path.join(
-			dmMetaData.pkgPath,
-			dmMetaData.path
+			metadata.pkgPath,
+			metadata.path
 		);
 
-		if (existsSync(dataModelFilePath)) {
-			const content = readFileSync(dataModelFilePath, "utf8");
-			const parsed = JSON.parse(content) as CfsSocDataModel;
-
-			// Cache the parsed data model using the nested structure
-			if (!this.dataModelCache[normalizedName]) {
-				this.dataModelCache[normalizedName] = {};
-			}
-
-			if (!this.dataModelCache[normalizedName][normalizedPackageId]) {
-				this.dataModelCache[normalizedName][normalizedPackageId] = {};
-			}
-
-			this.dataModelCache[normalizedName][normalizedPackageId][
-				versionToUse
-			] = parsed;
-
-			return parsed;
+		if (!existsSync(dataModelFilePath)) {
+			return undefined;
 		}
 
-		return undefined;
+		const content = readFileSync(dataModelFilePath, "utf8");
+		const parsed = JSON.parse(content) as CfsSocDataModel;
+
+		// Cache the parsed data model using the nested structure
+		if (!this.dataModelCache[normalizedName]) {
+			this.dataModelCache[normalizedName] = {};
+		}
+
+		if (!this.dataModelCache[normalizedName][normalizedPackageId]) {
+			this.dataModelCache[normalizedName][normalizedPackageId] = {};
+		}
+
+		this.dataModelCache[normalizedName][normalizedPackageId][
+			metadata.version
+		] = parsed;
+
+		return parsed;
 	}
 
 	/**
@@ -417,28 +548,51 @@ export class CfsDataModelManager {
 	}
 
 	/**
-	 * Find the latest cached data model for a given SoC name and package ID.
-	 * If only one version exists, returns it directly.
-	 * If multiple versions exist, returns the one with the highest semantic version.
+	 * Find a cached data model by version or semver range.
+	 * If versionOrRange is undefined, returns the latest version (uses "*" range).
 	 * @param name - Normalized SoC name (lowercase)
 	 * @param pkgId - Normalized package ID (lowercase)
-	 * @returns The latest cached CfsSocDataModel or undefined if none found.
+	 * @param versionOrRange - Exact version, semver range (e.g., "^1.0.0", "~1.2.0"), or undefined for latest
+	 * @returns The matching cached CfsSocDataModel or undefined if none found.
 	 */
-	private findLatestCachedDataModel(
+	private findCachedDataModelByVersionOrRange(
 		name: string,
-		pkgId: string
+		pkgId: string,
+		versionOrRange?: string
 	): CfsSocDataModel | undefined {
-		const versions = Object.keys(
-			this.dataModelCache[name]?.[pkgId] || {}
-		);
+		const cachedVersions = this.dataModelCache[name]?.[pkgId];
 
-		if (versions.length === 0) return undefined;
+		if (!cachedVersions) return undefined;
 
-		if (versions.length === 1)
-			return this.dataModelCache[name][pkgId][versions[0]];
+		const availableVersions = Object.keys(cachedVersions);
 
-		const latestVersion = findLatestVersion(versions);
+		if (availableVersions.length === 0) return undefined;
 
-		return this.dataModelCache[name][pkgId][latestVersion];
+		// Treat undefined as "*" (match any, returns highest)
+		const range = versionOrRange ?? "*";
+
+		const matchedVersion =
+			findMatchingVersion(range, availableVersions) ?? "";
+
+		return cachedVersions[matchedVersion];
+	}
+
+	/**
+	 * Get available versions for a specific SoC and package from the already-populated cache.
+	 * Used internally after cache has been refreshed.
+	 * @param normalizedName - Normalized (lowercase) SoC name
+	 * @param normalizedPackageId - Normalized (lowercase) package identifier
+	 * @returns Array of available version strings
+	 */
+	private getAvailableVersionsFromCache(
+		normalizedName: string,
+		normalizedPackageId: string
+	): string[] {
+		const indexedSocForPackage =
+			this.dataModelIndexCache[normalizedName]?.[normalizedPackageId];
+
+		if (!indexedSocForPackage) return [];
+
+		return Object.keys(indexedSocForPackage);
 	}
 }

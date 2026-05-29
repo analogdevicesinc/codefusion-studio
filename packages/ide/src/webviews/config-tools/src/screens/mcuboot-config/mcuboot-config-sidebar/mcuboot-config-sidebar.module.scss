@@ -1,0 +1,125 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+@use '#layout' as layout;
+
+.sidebarHeader {
+	display: flex;
+	padding: layout.$spacing-4 layout.$spacing-4 layout.$spacing-4
+		layout.$spacing-5;
+	align-items: center;
+	justify-content: space-between;
+	gap: layout.$spacing-2;
+	align-self: stretch;
+	border-bottom: 0.5px solid colors.$default-border;
+	.title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		@include fonts.heading-h4;
+		color: colors.$default-foreground;
+	}
+}
+
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+}
+
+.listContainer {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.listItem {
+	display: flex;
+	align-items: center;
+	padding: layout.$spacing-4 layout.$spacing-4 layout.$spacing-4
+		layout.$spacing-5;
+	gap: layout.$spacing-3;
+	cursor: pointer;
+	border-bottom: 1px solid colors.$default-border;
+	border-left: 2px solid transparent;
+	overflow: hidden;
+
+	&:hover {
+		background-color: colors.$list-hover-background;
+		border-left: 2px solid colors.$default-foreground;
+	}
+
+	&:focus-visible {
+		outline: 1px solid colors.$focus-border;
+		outline-offset: -1px;
+	}
+
+	&.active {
+		background-color: colors.$list-hover-background;
+		border-left: 2px solid colors.$default-foreground;
+	}
+	.listItemDetails {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: flex-start;
+		gap: layout.$spacing-2;
+		flex: 1;
+		min-width: 0;
+		min-height: 20px;
+		overflow: hidden;
+		.listItemName {
+			width: 100%;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			@include fonts.heading-h4;
+			color: colors.$default-foreground;
+		}
+		.listItemDescription {
+			@include fonts.label-l4;
+			color: colors.$description-foreground;
+		}
+	}
+	.disabledIcon {
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+}
+
+.fixedTooltip {
+	position: fixed;
+	z-index: 1001;
+	padding: 5px 8px;
+	border-radius: layout.$border-radius-1;
+	border: 1px solid colors.$default-border;
+	background: colors.$editor-widget-background;
+	box-shadow: 0px 2px 16px 0px colors.$default-shadow;
+	transform: translateX(-50%);
+	pointer-events: none;
+	white-space: nowrap;
+	@include fonts.body-b3;
+}
+
+.emptySidebarContainer {
+	max-width: 600px;
+	box-sizing: border-box;
+}

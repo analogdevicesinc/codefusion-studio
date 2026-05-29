@@ -1,6 +1,6 @@
 [project]
 name = "cfsai-compatibility-analyzer"
-version = "2.1.0"
+version = "2.2.0"
 description = "This package provides tools for analyzing compatibility of machine learning models with various hardware platforms."
 readme = "README.md"
 requires-python = ">=3.11.9"

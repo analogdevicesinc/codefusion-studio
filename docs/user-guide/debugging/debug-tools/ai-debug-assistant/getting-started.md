@@ -1,28 +1,28 @@
 ---
-description: Prerequisites, starting the MCP server, and connecting AI clients to the AI Debug Assistant in CodeFusion Studio.
+description: Setup guide for the AI Debug Assistant - choose between the CFS MCP debug server (recommended) or the CFS Debug chat participant.
 author: Analog Devices
-date: 2026-03-25
+date: 2026-05-15
 ---
 
 # Getting started with the AI Debug Assistant
 
-This page covers everything you need to enable the AI Debug Assistant and connect it to your preferred AI client.
+The AI Debug Assistant provides two integration paths: the **CFS MCP debug server** (recommended for production) and the **CFS Debug chat participant** (for quick interactions). Choose the path that fits your workflow.
 
-## Prerequisites
+## Before using the assistant
+
+Most AI Debug Assistant tools require an active debug session to inspect hardware state. Press **F5** or click the **Run and Debug** icon ![Run and Debug icon](../../images/run-and-debug-icon-dark.png#only-dark) ![Run and Debug icon](../../images/run-and-debug-icon-light.png#only-light) before asking the assistant to investigate, inspect, or control your target. Alternatively, you can ask the assistant to start a debug session using the appropriate configuration name. For example: *"Start debugging CFS: Debug with GDB and OpenOCD (ARM Embedded)"*. For detailed debug steps, refer to [Start a debug session](../../debug-an-application.md).
+
+## CFS MCP debug server (recommended)
 
 Before you begin, make sure you have:
 
 - **CodeFusion Studio** installed with an active project
-- A **debug target connected** (the AI Debug Assistant requires a live hardware session for most operations)
-- For **GitHub Copilot** integration: VS Code 1.96.0 or later and the [:octicons-link-external-24: GitHub Copilot extension](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot){:target="_blank"}
-- For **Claude Code** integration: [:octicons-link-external-24: Claude Code](https://claude.com/product/claude-code){:target="_blank"} installed
+- For **GitHub Copilot Agent Mode**: VS Code 1.96.0 or later and the [:octicons-link-external-24: GitHub Copilot extension](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot){:target="_blank"}
+- For **Claude Code**: [:octicons-link-external-24: Claude Code](https://claude.com/product/claude-code){:target="_blank"} installed
 
-## Step 1: Start the MCP server
+### Start the MCP server
 
-!!! note
-    The MCP server is only required for external AI clients such as Claude Code. If you are using the `@cfs-debug` chat participant or Agent Mode in GitHub Copilot, you can skip this step — the assistant connects directly through the VS Code extension.
-
-The AI Debug Assistant runs as a local MCP (Model Context Protocol) server inside CodeFusion Studio. The server does not start automatically — you must start it manually before connecting an AI client.
+The MCP server runs as a local HTTP service inside CodeFusion Studio. The server does not start automatically — you must start it manually before connecting an AI client.
 
 1. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and type MCP Server.
     ![Command Palette showing CFS MCP commands](./images/mcp-command-palette-light.png#only-light) ![Command Palette showing CFS MCP commands](./images/mcp-command-palette-dark.png#only-dark)
@@ -43,30 +43,23 @@ When the server starts, a VS Code notification shows the URL it is listening on 
 
     ![CFS Run on Activation](./images/cfs-mcp-activation-light.png#only-light) ![CFS Run on Activation](./images/cfs-mcp-activation-dark.png#only-dark)
 
-## Step 2: Start a debug session
+### Connect your AI client
 
-Most AI Debug Assistant tools require an active debug session to inspect hardware state. Press **F5** or click the **Run and Debug** icon ![Run and Debug icon](../../images/run-and-debug-icon-dark.png#only-dark) ![Run and Debug icon](../../images/run-and-debug-icon-light.png#only-light) before asking the assistant to investigate, inspect, or control your target. For detailed debug steps, refer to [Start a debug session](../../debug-an-application.md).
+The MCP server works with any MCP-compatible AI client. The sections below show connection steps for commonly used clients.
 
-## Step 3: Connect your AI client
+#### Example: GitHub Copilot Agent Mode
 
-### GitHub Copilot
+1. Open GitHub Copilot Chat (`Ctrl+Alt+I` / `Cmd+Shift+I`)
+2. Click the mode selector dropdown in the chat input box — it defaults to **Ask**
+3. Select **Agent**
+4. Describe what you want investigated
 
-No additional configuration or MCP server setup is needed. GitHub Copilot works out of the box with the AI Debug Assistant: the CFS debug tools are exposed directly in GitHub Copilot Chat through the `@cfs-debug` chat participant and Agent Mode (the MCP server is only required for external clients such as Claude Code).
+When VS Code MCP support is enabled and available, Agent Mode automatically discovers the MCP server while it is running and uses it to access all debug tools and diagnostic prompts.
 
 !!! note
-    Requires VS Code 1.96.0 or later. If the tools do not appear in GitHub Copilot Chat, check your VS Code version and update if needed.
+    If Agent Mode does not show the CFS MCP server or its tools, make sure your VS Code installation supports MCP and that MCP support is enabled/available. If MCP support is unavailable in your environment, use the **CFS Debug** chat participant or connect with an external MCP client such as Claude Code instead.
 
-!!! tip
-    For best results, use a Claude model (such as Claude Sonnet 4.5 or Claude Opus 4.6) with the `@cfs-debug` chat participant. Other models may work for basic commands but could produce inconsistent results or errors for AI analysis features.
-
-To activate the AI debug assistant, open GitHub Copilot Chat and either:
-
-- Use **`@cfs-debug`** followed by your question to interact with the `@cfs-debug` chat assistant directly, or
-- Use **Agent Mode** to let GitHub Copilot autonomously orchestrate multi-step debugging investigations
-
-![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-light.png#only-light) ![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-dark.png#only-dark)
-
-### Claude Code
+#### Example: Claude Code
 
 The MCP server is assigned an available port by the operating system at startup. Before connecting Claude Code, check which URL was assigned:
 
@@ -75,7 +68,7 @@ The MCP server is assigned an available port by the operating system at startup.
 
 Both show the full URL (for example, `http://localhost:56448/mcp`).
 
-For a stable connection, we recommend setting a fixed port before registering with Claude Code. See [Set a fixed port](#set-a-fixed-port) below.
+For a stable connection, we recommend setting a fixed port before registering with Claude Code. See [Set a fixed port](#optional-set-a-fixed-port) below.
 
 Once you know the port, register the server with Claude Code:
 
@@ -92,11 +85,19 @@ Start a debug session in CodeFusion Studio, then try asking Claude: *"What is th
 
 ![Claude Code connected to a CFS debug session](./images/claude-code-connected-light.png#only-light) ![Claude Code connected to a CFS debug session](./images/claude-code-connected-dark.png#only-dark)
 
-### Other MCP-compatible clients
+#### Other MCP-compatible clients
 
-The MCP server is open by design. Any client that supports the [:octicons-link-external-24: Model Context Protocol](https://modelcontextprotocol.io/){:target="_blank"} over Streamable HTTP can connect. Point it at `http://localhost:<port>/mcp`, where `<port>` is the port assigned at startup.
+The above are examples only - there are numerous MCP-compatible clients available.
 
-## Set a fixed port
+To connect another MCP client:
+
+1. Start the MCP server via `(CFS) MCP: Start Debug Server` in the Command Palette
+2. Note the server URL displayed in the VS Code notification (for example, `http://localhost:56448/mcp`)
+3. Register this URL with your AI client - consult your client's documentation for how to add an MCP server
+
+The specific registration method varies by client, but all MCP-compatible clients provide a way to connect to external MCP servers.
+
+### Optional: Set a fixed port
 
 By default, the OS assigns an available port when the MCP server starts. To use a fixed port instead (recommended for Claude Code, so the registration URL stays stable):
 
@@ -116,7 +117,7 @@ By default, the OS assigns an available port when the MCP server starts. To use 
 !!! note
     GitHub Copilot reads the port directly from the `cfs.mcp.port` setting — no re-registration is needed after a port change.
 
-## Verify the connection with MCP Inspector
+### Optional: Verify the connection with MCP Inspector
 
 To test the connection independently of any AI client, use the open-source [:octicons-link-external-24: MCP Inspector](https://github.com/modelcontextprotocol/inspector){:target="_blank"}:
 
@@ -148,7 +149,27 @@ Once connected, you can browse all available tools, resources, and prompts, and 
 
 ![Using MCP Inspector](./images/mcp-server-light.png#only-light) ![Using MCP Inspector](./images/mcp-server-dark.png#only-dark)
 
+## CFS Debug chat participant
+
+Before you begin, make sure you have:
+
+- **CodeFusion Studio** installed with an active project
+- **VS Code 1.96.0 or later**
+- [:octicons-link-external-24: **GitHub Copilot extension**](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot){:target="_blank"} installed and authenticated
+
+### Use the chat participant
+
+1. Open GitHub Copilot Chat (`Ctrl+Alt+I` / `Cmd+Shift+I`).
+2. Type `@cfs-debug` followed by your question.
+
+The chat participant is available immediately - no MCP server setup required.
+
+!!! tip
+    For best results, use a Claude model (such as Claude Sonnet 4.5 or Claude Opus 4.6) with the `@cfs-debug` chat participant. Other models may work for basic commands but could produce inconsistent results or errors for AI analysis features.
+
+![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-light.png#only-light) ![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-dark.png#only-dark)
+
 ## Next steps
 
-- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — practical examples for Copilot Chat, Agent Mode, and Claude Code
-- [Tools and workflows reference](reference.md) — full reference for all debug tools and diagnostic workflows
+- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — practical examples for both interfaces with real-world debugging scenarios
+- [Tools and workflows reference](reference.md) — full reference for all debug tools and diagnostic prompts

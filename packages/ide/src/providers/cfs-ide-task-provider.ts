@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,80 +14,75 @@
  */
 
 import * as vscode from "vscode";
-import * as fs from "fs";
-import { glob } from "glob";
-import { CfsToolManager, CfsVariableResolver } from "cfs-lib";
-import { Utils } from "../utils/utils";
+import {
+  CfsToolManager,
+  CfsTaskProvider,
+  CfsTaskDiscoveryStrategy,
+  MsdkTaskStrategy,
+  ZephyrTaskStrategy,
+} from "cfs-lib";
+import { TaskDefinitionConverter } from "./task-definition-converter";
+import {
+  CustomTaskShellOptions,
+  ToolchainShellOptions,
+  type IShellOptionsResolver,
+} from "./shell-options-resolver";
+import type { IDEShellEnvProvider } from "../toolchains/shell-env-provider";
 
 /**
- * Interface for the cfs.tasks.json file structure
- */
-interface CfsTaskJson {
-  version: string;
-  schema: string;
-  tasks: TaskDefinitionJson[];
-}
-
-interface PlatformOptions {
-  options?: Partial<
-    vscode.ShellExecutionOptions & {
-      shell: {
-        args: string[];
-        executable?: string;
-      };
-    }
-  >;
-  command?: string;
-}
-
-interface TaskDefinitionJson {
-  label: string;
-  type: string;
-  command: string;
-  options?: Partial<
-    vscode.ShellExecutionOptions & {
-      shell: {
-        args: string[];
-        executable?: string;
-      };
-    }
-  >;
-  windows?: PlatformOptions;
-  linux?: PlatformOptions;
-  osx?: PlatformOptions;
-  group?: string | { kind: string; isDefault: boolean };
-  problemMatcher?: string | string[];
-  dependsOn?: string | string[];
-  [key: string]: unknown;
-}
-
-/**
- * Task provider for CodeFusion Studio that discovers and provides tasks from cfs.tasks.json files.
+ * Unified task provider for CodeFusion Studio that combines custom and toolchain tasks.
  *
- * This provider implements the VS Code TaskProvider interface to:
- * - Load custom tasks defined in `.vscode/cfs.tasks.json` files across all workspace folders
- * - Resolve variables within task definitions using the CfsVariableResolver
- * - Create platform-specific VS Code Task objects with appropriate shell execution configuration
- * - Support Windows, Linux, and macOS specific task configurations
+ * This provider implements the VS Code TaskProvider interface to provide tasks from multiple sources:
+ * 1. Custom tasks - defined in `.vscode/cfs.tasks.json` files (CfsTaskDiscoveryStrategy)
+ * 2. Toolchain tasks - default MSDK/Zephyr tasks (MsdkTaskStrategy, ZephyrTaskStrategy)
+ *
+ * All strategies are aggregated through a single CfsTaskProvider orchestrator from cfs-lib.
+ *
+ * Task resolution flow:
+ * - Custom tasks use CustomTaskShellOptions (env from task JSON)
+ * - Toolchain tasks use ToolchainShellOptions (env from IDEShellEnvProvider)
+ * - Both use TaskDefinitionConverter for vscode.Task creation
  *
  * Tasks are cached after initial discovery to improve performance during subsequent requests.
- * The provider is designed to work with available tools and toolchains to provide integrated
- * task management capabilities within the VS Code environment.
  *
  * @implements {vscode.TaskProvider}
  */
 export class CfsIDETaskProvider implements vscode.TaskProvider {
   /**
-   * The CfsVariableResolver instance for resolving variables in task definitions
+   * Unified provider that aggregates tasks from all strategies
    */
-  private variableResolver: CfsVariableResolver;
+  private readonly taskProvider: CfsTaskProvider;
+
+  /**
+   * Shell options resolver for custom tasks (reads env from task JSON)
+   */
+  private readonly customTaskShellOptions: IShellOptionsResolver;
+
+  /**
+   * Shell options resolver for toolchain tasks (reads env from IDEShellEnvProvider)
+   */
+  private readonly toolchainShellOptions: IShellOptionsResolver;
+
   /**
    * Cached list of resolved tasks
    */
   private resolvedTasks: vscode.Task[] | undefined;
 
-  constructor(toolManager: CfsToolManager) {
-    this.variableResolver = new CfsVariableResolver(toolManager);
+  constructor(
+    toolManager: CfsToolManager,
+    shellEnvProvider: IDEShellEnvProvider,
+  ) {
+    // Unified provider combines all task strategies:
+    // - CfsTaskDiscoveryStrategy: discovers .vscode/cfs.tasks.json files
+    // - MsdkTaskStrategy: auto-detects MSDK workspaces, provides default tasks
+    // - ZephyrTaskStrategy: auto-detects Zephyr workspaces, provides default tasks
+    this.taskProvider = new CfsTaskProvider(
+      [new CfsTaskDiscoveryStrategy(toolManager)],
+      [new MsdkTaskStrategy(), new ZephyrTaskStrategy()],
+    );
+
+    this.customTaskShellOptions = new CustomTaskShellOptions();
+    this.toolchainShellOptions = new ToolchainShellOptions(shellEnvProvider);
   }
 
   /**
@@ -121,227 +116,69 @@ export class CfsIDETaskProvider implements vscode.TaskProvider {
   }
 
   /**
-   * Discovers and loads tasks from `.vscode/cfs.tasks.json` files across all workspace folders.
+   * Discovers and loads tasks from all registered strategies.
    * @returns A Promise that resolves to an array of VS Code Task objects
    * @private
    */
   private async getTasks(): Promise<vscode.Task[]> {
+    if (!vscode.workspace.workspaceFolders) {
+      return [];
+    }
+    const platform = process.platform;
+
     const result: vscode.Task[] = [];
 
-    if (!vscode.workspace.workspaceFolders) {
-      return result;
-    }
+    // Discover all tasks from unified provider (custom + toolchain)
+    const workspaceFolderPaths = vscode.workspace.workspaceFolders.map(
+      (folder) => folder.uri.fsPath,
+    );
+    const taskDefinitions =
+      await this.taskProvider.discoverTasks(workspaceFolderPaths);
 
-    for (const workspaceFolder of vscode.workspace.workspaceFolders) {
-      const taskFiles = await glob([".vscode/cfs.tasks.json"], {
-        cwd: workspaceFolder.uri.fsPath,
-        maxDepth: 2,
-        nodir: true,
-        dot: true,
-        absolute: true,
-      });
+    // Convert Task.Definition[] to vscode.Task[]
+    for (const taskDefinition of taskDefinitions) {
+      // Find the workspace folder for this task
+      const folder =
+        vscode.workspace.workspaceFolders.find((wf) =>
+          taskDefinition.options?.cwd?.startsWith(wf.uri.fsPath),
+        ) ?? vscode.workspace.workspaceFolders[0];
 
-      for (const taskFile of taskFiles) {
-        try {
-          const tasksJsonContent = fs.readFileSync(taskFile, "utf8");
-          const tasksJson = JSON.parse(tasksJsonContent) as CfsTaskJson;
+      try {
+        const platformOptions =
+          platform === "win32"
+            ? taskDefinition.windows?.options
+            : platform === "linux"
+              ? taskDefinition.linux?.options
+              : platform === "darwin"
+                ? taskDefinition.osx?.options
+                : undefined;
+        // Determine which shell options resolver to use:
+        // - Custom tasks (from cfs.tasks.json) may define env in root options.env
+        //   or in platform-specific override options (windows/linux/osx)
+        // - Toolchain tasks need full shell environment from IDEShellEnvProvider
+        const hasCustomEnv =
+          (taskDefinition.options?.env &&
+            Object.keys(taskDefinition.options.env).length > 0) ||
+          (platformOptions?.env && Object.keys(platformOptions.env).length > 0);
 
-          if (!tasksJson.tasks || !Array.isArray(tasksJson.tasks)) {
-            continue;
-          }
+        const shellOptions = hasCustomEnv
+          ? await this.customTaskShellOptions.resolve(taskDefinition, folder)
+          : await this.toolchainShellOptions.resolve(taskDefinition, folder);
 
-          for (const taskDefinition of tasksJson.tasks) {
-            // Resolve custom cfs variables in the task definition
-            await this.variableResolver.resolveObjectVariables(taskDefinition);
+        const task = TaskDefinitionConverter.createVscodeTask(
+          taskDefinition,
+          folder,
+          shellOptions,
+        );
 
-            // Create a task from the resolved definition
-            const task = await this.createTaskFromDefinition(
-              taskDefinition,
-              workspaceFolder,
-            );
-
-            if (task) {
-              result.push(task);
-            }
-          }
-        } catch (error) {
-          console.error(
-            `Error processing cfs.tasks.json at ${taskFile}:`,
-            error,
-          );
+        if (task) {
+          result.push(task);
         }
+      } catch (error) {
+        console.error(`Error creating task "${taskDefinition.label}":`, error);
       }
     }
 
     return result;
-  }
-
-  /**
-   * Creates a VS Code task from a JSON task definition
-   *
-   * @param taskDefinition - The task definition as parsed from a cfs.tasks.json file.
-   * @param folder - The VS Code workspace folder where the task will be executed
-   * @returns A Promise that resolves to a configured VS Code Task object or undefined if creation fails
-   *
-   */
-  private async createTaskFromDefinition(
-    taskDefinition: TaskDefinitionJson,
-    folder: vscode.WorkspaceFolder,
-  ): Promise<vscode.Task | undefined> {
-    try {
-      const platform = process.platform;
-      const cwd = folder.uri.fsPath;
-
-      // Compute shell options with platform-specific overrides
-      const shellOptions = this.computePlatformShellOptions(
-        taskDefinition,
-        platform,
-        cwd,
-      );
-
-      if (platform === "win32" && taskDefinition.windows?.command) {
-        taskDefinition.command = taskDefinition.windows.command;
-      }
-      if (platform === "darwin" && taskDefinition.osx?.command) {
-        taskDefinition.command = taskDefinition.osx.command;
-      }
-      if (platform === "linux" && taskDefinition.linux?.command) {
-        taskDefinition.command = taskDefinition.linux.command;
-      }
-
-      // Create shell execution with merged options
-      const shellExecution = new vscode.ShellExecution(
-        taskDefinition.command,
-        shellOptions,
-      );
-
-      // Create the task with full definition and execution
-      const task = new vscode.Task(
-        {
-          type: taskDefinition.type,
-        },
-        folder,
-        taskDefinition.label,
-        "CFS",
-        shellExecution,
-        taskDefinition.problemMatcher,
-      );
-
-      // Remove the task ID, which isn't supported in custom shell tasks.
-      if (taskDefinition.id) delete taskDefinition.id;
-
-      task.definition.options = {
-        cwd,
-        env: shellOptions.env,
-        shell: {
-          args: shellOptions.shellArgs,
-          executable: shellOptions.executable,
-        },
-      };
-
-      // Mapping the group type
-      if (typeof taskDefinition.group === "string") {
-        switch (taskDefinition.group) {
-          case "build":
-            task.group = vscode.TaskGroup.Build;
-            break;
-          case "clean":
-            task.group = vscode.TaskGroup.Clean;
-            break;
-          default:
-            console.warn(`Unknown task group: ${taskDefinition.group}`);
-            break;
-        }
-      } else {
-        if (
-          typeof taskDefinition.group === "object" &&
-          taskDefinition.group !== null
-        ) {
-          if (taskDefinition.group.kind === "build") {
-            task.group = vscode.TaskGroup.Build;
-          } else if (taskDefinition.group.kind === "clean") {
-            task.group = vscode.TaskGroup.Clean;
-          }
-        }
-      }
-
-      //Updating terminal presentation options
-      task.presentationOptions = {
-        reveal: vscode.TaskRevealKind.Always,
-        clear: false,
-      };
-
-      return task;
-    } catch (error) {
-      console.error("Error creating task:", error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Computes shell execution options for a task based on the current platform.
-   *
-   * This method determines the appropriate shell options by checking for platform-specific
-   * configurations first (windows, linux, or osx), then falling back to default options
-   * if platform-specific ones are not available.
-   *
-   * @param taskDefinition - The task definition containing configuration options
-   * @param platform - The current platform identifier (win32, linux, or darwin)
-   * @param cwd - The current working directory for the task execution
-   * @returns Shell execution options configured for the specified platform
-   * @throws Error if required environment variables configuration is missing
-   * @private
-   */
-  private computePlatformShellOptions(
-    taskDefinition: TaskDefinitionJson,
-    platform: string,
-    cwd: string,
-  ): vscode.ShellExecutionOptions {
-    // Get platform-specific options based on current platform
-    let platformOptions:
-      | Partial<
-          vscode.ShellExecutionOptions & {
-            shell: {
-              args: string[];
-              executable?: string;
-            };
-          }
-        >
-      | undefined;
-
-    if (platform === "win32" && taskDefinition.windows?.options) {
-      platformOptions = taskDefinition.windows.options;
-    } else if (platform === "linux" && taskDefinition.linux?.options) {
-      platformOptions = taskDefinition.linux.options;
-    } else if (platform === "darwin" && taskDefinition.osx?.options) {
-      platformOptions = taskDefinition.osx.options;
-    }
-
-    // Use platform-specific env if available, otherwise fallback to task definition env
-    const env = platformOptions?.env || taskDefinition.options?.env;
-
-    if (!env) {
-      throw new Error(
-        `Task "${taskDefinition.label}" is missing required environment variables configuration.`,
-      );
-    }
-
-    // Determine shell args and executable
-    const shellArgs =
-      platformOptions?.shell?.args ||
-      taskDefinition.options?.shell?.args ||
-      Utils.getShellArgs(platform);
-
-    const shellExecutable =
-      platformOptions?.shell?.executable ||
-      taskDefinition.options?.shell?.executable ||
-      Utils.getShellExecutable(platform);
-
-    return {
-      cwd,
-      env,
-      executable: shellExecutable,
-      shellArgs: shellArgs,
-    };
   }
 }

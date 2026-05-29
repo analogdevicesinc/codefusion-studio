@@ -1,0 +1,159 @@
+/**
+ *
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layouts;
+
+// Unified container with CSS variables for customization
+.container {
+	// CSS variables that parent components can override
+	--item-padding-top: 8px;
+	--item-padding-bottom: 8px;
+	--item-padding-left: 32px;
+	--item-padding-right: 12px;
+	--item-min-height: unset;
+	--item-height: auto;
+	--item-border-bottom: none;
+	--item-border-top: none;
+	--item-border-left: none;
+
+	min-height: var(--item-min-height);
+	height: var(--item-height);
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	border-top: var(--item-border-top);
+	border-bottom: var(--item-border-bottom);
+	border-left: var(--item-border-left);
+	padding-top: var(--item-padding-top);
+	padding-bottom: var(--item-padding-bottom);
+	padding-left: var(--item-padding-left);
+	padding-right: var(--item-padding-right);
+	color: colors.$default-foreground;
+	cursor: unset;
+
+	& svg:hover {
+		background-color: colors.$default-background;
+		cursor: pointer;
+		border-radius: 4px;
+	}
+}
+
+// Label and core badge container
+.labelContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	align-items: flex-start;
+	justify-content: center;
+	flex: 1;
+	min-width: 0;
+	box-sizing: border-box;
+
+	.label {
+		@include fonts.heading-h5;
+		font-weight: var(--label-font-weight, 700);
+		align-content: center;
+		font-size: var(--label-font-size, inherit);
+		text-transform: var(--label-text-transform, none);
+
+		// Grouped signal styling
+		&.grouped {
+			color: colors.$disabled-foreground;
+		}
+	}
+
+	.core {
+		--allocated-core-foreground: var(
+			--vscode-disabledForeground,
+			#808080
+		);
+	}
+}
+
+// Action buttons container
+.actionButton {
+	position: relative;
+	display: flex;
+	gap: 6px;
+	padding-right: 5px;
+	cursor: pointer;
+
+	.configureButton {
+		svg {
+			width: 14px;
+			height: 14px;
+		}
+	}
+
+	& svg {
+		visibility: hidden;
+		width: 10px;
+		height: 12px;
+		padding: 2px;
+	}
+
+	& svg:hover {
+		background-color: colors.$default-background;
+		cursor: pointer;
+		border-radius: 4px;
+	}
+}
+
+// Allocate button (chevron)
+.chevron {
+	rotate: 90;
+
+	& svg:hover {
+		background-color: colors.$default-background;
+		cursor: pointer;
+		border-radius: 4px;
+	}
+}
+
+.tooltip {
+	position: absolute;
+	display: flex;
+	padding: 5px 8px;
+	top: 100%;
+	right: 3px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	border: 0.5px solid colors.$default-border;
+	border-radius: 2px;
+	background-color: colors.$default-background;
+	box-shadow: 0px 2px 16px 0px rgba(0, 0, 0, 0.36);
+}
+
+// Fixed tooltip for assignable items
+.fixedTooltip {
+	position: fixed;
+	display: flex;
+	padding: 5px 8px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	border: 0.5px solid colors.$default-border;
+	border-radius: 2px;
+	background-color: colors.$default-background;
+	box-shadow: layouts.$default-shadow;
+}
+
+.highlight {
+	background-color: colors.$list-hover-background;
+	transition: background-color 0.8s ease;
+}

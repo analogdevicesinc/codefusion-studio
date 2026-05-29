@@ -15,7 +15,7 @@
 
 import type {Meta} from '@storybook/react';
 
-import React, {useState} from 'react';
+import React from 'react';
 import Tooltip from './tooltip';
 import InfoIcon from '../icons/info-icon';
 
@@ -28,11 +28,10 @@ export default meta;
 
 export function Default(args: React.ComponentProps<typeof Tooltip>) {
 	// Neccesary because storybook body has no height, so the tooltip would not be positioned correctly
-	const [container, setContainer] = useState<HTMLElement | null>(
-		null
-	);
+	const containerId = 'tooltip-default-container';
 	return (
 		<div
+			id={containerId}
 			style={{
 				width: '100%',
 				height: '100%',
@@ -40,14 +39,13 @@ export function Default(args: React.ComponentProps<typeof Tooltip>) {
 				alignItems: 'center',
 				justifyContent: 'center'
 			}}
-			ref={setContainer}
 		>
 			<div
 				style={{
 					width: 'fit-content'
 				}}
 			>
-				<Tooltip {...args} containerElement={container}>
+				<Tooltip {...args} containerId={containerId}>
 					<InfoIcon />
 				</Tooltip>
 			</div>
@@ -59,15 +57,15 @@ export function CloseToBorder(
 	args: React.ComponentProps<typeof Tooltip>
 ) {
 	// Neccesary because storybook body has no height, so the tooltip would not be positioned correctly
-	const [container, setContainer] = useState<HTMLElement | null>();
+	const containerId = 'tooltip-border-container';
 	return (
 		<div
+			id={containerId}
 			style={{
 				width: '100%',
 				height: '100%',
 				border: '1px solid black'
 			}}
-			ref={setContainer}
 		>
 			{/* top left */}
 			<div
@@ -75,7 +73,7 @@ export function CloseToBorder(
 					width: 'fit-content'
 				}}
 			>
-				<Tooltip {...args} containerElement={container}>
+				<Tooltip {...args} containerId={containerId}>
 					<InfoIcon />
 				</Tooltip>
 			</div>
@@ -87,7 +85,7 @@ export function CloseToBorder(
 					bottom: '16px'
 				}}
 			>
-				<Tooltip {...args} containerElement={container}>
+				<Tooltip {...args} containerId={containerId}>
 					<InfoIcon />
 				</Tooltip>
 			</div>
@@ -100,7 +98,7 @@ export function CloseToBorder(
 					top: '16px'
 				}}
 			>
-				<Tooltip {...args} containerElement={container}>
+				<Tooltip {...args} containerId={containerId}>
 					<InfoIcon />
 				</Tooltip>
 			</div>
@@ -113,7 +111,7 @@ export function CloseToBorder(
 					bottom: '16px'
 				}}
 			>
-				<Tooltip {...args} containerElement={container}>
+				<Tooltip {...args} containerId={containerId}>
 					<InfoIcon />
 				</Tooltip>
 			</div>

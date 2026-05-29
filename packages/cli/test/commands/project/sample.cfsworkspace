@@ -1,6 +1,6 @@
 {
   "copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "dataModelVersion": "0.0.1",
+  "dataModelVersion": "^1.0.0",
   "dataModelSchemaVersion": "0.0.1",
   "timestamp": "2025-03-07T14:57:03.832Z",
   "soc": "MAX32690",
@@ -18,9 +18,8 @@
       "CoreId": "RV",
       "name": "test-project",
       "path": "project-test-path/project",
-      "pluginId": "com.analog.project.msdk.plugin",
+      "pluginId": "com.analog.project.msdk.mock.plugin",
       "pluginVersion": "1.1.0",
-      "pluginConfig": {},
       "projects": [
         {
           "name": "riscv",

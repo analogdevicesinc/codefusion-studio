@@ -14,65 +14,80 @@
  */
 
 import {
-	compareVersions,
-	findLatestVersion
+	findLatestVersion,
+	findMatchingVersion
 } from "../../src/utils/semantic-versioning.js";
 import { expect } from "chai";
 
-describe("compareVersions", () => {
-	it("returns 0 for equal versions", () => {
-		expect(compareVersions("1.2.3", "1.2.3")).to.equal(0);
-		expect(compareVersions("0.0.0", "0.0.0")).to.equal(0);
+describe("Semantic Versioning utilities", () => {
+	describe("findLatestVersion", () => {
+		it("should return undefined for empty array", () => {
+			expect(findLatestVersion([])).to.be.undefined;
+		});
+
+		it("should return undefined when no valid versions exist", () => {
+			expect(findLatestVersion(["invalid", "not-a-version", "bad"]))
+				.to.be.undefined;
+		});
+
+		it("should filter out invalid versions and return valid one", () => {
+			expect(
+				findLatestVersion(["invalid", "1.0.0", "not-a-version"])
+			).to.equal("1.0.0");
+		});
 	});
 
-	it("returns positive if first is greater", () => {
-		expect(compareVersions("1.2.4", "1.2.3")).to.be.greaterThan(0);
-		expect(compareVersions("2.0.0", "1.9.9")).to.be.greaterThan(0);
-		expect(compareVersions("1.10.0", "1.2.99")).to.be.greaterThan(0);
-		expect(compareVersions("1.2.0", "1.1.99")).to.be.greaterThan(0);
-	});
+	describe("findMatchingVersion", () => {
+		const availableVersions = ["1.0.0", "1.1.0", "1.2.0", "2.0.0"];
 
-	it("returns negative if first is less", () => {
-		expect(compareVersions("1.2.3", "1.2.4")).to.be.lessThan(0);
-		expect(compareVersions("1.9.9", "2.0.0")).to.be.lessThan(0);
-		expect(compareVersions("1.2.99", "1.10.0")).to.be.lessThan(0);
-		expect(compareVersions("1.1.99", "1.2.0")).to.be.lessThan(0);
-	});
+		it("should return matching version for exact version match", () => {
+			const result = findMatchingVersion("1.1.0", availableVersions);
+			expect(result).to.equal("1.1.0");
+		});
 
-	it("handles missing patch/minor/major as zero", () => {
-		expect(compareVersions("1.2", "1.2.0")).to.equal(0);
-		expect(compareVersions("1", "1.0.0")).to.equal(0);
-		expect(compareVersions("1.0.1", "1")).to.be.greaterThan(0);
-		expect(compareVersions("1.0", "1.0.1")).to.be.lessThan(0);
-	});
-});
+		it("should return highest matching version for range", () => {
+			const result = findMatchingVersion("^1.0.0", availableVersions);
+			expect(result).to.equal("1.2.0");
+		});
 
-describe("findLatestVersion", () => {
-	it("returns the highest version", () => {
-		expect(findLatestVersion(["1.2.3", "1.2.4", "1.2.2"])).to.equal(
-			"1.2.4"
-		);
-		expect(findLatestVersion(["0.1.0", "0.0.9", "0.1.1"])).to.equal(
-			"0.1.1"
-		);
-		expect(findLatestVersion(["2.0.0", "1.9.9", "2.0.1"])).to.equal(
-			"2.0.1"
-		);
-		expect(findLatestVersion(["1.2.0", "1.2", "1.2.1"])).to.equal(
-			"1.2.1"
-		);
-	});
+		it("should return undefined when exact version not found", () => {
+			const result = findMatchingVersion("3.0.0", availableVersions);
+			expect(result).to.be.undefined;
+		});
 
-	it("returns the only version if array has one element", () => {
-		expect(findLatestVersion(["1.2.3"])).to.equal("1.2.3");
-	});
+		it("should return undefined when no version satisfies range", () => {
+			const result = findMatchingVersion("^3.0.0", availableVersions);
+			expect(result).to.be.undefined;
+		});
 
-	it("works with unordered input", () => {
-		expect(findLatestVersion(["1.2.3", "1.2.1", "1.2.2"])).to.equal(
-			"1.2.3"
-		);
-		expect(findLatestVersion(["1.2.1", "1.2.3", "1.2.2"])).to.equal(
-			"1.2.3"
-		);
+		it("should return undefined for empty available versions array", () => {
+			const result = findMatchingVersion("1.0.0", []);
+			expect(result).to.be.undefined;
+		});
+
+		it("should return undefined for invalid version string", () => {
+			const result = findMatchingVersion(
+				"not-valid",
+				availableVersions
+			);
+			expect(result).to.be.undefined;
+		});
+
+		it("should return undefined for invalid range string", () => {
+			const result = findMatchingVersion(
+				"totally-invalid-range",
+				availableVersions
+			);
+			expect(result).to.be.undefined;
+		});
+
+		it("should filter invalid versions and match against valid ones", () => {
+			const result = findMatchingVersion("1.0.0", [
+				"invalid",
+				"1.0.0",
+				"bad"
+			]);
+			expect(result).to.equal("1.0.0");
+		});
 	});
 });

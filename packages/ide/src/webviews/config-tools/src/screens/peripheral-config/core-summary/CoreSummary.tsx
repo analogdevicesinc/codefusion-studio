@@ -33,9 +33,9 @@ import {getProjectInfoList} from '../../../utils/config';
 import {
 	Button,
 	CollapseAllIcon,
-	ExpandAllIcon
+	ExpandAllIcon,
+	Tooltip
 } from 'cfs-react-library';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
 import {setPeripheralScreenOpenProjectCards} from '../../../state/slices/app-context/appContext.reducer';
 import {
 	type TLocaleContext,
@@ -104,46 +104,53 @@ function CoreSummary() {
 			<div className={styles.sectionContainer}>
 				<div className={styles.coreSectionHeader}>
 					<h1>Core Projects</h1>
-					<div className={styles.headerIcons}>
-						<Tooltip
-							title={l10n?.['expand-action']?.tooltips?.expand}
-							type='long'
+					{Array.isArray(projects) && projects.length > 1 && (
+						<div
+							className={styles.headerIcons}
+							data-test='core-summary:expand-collapse-actions'
 						>
-							<Button
-								appearance='icon'
-								disabled={
-									projectsWithPeripherals.length ===
-									openProjectCards.length
-								}
-								className={styles.icon}
-								onClick={() => {
-									dispatch(
-										setPeripheralScreenOpenProjectCards(
-											projectsWithPeripherals
-										)
-									);
-								}}
+							<Tooltip
+								title={l10n?.['expand-action']?.tooltips?.expand}
+								width={60}
+								position='bottom'
 							>
-								<ExpandAllIcon />
-							</Button>
-						</Tooltip>
+								<Button
+									appearance='icon'
+									disabled={
+										projectsWithPeripherals.length ===
+										openProjectCards.length
+									}
+									className={styles.icon}
+									onClick={() => {
+										dispatch(
+											setPeripheralScreenOpenProjectCards(
+												projectsWithPeripherals
+											)
+										);
+									}}
+								>
+									<ExpandAllIcon />
+								</Button>
+							</Tooltip>
 
-						<Tooltip
-							title={l10n?.['expand-action']?.tooltips?.collapse}
-							type='long'
-						>
-							<Button
-								appearance='icon'
-								disabled={openProjectCards.length === 0}
-								className={styles.icon}
-								onClick={() => {
-									dispatch(setPeripheralScreenOpenProjectCards([]));
-								}}
+							<Tooltip
+								title={l10n?.['expand-action']?.tooltips?.collapse}
+								width={65}
+								position='bottom'
 							>
-								<CollapseAllIcon />
-							</Button>
-						</Tooltip>
-					</div>
+								<Button
+									appearance='icon'
+									disabled={openProjectCards.length === 0}
+									className={styles.icon}
+									onClick={() => {
+										dispatch(setPeripheralScreenOpenProjectCards([]));
+									}}
+								>
+									<CollapseAllIcon />
+								</Button>
+							</Tooltip>
+						</div>
+					)}
 				</div>
 				<div
 					className={styles.coreSection}

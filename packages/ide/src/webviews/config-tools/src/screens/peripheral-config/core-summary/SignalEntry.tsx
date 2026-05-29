@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *
  */
 
-import {memo, useCallback, useEffect} from 'react';
+import {memo, useCallback} from 'react';
 import ConfigIcon16px from '@common/icons/Config16px';
 import ConflictIcon from '@common/icons/Conflict';
 import {useAppDispatch} from '../../../state/store';
@@ -42,14 +42,9 @@ import {removeAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 type SignalEntryProps = Readonly<{
 	signal: string;
 	peripheral: string;
-	shouldHighlight?: boolean;
 }>;
 
-function SignalEntry({
-	signal,
-	peripheral,
-	shouldHighlight
-}: SignalEntryProps) {
+function SignalEntry({signal, peripheral}: SignalEntryProps) {
 	const dispatch = useAppDispatch();
 	const [_, activeSignal] = useActiveSignal()?.split(' ') ?? [];
 	const isActive = activeSignal === signal;
@@ -95,20 +90,19 @@ function SignalEntry({
 		};
 
 		dispatch(
+			// Two Redux actions are dispatched synchronously — removeSignalAssignment and removeAppliedSignal.
+			// Each triggers its own async persistence call to the extension, which does a full document replacement.
+			// These two writes race: each reads the document, modifies only its subset, then writes the entire document back.
+			// So we discard the persistence of this action so that the stale data does not get written back.
 			removeSignalAssignment({
 				signalName: signal,
-				peripheral
+				peripheral,
+				discardPersistence: true
 			})
 		);
 		dispatch(removeAppliedSignal(payload));
 		dispatch(setActiveSignal(undefined));
 	}, [dispatch, peripheral, signal, targetPinId]);
-
-	useEffect(() => {
-		if (shouldHighlight) {
-			handleConfigClick();
-		}
-	}, [shouldHighlight, handleConfigClick, dispatch]);
 
 	// Render if not a signalGroup, or if signalGroup and assignedPin is true
 	if (Boolean(assignable) && !assignedPin) {

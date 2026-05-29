@@ -53,6 +53,7 @@ $padding: 4px;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				padding: 2px 4px;
+				@include fonts.body-b1;
 			}
 
 			.size {

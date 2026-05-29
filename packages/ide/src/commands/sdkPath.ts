@@ -32,7 +32,7 @@ import { ERROR, WARNING } from "../messages";
 import { Utils } from "../utils/utils";
 
 import { resolveVariables } from "../utils/resolveVariables";
-import { glob } from "glob";
+import * as fg from "fast-glob";
 import { SELECT_SDK_PATH_COMMAND_ID } from "./constants";
 
 export class SdkPath {
@@ -59,7 +59,9 @@ export class SdkPath {
     );
     let sdkPaths: Map<string, string | undefined> = new Map();
     for (const p of defaultSdkLocations) {
-      const pathsFound = (await glob(p)).map(Utils.normalizePath);
+      const pathsFound = (await fg.async(p, { suppressErrors: true })).map(
+        Utils.normalizePath,
+      );
       for (const cfsJsonPath of pathsFound) {
         const sdkPath = path.dirname(cfsJsonPath);
         const sdkVersion = await this.getSdkVersion(sdkPath);

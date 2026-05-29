@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,16 +27,20 @@ export type DropDownOptions = Array<{
 	disabled?: boolean;
 }>;
 
-type DropDownProps = {
-	readonly controlId: string;
-	readonly isDisabled?: boolean;
-	readonly currentControlValue: string | undefined;
-	readonly options: DropDownOptions;
-	readonly dataTest?: string;
-	readonly size?: 'large' | 'small';
-	readonly error?: string;
-	readonly onHandleDropdown: (value: string) => void;
-};
+type DropDownProps = Readonly<{
+	controlId: string;
+	isDisabled?: boolean;
+	currentControlValue: string | undefined;
+	options: DropDownOptions;
+	dataTest?: string;
+	size?: 'large' | 'small';
+	error?: string;
+	placeholder?: string;
+	// Adds an option to the list when there is no value selected yet
+	noValueOption?: DropDownOptions[0];
+	onOpenDropdown?: () => void;
+	onHandleDropdown: (value: string) => void;
+}>;
 
 export default function DropDown({
 	controlId,
@@ -46,15 +50,20 @@ export default function DropDown({
 	dataTest,
 	size = 'large',
 	error,
+	placeholder,
+	noValueOption,
+	onOpenDropdown,
 	onHandleDropdown
 }: DropDownProps) {
 	const dropdownRef = useRef<HTMLSelectElement>(null);
 	const [isExpanded, setIsExpanded] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const hasValue = !!currentControlValue;
 
 	const handleDropdown = () => {
 		dropdownRef.current?.blur();
 		onHandleDropdown(dropdownRef.current?.value ?? '');
+		setIsExpanded(false);
 	};
 
 	useEffect(() => {
@@ -63,7 +72,7 @@ export default function DropDown({
 		return () => {
 			document.removeEventListener('click', handleBodyClick);
 		};
-	});
+	}, []);
 
 	const handleBodyClick = (event: Event): void => {
 		const clickEventTarget = event.target as HTMLElement;
@@ -75,16 +84,26 @@ export default function DropDown({
 
 	// @TODO: Add another prop to this component to (size: xs/lg) to allow it to also render smaller dropdowns - i.e. the one in pinmux
 	return (
-		<div ref={containerRef}>
+		<div ref={containerRef} className={styles.container}>
 			<VSCodeDropdown
 				// @ts-expect-error: This external component doesn't recognize a ref as a possible prop
 				ref={dropdownRef}
 				id={`${controlId}-controlDropdown`}
 				data-test={dataTest}
 				disabled={isDisabled}
-				className={`${styles.dropdown} ${error ? styles.error : ''} ${styles[size]}`}
-				value={currentControlValue}
+				className={`${styles.dropdown} ${error ? styles.error : ''} ${
+					isExpanded ? styles.expandedDropdown : ''
+				} ${styles[size]}`}
+				value={
+					noValueOption && !hasValue
+						? noValueOption.value
+						: currentControlValue
+				}
 				onClick={() => {
+					if (!isExpanded && !isDisabled) {
+						onOpenDropdown?.();
+					}
+
 					setIsExpanded(!isExpanded);
 				}}
 				onChange={() => {
@@ -97,7 +116,10 @@ export default function DropDown({
 				>
 					<DownArrow />
 				</div>
-				{options.map(option => (
+				{(noValueOption && !hasValue
+					? [noValueOption, ...options]
+					: options
+				).map(option => (
 					<VSCodeOption
 						key={`${controlId}_${option.value}`}
 						id={`${controlId}_${option.value}`}
@@ -105,13 +127,19 @@ export default function DropDown({
 						value={option.value}
 						data-value={option.value}
 						className={styles.option}
-						selected={option.value === currentControlValue}
 						disabled={option.disabled}
 					>
 						{option.label}
 					</VSCodeOption>
 				))}
 			</VSCodeDropdown>
+
+			{placeholder && !hasValue && !isExpanded && (
+				<div className={styles.placeholder} aria-hidden='true'>
+					{placeholder}
+				</div>
+			)}
+
 			{error && (
 				<div
 					className={styles.errorMessage}

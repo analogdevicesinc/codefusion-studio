@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,45 +12,52 @@
  * limitations under the License.
  *
  */
-import {LocalizationProvider} from '../../common/contexts/LocaleContext';
-import DataModelError, {
-	type DataModel
-} from './screens/error/data-model-error';
-import MissingPluginsError, {
-	type MissingPlugins
-} from './screens/error/missing-plugins-error';
-import UnknownError from './screens/error/unknown-error';
 
-export type WebviewError = {
-	type: string;
-	body: unknown;
-};
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
+import type {WebviewError} from '@common/types/errors';
+import UnknownError from './screens/error/unknown-error';
+import MissingComponentsError from './screens/error/version-updater/missing-components/missing-components-error';
+import {useInitializationError} from './hooks/use-initialization-error';
+import GenericError from './screens/error/generic-error';
+import type {CfsMissingComponent} from 'cfs-types';
 
 type ErrorViewProps = {
 	readonly error: WebviewError;
 };
 
 function ErrorView({error}: ErrorViewProps) {
-	const renderError = (error: WebviewError) => {
-		const {type, body} = error;
+	const {title, description, items, docLink} =
+		useInitializationError(error);
 
-		switch (type) {
-			case 'missing-plugins':
-				return (
-					<MissingPluginsError plugins={body as MissingPlugins} />
-				);
-
-			case 'data-model':
-				return <DataModelError dataModel={body as DataModel} />;
-
-			default:
-				return <UnknownError />;
-		}
-	};
+	const isMissingComponentErrorType =
+		error.type === 'missing-components';
+	const isUnknownErrorType = error.type === 'unknown';
 
 	return (
 		<LocalizationProvider namespace='cfgtools'>
-			<div style={{height: '100vh'}}>{renderError(error)}</div>
+			<div style={{height: '100vh'}}>
+				{isMissingComponentErrorType && (
+					<MissingComponentsError
+						components={
+							(error.body as {components: CfsMissingComponent[]})
+								.components
+						}
+					/>
+				)}
+
+				{isUnknownErrorType && (
+					<GenericError
+						title={title}
+						description={description}
+						items={items}
+						docLink={docLink}
+					/>
+				)}
+
+				{!isMissingComponentErrorType && !isUnknownErrorType && (
+					<UnknownError />
+				)}
+			</div>
 		</LocalizationProvider>
 	);
 }

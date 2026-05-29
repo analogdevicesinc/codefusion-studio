@@ -22,7 +22,7 @@ import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockN
 const soc = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',

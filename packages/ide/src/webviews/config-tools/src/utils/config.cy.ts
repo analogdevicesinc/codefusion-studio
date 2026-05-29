@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import type {Soc} from '../../../common/types/soc';
 import {getPrimaryProjectId} from './config';
 import {sysPlannerDataInit} from './sys-planner-data-init';

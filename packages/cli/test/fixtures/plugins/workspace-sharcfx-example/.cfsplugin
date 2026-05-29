@@ -1,0 +1,23 @@
+{
+  "pluginName": "CLI SHARCFX Workspace Fixture",
+  "pluginId": "com.analog.sharcfx.mock.example",
+  "pluginDescription": "Fixture SHARCFX workspace plugin for CLI tests.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "sharcfx",
+  "supportedSocs": [
+    {
+      "name": "ADSP-SC835",
+      "board": "ADSPSC835-EV-SOM",
+      "package": "bga_ed"
+    }
+  ],
+  "features": {
+    "workspace": {
+      "templates": [],
+      "files": []
+    }
+  }
+}

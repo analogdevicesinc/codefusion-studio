@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import {
 import {ByteUnitMap, type ByteUnit} from '../types/memory';
 import {BYTE_UNITS} from '../constants/memory';
 import {getSocCoreList} from './soc-cores';
-import type {SocCoreMemory} from 'cfs-plugins-api';
+import type {SocCoreMemory} from 'cfs-types';
 
 const coreMemoryDictionary: Record<string, MemoryBlock> = {};
 const coreMemoryAliasDictionary: Record<string, MemoryAlias[]> = {};

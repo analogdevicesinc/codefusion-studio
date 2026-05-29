@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import type {
 	SocGasketInputStream,
 	SocGasketOutputStream,
 	SocGasket
-} from 'cfs-plugins-api';
+} from 'cfs-types';
 import type {ControlErrorTypes} from '@common/types/errorTypes';
 
 export type Soc = CfsSocDataModel;
@@ -96,7 +96,6 @@ export type FormattedPeripheral<T> = {
 	signals: Record<string, T>;
 	preassigned?: boolean;
 	config?: SocConfigFields;
-	pluginConfig?: Record<string, string>;
 	cores?: string[];
 	group?: string;
 	assignable: boolean;

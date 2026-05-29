@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  *
  */
 
-import { CatalogManager } from "../catalog/catalogManager";
 import { Utils } from "./utils";
 import { resolveVariables } from "./resolveVariables";
 import {
@@ -23,7 +22,7 @@ import {
   CHECK_FOR_UPDATES,
 } from "../constants";
 import { AuthConfigParser } from "./auth-config";
-import { AuthConfig, SessionManager, TokenAuthSession } from "cfs-lib";
+import { CatalogManager, CfsApiClient, SessionManager } from "cfs-lib";
 import * as vscode from "vscode";
 import path from "node:path";
 
@@ -56,35 +55,45 @@ export async function getCatalogManager(): Promise<CatalogManager | undefined> {
     : undefined;
   const catalogStoreDir = resolveVariables(String(catalogLocation));
   let offlineMode = !Boolean(checkForCatalogUpdates);
-  let authConfig: AuthConfig | undefined;
-  let session: TokenAuthSession | undefined;
-  let authError = false;
+  let apiClient: CfsApiClient | undefined;
 
-  try {
-    authConfig = new AuthConfigParser().getConfig();
-    const sessionManager = new SessionManager(authConfig);
-
-    session = await sessionManager.getSession();
-  } catch (error) {
-    console.warn(error);
-    authError = true;
-  }
-
-  let catalogManager: CatalogManager | undefined;
-  try {
-    catalogManager = new CatalogManager(
-      catalogStoreDir,
-      catalogBackupStore,
-      offlineMode,
-      authConfig?.ccmUrl,
-      session?.authorizer,
-    );
-    if (authError && !offlineMode) {
+  if (!offlineMode) {
+    let authConfig;
+    let session;
+    try {
+      authConfig = new AuthConfigParser().getConfig();
+      const sessionManager = new SessionManager(authConfig);
+      session = await sessionManager.getSession();
+    } catch (error) {
       // Wanted online mode, but errored getting the session (rather than there just being no session)
+      console.warn("Failed to load auth session", error);
       void vscode.window.showWarningMessage(
         "Catalog Manager failed to load user authentication session. Using public catalog.",
       );
     }
+
+    try {
+      apiClient = new CfsApiClient({
+        baseUrl: authConfig?.ccmUrl,
+        authorizer: session?.authorizer,
+      });
+    } catch (error) {
+      // Work offline if unable to create api client
+      console.warn("Failed to create API client", error);
+      void vscode.window.showWarningMessage(
+        "Catalog Manager failed to create API client. Using offline mode for catalog.",
+      );
+      offlineMode = true;
+    }
+  }
+
+  let catalogManager: CatalogManager | undefined;
+  try {
+    catalogManager = new CatalogManager({
+      catalogStoreDir,
+      catalogBackupZipFile: catalogBackupStore,
+      apiClient,
+    });
   } catch (error) {
     console.error("Catalog Manager could not be initialized.", error);
     void vscode.window.showErrorMessage(

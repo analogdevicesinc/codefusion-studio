@@ -34,7 +34,7 @@ export type Target = {
 	Hardware: {
 		Soc?: string;
 		Core?: string;
-		Arch?: string;
+		Family?: string;
 		// It's required to use null here to differentiate between ignoring accellerator and checking if the core does not have an accelerator.
 		// eslint-disable-next-line @typescript-eslint/ban-types
 		Accelerator?: string | null;

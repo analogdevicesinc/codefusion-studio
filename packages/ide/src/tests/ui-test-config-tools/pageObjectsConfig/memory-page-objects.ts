@@ -82,7 +82,7 @@ export class Locatorspaths {
 
   public startAddress: By = By.css('[data-test="start-address"] input');
 
-  public sizeStepper: By = By.css("[data-test='size-stepper'] input");
+  public sizeStepper: By = By.css("[data-test='size-stepper-control-input']");
 
   public createConfiguredPartition: By = By.css(
     "[data-test='create-partition-button']",
@@ -107,6 +107,6 @@ export class Locatorspaths {
   );
 
   public getEditPartitionButton(index: number): By {
-    return By.xpath(`(//*[@data-Test='edit-partition-btn'])[${index}]`);
+    return By.xpath(`(//*[@data-test='edit-partition-btn'])[${index}]`);
   }
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ import type {
 	UnifiedPeripherals
 } from '../../../../../common/types/soc';
 import Peripheral from '../../../components/peripheral/Peripheral';
-import {useActiveFilterType} from '../../../state/slices/app-context/appContext.selector';
+import {useActivePinconfigAssignmentFilter} from '../../../state/slices/app-context/appContext.selector';
 import {
 	useActivePeripheral,
+	useActiveSignal,
 	useCurrentSignalsTargets
 } from '../../../state/slices/peripherals/peripherals.selector';
 import {
@@ -34,6 +35,11 @@ import {getFixedFuntionPins} from '../../../utils/soc-pins';
 import {filterSignals} from '../utils/filters';
 import {getPeripheralList} from '../../../utils/soc-peripherals';
 import {pinInConflict} from '../../../utils/pin-error';
+import {
+	setActivePeripheral,
+	setActiveSignal
+} from '../../../state/slices/peripherals/peripherals.reducer';
+import PeripheralPinsReserved from './peripheral-pins-reserved/peripheral-pins-reserved';
 
 const emptySignals = [] as Array<
 	FormattedPeripheralSignal & {
@@ -41,11 +47,30 @@ const emptySignals = [] as Array<
 	}
 >;
 
+export const stripPeripheralFromSignalName = (
+	signal?: string,
+	activePeripheral?: string
+): string | undefined => {
+	if (!signal || !activePeripheral) return signal;
+
+	if (
+		signal.toLowerCase().startsWith(activePeripheral.toLowerCase())
+	) {
+		return signal.slice(activePeripheral.length).trimStart();
+	}
+
+	return signal;
+};
+
 function PeripheralNavigation() {
 	const dispatch = useAppDispatch();
 	const assignedPins = useAssignedPins();
 	const activePeripheral = useActivePeripheral();
-	const activeFilterType = useActiveFilterType();
+	const activeSignal = stripPeripheralFromSignalName(
+		useActiveSignal(),
+		activePeripheral
+	);
+	const activeFilterType = useActivePinconfigAssignmentFilter();
 	const peripheralSignalsTargets = useCurrentSignalsTargets();
 
 	const socPeripheralList: Array<
@@ -109,17 +134,42 @@ function PeripheralNavigation() {
 		return filteredList;
 	}, [activeFilterType, assignedPins, unifiedPeripherals]);
 
-	// @TODO:If we sort once and build a dictionary with the sorted data, we can avoid sorting on every render
 	const sortedPeripherals = useMemo(
 		() =>
-			filteredPeripherals.sort((a, b) =>
-				a.name.localeCompare(b.name, 'en', {
-					numeric: true,
-					sensitivity: 'base'
+			[...filteredPeripherals]
+				.map(p => {
+					const signals = Object.values(p.signals);
+
+					return {
+						...p,
+						hasSignalsWithPins: signals.some(s => s.pins.length > 0)
+					};
 				})
-			),
+				.sort((a, b) =>
+					a.name.localeCompare(b.name, 'en', {
+						numeric: true,
+						sensitivity: 'base'
+					})
+				),
 		[filteredPeripherals]
 	);
+	const peripheralsByName = useMemo(
+		() => Object.fromEntries(sortedPeripherals.map(p => [p.name, p])),
+		[sortedPeripherals]
+	);
+
+	// Handles case when a peripheral is active but has no pins to render,
+	// which can happen when all pins are reserved like in case of BLE.
+	const activePeripheralAllPinsReserved =
+		activePeripheral && peripheralsByName[activePeripheral]
+			? !peripheralsByName[activePeripheral].hasSignalsWithPins
+			: false;
+
+	// Handles case where a peripheral has configurable pins but the active signal has all its pins reserved.
+	// Which can happen in casses like RSTN.
+	const activeSignalPinIsReserved =
+		peripheralsByName[activePeripheral!]?.signals?.[activeSignal!]
+			?.pins?.length === 0;
 
 	// Handles focus/unfocus of pins based on the filtered set of peripherals/signals
 	// when all peripherals are collapsed
@@ -172,6 +222,19 @@ function PeripheralNavigation() {
 		sortedPeripherals,
 		peripheralSignalsTargets
 	]);
+
+	if (activePeripheralAllPinsReserved || activeSignalPinIsReserved) {
+		return (
+			<PeripheralPinsReserved
+				peripheralName={activePeripheral ?? ''}
+				signalName={activeSignal}
+				onBackClick={() => {
+					dispatch(setActivePeripheral(undefined));
+					dispatch(setActiveSignal(undefined));
+				}}
+			/>
+		);
+	}
 
 	return (
 		<section style={{height: '100%', overflowY: 'auto'}}>

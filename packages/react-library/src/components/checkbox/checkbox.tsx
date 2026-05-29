@@ -49,7 +49,7 @@ export default function CheckBox({
 				disabled={isDisabled}
 				onChange={onChange}
 				onClick={onClick}
-				className={className}
+				className={`checkboxContainer ${className}`}
 			>
 				{children}
 			</VSCodeCheckbox>

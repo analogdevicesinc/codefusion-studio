@@ -13,7 +13,7 @@
  *
  */
 
-import { Authorizer } from './authorizer.js';
+import type { Authorizer } from './authorizer.js';
 
 // A session is the means to obtain access to the API
 // sessions are long-lived and can be revoked

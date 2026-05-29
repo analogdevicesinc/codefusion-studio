@@ -104,6 +104,108 @@ describe('Clock Control Input', () => {
 			'Value is lower than the allowed range 1 to 80000000'
 		);
 	});
+});
+
+// Tests focused on input normalization behavior
+describe('Clock Control Input - Input Normalization', () => {
+	it('Should always display `0` when the input is empty', () => {
+		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
+		reduxStore.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+
+		cy.mount(
+			<ClockControlInput
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
+				isDisabled={false}
+				label='Test Label'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input')
+			.shadow()
+			.find('input')
+			.focus();
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input')
+			.shadow()
+			.find('input')
+			.type('{selectall}{backspace}');
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
+			'have.value',
+			0
+		);
+	});
+
+	it('Should always display `0` when the input is an alphanumeric string', () => {
+		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
+		reduxStore.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+
+		cy.mount(
+			<ClockControlInput
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
+				isDisabled={false}
+				label='Test Label'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input')
+			.shadow()
+			.find('input')
+			.focus();
+
+		cy.realType('abc');
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
+			'have.value',
+			0
+		);
+	});
+
+	it('Should strip leading `0`s and only keep digits after the 0', () => {
+		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
+		reduxStore.dispatch(setClockNodeDetailsTargetNode('P0.23'));
+
+		cy.mount(
+			<ClockControlInput
+				controlCfg={{
+					key: 'P0_23_FREQ',
+					type: 'integer',
+					minVal: 1,
+					maxVal: 80000000,
+					unit: ''
+				}}
+				isDisabled={false}
+				label='Test Label'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input')
+			.shadow()
+			.find('input')
+			.focus();
+
+		cy.realType('009');
+
+		cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
+			'have.value',
+			9
+		);
+	});
 
 	it('Should only allow positive integers as inputs', () => {
 		const reduxStore = configurePreloadedStore(wlp as unknown as Soc);
@@ -137,14 +239,14 @@ describe('Clock Control Input', () => {
 		cy.realType('!.-  +/');
 
 		cy.dataTest('P0_23_FREQ-P0.23-control-input')
-			.should('have.value', '')
+			.should('have.value', 0)
 			.then(() => {
 				focusInput();
 
 				cy.realType('abc');
 
 				cy.dataTest('P0_23_FREQ-P0.23-control-input')
-					.should('have.value', '')
+					.should('have.value', 0)
 					.then(() => {
 						focusInput();
 

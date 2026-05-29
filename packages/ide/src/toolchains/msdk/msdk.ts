@@ -15,13 +15,11 @@
 
 import * as fs from "fs";
 import * as vscode from "vscode";
-import { platform } from "node:process";
 
 import {
   ADI_CONFIGURE_WORKSPACE_SETTING,
   BOARD,
   FIRMWARE_PLATFORM,
-  MSDK,
   OPENOCD,
   OPENOCD_INTERFACE,
   OPENOCD_RISCV_INTERFACE,
@@ -35,14 +33,7 @@ import { getPropertyName } from "../../properties";
 import { Utils } from "../../utils/utils";
 import { default as launch } from "./resources/launch";
 import { default as oldSettings } from "./resources/settings-old";
-import { default as msdkTasksSubset } from "./resources/tasks-subset";
-import { default as msdkTasks } from "./resources/tasks";
-
-import type { IDEShellEnvProvider } from "../shell-env-provider";
 import path from "path";
-
-// Globals
-let msdkTaskProvider: vscode.Disposable | undefined;
 
 export function parseMaximPath(uri: vscode.Uri): string {
   const expected = vscode.Uri.joinPath(uri, "Tools"); // Look for Tools directory - it exists on both the Github repo and MaintenanceTool install
@@ -53,154 +44,6 @@ export function parseMaximPath(uri: vscode.Uri): string {
     //          for that elsewhere so pattern matching should work consistently (i.e. in filter_maxim_path).
   } else {
     return "";
-  }
-}
-
-export class MsdkTaskProvider implements vscode.TaskProvider {
-  private shellEnvProvider: IDEShellEnvProvider;
-  private resolvedTasks: vscode.Task[] | undefined;
-
-  constructor(shellEnvProvider: IDEShellEnvProvider) {
-    this.shellEnvProvider = shellEnvProvider;
-  }
-
-  provideTasks(
-    _token: vscode.CancellationToken,
-  ): vscode.ProviderResult<vscode.Task[]> {
-    // Return cached tasks only
-    return this.resolvedTasks || [];
-  }
-
-  resolveTask(
-    _task: vscode.Task,
-    _token: vscode.CancellationToken,
-  ): vscode.ProviderResult<vscode.Task> {
-    // Since we're providing fully resolved tasks, we don't need to implement this.
-    return undefined;
-  }
-
-  /**
-   * Initializes the resolved tasks cache
-   */
-  async initializeTasks(): Promise<void> {
-    try {
-      this.resolvedTasks = await this.getMsdkTasks();
-    } catch (error) {
-      console.error(`Error initializing MSDK tasks: ${error}`);
-      this.resolvedTasks = [];
-    }
-  }
-
-  async getMsdkTasks(): Promise<vscode.Task[]> {
-    const result: vscode.Task[] = [];
-
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return result;
-    }
-
-    let environment: vscode.ShellExecutionOptions["env"] =
-      await this.shellEnvProvider.getShellEnvironment();
-
-    for (const workspaceFolder of workspaceFolders) {
-      if (
-        workspaceFolder.name === ".cfs" ||
-        Utils.getProjectFirmwarePlatform(workspaceFolder) !== MSDK
-      ) {
-        continue;
-      }
-
-      const cfsEnvVars =
-        this.shellEnvProvider.getCfsEnvironmentVariables(workspaceFolder);
-      environment = {
-        ...environment,
-        ...cfsEnvVars,
-      };
-
-      // Load an environment dictionary from the MSDK class.
-      // This is provided to each task's ShellExecution object
-      // to set its Path and environment variables correctly.
-      // Loading it via the class allows the toolchain to change dynamically.
-
-      const cwd = workspaceFolder.uri.fsPath;
-      const relDirPath = path.relative(workspaceFolder.uri.fsPath, cwd);
-
-      const shellOptions: vscode.ShellExecutionOptions = {
-        cwd: cwd,
-        env: environment,
-        executable: Utils.getShellExecutable(platform),
-        shellArgs: Utils.getShellArgs(platform),
-      };
-
-      const workspaceTasks = Utils.getTasksFromCustomTasksJson(cwd);
-
-      // Iterate across the resources/tasks.json file to load definitions.
-      // This reduces maintenance overhead and enables easy testing of tasks.json files.
-      // New tasks should be added to the json file as opposed to manually creating them inside
-      // this provider.
-
-      // Always loop over subset tasks. If we have a cfs.tasks.json file, append those tasks as well otherwise use the full set.
-      for (const taskDef of [
-        ...msdkTasksSubset.tasks,
-        ...(workspaceTasks?.tasks || msdkTasks.tasks),
-      ]) {
-        let command = taskDef.command;
-        if (command === undefined) {
-          switch (platform) {
-            case "win32":
-              command = taskDef.windows?.command;
-              break;
-            case "darwin":
-              command = taskDef.osx?.command;
-              break;
-            case "linux":
-              command = taskDef.linux?.command;
-              break;
-          }
-        }
-        if (command === undefined) {
-          continue;
-        }
-
-        let taskName = `${taskDef.label}`;
-        if (relDirPath.length > 0) {
-          taskName += ` (${relDirPath})`;
-        }
-        const task = new vscode.Task(
-          {
-            type: taskDef.type,
-          },
-          workspaceFolder,
-          taskName,
-          "CFS",
-          new vscode.ShellExecution(command, shellOptions),
-        );
-
-        // Remove the task ID, which isn't supported in custom shell tasks.
-        delete task.definition.id;
-        task.definition.command = command;
-        task.definition.options = {
-          cwd: cwd,
-          env: environment,
-          shell: {
-            args: shellOptions.shellArgs,
-            executable: shellOptions.executable,
-          },
-        };
-
-        task.presentationOptions = {
-          reveal: vscode.TaskRevealKind.Always,
-          clear: false,
-        };
-
-        if (taskDef.group !== undefined && taskDef.group === "build") {
-          task.group = vscode.TaskGroup.Build;
-        }
-        result.push(task);
-      }
-    }
-
-    return result;
   }
 }
 
@@ -496,25 +339,4 @@ export function activate(context: vscode.ExtensionContext): void {
       openInstallationInstructions,
     ),
   );
-}
-
-/**
- * Called when the workspace has been configured as a CFS project
- */
-export async function registerTaskProvider(
-  context: vscode.ExtensionContext,
-  shellEnvProvider: IDEShellEnvProvider,
-) {
-  const provider = new MsdkTaskProvider(shellEnvProvider);
-
-  msdkTaskProvider = vscode.tasks.registerTaskProvider("shell", provider);
-  context.subscriptions.push(msdkTaskProvider);
-
-  return provider;
-}
-
-export function deactivate(): void {
-  if (msdkTaskProvider) {
-    msdkTaskProvider.dispose();
-  }
 }

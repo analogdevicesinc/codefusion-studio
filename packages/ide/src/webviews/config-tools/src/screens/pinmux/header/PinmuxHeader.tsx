@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,23 @@
  * limitations under the License.
  *
  */
-import FilterControls from '../../../components/filter-controls/FilterControls';
+import PinAssignmentStatusFilter from '../pin-assignment-status-filter/pin-assignment-status-filter';
 import ContextSearchInput from '../../../components/context-search-input/context-search-input';
 
 import style from './PinmuxHeader.module.scss';
+import SearchScopePicker from '../search-scope-picker/search-scope-picker';
+import {useSearchString} from '../../../state/slices/app-context/appContext.selector';
 
 export default function PinmuxHeader() {
+	const pickerOpened = useSearchString('pinconfig').length > 0;
+
 	return (
 		<div className={style.headerContainer}>
 			<div className={style.inputWrapper}>
 				<ContextSearchInput searchContext='pinconfig' />
+				{pickerOpened && <SearchScopePicker />}
 			</div>
-			<FilterControls />
+			<PinAssignmentStatusFilter />
 		</div>
 	);
 }

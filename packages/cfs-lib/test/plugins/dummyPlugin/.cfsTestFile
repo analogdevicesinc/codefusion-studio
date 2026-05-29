@@ -10,7 +10,6 @@
     "supportedSocs": [
         {
             "name": "soc1",
-            "dataModel": "dataModel",
             "board": "board",
             "package": "package"
         }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ export type PartitionCore = {
 	label: string;
 	access: string;
 	owner: boolean;
+	secure?: boolean;
 };
 
 type PartitionsState = {
@@ -124,8 +125,7 @@ const partitionsSlice = createSlice({
 				payload
 			}: PayloadAction<{
 				projectId: string;
-				key: string;
-				value: string | number | boolean;
+				updates: Record<string, string | number | boolean>;
 			}>
 		) {
 			if (!state.activePartition) {
@@ -136,7 +136,7 @@ const partitionsSlice = createSlice({
 				...state.activePartition.config,
 				[payload.projectId]: {
 					...state.activePartition.config?.[payload.projectId],
-					[payload.key]: payload.value
+					...payload.updates
 				}
 			};
 		},

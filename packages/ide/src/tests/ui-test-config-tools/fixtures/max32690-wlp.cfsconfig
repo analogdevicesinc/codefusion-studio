@@ -1,7 +1,7 @@
 {
   "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "DataModelVersion": "1.1.0",
-  "DataModelSchemaVersion": "1.1.0",
+  "DataModelVersion": "^1.1.0",
+  "SchemaVersion": "2.1.0",
   "Timestamp": "2025-09-16T12:10:18.374Z",
   "Soc": "MAX32690",
   "BoardName": "AD-APARD32690-SL",
@@ -23,9 +23,9 @@
       "Signal": "TX"
     },
     {
-      "Pin": "G5",
-      "Peripheral": "USBHS",
-      "Signal": "CLKEXT"
+      "Pin": "H10",
+      "Peripheral": "LPTMR0",
+      "Signal": "CLK"
     },
     {
       "Pin": "G9",
@@ -40,8 +40,8 @@
   ],
   "ClockNodes": [
     {
-      "Name": "P0.27",
-      "Control": "P0_27_FREQ",
+      "Name": "P3.5",
+      "Control": "P3_5_FREQ",
       "Value": "1000",
       "Enabled": true
     },
@@ -56,8 +56,8 @@
     {
       "CoreId": "CM4",
       "ProjectId": "max32690_arm-cortex-m4f",
-      "PluginId": "com.analog.project.zephyr.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
       "FirmwarePlatform": "zephyr-4.1",
       "ExternallyManaged": false,
       "PlatformConfig": {
@@ -109,8 +109,8 @@
     {
       "CoreId": "RV",
       "ProjectId": "max32690_risc-v",
-      "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.1.0",
+      "PluginId": "com.analog.project.msdk.mock.plugin",
+      "PluginVersion": "^1.1.0",
       "FirmwarePlatform": "msdk",
       "ExternallyManaged": false,
       "PlatformConfig": {
@@ -131,7 +131,7 @@
     }
   ],
   "ClockFrequencies": {
-    "P0.27": 1000,
+    "LPTMR0_CLK": 1000,
     "P0.23": "Undef",
     "Cortex-M4": 120000000,
     "FLC0/1": 120000000,

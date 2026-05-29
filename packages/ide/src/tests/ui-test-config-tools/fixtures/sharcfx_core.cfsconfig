@@ -1,0 +1,73 @@
+{
+  "Copyright": "Copyright (c) 2026 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "SchemaVersion": "1.3.355",
+  "DataModelVersion": "^1.1.0",
+  "Timestamp": "2026-04-28T18:37:10.352Z",
+  "Soc": "ADSP-21835W",
+  "Package": "BGA_ED",
+  "Pins": [],
+  "ClockNodes": [],
+  "BoardName": "ev_som",
+  "Projects": [
+    {
+      "CoreId": "FX",
+      "ProjectId": "FX",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "sfx"
+      },
+      "AIModels": [
+        {
+          "Name": "hello_world_model_f32",
+          "Files": {
+            "Model": "sfx/hello_world_f32.tflite"
+          },
+          "Target": {
+            "Core": "FX"
+          },
+          "Backend": {
+            "Name": "tflm",
+            "Extensions": {
+              "Symbol": "hello_world_model_f32",
+              "Section": ".data"
+            }
+          },
+          "Enabled": true
+        }
+      ],
+      "Family": "SHARC-FX",
+      "Ai": {
+        "FlashSize": 0,
+        "RamSize": 2560,
+        "CoreClock": 1000,
+        "SupportedOps": [],
+        "AccelOps": [],
+        "OperatorInfos": [
+          {
+            "Name": "MAC",
+            "Cycles": 1,
+            "Energy": 1.5
+          }
+        ],
+        "SupportedDataTypes": []
+      },
+      "Partitions": [],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "CM33",
+      "ProjectId": "CM33",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "ExternallyManaged": true,
+      "PlatformConfig": {
+        "ProjectName": "m33"
+      },
+      "Family": "",
+      "Partitions": [],
+      "Peripherals": []
+    }
+  ]
+}

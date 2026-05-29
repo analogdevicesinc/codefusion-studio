@@ -27,17 +27,12 @@ export type ClockNodesState = {
 	clockNodes: ClockNodesDictionary;
 	activeClockNodeType: string | undefined;
 	clockNodeDetailsTargetNode: string | undefined;
-	diagramData: Record<
-		string,
-		{enabled: boolean | undefined; error: boolean | undefined}
-	>;
 };
 
 export const clockNodesInitialState: ClockNodesState = {
 	clockNodes: {},
 	activeClockNodeType: undefined,
-	clockNodeDetailsTargetNode: undefined,
-	diagramData: {}
+	clockNodeDetailsTargetNode: undefined
 };
 
 const clockNodes = createSlice({
@@ -87,19 +82,6 @@ const clockNodes = createSlice({
 					targetClockNode.Errors[payload.key] = payload.error;
 				}
 			}
-		},
-		setDiagramData(
-			state,
-			{
-				payload
-			}: PayloadAction<
-				Record<
-					string,
-					{enabled: boolean | undefined; error: boolean | undefined}
-				>
-			>
-		) {
-			state.diagramData = payload;
 		}
 	}
 });
@@ -107,8 +89,7 @@ const clockNodes = createSlice({
 export const {
 	setClockNodeDetailsTargetNode,
 	setActiveClockNodeType,
-	setClockNodeControlValue,
-	setDiagramData
+	setClockNodeControlValue
 } = clockNodes.actions;
 
 export const clockNodesReducer = clockNodes.reducer;

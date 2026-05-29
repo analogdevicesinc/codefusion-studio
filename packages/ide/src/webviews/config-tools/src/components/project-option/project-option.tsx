@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ import {Badge} from 'cfs-react-library';
 import {
 	SECURE_ABBR,
 	NON_SECURE_ABBR
-} from '../../../../common/constants/core-properties';
+} from '@common/constants/core-properties';
 import {type ProjectInfo} from '../../utils/config';
 import {memo} from 'react';
 
 function ProjectOption({project}: {readonly project: ProjectInfo}) {
 	return (
-		<div>
-			{project.Description}&nbsp;
+		<div title={project.Description}>
+			{project.Name}&nbsp;
 			{project.Secure ? (
 				<Badge appearance='secondary'>{SECURE_ABBR}</Badge>
 			) : project.Secure === false ? (

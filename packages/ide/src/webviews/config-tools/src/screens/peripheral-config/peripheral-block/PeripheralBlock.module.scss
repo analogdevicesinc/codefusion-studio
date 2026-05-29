@@ -144,19 +144,6 @@
 	}
 }
 
-.tooltip {
-	position: fixed;
-	display: flex;
-	padding: 5px 8px;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 8px;
-	border: 0.5px solid colors.$default-border;
-	border-radius: 2px;
-	background-color: colors.$default-background;
-	box-shadow: layouts.$default-shadow;
-}
-
 .highlight {
 	background-color: colors.$list-hover-background;
 	transition: background-color 0.8s ease;
@@ -168,5 +155,19 @@
 		& svg {
 			visibility: visible;
 		}
+	}
+}
+
+// Peripheral item styling (overrides for AssignableItem)
+.peripheralItem {
+	--item-border-bottom: 1px solid #{colors.$default-border};
+	--item-border-left: 2px solid transparent;
+	--label-text-transform: uppercase;
+
+	@include fonts.body-b3;
+
+	// Nested label gets heading style
+	.label {
+		@include fonts.heading-h5;
 	}
 }

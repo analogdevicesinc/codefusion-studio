@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 import { CfsVariableResolver } from "../../src/utils/cfs-variable-resolver.js";
 import { CfsToolManager } from "../../src/managers/cfs-tool-manager.js";
 import { expect } from "chai";
+import path from "node:path";
 
 // Manual mock implementation for CfsToolManager
 class MockToolManager {
@@ -176,6 +177,140 @@ describe("CfsVariableResolver", function () {
 		expect(toolManager.resolveTemplatePathsCalls).to.include(
 			"mock-tool-3",
 			"Expected call with mock-tool-3"
+		);
+	});
+});
+
+describe("Custom resolver extensions", function () {
+	let toolManager: MockToolManager;
+	let resolver: CfsVariableResolver;
+
+	beforeEach(function () {
+		toolManager = new MockToolManager();
+		resolver = new CfsVariableResolver(
+			toolManager as unknown as CfsToolManager
+		);
+	});
+
+	it("should resolve ${config:KEY} via registered resolver", async function () {
+		resolver.registerResolver((value: string) =>
+			value.replace(
+				/\$\{config:([^}]+)\}/g,
+				(fullMatch: string, key: string) => {
+					if (key === "cfs.project.target") {
+						return "MAX32655";
+					}
+
+					return fullMatch;
+				}
+			)
+		);
+
+		const result = await resolver.resolveStringVariables(
+			"Target: ${config:cfs.project.target}"
+		);
+
+		expect(result).to.equal("Target: MAX32655");
+	});
+
+	it("should leave IDE-native variables untouched by default", async function () {
+		const result = await resolver.resolveStringVariables(
+			"${workspaceFolder}/build/${workspaceFolderBasename}.elf"
+		);
+
+		expect(result).to.equal(
+			"${workspaceFolder}/build/${workspaceFolderBasename}.elf"
+		);
+	});
+
+	it("should resolve ${command:CMD} via async registered resolver", async function () {
+		resolver.registerResolver((value: string) => {
+			const pattern = /\$\{command:([^}]+)\}/g;
+			let result = value;
+			let match = pattern.exec(value);
+
+			while (match !== null) {
+				const fullMatch = match[0];
+				const command = match[1];
+				if (command === "cfs.tool.path.msdk") {
+					result = result.replace(fullMatch, "/opt/msdk");
+				}
+
+				match = pattern.exec(value);
+			}
+
+			return result;
+		});
+
+		const result = await resolver.resolveStringVariables(
+			"SDK: ${command:cfs.tool.path.msdk}"
+		);
+
+		expect(result).to.equal("SDK: /opt/msdk");
+	});
+
+	it("should resolve multi-pass chained custom variables", async function () {
+		const workspaceFolder = "/workspace/78000-multi-msdk-hw/m4";
+
+		resolver.registerResolver((value: string) =>
+			value.replace(
+				/\$\{config:([^}]+)\}/g,
+				(fullMatch: string, key: string) => {
+					if (key === "cfs.programFile") {
+						return "${workspaceFolder}/build/${workspaceFolderBasename}.elf";
+					}
+					return fullMatch;
+				}
+			)
+		);
+
+		resolver.registerResolver((value: string) =>
+			value.replace(/\$\{workspaceFolder\}/g, workspaceFolder)
+		);
+
+		resolver.registerResolver((value: string) =>
+			value.replace(
+				/\$\{workspaceFolderBasename\}/g,
+				path.basename(workspaceFolder)
+			)
+		);
+
+		const result = await resolver.resolveStringVariables(
+			"Program: ${config:cfs.programFile}"
+		);
+
+		expect(result).to.equal(
+			"Program: /workspace/78000-multi-msdk-hw/m4/build/m4.elf"
+		);
+	});
+
+	it("should stop early when no replacements occur", async function () {
+		const result = await resolver.resolveStringVariables(
+			"no variables here"
+		);
+
+		expect(result).to.equal("no variables here");
+	});
+
+	it("should throw when recursive replacements exceed max passes", async function () {
+		resolver.registerResolver((value: string) => {
+			if (value.includes("${loop:a}")) {
+				return value.replace(/\$\{loop:a\}/g, "${loop:b}");
+			}
+
+			return value.replace(/\$\{loop:b\}/g, "${loop:a}");
+		});
+
+		let thrownError: unknown;
+		try {
+			await resolver.resolveStringVariables("Value: ${loop:a}");
+		} catch (error) {
+			thrownError = error;
+		}
+
+		expect(thrownError).to.be.instanceOf(Error);
+		expect((thrownError as Error).message).to.include(
+			"Variable resolution exceeded"
 		);
 	});
 });

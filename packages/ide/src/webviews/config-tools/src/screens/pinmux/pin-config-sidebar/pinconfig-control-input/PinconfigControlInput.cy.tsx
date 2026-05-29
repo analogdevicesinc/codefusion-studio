@@ -1,3 +1,4 @@
+/* eslint-disable max-nested-callbacks */
 /* eslint-disable no-template-curly-in-string */
 import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../../state/store';
@@ -9,7 +10,7 @@ import {
 	setActiveSignal
 } from '../../../../state/slices/peripherals/peripherals.reducer';
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 const wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
@@ -85,7 +86,7 @@ describe('Pinconfig Input Field', () => {
 
 		// Valid pattern for C identifiers are strings that start with a letter followed by letters, digits, or underscores
 		cy.realType('011-gpio').then(() => {
-			cy.wait(1000);
+			cy.wait(100);
 
 			cy.dataTest('DT_NAME-P0.11-error').should(
 				'contain.text',
@@ -100,12 +101,25 @@ describe('Pinconfig Input Field', () => {
 			cy.dataTest('DT_NAME-P0.11-control-input').realTouch();
 
 			cy.realType('fd-34&').then(() => {
-				cy.wait(1000);
+				cy.wait(100);
 
 				cy.dataTest('DT_NAME-P0.11-error').should(
 					'contain.text',
 					'Invalid format for field'
 				);
+
+				// A valid input should clear the error message
+				cy.dataTest('DT_NAME-P0.11-control-input')
+					.shadow()
+					.find('input')
+					.clear();
+				cy.dataTest('DT_NAME-P0.11-control-input').realTouch();
+
+				cy.realType('fd').then(() => {
+					cy.wait(100);
+
+					cy.dataTest('DT_NAME-P0.11-error').should('not.exist');
+				});
 			});
 		});
 	});

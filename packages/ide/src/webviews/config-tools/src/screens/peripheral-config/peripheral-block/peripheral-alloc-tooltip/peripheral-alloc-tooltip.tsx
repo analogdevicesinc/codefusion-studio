@@ -14,7 +14,7 @@
  */
 
 import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
-
+import {PERIPHERAL_LIST_CONTAINER_ID} from '../../constants';
 import styles from './peripheral-alloc-tooltip.module.scss';
 
 type PeripheralTooltipProps = {
@@ -22,6 +22,7 @@ type PeripheralTooltipProps = {
 	description: string;
 };
 
+// @TODO: CFSIO-12642 - Remove custom tooltip component and replace with generic react-lib tooltip.
 export default function PeripheralAllocTooltip({
 	title,
 	description
@@ -37,7 +38,7 @@ export default function PeripheralAllocTooltip({
 
 	const {top: containerTop = 0, bottom: containerBottom = 0} =
 		document
-			.getElementById('peripheral-list-container')
+			.getElementById(PERIPHERAL_LIST_CONTAINER_ID)
 			?.getBoundingClientRect() ?? {};
 
 	// Take into account the height of the filter container because the `position: relative` is applied to the `.sidebarWrapper`

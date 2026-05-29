@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import type {ControlCfg, Soc} from '@common/types/soc';
 import ClockDiagram from './ClockDiagram';
 import {configurePreloadedStore} from '../../../state/store';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const soc = (await import('@socs/max32690-wlp.json').then(
 	module => module.default
@@ -95,7 +95,7 @@ describe('Clock Diagram disabled states', () => {
 
 					const junctions = cy.get('circle.schematic_dot');
 
-					junctions.should('have.length', 47);
+					junctions.should('have.length', 46);
 
 					cy.wrap(
 						targetClocks.map(clock => {
@@ -165,7 +165,7 @@ describe('Clock Diagram disabled states', () => {
 												.then(() => {
 													cy.get('circle.schematic_dot').should(
 														'have.length',
-														47
+														46
 													);
 												});
 										});

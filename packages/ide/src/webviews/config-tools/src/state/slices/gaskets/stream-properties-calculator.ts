@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
  */
 
 import type {Gasket} from '@common/types/soc';
-import type {DFGStream} from 'cfs-plugins-api';
 import {validateDFGErrors} from './dfg-validations';
-import type {GasketState} from './gasket.reducer';
+import type {DFGStreamUI, GasketState} from './gasket.reducer';
 import {getGasketDictionary} from '../../../utils/dfg';
 
 // Types for better type safety
-type StreamsByGasket = Record<string, DFGStream[]>;
+type StreamsByGasket = Record<string, DFGStreamUI[]>;
 
 type StreamComputationResult = {
-	updatedStreams: DFGStream[];
+	updatedStreams: DFGStreamUI[];
 	inputStreamMap: StreamsByGasket;
 	outputStreamMap: StreamsByGasket;
 };
@@ -51,9 +50,15 @@ export function isGasketIOBufferSizeFixed(gasket: Gasket): {
 /**
  * Main entry point for recomputing stream properties
  */
-export function recomputeStreams(state: GasketState): void {
+export function recomputeStreams(
+	state: GasketState,
+	skipFixingTiedStreamIndices = false
+): void {
 	// Run the computation
-	const result = computeStreamProperties(state.Streams);
+	const result = computeStreamProperties(
+		state.Streams,
+		skipFixingTiedStreamIndices
+	);
 
 	// Update the State
 	state.Streams = result.updatedStreams;
@@ -72,7 +77,8 @@ export function recomputeStreams(state: GasketState): void {
 }
 
 export function computeStreamProperties(
-	streams: DFGStream[]
+	streams: DFGStreamUI[],
+	skipFixingTiedStreamIndices = false
 ): StreamComputationResult {
 	const updatedStreams = streams.map(stream => ({
 		...stream,
@@ -92,7 +98,11 @@ export function computeStreamProperties(
 	updateInputStreamProperties(inputStreamsPerGasket);
 	updateOutputStreamProperties(outputStreamsPerGasket);
 
-	fixTiedStreamIndices(movedInputStreams, outputStreamsPerGasket);
+	// When add new stream, it's already selected correct streamId,
+	// it is not necessary to change it again.
+	if (!skipFixingTiedStreamIndices) {
+		fixTiedStreamIndices(movedInputStreams, outputStreamsPerGasket);
+	}
 
 	return {
 		updatedStreams,
@@ -104,7 +114,7 @@ export function computeStreamProperties(
 /**
  * Groups streams by gasket and sorts them by buffer size (descending)
  */
-export function groupAndSortStreamsByGasket(streams: DFGStream[]): {
+export function groupAndSortStreamsByGasket(streams: DFGStreamUI[]): {
 	inputStreamsPerGasket: StreamsByGasket;
 	outputStreamsPerGasket: StreamsByGasket;
 } {
@@ -123,7 +133,7 @@ export function groupAndSortStreamsByGasket(streams: DFGStream[]): {
  * A stream with multiple destinations will be included in multiple gasket groups
  */
 function groupStreamsByDestination(
-	streams: DFGStream[]
+	streams: DFGStreamUI[]
 ): StreamsByGasket {
 	return streams.reduce<StreamsByGasket>((acc, stream) => {
 		// Handle multiple destinations - add stream to each destination gasket's group
@@ -140,7 +150,9 @@ function groupStreamsByDestination(
 /**
  * Groups streams by their source gasket
  */
-function groupStreamsBySource(streams: DFGStream[]): StreamsByGasket {
+function groupStreamsBySource(
+	streams: DFGStreamUI[]
+): StreamsByGasket {
 	return streams.reduce<StreamsByGasket>((acc, stream) => {
 		const gasketName = stream.Source.Gasket;
 		acc[gasketName] = acc[gasketName] || [];
@@ -249,16 +261,16 @@ function updateOutputStreamProperties(
  *
  * instead of going through all streams
  */
-function updateStreamIndices(streams: DFGStream[]): {
-	movedOutputStreams: Record<string, MovedStream>;
-	movedInputStreams: Record<string, MovedStream>;
+function updateStreamIndices(streams: DFGStreamUI[]): {
+	movedOutputStreams: Record<string, MovedStream[]>;
+	movedInputStreams: Record<string, MovedStream[]>;
 } {
 	const sourceIndexMap: Record<string, number> = {};
 	const destinationIndexMap: Record<string, number> = {};
 	const gasketMap = getGasketDictionary();
 
-	const movedOutputStreams: Record<string, MovedStream> = {};
-	const movedInputStreams: Record<string, MovedStream> = {};
+	const movedOutputStreams: Record<string, MovedStream[]> = {};
+	const movedInputStreams: Record<string, MovedStream[]> = {};
 
 	streams.forEach(stream => {
 		const sourceGasket = stream.Source.Gasket;
@@ -271,10 +283,14 @@ function updateStreamIndices(streams: DFGStream[]): {
 			const newIndex = sourceIndexMap[sourceGasket]++;
 
 			if (newIndex !== stream.Source.Index) {
-				movedOutputStreams[sourceGasket] = {
+				if (!movedOutputStreams[sourceGasket]) {
+					movedOutputStreams[sourceGasket] = [];
+				}
+
+				movedOutputStreams[sourceGasket].push({
 					fromIndex: stream.Source.Index,
 					toIndex: newIndex
-				};
+				});
 			}
 
 			stream.Source.Index = newIndex;
@@ -290,10 +306,14 @@ function updateStreamIndices(streams: DFGStream[]): {
 			const newIndex = destinationIndexMap[destinationGasket]++;
 
 			if (newIndex !== destination.Index) {
-				movedInputStreams[destinationGasket] = {
+				if (!movedInputStreams[destinationGasket]) {
+					movedInputStreams[destinationGasket] = [];
+				}
+
+				movedInputStreams[destinationGasket].push({
 					fromIndex: destination.Index,
 					toIndex: newIndex
-				};
+				});
 			}
 
 			destination.Index = newIndex;
@@ -304,20 +324,30 @@ function updateStreamIndices(streams: DFGStream[]): {
 }
 
 function fixTiedStreamIndices(
-	movedInputStreams: Record<string, MovedStream>,
+	movedInputStreams: Record<string, MovedStream[]>,
 	outputStreamsPerGasket: StreamsByGasket
 ) {
 	const gasketMap = getGasketDictionary();
 
+	const fixedStreamArrayIndices = new Set<number>();
+
 	Object.entries(movedInputStreams).forEach(
-		([gasketName, {fromIndex, toIndex}]) => {
+		([gasketName, movedIndices]) => {
 			if (gasketMap[gasketName]?.InputAndOutputBuffersTied) {
-				outputStreamsPerGasket[gasketName]?.forEach(stream => {
-					if (stream.Source.Index === fromIndex) {
-						stream.Source.Index = toIndex;
-						stream.StreamId =
-							gasketMap[gasketName].OutputStreams[toIndex].Index;
-					}
+				movedIndices.forEach(({fromIndex, toIndex}) => {
+					outputStreamsPerGasket[gasketName]?.forEach((stream, i) => {
+						const isAlreadyFixed = fixedStreamArrayIndices.has(i);
+
+						if (
+							stream.Source.Index === fromIndex &&
+							!isAlreadyFixed
+						) {
+							stream.Source.Index = toIndex;
+							stream.StreamId =
+								gasketMap[gasketName].OutputStreams[toIndex].Index;
+							fixedStreamArrayIndices.add(i);
+						}
+					});
 				});
 			}
 		}

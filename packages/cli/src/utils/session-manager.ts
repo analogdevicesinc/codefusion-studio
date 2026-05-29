@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import {fileURLToPath} from 'node:url';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const authConfigFile = path.resolve(dirname, '../config/auth.json');
+
+let authConfig: AuthConfig | undefined;
+let sessionManager: SessionManager | undefined;
 
 // Default session file path
 const defaultSessionFile = path.join(
@@ -49,12 +52,17 @@ try {
 }
 
 export function getSessionManager(): SessionManager {
-  const authConfig = getAuthConfig();
-  return new SessionManager(authConfig);
+  sessionManager ??= new SessionManager(getAuthConfig());
+  return sessionManager;
 }
 
 // function to get auth config variables from json file and/or the environment
 export function getAuthConfig(): AuthConfig {
+  authConfig ??= parseAuthConfig();
+  return authConfig;
+}
+
+function parseAuthConfig(): AuthConfig {
   try {
     let authConfig;
     if (checkIfFileExists(authConfigFile)) {

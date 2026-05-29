@@ -35,8 +35,8 @@ We recommend using NVM to install and manage NodeJS on your machine.
 
 2. Install NodeJS.
 
-    - `nvm install`
-    - `nvm use`
+    - `nvm install 20`
+    - `nvm use 20`
 
 3. Install the dependencies.
 
@@ -62,6 +62,24 @@ Details can be found in the [User documentation](https://developer.analog.com/do
 Recommended VS Code extensions:
 
 - Prettier - Code formatter (extension id: esbenp.prettier-vscode)
+
+### Set up plugins for development
+
+CodeFusion Studio requires built plugins to load workspace templates. Clone and build the plugins repository separately:
+
+```bash
+git clone https://github.com/analogdevicesinc/cfs-plugins.git ~/cfs-plugins
+cd ~/cfs-plugins
+yarn install
+yarn build
+```
+
+Note: The plugins repository URL is provided as a reference. Change the URL pointing to the private repository if you have access to it.
+
+For detailed configuration (IDE search paths, CLI config, environment variables), see:
+
+- [IDE development setup](./packages/ide/DEVELOPMENT.md#build-plugins)
+- [CLI development configuration](./packages/cli/DEVELOPMENT.md#data-model-package-paths)
 
 ### Debug the VS Code extension
 

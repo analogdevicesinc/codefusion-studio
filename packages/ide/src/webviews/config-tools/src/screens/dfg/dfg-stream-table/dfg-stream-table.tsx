@@ -17,7 +17,8 @@ import {
 	Button,
 	DataGrid,
 	DataGridCell,
-	DataGridRow
+	DataGridRow,
+	Tooltip
 } from 'cfs-react-library';
 import styles from './dfg-stream-table.module.scss';
 import {useStreams} from '../../../state/slices/gaskets/gasket.selector';
@@ -153,15 +154,21 @@ export function DfgStreamTable() {
 									gridColumn='9'
 									className={styles.streamListItemButtonCell}
 								>
-									<Button
-										appearance='icon'
-										className={styles.streamListItemButton}
-										onClick={() => {
-											dispatch(setEditingStream(stream));
-										}}
+									<Tooltip
+										title='Configure'
+										position='left'
+										type='short'
 									>
-										<SmallSettingsIcon />
-									</Button>
+										<Button
+											appearance='icon'
+											className={styles.streamListItemButton}
+											onClick={() => {
+												dispatch(setEditingStream(stream));
+											}}
+										>
+											<SmallSettingsIcon />
+										</Button>
+									</Tooltip>
 								</DataGridCell>
 							</DataGridRow>
 						);

@@ -13,26 +13,34 @@
  *
  */
 
-import {ReactNode, useMemo, useState} from 'react';
+import {
+	ReactNode,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState
+} from 'react';
 import styles from './tooltip.module.scss';
 
 type TooltipProps = {
 	readonly title: string;
 	readonly children: ReactNode;
-	/** Optional a container element to which bounding box this tooltip reacts */
-	readonly containerElement?: HTMLElement | null;
+	/** Optional container element ID to which bounding box this tooltip reacts */
+	readonly containerId?: string;
 	readonly position?: 'top' | 'bottom' | 'left' | 'right';
 	readonly width?: number;
 	readonly type?: 'short' | 'long';
+	readonly disabled?: boolean;
 };
 
 function Tooltip({
 	title,
 	children,
 	position = 'top',
-	containerElement,
+	containerId,
 	width = 192,
-	type = 'long'
+	type = 'long',
+	disabled = false
 }: TooltipProps) {
 	const [additionalClasses, setAdditionalClasses] =
 		useState<string>('');
@@ -41,69 +49,97 @@ function Tooltip({
 		useState<HTMLElement | null>();
 
 	const [visible, setVisible] = useState(false);
+	const [actualPosition, setActualPosition] = useState(position);
+	const tooltipTimeoutRef = useRef<
+		ReturnType<typeof setTimeout> | undefined
+	>(undefined);
 
-	const actualPosition = useMemo(() => {
-		const elementRect =
-			tooltipContainerElement?.getBoundingClientRect();
-		if (!elementRect) {
-			return position;
+	useLayoutEffect(() => {
+		if (!visible || !tooltipContainerElement) {
+			setActualPosition(position);
+			return;
 		}
 
-		setAdditionalClasses('');
+		const elementRect =
+			tooltipContainerElement.getBoundingClientRect();
 
-		const container = containerElement || document.body;
-		const containerRect = container.getBoundingClientRect();
+		const container = containerId
+			? document.getElementById(containerId)
+			: null;
+
+		const containerRect = (
+			container || document.body
+		).getBoundingClientRect();
 
 		let adjustedPosition = position;
+		let classes = '';
 
 		if (elementRect.top - 50 < containerRect.top) {
 			if (position === 'top') adjustedPosition = 'bottom';
-			if (position === 'left' || position === 'right') {
-				// TODO add alignment classes for left and right
-			}
 		} else if (containerRect.bottom - elementRect.bottom < 50) {
 			if (position === 'bottom') adjustedPosition = 'top';
-			if (position === 'left' || position === 'right') {
-				// TODO add alignment classes for left and right
-			}
 		}
+
 		if (elementRect.left - width / 2 < containerRect.left) {
 			if (position === 'left') adjustedPosition = 'right';
 			if (position === 'top' || position === 'bottom') {
-				setAdditionalClasses(styles.leftAlgin);
+				classes = styles.leftAlign;
 			}
 		} else if (containerRect.right - elementRect.right < width / 2) {
 			if (position === 'right') adjustedPosition = 'left';
 			if (position === 'top' || position === 'bottom') {
-				setAdditionalClasses(styles.rightAlgin);
+				classes = styles.rightAlign;
 			}
 		}
 
-		return adjustedPosition;
-		// should recalculate when visible changes because the component position could have changed
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		setAdditionalClasses(classes);
+		setActualPosition(adjustedPosition);
 	}, [
-		position,
-		containerElement,
-		tooltipContainerElement,
 		visible,
+		tooltipContainerElement,
+		position,
+		containerId,
 		width
 	]);
+
+	const clearTooltipTimeout = () => {
+		if (tooltipTimeoutRef.current) {
+			clearTimeout(tooltipTimeoutRef.current);
+			tooltipTimeoutRef.current = undefined;
+		}
+	};
+
+	const handleMouseEnter = () => {
+		tooltipTimeoutRef.current = setTimeout(() => {
+			setVisible(true);
+		}, 400);
+	};
+
+	const handleMouseLeave = () => {
+		clearTooltipTimeout();
+		setVisible(false);
+	};
+
+	useEffect(() => {
+		return clearTooltipTimeout;
+	}, []);
 
 	return (
 		<div
 			className={styles.tooltipContainer}
 			ref={el => setTooltipContainerElement(el)}
-			onMouseEnter={() => setVisible(true)}
-			onMouseLeave={() => setVisible(false)}
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={handleMouseLeave}
 		>
 			{children}
-			<span
-				style={type === 'short' ? {} : {width: `${width}px`}}
-				className={`${styles.tooltip} ${additionalClasses} ${styles[actualPosition]} ${styles[type]}`}
-			>
-				{title}
-			</span>
+			{visible && !disabled && (
+				<span
+					style={type === 'short' ? {} : {width: `${width}px`}}
+					className={`${styles.tooltip} ${additionalClasses} ${styles[actualPosition]} ${styles[type]}`}
+				>
+					{title}
+				</span>
+			)}
 		</div>
 	);
 }

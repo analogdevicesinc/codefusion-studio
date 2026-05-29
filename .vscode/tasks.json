@@ -34,9 +34,127 @@
 			"dependsOn": ["extension: build", "react-lib: build"]
 		},
 		{
+			"label": "trace-side-panel: build",
+			"type": "shell",
+			"command": "yarn trace-side-panel:build-dev",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "trace-configuration: build",
+			"type": "shell",
+			"command": "yarn trace-configuration:build-dev",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
 			"label": "wrksp: build",
 			"type": "shell",
 			"command": "yarn wrksp:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"owner": "vite",
+					"pattern": {
+						"regexp": "vite v[0-9\\.]+ building",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "model-wrksp: build",
+			"type": "shell",
+			"command": "yarn model-wrksp:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"owner": "vite",
+					"pattern": {
+						"regexp": "vite v[0-9\\.]+ building",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
+			"label": "ai-profiling: build",
+			"type": "shell",
+			"command": "yarn ai-profiling:build-dev",
 			"isBackground": true,
 			"problemMatcher": [
 				{
@@ -166,6 +284,37 @@
 			}
 		},
 		{
+			"label": "report-viewer: build",
+			"type": "shell",
+			"command": "yarn report-viewer:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build"
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
 			"label": "ide: deps",
 			"type": "shell",
 			"command": "yarn install --immutable && yarn ws:ide build-local-deps",
@@ -230,6 +379,32 @@
 			}
 		},
 		{
+			"label": "mem-viewer: build",
+			"type": "shell",
+			"command": "yarn ws:ide mem-viewer:build-dev",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
 			"label": "system-planner: build",
 			"type": "shell",
 			"command": "echo 'Building system planner dev environment...'",
@@ -256,10 +431,16 @@
 			"dependsOn": [
 				"extension: build",
 				"cfgtools: build",
+				"report-viewer: build",
 				"wrksp: build",
+				"model-wrksp: build",
+				"ai-profiling: build",
 				"cfs-lib: build",
 				"react-lib: build",
-				"home-page: build"
+				"home-page: build",
+				"trace-side-panel: build",
+				"trace-configuration: build",
+				"mem-viewer: build"
 			],
 			"dependsOrder": "parallel"
 		}

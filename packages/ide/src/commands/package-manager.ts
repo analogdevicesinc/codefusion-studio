@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import type {
 import * as vscode from "vscode";
 import { CLOUD_CATALOG_AUTH, PACKAGE_MANAGER_COMMANDS } from "./constants";
 import { PACKAGE_MANAGER_CREDENTIAL_PROVIDER } from "../constants";
+import { promptForPackageLicenseAcceptance } from "../utils/package-manager";
+
+interface InstallPackageItem extends vscode.QuickPickItem {
+  pkg: CfsPackageReference;
+}
 
 //This file contains Package Manager specific commands
 export function registerPackageManagerCommands(
@@ -37,6 +42,13 @@ export function registerPackageManagerCommands(
     vscode.commands.registerCommand(
       PACKAGE_MANAGER_COMMANDS.UNINSTALL_PACKAGE,
       () => uninstallPackage(pkgManager),
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      PACKAGE_MANAGER_COMMANDS.DELETE_PACKAGE,
+      () => deletePackage(pkgManager),
     ),
   );
 
@@ -76,26 +88,21 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
     return;
   }
 
-  //Instantiate Quick Pick
-  const searchResultQuickPick = vscode.window.createQuickPick();
+  // Package selection
+  const searchQuickPick = vscode.window.createQuickPick();
+  searchQuickPick.title = "CFS: Install Package";
+  searchQuickPick.placeholder = "Searching for packages...";
+  searchQuickPick.busy = true;
+  searchQuickPick.ignoreFocusOut = true;
+  searchQuickPick.show();
 
-  // Initialize QuickPick UI
-  searchResultQuickPick.title = "CFS: Install Package";
-  searchResultQuickPick.placeholder = "Searching for packages...";
-  searchResultQuickPick.busy = true;
-  searchResultQuickPick.ignoreFocusOut = true;
-  searchResultQuickPick.show();
-
-  //Search for packages available for installation
-  let selectedPackageRef: CfsPackageReference | undefined = undefined;
+  let selectedPackageRefs: CfsPackageReference[] | undefined;
   try {
-    // Fetch packages
     const [allPackages, installedPackages] = await Promise.all([
-      pkgManager.search(`*`),
+      pkgManager.search("*"),
       pkgManager.list(),
     ]);
 
-    // Filter out already installed packages
     const availablePackages = allPackages.filter(
       (pkg) =>
         !installedPackages.some(
@@ -104,28 +111,29 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
         ),
     );
 
-    searchResultQuickPick.busy = false;
-    searchResultQuickPick.ignoreFocusOut = false;
+    searchQuickPick.busy = false;
+    searchQuickPick.ignoreFocusOut = false;
 
-    // Handle case where no packages are available for installation
     if (availablePackages.length === 0) {
-      searchResultQuickPick.placeholder = "";
-      searchResultQuickPick.items = [{ label: "No new packages available" }];
+      searchQuickPick.placeholder = "";
+      searchQuickPick.items = [{ label: "No new packages available" }];
       await new Promise<void>((resolve) => {
-        searchResultQuickPick.onDidHide(() => resolve());
-        searchResultQuickPick.onDidAccept(() => resolve());
+        searchQuickPick.onDidHide(() => resolve());
+        searchQuickPick.onDidAccept(() => resolve());
       });
-
       return;
     }
 
-    // Populate QuickPick items
-    searchResultQuickPick.placeholder = "Select the package to install.";
-    searchResultQuickPick.items = availablePackages
-      .map((pkg) => ({
-        label: pkg.name,
-        description: pkg.version,
-      }))
+    searchQuickPick.canSelectMany = true;
+    searchQuickPick.placeholder = "Select package(s) to install.";
+    searchQuickPick.items = availablePackages
+      .map(
+        (pkg): InstallPackageItem => ({
+          label: pkg.name,
+          description: pkg.version,
+          pkg,
+        }),
+      )
       // Sort alphabetically by name then in descending order by version
       .sort((a, b) => {
         const nameCompare = a.label.localeCompare(b.label);
@@ -134,65 +142,161 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
           : -1 * a.description!.localeCompare(b.description!);
       });
 
-    // Handle package selection
-    selectedPackageRef = await new Promise<CfsPackageReference | undefined>(
+    selectedPackageRefs = await new Promise<CfsPackageReference[]>(
       (resolve) => {
-        searchResultQuickPick.onDidAccept(() => {
-          resolve({
-            name: searchResultQuickPick.selectedItems[0].label,
-            version: searchResultQuickPick.selectedItems[0].description!,
-          });
+        let keepOpenAfterHide = false;
+
+        const getAcceptedItems = (): InstallPackageItem[] => {
+          const selectedItems = searchQuickPick.selectedItems.filter(
+            (item): item is InstallPackageItem => "pkg" in item,
+          );
+
+          // Match delete-command UX: Enter on a highlighted item should proceed
+          // even if the user did not explicitly toggle a checkbox.
+          if (selectedItems.length > 0) {
+            return [...selectedItems];
+          }
+
+          const activeItems = searchQuickPick.activeItems.filter(
+            (item): item is InstallPackageItem => "pkg" in item,
+          );
+
+          return activeItems.length > 0 ? [activeItems[0]] : [];
+        };
+
+        searchQuickPick.onDidAccept(() => {
+          const selected = getAcceptedItems().map((item) => item.pkg);
+
+          if (selected.length === 0) {
+            keepOpenAfterHide = true;
+            vscode.window.showWarningMessage(
+              "Select at least one package to install.",
+            );
+            searchQuickPick.show();
+            return;
+          }
+
+          // Only one version per package can be selected for install.
+          const duplicatePackageNames = new Set<string>();
+          const seenPackageNames = new Set<string>();
+          for (const pkg of selected) {
+            if (seenPackageNames.has(pkg.name)) {
+              duplicatePackageNames.add(pkg.name);
+            }
+            seenPackageNames.add(pkg.name);
+          }
+
+          if (duplicatePackageNames.size > 0) {
+            keepOpenAfterHide = true;
+            vscode.window.showWarningMessage(
+              `Select only one version per package. Duplicates: ${Array.from(duplicatePackageNames).join(", ")}.`,
+            );
+            searchQuickPick.show();
+            return;
+          }
+
+          resolve(selected);
         });
-        searchResultQuickPick.onDidHide(() => {
-          resolve(undefined);
+        searchQuickPick.onDidHide(() => {
+          if (keepOpenAfterHide) {
+            keepOpenAfterHide = false;
+            return;
+          }
+          resolve([]);
         });
       },
     );
-    if (!selectedPackageRef) {
-      return; // User cancelled
-    }
   } catch (err) {
-    let errorMessage = "CFS: Failed to find available packages.";
-    if (err instanceof Error && err.message) {
-      errorMessage += ` ${err.message}`;
-    }
     console.error(err);
-    vscode.window.showErrorMessage(errorMessage);
+    vscode.window.showErrorMessage(
+      `CFS: Failed to find available packages.${err instanceof Error ? ` ${err.message}` : ""}`,
+    );
     return;
   } finally {
-    searchResultQuickPick.dispose();
+    searchQuickPick.dispose();
   }
 
-  // Handle package installation
+  if (selectedPackageRefs.length === 0) {
+    return; // User cancelled
+  }
+
+  // License check
+  // Show the license QuickPick immediately in busy state so there is no
+  // notification popup between the package selection and the license step.
+  const licenseQuickPick = vscode.window.createQuickPick();
+  licenseQuickPick.title = "CFS: Gathering Package Information";
+  licenseQuickPick.placeholder = "Gathering package information...";
+  licenseQuickPick.ignoreFocusOut = true;
+  licenseQuickPick.busy = true;
+  licenseQuickPick.show();
+
+  let cancelRequestedDuringMetadataFetch = false;
+  const hideDisposable = licenseQuickPick.onDidHide(() => {
+    cancelRequestedDuringMetadataFetch = true;
+  });
+
   try {
-    // Show installation progress
-    const progressOptions: vscode.ProgressOptions = {
-      location: vscode.ProgressLocation.Notification,
-      title: `CFS: Installing package ${selectedPackageRef.name}/${selectedPackageRef.version}...`,
-      cancellable: false,
-    };
+    const plan = await pkgManager.getInstallPlan(selectedPackageRefs);
 
-    await vscode.window.withProgress(progressOptions, async () => {
-      const installedPackageRefs = await pkgManager.install(selectedPackageRef);
+    hideDisposable.dispose();
 
-      //Check if any packages were installed.
-      if (installedPackageRefs.length > 0) {
-        const installedPackageRefsStr = installedPackageRefs
-          .map((ref) => `${ref.name}`)
-          .join(", ");
+    if (cancelRequestedDuringMetadataFetch) {
+      licenseQuickPick.dispose();
+      return;
+    }
+
+    let acceptedRequestedPackageLicenses = false;
+
+    if (plan.requiresLicenseAcceptance.length > 0) {
+      acceptedRequestedPackageLicenses =
+        await promptForPackageLicenseAcceptance(
+          plan.requiresLicenseAcceptance,
+          {
+            quickPick: licenseQuickPick,
+            acceptDescription:
+              selectedPackageRefs.length > 1
+                ? "Accept the licenses and install selected packages"
+                : "Accept the license and install the package",
+          },
+        );
+      if (!acceptedRequestedPackageLicenses) {
+        return;
+      }
+    } else {
+      // No license required — dismiss the QuickPick before proceeding.
+      licenseQuickPick.dispose();
+    }
+
+    // Install the package and its dependencies, showing progress and handling license acceptance for dependencies as well
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title:
+          selectedPackageRefs.length > 1
+            ? `CFS: Installing ${selectedPackageRefs.length} selected packages...`
+            : `CFS: Installing package ${selectedPackageRefs[0].name}/${selectedPackageRefs[0].version}...`,
+        cancellable: false,
+      },
+      async () => {
+        const installed = await pkgManager.install(plan, {
+          acceptLicense: acceptedRequestedPackageLicenses,
+        });
+
+        if (installed.length === 0) {
+          return;
+        }
 
         vscode.window.showInformationMessage(
-          `CFS: Successfully installed ${installedPackageRefsStr}.`,
+          `CFS: Successfully installed ${installed.map((r) => r.name).join(", ")}.`,
         );
-      } else {
-        vscode.window.showErrorMessage(
-          `CFS: Failed to install package ${selectedPackageRef.name}/${selectedPackageRef.version}.`,
-        );
-      }
-    });
+      },
+    );
   } catch (err) {
     console.error(err);
     vscode.window.showErrorMessage("CFS: Failed to install package.");
+  } finally {
+    hideDisposable.dispose();
+    licenseQuickPick.dispose();
   }
 }
 
@@ -291,7 +395,176 @@ async function uninstallPackage(pkgManager?: CfsPackageManagerProvider) {
     });
   } catch (err) {
     console.error(err);
-    vscode.window.showErrorMessage(`CFS: Failed to uninstall package.`);
+    // Conan errors can include an uppercase "ERROR:" prefix; normalize it for UI readability.
+    const uninstallErrorMessage =
+      err instanceof Error
+        ? err.message.replace(/(^|\s)ERROR:\s*/gi, "$1Error: ").trim()
+        : "";
+    // Ensure the detail sentence is properly terminated before appending to the base message.
+    const uninstallErrorWithPeriod = uninstallErrorMessage
+      ? /[.!?]$/.test(uninstallErrorMessage)
+        ? ` ${uninstallErrorMessage}`
+        : ` ${uninstallErrorMessage}.`
+      : "";
+    vscode.window.showErrorMessage(
+      `CFS: Failed to uninstall package.${uninstallErrorWithPeriod}`,
+    );
+  }
+}
+
+interface CachedPackageItem extends vscode.QuickPickItem {
+  pkg: CfsPackageReference;
+}
+
+async function deletePackage(pkgManager?: CfsPackageManagerProvider) {
+  //Registering the command even if package manager is not defined as Vs Code complains about the command not being registered
+  if (!pkgManager) {
+    vscode.window.showErrorMessage(
+      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
+    );
+    return;
+  }
+
+  // Instantiate Quick Pick with type parameter
+  const cachedPackagesQuickPick =
+    vscode.window.createQuickPick<CachedPackageItem>();
+
+  // Initialize QuickPick UI - delay canSelectMany until items are ready
+  cachedPackagesQuickPick.title = "CFS: Delete Package from Cache";
+  cachedPackagesQuickPick.placeholder = "Fetching cached packages...";
+  cachedPackagesQuickPick.busy = true;
+  cachedPackagesQuickPick.ignoreFocusOut = true;
+  cachedPackagesQuickPick.show();
+
+  // Fetch cached and installed packages
+  let selectedPackageRefs: CfsPackageReference[] = [];
+
+  try {
+    // listCache now returns isInstalled status, so no need to fetch installed list separately
+    const cachedPackages = await pkgManager.listCache();
+
+    // Filter to only show deletable (uninstalled) packages
+    const deletablePackages = cachedPackages
+      .filter((pkg) => !pkg.isInstalled)
+      .map((pkg): CachedPackageItem => {
+        return {
+          label: pkg.reference.name,
+          description: pkg.reference.version,
+          pkg: pkg.reference,
+        };
+      })
+      .sort((a: CachedPackageItem, b: CachedPackageItem) => {
+        const nameCompare = a.label.localeCompare(b.label);
+        return nameCompare !== 0
+          ? nameCompare
+          : -1 * a.description!.localeCompare(b.description!);
+      });
+
+    cachedPackagesQuickPick.busy = false;
+    cachedPackagesQuickPick.ignoreFocusOut = false;
+
+    if (deletablePackages.length === 0) {
+      cachedPackagesQuickPick.placeholder = "";
+      cachedPackagesQuickPick.items = [
+        {
+          label: "No packages available for deletion",
+          pkg: { name: "", version: "" },
+        } as CachedPackageItem,
+      ];
+      await new Promise<void>((resolve) => {
+        cachedPackagesQuickPick.onDidHide(() => resolve());
+        cachedPackagesQuickPick.onDidAccept(() => resolve());
+      });
+
+      return;
+    }
+
+    // Enable multi-select only when items are ready
+    cachedPackagesQuickPick.canSelectMany = true;
+    cachedPackagesQuickPick.placeholder =
+      "Select packages to delete (only uninstalled packages are shown)";
+    cachedPackagesQuickPick.items = deletablePackages;
+
+    // Handle package selection
+    selectedPackageRefs = await new Promise<CfsPackageReference[]>(
+      (resolve) => {
+        cachedPackagesQuickPick.onDidAccept(() => {
+          const selectedItems =
+            cachedPackagesQuickPick.selectedItems as readonly CachedPackageItem[];
+          const selected = selectedItems
+            .filter((item): item is CachedPackageItem => "pkg" in item)
+            .map((item) => item.pkg);
+
+          resolve(selected);
+        });
+        cachedPackagesQuickPick.onDidHide(() => {
+          resolve([]);
+        });
+      },
+    );
+
+    if (selectedPackageRefs.length === 0) {
+      return; // User cancelled or selected only installed packages
+    }
+  } catch (err) {
+    console.error(err);
+    let errorMessage = "CFS: Failed to find cached packages.";
+    if (err instanceof Error && err.message) {
+      errorMessage += ` ${err.message}`;
+    }
+    vscode.window.showErrorMessage(errorMessage);
+    return;
+  } finally {
+    cachedPackagesQuickPick.dispose();
+  }
+
+  // Handle package deletion
+  try {
+    // Show deletion progress
+    const progressOptions: vscode.ProgressOptions = {
+      location: vscode.ProgressLocation.Notification,
+      title: "CFS: Deleting package(s) ",
+      cancellable: false,
+    };
+
+    const allDeletedPackages: CfsPackageReference[] = [];
+
+    await vscode.window.withProgress(progressOptions, async (progress) => {
+      const totalPackages = selectedPackageRefs.length;
+      // Delete each selected package
+      for (let i = 0; i < totalPackages; i++) {
+        const pkgRef = selectedPackageRefs[i];
+        const pattern = `${pkgRef.name}/${pkgRef.version}`;
+
+        progress.report({
+          message: `(${i + 1}/${totalPackages}) ${pattern}`,
+        });
+
+        const deletedPackages = await pkgManager.delete(pattern);
+        allDeletedPackages.push(...deletedPackages);
+      }
+    });
+
+    if (allDeletedPackages.length === 0) {
+      vscode.window.showWarningMessage(
+        "CFS: No packages were deleted. The selected packages may have already been removed.",
+      );
+    } else {
+      const deletedPackagesList = allDeletedPackages
+        .map((ref) => `${ref.name}/${ref.version}`)
+        .join(", ");
+
+      vscode.window.showInformationMessage(
+        `CFS: Successfully deleted ${allDeletedPackages.length} package(s), ${deletedPackagesList}`,
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    let errorMessage = "CFS: Failed to delete package(s).";
+    if (err instanceof Error && err.message) {
+      errorMessage += ` ${err.message}`;
+    }
+    vscode.window.showErrorMessage(errorMessage);
   }
 }
 

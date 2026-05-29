@@ -25,6 +25,10 @@ import {
   showHelp,
   identifyRequiredTools,
 } from "./handlers";
+import {
+  isSessionDisconnectedError,
+  getDisconnectionMessage,
+} from "./utils/session-error-helpers";
 
 export class DebugChatParticipant implements vscode.Disposable {
   private participant: vscode.ChatParticipant;
@@ -45,7 +49,7 @@ export class DebugChatParticipant implements vscode.Disposable {
 
     // Initialize handlers
     this.breakpointHandler = new BreakpointHandler();
-    this.lifecycleHandler = new LifecycleHandler();
+    this.lifecycleHandler = new LifecycleHandler(debugManager);
     this.analysisHandler = new AnalysisHandler(
       this.toolExecutor,
       this.promptBuilder,
@@ -76,6 +80,24 @@ export class DebugChatParticipant implements vscode.Disposable {
   ): Promise<void> {
     try {
       const userMessage = request.prompt;
+      const hadActiveSession = !!vscode.debug.activeDebugSession;
+
+      // Handle slash commands
+      if (request.command === "help") {
+        showHelp(stream);
+        return;
+      }
+
+      if (request.command === "gdb") {
+        const handled = await this.analysisHandler.handleGdbCommand(
+          userMessage,
+          stream,
+        );
+        if (!handled) {
+          showHelp(stream);
+        }
+        return;
+      }
 
       // Check for debug lifecycle commands (start, stop, restart, step, etc.)
       try {
@@ -86,7 +108,7 @@ export class DebugChatParticipant implements vscode.Disposable {
         );
         if (handled) return;
       } catch (error) {
-        this.showError(stream, "Debug command", error);
+        this.showError(stream, "Debug command", error, hadActiveSession);
         return;
       }
 
@@ -98,7 +120,7 @@ export class DebugChatParticipant implements vscode.Disposable {
         );
         if (handled) return;
       } catch (error) {
-        this.showError(stream, "Breakpoint command", error);
+        this.showError(stream, "Breakpoint command", error, hadActiveSession);
         return;
       }
 
@@ -111,7 +133,7 @@ export class DebugChatParticipant implements vscode.Disposable {
         );
         if (handled) return;
       } catch (error) {
-        this.showError(stream, "Inspection command", error);
+        this.showError(stream, "Inspection command", error, hadActiveSession);
         return;
       }
 
@@ -123,7 +145,7 @@ export class DebugChatParticipant implements vscode.Disposable {
         );
         if (handled) return;
       } catch (error) {
-        this.showError(stream, "GDB command", error);
+        this.showError(stream, "GDB command", error, hadActiveSession);
         return;
       }
 
@@ -136,7 +158,7 @@ export class DebugChatParticipant implements vscode.Disposable {
         );
         if (handled) return;
       } catch (error) {
-        this.showError(stream, "Find bugs", error);
+        this.showError(stream, "Find bugs", error, hadActiveSession);
         return;
       }
 
@@ -217,7 +239,14 @@ export class DebugChatParticipant implements vscode.Disposable {
     stream: vscode.ChatResponseStream,
     context: string,
     error: unknown,
+    hadActiveSession = false,
   ): void {
+    if (isSessionDisconnectedError(error, hadActiveSession)) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      stream.markdown(getDisconnectionMessage(errorMsg));
+      return;
+    }
+
     const errorMsg = error instanceof Error ? error.message : String(error);
     stream.markdown(`❌ ${context} error: ${errorMsg}\n`);
   }

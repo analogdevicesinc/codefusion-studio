@@ -13,16 +13,19 @@
  *
  */
 
-import {type DFGStream} from 'cfs-plugins-api';
 import {CustomizableDropdown} from 'cfs-react-library';
 import {useMemo, useState} from 'react';
-import {useStreams} from '../../../state/slices/gaskets/gasket.selector';
+import {
+	useEditingStream,
+	useStreams
+} from '../../../state/slices/gaskets/gasket.selector';
 import styles from './tied-stream-dropdown.module.scss';
+import {type DFGStreamUI} from '../../../state/slices/gaskets/gasket.reducer';
 
 export type TiedStreamDropdownProps = {
-	readonly stream: DFGStream;
+	readonly stream: DFGStreamUI;
 	readonly gasketName: string;
-	readonly onChange?: (stream: DFGStream) => void;
+	readonly onChange?: (stream: DFGStreamUI) => void;
 };
 
 export function TiedStreamDropdown({
@@ -31,6 +34,7 @@ export function TiedStreamDropdown({
 	onChange
 }: TiedStreamDropdownProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
+	const activeStream = useEditingStream();
 
 	const streams = useStreams();
 
@@ -78,7 +82,10 @@ export function TiedStreamDropdown({
 		>
 			<div className={styles.dropdownContent}>
 				{selectableStreams.map(stream => {
-					const disabled = tiedStreams.includes(stream);
+					const tiedStream = tiedStreams.includes(stream);
+					const isSelfReferencingStream =
+						stream.Uuid === activeStream?.Uuid;
+					const disabled = tiedStream || isSelfReferencingStream;
 
 					return (
 						<div

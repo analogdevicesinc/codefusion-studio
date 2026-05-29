@@ -16,10 +16,7 @@
 import type {DiagramNode, Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import NodeTooltip from './NodeTooltip';
-import {
-	setClockNodeControlValue,
-	setDiagramData
-} from '../../../state/slices/clock-nodes/clockNodes.reducer';
+import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {useRef} from 'react';
 import {controlErrorTypes} from '@common/utils/control-errors';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
@@ -27,7 +24,7 @@ import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 const wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 const configDict = {
 	BoardName: '',
 	Package: 'WLP',
@@ -123,15 +120,6 @@ describe('Node Tooltip', () => {
 				);
 
 				store.dispatch(
-					setDiagramData({
-						'P0.23': {
-							enabled: true,
-							error: true
-						}
-					})
-				);
-
-				store.dispatch(
 					setClockNodeControlValue({
 						name: 'SYS_OSC Mux',
 						key: 'MUX',
@@ -187,6 +175,14 @@ describe('Node Tooltip', () => {
 					Pin: 'F4',
 					Peripheral: 'MISC',
 					Name: 'CLKEXT'
+				})
+			);
+
+			store.dispatch(
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'CLKEXT'
 				})
 			);
 

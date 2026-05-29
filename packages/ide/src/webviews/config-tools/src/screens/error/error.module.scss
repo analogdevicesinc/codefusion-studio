@@ -14,6 +14,7 @@
  */
 @use '#colors' as colors;
 @use '#fonts' as fonts;
+@use '#layout' as layout;
 
 .errorContainer {
 	display: flex;
@@ -22,7 +23,6 @@
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	gap: 12px;
 
 	.errorMessage {
 		display: flex;
@@ -71,6 +71,115 @@
 			gap: 8px;
 			align-items: center;
 			color: var(--vscode-textLink-foreground);
+		}
+	}
+}
+
+.versionUpdateWizard {
+	height: 100vh;
+	display: grid;
+	--sliding-panel-vertical-offset: 40px;
+
+	.errorContainer {
+		.messageTitle {
+			@include fonts.heading-h1;
+			margin-bottom: 20px;
+			font-weight: 700;
+		}
+
+		.messageBody {
+			text-align: center;
+			white-space: pre-line;
+		}
+
+		.errorList {
+			width: 600px;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.errorItemCard {
+			display: flex;
+			flex-direction: column;
+			padding: layout.$spacing-5;
+			align-items: flex-start;
+			width: 100%;
+
+			.errorSummary {
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				gap: 4px;
+				padding-bottom: 12px;
+
+				.missingComponentTouchedHeader {
+					display: flex;
+					align-items: baseline;
+					gap: 1rem;
+
+					.missingComponentHeaderName {
+						@include fonts.heading-h3;
+						font-weight: 600;
+					}
+					.missingComponentHeaderVersion {
+						color: colors.$description-foreground;
+					}
+					.missingComponentHeaderStatus {
+						margin-left: auto;
+						display: flex;
+						gap: 1rem;
+
+						.headerStatusIcon {
+							width: 16px;
+							height: 16px;
+						}
+					}
+				}
+
+				.missingComponentTitle {
+					@include fonts.heading-h3;
+					font-weight: 600;
+				}
+
+				.missingComponentDescription {
+					@include fonts.body-b2;
+					color: colors.$description-foreground;
+					font-weight: 600;
+				}
+
+				.missingComponentDescriptionError {
+					@include fonts.body-b2;
+					color: colors.$error;
+					font-weight: 600;
+				}
+
+				.linkText {
+					@include fonts.body-b2;
+					font-weight: 600;
+				}
+			}
+
+			.resolutionContainer {
+				border-top: 0.5px solid colors.$default-border;
+				padding-top: 8px;
+				width: 100%;
+
+				.resolutionLabel {
+					@include fonts.label-l2;
+					margin-bottom: 4px;
+				}
+
+				vscode-dropdown {
+					max-width: unset;
+					height: 25px;
+					margin-bottom: 8px;
+				}
+
+				.futureVersionsLabel {
+					@include fonts.label-l2;
+				}
+			}
 		}
 	}
 }

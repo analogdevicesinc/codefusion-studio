@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./trace-configuration/**/*.ts",
+		"./trace-configuration/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./custom.d.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

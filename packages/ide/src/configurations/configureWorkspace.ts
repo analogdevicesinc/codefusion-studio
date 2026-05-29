@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import * as vscode from "vscode";
 import {
   GET_CONTEXT_COMMAND_ID,
   OPEN_WALKTHROUGH_COMMAND_ID,
+  PROJECT_TOOLCHAIN_PATH_COMMAND_ID,
   SELECT_CMSIS_PACK_COMMAND_ID,
   SELECT_OPENOCD_INTERFACE_COMMAND_ID,
   SELECT_OPENOCD_RISCV_INTERFACE_COMMAND_ID,
@@ -232,6 +233,31 @@ export function configureWorkspace(
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
+      PROJECT_TOOLCHAIN_PATH_COMMAND_ID,
+      async (workspaceInfo: string[]) => {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.find((f) =>
+          workspaceInfo
+            .map((w) => w.replace(/[\\/]/g, "").toLocaleUpperCase())
+            .includes(f.uri.fsPath.replace(/[\\/]/g, "").toLocaleUpperCase()),
+        );
+
+        if (workspaceFolder) {
+          let toolchainPath = vscode.workspace
+            .getConfiguration(EXTENSION_ID, workspaceFolder)
+            .get<string | undefined>("cfs.project.toolchain.path");
+
+          if (toolchainPath) {
+            return toolchainPath;
+          }
+          return await getProjectToolchainPath(toolManager, workspaceFolder);
+        }
+        return "";
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
       SET_RISCV_DEBUG_PATH_COMMAND_ID,
       async () => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -360,7 +386,7 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
 
             if (projectSdk) {
               const sdkPath = await toolManager.getToolPath(projectSdk);
-              
+
               if (sdkPath) {
                 jsonContents["env"][CFS_PROJECT_SDK_PATH] = sdkPath;
                 updated = true;
@@ -389,6 +415,7 @@ async function getProjectToolchainPath(
     EXTENSION_ID,
     workspaceFolder,
   );
+
   const toolchainId = config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`);
 
   if (!toolchainId) {

@@ -36,6 +36,7 @@
 
 		&:checked + .slider:before {
 			transform: translateX(12px);
+			background-color: colors.$button-foreground;
 		}
 
 		&:checked:hover + .slider {

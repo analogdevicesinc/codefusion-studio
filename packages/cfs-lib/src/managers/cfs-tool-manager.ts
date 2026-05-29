@@ -14,12 +14,10 @@
  */
 
 import type { CfsPackageManagerProvider } from "cfs-package-manager";
-import { platform } from "node:process";
 import * as fs from "node:fs";
 import path from "node:path";
-import * as fg from "fast-glob";
+import fg from "fast-glob";
 import type { Options } from "fast-glob";
-import { findLatestVersion } from "../utils/semantic-versioning.js";
 
 /**
  * Interface describing the `tool.json` file format, allowing external
@@ -39,107 +37,21 @@ export interface ToolInfo {
 	/** `tool.json` schema version */
 	schemaVersion: string;
 	/** The relative path to the software license */
-	license: string;
+	license?: string;
 	/** Paths to add to the Path environment variable */
-	paths: string[];
+	paths?: string[];
 	/** Environment variables to set */
-	envVars: [{ name: string; value: string; isPath: boolean }];
+	envVars?: { name: string; value: string; isPath: boolean }[];
 	/** Relative path to the toolchain compiler, e.g. gcc */
 	compilerPath?: string;
 	/** Relative path to the debugger, e.g. gdb */
 	debuggerPath?: string;
-}
-
-/**
- * The Tool class describes an external tool supported by the extension.
- * This includes the tool's path, path to the tool's binaries, and access
- * to the `tool.json` content associated with the tool (tool name, ID, version, etc).
- *
- * The Tool objects are handled by the {@link ToolManager} class.
- */
-export class Tool {
-	/** The tool.json file contents associated with this tool */
-	protected info: ToolInfo;
-	/** File path to the tool */
-	protected path: string;
-
-	/**
-	 * Tool constructor
-	 * @param info - Tool description info
-	 * @param path - Tool root path
-	 */
-	constructor(info: ToolInfo, path: string) {
-		this.info = info;
-		this.path = path;
-	}
-
-	/**
-	 * Get the absolute resolved file path to the root tool directory.
-	 * @returns The resolved file path
-	 */
-	getPath(): string {
-		return this.path;
-	}
-
-	/**
-	 * Get the absolute resolved file path to the tool's paths.
-	 * @returns An array of resolved paths
-	 */
-	getPaths(): string[] {
-		const paths: string[] = [];
-
-		if (
-			Array.isArray(this.info.paths) &&
-			this.info.paths.length > 0
-		) {
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-			(this.info.paths ?? []).forEach((path: string) => {
-				const fullPath = [this.path, path].join("/");
-				paths.push(fullPath);
-			});
-		}
-
-		return paths;
-	}
-
-	/**
-	 * Get the absolute resolved file path to the tool binary directory.
-	 * @returns The resolved file path
-	 */
-	getBinaryPath(): string {
-		const binaryPath = this.getPaths().find((p) =>
-			p.toLowerCase().includes("bin")
-		);
-
-		if (binaryPath) {
-			return [this.getPath(), binaryPath].join("/");
-		}
-
-		return "";
-	}
-
-	/**
-	 * Get the {@link ToolInfo} object for this Tool.
-	 * @returns The {@link ToolInfo} object
-	 */
-	getInfo(): ToolInfo {
-		return this.info;
-	}
-
-	/**
-	 * Get the full path to the given executable.
-	 * @param relativeExePath - The executable path relative to the root tool path.
-	 * @returns The full path to the executable
-	 */
-	protected getExecutablePath(relativeExePath: string): string {
-		let ret = [this.getPath(), relativeExePath].join("/");
-
-		if (platform === "win32") {
-			ret += ".exe";
-		}
-
-		return ret;
-	}
+	/** Absolute path to the tool  */
+	rootPath: string;
+	/** Computed absolute paths based on path object from tool.json */
+	resolvedPaths: string[];
+	/** Aboslute path to bin folder */
+	binaryPath: string;
 }
 
 /**
@@ -164,7 +76,7 @@ export class CfsToolManager {
 	/** Package manager instance */
 	private packageManager: CfsPackageManagerProvider | undefined;
 	/** Dictionary of all installed tools using id as first level key and version as second level key */
-	private installedTools: Record<string, Record<string, Tool>>;
+	private installedTools: Record<string, ToolInfo>;
 	/** Custom search paths or a provider function returning them */
 	private customSearchPaths?: string[] | (() => string[]);
 	/** Target SoC for the tool manager */
@@ -189,7 +101,7 @@ export class CfsToolManager {
 	 * @param toolInfoPath - the file path to the tool.json or toolchain.json file
 	 * @returns the Tool object containing the parsed data
 	 */
-	private parseTool(toolInfoPath: string): Tool | null {
+	private parseTool(toolInfoPath: string): ToolInfo | null {
 		try {
 			const toolPath = path.dirname(toolInfoPath);
 			const fileName = path.basename(toolInfoPath);
@@ -205,7 +117,20 @@ export class CfsToolManager {
 			const contents = fs.readFileSync(toolInfoPath, "utf8");
 			const info = JSON.parse(contents) as ToolInfo;
 
-			return new Tool(info, toolPath);
+			const resolvedPaths = (info.paths ?? []).map((_path) => {
+				return path.join(toolPath, _path);
+			});
+
+			const binaryPath = resolvedPaths.find((p) =>
+				p.toLowerCase().includes("bin")
+			);
+
+			return {
+				...info,
+				resolvedPaths,
+				binaryPath: binaryPath ?? "",
+				rootPath: toolPath
+			} as ToolInfo;
 		} catch (error) {
 			console.error(
 				`Error parsing tool info file ${toolInfoPath}:`,
@@ -264,7 +189,6 @@ export class CfsToolManager {
 				}
 
 				if (
-				  pkgInfo.type !== "toolchain" &&
 				  Array.isArray(pkgInfo.cfsSoc) &&
 				  pkgInfo.cfsSoc.length > 0 &&
 				  this.targetSoc &&
@@ -306,72 +230,56 @@ export class CfsToolManager {
 			return;
 		}
 
-		const { id, version } = tool.getInfo();
+		const { id } = tool;
 
-		// If an instance of the tool with the same id already exists, we skip adding it to give precedence
-		// to pkg manager installed tools.
-		if (Object.keys(this.installedTools[id] ?? {}).length > 0) {
+		/**
+		 * If an instance of the tool with the same id already exists, we skip adding it to give precedence
+		 * to pkg manager installed tools.
+		 */
+		if (typeof this.installedTools[id] !== "undefined") {
 			console.warn(
-				`Duplicate tool version detected: ${id} at path ${toolInfoPath} can't be added as its a duplicate of package at path ${Object.values(this.installedTools[id])[0]?.getPath()}. Skipping duplicate.`
+				`Duplicate tool detected: ${id} at path ${toolInfoPath} can't be added as its a duplicate of package at path ${this.installedTools[id].rootPath}. Skipping duplicate.`
 			);
 
 			return;
 		}
 
 		// Initialize the tool dictionary entry
-		this.installedTools[id] = {};
-		this.installedTools[id][version] = tool;
-	}
-
-	/**
-	 * Extracts and returns an array of Tool instances from the provided version map,
-	 * filtering out any undefined values.
-	 *
-	 * @param versionMap - A record mapping version strings to Tool instances or undefined.
-	 * @returns An array of Tool instances present in the version map.
-	 */
-	private getToolsFromVersionMap(
-		versionMap: Record<string, Tool>
-	): Tool[] {
-		return Array.from(Object.values(versionMap));
+		this.installedTools[id] = tool;
 	}
 
 	/**
 	 * Get all installed tools
 	 * @returns all currently installed tools
 	 */
-	public async getInstalledTools(): Promise<Tool[]> {
+	public async getInstalledTools(): Promise<ToolInfo[]> {
 		await this.discoverToolPackages();
 
-		const tools: Tool[] = [];
+		const tools: ToolInfo[] = [];
 
 		for (const id in this.installedTools) {
-			const versionMap = this.installedTools[id];
+			const tool = this.installedTools[id];
 
-			tools.push(...this.getToolsFromVersionMap(versionMap));
+			tools.push(tool);
 		}
 
 		return tools;
 	}
 
 	/**
-	 * Get the installed tools by ID
+	 * Get the installed tool by ID
 	 * @param id - the tool ID
-	 * @returns an array containing all installed tools with the given ID, or an empty array
+	 * @returns a ToolInfo object with the given ID or null
 	 */
-	public async getInstalledToolsForId(id: string): Promise<Tool[]> {
-		const installedTools = this.getToolsFromVersionMap(
-			this.installedTools[id] ?? {}
-		);
-
-		if (installedTools.length > 0) {
-			return installedTools;
+	public async getInstalledToolById(
+		id: string
+	): Promise<ToolInfo | null> {
+		if (typeof this.installedTools[id] === "undefined") {
+			// Tool not found or no valid entries, discover new packages and check again
+			await this.discoverToolPackages();
 		}
 
-		// Tool not found or no valid entries, discover new packages and check again
-		await this.discoverToolPackages();
-
-		return this.getToolsFromVersionMap(this.installedTools[id] ?? {});
+		return this.installedTools[id] ?? null;
 	}
 
 	/**
@@ -384,14 +292,14 @@ export class CfsToolManager {
 		const [toolId, subPath] = string.split(".");
 
 		// Get the tool with the specified ID
-		const [tool] = await this.getInstalledToolsForId(toolId);
+		const tool = await this.getInstalledToolById(toolId);
 
-		if (tool instanceof Tool) {
-			let resolvedPath = tool.getPath();
+		if (tool !== null) {
+			let resolvedPath = tool.rootPath;
 
 			// If subPath is specified, try to get that property value from tool info
 			if (subPath) {
-				const info = tool.getInfo();
+				const info = tool;
 				// Check if the subPath exists in the tool info
 				const key = subPath as keyof ToolInfo;
 
@@ -413,7 +321,7 @@ export class CfsToolManager {
 	/**
 	 * Get the path for a specific tool by ID, optionally specifying a version
 	 * @param id - The tool ID to look for
-	 * @param version - Optional version string; if not provided, returns the latest version
+	 * @param version - Optional version string; if not provided, returns the one that exists
 	 * @returns Promise that resolves to the tool path or empty string if not found
 	 */
 	public async getToolPath(
@@ -421,42 +329,19 @@ export class CfsToolManager {
 		version?: string
 	): Promise<string> {
 		try {
-			const tools = await this.getInstalledToolsForId(id);
+			const tool = await this.getInstalledToolById(id);
 
-			if (tools.length === 0) {
+			if (tool === null) {
 				console.warn(`No tool found with ID: ${id}`);
 				return "";
 			}
 
-			let selectedTool: Tool | undefined;
-
-			if (version) {
-				// Find the specific version requested
-				selectedTool = tools.find(
-					(tool) => tool.getInfo().version === version
-				);
-
-				if (!selectedTool) {
-					console.warn(`Version ${version} not found for tool ${id}`);
-					return "";
-				}
+			if (!version || tool.version === version) {
+				return tool.rootPath;
 			} else {
-				// Find the latest version if no specific version is requested
-				if (tools.length === 1) {
-					selectedTool = tools[0];
-				} else {
-					// Get all versions and find the latest
-					const versions = tools.map(
-						(tool) => tool.getInfo().version
-					);
-					const latestVersion = findLatestVersion(versions);
-					selectedTool = tools.find(
-						(tool) => tool.getInfo().version === latestVersion
-					);
-				}
+				console.warn(`Version ${version} not found for tool ${id}`);
+				return "";
 			}
-
-			return selectedTool ? selectedTool.getPath() : "";
 		} catch (error) {
 			console.error(`Error getting tool path for ${id}:`, error);
 			return "";

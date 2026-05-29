@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,34 +48,15 @@ export const calculateSectionSizes = (
 	return result;
 };
 
-const getComputedStyleValue = (element: Element, property: string) =>
-	getComputedStyle(element).getPropertyValue(property).trim();
-
-const chartBlue = getComputedStyleValue(
-	document.documentElement,
-	'--vscode-charts-blue'
-);
-
-const chartGreen = getComputedStyleValue(
-	document.documentElement,
-	'--vscode-charts-green'
-);
-
-const chartOrange = getComputedStyleValue(
-	document.documentElement,
-	'--vscode-charts-orange'
-);
+export const getComputedStyleValue = (
+	element: Element,
+	property: string
+) => getComputedStyle(element).getPropertyValue(property).trim();
 
 export const axisColor = getComputedStyleValue(
 	document.documentElement,
 	'--vscode-commandCenter-inactiveBorder'
 );
-
-export const chartLegendColors = {
-	bss: chartOrange,
-	text: chartBlue,
-	data: chartGreen
-};
 
 export const TooltipInfo = [
 	{

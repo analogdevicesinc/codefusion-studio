@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import {
 import {configurePreloadedStore} from '../../../state/store';
 import ClockDetails from './ClockDetails';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const mock = (await import(`@socs/max32690-wlp.json`))
 	.default as unknown as Soc;
@@ -200,14 +200,14 @@ describe('Clock details component', () => {
 			);
 			const controlsPromise = getControlsPromise();
 
-			store.dispatch(setClockNodeDetailsTargetNode('P0.27'));
+			store.dispatch(setClockNodeDetailsTargetNode('P0.23'));
 
 			cy.mount(
 				<ClockDetails controlsPromise={controlsPromise} />,
 				store
 			);
 
-			cy.dataTest('P0_27_FREQ-P0.27-control-input').should(
+			cy.dataTest('P0_23_FREQ-P0.23-control-input').should(
 				'have.attr',
 				'disabled'
 			);

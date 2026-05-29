@@ -24,11 +24,8 @@ import {
 	EMPTY_CLOCK_VALUE,
 	UNDEFINED_MARKER
 } from '../constants/clocks';
-import {
-	getClockNodeConfig,
-	getTargetControls
-} from '../../../utils/clock-nodes';
-import {getPrimaryProjectId} from '../../../utils/config';
+import {getClockNodeConfig} from '../../../utils/clock-nodes';
+import type {ClockNodeStatus} from '../../../utils/clock-evaluation';
 
 function formatIconPath(iconName: string) {
 	const resourcesPath =
@@ -67,11 +64,13 @@ export function getFormattedClockFrequency(
 	return formatFrequency(frequency) + ' Hz';
 }
 
+// eslint-disable-next-line max-params
 export function formatDiagramData(
 	data: DiagramData,
 	colorsRecord: Record<string, string>,
 	currentConfig: GlobalConfig,
-	computedFrequencies: Record<string, number | string>
+	computedFrequencies: Record<string, number | string>,
+	nodeStatuses: Record<string, ClockNodeStatus>
 ) {
 	const formattedData: DiagramData = JSON.parse(JSON.stringify(data));
 
@@ -128,14 +127,10 @@ export function formatDiagramData(
 			const {foreground} = colorVariablesIds;
 			const fallbackForeground = '#ffffff';
 			const {condition} = formattedData.parts[part];
-			const {clockconfig} = currentConfig;
 
 			const nodeConfig = getClockNodeConfig(
 				formattedData.parts[part].name
 			);
-
-			const currentNodeConfig =
-				clockconfig[formattedData.parts[part].name];
 
 			formattedData.parts[part].styles.backgroundColor =
 				'transparent';
@@ -210,86 +205,12 @@ export function formatDiagramData(
 			}
 
 			if (formattedData.parts[part].enabled) {
-				const projectId = getPrimaryProjectId();
-				const targetControls = getTargetControls(
-					'clockConfig',
-					projectId ?? '',
-					currentNodeConfig?.Name ?? ''
-				);
-
-				// Set error state of node
-				const isControlError = Object.entries(
-					currentNodeConfig?.Errors ?? {}
-				).some(([key, error]) => {
-					const isControlEnabled =
-						typeof targetControls[key]?.Condition === 'string'
-							? evaluateClockCondition(
-									currentConfig,
-									targetControls[key]?.Condition ?? ''
-								)
-							: true;
-
-					return Boolean(error) && isControlEnabled;
-				});
-
-				const hasOutputError = nodeConfig?.Outputs?.some(output => {
-					const {MaximumValue, MinimumValue} = output;
-
-					const computedFreq = computedFrequencies[output.Name];
-
-					const isOutputEnabled =
-						typeof output.Condition === 'string'
-							? evaluateClockCondition(
-									currentConfig,
-									output.Condition
-								)
-							: true;
-
-					if (isOutputEnabled === false) {
-						return false;
-					}
-
-					const isGreaterThanMaxAllowed =
-						typeof MaximumValue === 'number' &&
-						Number(computedFreq) > MaximumValue;
-
-					const isLessThanMinAllowed =
-						typeof MinimumValue === 'number' &&
-						Number(computedFreq) < MinimumValue;
-
-					const hasUnconfiguredValue =
-						computedFreq === EMPTY_CLOCK_VALUE ||
-						computedFreq === UNDEFINED_MARKER;
-
-					return (
-						isGreaterThanMaxAllowed ||
-						isLessThanMinAllowed ||
-						hasUnconfiguredValue
-					);
-				});
-
-				const referencedClockConfig = nodeConfig?.Outputs?.filter(
-					output => output.Name === clockKey
-				)[0];
-
-				const hasUnconfiguredValue =
-					clockValue === UNDEFINED_MARKER ||
-					clockValue === EMPTY_CLOCK_VALUE;
-
-				const isGreaterThanMaxAllowed =
-					typeof referencedClockConfig?.MaximumValue === 'number' &&
-					Number(clockValue) > referencedClockConfig?.MaximumValue;
-
-				const isLessThanMinAllowed =
-					typeof referencedClockConfig?.MinimumValue === 'number' &&
-					Number(clockValue) < referencedClockConfig?.MinimumValue;
+				// Use precomputed error status from clock-evaluation
+				const nodeName = formattedData.parts[part].name;
+				const nodeStatus = nodeStatuses[nodeName];
 
 				formattedData.parts[part].error =
-					isControlError ||
-					isGreaterThanMaxAllowed ||
-					isLessThanMinAllowed ||
-					hasUnconfiguredValue ||
-					hasOutputError;
+					nodeStatus?.hasError ?? false;
 			}
 		}
 	}

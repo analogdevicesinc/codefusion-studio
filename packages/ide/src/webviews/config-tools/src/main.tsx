@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import '../../../../../react-library/src/styles/index.scss';
-import ErrorView, {type WebviewError} from './Error';
+import ErrorView from './Error';
+import type {WebviewError} from '../../common/types/errors';
 
 const root = document.getElementById('root');
 const errorDiv = document.getElementById('error');

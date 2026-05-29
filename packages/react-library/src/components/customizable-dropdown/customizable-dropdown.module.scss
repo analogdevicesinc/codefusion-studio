@@ -20,6 +20,19 @@
 	@include fonts.body-b1;
 	font-family: fonts.$default-font-family;
 
+	.placeholder {
+		@include fonts.body-b3;
+		color: colors.$description-foreground;
+		font-size: 13px;
+		font-weight: 400;
+		position: absolute;
+		left: 29px;
+		padding-top: 0.5px;
+		z-index: 1;
+		transform: translateY(50%);
+		pointer-events: none;
+	}
+
 	.dropdownField {
 		display: flex;
 		width: 100%;
@@ -54,6 +67,10 @@
 		.valueSlot {
 			flex-grow: 1;
 			text-align: start;
+		}
+
+		.indicator {
+			display: flex;
 		}
 	}
 

@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsSocDataModel} from 'cfs-lib';
+import type {CfsSocDataModel} from 'cfs-types';
 
 export type Soc = CfsSocDataModel;
 

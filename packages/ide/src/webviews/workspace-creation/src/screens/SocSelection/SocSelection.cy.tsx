@@ -38,14 +38,16 @@ describe('SocSelection', () => {
 	it('Should yield correct search results', () => {
 		cy.get('#control-input').shadow().find('input').type('32655');
 
-		cy.dataTest('socSelection:card:MAX32655').should('exist');
-		cy.dataTest('socSelection:card:MAX32670').should('not.exist');
+		cy.dataTest('soc-selection:segmented-controls:expand').click();
+
+		cy.dataTest('soc-selection:option:MAX32655').should('exist');
+		cy.dataTest('soc-selection:option:MAX32670').should('not.exist');
 	});
 
 	it('Should yield <NoSearchResult> component on faulty search input', () => {
 		cy.get('#control-input').shadow().find('input').type('XXXXXX');
 
-		cy.dataTest('socSelection:card:MAX32655').should('not.exist');
+		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
 		cy.dataTest('no-search-results').should('exist');
 	});
 
@@ -72,41 +74,51 @@ describe('SocSelection', () => {
 		testStore.dispatch(setSelectedSoc('MAX32655'));
 
 		cy.mount(<TestComponent />, store).then(() => {
-			const cardTestId = 'socSelection:card:MAX32655';
+			const optionTestId = 'soc-selection:option:MAX32655';
 
-			cy.dataTest(cardTestId).should('exist');
-			cy.dataTest(cardTestId).should(
-				'have.attr',
-				'data-active',
-				'true'
-			);
+			cy.dataTest('soc-selection:segmented-controls:expand').click();
+
+			cy.dataTest(optionTestId).should('exist');
+			cy.dataTest(optionTestId)
+				.find('[role="radio"]')
+				.should('have.attr', 'current-checked', 'true');
 		});
 	});
 
 	it('Should correctly filter the list based on the search', () => {
 		cy.get('#control-input').shadow().find('input').type('MAX326');
 
-		cy.dataTest('socSelection:card:MAX32655').should('exist');
-		cy.dataTest('socSelection:card:MAX32672').should('exist');
+		cy.dataTest('soc-selection:option:MAX32655').should('exist');
+		cy.dataTest('soc-selection:option:MAX32672').should('exist');
 
-		cy.dataTest('socSelection:card:MAX78002').should('not.exist');
+		cy.dataTest('soc-selection:option:MAX78002').should('not.exist');
 
 		cy.get('#control-input').shadow().find('input').clear();
 
-		cy.dataTest('socSelection:card:MAX32655').should('exist');
-		cy.dataTest('socSelection:card:MAX32672').should('exist');
-		cy.dataTest('socSelection:card:MAX78002').should('exist');
+		cy.dataTest('soc-selection:segmented-controls:expand').click();
+
+		cy.dataTest('soc-selection:option:MAX32655').should('exist');
+		cy.dataTest('soc-selection:option:MAX32672').should('exist');
+		cy.dataTest('soc-selection:option:MAX78002').should('exist');
+
+		// Special case for CFSIO-18572 - ensure badge is not included in search highlighting
+		cy.get('#control-input').shadow().find('input').type('1');
+		cy.get('[data-test^="soc-selection:option:"]:visible').should(
+			'have.length',
+			1
+		);
 	});
 
 	it('Should display <NoSearchResults> component with the correct message', () => {
 		const searchQuery = 'test';
 		cy.get('#control-input').shadow().find('input').type(searchQuery);
 
-		cy.dataTest('socSelection:card:MAX32655').should('not.exist');
+		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
 
 		cy.dataTest('no-search-results').should('exist');
-		cy.dataTest('no-results-description')
-			.should('contain.text', `We couldn't find any results for`)
-			.and('contain.text', `"${searchQuery}"`);
+		cy.dataTest('no-results-description').and(
+			'contain.text',
+			`"${searchQuery}"`
+		);
 	});
 });

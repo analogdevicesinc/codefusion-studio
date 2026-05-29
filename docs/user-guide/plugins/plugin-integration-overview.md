@@ -47,7 +47,6 @@ Plugins define the configuration options available in the System Planner. These 
 "supportedSocs": [
   {
     "name": "MAX32655",
-    "dataModel": "max32655-ctbga.json",
     "board": "EvKit_V1",
     "package": "ctbga"
   }

@@ -59,6 +59,18 @@
 	}
 }
 
+@mixin suppress-focus-active {
+	vscode-data-grid-cell {
+		&:focus,
+		&:active {
+			background-color: transparent;
+			border-color: transparent;
+			color: colors.$foreground;
+			outline: none;
+		}
+	}
+}
+
 vscode-data-grid-cell {
 	padding: 8px 3px;
 
@@ -69,4 +81,17 @@ vscode-data-grid-cell {
 			}
 		}
 	}
+
+	vscode-button[appearance='icon']:hover {
+		background-color: colors.$default-background;
+	}
+
+	vscode-button[appearance='icon'] {
+		width: 24px;
+		height: 24px;
+	}
+}
+
+vscode-button[appearance='icon'] {
+	border-radius: calc(var(--corner-radius-round) * 1px);
 }

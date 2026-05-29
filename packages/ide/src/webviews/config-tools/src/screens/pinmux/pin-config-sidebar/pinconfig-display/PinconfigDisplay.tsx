@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 import {createPortal} from 'react-dom';
 import ControlDropdown from '../control-dropdown/ControlDropdown';
 import {
@@ -32,7 +32,7 @@ import {
 import {use} from 'cfs-react-library';
 import type {ControlCfg} from '@common/types/soc';
 import {PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID} from '../pin-config-task';
-import {shouldRenderControl} from '../../../../utils/rpn-expression-resolver';
+import {shouldRenderPinConfigControl} from '../../../../utils/rpn-expression-resolver';
 import PluginInfo from '../../../../components/plugin-info/plugin-info';
 import styles from './PinconfigDisplay.module.scss';
 
@@ -128,7 +128,7 @@ export default function PinconfigDisplay({
 
 					// Only add control if it should be rendered based on its condition
 					if (
-						shouldRenderControl(
+						shouldRenderPinConfigControl(
 							formattedControl,
 							userSelections,
 							activeSignal ?? ''
@@ -152,7 +152,7 @@ export default function PinconfigDisplay({
 			if (control?.PluginOption) {
 				// Only add plugin control if it should be rendered based on its condition
 				if (
-					shouldRenderControl(
+					shouldRenderPinConfigControl(
 						control,
 						userSelections,
 						activeSignal ?? ''
@@ -297,6 +297,78 @@ export default function PinconfigDisplay({
 			portalTarget
 		);
 	};
+
+	// This function checks the current user selections against the valid options for this pin/signal
+	// and returns an updated config object with any invalid values reset to default.
+	const getValidConfigValues = () => {
+		if (!signalPinCfg) return {...userSelections};
+
+		const nextValues = {...userSelections};
+
+		for (const controlId of Object.keys(userSelections ?? {})) {
+			const value = userSelections?.[controlId];
+			if (value === undefined) continue;
+
+			const control = pinConfigControls[controlId];
+			const defaultValue = resetValues?.[controlId];
+
+			// Control not available for this pin
+			if (!control?.PluginOption && !signalPinCfg[controlId]) {
+				nextValues[controlId] = defaultValue;
+				continue;
+			}
+
+			// Enum invalid
+			if (control?.EnumValues && signalPinCfg[controlId]) {
+				const allowed = Object.keys(signalPinCfg[controlId] ?? {});
+
+				if (!allowed.includes(String(value))) {
+					nextValues[controlId] = defaultValue;
+					continue;
+				}
+			}
+
+			// Hidden by condition
+			if (
+				control &&
+				!shouldRenderPinConfigControl(
+					control,
+					nextValues,
+					activeSignal ?? ''
+				)
+			) {
+				nextValues[controlId] = defaultValue;
+			}
+		}
+
+		return nextValues;
+	};
+
+	// We need to reset invalid control values if user changes the pin,
+	// that way we can avoid showing invalid (blank) values in the dropdowns/inputs.
+	useEffect(() => {
+		if (!activePin?.pinId || !controls?.PinConfig.length) return;
+
+		const validConfigValues = getValidConfigValues();
+
+		const didConfigChange = Object.keys({
+			...(userSelections ?? {}),
+			...validConfigValues
+		}).some(key => userSelections?.[key] !== validConfigValues[key]);
+
+		if (!didConfigChange) return;
+
+		dispatch(
+			setResetControlValues({
+				Peripheral: activePeripheral,
+				Name: activeSignal,
+				pinId: activePin?.pinId,
+				controls: controls.PinConfig,
+				resetValues: validConfigValues
+			})
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activePin?.pinId]);
 
 	return (
 		<>

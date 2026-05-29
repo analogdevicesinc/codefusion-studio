@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,12 @@
 
 import envPaths from 'env-paths';
 import { CfsCcmError } from '../error/error.js';
-import { Authorizer } from '../auth/index.js';
+import { Authorizer, PublicAuthorizer } from '../auth/index.js';
 import { OpenApiClient } from './openapi-client.js';
 import { LIB_NAME } from '../config/constants.cjs';
 import createClient from 'openapi-fetch';
-import { paths } from '../gen/api-types.js';
-import { RestClient } from '../gen/rest.js';
-import { RequireOptional } from '../types.js';
+import { paths } from 'cfs-ccm-api/api-types';
+import { RestClient } from 'cfs-ccm-api/rest-client';
 import NodeFetchCache, {
     FileSystemCache,
     getNodeFetch,
@@ -42,23 +41,17 @@ export class CfsApiError extends CfsCcmError<CfsApiErrorType> {}
 
 export interface ApiOptions {
     // base URL for all API requests
-    baseUrl: string | URL;
+    baseUrl?: string | URL;
 
     // specify an authorizer to use for authentication (e.g ApiKeyAuthorizer, TokenAuthorizer, etc).
     // or the PublicAuthorizer for no authentication.
-    authorizer: Authorizer;
+    authorizer?: Authorizer;
 
     // whether or not to cache and where to store the cache file;
     // defaults to true, with cache file in OS-appropriate location
     isCache?: boolean;
     cacheDir?: string;
 }
-
-const defaultApiOptions: RequireOptional<ApiOptions> = {
-    isCache: false, // disable for interim release
-    // default cache db file in OS-appropriate location
-    cacheDir: envPaths(LIB_NAME, { suffix: '' }).cache,
-};
 
 // These are the methods of the openapi-client that we want to expose
 // publicly through the apiclient fetch property
@@ -93,13 +86,18 @@ export class CfsApiClient {
      * Constructs a new CfsApiClient instance.
      * @param options - The options for configuring the API client.
      */
-    public constructor(options: ApiOptions) {
-        const opts = { ...defaultApiOptions, ...options };
+    public constructor({
+        baseUrl = 'https://ccm.codefusion.app.analog.com',
+        authorizer = new PublicAuthorizer(),
+        isCache = false, // disable for interim release
+        // default cache db file in OS-appropriate location
+        cacheDir = envPaths(LIB_NAME, { suffix: '' }).cache,
+    }: ApiOptions = {}) {
         let nodeFetch;
-        if (opts.isCache) {
+        if (isCache) {
             nodeFetch = NodeFetchCache.create({
                 cache: new FileSystemCache({
-                    cacheDirectory: opts.cacheDir,
+                    cacheDirectory: cacheDir,
                 }),
             });
         } else {
@@ -107,15 +105,15 @@ export class CfsApiClient {
         }
 
         // Validate the base URL
-        const baseUrl = new URL(opts.baseUrl).toString();
+        const apiUrl = new URL(baseUrl).toString();
 
         this.openapiClient = createClient<paths>({
-            baseUrl,
+            baseUrl: apiUrl,
             fetch: nodeFetch,
             Request: NodeFetchRequest,
         });
-        if (opts.authorizer) {
-            this.openapiClient.use(opts.authorizer);
+        if (authorizer) {
+            this.openapiClient.use(authorizer);
         }
     }
 

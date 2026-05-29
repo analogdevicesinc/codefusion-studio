@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  *
  */
 
-import {Button} from 'cfs-react-library';
+import {Button, Tooltip} from 'cfs-react-library';
 import {useState} from 'react';
 
-import type {DFGStream} from 'cfs-plugins-api';
 import Accordion from '../../../../../common/components/accordion/Accordion';
 import PlusIcon from '../../../../../common/components/icons/PlusIcon';
 import SmallSettingsIcon from '../../../../../common/components/icons/SamllSettingsIcon';
@@ -24,6 +23,7 @@ import SmallArrowRightIcon from '../../../../../common/components/icons/SmallArr
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import type {Gasket} from '../../../../../common/types/soc';
 import {
+	type DFGStreamUI,
 	setEditingStream,
 	setHoveredStream,
 	setSelectedGaskets,
@@ -40,7 +40,7 @@ import {useFilteredStreams} from '../hooks/useFilteredStreams';
 import styles from './stream-sidebar.module.scss';
 
 type StreamListViewProps = {
-	readonly stream: DFGStream;
+	readonly stream: DFGStreamUI;
 	readonly type: 'inbound' | 'outbound';
 };
 
@@ -48,7 +48,7 @@ function StreamListView({stream, type}: StreamListViewProps) {
 	const dispatch = useAppDispatch();
 
 	const streamErrors = useStreamErrors();
-	const errors = streamErrors[stream.StreamId] ?? [];
+	const errors = streamErrors[stream.Uuid] ?? [];
 
 	const handleClick = () => {
 		dispatch(setEditingStream(stream));
@@ -77,22 +77,27 @@ function StreamListView({stream, type}: StreamListViewProps) {
 			onMouseLeave={handleMouseLeave}
 		>
 			{type === 'outbound' && <SmallArrowRightIcon />}
-			<h5>
+			<h5 className={styles.streamListItemTitle}>
 				{type === 'inbound'
 					? stream.Source.Gasket
 					: stream.Destinations.map(d => d.Gasket).join(', ')}
 			</h5>
 			{type === 'inbound' && <SmallArrowRightIcon />}
-			<span className={styles.streamListItemDescription}>
+			<span
+				className={styles.streamListItemDescription}
+				title={stream.Description}
+			>
 				{stream.Description}
 			</span>
-			<Button
-				appearance='icon'
-				className={styles.streamListItemButton}
-				onClick={handleClick}
-			>
-				<SmallSettingsIcon />
-			</Button>
+			<Tooltip title='Configure' position='left' type='short'>
+				<Button
+					appearance='icon'
+					className={styles.streamListItemButton}
+					onClick={handleClick}
+				>
+					<SmallSettingsIcon />
+				</Button>
+			</Tooltip>
 			{errors.length > 0 ? (
 				<div
 					data-test={`stream-${type}-${stream.StreamId}-error`}
@@ -138,10 +143,10 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 	 */
 	const hasStreamErrors =
 		allInboundStreams.some(
-			stream => streamErrors[stream.StreamId]?.length > 0
+			stream => streamErrors[stream.Uuid]?.length > 0
 		) ||
 		allOutboundStreams.some(
-			stream => streamErrors[stream.StreamId]?.length > 0
+			stream => streamErrors[stream.Uuid]?.length > 0
 		);
 
 	return (
@@ -200,26 +205,28 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 						data-test={`inbound-stream-header-${gasket.Name}`}
 					>
 						<h5>INBOUND</h5>
-						<Button
-							disabled={!canHaveInboundStreams}
-							appearance='icon'
-							onClick={() => {
-								dispatch(
-									setEditingStream({
-										Destinations: [
-											{
-												Gasket: gasket.Name,
-												Index: 0,
-												BufferSize: 0,
-												BufferAddress: 0
-											}
-										]
-									})
-								);
-							}}
-						>
-							<PlusIcon />
-						</Button>
+						<Tooltip title='Add' position='left' type='short'>
+							<Button
+								disabled={!canHaveInboundStreams}
+								appearance='icon'
+								onClick={() => {
+									dispatch(
+										setEditingStream({
+											Destinations: [
+												{
+													Gasket: gasket.Name,
+													Index: 0,
+													BufferSize: 0,
+													BufferAddress: 0
+												}
+											]
+										})
+									);
+								}}
+							>
+								<PlusIcon />
+							</Button>
+						</Tooltip>
 					</div>
 					{inboundStreams.map(stream => (
 						<StreamListView
@@ -233,25 +240,27 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 						data-test={`outbound-stream-header-${gasket.Name}`}
 					>
 						<h5>OUTBOUND</h5>
-						<Button
-							data-test={`add-outbound-stream-${gasket.Name}`}
-							disabled={!canHaveOutboundStreams}
-							appearance='icon'
-							onClick={() => {
-								dispatch(
-									setEditingStream({
-										Source: {
-											Gasket: gasket.Name,
-											Index: 0,
-											BufferSize: 0,
-											BufferAddress: 0
-										}
-									})
-								);
-							}}
-						>
-							<PlusIcon />
-						</Button>
+						<Tooltip title='Add' position='left' type='short'>
+							<Button
+								data-test={`add-outbound-stream-${gasket.Name}`}
+								disabled={!canHaveOutboundStreams}
+								appearance='icon'
+								onClick={() => {
+									dispatch(
+										setEditingStream({
+											Source: {
+												Gasket: gasket.Name,
+												Index: 0,
+												BufferSize: 0,
+												BufferAddress: 0
+											}
+										})
+									);
+								}}
+							>
+								<PlusIcon />
+							</Button>
+						</Tooltip>
 					</div>
 					{outboundStreams.map(stream => (
 						<StreamListView

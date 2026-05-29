@@ -14,7 +14,7 @@
  */
 
 import type {Gasket} from '@common/types/soc';
-import type {DFGStream} from 'cfs-plugins-api';
+import {type DFGStreamUI} from '../state/slices/gaskets/gasket.reducer';
 
 let gaskets: Gasket[];
 const gasketDictionary: Record<string, Gasket> = {};
@@ -64,7 +64,7 @@ export function resetDfg() {
  * Checks if a stream has a destination with the specified gasket name
  */
 export function streamHasDestinationGasket(
-	stream: DFGStream,
+	stream: DFGStreamUI,
 	gasketName: string
 ): boolean {
 	return stream.Destinations.some(dest => dest.Gasket === gasketName);
@@ -75,7 +75,7 @@ export function streamHasDestinationGasket(
  * undefined if not found
  */
 export function findDestinationByGasket(
-	stream: DFGStream,
+	stream: DFGStreamUI,
 	gasketName: string
 ) {
 	return stream.Destinations.find(dest => dest.Gasket === gasketName);
@@ -85,9 +85,9 @@ export function findDestinationByGasket(
  * Filters streams to those that have the specified gasket as one of its destinations
  */
 export function filterStreamsByDestinationGasket(
-	streams: DFGStream[],
+	streams: DFGStreamUI[],
 	gasketName: string
-): DFGStream[] {
+): DFGStreamUI[] {
 	return streams.filter(stream =>
 		streamHasDestinationGasket(stream, gasketName)
 	);

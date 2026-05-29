@@ -19,16 +19,48 @@ import {
 } from '@reduxjs/toolkit';
 
 import {
+	setCpuLoadInterval,
+	setInterface,
+	setMemoryUsageInterval,
 	setUARTPort,
+	setValidationErrors,
 	toggleAIProfilingEnabled,
-	toggleProfilingEnabled
+	toggleCpuLoadEnabled,
+	toggleInstrumentationSubsystemEnabled,
+	toggleMemoryUsageEnabled,
+	toggleProfilingEnabled,
+	toggleRtosEventsEnabled,
+	type ZephelinConfigErrors
 } from '../slices/profiling/profiling.reducer';
 import {updateProfilingConfig} from '../../utils/api';
 import {type RootState} from '../store';
+import {
+	getMaxCpuLoadInterval,
+	getMaxProfilingMemoryInterval,
+	getMinCpuLoadInterval,
+	getMinProfilingMemoryInterval
+} from '../slices/profiling/profilingPeripherals';
+import {type Zephelin} from 'cfs-types';
+import {
+	getLocalization,
+	localizeMessage
+} from '../../../../common/utils/localization';
+import {type TLocaleContext} from '../../common/types/context';
 
 export const persistedProfilingActions: Array<
 	ActionCreatorWithPayload<any>
-> = [toggleProfilingEnabled, toggleAIProfilingEnabled, setUARTPort];
+> = [
+	toggleProfilingEnabled,
+	toggleRtosEventsEnabled,
+	toggleMemoryUsageEnabled,
+	setMemoryUsageInterval,
+	toggleCpuLoadEnabled,
+	setCpuLoadInterval,
+	toggleAIProfilingEnabled,
+	toggleInstrumentationSubsystemEnabled,
+	setInterface,
+	setUARTPort
+];
 
 export function getProfilingPersistenceListenerMiddleware(
 	actionsArray: Array<ActionCreatorWithPayload<unknown>>
@@ -40,11 +72,16 @@ export function getProfilingPersistenceListenerMiddleware(
 			actionCreator: action,
 			effect(action, listenerApi) {
 				const {projectId} = action.payload as {projectId: string};
-				void updateProfilingConfig(
-					(listenerApi.getState() as RootState).profilingReducer
-						.zephelin[projectId],
-					'Zephelin',
-					projectId
+				const state = listenerApi.getState() as RootState;
+				const config = state.profilingReducer.zephelin[projectId];
+
+				void updateProfilingConfig(config, 'Zephelin', projectId);
+
+				listenerApi.dispatch(
+					setValidationErrors({
+						projectId,
+						errors: validateProfilingConfig(config)
+					})
 				);
 			}
 		});
@@ -52,3 +89,83 @@ export function getProfilingPersistenceListenerMiddleware(
 		return listenerMiddleware.middleware;
 	});
 }
+
+const validateProfilingConfig = (
+	config: Partial<Zephelin> | undefined
+): ZephelinConfigErrors => {
+	const translations: TLocaleContext | undefined =
+		getLocalization('cfgtools');
+	const errors: ZephelinConfigErrors = {};
+
+	if (config === undefined) {
+		return errors;
+	}
+
+	if (config.ProfilingMemoryUsageEnabled) {
+		if (config.ProfilingMemoryUsageInterval === undefined) {
+			errors.ProfilingMemoryUsageInterval = localizeMessage(
+				translations,
+				'profiling.errors.invalid-input',
+				{fieldName: 'Memory Usage Interval'}
+			);
+		} else if (
+			config.ProfilingMemoryUsageInterval <
+			getMinProfilingMemoryInterval()
+		) {
+			errors.ProfilingMemoryUsageInterval = localizeMessage(
+				translations,
+				'profiling.errors.value-too-low',
+				{
+					minValue: getMinProfilingMemoryInterval().toString(),
+					unit: 'ms'
+				}
+			);
+		} else if (
+			config.ProfilingMemoryUsageInterval >
+			getMaxProfilingMemoryInterval()
+		) {
+			errors.ProfilingMemoryUsageInterval = localizeMessage(
+				translations,
+				'profiling.errors.value-too-high',
+				{
+					maxValue: getMaxProfilingMemoryInterval().toString(),
+					unit: 'ms'
+				}
+			);
+		}
+	}
+
+	if (config.ProfilingCpuLoadEnabled) {
+		if (config.ProfilingCpuLoadInterval === undefined) {
+			errors.ProfilingCpuLoadInterval = localizeMessage(
+				translations,
+				'profiling.errors.invalid-input',
+				{fieldName: 'CPU Load Interval'}
+			);
+		} else if (
+			config.ProfilingCpuLoadInterval < getMinCpuLoadInterval()
+		) {
+			errors.ProfilingCpuLoadInterval = localizeMessage(
+				translations,
+				'profiling.errors.value-too-low',
+				{
+					minValue: getMinCpuLoadInterval().toString(),
+					unit: 'ms'
+				}
+			);
+		} else if (
+			config.ProfilingCpuLoadInterval > getMaxCpuLoadInterval()
+		) {
+			errors.ProfilingCpuLoadInterval = localizeMessage(
+				translations,
+				'profiling.errors.value-too-high',
+				{
+					maxValue: getMaxCpuLoadInterval().toString(),
+					unit: 'ms'
+				}
+			);
+		}
+	}
+
+	return errors;
+};

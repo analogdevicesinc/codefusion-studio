@@ -23,6 +23,7 @@ import {
   CONFIG_TOOLS_COMMANDS,
   WORKSPACE_CREATION_COMMANDS,
   BROWSE_MSDK_EXAMPLES_COMMAND_ID,
+  OPEN_REPORT_FILE_COMMAND_ID,
 } from "../commands/constants";
 import {
   HOME as HOMEPAGE,
@@ -34,13 +35,12 @@ import {
   BROWSE_EXAMPLES,
 } from "./constants";
 import { ViewContainerItem } from "./view-container-item";
+import { AI_TOOLS } from "../constants";
 
 /**
  * This provider is responsible for supplying data in a tree structure to the welcome view container.
  */
-export class QuickAccessProvider
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
+export class QuickAccessProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   homePageItems: vscode.TreeItem[] = [
     new ViewContainerItem({
       label: "Open Home Page",
@@ -116,6 +116,22 @@ export class QuickAccessProvider
     }),
   ];
 
+  aiToolsTreeItems: vscode.TreeItem[] = [
+    new ViewContainerItem({
+      label: "Open Report",
+      tooltip: "Open an AI Model Insight report file",
+      commandId: OPEN_REPORT_FILE_COMMAND_ID,
+      icon: new vscode.ThemeIcon("go-to-file"),
+    }),
+    new ViewContainerItem({
+      label: "New Workspace from AI model",
+      tooltip: "Create a new workspace from an AI model",
+      commandId: WORKSPACE_CREATION_COMMANDS.NEW_MODEL_WORKSPACE,
+      icon: new vscode.ThemeIcon("new-file"),
+      collapsible: vscode.TreeItemCollapsibleState.None,
+    }),
+  ];
+
   /**
    * Gets the tree item associated with the specified element.
    * @param element - The element for which the UI representation is needed.
@@ -141,6 +157,8 @@ export class QuickAccessProvider
           return Promise.resolve(this.configTreeItems);
         case ELF_FILE_EXPLORER:
           return Promise.resolve(this.elfFileExplorerTreeItems);
+        case AI_TOOLS:
+          return Promise.resolve(this.aiToolsTreeItems);
         default:
           return Promise.resolve([]);
       }
@@ -168,6 +186,12 @@ export class QuickAccessProvider
           tooltip: "ELF file explorer actions",
           collapsible: vscode.TreeItemCollapsibleState.Expanded,
           contextValue: "elfExplorer",
+        }),
+        new ViewContainerItem({
+          label: AI_TOOLS,
+          tooltip: "AI Tools actions",
+          collapsible: vscode.TreeItemCollapsibleState.Expanded,
+          contextValue: "aiTools",
         }),
       ]);
     }

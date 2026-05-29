@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,33 @@ import {
   memoryTypeSelector,
 } from "./create-partition-sidebar";
 
+// Memory type dropdown can be slow to render options, so we use more retries than default
+const MEMORY_TYPE_DROPDOWN_RETRIES = 3;
+
+/**
+ * Selects a memory type from the dropdown with enhanced reliability.
+ * Waits for dropdown readiness then selects with extra retries for stability.
+ * This function addresses intermittent failures with the memory type dropdown
+ * by ensuring element readiness before interaction.
+ *
+ * @param view - The WebView instance representing the current UI context
+ * @param memoryType - The type of memory to select ("Flash" or "RAM")
+ * @returns A Promise that resolves when the memory type is successfully selected
+ * @throws Error if the dropdown selection fails after all retry attempts
+ */
+async function selectMemoryTypeWithRetry(
+  view: WebView,
+  memoryType: "Flash" | "RAM",
+): Promise<void> {
+  await UIUtils.waitForElement(view, memoryTypeDropdown);
+  await UIUtils.selectOptionFromDropdown(
+    view,
+    memoryTypeDropdown,
+    await memoryTypeSelector(memoryType),
+    MEMORY_TYPE_DROPDOWN_RETRIES,
+  );
+}
+
 export const partitionDetailsDropdowns: By = By.css(
   `[data-test="partition-details-chevron"]`,
 );
@@ -40,6 +67,12 @@ export const memoryTypeFilterOptionRAM: By = By.css(
   "[data-test='multiselect-option-RAM']",
 );
 
+export async function pluginOptionsHeader(index: number): Promise<By> {
+  return By.xpath(
+    `//h3[normalize-space()='Plugin Options']/following::h5[${index}]/div`,
+  );
+}
+
 export async function partitionDetailsChevron(index: number): Promise<By> {
   return By.xpath(`(//div[@data-test='partition-details-chevron'])[${index}]`);
 }
@@ -49,8 +82,20 @@ export async function getDeletePartitionButton(index: number): Promise<By> {
 }
 
 export async function getEditPartitionButton(index: number): Promise<By> {
-  return By.xpath(`(//*[@data-Test='edit-partition-btn'])[${index}]`);
+  return By.xpath(`(//*[@data-test='edit-partition-btn'])[${index}]`);
 }
+
+export async function getBaseBlockOption(optionText: string): Promise<By> {
+  return By.css(`[data-test='${optionText}']`);
+}
+
+export const chosenControlInput: By = By.css(
+  "[data-test='plugin-options-form:control-CHOSEN-control-input']",
+);
+
+export const partitionSidebarCloseButton: By = By.xpath(
+  "//*[@data-test='partition-sidebar']//vscode-button[.//*[contains(@class,'closeIcon')]]",
+);
 
 export async function getPartitionTitleEl(
   coreId: "CM4" | "RV",
@@ -61,8 +106,13 @@ export async function getPartitionTitleEl(
   );
 }
 
-export async function getPartitionName(name: string): Promise<By> {
-  return By.xpath(`//div[@class='_title_5et1w_51' and text()='${name}']`);
+export async function getPartitionName(
+  name: string,
+  memory: string,
+): Promise<By> {
+  return By.xpath(
+    `//div[@data-test='partition-accordion-${memory}']//div[@title='${name}']`,
+  );
 }
 
 export async function getStartAddressForMemoryType(
@@ -91,7 +141,7 @@ export async function leftPartitionDropdown(
  * Creates a memory partition in the UI with the specified options and verifies its existence
  * @param view - The WebView instance representing the current UI context.
  * @param options - An object containing:
- *   @property memoryType - The type of memory (e.g., "Flash").
+ *   @property memoryType - The type of memory (e.g., "Flash" or "RAM").
  *   @property partitionName - The name of the partition to create (e.g., "smoketest").
  *   @property coreName - The name of the core to assign the partition to (e.g., "arm_cortex").
  *   @property baseBlock - The base block to select (e.g., "flash1").
@@ -101,7 +151,7 @@ export async function leftPartitionDropdown(
 export async function createAndVerifyMemoryPartition(
   view: WebView,
   options: {
-    memoryType: "Flash";
+    memoryType: "Flash" | "RAM";
     partitionName: string;
     coreName: string;
     baseBlock: string;
@@ -111,14 +161,14 @@ export async function createAndVerifyMemoryPartition(
   const { partitionName, coreName, baseBlock, sizeKB } = options;
 
   // ===Open partition creation dialog===
-  await UIUtils.clickElement(view, createPartitionButton);
+  const createPartitionBtnClick = await UIUtils.waitForElement(
+    view,
+    createPartitionButton,
+  );
+  await createPartitionBtnClick.click();
 
   // ===Select memory type===
-  await UIUtils.selectOptionFromDropdown(
-    view,
-    memoryTypeDropdown,
-    await memoryTypeSelector(options.memoryType),
-  );
+  await selectMemoryTypeWithRetry(view, options.memoryType);
 
   // ===Enter partition name===
   await UIUtils.sendKeysToElements(
@@ -128,30 +178,55 @@ export async function createAndVerifyMemoryPartition(
   );
 
   // ===Assign core===
-  await UIUtils.clickElement(view, "assigned-cores-multiselect");
-  await UIUtils.clickElement(view, `multiselect-option-${coreName}`);
+  const assignedCoresSelector = await UIUtils.waitForElement(
+    view,
+    By.css("[data-test='assigned-cores-multiselect']"),
+  );
+  await assignedCoresSelector.click();
+  const coreOptionSelector = await UIUtils.waitForElement(
+    view,
+    By.css(`[data-test='multiselect-option-${coreName}']`),
+  );
+  await coreOptionSelector.click();
 
   // ===Select base block===
-  await UIUtils.clickElement(view, "base-block-dropdown");
-  await UIUtils.clickElement(view, baseBlock);
+  const baseBlockSelector = await UIUtils.waitForElement(
+    view,
+    By.css("[data-test='base-block-dropdown']"),
+  );
+  await baseBlockSelector.click();
+  const baseBlockOptionSelector = await UIUtils.waitForElement(
+    view,
+    By.css(`[data-test='${baseBlock}']`),
+  );
+  await baseBlockOptionSelector.click();
 
   // ===Enter size===
   await UIUtils.sendKeysToElements(
     view,
-    By.css("[data-test='size-stepper'] input[type='text']"),
+    By.css("[data-test='size-stepper-control-input']"),
     sizeKB,
   );
 
   // ===Create partition and expand details===
-  await UIUtils.clickElement(view, "create-partition-button");
-  await UIUtils.clickElement(view, "partition-details-chevron");
+  const saveToCreatePartition = await UIUtils.waitForElement(
+    view,
+    By.css("[data-test='create-partition-button']"),
+  );
+  await saveToCreatePartition.click();
+  const partitionDetailsChevron = await UIUtils.waitForElement(
+    view,
+    By.css("[data-test='partition-details-chevron']"),
+  );
+  await partitionDetailsChevron.click();
 
   // ===Verify partition card exists===
   const partitionTitleCss = `[data-test='${coreName}-partition-card-title'] > h3`;
-  const partitionTitleElem = await UIUtils.clickElement(
+  const partitionTitleElem = await UIUtils.waitForElement(
     view,
     By.css(partitionTitleCss),
   );
+  await partitionTitleElem.click();
   const displayedText = await partitionTitleElem.getText();
 
   expect(displayedText).to.include(

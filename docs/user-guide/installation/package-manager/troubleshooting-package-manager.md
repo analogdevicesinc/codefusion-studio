@@ -70,19 +70,19 @@ This usually happens when your myAnalog login session has expired.
 ### Check login status Command Palette
 
 1. Open the **Command Palette** (`Ctrl+Shift+P` / `Cmd+Shift+P` on macOS).
-2. Run `CFS myAnalog Status`.
+2. Run `(CFS) myAnalog Status`.
 
     ![Check your login status ](./images/my-analog-status-dark.png#only-dark)
     ![Check your login status ](./images/my-analog-status-light.png#only-light)
 
 If you are logged out:
 
-1. Run the `CFS myAnalog Login` command in the **Command Palette**.
+1. Run the `(CFS) myAnalog Login` command in the **Command Palette**.
 
     ![Check your login status ](./images/cfs_my_analog_login-dark.png#only-dark)
     ![Check your login status ](./images/cfs_my_analog_login-light.png#only-light)
 
-2. Click **Open** to launch the browser. If the browser does not open, use the **Copy link** button to copy the link and paste it in your browser.
+2. Click **Open** to launch the browser. If the browser does not open, use the **Copy** button to copy the link and paste it in your browser.
 3. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process.
 
     ![My Analog Login](./images/login_with-my-analog.png)

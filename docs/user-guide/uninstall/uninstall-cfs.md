@@ -1,7 +1,7 @@
 ---
 description: Uninstall CodeFusion Studio
 author: Analog Devices
-date: 2026-12-01
+date: 2026-04-07
 ---
 
 # Uninstall CodeFusion Studio
@@ -22,7 +22,7 @@ date: 2026-12-01
 ![CodeFusion Extension Uninstall](images/uninstall-extension-light.png#only-light)
 
 !!! warning
-    Uninstalling CodeFusion Studio does not remove its dependent extensions. These extensions (including Microsoft C/C++ and Cortex-Debug) will remain installed in VS Code. If you no longer need them, uninstall each one separately using the same uninstall process. To view the complete list of dependent extensions, open the **Dependencies** tab in the CodeFusion Studio extension details before uninstalling.
+    Uninstalling CodeFusion Studio does not remove its dependent extensions. These extensions (including Microsoft C/C++, Cortex-Debug, and Zephelin Trace Viewer) will remain installed in VS Code. If you no longer need them, uninstall each one separately using the same uninstall process. To view the complete list of dependent extensions, open the **Dependencies** tab in the CodeFusion Studio extension details before uninstalling.
 
 ## Uninstall from file system
 
@@ -55,6 +55,6 @@ To fully reset your environment and remove cached packages, delete the following
 
 Use the following command to uninstall CodeFusion Studio from the default location:
 
-- Windows: `C:\analog\cfs\2.0.0\MaintenanceTool.exe purge`
-- Linux: `~/analog/cfs/2.0.0/MaintenanceTool purge`
-- macOS: `~/analog/cfs/2.0.0/MaintenanceTool.app/Contents/MacOS/MaintenanceTool purge`
+- Windows: `C:\analog\cfs\2.2.0\MaintenanceTool.exe purge`
+- Linux: `~/analog/cfs/2.2.0/MaintenanceTool purge`
+- macOS: `~/analog/cfs/2.2.0/MaintenanceTool.app/Contents/MacOS/MaintenanceTool purge`

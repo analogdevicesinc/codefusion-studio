@@ -19,7 +19,7 @@ export class Locatorspaths {
   public spioSignal: By = By.xpath("//*[@data-test='accordion:SPI0']");
 
   public spioSignalAssign: By = By.xpath(
-    "//*[@data-test='peripheral-signal-SPI0-chevron']",
+    "//*[@data-test='assignable-item:chevron:SPI0']",
   );
 
   public allocateArm: By = By.xpath(
@@ -31,7 +31,7 @@ export class Locatorspaths {
   );
 
   public GPIO0Signal: By = By.xpath(
-    "//*[@data-test='peripheral-signal-P0.7-container']",
+    "//*[@data-test='assignable-item:container:P0.7']",
   );
 
   public configureSettings: By = By.xpath(
@@ -92,7 +92,9 @@ export class Locatorspaths {
     return By.css(`[data-test="${peripheralName}-${signalName}-span"]`);
   }
 
-  public assignedPinsList: By = By.css("[data-test='pinmux:peripheral-navigation'] span");
+  public assignedPinsList: By = By.css(
+    "[data-test='pinmux:peripheral-navigation'] span",
+  );
 
   public pinConfigButton(peripheralName: string, signalName: string): By {
     return By.css(
@@ -142,7 +144,7 @@ export class Locatorspaths {
 
   public startAddress: By = By.css('[data-test="start-address"] input');
 
-  public sizeStepper: By = By.css("[data-test='size-stepper'] input");
+  public sizeStepper: By = By.css("[data-test='size-stepper-control-input']");
 
   public createConfiguredPartition: By = By.css(
     "[data-test='create-partition-button']",

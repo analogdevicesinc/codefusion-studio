@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,14 @@
  *
  */
 
+import { randomBytes } from "node:crypto";
+
 /**
- * A helper function that returns a unique alphanumeric identifier called a nonce.
+ * A helper function that returns a Base64-encoded string called a nonce.
  * @remarks This function is primarily used to help enforce content security policies for resources/scripts being executed in a webview context.
  * @returns A nonce
  */
 
 export function getNonce() {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+  return randomBytes(16).toString("base64");
 }

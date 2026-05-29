@@ -21,7 +21,27 @@ import TextField from './textfield';
 
 const meta: Meta<typeof TextField> = {
 	component: TextField,
-	title: 'Text field'
+	title: 'Components/Text Field',
+	argTypes: {
+		inputVal: {control: 'text'},
+		label: {control: 'text'},
+		optional: {control: 'boolean'},
+		placeholder: {control: 'text'},
+		isDisabled: {control: 'boolean'},
+		error: {control: 'text'},
+		startSlot: {control: 'text'},
+		endSlot: {control: 'text'},
+		direction: {
+			control: 'radio',
+			options: ['vertical', 'horizontal']
+		},
+		fullWidth: {control: 'boolean'},
+		onInputChange: {action: 'inputChange'},
+		onBeforeInput: {action: 'beforeInput'},
+		onKeyUp: {action: 'keyUp'},
+		onKeyDown: {action: 'keyDown'},
+		onFocus: {action: 'focus'}
+	}
 };
 
 export default meta;
@@ -33,14 +53,103 @@ export function Default(
 }
 
 Default.args = {
-	inputVal: 'input',
-	label: '',
+	inputVal: '',
+	label: 'Label',
+	placeholder: 'Placeholder text',
+	optional: false,
 	isDisabled: false,
 	error: '',
 	startSlot: '',
 	endSlot: '',
 	direction: 'vertical',
 	fullWidth: false,
+	onInputChange: (e: string) => console.log(e),
+	onBeforeInput: fn(),
+	onKeyUp: fn(),
+	onKeyDown: fn(),
+	onFocus: fn()
+};
+
+export function WithError(
+	args: React.ComponentProps<typeof TextField>
+) {
+	return <TextField {...args} />;
+}
+
+WithError.args = {
+	inputVal: 'mail@ domain.com',
+	label: 'Email address',
+	placeholder: 'Placeholder text',
+	optional: false,
+	isDisabled: false,
+	error: 'Invalid email address',
+	startSlot: '',
+	endSlot: '',
+	direction: 'vertical',
+	fullWidth: false,
+	onInputChange: (e: string) => console.log(e),
+	onBeforeInput: fn(),
+	onKeyUp: fn(),
+	onKeyDown: fn(),
+	onFocus: fn()
+};
+
+export function Horizontal(
+	args: React.ComponentProps<typeof TextField>
+) {
+	return <TextField {...args} />;
+}
+
+Horizontal.args = {
+	inputVal: '',
+	label: 'Label',
+	placeholder: 'Placeholder text',
+	optional: false,
+	isDisabled: false,
+	error: '',
+	startSlot: '',
+	endSlot: '',
+	direction: 'horizontal',
+	fullWidth: true,
+	onInputChange: (e: string) => console.log(e),
+	onBeforeInput: fn(),
+	onKeyUp: fn(),
+	onKeyDown: fn(),
+	onFocus: fn()
+};
+
+export function FullWidth(
+	args: React.ComponentProps<typeof TextField>
+) {
+	return (
+		<div
+			style={{
+				display: 'flex'
+			}}
+		>
+			<h3
+				style={{
+					flex: 0.2
+				}}
+			>
+				Sub-header
+			</h3>
+			<TextField {...args} />
+		</div>
+	);
+}
+
+FullWidth.args = {
+	inputVal: '',
+	label: '',
+	placeholder: 'Placeholder text',
+	optional: false,
+	isDisabled: false,
+	error: '',
+	startSlot: '',
+	endSlot: '',
+	direction: 'vertical',
+	fullWidth: true,
 	onInputChange: (e: string) => console.log(e),
 	onBeforeInput: fn(),
 	onKeyUp: fn(),

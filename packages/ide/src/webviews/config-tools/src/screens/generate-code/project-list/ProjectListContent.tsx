@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,11 @@ export default function ProjectListContent({
 			pin: number;
 			clock: number;
 			dfg: number;
+			mcuboot: number;
 		};
 	};
 }>) {
-	const { memory, peripheral, pin, clock, dfg } = errors?.param || {};
+	const { memory, peripheral, pin, clock, dfg, mcuboot } = errors?.param || {};
 
 	return (
 		<>
@@ -90,6 +91,13 @@ export default function ProjectListContent({
 							error={dfg}
 							path={navItems.dfg}
 							label='DFG.'
+						/>
+					)}
+					{Boolean(mcuboot) && (
+						<ProjectListContentItem
+							error={mcuboot}
+							path={navItems.mcubootConfig}
+							label='MCUboot Config.'
 						/>
 					)}
 				</div>

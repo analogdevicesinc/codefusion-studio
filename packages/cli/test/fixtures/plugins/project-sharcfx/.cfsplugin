@@ -1,0 +1,38 @@
+{
+  "pluginName": "CLI SHARCFX Project Fixture",
+  "pluginId": "com.analog.project.sharcfx.mock.plugin",
+  "pluginDescription": "Fixture SHARCFX project plugin for CLI tests.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "sharcfx",
+  "supportedSocs": [
+    {
+      "name": "ADSP-SC835",
+      "board": "ADSPSC835-EV-SOM",
+      "package": "bga_ed"
+    }
+  ],
+  "features": {
+    "project": {
+      "templates": [],
+      "files": []
+    },
+    "codegen": {
+      "templates": [],
+      "files": []
+    }
+  },
+  "properties": {
+    "project": [
+      {
+        "id": "ProjectName",
+        "name": "Project Name",
+        "default": "${context.coreId}",
+        "type": "string",
+        "required": true
+      }
+    ]
+  }
+}

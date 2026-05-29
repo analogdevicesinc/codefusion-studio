@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,33 +33,26 @@ export function handleWriteFileAction(
   action: GdbToolboxAction,
   context: Record<string, string>,
   variableContext: Record<string, string | number>,
-  responseBuffer: Record<string, any>,
+  response: string,
 ): void {
   try {
     const activeDebugSession = vscode.debug.activeDebugSession;
 
-    if(!activeDebugSession || !activeDebugSession.workspaceFolder) {
+    if (!activeDebugSession || !activeDebugSession.workspaceFolder) {
       throw new Error("No project folder is open.");
     }
 
     const resolvedFilePath = path.resolve(
-      activeDebugSession.workspaceFolder.uri.fsPath, 
+      activeDebugSession.workspaceFolder.uri.fsPath,
       substituteVars(
         action.filePath || "",
-        convertRecordValuesToString(context)
-      )
+        convertRecordValuesToString(context),
+      ),
     );
 
-    const sourceKey = action.sourceCommand
-      ? substituteVars(
-          action.sourceCommand,
-          convertRecordValuesToString(variableContext),
-        )
-      : context.command;
+    // Use the current response as the GDB output
     const gdbResponse =
-      sourceKey && responseBuffer[sourceKey]
-        ? responseBuffer[sourceKey]
-        : context.gdbOutput || "";
+      typeof response === "string" ? response : JSON.stringify(response);
 
     let resolvedContent: string;
     if ((action.content || "").trim() === "${markdownReport}") {
@@ -76,7 +69,7 @@ export function handleWriteFileAction(
       resolvedFilePath,
       resolvedContent,
       convertRecordValuesToString(variableContext),
-      { command: sourceKey || "", response: gdbResponse },
+      { command: context.command || "", response: gdbResponse },
     );
   } catch (error) {
     vscode.window.showErrorMessage(
@@ -91,43 +84,28 @@ export function handleWriteFileAction(
 export function handleAppendFileAction(
   action: GdbToolboxAction,
   context: Record<string, string>,
-  responseBuffer: Record<string, any>,
   variableContext: Record<string, string | number>,
-  response: any,
+  response: string,
 ): void {
   try {
     const activeDebugSession = vscode.debug.activeDebugSession;
 
-    if(!activeDebugSession || !activeDebugSession.workspaceFolder) {
+    if (!activeDebugSession || !activeDebugSession.workspaceFolder) {
       throw new Error("No project folder is open.");
     }
-
     const resolvedFilePath = path.resolve(
-      activeDebugSession.workspaceFolder.uri.fsPath, 
-      substituteVars(action.filePath || "", context)
+      activeDebugSession.workspaceFolder.uri.fsPath,
+      substituteVars(action.filePath || "", context),
     );
-
-    const sourceKey = action.sourceCommand
-      ? substituteVars(
-          action.sourceCommand,
-          convertRecordValuesToString(variableContext),
-        )
-      : context.command;
-    const gdbResponse =
-      sourceKey && responseBuffer[sourceKey]
-        ? responseBuffer[sourceKey]
-        : typeof response === "string"
-          ? response
-          : JSON.stringify(response);
 
     let resolvedContent: string;
     if ((action.content || "").trim() === "${markdownReport}") {
       resolvedContent = formatGdbOutputForMarkdown({
-        gdbOutput: context.gdbOutput || gdbResponse,
+        gdbOutput: context.gdbOutput || response,
       });
     } else {
       resolvedContent = substituteVars(action.content || "", {
-        gdbOutput: gdbResponse,
+        gdbOutput: response,
         ...context,
       });
     }
@@ -168,7 +146,7 @@ export function handleLogAction(
  */
 export async function handleOpenFileAction(
   action: GdbToolboxAction,
-  _response: any,
+  _response: string,
   variableContext: Record<string, string | number>,
   session?: vscode.DebugSession,
 ): Promise<void> {
@@ -255,11 +233,11 @@ export async function handleOpenFileAction(
 export function handleShowMessageAction(
   action: GdbToolboxAction,
   variableContext: Record<string, string | number>,
-  lastResponse: { command: string; response: any } | null,
+  response: string,
 ): void {
   if (action.message) {
     const msg = substituteVars(action.message, {
-      gdbOutput: lastResponse?.response,
+      gdbOutput: response,
       ...convertRecordValuesToString(variableContext),
     });
     const level = action.level || "info";
@@ -278,14 +256,12 @@ export function handleShowMessageAction(
  */
 export function handleSetVariableAction(
   action: GdbToolboxAction,
-  response: any,
+  response: string,
   variableContext: Record<string, string | number>,
 ): void {
   if (action.name && action.regex) {
     const regex = new RegExp(action.regex);
-    const target =
-      typeof response === "string" ? response : JSON.stringify(response);
-    const match = regex.exec(target);
+    const match = regex.exec(response);
     if (match && match[1]) {
       const value = match[1];
       const trimmed = value.trim();
@@ -304,7 +280,7 @@ export async function handleConditionalAction(
   session: vscode.DebugSession,
   executeActions: (
     actions: GdbToolboxAction[],
-    response: any,
+    response: string,
     session: vscode.DebugSession,
   ) => Promise<void>,
 ): Promise<void> {

@@ -1,0 +1,32 @@
+{
+	"root": true,
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/recommended",
+		"prettier"
+	],
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"project": "./tsconfig.json"
+	},
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"@typescript-eslint/no-namespace": "off",
+		"no-case-declarations": "off",
+		"no-restricted-syntax": [
+			"error",
+			{
+				"selector": "TSEnumDeclaration",
+				"message": "Enums are not allowed in cfs-types. Use union types instead to avoid generating runtime code."
+			},
+			{
+				"selector": "ClassDeclaration",
+				"message": "Classes are not allowed in cfs-types. This package must contain only type definitions (types and interfaces)."
+			},
+			{
+				"selector": "FunctionDeclaration",
+				"message": "Functions are not allowed in cfs-types. This package must contain only type definitions (types and interfaces)."
+			}
+		]
+	}
+}

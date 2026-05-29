@@ -6,6 +6,7 @@ date: 2026-02-10
 
 # Release Notes
 
+- [2.2.0 Release Notes](2.2.0.md)
 - [2.1.0 Release Notes](2.1.0.md)
 - [2.0.2 Release Notes](2.0.2.md)
 - [2.0.1 Release Notes](2.0.1.md)

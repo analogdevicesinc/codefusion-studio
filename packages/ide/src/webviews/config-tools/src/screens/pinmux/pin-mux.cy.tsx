@@ -14,10 +14,8 @@ describe('PinMUX component', () => {
 		const reduxStore = configurePreloadedStore(mock);
 
 		const canPeripheralResults = [
-			{id: 'CAN0-TX', selectedPin: 'F9'},
-			{id: 'CAN1-TX', selectedPin: 'G3'},
-			{id: 'CAN0-RX', selectedPin: 'G9'},
-			{id: 'CAN1-RX', selectedPin: 'L4'}
+			{id: 'CAN1-RX', selectedPin: 'L4'},
+			{id: 'CAN1-TX', selectedPin: 'G3'}
 		];
 
 		cy.mount(<PinMUX />, reduxStore);
@@ -29,21 +27,16 @@ describe('PinMUX component', () => {
 			cy.dataTest('search-control-input')
 				.shadow()
 				.find('input')
-				.type('CAN');
+				.type('RX');
 		});
 
-		cy.dataTest('details-view:container').should('exist');
-		cy.dataTest('details-view:container').within(() => {
-			canPeripheralResults.forEach(item => {
-				cy.dataTest(`${item.id}`)
-					.should('exist')
-					.find('> vscode-dropdown')
-					.should(
-						'have.attr',
-						'current-value',
-						`${item.selectedPin}`
-					);
-			});
+		cy.dataTest('search-result-CAN1 RX-undefined').first().click();
+
+		canPeripheralResults.forEach(item => {
+			cy.dataTest(`${item.id}`)
+				.should('exist')
+				.find('> vscode-dropdown')
+				.should('have.attr', 'current-value', `${item.selectedPin}`);
 		});
 	});
 });

@@ -41,6 +41,10 @@
 		&.error {
 			border-color: #{colors.$error};
 		}
+
+		.indicator {
+			display: flex;
+		}
 	}
 
 	.selectedBackground {
@@ -59,9 +63,19 @@
 		}
 	}
 
+	.form,
 	.default {
 		width: 100%;
 		padding: 4px 8px;
+	}
+
+	&:has(.form) {
+		background-color: colors.$input-background;
+		position: relative;
+
+		.optionsContainer {
+			width: 100%;
+		}
 	}
 
 	p {

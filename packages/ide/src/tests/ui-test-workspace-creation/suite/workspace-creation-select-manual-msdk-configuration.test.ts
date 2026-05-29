@@ -42,7 +42,7 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     await view.switchBack();
     await UIUtils.sleep(2000);
     console.log("Switched back to close editors");
-    await workbench.executeCommand("view: close all editors");
+    await workbench.executeCommand("View: Revert and Close Editor");
     await UIUtils.sleep(2000);
     console.log("Closed all editors");
   });
@@ -66,9 +66,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     // SOC Screen Selection
     console.log("Creating new workspace for MAX32690");
     await UIUtils.clickElement(view, locatorspath.selectorSoc);
-
-    console.log("Clicked on select SOC");
-
     await UIUtils.sendKeysToElements(
       view,
       locatorspath.selectorSoc,
@@ -84,11 +81,7 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     expect(socName).to.include(TextData.socNameSelect);
 
-    console.log("Clicked on radiobuttonsoc");
-
     await UIUtils.clickElement(view, locatorspath.continueButton);
-
-    console.log("Clicked on continue button");
     // Kit Selection Screen
     console.log("KIT SELECTION SCREEN");
 
@@ -111,9 +104,7 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     console.log("kitname:", kitName);
     await UIUtils.clickElement(view, locatorspath.kitSelect("EvKit_V1___TQFN"));
 
-    console.log("Clicked on kitselect");
     await UIUtils.clickElement(view, locatorspath.continueButton);
-    console.log("Clicked on continue button");
 
     await UIUtils.sleep(2000);
     // Manual Template Configuration Screen
@@ -129,15 +120,9 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     console.log("Template name:", templateName);
     expect(templateName).to.include("custom");
     await UIUtils.clickElement(view, manualConfigure);
-
     await UIUtils.sleep(2000);
-
-    console.log(
-      "Clicked on manual configure option and clicking on continue button",
-    );
     await UIUtils.clickElement(view, locatorspath.continueButton);
     // Selection of arm cortex on riscv  and  cores Screen
-    console.log("Clicked on continue button for arm cores");
     const armCores = await UIUtils.waitForElement(
       view,
       By.css(
@@ -159,7 +144,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     expect(await riscvCores.getText()).to.include("RISC-V");
     console.log("riscvcores text is included in the riscvcores element");
     await UIUtils.clickElement(view, riscvCores);
-    console.log("Clicked on riscv cores element");
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
@@ -167,14 +151,15 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     const msdk = await UIUtils.waitForElement(
       view,
-      By.css(`[data-test='coreConfig:card:com.analog.project.msdk.plugin']`),
+      By.css(
+        `[data-test='coreConfig:card:com.analog.project.msdk.mock.plugin']`,
+      ),
       2000,
     );
     const pluginid = await msdk.getAttribute("id");
-    expect(pluginid).to.include("com.analog.project.msdk.plugin");
+    expect(pluginid).to.include("com.analog.project.msdk.mock.plugin");
 
     await UIUtils.clickElement(view, msdk);
-    console.log("Clicked on msdk plugin selection");
 
     await UIUtils.sleep(2000);
     const boarddefaultname = await UIUtils.findWebElement(
@@ -184,27 +169,19 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
       ),
     );
     await UIUtils.clickElement(view, boarddefaultname);
-    console.log("Clicked on board default name input");
     const boardname = await boarddefaultname.getAttribute("current-value");
     console.log("Board name arm cortex is: " + boardname);
     expect(boardname).to.equal(TextData.evKitText);
-
-    const applybutton = await UIUtils.findWebElement(
-      view,
-      By.xpath("//*[@data-test='wrksp-footer:continue-btn']"),
-    );
     await UIUtils.sleep(2000);
-    await UIUtils.clickElement(view, applybutton);
-    console.log("Clicked on Apply button");
+    await UIUtils.clickElement(view, locatorspath.continueButton);
     // MSDK Plugin Selection for RISCV cores
     const msdkRiscv = await UIUtils.dataTest(
       view,
-      "coreConfig:card:com.analog.project.msdk.plugin",
+      "coreConfig:card:com.analog.project.msdk.mock.plugin",
     );
     const pluginIdRiscv = await msdkRiscv.getAttribute("id");
 
     await UIUtils.clickElement(view, msdkRiscv);
-    console.log("Clicked on msdk plugin selection for riscv");
     const boardNameRiscv = await UIUtils.findWebElement(
       view,
       By.xpath(
@@ -212,19 +189,12 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
       ),
     );
     await UIUtils.clickElement(view, boardNameRiscv);
-    console.log("Clicked on board default name input");
     const getBoardNameRiscv =
       await boardNameRiscv.getAttribute("current-value");
     console.log("Board name riscv is: " + getBoardNameRiscv);
     await UIUtils.sleep(2000);
-    const applyButtonRiscv = await UIUtils.findWebElement(
-      view,
-      By.xpath("//*[@data-test='wrksp-footer:continue-btn']"),
-    );
+    await UIUtils.clickElement(view, locatorspath.continueButton);
     await UIUtils.sleep(2000);
-    await UIUtils.clickElement(view, applyButtonRiscv);
-    await UIUtils.sleep(2000);
-    console.log("Clicked on apply button");
 
     // Workspace Input Screen
     console.log("WORKSPACE NAME DETAILS SCREEN");
@@ -249,14 +219,8 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     console.log("Sent workspace name to input element");
 
-    const createwsBtn = await UIUtils.findWebElement(
-      view,
-      By.xpath('//*[@id="root"]/div/div[3]/div/div/vscode-button[2]'),
-    );
-
     console.log("Found create workspace button");
-    await UIUtils.clickElement(view, createwsBtn);
-    console.log("Clicked on create workspace button");
+    await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
     await UIUtils.sleep(2000);
     // Assert that the workspace is created successfully
     const userHome = os.homedir();
@@ -264,6 +228,11 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     console.log(`location is ${location}`);
     const workspacePath = `${location}/${workspaceName}`;
     console.log(`workspacePath is ${workspacePath}`);
+    await VSBrowser.instance.driver.wait(
+      () => existsSync(workspacePath),
+      10000,
+      `Workspace was not created at expected location: ${workspacePath}`,
+    );
     expect(existsSync(workspacePath)).to.be.true;
     console.log(`Workspace created at: ${workspacePath}`);
     const cfsWorkspaceFile = path.join(workspacePath, ".cfs", ".cfsworkspace");

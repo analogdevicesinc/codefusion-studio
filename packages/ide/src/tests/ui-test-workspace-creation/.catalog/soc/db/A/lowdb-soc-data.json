@@ -42,14 +42,16 @@
           "name": "CTBGA",
           "description": "81-ball CTBGA package",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
-          "packageType": "CTBGA"
+          "packageType": "CTBGA",
+          "dataModelPackageID": "CTBGA"
         },
         {
           "id": "package_01jrdgezmjehfbfwy6sar1ek6t",
           "name": "WLP",
           "description": "51-ball WLP package",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
-          "packageType": "WLP"
+          "packageType": "WLP",
+          "dataModelPackageID": "WLP"
         }
       ],
       "boards": [
@@ -134,6 +136,64 @@
       "media": []
     },
     {
+      "id": "soc_01jrdgezp9eexs3hf01g7hzrz2",
+      "family": {
+        "id": "socfamily_01jrdgexk6ejcb9ep7s31hykmp",
+        "name": "MAX32XXX"
+      },
+      "description": "Arm® Cortex®-M33 CPU with floating-point and DSP extensions, 1MB dual-bank internal flash with ECC, 256kB internal SRAM, and Bluetooth® 5.4 Low Energy (LE) radio.",
+      "name": "MAX32657",
+      "cfsVersionConstraint": ">=2.0.0",
+      "cores": [
+        {
+          "id": "corepart_01jrdgezp9eeya9367snjddfbn",
+          "socID": "soc_01jrdgezp9eexs3hf01g7hzrz2",
+          "name": "Arm Cortex-M33",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_01jrdgexsffcna8kqgg7rp2hvx",
+            "architecture": "ARMv8-M",
+            "isa": "Thumb / Thumb-2"
+          },
+          "dataModelCoreID": "CM33",
+          "supportsTrustZone": true
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_01jrdgezp9eeytjag8bb5jdr5r",
+          "name": "WLP",
+          "description": "0.4mm pitch WLP 2.621mm by 2.621mm package",
+          "socID": "soc_01jrdgezp9eexs3hf01g7hzrz2",
+          "packageType": "WLP",
+          "dataModelPackageID": "WLP"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_01jrdgezp9eezrmd0yr9cw1f52",
+          "name": "EvKit_V1",
+          "description": "The MAX32657 EV kit evaluates the MAX32657 microcontroller. It includes an Arm® Cortex®-M33 CPU with FPU and DSP extensions, 1MB dual-bank flash with ECC, 256kB SRAM, and Bluetooth® 5.4 LE radio.",
+          "socID": "soc_01jrdgezp9eexs3hf01g7hzrz2",
+          "packageIDs": [
+            "package_01jrdgezp9eeytjag8bb5jdr5r"
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "name": "MAX32657 Product Info",
+          "url": "https://www.analog.com/",
+          "categories": [
+            "home",
+            "dashboard"
+          ]
+        }
+      ],
+      "media": []
+    },
+    {
       "id": "soc_01jrdgezphe4mrnzszxn3189wa",
       "family": {
         "id": "socfamily_01jrdgexsjeqhv7cjbkq26n3n1",
@@ -175,7 +235,8 @@
           "name": "CSBGA",
           "description": "144-ball CSBGA 12mm x 12mm package (0.8mm pitch)",
           "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
-          "packageType": "CSBGA"
+          "packageType": "CSBGA",
+          "dataModelPackageID": "CSBGA"
         }
       ],
       "boards": [
@@ -267,14 +328,16 @@
           "name": "WLP",
           "description": "140-ball WLP package (0.35mm pitch)",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
-          "packageType": "WLP"
+          "packageType": "WLP",
+          "dataModelPackageID": "WLP"
         },
         {
           "id": "package_01jrdgezrce6b9nqbjfzkfg20a",
           "name": "TQFN",
           "description": "68-pin TQFN package (0.40mm pitch)",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
-          "packageType": "TQFN"
+          "packageType": "TQFN",
+          "dataModelPackageID": "TQFN"
         }
       ],
       "boards": [
@@ -404,14 +467,16 @@
           "name": "TQFN-40",
           "description": "40-pin TQFN-EP package",
           "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
-          "packageType": "TQFN"
+          "packageType": "TQFN",
+          "dataModelPackageID": "TQFN40"
         },
         {
           "id": "package_01jrdgezssf13tmxfxgm5218j9",
           "name": "TQFN-56",
           "description": "56-pin TQFN-EP package",
           "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
-          "packageType": "TQFN"
+          "packageType": "TQFN",
+          "dataModelPackageID": "TQFN56"
         }
       ],
       "boards": [
@@ -467,7 +532,7 @@
     "data": {
       "fetchedAt": "2025-04-10T13:09:15.611Z",
       "libName": "cfs-ccm-lib",
-      "libVersion": "1.1.0-16"
+      "libVersion": "2.2.0"
     }
   }
 }

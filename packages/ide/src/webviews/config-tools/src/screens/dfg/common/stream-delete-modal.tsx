@@ -13,7 +13,6 @@
  *
  */
 
-import {type DFGStream} from 'cfs-plugins-api';
 import {Modal} from '../../../../../common/components/modal/Modal';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {useMemo} from 'react';
@@ -21,12 +20,15 @@ import {getGasketDictionary} from '../../../utils/dfg';
 import {useGasketOutputStreamMap} from '../../../state/slices/gaskets/gasket.selector';
 import {Button} from 'cfs-react-library';
 import {useAppDispatch} from '../../../state/store';
-import {removeStream} from '../../../state/slices/gaskets/gasket.reducer';
+import {
+	type DFGStreamUI,
+	removeStream
+} from '../../../state/slices/gaskets/gasket.reducer';
 import styles from './stream-delete-modal.module.scss';
 
 type StreamDeleteModalProps = {
 	readonly isOpen: boolean;
-	readonly stream: DFGStream | undefined;
+	readonly stream: DFGStreamUI | undefined;
 	readonly onClose: (deleted: boolean) => void;
 };
 
@@ -77,10 +79,12 @@ export function StreamDeleteModal({
 						<Button
 							dataTest='confirm-delete-stream'
 							onClick={() => {
-								dispatch(
-									removeStream({StreamId: stream?.StreamId ?? -1})
-								);
-								onClose(true);
+								if (stream?.Uuid) {
+									dispatch(removeStream({Uuid: stream.Uuid}));
+									onClose(true);
+								} else {
+									onClose(false);
+								}
 							}}
 						>
 							{i10n?.dfg.deleteConfirmation.deleteButton}

@@ -22,7 +22,7 @@ import {
 } from './rpn-expression-resolver';
 import {getControlsForProjectIds} from './api';
 import {CONTROL_SCOPES} from '../constants/scopes';
-import {getIsExternallyManagedProyect} from './config';
+import {getIsExternallyManagedProject} from './config';
 
 export function getSocPinResetControlValues(
 	pinId: string | undefined,
@@ -75,7 +75,7 @@ export async function computeInitialPinConfig({
 	Signal: string;
 	ProjectId: string;
 }) {
-	if (getIsExternallyManagedProyect(ProjectId)) {
+	if (getIsExternallyManagedProject(ProjectId)) {
 		return {};
 	}
 

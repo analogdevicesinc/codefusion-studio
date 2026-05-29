@@ -1,0 +1,50 @@
+{
+  "pluginName": "CLI Zephyr Project Fixture",
+  "pluginId": "com.analog.project.zephyr.mock.plugin",
+  "pluginDescription": "Fixture Zephyr project plugin for CLI tests.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "zephyr",
+  "supportedSocs": [
+    {
+      "name": "MAX78002",
+      "board": "EvKit_V1",
+      "package": "csbga"
+    },
+    {
+      "name": "MAX32690",
+      "board": "EvKit_V1",
+      "package": "wlp"
+    }
+  ],
+  "features": {
+    "project": {
+      "templates": [],
+      "files": []
+    },
+    "codegen": {
+      "templates": [],
+      "files": []
+    }
+  },
+  "properties": {
+    "project": [
+      {
+        "id": "ProjectName",
+        "name": "Project Name",
+        "default": "${context.coreId}",
+        "type": "string",
+        "required": true
+      },
+      {
+        "id": "ZephyrBoardName",
+        "name": "Zephyr Board Name",
+        "default": "max78002evkit/max78002/m4",
+        "type": "string",
+        "required": true
+      }
+    ]
+  }
+}

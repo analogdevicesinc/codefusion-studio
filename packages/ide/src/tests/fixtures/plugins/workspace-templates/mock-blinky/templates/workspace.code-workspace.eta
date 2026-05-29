@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "cfs.configureWorkspace": "Yes",
+    "cfs.project.board": "<%= it.board %>",
+    "cfs.project.target": "<%= it.soc %>",
+    "terminal.integrated.defaultProfile.windows": "CFS Terminal",
+    "terminal.integrated.defaultProfile.osx": "CFS Terminal",
+    "terminal.integrated.defaultProfile.linux": "CFS Terminal"
+  },
+  "folders": [
+    {
+      "path": ".cfs"
+    }
+<% if (it.projects && it.projects.length) { %>
+<% it.projects.forEach((project) => { %>
+<% if (!project.isEnabled) { return; } %>
+,
+    {
+      "path": "<%= project.platformConfig?.ProjectName || project.name || project.id %>"
+    }
+<% }) %>
+<% } %>
+  ]
+}

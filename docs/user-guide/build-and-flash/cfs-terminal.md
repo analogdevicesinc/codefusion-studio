@@ -1,14 +1,15 @@
 ---
 description: The CFS Terminal
 author: Analog Devices
-date: 2025-11-03
+date: 2026-05-26
 ---
 
 # CFS Terminal
 
-CodeFusion Studio (CFS) introduces a new terminal called the CFS Terminal.
+CodeFusion Studio (CFS) provides a custom terminal called the CFS Terminal.
 
-The CFS Terminal is the default terminal that opens when interacting with CodeFusion Studio and provides additional paths for CodeFusion Studio without needing any additional user configuration.
+The CFS Terminal is the default terminal that opens when interacting with CodeFusion Studio and adds CodeFusion Studio tools to your `PATH` without any additional user configuration (for example, `cfsutil` and Zephyr's `west`). Most tasks available in the IDE (such as build, flash, and workspace management) have command-line equivalents in `cfsutil` that can be run from the CFS Terminal. See the [CFS Command Line Utility](../cfsutil/index.md) documentation for more information.
+
 The underlying shell depends on your host operating system:
 
 - `cmd` on Windows
@@ -30,7 +31,7 @@ The underlying shell depends on your host operating system:
     ![New CFS Terminal](./images/terminal-new-dark.png#only-dark)  
     ![New CFS Terminal](./images/terminal-new-light.png#only-light)
 
-4. Run `cfsutil` or `cfsai` in the terminal to confirm it's working correctly.
+4. Run `cfsutil` in the terminal to confirm it's working correctly.
 
 ## Clear the terminal
 

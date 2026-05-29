@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,17 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {decimalToHex} from 'cfs-lib';
 
 // import {SYMBOLS_TABLE_ID} from 'elf-parser'
 
+import Table from 'cli-table3';
 import {ElfFileParser} from 'elf-parser';
 
 import {Logger} from '../../logger.js';
-
-import Table = require('cli-table3');
+import {BaseCommand} from '../../utils/base-command.js';
+import {tableOutputStyles} from '../../utils/utils.js';
 
 // TODO move code to cfs-lib
 
@@ -64,7 +65,7 @@ const serializeSymbols = (symbols: TSymbol[]): TSymbol[] =>
     return newSymbol;
   });
 
-export default class Symbols extends Command {
+export default class Symbols extends BaseCommand<typeof Symbols> {
   static args = {
     filePath: Args.string({description: 'file path  to read'}),
     sqlQuery: Args.string({description: 'Sql query to execute'})
@@ -73,20 +74,17 @@ export default class Symbols extends Command {
   static description = 'Query symbols contained within the ELF file';
 
   static flags = {
-    json: Flags.boolean({
-      char: 'j',
-      description: 'Export in JSON format'
-    }),
     full: Flags.boolean({char: 'f', description: 'Print full path'})
   };
 
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Symbols);
+  public async run(): Promise<{
+    data: TSymbol[];
+    RowsTotalNumber: number;
+  }> {
+    const {args, flags} = this;
 
     if (args.sqlQuery && args.filePath) {
-      if (!flags.json) {
-        console.log(`SQL: ${args.sqlQuery}`);
-      }
+      this.log(`SQL: ${args.sqlQuery}`);
 
       try {
         // const {modifiedQuery, paramValues} = formatQuery(args.sqlQuery)
@@ -147,37 +145,30 @@ export default class Symbols extends Command {
           }
         });
 
-        if (dataResult !== undefined && dataResult.length > 0) {
-          if (flags.json) {
-            let jsonString =
-              '{\n"Data":' + JSON.stringify(dataResult);
-            if (dataResult.length > 0) {
-              jsonString +=
-                ',\n"RowsTotalNumber":' + dataResult.length + '\n';
-            }
+        if (
+          dataResult !== undefined &&
+          dataResult.length > 0 &&
+          !this.jsonEnabled()
+        ) {
+          const table = new Table({
+            head: Object.getOwnPropertyNames(dataResult[0]),
+            ...tableOutputStyles()
+          });
 
-            jsonString += '}';
-            console.log(
-              JSON.stringify(JSON.parse(jsonString), null, 2)
-            );
-          } else {
-            const table = new Table({
-              head: Object.getOwnPropertyNames(dataResult[0])
-            });
-
-            for (const item of dataResult) {
-              table.push(Object.values(item));
-            }
-
-            console.log(table.toString());
-            console.log(`\nNumber of rows: ${dataResult.length}`);
+          for (const item of dataResult) {
+            table.push(Object.values(item));
           }
+
+          this.log(table.toString());
+          this.log(`\nNumber of rows: ${dataResult.length}`);
         }
+
+        return {data: dataResult, RowsTotalNumber: dataResult.length};
       } catch (error) {
-        Logger.logError(`${error}`);
+        return Logger.logError(`${error}`);
       }
     } else {
-      Logger.logError(
+      return Logger.logError(
         `No input file or query to execute. Please provide a valid file path and a valid query.`
       );
     }

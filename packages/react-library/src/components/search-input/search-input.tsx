@@ -67,17 +67,18 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
 				}}
 				startSlot={<SearchIcon />}
 				endSlot={
-					inputVal ? (
-						<Button
-							appearance='icon'
-							onClick={onClear}
-							disabled={disabled}
-						>
-							<CloseIcon />
-						</Button>
-					) : rightAdornment ? (
-						rightAdornment
-					) : undefined
+					<>
+						{rightAdornment ? rightAdornment : undefined}
+						{inputVal && (
+							<Button
+								appearance='icon'
+								onClick={onClear}
+								disabled={disabled}
+							>
+								<CloseIcon />
+							</Button>
+						)}
+					</>
 				}
 			/>
 		);

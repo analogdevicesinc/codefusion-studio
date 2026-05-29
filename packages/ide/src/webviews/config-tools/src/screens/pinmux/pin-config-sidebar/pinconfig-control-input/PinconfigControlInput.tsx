@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  */
 import {useState, useMemo, useEffect} from 'react';
 import {TextField} from 'cfs-react-library';
-import {usePinConfigError} from '../../../../state/slices/pins/pins.selector';
 import {generateValidationErrorType} from '@common/utils/validate-inputs';
 import {useAppDispatch} from '../../../../state/store';
 import {setAppliedSignalControlValue} from '../../../../state/slices/pins/pins.reducer';
@@ -27,15 +26,15 @@ import type {
 } from '@common/types/errorTypes';
 import type {ControlCfg} from '@common/types/soc';
 
-type PinconfigControlInputProps = {
-	readonly controlCfg: ControlCfg;
-	readonly controlValue?: string;
-	readonly defaultControlValue?: string;
-	readonly pinId?: string;
-	readonly peripheral?: string;
-	readonly signal?: string;
-	readonly projectId?: string;
-};
+type PinconfigControlInputProps = Readonly<{
+	controlCfg: ControlCfg;
+	controlValue?: string;
+	defaultControlValue?: string;
+	pinId?: string;
+	peripheral?: string;
+	signal?: string;
+	projectId?: string;
+}>;
 
 export default function PinconfigControlInput({
 	controlCfg,
@@ -65,11 +64,16 @@ export default function PinconfigControlInput({
 	const label = SET_INSTRUCTION + ' ' + (Description ?? '');
 	const unit = Units ?? '';
 
-	const errType = usePinConfigError(
-		pinId ?? '',
-		peripheral!,
-		signal!,
-		Id
+	const errType = useMemo(
+		() =>
+			generateValidationErrorType({
+				content: input ?? '',
+				controlType: Type as TControlTypes,
+				minVal: MinimumValue,
+				maxVal: MaximumValue,
+				pattern: Pattern
+			}),
+		[input, Type, MinimumValue, MaximumValue, Pattern]
 	);
 
 	const debounceInputChange = useMemo(
@@ -129,13 +133,12 @@ export default function PinconfigControlInput({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [controlValue, defaultControlValue]);
 
-	useEffect(() => {
-		if (controlValue === input) return;
-
-		// Synchronizes local and store state to cover undo-redo scenarios
-		setInput(controlValue);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [controlValue]);
+	useEffect(
+		() => () => {
+			debounceInputChange.cancel();
+		},
+		[debounceInputChange]
+	);
 
 	return (
 		<TextField

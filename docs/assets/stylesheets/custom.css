@@ -1,0 +1,11 @@
+/**
+ * Copyright (c) 2024-2026 Analog Devices, Inc. All rights reserved.
+ */
+
+/* Improve table column widths globally */
+
+/* Give first column more breathing room to prevent wrapping of long flags/commands */
+.md-typeset table thead th:first-child,
+.md-typeset table tbody td:first-child {
+    min-width: 200px;
+}

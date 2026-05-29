@@ -55,11 +55,8 @@ export const SlidingPanel = ({
 					<div className={styles.title}>
 						<h2>{title}</h2>
 						{isCloseable && (
-							<Button appearance='icon'>
-								<CloseIcon
-									className={styles.closeIcon}
-									onClick={closeSlider}
-								/>
+							<Button appearance='icon' onClick={closeSlider}>
+								<CloseIcon className={styles.closeIcon} />
 							</Button>
 						)}
 					</div>

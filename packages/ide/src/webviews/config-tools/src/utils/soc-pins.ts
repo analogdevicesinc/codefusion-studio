@@ -26,6 +26,7 @@ let socPackage: Package = {} as Package;
 let pinDictionary: Record<string, Pin> = {};
 let configurablePins: Pin[] | undefined;
 let fixedFuntionPins: Pin[] | undefined;
+let pinByPeripheralSignalMap: Map<string, Pin> | undefined;
 
 /**
  * Initializes the SoC package and resets pin dictionaries.
@@ -35,6 +36,19 @@ export function initializeSocPackage(pkg: Package | undefined) {
 	resetPinInfo();
 
 	socPackage = pkg ?? ({} as Package);
+}
+
+function buildPinLookupMap(): Map<string, Pin> {
+	const map = new Map<string, Pin>();
+
+	Object.values(getSocPinDictionary()).forEach(pin => {
+		pin.Signals?.forEach(signal => {
+			const key = `${signal.Peripheral}__${signal.Name}`;
+			map.set(key, pin);
+		});
+	});
+
+	return map;
 }
 
 function formatSocPinsDictionary(
@@ -164,4 +178,17 @@ export function getPinsByPeripheralSignalDictionary(
 	}
 
 	return dictionary;
+}
+
+export function getPinByPeripheralSignal(
+	peripheralName: string,
+	signalName: string
+): Pin | undefined {
+	if (!pinByPeripheralSignalMap) {
+		pinByPeripheralSignalMap = buildPinLookupMap();
+	}
+
+	return pinByPeripheralSignalMap.get(
+		`${peripheralName}__${signalName}`
+	);
 }

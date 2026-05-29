@@ -13,7 +13,7 @@
     "name": "Analog Devices Inc"
   },
   "license": "See LICENSE",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "engines": {
     "vscode": "^1.96.0",
     "node": "^20.x"
@@ -59,6 +59,10 @@
           {
             "name": "help",
             "description": "Get help with debugging commands"
+          },
+          {
+            "name": "gdb",
+            "description": "Execute a GDB command in the active debug session"
           }
         ]
       }
@@ -74,6 +78,24 @@
         ]
       },
       {
+        "viewType": "cfs.modelWorkspaceCreation",
+        "displayName": "Model Workspace Creation",
+        "selector": [
+          {
+            "filenamePattern": "*.cfsworkspace"
+          }
+        ]
+      },
+      {
+        "viewType": "cfs.aiHardwareProfiling",
+        "displayName": "AI Model Hardware Profiling",
+        "selector": [
+          {
+            "filenamePattern": "*.cfsaiprof"
+          }
+        ]
+      },
+      {
         "viewType": "cfgtools.editor",
         "displayName": "System Planner",
         "selector": [
@@ -82,6 +104,26 @@
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "cfs.reportViewer",
+        "displayName": "Codefusion Studio Report Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.cfsreport"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "cfs.reportViewer.json",
+        "displayName": "Codefusion Studio Report Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.json"
+          }
+        ],
+        "priority": "option"
       },
       {
         "viewType": "elf.fileEditor",
@@ -128,6 +170,18 @@
             "filenamePattern": "*.ssprj"
           }
         ]
+      },
+      {
+        "viewType": "cfs.sev.editor",
+        "displayName": "System Event Viewer",
+        "selector": [
+          {
+            "filenamePattern": "cfs-sev:**/*"
+          },
+          {
+            "filenamePattern": "*.cfsevents"
+          }
+        ]
       }
     ],
     "viewsContainers": {
@@ -135,6 +189,13 @@
         {
           "id": "CodeFusionStudio",
           "title": "CodeFusion Studio",
+          "icon": "media/images/cfs-activitybar-icon.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "cfs-debug-memory-viewer",
+          "title": "CFS Memory",
           "icon": "media/images/cfs-activitybar-icon.svg"
         }
       ]
@@ -162,6 +223,11 @@
           "name": "DeviceTree",
           "type": "tree",
           "contextualTitle": "DeviceTree"
+        },
+        {
+          "id": "cfs.traceCapturePanel",
+          "name": "Trace Capture",
+          "type": "webview"
         }
       ],
       "debug": [
@@ -174,6 +240,22 @@
           "id": "cfs.coreDumpTreeView",
           "name": "Core Dump Analysis",
           "type": "tree"
+        },
+        {
+          "id": "cfs.systemEventViewer",
+          "name": "System Event Viewer",
+          "type": "webview",
+          "contextualTitle": "CFS",
+          "when": "config.cfs.project.target in cfs.sev.supportedSocs",
+          "icon": "$(graph-scatter)"
+        }
+      ],
+      "cfs-debug-memory-viewer": [
+        {
+          "id": "cfs.memory.view",
+          "name": "CFS Memory Viewer",
+          "type": "webview",
+          "when": "cfs.features.memoryViewer.enabled"
         }
       ]
     },
@@ -201,6 +283,10 @@
       {
         "view": "cfs.coreDumpTreeView",
         "contents": "Loading Core Dump Analysis..."
+      },
+      {
+        "view": "cfs.systemEventViewer",
+        "contents": "System Event Viewer is only available during debug sessions"
       }
     ],
     "terminal": {
@@ -291,6 +377,10 @@
         "title": "(CFS) Select the Zephyr Workspace."
       },
       {
+        "command": "cfs.getToolchainPath",
+        "title": "(CFS) Get the toolchain path using the cfs.project.toolchain.id."
+      },
+      {
         "command": "cfgtools.loadConfig",
         "title": "(CFS) Load configuration file",
         "category": "Config Tools",
@@ -367,6 +457,10 @@
         "title": "(CFS) Uninstall Package"
       },
       {
+        "command": "cfs.deletePackage",
+        "title": "(CFS) Delete Package from Cache"
+      },
+      {
         "command": "cfs.manageRemotes",
         "title": "(CFS) Manage Package Remotes"
       },
@@ -381,16 +475,6 @@
       {
         "command": "cfs.authRemote",
         "title": "(CFS) Set Custom Package Remote Authentication"
-      },
-      {
-        "command": "cfs.zephelin.captureProfilerTrace",
-        "title": "Capture Profiler Trace (Zephelin)",
-        "category": "Zephelin"
-      },
-      {
-        "command": "cfs.zephelin.convertTraceCtfToTef",
-        "title": "Prepare CTF Trace for Visualization (Zephelin)",
-        "category": "Zephelin"
       },
       {
         "command": "cfs.runGdbToolboxScript",
@@ -462,6 +546,21 @@
         "command": "cfs.coreDumpCopyFilePath",
         "title": "Copy File Path",
         "icon": "$(copy)"
+      },
+      {
+        "command": "cfs.openAIReportFile",
+        "title": "Open Report File",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "cfs.openTraceConfiguration",
+        "title": "(CFS) Open Trace Configuration"
+      },
+      {
+        "command": "cfs.sev.open",
+        "title": "Open Event Viewer",
+        "icon": "$(graph-scatter)",
+        "enablement": "debugState == stopped"
       }
     ],
     "menus": {
@@ -507,6 +606,11 @@
           "command": "cfs.downloadCoreDumpReport",
           "when": "view == cfs.coreDumpTreeView && cfs.coreDumpViewsVisible",
           "group": "navigation@4"
+        },
+        {
+          "command": "cfs.sev.open",
+          "when": "view == cfs.systemEventViewer",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -624,6 +728,12 @@
             "description": "Unique user ID for telemetry. This is generated on first run and should not be changed.",
             "scope": "machine-overridable"
           },
+          "cfs.telemetry.userType": {
+            "type": "string",
+            "default": "",
+            "description": "User type for telemetry. The user will either be internal or external.",
+            "scope": "machine-overridable"
+          },
           "cfs.environment": {
             "type": "object",
             "default": {},
@@ -682,6 +792,45 @@
             "default": false,
             "description": "Automatically run the MCP debug server on extension activation. **This is an experimental feature.**",
             "scope": "machine-overridable"
+          },
+          "cfs.traceCapture.configuration": {
+            "type": "object",
+            "default": {},
+            "description": "Trace capture configuration for CodeFusion Studio.",
+            "scope": "window",
+            "properties": {
+              "interfaceType": {
+                "type": "string",
+                "enum": [
+                  "uart",
+                  "usb"
+                ]
+              },
+              "serialPort": {
+                "type": "string"
+              },
+              "baudRate": {
+                "type": "number"
+              },
+              "outputDirectory": {
+                "type": "string"
+              },
+              "autoReset": {
+                "type": "boolean"
+              },
+              "elfFile": {
+                "type": "string"
+              },
+              "buildDir": {
+                "type": "string"
+              },
+              "aiModels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
@@ -699,7 +848,7 @@
           "cfs.catalogManager.catalogLocation": {
             "type": "string",
             "order": 2,
-            "default": "${userHome}/cfs/2.1.0/.catalog",
+            "default": "${userHome}/cfs/2.2.0/.catalog",
             "description": "Path to the directory where the catalog will be stored.",
             "scope": "machine-overridable"
           }
@@ -877,6 +1026,11 @@
           "cfs.project.toolchain.id": {
             "type": "string",
             "description": "Toolchain ID for the project. Used to resolve toolchain paths dynamically",
+            "scope": "resource"
+          },
+          "cfs.project.toolchain.path": {
+            "type": "string",
+            "description": "Toolchain path for the project. Overrides dynamically resolved toolchain paths when set.",
             "scope": "resource"
           },
           "cfs.project.sdk.id": {
@@ -1185,18 +1339,7 @@
                 "set logging on",
                 "set remotetimeout 60"
               ],
-              "preLaunchTask": "CFS: build",
-              "overrideLaunchCommands": [
-                "monitor halt",
-                "monitor reset",
-                "-target-download"
-              ],
-              "overrideResetCommands": [
-                "monitor reset"
-              ],
-              "overrideRestartCommands": [
-                "monitor reset"
-              ]
+              "preLaunchTask": "CFS: build"
             }
           },
           {
@@ -1308,7 +1451,8 @@
               "svdPath": "${config:cfs.cmsis.svdFile}",
               "executable": "^\"\\${workspaceFolder}/build/zephyr/zephyr.elf\"",
               "cwd": "^\"\\${workspaceFolder}\"",
-              "overrideLaunchCommands": []
+              "overrideLaunchCommands": [],
+              "coreDump": true
             }
           }
         ]
@@ -1335,11 +1479,22 @@
         "id": "cfs-mcp",
         "label": "CFS MCP Server Provider"
       }
+    ],
+    "languages": [
+      {
+        "id": "json",
+        "extensions": [
+          ".cfsconfig",
+          ".cfsworkspace",
+          ".cfsreport"
+        ]
+      }
     ]
   },
   "extensionDependencies": [
     "ms-vscode.cpptools",
-    "marus25.cortex-debug"
+    "marus25.cortex-debug",
+    "antmicro.zephelin-trace"
   ],
   "vsce": {
     "dependencies": false,
@@ -1358,42 +1513,81 @@
     "ide:lint": "eslint --ext .ts --ignore-path .gitignore --ignore-pattern \"src/webviews/**\" .",
     "ide:run-extester": "yarn ide:compile-tests && node out/tests/ui-test/runTest.js",
     "ide:compile-tests": "tsc -p src/tests/ui-test/tsconfig.json",
+    "ide:compile-unit-tests": "tsc -p tsconfig.unit-tests.json",
+    "ide:test-unit": "yarn run build:extension && yarn run ide:compile-unit-tests && vscode-test",
     "elf:dev": "vite --config ./vite.config.elf-explorer.mts",
     "elf:build": "vite build --config ./vite.config.elf-explorer.mts",
     "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.ts src/webviews/elf-explorer/**/*.tsx && tsc --noEmit -p ./src/webviews/elf.tsconfig.json",
     "elf:run-cypress": "cypress run --component --browser electron --spec './src/webviews/elf-explorer/**/*.cy.ts*'",
+    "report-viewer:dev": "vite --config ./vite.config.report-viewer.mts",
+    "report-viewer:build": "vite build --config ./vite.config.report-viewer.mts",
+    "report-viewer:build-dev": "vite build --mode development --config ./vite.config.report-viewer.mts --watch",
+    "report-viewer:lint": "eslint ./src/webviews/report-viewer/**/*.ts src/webviews/report-viewer/**/*.tsx && tsc --noEmit -p ./src/webviews/report-viewer.tsconfig.json",
+    "report-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/report-viewer/**/*.cy.ts*'",
     "home-page:dev": "vite --config ./vite.config.home-page.mts",
     "home-page:build": "vite build --config ./vite.config.home-page.mts",
     "home-page:build-dev": "vite build --mode development --config ./vite.config.home-page.mts --watch",
     "home-page:lint": "eslint ./src/webviews/home-page/**/*.ts ./src/webviews/home-page/**/*.tsx && tsc --noEmit -p ./src/webviews/home.tsconfig.json",
+    "mem-viewer:dev": "vite --config ./vite.config.memory-viewer.mts",
+    "mem-viewer:build": "vite build --config ./vite.config.memory-viewer.mts",
+    "mem-viewer:build-dev": "vite build --mode development --config ./vite.config.memory-viewer.mts --watch",
+    "mem-viewer:lint": "eslint ./src/webviews/memory-viewer/**/*.ts ./src/webviews/memory-viewer/**/*.tsx && tsc --noEmit -p ./src/webviews/memory-viewer.tsconfig.json",
+    "mem-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/memory-viewer/**/*.cy.tsx'",
+    "mem-viewer:run-extester": "yarn mem-viewer:compile-tests && node out/tests/ui-test-memory-viewer/runTest.js",
+    "mem-viewer:compile-tests": "tsc -p src/tests/ui-test-memory-viewer/tsconfig.json && yarn ws:data-models generate-index",
+    "trace-side-panel:dev": "vite --config ./vite.config.trace-side-panel.mts",
+    "trace-side-panel:build": "vite build --config ./vite.config.trace-side-panel.mts",
+    "trace-side-panel:build-dev": "vite build --mode development --config ./vite.config.trace-side-panel.mts --watch",
+    "trace-side-panel:lint": "eslint ./src/webviews/trace-side-panel/**/*.ts ./src/webviews/trace-side-panel/**/*.tsx && tsc --noEmit -p ./src/webviews/trace-side-panel.tsconfig.json",
+    "trace-configuration:dev": "vite --config ./vite.config.trace-configuration.mts",
+    "trace-configuration:build": "vite build --config ./vite.config.trace-configuration.mts",
+    "trace-configuration:build-dev": "vite build --mode development --config ./vite.config.trace-configuration.mts --watch",
+    "trace-configuration:lint": "eslint ./src/webviews/trace-configuration/**/*.ts ./src/webviews/trace-configuration/**/*.tsx && tsc --noEmit -p ./src/webviews/trace-configuration.tsconfig.json",
+    "sev:build": "vite build --config ./vite.config.system-event-viewer.mts",
+    "sev:lint": "eslint ./src/webviews/system-event-viewer/**/*.ts* && tsc --noEmit -p ./src/webviews/system-event-viewer.tsconfig.json",
+    "sev:run-extester": "yarn sev:compile-tests && node out/tests/ui-test-system-event-viewer/runTest.js",
+    "sev:compile-tests": "tsc -p src/tests/ui-test-system-event-viewer/tsconfig.json && yarn ws:data-models generate-index",
+    "sev:dev": "vite build --mode development --config ./vite.config.system-event-viewer.mts --watch",
+    "sev:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer/**/*.cy.ts*'",
+    "sev-treeview:build": "vite build --config ./vite.config.system-event-viewer-treeview.mts",
+    "sev-treeview:lint": "eslint ./src/webviews/system-event-viewer-treeview/**/*.ts* && tsc --noEmit -p ./src/webviews/system-event-viewer-treeview.tsconfig.json",
+    "sev-treeview:dev": "vite build --mode development --config ./vite.config.system-event-viewer-treeview.mts --watch",
+    "sev-treeview:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer-treeview/**/*.cy.ts*'",
     "wrksp:build": "vite build --config ./vite.config.workspace-creation.mts",
     "wrksp:build-dev": "vite build --mode development --config ./vite.config.workspace-creation.mts --watch",
     "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.ts ./src/webviews/workspace-creation/**/*.tsx && tsc --noEmit -p ./src/webviews/workspace.tsconfig.json",
     "wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/workspace-creation/**/*.cy.tsx'",
     "wrksp:run-extester": "yarn wrksp:compile-tests && node out/tests/ui-test-workspace-creation/runTest.js",
     "wrksp:compile-tests": "tsc -p src/tests/ui-test-workspace-creation/tsconfig.json && yarn ws:data-models generate-index",
+    "model-wrksp:build": "vite build --config ./vite.config.model-workspace-creation.mts",
+    "model-wrksp:build-dev": "vite build --mode development --config ./vite.config.model-workspace-creation.mts --watch",
+    "model-wrksp:lint": "eslint ./src/webviews/model-workspace/**/*.ts ./src/webviews/model-workspace/**/*.tsx && tsc --noEmit -p ./src/webviews/model-workspace.tsconfig.json",
+    "model-wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/model-workspace/**/*.cy.tsx'",
+    "ai-profiling:build": "vite build --config ./vite.config.ai-hardware-profiling.mts",
+    "ai-profiling:build-dev": "vite build --mode development --config ./vite.config.ai-hardware-profiling.mts --watch",
+    "ai-profiling:lint": "eslint ./src/webviews/ai-hardware-profiling/**/*.ts ./src/webviews/ai-hardware-profiling/**/*.tsx && tsc --noEmit -p ./src/webviews/ai-hardware-profiling.tsconfig.json",
+    "ai-profiling:run-cypress": "cypress run --component --browser electron --spec './src/webviews/ai-hardware-profiling/**/*.cy.tsx'",
     "ssplus:build": "vite build --config ./vite.config.sigma-studio-plus-project.mts",
     "ssplus:lint": "eslint ./src/webviews/sigma-studio-plus-project/**/*.tsx && tsc --noEmit -p ./src/webviews/sigma-studio-plus-project.tsconfig.json",
     "webviews:lint-common": "eslint src/webviews/common/**/*.ts src/webviews/common/**/*.tsx && tsc --noEmit -p src/webviews/common/tsconfig.json",
     "build-local-deps": "yarn ws:react-lib build && yarn ws:elf-parser build && yarn ws:lib build && yarn ws:ccm-lib build",
-    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests",
+    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests && yarn sev:compile-tests",
     "vite:extension": "vite build --mode extension",
     "vite:watch": "vite build --watch",
     "dev:config-tools": "vite --config ./vite.config.config-tools.mts",
-    "pretest": "yarn run build:extension",
     "stylelint": "npx stylelint \"**/src/**/*.{scss,css}\" --fix",
     "markdownlint": "npx markdownlint-cli docs/**/*.md",
     "test:cy-run-component": "cypress run --component --browser electron",
     "test:ui": "extest setup-and-run \"out/tests/ui-test/**/*-test.js\" -c 1.85.2 -u --mocha_config .mocharc.js",
-    "test:unit": "yarn run pretest && vscode-test --code-version 1.85.2",
     "package": "vsce package --baseImagesUrl https://github.com/analogdevicesinc/codefusion-studio/raw/HEAD/packages/ide",
     "auth-cfg": "node build-scripts/auth-config.js > auth.json",
-    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn home-page:build && yarn wrksp:build && yarn ssplus:build && yarn ide:build && yarn auth-cfg"
+    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn mem-viewer:build && yarn home-page:build && yarn wrksp:build && yarn && yarn trace-side-panel:build && yarn trace-configuration:build && yarn report-viewer:build && yarn model-wrksp:build && yarn ai-profiling:build && yarn && yarn ssplus:build && yarn sev:build && yarn sev-treeview:build && yarn ide:build && yarn auth-cfg"
   },
   "devDependencies": {
     "@types/chai": "^4.3.10",
     "@types/jexl": "^2",
     "@types/lodash.debounce": "^4.0.8",
+    "@types/lodash.throttle": "^4.0.8",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.27",
     "@types/path-browserify": "^1.0.2",
@@ -1409,7 +1603,8 @@
     "@vscode/codicons": "^0.0.35",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "2.3.8",
-    "@vscode/vsce": "^3.2.2",
+    "@vscode/vsce": "^3.7.1",
+    "cfs-types": "workspace:^",
     "chai": "^4.3.7",
     "clipboardy": "2.3.0",
     "concurrently": "^8.2.2",
@@ -1453,7 +1648,7 @@
     "stylelint-config-recess-order": "^4.4.0",
     "stylelint-config-standard": "^36.0.0",
     "stylelint-config-standard-scss": "^13.0.0",
-    "typescript": "5.0.4",
+    "typescript": "^5.4.0",
     "vite": "^5.2.11",
     "vite-plugin-node-polyfills": "^0.19.0",
     "vite-tsconfig-paths": "^4.3.2",
@@ -1464,6 +1659,8 @@
     "@reduxjs/toolkit": "^2.0.1",
     "@types/express": "^5.0.3",
     "@vscode/webview-ui-toolkit": "^1.4.0",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
     "cfs-ccm-lib": "workspace:*",
     "cfs-lib": "workspace:*",
     "cfs-package-manager": "workspace:^",
@@ -1471,18 +1668,24 @@
     "echarts": "^5.5.0",
     "echarts-for-react": "^3.0.2",
     "elf-parser": "workspace:^",
-    "glob": "^10.4.1",
+    "fast-glob": "^3.3.3",
     "htmlparser2": "^9.1.0",
     "jsonc-parser": "^3.3.1",
     "lodash.debounce": "^4.0.8",
+    "lodash.throttle": "^4.0.8",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.21.1",
+    "react-window": "^2.2.7",
+    "react-window-infinite-loader": "^2.0.1",
     "recharts": "^2.12.6",
-    "semver": "^7.7.2",
+    "semver": "^7.7.3",
+    "serialport": "^13.0.0",
     "swiper": "^11.0.5",
+    "vscode-messenger": "^0.6.0",
+    "vscode-messenger-webview": "^0.6.0",
     "zod": "^3.25.76"
   },
   "resolutions": {

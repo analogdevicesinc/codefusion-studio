@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,14 @@ export type {
 	CfsPackageRemote,
 	CfsPackageReference,
 	CfsPackage,
+	CfsCachedPackage,
 	CfsInstalledPackage,
 	CfsPackageManifest,
-	CfsPackageInstallOptions
+	CfsPackageInstallOptions,
+	CfsInstallInput,
+	CfsInstallPlan,
+	CfsPackageLicenseInfo,
+	CfsPackageLicenseReporter,
+	CfsPackageFilter,
+	CfsPackageComponent
 } from "./api/api.d.ts";

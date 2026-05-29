@@ -1,7 +1,7 @@
 ---
 description: Memory Allocation for CodeFusion Studio
 author: Analog Devices
-date: "2025-07-29"
+date: "2026-05-25"
 ---
 
 # Memory Allocation
@@ -33,9 +33,9 @@ The partition form includes the following fields:
 
 - **Memory Type**: The type of memory (e.g., RAM, FLASH).
 - **Partition Name**: A unique name for the partition.
-- **Assigned Cores**: The cores that will access the partition (e.g., ARM Cortex-M4). Multiple cores can be selected for a shared memory region.
-- **Access Permissions**: Configure access permissions (for example: read, read/write) for each assigned core. If multiple cores are assigned, you can designate one of them as the owner. The owner core is responsible for initializing the memory. Other cores may access the memory but do not manage it.
-- **Plugin Options**: Use these fields to pass additional configuration to the code generation plugin for the selected core. The available options depend on the firmware platform. For example, for a Zephyr-based core, you can enter `sram` or `flash` into the chosen field to assign a specific role (such as system SRAM or flash storage) to the memory region. Multiple values can be entered as a comma-separated list.
+- **Assigned Projects**: The projects that will access the partition. Multiple projects can be selected for a shared memory region.
+- **Access Permissions**: Configure access permissions (for example: read, read/write) for each assigned project. If multiple projects are assigned, you can designate one of them as the owner. The owner project is responsible for initializing the memory. Other projects may access the memory but do not manage it.
+- **Plugin Options**: Fields used to pass additional configurations to the code generation plugin for the selected project. The available options depend on the firmware platform. For example, in a Zephyr-based project, you can enter `sram` or `flash` into the chosen field to assign a specific role (such as system SRAM or flash storage) to the memory region. Multiple values can be entered as a comma-separated list.
 - **Base Block** (Optional): The base memory block (for example: System RAM Block 8). If left blank, this value is automatically determined based on the **Starting Address**.
 - **Starting Address**: The starting address of the partition in hexadecimal format. If a **Base Block** is selected, this field updates accordingly.
 - **Size**:  The partition size in KB, MB or bytes.

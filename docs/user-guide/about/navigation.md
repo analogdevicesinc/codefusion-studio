@@ -1,7 +1,7 @@
 ---
 description: Description of the user interface for CodeFusion Studio.
 author: Analog Devices
-date: 2025-04-23
+date: 2026-05-23
 ---
 
 # Navigation
@@ -20,10 +20,10 @@ An overview of the CodeFusion Studio layout and navigation.
    Displays the current project and allows switching between projects in the workspace.  
 
 3. **Home view**  
-   Provides access to key actions such as workspace creation and configuration, ELF file visualization, and config file access.  
+   Provides access to workspace creation, configuration tools, ELF file exploration, AI workspace deployment, and AI compatibility and performance reports.  
 
 4. **Actions view**  
-   Displays tasks such as build, clean, erase, flash, and debug. The available actions update dynamically based on the selected project in the **Context** view(2).
+   Displays tasks such as build, clean, erase, flash, and debug. The available actions update dynamically based on the selected project in the **Context** view (2).
 
     !!! Tip
         Click **Copy and Edit** ![Copy and Edit tasks in the Actions view](../build-and-flash/images/copy_and_edit-tasks-actions-view-dark.png#only-dark)![Copy and Edit tasks in the Actions view](../build-and-flash/images/copy_and_edit-tasks-actions-view-light.png#only-light) next to a task to create a new custom task.
@@ -31,10 +31,13 @@ An overview of the CodeFusion Studio layout and navigation.
 5. **Device tree view**  
    Displays hardware components when opening a device tree file.  
 
-6. **Support resources**  
+6. **Trace capture**  
+   Capture profiling traces from Zephyr projects and view runtime and AI inference performance in an integrated flamegraph visualization. For setup instructions, see [Profiling](../tools/profiling.md).
+
+7. **Support resources**  
    Provides links to CodeFusion Studio support resources. See [Help](help.md) for more information.
 
-7. **VS Code Status Bar**  
+8. **VS Code Status Bar**  
    Displays information and actions that relate to your workspace. Use the icons on the left of the status bar to perform build tasks.
 
 !!! Note

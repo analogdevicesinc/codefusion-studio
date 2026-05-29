@@ -2,7 +2,7 @@
 	"name": "adi-cfs",
 	"publisher": "Analog Devices",
 	"private": true,
-	"packageManager": "yarn@4.2.2",
+	"packageManager": "yarn@4.13.0",
 	"type": "module",
 	"engines": {
 		"node": "^20.x"
@@ -41,15 +41,15 @@
 		"ws:ccm-lib": "yarn workspace cfs-ccm-lib",
 		"ws:elf-parser": "yarn workspace elf-parser",
 		"ws:react-lib": "yarn workspace cfs-react-library",
-		"ws:plugins-api": "yarn workspace cfs-plugins-api",
+		"ws:plugins-sdk": "yarn workspace cfs-plugins-sdk",
 		"ws:pkg-mgr": "yarn workspace cfs-package-manager",
+		"ws:types": "yarn workspace cfs-types",
 		"cfsutil": "yarn ws:cli cfsutil",
 		"ui-package": "yarn ws:ui package",
 		"ide-package": "yarn ws:ide package"
 	},
 	"workspaces": [
 		"packages/*",
-		"packages/cli-plugins/*",
-		"submodules/cfs-plugins/api"
+		"packages/cli-plugins/*"
 	]
 }

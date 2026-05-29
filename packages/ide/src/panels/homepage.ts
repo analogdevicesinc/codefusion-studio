@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import {
 import { getNonce } from "../utils/getNonce";
 import { getUri } from "../utils/getUri";
 import { readFileSync } from "node:fs";
-import { CatalogManager } from "../catalog/catalogManager";
+import { CatalogManager } from "cfs-lib";
 import { SoC } from "cfs-ccm-lib";
 import { getCatalogManager } from "../utils/catalog";
 

@@ -1,0 +1,66 @@
+/**
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.pageLayout {
+	display: flex;
+	height: 100vh;
+	min-width: layout.$min-width;
+	overflow: hidden;
+}
+
+.navColumn {
+	display: flex;
+	flex: 0 0 layout.$side-nav-width;
+	border-top: 1px solid colors.$default-border;
+	box-sizing: border-box;
+}
+
+.mainColumn {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-width: 0;
+	overflow: hidden;
+
+	:global([id='cfs-top-bar:container']) {
+		border-left: 0;
+	}
+}
+
+.panelArea {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+	position: relative; // Needed for side-panel component
+
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+}
+
+.panelArea > * {
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.loadingContainer {
+	padding: 40px;
+}

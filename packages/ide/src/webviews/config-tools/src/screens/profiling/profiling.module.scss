@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,76 +18,68 @@
 @use '#layout' as layout;
 
 .page {
-	margin: layout.$spacing-9;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: layout.$spacing-9;
+	padding-bottom: 0;
+}
 
-	.header {
-		padding-bottom: layout.$spacing-9;
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-7;
+	width: min(600px, 100%);
+}
 
-		.pageTitle {
-			@include fonts.heading-h1;
-		}
+.header {
+	display: flex;
+	gap: layout.$spacing-5;
+	justify-content: space-between;
 
-		.pageTitleDescription {
-			@include fonts.body-b1;
-			color: colors.$description-foreground;
-		}
-	}
-
-	.configSections {
-		padding-top: layout.$spacing-4;
-		display: flex;
-		gap: layout.$spacing-3;
-		flex-wrap: wrap;
-	}
-
-	.section {
-		max-width: calc(50% - (layout.$spacing-3 + layout.$spacing-9));
-		flex-grow: 0.5;
+	.titleContainer {
 		display: flex;
 		flex-direction: column;
-		gap: layout.$spacing-5;
-		border: 1px solid colors.$default-border;
-		border-radius: layout.$border-radius-2;
-		padding: layout.$spacing-5;
+		gap: layout.$spacing-2;
 
-		.sectionHeader {
+		.title {
 			display: flex;
-			justify-content: space-between;
 			align-items: center;
+			gap: layout.$spacing-3;
 
-			div {
-				display: flex;
-				gap: layout.$spacing-3;
-				align-items: center;
+			@include fonts.heading-h1;
+			margin: 0;
+		}
+
+		.titleDescription {
+			@include fonts.body-b1;
+			margin: 0;
+		}
+	}
+
+	.headerControls {
+		display: flex;
+		align-items: flex-end;
+
+		svg {
+			width: 18px;
+			height: 18px;
+			padding: 4px;
+		}
+
+		.icon {
+			cursor: pointer;
+			border: 1px solid colors.$default-border;
+			border-radius: 2px;
+			&[disabled] {
+				pointer-events: none;
 			}
 		}
-
-		.settings {
-			display: flex;
-			flex-direction: column;
-			gap: layout.$spacing-4;
-		}
-
-		hr {
-			margin: 0;
-			width: 100%;
-			border: none;
-			border-top: 1px solid colors.$default-border;
-		}
 	}
+}
 
-	.label {
-		@include fonts.label-l1;
-	}
-
-	.disabledLabel {
-		opacity: var(--disabled-opacity);
-	}
-
-	.fieldWithLabel {
-		display: flex;
-		flex-direction: column;
-		gap: layout.$spacing-1;
-		--cfs-dropdown-max-width: 100%;
-	}
+.configSections {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-5;
 }

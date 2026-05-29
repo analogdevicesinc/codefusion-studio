@@ -31,6 +31,8 @@ use(chaiAsPromised);
 
 const API_URL = 'http://api.test.me';
 const REPO_URL = 'https://adi.repo.test/my/repo';
+const REPO_URL_2 = 'https://adi.repo.test/my/2nd_repo';
+const REPO_URL_3 = 'https://adi.repo.test/my/32d_repo';
 
 let client: RepositoryClient;
 let repo: PackageRepository;
@@ -49,6 +51,23 @@ const refreshResponse = {
     token: 'refreshed-token',
 };
 
+const respositoryListResponse = {
+    items: [
+        {
+            id: '1',
+            repoUrl: REPO_URL,
+        },
+        {
+            id: '2',
+            repoUrl: REPO_URL_2,
+        },
+        {
+            id: '3',
+            repoUrl: REPO_URL_3,
+        },
+    ],
+};
+
 beforeEach(() => {
     cfsApiClient = new CfsApiClient({ baseUrl: API_URL });
 });
@@ -64,7 +83,7 @@ describe('RepositoryClient', () => {
     });
 
     describe('getRepository', () => {
-        it('should fetch the repository', async () => {
+        it('should fetch the repository for a given URL', async () => {
             nockScope
                 .post('/users/entitlements', {
                     repoUrl: requestResponse.repoUrl,
@@ -92,6 +111,62 @@ describe('RepositoryClient', () => {
             )
                 .to.eventually.be.rejectedWith(PackageRepositoryError)
                 .that.has.property('type', 'UNSUPPORTED_REPOSITORY');
+        });
+    });
+
+    describe('getRepositoryUrls', () => {
+        it('should fetch the array of available repository URLs', async () => {
+            nockScope
+                .get('/sw/packages/repos')
+                .reply(200, respositoryListResponse);
+
+            await expect(
+                client.getRepositoryUrls(),
+            ).to.eventually.deep.equal([
+                REPO_URL,
+                REPO_URL_2,
+                REPO_URL_3,
+            ]);
+        });
+    });
+
+    describe('getRepositories', () => {
+        it('should fetch the array of available repositories', async () => {
+            nockScope
+                .get('/sw/packages/repos')
+                .reply(200, respositoryListResponse)
+                .post('/users/entitlements', {
+                    repoUrl: REPO_URL,
+                    entitlementType: requestResponse.entitlementType,
+                })
+                .reply(200, requestResponse)
+                .post('/users/entitlements', {
+                    repoUrl: REPO_URL_2,
+                    entitlementType: requestResponse.entitlementType,
+                })
+                .reply(200, {
+                    ...requestResponse,
+                    repoUrl: REPO_URL_2,
+                })
+                .post('/users/entitlements', {
+                    repoUrl: REPO_URL_3,
+                    entitlementType: requestResponse.entitlementType,
+                })
+                .reply(200, {
+                    ...requestResponse,
+                    repoUrl: REPO_URL_3,
+                });
+
+            const repos = await client.getRepositories();
+            expect(repos).to.be.an('array').with.length(3);
+            for (const repo of repos) {
+                expect(repo).to.be.instanceOf(PackageRepository);
+                expect(repo.repoUrl).to.be.oneOf([
+                    REPO_URL,
+                    REPO_URL_2,
+                    REPO_URL_3,
+                ]);
+            }
         });
     });
 });

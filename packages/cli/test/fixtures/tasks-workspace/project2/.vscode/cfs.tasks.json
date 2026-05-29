@@ -1,0 +1,89 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Build",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Build"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "npm run build",
+      "label": "Build (NPM)",
+      "group": "build",
+      "options": {
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Build (Node)",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Build (Node)"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "npm run lint",
+      "label": "Lint",
+      "group": "test",
+      "options": {
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Lint / Verify",
+      "group": "test",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Lint / Verify"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "fail",
+      "label": "Fail Task",
+      "group": "test",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Fail Task"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    }
+  ]
+}

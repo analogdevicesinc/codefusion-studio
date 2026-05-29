@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,35 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test'
+import * as path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {expect, test} from '@oclif/test';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('elf info', () => {
-	test.stdout().it('text', (ctx) => {
-		expect(ctx.stdout).to.contain('')
-	})
-})
+  test.stdout().it('text', (ctx) => {
+    expect(ctx.stdout).to.contain('');
+  });
+
+  test
+    .stdout()
+    .command(
+      [
+        'elf:info',
+        '-a',
+        path.resolve(
+          __dirname,
+          '../../../../elf-parser/test/data/input.elf'
+        ),
+        '--format=json'
+      ],
+      {root: '..'}
+    )
+    .it('json', (ctx) => {
+      const json = JSON.parse(ctx.stdout);
+      expect(json).to.be.an('object');
+      expect(json).to.have.property('AttributesInfo');
+    });
+});

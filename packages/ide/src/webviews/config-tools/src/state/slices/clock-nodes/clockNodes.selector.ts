@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,18 @@ import type {
 	ClockNodesDictionary,
 	ClockNodeState
 } from '@common/types/soc';
+import {
+	computeClockErrorSummary,
+	computeClockNodesStatus,
+	type ClockErrorSummary,
+	type ClockNodeStatus
+} from '../../../utils/clock-evaluation';
+import {
+	selectAppliedSignalsMap,
+	selectAssignedPins
+} from '../pins/pins.selector';
+import {selectPeripheralAllocations} from '../peripherals/peripherals.selector';
+import {computeFrequencies} from '../../../utils/rpn-expression-resolver';
 
 export function useClockNodeDetailsTargetNode() {
 	return useAppSelector(
@@ -142,12 +154,78 @@ export function useClockConfigError(
 	});
 }
 
-export function useDiagramNodeData(clockNodeId: string) {
-	return useAppSelector(
-		state => state.clockNodesReducer.diagramData[clockNodeId]
-	);
+/**
+ * Selector for computing clock node statuses from the current configuration.
+ */
+const selectNodesStatus = createSelector(
+	[
+		(state: RootState) => state.clockNodesReducer.clockNodes,
+		selectAssignedPins,
+		selectAppliedSignalsMap,
+		selectPeripheralAllocations
+	],
+	(clockConfig, assignedPins, pinConfig, peripheralConfig) => {
+		const globalConfig = {
+			clockconfig: clockConfig,
+			pinconfig: pinConfig,
+			peripheralconfig: peripheralConfig,
+			assignedPins
+		};
+
+		const computedFrequencies = computeFrequencies(globalConfig);
+
+		return computeClockNodesStatus(
+			clockConfig,
+			computedFrequencies,
+			globalConfig
+		);
+	}
+);
+
+/**
+ * Selector for computing the clock error summary.
+ * This provides the total error count and per-node error details.
+ */
+export const selectClockErrorSummary = createSelector(
+	[
+		(state: RootState) => state.clockNodesReducer.clockNodes,
+		selectAssignedPins,
+		selectAppliedSignalsMap,
+		selectPeripheralAllocations
+	],
+	(clockConfig, assignedPins, pinConfig, peripheralConfig) => {
+		const globalConfig = {
+			clockconfig: clockConfig,
+			pinconfig: pinConfig,
+			peripheralconfig: peripheralConfig,
+			assignedPins
+		};
+
+		const computedFrequencies = computeFrequencies(globalConfig);
+
+		return computeClockErrorSummary(
+			clockConfig,
+			computedFrequencies,
+			globalConfig
+		);
+	}
+);
+
+/**
+ * Hook for accessing clock node statuses.
+ * Replaces the need to read diagramNodesDiagramStatus.
+ */
+export function useClockNodesStatus(): Record<
+	string,
+	ClockNodeStatus
+> {
+	return useAppSelector(selectNodesStatus);
 }
 
-export function useDiagramData() {
-	return useAppSelector(state => state.clockNodesReducer.diagramData);
+/**
+ * Hook for accessing clock error summary (total errors + per-node details).
+ * This is the primary hook for components that need to display clock errors.
+ */
+export function useClockConfigErrorsSummary(): ClockErrorSummary {
+	return useAppSelector(selectClockErrorSummary);
 }

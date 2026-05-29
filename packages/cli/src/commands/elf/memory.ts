@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {
   TExtendedSegment,
   TExtendedSymbol,
@@ -21,18 +21,18 @@ import {
   mapSections,
   mapSegments
 } from 'cfs-lib';
+import Table from 'cli-table3';
 import {ElfFileParser} from 'elf-parser';
 import {ElfDataModel} from 'elf-parser/dist/ElfDataModel.js';
 
 import {Logger} from '../../logger.js';
-
-import Table = require('cli-table3');
+import {BaseCommand} from '../../utils/base-command.js';
+import {tableOutputStyles} from '../../utils/utils.js';
 
 export interface MemoryFlags {
   [flag: string]: unknown;
   detail: boolean;
   id: number | undefined;
-  json: boolean;
   name: string | undefined;
   section: boolean;
   segment: boolean;
@@ -42,7 +42,8 @@ export interface MemoryFlags {
 export function generateMemoryJson(
   md: ElfDataModel,
   parser: ElfFileParser,
-  flags: MemoryFlags
+  flags: MemoryFlags,
+  json: boolean
 ): string {
   let flagsCount: number =
     Number(flags.segment || 0) +
@@ -63,7 +64,8 @@ export function generateMemoryJson(
       parser,
       flags,
       flagsCount,
-      jsonString
+      jsonString,
+      json
     ));
   }
 
@@ -73,7 +75,8 @@ export function generateMemoryJson(
       parser,
       flags,
       flagsCount,
-      jsonString
+      jsonString,
+      json
     ));
   }
 
@@ -83,7 +86,8 @@ export function generateMemoryJson(
       parser,
       flags,
       flagsCount,
-      jsonString
+      jsonString,
+      json
     ));
   }
 
@@ -91,13 +95,14 @@ export function generateMemoryJson(
   return jsonString;
 }
 
-export default class Memory extends Command {
+export default class Memory extends BaseCommand<typeof Memory> {
   static args = {
     filePath: Args.string({description: 'file path  to read'})
   };
 
   static description =
-    'View relationships between segments, sections and symbols';
+    'View relationships between segments, sections and symbols\n' +
+    'Note that this command can generate large amounts of output which might not be viewable in a terminal window. Consider piping the output to a file';
 
   static flags = {
     segment: Flags.boolean({
@@ -122,10 +127,6 @@ export default class Memory extends Command {
       description:
         ' Displays the sections/symbols contained in the specified segment/sections by name. Use only with -y'
     }),
-    json: Flags.boolean({
-      char: 'j',
-      description: 'Export in JSON format. Use alongside -s, -t, -y'
-    }),
     detail: Flags.boolean({
       char: 'd',
       description:
@@ -133,14 +134,14 @@ export default class Memory extends Command {
     })
   };
 
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Memory);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public async run(): Promise<any> {
+    const {args, flags} = this;
 
     if (!args.filePath) {
-      Logger.logError(
+      return Logger.logError(
         'No input file. Please provide a valid file path.'
       );
-      return;
     }
 
     try {
@@ -151,16 +152,13 @@ export default class Memory extends Command {
       const jsonString = generateMemoryJson(
         md,
         parser,
-        flags as MemoryFlags
+        flags,
+        this.jsonEnabled()
       );
 
-      if (flags.json) {
-        // The parse and then stringify is for formatting, to facilitate testability with oclif test
-        const obj = JSON.parse(jsonString);
-        console.log(JSON.stringify(obj, null, 2));
-      }
+      return JSON.parse(jsonString);
     } catch (error) {
-      Logger.logError(`${error}`);
+      return Logger.logError(`${error}`);
     }
   }
 }
@@ -175,11 +173,11 @@ function formatSymbol(
     symbol: boolean;
     id: number | undefined;
     name: string | undefined;
-    json: boolean;
     detail: boolean;
-  } & {[flag: string]: unknown} & {json: boolean | undefined},
+  } & {[flag: string]: unknown},
   flagsCount: number,
-  jsonString: string
+  jsonString: string,
+  json: boolean
 ) {
   let sections = mapSections(md.elfSectionHeaders, md, parser);
   if (flags.id !== undefined) {
@@ -190,7 +188,7 @@ function formatSymbol(
     sections = sections.filter((item) => item.name === flags.name);
   }
 
-  if (flags.json) {
+  if (json) {
     --flagsCount;
     jsonString +=
       '"Sections":' +
@@ -215,7 +213,8 @@ function formatSymbol(
     if (result.length > 0) {
       const table = new Table({
         head: Object.getOwnPropertyNames(result[0]),
-        colWidths: [20, 20]
+        colWidths: [20, 20],
+        ...tableOutputStyles()
       });
       for (const item of result) {
         if (item !== undefined) {
@@ -240,11 +239,11 @@ function formatSection(
     symbol: boolean;
     id: number | undefined;
     name: string | undefined;
-    json: boolean;
     detail: boolean;
-  } & {[flag: string]: unknown} & {json: boolean | undefined},
+  } & {[flag: string]: unknown},
   flagsCount: number,
-  jsonString: string
+  jsonString: string,
+  json: boolean
 ) {
   let segments: TExtendedSegment[] = mapSegments(
     md.elfProgramHeaders,
@@ -264,7 +263,7 @@ function formatSection(
         for (const item of segment.sections) {
           if (flags.detail) {
             // eslint-disable-next-line unicorn/prefer-ternary
-            if (flags.json) {
+            if (json) {
               sectionsString += `\n { "name" => "${item.name}", "type": "${item.type}", "address": "${item.address}", "size": ${item.size}, "flags": "${item.flags}"},`;
             } else {
               sectionsString += `\n ${item.name} => type: ${item.type}, address: ${item.address}, size: ${item.size}, flags: ${item.flags}`;
@@ -275,7 +274,7 @@ function formatSection(
         }
       }
 
-      if (flags.json) {
+      if (json) {
         --segmentsCount;
         if (flags.detail) {
           if (sectionsString.length > 0)
@@ -315,11 +314,11 @@ function formatSegment(
     symbol: boolean;
     id: number | undefined;
     name: string | undefined;
-    json: boolean;
     detail: boolean;
-  } & {[flag: string]: unknown} & {json: boolean | undefined},
+  } & {[flag: string]: unknown},
   flagsCount: number,
-  jsonString: string
+  jsonString: string,
+  json: boolean
 ) {
   let segments = mapSegments(md.elfProgramHeaders, md, parser);
   if (segments.length > 0) {
@@ -333,7 +332,7 @@ function formatSegment(
     header.forEach((header: TExtendedSegment) => {
       delete header.sections;
     });
-    if (flags.json) {
+    if (json) {
       --flagsCount;
       jsonString +=
         '"Segments":' +
@@ -342,7 +341,8 @@ function formatSegment(
     } else {
       const table = new Table({
         head: Object.getOwnPropertyNames(header[0]),
-        colWidths: [20, 20]
+        colWidths: [20, 20],
+        ...tableOutputStyles()
       });
 
       for (const item of header) {

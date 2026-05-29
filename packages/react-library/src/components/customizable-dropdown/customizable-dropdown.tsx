@@ -21,16 +21,17 @@ import DownArrowIcon from '../icons/down-arrow-icon';
  * ParentRef: a reference to a parent element which top and bottom will be used to determine if the dropdown should open upwards. If none is given just the windows height is used
  *
  */
-export type CustomizableDropdownProps = {
-	readonly children: React.ReactNode;
-	readonly value: string;
-	readonly startSlot?: React.ReactNode;
-	readonly maxHeight?: number;
-	readonly containerRef?: HTMLElement;
-	readonly dataTest?: string;
-	readonly isExpanded: boolean;
-	readonly setIsExpanded: (value: boolean) => void;
-};
+export type CustomizableDropdownProps = Readonly<{
+	children: React.ReactNode;
+	value: string;
+	startSlot?: React.ReactNode;
+	maxHeight?: number;
+	containerRef?: HTMLElement;
+	dataTest?: string;
+	isExpanded: boolean;
+	placeholder?: string;
+	setIsExpanded: (value: boolean) => void;
+}>;
 
 export function CustomizableDropdown({
 	value,
@@ -40,9 +41,11 @@ export function CustomizableDropdown({
 	isExpanded,
 	containerRef,
 	dataTest,
+	placeholder,
 	setIsExpanded
 }: CustomizableDropdownProps) {
 	const dropdownRef = useRef<HTMLDivElement>(null);
+	const hasValue = !!value;
 
 	useEffect(() => {
 		if (isExpanded) {
@@ -86,8 +89,17 @@ export function CustomizableDropdown({
 			ref={dropdownRef}
 			data-test={dataTest}
 		>
+			{placeholder && !hasValue && !isExpanded && (
+				<div className={styles.placeholder} aria-hidden='true'>
+					{placeholder}
+				</div>
+			)}
+
 			<button
 				className={styles.dropdownField}
+				data-test={
+					dataTest ? `${dataTest}_button` : 'group_dropdownbutton'
+				}
 				onClick={() => {
 					setIsExpanded(!isExpanded);
 				}}

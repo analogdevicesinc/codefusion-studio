@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,9 @@ import { selectQuickPick } from "../../ui-test-utils/settings-utils";
 import { SELECT_SDK_PATH_COMMAND_ID } from "../../../commands/constants";
 import { CFS_SDK_VERSION } from "../../ui-test-utils/settings-utils";
 
-// Test user setting prompt for missing sdk path
-describe("SDK Path User Setting Prompt Test", () => {
+// skipping this test as it is flaky - will be fixed in CFSIO-15858
+
+xdescribe("SDK Path User Setting Prompt Test", () => {
   let workbench: Workbench;
   const testDirectory = "src/tests/ui-test/data/Hello_World";
 

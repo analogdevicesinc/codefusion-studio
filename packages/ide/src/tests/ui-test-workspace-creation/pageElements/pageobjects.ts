@@ -25,7 +25,7 @@ export class Locatorspaths {
   );
 
   public selectorSoc: By = By.xpath(
-    "//*[@id='control-input' and contains(@placeholder, 'Search SoCs')]",
+    "//*[@id='control-input' and contains(@placeholder, 'Type to search...')]",
   );
 
   public spioSignal: By = By.xpath("//*[@data-test='accordion:SPI0']");
@@ -111,4 +111,38 @@ export class Locatorspaths {
   );
 
   randomWorkspaceName = `test_workspace_${Date.now()}`;
+
+  public buildSystem: By = By.css(
+    "[data-test='core-config:dynamic-form:control-BuildSystem']",
+  );
+
+  public boardDefaultName: By = By.css(
+    "[data-test='core-config:dynamic-form:control-ZephyrBoardName-control-input']",
+  );
+
+  public workspaceNameInput: By = By.css(
+    "[data-test='confirmation-screen:workspace-name:text-field-control-input']",
+  );
+
+  public trustZoneToggle: By = By.css(
+    "[data-test='toggle:trustzone-corepart_01jrdgezp9eeya9367snjddfbn-span']",
+  );
+
+  public backButton: By = By.css("[data-test='wrksp-footer:back-btn']");
+
+  public secureCheckBox: By = By.xpath(
+    "//*[@id='corepart_01jrdgezp9eeya9367snjddfbn-secure']//vscode-checkbox",
+  );
+
+  public nonSecureCheckBox: By = By.xpath(
+    "//*[@id='corepart_01jrdgezp9eeya9367snjddfbn-nonsecure']//vscode-checkbox",
+  );
+
+  public coreSelectionCard(coreId: string): By {
+    return By.css(`[data-test='coresSelection:card:${coreId}']`);
+  }
+
+  public externallyManagedLabel: By = By.xpath(
+    "//vscode-badge[text()='Externally managed']",
+  );
 }

@@ -1,6 +1,7 @@
+/* eslint-disable no-template-curly-in-string */
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +27,7 @@ const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
 );
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig, SocCoreMemory} from 'cfs-types';
 import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
 import {configurePreloadedStore} from '../../../state/store';
 
@@ -36,25 +37,20 @@ const mockedConfigDict = {
 	Soc: 'MAX32690',
 	Projects: [
 		{
-			CoreNum: 0,
-			Description: 'ARM Cortex-M4',
 			ExternallyManaged: false,
 			FirmwarePlatform: '',
 			CoreId: 'CM4',
 			ProjectId: 'CM4-proj',
-			IsPrimary: true,
-			Name: 'ARM Cortex-M4',
-			PluginId: ''
+			PluginId: '',
+			PluginVersion: ''
 		},
 		{
-			CoreNum: 1,
-			Description: 'RISC-V (RV32)',
 			ExternallyManaged: false,
 			FirmwarePlatform: '',
 			CoreId: 'RV',
 			ProjectId: 'RV-proj',
-			Name: 'RISC-V (RV32)',
-			PluginId: ''
+			PluginId: '',
+			PluginVersion: ''
 		}
 	]
 } as unknown as CfsConfig;
@@ -82,6 +78,11 @@ export const createMockPartition = (
 });
 
 describe('Partition Sidebar', () => {
+	// The aim of this change is to create a difference between Name and
+	// Description for testing purposes, as the model has the same value.
+	const modifiedCore1Description = `Description of ${mock.Cores[1].Name}`;
+	mock.Cores[1].Description = modifiedCore1Description;
+
 	const reduxStore = configurePreloadedStore(
 		mock as unknown as Soc,
 		mockedConfigDict
@@ -192,9 +193,17 @@ describe('Partition Sidebar', () => {
 				.get('button')
 				.should('have.text', 'Select projects');
 			// Address should be reset
-			cy.get('input').eq(0).should('have.value', '');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').should('have.value', 0);
+				});
 			// Size should be reset
-			cy.get('input').eq(1).should('have.value', '0');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').should('have.value', 0);
+				});
 		});
 		it('should respect DisplayUnit field', () => {
 			cy.mount(
@@ -226,9 +235,11 @@ describe('Partition Sidebar', () => {
 				})
 			);
 
-			cy.dataTest('size-stepper')
-				.find('input')
-				.should('have.value', '80');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').should('have.value', 80);
+				});
 		});
 	});
 
@@ -252,7 +263,14 @@ describe('Partition Sidebar', () => {
 
 			cy.dataTest('multiselect-option-RV-proj')
 				.should('be.visible')
+				.find('div')
+				.contains(/^RISC-V \(RV32\)/)
 				.click();
+
+			cy.dataTest('assigned-cores-multiselect')
+				.should('be.visible')
+				.find('button')
+				.contains(/^RISC-V \(RV32\)/);
 
 			cy.dataTest('assigned-cores-multiselect').get('button').click();
 
@@ -336,7 +354,11 @@ describe('Partition Sidebar', () => {
 			cy.dataTest('block-item-section').should('not.exist');
 
 			// Size input
-			cy.get('input').eq(1).type('16');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').type('16');
+				});
 
 			cy.dataTest('block-item-section').should('exist');
 		});
@@ -413,7 +435,65 @@ describe('Partition Sidebar', () => {
 						'Chosen. Multiple values can be separated by commas.',
 					Type: 'text',
 					Pattern: '([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*',
-					PluginOption: true
+					Condition: '${CoreId} ${String:CM4} ='
+				},
+				{
+					Id: 'CHOSENRV',
+					Description:
+						'Chosen. Multiple values can be separated by commas.',
+					Type: 'text',
+					Pattern: '([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*',
+					Condition: '${CoreId} ${String:RV} ='
+				},
+				{
+					Id: 'KERNEL',
+					Description: 'Kernel Accessibility',
+					EnumValues: [
+						{
+							Id: 'ILLEGAL',
+							Description: 'Illegal',
+							Value: 0
+						},
+						{
+							Id: 'R',
+							Description: 'Read',
+							Value: 1
+						},
+						{
+							Id: 'W',
+							Description: 'Write',
+							Value: 2
+						}
+					],
+					Type: 'enum',
+					Hint: 'R',
+					Condition: '${CoreId} ${String:CM4} ='
+				},
+				{
+					Id: 'USER',
+					Description: 'User Accessibility',
+					EnumValues: [
+						{
+							Id: 'ILLEGAL',
+							Description: 'Illegal',
+							Value: 0
+						},
+						{
+							Id: 'R',
+							Description: 'Read',
+							Value: 1,
+							Condition: '${Control:KERNEL} ${String:R} ='
+						},
+						{
+							Id: 'W',
+							Description: 'Write',
+							Value: 2,
+							Condition: '${Control:KERNEL} ${String:R} !='
+						}
+					],
+					Type: 'enum',
+					Hint: 'ILLEGAL',
+					Condition: '${Control:KERNEL} ${String:ILLEGAL} !='
 				}
 			]
 		};
@@ -444,9 +524,9 @@ describe('Partition Sidebar', () => {
 						{
 							label: 'ARM Cortex-M4',
 							access: 'R',
-							coreId: 'M4',
+							coreId: 'CM4',
 							projectId: 'CM4-proj',
-							owner: false
+							owner: true
 						}
 					]
 				})
@@ -456,8 +536,58 @@ describe('Partition Sidebar', () => {
 
 			cy.dataTest('Flash').click();
 
+			// Check existence of controls based on static CoreId conditions
 			cy.dataTest(
 				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			).should('exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[1].Id}-control-input`
+			).should('not.exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[2].Id}`
+			).should('exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}`
+			).should('exist');
+
+			// Check existence of controls based on conditions dependent on other control choices
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[2].Id}`
+			).click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[2].Id}:ILLEGAL`
+			).click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}`
+			).should('not.exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[2].Id}`
+			).click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[2].Id}:W`
+			).click();
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}`
+			).should('exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}:ILLEGAL`
+			).should('exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}:R`
+			).should('not.exist');
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[3].Id}:W`
 			).should('exist');
 		});
 
@@ -477,7 +607,7 @@ describe('Partition Sidebar', () => {
 						{
 							label: 'ARM Cortex-M4',
 							access: 'R',
-							coreId: 'M4',
+							coreId: 'CM4',
 							projectId: 'CM4-proj',
 							owner: false
 						}
@@ -491,6 +621,76 @@ describe('Partition Sidebar', () => {
 
 			cy.dataTest(
 				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			).should('not.exist');
+		});
+
+		it('should render the plugin options and validate', () => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(pluginControls)
+			);
+
+			window.localStorage.setItem(
+				'configDict',
+				JSON.stringify(mockedConfigDict)
+			);
+
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			setSideBarPartition(
+				createMockPartition({
+					projects: [
+						{
+							label: 'ARM Cortex-M4',
+							access: 'R',
+							coreId: 'CM4',
+							projectId: 'CM4-proj',
+							owner: true
+						}
+					]
+				})
+			);
+
+			cy.dataTest('memory-type-dropdown').click();
+
+			cy.dataTest('Flash').click();
+
+			// Check existence of controls based on static CoreId conditions
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			).should('exist');
+
+			// Not correct input, failed validation
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').clear().type('asd,');
+				});
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-error`
+			).should('exist');
+
+			// Correct input, passes the validation
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('#control').clear().type('asd,wer');
+				});
+
+			cy.dataTest(
+				`plugin-options-form:control-${pluginControls.memory[0].Id}-error`
 			).should('not.exist');
 		});
 
@@ -520,7 +720,7 @@ describe('Partition Sidebar', () => {
 						{
 							label: 'ARM Cortex-M4',
 							access: 'R',
-							coreId: 'M4',
+							coreId: 'CM4',
 							projectId: 'CM4-proj',
 							owner: false
 						}
@@ -730,7 +930,7 @@ describe('Partition Sidebar', () => {
 			);
 		});
 
-		it('should not display error when parition name is valid', () => {
+		it('should not display error when partition name is valid', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched
@@ -803,8 +1003,8 @@ describe('Partition Sidebar', () => {
 						{
 							label: 'ARM',
 							access: 'R/W/X',
-							coreId: 'M4',
-							projectId: 'M4-proj',
+							coreId: 'CM4',
+							projectId: 'CM4-proj',
 							owner: false
 						}
 					]
@@ -864,11 +1064,13 @@ describe('Partition Sidebar', () => {
 							projectId: 'RV-proj',
 							owner: true
 						},
+						// The only way to hack this use the SoC is to try to use a core ID that doesn't exist,
+						// because in MAX32690 the two cores share both some RAM and some flash.
 						{
-							label: 'ARM',
+							label: 'RISC-V',
 							access: 'R',
-							coreId: 'M4',
-							projectId: 'M4-proj',
+							coreId: 'I do not exist',
+							projectId: 'CM4-proj',
 							owner: false
 						}
 					]
@@ -935,7 +1137,9 @@ describe('Partition Sidebar', () => {
 				block => block.Name === 'flash1'
 			)!;
 
-			const minimumAlignment = getBlockMinAlignment(block);
+			const minimumAlignment = getBlockMinAlignment(
+				block as SocCoreMemory
+			);
 
 			cy.dataTest('start-address-error').should(
 				'have.text',
@@ -960,16 +1164,16 @@ describe('Partition Sidebar', () => {
 			setSideBarPartition(
 				createMockPartition({
 					type: 'RAM',
-					startAddress: '0x20100000',
+					startAddress: '0x20000000',
 					blockNames: [''],
 					size: 8,
 					projects: [
 						{
-							label: 'ARM Cortex-M4',
-							access: 'R',
-							coreId: 'M4',
-							projectId: 'M4-proj',
-							owner: false
+							label: 'RISC-V',
+							access: 'R/W/X',
+							coreId: 'RV',
+							projectId: 'RV-proj',
+							owner: true
 						}
 					]
 				})
@@ -1103,7 +1307,8 @@ describe('Partition Sidebar', () => {
 					projects: [
 						{
 							label: 'RISC-V',
-							access: 'R/W/X',
+							// Since currently all memory allows R/W/X, we hack this test with a dummy Q type which triggers the error
+							access: 'R/W/Q',
 							coreId: 'RV',
 							projectId: 'RV-proj',
 							owner: true

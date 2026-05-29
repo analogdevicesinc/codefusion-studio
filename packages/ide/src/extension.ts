@@ -20,6 +20,7 @@ import * as fsPromises from "fs/promises";
 import * as fs from "node:fs";
 import debounce from "lodash.debounce";
 import * as semver from "semver";
+import { Messenger } from "vscode-messenger";
 
 import {
   ACTIONS_TREE_COMMAND_ID,
@@ -70,6 +71,9 @@ import {
   OPEN_OPENOCD_TARGET_SETTING_COMMAND_ID,
   OPEN_SDK_SETTINGS_COMMAND_ID,
   SELECT_SDK_PATH_COMMAND_ID,
+  OPEN_REPORT_FILE_COMMAND_ID,
+  SHOW_AI_PROFILING_VIEW_AT_STARTUP_COMMAND_ID,
+  OPEN_TRACE_CONFIGURATION_COMMAND_ID,
 } from "./commands/constants";
 import { GDBToolbox } from "./debug-tools/gdb-toolbox/core/gdb-toolbox";
 import { CfsDebugManager } from "./debug-tools/debug-manager";
@@ -83,7 +87,6 @@ import {
 } from "./configurations/configureWorkspace";
 import { HomePagePanel } from "./panels/homepage";
 import * as msdk from "./toolchains/msdk/msdk";
-import * as zephyr from "./toolchains/zephyr/zephyr";
 import { Utils } from "./utils/utils";
 import {
   ActionsViewProvider,
@@ -121,6 +124,8 @@ import {
   SEARCH_DIRECTORIES,
   BROWSE_STRING,
   TARGET,
+  OPEN_AIPROFILING_EXTENSION_STATE,
+  AI_HARDWARE_PROFILING_EDITOR_ID,
 } from "./constants";
 import { INFO, WARNING } from "./messages";
 import { CFS_TERMINAL, CFS_TERMINAL_ID } from "./toolchains/constants";
@@ -141,6 +146,8 @@ import { AuthCommandManager } from "./commands/auth-command-mgr";
 import { openFileAtLocation } from "./utils/open-file-location";
 import { AbstractViewProvider } from "./view-provider/view-provider-abstract";
 import type {
+  CfsInstallPlan,
+  CfsPackageLicenseReporter,
   CfsPackageManagerProvider,
   CfsPackageReference,
   CfsPackageRemoteCredentialProvider,
@@ -155,12 +162,32 @@ import { SigmaStudioPlusProjectEditor } from "./custom-editors/sigma-studio-plus
 import { CfsDataModelManager, CfsToolManager } from "cfs-lib";
 import { resolveVariables } from "./utils/resolveVariables";
 import { registerGDBToolboxValidator } from "./debug-tools/gdb-toolbox/scripts/config-validator";
-import { glob } from "glob";
+import * as fg from "fast-glob";
 import { CfsIDETaskProvider } from "./providers/cfs-ide-task-provider";
 import { CortexDebugConfigurationProvider } from "./providers/cortex-debug-configuration-provider";
-import { getCredentialProvider } from "./utils/package-manager";
+import {
+  getPackageManagerProviders,
+  getManifestPackages,
+  promptForPackageLicenseAcceptance,
+} from "./utils/package-manager";
 import { getTelemetryManager } from "./telemetry/telemetry";
+import { ReportViewer } from "./custom-editors/report-viewer";
+import { SystemEventViewer } from "./debug-tools/system-event-viewer/system-event-viewer";
+import MemoryViewerWebviewProvider from "./providers/memory-viewer-webview-provider";
 import { CfsDebugAssistant } from "./debug-tools/ai-debug/debug-assistant";
+import { ModelWorkspaceCreationEditor } from "./custom-editors/model-workspace-creation-editor";
+import { AiHardwareProfilingEditor } from "./custom-editors/ai-hardware-profiling-editor";
+import { regsiterVSCodeApiMessageHandlers } from "./providers/vscode-api-message-handler";
+import {
+  TraceCaptureService,
+  TraceConfigurationProvider,
+  TraceSidePanelProvider,
+} from "./providers/trace-capture-webview-provider";
+import { registerGlobalCfsMessageHandlers } from "./providers/global-cfs-message-handlers";
+
+// Feature flags - values are replaced at build time by Vite
+const MEMORY_VIEWER_ENABLED =
+  import.meta.env.VITE_FEATURE_MEMORY_VIEWER === "true";
 
 // --- Constants ---
 const DOCUMENTATION_URL =
@@ -249,6 +276,13 @@ export async function activate(
   // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#ticking_during_sleep
   const activationStart = Date.now();
 
+  // Set context keys for build-time feature flags
+  await vscode.commands.executeCommand(
+    "setContext",
+    "cfs.features.memoryViewer.enabled",
+    MEMORY_VIEWER_ENABLED,
+  );
+
   await SdkPath.verifyPathSettings();
 
   context.subscriptions.push(
@@ -284,10 +318,14 @@ export async function activate(
   let packageManagerCredsProvider:
     | CfsPackageRemoteCredentialProvider
     | undefined;
+  let packageManagerLicenseReporter: CfsPackageLicenseReporter | undefined;
   try {
-    packageManagerCredsProvider = await getCredentialProvider();
+    const providers = await getPackageManagerProviders();
+    if (providers) {
+      [packageManagerCredsProvider, packageManagerLicenseReporter] = providers;
+    }
   } catch (error) {
-    console.error("Failed to get package manager credentials provider:", error);
+    console.error("Failed to get package manager providers:", error);
   }
 
   if (packageManagerCredsProvider) {
@@ -298,11 +336,14 @@ export async function activate(
    * Managers Initialization step
    **/
   // Package manager initialization
-  let pkgManager: CfsPackageManagerProvider | undefined = new ConanPkgManager(
+  let pkgManager: ConanPkgManager | undefined = new ConanPkgManager(
     pkgManagerConfig,
   );
   try {
     await pkgManager.init();
+    if (packageManagerLicenseReporter) {
+      await pkgManager.registerLicenseReporter(packageManagerLicenseReporter);
+    }
   } catch (error) {
     console.error(error);
     vscode.window.showWarningMessage(WARNING.packageManagerInitError);
@@ -340,26 +381,13 @@ export async function activate(
    **/
   const shellEnvProvider = new IDEShellEnvProvider(toolManager);
 
-  const cfsTaskProvider = new CfsIDETaskProvider(toolManager);
+  const cfsTaskProvider = new CfsIDETaskProvider(toolManager, shellEnvProvider);
 
   context.subscriptions.push(
     vscode.tasks.registerTaskProvider("shell", cfsTaskProvider),
   );
-  const zephyrTaskProvider = zephyr.registerZephyrTaskProvider(
-    context,
-    shellEnvProvider,
-    toolManager,
-  );
-  const msdkTaskProvider = await msdk.registerTaskProvider(
-    context,
-    shellEnvProvider,
-  );
 
-  const actionsViewProvider = new ActionsViewProvider(
-    cfsTaskProvider,
-    zephyrTaskProvider,
-    msdkTaskProvider,
-  );
+  const actionsViewProvider = new ActionsViewProvider(cfsTaskProvider);
 
   // Debug providers registration
   const debugManager = new CfsDebugManager();
@@ -406,6 +434,11 @@ export async function activate(
   // Terminal provider registration
   registerTerminalProvider(shellEnvProvider);
 
+  const messenger = new Messenger();
+
+  regsiterVSCodeApiMessageHandlers(messenger);
+  registerGlobalCfsMessageHandlers(messenger);
+
   /**
    * Custom editors registration step
    **/
@@ -413,7 +446,60 @@ export async function activate(
     McuEditor.register(context, dataModelManager, toolManager, pkgManager),
     ElfEditor.register(context),
     WorkspaceCreationEditor.register(context, dataModelManager, pkgManager),
+    ModelWorkspaceCreationEditor.register(
+      context,
+      messenger,
+      dataModelManager,
+      toolManager,
+      pkgManager,
+    ),
+    AiHardwareProfilingEditor.register(
+      context,
+      messenger,
+      shellEnvProvider,
+      toolManager,
+      dataModelManager,
+    ),
     SigmaStudioPlusProjectEditor.register(context),
+    ReportViewer.register(context, messenger),
+  );
+
+  // Register Memory Viewer if feature flag is enabled at build time
+  if (MEMORY_VIEWER_ENABLED) {
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        MemoryViewerWebviewProvider.viewType,
+        new MemoryViewerWebviewProvider(context.extensionUri, debugManager),
+        { webviewOptions: { retainContextWhenHidden: true } },
+      ),
+    );
+  }
+
+  // Register trace capture panel (always enabled)
+  const traceCaptureService = new TraceCaptureService(
+    context,
+    messenger,
+    shellEnvProvider,
+  );
+  const traceSidePanelProvider = new TraceSidePanelProvider(
+    context,
+    traceCaptureService,
+    messenger,
+  );
+  const traceConfigurationProvider = new TraceConfigurationProvider(
+    context,
+    traceCaptureService,
+    messenger,
+  );
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      TraceSidePanelProvider.viewType,
+      traceSidePanelProvider,
+      { webviewOptions: { retainContextWhenHidden: true } },
+    ),
+    vscode.commands.registerCommand(OPEN_TRACE_CONFIGURATION_COMMAND_ID, () => {
+      traceConfigurationProvider.open();
+    }),
   );
 
   /**
@@ -424,7 +510,12 @@ export async function activate(
   registerPreActivationCommands(context);
   await activateWorkspace(context, toolManager);
 
-  await registerCommands(context, actionsViewProvider, toolManager);
+  await registerCommands(
+    context,
+    actionsViewProvider,
+    toolManager,
+    debugManager,
+  );
   registerAllCommands(context);
   AuthCommandManager.registerAllCommands(context, pkgManager);
 
@@ -445,6 +536,17 @@ export async function activate(
       },
     ),
   );
+
+  /**
+   * CFS Component initialization step
+   **/
+
+  const systemEventViewer = new SystemEventViewer(
+    context,
+    debugManager,
+    dataModelManager,
+  );
+  context.subscriptions.push(systemEventViewer);
 
   /**
    * Custom listeners registration step
@@ -491,8 +593,16 @@ export async function activate(
       // Deferred opening of system planner after manifests are checked.
       vscode.commands.executeCommand(SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID);
 
+      // Defered opening of AI profiling view after workspace generation is checked.
+      vscode.commands.executeCommand(
+        SHOW_AI_PROFILING_VIEW_AT_STARTUP_COMMAND_ID,
+      );
+
       // Update c_cpp_properties.json
       updateCppProperties(toolManager);
+
+      // set extension ready context for other features that need to wait for workspace or task activation to complete
+      Utils.extensionReadyDeferred.resolve();
     }, 0);
   } catch (error) {
     console.error(error);
@@ -506,9 +616,6 @@ export async function activate(
  * Deactivate the extension
  */
 export async function deactivate(): Promise<Response | undefined> {
-  msdk.deactivate();
-  zephyr.deactivate();
-
   const telemetryManager = await getTelemetryManager();
   return telemetryManager.logAction("Extension deactivated", {});
 }
@@ -602,6 +709,39 @@ function registerPreActivationCommands(context: vscode.ExtensionContext) {
       }
     }),
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      SHOW_AI_PROFILING_VIEW_AT_STARTUP_COMMAND_ID,
+      async () => {
+        const workspaceFile = vscode.workspace.workspaceFile;
+        const stateKey = `${OPEN_AIPROFILING_EXTENSION_STATE}:${workspaceFile}`;
+        if (context.globalState.get(stateKey)) {
+          context.globalState.update(stateKey, undefined);
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          if (!workspaceFolders) {
+            return;
+          }
+          for (const folder of workspaceFolders) {
+            if (folder.name === ".cfs") {
+              vscode.workspace
+                .findFiles(new vscode.RelativePattern(folder, "*.cfsaiprof"))
+                .then((cfsConfigFiles) => {
+                  if (cfsConfigFiles.length === 0) {
+                    return;
+                  }
+                  vscode.commands.executeCommand(
+                    "vscode.openWith",
+                    cfsConfigFiles[0],
+                    AI_HARDWARE_PROFILING_EDITOR_ID,
+                  );
+                });
+            }
+          }
+        }
+      },
+    ),
+  );
 }
 
 // --- Command Registration ---
@@ -614,6 +754,7 @@ async function registerCommands(
   context: vscode.ExtensionContext,
   actionsViewProvider: ActionsViewProvider,
   toolManager: CfsToolManager,
+  debugManager: CfsDebugManager,
 ) {
   // Registering command handler for configuring workspace as a CFS workspace
   context.subscriptions.push(
@@ -865,19 +1006,18 @@ async function registerCommands(
 
   // --- Core Dump Analysis Commands Registration ---
 
-  registerCoreDumpCommands(context);
-
+  registerCoreDumpCommands(context, debugManager);
   // --- GDB Toolbox Panel and Commands Registration ---
 
   // Initialize GDBToolbox singleton and get core components
-  const gdbToolbox = await GDBToolbox.initialize(context.extensionPath);
+  const gdbToolbox = await GDBToolbox.initialize(debugManager);
   const scriptManager = gdbToolbox.getScriptManager();
   const executor = gdbToolbox.getExecutor();
 
   await createDebugDirectoryStructure();
 
   // Register the GDB Toolbox panel in the sidebar
-  const gdbToolboxPanel = new GdbToolboxPanel(scriptManager);
+  const gdbToolboxPanel = new GdbToolboxPanel(scriptManager, debugManager);
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
       GDB_TOOLBOX_VIEW_COMMAND_ID,
@@ -1081,6 +1221,21 @@ async function registerCommands(
       openWithSSPlusCommand,
     ),
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(OPEN_REPORT_FILE_COMMAND_ID, async () => {
+      const filePaths = await vscode.window.showOpenDialog({
+        canSelectMany: false,
+        canSelectFolders: false,
+        filters: { "Report Files": ["json", "cfsreport"] },
+      });
+      vscode.commands.executeCommand(
+        "vscode.openWith",
+        filePaths?.[0],
+        ReportViewer.viewType,
+      );
+    }),
+  );
 }
 
 /**
@@ -1112,163 +1267,217 @@ async function handleWorkspacePackageManifests(
 
     if (workspaceRootPath === undefined) return;
 
-    const allManifestPaths = await glob(`**/${MANIFEST_FILE_NAME}`, {
+    const allManifestPaths = await fg.async(`**${MANIFEST_FILE_NAME}`, {
       cwd: workspaceRootPath,
       absolute: true,
       dot: true,
-      nodir: true,
+      onlyFiles: true,
     });
 
     if (allManifestPaths.length === 0) {
       return;
     }
 
-    // Check manifests for missing packages
-    const missingPackages: CfsPackageReference[] = [];
-
+    // Collect all unique packages from all manifests (pure file reads, no Python)
+    const allDeclaredPackages: CfsPackageReference[] = [];
     for (const manifestPath of allManifestPaths) {
       try {
-        const packagesToInstall = await pkgManager.checkManifest(manifestPath);
-        if (packagesToInstall.length > 0) {
-          // Add packages to the flat list, avoiding duplicates
-          for (const pkg of packagesToInstall) {
-            // Given that we are still supporting fallback for tools and SDKs in the install dir,
-            // we need to check if the package (package name/version) is already discoverable by the tool manager
-            // In the custom search paths.
-            const installedTools = await toolManager.getInstalledToolsForId(
-              pkg.name,
-            );
-
-            // Check if any installed version satisfies the required version/range
-            const versionSatisfied = installedTools.some((tool) => {
-              const installedVersion = tool.getInfo().version;
-              if (installedVersion === pkg.version) {
-                return true;
-              }
-              try {
-                // Check if version contains range operators (^, ~, >, <, >=, <=, ||, *, x, X)
-                // If no range operators, treat as exact version match
-                const rangeOperatorPattern = /[~^><|*xX]|>=|<=|\s-\s/;
-                if (!rangeOperatorPattern.test(pkg.version)) {
-                  // Exact version comparison - already checked above
-                  return false;
-                }
-
-                // Use semver.satisfies for range comparisons
-                return semver.satisfies(installedVersion, pkg.version, {
-                  loose: true,
-                });
-              } catch {
-                return false;
-              }
-            });
-
-            if (versionSatisfied) {
-              continue;
-            }
-
-            if (
-              !missingPackages.some(
-                (p) => p.name === pkg.name && p.version === pkg.version,
-              )
-            ) {
-              missingPackages.push(pkg);
-            }
+        const packages = getManifestPackages(manifestPath);
+        for (const pkg of packages) {
+          if (
+            !allDeclaredPackages.some(
+              (p) => p.name === pkg.name && p.version === pkg.version,
+            )
+          ) {
+            allDeclaredPackages.push(pkg);
           }
         }
       } catch (error) {
         vscode.window.showErrorMessage(
-          `Error checking manifest ${path.basename(manifestPath)}: ${
+          `Error reading manifest ${path.basename(manifestPath)}: ${
             error instanceof Error ? error.message : String(error)
           }`,
         );
       }
     }
 
-    // If any manifests have missing packages, prompt the user
-    if (missingPackages.length > 0) {
-      // Format the package list for display
-      const packageList = missingPackages
-        .map((pkg) => `${pkg.name} (${pkg.version})`)
-        .join(", ");
+    if (allDeclaredPackages.length === 0) {
+      return;
+    }
 
-      const message = `Found ${missingPackages.length} required package${missingPackages.length > 1 ? "s" : ""} that need to be installed: ${packageList}`;
-      const installAction = `Install ${missingPackages.length > 1 ? "All" : "Package"}`;
+    // First filter out packages already available via toolManager fallback
+    // This avoids unnecessary remote access for tools/SDKs in custom search paths
+    const packagesNeedingCheck: CfsPackageReference[] = [];
+    const rangeOperatorPattern = /[~^><|*xX]|>=|<=|\s-\s/;
+    for (const pkg of allDeclaredPackages) {
+      // Given that we are still supporting fallback for tools and SDKs in the install dir,
+      // we need to check if the package (package name/version) is already discoverable by
+      // the tool manager in the custom search paths.
+      const installedTool = await toolManager.getInstalledToolById(pkg.name);
+      if (installedTool) {
+        const installedVersion = installedTool.version;
+        if (installedVersion === pkg.version) {
+          // Skip if exact version already installed.
+          continue;
+        }
+        try {
+          // If version contains range operators (^, ~, >, <, >=, <=, ||, *, x, X),
+          // do a semver comparison, and skip if the requirement is satisfied.
+          if (
+            rangeOperatorPattern.test(pkg.version) &&
+            semver.satisfies(installedVersion, pkg.version, {
+              loose: true,
+            })
+          ) {
+            continue;
+          }
+        } catch {
+          // Ignore
+        }
+      }
+      packagesNeedingCheck.push(pkg);
+    }
 
-      const selection = await vscode.window.showInformationMessage(
-        message,
-        installAction,
-        "Cancel",
+    if (packagesNeedingCheck.length === 0) {
+      // All packages are already available via toolManager fallback
+      return;
+    }
+
+    // Now call getInstallPlan only for packages that actually need checking
+    let installPlan;
+    try {
+      installPlan = await pkgManager.getInstallPlan(packagesNeedingCheck);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Error fetching package metadata: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return;
+    }
+
+    // All packages from installPlan.toInstall are missing and need installation
+    const missingPackages = installPlan.toInstall;
+
+    // If there are no missing packages, return
+    if (missingPackages.length === 0) {
+      // All packages are already installed
+      return;
+    }
+
+    // If any packages are missing, prompt the user
+    // Format the package list for display
+    const packageList = missingPackages
+      .map((pkg) => `${pkg.name} (${pkg.version})`)
+      .join(", ");
+
+    const message = `Found ${missingPackages.length} required package${missingPackages.length > 1 ? "s" : ""} that need to be installed: ${packageList}`;
+    const installAction = `Install ${missingPackages.length > 1 ? "All" : "Package"}`;
+
+    const selection = await vscode.window.showInformationMessage(
+      message,
+      installAction,
+      "Cancel",
+    );
+
+    if (selection === installAction) {
+      let accepted = false;
+
+      // Filter license requirements to only those packages that are actually missing
+      const licensesForMissing = installPlan.requiresLicenseAcceptance.filter(
+        (lic) =>
+          missingPackages.some(
+            (p) =>
+              p.name === lic.reference.name &&
+              p.version === lic.reference.version,
+          ),
       );
 
-      if (selection === installAction) {
-        await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: "Installing required packages",
-            cancellable: false,
-          },
-          async (progress) => {
-            try {
-              const packageNames = missingPackages
-                .map((pkg) => pkg.name)
-                .join(", ");
-              progress.report({
-                message: packageNames,
-              });
-
-              const installedPackages =
-                await pkgManager.install(missingPackages);
-
-              if (installedPackages.length > 0) {
-                const installedList = installedPackages
-                  .map((pkg) => `${pkg.name} (${pkg.version})`)
-                  .join(", ");
-                vscode.window.showInformationMessage(
-                  `Successfully installed ${installedPackages.length} required package${installedPackages.length > 1 ? "s" : ""}: ${installedList}.`,
-                );
-              }
-            } catch (error) {
-              const isLoggedIn = await vscode.commands.executeCommand(
-                CLOUD_CATALOG_AUTH.STATUS,
-              );
-              if (!isLoggedIn) {
-                const errMessage = `Some packages may require authentication. Try logging in with myAnalog and install them manually using the command palette.`;
-                vscode.window
-                  .showWarningMessage(
-                    `Failed to install packages: ${
-                      error instanceof Error ? error.message : String(error)
-                    }. ${errMessage}`,
-                    "Login",
-                  )
-                  .then(async (selection) => {
-                    if (selection === "Login") {
-                      await vscode.commands.executeCommand(
-                        CLOUD_CATALOG_AUTH.LOGIN,
-                      );
-                    }
-                  });
-              } else {
-                const errMessage = `Verify you have the necessary package remotes configured then install manually using the command palette.`;
-                vscode.window
-                  .showWarningMessage(
-                    `Failed to install packages: ${
-                      error instanceof Error ? error.message : String(error)
-                    }. ${errMessage}`,
-                    "Remotes",
-                  )
-                  .then(async (selection) => {
-                    if (selection === "Remotes") {
-                      await vscode.commands.executeCommand(
-                        PACKAGE_MANAGER_COMMANDS.MANAGE_REMOTES,
-                      );
-                    }
-                  });
-              }
-            }
-          },
-        );
+      if (licensesForMissing.length > 0) {
+        accepted = await promptForPackageLicenseAcceptance(licensesForMissing);
+        if (!accepted) {
+          return;
+        }
       }
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Installing required packages",
+          cancellable: false,
+        },
+        async (progress) => {
+          try {
+            const packageNames = missingPackages
+              .map((pkg) => pkg.name)
+              .join(", ");
+            progress.report({
+              message: packageNames,
+            });
+
+            const installPlanForMissingPackages: CfsInstallPlan = {
+              ...installPlan,
+              toInstall: missingPackages,
+              requiresLicenseAcceptance: licensesForMissing,
+            };
+
+            const installedPackages = await pkgManager.install(
+              installPlanForMissingPackages,
+              {
+                acceptLicense: accepted,
+              },
+            );
+
+            if (installedPackages.length === 0) {
+              return;
+            }
+
+            const installedList = installedPackages
+              .map((pkg) => `${pkg.name} (${pkg.version})`)
+              .join(", ");
+            vscode.window.showInformationMessage(
+              `Successfully installed ${installedPackages.length} required package${installedPackages.length > 1 ? "s" : ""}: ${installedList}.`,
+            );
+          } catch (error) {
+            const isLoggedIn = await vscode.commands.executeCommand(
+              CLOUD_CATALOG_AUTH.STATUS,
+            );
+            if (!isLoggedIn) {
+              const errMessage = `Some packages may require authentication. Try logging in with myAnalog and install them manually using the command palette.`;
+              vscode.window
+                .showWarningMessage(
+                  `Failed to install packages: ${
+                    error instanceof Error ? error.message : String(error)
+                  }. ${errMessage}`,
+                  "Login",
+                )
+                .then(async (selection) => {
+                  if (selection === "Login") {
+                    await vscode.commands.executeCommand(
+                      CLOUD_CATALOG_AUTH.LOGIN,
+                    );
+                  }
+                });
+            } else {
+              const errMessage = `Verify you have the necessary package remotes configured then install manually using the command palette.`;
+              vscode.window
+                .showWarningMessage(
+                  `Failed to install packages: ${
+                    error instanceof Error ? error.message : String(error)
+                  }. ${errMessage}`,
+                  "Remotes",
+                )
+                .then(async (selection) => {
+                  if (selection === "Remotes") {
+                    await vscode.commands.executeCommand(
+                      PACKAGE_MANAGER_COMMANDS.MANAGE_REMOTES,
+                    );
+                  }
+                });
+            }
+          }
+        },
+      );
     }
   } catch (error) {
     vscode.window.showErrorMessage(

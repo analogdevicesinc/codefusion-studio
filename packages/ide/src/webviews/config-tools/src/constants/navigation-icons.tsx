@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import {navigationItems} from '@common/constants/navigation';
 import {
 	MemoryLayoutIcon,
 	PeripheralsIcon,
-	DataFlowGasketIcon
+	DataFlowGasketIcon,
+	SettingsIcon,
+	MCUBootIcon
 } from 'cfs-react-library';
 import EmbeddedAITools from '../../../common/icons/EmbeddedAITools';
 import {ProfilingIcon} from '../../../common/icons/Profiling';
@@ -68,6 +70,11 @@ export const availableIcons = [
 		tooltipLabel: 'Embedded AI Tools'
 	},
 	{
+		icon: <MCUBootIcon width={24} height={24} />,
+		id: navigationItems.mcubootConfig,
+		tooltipLabel: 'MCUboot Config'
+	},
+	{
 		icon: <ProfilingIcon />,
 		id: navigationItems.profiling,
 		tooltipLabel: 'Profiling'
@@ -78,3 +85,9 @@ export const availableIcons = [
 		tooltipLabel: 'Generate Code'
 	}
 ];
+
+export const settingsIcon = {
+	icon: <SettingsIcon width={24} height={24} />,
+	id: navigationItems.settings,
+	tooltipLabel: 'Settings'
+};

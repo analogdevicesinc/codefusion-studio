@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ export interface HexInputFieldProps {
 	value: string;
 	dataTest?: string;
 	error?: string;
+	placeholder?: string;
 	onValueChange: (value: string) => void;
 }
 export default function HexInputField({
 	value,
 	dataTest,
 	error,
+	placeholder = '00000000',
 	onValueChange
 }: HexInputFieldProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,7 @@ export default function HexInputField({
 				<input
 					ref={inputRef}
 					className={styles.input}
-					placeholder='00000000'
+					placeholder={placeholder}
 					type='text'
 					onChange={handleOnChange}
 					value={value ? formatStringToHex(value?.toUpperCase()) : ''}

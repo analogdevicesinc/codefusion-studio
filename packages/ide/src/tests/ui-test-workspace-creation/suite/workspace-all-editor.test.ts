@@ -125,12 +125,21 @@ describe("Editor Customization", () => {
       console.log("Waiting for DOM elements to load (10 seconds)");
       await UIUtils.sleep(10000);
 
+      console.log("expand all soc groups");
+      const expandAllBtn = await UIUtils.findWebElement(
+        view,
+        By.css('[data-test="soc-selection:segmented-controls:expand"]'),
+      );
+      await UIUtils.clickElement(view, expandAllBtn);
+      await UIUtils.sleep(1000);
+
       console.log("SoC Selection Screen - Finding MAX32690 card");
-      const selectedSocCard = await UIUtils.findWebElement(view,
-        By.css('[data-test="socSelection:card:MAX32690"]'),
+      const mainSocCard = await UIUtils.findWebElement(
+        view,
+        By.css('[data-test="soc-selection:option:MAX32690"]'),
       );
 
-      const isActive = await selectedSocCard.getAttribute("data-active");
+      const isActive = await mainSocCard.getAttribute("data-active");
       console.log(`SoC card MAX32690 active state: ${isActive}`);
       expect(isActive).to.equal("true");
 
@@ -138,7 +147,8 @@ describe("Editor Customization", () => {
       await UIUtils.sleep(5000);
 
       console.log("Finding continue button");
-      const continueBtn = await UIUtils.findWebElement(view,
+      const continueBtn = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="wrksp-footer:continue-btn"]'),
       );
 
@@ -150,7 +160,8 @@ describe("Editor Customization", () => {
       await UIUtils.clickElement(view, continueBtn);
 
       console.log("Board Selection Screen - Finding board card");
-      const selectedBoardCard = await UIUtils.findWebElement(view,
+      const selectedBoardCard = await UIUtils.findWebElement(
+        view,
         By.css(`[data-test="boardSelection:card:${boardId}"]`),
       );
 
@@ -162,7 +173,8 @@ describe("Editor Customization", () => {
       await UIUtils.clickElement(view, continueBtn);
 
       console.log("Workspace Options Screen - Finding manual config card");
-      const selectedWorkspaceCard = await UIUtils.findWebElement(view,
+      const selectedWorkspaceCard = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="workspaceOptions:card:manualConfig"]'),
       );
 
@@ -173,7 +185,8 @@ describe("Editor Customization", () => {
       await UIUtils.clickElement(view, continueBtn);
 
       console.log("Cores Selection Screen - Finding first core card");
-      const firstSelectedCoreCard = await UIUtils.findWebElement(view,
+      const firstSelectedCoreCard = await UIUtils.findWebElement(
+        view,
         By.css(`[data-test="coresSelection:card:${firstCoreId}"]`),
       );
 
@@ -190,9 +203,10 @@ describe("Editor Customization", () => {
       console.log("Core Details Screen - Configuring first core");
       await UIUtils.sleep(1000);
       console.log("Finding Zephyr plugin for first core");
-      const firstCodeGenPluginZephyr = await UIUtils.findWebElement(view,
+      const firstCodeGenPluginZephyr = await UIUtils.findWebElement(
+        view,
         By.css(
-          '[data-test="coreConfig:card:com.analog.project.zephyr.plugin"]',
+          '[data-test="coreConfig:card:com.analog.project.zephyr.mock.plugin"]',
         ),
       );
 
@@ -205,12 +219,15 @@ describe("Editor Customization", () => {
       await UIUtils.clickElement(view, continueBtn);
 
       console.log("Finding MSDK plugin for second core");
-      const secondCodeGenPluginZephyr = await UIUtils.findWebElement(view,
-        By.css('[data-test="coreConfig:card:com.analog.project.msdk.plugin"]'),
+      const secondCodeGenPluginZephyr = await UIUtils.findWebElement(
+        view,
+        By.css(
+          '[data-test="coreConfig:card:com.analog.project.msdk.mock.plugin"]',
+        ),
       );
 
       console.log("Selecting MSDK plugin for second core");
-      await  UIUtils.clickElement(view, secondCodeGenPluginZephyr);
+      await UIUtils.clickElement(view, secondCodeGenPluginZephyr);
       await UIUtils.sleep(1000);
 
       console.log("Proceeding to confirmation screen");
@@ -218,17 +235,20 @@ describe("Editor Customization", () => {
 
       console.log("Confirmation Screen - Validating summary section");
       console.log("Finding SoC summary element");
-      const socSummary = await UIUtils.findWebElement(view,
+      const socSummary = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="confirmation-screen:summary:soc"]'),
       );
 
       console.log("Finding board summary element");
-      const boardSummary = await UIUtils.findWebElement(view,
+      const boardSummary = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="confirmation-screen:summary:board-package"]'),
       );
 
       console.log("Finding cores summary element");
-      const coresSummary = await UIUtils.findWebElement(view,
+      const coresSummary = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="confirmation-screen:summary:cores"]'),
       );
 
@@ -252,21 +272,24 @@ describe("Editor Customization", () => {
 
       console.log("Validating workspace name and path inputs");
       console.log("Finding workspace name input field");
-      const workspaceNameInput = await UIUtils.findWebElement(view,
+      const workspaceNameInput = await UIUtils.findWebElement(
+        view,
         By.css(
           '[data-test="confirmation-screen:workspace-name:text-field-control-input"]',
         ),
       );
 
       console.log("Finding workspace path input field");
-      const workspacePathInput = await UIUtils.findWebElement(view,
+      const workspacePathInput = await UIUtils.findWebElement(
+        view,
         By.css(
           '[data-test="confirmation-screen:workspace-path:text-field-control-input"]',
         ),
       );
 
       console.log("Finding default location checkbox");
-      const defaultLocationCheckbox = await UIUtils.findWebElement(view,
+      const defaultLocationCheckbox = await UIUtils.findWebElement(
+        view,
         By.css(
           '[data-test="confirmation-screen:workspace-path:default-location-checkbox"]',
         ),
@@ -342,21 +365,30 @@ describe("Editor Customization", () => {
 
     console.log("Switching to webview frame");
     await view.switchToFrame().then(async () => {
+      console.log("expand all soc groups");
+      const expandAllBtn = await UIUtils.findWebElement(
+        view,
+        By.css('[data-test="soc-selection:segmented-controls:expand"]'),
+      );
+      await UIUtils.clickElement(view, expandAllBtn);
+      await UIUtils.sleep(3000);
+
       console.log(`Finding main SoC card: ${mainSoC}`);
-      const selectedSocCard = await UIUtils.findWebElement(view,
-        By.css(`[data-test="socSelection:card:${mainSoC}"]`),
+      const mainSocCard = await UIUtils.findWebElement(
+        view,
+        By.css(`[data-test="soc-selection:option:${mainSoC}"]`),
       );
 
-      const initialActiveState =
-        await selectedSocCard.getAttribute("data-active");
+      const initialActiveState = await mainSocCard.getAttribute("data-active");
       console.log(
         `Initial SoC card ${mainSoC} active state: ${initialActiveState}`,
       );
       expect(initialActiveState).to.equal("true");
 
       console.log(`Finding secondary SoC card: ${secondarySoC}`);
-      const newSelectedSocCard = await UIUtils.findWebElement(view,
-        By.css(`[data-test="socSelection:card:${secondarySoC}"]`),
+      const newSelectedSocCard = await UIUtils.findWebElement(
+        view,
+        By.css(`[data-test="soc-selection:option:${secondarySoC}"]`),
       );
 
       console.log(`Switching to ${secondarySoC} to test reset behavior`);
@@ -366,13 +398,14 @@ describe("Editor Customization", () => {
       await UIUtils.sleep(4000);
 
       console.log(`Switching back to original SoC: ${mainSoC}`);
-      await UIUtils.clickElement(view, selectedSocCard);
+      await UIUtils.clickElement(view, mainSocCard);
 
       console.log("Waiting for SoC change to complete (4 seconds)");
       await UIUtils.sleep(4000);
 
       console.log("Finding continue button");
-      const continueBtn = await UIUtils.findWebElement(view,
+      const continueBtn = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="wrksp-footer:continue-btn"]'),
       );
 
@@ -383,7 +416,8 @@ describe("Editor Customization", () => {
       await UIUtils.sleep(5000);
 
       console.log(`Finding previously selected board card: ${boardId}`);
-      const selectedBoardCard = await UIUtils.findWebElement(view,
+      const selectedBoardCard = await UIUtils.findWebElement(
+        view,
         By.css(`[data-test="boardSelection:card:${boardId}"]`),
       );
 
@@ -395,7 +429,8 @@ describe("Editor Customization", () => {
       expect(resetBoardState).to.equal("false");
 
       console.log("Finding new board package option: FTHR___TQFN");
-      const newSelectedBoardPackage = await UIUtils.findWebElement(view,
+      const newSelectedBoardPackage = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="boardSelection:card:FTHR___TQFN"]'),
       );
 
@@ -414,7 +449,8 @@ describe("Editor Customization", () => {
       await UIUtils.sleep(5000);
 
       console.log("Workspace Options Screen - Finding manual config card");
-      const selectedWorkspaceCard = await UIUtils.findWebElement(view,
+      const selectedWorkspaceCard = await UIUtils.findWebElement(
+        view,
         By.css('[data-test="workspaceOptions:card:manualConfig"]'),
       );
 
@@ -431,7 +467,8 @@ describe("Editor Customization", () => {
       await UIUtils.sleep(5000);
 
       console.log(`Finding core card: ${firstCoreId}`);
-      const firstSelectedCoreCard = await UIUtils.findWebElement(view,
+      const firstSelectedCoreCard = await UIUtils.findWebElement(
+        view,
         By.css(`[data-test="coresSelection:card:${firstCoreId}"]`),
       );
 
@@ -558,7 +595,8 @@ describe("Editor Customization", () => {
     await UIUtils.sleep(10000);
 
     console.log("Finding continue button");
-    const continueBtn = await UIUtils.findWebElement(view,
+    const continueBtn = await UIUtils.findWebElement(
+      view,
       By.css('[data-test="wrksp-footer:continue-btn"]'),
     );
 
@@ -579,10 +617,9 @@ describe("Editor Customization", () => {
     await UIUtils.sleep(10000);
 
     console.log("Finding Zephyr Blinky template card");
-    const selectedTemplateCard = await UIUtils.findWebElement(view,
-      By.css(
-        '[data-test="templateSelection:card:com.analog.zephyr.workspace.blinky"]',
-      ),
+    const selectedTemplateCard = await UIUtils.findWebElement(
+      view,
+      By.css('[data-test="templateSelection:card:mock.workspace.blinky"]'),
     );
 
     console.log("Scrolling template card into view");
@@ -607,7 +644,8 @@ describe("Editor Customization", () => {
     await UIUtils.sleep(1000);
 
     console.log("Finding Create Workspace button");
-    const createWrkspBtn = await UIUtils.findWebElement(view,
+    const createWrkspBtn = await UIUtils.findWebElement(
+      view,
       By.css('[data-test="wrksp-footer:continue-btn"]'),
     );
 

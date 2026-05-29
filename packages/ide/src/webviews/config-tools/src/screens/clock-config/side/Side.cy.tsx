@@ -14,13 +14,14 @@
  */
 import type {Soc} from '@common/types/soc';
 import {
-	setClockNodeDetailsTargetNode,
-	setDiagramData
+	setClockNodeControlValue,
+	setClockNodeDetailsTargetNode
 } from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {configurePreloadedStore} from '../../../state/store';
 import ClockConfigSideContainer from './Side';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
+import {controlErrorTypes} from '../../../../../common/utils/control-errors';
 
 const mock = (await import(`@socs/max32690-wlp.json`))
 	.default as unknown as Soc;
@@ -135,11 +136,11 @@ describe('Clock config side component', () => {
 			);
 
 			store.dispatch(
-				setDiagramData({
-					'P0.23': {
-						enabled: true,
-						error: true
-					}
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'CLKEXT',
+					error: undefined
 				})
 			);
 
@@ -164,22 +165,15 @@ describe('Clock config side component', () => {
 			);
 
 			store.dispatch(
-				setAppliedSignal({
-					Pin: 'F4',
-					Peripheral: 'MISC',
-					Name: 'CLKEXT'
+				setClockNodeControlValue({
+					name: 'P0.23',
+					key: 'P0_23_FREQ',
+					value: '',
+					error: controlErrorTypes.integer
 				})
 			);
 
-			store.dispatch(
-				setDiagramData({
-					'P0.23': {
-						enabled: false,
-						error: true
-					}
-				})
-			);
-
+			// In its default state, P0.23 will be disabled.
 			cy.mount(<ClockConfigSideContainer />, store);
 
 			cy.dataTest('accordion:conflict:PIN INPUT').should('not.exist');
@@ -195,23 +189,31 @@ describe('Clock config side component', () => {
 	});
 
 	it('Does not display an error icon for disabled control values', () => {
-		const store = {...reduxStore};
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			const store = configurePreloadedStore(
+				mock,
+				configDict,
+				controls
+			);
 
-		store.dispatch(
-			setAppliedSignal({
-				Pin: 'G5',
-				Peripheral: 'OSC',
-				Name: 'ERFO_CLK_OUT',
-				PinCfg: {PWR: 'VDDIO'}
-			})
-		);
+			store.dispatch(
+				setAppliedSignal({
+					Pin: 'G5',
+					Peripheral: 'OSC',
+					Name: 'ERFO_CLK_OUT',
+					PinCfg: {PWR: 'VDDIO'}
+				})
+			);
 
-		cy.mount(<ClockConfigSideContainer />, store);
+			cy.mount(<ClockConfigSideContainer />, store);
 
-		cy.dataTest('accordion:OSCILLATOR')
-			.should('exist')
-			.then(() => {
-				cy.dataTest('accordion:conflict:Divider').should('not.exist');
-			});
+			cy.dataTest('accordion:OSCILLATOR')
+				.should('exist')
+				.then(() => {
+					cy.dataTest('accordion:conflict:Divider').should(
+						'not.exist'
+					);
+				});
+		});
 	});
 });

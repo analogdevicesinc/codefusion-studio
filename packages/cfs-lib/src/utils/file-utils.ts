@@ -28,10 +28,10 @@ export function checkIfFileExists(filename: string | undefined) {
 	return fs.existsSync(filepath);
 }
 
-export function readJsonFile(filename: string) {
+export function readJsonFile<T = Record<string, unknown>>(filename: string): T {
 	try {
 		const fileContent = fs.readFileSync(filename, "utf8");
-		return JSON.parse(fileContent) as Record<string, unknown>;
+		return JSON.parse(fileContent) as T;
 	} catch {
 		throw new Error(
 			`The file: ${filename} is not a valid JSON file.`

@@ -1,11 +1,14 @@
 {
-  "folders": [
-    {
+	"folders": [
+		{
 			"name": "codefusion-studio",
-			"path": "."
+			"path": ".",
 		},
 		{
-			"path": "./cfs-ai"
-		}
-  ]
+			"path": "./cfs-ai",
+		},
+	],
+	"settings": {
+		"cfs.configureWorkspace": "No",
+	},
 }

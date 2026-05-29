@@ -1,0 +1,2 @@
+/* CLI fixture system init */
+void MXC_Initialize(void) {}

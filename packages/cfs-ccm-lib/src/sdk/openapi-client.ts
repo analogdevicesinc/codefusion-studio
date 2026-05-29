@@ -16,7 +16,7 @@
 // Override the global Request and Response types seen by the openapi-fetch module to those
 // provided by node-fetch, this lets use node-fetch-cache with the openapi-fetch client
 import { getNodeFetch } from 'node-fetch-cache';
-import { Middleware } from 'openapi-fetch';
+import type { Client, Middleware } from 'openapi-fetch';
 type NodeFetchRequest = Awaited<
     ReturnType<typeof getNodeFetch>
 >['Request'];
@@ -35,7 +35,6 @@ declare module 'openapi-fetch' {
         Required<Middleware>['onResponse'];
 }
 
-import { paths } from '../gen/api-types.js';
-import createClient from 'openapi-fetch';
+import type { paths } from 'cfs-ccm-api/api-types';
 // type for openapi-fetch client so TypeScript will allow us to safely invoke its methods
-export type OpenApiClient = ReturnType<typeof createClient<paths>>;
+export type OpenApiClient = Client<paths>;

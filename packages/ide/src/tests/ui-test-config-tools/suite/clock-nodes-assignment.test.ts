@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,8 +92,7 @@ describe("System Planner clock configuration diagram for frequencies used by dif
   // ===Locator===
   const textBox = By.css(`[data-test='P0_9_FREQ-P0.9-control-input']`);
   const configFile = "manual32690.cfsconfig";
-
-  const configPath = (file: string) => getConfigPathForFile(file);
+  const configPath = getConfigPathForFile(configFile);
 
   // ===Test Setup===
   let workbench: Workbench;
@@ -110,9 +109,16 @@ describe("System Planner clock configuration diagram for frequencies used by dif
     await UIUtils.sleep(3000);
   });
 
+  after(async () => {
+    if (configPath) {
+      // Teardown - reset cfsconfig file
+      await UIUtils.restoreFixtureFileFromGit(configPath);
+    }
+  });
+
   it("Enabling the clock nodes under clock configuration", async () => {
     // ===Given I open the configuration file "manual32690.cfsconfig"===
-    await browser.openResources(configPath(configFile));
+    await browser.openResources(configPath);
     workbench = new Workbench();
     console.log("Opened the cfsconfig file");
 
@@ -195,7 +201,7 @@ describe("System Planner clock configuration diagram for frequencies used by dif
     await UIUtils.sleep(200);
 
     // ===Then Verify the persistence schema of the config file after changes being saved===
-    const config = await parseJSONFile(configPath(configFile));
+    const config = await parseJSONFile(configPath);
     const clockNodeNamesAndValues = config.ClockNodes.map((node: any) => ({
       name: node.Name,
       value: node.Value,

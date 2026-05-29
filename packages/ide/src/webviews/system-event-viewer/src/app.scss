@@ -1,0 +1,63 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+
+body.ev-sources-list-resizing,
+body.ev-sources-list-resizing * {
+	cursor: col-resize !important;
+	user-select: none !important;
+}
+
+// Remove hover/active background for rows when resizing
+// - Event sources list
+body.ev-sources-list-resizing {
+	[data-test='event-sources:list']
+		[data-test^='event-sources:item:'][data-row-emphasized='true'] {
+		background: colors.$default-background !important;
+	}
+}
+// - Timeline diagram
+body.ev-sources-list-resizing {
+	[data-test='timeline-diagram']
+		[data-test^='timeline-diagram:chart-row:'][data-row-emphasized='true'] {
+		background-color: colors.$default-background !important;
+	}
+
+	[data-test='timeline-diagram']
+		[data-test^='timeline-diagram:chart-row:'][data-row-emphasized='true']
+		[data-test='timeline-diagram:empty-block'] {
+		background: colors.$default-background !important;
+	}
+}
+
+// For floating card during drag in event sources list
+body.timeline-drag-active {
+	cursor: grabbing !important;
+	user-select: none !important;
+}
+body.timeline-drag-outside {
+	cursor: not-allowed !important;
+}
+
+body.timeline-handle-ew-resize,
+body.timeline-handle-ew-resize * {
+	cursor: ew-resize !important;
+}
+
+body.timeline-range-grabbing,
+body.timeline-range-grabbing * {
+	cursor: grabbing !important;
+}

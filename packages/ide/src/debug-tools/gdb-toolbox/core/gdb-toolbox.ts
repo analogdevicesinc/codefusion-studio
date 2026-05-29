@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  *
  */
 
-import { registerDebugSessionListeners } from "../services/debug-event-hooks";
 import { ScriptManager } from "../scripts/script-manager";
 import { GDBExecutor } from "../execution/gdb-executor";
+import { CfsDebugManager } from "../../debug-manager";
 
 /**
  * GDBToolbox is a singleton class that manages the core components of the GDB Toolbox extension.
@@ -26,20 +26,20 @@ export class GDBToolbox {
   private static instance: GDBToolbox;
   private scriptManager: ScriptManager;
   private executor: GDBExecutor;
-
-  private constructor(extensionRoot: string) {
+  private constructor(debugManager: CfsDebugManager) {
     this.scriptManager = new ScriptManager();
-    this.executor = new GDBExecutor(extensionRoot);
+    this.executor = new GDBExecutor(debugManager);
   }
 
   /**
    * Initializes the GDBToolbox singleton and registers debug session listeners.
    * Should be called once during extension activation.
    */
-  public static async initialize(extensionRoot: string): Promise<GDBToolbox> {
+  public static async initialize(
+    debugManager: CfsDebugManager,
+  ): Promise<GDBToolbox> {
     if (!GDBToolbox.instance) {
-      await registerDebugSessionListeners();
-      GDBToolbox.instance = new GDBToolbox(extensionRoot);
+      GDBToolbox.instance = new GDBToolbox(debugManager);
     }
     return GDBToolbox.instance;
   }

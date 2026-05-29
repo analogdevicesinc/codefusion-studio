@@ -22,9 +22,12 @@ export const CONFIG_TOOLS_ID = "cfgtools";
 export const CONFIG_FILE_EXTENSION = "cfsconfig";
 export const WORKSPACE_CONFIG_FILE_EXTENSION = "cfsworkspace";
 export const WORKSPACE_CONTEXT = "Workspace";
+export const AI_TOOLS = "AI Tools";
 
 // Custom Editor Ids
 export const WORKSPACE_CREATION_EDITOR_ID = "cfs.workspaceCreation";
+export const MODEL_WORKSPACE_CREATION_EDITOR_ID = "cfs.modelWorkspaceCreation";
+export const AI_HARDWARE_PROFILING_EDITOR_ID = "cfs.aiHardwareProfiling";
 export const MCU_EDITOR_ID = "cfgtools.editor";
 export const ELF_EDITOR_ID = "elf.fileEditor";
 export const SIGMA_STUDIO_PLUS_PROJECT_EDITOR_ID =
@@ -84,6 +87,7 @@ export const MAXIM_SDK_PATH = "/SDK/MAX";
 export const BROWSE_STRING = "Browse...";
 export const CFS_PREFIX = "CFS: ";
 export const BUILD = "build";
+export const PRISTINE_BUILD = "pristine build";
 export const CLEAN = "clean";
 export const FLASH_OPENOCD = "flash (OpenOCD)";
 export const FLASH_JLINK = "flash (JLink)";
@@ -115,6 +119,7 @@ export const SET_SDK_PATH = "setSdkPath";
 export const ACTIVE_CONTEXT = "activeContext";
 export const CFS_TELEMETRY_ENABLE = "telemetry.enable";
 export const CFS_TELEMETRY_USER_ID = "telemetry.userId";
+export const CFS_TELEMETRY_USER_TYPE = "telemetry.userType";
 export const ENVIRONMENT = "environment";
 export const CFS_PROJECT_SDK_ID = "project.sdk.id";
 export const CFS_PROJECT_SDK_PATH = "cfs.project.sdk.path";
@@ -151,6 +156,7 @@ export const DEBUG_ARM_OPENOCD_ACTION = "Debug (Arm Cortex-M4, OpenOCD)";
 export const DEBUG_ARM_JLINK_ACTION = "Debug (Arm Cortex-M4, JLink)";
 export const DEBUG_RISCV_OPENOCD_ACTION = "Debug (RISC-V, OpenOCD)";
 export const RISCV_DEBUG = "CFS: Debug with GDB and OpenOCD (RISC-V)";
+export const CORE_DUMP_LAUNCH = "CFS: Launch Core Dump Analysis";
 
 // Icons
 export const TOOLS = "tools";
@@ -178,3 +184,13 @@ export const SELECT_SDK_PATH = "Choose SDK path";
 
 // JLink Configuration
 export const SELECT_JLINK_PATH = "Choose JLink path";
+
+// Model to Workspace
+export const OPEN_AIPROFILING_EXTENSION_STATE = "openAiProfilingView";
+
+// System Event Viewer Constants
+export const SEV_VIEW_ID = `${EXTENSION_ID}.systemEventViewer`;
+export const SEV_EDITOR_ID = `${EXTENSION_ID}.sev.editor`;
+export const SEV_OPEN_COMMAND_ID = `${EXTENSION_ID}.sev.open`;
+export const SEV_SUPPORTED_SOCS_CONTEXT_ID = `${EXTENSION_ID}.sev.supportedSocs`;
+export const SEV_SCHEMA = "cfs-sev";

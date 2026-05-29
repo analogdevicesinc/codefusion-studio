@@ -1,9 +1,9 @@
 {
-  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.",
+  "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.98",
+  "Version": "1.3.759",
   "Schema": "1.2.0",
-  "Timestamp": "2025-11-26 14:40:34.518889",
+  "Timestamp": "2026-04-17T10:40:28.616085Z",
   "Name": "MAX32658",
   "Description": "Nano-Power Arm Cortex-M33 MCU with BLE for CGM and Wearable Applications",
   "Endianness": "Little",
@@ -39,7 +39,7 @@
       "AddressStart": "0x20000000",
       "AddressEnd": "0x20007fff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -50,7 +50,7 @@
       "AddressStart": "0x20008000",
       "AddressEnd": "0x2000ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -61,7 +61,7 @@
       "AddressStart": "0x20010000",
       "AddressEnd": "0x2001ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -72,7 +72,7 @@
       "AddressStart": "0x20020000",
       "AddressEnd": "0x2002ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -83,7 +83,7 @@
       "AddressStart": "0x20030000",
       "AddressEnd": "0x2003ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -94,7 +94,7 @@
       "AddressStart": "0x1000000",
       "AddressEnd": "0x10fffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "Flash",
       "Location": "Internal",
       "MinimumAlignment": 8192
@@ -380,7 +380,7 @@
     },
     {
       "Name": "FLC",
-      "Description": "Flash Memory Control",
+      "Description": "Flash Controller",
       "Cores": [
         "CM33"
       ],
@@ -535,7 +535,7 @@
     },
     {
       "Name": "I3C0",
-      "Description": "Inter-Integrated Circuit [n]",
+      "Description": "Inter-Integrated Circuit 0",
       "Cores": [
         "CM33"
       ],
@@ -1366,7 +1366,7 @@
     },
     {
       "Name": "ICC0",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 0",
       "Cores": [
         "CM33"
       ],
@@ -1684,7 +1684,7 @@
     },
     {
       "Name": "SPI0",
-      "Description": "Serial Peripheral Interface",
+      "Description": "Serial Peripheral Interface 0",
       "Cores": [
         "CM33"
       ],
@@ -7807,11 +7807,16 @@
     },
     {
       "Name": "UART0",
-      "Description": "UART Peripheral",
+      "Description": "UART Peripheral 0",
       "Cores": [
         "CM33"
       ],
       "Config": {
+        "TX_RX_MODES": {
+          "TX_RX": [],
+          "TX_ONLY": [],
+          "RX_ONLY": []
+        },
         "PARITY": {
           "DISABLED": [
             {
@@ -8216,6 +8221,7 @@
         }
       },
       "ConfigProgrammingOrder": [
+        "TX_RX_MODES",
         "PARITY",
         "PARITY_MD",
         "CTS_SAMPLING",
@@ -8241,12 +8247,12 @@
         {
           "Name": "RX",
           "Description": "Receive",
-          "Required": "1"
+          "Required": "${Control:TX_RX_MODES} ${String:TX_ONLY} !="
         },
         {
           "Name": "TX",
           "Description": "Transmit",
-          "Required": "1"
+          "Required": "${Control:TX_RX_MODES} ${String:RX_ONLY} !="
         }
       ],
       "ClockNode": "UART0"
@@ -8305,7 +8311,7 @@
     },
     {
       "Name": "WDT",
-      "Description": "Windowed Watchdog Timer 0",
+      "Description": "Windowed Watchdog Timer",
       "Cores": [
         "CM33"
       ],
@@ -9413,13 +9419,8 @@
         "EnumValues": [
           {
             "Id": "WEAK_PU",
-            "Description": "Weak Pull-up",
-            "Value": 1
-          },
-          {
-            "Id": "PU",
             "Description": "Pull-up",
-            "Value": 2
+            "Value": 1
           },
           {
             "Id": "DIS",
@@ -9427,13 +9428,8 @@
             "Value": 3
           },
           {
-            "Id": "PD",
-            "Description": "Pull-down",
-            "Value": 4
-          },
-          {
             "Id": "WEAK_PD",
-            "Description": "Weak Pull-down",
+            "Description": "Pull-down",
             "Value": 5
           }
         ]
@@ -9466,12 +9462,12 @@
           },
           {
             "Id": "SPEC0",
-            "Description": "2 mA",
+            "Description": "1 mA",
             "Value": 4
           },
           {
             "Id": "SPEC2",
-            "Description": "10 mA",
+            "Description": "5 mA",
             "Value": 5
           }
         ]
@@ -10598,6 +10594,7 @@
         "Id": "POLY",
         "Description": "CRC Polynomial",
         "Type": "integer",
+        "Hint": "0xEDB88320",
         "MinimumValue": "0x0",
         "MaximumValue": "0xffffffff",
         "Increment": "0x1",
@@ -13874,6 +13871,28 @@
     ],
     "UART0": [
       {
+        "Id": "TX_RX_MODES",
+        "Description": "Mode",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "TX_RX",
+            "Description": "Transmit and Receive",
+            "Value": 0
+          },
+          {
+            "Id": "TX_ONLY",
+            "Description": "Transmit Only (Non-standard)",
+            "Value": 1
+          },
+          {
+            "Id": "RX_ONLY",
+            "Description": "Receive Only (Non-standard)",
+            "Value": 2
+          }
+        ]
+      },
+      {
         "Id": "PARITY",
         "Description": "Parity",
         "Type": "enum",
@@ -13964,12 +13983,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -14878,7 +14897,7 @@
         {
           "Name": "CLK_EXT",
           "Description": "External Clock on P0.7",
-          "Value": "${Control:P0_7_FREQ}"
+          "Value": "${PinMux:P0.7} ${String:MISC_CLK_EXT} = ${Control:P0_7_FREQ} ${Undef} ?"
         }
       ],
       "Signpost": "To configure the external clock source on P0.7, the MISC CLK_EXT signal must be assigned using the Pin Config tool.",
@@ -18231,178 +18250,6 @@
           "Documentation": "Reserved.",
           "Position": 21,
           "Length": 11,
-          "Access": "R",
-          "Reset": 0
-        }
-      ]
-    },
-    {
-      "Name": "GCR_SYSCTRL",
-      "Description": "System Control Register",
-      "Address": "0x40000000",
-      "Size": 32,
-      "Fields": [
-        {
-          "Name": "BSTAPEN",
-          "Description": "Boundary Scan Tap Enable",
-          "Documentation": "This field's reset value matches GCR_SYSST.icelock. Do not modify.",
-          "Position": 0,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 1,
-          "Length": 3,
-          "Access": "R",
-          "Reset": 1
-        },
-        {
-          "Name": "FLASH_PAGE_FLIP",
-          "Description": "Flash Page Flip Flag",
-          "Documentation": "This field flips the bottom and top halves of flash memory. This bit is controlled by hardware and should not be modified by software.",
-          "Position": 4,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "NOT_FLIPPED",
-              "Description": "Not Flipped",
-              "Value": 0,
-              "Documentation": "Physical layout matches logical layout."
-            },
-            {
-              "Name": "FLIPPED",
-              "Description": "Flipped",
-              "Value": 1,
-              "Documentation": "Top and bottom halves flipped."
-            }
-          ]
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 5,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "ICC0_FLUSH",
-          "Description": "ICC0 Cache Flush",
-          "Documentation": "Write 1 to flush the code cache and the instruction buffer for the CM4 (CPU0). This bit is automatically cleared to 0 when the flush is complete. Writing 0 has no effect and does not stop a cache flush in progress.",
-          "Position": 6,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "COMPLETE",
-              "Description": "Flush Complete",
-              "Value": 0,
-              "Documentation": "ICC0 flush complete."
-            },
-            {
-              "Name": "FLUSH",
-              "Description": "Flush Contents",
-              "Value": 1,
-              "Documentation": "Flush the contents of the ICC0 cache."
-            }
-          ]
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 7,
-          "Length": 5,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "ROMDONE",
-          "Description": "Reserved, Do Not Modify",
-          "Documentation": "Reserved, Do Not Modify.",
-          "Position": 12,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "CCHK",
-          "Description": "Calculate ROM Checksum",
-          "Documentation": "This bit is self-clearing when the ROM checksum calculation is complete, and the result is available at bit GCR_SYSCTRL.chkres. Writing a 0 has no effect.",
-          "Position": 13,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "NOOP",
-              "Description": "No Operation",
-              "Value": 0,
-              "Documentation": "No operation."
-            },
-            {
-              "Name": "START",
-              "Description": "Start Checksum",
-              "Value": 1,
-              "Documentation": "Start ROM checksum calculation."
-            }
-          ]
-        },
-        {
-          "Name": "SWD_DIS",
-          "Description": "Serial Wire Debug Disable",
-          "Documentation": "This bit is used to disable the serial wire debug interface.",
-          "Position": 14,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0
-        },
-        {
-          "Name": "CHKRES",
-          "Description": "ROM Checksum Calculation Pass/Fail",
-          "Documentation": "This field is the result after setting the bit GCR_SYSCTRL.cchk. This field is only valid after the ROM checksum is complete and GCR_SYSCTRL.cchk is cleared by the hardware.",
-          "Position": 15,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "PASS",
-              "Description": "Pass",
-              "Value": 0,
-              "Documentation": "ROM checksum calculation passed."
-            },
-            {
-              "Name": "FAIL",
-              "Description": "Fail",
-              "Value": 1,
-              "Documentation": "ROM checksum calculation failed."
-            }
-          ]
-        },
-        {
-          "Name": "OVR",
-          "Description": "Reserved, Do Not Modify",
-          "Documentation": "This field must be set to 0b10 for proper device operation.",
-          "Position": 16,
-          "Length": 2,
-          "Access": "R",
-          "Reset": 2
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 18,
-          "Length": 14,
           "Access": "R",
           "Reset": 0
         }
@@ -35822,34 +35669,16 @@
         {
           "Name": "A3",
           "Label": "P0.10",
-          "Description": "GPIO P0.10",
+          "Description": "GPIO P0.10 / SWDCLK",
           "Position": {
             "X": 2,
             "Y": 0
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 10,
           "Signals": [
             {
               "Peripheral": "MISC",
-              "Name": "SWDCLK",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN10",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GCR_SYSCTRL",
-                  "Field": "SWD_DIS",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ]
+              "Name": "SWDCLK"
             }
           ]
         },
@@ -37072,34 +36901,16 @@
         {
           "Name": "B3",
           "Label": "P0.11",
-          "Description": "GPIO P0.11",
+          "Description": "GPIO P0.11 / SWDIO",
           "Position": {
             "X": 2,
             "Y": 1
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 11,
           "Signals": [
             {
               "Peripheral": "MISC",
-              "Name": "SWDIO",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN11",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GCR_SYSCTRL",
-                  "Field": "SWD_DIS",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ]
+              "Name": "SWDIO"
             }
           ]
         },
@@ -39016,20 +38827,6 @@
           }
         ]
       },
-      "CoprogrammedSignals": [
-        [
-          {
-            "Pin": "A3",
-            "Peripheral": "MISC",
-            "Signal": "SWDCLK"
-          },
-          {
-            "Pin": "B3",
-            "Peripheral": "MISC",
-            "Signal": "SWDIO"
-          }
-        ]
-      ],
       "ClockCanvas": {
         "meta": {
           "version": "0.0.0",

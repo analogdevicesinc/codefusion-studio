@@ -22,6 +22,7 @@ export const ELF_FILE_EXPLORER = "ELF File Explorer";
 export const EXAMPLES = "Browse Examples";
 export const HOME = "CFS Home Page";
 export const PROJECTS = "Projects";
+export const AI_TOOLS = "AI Tools";
 
 export const CONFIGURE_WORKSPACE = {
   label: "Configure Workspace",

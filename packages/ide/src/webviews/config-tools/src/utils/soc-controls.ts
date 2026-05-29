@@ -23,7 +23,7 @@ import type {
 	TFormFieldValue,
 	TFormNumericBase
 } from 'cfs-react-library';
-import type {SocControl} from 'cfs-plugins-api';
+import type {SocControl} from 'cfs-types';
 
 import {evaluateCondition} from './rpn-expression-resolver';
 import {computeErrorPerControl} from '@common/utils/dynamic-form-svc';
@@ -107,16 +107,27 @@ export function formatControlsForDynamicForm(
 			}`,
 			type: control.Type as TFormControlType,
 			base: control.NumericBase as TFormNumericBase,
+			integer: {
+				min: control.MinimumValue,
+				max: control.MaximumValue,
+				step: control.Increment,
+				allowNegative: true
+			},
 			description: control.Description,
 			pluginOption: control.PluginOption,
-			default: control.Type === 'integer' ? control.Hint : '',
+			default: control.Hint ?? '',
 			...(control.EnumValues?.length
 				? {
-						enum:
-							control.EnumValues?.map(value => ({
+						enum: (control.EnumValues ?? [])
+							.filter(v =>
+								v.Condition
+									? evaluateCondition(currentConfig, v.Condition)
+									: true
+							)
+							.map(value => ({
 								label: value.Description,
 								value: value.Id
-							})) ?? []
+							}))
 					}
 				: {}),
 			info: control.Tooltip,

@@ -1,7 +1,7 @@
 ---
 description: Introduction to the AI Debug Assistant and how to use it with CodeFusion Studio.
 author: Analog Devices
-date: "2026-02-24"
+date: "2026-05-15"
 ---
 
 # AI Debug Assistant
@@ -11,14 +11,19 @@ date: "2026-02-24"
 
 The AI Debug Assistant is an agentic AI system built into CodeFusion Studio that actively participates in your debug sessions. Rather than answering static questions about your source code, it can autonomously investigate faults, inspect live hardware state, coordinate across multiple cores, and reason about what your silicon is actually doing - all in real time.
 
-The Assistant is built on the [:octicons-link-external-24: Model Context Protocol (MCP)](https://modelcontextprotocol.io/){:target="_blank"}, an open standard created by Anthropic that enables AI models to securely connect to external tools and data sources. This open architecture means the AI Debug Assistant is not locked to a single AI provider or interface. Today it supports GitHub Copilot in VS Code and Claude Code. As the ecosystem grows, it will work with whatever AI client your team adopts.
+The AI Debug Assistant is accessible through two integration paths:
+
+- **CFS MCP debug server**: an MCP-based integration that works with GitHub Copilot Agent Mode, Claude Code, and other MCP-compatible AI clients.
+- **CFS Debug chat participant**: a VS Code GitHub Copilot chat integration available through the `@cfs-debug` participant.
+
+The recommended workflow is the CFS MCP debug server, which is built on the [:octicons-link-external-24: Model Context Protocol (MCP)](https://modelcontextprotocol.io/){:target="_blank"}, an open standard created by Anthropic for connecting AI models to external tools and data sources.
 
 ![AI Debug Assistant hero — AI interfacing with a live embedded debug session](./images/ai-debug-assistant-hero.png)
 
 In this section you'll find:
 
-- [Getting started](getting-started.md) — prerequisites, enabling the MCP server, and connecting AI clients.
-- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — working with GitHub Copilot Chat (including Agent Mode) and Claude Code, with real-world debugging examples.
+- [Getting started](getting-started.md) — prerequisites and setup for the CFS MCP debug server or CFS Debug chat participant.
+- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — using both integration paths with real-world debugging examples.
 - [Tools and workflows reference](reference.md) — full reference for all debug tools and pre-built diagnostic prompts.
 - [Troubleshooting](troubleshooting.md) — troubleshooting guidance and information.
 
@@ -30,7 +35,7 @@ The AI Debug Assistant bridges that gap. It enables **agentic debugging workflow
 
 ## What it can do
 
-The AI Debug Assistant exposes a comprehensive set of debug tools, contextual resources, and pre-built diagnostic prompts through the MCP protocol.
+The AI Debug Assistant provides a comprehensive set of debug tools, contextual resources, and pre-built diagnostic prompts.
 
 | Capability | Description |
 |---|---|
@@ -42,10 +47,24 @@ The AI Debug Assistant exposes a comprehensive set of debug tools, contextual re
 | **ELF binary analysis** | Surface symbol sizes, stack usage, section layout, and the largest consumers of flash and RAM |
 | **Structured diagnostic prompts** | Pre-built investigation sequences for crash diagnosis, memory corruption, peripheral misconfiguration, multi-core debugging, and more |
 
-## Supported AI clients
+## How to use the AI Debug Assistant
 
-| Client | How it connects |
+The AI Debug Assistant currently supports two integration paths: the CFS MCP debug server and the CFS Debug chat participant. For production workflows, we recommend using the CFS MCP debug server with MCP-compatible AI clients for maximum portability and future compatibility.
+
+### CFS MCP debug server (recommended)
+
+| Client | Connection Method |
 |---|---|
-| **GitHub Copilot** | Automatically registered by VS Code's MCP integration (VS Code 1.96.0+). Use `@cfs-debug` in GitHub Copilot Chat, or let Agent Mode drive autonomous investigations. |
-| **Claude Code** | Run `claude mcp add --transport http cfs-debug http://localhost:<port>/mcp` to register the server (replace `<port>` with the port assigned at startup). See [Getting started](getting-started.md) for details. |
-| **Any MCP-compatible client** | The MCP server runs as a local HTTP service on a configurable port. Any client that speaks JSON-RPC over Streamable HTTP can connect. |
+| **GitHub Copilot (Agent Mode)** | Requires MCP server started with `(CFS) MCP: Start Debug Server` command. See [Getting started](getting-started.md#example-github-copilot-agent-mode). |
+| **Claude Code** | Register the server with `claude mcp add --transport http cfs-debug http://localhost:<port>/mcp`. See [Getting started](getting-started.md#example-claude-code). |
+| **Any MCP-compatible client** | The MCP server is open by design. Any AI client that supports the Model Context Protocol can connect. See [Getting started](getting-started.md#other-mcp-compatible-clients). |
+
+### CFS Debug chat participant
+
+| Interface | Connection Method |
+|---|---|
+| **`@cfs-debug` Chat Participant** | Type `@cfs-debug` in GitHub Copilot Chat within VS Code. Does NOT require MCP server to be started. |
+
+!!! tip "Which path should I use?"
+    - **For production workflows:** Use the CFS MCP debug server with any MCP-compatible AI client for maximum portability and future compatibility
+    - **For quick interactions in VS Code:** The CFS Debug chat participant works without starting the MCP server

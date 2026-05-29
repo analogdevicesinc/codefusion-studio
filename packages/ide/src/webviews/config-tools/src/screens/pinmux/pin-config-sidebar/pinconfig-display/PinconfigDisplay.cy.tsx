@@ -24,7 +24,7 @@ import {
 	setPeripheralAssignment,
 	setSignalAssignment
 } from '../../../../state/slices/peripherals/peripherals.reducer';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {computeInitialPinConfig} from '../../../../utils/pin-reset-controls';
 
 const mock = (await import(`@socs/max32690-tqfn.json`))
@@ -361,5 +361,77 @@ describe('PinconfigDisplay component', () => {
 		input.type('test');
 
 		cy.dataTest('ALIAS-P0.7-error').should('not.exist');
+	});
+
+	it('Correctly resets invalid signal configuration on pin change', () => {
+		const persistedPinConfig: ConfiguredPin[] = [
+			{
+				Pin: '27',
+				Peripheral: 'PT6',
+				Signal: 'PT6'
+			}
+		];
+
+		const persistedProjectConfig = [
+			{
+				ProjectId: 'CM4-proj',
+				CoreId: 'CM4',
+				Peripherals: [
+					{
+						Name: 'PT6',
+						Signals: [
+							{
+								Name: 'PT6',
+								Config: {
+									PWR: 'VDDIOH' // Non-default value
+								}
+							}
+						]
+					}
+				],
+				Partitions: [],
+				PlatformConfig: {}
+			}
+		];
+
+		const reduxStore = configurePreloadedStore(mock, {
+			Pins: persistedPinConfig,
+			Projects: persistedProjectConfig
+		} as unknown as CfsConfig);
+
+		reduxStore.dispatch(setActivePeripheral('PT6'));
+
+		reduxStore.dispatch(
+			setActiveSignal({
+				peripheral: 'PT6',
+				signal: 'PT6',
+				keepActivePeripheral: true
+			})
+		);
+
+		// Pin 33 doesn't support VDDIOH for PT6 signal,
+		// so when we set the active configured signal to pin 33,
+		// it should reset the PWR config to default value (VDDIO).
+		reduxStore.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'PT6',
+				signalName: 'PT6',
+				pinId: '33'
+			})
+		);
+
+		cy.mount(
+			<PinconfigDisplay
+				controlsPromise={mockControlsPromise}
+				projectId='CM4-proj'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('PWR-PT6-control-dropdown').should(
+			'have.attr',
+			'current-value',
+			'VDDIO'
+		);
 	});
 });

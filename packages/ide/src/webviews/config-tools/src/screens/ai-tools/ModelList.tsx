@@ -167,7 +167,7 @@ export function ModelList() {
 						<div key={core.Id + (core.Accelerator ?? '')}>
 							<h2 className={styles.tableTitle}>{core.Name}</h2>
 							<ModelTable
-								backend={aiBackends[models[0]?.Backend.Name]}
+								backend={aiBackends[models[0]?.Backend?.Name ?? '']}
 								models={models}
 								onDelete={setModelToDelete}
 							/>
@@ -310,7 +310,10 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 						</div>
 					</DataGridCell>
 					{backend?.AdvancedTools && (
-						<DataGridCell gridColumn='4'>
+						<DataGridCell
+							gridColumn='4'
+							dataTest='compatibility-column'
+						>
 							<CompatibilityStateView model={model} />
 						</DataGridCell>
 					)}
@@ -330,7 +333,11 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 	);
 }
 
-function CorruptModelConfig({modelName}: { readonly modelName?: string}) {
+function CorruptModelConfig({
+	modelName
+}: {
+	readonly modelName?: string;
+}) {
 	const l10n = useLocaleContext();
 
 	return (
@@ -406,7 +413,10 @@ function ActionButtons({
 					<Button
 						appearance='icon'
 						onClick={() => {
-							void openFile(compatibilityState.reportPath ?? '');
+							void openFile(
+								compatibilityState.reportPath ?? '',
+								'cfs.reportViewer'
+							);
 						}}
 					>
 						<ViewSourceIcon />
@@ -423,6 +433,7 @@ function ActionButtons({
 					width={110}
 				>
 					<Button
+						dataTest='report-action'
 						appearance='icon'
 						onClick={() => {
 							if (runningAnalysis) {

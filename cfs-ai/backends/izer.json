@@ -1,0 +1,115 @@
+{
+  "SupportedBackends": {
+    "izer": {
+      "Targets": [
+        {
+          "Hardware": {
+            "Soc": "max78002",
+            "Core": "CM4",
+            "Accelerator": "CNN"
+          },
+          "FirmwarePlatform": "msdk"
+        }
+      ],
+      "AdvancedTools": false,
+      "Description": "ai8x-izer generation for MAX78002 CNN",
+      "Formats": ["pytorch"],
+      "Package": "cfsai",
+      "Module": "cfsai_backend_izer",
+      "MaxModels": 1,
+      "Slow": false,
+      "Name": "izer"
+    }
+  },
+  "properties": {
+    "izer": [
+      {
+        "Id": "Softmax",
+        "Type": "boolean",
+        "Description": "Enable softmax layer generation",
+        "Tooltip": "Enable softmax layer generation.",
+        "Default": true
+      },
+      {
+        "Id": "Timer",
+        "Type": "enum",
+        "Description": "Inference timer",
+        "Tooltip": "Timer [0-3] to use to measure the inference timing.",
+        "Default": "0",
+        "EnumValues": [
+          {
+            "Id": "0",
+            "Value": "0",
+            "Description": "0"
+          },
+          {
+            "Id": "1",
+            "Value": "1",
+            "Description": "1"
+          },
+          {
+            "Id": "2",
+            "Value": "2",
+            "Description": "2"
+          },
+          {
+            "Id": "3",
+            "Value": "3",
+            "Description": "3"
+          }
+        ]
+      },
+      {
+        "Id": "Prefix",
+        "Type": "string",
+        "Description": "Test name prefix",
+        "Tooltip": "The prefix used for the test name"
+      },
+      {
+        "Id": "AvgPoolRounding",
+        "Type": "boolean",
+        "Description": "Round average pooling results",
+        "Tooltip": "Round the average pooling results.",
+        "Default": true
+      },
+      {
+        "Id": "ClockDivider",
+        "Type": "enum",
+        "Description": "CNN Clock divider",
+        "Tooltip": "Clock divider for CNN accelerator (1 or 4 depending on source)",
+        "Default": "1",
+        "EnumValues": [
+          {
+            "Id": "1",
+            "Value": "1",
+            "Description": "1"
+          },
+          {
+            "Id": "4",
+            "Value": "4",
+            "Description": "4"
+          }
+        ]
+      },
+      {
+        "Id": "InputShape",
+        "Type": "string",
+        "Description": "Input shape",
+        "Tooltip": "Tuple describing the input shape used to generate random sample input data e.g. 256,256,256"
+      },
+      {
+        "Id": "Fifo",
+        "Type": "boolean",
+        "Description": "Use FIFO",
+        "Tooltip": "Use a FIFO when reading the layer data (useful for larger models)",
+        "Default": true
+      },
+      {
+        "Id": "NetworkConfig",
+        "Type": "File",
+        "Description": "Network Configuration File",
+        "Tooltip": "Path to the .yaml file describing the network configuration."
+      }
+    ]
+  }
+}

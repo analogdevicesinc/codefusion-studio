@@ -1,0 +1,24 @@
+<%~ include("@normalizeSoc", it) %>
+{
+  "settings": {
+    "cfs.configureWorkspace": "Yes",
+    "cfs.project.board": "<%= it.board %>",
+    "cfs.project.target": "<%= it.projectInflectionPoint(it.soc) %>",
+    "terminal.integrated.defaultProfile.windows": "CFS Terminal",
+    "terminal.integrated.defaultProfile.osx": "CFS Terminal",
+    "terminal.integrated.defaultProfile.linux": "CFS Terminal"
+  },
+  "folders": [
+    {
+      "path": ".cfs"
+    },
+<% for (let i=0; i<it.projects.length; i++) { %>
+  <% const project = it.projects[i]; %>
+  <% if (!project.isEnabled) { continue; } %>
+    {
+      "path": "<%= project.platformConfig.ProjectName %>"
+    }<% if (i !== it.projects.length - 1) { %>,<% } %>
+
+<% } %>
+  ]
+}

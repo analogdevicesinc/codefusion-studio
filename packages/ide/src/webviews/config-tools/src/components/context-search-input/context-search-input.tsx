@@ -32,7 +32,7 @@ export default function ContextSearchInput({
 		dispatch(
 			setActiveSearchString({
 				searchContext,
-				value
+				value: value.trim()
 			})
 		);
 	};

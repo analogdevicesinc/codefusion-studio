@@ -13,7 +13,7 @@
  *
  */
 
-export * from './gen/index.js';
+export * from 'cfs-ccm-api/rest-types';
 export * from './auth/index.js';
 export * from './catalog/index.js';
 export * from './sdk/index.js';

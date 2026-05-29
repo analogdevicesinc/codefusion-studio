@@ -13,25 +13,56 @@
  *
  */
 
-import type {SocPeripheral} from 'cfs-plugins-api';
+import type {SocPeripheral, ZephelinInterface} from 'cfs-types';
 
-let uartPorts: Record<number, SocPeripheral> = {};
+const interfaces = new Set<ZephelinInterface>();
+let uartPorts: Record<string, SocPeripheral> = {};
 
-export function getUARTPorts() {
+export function getInterfaces() {
+	return Array.from(interfaces);
+}
+
+export function getUARTPorts(): Record<string, SocPeripheral> {
 	return uartPorts;
 }
 
-const uartRegex = /^UART(\d+)$/;
+export function getMinProfilingMemoryInterval(): number {
+	return 50;
+}
+
+export function getMaxProfilingMemoryInterval(): number {
+	return Infinity;
+}
+
+export function getMinCpuLoadInterval(): number {
+	return 50;
+}
+
+export function getMaxCpuLoadInterval(): number {
+	return Infinity;
+}
+
+export function getDefaultProfilingInterval(): number {
+	return 250;
+}
+
+const uartRegex = /^(LP)?UART(\d+)$/;
 
 export function initializeProfilingPeripherals(
 	peripherals: SocPeripheral[]
 ) {
-	uartPorts = peripherals
-		?.filter(p => uartRegex.test(p.Name))
-		.reduce<typeof uartPorts>((acc, p) => {
-			const portNumber = Number(p.Name.substring(4));
+	if (peripherals.some(p => uartRegex.test(p.Name))) {
+		interfaces.add('UART');
+	}
 
-			acc[portNumber] = p;
+	if (peripherals.some(p => p.Name === 'USBHS')) {
+		interfaces.add('USB');
+	}
+
+	uartPorts = peripherals
+		.filter(p => uartRegex.test(p.Name))
+		.reduce<typeof uartPorts>((acc, p) => {
+			acc[p.Name] = p;
 
 			return acc;
 		}, {});

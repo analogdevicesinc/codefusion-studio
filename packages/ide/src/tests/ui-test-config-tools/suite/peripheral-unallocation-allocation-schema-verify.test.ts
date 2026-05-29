@@ -13,12 +13,19 @@
  *
  */
 
-/**
- * These tests cover the peripheral assignment of Signals in a CFS configuration file.
- */
+// Feature: Peripheral signal allocation and unallocation
+//   As a user
+//   I want to allocate and unallocate peripheral signals to different projects
+//   So that the peripheral assignments and configuration schema are updated correctly
+
+//   Background:
+//     Given VS Code is open
+//     And all editors are closed
+//     And the CFS configuration file "manual32690.cfsconfig" exists
 
 import { expect } from "chai";
 import {
+  By,
   EditorView,
   ModalDialog,
   VSBrowser,
@@ -42,10 +49,6 @@ import {
 } from "../page-objects/peripheral-allocation-section/peripheral-allocation-screen";
 import { peripheralTab } from "../page-objects/main-menu";
 
-/**
- * Test for Peripheral assignment of Signals and unallocating them as well in a CFS configuration file
- */
-
 describe("System Planner Peripheral Verification allocation/unallocation", () => {
   const configPath = getConfigPathForFile("manual32690.cfsconfig");
   let workbench: Workbench;
@@ -65,6 +68,27 @@ describe("System Planner Peripheral Verification allocation/unallocation", () =>
   });
 
   it("Should check the peripheral assignment of Signals to multiple Cores", async () => {
+    // Scenario: Allocate GPIO signals to multiple cores and validate configuration
+    //   When I open the configuration file "manual32690.cfsconfig"
+    //   And I dismiss all notifications
+    //   And I wait for the UI to load
+    //   And I switch to the webview frame
+    //   And I click on the Peripheral tab
+    //   And I expand the GPIO0 peripheral accordion
+    //   And I click the assign chevron for signal P0.7
+    //   And I allocate the signal to RISCV core
+    //   Then the signal assignment "P0.7" should appear in the core summary
+    //   And the configuration sidebar should open with header "GPIO0 P0.7"
+    //   When I click the assign chevron for signal P0.8
+    //   And I allocate the signal to ARM Cortex M4 core
+    //   Then the signal assignment "P0.8" should appear in the core summary
+    //   And the configuration sidebar should open with header "GPIO0 P0.8"
+    //   When I save the configuration file
+    //   Then the RISCV project should contain the GPIO0 peripheral
+    //   And the CM4 project should contain the GPIO0 peripheral
+    //   And GPIO0 signal P0.7 should have PHANDLE and DT_NAME in the RISCV project
+    //   And GPIO0 signal P0.8 should have PHANDLE and DT_NAME in the CM4 project
+
     await browser.openResources(configPath);
     workbench = new Workbench();
 
@@ -92,11 +116,62 @@ describe("System Planner Peripheral Verification allocation/unallocation", () =>
 
     // This locator is for locating the RISCV core to GPIO0 peripheral Signal
     await UIUtils.clickElement(view, allocateRiscv);
+
+    // The new assignment should be visible in the project summary container
+    // the data-test selector is signal-assignment:P0.7
+    expect(
+      await UIUtils.dataTest(view, "signal-assignment:P0.7"),
+      "P0.7 assignment not found in core summary peripheral card",
+    ).to.exist;
+
+    // The configuration sidebar should be opened after assignment
+    const configSidebarHeader = await UIUtils.findWebElement(
+      view,
+      By.xpath('//*[@id="root"]/div/div[3]/div/div[2]/div[2]/div[1]/div[1]/h2'),
+    );
+
+    console.log(
+      `Configuration sidebar header: ${await configSidebarHeader.getText()}`,
+    );
+
+    expect(
+      await configSidebarHeader.getText(),
+      "Found text in Configuration sidebar header is incorrect",
+    ).to.equal("GPIO0 P0.7");
+
+    expect(
+      await UIUtils.dataTest(view, "config-sidebar:signal-config"),
+      "Configuration sidebar did not open after signal assignment",
+    ).to.exist;
+
+    expect(
+      await (
+        await UIUtils.dataTest(
+          view,
+          "allocated-core-card:corepart_01jrdgezrce6a8zq3xaqac6wkg",
+        )
+      ).getText(),
+      "Allocated project information not found in config sidebar for RISCV core",
+    ).to.include("RISC-V");
+
     // Assignining GPIO0 which further have pins and assigning one of them P0.8 to Arm core
     await UIUtils.clickElement(view, await signalAssignChevron("P0.8"));
 
     // This allocateArm locator is used to assign the GPIO0 P0.8 signal to Arm Cortex M4 core
     await UIUtils.clickElement(view, allocateArm);
+
+    // The new assignment should be visible in the project summary container
+    expect(
+      await UIUtils.dataTest(view, "signal-assignment:P0.8"),
+      "P0.8 assignment not found in core summary peripheral card",
+    ).to.exist;
+
+    // The configuration sidebar should be opened after assignment
+    expect(
+      await configSidebarHeader.getText(),
+      "Configuration sidebar header not found",
+    ).to.contain("GPIO0 P0.8");
+
     await view.switchBack();
     await workbench.executeCommand("view: close all editors");
     const dialog = new ModalDialog();
@@ -147,6 +222,18 @@ describe("System Planner Peripheral Verification allocation/unallocation", () =>
   }).timeout(90000);
 
   it("Should Delete the Signals and Pin Configuration and verify persistance schema", async () => {
+    // Scenario: Unallocate a peripheral signal and validate configuration
+    //   When I open the configuration file "manual32690.cfsconfig"
+    //   And I dismiss all notifications
+    //   And I wait for the UI to load
+    //   And I switch to the webview frame
+    //   And I click on the Peripheral tab
+    //   And I expand the GPIO0 peripheral accordion
+    //   And I hover over the signal container for "P0.8"
+    //   And I click the delete button for signal "P0.8"
+    //   And I save the configuration file
+    //   Then the CM4 project should not contain the GPIO0 peripheral
+
     await browser.openResources(configPath);
     workbench = new Workbench();
 

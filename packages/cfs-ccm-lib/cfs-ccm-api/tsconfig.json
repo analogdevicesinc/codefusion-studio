@@ -1,0 +1,18 @@
+{
+    "extends": "@tsconfig/node20",
+    "compilerOptions": {
+        "declaration": true,
+        "declarationMap": true,
+        "outDir": "dist",
+        "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+        "rootDir": "src",
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "composite": true,
+        "resolveJsonModule": false,
+        "module": "nodenext"
+    },
+    "include": ["src/**/*"]
+}

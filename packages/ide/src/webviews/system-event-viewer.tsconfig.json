@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./system-event-viewer/**/*.ts",
+		"./system-event-viewer/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./custom.d.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

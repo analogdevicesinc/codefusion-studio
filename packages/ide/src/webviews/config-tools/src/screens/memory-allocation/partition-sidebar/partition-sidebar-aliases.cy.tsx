@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32657-wlp.json')).default as unknown as Soc
 );
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
 import {configurePreloadedStore} from '../../../state/store';
 import {PartitionSidebar} from './partition-sidebar';
 
 const mockedConfigDict = {
+	SchemaVersion: '2.1.0',
 	DataModelVersion: '1.0.0',
-	DataModelSchemaVersion: '1.0.0',
 	Soc: 'MAX32657',
 	Package: 'WLP',
 	BoardName: 'EvKit_V1',

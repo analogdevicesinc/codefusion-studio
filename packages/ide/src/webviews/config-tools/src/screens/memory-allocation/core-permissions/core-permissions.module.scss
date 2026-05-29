@@ -1,3 +1,20 @@
+/**
+ *
+ * Copyright (c) 2024 - 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing defaultPermissions and
+ * limitations under the License.
+ *
+ */
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+
 .container {
 	width: 100%;
 	.row {
@@ -5,6 +22,13 @@
 		justify-content: space-between;
 		align-items: center;
 		--cfs-dropdown-max-width: 120px;
+		margin-bottom: 0.4rem;
+
+		.noPermission {
+			@include fonts.body-b3;
+			color: colors.$description-foreground;
+			width: 120px;
+	}
 	}
 	.toggleContainer {
 		display: flex;

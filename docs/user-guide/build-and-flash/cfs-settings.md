@@ -1,7 +1,7 @@
 ---
 description: User Settings for CFS
 author: Analog Devices
-date: 2025-11-03
+date: 2026-05-26
 ---
 
 # CFS Settings
@@ -22,9 +22,9 @@ Use these settings when you need to:
 
 Settings are saved at either the User, Workspace, or Folder level and are applied hierarchically: `Folder > Workspace > User`.
 
-- User settings can be modified from the `File > Preferences > Settings` (on macOS, use `Code > Settings > Settings`) menu.
-- Workspace settings can be modified from the `File > Preferences > Settings` menu or by editing the `.vscode/settings.json` in your workspace.
-- Folder settings can be modified by editing the `.vscode/settings.json` in your sub directory.
+- User settings can be modified from Settings by selecting **File > Preferences > Settings** (on macOS: **Code > Settings > Settings**). You can also open Settings from the Command Palette (`Ctrl+Shift+P` / `⇧⌘P`) by searching for **Preferences: Open Settings (UI)**, or by using the keyboard shortcut (`Ctrl+,` on Windows/Linux; `⌘,` on macOS).
+- Workspace settings can be modified from Settings or by editing the `.vscode/settings.json` in your workspace.
+- Folder settings can be modified by editing the `.vscode/settings.json` in your subdirectory.
 
 When you create a new workspace, a corresponding set of workspace settings are automatically generated and will have values related to that workspace.
 

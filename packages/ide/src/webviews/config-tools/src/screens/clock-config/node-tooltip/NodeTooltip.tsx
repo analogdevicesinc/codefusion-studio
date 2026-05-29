@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import {gap, notchHeight} from '../constants/tooltip';
 import type {ClockOutput, DiagramNode} from '@common/types/soc';
 import {extractClockPrefix} from '../utils/clock-nodes';
 import {
-	useClockNodesConfig,
 	useClockNodeState
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {ShortDescErrors} from '@common/types/errorTypes';
@@ -35,7 +34,7 @@ import {
 	getCurrentNodeError
 } from '../../../utils/node-error';
 import {getClockNodeConfig} from '../../../utils/clock-nodes';
-import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
+import {useGlobalConfig} from '../../../hooks/use-global-config';
 
 type PositionedNodeTooltipProps = {
 	readonly hoveredNodeInfo: DiagramNode;
@@ -72,10 +71,9 @@ function NodeTooltip({
 	const hoveredNode = document.getElementById(hoveredNodeInfo.id);
 	const nodeDetails = getClockNodeConfig(hoveredNodeInfo.name);
 	const nodeState = useClockNodeState(hoveredNodeInfo.name);
-	const nodesConfig = useClockNodesConfig();
-	const assignedPins = useAssignedPins();
 	const computeOutputEnabledState = useEvaluateClockCondition();
 	const clockFrequencyDictionary = getClockFrequencyDictionary();
+	const globalConfig = useGlobalConfig();
 
 	const nodeError = getCurrentNodeError(
 		nodeState,
@@ -121,9 +119,8 @@ function NodeTooltip({
 			!output.Condition ||
 			evaluateClockCondition(
 				{
-					clockconfig: nodesConfig,
-					currentNode: nodeDetails.Name,
-					assignedPins
+					...globalConfig,
+					currentNode: nodeDetails.Name
 				},
 				output.Condition
 			)

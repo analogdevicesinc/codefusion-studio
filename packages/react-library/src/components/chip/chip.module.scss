@@ -23,6 +23,16 @@
 	min-width: var(--chip-min-width, 74px);
 	height: var(--chip-height, auto);
 
+	&[appearance='primary'] {
+		&::part(control) {
+			color: colors.$button-foreground;
+			background: colors.$button-background;
+			&:hover {
+				background-color: colors.$button-primary-hover-background;
+			}
+		}
+	}
+
 	&[appearance='secondary'] {
 		&::part(control) {
 			color: colors.$button-secondary-foreground;

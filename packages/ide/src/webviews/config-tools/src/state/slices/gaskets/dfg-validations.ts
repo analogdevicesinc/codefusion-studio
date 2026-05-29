@@ -13,8 +13,10 @@
  *
  */
 
-import type {DFGStream} from 'cfs-plugins-api';
-import type {GasketBufferSizeProps} from './gasket.reducer';
+import type {
+	DFGStreamUI,
+	GasketBufferSizeProps
+} from './gasket.reducer';
 import {getGasketModel} from '../../../utils/dfg';
 
 export type StreamErrorType =
@@ -71,7 +73,7 @@ function addErrorToGasket(
  * @returns An object containing the stream and gasket errors
  */
 export function validateDFGErrors(
-	streams: DFGStream[],
+	streams: DFGStreamUI[],
 	gasketProps: Record<string, GasketBufferSizeProps>
 ): StreamComputationErrors {
 	const gaskets = getGasketModel();
@@ -128,7 +130,7 @@ export function validateDFGErrors(
 
 		if (!srcGasket) {
 			// Add an error to the stream
-			addErrorToStream(streamErrors, stream.StreamId.toString(), {
+			addErrorToStream(streamErrors, stream.Uuid, {
 				message: `Stream ${stream.StreamId} has an unknown source gasket ${stream.Source.Gasket}`,
 				errorType: 'UNKNOWN_GASKET',
 				direction: 'output'
@@ -142,7 +144,7 @@ export function validateDFGErrors(
 		if (
 			!srcGasketProps.OutputBufferSizeChoices.includes(srcBufferSize)
 		) {
-			addErrorToStream(streamErrors, stream.StreamId.toString(), {
+			addErrorToStream(streamErrors, stream.Uuid, {
 				message: `Stream ${stream.StreamId} has an invalid output buffer size of ${srcBufferSize} bytes at the ${srcGasket.Name} Gasket`,
 				errorType: 'BUFFER_SIZE_NOT_IN_RANGE',
 				direction: 'output'
@@ -157,7 +159,7 @@ export function validateDFGErrors(
 			);
 
 			if (!dstGasket) {
-				addErrorToStream(streamErrors, stream.StreamId.toString(), {
+				addErrorToStream(streamErrors, stream.Uuid, {
 					message: `Stream ${stream.StreamId} has an unknown destination gasket ${destination.Gasket}`,
 					errorType: 'UNKNOWN_GASKET',
 					direction: 'input'
@@ -171,7 +173,7 @@ export function validateDFGErrors(
 			if (
 				!dstGasketProps.InputBufferSizeChoices.includes(dstBufferSize)
 			) {
-				addErrorToStream(streamErrors, stream.StreamId.toString(), {
+				addErrorToStream(streamErrors, stream.Uuid, {
 					message: `Stream ${stream.StreamId} has an invalid input buffer size of ${dstBufferSize} bytes at the ${dstGasket.Name} Gasket`,
 					errorType: 'BUFFER_SIZE_NOT_IN_RANGE',
 					direction: 'input'

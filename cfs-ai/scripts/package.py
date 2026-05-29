@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -9,6 +9,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import glob
+import argparse
 import logging
 import sys
 import platform
@@ -23,10 +25,21 @@ import shutil
 from dataclasses import dataclass
 from typing import Self, Optional
 
-logging.basicConfig(
-    level=logging.DEBUG
-)
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Package:
+    name: str
+    dir: str
+    module: str
+    base: bool
+
+packages = { 
+    "cfsai" : Package("cfsai", ".", "cfsai", True),
+    "cfsai-izer" : Package("cfsai-izer", "packages/cfsai-backend-izer", "cfsai_backend_izer", False)
+}
+
 
 @dataclass
 class LlvmTriple:
@@ -199,24 +212,25 @@ class ReleaseDataV1:
         return f'{self.asset_url_prefix}/{filename}'
 
 
-def zip_directory_contents(source_dir: str, output_zip_path: str):
-    logger.info(f'Zipping {source_dir}')
-    with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(source_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                # Preserve relative path inside the zip
-                arcname = os.path.relpath(file_path, source_dir)
-                zipf.write(file_path, arcname)
+def tarfile_filter(ti: tarfile.TarInfo) -> tarfile.TarInfo:
+    """ Set dll's and directories to be executable. """
+    # Tuple rather than array to pass to endswith()
+    extensions = (".dll", ".pyd", ".so", ".exe")
+    
+    name = ti.name.lower()
+    if ti.isdir() or name.endswith(extensions):
+        ti.mode = 0o755
+    return ti
 
 def compress_directory_contents(source_dir: Path, output_path: Path):
     logger.info(f'Compressing {source_dir}')
+
     with tarfile.open(output_path, 'w:xz') as tar:
         for x in source_dir.iterdir():
-            tar.add(x, arcname=x.name)
+            tar.add(x, arcname=x.name, filter=tarfile_filter)
 
 
-def pip_install(python_path: Path, dist_path: Path):
+def pip_install(python_path: Path, dist_path: Path, package: Package):
     system = platform.system().lower()
 
     if 'windows' in system:
@@ -232,7 +246,7 @@ def pip_install(python_path: Path, dist_path: Path):
         '--force-reinstall',
         f'--find-links={dist_path.absolute()}',
         '--torch-backend', 'cpu',
-        'cfsai'
+        package.module
     ]
     logger.info(f'Executing => {" ".join(pip_cmd)}')
     result = subprocess.run(
@@ -249,6 +263,26 @@ def pip_install(python_path: Path, dist_path: Path):
 
 def bootstrap(repo_root: Path, workspace: Path):
     cli_bootstraper = repo_root / 'cli'
+    system = platform.system().lower()
+
+    cargo_cmd = [
+        'cargo', 'build', '--release', '--manifest-path', 'cli/Cargo.toml'
+    ]
+    if 'linux' in system:
+        cargo_cmd.extend([ '--target', 'x86_64-unknown-linux-musl' ])
+
+    logger.info(f'Executing => {" ".join(cargo_cmd)}')
+    result = subprocess.run(
+        cargo_cmd,
+        capture_output=True
+    )
+    logger.debug(f'return code => {result.returncode}')
+    logger.debug(f'stdout => {result.stdout.decode("utf-8")}')
+    logger.warning(f'stderr => {result.stderr.decode("utf-8")}')
+
+    if result.returncode != 0:
+        logger.error('cargo failed')
+        exit(-1)
     
     build_name = 'cfsai.exe' if 'windows' in platform.system().lower() else 'cfsai'
     if 'linux' in platform.system().lower():
@@ -262,10 +296,34 @@ def bootstrap(repo_root: Path, workspace: Path):
     bin_path = workspace / 'bin'
     bin_path.mkdir(exist_ok=True)
 
-    shutil.move(build_path, bin_path / build_name)
+    shutil.copy(build_path, bin_path / build_name)
 
-def ui_json(repo_root: Path, workspace: Path):
-    shutil.copy(repo_root / 'ui' / 'ui.json' , workspace / 'ui.json')
+
+def uv_build(package: Package):
+
+    build_cmd = [ 'uv', 'build', '--directory', package.dir ]
+    if package.name == "cfsai":
+        build_cmd.append("--all")
+    logger.info(f'Executing => {" ".join(build_cmd)}')
+    result = subprocess.run(
+        build_cmd,
+        capture_output=True
+    )
+    logger.debug(f'return code => {result.returncode}')
+    logger.debug(f'stdout => {result.stdout.decode("utf-8")}')
+    logger.warning(f'stderr => {result.stderr.decode("utf-8")}')
+
+    if result.returncode != 0:
+        logger.error('build failed')
+        exit(-1)
+
+def backend_json(repo_root: Path, workspace: Path):
+    src = repo_root / 'backends'
+    dest = workspace / 'backends'
+    dest.mkdir(exist_ok=True)
+
+    for file_path in src.glob("*.json"):
+        shutil.copy(file_path, dest)
 
 def extract_zip(src: Path, dest: Path):
     try:
@@ -314,7 +372,7 @@ def tflm_src_sfx(repo_root: Path, workspace: Path):
 def examples(repo_root: Path, workspace: Path):
     dest = workspace / 'examples'
     src = repo_root / 'examples'
-    shutil.copytree(src, dest)
+    shutil.copytree(src, dest, dirs_exist_ok=True)
 
 def strip(dist_path: Path):
     system = platform.system().lower()
@@ -328,7 +386,7 @@ def strip(dist_path: Path):
             capture_output=True,
             text=True
         )
-        logger.info('Execution completed')
+        logger.debug('Execution completed')
         # Don't check the results of the strip, because it'll complain about
         # skipping files that aren't in an executable format.
     elif 'windows' in system:
@@ -373,19 +431,19 @@ def remove_static_libs(dist_path: Path):
             f.unlink()
         
 
-def package(pyver: str) -> Path:
+def package(package:Package, pyver: str, no_tar: bool) -> None:
     release_data = ReleaseDataV1.from_pinned_release()
     dist = Distribution.from_pyver_and_tag(pyver, release_data.tag)
 
     repo_root_path = Path(__file__).parent.parent
     dist_path = repo_root_path / 'dist'
-    if not dist_path.exists():
-        print(f'Could not find {dist_path}. Please build the packages')
-        exit(-1)
+
+    uv_build(package)
     
     fileurl = release_data.file_url(dist) 
     python_targz_path = dist_path / str(dist)
     logger.debug(f'Retrieving {fileurl}')
+    logger.debug(f'  to {python_targz_path}')
     request.urlretrieve(fileurl, python_targz_path)
 
     if not python_targz_path.exists():
@@ -393,7 +451,7 @@ def package(pyver: str) -> Path:
         exit(-1)
     
     workspace_path = dist_path / 'workspace'
-    workspace_path.mkdir()
+    workspace_path.mkdir(exist_ok=True)
     python_path = workspace_path / 'python'
     with tarfile.open(python_targz_path, 'r:gz') as tar:
         tar.extractall(path=workspace_path)
@@ -401,31 +459,48 @@ def package(pyver: str) -> Path:
         logger.error(f'Could not find {python_path} after extracting {python_targz_path}')
         exit(-1)
 
-    pip_install(python_path, dist_path)
-    bootstrap(repo_root_path, workspace_path)
-    ui_json(repo_root_path, workspace_path)
-    tflm_src_sfx(repo_root_path, workspace_path)
-    tflm_src_cortex(repo_root_path, workspace_path)
-    examples(repo_root_path, workspace_path)
+    pip_install(python_path, dist_path, package)
+    if package.base:
+        # Components that only need to be produced in the base package
+        bootstrap(repo_root_path, workspace_path)
+        backend_json(repo_root_path, workspace_path)
+        tflm_src_sfx(repo_root_path, workspace_path)
+        tflm_src_cortex(repo_root_path, workspace_path)
+        examples(repo_root_path, workspace_path)
     strip(workspace_path)
     remove_pyc(dist_path)
     remove_static_libs(dist_path)
 
     # Kind of a hack
-    dist.prepend = 'cfsai'
+    dist.prepend = package.name 
     dist.ext = 'tar.xz'
-    compress_directory_contents(
-        workspace_path,
-        dist_path / dist.github_name()
-    )
-    return dist_path / dist.github_name()
+    if not no_tar:
+        compress_directory_contents(
+            workspace_path,
+            dist_path / dist.github_name()
+        )
+        path = dist_path / dist.github_name()
+    else:
+        path = workspace_path
+
+    logger.info(f'Created {str(path)}')
     
-def main():
-    if len(sys.argv) != 2:
-        logger.error(f'Invalid format, please call the script and pass the python version as an argument')
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+        description="cfsai packager"
+    )
+    parser.add_argument('--py-version', default="3.11", help='Python version (default 3.11)')
+    parser.add_argument('--package', default="cfsai", help='Package to build (default cfsai)')
+    parser.add_argument('--no-tar', action='store_true', help='Don\'t compress final artifact')
+    parser.add_argument('--verbose', action='store_true', help='Verbose output')
+    args = parser.parse_args()
+
+    logging.basicConfig( level=logging.DEBUG if args.verbose else logging.INFO)
+
+    if args.package not in packages:
+        keys = list(packages.keys())
+        logger.error(f' package not found: {args.package}. Valid options: {", ".join(keys)}')
         exit(-1)
 
-    package(sys.argv[1])
-
-if __name__ == '__main__':
-    main()
+    package(packages[args.package], args.py_version, args.no_tar)

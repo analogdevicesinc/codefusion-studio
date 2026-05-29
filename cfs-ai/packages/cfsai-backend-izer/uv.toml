@@ -1,0 +1,3 @@
+[sources]
+cfsai-types = { path = "../cfs-types", editable = true }
+

@@ -1,0 +1,132 @@
+/**
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '#fonts' as fonts;
+@use '@sev-common/styles/sev-variables' as sev;
+
+@mixin list-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: auto;
+	height: sev.$timeline-list-item-height;
+	padding: 0 8px;
+	cursor: default;
+}
+
+.listContainer {
+	--tooltip-width: auto;
+
+	display: flex;
+	flex: 0 0 auto;
+	height: 100%;
+	min-height: 0;
+
+	.item {
+		@include list-item;
+		box-sizing: border-box;
+		border-bottom: 1px solid colors.$default-border;
+
+		&[data-row-emphasized='true'] {
+			background: colors.$list-inactive-selection-background;
+		}
+
+		.name {
+			color: colors.$default-foreground;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+
+			@include fonts.heading-h5;
+		}
+
+		.tooltip {
+			--tooltip-width: auto;
+			--cfs-tooltip-body-padding: 5px 8px;
+			--cfs-tooltip-layout-min-width: 89px;
+			max-width: 160px;
+
+			* {
+				color: var(--vscode-editor-foreground);
+			}
+		}
+	}
+
+	.dragIcon {
+		cursor: grab;
+		margin-right: 8px;
+		user-select: none;
+	}
+
+	.placeholder {
+		width: auto;
+		height: sev.$timeline-list-item-height;
+		background-color: colors.$default-background;
+		box-shadow: colors.$default-shadow;
+		border-bottom: 1px solid colors.$default-border;
+		pointer-events: none;
+
+		> * {
+			position: absolute;
+			width: 0;
+			height: 0;
+			overflow: hidden;
+			visibility: hidden;
+		}
+	}
+
+	.emptyBlockItem {
+		width: auto;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		border-bottom: 1px solid colors.$default-border;
+		padding: 0 8px;
+		box-sizing: border-box;
+		position: sticky;
+		top: 0;
+		z-index: sev.zIndex('timeline-row');
+		background: colors.$default-background;
+		color: colors.$default-foreground;
+
+		@include fonts.body-b3;
+	}
+
+	.list {
+		min-width: 0;
+		flex: 1 1 auto;
+		position: relative;
+	}
+
+	.resizer {
+		flex: 0 0 2px;
+		height: auto;
+		background-color: colors.$default-border;
+		cursor: col-resize;
+		position: relative;
+		z-index: sev.zIndex('list-resizer');
+
+		&:hover {
+			background-color: colors.$button-primary-background;
+		}
+
+		&.active {
+			background-color: colors.$button-primary-background;
+		}
+	}
+}

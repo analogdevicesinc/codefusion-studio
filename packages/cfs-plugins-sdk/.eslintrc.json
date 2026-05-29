@@ -1,0 +1,27 @@
+{
+	"root": true,
+	"parser": "@typescript-eslint/parser",
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/strict-type-checked",
+		"plugin:@typescript-eslint/stylistic-type-checked",
+		"prettier"
+	],
+	"parserOptions": {
+		"project": "./tsconfig.eslint.json"
+	},
+	"rules": {
+		"@typescript-eslint/no-namespace": "off",
+		"no-case-declarations": "off",
+		"@typescript-eslint/no-unnecessary-type-parameters": "off"
+	},
+	"overrides": [
+		{
+			"files": ["**/test/**/*.test.ts"],
+			"env": {
+				"mocha": true
+			}
+		}
+	],
+	"ignorePatterns": ["node_modules", "dist", "cjs", "esm"]
+}

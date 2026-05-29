@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 import {type CoreType} from 'cfs-ccm-lib';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 
 export type SoCFamily = {
 	familyId: string;
@@ -39,6 +39,7 @@ export type CatalogBoardInfo = {
 export type TStandardBoard = {
 	boardId: string;
 	packageId: string;
+	dataModelPackageID: string;
 	name: string;
 	description: string;
 	packageLayout: string;
@@ -48,6 +49,7 @@ export type TStandardBoard = {
 export type TCustomBoard = {
 	boardId: string;
 	packageId: string;
+	dataModelPackageID: string;
 	name: string;
 	description: string;
 	packageLayout: string;

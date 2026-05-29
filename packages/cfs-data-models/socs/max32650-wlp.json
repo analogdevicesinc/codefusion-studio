@@ -1,9 +1,9 @@
 {
-  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.",
+  "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.98",
+  "Version": "1.3.772",
   "Schema": "1.2.0",
-  "Timestamp": "2025-11-26 14:40:13.061933",
+  "Timestamp": "2026-04-21T11:26:23.547468Z",
   "Name": "MAX32650",
   "Description": "Ultra-Low-Power Arm Cortex-M4 Processor with FPU-Based Microcontroller (MCU) with 3MB Flash and 1MB SRAM",
   "Endianness": "Little",
@@ -34,7 +34,7 @@
       "AddressStart": "0x20000000",
       "AddressEnd": "0x200fffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -45,7 +45,7 @@
       "AddressStart": "0x10000000",
       "AddressEnd": "0x102fffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "Flash",
       "Location": "Internal",
       "MinimumAlignment": 16384
@@ -1649,6 +1649,12 @@
       "ClockNode": "Cache"
     },
     {
+      "Name": "FCR",
+      "Description": "Function Control Registers",
+      "Cores": [],
+      "Assignable": false
+    },
+    {
       "Name": "FLC",
       "Description": "Flash Controller",
       "Cores": [
@@ -1697,6 +1703,12 @@
         "ACCESS_FAIL_IE"
       ],
       "ClockNode": "FLC"
+    },
+    {
+      "Name": "GCFR",
+      "Description": "General Control Function",
+      "Cores": [],
+      "Assignable": false
     },
     {
       "Name": "GCR",
@@ -1784,16 +1796,6 @@
           "Name": "P0.27",
           "Description": "GPIO Port 0 Pin 27",
           "Group": "P0.27"
-        },
-        {
-          "Name": "P0.28",
-          "Description": "GPIO Port 0 Pin 28",
-          "Group": "P0.28"
-        },
-        {
-          "Name": "P0.29",
-          "Description": "GPIO Port 0 Pin 29",
-          "Group": "P0.29"
         },
         {
           "Name": "P0.30",
@@ -2105,7 +2107,7 @@
     },
     {
       "Name": "I2C1",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 1",
       "Cores": [
         "CM4"
       ],
@@ -2783,7 +2785,7 @@
     },
     {
       "Name": "ICC0",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 0",
       "Cores": [
         "CM4"
       ],
@@ -2814,7 +2816,7 @@
     },
     {
       "Name": "ICC1",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 1",
       "Cores": [
         "CM4"
       ],
@@ -2854,8 +2856,12 @@
           "Description": "External System Reset Input"
         },
         {
-          "Name": "TCK",
-          "Description": "JTAG TCK"
+          "Name": "SWDCLK",
+          "Description": "Serial Wire Debug Clock"
+        },
+        {
+          "Name": "SWDIO",
+          "Description": "Serial Wire Debug I/O"
         },
         {
           "Name": "TDI",
@@ -2864,10 +2870,6 @@
         {
           "Name": "TDO",
           "Description": "JTAG TDO"
-        },
-        {
-          "Name": "TMS",
-          "Description": "JTAG TMS"
         }
       ]
     },
@@ -3169,7 +3171,7 @@
     },
     {
       "Name": "PT0",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 0",
       "Cores": [
         "CM4"
       ],
@@ -3187,7 +3189,7 @@
     },
     {
       "Name": "PT1",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 1",
       "Cores": [
         "CM4"
       ],
@@ -3199,7 +3201,7 @@
     },
     {
       "Name": "PT10",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 10",
       "Cores": [
         "CM4"
       ],
@@ -3211,7 +3213,7 @@
     },
     {
       "Name": "PT11",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 11",
       "Cores": [
         "CM4"
       ],
@@ -3229,7 +3231,7 @@
     },
     {
       "Name": "PT12",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 12",
       "Cores": [
         "CM4"
       ],
@@ -3247,7 +3249,7 @@
     },
     {
       "Name": "PT13",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 13",
       "Cores": [
         "CM4"
       ],
@@ -3265,7 +3267,7 @@
     },
     {
       "Name": "PT14",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 14",
       "Cores": [
         "CM4"
       ],
@@ -3277,7 +3279,7 @@
     },
     {
       "Name": "PT15",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 15",
       "Cores": [
         "CM4"
       ],
@@ -3295,7 +3297,7 @@
     },
     {
       "Name": "PT2",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 2",
       "Cores": [
         "CM4"
       ],
@@ -3313,7 +3315,7 @@
     },
     {
       "Name": "PT3",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 3",
       "Cores": [
         "CM4"
       ],
@@ -3331,7 +3333,7 @@
     },
     {
       "Name": "PT4",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 4",
       "Cores": [
         "CM4"
       ],
@@ -3349,7 +3351,7 @@
     },
     {
       "Name": "PT5",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 5",
       "Cores": [
         "CM4"
       ],
@@ -3367,7 +3369,7 @@
     },
     {
       "Name": "PT6",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 6",
       "Cores": [
         "CM4"
       ],
@@ -3385,7 +3387,7 @@
     },
     {
       "Name": "PT7",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 7",
       "Cores": [
         "CM4"
       ],
@@ -3403,7 +3405,7 @@
     },
     {
       "Name": "PT8",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 8",
       "Cores": [
         "CM4"
       ],
@@ -3421,7 +3423,7 @@
     },
     {
       "Name": "PT9",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 9",
       "Cores": [
         "CM4"
       ],
@@ -3447,7 +3449,7 @@
     },
     {
       "Name": "PWRSEQ",
-      "Description": "Power Sequencer / Low Power Control Register",
+      "Description": "Power Sequencer / Low-Power Control Register",
       "Cores": [],
       "Assignable": false,
       "ClockNode": "POWER SEQ"
@@ -5054,13 +5056,6 @@
         }
       ],
       "ClockNode": "SDHC"
-    },
-    {
-      "Name": "SMON",
-      "Description": "Security Monitor",
-      "Cores": [
-        "CM4"
-      ]
     },
     {
       "Name": "SPI1",
@@ -9141,17 +9136,17 @@
         {
           "Name": "SDIO1",
           "Description": "Data 1",
-          "Required": "${ControlCMD_WIDTH} ${String:DUAL} = ${Control:ADDR_WIDTH} ${String:DUAL} = ${Control:DATA_WIDTH} ${String:DUAL} = ${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | | | | |"
+          "Required": "${Control:CMD_WIDTH} ${String:DUAL} = ${Control:ADDR_WIDTH} ${String:DUAL} = ${Control:DATA_WIDTH} ${String:DUAL} = ${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | | | | |"
         },
         {
           "Name": "SDIO2",
           "Description": "Data 2",
-          "Required": "${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
+          "Required": "${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
         },
         {
           "Name": "SDIO3",
           "Description": "Data 3",
-          "Required": "${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
+          "Required": "${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
         },
         {
           "Name": "SS0",
@@ -14187,7 +14182,7 @@
     },
     {
       "Name": "WDT0",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Windowed Watchdog Timer 0",
       "Cores": [
         "CM4"
       ],
@@ -14509,7 +14504,7 @@
     },
     {
       "Name": "WDT1",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Windowed Watchdog Timer 1",
       "Cores": [
         "CM4"
       ],
@@ -15009,7 +15004,7 @@
           },
           {
             "Id": "LPCLK",
-            "Description": "LPCLK (Low Power Osc.)",
+            "Description": "LPCLK (Low-Power Osc.)",
             "Value": 15
           },
           {
@@ -15121,38 +15116,6 @@
             "Value": 18
           }
         ]
-      },
-      {
-        "Id": "32KCAL",
-        "Description": "Frequency on Output Pin",
-        "Type": "enum",
-        "EnumValues": [
-          {
-            "Id": "DIS",
-            "Description": "Disabled",
-            "Value": 0
-          },
-          {
-            "Id": "1HZ",
-            "Description": "1 Hz",
-            "Value": 1
-          },
-          {
-            "Id": "512HZ",
-            "Description": "512 Hz",
-            "Value": 2
-          },
-          {
-            "Id": "4KHZ",
-            "Description": "4 kHz",
-            "Value": 3
-          },
-          {
-            "Id": "32KHZ",
-            "Description": "32 kHz",
-            "Value": 4
-          }
-        ]
       }
     ],
     "PinConfig": [
@@ -15258,22 +15221,22 @@
         "EnumValues": [
           {
             "Id": "0",
-            "Description": "Drive Strength 0",
+            "Description": "1 mA",
             "Value": 0
           },
           {
             "Id": "1",
-            "Description": "Drive Strength 1",
+            "Description": "2 mA",
             "Value": 1
           },
           {
             "Id": "2",
-            "Description": "Drive Strength 2",
+            "Description": "4 mA",
             "Value": 2
           },
           {
             "Id": "3",
-            "Description": "Drive Strength 3",
+            "Description": "8 mA",
             "Value": 3
           }
         ]
@@ -19795,12 +19758,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -20072,12 +20035,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -20387,12 +20350,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -22847,115 +22810,6 @@
       ],
       "ConfigProgrammingOrder": [
         "MUX"
-      ]
-    },
-    {
-      "Name": "32KCAL",
-      "Description": "Square Wave Pin Output",
-      "Type": "Pin Output",
-      "Inputs": [
-        {
-          "Name": "ERTCO"
-        }
-      ],
-      "Outputs": [
-        {
-          "Name": "32KCAL",
-          "Description": "Square Wave Pin Output",
-          "Value": "${Control:32KCAL} ${String:1HZ} = 1 ${Control:32KCAL} ${String:512HZ} = 512 ${Control:32KCAL} ${String:4KHZ} = 4096 ${Control:32KCAL} ${String:32KHZ} = 32768 ${Undef} ? ? ? ?"
-        }
-      ],
-      "Config": {
-        "32KCAL": {
-          "DIS": [
-            {
-              "Register": "RTC_OSCCTRL",
-              "Field": "SQW_32KOUT",
-              "Value": "0",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_CTRL",
-              "Field": "SQWOUT_EN",
-              "Value": "0",
-              "Operation": "Write"
-            }
-          ],
-          "1HZ": [
-            {
-              "Register": "RTC_CTRL",
-              "Field": "FREQ_SEL",
-              "Value": "0",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_CTRL",
-              "Field": "SQWOUT_EN",
-              "Value": "1",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_OSCCTRL",
-              "Field": "SQW_32KOUT",
-              "Value": "0",
-              "Operation": "Write"
-            }
-          ],
-          "512HZ": [
-            {
-              "Register": "RTC_CTRL",
-              "Field": "FREQ_SEL",
-              "Value": "1",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_CTRL",
-              "Field": "SQWOUT_EN",
-              "Value": "1",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_OSCCTRL",
-              "Field": "SQW_32KOUT",
-              "Value": "0",
-              "Operation": "Write"
-            }
-          ],
-          "4KHZ": [
-            {
-              "Register": "RTC_CTRL",
-              "Field": "FREQ_SEL",
-              "Value": "2",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_CTRL",
-              "Field": "SQWOUT_EN",
-              "Value": "1",
-              "Operation": "Write"
-            },
-            {
-              "Register": "RTC_OSCCTRL",
-              "Field": "SQW_32KOUT",
-              "Value": "0",
-              "Operation": "Write"
-            }
-          ],
-          "32KHZ": [
-            {
-              "Register": "RTC_OSCCTRL",
-              "Field": "SQW_32KOUT",
-              "Value": "1",
-              "Operation": "Write"
-            }
-          ]
-        }
-      },
-      "ConfigUIOrder": [
-        "32KCAL"
-      ],
-      "ConfigProgrammingOrder": [
-        "32KCAL"
       ]
     },
     {
@@ -25820,7 +25674,7 @@
         {
           "Name": "STN_AC_BIAS",
           "Description": "AC Bias Frequency Control",
-          "Documentation": "THis fiels sets the AC Bias Frequency output on the CLCD_VDEN pin for Color StN display mode.",
+          "Documentation": "This fiels sets the AC Bias Frequency output on the CLCD_VDEN pin for Color StN display mode.",
           "Position": 8,
           "Length": 8,
           "Access": "R/W",
@@ -87613,283 +87467,16 @@
         {
           "Name": "F6",
           "Label": "P0.29",
-          "Description": "GPIO P0.29",
+          "Description": "GPIO P0.29 / SWDCLK / JTAG TCK",
           "Position": {
             "X": 5,
             "Y": 5
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 29,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.29",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "TCK",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDCLK"
             }
           ]
         },
@@ -90240,283 +89827,16 @@
         {
           "Name": "G6",
           "Label": "P0.28",
-          "Description": "GPIO P0.28",
+          "Description": "GPIO P0.28 / SWDIO / JTAG TMS",
           "Position": {
             "X": 5,
             "Y": 6
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 28,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.28",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "TMS",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDIO"
             }
           ]
         },
@@ -96924,7 +96244,7 @@
                   "position": "right",
                   "id": "output_7f01dad1-e30e-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5457db0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -96936,7 +96256,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_7f01dad1-e30e-11ef-b345-d32ad91fc0a4"
               }
@@ -96993,7 +96313,7 @@
                   "position": "right",
                   "id": "output_8388e990-e30e-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5449351-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97005,7 +96325,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_8388e990-e30e-11ef-b345-d32ad91fc0a4"
               }
@@ -97062,7 +96382,7 @@
                   "position": "right",
                   "id": "output_86d22121-e30e-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f546b630-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a716ac80-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97074,7 +96394,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f546b630-68a5-11f0-b5be-558493c9159c",
+                "netID": "a716ac80-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_86d22121-e30e-11ef-b345-d32ad91fc0a4"
               }
@@ -97130,7 +96450,7 @@
                   "position": "left",
                   "id": "input_515d7311-e312-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5444549-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -97142,7 +96462,7 @@
                   "position": "right",
                   "id": "output_515d7312-e312-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5450880-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7159b10-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "point",
@@ -97152,7 +96472,7 @@
                   "position": "left",
                   "id": "output_515d7313-e312-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5446c40-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97163,7 +96483,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 10,
-                "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_515d7311-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97173,7 +96493,7 @@
                 "connections": [],
                 "offsetX": 120,
                 "offsetY": 20,
-                "netID": "f5450880-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7159b10-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_515d7312-e312-11ef-b345-d32ad91fc0a4"
               },
@@ -97181,7 +96501,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "f5446c40-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_515d7313-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97194,7 +96514,7 @@
             "zOrder": 5,
             "portIDConnected": [],
             "highlight": false,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &"
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &"
           },
           "868563e0-e312-11ef-b345-d32ad91fc0a4": {
             "id": "868563e0-e312-11ef-b345-d32ad91fc0a4",
@@ -97238,7 +96558,7 @@
                   "position": "right",
                   "id": "output_86858af0-e312-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5444549-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97250,7 +96570,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_86858af0-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97263,7 +96583,7 @@
             "zOrder": 7,
             "portIDConnected": [],
             "highlight": false,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = & ${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = & |"
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = & 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = & |"
           },
           "9684d960-e312-11ef-b345-d32ad91fc0a4": {
             "id": "9684d960-e312-11ef-b345-d32ad91fc0a4",
@@ -97306,7 +96626,7 @@
                   "position": "right",
                   "id": "input_9684d961-e312-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5446c40-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -97318,7 +96638,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f5446c40-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_9684d961-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97331,7 +96651,7 @@
             "y": -910,
             "zOrder": 8,
             "portIDConnected": [],
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &"
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &"
           },
           "eeb74780-e312-11ef-b345-d32ad91fc0a4": {
             "id": "eeb74780-e312-11ef-b345-d32ad91fc0a4",
@@ -97374,7 +96694,7 @@
                   "position": "left",
                   "id": "input_eeb74781-e312-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5449350-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f5-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -97386,7 +96706,7 @@
                   "position": "right",
                   "id": "output_eeb74782-e312-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97397,7 +96717,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "f5449350-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f5-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_eeb74781-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97407,7 +96727,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 20,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_eeb74782-e312-11ef-b345-d32ad91fc0a4"
               }
@@ -97462,7 +96782,7 @@
                   "position": "left",
                   "id": "input_4fa83711-e314-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5464100-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -97472,7 +96792,7 @@
                   "position": "left",
                   "id": "input_4fa83712-e314-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5452f90-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -97482,7 +96802,7 @@
                   "position": "left",
                   "id": "input_4fa83713-e314-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5457db0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -97492,7 +96812,7 @@
                   "position": "left",
                   "id": "input_4fa83714-e314-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f546b630-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a716ac80-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -97502,7 +96822,7 @@
                   "position": "left",
                   "id": "input_4fa83715-e314-11ef-b345-d32ad91fc0a4",
                   "type": "input",
-                  "netID": "f5449351-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -97514,7 +96834,7 @@
                   "position": "right",
                   "id": "output_4fa83716-e314-11ef-b345-d32ad91fc0a4",
                   "type": "output",
-                  "netID": "f5449350-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f5-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97525,7 +96845,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4fa83711-e314-11ef-b345-d32ad91fc0a4"
               },
@@ -97533,7 +96853,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 60,
-                "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4fa83712-e314-11ef-b345-d32ad91fc0a4"
               },
@@ -97541,7 +96861,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 100,
-                "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4fa83713-e314-11ef-b345-d32ad91fc0a4"
               },
@@ -97549,7 +96869,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 140,
-                "netID": "f546b630-68a5-11f0-b5be-558493c9159c",
+                "netID": "a716ac80-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4fa83714-e314-11ef-b345-d32ad91fc0a4"
               },
@@ -97557,7 +96877,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 180,
-                "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4fa83715-e314-11ef-b345-d32ad91fc0a4"
               }
@@ -97567,7 +96887,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 100,
-                "netID": "f5449350-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f5-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_4fa83716-e314-11ef-b345-d32ad91fc0a4"
               }
@@ -97622,7 +96942,7 @@
                   "position": "bottom",
                   "id": "input_830077f1-e7a9-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -97634,7 +96954,7 @@
                 "connections": [],
                 "offsetX": 70,
                 "offsetY": 60,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_830077f1-e7a9-11ef-aaf9-2913c5558c13"
               }
@@ -97690,7 +97010,7 @@
                   "position": "bottom",
                   "id": "input_c58239b0-e7a9-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -97702,7 +97022,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_c58239b0-e7a9-11ef-aaf9-2913c5558c13"
               }
@@ -97759,7 +97079,7 @@
                   "position": "bottom",
                   "id": "input_d0b1feb1-e7a9-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -97771,7 +97091,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_d0b1feb1-e7a9-11ef-aaf9-2913c5558c13"
               }
@@ -97828,7 +97148,7 @@
                   "position": "top",
                   "id": "input_6a6c1721-e7aa-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -97840,7 +97160,7 @@
                   "position": "bottom",
                   "id": "output_6a6c1722-e7aa-11ef-aaf9-2913c5558c13",
                   "type": "output",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -97851,7 +97171,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_6a6c1721-e7aa-11ef-aaf9-2913c5558c13"
               }
@@ -97861,7 +97181,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_6a6c1722-e7aa-11ef-aaf9-2913c5558c13"
               }
@@ -97916,7 +97236,7 @@
                   "position": "top",
                   "id": "input_86629941-e7aa-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f5449351-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -97926,7 +97246,7 @@
                   "position": "top",
                   "id": "input_86629942-e7aa-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -97938,7 +97258,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 0,
-                "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_86629941-e7aa-11ef-aaf9-2913c5558c13"
               },
@@ -97946,7 +97266,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_86629942-e7aa-11ef-aaf9-2913c5558c13"
               }
@@ -98003,7 +97323,7 @@
                   "position": "top",
                   "id": "input_d15fb8f1-e7ab-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98015,7 +97335,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_d15fb8f1-e7ab-11ef-aaf9-2913c5558c13"
               }
@@ -98072,7 +97392,7 @@
                   "position": "top",
                   "id": "input_3c7de711-e7ac-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98084,7 +97404,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_3c7de711-e7ac-11ef-aaf9-2913c5558c13"
               }
@@ -98141,7 +97461,7 @@
                   "position": "top",
                   "id": "input_deed9cc0-e7ac-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98153,7 +97473,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_deed9cc0-e7ac-11ef-aaf9-2913c5558c13"
               }
@@ -98209,7 +97529,7 @@
                   "position": "top",
                   "id": "input_23e87f61-e7ae-11ef-aaf9-2913c5558c13",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98221,7 +97541,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_23e87f61-e7ae-11ef-aaf9-2913c5558c13"
               }
@@ -98236,75 +97556,6 @@
             "portIDConnected": [],
             "highlight": false,
             "condition": "${Control:OWM:ENABLE}"
-          },
-          "97797ff0-e7af-11ef-aaf9-2913c5558c13": {
-            "id": "97797ff0-e7af-11ef-aaf9-2913c5558c13",
-            "uuid": "97797ff0-e7af-11ef-aaf9-2913c5558c13",
-            "name": "32KCAL",
-            "dataModel": {},
-            "source": "LTPPW",
-            "type": "Part",
-            "subType": "BPrt",
-            "width": 140,
-            "height": 60,
-            "labelSize": "12",
-            "labelPosition": {
-              "x": 20,
-              "y": 20
-            },
-            "icon": "icon-24-px-pin-output.svg",
-            "background": "icon-24-px-pin-output.svg",
-            "styles": {
-              "isSymbol": true,
-              "backgroundColor": "#fff",
-              "fontColor": "#000000",
-              "circleColor": "#551E03",
-              "borderColor": "#e2e4e8",
-              "fontSize": 12,
-              "borderSize": 0,
-              "icon": "icon-24-px-pin-output.svg"
-            },
-            "metadata": {
-              "name": "32KCAL",
-              "group": "${Clock:32KCAL}",
-              "legacyPlannerGroup": "CFS-PinOutput",
-              "type": "BPrt",
-              "inputTerminals": [
-                {
-                  "shape": "arrow",
-                  "radius": 3,
-                  "x": 0,
-                  "y": 30,
-                  "position": "left",
-                  "id": "input_9779a700-e7af-11ef-aaf9-2913c5558c13",
-                  "type": "input",
-                  "netID": "f5452f90-68a5-11f0-b5be-558493c9159c"
-                }
-              ],
-              "outputTerminals": [],
-              "defaultTerminals": [],
-              "netTerminals": []
-            },
-            "inputTerminals": {
-              "input_9779a700-e7af-11ef-aaf9-2913c5558c13": {
-                "connections": [],
-                "offsetX": 0,
-                "offsetY": 30,
-                "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
-                "type": "input",
-                "id": "input_9779a700-e7af-11ef-aaf9-2913c5558c13"
-              }
-            },
-            "outputTerminals": {},
-            "defaultTerminals": {},
-            "netTerminals": {},
-            "legacyId": 1,
-            "x": 110,
-            "y": -960,
-            "zOrder": 24,
-            "portIDConnected": [],
-            "highlight": false,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} !="
           },
           "f1616640-e7af-11ef-acd8-df680084454a": {
             "id": "f1616640-e7af-11ef-acd8-df680084454a",
@@ -98347,7 +97598,7 @@
                   "position": "left",
                   "id": "input_f1618d50-e7af-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5444549-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -98357,7 +97608,7 @@
                   "position": "left",
                   "id": "input_f1618d51-e7af-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5450880-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7159b10-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -98369,7 +97620,7 @@
                   "position": "right",
                   "id": "output_f1618d52-e7af-11ef-acd8-df680084454a",
                   "type": "output",
-                  "netID": "f5452f90-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -98380,7 +97631,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+                "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_f1618d50-e7af-11ef-acd8-df680084454a"
               },
@@ -98388,7 +97639,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 60,
-                "netID": "f5450880-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7159b10-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_f1618d51-e7af-11ef-acd8-df680084454a"
               }
@@ -98398,7 +97649,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 40,
-                "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_f1618d52-e7af-11ef-acd8-df680084454a"
               }
@@ -98411,7 +97662,7 @@
             "zOrder": 25,
             "portIDConnected": [],
             "highlight": true,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & |"
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = &"
           },
           "173e7240-e7b5-11ef-acd8-df680084454a": {
             "id": "173e7240-e7b5-11ef-acd8-df680084454a",
@@ -98454,7 +97705,7 @@
                   "position": "top",
                   "id": "input_173e7241-e7b5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98466,7 +97717,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_173e7241-e7b5-11ef-acd8-df680084454a"
               }
@@ -98523,7 +97774,7 @@
                   "position": "top",
                   "id": "input_3209bad1-e7b5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98535,7 +97786,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_3209bad1-e7b5-11ef-acd8-df680084454a"
               }
@@ -98592,7 +97843,7 @@
                   "position": "top",
                   "id": "input_68e06d10-e7b5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98604,7 +97855,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_68e06d10-e7b5-11ef-acd8-df680084454a"
               }
@@ -98661,7 +97912,7 @@
                   "position": "top",
                   "id": "input_ec159931-e7b5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5457db0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98673,7 +97924,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_ec159931-e7b5-11ef-acd8-df680084454a"
               }
@@ -98730,7 +97981,7 @@
                   "position": "top",
                   "id": "input_6ec9b901-e7b7-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98742,7 +97993,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_6ec9b901-e7b7-11ef-acd8-df680084454a"
               }
@@ -98799,7 +98050,7 @@
                   "position": "top",
                   "id": "input_1db848f1-e7b8-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -98811,7 +98062,7 @@
                   "position": "bottom",
                   "id": "output_1db848f2-e7b8-11ef-acd8-df680084454a",
                   "type": "output",
-                  "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -98822,7 +98073,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_1db848f1-e7b8-11ef-acd8-df680084454a"
               }
@@ -98832,7 +98083,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_1db848f2-e7b8-11ef-acd8-df680084454a"
               }
@@ -98888,7 +98139,7 @@
                   "position": "top",
                   "id": "input_c0b8ccf0-e7b8-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123"
                 },
                 {
                   "shape": "arrow",
@@ -98898,7 +98149,7 @@
                   "position": "top",
                   "id": "input_c0b8ccf1-e7b8-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f545f2e0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7163750-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -98910,7 +98161,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 0,
-                "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_c0b8ccf0-e7b8-11ef-acd8-df680084454a"
               },
@@ -98918,7 +98169,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 0,
-                "netID": "f545f2e0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7163750-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_c0b8ccf1-e7b8-11ef-acd8-df680084454a"
               }
@@ -98975,7 +98226,7 @@
                   "position": "top",
                   "id": "input_18b02de1-e7b9-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5457db0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [
@@ -98987,7 +98238,7 @@
                   "position": "bottom",
                   "id": "output_18b02de2-e7b9-11ef-acd8-df680084454a",
                   "type": "output",
-                  "netID": "f545f2e0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7163750-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -98998,7 +98249,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_18b02de1-e7b9-11ef-acd8-df680084454a"
               }
@@ -99008,7 +98259,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "f545f2e0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7163750-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_18b02de2-e7b9-11ef-acd8-df680084454a"
               }
@@ -99064,7 +98315,7 @@
                   "position": "bottom",
                   "id": "input_4a49b711-e7d5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99076,7 +98327,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_4a49b711-e7d5-11ef-acd8-df680084454a"
               }
@@ -99133,7 +98384,7 @@
                   "position": "top",
                   "id": "input_ede6a221-e7d5-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99145,7 +98396,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_ede6a221-e7d5-11ef-acd8-df680084454a"
               }
@@ -99202,7 +98453,7 @@
                   "position": "top",
                   "id": "input_7b28a4c1-e89f-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99214,7 +98465,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_7b28a4c1-e89f-11ef-acd8-df680084454a"
               }
@@ -99271,7 +98522,7 @@
                   "position": "top",
                   "id": "input_b1ed3ae1-e929-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99283,7 +98534,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_b1ed3ae1-e929-11ef-acd8-df680084454a"
               }
@@ -99340,7 +98591,7 @@
                   "position": "top",
                   "id": "input_b7f01691-e95d-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5468f20-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99352,7 +98603,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_b7f01691-e95d-11ef-acd8-df680084454a"
               }
@@ -99409,7 +98660,7 @@
                   "position": "left",
                   "id": "input_540f53d1-ea3d-11ef-acd8-df680084454a",
                   "type": "input",
-                  "netID": "f5464100-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99421,7 +98672,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_540f53d1-ea3d-11ef-acd8-df680084454a"
               }
@@ -99478,7 +98729,7 @@
                   "position": "right",
                   "id": "output_6c487fd1-ea3d-11ef-acd8-df680084454a",
                   "type": "output",
-                  "netID": "f5464100-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "defaultTerminals": [],
@@ -99490,7 +98741,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "output",
                 "id": "output_6c487fd1-ea3d-11ef-acd8-df680084454a"
               }
@@ -99545,7 +98796,7 @@
                   "position": "top",
                   "id": "input_7c0d2fc0-153e-11f0-9857-7ff51d13dae1",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99557,7 +98808,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_7c0d2fc0-153e-11f0-9857-7ff51d13dae1"
               }
@@ -99614,7 +98865,7 @@
                   "position": "top",
                   "id": "input_f2cb7d01-68a5-11f0-b5be-558493c9159c",
                   "type": "input",
-                  "netID": "f544ba60-68a5-11f0-b5be-558493c9159c"
+                  "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123"
                 }
               ],
               "outputTerminals": [],
@@ -99626,7 +98877,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+                "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
                 "type": "input",
                 "id": "input_f2cb7d01-68a5-11f0-b5be-558493c9159c"
               }
@@ -99660,9 +98911,9 @@
               "x": -900,
               "y": -950
             },
-            "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = & ${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = & |",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = & 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = & |",
             "clock": "ERTCO_CLK"
           },
           "c06f70a9-e312-11ef-b345-d32ad91fc0a4": {
@@ -99681,9 +98932,9 @@
               "x": -880,
               "y": -950
             },
-            "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_CLK"
           },
           "c06f70ac-e312-11ef-b345-d32ad91fc0a4": {
@@ -99702,9 +98953,9 @@
               "x": -880,
               "y": -920
             },
-            "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_CLK"
           },
           "c240601b-e312-11ef-b345-d32ad91fc0a4": {
@@ -99723,9 +98974,9 @@
               "x": -880,
               "y": -950
             },
-            "netID": "f5444549-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f3-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = &",
             "clock": "ERTCO_CLK"
           },
           "c463dc56-e312-11ef-b345-d32ad91fc0a4": {
@@ -99744,9 +98995,9 @@
               "x": -900,
               "y": -880
             },
-            "netID": "f5446c40-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
           },
           "c463dc59-e312-11ef-b345-d32ad91fc0a4": {
@@ -99765,9 +99016,9 @@
               "x": -880,
               "y": -900
             },
-            "netID": "f5446c40-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
           },
           "c463dc5c-e312-11ef-b345-d32ad91fc0a4": {
@@ -99786,9 +99037,9 @@
               "x": -880,
               "y": -900
             },
-            "netID": "f5446c40-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f4-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
           },
           "f5644386-e312-11ef-b345-d32ad91fc0a4": {
@@ -99807,7 +99058,7 @@
               "x": -560,
               "y": -660
             },
-            "netID": "f5449350-68a5-11f0-b5be-558493c9159c",
+            "netID": "a71525f5-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "SYS_OSC"
           },
@@ -99827,7 +99078,7 @@
               "x": -680,
               "y": -550
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:7MCLK} = & | |",
             "clock": "7MCLK"
@@ -99848,7 +99099,7 @@
               "x": -680,
               "y": -580
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:7MCLK} = &",
             "clock": "7MCLK"
@@ -99869,7 +99120,7 @@
               "x": -1000,
               "y": -500
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:7MCLK} = & | |",
             "clock": "7MCLK"
@@ -99890,7 +99141,7 @@
               "x": -1000,
               "y": -500
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:7MCLK} = & | |",
             "clock": "7MCLK"
@@ -99911,7 +99162,7 @@
               "x": -460,
               "y": -570
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "APBCLK"
           },
@@ -99931,7 +99182,7 @@
               "x": -850,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:ADC:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:APBCLK} = & | | |",
             "clock": "APBCLK"
@@ -99952,7 +99203,7 @@
               "x": -960,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:APBCLK} = & | |",
             "clock": "APBCLK"
@@ -99973,7 +99224,7 @@
               "x": -590,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "APBCLK"
           },
@@ -99993,7 +99244,7 @@
               "x": -850,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:ADC:ENABLE}",
             "clock": "APBCLK"
@@ -100014,7 +99265,7 @@
               "x": -720,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3/4/5:TMR5_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR4_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR3_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR2_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR1_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR0_ENABLE} | | | | |",
             "clock": "APBCLK"
@@ -100035,7 +99286,7 @@
               "x": -590,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "APBCLK"
           },
@@ -100055,7 +99306,7 @@
               "x": -460,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:OWM:ENABLE}",
             "clock": "APBCLK"
@@ -100076,7 +99327,7 @@
               "x": -960,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:APBCLK} = & | |",
             "clock": "APBCLK"
@@ -100097,7 +99348,7 @@
               "x": -720,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3/4/5:TMR5_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR4_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR3_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR2_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR1_ENABLE} ${Control:TMR0/1/2/3/4/5:TMR0_ENABLE} | | | | | ${Control:ADC:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:APBCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:APBCLK} = & | | | |",
             "clock": "APBCLK"
@@ -100118,7 +99369,7 @@
               "x": -330,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:I2C1:I2C1_ENABLE}",
             "clock": "APBCLK"
@@ -100139,7 +99390,7 @@
               "x": -460,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:I2C1:I2C1_ENABLE} ${Control:SPI1/2:SPI2_ENABLE} ${Control:SPI1/2:SPI1_ENABLE} | ${Control:CLCD:ENABLE} ${Control:SPIMSS:ENABLE} ${Control:PT0-15:ENABLE} | | | |",
             "clock": "APBCLK"
@@ -100160,31 +99411,10 @@
               "x": -740,
               "y": -910
             },
-            "netID": "f5450880-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7159b10-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_OSC"
-          },
-          "f83d8896-e7af-11ef-acd8-df680084454a": {
-            "parent_class": "connection",
-            "id": "f83d8896-e7af-11ef-acd8-df680084454a",
-            "uuid": "f83d8896-e7af-11ef-acd8-df680084454a",
-            "type": "Connection",
-            "className": "main_path drawing_path",
-            "startPoint": {
-              "id": "f83d8895-e7af-11ef-acd8-df680084454a",
-              "x": 110,
-              "y": -930
-            },
-            "endPoint": {
-              "id": "f83d8894-e7af-11ef-acd8-df680084454a",
-              "x": -660,
-              "y": -930
-            },
-            "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
-            "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} !=",
-            "clock": "ERTCO"
           },
           "04fc03e9-e7b0-11ef-acd8-df680084454a": {
             "parent_class": "connection",
@@ -100202,7 +99432,7 @@
               "x": -660,
               "y": -930
             },
-            "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -100223,7 +99453,7 @@
               "x": -660,
               "y": -700
             },
-            "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -100244,9 +99474,9 @@
               "x": -680,
               "y": -930
             },
-            "netID": "f5452f90-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715c220-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
-            "condition": "${Control:32KCAL:32KCAL} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & |",
+            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
           },
           "c787f3cc-e7b4-11ef-acd8-df680084454a": {
@@ -100265,7 +99495,7 @@
               "x": -660,
               "y": -660
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:HSCLK} = &",
             "clock": "HSCLK"
@@ -100286,7 +99516,7 @@
               "x": -200,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:PT0-15:ENABLE}",
             "clock": "APBCLK"
@@ -100307,7 +99537,7 @@
               "x": -330,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI1/2:SPI2_ENABLE} ${Control:SPI1/2:SPI1_ENABLE} | ${Control:CLCD:ENABLE} ${Control:SPIMSS:ENABLE} ${Control:PT0-15:ENABLE} | | |",
             "clock": "APBCLK"
@@ -100328,7 +99558,7 @@
               "x": -70,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPIMSS:ENABLE}",
             "clock": "APBCLK"
@@ -100349,7 +99579,7 @@
               "x": -200,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI1/2:SPI2_ENABLE} ${Control:SPI1/2:SPI1_ENABLE} | ${Control:CLCD:ENABLE} ${Control:SPIMSS:ENABLE} | |",
             "clock": "APBCLK"
@@ -100370,7 +99600,7 @@
               "x": 60,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI1/2:SPI2_ENABLE} ${Control:SPI1/2:SPI1_ENABLE} |",
             "clock": "APBCLK"
@@ -100391,7 +99621,7 @@
               "x": -70,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI1/2:SPI2_ENABLE} ${Control:SPI1/2:SPI1_ENABLE} | ${Control:CLCD:ENABLE} |",
             "clock": "APBCLK"
@@ -100412,7 +99642,7 @@
               "x": 190,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:CLCD:ENABLE}",
             "clock": "APBCLK"
@@ -100433,7 +99663,7 @@
               "x": 60,
               "y": -345
             },
-            "netID": "f544ba60-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf1-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:CLCD:ENABLE}",
             "clock": "APBCLK"
@@ -100454,7 +99684,7 @@
               "x": 60,
               "y": -540
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SDHC:ENABLE}",
             "clock": "HSCLK"
@@ -100475,7 +99705,7 @@
               "x": -50,
               "y": -540
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SDHC:ENABLE}",
             "clock": "HSCLK"
@@ -100496,7 +99726,7 @@
               "x": -660,
               "y": -660
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE} ${Control:SDHC:ENABLE} |",
             "clock": "HSCLK"
@@ -100517,7 +99747,7 @@
               "x": -330,
               "y": -480
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SDMA:ENABLE}",
             "clock": "AHBCLK"
@@ -100538,7 +99768,7 @@
               "x": -200,
               "y": -570
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI3:SPI3_ENABLE} ${Control:High-Speed USB:ENABLE} ${Control:SDMA:ENABLE} | |",
             "clock": "AHBCLK"
@@ -100559,7 +99789,7 @@
               "x": -200,
               "y": -480
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE}",
             "clock": "AHBCLK"
@@ -100580,7 +99810,7 @@
               "x": -90,
               "y": -480
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE}",
             "clock": "AHBCLK"
@@ -100601,7 +99831,7 @@
               "x": -50,
               "y": -540
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE}",
             "clock": "HSCLK"
@@ -100622,7 +99852,7 @@
               "x": -660,
               "y": -540
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE} ${Control:SDHC:ENABLE} |",
             "clock": "HSCLK"
@@ -100643,7 +99873,7 @@
               "x": -50,
               "y": -470
             },
-            "netID": "f545f2e0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7163750-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE}",
             "clock": "USB_CLK"
@@ -100664,7 +99894,7 @@
               "x": -330,
               "y": -480
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SDMA:ENABLE}",
             "clock": "AHBCLK"
@@ -100685,7 +99915,7 @@
               "x": -200,
               "y": -480
             },
-            "netID": "f545cbd0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7161040-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI3:SPI3_ENABLE}",
             "clock": "AHBCLK"
@@ -100706,7 +99936,7 @@
               "x": -200,
               "y": -830
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "INRO"
           },
@@ -100726,7 +99956,7 @@
               "x": -270,
               "y": -830
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "INRO"
           },
@@ -100746,7 +99976,7 @@
               "x": -200,
               "y": -830
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -100767,7 +99997,7 @@
               "x": -640,
               "y": -780
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -100788,7 +100018,7 @@
               "x": -640,
               "y": -780
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -100809,7 +100039,7 @@
               "x": -640,
               "y": -740
             },
-            "netID": "f5464100-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7165e60-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -100830,7 +100060,7 @@
               "x": -480,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -100850,7 +100080,7 @@
               "x": -460,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -100870,7 +100100,7 @@
               "x": -340,
               "y": -700
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -100890,7 +100120,7 @@
               "x": -460,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -100910,7 +100140,7 @@
               "x": -200,
               "y": -700
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPIXF:ENABLE}",
             "clock": "SYS_CLK"
@@ -100931,7 +100161,7 @@
               "x": -340,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE} ${Control:Cache:ICC_ENABLE} ${Control:Cache:EMCC_ENABLE} | ${Control:FLC:FIC_ENABLE} ${Control:FLC:SFLC_ENABLE} | ${Control:DMA:ENABLE} ${Control:SPI3:SPI3_ENABLE} ${Control:High-Speed USB:ENABLE} ${Control:SDMA:ENABLE} | | ${Control:SPIXR:ENABLE} ${Control:SPIXF:ENABLE} | | | | | |",
             "clock": "SYS_CLK"
@@ -100952,7 +100182,7 @@
               "x": -70,
               "y": -700
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPIXR:ENABLE}",
             "clock": "SYS_CLK"
@@ -100973,7 +100203,7 @@
               "x": -200,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE} ${Control:Cache:ICC_ENABLE} ${Control:Cache:EMCC_ENABLE} | ${Control:FLC:FIC_ENABLE} ${Control:FLC:SFLC_ENABLE} | ${Control:DMA:ENABLE} ${Control:SPIXR:ENABLE} | | | |",
             "clock": "SYS_CLK"
@@ -100994,7 +100224,7 @@
               "x": 60,
               "y": -700
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:DMA:ENABLE}",
             "clock": "SYS_CLK"
@@ -101015,7 +100245,7 @@
               "x": -70,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE} ${Control:FLC:FIC_ENABLE} ${Control:FLC:SFLC_ENABLE} | ${Control:DMA:ENABLE} | |",
             "clock": "SYS_CLK"
@@ -101036,7 +100266,7 @@
               "x": 60,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE}",
             "clock": "SYS_CLK"
@@ -101057,7 +100287,7 @@
               "x": 190,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE}",
             "clock": "SYS_CLK"
@@ -101078,7 +100308,7 @@
               "x": 60,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:FLC:FIC_ENABLE} ${Control:FLC:SFLC_ENABLE} |",
             "clock": "SYS_CLK"
@@ -101099,7 +100329,7 @@
               "x": -70,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:Cache:ICC_ENABLE} ${Control:Cache:EMCC_ENABLE} |",
             "clock": "SYS_CLK"
@@ -101120,7 +100350,7 @@
               "x": -200,
               "y": -660
             },
-            "netID": "f5468f20-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7168570-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:SPI3:SPI3_ENABLE} ${Control:High-Speed USB:ENABLE} ${Control:SDMA:ENABLE} | |",
             "clock": "SYS_CLK"
@@ -101141,7 +100371,7 @@
               "x": -900,
               "y": -690
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE} ${Control:SDHC:ENABLE} 1 ${Control:SYS_OSC Mux:MUX} ${String:HSCLK} = & | |",
             "clock": "HSCLK"
@@ -101162,7 +100392,7 @@
               "x": -660,
               "y": -690
             },
-            "netID": "f5457db0-68a5-11f0-b5be-558493c9159c",
+            "netID": "a715e930-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:High-Speed USB:ENABLE} ${Control:SDHC:ENABLE} 1 ${Control:SYS_OSC Mux:MUX} ${String:HSCLK} = & | |",
             "clock": "HSCLK"
@@ -101183,7 +100413,7 @@
               "x": -900,
               "y": -620
             },
-            "netID": "f546b630-68a5-11f0-b5be-558493c9159c",
+            "netID": "a716ac80-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:LPCLK} = &",
             "clock": "LPCLK"
@@ -101204,7 +100434,7 @@
               "x": -900,
               "y": -550
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:7MCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:7MCLK} = & | | 1 ${Control:SYS_OSC Mux:MUX} ${String:7MCLK} = & |",
             "clock": "7MCLK"
@@ -101225,7 +100455,7 @@
               "x": -680,
               "y": -580
             },
-            "netID": "f5449351-68a5-11f0-b5be-558493c9159c",
+            "netID": "a7154cf0-d5c5-11f0-bfcf-a7b279d94123",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:7MCLK} = &",
             "clock": "7MCLK"

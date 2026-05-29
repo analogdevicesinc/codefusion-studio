@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,5 +23,7 @@ export const TextData = {
   plugintext: "Zephyr Single Core Blinky",
   evkitName32690: "max32690evkit/max32690/m4",
   evkitname78XXX: "max78002evkit/max78002/m4",
-  cfsideversion: "2.1.0",
+  evkitname326XX: "max32657evkit/max32657",
+  cfsideversion: "2.2.0",
+  workspaceName: "TrustZone_SingleCore_Workspace",
 };

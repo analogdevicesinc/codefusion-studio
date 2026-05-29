@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('cfsplugins list', () => {
-  const pluginsPath = path.resolve(__dirname, '..', CFS_PLUGINS_PATH);
+  const pluginsPath = CFS_PLUGINS_PATH;
 
   test
     .stdout()

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@
 //       | RISCV_SRAM | 0x20100000   | 131072  | R      | SRAM          |
 
 import { expect } from "chai";
-
 import {
   By,
   EditorView,
@@ -71,7 +70,6 @@ import {
   partitionDetailsDropdowns,
 } from "../../page-objects/memory-allocation-section/memory-allocation-screen";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../../ui-test-utils/exec-utils";
 
 describe("Memory Allocation", () => {
   let workbench: Workbench;
@@ -89,9 +87,8 @@ describe("Memory Allocation", () => {
   });
 
   afterEach(async () => {
-    // Teardown - reset cfsconfig files
     if (configPath) {
-      await asyncExecFile("git", "checkout", configPath);
+      await UIUtils.restoreFixtureFileFromGit(configPath);
       configPath = undefined;
     }
   });
@@ -102,7 +99,7 @@ describe("Memory Allocation", () => {
     await UIUtils.sleep(5000);
     console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
-    console.log("max32690-wlp-dual-core-blinky UI loaded");
+    console.log("max32690-wlp-core-config UI loaded");
     await view.switchToFrame();
 
     expect(

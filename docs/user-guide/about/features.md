@@ -1,20 +1,20 @@
 ---
 description: Features included with CodeFusion Studio
 author: Analog Devices
-date: 2026-03-26
+date: 2026-05-03
 ---
 
 # Features
 
 Explore all the features CodeFusion Studio has to offer.
 
-## Embedded AI Tools
+## Embedded AI Workflows
 
-Build and optimize AI models directly inside your embedded workflow. Use the Embedded AI Tools in System Planner to import models, assign them to cores, validate compatibility, and generate deployment-ready source code.
+Complete model-to-deployment workflow for AI on embedded hardware. Create AI-ready workspaces directly from model files with automatic compatibility checking. Import models, validate compatibility with ADI processors, profile runtime performance, and generate optimized inference-ready code. Use the GUI or `cfsutil` commands.
 
-[Learn more →](../tools/manage-ai-models.md)
+[Create workspace from AI model →](../workspaces/create-workspace-from-ai-model.md) | [AI model tools →](../tools/manage-ai-models.md)
 
-![Embedded AI Tools Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.1.0/packages/ide/gifs/ide-ai-tools.gif)
+![Embedded AI Workflows Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-ai-tools.gif)
 
 ## AI Debug Assistant (Preview)
 
@@ -22,7 +22,7 @@ Investigate faults, inspect hardware state, decode fault registers, and coordina
 
 [Learn more →](../debugging/debug-tools/ai-debug-assistant/index.md)
 
-![AI Debug Assistant](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.1.0/packages/ide/gifs/ide-ai-debug-assistant.gif)
+![AI Debug Assistant](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-ai-debug-assistant.gif)
 
 ## System Planner
 
@@ -30,11 +30,11 @@ Use the System Planner to visually configure every aspect of your system — fro
 
 [Learn more →](../tools/index.md)
 
-![System Planner Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.1.0/packages/ide/gifs/ide-system-planner.gif)
+![System Planner Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-system-planner.gif)
 
 ## Debugging and Analysis
 
-Inspect, automate, and analyze your system behavior with built-in debugging and analysis utilities — including multi-core debugging, the Core Dump Analysis Tool, the GDB Toolbox, and the [Zephelin profiler](../tools/profiling.md).
+Inspect, automate, and analyze your system behavior with built-in debugging and analysis utilities — including multi-core debugging, the Memory Viewer, the Core Dump Analysis Tool, the GDB Toolbox, and the [Zephelin profiler](../tools/profiling.md).
 
 [Learn more →](../debugging/debug-tools/index.md)
 
@@ -48,6 +48,12 @@ CodeFusion Studio provides an extended debugging ecosystem for multi-core system
 
 ![Multi-core debugging](./images/multi-core-debugging-light.png#only-light)
 ![Multi-core debugging](./images/multi-core-debugging-dark.png#only-dark)
+
+## CLI-First Development
+
+Build, flash, and configure workspaces entirely from the command line with `cfsutil`. Set up projects without opening the IDE, run complete AI model workflows, manage SDKs and packages, and execute build tasks. Perfect for CI/CD pipelines, automation scripts, and terminal-based workflows.
+
+[Learn more →](../cfsutil/index.md)
 
 ## Package Manager
 
@@ -63,7 +69,7 @@ Start new single- or multi-core projects in seconds with guided setup, example t
 
 [Learn more →](../workspaces/create-new-workspace.md)
 
-![Workspace Creation Wizard Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.1.0/packages/ide/gifs/ide-workspace.gif)
+![Workspace Creation Wizard Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-workspace.gif)
 
 ## Plugin-Based Architecture
 

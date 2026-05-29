@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@ import ReactECharts, {type EChartsOption} from 'echarts-for-react';
 
 import HeaderWithTooltip from '../../../../components/HeaderWithTooltip/HeaderWithTooltip';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
-import {
-	calculateSectionSizes,
-	chartLegendColors
-} from '../../../../utils/chart-utils';
+import {calculateSectionSizes} from '../../../../utils/chart-utils';
 import ChartLegend from '../../../../components/ChartLegend/ChartLegend';
 import {transformBtoKB} from '../../../../utils/number';
 import {formatSize} from '../../../../utils/stats-utils';
@@ -29,6 +26,8 @@ import type {TLocaleContext} from '../../../../common/types/context';
 
 import styles from './MainSectionChart.module.scss';
 import type {ECElementEvent} from 'echarts';
+import {useMemo} from 'react';
+import {useChartLegendColors} from '../../../../common/hooks/use-chart-legend-colors';
 
 type TMainSectionChartProps = {
 	readonly sections: TSection[];
@@ -37,126 +36,148 @@ type TMainSectionChartProps = {
 export default function MainSectionChart({
 	sections
 }: TMainSectionChartProps) {
-	const chartData = calculateSectionSizes(sections);
+	const chartData = useMemo(
+		() => calculateSectionSizes(sections),
+		[sections]
+	);
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.stats?.chart;
 
-	const totalSize = chartData.text + chartData.data + chartData.bss;
-	const step = Math.ceil(totalSize / 5);
+	const {totalSize, step, maxValue} = useMemo(() => {
+		const totalSize = chartData.text + chartData.data + chartData.bss;
+		const step = Math.max(1, Math.ceil(totalSize / 3));
+		const maxValue = Math.ceil((totalSize + step) / step) * step;
 
-	const text = `(${transformBtoKB(chartData.text)})`;
-	const data = `(${transformBtoKB(chartData.data)})`;
-	const bss = `(${transformBtoKB(chartData.bss)})`;
+		return {totalSize, step, maxValue};
+	}, [chartData]);
 
-	const legendData = {text, data, bss};
+	const legendData = useMemo(
+		() => ({
+			text: `(${transformBtoKB(chartData.text)})`,
+			data: `(${transformBtoKB(chartData.data)})`,
+			bss: `(${transformBtoKB(chartData.bss)})`
+		}),
+		[chartData]
+	);
 
-	const getOption = (): EChartsOption => ({
-		animation: false,
-		grid: {
-			left: '0',
-			top: '-10',
-			right: '50%',
-			bottom: '5'
-		},
-		xAxis: {
-			type: 'category',
-			data: ['Total Size'],
-			axisLine: {
-				show: false
+	const chartLegendColors = useChartLegendColors();
+
+	const options: EChartsOption = useMemo(
+		() => ({
+			animation: false,
+			grid: {
+				left: '0',
+				top: '-10',
+				right: '50%',
+				bottom: '5'
 			},
-			axisTick: {
-				show: false
-			},
-			axisLabel: {
-				show: false
-			}
-		},
-		yAxis: {
-			type: 'value',
-			position: 'right',
-			axisLine: {
-				show: false
-			},
-			axisTick: {
-				show: true,
-				inside: true
-			},
-			splitLine: {
-				show: false
-			},
-			alignTicks: true,
-			axisLabel: {
-				show: true,
-				align: 'left',
-				verticalAlign: 'middle',
-				formatter(value: number) {
-					// Add an underscore and a space before each label item
-					return value % step === 0
-						? formatSize(value).toString()
-						: '';
+			xAxis: {
+				type: 'category',
+				data: ['Total Size'],
+				axisLine: {
+					show: false
+				},
+				axisTick: {
+					show: false
+				},
+				axisLabel: {
+					show: false
 				}
 			},
-			min: 0,
-			max: totalSize + step,
-			interval: step
-		},
-		tooltip: {
-			trigger: 'item',
-			className: styles.chartTooltip,
-			formatter(params: ECElementEvent) {
-				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-				return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+			yAxis: {
+				type: 'value',
+				position: 'right',
+				axisLine: {
+					show: false
+				},
+				axisTick: {
+					show: true,
+					inside: true
+				},
+				splitLine: {
+					show: false
+				},
+				axisLabel: {
+					show: true,
+					align: 'left',
+					verticalAlign: 'middle',
+					formatter(value: number) {
+						// Show step intervals, but display totalSize for the top label
+						if (value % step === 0) {
+							// If this is the topmost label, show actual totalSize instead
+							const isTopLabel = value === step * 3;
+
+							return isTopLabel
+								? formatSize(totalSize).toString()
+								: formatSize(value).toString();
+						}
+
+						return '';
+					}
+				},
+				min: 0,
+				max: maxValue,
+				interval: step
 			},
-			confine: true
-		},
-		series: [
-			{
-				name: 'text',
-				type: 'bar',
-				stack: 'total',
-				data: [chartData.text],
-				itemStyle: {
-					color: chartLegendColors.text
+			tooltip: {
+				trigger: 'item',
+				className: styles.chartTooltip,
+				formatter(params: ECElementEvent) {
+					// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+					return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
 				},
-				barCategoryGap: '0%',
-				barWidth: '80px',
-				emphasis: {
-					disabled: true
-				},
-				cursor: 'default'
+				confine: true
 			},
-			{
-				name: 'data',
-				type: 'bar',
-				stack: 'total',
-				data: [chartData.data],
-				itemStyle: {
-					color: chartLegendColors.data
+			series: [
+				{
+					name: 'text',
+					type: 'bar',
+					stack: 'total',
+					data: [chartData.text],
+					itemStyle: {
+						color: chartLegendColors.text
+					},
+					barCategoryGap: '0%',
+					barWidth: '80px',
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
 				},
-				barCategoryGap: '0%',
-				barWidth: '80px',
-				emphasis: {
-					disabled: true
+				{
+					name: 'data',
+					type: 'bar',
+					stack: 'total',
+					data: [chartData.data],
+					itemStyle: {
+						color: chartLegendColors.data
+					},
+					barCategoryGap: '0%',
+					barWidth: '80px',
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
 				},
-				cursor: 'default'
-			},
-			{
-				name: 'bss',
-				type: 'bar',
-				stack: 'total',
-				data: [chartData.bss],
-				itemStyle: {
-					color: chartLegendColors.bss
-				},
-				barCategoryGap: '0%',
-				barWidth: '80px',
-				emphasis: {
-					disabled: true
-				},
-				cursor: 'default'
-			}
-		]
-	});
+				{
+					name: 'bss',
+					type: 'bar',
+					stack: 'total',
+					data: [chartData.bss],
+					itemStyle: {
+						color: chartLegendColors.bss
+					},
+					barCategoryGap: '0%',
+					barWidth: '80px',
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
+				}
+			]
+		}),
+		[chartData, step, maxValue, totalSize, chartLegendColors]
+	);
 
 	return (
 		<div
@@ -172,7 +193,7 @@ export default function MainSectionChart({
 			<div className={styles.chartWrapper}>
 				<div className={styles.chartContainer}>
 					<ReactECharts
-						option={getOption()}
+						option={options}
 						style={{
 							height: '100%',
 							width: '180px'

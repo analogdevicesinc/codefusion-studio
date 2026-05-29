@@ -1,16 +1,24 @@
 {
   "author": "Analog Devices, Inc.",
-  "bin": "./bin/run.js",
+  "bin": {
+    "cfs": "./bin/run.js",
+    "cfsutil": "./bin/run.js"
+  },
   "description": "ADI CodeFusion Studio CLI tool",
   "dependencies": {
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^4",
+    "@serialport/parser-readline": "^13.0.0",
     "cfs-lib": "workspace:*",
     "cfs-package-manager": "workspace:*",
+    "cfs-plugins-sdk": "workspace:*",
     "cli-table3": "^0.6.5",
     "elf-parser": "workspace:*",
-    "env-paths": "^3.0.0"
+    "env-paths": "^3.0.0",
+    "jsonc-parser": "^3.3.1",
+    "semver": "^7.7.3",
+    "serialport": "^13.0.0"
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",
@@ -19,6 +27,9 @@
     "@types/copyfiles": "^2",
     "@types/mocha": "^10",
     "@types/node": "^20",
+    "@types/semver": "^7",
+    "cfs-ccm-lib": "workspace:*",
+    "cfs-types": "workspace:^",
     "chai": "^4",
     "copyfiles": "^2.4.1",
     "dotenv": "^16.5.0",
@@ -41,12 +52,15 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/analogdevicesinc/codefusion-studio/tree/V2.0.1/packages/cli",
+  "homepage": "https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/cli",
   "license": "MIT",
   "main": "",
   "name": "cfsutil",
   "oclif": {
     "bin": "cfsutil",
+    "binAliases": [
+      "cfs"
+    ],
     "dirname": "cfsutil",
     "commands": "./dist/commands",
     "plugins": [
@@ -65,36 +79,66 @@
         "description": "CFS plugins."
       },
       "workspace": {
-        "description": "Workspace."
+        "description": "Workspace creation and configuration."
       },
       "project": {
-        "description": "Project."
+        "description": "Project regeneration."
       },
       "pkg": {
         "description": "CFS Package Manager."
       },
       "myanalog": {
         "description": "Manage myAnalog session."
+      },
+      "auth": {
+        "description": "CFS backend authentication."
+      },
+      "soc": {
+        "description": "SoC data model and catalog operations."
+      },
+      "socs": {
+        "description": "SoC data model and catalog operations."
+      },
+      "ai": {
+        "description": "AI tools and model management."
+      },
+      "tasks": {
+        "description": "List and run project tasks."
+      },
+      "ai:model": {
+        "description": "Manage models within a Workspace."
+      },
+      "port": {
+        "description": "List information about serial ports."
+      },
+      "ai:workspace": {
+        "description": "Generate workspaces from AI models"
+      },
+      "catalog": {
+        "description": "Update or restore the SoC catalog."
       }
     }
   },
-  "repository": "https://github.com/analogdevicesinc/codefusion-studio/tree/V2.0.1/packages/cli",
+  "repository": "https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/cli",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/config/*.json' dist",
-    "build-local-deps": "yarn workspaces foreach -Rpt --topological-dev --exclude cfs-plugins-api run build",
+    "build-local-deps": "yarn workspaces foreach -Rpt --topological-dev --exclude cfs-plugins-sdk run build",
     "auth-cfg": "node build-scripts/auth-config.js > src/config/auth.json",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
     "prepack": "yarn auth-cfg && yarn build && oclif manifest && oclif readme",
     "prepare": "yarn build",
+    "pretarball": "shx cp bin/cfsutil.cmd bin/cfs.cmd && shx cp -n bin/cfsutil bin/cfs",
     "tarballs": "yarn build-local-deps && node build-scripts/tarballs.js && oclif pack tarballs \"$@\" && shx mv -f package.json.bak package.json",
     "test": "CFS_INSTALL_DIR=\"test/fixtures\" c8 mocha --forbid-only \"test/commands/**/*.test.ts\" --reporter-option output=coverage/test-results.json",
+    "test:dev": "CFS_INSTALL_DIR=\"test/fixtures\" mocha \"test/commands/**/*.test.ts\" --reporter spec; yarn clean-fixtures",
     "test-plugins": "CFS_INSTALL_DIR=\"test/fixtures\" mocha --forbid-only \"test/plugins/**/*.test.ts\"",
     "test-gen": "CFS_INSTALL_DIR=\"test/fixtures\" mocha --forbid-only \"test/commands/generate.test.ts\"",
+    "clean-fixtures": "./scripts/clean-test-fixtures.sh",
     "version": "oclif readme && git add README.md"
   },
-  "version": "2.1.0",
+  "version": "2.2.0",
   "bugs": "https://github.com/analogdevicesinc/codefusion-studio/issues",
   "keywords": [
     "oclif"

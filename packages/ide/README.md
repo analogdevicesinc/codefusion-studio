@@ -1,13 +1,23 @@
 # Overview
 
 CodeFusion Studio (CFS) is a modern embedded software development ecosystem that integrates with Microsoft Visual Studio Code.
-Designed for Analog Devices’ embedded processors and microcontrollers, it provides a unified environment that combines system configuration, AI integration, code generation, and advanced debugging within a single workspace.
+Designed for Analog Devices’ embedded processors and microcontrollers, it provides a unified environment for system configuration, AI integration, code generation, and advanced debugging - accessible through both an intuitive IDE and a command-line workflow.
 
 ## Key Features
 
+### Embedded AI Workflows
+
+Complete model-to-deployment workflow for AI on embedded hardware. Create AI-ready workspaces directly from model files with automatic compatibility checking and guided hardware configuration. Import models, validate compatibility with ADI processors, profile runtime performance, and generate optimized inference-ready code.
+
+![Embedded AI Tools](./gifs/ide-ai-tools.gif)
+
+### CLI-First Development
+
+Build, flash, and configure workspaces entirely from the command line with `cfsutil`. Set up projects without opening the IDE, run complete AI model workflows, manage SDKs and packages, and execute build tasks. Perfect for CI/CD pipelines, automation scripts, and terminal-based workflows.
+
 ### Workspace Creation Wizard
 
-Create single- or multi-core projects in seconds with guided setup, example templates, and Arm® TrustZone®-ready configurations.
+Create single- or multi-core projects in seconds with guided setup, example templates, and Arm® TrustZone®-ready configurations. New templates are added regularly and are filtered based on your selected hardware.
 
 ![Workspace Creation wizard](./gifs/ide-workspace.gif)
 
@@ -17,16 +27,10 @@ Visually configure every aspect of your system — from memory and peripheral al
 
 ![System Planner](./gifs/ide-system-planner.gif)
 
-### Embedded AI Tools
-
-Build and optimize AI models directly inside your embedded workflow.
-Use the Embedded AI Tools in System Planner to import models, assign cores, validate compatibility, and generate deployment-ready source code.
-
-![Embedded AI Tools](./gifs/ide-ai-tools.gif)
-
 ### Advanced Debugging
 
 - Extended debugging ecosystem for multi-core systems with breakpoints, disassembly, cross-core support, and RTOS thread awareness.
+- Memory Viewer — inspect device memory during live and retrospective debug sessions with configurable display options and multi-core session tracking.
 - Core Dump Analysis Tool — inspect captured dumps to identify crash causes.
 - GDB Toolbox — automate inspection and debugging with custom GDB or Python-based scripts.
 
@@ -49,7 +53,7 @@ Debug smarter with an AI assistant that connects directly to your live debug ses
 ## Requirements
 
 - Visual Studio Code 1.100 or later
-- CodeFusion Studio SDK 2.1.0 or later — download the [CFS SDK](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/).
+- CodeFusion Studio SDK 2.2.0 or later — download the [CFS SDK](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/).
 - Supported platforms:
   - Windows 11 (64-bit)
   - macOS 15 and macOS 26 (ARM64)
@@ -58,10 +62,10 @@ Debug smarter with an AI assistant that connects directly to your live debug ses
 ## Product Details
 
 - Permissive open-source license.
-- Integrated support for Zephyr RTOS 4.2.
+- Integrated support for Zephyr RTOS 4.3.
 - Native support for ADI’s MAX Software Development Kit (MSDK).
 - Support for the ADSP-2183x / SC83x SHARC-FX family (Windows only).
-- Beta support for Zephelin profiling, providing real-time insight into runtime behavior and AI inference performance on supported processors.
+- Beta support for Zephelin profiling including trace capture panel, automatic .ctf/.tef format generation, and integrated trace viewer for real-time runtime behavior and AI inference performance analysis on supported processors.
 - Compiler and debugger support for Zephyr (Arm Cortex-M), MSDK (Arm Cortex-M and RISC-V), and SHARC-FX (ADSP-2183x / SC83x), including heterogeneous multicore debugging where applicable.
 - Modern UI with a CI-friendly command-line interface.
 - ELF visualization tools for analyzing compiled applications and memory layouts, including an ELF File Explorer with SQL queries for symbol selection and a graphical memory map.

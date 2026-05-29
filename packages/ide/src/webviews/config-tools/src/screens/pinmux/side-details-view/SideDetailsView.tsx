@@ -22,18 +22,16 @@ import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {isPinReserved} from '../../../utils/is-pin-reserved';
 import {pinInConflict} from '../../../utils/pin-error';
 
-type PinDetailsProps = {
-	readonly targetPins: Array<Pin[] | undefined>;
-	readonly peripheralPins?: Record<string, Pin[]> | undefined;
-	readonly handleBackClick: () => void;
-	readonly errorMsg?: string;
-};
+type PinDetailsProps = Readonly<{
+	targetPins: Array<Pin[] | undefined>;
+	peripheralPins?: Record<string, Pin[]> | undefined;
+	handleBackClick: () => void;
+}>;
 
 export default function SideDetailsView({
 	targetPins,
 	peripheralPins = {},
-	handleBackClick,
-	errorMsg
+	handleBackClick
 }: PinDetailsProps) {
 	const assignedPins = useAssignedPins();
 
@@ -58,95 +56,83 @@ export default function SideDetailsView({
 	return (
 		<DetailsView
 			handleBackClick={handleBackClick}
-			body={
-				errorMsg ? (
-					<div style={{textAlign: 'center'}}>{errorMsg}</div>
-				) : (
-					targetPinsState.map(pinArray =>
-						pinArray?.map(targetPin => {
-							const isAssignedPin = assignedPinsNames.includes(
-								targetPin.Name
-							);
-							const isAnyPinAssigned = targetPinsIds.some(
-								pinName =>
-									pinName && assignedPinsNames.includes(pinName)
-							);
+			body={targetPinsState.map(pinArray =>
+				pinArray?.map(targetPin => {
+					const isAssignedPin = assignedPinsNames.includes(
+						targetPin.Name
+					);
+					const isAnyPinAssigned = targetPinsIds.some(
+						pinName => pinName && assignedPinsNames.includes(pinName)
+					);
 
-							const shouldRenderPin =
-								(pinArray.length > 1 && isAssignedPin) ||
-								(pinArray.length > 1 &&
-									!isAnyPinAssigned &&
-									pinArray[0].Name === targetPin.Name) ||
-								pinArray.length === 1;
+					const shouldRenderPin =
+						(pinArray.length > 1 && isAssignedPin) ||
+						(pinArray.length > 1 &&
+							!isAnyPinAssigned &&
+							pinArray[0].Name === targetPin.Name) ||
+						pinArray.length === 1;
 
-							if (!shouldRenderPin) return;
+					if (!shouldRenderPin) return;
 
-							return (
-								<div
-									key={`${targetPin?.Name}`}
-									className={styles.body}
-								>
-									<div
-										data-testid='pin-details-title'
-										id='pin-details-title'
-										className={styles.titleContainer}
-									>
-										<div className={styles.title}>
-											<h3>{targetPin?.Label}</h3>
-											<h3 className={styles.pinName}>
-												{targetPin?.Name}
-											</h3>
-										</div>
-										{targetPin.appliedSignals &&
-											pinInConflict(targetPin.appliedSignals) && (
-												<div
-													className={styles.conflictContainer}
-													data-test='pin:tooltip:conflictMarker'
-												>
-													<div className={styles.notification}>
-														<p>Pin conflict</p>
-														<ConflictIcon />
-													</div>
-												</div>
-											)}
-									</div>
-
-									<section id='pin-details-signals-container'>
-										{isPinReserved(
-											packagePins[targetPin.Name].Name
-										) ? (
-											<div className={styles.reservedPinContainer}>
-												<h4>RESERVED PIN</h4>
-												<p>{`${targetPin?.Description}`}</p>
-											</div>
-										) : (
-											targetPin?.Signals?.map(signal => (
-												<div
-													key={`pinDetails:signals:${signal.Peripheral}:${signal.Name}`}
-													className={styles.peripheralGroup}
-												>
-													<div className={styles.groupTitle}>
-														{signal.Peripheral}
-													</div>
-													<Function
-														peripheralGroup={signal.Peripheral ?? ''}
-														name={signal.Name}
-														pins={
-															peripheralPins[
-																`${signal?.Peripheral}__${signal?.Name}`
-															] ?? []
-														}
-													/>
-												</div>
-											))
-										)}
-									</section>
+					return (
+						<div key={`${targetPin?.Name}`} className={styles.body}>
+							<div
+								data-testid='pin-details-title'
+								id='pin-details-title'
+								className={styles.titleContainer}
+							>
+								<div className={styles.title}>
+									<h3>{targetPin?.Label}</h3>
+									<h3 className={styles.pinName}>
+										{targetPin?.Name}
+									</h3>
 								</div>
-							);
-						})
-					)
-				)
-			}
+								{targetPin.appliedSignals &&
+									pinInConflict(targetPin.appliedSignals) && (
+										<div
+											className={styles.conflictContainer}
+											data-test='pin:tooltip:conflictMarker'
+										>
+											<div className={styles.notification}>
+												<p>Pin conflict</p>
+												<ConflictIcon />
+											</div>
+										</div>
+									)}
+							</div>
+
+							<section id='pin-details-signals-container'>
+								{isPinReserved(packagePins[targetPin.Name].Name) ? (
+									<div className={styles.reservedPinContainer}>
+										<h4>RESERVED PIN</h4>
+										<p>{`${targetPin?.Description}`}</p>
+									</div>
+								) : (
+									targetPin?.Signals?.map(signal => (
+										<div
+											key={`pinDetails:signals:${signal.Peripheral}:${signal.Name}`}
+											className={styles.peripheralGroup}
+										>
+											<div className={styles.groupTitle}>
+												{signal.Peripheral}
+											</div>
+											<Function
+												peripheralGroup={signal.Peripheral ?? ''}
+												name={signal.Name}
+												pins={
+													peripheralPins[
+														`${signal?.Peripheral}__${signal?.Name}`
+													] ?? []
+												}
+											/>
+										</div>
+									))
+								)}
+							</section>
+						</div>
+					);
+				})
+			)}
 		/>
 	);
 }

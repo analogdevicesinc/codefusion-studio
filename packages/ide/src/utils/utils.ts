@@ -13,7 +13,7 @@
  *
  */
 import * as fs from "fs";
-import { glob } from "glob";
+import * as fg from "fast-glob";
 import * as path from "path";
 import * as vscode from "vscode";
 import { tmpdir } from "os";
@@ -40,7 +40,7 @@ import {
 } from "../constants";
 import { ERROR } from "../messages";
 import { PropertyNode } from "../properties";
-import { resolveUserHomePath } from "./resolveVariables";
+import { resolveUserHomePath, resolveVariables } from "./resolveVariables";
 
 import { SELECT_JLINK_PATH } from "../constants";
 import { openFileAtLocation } from "./open-file-location";
@@ -72,7 +72,13 @@ export function extractSessionId(input: any): string | undefined {
 }
 
 import { SoC } from "cfs-ccm-lib";
+import { Deferred } from "./deferred";
 export class Utils {
+  static extensionReadyDeferred = new Deferred<void>();
+  static isExtensionReady() {
+    return Utils.extensionReadyDeferred.promise;
+  }
+
   /**
    * Find files within the current workspace
    * @param pattern - the pattern to search for
@@ -127,8 +133,8 @@ export class Utils {
    * @param pattern - the pattern to search for
    * @returns a thenable with the search results
    */
-  static findFiles(pattern: string) {
-    return glob(pattern);
+  static async findFiles(pattern: string) {
+    return fg.async(pattern);
   }
 
   /**
@@ -405,9 +411,9 @@ export class Utils {
    * @param _taskType - string to identify task type
    * @param taskName - string to identify task name
    */
-  static async executeTask(_taskType: string, taskName: string) {
+  static async executeCFSTask(taskName: string, group?: vscode.TaskGroup) {
     const tasks = (await vscode.tasks.fetchTasks()).filter((task) => {
-      return task.group === vscode.TaskGroup.Build && task.source === "CFS";
+      return task.source === "CFS" && (group ? task.group === group : true);
     });
     const selectedTask = tasks.find((task) => task.name === taskName);
     if (selectedTask) {
@@ -416,6 +422,35 @@ export class Utils {
       console.error(`Error: Task '${taskName}' not found`);
       return undefined;
     }
+  }
+
+  static async executeAndWaitForCFSTask(
+    taskName: string,
+    group?: vscode.TaskGroup,
+  ): Promise<number | undefined> {
+    const execution = await this.executeCFSTask(taskName, group);
+
+    if (!execution) {
+      throw new Error(`Task '${taskName}' could not be executed`);
+    }
+
+    return new Promise((resolve) => {
+      const endTaskProcessDisposable = vscode.tasks.onDidEndTaskProcess((e) => {
+        if (e.execution === execution) {
+          endTaskProcessDisposable.dispose();
+          endTaskDisposable.dispose();
+          resolve(e.exitCode);
+        }
+      });
+
+      const endTaskDisposable = vscode.tasks.onDidEndTask((e) => {
+        if (e.execution === execution) {
+          endTaskProcessDisposable.dispose();
+          endTaskDisposable.dispose();
+          resolve(undefined);
+        }
+      });
+    });
   }
 
   static getDefaultLocation() {
@@ -774,6 +809,17 @@ export class Utils {
     return Utils.normalizePath(joined);
   }
 
+  static getDefaultWorkspacepath(): string {
+    const userHome = resolveVariables("${userHome}");
+    const version = Utils.getExtensionVersion();
+
+    const defaultLocation = Utils.normalizePath(
+      `${userHome}/cfs${version !== undefined ? `/${version}` : ""}`,
+    );
+
+    return defaultLocation;
+  }
+
   /**
    * Determines if a plugin is developed by ADI based on its plugin ID.
    * @param pluginId - the plugin ID to check
@@ -831,4 +877,10 @@ export class Utils {
       }
     }
   }
+}
+
+export function getWorkspaceRoot(): string | undefined {
+  return vscode.workspace.workspaceFile
+    ? path.dirname(vscode.workspace.workspaceFile?.fsPath)
+    : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 }

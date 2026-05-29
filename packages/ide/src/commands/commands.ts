@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import {
   CHANGE_CONTEXT,
   EXECUTE_TASK,
   WORKSPACE_CREATION_COMMANDS,
-  ZEPHELIN_COMMANDS,
 } from "./constants";
 import { Utils } from "../utils/utils";
 import {
@@ -30,10 +29,7 @@ import {
   openVscodeWorkspace,
 } from "../custom-editors/cfs-custom-editor";
 import { ContextPanelProvider } from "../view-container";
-import {
-  convertTraceCtfToTef,
-  captureProfilerTrace,
-} from "./zephelin-commands";
+import { MODEL_WORKSPACE_CREATION_EDITOR_ID } from "../constants";
 /**
  * Executes a specified task by its name or as a vscode.Task within the given workspace folder.
  *
@@ -154,8 +150,6 @@ export function registerAllCommands(context: vscode.ExtensionContext) {
     ContextPanelProvider.setActiveContext(context);
   });
 
-  registerZephelinCommands(context);
-
   registerQuickAccessPanelCommands(context);
 }
 
@@ -165,6 +159,12 @@ function registerQuickAccessPanelCommands(context: vscode.ExtensionContext) {
     context,
     WORKSPACE_CREATION_COMMANDS.NEW_WORKSPACE,
     openTempDocumentInWorkspaceEditor,
+  );
+
+  registerCommand(
+    context,
+    WORKSPACE_CREATION_COMMANDS.NEW_MODEL_WORKSPACE,
+    () => openTempDocumentInWorkspaceEditor(MODEL_WORKSPACE_CREATION_EDITOR_ID),
   );
 
   registerCommand(
@@ -196,20 +196,5 @@ export function registerCommand(
 ) {
   context.subscriptions.push(
     vscode.commands.registerCommand(command, callback, thisArg),
-  );
-}
-
-function registerZephelinCommands(context: vscode.ExtensionContext) {
-  // Zephelin commands
-  registerCommand(
-    context,
-    ZEPHELIN_COMMANDS.CAPTURE_PROFILER_TRACE,
-    captureProfilerTrace,
-  );
-
-  registerCommand(
-    context,
-    ZEPHELIN_COMMANDS.CONVERT_TRACE_CTF_TO_TEF,
-    convertTraceCtfToTef,
   );
 }

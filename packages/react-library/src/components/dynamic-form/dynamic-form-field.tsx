@@ -17,6 +17,7 @@ import CheckBox from '../checkbox/checkbox.tsx';
 import TextField from '../text-field/textfield.tsx';
 import TextArea from '../text-area/text-area.js';
 import DropDown from '../dropdown/dropdown.tsx';
+import IntegerField from '../integer-field/integer-field.tsx';
 
 import type {
 	TFormControl,
@@ -27,24 +28,12 @@ import styles from './dynamic-form-field.module.scss';
 import Tooltip from '../tooltip/tooltip.tsx';
 import InfoIcon from '../icons/info-icon.tsx';
 
-const computeReceivedValue = (input: string): number | string => {
-	if (isNaN(parseFloat(input))) {
-		const number = input.replace(/[a-zA-Z]/g, '');
-
-		if (number === '') return '';
-
-		return parseFloat(number);
-	}
-
-	return parseFloat(input);
-};
-
-const validNumericInputTypes = ['number', 'integer'];
-
 export default function DynamicFormField({
 	control: {
 		id,
 		type,
+		base,
+		integer: {min, max, step, allowNegative} = {},
 		default: defaultValue,
 		disabled,
 		placeholder = 'Start typing...',
@@ -78,12 +67,8 @@ export default function DynamicFormField({
 	};
 
 	const displayDefaultComponent = () => {
-		// Input type string OR number
-		if (
-			type === 'string' ||
-			type === 'text' ||
-			validNumericInputTypes.includes(type as string)
-		)
+		// Alphabetic and string input types
+		if (type === 'string' || type === 'text')
 			return (
 				<div className={styles.input} id={`input-container:${id}`}>
 					<TextField
@@ -97,12 +82,37 @@ export default function DynamicFormField({
 						onInputChange={(value: string) => {
 							onFieldChangeHandler(
 								id,
-								type === 'string' || type === 'text'
-									? (value as unknown as TFormFieldValue)
-									: (computeReceivedValue(
-											value
-										) as unknown as TFormFieldValue)
+								value as unknown as TFormFieldValue
 							);
+						}}
+					/>
+				</div>
+			);
+
+		// Input type integer
+		if (
+			type === 'integer' &&
+			(base === undefined || base === 'Decimal')
+		)
+			return (
+				<div
+					className={styles.input}
+					id={`integer-field-container:${id}`}
+				>
+					<IntegerField
+						value={isNaN(Number(value)) ? 0 : Number(value)}
+						step={step && !isNaN(Number(step)) ? Number(step) : 1}
+						min={Number(min)}
+						max={Number(max)}
+						allowNegative={allowNegative}
+						isDisabled={disabled}
+						label=''
+						error={error}
+						placeholder={placeholder}
+						dataTest={testId}
+						direction='vertical'
+						onValueChange={(value: number) => {
+							onFieldChangeHandler(id, value);
 						}}
 					/>
 				</div>
@@ -137,8 +147,11 @@ export default function DynamicFormField({
 					<DropDown
 						controlId={id}
 						isDisabled={disabled}
-						currentControlValue={value as unknown as string}
-						options={enumOptions}
+						currentControlValue={value?.toString() ?? defaultValue}
+						options={enumOptions.map(option => ({
+							...option,
+							dataTest: testId + ':' + option.value
+						}))}
 						dataTest={testId}
 						error={error}
 						onHandleDropdown={(value: string) => {

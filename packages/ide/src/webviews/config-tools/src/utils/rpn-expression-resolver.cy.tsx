@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import {
 	UNDEFINED_MARKER,
 	UNCONFIGURED_TEXT
 } from '../screens/clock-config/constants/clocks';
+import type {AppliedSignal} from '@common/types/soc';
 import {
 	evaluateCondition,
 	clockFrequencyDictionary,
@@ -40,7 +41,7 @@ Object.assign(clockFrequencyDictionary, {
 });
 
 function TestComponent(props: {
-	readonly currentCfg: Record<string, string>;
+	readonly currentCfg: Record<string, unknown>;
 	readonly condition: string | undefined;
 }) {
 	const evaluate = evaluateCondition(
@@ -78,6 +79,26 @@ function ComputeFrequencyComponent(props: {
 		</>
 	);
 }
+
+const makePinEntry = (
+	pin: string,
+	name: string,
+	pinCfg: Record<string, string>
+): AppliedSignal => ({
+	Pin: pin,
+	Name: name,
+	PinCfg: pinCfg
+});
+
+const withGlobalConfigDefaults = (
+	overrides: Partial<GlobalConfig>
+): GlobalConfig => ({
+	clockconfig: {},
+	pinconfig: {},
+	peripheralconfig: {},
+	assignedPins: [],
+	...overrides
+});
 
 describe('RPN Expression Resolver', () => {
 	it('Should evaluate flat string conditions correctly', () => {
@@ -777,7 +798,7 @@ describe('RPN Expression Resolver', () => {
 	it('Should interpret the value of a control as a clock when evaluating the clk operator', () => {
 		const valueCondition = '${Control:MUX} clk';
 
-		const currentConfig = {
+		const currentConfig = withGlobalConfigDefaults({
 			clockconfig: {
 				'ERTCO Mux': {
 					Name: 'ERTCO Mux',
@@ -809,7 +830,7 @@ describe('RPN Expression Resolver', () => {
 				}
 			},
 			currentNode: 'ERTCO Mux'
-		};
+		});
 
 		cy.mount(
 			<ComputeFrequencyComponent
@@ -835,7 +856,7 @@ describe('RPN Expression Resolver', () => {
 		const valueCondition =
 			'${Control:MUX} clk ${Control:EN_DIV} int /';
 
-		const currentConfig = {
+		const currentConfig = withGlobalConfigDefaults({
 			clockconfig: {
 				ADC: {
 					Name: 'ADC',
@@ -869,7 +890,7 @@ describe('RPN Expression Resolver', () => {
 				}
 			},
 			currentNode: 'ADC'
-		};
+		});
 
 		cy.mount(
 			<ComputeFrequencyComponent
@@ -899,7 +920,7 @@ describe('RPN Expression Resolver', () => {
 	it('Should process template strings that reference other control values withing the same tool', () => {
 		const selector = '${Control:SYS_OSC Mux:MUX}';
 
-		const currentConfig = {
+		const currentConfig = withGlobalConfigDefaults({
 			clockconfig: {
 				'SYS_OSC Mux': {
 					Name: 'SYS_OSC Mux',
@@ -916,7 +937,7 @@ describe('RPN Expression Resolver', () => {
 				}
 			},
 			currentNode: 'x'
-		};
+		});
 
 		cy.mount(
 			<ComputeFrequencyComponent
@@ -951,7 +972,7 @@ describe('RPN Expression Resolver', () => {
 		cy.mount(
 			<ComputeFrequencyComponent
 				condition={condition}
-				currentCfg={{clockconfig: currentConfig}}
+				currentCfg={withGlobalConfigDefaults({clockconfig: currentConfig})}
 			/>
 		);
 
@@ -971,7 +992,7 @@ describe('RPN Expression Resolver', () => {
 
 		cy.mount(
 			<ComputeFrequencyComponent
-				currentCfg={{
+				currentCfg={withGlobalConfigDefaults({
 					clockconfig: {
 						'P3.5': {
 							Name: 'P3.5',
@@ -988,11 +1009,353 @@ describe('RPN Expression Resolver', () => {
 						}
 					},
 					currentNode: 'P3.5'
-				}}
+				})}
 				condition={condition}
 			/>
 		);
 
 		cy.dataTest('result').should('have.text', UNCONFIGURED_TEXT);
+	});
+
+	describe('PinConfig references', () => {
+		it('Should resolve a PinConfig control value', () => {
+			const condition =
+				'${Control:PinConfig:GPIO0_P0.1:MODE} ${String:IN} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						pinconfig: {
+							'GPIO0_P0.1': makePinEntry('P0.1', 'GPIO0', {MODE: 'IN', PWR: 'VDDIO'})
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should resolve a PinConfig control value used in arithmetic', () => {
+			const condition =
+				'${Control:PinConfig:GPIO0_P0.2:DRIVE_STRENGTH} int 2 +';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						pinconfig: {
+							'GPIO0_P0.2': makePinEntry('A6', 'P0.2', {DRIVE_STRENGTH: '4'})
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '6');
+		});
+
+		it('Should return unconfigured for a missing PinConfig pin', () => {
+			const condition = '${Control:PinConfig:GPIO0_P0.3:MODE}';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						pinconfig: {}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', UNCONFIGURED_TEXT);
+		});
+
+		it('Should return unconfigured for a missing PinConfig control key', () => {
+			const condition = '${Control:PinConfig:GPIO0_P0.1:NONEXISTENT}';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						pinconfig: {
+							'GPIO0_P0.1': makePinEntry('B4', 'P0.1', {MODE: 'IN'})
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', UNCONFIGURED_TEXT);
+		});
+
+		it('Should compare two PinConfig control values', () => {
+			const condition =
+				'${Control:PinConfig:GPIO0_P0.1:MODE} ${Control:PinConfig:GPIO0_P0.2:MODE} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						pinconfig: {
+							'GPIO0_P0.1': makePinEntry('B4', 'P0.1', {MODE: 'OUT'}),
+							'GPIO0_P0.2': makePinEntry('A6', 'P0.2', {MODE: 'OUT'})
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+	});
+
+	describe('PeripheralConfig references', () => {
+		it('Should resolve a PeripheralConfig string control value', () => {
+			const condition =
+				'${Control:PeripheralConfig:UART0:BAUD_RATE} ${String:115200} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								UART0: {
+									name: 'UART0',
+									signals: {},
+									config: {BAUD_RATE: '115200'}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should resolve a PeripheralConfig numeric control value', () => {
+			const condition =
+				'${Control:PeripheralConfig:UART0:DATA_BITS} int 8 =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								UART0: {
+									name: 'UART0',
+									signals: {},
+									config: {DATA_BITS: 8}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should resolve a PeripheralConfig boolean control value as TRUE', () => {
+			const condition =
+				'${Control:PeripheralConfig:SPI0:DMA_ENABLED} ${String:TRUE} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								SPI0: {
+									name: 'SPI0',
+									signals: {},
+									config: {DMA_ENABLED: true}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should resolve a PeripheralConfig boolean control value as FALSE', () => {
+			const condition =
+				'${Control:PeripheralConfig:SPI0:DMA_ENABLED} ${String:FALSE} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								SPI0: {
+									name: 'SPI0',
+									signals: {},
+									config: {DMA_ENABLED: false}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should return unconfigured for a missing PeripheralConfig peripheral', () => {
+			const condition =
+				'${Control:PeripheralConfig:I2C0:SPEED}';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', UNCONFIGURED_TEXT);
+		});
+
+		it('Should return unconfigured for a missing PeripheralConfig control key', () => {
+			const condition =
+				'${Control:PeripheralConfig:UART0:NONEXISTENT}';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								UART0: {
+									name: 'UART0',
+									signals: {},
+									config: {BAUD_RATE: '115200'}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', UNCONFIGURED_TEXT);
+		});
+
+		it('Should resolve a PeripheralConfig value from any core', () => {
+			const condition =
+				'${Control:PeripheralConfig:UART1:BAUD_RATE} ${String:9600} =';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {},
+							core1: {
+								UART1: {
+									name: 'UART1',
+									signals: {},
+									config: {BAUD_RATE: '9600'}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '1');
+		});
+
+		it('Should use PeripheralConfig value in arithmetic expressions', () => {
+			const condition =
+				'${Control:PeripheralConfig:TMR0:PRESCALER} int 15 -';
+
+			cy.mount(
+				<ComputeFrequencyComponent
+					currentCfg={withGlobalConfigDefaults({
+						peripheralconfig: {
+							core0: {
+								TMR0: {
+									name: 'TMR0',
+									signals: {},
+									config: {PRESCALER: '32'}
+								}
+							}
+						}
+					})}
+					condition={condition}
+				/>
+			);
+
+			cy.dataTest('result').should('have.text', '17');
+		});
+
+		it('Should allow checking if accessing path for node is defined', () => {
+			const workingRes = evaluateCondition(
+				{
+					some: {
+						path: {
+							to: {
+								value: 'SomeValue'
+							}
+						}
+					}
+				},
+				'${Node:some:path:to:value} defined'
+			);
+
+			cy.wrap(workingRes).should('equal', true);
+
+			const undefinedRes = evaluateCondition(
+				{
+					some: {
+						path: {
+							to: {
+								value: undefined
+							}
+						}
+					}
+				},
+				'${Node:some:path:to:value} defined'
+			);
+
+			cy.wrap(undefinedRes).should('equal', false);
+
+			const notExistentRes = evaluateCondition(
+				{
+					some: {}
+				},
+				'${Node:some:path:to:value} defined'
+			);
+
+			cy.wrap(notExistentRes).should('equal', false);
+		});
+
+	});
+
+	it('Should evaluate a boolean node correct', () => {
+		const condition = '${Node:boolNode}';
+
+		const falseRes = evaluateCondition(
+			{
+				boolNode: false
+			},
+			condition
+		);
+
+		cy.wrap(falseRes).should('equal', false);
+
+		const trueRes = evaluateCondition(
+			{
+				boolNode: true
+			},
+			condition
+		);
+
+		cy.wrap(trueRes).should('equal', true);
 	});
 });

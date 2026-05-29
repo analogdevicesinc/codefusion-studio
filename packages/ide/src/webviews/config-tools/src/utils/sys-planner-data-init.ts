@@ -23,7 +23,7 @@ import {initializeSocPeripherals} from './soc-peripherals';
 import {initializeSocControls} from './soc-controls';
 import {initializeRegisterDictionary} from './register-dictionary';
 import type {Soc} from '../../../common/types/soc';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {initializeDfg} from './dfg';
 import {initializeAiToolsData} from './ai-tools';
 import {initializeProfilingPeripherals} from '../state/slices/profiling/profilingPeripherals';

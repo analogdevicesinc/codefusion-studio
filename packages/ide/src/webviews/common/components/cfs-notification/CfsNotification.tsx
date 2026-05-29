@@ -29,7 +29,10 @@ function CfsNotification({
 	return (
 		<div data-test={testId} className={styles.notificationContainer}>
 			{type === 'error' ? (
-				<div data-test='notification:icon:conflict'>
+				<div
+					className={styles.icon}
+					data-test='notification:icon:conflict'
+				>
 					<ConflictIcon />
 				</div>
 			) : (

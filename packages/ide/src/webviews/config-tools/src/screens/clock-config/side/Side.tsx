@@ -21,7 +21,7 @@ import {
 	useActiveClockNodeType,
 	useClockNodeDetailsTargetNode,
 	useClockNodes,
-	useDiagramData
+	useClockNodesStatus
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {useAppDispatch} from '../../../state/store';
 import ClockDetails from '../clock-details/ClockDetails';
@@ -43,7 +43,7 @@ export default function ClockConfigSideContainer() {
 	const clockNodesState = useClockNodes();
 	const activeClockNodeType = useActiveClockNodeType();
 	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
-	const diagramData = useDiagramData();
+	const nodeStatuses = useClockNodesStatus();
 	const clockNodeTypes = getSortedClockTypeList();
 	const computeEnabledState = useEvaluateClockCondition();
 
@@ -66,15 +66,12 @@ export default function ClockConfigSideContainer() {
 		dispatch(setClockNodeDetailsTargetNode(clockNode));
 	};
 
-	function getIsNodeError(
-		clockNode: ClockNodeState,
-		diagramData: any
-	) {
-		const isNodeEnabled = diagramData[clockNode.Name]?.enabled;
+	function getIsNodeError(clockNode: ClockNodeState) {
+		const nodeStatus = nodeStatuses[clockNode.Name];
 
 		return (
-			isNodeEnabled &&
-			(Object.values(clockNode.Errors ?? {}).length ||
+			nodeStatus?.enabled &&
+			(nodeStatus?.hasError ||
 				getCurrentNodeError(clockNode, computeEnabledState))
 		);
 	}
@@ -96,7 +93,7 @@ export default function ClockConfigSideContainer() {
 					title={clockNodeType.toUpperCase()}
 					icon={
 						Object.values(clockNodesForType).some(({Name}) =>
-							getIsNodeError(clockNodesState[Name], diagramData)
+							getIsNodeError(clockNodesState[Name])
 						) ? (
 							<div
 								data-test={`accordion:conflict:${clockNodeType}`}
@@ -127,8 +124,7 @@ export default function ClockConfigSideContainer() {
 											{clockNode.Name}
 											<div style={{flex: 1}} />
 											{getIsNodeError(
-												clockNodesState[clockNode.Name],
-												diagramData
+												clockNodesState[clockNode.Name]
 											) && (
 												<div
 													data-test={`accordion-item:conflict:${clockNode.Name}`}

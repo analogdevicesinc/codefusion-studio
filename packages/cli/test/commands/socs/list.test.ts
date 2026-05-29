@@ -16,10 +16,10 @@ import {expect, test} from '@oclif/test';
 
 import {parseJson} from '../../utils/parse-json.js';
 
-describe('soc list', () => {
+describe('soc list (legacy format)', () => {
   test
     .stdout()
-    .command(['socs:list'], {
+    .command(['socs:list', '--legacy'], {
       root: '..'
     })
     .it('text, no verbose', (ctx) => {
@@ -35,7 +35,8 @@ describe('soc list', () => {
         '--format',
         'json',
         '--search-path',
-        './test/fixtures/socs'
+        './test/fixtures/socs',
+        '--legacy'
       ],
       {root: '..'}
     )
@@ -51,7 +52,8 @@ describe('soc list', () => {
         'socs:list',
         '--verbose',
         '--search-path',
-        './test/fixtures/socs'
+        './test/fixtures/socs',
+        '--legacy'
       ],
       {root: '..'}
     )
@@ -73,7 +75,8 @@ describe('soc list', () => {
         'json',
         '--verbose',
         '--search-path',
-        './test/fixtures/socs'
+        './test/fixtures/socs',
+        '--legacy'
       ],
       {
         root: '..'
@@ -84,5 +87,97 @@ describe('soc list', () => {
       expect(Object.keys(parseJson(ctx.stdout))).to.include(
         'test_soc_b-tqfn'
       );
+    });
+});
+
+describe('soc list', () => {
+  test
+    .stdout()
+    .command(['socs:list'], {
+      root: '..'
+    })
+    .it('text, no verbose', (ctx) => {
+      expect(ctx.stdout).to.contain('test_soc_b (tqfn, wlp)');
+      expect(ctx.stdout).not.to.contain('soc1234');
+    });
+
+  test
+    .stdout()
+    .command(
+      [
+        'socs:list',
+        '--format',
+        'json',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    )
+    .it('json, no verbose', (ctx) => {
+      const parsedJson = parseJson(ctx.stdout);
+      expect(parsedJson).to.deep.property('test_soc_a', ['wlp']);
+      expect(parsedJson).to.deep.property('test_soc_b', [
+        'tqfn',
+        'wlp'
+      ]);
+    });
+
+  test
+    .stdout()
+    .command(
+      [
+        'socs:list',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    )
+    .it('text, verbose', (ctx) => {
+      expect(ctx.stdout).to.contain('Name');
+      expect(ctx.stdout).to.contain('Package');
+      expect(ctx.stdout).to.contain('Version');
+      expect(ctx.stdout).to.contain('Timestamp');
+      expect(ctx.stdout).to.contain('Description');
+      expect(ctx.stdout).to.contain('Schema');
+      expect(ctx.stdout).to.contain('AI Compatible cores');
+    });
+
+  test
+    .stdout()
+    .command(
+      [
+        'socs:list',
+        '--format',
+        'json',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {
+        root: '..'
+      }
+    )
+    .it('json, verbose', (ctx) => {
+      const parsedJson = parseJson(ctx.stdout);
+      const reducedJson = parsedJson.map(
+        (soc: {Name: string; Package: string}) => ({
+          Name: soc.Name,
+          Package: soc.Package
+        })
+      );
+      expect(parsedJson).to.be.an('Array');
+      expect(reducedJson).to.deep.include({
+        Name: 'test_soc_a',
+        Package: 'wlp'
+      });
+      expect(reducedJson).to.deep.include({
+        Name: 'test_soc_b',
+        Package: 'tqfn'
+      });
+      expect(reducedJson).to.deep.include({
+        Name: 'test_soc_b',
+        Package: 'wlp'
+      });
     });
 });

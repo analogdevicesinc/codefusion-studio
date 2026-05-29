@@ -29,7 +29,7 @@ import {
 	setWorkspaceTemplateType
 } from '../../state/slices/workspace-config/workspace-config.reducer';
 import {configErrors} from '../../common/constants/validation-errors';
-import type {CfsPluginInfo as BaseCfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo as BaseCfsPluginInfo} from 'cfs-types';
 
 type CfsPluginInfo = BaseCfsPluginInfo & {
 	supportedHostPlatforms?: string[];

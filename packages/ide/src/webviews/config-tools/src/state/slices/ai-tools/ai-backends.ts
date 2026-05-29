@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,14 @@ let cachedControls: Record<string, ControlCfg[]> = {};
 export async function getControlsForAiBackend(
 	backendName: string
 ): Promise<ControlCfg[]> {
-	const properties = await getAiProperties(backendName);
+	if (!cachedControls[backendName]) {
+		const properties = await getAiProperties(backendName);
 
-	cachedControls = {
-		...cachedControls,
-		[backendName]: properties
-	};
+		cachedControls = {
+			...cachedControls,
+			[backendName]: properties
+		};
+	}
 
 	return cachedControls[backendName];
 }

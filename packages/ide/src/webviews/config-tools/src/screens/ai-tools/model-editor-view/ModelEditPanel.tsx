@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,15 @@
  */
 
 import styles from './ModelEditPanel.module.scss';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {
+	type Dispatch,
+	type SetStateAction,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState
+} from 'react';
 import {
 	useAIModels,
 	useEditingAIModel,
@@ -47,6 +55,7 @@ import {
 	getAiBackends,
 	getAICores
 } from '../../../utils/ai-tools';
+import MultiFileSelect from '../../../../../common/components/multi-file-select/multi-file-select';
 
 export function ModelEditPanel() {
 	const originalModel = useEditingAIModel();
@@ -111,7 +120,7 @@ export function ModelEditPanel() {
 
 		// Symbol name
 		if (
-			currentModel.Backend.Extensions?.Symbol &&
+			currentModel.Backend?.Extensions?.Symbol &&
 			!isValidCIdentifier(
 				String(currentModel.Backend.Extensions.Symbol)
 			)
@@ -137,6 +146,7 @@ export function ModelEditPanel() {
 			footer={
 				<Button
 					className={styles.saveButton}
+					dataTest='model-save-button'
 					onClick={() => {
 						if (!validateModelConfig()) {
 							return;
@@ -167,7 +177,7 @@ export function ModelEditPanel() {
 type ModelConfigurationProps = {
 	readonly currentModel: AIModelWithId;
 	readonly isEditing?: boolean;
-	readonly setCurrentModel: (model: AIModelWithId) => void;
+	readonly setCurrentModel: Dispatch<SetStateAction<AIModelWithId>>;
 	readonly errors: Record<string, string>;
 };
 
@@ -196,13 +206,13 @@ function ModelConfiguration({
 	>([]);
 
 	useEffect(() => {
-		if (currentModel.Backend.Name) {
+		if (currentModel.Backend?.Name) {
 			getControlsForAiBackend(currentModel.Backend.Name)
 				.then(controls => {
 					if (controls) {
 						const formattedControls = formatControlsForDynamicForm(
 							controls,
-							currentModel.Backend.Extensions ?? {},
+							currentModel ?? {},
 							{}
 						).map(control => {
 							if (control.type === 'MemorySection') {
@@ -223,11 +233,11 @@ function ModelConfiguration({
 				})
 				.catch(() => {
 					console.error(
-						`Failed to get controls for backend ${currentModel.Backend.Name}`
+						`Failed to get controls for backend ${currentModel.Backend?.Name}`
 					);
 				});
 		}
-	}, [currentModel.Backend, backends, partitions]);
+	}, [currentModel, backends, partitions]);
 
 	const fileComponents = useMemo(() => {
 		const fileComponents: Record<string, JSX.Element> = {};
@@ -241,11 +251,16 @@ function ModelConfiguration({
 						value={currentModel.Files?.[control.id] ?? ''}
 						error={errors[control.id]}
 						onInputChange={value => {
+							// Remove the file from the model if the value is empty to avoid confusion about whether an empty string is a valid path or not since it could be relative.
+							if (!value) {
+								delete currentModel.Files?.[control.id];
+							}
+
 							setCurrentModel({
 								...currentModel,
 								Files: {
 									...currentModel.Files,
-									[control.id]: value
+									...(value ? {[control.id]: value} : {})
 								}
 							});
 						}}
@@ -256,65 +271,75 @@ function ModelConfiguration({
 		return fileComponents;
 	}, [additionalControls, currentModel, errors, setCurrentModel]);
 
-	const [currentBackendForControls, setCurrentBackendForControls] =
-		useState<string>(currentModel.Backend.Name);
+	const previousBackendRef = useRef<string | undefined>(
+		currentModel.Backend?.Name
+	);
 
+	// Reset the values of the additional controls when the backend changes
 	useEffect(() => {
-		if (
-			currentModel.Backend.Name &&
-			currentModel.Backend.Name !== currentBackendForControls
-		) {
-			setCurrentBackendForControls(currentModel.Backend.Name);
-			getControlsForAiBackend(currentModel.Backend.Name)
-				.then(controls => {
-					const defaultValues = controls.reduce<
-						Record<string, string | number | boolean>
-					>((acc, control) => {
-						if (control.Default) {
-							acc[control.Id] = control.Default;
-						}
+		const backendName = currentModel.Backend?.Name;
 
-						if (
-							(control.Type as unknown) === 'MemorySection' &&
-							partitions.length > 0
-						) {
-							acc[control.Id] = partitions[0].displayName;
-						}
+		if (!backendName || backendName === previousBackendRef.current) {
+			return;
+		}
 
-						return acc;
-					}, {});
+		previousBackendRef.current = backendName;
 
-					setCurrentModel({
+		getControlsForAiBackend(backendName)
+			.then(controls => {
+				const defaultValues = controls.reduce<
+					Record<string, string | number | boolean>
+				>((acc, control) => {
+					if (
+						control.Default !== undefined &&
+						control.Default !== null
+					) {
+						acc[control.Id] = control.Default;
+					}
+
+					if (
+						(control.Type as unknown) === 'MemorySection' &&
+						partitions.length > 0
+					) {
+						acc[control.Id] = partitions[0].displayName;
+					}
+
+					return acc;
+				}, {});
+
+				setCurrentModel(model => {
+					if (previousBackendRef.current !== model.Backend?.Name) {
+						// If the backend has already changed again since the async call was made,
+						return model;
+					}
+
+					return {
 						...currentModel,
 						Backend: {
-							...currentModel.Backend,
+							...currentModel.Backend!,
 							Extensions: {
 								...defaultValues,
-								...currentModel.Backend.Extensions
+								...currentModel.Backend?.Extensions
 							}
 						}
-					});
-				})
-				.catch(() => {
-					console.error(
-						`Failed to get controls for backend ${currentModel.Backend.Name}`
-					);
+					};
 				});
-		}
-	}, [
-		currentModel.Backend.Name,
-		backends,
-		currentBackendForControls,
-		partitions,
-		currentModel,
-		setCurrentModel
-	]);
+			})
+			.catch(() => {
+				console.error(
+					`Failed to get controls for backend ${backendName}`
+				);
+			});
+		// Should only run when the backend name changes.
+		// But exhaustive-deps rule requires it to rerun every time the currentModel changes.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [currentModel.Backend?.Name, partitions, setCurrentModel]);
 
 	return (
-		<div className={styles.editArea}>
+		<div className={styles.editArea} data-test='model-edit-panel'>
 			<DynamicForm
 				testId='model-config-form'
-				data={currentModel.Backend.Extensions ?? {}}
+				data={currentModel.Backend?.Extensions ?? {}}
 				controls={[
 					{
 						id: 'Target',
@@ -350,6 +375,7 @@ function ModelConfiguration({
 							controlId='target'
 							error={errors.Target}
 							currentControlValue={`${currentModel.Target.Core}:${currentModel.Target.Accelerator ?? ''}`}
+							dataTest='model-target-dropdown'
 							onHandleDropdown={value => {
 								const [coreId, accelerator] = value.split(':');
 								const core = availableCores.find(
@@ -386,6 +412,7 @@ function ModelConfiguration({
 							placeholder='Model Name'
 							inputVal={currentModel.Name}
 							error={errors.Name}
+							dataTest='model-name'
 							onInputChange={value => {
 								const newName = value;
 								setCurrentModel({
@@ -399,6 +426,7 @@ function ModelConfiguration({
 						<FileField
 							value={currentModel.Files?.Model ?? ''}
 							error={errors?.ModelFile}
+							dataTest='model-file'
 							onInputChange={value => {
 								setCurrentModel({
 									...currentModel,
@@ -407,16 +435,80 @@ function ModelConfiguration({
 							}}
 						/>
 					),
+					CalibrationSet: (
+						<MultiFileSelect
+							title={i10n?.calibrationFiles}
+							files={(
+								currentModel.Backend?.CalibrationData ?? []
+							).map(file => ({path: file}))}
+							dataTest='calibration-set'
+							selectFileOptions={{
+								relativeToWorkspaceRoot: true
+							}}
+							onFilesChange={files => {
+								setCurrentModel({
+									...currentModel,
+									Backend: {
+										...currentModel.Backend!,
+										CalibrationData: files.map(file => file.path)
+									}
+								});
+							}}
+						/>
+					),
+					ValidationSet: (
+						<MultiFileSelect<{expectedReturn: string}>
+							title={i10n?.validationFiles}
+							files={(currentModel.Backend?.ValidationData ?? []).map(
+								([path, expectedReturn]) => ({
+									path,
+									properties: {expectedReturn}
+								})
+							)}
+							selectFileOptions={{
+								relativeToWorkspaceRoot: true
+							}}
+							renderFileProperties={({file, onPropertiesChange}) => (
+								<TextField
+									inputVal={file.properties?.expectedReturn}
+									label={i10n?.expectedReturn}
+									onInputChange={val => {
+										onPropertiesChange({
+											...(file.properties ?? {}),
+											expectedReturn: val
+										});
+									}}
+								/>
+							)}
+							dataTest='validation-set'
+							onFilesChange={files => {
+								setCurrentModel({
+									...currentModel,
+									Backend: {
+										...currentModel.Backend!,
+										ValidationData: files.map(file => [
+											file.path,
+											file.properties?.expectedReturn ?? ''
+										])
+									}
+								});
+							}}
+						/>
+					),
 					...fileComponents
 				}}
 				errors={errors ?? {}}
 				onControlChange={(id, val) => {
+					if (id === 'Symbol' && typeof val === 'string') {
+						val = val.substring(0, 63);
+					}
+
 					setCurrentModel({
 						...currentModel,
 						Backend: {
-							...currentModel.Backend,
+							...currentModel.Backend!,
 							Extensions: {
-								...currentModel.Backend.Extensions,
+								...currentModel.Backend?.Extensions,
 								[id]: val
 							}
 						}
@@ -431,17 +523,25 @@ type FileFieldProps = {
 	readonly value: string;
 	readonly error?: string;
 	readonly onInputChange: (path: string) => void;
+	readonly dataTest?: string;
 };
 
-function FileField({value, error, onInputChange}: FileFieldProps) {
+function FileField({
+	value,
+	error,
+	dataTest,
+	onInputChange
+}: FileFieldProps) {
 	return (
 		<TextField
 			placeholder='Model Location'
+			dataTest={dataTest}
 			inputVal={value}
 			error={error}
 			startSlot={
 				<Button
 					className={styles.browseButton}
+					dataTest={dataTest + '-browse-button'}
 					onClick={async () => {
 						const res = await selectFile({
 							title: 'Select Model File',
@@ -509,8 +609,8 @@ export function selectBackendForTarget(
 				}
 
 				if (
-					hardware.Arch &&
-					!caseInsensitiveCompare(hardware.Arch, aiCore.Family)
+					hardware.Family &&
+					!caseInsensitiveCompare(hardware.Family, aiCore.Family)
 				) {
 					return false;
 				}

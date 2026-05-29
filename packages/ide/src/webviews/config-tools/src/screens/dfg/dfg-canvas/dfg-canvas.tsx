@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import styles from './dfg-canvas.module.scss';
 import {useEffect, useState, useRef, useMemo} from 'react';
 import StreamTooltip from './stream-tooltip/StreamTooltip';
 import {
+	type DFGStreamUI,
 	setEditingGasket,
 	setEditingStream,
 	setHoveredStream,
@@ -38,7 +39,7 @@ import {
 	setSelectedStreams
 } from '../../../state/slices/gaskets/gasket.reducer';
 import {useDispatch} from 'react-redux';
-import type {DFGStream, GasketConfig} from 'cfs-plugins-api';
+import type {GasketConfig} from 'cfs-types';
 import {
 	getGasketModel,
 	filterStreamsByDestinationGasket,
@@ -68,7 +69,6 @@ export function DFGCanvas(): React.ReactElement {
 	) => {
 		dispatch(setSelectedGaskets([]));
 		dispatch(setSelectedStreams([]));
-		dispatch(setEditingStream(undefined));
 		e.stopPropagation();
 	};
 
@@ -168,8 +168,8 @@ function GasketSection({
 }: {
 	readonly gasket: Gasket;
 	readonly side: 'left' | 'right';
-	readonly outStreams: DFGStream[];
-	readonly inStreams: DFGStream[];
+	readonly outStreams: DFGStreamUI[];
+	readonly inStreams: DFGStreamUI[];
 	readonly zoomLevel: number;
 }): React.ReactElement {
 	return (
@@ -231,7 +231,7 @@ function GasketPhysicalConnections({
 }: {
 	readonly name: string;
 	readonly side: 'left' | 'right';
-	readonly streams: DFGStream[];
+	readonly streams: DFGStreamUI[];
 	readonly connectionType: 'input' | 'output';
 	readonly gasket: Gasket;
 	readonly zoomLevel: number;
@@ -251,7 +251,7 @@ function GasketPhysicalConnections({
 			return streams.reverse();
 		}
 
-		const orderedStreams: Array<DFGStream | undefined> = [];
+		const orderedStreams: Array<DFGStreamUI | undefined> = [];
 		streams.forEach(s => {
 			orderedStreams[s.Source.Index] = s;
 		});
@@ -271,10 +271,10 @@ function GasketPhysicalConnections({
 		>
 			{orderedStreams.map((s, i) => {
 				const isHovered =
-					Boolean(s) && hoveredStream?.StreamId === s!.StreamId;
+					Boolean(s) && hoveredStream?.Uuid === s!.Uuid;
 				const isSelected =
 					Boolean(s) &&
-					selectedStreams.some(ss => ss.StreamId === s!.StreamId);
+					selectedStreams.some(ss => ss.Uuid === s!.Uuid);
 
 				if (!letThroughOnHover) {
 					letThroughOnHover = isHovered;
@@ -282,7 +282,7 @@ function GasketPhysicalConnections({
 
 				if (!letThroughOnSelect) {
 					letThroughOnSelect = selectedStreams.some(
-						ss => ss.StreamId === s?.StreamId
+						ss => ss.Uuid === s?.Uuid
 					);
 				}
 
@@ -357,7 +357,7 @@ function GasketPhysicalConnection({
 	readonly name: string;
 	readonly connectionType: 'input' | 'output';
 	readonly side: 'left' | 'right';
-	readonly stream: DFGStream;
+	readonly stream: DFGStreamUI;
 	readonly isHovered: boolean;
 	readonly isOpenOnHover: boolean;
 	readonly zoomLevel: number;
@@ -538,12 +538,12 @@ function GasketPhysicalConnection({
 						</div>
 					</div>
 
-					{streamErrors[stream.StreamId]?.length > 0 && (
+					{streamErrors[stream.Uuid]?.length > 0 && (
 						<div
 							className={styles.gasketErrorsContainer}
 							data-test='stream-tooltip-errors'
 						>
-							{streamErrors[stream.StreamId]?.map(error => (
+							{streamErrors[stream.Uuid]?.map(error => (
 								<div
 									key={error.message}
 									className={styles.gasketError}
@@ -566,8 +566,8 @@ function GasketBox({
 	zoomLevel
 }: {
 	readonly gasket: Gasket;
-	readonly inStreams: DFGStream[];
-	readonly outStreams: DFGStream[];
+	readonly inStreams: DFGStreamUI[];
+	readonly outStreams: DFGStreamUI[];
 	readonly zoomLevel: number;
 }): React.ReactElement {
 	const [showTooltip, setShowTooltip] = useState(false);
@@ -729,8 +729,8 @@ function GasketBox({
 }
 
 function goesThroughBridge(
-	inStreams: DFGStream[],
-	outStreams: DFGStream[]
+	inStreams: DFGStreamUI[],
+	outStreams: DFGStreamUI[]
 ): boolean {
 	return (
 		inStreams.some(s =>
@@ -750,24 +750,24 @@ function GasketStreamsToBridge({
 	side
 }: {
 	readonly gasket: Gasket;
-	readonly inStreams: DFGStream[];
-	readonly outStreams: DFGStream[];
+	readonly inStreams: DFGStreamUI[];
+	readonly outStreams: DFGStreamUI[];
 	readonly side: 'left' | 'right';
 }): React.ReactElement {
 	const hoveredStream = useHoveredStream();
 	const outputIsHovered = outStreams.some(
-		s => hoveredStream?.StreamId === s.StreamId
+		s => hoveredStream?.Uuid === s.Uuid
 	);
 	const inputIsHovered = inStreams.some(
-		s => hoveredStream?.StreamId === s.StreamId
+		s => hoveredStream?.Uuid === s.Uuid
 	);
 	const selectedStreams = useSelectedStreams();
 	const selectedGaskets = useSelectedGaskets();
 	const inputIsSelected = inStreams.some(s =>
-		selectedStreams.some(ss => ss.StreamId === s.StreamId)
+		selectedStreams.some(ss => ss.Uuid === s.Uuid)
 	);
 	const outputIsSelected = outStreams.some(s =>
-		selectedStreams.some(ss => ss.StreamId === s.StreamId)
+		selectedStreams.some(ss => ss.Uuid === s.Uuid)
 	);
 
 	const isSingleStreamSelected =
@@ -854,7 +854,7 @@ function GasketBufferSize({
 }: {
 	readonly name: string;
 	readonly gasket: Gasket;
-	readonly streams: DFGStream[];
+	readonly streams: DFGStreamUI[];
 	readonly type: 'input' | 'output';
 }): React.ReactElement {
 	const totalBufferSize = streams.reduce(

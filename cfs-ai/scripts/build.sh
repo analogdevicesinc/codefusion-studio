@@ -1,4 +1,4 @@
-## Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,28 @@
 
 # Bash script to produce a clean build of the cfsai product.
 
-# Clean any previous build
+if [ "$1" != "" ]; then
+  CFS=$1
+  if [ ! -d ${CFS} ]; then
+    echo "${CFS} not found!"
+    exit 1
+  fi
+fi
+
+# Build base cfsai package
 rm -rf dist
+uv run python scripts/package.py --package cfsai
+if [ $? -ne 0 ] ; then
+  exit
+fi
 
-# Build the packages and bootstrap
-uv build --all-packages
-cargo build --release --manifest-path cli/Cargo.toml
+# Extract packages and copy into kit
+if [ "${CFS}" != "" ]; then
+  rm -rf tmp.build
+  mkdir -p tmp.build/cfsai
 
-# Generate ui.json
-uv run python -m cfsai export --ui > ui/ui.json
+  tar -xf dist/cfsai-cpython-3.11-*-latest.tar.xz -C tmp.build/cfsai/
 
-# Package everything into dist/workspace
-uv run python scripts/package.py 3.11
+  cp -r tmp.build/* ${CFS}/Tools/
+  rm -rf tmp.build
+fi

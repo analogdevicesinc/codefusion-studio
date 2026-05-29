@@ -16,6 +16,10 @@
 import * as vscode from "vscode";
 import { DebugPromptBuilder } from "../debug-prompt-builder";
 import { DebugToolExecutor } from "../debug-tool-executor";
+import {
+  isSessionDisconnectedError,
+  getDisconnectionMessage,
+} from "../utils/session-error-helpers";
 
 /**
  * Handles GDB commands and code analysis ("find bugs").
@@ -36,8 +40,9 @@ export class AnalysisHandler {
   ): Promise<boolean> {
     const gdbPatterns = [
       /(?:run|execute|send)\s+(?:gdb\s+)?(?:command|cmd)?[:\s]+(.+)/i,
+      /^gdb:\s*(.+)/i, // gdb: <command> prefix syntax
       /^-[a-z]+-/i, // GDB/MI commands start with -
-      /^(?:info|print|x\/|display|watch|set|show)\s+/i, // Common GDB commands
+      /^(?:info|print|display|watch|set|show)\s+/i, // Common GDB commands
     ];
 
     let gdbCommand: string | null = null;
@@ -59,7 +64,7 @@ export class AnalysisHandler {
       return true;
     }
 
-    stream.markdown(`Executing GDB command: \`${gdbCommand}\`\n\n`);
+    stream.markdown(`GDB command: \`${gdbCommand}\`\n\n`);
 
     try {
       const result = await this.toolExecutor.executeGdbCommand(gdbCommand);
@@ -69,8 +74,13 @@ export class AnalysisHandler {
           "\n```\n",
       );
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      stream.markdown(`Error: ${errorMsg}\n`);
+      if (isSessionDisconnectedError(error, true)) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(getDisconnectionMessage(errorMsg));
+      } else {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(`Error: ${errorMsg}\n`);
+      }
     }
 
     return true;

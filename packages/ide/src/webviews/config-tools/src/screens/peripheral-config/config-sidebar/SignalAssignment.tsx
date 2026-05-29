@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,15 +67,15 @@ function SignalAssignment({
 	const configurablePeripheralList: Array<
 		FormattedPeripheral<FormattedPeripheralSignal>
 	> = getConfigurablePeripherals();
-	const filteredPeripheralList = configurablePeripheralList.filter(
+	const filteredPeripheral = configurablePeripheralList.find(
 		item => item.name === peripheral
 	);
 
 	const {signal: activeConfiguredSignal, pin: activeConfiguredPin} =
 		useActiveConfiguredSignal();
 
-	const signals = filteredPeripheralList?.[0]?.signals ?? [];
-	const pins = signals[signal].pins ?? [];
+	const signals = filteredPeripheral?.signals;
+	const pins = signals?.[signal]?.pins ?? [];
 
 	const targetPinId =
 		useCurrentSignalTarget(peripheral, signal) ?? '';

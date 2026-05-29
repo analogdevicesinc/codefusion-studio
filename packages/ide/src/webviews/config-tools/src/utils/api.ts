@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import type {
 } from '@common/types/soc';
 import {
 	getAssignedPlugin,
-	getIsExternallyManagedProyect,
+	getIsExternallyManagedProject,
 	getProjectProperty
 } from './config';
 import {isCypressEnvironment} from '@common/utils/env';
@@ -36,13 +36,20 @@ import type {
 	AIModel,
 	DFGStream,
 	GasketConfig,
-	Profiling
-} from 'cfs-plugins-api';
+	Profiling,
+	CfsSettings,
+	ConfiguredApplicationPackage,
+	CfsMissingComponent
+} from 'cfs-types';
 import type {
 	CodeGenerationProject,
 	CodeGenerationResult
 } from 'cfs-lib/dist/types/code-generation';
 import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
+import type {
+	CfsPackage,
+	CfsPackageReference
+} from 'cfs-package-manager';
 
 export async function getSocAndCfsconfigData(): Promise<ConfigOptionsReturn> {
 	return request(
@@ -56,6 +63,50 @@ export async function generateCode(
 	return request('generate-code', {
 		selectedProjects
 	}) as Promise<CodeGenerationResult>;
+}
+
+export type CfsUpdateFileStatus = {
+	componentId: string;
+	success: boolean;
+	error?: string;
+};
+
+/**
+ * Update version for specific data model id
+ * @param componentId id of the data model, like: WLP
+ * @param version Version to update on
+ * @returns
+ */
+export async function updatePersistedConfigDataModelVersion(
+	componentId: string,
+	version: string
+): Promise<CfsUpdateFileStatus> {
+	return request(
+		'packager--update--persisted--cfsconfig--data-model--version',
+		{
+			componentId,
+			version
+		}
+	) as Promise<CfsUpdateFileStatus>;
+}
+
+/**
+ * Update version for specific pluginId
+ * @param componentId pluginId, like: com.analog.project.zephyr.plugin
+ * @param version Version to update on
+ * @returns
+ */
+export async function updatePersistedConfigPluginVersion(
+	componentId: string,
+	version: string
+): Promise<CfsUpdateFileStatus> {
+	return request(
+		'packager--update--persisted--cfsconfig--plugin--version',
+		{
+			componentId,
+			version
+		}
+	) as Promise<CfsUpdateFileStatus>;
 }
 
 export async function updatePersistedConfig(updatedConfig: {
@@ -72,6 +123,13 @@ export async function updatePersistedConfig(updatedConfig: {
 	return request('update-persisted-config', {
 		updatedConfig
 	}) as Promise<void>;
+}
+
+export async function updateMcubootConfig(config: {
+	settings: CfsSettings;
+	applicationPackages: ConfiguredApplicationPackage[];
+}) {
+	return request('update-mcuboot-config', config) as Promise<void>;
 }
 
 export type GasketStreamDelta = {
@@ -122,6 +180,55 @@ export async function getPluginProperties(
 		pluginId,
 		pluginVersion
 	}) as Promise<Record<string, any>>;
+}
+
+export async function getMemoryAccessOverrides(coreId: string) {
+	return request('get-memory-access-overrides', {
+		coreId
+	}) as Promise<Record<string, Record<string, string[] | undefined>>>;
+}
+
+export type CfsPackageInstallStatus = {
+	reference: CfsPackageReference;
+	success: boolean;
+	data?: unknown;
+	error?: {
+		cause?: {
+			code?: number;
+			killed?: boolean;
+			cmd?: string;
+			stderr?: string;
+			stdout?: string;
+		};
+		code?: string;
+		name?: string;
+	};
+};
+
+export async function installPackage(
+	referencesToInstall: CfsPackageReference[]
+): Promise<CfsPackageInstallStatus[]> {
+	return request('packager--install', {
+		referencesToInstall
+	}) as Promise<CfsPackageInstallStatus[]>;
+}
+
+export type SearchPackageResult = {
+	id: string;
+	packages: CfsPackage[];
+};
+
+/**
+ * Retrieve remote packages available for install.
+ * @param components
+ * @returns List of available packages
+ */
+export async function searchPackage(
+	components: CfsMissingComponent[]
+): Promise<SearchPackageResult[]> {
+	return request('packager--search', {components}) as Promise<
+		SearchPackageResult[]
+	>;
 }
 
 export async function getIsPeripheralBanner() {
@@ -185,6 +292,38 @@ export async function validateAIModel(aiModel: AIModel) {
 	}>;
 }
 
+export async function getApplicationPackageBanner() {
+	return request(
+		'get-application-package-banner'
+	) as Promise<boolean>;
+}
+
+export async function updateApplicationPackageBanner(flag: boolean) {
+	return request('update-application-package-banner', {
+		flag
+	}) as Promise<void>;
+}
+
+export async function showDeleteAppPackWarning(flag: boolean) {
+	return request('show-delete-app-pack-warning', {
+		flag
+	}) as Promise<void>;
+}
+
+export async function getDeleteAppPackWarning() {
+	return request('get-delete-app-pack-warning') as Promise<boolean>;
+}
+
+export async function showDeleteCustomTLVWarning(flag: boolean) {
+	return request('show-delete-custom-tlv-warning', {
+		flag
+	}) as Promise<void>;
+}
+
+export async function getDeleteCustomTLVWarning() {
+	return request('get-delete-custom-tlv-warning') as Promise<boolean>;
+}
+
 /**
  * Cache for storing previously fetched control configurations
  * Key format: `${scope}:${pluginId}:${pluginVersion}`
@@ -222,7 +361,7 @@ export function getControlsFromCache(
 	scope: string,
 	projectId: string
 ): Record<string, ControlCfg[]> | undefined {
-	if (getIsExternallyManagedProyect(projectId)) {
+	if (getIsExternallyManagedProject(projectId)) {
 		return {};
 	}
 
@@ -393,7 +532,7 @@ export async function getControlsForProjectIds(
 		for (const projectId of projectIds) {
 			// Skip externally managed projects
 			const isExternallyManaged =
-				getIsExternallyManagedProyect(projectId);
+				getIsExternallyManagedProject(projectId);
 
 			if (isExternallyManaged) continue;
 

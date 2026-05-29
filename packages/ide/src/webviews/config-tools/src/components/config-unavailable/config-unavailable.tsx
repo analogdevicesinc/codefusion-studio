@@ -16,24 +16,27 @@
 import Lock from '../../../../common/icons/Lock';
 import styles from './config-unavailable.module.scss';
 
-type ConfigUnavailableProps = {
-	readonly message: string;
-};
+type ConfigUnavailableProps = Readonly<{
+	message: string;
+	showLockIcon?: boolean;
+	dataTest?: string;
+}>;
 
 export default function ConfigUnavailable({
-	message
+	message,
+	showLockIcon = true,
+	dataTest = 'config-unavailable:message'
 }: ConfigUnavailableProps) {
 	return (
 		<div className={styles.container}>
-			<div
-				data-test='config-unavailable:message'
-				className={styles.unavailableText}
-			>
+			<div data-test={dataTest} className={styles.unavailableText}>
 				{message}
 			</div>
-			<div>
-				<Lock />
-			</div>
+			{showLockIcon && (
+				<div>
+					<Lock />
+				</div>
+			)}
 		</div>
 	);
 }

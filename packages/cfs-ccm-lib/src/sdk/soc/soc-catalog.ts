@@ -15,9 +15,11 @@
 
 import _ from 'lodash';
 import { CfsApiClient } from '../cfsapi-client.js';
-import { zSoC } from '../../gen/rest-types.zod.js';
-import { Catalog, StorageOptions } from '../../catalog/catalog.js';
-import { SoC } from '../../gen/index.js';
+import { zSoC } from 'cfs-ccm-api/rest-types/zod';
+import { Catalog } from '../../catalog/catalog.js';
+import type { StorageOptions } from '../../catalog/catalog.js';
+import type { SoC } from 'cfs-ccm-api/rest-types';
+import { LIB_VERSION } from '../../config/constants.cjs';
 /**
  * SoC Catalog that can be used in online (uses CFS API) or offline modes.
  */
@@ -38,6 +40,7 @@ export class SocCatalog extends Catalog<SoC> {
      * @param options.storage The class to use for local storage operations. Defaults to LowDBDataStore.
      * @param options.cleanTmp Whether to delete the temporary data when the catalog is disposed of.
      * @param cfsApiClient CFS API client object for online mode.
+     * @param cfsVersion CFS version to use when fetching SoCs from the API. Defaults to LIB_VERSION.
      * @throws {CatalogError}
      * @example const catalogWithClient = new SocCatalog({ directory: '/path/to/data' }, cfsApiClient);
      * @example const catalogWithoutClient = new SocCatalog({ directory: '/path/to/data' });
@@ -47,8 +50,9 @@ export class SocCatalog extends Catalog<SoC> {
     public constructor(
         options: StorageOptions,
         cfsApiClient?: CfsApiClient,
+        cfsVersion: string = LIB_VERSION,
     ) {
-        super(options, 'soc', cfsApiClient?.rest.socs);
+        super(options, 'soc', cfsApiClient?.rest.socs, cfsVersion);
     }
 
     /**

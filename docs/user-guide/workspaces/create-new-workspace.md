@@ -1,7 +1,7 @@
 ---
 description: Create a new workspace in CodeFusion Studio.
 author: Analog Devices
-date: 2026-01-30
+date: 2026-04-28
 ---
 
 # Create a new workspace
@@ -56,7 +56,7 @@ Choose this option to set up your system configuration step by step.
 
 ### Select a workspace template
 
-Choose a pre-defined SoC template with ADI-recommended configuration options. You can choose from single or multi-core options. For details on supported workspace templates, see [Supported workspace templates](supported-templates.md).
+Choose a pre-defined SoC template with ADI-recommended configuration options. You can choose from single or multi-core options.
 
 ### Complete workspace setup
 

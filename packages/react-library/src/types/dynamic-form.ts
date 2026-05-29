@@ -1,5 +1,4 @@
 // The interface accepted by the dynamic form
-// to be updated based on the Plugin Manager API
 export type TFormControl = {
 	id: string;
 	/** Property name */
@@ -8,6 +7,17 @@ export type TFormControl = {
 	type: TFormControlType;
 	/** Property numeric base */
 	base?: TFormNumericBase;
+	/** Properties specific to integer type */
+	integer?: {
+		/** Property minimum value */
+		min?: number | string;
+		/** Property maximum value */
+		max?: number | string;
+		/** Property step value */
+		step?: number | string;
+		/** Allow negative values  */
+		allowNegative?: boolean;
+	};
 	/** Property description; only used for checkbox label */
 	description?: string;
 	/** Default value */
@@ -28,7 +38,7 @@ export type TFormControl = {
 
 export type TFormControlType =
 	| 'string'
-	| 'number'
+	| 'integer'
 	| 'textarea'
 	| 'boolean'
 	| 'array'

@@ -11,36 +11,12 @@
 
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from cfsai_types.config.aiconfig import ConfigBackend
-from cfsai_types.config.targets import ResolvedExplicitTarget
+from cfsai_types.config.targets import UserTarget
 
-
-class ModelInfo(BaseModel):
-    """
-    Information about the model file.
-
-    Attributes:
-        file: Path to the model file.
-    """
-
-    file: Path
-
-    @field_serializer('file')
-    def _unix_path_style(self, file: Path) -> str:
-        """
-        Serializes the file path to use Unix-style paths for consistency.
-
-        Args:
-            file: The file path to serialize.
-
-        Returns:
-            The serialized file path in Unix-style format.
-        """
-        return file.as_posix()
 
 class ProjectInfo(BaseModel):
     """
@@ -105,7 +81,6 @@ class VerifiedConfig(BaseModel):
     Attributes:
         name: Name of the model configuration.
         prj_info: Project information for this model configuration.
-        model_info: Infomation about the model.
         target: Resolved target information.
         backend: Backend settings to use for code generation.
         izer_network_config_file: Optional path to the izer network description 
@@ -118,32 +93,16 @@ class VerifiedConfig(BaseModel):
     """
     name: str
     prj_info: ProjectInfo
-    model_info: ModelInfo
-    target: ResolvedExplicitTarget
+    files: dict[str,Path]
+    target: UserTarget
     backend: ConfigBackend
-    izer_network_config_file: Optional[Path]
 
     model_config = ConfigDict(frozen=True)
 
-    @field_serializer('izer_network_config_file')
-    def path_unix_path_style(
-            self,
-            izer_network_config_file: Optional[Path]
-        ) -> Optional[str]:
-        """
-        Serializes the file path to use Unix-style paths for consistency.
-
-        Args:
-            izer_network_config_file: Optional file path to serialize.
-
-        Returns:
-            The serialized file path in Unix-style format or `None` if no path 
-                is provided.
-        """
-        if izer_network_config_file is not None:
-            return izer_network_config_file.as_posix()
-        return None
-
+     
+    @field_serializer('files')
+    def _unix_style_files(self, files: dict[str, Path]) -> dict[str,str]:
+        return {k: v.as_posix() for k, v in files.items()}
 
 class VerifiedBackendConfig(BaseModel):
     """

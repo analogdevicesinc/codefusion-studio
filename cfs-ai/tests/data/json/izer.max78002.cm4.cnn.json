@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "name": "ai85-catsdogs-qat8-q.pth",
+      "prj_info": {
+        "name": "output",
+        "workspace": ".",
+        "out_dir": "."
+      },
+      "files": {
+        "Model": "tests/data/models/ai85-catsdogs-qat8-q.pth.tar",
+        "NetworkConfig": "tests/data/models/cats-dogs-hwc-no-fifo.yaml"
+      },
+      "target": {
+        "soc": "MAX78002",
+        "core": "CM4",
+        "accelerator": "CNN",
+        "family": "CORTEX-M",
+        "firmware_platform": null
+      },
+      "backend": { "Name": "izer", "Extensions": null }
+    }
+  ]
+}

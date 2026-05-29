@@ -11,9 +11,9 @@ CodeFusion Studio automatically generates a default debug configuration for each
 ## Before you start
 
 - If you are debugging using external hardware probes, ensure the required drivers are installed. Refer to the relevant setup guides:
-    - [Install Segger J-Link drivers](install-jlink-drivers.md)
-    - [Install Olimex Arm JTAG drivers (RISC-V)](install-olimex-drivers.md)
-    - [Install ICE drivers (SHARC-FX devices)](install-ice-drivers.md)
+    - [Install Segger J-Link drivers](debug-drivers/install-jlink-drivers.md)
+    - [Install Olimex Arm JTAG drivers (RISC-V)](debug-drivers/install-olimex-drivers.md)
+    - [Install ICE drivers (SHARC-FX devices)](debug-drivers/install-ice-drivers.md)
 - Make sure you have a successful build for the project you intend to debug. Debugging requires a generated ELF file in the project’s build folder, for example `build/m4.elf`. For information on how to build a project, refer to [CFS build task](../build-and-flash/tasks.md).
 - Debug configuration settings are automatically selected based on your CFS workspace. If any required settings are undefined, CFS prompts you to resolve them. For information on how to adjust settings, see [CFS Settings](../build-and-flash/cfs-settings.md).
 

@@ -81,18 +81,21 @@ export const mockedCatalog: SoC[] = [
 				id: 'CSP_BGA',
 				name: 'MAX32690-tqfn',
 				socID: 'MAX32690',
-				packageType: 'TQFN'
+				packageType: 'TQFN',
+				dataModelPackageID: 'MAX32690-tqfn'
 			},
 			{
 				description: '',
 				id: 'TQFN',
 				name: 'TQFN',
 				socID: 'MAX32690',
-				packageType: 'CSBGA'
+				packageType: 'CSBGA',
+				dataModelPackageID: 'TQFN'
 			},
 			{
 				description: '',
 				id: 'WLP',
+				dataModelPackageID: 'WLP',
 				name: 'WLP',
 				socID: 'MAX32690',
 				packageType: 'WLP'
@@ -157,7 +160,8 @@ export const mockedCatalog: SoC[] = [
 				id: 'max78002-csbga',
 				name: 'max78002-csbga',
 				socID: 'max78002',
-				packageType: 'CSBGA'
+				packageType: 'CSBGA',
+				dataModelPackageID: 'CSBGA'
 			}
 		]
 	},
@@ -168,7 +172,6 @@ export const mockedCatalog: SoC[] = [
 					'The MAX32691 evaluation kit (EV kit) provides a platform for evaluating the capabilities of the MAX32691 microcontroller, which is an advanced system-on-chip (SoC). It features an Arm® Cortex®-M4F CPU for efficient computation of complex functions and algorithms, and the latest generation Bluetooth® 5 Low Energy (Bluetooth LE) radio designed for wearable and hearable fitness devices, portable and wearable wireless medical devices, industrial sensors/networks, internet of things (IoT), and asset tracking.',
 
 				id: 'MAX32691-evkit_v1',
-
 				name: 'MAX32691-evkit_v1',
 				packageIDs: ['MAX32691-tqfn'],
 				socID: 'MAX32691'
@@ -203,7 +206,8 @@ export const mockedCatalog: SoC[] = [
 				id: 'MAX32691-tqfn',
 				name: 'MAX32691-tqfn',
 				socID: 'MAX32691',
-				packageType: 'TQFN'
+				packageType: 'TQFN',
+				dataModelPackageID: 'TQFN'
 			}
 		]
 	},
@@ -278,14 +282,16 @@ export const mockedCatalog: SoC[] = [
 				id: 'TQFN',
 				name: 'TQFN',
 				socID: 'MAX32655',
-				packageType: 'TQFN'
+				packageType: 'TQFN',
+				dataModelPackageID: 'TQFN'
 			},
 			{
 				description: '',
 				id: 'WLP',
 				name: 'WLP',
 				socID: 'MAX32655',
-				packageType: 'WLP'
+				packageType: 'WLP',
+				dataModelPackageID: 'WLP'
 			}
 		]
 	},
@@ -444,7 +450,8 @@ export const mockedCatalog: SoC[] = [
 				id: 'WLP',
 				name: 'WLP',
 				socID: 'MAX32657',
-				packageType: 'WLP'
+				packageType: 'WLP',
+				dataModelPackageID: 'WLP'
 			}
 		]
 	}

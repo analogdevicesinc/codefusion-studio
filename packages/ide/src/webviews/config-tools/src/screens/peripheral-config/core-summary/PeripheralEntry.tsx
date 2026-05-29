@@ -24,8 +24,7 @@ import {useActivePeripheral} from '../../../state/slices/peripherals/peripherals
 import styles from './CoreSummaryEntry.module.scss';
 import {memo} from 'react';
 import ConflictIcon from '../../../../../common/icons/Conflict';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
-import {Button, DeleteIcon} from 'cfs-react-library';
+import {Button, DeleteIcon, Tooltip} from 'cfs-react-library';
 import useProjectPeripheralErrorCount from '../../../hooks/use-project-peripheral-error-count';
 
 type PeripheralEntryProps = Readonly<{
@@ -72,7 +71,7 @@ function PeripheralEntry({
 					) : (
 						<div className={styles.iconPlaceholder} />
 					)}
-					<Tooltip title='Configure' type='long'>
+					<Tooltip title='Configure' type='short' position='bottom'>
 						<Button
 							className={`${styles.configIcon} ${isActive ? styles.isActive : ''}`}
 							appearance='icon'
@@ -93,7 +92,7 @@ function PeripheralEntry({
 							className={styles.lockIcon}
 						/>
 					) : (
-						<Tooltip title='Remove' type='long'>
+						<Tooltip title='Remove' type='short' position='bottom'>
 							<Button
 								className={styles.deleteIcon}
 								appearance='icon'

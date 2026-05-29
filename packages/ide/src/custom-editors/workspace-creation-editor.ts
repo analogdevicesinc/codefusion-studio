@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 import * as vscode from "vscode";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import CfsCustomEditor from "./cfs-custom-editor";
-import { CfsPluginInfo, CfsPluginManager, getHostPlatform } from "cfs-lib";
+import type { CfsPluginInfo, CfsWorkspace } from "cfs-types";
+import { getHostPlatform } from "cfs-lib";
 import type { CfsPackageManagerProvider } from "cfs-package-manager";
 import { CfsDataModelManager } from "cfs-lib";
 
 import { WORKSPACE_CREATION_EDITOR_ID } from "../constants";
-import { resolveVariables } from "../utils/resolveVariables";
 import { Utils } from "../utils/utils";
-import { CfsWorkspace } from "cfs-lib";
 import path from "path";
 import { VSCODE_OPEN_FOLDER_COMMAND_ID } from "../commands/constants";
 import { SoC } from "cfs-ccm-lib";
-import debounce from "lodash.debounce";
 import * as fs from "node:fs";
 import {
   getTelemetryManager,
   handleSensitiveTelemetryData,
 } from "../telemetry/telemetry";
 import { getCatalogManager } from "../utils/catalog";
+import { createPluginManager } from "../utils/plugin-manager";
 
 const messageTypes = {
   getCatalog: "get-catalog",
@@ -54,7 +53,7 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
   private pkgManager?: CfsPackageManagerProvider;
 
   constructor(
-    private context: vscode.ExtensionContext,
+    context: vscode.ExtensionContext,
     private dataModelManager: CfsDataModelManager,
     pkgManager?: CfsPackageManagerProvider,
   ) {
@@ -94,20 +93,37 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
       enableScripts: true,
     };
 
+    /**
+     * Get the default filter for selecting plugins for a particular SoC/Package/Board
+     * @param selectedSocId - The selected SoC ID
+     * @param packageId - The selected package ID
+     * @param boardId - The selected board ID
+     * @returns A filter function that can be used to filter plugins
+     */
+    function getBoardPackagePluginFilter(
+      selectedSocId: string | undefined,
+      packageId: string,
+      boardId: string,
+    ): (plugin: CfsPluginInfo) => boolean {
+      return (plugin: CfsPluginInfo) =>
+        plugin.supportedSocs?.some(
+          (soc) =>
+            soc.name.toLowerCase() === selectedSocId?.toLowerCase() &&
+            (soc.package.toLowerCase() === packageId.toLowerCase() ||
+              // Backwards compatibility for MAX32675C TQFN/LGA packageId mismatch.
+              // Allow LGA name from catalog to match old plugins using TQFN.
+              (soc.name.toLowerCase() === "max32675c" &&
+                soc.package.toLowerCase() === "tqfn" &&
+                packageId.toLowerCase() === "lga")) &&
+            (boardId === "" ||
+              soc.board?.toLowerCase() === boardId.toLowerCase()),
+        );
+    }
+
     const viewProviderPanel = new ViewProviderPanel(this.context, {
       distDir: "out/workspace-creation",
       indexPath: "out/workspace-creation/index.html",
     });
-
-    const pluginSearchDirs = vscode.workspace
-      .getConfiguration("cfs")
-      .get<string[]>("plugins.searchDirectories")
-      ?.map((dir) => resolveVariables(dir, true));
-
-    const dataModelSearchDirs = vscode.workspace
-      .getConfiguration("cfs")
-      .get<string[]>("plugins.dataModelSearchDirectories")
-      ?.map((dir) => resolveVariables(dir, true));
 
     let catalogData: SoC[] | undefined;
     let catalogManager = await getCatalogManager();
@@ -125,27 +141,8 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
       }
     }
 
-    let pluginManager: CfsPluginManager | undefined;
-
-    try {
-      const searchPaths = [
-        ...(pluginSearchDirs ?? []),
-        ...(dataModelSearchDirs ?? []),
-      ];
-      pluginManager = new CfsPluginManager(
-        searchPaths,
-        this.pkgManager,
-        this.dataModelManager,
-      );
-    } catch (error) {
-      debounce(
-        () =>
-          vscode.window.showWarningMessage(
-            `Plugin Manager failed to initialize with error ${(error as Error).message}. Some features may not work as expected.`,
-          ),
-        4000,
-      );
-    }
+    let pluginManager =
+      createPluginManager(this.pkgManager, this.dataModelManager);
 
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       let request;
@@ -234,20 +231,18 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
           }
 
         case messageTypes.getDefaultPath:
-          const userHome = resolveVariables("${userHome}");
-          const version = this.getExtensionVersion();
-
-          const defaultLocation = Utils.normalizePath(
-            `${userHome}/cfs${version !== undefined ? `/${version}` : ""}`,
-          );
-
+          const defaultLocation = Utils.getDefaultWorkspacepath();
           request = Promise.resolve(defaultLocation);
           break;
 
         case messageTypes.getPlugins:
           if (pluginManager) {
+            const { socId, packageId, boardId } = message.body;
+
             try {
-              const plugins = await pluginManager?.getPluginsInfoList();
+              const plugins = await pluginManager?.getPluginsInfoList(
+                getBoardPackagePluginFilter(socId, packageId, boardId),
+              );
               request = Promise.resolve(plugins ?? []);
             } catch (error) {
               request = Promise.reject(error);
@@ -345,19 +340,16 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
             try {
               const { socId, packageId, boardId = "" } = message.body;
 
+              const defaultFilter = getBoardPackagePluginFilter(
+                socId,
+                packageId,
+                boardId,
+              );
               const filter = (plugin: CfsPluginInfo) => {
-                const normalizedPackageId = packageId.replace(/[\s-]+/g, "");
                 return (
                   Boolean(plugin.features.workspace) &&
-                  (plugin.supportedSocs?.some(
-                    (soc) =>
-                      soc.name?.toLowerCase() === socId.toLowerCase() &&
-                      soc.package?.toLowerCase() ===
-                        normalizedPackageId.toLowerCase() &&
-                      (soc.board?.toLowerCase() ?? "") ===
-                        boardId.toLowerCase(),
-                  ) ??
-                    false)
+                  boardId !== "" &&
+                  defaultFilter(plugin)
                 );
               };
 

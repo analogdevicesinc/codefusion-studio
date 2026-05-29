@@ -3,8 +3,7 @@ const { defineConfig } = require('@vscode/test-cli');
 module.exports = defineConfig([
   {
     label: 'unitTests',
-    files: 'out/tests/**/*.test.js',
-    version: 'insiders',
+    files: 'out/tests/unit/**/*.test.js',
     workspaceFolder: './sampleWorkspace',
     mocha: {
       ui: 'bdd',

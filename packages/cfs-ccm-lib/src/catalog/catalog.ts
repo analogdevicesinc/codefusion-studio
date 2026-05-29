@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,14 +39,14 @@ type RestObject = {
 // These are the REST entities which can be stored in a catalog
 // (because they have a class with a getAll() method and an entity
 // tag in the REST client)
-type RestEntity = {
+export type RestEntity = {
     [K in keyof CfsApiClient['rest']]: CfsApiClient['rest'][K] extends {
         getAll(): infer R extends Promise<RestObject[]>;
         TAG: string;
     }
         ? Awaited<R>[number]
         : never;
-}[keyof CfsApiClient['rest']];
+}[Extract<keyof CfsApiClient['rest'], string>];
 
 // The class in the REST client which returns the entity
 type RestClass<T extends RestEntity> = {
@@ -56,7 +56,7 @@ type RestClass<T extends RestEntity> = {
     }
         ? CfsApiClient['rest'][K]
         : never;
-}[keyof CfsApiClient['rest']];
+}[Extract<keyof CfsApiClient['rest'], string>];
 
 // The tag for the entity in the REST client class
 type EntityTag<T extends RestEntity> = RestClass<T>['TAG'];
@@ -126,12 +126,14 @@ export abstract class Catalog<T extends RestEntity>
      * @param options.cleanTmp Whether to delete temporary data when the catalog is disposed of.
      * @param entityTag A string that identifies the entity type, used in datastore locations and exported data files.
      * @param entityClient An instance of a class in the CFS API REST client that can fetch the entities.  Catalog works offline if not provided.
+     * @param cfsVersion CFS version to use when fetching items from the API. Defaults to LIB_VERSION.
      * @throws {CatalogError}
      */
     protected constructor(
         options: StorageOptions,
         public readonly entityTag: EntityTag<T>,
         protected readonly entityClient?: RestClass<T>,
+        protected readonly cfsVersion: string = LIB_VERSION,
     ) {
         const opts = { ...defaultStorageOpts, ...options };
         this.ZIP_FILE_MEMBER = `${this.entityTag}-catalog.json`;
@@ -371,7 +373,9 @@ export abstract class Catalog<T extends RestEntity>
 
         let objs: unknown[];
         try {
-            objs = await this.entityClient.getAll();
+            objs = await this.entityClient.getAll({
+                cfsVersion: this.cfsVersion,
+            });
         } catch (err: unknown) {
             throw new CatalogError({
                 message: 'Error fetching items from the API',
@@ -527,7 +531,9 @@ export abstract class Catalog<T extends RestEntity>
      * @returns A promise that resolves to the item, or undefined if not found.
      * @throws {CatalogError}
      */
-    public async get(itemId: string): Promise<T | undefined> {
+    public async get(
+        itemId: string,
+    ): Promise<Omit<T, 'accessTag'> | undefined> {
         try {
             const item = await this.primaryStore.get(itemId);
             return item ? this._validateItem(item) : undefined;
@@ -541,7 +547,7 @@ export abstract class Catalog<T extends RestEntity>
      * @returns A promise that resolves to a list of items.
      * @throws {CatalogError}
      */
-    public async getAll(): Promise<T[]> {
+    public async getAll(): Promise<Omit<T, 'accessTag'>[]> {
         try {
             const allItems = await this.primaryStore.list();
             this._assertIsUniqueItemArray(allItems); // ensure all items have unique IDs
@@ -567,14 +573,14 @@ export abstract class Catalog<T extends RestEntity>
 
     /**
      * Asserts that the given object is a valid metadata object.
-     * @param obj The object to check.
+     * @param input The object to check.
      * @throws {CatalogError} if the object is not a valid metadata object.
      */
     private _assertIsMetadata(
-        obj: unknown,
-    ): asserts obj is CatalogMetadata {
+        input: unknown,
+    ): asserts input is CatalogMetadata {
         try {
-            void zCatalogMetadata.parse(obj);
+            void zCatalogMetadata.parse(input);
         } catch (err) {
             throw new CatalogError({
                 message: 'Error validating catalog metadata',
@@ -586,13 +592,29 @@ export abstract class Catalog<T extends RestEntity>
 
     /**
      * Validate an object is a valid entity item and return it with extra properties removed.
-     * @param obj The object to validate.
+     * @param input The object to validate.
      * @returns The object with extra properties removed.
      * @throws {CatalogError} if the object is not a valid entity.
      */
-    private _validateItem(obj: unknown): T {
+    private _validateItem(input: unknown): Omit<T, 'accessTag'> {
         try {
-            return this.itemParser.parse(obj);
+            return this.itemParser
+                .superRefine((item) => {
+                    // remove any properties that we don't want from an item and it's nested objects
+                    const remove = (obj: object, key: string) => {
+                        if (_.has(obj, key)) {
+                            delete obj[key];
+                        }
+                        _.forOwn(obj, (value) => {
+                            if (_.isObject(value)) {
+                                return remove(value, key);
+                            }
+                        });
+                    };
+                    // remove accessTag for any item
+                    remove(item, 'accessTag');
+                })
+                .parse(input);
         } catch (err) {
             throw new CatalogError({
                 message: 'Error validating item',
@@ -605,15 +627,15 @@ export abstract class Catalog<T extends RestEntity>
     /**
      * Check that the given array of objects have unique item ids and
      * that each object is a valid entity.
-     * @param obj An array of objects to check.
+     * @param input An array of objects to check.
      * @throws {CatalogError} if the array contains invalid entities or duplicate ids.
      */
     private _assertIsUniqueItemArray(
-        obj: unknown[],
-    ): asserts obj is T[] {
+        input: unknown[],
+    ): asserts input is T[] {
         const ids = new Set<string>();
-        obj.forEach((o) => {
-            const item = this._validateItem(o);
+        input.forEach((obj) => {
+            const item = this._validateItem(obj);
             if (ids.has(item.id)) {
                 throw new CatalogError({
                     message: `Duplicate item id: ${item.id}`,

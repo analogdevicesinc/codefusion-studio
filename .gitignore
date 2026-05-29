@@ -17,6 +17,7 @@ out
 
 # python files
 *venv
+/site
 
 # OS Generated
 .DS_STORE

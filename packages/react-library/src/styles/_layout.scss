@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  */
 @use './colors';
 
+// Generic
 $default-shadow: 0px 0px 8px 2px colors.$default-shadow;
-
 $sticky-element-shadow: 0px 2px 16px 0px colors.$default-shadow;
-
 $common-padding: 40px;
-
 $navbar-height: 40px;
 $footer-height: 60px;
-
 $main-width: 566px;
-
-$min-width: 972px;
-
 $border-radius-1: 2px;
 $border-radius-2: 5px;
+$border-radius-3: 999px;
+$border-width-1: 1px;
+$border-width-2: 2px;
+$min-width: 972px;
 
 // CfsMainLayout
 $max-sidebar-width: 262px;
@@ -37,16 +35,13 @@ $max-sidebar-width: 262px;
 $secondary-layout-padding-top-bottom: 24px;
 $secondary-layout-padding-left-right: 32px;
 
-/********** ELF **********/
+$side-nav-width: 48px;
 
+// ELF Explorer
 $elf-main-gap: 32px;
-
-// Memory usage visual
 $elf-main-stack-width: 200px;
 $elf-overlapping-stack-width: 10px;
 $elf-memory-visual-margin: 0 80px;
-
-// Symbol Explorer
 $elf-symbols-table-z-index: 10;
 
 // default spacings
@@ -63,7 +58,9 @@ $spacing-9: 40px;
 //map of z-index values
 //TODO: CFSIO-12451 to add more z-index indices.
 $z-index-map: (
-	'tooltip': 6000
+	'side-panel': 1100,
+	'tooltip': 6000,
+	'dropdown-expanded': 1200
 );
 
 // @param {String} $key - The z-index key.

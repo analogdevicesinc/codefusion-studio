@@ -1,12 +1,18 @@
 ---
 description: Full reference for AI Debug Assistant tools and diagnostic workflows.
 author: Analog Devices
-date: "2026-02-24"
+date: "2026-05-15"
 ---
 
 # Tools and workflows reference
 
-This page is a full reference for all tools and diagnostic prompts exposed by the AI Debug Assistant's MCP server.
+!!! info "Preview"
+    The AI Debug Assistant is currently in preview and may change in future releases.
+
+!!! tip "Recommended Interface"
+    For production workflows, we recommend using the MCP server with MCP-enabled AI clients for maximum portability and future compatibility.
+
+This page documents the tools, resources, and diagnostic prompts exposed through the CFS MCP debug server.
 
 ## Debug tools
 
@@ -118,5 +124,5 @@ In Claude Code, run `/mcp` to browse all available prompts.
 
 ## Additional information
 
-- [:octicons-link-external-24: CFS Debug Chat Participant](https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/ide/src/debug-tools/ai-debug/README.md){:target="_blank"}
+- [:octicons-link-external-24: CFS Debug chat participant](https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/ide/src/debug-tools/ai-debug/README.md){:target="_blank"}
 - [:octicons-link-external-24: Introducing Agentic AI Workflows as Embedded Debugging Partner in CodeFusion Studio](https://developer.analog.com/newsroom/introducing-agentic-ai-workflows-as-embedded-debugging-partner-in-codefusion-studio){:target="_blank"}

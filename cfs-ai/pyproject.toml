@@ -1,36 +1,28 @@
 [project]
 name = "cfsai"
-version = "2.1.0"
+version = "2.2.0"
 description = "A tool to help you put your AI model on hardware"
 readme = "README.md"
 authors = [
     { name = "Codefusion Studio Team", email = "processor.tools.support@analog.com" }
 ]
-requires-python = ">=3.11"
+requires-python = "==3.11.9"
 dependencies = [
-    "cfsai-backend-max7800x",
+    "cfsai-backend-izer",
+    "cfsai-backend-tflm",
     "cfsai-compatibility-analyzer",
     "cfsai-resource-profiler",
     "cfsai-model-parser",
     "cfsai-tflite",
     "cfsai-types",
-    "dotenv>=0.9.9",
-    "httpx>=0.28.1",
     "pydantic==2.11.3",
-    "typer>=0.15.3",
 ]
 
 [tool.uv.sources]
 cfsai-tflite = { workspace = true }
-cfsai-backend-max7800x = { workspace = true }
+cfsai-backend-izer = { workspace = true }
+cfsai-backend-tflm = { workspace = true }
 cfsai-types = { workspace = true }
-
-torch = [
-    { index = "pytorch-cpu" }
-]
-torchvision = [
-    { index = "pytorch-cpu"}
-]
 cfsai-model-parser = { workspace = true }
 cfsai-compatibility-analyzer = { workspace = true }
 cfsai-resource-profiler = { workspace = true }
@@ -40,14 +32,12 @@ cfsai = "cfsai.cli:cli"
 
 [dependency-groups]
 dev = [
-    "datamodel-code-generator>=0.31.2",
     "flit>=3.12.0",
     "hypothesis>=6.131.21",
     "mypy>=1.15.0",
     "pytest>=8.3.5",
     "ruff>=0.11.6",
     "tensorflow>=2.0",
-    "types-requests>=2.32.0.20250328",
 ]
 
 [build-system]
@@ -60,7 +50,7 @@ files = [
     "src/", 
     "packages/cfsai-types/src", 
     "packages/cfsai-tflite/src",
-    "platforms/max7800x/cfsai-backend-max7800x/src/",
+    "packages/cfsai-backend-izer/src/",
 ]
 exclude = [
     "scripts/",
@@ -68,7 +58,7 @@ exclude = [
     "packages/cfsai-model-parser",
     "packages/cfsai-resource-profiler",
     "packages/cfsai-compatibility-analyzer",
-    "platforms/max7800x/cfsai-backend-max7800x/src/cfsai_backend_max7800x/izer/"
+    "packages/cfsai-backend-izer/src/cfsai_backend_izer/izer/",
 ]
 
 [tool.ruff.lint]
@@ -100,7 +90,6 @@ ignore = [
     "B904", # Allow raise with `from` inside an except block
     "UP045", # Allow the use of `Optional`
     "UP007", # Allow use of `Union`
-    "UP038", # Allow tuples instead of X|Y syntax where applicable
     "ANN002", # Allow no annotations for *args
     "ANN003", # Allow no annotations for **kwargs,
     "ANN401", # Allowing typing.Any. This is just required in certain areas.
@@ -117,7 +106,7 @@ src = [
     "src/", 
     "packages/cfsai-types/src", 
     "packages/cfsai-tflite/src",
-    "platforms/max7800x/cfsai-backend-max7800x/src/"
+    "packages/cfsai-backend-izer/src/"
 ]
 exclude = [
     "scripts", 
@@ -126,23 +115,15 @@ exclude = [
     "tests",
     "packages/cfsai-tflite/build_hook.py",
     "packages/cfsai-tflite/src/cfsai_tflite/schema",
-    "packages/cfsai-types/src/cfsai_types/datamodel/_internal",
-    "platforms/max7800x/cfsai-backend-max7800x/src/cfsai_backend_max7800x/izer/"
+    "packages/cfsai-backend-izer/src/cfsai_backend_izer/izer/"
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests/core"]
-markers = [
-    "integration: mark a test as an integration test",
-    "fuzzing: marks a test as fuzzing (not run by default)"
-]
-addopts = '-m "not fuzzing"'
 
 [tool.uv.workspace]
 members = [
     "packages/cfsai-tflite",
     "packages/cfsai-types",
-    "platforms/max7800x/cfsai-backend-max7800x",
+    "packages/cfsai-backend-izer",
+    "packages/cfsai-backend-tflm",
 
     # Advanced AI Tools
     "packages/cfsai-resource-profiler",

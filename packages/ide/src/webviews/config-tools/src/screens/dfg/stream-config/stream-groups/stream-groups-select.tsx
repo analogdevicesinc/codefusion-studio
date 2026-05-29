@@ -114,6 +114,7 @@ export function StreamGroupSelector({
 			data-test='stream-groups-dropdown'
 			value={editingStream?.Group ?? ''}
 			isExpanded={isExpanded}
+			placeholder='Select value'
 			setIsExpanded={setIsExpanded}
 		>
 			<div className={styles.dropdownContent}>

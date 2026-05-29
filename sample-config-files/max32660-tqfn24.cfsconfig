@@ -1,7 +1,7 @@
 {
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "DataModelVersion": "0.0.25",
-  "DataModelSchemaVersion": "1.0.0",
+  "DataModelVersion": "^1.0.25",
+  "SchemaVersion": "2.1.0",
   "Timestamp": "2024-03-12T13:09:29.484Z",
   "Soc": "MAX32660",
   "Package": "TQFN24",
@@ -13,7 +13,7 @@
       "ProjectId": "CM4",
       "FirmwarePlatform": "msdk",
       "PluginId": "com.analog.project.msdk.plugin",
-      "PluginVersion": "1.1.0",
+      "PluginVersion": "^1.1.0",
       "ExternallyManaged": false,
       "Partitions": [],
       "Peripherals": [

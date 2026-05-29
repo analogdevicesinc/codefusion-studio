@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,27 @@ export function usePinAppliedSignals(id: string | undefined) {
 	);
 }
 
+export function useAppliedSignals() {
+	return useAppSelector(selectAppliedSignalsMap);
+}
+
 // Memoize useAssignedPins to avoid unnecessary re-renders
 const selectPins = (state: RootState) => state.pinsReducer.pins;
+
+export const selectAppliedSignalsMap = createSelector(
+	[selectPins],
+	pins =>
+		Object.values(pins).reduce<Record<string, AppliedSignal>>(
+			(acc, pin) => {
+				pin.appliedSignals.forEach(signal => {
+					acc[`${signal.Peripheral}_${signal.Name}`] = signal;
+				});
+
+				return acc;
+			},
+			{}
+		)
+);
 
 export const selectAssignedPins = createSelector(
 	[selectPins],
@@ -157,13 +176,15 @@ export function useProjectAssignedPins(projectId: string) {
 	const peripheralsForProject = useAssignedPeripherals(projectId);
 
 	return useAssignedPins().filter(pin =>
-		peripheralsForProject.some(peripheral => pin.appliedSignals.some(
+		peripheralsForProject.some(peripheral =>
+			pin.appliedSignals.some(
 				(signal: AppliedSignal) =>
 					// Check if peripheral is assigned as one or by signal
 					(peripheral.projectId === projectId &&
 						signal.Peripheral === peripheral.name) ||
 					peripheral.signals[signal.Name]?.projectId === projectId
-			))
+			)
+		)
 	);
 }
 

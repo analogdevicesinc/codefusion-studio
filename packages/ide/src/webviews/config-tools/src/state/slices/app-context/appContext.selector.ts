@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-import type {SocCoreMemory} from 'cfs-plugins-api';
 import {type MemoryBlock} from '../../../../../common/types/soc';
 import {
 	getProjectInfoList,
@@ -37,14 +36,24 @@ export const useActiveScreenSubscreen = () =>
 		state => state.appContextReducer.activeScreenSubscreen
 	);
 
+export const useActiveSettingsPage = () =>
+	useAppSelector(state => state.appContextReducer.activeSettingsPage);
+
 export const useActiveConfiguredSignal = () =>
 	useAppSelector(
 		state =>
 			state.appContextReducer.configScreen.activeConfiguredSignalId
 	);
 
-export const useActiveFilterType = () =>
-	useAppSelector(state => state.appContextReducer.filter);
+export const useActivePinconfigAssignmentFilter = () =>
+	useAppSelector(
+		state => state.appContextReducer.filter.pinconfig.assignment
+	);
+
+export const useActivePinconfigSearchScope = () =>
+	useAppSelector(
+		state => state.appContextReducer.filter.pinconfig.searchScope
+	);
 
 export const useSearchString = (
 	searchContext: 'register' | 'pinconfig'
@@ -52,9 +61,6 @@ export const useSearchString = (
 	useAppSelector(
 		state => state.appContextReducer.searchString[searchContext]
 	);
-
-export const useIsAllocatingProject = () =>
-	useAppSelector(state => state.appContextReducer.isAllocatingCore);
 
 export const useMemoryTypeFilters = () =>
 	useAppSelector(state => state.appContextReducer.memoryTypeFilter);
@@ -148,9 +154,7 @@ export const useFilteredCores = (): ProjectInfo[] => {
 					dataModelCore?.Memory.filter(
 						memoryBlock => 'Type' in memoryBlock
 					).some(memoryBlock =>
-						memoryTypeFilter.includes(
-							(memoryBlock as SocCoreMemory).Type
-						)
+						memoryTypeFilter.includes(memoryBlock.Type)
 					)
 				);
 			}) ?? []
@@ -172,9 +176,9 @@ export const useOpenTypeCards = () =>
 		state => state.appContextReducer.memoryScreen.openTypeCards
 	);
 
-export function useIsProjectSelectionView() {
+export function useProjectSelectionConfig() {
 	return useAppSelector(
-		state => state.appContextReducer.isProjectSelectionView
+		state => state.appContextReducer.projectSelectionConfig
 	);
 }
 
@@ -195,3 +199,14 @@ export function usePeripheralScreenOpenProjectCards() {
 		state => state.appContextReducer.peripheralScreen.openProjectCards
 	);
 }
+
+export const useActiveSettingsChild = () =>
+	useAppSelector(
+		state => state.appContextReducer.activeSettingsChild
+	);
+
+export const useMcubootEnableState = () =>
+	useAppSelector(state => state.appContextReducer.mcubootEnableState);
+
+export const useSigningKeys = () =>
+	useAppSelector(state => state.appContextReducer.signingKeys);

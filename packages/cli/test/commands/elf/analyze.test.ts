@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ describe('elf analyze', () => {
 
   test
     .stdout()
-    .command(['elf:analyze', elfPath, '-j'], {root: '..'})
+    .command(['elf:analyze', elfPath, '--format=json'], {root: '..'})
     .it('produces valid JSON output', (ctx) => {
       // Verify the output is valid JSON
       const output = parseJson(ctx.stdout);

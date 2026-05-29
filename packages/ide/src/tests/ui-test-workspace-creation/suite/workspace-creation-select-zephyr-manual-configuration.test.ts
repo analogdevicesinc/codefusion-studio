@@ -42,7 +42,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     await view.switchBack();
     await UIUtils.sleep(2000);
     console.log("Switched back to close editors");
-    await workbench.executeCommand("view: close all editors");
+    await workbench.executeCommand("View: Revert and Close Editor");
     await UIUtils.sleep(2000);
     console.log("Closed all editors");
   });
@@ -81,8 +81,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
     expect(socName).to.include(TextData.soc78XXX);
 
-    console.log("Clicked on radiobuttonsoc");
-
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
     // Kit Selection Screen
@@ -111,7 +109,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
       locatorspath.kitSelect("EvKit_V1___CSBGA"),
     );
 
-    console.log("Clicked on kitselect");
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
     await UIUtils.sleep(2000);
@@ -131,9 +128,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
     await UIUtils.sleep(2000);
 
-    console.log(
-      "Clicked on manual configure option and clicking on continue button",
-    );
     await UIUtils.clickElement(view, locatorspath.continueButton);
     // Selection of arm cortex on riscv  and  cores Screen
     console.log("Waiting to find Arm Cores ");
@@ -159,22 +153,20 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     expect(await riscvCores.getText()).to.include("RISC-V");
     console.log("riscvcores text is included in the riscvcores element");
     await UIUtils.clickElement(view, riscvCores);
-    console.log("Clicked on riscv cores element");
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
     console.log("PLUGIN SELECTION SCREEN - ARM CORES");
     const zephyrSel = await UIUtils.dataTest(
       view,
-      "coreConfig:card:com.analog.project.zephyr.plugin",
+      "coreConfig:card:com.analog.project.zephyr.mock.plugin",
     );
 
     const pluginId = await zephyrSel.getAttribute("id");
-    expect(pluginId).to.include("com.analog.project.zephyr.plugin");
+    expect(pluginId).to.include("com.analog.project.zephyr.mock.plugin");
 
     await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, zephyrSel);
-    console.log("Clicked on zephyr plugin selection");
 
     const buildSystem = await UIUtils.dataTest(
       view,
@@ -192,28 +184,21 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
       ),
     );
     await UIUtils.clickElement(view, boardDefaultName);
-    console.log("Clicked on board default name input");
     const boardName = await boardDefaultName.getAttribute("current-value");
     console.log("Board name arm cortex is: " + boardName);
     expect(boardName).to.equal(TextData.evkitname78XXX);
 
-    const applyButton = await UIUtils.findWebElement(
-      view,
-      By.xpath("//*[@data-test='wrksp-footer:continue-btn']"),
-    );
     await UIUtils.sleep(2000);
-    await UIUtils.clickElement(view, applyButton);
-    console.log("Clicked on Apply button");
+    await UIUtils.clickElement(view, locatorspath.continueButton);
 
     // MSDK Plugin Selection for RISCV cores
     const msdkSelRiscv = await UIUtils.dataTest(
       view,
-      "coreConfig:card:com.analog.project.msdk.plugin",
+      "coreConfig:card:com.analog.project.msdk.mock.plugin",
     );
     const pluginIdRiscv = await msdkSelRiscv.getAttribute("id");
 
     await UIUtils.clickElement(view, msdkSelRiscv);
-    console.log("Clicked on msdk plugin selection for riscv");
     const boardNameRiscv = await UIUtils.findWebElement(
       view,
       By.xpath(
@@ -221,17 +206,11 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
       ),
     );
     await UIUtils.clickElement(view, boardNameRiscv);
-    console.log("Clicked on board default name input");
     const getBoardNameRiscv =
       await boardNameRiscv.getAttribute("current-value");
     console.log("Board name ricv is: " + getBoardNameRiscv);
     await UIUtils.sleep(2000);
-    const applyButtonRiscv = await UIUtils.findWebElement(
-      view,
-      By.xpath("//*[@data-test='wrksp-footer:continue-btn']"),
-    );
-    await UIUtils.sleep(2000);
-    await UIUtils.clickElement(view, applyButtonRiscv);
+    await UIUtils.clickElement(view, locatorspath.continueButton);
     await UIUtils.sleep(2000);
 
     // Workspace Input Screen
@@ -255,14 +234,8 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     );
     const workspaceName = await pathInput.getAttribute("current-value");
 
-    const createwsBtn = await UIUtils.findWebElement(
-      view,
-      By.xpath('//*[@id="root"]/div/div[3]/div/div/vscode-button[2]'),
-    );
-
     console.log("Found create workspace button");
-    await UIUtils.clickElement(view, createwsBtn);
-    console.log("Clicked on create workspace button");
+    await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
     await UIUtils.sleep(5000);
     // Assert that the workspace is created successfully
     const userHome = os.homedir();
@@ -270,6 +243,11 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     console.log(`location is ${location}`);
     const workspacePath = `${location}/${workspaceName}`;
     console.log(`workspacePath is ${workspacePath}`);
+    await VSBrowser.instance.driver.wait(
+      () => existsSync(workspacePath),
+      10000,
+      `Workspace was not created at expected location: ${workspacePath}`,
+    );
     expect(existsSync(workspacePath)).to.be.true;
     console.log(`Workspace created at: ${workspacePath}`);
     const cfsWorkspaceFile = path.join(workspacePath, ".cfs", ".cfsworkspace");

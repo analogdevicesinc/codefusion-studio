@@ -1,0 +1,70 @@
+{
+  "SupportedBackends": {
+    "tflm": {
+      "Targets": [
+        {
+          "Hardware": {
+            "Family": "SHARC-FX",
+            "Accelerator": null
+          },
+          "FirmwarePlatform": null
+        },
+        {
+          "Hardware": {
+            "Family": "Cortex-M",
+            "Accelerator": null
+          },
+          "FirmwarePlatform": null
+        }
+      ],
+      "AdvancedTools": true,
+      "Description": "Generation for Tflite-micro run-time",
+      "Formats": ["tflite"],
+      "Package": "cfsai",
+      "Module": "cfsai_backend_tflm",
+      "MaxModels": 999,
+      "Slow": false,
+      "Name": "tflm"
+    }
+  },
+  "properties": {
+    "tflm": [
+      {
+        "Id": "Section",
+        "Type": "string",
+        "Description": "Memory section for data",
+        "Tooltip": "The memory section used to map the data."
+      },
+      {
+        "Id": "Symbol",
+        "Type": "string",
+        "Description": "Symbol for data",
+        "Tooltip": "The C symbol used for the data array and generated files."
+      },
+      {
+        "Id": "ArenaSize",
+        "Type": "string",
+        "Description": "Arena size for model",
+        "Tooltip": "Arena size (bytes) for model. Estimated if omitted"
+      },
+      {
+        "Id": "ArenaSection",
+        "Type": "string",
+        "Description": "Memory section for arena",
+        "Tooltip": "The memory section used to map the arena buffer."
+      },
+      {
+        "Id": "DatasetSection",
+        "Type": "string",
+        "Description": "Memory section for dataset",
+        "Tooltip": "The memory section used to map the dataset."
+      },
+      {
+        "Id": "Dataset",
+        "Type": "File",
+        "Description": "Dataset File",
+        "Tooltip": "Path to binary file containing model input dataset."
+      }
+    ]
+  }
+}

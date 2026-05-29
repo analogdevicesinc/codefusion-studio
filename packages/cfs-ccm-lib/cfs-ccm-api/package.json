@@ -1,0 +1,50 @@
+{
+  "name": "cfs-ccm-api",
+  "description": "Client binding for CodeFusion Studio's Cloud Catalog Management Service API",
+  "version": "1.3.0-1",
+  "engines": {
+    "node": ">=20"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js"
+    },
+    "./api-types": {
+      "types": "./dist/api-types.d.ts",
+      "node": "./dist/api-types.js"
+    },
+    "./rest-client": {
+      "types": "./dist/rest.d.ts",
+      "node": "./dist/rest.js"
+    },
+    "./rest-types": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js"
+    },
+    "./rest-types/zod": {
+      "types": "./dist/rest-types.zod.d.ts",
+      "node": "./dist/rest-types.zod.js"
+    }
+  },
+  "type": "module",
+  "files": [
+    "/dist",
+    "!tsconfig.tsbuildinfo"
+  ],
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.6",
+    "@types/node": "^20.19.11",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.14.0",
+    "zod": "^3.25.76"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "install": "tsc -b",
+    "test": "tsc --noEmit"
+  }
+}

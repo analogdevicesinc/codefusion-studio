@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025 - 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,21 @@
  * limitations under the License.
  *
  */
+@use '#layout' as layout;
 
 .sidePanelContainer {
 	--sliding-panel-vertical-offset: 40px;
+	position: fixed;
 	margin-top: 40px;
+	top: 0;
+	right: 0;
+	z-index: layout.getZIndex('side-panel');
+	overflow: visible;
+	pointer-events: none;
+}
+
+.sidePanelContainer > * {
+	pointer-events: auto;
 }
 
 .headerItems {
@@ -34,6 +45,10 @@
 	display: flex;
 	align-items: end;
 	gap: 8px;
+}
+
+.dfgStreamTable {
+	overflow-y: auto;
 }
 
 .dfgVisualisation {

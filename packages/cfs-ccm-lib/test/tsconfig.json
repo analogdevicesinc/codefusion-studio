@@ -1,8 +1,7 @@
 {
-    "extends": "../tsconfig.json",
+    "extends": "@tsconfig/node20",
     "compilerOptions": {
-        "noEmit": true,
-        "tsBuildInfoFile": "tsconfig.tsbuildinfo"
+        "noEmit": true
     },
     "references": [{ "path": ".." }]
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import {
 	PeripheralsIcon,
 	CfsSuspense,
 	DataFlowGasketIcon,
-	EmbeddedAiToolsIcon
+	EmbeddedAiToolsIcon,
+	MCUBootIcon
 } from 'cfs-react-library';
 import ChevronRight from '../../../../../common/icons/ChevronRight';
 import {useAppDispatch} from '../../../state/store';
@@ -34,17 +35,15 @@ import {navigationItems} from '../../../../../common/constants/navigation';
 import styles from './system-planner-config-tools-list.module.scss';
 import {type TLocaleContext} from '../../../common/types/context';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
-import {
-	useClockNodesConfig,
-	useDiagramData
-} from '../../../state/slices/clock-nodes/clockNodes.selector';
-import {useEvaluateClockCondition} from '../../../hooks/use-evaluate-clock-condition';
+import {useClockConfigErrorsSummary} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {usePeripheralControlsPerProjects} from '../../../hooks/use-peripheral-controls-per-projects';
-import {computeClockNodeErr} from '../../../utils/node-error';
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import {getAssignedPinErrors} from '../../../utils/pin-error';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
-import {getProjectInfoList} from '../../../utils/config';
+import {
+	getProjectInfoList,
+	getSupportsMCUboot
+} from '../../../utils/config';
 import PeripheralErrorIcon from './peripheral-error-icon';
 import {
 	useGasketErrors,
@@ -56,6 +55,7 @@ import {getCoreMemoryDictionary} from '../../../utils/memory';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {getAICores} from '../../../utils/ai-tools';
 import {ProfilingIconSmall} from '../../../../../common/icons/Profiling';
+import {useTotalApplicationPackagesErrorCount} from '../../../hooks/use-total-application-packages-error-count';
 
 function SystemPlannerConfigToolsList() {
 	const dispatch = useAppDispatch();
@@ -72,19 +72,22 @@ function SystemPlannerConfigToolsList() {
 	// Sometimes to keep Yoda/Soc Schema happy, we populate one dummy pin but the package is still unsupported.
 	const pinmuxAvailable =
 		Object.keys(getSocPinDictionary()).length > 1;
-	const clockConfig = useClockNodesConfig();
-	const diagramData = useDiagramData();
-	const computeEnabledState = useEvaluateClockCondition();
+	const clockErrorSummary = useClockConfigErrorsSummary();
 	const assignedPins = useAssignedPins();
 	const {conflictsCount, hasFunctionConfigErrors} =
 		getAssignedPinErrors(assignedPins, 0);
 	const aiCores = getAICores();
+	const isSupportedSoc = getSupportsMCUboot();
+	const mcubootErrorCount = useTotalApplicationPackagesErrorCount();
 
 	const gasketErrors = useGasketErrors();
 	const streamErrors = useStreamErrors();
 
 	const projects = getProjectInfoList() ?? [];
 	const projectIds = projects.map(project => project.ProjectId);
+	const showMcubootConfig =
+		projects.some(p => p.FirmwarePlatform === 'zephyr') &&
+		isSupportedSoc;
 	const controlsPromises =
 		usePeripheralControlsPerProjects(projectIds);
 
@@ -162,13 +165,7 @@ function SystemPlannerConfigToolsList() {
 									<div>{i10n?.['configure-clocks']}</div>
 								</div>
 								<div className={styles.cardEnd}>
-									{Boolean(
-										computeClockNodeErr(
-											clockConfig,
-											diagramData,
-											computeEnabledState
-										)
-									) && (
+									{clockErrorSummary.totalErrors > 0 && (
 										<ConflictIcon data-test='clock-config-error' />
 									)}
 									<div className={styles.chevronIcon}>
@@ -263,6 +260,34 @@ function SystemPlannerConfigToolsList() {
 						</div>
 					</Card>
 				)}
+				{showMcubootConfig && (
+					<Card
+						id={navigationItems.mcubootConfig}
+						testId='mcuboot-card'
+					>
+						<div
+							className={styles.configCard}
+							onClick={() => {
+								handleLinkClick(navigationItems.mcubootConfig);
+							}}
+						>
+							<div className={styles.cardContainer}>
+								<div className={styles.cardDetails}>
+									<MCUBootIcon />
+									<div>{i10n?.['mcuboot-config']}</div>
+								</div>
+							<div className={styles.cardEnd}>
+								{mcubootErrorCount > 0 && (
+									<ConflictIcon data-test='mcuboot-error' />
+								)}
+								<div className={styles.chevronIcon}>
+									<ChevronRight />
+								</div>
+								</div>
+							</div>
+						</div>
+					</Card>
+				)}
 				{projects.some(p => p.FirmwarePlatform === 'zephyr') && (
 					<Card id={navigationItems.generate} testId='aitools-card'>
 						<div
@@ -274,7 +299,10 @@ function SystemPlannerConfigToolsList() {
 							<div className={styles.cardContainer}>
 								<div className={styles.cardDetails}>
 									<ProfilingIconSmall />
-									<div>{i10n?.profiling} <Badge appearance='primary'>BETA</Badge></div>
+									<div>
+										{i10n?.profiling}{' '}
+										<Badge appearance='primary'>BETA</Badge>
+									</div>
 								</div>
 								<div className={styles.chevronIcon}>
 									<ChevronRight />

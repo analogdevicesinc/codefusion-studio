@@ -22,16 +22,25 @@ import {
 	setPeripheralAssignment,
 	setPeripheralConfig
 } from '../../../state/slices/peripherals/peripherals.reducer';
-import ClockDiagram from '../../clock-config/clock-diagram/ClockDiagram';
 
 const mock = (await import(
 	`@socs/max32690-tqfn.json`
 )) as unknown as Soc;
+
 const clockConfigMock = (await import(
 	`@socs/max32690-wlp.json`
 )) as unknown as Soc;
 
+const mockWithoutClocks = {
+	...mock,
+	ClockNodes: []
+};
+
 describe('Register body component', () => {
+	beforeEach(() => {
+		cy.viewport(1200, 800);
+	});
+
 	it('Assigning WDT before LPWDT should give the same result', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			const reduxStore = configurePreloadedStore(
@@ -115,7 +124,7 @@ describe('Register body component', () => {
 			// Verify the 'Modified' chip is enabled and contains the correct count
 			cy.get('[data-test="Modified"]')
 				.should('not.be.disabled')
-				.and('contain.text', '4');
+				.and('contain.text', '5');
 		});
 	});
 
@@ -201,7 +210,7 @@ describe('Register body component', () => {
 
 			cy.get('[data-test="Modified"]')
 				.should('not.be.disabled')
-				.and('contain.text', '4');
+				.and('contain.text', '5');
 		});
 	});
 
@@ -232,8 +241,8 @@ describe('Register body component', () => {
 
 			cy.mount(<RegisterBody />, reduxStore);
 
-			// Verify the 'Modified' chip is disabled
-			cy.get('[data-test="Modified"]').should('be.disabled');
+			// Verify the 'Modified' chip count
+			cy.get('[data-test="Modified"]').should('contain.text', '1');
 		});
 	});
 
@@ -353,24 +362,27 @@ describe('Register body component', () => {
 			.clear();
 	});
 
-	it('Verifies the initial state of Modified and Unmodified chips with no pin assignments, reflecting the reset value of the MCU.', () => {
+	it('Tests filters chips support disabling and total register computation correctly.', () => {
 		cy.fixture('clock-config-plugin-controls-baremetal.json').then(
 			controls => {
 				const reduxStore = configurePreloadedStore(
-					mock,
+					mockWithoutClocks as unknown as Soc,
 					undefined,
 					controls
 				);
 
 				cy.mount(<RegisterBody />, reduxStore);
 
-				// Verify the 'Modified' chip is disabled
+				// The modified chip should be disabled if no registers have been modified
 				cy.get('[data-test="Modified"]').should('be.disabled');
 
-				// Verify the 'Unmodified' chip is enabled and contains the correct count
+				// We test that a chip can compute the total amount of registers present in a given SoC
 				cy.get('[data-test="Unmodified"]')
 					.should('not.be.disabled')
-					.and('contain.text', mock.Registers.length.toString());
+					.and(
+						'contain.text',
+						mockWithoutClocks.Registers.length.toString()
+					);
 			}
 		);
 	});
@@ -477,21 +489,6 @@ describe('Register body component', () => {
 					})
 				);
 
-				// Switch first to clock canvas to make sure the clock dictionary is computed
-				/* eslint-disable @typescript-eslint/no-empty-function */
-				cy.mount(
-					<div style={{width: '100%', height: '400px'}}>
-						<ClockDiagram
-							canvas={mock.Packages[0].ClockCanvas}
-							handleNodeHover={() => {}}
-							handleClockHover={() => {}}
-						/>
-					</div>,
-					reduxStore
-				);
-				// Ensure it loads
-				cy.wait(3000);
-				// Switch to register view
 				cy.mount(<RegisterBody />, reduxStore);
 
 				cy.dataTest('Modified').click();

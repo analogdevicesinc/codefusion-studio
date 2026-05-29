@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,21 +119,21 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
     await UIUtils.sleep(2000);
     await view.switchBack();
     await editor.closeAllEditors();
+    await UIUtils.restoreFixtureFileFromGit(getConfigPathForFile(configFile));
   });
 
   it("Performs system planner end to end flow @smoke", async () => {
     await browser.openResources(getConfigPathForFile(configFile));
     workbench = new Workbench();
 
-    // === Then dismiss all notifications ,wait for the webview to load===
+    // === Then dismiss all notifications, wait for the webview to load===
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
-    await view.wait(5000);
-    console.log("Switched to the WebView frame");
+    await view.wait();
     await view.switchToFrame();
-    expect(
-      await (await UIUtils.waitForElement(view, peripheralTab)).isDisplayed(),
-    ).to.be.true;
+    console.log("Switched to the WebView frame");
+
+    await UIUtils.sleep(3000); // Wait for the webview content to load
 
     // ===Given the cfsconfig file to be opened have RX, TX and MISC signals with Pins already configured===
     // ===When user clicks on peripheral tab to all peripherals are listed===
@@ -217,8 +217,22 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
     // ===Persistence Verification of JSON ===
     const fullConfig = await parseJSONFile(getConfigPathForFile(configFile));
 
+    // === Overall cfsconfig structure (order-insensitive arrays) ===
+    function deepSortArrays(obj: any): any {
+      if (Array.isArray(obj)) {
+        return obj
+          .map(deepSortArrays)
+          .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      } else if (obj && typeof obj === "object") {
+        return Object.fromEntries(
+          Object.entries(obj).map(([k, v]) => [k, deepSortArrays(v)]),
+        );
+      }
+      return obj;
+    }
+
     // Drop parts of file that can change over time like timestamp
-    const config = {
+    const config = deepSortArrays({
       Soc: fullConfig.Soc,
       BoardName: fullConfig.BoardName,
       Package: fullConfig.Package,
@@ -226,9 +240,9 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
       ClockNodes: fullConfig.ClockNodes,
       Projects: fullConfig.Projects,
       ClockFrequencies: fullConfig.ClockFrequencies,
-    };
+    });
 
-    const expectedConfig = {
+    const expectedConfig = deepSortArrays({
       Soc: "MAX32690",
       BoardName: "AD-APARD32690-SL",
       Package: "WLP",
@@ -259,9 +273,9 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
           Signal: "TX",
         },
         {
-          Pin: "G5",
-          Peripheral: "USBHS",
-          Signal: "CLKEXT",
+          Pin: "H10",
+          Peripheral: "LPTMR0",
+          Signal: "CLK",
         },
         {
           Pin: "G9",
@@ -276,8 +290,8 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
       ],
       ClockNodes: [
         {
-          Name: "P0.27",
-          Control: "P0_27_FREQ",
+          Name: "P3.5",
+          Control: "P3_5_FREQ",
           Value: "1000",
           Enabled: true,
         },
@@ -309,8 +323,8 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
         {
           CoreId: "CM4",
           ProjectId: "max32690_arm-cortex-m4f",
-          PluginId: "com.analog.project.zephyr.plugin",
-          PluginVersion: "1.0.0",
+          PluginId: "com.analog.project.zephyr.mock.plugin",
+          PluginVersion: "^1.0.0",
           FirmwarePlatform: "zephyr-4.1",
           ExternallyManaged: false,
           PlatformConfig: {
@@ -334,7 +348,7 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
               {
                 Name: "MAC",
                 Cycles: 2,
-                Energy: 15,
+                Energy: 0.17,
               },
             ],
             SupportedDataTypes: [],
@@ -346,8 +360,11 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
               Size: 8192,
               DisplayUnit: "KB",
               IsOwner: true,
-              Access: "R",
-              Config: {},
+              Access: "R/W/X",
+              Config: {
+                CHOSEN: "",
+                LABEL: "",
+              },
             },
           ],
           Peripherals: [
@@ -406,8 +423,8 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
         {
           CoreId: "RV",
           ProjectId: "max32690_risc-v",
-          PluginId: "com.analog.project.msdk.plugin",
-          PluginVersion: "1.1.0",
+          PluginId: "com.analog.project.msdk.mock.plugin",
+          PluginVersion: "^1.1.0",
           FirmwarePlatform: "msdk",
           ExternallyManaged: false,
           PlatformConfig: {
@@ -440,15 +457,39 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
                   },
                 },
               ],
-              Config: {},
+              Config: {
+                AFM: "DUAL",
+                TSEG1: "1",
+                TSEG2: "1",
+                SJW: "0",
+                DOR_IE: "FALSE",
+                BERR_IE: "FALSE",
+                TX_IE: "FALSE",
+                RX_IE: "FALSE",
+                ERPSV_IE: "FALSE",
+                ERWARN_IE: "FALSE",
+                AL_IE: "FALSE",
+                WU_IE: "FALSE",
+                RX_THD_IE: "FALSE",
+                RX_TO_IE: "FALSE",
+                BITRATE: "500000",
+                UNIT_CB: "",
+                OBJ_CB: "",
+                FILTER_ID_LENGTH_DUAL_1: "STD",
+                FILTER_TYPE_DUAL_1: "EXACT",
+                FILTER_ID_DUAL_1: "0x0",
+                FILTER_ID_LENGTH_DUAL_2: "STD",
+                FILTER_TYPE_DUAL_2: "EXACT",
+                FILTER_ID_DUAL_2: "0x0",
+              },
             },
           ],
         },
       ],
       ClockFrequencies: {
-        "P0.27": 1000,
         SYS_CLK_DIV_2: 60000000,
         "P0.23": 1000,
+        LPTMR0_CLK: 1000,
         "Cortex-M4": 120000000,
         "FLC0/1": 120000000,
         SYS_OSC: 120000000,
@@ -459,7 +500,10 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
         I2S: 60000000,
         "I2S-CONTROLLER": 0,
       },
-    };
+    });
+
+    console.log("Actual config:");
+    console.log(config);
 
     // ===Peripheral with Pins verification derived from expectedConfig===
     console.log("Verifying peripherals in cfsconfig.");
@@ -492,7 +536,6 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
       "Pin configuration does not match expected values",
     ).to.deep.equal(expectedConfig.Pins);
 
-    console.log(config.ClockNodes);
     // ===Clock config verification derived from expectedConfig===
     console.log("Verifying clock node configuration");
     expect(
@@ -507,10 +550,10 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
       "Clock frequencies do not match expected values",
     ).to.deep.equal(getClockFrequencies(expectedConfig));
 
-    // === Overall cfsconfig structure ===
-    console.log("Verifying cfsconfig in entirety");
-    expect(config, "CFS config structure is not correct").to.deep.equal(
-      expectedConfig,
-    );
+    console.log("Verifying cfsconfig in entirety (order-insensitive arrays)");
+    expect(
+      config,
+      "CFS config structure is not correct (order-insensitive arrays)",
+    ).to.deep.equal(expectedConfig);
   }).timeout(300000);
 });

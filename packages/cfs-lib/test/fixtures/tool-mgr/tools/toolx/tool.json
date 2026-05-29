@@ -1,0 +1,9 @@
+{
+	"name": "CFS Tool X",
+	"description": "",
+	"id": "tool.x",
+	"vendor": "ADI",
+	"version": "1.1.0",
+	"schemaVersion": "1.0",
+	"paths": ["bin1"]
+}

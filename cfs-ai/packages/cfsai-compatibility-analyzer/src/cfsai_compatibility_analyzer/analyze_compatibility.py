@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,13 +33,17 @@ from cfsai_compatibility_analyzer.exceptions import (
     ModelParsingError,
 )
 from cfsai_compatibility_analyzer.schemas import (
+    COMPAT_REPORT_VERSION,
     CompatibilityReport,
     MemoryIssue,
     MemoryRecommendation,
+    ModelSummary,
     OperatorIssue,
     OptimizationOpportunity,
     UnsupportedTypeIssue,
 )
+from cfsai_types.hardware_profile import HardwareProfile
+from cfsai_types.report import ReportInfo, ReportType
 
 # Analysis Configuration Constants
 MAX_OPTIMIZATION_LAYERS = 10
@@ -94,23 +98,26 @@ class CompatibilityAnalyzer:
             f"{__name__}.{self.__class__.__name__}"
         )
 
-        self.logger.info(f"Initialized analyzer: {self.__class__.__name__}")
+        self.logger.debug(f"Initialized analyzer: {self.__class__.__name__}")
 
-    def analyze_model(self, model_path: Union[str, Path], 
-                      hw_metadata: dict[str, str | dict]) -> CompatibilityReport:
+    def analyze_model(
+        self,
+        model_path: Union[str, Path],
+        hw_metadata: HardwareProfile,
+        dataset_path: Optional[Union[str, Path]] = None
+    ) -> CompatibilityReport:
         """
         Perform comprehensive compatibility analysis on a TensorFlow Lite model.
-        
+
         Args:
             model_path: Path to the model file to analyze
-            hw_metadata: Hardware metadata dictionary containing:
-                - supported_operations: List of supported operator names
-                - compatibility_constraints: Dict with size and memory limits  
-                - supported_data_types: List of supported data type strings
-                
+            hw_metadata: HardwareProfile instance containing hardware constraints
+                including flash_size, ram_size, supported_ops, and supported_data_types
+            dataset_path: Optional path to dataset file for memory analysis
+
         Returns:
             CompatibilityReport containing detailed analysis results
-            
+
         Raises:
             ModelParsingError: If model parsing fails
             CompatibilityAnalysisError: If analysis encounters an error
@@ -143,14 +150,22 @@ class CompatibilityAnalyzer:
                 dtype.upper() for dtype in self.supported_data_types
             ]
 
-            self.logger.info(f"Starting compatibility analysis for: {model_path}")
-            
+            self.logger.debug(f"Starting compatibility analysis for: {model_path}")
+            # Save path for report
+            self._model_path = Path(model_path)
+
+            # Calculate dataset size if provided
+            dataset_size_kb = 0.0
+            if dataset_path:
+                dataset_size_kb = self._calculate_dataset_size(dataset_path)
+                self.logger.debug(f"Dataset size: {dataset_size_kb:.2f} KB")
+
             # Parse model with validation
             parsed_model = self._parse_model_safely(model_path)
             self._validate_parsed_model(parsed_model)
-            
+
             # Perform comprehensive analysis
-            analysis_results = self._perform_analyses(parsed_model)
+            analysis_results = self._perform_analyses(parsed_model, dataset_size_kb)
             
             # Build structured report
             compatibility_report = self._build_compatibility_report(analysis_results)
@@ -164,7 +179,7 @@ class CompatibilityAnalyzer:
             )
             self._log_analysis_metrics(analysis_metrics)
             
-            self.logger.info("Compatibility analysis completed successfully")
+            self.logger.debug("Compatibility analysis completed successfully")
             return compatibility_report
             
         except (ModelParsingError, CompatibilityAnalysisError, 
@@ -198,7 +213,7 @@ class CompatibilityAnalyzer:
         """Validate parsed model has required attributes."""
         required_attributes = \
         ["layer_details", "total_macs", "model_total_param_memory_b"]
-        
+
         for attr in required_attributes:
             if not hasattr(parsed_model, attr):
                 raise ModelParsingError(
@@ -207,41 +222,112 @@ class CompatibilityAnalyzer:
                     details={"missing_attribute": attr}
                 )
 
-    def _perform_analyses(self, parsed_model: ModelDetails) -> dict[str, Any]:
+    def _calculate_dataset_size(self, dataset_path: Union[str, Path]) -> float:
+        """
+        Calculate dataset memory size in KB.
+
+        Only binary (.bin) files are supported. The dataset must be a flat buffer
+        (contiguous binary data) in little-endian format.
+
+        To convert a NumPy array to the required format:
+            arr = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int16)
+            arr = np.ascontiguousarray(arr)
+            arr = arr.newbyteorder('<')  # little-endian (important for MCUs)
+            arr.tofile('dataset.bin')
+
+        Args:
+            dataset_path: Path to binary dataset file (.bin)
+
+        Returns:
+            Dataset size in kilobytes
+
+        Raises:
+            CompatibilityAnalysisError: If dataset file cannot be read or has
+                unsupported format
+        """
+        try:
+            dataset_path = Path(dataset_path)
+
+            if not dataset_path.exists():
+                raise CompatibilityAnalysisError(
+                    f"Dataset file not found: {dataset_path}",
+                    error_code="DATASET_NOT_FOUND"
+                )
+
+            # Only support binary files
+            if dataset_path.suffix not in ['.bin', '']:
+                raise CompatibilityAnalysisError(
+                    f"Unsupported dataset format: {dataset_path.suffix}. "
+                    f"Only binary (.bin) files are supported. "
+                    f"To convert a NumPy array: "
+                    f"arr = np.ascontiguousarray(arr).newbyteorder('<'); "
+                    f"arr.tofile('dataset.bin')",
+                    error_code="UNSUPPORTED_DATASET_FORMAT",
+                    details={"file_extension": dataset_path.suffix}
+                )
+
+            # Calculate size from binary file
+            size_bytes = dataset_path.stat().st_size
+
+            size_kb = size_bytes / 1024
+            self.logger.debug(
+                f"Calculated dataset size: {size_kb:.2f} KB "
+                f"({size_bytes} bytes)"
+            )
+            return size_kb
+
+        except CompatibilityAnalysisError:
+            raise
+        except Exception as e:
+            raise CompatibilityAnalysisError(
+                f"Failed to calculate dataset size: {e}",
+                error_code="DATASET_SIZE_ERROR",
+                details={"dataset_path": str(dataset_path)}
+            ) from e
+
+    def _perform_analyses(
+        self,
+        parsed_model: ModelDetails,
+        dataset_size_kb: float = 0.0
+    ) -> dict[str, Any]:
         """
         Perform all compatibility analyses and return results.
-        
+
         Args:
             parsed_model: Parsed model object
-            
+            dataset_size_kb: Dataset size in KB (optional)
+
         Returns:
             Dictionary containing analysis results
-            
+
         Raises:
             CompatibilityAnalysisError: If any analysis phase fails
         """
         results = {}
-        
+
         try:
             self.logger.debug("Analyzing operator compatibility")
             results['operator_issues'] = self._analyze_operators(
                 parsed_model.layer_details)
-            
+
             self.logger.debug("Analyzing memory compatibility")
-            results['memory_issues'] = self._analyze_memory(parsed_model)
-            
+            results['memory_issues'] = self._analyze_memory(
+                parsed_model,
+                dataset_size_kb
+            )
+
             self.logger.debug("Analyzing data type compatibility")
             results['type_issues'] = self._analyze_data_types(
-                parsed_model.layer_details, 
+                parsed_model.layer_details,
                 parsed_model
             )
-            
+
         except Exception as e:
             raise CompatibilityAnalysisError(
                 f"Analysis phase failed: {e}",
                 error_code="ANALYSIS_PHASE_ERROR"
             ) from e
-        
+
         return results
 
     def _analyze_operators(self, layer_details: list[LayerDetail]) -> \
@@ -296,14 +382,23 @@ class CompatibilityAnalyzer:
                             not in normalized_supported_ops):
                         suggested_alternative = "None"
 
-                    issues.append(OperatorIssue(
-                        type="unsupported operator",
-                        operator=layer_name,
-                        layer_index=layer_index,
-                        suggested_alternative=suggested_alternative,
-                        severity="critical"
+                    # Update existing operator issue if there is one
+                    found = False
+                    for i in issues:
+                        if i.operator == layer_name:
+                            i.layers.append(layer_index)
+                            found = True
+                            break
+                    if not found:
+                        # Or create new issue
+                        issue = OperatorIssue(
+                            type="unsupported operator",
+                            operator=layer_name,
+                            layers=[layer_index],
+                            suggested_alternative=suggested_alternative,
+                            severity="critical"
                         )
-                    )
+                        issues.append(issue)
                     
             self.logger.debug(
                 f"Processed {processed_layers} layers, "
@@ -441,13 +536,23 @@ class CompatibilityAnalyzer:
                             # Determine severity based on data type
                             severity = self._determine_dtype_severity(normalized_dtype)
                         
-                            issue = UnsupportedTypeIssue(
-                                layer_index=layer_index,
-                                operation_type=operation_type,
-                                data_type=normalized_dtype,
-                                severity=severity
-                            )
-                            issues.append(issue)
+                            # Update existing operator issue if there is one
+                            found = False
+                            for i in issues:
+                                if i.data_type == normalized_dtype \
+                                    and i.operation_type == operation_type:
+                                    i.layers.append(layer_index)
+                                    found = True
+                                    break
+                            if not found:
+                                # Or create a new issue
+                                issue = UnsupportedTypeIssue(
+                                    layers=[layer_index],
+                                    operation_type=operation_type,
+                                    data_type=normalized_dtype,
+                                    severity=severity
+                                )
+                                issues.append(issue)
 
             self.logger.debug(
                 f"Processed {processed_layers} layers for data type analysis, "
@@ -506,17 +611,21 @@ class CompatibilityAnalyzer:
             # Default to critical for unknown types
             return "critical"
 
-    def _analyze_memory(self, parsed_model: ModelDetails) -> \
-        Optional[list[MemoryIssue]]:
+    def _analyze_memory(
+        self,
+        parsed_model: ModelDetails,
+        dataset_size_kb: float = 0.0
+    ) -> Optional[list[MemoryIssue]]:
         """
         Analyze memory constraint compliance against hardware limitations.
-        
+
         Args:
             parsed_model: Parsed model containing size and memory information
-            
+            dataset_size_kb: Dataset size in KB to include in memory calculations
+
         Returns:
             List of memory compatibility issues, or None if no issues found
-            
+
         Raises:
             CompatibilityAnalysisError: If memory analysis encounters errors
         """
@@ -534,16 +643,26 @@ class CompatibilityAnalyzer:
             # Extract model memory requirements with validation
             model_disk_size_kb = getattr(parsed_model, 'model_size_on_disk_kb', 0)
             model_ram_kb = getattr(parsed_model, 'model_peak_ram_kb', 0)
-            
+
             # Validate model memory values
-            if (not isinstance(model_disk_size_kb, (int, float)) or 
+            if (not isinstance(model_disk_size_kb, (int, float)) or
                 model_disk_size_kb < 0):
                 self.logger.warning(f"Invalid model disk size: {model_disk_size_kb}")
                 model_disk_size_kb = 0
-                
+
             if not isinstance(model_ram_kb, (int, float)) or model_ram_kb < 0:
                 self.logger.warning(f"Invalid model RAM size: {model_ram_kb}")
                 model_ram_kb = 0
+
+            # Add dataset size to flash memory requirements
+            total_disk_size_kb = model_disk_size_kb + dataset_size_kb
+            if dataset_size_kb > 0:
+                self.logger.debug(
+                    f"Including dataset in memory analysis: "
+                    f"Model={model_disk_size_kb:.2f} KB + "
+                    f"Dataset={dataset_size_kb:.2f} KB = "
+                    f"{total_disk_size_kb:.2f} KB total"
+                )
             
             # Get layer details for optimization opportunities
             layer_details = getattr(parsed_model, 'layer_details', [])
@@ -559,20 +678,21 @@ class CompatibilityAnalyzer:
             
             # Analyze different memory constraint scenarios
             self._check_combined_memory_overflow(
-                model_disk_size_kb, model_ram_kb, hw_flash_limit_kb, hw_ram_limit_kb,
+                model_disk_size_kb, dataset_size_kb, model_ram_kb,
+                hw_flash_limit_kb, hw_ram_limit_kb,
                 optimization_opps, detected_memory_issues
             )
-            
+
             self._check_flash_memory_overflow(
-                model_disk_size_kb, hw_flash_limit_kb, optimization_opps, 
-                detected_memory_issues
-            )
-            
-            self._check_ram_memory_overflow(
-                model_disk_size_kb, model_ram_kb, hw_ram_limit_kb, 
+                model_disk_size_kb, dataset_size_kb, hw_flash_limit_kb,
                 optimization_opps, detected_memory_issues
             )
-            
+
+            self._check_ram_memory_overflow(
+                model_disk_size_kb, dataset_size_kb, model_ram_kb, hw_ram_limit_kb,
+                optimization_opps, detected_memory_issues
+            )
+
             self._check_runtime_memory_overflow(
                 model_ram_kb, hw_ram_limit_kb, detected_memory_issues
             )
@@ -590,7 +710,7 @@ class CompatibilityAnalyzer:
         return detected_memory_issues if detected_memory_issues else None
     
     def _determine_memory_recommendations(self, optimization_opps: list) -> \
-        tuple[MemoryRecommendation, MemoryRecommendation, MemoryRecommendation]:
+        list[MemoryRecommendation]:
         """
         Determine memory optimization recommendations based on model data types.
         
@@ -598,125 +718,161 @@ class CompatibilityAnalyzer:
             optimization_opps: List of optimization opportunities from model analysis
             
         Returns:
-            Tuple of (primary, secondary, alternative) memory recommendations
+            List of memory recommendations
         """
         # Check if model has floating point layers that can be quantized
         has_quantizable_layers = bool(optimization_opps)
+
+        recs = []
         
         if has_quantizable_layers:
             # Model has floating point weights - quantization is beneficial
-            primary = MemoryRecommendation(
+            recs.append(MemoryRecommendation(
                 method="INT8 Quantization",
                 reference="https://tensorflow.org/lite/performance/post_training_quantization"
-            )
-            secondary = MemoryRecommendation(
+            ))
+            recs.append(MemoryRecommendation(
                 method="Weight Pruning",
                 reference="https://tensorflow.org/model_optimization"
-            )
-            alternative = MemoryRecommendation(
+            ))
+            recs.append(MemoryRecommendation(
                 method="Model Architecture Optimization",
                 reference=None
-            )
+            ))
         else:
             # Model is likely already quantized or has no quantizable layers
-            primary = MemoryRecommendation(
+            recs.append(MemoryRecommendation(
                 method="Weight Pruning",
                 reference="https://tensorflow.org/model_optimization"
-            )
-            secondary = MemoryRecommendation(
+            ))
+            recs.append(MemoryRecommendation(
                 method="Model Architecture Optimization", 
                 reference=None
-            )
-            alternative = MemoryRecommendation(
+            ))
+            recs.append(MemoryRecommendation(
                 method="Reduce Model Complexity",
                 reference="https://tensorflow.org/lite/performance/model_optimization"
-            )
+            ))
         
-        return primary, secondary, alternative
+        return recs
     
-    def _check_combined_memory_overflow(self, model_size_kb: float, model_ram_kb: float,
-                                        hw_flash_kb: float, hw_ram_kb: float,
-                                        optimization_opps: list, 
-                                        memory_issues: list[MemoryIssue]) -> None:
+    def _check_combined_memory_overflow(
+        self, model_size_kb: float, dataset_size_kb: float,
+        model_ram_kb: float, hw_flash_kb: float,
+        hw_ram_kb: float, optimization_opps: list,
+        memory_issues: list[MemoryIssue]
+    ) -> None:
         """Check for combined flash and RAM memory overflow."""
-        total_model_memory = model_size_kb + model_ram_kb
-        
-        if (total_model_memory > hw_ram_kb and model_size_kb > hw_flash_kb):
+        total_disk_size_kb = model_size_kb + dataset_size_kb
+        total_model_memory = total_disk_size_kb + model_ram_kb
+
+        if (total_model_memory > hw_ram_kb and total_disk_size_kb > hw_flash_kb):
             # Get recommendations based on model data types
-            primary_rec, secondary_rec, alternative_rec = \
-                self._determine_memory_recommendations(optimization_opps)
-            
+            recs = self._determine_memory_recommendations(optimization_opps)
+
+            # Format detailed info with dataset breakdown if present
+            if dataset_size_kb > 0:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB + "
+                    f"Dataset {dataset_size_kb:.1f} KB + "
+                    f"{model_ram_kb:.1f} KB RAM = "
+                    f"{total_model_memory:.1f} KB total. "
+                    f"Hardware limits: Flash {hw_flash_kb:.1f} KB, "
+                    f"RAM {hw_ram_kb:.1f} KB"
+                )
+            else:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB + "
+                    f"{model_ram_kb:.1f} KB RAM = "
+                    f"{total_model_memory:.1f} KB total. "
+                    f"Hardware limits: Flash {hw_flash_kb:.1f} KB, "
+                    f"RAM {hw_ram_kb:.1f} KB"
+                )
+
             memory_issues.append(
                 MemoryIssue(
                     type="model_storage_memory_overflow",
                     memory_type="flash_and_ram",
-                    detailed_info=(
-                        f"Model requires {model_size_kb:.1f} KB + "
-                        f"{model_ram_kb:.1f} KB RAM = "
-                        f"{total_model_memory:.1f} KB total. "
-                        f"Hardware limits: Flash {hw_flash_kb:.1f} KB, "
-                        f"RAM {hw_ram_kb:.1f} KB"
-                    ),
+                    detailed_info=detailed_info,
                     severity="critical",
-                    primary_recommendation=primary_rec,
-                    secondary_recommendation=secondary_rec,
-                    alternative_recommendation=alternative_rec,
+                    recommendations=recs,
                     optimization_opportunities=optimization_opps
                 )
             )
     
-    def _check_flash_memory_overflow(self, model_size_kb: float, hw_flash_kb: float,
-                                     optimization_opps: list, 
+    def _check_flash_memory_overflow(self, model_size_kb: float, dataset_size_kb: float,
+                                     hw_flash_kb: float, optimization_opps: list,
                                      memory_issues: list[MemoryIssue]) -> None:
         """
         Check for flash memory overflow.
         Ignore if there is no flash.
         """
-        if hw_flash_kb and model_size_kb > hw_flash_kb:
+        total_disk_size_kb = model_size_kb + dataset_size_kb
+
+        if hw_flash_kb and total_disk_size_kb > hw_flash_kb:
             # Get recommendations based on model data types
-            primary_rec, secondary_rec, alternative_rec = \
-                self._determine_memory_recommendations(optimization_opps)
-            
+            recs = self._determine_memory_recommendations(optimization_opps)
+
+            # Format detailed info with dataset breakdown if present
+            if dataset_size_kb > 0:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB + "
+                    f"Dataset {dataset_size_kb:.1f} KB = "
+                    f"{total_disk_size_kb:.1f} KB total, "
+                    f"hardware flash limit is {hw_flash_kb:.1f} KB"
+                )
+            else:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB, "
+                    f"hardware flash limit is {hw_flash_kb:.1f} KB"
+                )
+
             memory_issues.append(
                 MemoryIssue(
                     type="model_storage_flash_overflow",
                     memory_type="flash",
-                    detailed_info=(
-                        f"Model requires {model_size_kb:.1f} KB, "
-                        f"hardware flash limit is {hw_flash_kb:.1f} KB"
-                    ),
+                    detailed_info=detailed_info,
                     severity="warning",
-                    primary_recommendation=primary_rec,
-                    secondary_recommendation=secondary_rec,
-                    alternative_recommendation=alternative_rec,
+                    recommendations=recs,
                     optimization_opportunities=optimization_opps
                 )
             )
     
-    def _check_ram_memory_overflow(self, model_size_kb: float, model_ram_kb: float,
-                                   hw_ram_kb: float, optimization_opps: list,
-                                   memory_issues: list[MemoryIssue]) -> None:
+    def _check_ram_memory_overflow(
+        self, model_size_kb: float, dataset_size_kb: float,
+        model_ram_kb: float, hw_ram_kb: float,
+        optimization_opps: list, memory_issues: list[MemoryIssue]
+    ) -> None:
         """Check for RAM memory overflow (model + runtime)."""
-        total_ram_needed = model_size_kb + model_ram_kb
-        
+        total_disk_size_kb = model_size_kb + dataset_size_kb
+        total_ram_needed = total_disk_size_kb + model_ram_kb
+
         if total_ram_needed > hw_ram_kb:
             # Get recommendations based on model data types
-            primary_rec, secondary_rec, alternative_rec = \
-                self._determine_memory_recommendations(optimization_opps)
-            
+            recs = self._determine_memory_recommendations(optimization_opps)
+
+            # Format detailed info with dataset breakdown if present
+            if dataset_size_kb > 0:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB + "
+                    f"Dataset {dataset_size_kb:.1f} KB + "
+                    f"{model_ram_kb:.1f} KB runtime = {total_ram_needed:.1f} KB "
+                    f"total RAM, hardware RAM limit is {hw_ram_kb:.1f} KB"
+                )
+            else:
+                detailed_info = (
+                    f"Model requires {model_size_kb:.1f} KB + "
+                    f"{model_ram_kb:.1f} KB runtime = {total_ram_needed:.1f} KB "
+                    f"total RAM, hardware RAM limit is {hw_ram_kb:.1f} KB"
+                )
+
             memory_issues.append(
                 MemoryIssue(
                     type="model_storage_ram_overflow",
                     memory_type="ram",
-                    detailed_info=(
-                        f"Model requires {model_size_kb:.1f} KB + "
-                        f"{model_ram_kb:.1f} KB runtime = {total_ram_needed:.1f} KB "
-                        f"total RAM, hardware RAM limit is {hw_ram_kb:.1f} KB"
-                    ),
+                    detailed_info=detailed_info,
                     severity="warning",
-                    primary_recommendation=primary_rec,
-                    secondary_recommendation=secondary_rec,
-                    alternative_recommendation=alternative_rec,
+                    recommendations=recs,
                     optimization_opportunities=optimization_opps
                 )
             )
@@ -734,18 +890,20 @@ class CompatibilityAnalyzer:
                         f"hardware RAM limit is {hw_ram_kb:.1f} KB"
                     ),
                     severity="warning",
-                    primary_recommendation=MemoryRecommendation(
-                        method="Reduce batch size",
-                        reference=None
-                    ),
-                    secondary_recommendation=MemoryRecommendation(
-                        method="Layer fusion optimization",
-                        reference=None
-                    ),
-                    alternative_recommendation=MemoryRecommendation(
-                        method="Tensor lifecycle optimization",
-                        reference=None
-                    ),
+                    recommendations=[
+                        MemoryRecommendation(
+                            method="Reduce batch size",
+                            reference=None
+                        ),
+                        MemoryRecommendation(
+                            method="Layer fusion optimization",
+                            reference=None
+                        ),
+                        MemoryRecommendation(
+                            method="Tensor lifecycle optimization",
+                            reference=None
+                        )
+                    ],
                     optimization_opportunities=[]
                 )
             )
@@ -1101,7 +1259,16 @@ class CompatibilityAnalyzer:
             report = CompatibilityReport(
                 memory_issues=memory_issues,
                 operator_issues=operator_issues,
-                unsupported_types=type_issues
+                unsupported_types=type_issues,
+                model_summary=ModelSummary(
+                    model_name=self._model_path.name,
+                    model_path=str(self._model_path)
+                ),
+                info=ReportInfo(
+                    type=ReportType.COMPAT,
+                    version=COMPAT_REPORT_VERSION,
+                    hardware=self.hw_metadata
+                )
             )
             
             # Log summary of report contents
@@ -1182,7 +1349,7 @@ class CompatibilityAnalyzer:
 
     def _log_analysis_metrics(self, metrics: AnalysisMetrics) -> None:
         """Log analysis metrics for monitoring."""
-        self.logger.info(
+        self.logger.debug(
             f"Analysis completed in {metrics.analysis_duration_ms:.1f}ms: "
             f"{metrics.total_layers} layers, "
             f"{metrics.unsupported_operators} operator issues, "

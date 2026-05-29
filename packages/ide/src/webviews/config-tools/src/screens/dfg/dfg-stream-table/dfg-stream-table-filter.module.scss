@@ -28,6 +28,24 @@
 	& .multiSelectContainer {
 		--multiselect-width: 100%;
 		--multiselect-options-width: 180px;
+
+		// Selected count styling
+		button > p > span:not(:empty) {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 8px;
+		}
+
+		// Truncate option text
+		vscode-checkbox > span {
+			max-width: 120px;
+			min-width: 0;
+			display: block;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
 	}
 }
 

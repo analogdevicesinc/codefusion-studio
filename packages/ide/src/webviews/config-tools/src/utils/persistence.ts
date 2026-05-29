@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,16 @@ import {
 import {type Partition} from '../state/slices/partitions/partitions.reducer';
 import {convertDecimalToHex} from './memory';
 import {type PeripheralConfig} from '../types/peripherals';
+import {formatPeripheralConfigValues} from './peripheral';
 import {getProjectInfoList} from './config';
 import {getClockNodeDictionary} from './clock-nodes';
+import type {ClockNodeStatus} from './clock-evaluation';
+import {type Zephelin} from 'cfs-types';
+import {
+	getDefaultProfilingInterval,
+	getInterfaces,
+	getUARTPorts
+} from '../state/slices/profiling/profilingPeripherals';
 
 export function applyPersistedPinConfig(
 	dataModelPins: PinDictionary,
@@ -50,7 +58,10 @@ export function applyPersistedPinConfig(
 		core.Peripherals.forEach(peripheral => {
 			peripheral.Signals.forEach(signal => {
 				if (signal.Config) {
-					signalConfigMap.set(signal.Name, signal.Config);
+					signalConfigMap.set(
+						`${peripheral.Name}:${signal.Name}`,
+						signal.Config
+					);
 				}
 			});
 		});
@@ -64,7 +75,7 @@ export function applyPersistedPinConfig(
 						Name: Signal,
 						Peripheral,
 						Pin,
-						PinCfg: signalConfigMap.get(Signal),
+						PinCfg: signalConfigMap.get(`${Peripheral}:${Signal}`),
 						Errors
 					});
 				}
@@ -101,7 +112,7 @@ export function formatPinPersistencePayload(pins: PinDictionary) {
 			pinData.appliedSignals.forEach(signal => {
 				configuredPins.push({
 					Pin: pinName,
-					Peripheral: signal.Peripheral ?? '',
+					Peripheral: signal.Peripheral,
 					Signal: signal.Name,
 					Errors: signal.Errors
 				});
@@ -185,25 +196,9 @@ export function formatProjectPersistencePayload(
 						}
 					: {}),
 				Signals,
-				Config: Object.fromEntries(
-					Object.entries(peripheralConfig.config).map(
-						([key, value]) => {
-							const numericBase =
-								peripheralConfig.configFormat?.numericBase?.[key];
-
-							if (
-								numericBase === 'Hexadecimal' &&
-								typeof value === 'string'
-							) {
-								return [
-									key,
-									convertDecimalToHex(parseInt(value, 16))
-								];
-							}
-
-							return [key, String(value)];
-						}
-					)
+				Config: formatPeripheralConfigValues(
+					peripheralConfig.config,
+					peripheralConfig.configFormat
 				)
 			});
 
@@ -253,25 +248,9 @@ export function formatProjectPersistencePayload(
 								) ?? {}
 						}
 					],
-					Config: Object.fromEntries(
-						Object.entries(peripheralConfig.config).map(
-							([key, value]) => {
-								const numericBase =
-									peripheralConfig.configFormat?.numericBase?.[key];
-
-								if (
-									numericBase === 'Hexadecimal' &&
-									typeof value === 'string'
-								) {
-									return [
-										key,
-										convertDecimalToHex(parseInt(value, 16))
-									];
-								}
-
-								return [key, String(value)];
-							}
-						)
+					Config: formatPeripheralConfigValues(
+						peripheralConfig.config,
+						peripheralConfig.configFormat
 					)
 				});
 			}
@@ -573,18 +552,15 @@ export function handleConfigDocumentUpdates(
  *
  */
 export function filterClockFrequencies(
-	diagramData: Record<
-		string,
-		{enabled: boolean | undefined; error: boolean | undefined}
-	>,
+	nodesStatus: Record<string, ClockNodeStatus>,
 	clockFrequencies: Record<string, string | number>
 ) {
 	const clockNodeDictionary = getClockNodeDictionary();
 
 	const enabledClockNodes = new Set<string>();
 
-	for (const [nodeName, nodeData] of Object.entries(diagramData)) {
-		if (nodeData?.enabled) {
+	for (const [nodeName, nodeStatus] of Object.entries(nodesStatus)) {
+		if (nodeStatus?.enabled) {
 			enabledClockNodes.add(nodeName);
 		}
 	}
@@ -613,4 +589,19 @@ export function filterClockFrequencies(
 	}
 
 	return filteredClockFrequencies;
+}
+
+export function getDefaultZephelinProfilerConfig(): Partial<Zephelin> {
+	return {
+		Enabled: false,
+		RtosEventsEnabled: false,
+		ProfilingMemoryUsageEnabled: false,
+		ProfilingMemoryUsageInterval: getDefaultProfilingInterval(),
+		ProfilingCpuLoadEnabled: false,
+		ProfilingCpuLoadInterval: getDefaultProfilingInterval(),
+		AIEnabled: false,
+		InstrumentationSubsystemEnabled: false,
+		Interface: getInterfaces()[0],
+		Port: Object.keys(getUARTPorts())[0]
+	};
 }

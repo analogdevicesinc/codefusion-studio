@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  *
  */
 
-import {memo} from 'react';
+import {memo, useMemo} from 'react';
 import {DynamicForm, type TFormFieldValue} from 'cfs-react-library';
-import {type ControlCfg} from '../../../../../common/types/soc';
+import {type ControlCfg} from '@common/types/soc';
 import {formatControlsForDynamicForm} from '../../../utils/soc-controls';
-
 import styles from './PluginOptions.module.scss';
+import {validatePluginOptions} from '../../../utils/plugin-options-validation';
 
 type PluginOptionsProps = Readonly<{
 	config?: Record<string, any>;
@@ -34,6 +34,11 @@ export const PluginOptions = memo(
 			{}
 		);
 
+		const validationErrors = useMemo(
+			() => validatePluginOptions(config, pluginControls),
+			[config, pluginControls]
+		);
+
 		return (
 			<div className={styles.options}>
 				{formattedPluginControls.length === 0 ? (
@@ -45,6 +50,7 @@ export const PluginOptions = memo(
 						controls={formattedPluginControls}
 						data={config}
 						testId='plugin-options-form'
+						errors={validationErrors}
 						onControlChange={onChange}
 					/>
 				)}

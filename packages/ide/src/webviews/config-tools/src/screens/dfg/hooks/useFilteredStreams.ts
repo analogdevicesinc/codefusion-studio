@@ -14,8 +14,8 @@
  */
 
 import {useMemo} from 'react';
-import type {DFGStream} from 'cfs-plugins-api';
 import {useAppSelector} from '../../../state/store';
+import {type DFGStreamUI} from '../../../state/slices/gaskets/gasket.reducer';
 
 export function matchesStartOfWord(
 	text: string,
@@ -35,8 +35,8 @@ export function matchesStartOfWord(
  * @returns Filtered streams based on search query
  */
 export function useFilteredStreams(
-	streams: DFGStream[]
-): DFGStream[] {
+	streams: DFGStreamUI[]
+): DFGStreamUI[] {
 	const searchQuery: string = useAppSelector(
 		state => state.gasketsReducer.searchQuery ?? ''
 	);
@@ -64,8 +64,8 @@ export function useFilteredStreams(
  * @returns Filtered streams based on all filter criteria
  */
 export function useFilteredStreamsBySourcesAndDest(
-	streams: DFGStream[]
-): DFGStream[] {
+	streams: DFGStreamUI[]
+): DFGStreamUI[] {
 	const filteredSources = useAppSelector(
 		state => state.gasketsReducer.filteredSources ?? []
 	);

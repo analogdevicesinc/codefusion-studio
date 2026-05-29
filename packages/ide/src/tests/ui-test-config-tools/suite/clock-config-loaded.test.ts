@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import {
 } from "vscode-extension-tester";
 
 import { UIUtils } from "../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../ui-test-utils/exec-utils";
 import {
   accordion,
   backButton,
@@ -54,21 +53,21 @@ import {
      *     And all notifications are dismissed
      *
   * Scenario: User has loaded clock configurations from previously loaded cfsconfig file
-     *     Given the existing cfsconfig file with USBHS peripheral with PIN CLKNEXT configured which further configures Pin Input frequency for external clock is opened
+     *     Given the existing cfsconfig file with LPTMR0 with external clock configured which further configures Pin Input frequency for external clock is opened
      *     Then dismiss all notifications ,wait for the webview to load
      *     Then switch to frame
      *     And I click on the "clock" navigation tab
      *     Then click on the MUX accordion and select the LPM node
      *     And verify that the value in the dropdown is "SYS_CLK_DIV_2"
      *     And I verify the value in DMA toggle selected
-     *     Then verify the value of clock frequency PinInput entered as 1000 for P0.27, navigating back
+     *     Then verify the value of clock frequency PinInput entered as 1000 for P3.5, navigating back
 
   * Scenario: User modifies existing clock configurations in the loaded file, saves them, and verifies correctness
      *     And I click on MUX accordion to select node values for LPM MUX from "SYS_CLK_DIV_2" to "SYS_CLK_DIV_2_ISO",verify the new value
      *     Then I click on back button
      *     Then I click on DMA node from peripheral, switching the toggle ON , verifying new value
      *     And click on back button
-     *     Then change the Pin Input Value of P0.27 Pin as "2222", verify it
+     *     Then change the Pin Input Value of P3.5 Pin as "2222", verify it
      *     And close the file, save the changes
      *     Then Verify the persistence schema of the config file after changes being saved
      *     Then Assert the names of the clockNodes with their values of the clockNodes
@@ -77,7 +76,7 @@ import {
  */
 
 describe("System Planner clock configuration for already loaded pins", () => {
-  // === Given the existing cfsconfig file with USBHS peripheral with PIN CLKNEXT configured which further configures Pin Input frequency for external clock is opened===
+  // === Given the existing cfsconfig file with LPTMR0 with external clock configured which further configures Pin Input frequency for external clock is opened===
   const configFile = "max32690-wlp.cfsconfig";
   const configPath = getConfigPathForFile(configFile);
 
@@ -97,7 +96,7 @@ describe("System Planner clock configuration for already loaded pins", () => {
 
   after(async () => {
     // Teardown - reset cfsconfig file
-    await asyncExecFile("git", "checkout", configPath);
+    await UIUtils.restoreFixtureFileFromGit(configPath);
   });
 
   it("Should display the clock screen correctly for a pre-configured file", async () => {
@@ -124,12 +123,12 @@ describe("System Planner clock configuration for already loaded pins", () => {
     await UIUtils.clickElement(view, muxType("LPM"));
 
     // === And I verify the value in the dropdown is "SYS_CLK_DIV_2"===
-    const LPMNodeValue = await (
-      await UIUtils.clickElement(view, muxType("MUX-LPM"))
-    ).getAttribute("current-value");
-    expect(LPMNodeValue, "The clock source value should be matched").to.equal(
-      "SYS_CLK_DIV_2",
-    );
+    const LPMNodeValue = await UIUtils.clickElement(view, muxType("MUX-LPM"));
+    const LPMNodeValueAttr = await LPMNodeValue.getAttribute("current-value");
+    expect(
+      LPMNodeValueAttr,
+      "The clock source value should be matched",
+    ).to.equal("SYS_CLK_DIV_2");
 
     await UIUtils.clickElement(view, backButton);
 
@@ -140,21 +139,24 @@ describe("System Planner clock configuration for already loaded pins", () => {
       view,
       toggle("DMA"),
     );
-    expect(
-      await DMAPeripheralValue.getAttribute("data-checked"),
-      "The toggle for DMA should be ON",
-    ).to.equal("true");
+    const DMAPeripheralValueAttr =
+      await DMAPeripheralValue.getAttribute("data-checked");
+    expect(DMAPeripheralValueAttr, "The toggle for DMA should be ON").to.equal(
+      "true",
+    );
     await UIUtils.clickElement(view, backButton);
 
-    // ===Then verify the value of clock frequency PinInput entered as 1000 for P0.27, further navigating back====
+    // ===Then verify the value of clock frequency PinInput entered as 1000 for P3.5, further navigating back====
     await UIUtils.clickElement(view, accordion("PIN INPUT"));
-    await UIUtils.clickElement(view, "P0.27");
-    const pinValue = await (
-      await UIUtils.findWebElement(view, pinInputBox)
-    ).getAttribute("current-value");
-    expect(pinValue, "The pin value for P0.27 should be matched").to.include(
-      "1000",
-    );
+    await UIUtils.clickElement(view, "P3.5");
+    await UIUtils.waitForElementToBeVisible(view, pinInputBox);
+    const pinInputElement = await UIUtils.findWebElement(view, pinInputBox);
+    const pinInputCurrentValue =
+      await pinInputElement.getAttribute("current-value");
+    expect(
+      pinInputCurrentValue,
+      "The pin value for P3.5 should be matched",
+    ).to.include("1000");
     await UIUtils.clickElement(view, backButton);
   });
 
@@ -163,10 +165,12 @@ describe("System Planner clock configuration for already loaded pins", () => {
     await UIUtils.clickElement(view, accordion("MUX"));
     await UIUtils.clickElement(view, muxType("LPM"));
     await UIUtils.clickElement(view, muxType("MUX-LPM"));
-    const MUXNodeValue = await (
-      await UIUtils.clickElement(view, option("SYS_CLK_DIV_2_ISO"))
-    ).getAttribute("value");
-    expect(MUXNodeValue, "The MUX node value should be matched").to.include(
+    const MUXNodeValue = await UIUtils.clickElement(
+      view,
+      option("SYS_CLK_DIV_2_ISO"),
+    );
+    const MUXNodeValueAttr = await MUXNodeValue.getAttribute("value");
+    expect(MUXNodeValueAttr, "The MUX node value should be matched").to.include(
       "SYS_CLK_DIV_2_ISO",
     );
 
@@ -177,23 +181,27 @@ describe("System Planner clock configuration for already loaded pins", () => {
     await UIUtils.clickElement(view, accordion("PERIPHERAL"));
     await UIUtils.clickElement(view, "DMA");
     const checkedCanValue = await UIUtils.clickElement(view, toggle("DMA"));
-    expect(
-      await checkedCanValue.getAttribute("data-checked"),
-      "The toggle for DMA should be OFF",
-    ).to.equal("false");
+    const checkedCanValueAttr =
+      await checkedCanValue.getAttribute("data-checked");
+    expect(checkedCanValueAttr, "The toggle for DMA should be OFF").to.equal(
+      "false",
+    );
 
     // ===And I click on the back button===
     await UIUtils.clickElement(view, backButton);
 
-    // ===Then change the Pin Input Value of P0.27 Pin as "2222", verify it===
+    // ===Then change the Pin Input Value of P3.5 Pin as "2222", verify it===
     await UIUtils.clickElement(view, accordion("PIN INPUT"));
-    await UIUtils.clickElement(view, "P0.27");
-    const pinValue = await (
-      await UIUtils.sendKeysToElements(view, pinInputBox, "2222")
-    ).getAttribute("value");
+    await UIUtils.clickElement(view, "P3.5");
+    const pinValueToBeFilled = await UIUtils.sendKeysToElements(
+      view,
+      pinInputBox,
+      "2222",
+    );
+    const pinCurrentValue = await pinValueToBeFilled.getAttribute("value");
     expect(
-      pinValue,
-      "The pin value for P0.27 should be matched after change",
+      pinCurrentValue,
+      "The pin value for P3.5 should be matched after change",
     ).to.include("2222");
 
     // ===And close the file, save the changes===
@@ -224,7 +232,7 @@ describe("System Planner clock configuration for already loaded pins", () => {
       clockNodeNamesAndValues,
       "The Pin Input values are matched with Pin name",
     ).to.deep.include({
-      name: "P0.27",
+      name: "P3.5",
       value: "2222",
     });
     expect(

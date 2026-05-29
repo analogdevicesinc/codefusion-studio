@@ -31,11 +31,29 @@
 
 .memoryCardTitle {
 	display: flex;
-	align-items: center;
-	gap: 4px;
+	align-items: flex-start;
+	gap: 8px;
 	min-height: 24px;
+
 	@include fonts.heading-h3;
 }
+
+.memoryCardTitle h3 {
+	margin: 0;
+	line-height: 24px;
+}
+
+.badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: flex-start;
+}
+
+.badges :global(*) {
+	white-space: nowrap;
+}
+
 .memoryCardTitleInfo {
 	display: flex;
 	align-items: center;

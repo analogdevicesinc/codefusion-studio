@@ -1,7 +1,7 @@
 ---
 description: Debugging interface overview
 author: Analog Devices
-date: 2026-01-16
+date: 2026-05-27
 ---
 
 # Debugging interface
@@ -128,6 +128,11 @@ For additional information, see [GDB Toolbox](../debugging/debug-tools/gdb-toolb
 The Core Dump Analysis Tool enables retrospective debugging for supported Zephyr-based projects, such as those running on the MAX32690. When a core dump is retrieved over JTAG (from flash) or UART (from serial log output), the tool displays the state of the program at the time of the crash, including active threads, stack usage, register values, and memory state.
 For additional information, see [Core Dump Analysis](../debugging/debug-tools/core-dump-analysis/index.md).
 
+## CFS Memory Viewer
+
+The CFS Memory Viewer is a multi-core-aware tool that lets you inspect device memory during live and retrospective debug sessions. It integrates directly with CFS debug infrastructure and provides a native alternative to the [Cortex-Debug Memory tab](#memory). The viewer automatically re-reads memory each time the debugger halts, displays memory in a scrollable hex and ASCII grid, and supports configurable byte grouping, endianness, and display formats.
+For additional information, see [Memory Viewer](../debugging/debug-tools/memory-viewer/index.md).
+
 ## Peripheral registers
 
 The **XPeripherals** view provides a nested structure of peripheral registers and user-modifiable bits.
@@ -153,7 +158,7 @@ For additional information about GDB, refer to the [GDB Basics](../../tutorials/
 
 ## Memory
 
-The **Memory** tab in the toolbar above the terminal shows the working memory. This displays a detailed image of what is currently being stored in memory as the program executes.
+The **Memory** tab in the toolbar above the terminal shows the working memory. This displays a detailed image of what is currently being stored in memory as the program executes. This tab is provided by the Cortex-Debug extension. For an alternative with multi-core support and retrospective debugging, see [CFS Memory Viewer](#cfs-memory-viewer).
 
   ![View Memory](images/viewing-memory-dark.png#only-dark)
   ![View Memory](images/viewing-memory-light.png#only-light)

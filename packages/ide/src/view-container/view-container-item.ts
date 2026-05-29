@@ -31,7 +31,7 @@ export class ViewContainerItem extends TreeItem {
     commandId?: string;
     commandArgs?: Array<any>;
     icon?: ThemeIcon;
-    collapsible: TreeItemCollapsibleState;
+    collapsible?: TreeItemCollapsibleState;
     contextValue?: string;
     description?: string;
     id?: string;

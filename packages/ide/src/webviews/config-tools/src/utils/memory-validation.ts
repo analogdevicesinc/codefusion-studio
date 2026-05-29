@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import {
 	getBlockMinAlignment,
 	getEndAddress
 } from './memory';
+import {getMemoryAccessOverrideForProject} from './memory-access';
 import {getSocCoreList} from './soc-cores';
 
 /**
@@ -162,6 +163,21 @@ export const validateSize = (
 		}
 	}
 
+	if (blocksForType.length) {
+		const contiguousMemoryBlocks =
+			createContiguousMemoryBlocks(blocksForType);
+		const validAgainstContiguousMemoryBlocks =
+			isPartitionValidAgainstContiguousMemoryBlocks(
+				contiguousMemoryBlocks,
+				startAddress,
+				activePartition.size
+			);
+
+		if (!validAgainstContiguousMemoryBlocks) {
+			return 'Size exceeds contiguous memory block range';
+		}
+	}
+
 	if (
 		partitions.some(existingPartition => {
 			if (
@@ -211,6 +227,10 @@ export const validateSize = (
 		const socCore = getSocCoreList().find(
 			core => core.Id === project.coreId
 		);
+		const accessOverride = getMemoryAccessOverrideForProject(
+			project.projectId,
+			activePartition.type
+		);
 
 		// Every block included in the partition must be accessible by the core
 		if (
@@ -221,12 +241,14 @@ export const validateSize = (
 				)
 			)
 		) {
-			returnVal = `Core ${socCore?.Description} does not have access to all memory blocks.`;
+			returnVal = `Core ${socCore?.Name} does not have access to all memory blocks.`;
 		}
 
 		// The core will have different permissions for each block it accesses
 		// We need to check that the partition permissions match the block permissions
-		if (returnVal === '') {
+		// NOTE we don't check access overrides here,
+		// if they are defined we assume the permissions are handled correctly elsewhere.
+		if (returnVal === '' && accessOverride === undefined) {
 			const socCoreMemoryInPartition = socCore?.Memory.filter(block =>
 				blockNames.includes(block.Name)
 			);
@@ -244,6 +266,76 @@ export const validateSize = (
 	});
 
 	return returnVal;
+};
+
+type SuperMemoryBlock = {
+	start: bigint;
+	end: bigint;
+};
+
+/**
+ * Merges memory blocks into contiguous segments (super-blocks).
+ * @param blocks List of blocks of the same type (i.e. RAM only)
+ * @returns A list of super-blocks with start and end addresses.
+ */
+const createContiguousMemoryBlocks = (
+	blocks: MemoryBlock[]
+): SuperMemoryBlock[] => {
+	if (!blocks || blocks.length === 0) return [];
+
+	// Sort it by AddressStart
+	const sorted = [...blocks].sort((a, b) =>
+		BigInt(a.AddressStart) < BigInt(b.AddressStart) ? -1 : 1
+	);
+
+	const superBlocks: SuperMemoryBlock[] = [];
+	let current: SuperMemoryBlock = {
+		start: BigInt(sorted[0].AddressStart),
+		end: BigInt(sorted[0].AddressEnd)
+	};
+
+	for (let i = 1; i < sorted.length; i++) {
+		const nextStart = BigInt(sorted[i].AddressStart);
+		const nextEnd = BigInt(sorted[i].AddressEnd);
+
+		// If the next memory block is right after current (no gap)
+		if (nextStart === current.end + 1n) {
+			// Update end of super-block if it spreads
+			if (nextEnd > current.end) {
+				current.end = nextEnd;
+			}
+		} else {
+			// There is a gap, close the super-block and open a new one
+			superBlocks.push(current);
+			current = {start: nextStart, end: nextEnd};
+		}
+	}
+
+	superBlocks.push(current);
+
+	return superBlocks;
+};
+
+/**
+ * Check if there is a super-block which fulfills start/end positions of new partition
+ * @param superBlocks Available super-blocks
+ * @param start Start addess of new partition
+ * @param size Size of new partition
+ * @returns Returns true if it is possible to fit new partition into super-block
+ */
+const isPartitionValidAgainstContiguousMemoryBlocks = (
+	superBlocks: SuperMemoryBlock[],
+	start: number,
+	size: number
+): boolean => {
+	if (!Number.isInteger(start) || !Number.isInteger(size)) {
+		return false;
+	}
+
+	const nStart = BigInt(start);
+	const nEnd = nStart + BigInt(size) - 1n;
+
+	return superBlocks.some(sb => nStart >= sb.start && nEnd <= sb.end);
 };
 
 export const validatePartitionForm = (

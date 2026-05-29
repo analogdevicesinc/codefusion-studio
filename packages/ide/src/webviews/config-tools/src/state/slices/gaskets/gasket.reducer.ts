@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import {
 	recomputeStreams
 } from './stream-properties-calculator';
 import {gasketsInitialState} from './gasket.initializer';
-import type {DFGStream, GasketConfig} from 'cfs-plugins-api';
+import type {DFGStream, GasketConfig} from 'cfs-types';
 import type {ViewType} from '../../../screens/dfg/view-dropdown/view-dropdown';
 import {getGasketDictionary} from '../../../utils/dfg';
+
+export type DFGStreamUI = DFGStream & {Uuid: string};
 
 export type GasketBufferSizeProps = {
 	InputBufferSizeChoices: number[];
@@ -38,20 +40,20 @@ export type GasketBufferSizeProps = {
 
 export type GasketState = {
 	GasketOptions: GasketConfig[];
-	Streams: DFGStream[];
-	editingStream?: DFGStream;
+	Streams: DFGStreamUI[];
+	editingStream?: DFGStreamUI;
 	editingGasket?: GasketConfig;
 	filteredSources?: string[];
 	filteredDestinations?: string[];
 	filteredGroups?: string[];
 	searchQuery?: string;
 	selectedGaskets: string[];
-	selectedStreams: DFGStream[];
-	hoveredStream?: DFGStream;
+	selectedStreams: DFGStreamUI[];
+	hoveredStream?: DFGStreamUI;
 	// A map from gasket name to buffer size properties
 	GasketBufferSizes: Record<string, GasketBufferSizeProps>;
-	GasketInputStreamMap: Record<string, DFGStream[]>;
-	GasketOutputStreamMap: Record<string, DFGStream[]>;
+	GasketInputStreamMap: Record<string, DFGStreamUI[]>;
+	GasketOutputStreamMap: Record<string, DFGStreamUI[]>;
 
 	// Error states
 	GasketErrors: Record<string, GasketError[]>;
@@ -67,7 +69,7 @@ const gasketsSlice = createSlice({
 	name: 'Gaskets',
 	initialState: gasketsInitialState,
 	reducers: {
-		addNewStream(state, {payload}: PayloadAction<DFGStream>) {
+		addNewStream(state, {payload}: PayloadAction<DFGStreamUI>) {
 			const streamsFromGasket = state.Streams.filter(
 				s => s.Source.Gasket === payload.Source.Gasket
 			);
@@ -87,38 +89,46 @@ const gasketsSlice = createSlice({
 
 			state.Streams = [
 				...state.Streams,
-				{...payload, StreamId: generatedId}
+				{...payload, StreamId: generatedId, Uuid: crypto.randomUUID()}
 			];
 
-			recomputeStreams(state);
+			recomputeStreams(state, true);
 		},
-		removeStream(
-			state,
-			{payload}: PayloadAction<{StreamId: number}>
-		) {
-			const {StreamId} = payload;
+		removeStream(state, {payload}: PayloadAction<{Uuid: string}>) {
+			const {Uuid} = payload;
 			state.Streams = state.Streams.filter(
-				stream => stream.StreamId !== StreamId
-			).map((e, i) => ({
-				...e,
-				StreamId: i
-			}));
+				stream => stream.Uuid !== Uuid
+			);
 
 			recomputeStreams(state);
+
+			/* NOTE: We also need to remove the seleceted group name if not present anymore */
+			const uniqueGroupNames = state.Streams.map(s => s.Group).filter(
+				(value, index, self) => value && self.indexOf(value) === index
+			);
+
+			if (state.filteredGroups) {
+				const updatedFilteredGroups = state.filteredGroups.filter(
+					groupName => uniqueGroupNames.includes(groupName)
+				);
+				state.filteredGroups = updatedFilteredGroups;
+			}
 		},
 
 		updateStream(
 			state,
-			{payload}: PayloadAction<{updatedStream: DFGStream}>
+			{
+				payload
+			}: PayloadAction<{
+				updatedStream: DFGStreamUI;
+			}>
 		) {
 			const {updatedStream} = payload;
 			state.Streams = state.Streams.map(stream =>
-				stream.StreamId === updatedStream.StreamId
-					? updatedStream
-					: stream
+				stream.Uuid === updatedStream.Uuid ? updatedStream : stream
 			);
 
-			if (updatedStream.StreamId === state.editingStream?.StreamId) {
+			if (updatedStream.Uuid === state.editingStream?.Uuid) {
 				state.editingStream = updatedStream;
 			}
 
@@ -126,7 +136,7 @@ const gasketsSlice = createSlice({
 		},
 		setEditingStream(
 			state,
-			{payload}: PayloadAction<Partial<DFGStream> | undefined>
+			{payload}: PayloadAction<Partial<DFGStreamUI> | undefined>
 		) {
 			const sourceSizeChoices =
 				state.GasketBufferSizes[payload?.Source?.Gasket ?? '']
@@ -166,7 +176,8 @@ const gasketsSlice = createSlice({
 				Source: defaultSourceOptions,
 				Destinations: destinations,
 				Group: payload?.Group ?? '',
-				Description: payload?.Description ?? ''
+				Description: payload?.Description ?? '',
+				Uuid: payload?.Uuid ?? crypto.randomUUID()
 			};
 
 			state.editingStream = payload ? stream : undefined;
@@ -200,12 +211,15 @@ const gasketsSlice = createSlice({
 		setSelectedGaskets(state, {payload}: PayloadAction<string[]>) {
 			state.selectedGaskets = [...new Set(payload)];
 		},
-		setSelectedStreams(state, {payload}: PayloadAction<DFGStream[]>) {
+		setSelectedStreams(
+			state,
+			{payload}: PayloadAction<DFGStreamUI[]>
+		) {
 			state.selectedStreams = payload;
 		},
 		setHoveredStream(
 			state,
-			{payload}: PayloadAction<DFGStream | undefined>
+			{payload}: PayloadAction<DFGStreamUI | undefined>
 		) {
 			state.hoveredStream = payload;
 		},
@@ -323,8 +337,20 @@ export function initializeGasketProperties(
 }
 
 export function initializeGasketErrors(
-	streams: DFGStream[],
+	streams: DFGStreamUI[],
 	gasketUIProps: Record<string, GasketBufferSizeProps>
 ): StreamComputationErrors {
 	return validateDFGErrors(streams, gasketUIProps);
+}
+
+/**
+ * Extends streams in the list with UI related fields
+ * @param streams
+ * @returns Returns extended stream list
+ */
+export function extendUIStreams(streams: DFGStream[]): DFGStreamUI[] {
+	return streams.map(stream => ({
+		...stream,
+		Uuid: crypto.randomUUID()
+	}));
 }

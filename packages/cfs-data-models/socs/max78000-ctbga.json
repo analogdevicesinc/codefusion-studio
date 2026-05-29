@@ -1,9 +1,9 @@
 {
-  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.",
+  "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.98",
+  "Version": "1.3.759",
   "Schema": "1.2.0",
-  "Timestamp": "2025-11-26 14:26:41.487642",
+  "Timestamp": "2026-04-17T10:47:39.467070Z",
   "Name": "MAX78000",
   "Description": "Artificial Intelligence Microcontroller with Ultra-Low-Power Convolutional Neural Network Accelerator",
   "Endianness": "Little",
@@ -34,7 +34,7 @@
       "AddressStart": "0x20000000",
       "AddressEnd": "0x20007fff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -45,7 +45,7 @@
       "AddressStart": "0x20008000",
       "AddressEnd": "0x2000ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -56,7 +56,7 @@
       "AddressStart": "0x20010000",
       "AddressEnd": "0x2001bfff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -67,7 +67,7 @@
       "AddressStart": "0x2001c000",
       "AddressEnd": "0x2001ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -78,7 +78,7 @@
       "AddressStart": "0x10000000",
       "AddressEnd": "0x1007ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "Flash",
       "Location": "Internal",
       "MinimumAlignment": 8192
@@ -1396,7 +1396,7 @@
     },
     {
       "Name": "FLC0",
-      "Description": "Flash Controller",
+      "Description": "Flash Controller 0",
       "Cores": [
         "CM4",
         "RV"
@@ -1612,16 +1612,6 @@
           "Group": "P0.27"
         },
         {
-          "Name": "P0.28",
-          "Description": "GPIO Port 0 Pin 28",
-          "Group": "P0.28"
-        },
-        {
-          "Name": "P0.29",
-          "Description": "GPIO Port 0 Pin 29",
-          "Group": "P0.29"
-        },
-        {
           "Name": "P0.3",
           "Description": "GPIO Port 0 Pin 3",
           "Group": "P0.3"
@@ -1798,7 +1788,7 @@
     },
     {
       "Name": "GPIO3",
-      "Description": "GPIO Port",
+      "Description": "GPIO Port 3",
       "Cores": [
         "CM4",
         "RV"
@@ -1819,7 +1809,7 @@
     },
     {
       "Name": "I2C0",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 0",
       "Cores": [
         "CM4",
         "RV"
@@ -2792,7 +2782,7 @@
     },
     {
       "Name": "I2C1",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 1",
       "Cores": [
         "CM4",
         "RV"
@@ -3765,7 +3755,7 @@
     },
     {
       "Name": "I2C2",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 2",
       "Cores": [
         "CM4",
         "RV"
@@ -5515,7 +5505,7 @@
     },
     {
       "Name": "LPGCR",
-      "Description": "Low Power Global Control Registers",
+      "Description": "Low-Power Global Control Registers",
       "Cores": [],
       "Assignable": false
     },
@@ -6469,7 +6459,7 @@
     },
     {
       "Name": "LPUART0",
-      "Description": "Universal Asynchronous Receiver-Transmitter",
+      "Description": "Low-Power Universal Asynchronous Receiver-Transmitter 0",
       "Cores": [
         "CM4",
         "RV"
@@ -7027,7 +7017,7 @@
     },
     {
       "Name": "LPWDT0",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Low-Power Windowed Watchdog Timer 0",
       "Cores": [
         "CM4",
         "RV"
@@ -8307,7 +8297,7 @@
     },
     {
       "Name": "PT0",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 0",
       "Cores": [
         "CM4",
         "RV"
@@ -8326,7 +8316,7 @@
     },
     {
       "Name": "PT1",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 1",
       "Cores": [
         "CM4",
         "RV"
@@ -8345,7 +8335,7 @@
     },
     {
       "Name": "PT2",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 2",
       "Cores": [
         "CM4",
         "RV"
@@ -8364,7 +8354,7 @@
     },
     {
       "Name": "PT3",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 3",
       "Cores": [
         "CM4",
         "RV"
@@ -8636,7 +8626,7 @@
     },
     {
       "Name": "SPI0",
-      "Description": "Serial Peripheral Inteface",
+      "Description": "Serial Peripheral Inteface 0",
       "Cores": [
         "CM4"
       ],
@@ -9775,7 +9765,7 @@
     },
     {
       "Name": "SPI1",
-      "Description": "Serial Peripheral Inteface",
+      "Description": "Serial Peripheral Inteface 1",
       "Cores": [
         "CM4",
         "RV"
@@ -16524,7 +16514,7 @@
     },
     {
       "Name": "WDT0",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Windowed Watchdog Timer 0",
       "Cores": [
         "CM4"
       ],
@@ -18995,6 +18985,7 @@
         "Id": "POLY",
         "Description": "CRC Polynomial",
         "Type": "integer",
+        "Hint": "0xEDB88320",
         "MinimumValue": "0x0",
         "MaximumValue": "0xffffffff",
         "Increment": "0x1",
@@ -23367,12 +23358,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -23622,12 +23613,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -23839,12 +23830,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -25778,12 +25769,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -26687,10 +26678,11 @@
         {
           "Name": "I2S_CLKEXT",
           "Description": "External clock on P0.14 for I2S",
-          "Value": "${Control:P0_14_FREQ}",
+          "Value": "${PinMux:P0.14} ${String:I2S_CLKEXT} = ${Control:P0_14_FREQ} ${Undef} ?",
           "MaximumValue": 25000000
         }
       ],
+      "Signpost": "To configure the external clock source on P0.14, the I2S CLKEXT signal must be assigned using the Pin Config tool.",
       "Config": {
         "P0_14_FREQ": {
           "VALUE": []
@@ -26777,7 +26769,7 @@
         {
           "Name": "P0.3",
           "Description": "External Clock on P0.3",
-          "Value": "${Control:P0_3_FREQ}",
+          "Value": "${PinMux:P0.3} ${String:MISC_EXT_CLK} = ${Control:P0_3_FREQ} ${Undef} ?",
           "MaximumValue": 80000000
         }
       ],
@@ -26817,7 +26809,7 @@
         {
           "Name": "LPTMR0_CLK",
           "Description": "LPTMR0_CLK on P2.6",
-          "Value": "${Control:P2_6_FREQ}",
+          "Value": "${PinMux:P2.6} ${String:LPTMR0_CLK} = ${Control:P2_6_FREQ} ${Undef} ?",
           "MaximumValue": 8000000
         }
       ],
@@ -26843,7 +26835,7 @@
         {
           "Name": "LPTMR1_CLK",
           "Description": "LPTMR1_CLK on P2.7",
-          "Value": "${Control:P2_7_FREQ}",
+          "Value": "${PinMux:P2.7} ${String:LPTMR1_CLK} = ${Control:P2_7_FREQ} ${Undef} ?",
           "MaximumValue": 8000000
         }
       ],
@@ -27530,10 +27522,11 @@
       "Outputs": [
         {
           "Name": "SQWOUT",
-          "Description": "Square Wave Pin Output",
-          "Value": "${Control:SQWOUT} ${String:1HZ} = 1 ${Control:SQWOUT} ${String:512HZ} = 512 ${Control:SQWOUT} ${String:4KHZ} = 4096 ${Control:SQWOUT} ${String:32KHZ} = 32768 ${Undef} ? ? ? ?"
+          "Description": "Square Wave Output",
+          "Value": "${PinMux:P3.1} ${String:MISC_SQWOUT} != ${Undef} ${Control:SQWOUT} ${String:1HZ} = 1 ${Control:SQWOUT} ${String:512HZ} = 512 ${Control:SQWOUT} ${String:4KHZ} = 4096 ${Control:SQWOUT} ${String:32KHZ} = 32768 ${Undef} ? ? ? ? ?"
         }
       ],
+      "Signpost": "The multiplexer for pin P3.1 should be set to MISC_SQWOUT using the Pin Config tool.",
       "Config": {
         "SQWOUT": {
           "DIS": [
@@ -63316,14 +63309,14 @@
     },
     {
       "Name": "LPGCR_PCLKDIS",
-      "Description": "Low Power Peripheral Clock Disable Register",
+      "Description": "Low-Power Peripheral Clock Disable Register",
       "Address": "0x4008000C",
       "Size": 32,
       "Fields": [
         {
           "Name": "GPIO2",
-          "Description": "Low Power GPIO 2 Clock Disable",
-          "Documentation": "Low Power GPIO 2 Clock Disable.",
+          "Description": "Low-Power GPIO 2 Clock Disable",
+          "Documentation": "Low-Power GPIO 2 Clock Disable.",
           "Position": 0,
           "Length": 1,
           "Access": "R/W",
@@ -63345,8 +63338,8 @@
         },
         {
           "Name": "WDT1",
-          "Description": "Low Power Watchdog 1 Clock Disable",
-          "Documentation": "Low Power Watchdog 1 Clock Disable.",
+          "Description": "Low-Power Watchdog 1 Clock Disable",
+          "Documentation": "Low-Power Watchdog 1 Clock Disable.",
           "Position": 1,
           "Length": 1,
           "Access": "R/W",
@@ -63355,8 +63348,8 @@
         },
         {
           "Name": "TMR4",
-          "Description": "Low Power Timer 4 Clock Disable",
-          "Documentation": "Low Power Timer 4 Clock Disable.",
+          "Description": "Low-Power Timer 4 Clock Disable",
+          "Documentation": "Low-Power Timer 4 Clock Disable.",
           "Position": 2,
           "Length": 1,
           "Access": "R/W",
@@ -63365,8 +63358,8 @@
         },
         {
           "Name": "TMR5",
-          "Description": "Low Power Timer 5 Clock Disable",
-          "Documentation": "Low Power Timer 5 Clock Disable.",
+          "Description": "Low-Power Timer 5 Clock Disable",
+          "Documentation": "Low-Power Timer 5 Clock Disable.",
           "Position": 3,
           "Length": 1,
           "Access": "R/W",
@@ -63375,8 +63368,8 @@
         },
         {
           "Name": "UART3",
-          "Description": "Low Power UART 3 Clock Disable",
-          "Documentation": "Low Power UART 3 Clock Disable.",
+          "Description": "Low-Power UART 3 Clock Disable",
+          "Documentation": "Low-Power UART 3 Clock Disable.",
           "Position": 4,
           "Length": 1,
           "Access": "R/W",
@@ -63394,8 +63387,8 @@
         },
         {
           "Name": "LPCOMP",
-          "Description": "Low Power Comparator Clock Disable",
-          "Documentation": "Low Power Comparator Clock Disable.",
+          "Description": "Low-Power Comparator Clock Disable",
+          "Documentation": "Low-Power Comparator Clock Disable.",
           "Position": 6,
           "Length": 1,
           "Access": "R/W",
@@ -66931,7 +66924,7 @@
     },
     {
       "Name": "PWRSEQ_LPCN",
-      "Description": "Low Power Control Register",
+      "Description": "Low-Power Control Register",
       "Address": "0x40006800",
       "Size": 32,
       "Fields": [
@@ -67038,8 +67031,8 @@
         },
         {
           "Name": "LPMCLKSEL",
-          "Description": "Low Power Mode APB Clock Select",
-          "Documentation": "Low Power Mode APB Clock Select.",
+          "Description": "Low-Power Mode APB Clock Select",
+          "Documentation": "Low-Power Mode APB Clock Select.",
           "Position": 8,
           "Length": 1,
           "Access": "R/W",
@@ -67047,8 +67040,8 @@
         },
         {
           "Name": "LPMFAST",
-          "Description": "Low Power Mode Clock Select",
-          "Documentation": "Low Power Mode Clock Select.",
+          "Description": "Low-Power Mode Clock Select",
+          "Documentation": "Low-Power Mode Clock Select.",
           "Position": 9,
           "Length": 1,
           "Access": "R/W",
@@ -67097,8 +67090,8 @@
         },
         {
           "Name": "LPWKST_CLR",
-          "Description": "Low Power Wakeup Status Register Clear",
-          "Documentation": "Low Power Wakeup Status Register Clear.",
+          "Description": "Low-Power Wakeup Status Register Clear",
+          "Documentation": "Low-Power Wakeup Status Register Clear.",
           "Position": 31,
           "Length": 1,
           "Access": "R/W",
@@ -91952,289 +91945,16 @@
         {
           "Name": "H2",
           "Label": "P0.28",
-          "Description": "GPIO P0.28",
+          "Description": "GPIO P0.28 / SWDIO",
           "Position": {
             "X": 1,
             "Y": 7
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 28,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.28",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "SWDIO",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN2",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDIO"
             }
           ]
         },
@@ -95275,289 +94995,16 @@
         {
           "Name": "J1",
           "Label": "P0.29",
-          "Description": "GPIO P0.29",
+          "Description": "GPIO P0.29 / SWDCLK",
           "Position": {
             "X": 0,
             "Y": 8
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 29,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.29",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "SWDCLK",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN2",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDCLK"
             }
           ]
         },
@@ -97983,7 +97430,7 @@
                   "position": "left",
                   "id": "input_69903df1-9849-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18be990-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70609a80-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -97995,7 +97442,7 @@
                   "position": "right",
                   "id": "output_69903df2-9849-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18de560-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70624830-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "point",
@@ -98005,7 +97452,7 @@
                   "position": "left",
                   "id": "output_69903df3-9849-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18d2210-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98016,7 +97463,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 10,
-                "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+                "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_69903df1-9849-11ef-9529-11ddf0609c63"
               }
@@ -98026,7 +97473,7 @@
                 "connections": [],
                 "offsetX": 120,
                 "offsetY": 20,
-                "netID": "a18de560-bff1-11f0-9837-57623fd5b582",
+                "netID": "70624830-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_69903df2-9849-11ef-9529-11ddf0609c63"
               },
@@ -98034,7 +97481,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "a18d2210-bff1-11f0-9837-57623fd5b582",
+                "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_69903df3-9849-11ef-9529-11ddf0609c63"
               }
@@ -98091,7 +97538,7 @@
                   "position": "right",
                   "id": "output_fe877721-9849-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98103,7 +97550,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_fe877721-9849-11ef-9529-11ddf0609c63"
               }
@@ -98160,7 +97607,7 @@
                   "position": "right",
                   "id": "output_1af488d1-984a-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18b7460-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70602550-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98172,7 +97619,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+                "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_1af488d1-984a-11ef-9529-11ddf0609c63"
               }
@@ -98229,7 +97676,7 @@
                   "position": "right",
                   "id": "output_2551bb91-984a-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18c85d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7060e8a0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98241,7 +97688,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18c85d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "7060e8a0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_2551bb91-984a-11ef-9529-11ddf0609c63"
               }
@@ -98297,7 +97744,7 @@
                   "position": "bottom",
                   "id": "input_623c56c1-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98307,7 +97754,7 @@
                   "position": "bottom",
                   "id": "input_623c56c2-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98317,7 +97764,7 @@
                   "position": "bottom",
                   "id": "input_623c56c3-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ca306-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98327,7 +97774,7 @@
                   "position": "bottom",
                   "id": "input_623c56c4-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1892a70-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e5090-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -98339,7 +97786,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 60,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_623c56c1-984d-11ef-9529-11ddf0609c63"
               },
@@ -98347,7 +97794,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_623c56c2-984d-11ef-9529-11ddf0609c63"
               },
@@ -98355,7 +97802,7 @@
                 "connections": [],
                 "offsetX": 100,
                 "offsetY": 60,
-                "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_623c56c3-984d-11ef-9529-11ddf0609c63"
               },
@@ -98363,7 +97810,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 60,
-                "netID": "a1892a70-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e5090-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_623c56c4-984d-11ef-9529-11ddf0609c63"
               }
@@ -98420,7 +97867,7 @@
                   "position": "bottom",
                   "id": "input_6ca98f11-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98430,7 +97877,7 @@
                   "position": "bottom",
                   "id": "input_6ca98f12-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a188dc50-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e0270-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98440,7 +97887,7 @@
                   "position": "bottom",
                   "id": "input_6ca98f13-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ca306-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98450,7 +97897,7 @@
                   "position": "bottom",
                   "id": "input_6ca98f14-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1895180-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -98462,7 +97909,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 60,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6ca98f11-984d-11ef-9529-11ddf0609c63"
               },
@@ -98470,7 +97917,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "a188dc50-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e0270-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6ca98f12-984d-11ef-9529-11ddf0609c63"
               },
@@ -98478,7 +97925,7 @@
                 "connections": [],
                 "offsetX": 100,
                 "offsetY": 60,
-                "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6ca98f13-984d-11ef-9529-11ddf0609c63"
               },
@@ -98486,7 +97933,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 60,
-                "netID": "a1895180-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6ca98f14-984d-11ef-9529-11ddf0609c63"
               }
@@ -98543,7 +97990,7 @@
                   "position": "bottom",
                   "id": "input_7c2a1090-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -98553,7 +98000,7 @@
                   "position": "bottom",
                   "id": "input_7c2a1091-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -98565,7 +98012,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 60,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_7c2a1090-984d-11ef-9529-11ddf0609c63"
               },
@@ -98573,7 +98020,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 60,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_7c2a1091-984d-11ef-9529-11ddf0609c63"
               }
@@ -98630,7 +98077,7 @@
                   "position": "left",
                   "id": "input_d88eb6b1-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18dbe50-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7061d300-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -98642,7 +98089,7 @@
                   "position": "right",
                   "id": "output_d88eb6b2-984d-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98653,7 +98100,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "a18dbe50-bff1-11f0-9837-57623fd5b582",
+                "netID": "7061d300-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_d88eb6b1-984d-11ef-9529-11ddf0609c63"
               }
@@ -98663,7 +98110,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 20,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_d88eb6b2-984d-11ef-9529-11ddf0609c63"
               }
@@ -98718,7 +98165,7 @@
                   "position": "bottom",
                   "id": "input_f5294101-984d-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -98730,7 +98177,7 @@
                 "connections": [],
                 "offsetX": 70,
                 "offsetY": 60,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_f5294101-984d-11ef-9529-11ddf0609c63"
               }
@@ -98786,7 +98233,7 @@
                   "position": "bottom",
                   "id": "input_6105e7b1-984f-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -98798,7 +98245,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6105e7b1-984f-11ef-9529-11ddf0609c63"
               }
@@ -98855,7 +98302,7 @@
                   "position": "top",
                   "id": "input_b0405861-984f-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -98867,7 +98314,7 @@
                   "position": "bottom",
                   "id": "output_b0405862-984f-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98878,7 +98325,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_b0405861-984f-11ef-9529-11ddf0609c63"
               }
@@ -98888,7 +98335,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_b0405862-984f-11ef-9529-11ddf0609c63"
               }
@@ -98944,7 +98391,7 @@
                   "position": "top",
                   "id": "input_f4ade491-984f-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18d7030-bff1-11f0-9837-57623fd5b582"
+                  "netID": "706184e0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -98956,7 +98403,7 @@
                   "position": "bottom",
                   "id": "output_f4ade492-984f-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a18d9740-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7061abf0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -98967,7 +98414,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a18d7030-bff1-11f0-9837-57623fd5b582",
+                "netID": "706184e0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_f4ade491-984f-11ef-9529-11ddf0609c63"
               }
@@ -98977,7 +98424,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "a18d9740-bff1-11f0-9837-57623fd5b582",
+                "netID": "7061abf0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_f4ade492-984f-11ef-9529-11ddf0609c63"
               }
@@ -99033,7 +98480,7 @@
                   "position": "right",
                   "id": "input_6e8c9f91-9850-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99045,7 +98492,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6e8c9f91-9850-11ef-9529-11ddf0609c63"
               }
@@ -99054,11 +98501,11 @@
             "defaultTerminals": {},
             "netTerminals": {},
             "legacyId": 1,
-            "x": -600,
+            "x": -590,
             "y": -430,
             "zOrder": 31,
             "portIDConnected": [],
-            "highlight": true,
+            "highlight": false,
             "condition": "${Control:RISC-V:ENABLE}"
           },
           "93d69680-9859-11ef-9529-11ddf0609c63": {
@@ -99102,7 +98549,7 @@
                   "position": "left",
                   "id": "input_93d69681-9859-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18be990-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70609a80-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99112,7 +98559,7 @@
                   "position": "left",
                   "id": "input_93d69682-9859-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a18de560-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70624830-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -99124,7 +98571,7 @@
                   "position": "right",
                   "id": "output_93d69683-9859-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -99135,7 +98582,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+                "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_93d69681-9859-11ef-9529-11ddf0609c63"
               },
@@ -99143,7 +98590,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 60,
-                "netID": "a18de560-bff1-11f0-9837-57623fd5b582",
+                "netID": "70624830-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_93d69682-9859-11ef-9529-11ddf0609c63"
               }
@@ -99153,7 +98600,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 40,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_93d69683-9859-11ef-9529-11ddf0609c63"
               }
@@ -99209,7 +98656,7 @@
                   "position": "bottom",
                   "id": "input_db845991-9859-11ef-9529-11ddf0609c63",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -99221,7 +98668,7 @@
                   "position": "top",
                   "id": "output_db845992-9859-11ef-9529-11ddf0609c63",
                   "type": "output",
-                  "netID": "a188dc50-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e0270-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -99232,7 +98679,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 40,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_db845991-9859-11ef-9529-11ddf0609c63"
               }
@@ -99242,7 +98689,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a188dc50-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e0270-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_db845992-9859-11ef-9529-11ddf0609c63"
               }
@@ -99298,7 +98745,7 @@
                   "position": "top",
                   "id": "input_cf2b54f1-b1c2-11ef-b7e8-8d7690e3c0a0",
                   "type": "input",
-                  "netID": "a18d9740-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7061abf0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99310,7 +98757,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18d9740-bff1-11f0-9837-57623fd5b582",
+                "netID": "7061abf0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_cf2b54f1-b1c2-11ef-b7e8-8d7690e3c0a0"
               }
@@ -99367,7 +98814,7 @@
                   "position": "top",
                   "id": "input_265ced61-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18b7460-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70602550-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99377,7 +98824,7 @@
                   "position": "top",
                   "id": "input_265ced62-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -99389,7 +98836,7 @@
                   "position": "bottom",
                   "id": "output_265ced63-b34e-11ef-aa95-45089999831b",
                   "type": "output",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -99400,7 +98847,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+                "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_265ced61-b34e-11ef-aa95-45089999831b"
               },
@@ -99408,7 +98855,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_265ced62-b34e-11ef-aa95-45089999831b"
               }
@@ -99418,7 +98865,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 40,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_265ced63-b34e-11ef-aa95-45089999831b"
               }
@@ -99426,11 +98873,11 @@
             "defaultTerminals": {},
             "netTerminals": {},
             "legacyId": 1,
-            "x": -470,
+            "x": -460,
             "y": -500,
             "zOrder": 71,
             "portIDConnected": [],
-            "highlight": true,
+            "highlight": false,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | |"
           },
           "36e011d0-b34e-11ef-aa95-45089999831b": {
@@ -99474,7 +98921,7 @@
                   "position": "top",
                   "id": "input_36e011d1-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99484,7 +98931,7 @@
                   "position": "top",
                   "id": "input_36e011d2-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18b7460-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70602550-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99494,7 +98941,7 @@
                   "position": "top",
                   "id": "input_36e011d3-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99504,7 +98951,7 @@
                   "position": "top",
                   "id": "input_36e011d4-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99516,7 +98963,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_36e011d1-b34e-11ef-aa95-45089999831b"
               },
@@ -99524,7 +98971,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+                "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_36e011d2-b34e-11ef-aa95-45089999831b"
               },
@@ -99532,7 +98979,7 @@
                 "connections": [],
                 "offsetX": 100,
                 "offsetY": 0,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_36e011d3-b34e-11ef-aa95-45089999831b"
               },
@@ -99540,7 +98987,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 0,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_36e011d4-b34e-11ef-aa95-45089999831b"
               }
@@ -99597,7 +99044,7 @@
                   "position": "top",
                   "id": "input_610f5331-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99607,7 +99054,7 @@
                   "position": "top",
                   "id": "input_610f5332-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99619,7 +99066,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_610f5331-b34e-11ef-aa95-45089999831b"
               },
@@ -99627,7 +99074,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 0,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_610f5332-b34e-11ef-aa95-45089999831b"
               }
@@ -99684,7 +99131,7 @@
                   "position": "top",
                   "id": "input_6c409ed1-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99696,7 +99143,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6c409ed1-b34e-11ef-aa95-45089999831b"
               }
@@ -99753,7 +99200,7 @@
                   "position": "top",
                   "id": "input_762e1fd1-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99765,7 +99212,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_762e1fd1-b34e-11ef-aa95-45089999831b"
               }
@@ -99822,7 +99269,7 @@
                   "position": "top",
                   "id": "input_9406cf71-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70624831-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99832,7 +99279,7 @@
                   "position": "top",
                   "id": "input_9406cf72-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99844,7 +99291,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 0,
-                "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+                "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_9406cf71-b34e-11ef-aa95-45089999831b"
               },
@@ -99852,7 +99299,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_9406cf72-b34e-11ef-aa95-45089999831b"
               }
@@ -99909,7 +99356,7 @@
                   "position": "top",
                   "id": "input_ba3262e0-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -99921,7 +99368,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_ba3262e0-b34e-11ef-aa95-45089999831b"
               }
@@ -99978,7 +99425,7 @@
                   "position": "top",
                   "id": "input_c2d00b51-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -99988,7 +99435,7 @@
                   "position": "top",
                   "id": "input_c2d00b52-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100000,7 +99447,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_c2d00b51-b34e-11ef-aa95-45089999831b"
               },
@@ -100008,7 +99455,7 @@
                 "connections": [],
                 "offsetX": 80,
                 "offsetY": 0,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_c2d00b52-b34e-11ef-aa95-45089999831b"
               }
@@ -100065,7 +99512,7 @@
                   "position": "top",
                   "id": "input_d1451041-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100077,7 +99524,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_d1451041-b34e-11ef-aa95-45089999831b"
               }
@@ -100134,7 +99581,7 @@
                   "position": "top",
                   "id": "input_d726f411-b34e-11ef-aa95-45089999831b",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100146,7 +99593,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_d726f411-b34e-11ef-aa95-45089999831b"
               }
@@ -100204,7 +99651,7 @@
                   "position": "left",
                   "id": "output_0dfd8891-b66b-11ef-81a2-93f5a58eeaec",
                   "type": "output",
-                  "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ca306-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -100216,7 +99663,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_0dfd8891-b66b-11ef-81a2-93f5a58eeaec"
               }
@@ -100272,7 +99719,7 @@
                   "position": "left",
                   "id": "input_469e72f1-bd4f-11ef-85a1-532ab6b04be4",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100284,7 +99731,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_469e72f1-bd4f-11ef-85a1-532ab6b04be4"
               }
@@ -100293,11 +99740,11 @@
             "defaultTerminals": {},
             "netTerminals": {},
             "legacyId": 1,
-            "x": -400,
+            "x": -390,
             "y": -430,
             "zOrder": 88,
             "portIDConnected": [],
-            "highlight": true,
+            "highlight": false,
             "condition": "${Control:SEMA:ENABLE}"
           },
           "a39ea220-dcd2-11ef-accd-37ea211547b6": {
@@ -100341,7 +99788,7 @@
                   "position": "right",
                   "id": "input_a39ea221-dcd2-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100353,7 +99800,7 @@
                 "connections": [],
                 "offsetX": 120,
                 "offsetY": 30,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_a39ea221-dcd2-11ef-accd-37ea211547b6"
               }
@@ -100362,11 +99809,11 @@
             "defaultTerminals": {},
             "netTerminals": {},
             "legacyId": 1,
-            "x": -580,
+            "x": -570,
             "y": -360,
             "zOrder": 90,
             "portIDConnected": [],
-            "highlight": false,
+            "highlight": true,
             "condition": "${Control:ADC:ENABLE}"
           },
           "bd7837b0-dcd2-11ef-accd-37ea211547b6": {
@@ -100410,7 +99857,7 @@
                   "position": "left",
                   "id": "input_bd7837b1-dcd2-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18ad820-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705f6200-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100422,7 +99869,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+                "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_bd7837b1-dcd2-11ef-accd-37ea211547b6"
               }
@@ -100431,11 +99878,11 @@
             "defaultTerminals": {},
             "netTerminals": {},
             "legacyId": 1,
-            "x": -400,
+            "x": -390,
             "y": -360,
             "zOrder": 91,
             "portIDConnected": [],
-            "highlight": false,
+            "highlight": true,
             "condition": "${Control:AES/CRC/TRNG:AES_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} | ${Control:AES/CRC/TRNG:TRNG_ENABLE} |"
           },
           "4bbb21e0-dcd3-11ef-accd-37ea211547b6": {
@@ -100479,7 +99926,7 @@
                   "position": "top",
                   "id": "input_4bbb21e1-dcd3-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18b7460-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70602550-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100489,7 +99936,7 @@
                   "position": "top",
                   "id": "input_4bbb21e2-dcd3-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -100501,7 +99948,7 @@
                   "position": "bottom",
                   "id": "output_4bbb21e3-dcd3-11ef-accd-37ea211547b6",
                   "type": "output",
-                  "netID": "a18d7030-bff1-11f0-9837-57623fd5b582"
+                  "netID": "706184e0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -100512,7 +99959,7 @@
                 "connections": [],
                 "offsetX": 20,
                 "offsetY": 0,
-                "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+                "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_4bbb21e1-dcd3-11ef-accd-37ea211547b6"
               },
@@ -100520,7 +99967,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_4bbb21e2-dcd3-11ef-accd-37ea211547b6"
               }
@@ -100530,7 +99977,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 40,
-                "netID": "a18d7030-bff1-11f0-9837-57623fd5b582",
+                "netID": "706184e0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_4bbb21e3-dcd3-11ef-accd-37ea211547b6"
               }
@@ -100586,7 +100033,7 @@
                   "position": "left",
                   "id": "input_13458e71-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ca306-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100596,7 +100043,7 @@
                   "position": "left",
                   "id": "input_13458e72-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18c85d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7060e8a0-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100606,7 +100053,7 @@
                   "position": "left",
                   "id": "input_13458e73-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100616,7 +100063,7 @@
                   "position": "left",
                   "id": "input_13458e74-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100626,7 +100073,7 @@
                   "position": "left",
                   "id": "input_13458e75-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18b7460-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70602550-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -100636,7 +100083,7 @@
                   "position": "left",
                   "id": "input_13458e76-dd5c-11ef-accd-37ea211547b6",
                   "type": "input",
-                  "netID": "a18cace0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "706136c0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [
@@ -100648,7 +100095,7 @@
                   "position": "right",
                   "id": "output_13458e77-dd5c-11ef-accd-37ea211547b6",
                   "type": "output",
-                  "netID": "a18dbe50-bff1-11f0-9837-57623fd5b582"
+                  "netID": "7061d300-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -100659,7 +100106,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 20,
-                "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e71-dd5c-11ef-accd-37ea211547b6"
               },
@@ -100667,7 +100114,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 60,
-                "netID": "a18c85d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "7060e8a0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e72-dd5c-11ef-accd-37ea211547b6"
               },
@@ -100675,7 +100122,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 100,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e73-dd5c-11ef-accd-37ea211547b6"
               },
@@ -100683,7 +100130,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 140,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e74-dd5c-11ef-accd-37ea211547b6"
               },
@@ -100691,7 +100138,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 180,
-                "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+                "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e75-dd5c-11ef-accd-37ea211547b6"
               },
@@ -100699,7 +100146,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 220,
-                "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
+                "netID": "706136c0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_13458e76-dd5c-11ef-accd-37ea211547b6"
               }
@@ -100709,7 +100156,7 @@
                 "connections": [],
                 "offsetX": 40,
                 "offsetY": 120,
-                "netID": "a18dbe50-bff1-11f0-9837-57623fd5b582",
+                "netID": "7061d300-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_13458e77-dd5c-11ef-accd-37ea211547b6"
               }
@@ -100764,7 +100211,7 @@
                   "position": "top",
                   "id": "input_703e3791-dda6-11ef-808e-1127743f20f1",
                   "type": "input",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100776,7 +100223,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 0,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_703e3791-dda6-11ef-808e-1127743f20f1"
               }
@@ -100832,7 +100279,7 @@
                   "position": "bottom",
                   "id": "input_8c6825c1-dda6-11ef-808e-1127743f20f1",
                   "type": "input",
-                  "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70622120-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -100844,7 +100291,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+                "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_8c6825c1-dda6-11ef-808e-1127743f20f1"
               }
@@ -100902,7 +100349,7 @@
                   "position": "right",
                   "id": "output_dfc27ef1-dda6-11ef-808e-1127743f20f1",
                   "type": "output",
-                  "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70624831-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -100914,7 +100361,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+                "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_dfc27ef1-dda6-11ef-808e-1127743f20f1"
               }
@@ -100971,7 +100418,7 @@
                   "position": "right",
                   "id": "output_ecdc60b1-dda6-11ef-808e-1127743f20f1",
                   "type": "output",
-                  "netID": "a18cace0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "706136c0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -100983,7 +100430,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
+                "netID": "706136c0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_ecdc60b1-dda6-11ef-808e-1127743f20f1"
               }
@@ -101040,7 +100487,7 @@
                   "position": "right",
                   "id": "output_f5c0fd31-dda6-11ef-808e-1127743f20f1",
                   "type": "output",
-                  "netID": "a1892a70-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e5090-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -101052,7 +100499,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a1892a70-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e5090-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_f5c0fd31-dda6-11ef-808e-1127743f20f1"
               }
@@ -101109,7 +100556,7 @@
                   "position": "right",
                   "id": "output_0015a471-dda7-11ef-808e-1127743f20f1",
                   "type": "output",
-                  "netID": "a1895180-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -101121,7 +100568,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a1895180-bff1-11f0-9837-57623fd5b582",
+                "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_0015a471-dda7-11ef-808e-1127743f20f1"
               }
@@ -101178,7 +100625,7 @@
                   "position": "right",
                   "id": "output_54fe17b1-dda7-11ef-808e-1127743f20f1",
                   "type": "output",
-                  "netID": "a18be990-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70609a80-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "defaultTerminals": [],
@@ -101190,7 +100637,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+                "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
                 "type": "output",
                 "id": "output_54fe17b1-dda7-11ef-808e-1127743f20f1"
               }
@@ -101246,7 +100693,7 @@
                   "position": "left",
                   "id": "input_01e04061-dda9-11ef-808e-1127743f20f1",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -101258,7 +100705,7 @@
                 "connections": [],
                 "offsetX": 0,
                 "offsetY": 30,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_01e04061-dda9-11ef-808e-1127743f20f1"
               }
@@ -101315,7 +100762,7 @@
                   "position": "right",
                   "id": "input_42b6b2f1-de34-11ef-808e-1127743f20f1",
                   "type": "input",
-                  "netID": "a18d2210-bff1-11f0-9837-57623fd5b582"
+                  "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -101327,7 +100774,7 @@
                 "connections": [],
                 "offsetX": 140,
                 "offsetY": 30,
-                "netID": "a18d2210-bff1-11f0-9837-57623fd5b582",
+                "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_42b6b2f1-de34-11ef-808e-1127743f20f1"
               }
@@ -101384,7 +100831,7 @@
                   "position": "bottom",
                   "id": "input_0d539761-9890-11f0-a978-81a5a72b6832",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -101396,7 +100843,7 @@
                 "connections": [],
                 "offsetX": 60,
                 "offsetY": 60,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_0d539761-9890-11f0-a978-81a5a72b6832"
               }
@@ -101453,7 +100900,7 @@
                   "position": "bottom",
                   "id": "input_6d002e31-bff0-11f0-b240-75a374cb3ea8",
                   "type": "input",
-                  "netID": "a1884010-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705d6630-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -101463,7 +100910,7 @@
                   "position": "bottom",
                   "id": "input_6d002e32-bff0-11f0-b240-75a374cb3ea8",
                   "type": "input",
-                  "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705ca306-011b-11f1-bc2d-f194d97bc101"
                 },
                 {
                   "shape": "arrow",
@@ -101473,7 +100920,7 @@
                   "position": "bottom",
                   "id": "input_6d002e33-bff0-11f0-b240-75a374cb3ea8",
                   "type": "input",
-                  "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582"
+                  "netID": "705cf100-011b-11f1-bc2d-f194d97bc101"
                 }
               ],
               "outputTerminals": [],
@@ -101485,7 +100932,7 @@
                 "connections": [],
                 "offsetX": 30,
                 "offsetY": 60,
-                "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+                "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6d002e31-bff0-11f0-b240-75a374cb3ea8"
               },
@@ -101493,7 +100940,7 @@
                 "connections": [],
                 "offsetX": 70,
                 "offsetY": 60,
-                "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+                "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6d002e32-bff0-11f0-b240-75a374cb3ea8"
               },
@@ -101501,7 +100948,7 @@
                 "connections": [],
                 "offsetX": 110,
                 "offsetY": 60,
-                "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+                "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
                 "type": "input",
                 "id": "input_6d002e33-bff0-11f0-b240-75a374cb3ea8"
               }
@@ -101535,7 +100982,7 @@
               "x": -140,
               "y": -840
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:INRO} = & 1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = & ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:INRO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:INRO} = & | | |",
             "clock": "INRO"
@@ -101556,7 +101003,7 @@
               "x": -580,
               "y": -840
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -101577,7 +101024,7 @@
               "x": -580,
               "y": -780
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -101598,7 +101045,7 @@
               "x": 71,
               "y": -1090
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SQWOUT:SQWOUT} ${String:DIS} !=",
             "clock": "ERTCO"
@@ -101619,7 +101066,7 @@
               "x": -620,
               "y": -860
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | |",
             "clock": "ERTCO"
@@ -101640,7 +101087,7 @@
               "x": -620,
               "y": -700
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -101661,7 +101108,7 @@
               "x": -660,
               "y": -660
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -101682,7 +101129,7 @@
               "x": -450,
               "y": -970
             },
-            "netID": "a188dc50-bff1-11f0-9837-57623fd5b582",
+            "netID": "705e0270-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = &",
             "clock": "IBRO_DIV_8"
@@ -101703,7 +101150,7 @@
               "x": -490,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = & ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = & | | |",
             "clock": "IBRO"
@@ -101724,7 +101171,7 @@
               "x": -660,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = & ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = & ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:IBRO} = & | | | | |",
             "clock": "IBRO"
@@ -101745,7 +101192,7 @@
               "x": -100,
               "y": -860
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | |",
             "clock": "ERTCO"
@@ -101766,7 +101213,7 @@
               "x": -580,
               "y": -970
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -101787,7 +101234,7 @@
               "x": -920,
               "y": -950
             },
-            "netID": "a1892a70-bff1-11f0-9837-57623fd5b582",
+            "netID": "705e5090-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:LPTMR0_CLK} = &",
             "clock": "LPTMR0_CLK"
@@ -101808,7 +101255,7 @@
               "x": -540,
               "y": -970
             },
-            "netID": "a1892a70-bff1-11f0-9837-57623fd5b582",
+            "netID": "705e5090-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:LPTMR0_CLK} = &",
             "clock": "LPTMR0_CLK"
@@ -101829,7 +101276,7 @@
               "x": -580,
               "y": -840
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:INRO} = & |",
             "clock": "INRO"
@@ -101850,7 +101297,7 @@
               "x": -920,
               "y": -880
             },
-            "netID": "a1895180-bff1-11f0-9837-57623fd5b582",
+            "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:LPTMR1_CLK} = &",
             "clock": "LPTMR1_CLK"
@@ -101871,7 +101318,7 @@
               "x": -370,
               "y": -970
             },
-            "netID": "a1895180-bff1-11f0-9837-57623fd5b582",
+            "netID": "705e77a0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:LPTMR1_CLK} = &",
             "clock": "LPTMR1_CLK"
@@ -101892,7 +101339,7 @@
               "x": -160,
               "y": -540
             },
-            "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = &",
             "clock": "SYS_CLK_DIV_2"
@@ -101913,7 +101360,7 @@
               "x": -450,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = & | |",
             "clock": "IBRO"
@@ -101934,7 +101381,7 @@
               "x": -70,
               "y": -600
             },
-            "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | |",
             "clock": "SYS_CLK_DIV_2"
@@ -101947,15 +101394,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "c1166054-9866-11ef-8431-73adafff32e8",
-              "x": -430,
+              "x": -420,
               "y": -400
             },
             "endPoint": {
               "id": "c1166053-9866-11ef-8431-73adafff32e8",
-              "x": -430,
+              "x": -420,
               "y": -460
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | |",
             "clock": "PCLK"
@@ -101968,15 +101415,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "4a65fa81-9869-11ef-b605-7d4b1dfc37dd",
-              "x": -430,
+              "x": -420,
               "y": -220
             },
             "endPoint": {
               "id": "4a65fa82-9869-11ef-b605-7d4b1dfc37dd",
-              "x": -430,
+              "x": -420,
               "y": -330
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | | | | | | | | |",
             "clock": "PCLK"
@@ -101997,7 +101444,7 @@
               "x": -700,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ISO} = & ${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:ISO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ISO} = | & | | | ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | ${Control:LPM Mux:MUX} ${String:SYS_CLK_DIV_2_ISO} = & | | |",
             "clock": "ISO"
@@ -102018,7 +101465,7 @@
               "x": -640,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ISO} = | & | | |",
             "clock": "ISO"
@@ -102039,7 +101486,7 @@
               "x": -820,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:IBRO} = & | |",
             "clock": "IBRO"
@@ -102060,7 +101507,7 @@
               "x": -690,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:IBRO} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | | | |",
             "clock": "IBRO"
@@ -102081,7 +101528,7 @@
               "x": -620,
               "y": -860
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | |",
             "clock": "ERTCO"
@@ -102102,7 +101549,7 @@
               "x": -1050,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | |",
             "clock": "PCLK"
@@ -102115,7 +101562,7 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "02ac0684-9c5b-11ef-a9be-f10a3e4cd61e",
-              "x": -430,
+              "x": -420,
               "y": -220
             },
             "endPoint": {
@@ -102123,7 +101570,7 @@
               "x": -450,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | | | | |",
             "clock": "PCLK"
@@ -102144,7 +101591,7 @@
               "x": -860,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | |",
             "clock": "PCLK"
@@ -102165,7 +101612,7 @@
               "x": -1050,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | |",
             "clock": "PCLK"
@@ -102186,7 +101633,7 @@
               "x": -320,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | |",
             "clock": "PCLK"
@@ -102207,7 +101654,7 @@
               "x": -920,
               "y": -1110
             },
-            "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+            "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = & ${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = & |",
             "clock": "ERTCO_CLK"
@@ -102228,7 +101675,7 @@
               "x": -875,
               "y": -1110
             },
-            "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+            "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_CLK"
@@ -102249,7 +101696,7 @@
               "x": -875,
               "y": -1080
             },
-            "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+            "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_CLK"
@@ -102270,7 +101717,7 @@
               "x": -700,
               "y": -740
             },
-            "netID": "a18c85d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "7060e8a0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:IPO} = &",
             "clock": "IPO"
@@ -102291,7 +101738,7 @@
               "x": -180,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPCMP:ENABLE}",
             "clock": "IBRO"
@@ -102312,7 +101759,7 @@
               "x": -300,
               "y": -970
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -102333,7 +101780,7 @@
               "x": -160,
               "y": -540
             },
-            "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | |",
             "clock": "SYS_CLK_DIV_2"
@@ -102346,15 +101793,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "54290afb-b356-11ef-aa95-45089999831b",
-              "x": -410,
+              "x": -400,
               "y": -500
             },
             "endPoint": {
               "id": "54290afa-b356-11ef-aa95-45089999831b",
-              "x": -410,
+              "x": -400,
               "y": -540
             },
-            "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | |",
             "clock": "SYS_CLK_DIV_2"
@@ -102375,7 +101822,7 @@
               "x": -660,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = & ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = & ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO} = & | | | |",
             "clock": "IBRO"
@@ -102396,7 +101843,7 @@
               "x": -660,
               "y": -970
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -102417,7 +101864,7 @@
               "x": -450,
               "y": -900
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = &",
             "clock": "IBRO"
@@ -102438,7 +101885,7 @@
               "x": -490,
               "y": -970
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -102459,7 +101906,7 @@
               "x": -410,
               "y": -970
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -102480,7 +101927,7 @@
               "x": -700,
               "y": -660
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} 1 ${Control:SYS_OSC Mux:MUX} ${String:IBRO} = & ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:IBRO} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | | ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO_DIV_8} = & ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:IBRO} = & ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:IBRO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:IBRO} = & | | | | | | | | |",
             "clock": "IBRO"
@@ -102501,7 +101948,7 @@
               "x": -660,
               "y": -660
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:IBRO} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | | | |",
             "clock": "IBRO"
@@ -102522,7 +101969,7 @@
               "x": -620,
               "y": -970
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -102543,7 +101990,7 @@
               "x": -1010,
               "y": -240
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ISO} = | & | | |",
             "clock": "ISO"
@@ -102564,7 +102011,7 @@
               "x": -1010,
               "y": -240
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ISO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ISO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ISO} = | & | | |",
             "clock": "ISO"
@@ -102585,7 +102032,7 @@
               "x": -970,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | |",
             "clock": "IBRO"
@@ -102606,7 +102053,7 @@
               "x": -970,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | |",
             "clock": "IBRO"
@@ -102627,7 +102074,7 @@
               "x": -930,
               "y": -280
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | |",
             "clock": "ERTCO"
@@ -102648,7 +102095,7 @@
               "x": -930,
               "y": -280
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | |",
             "clock": "ERTCO"
@@ -102669,7 +102116,7 @@
               "x": -620,
               "y": -700
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | |",
             "clock": "ERTCO"
@@ -102682,15 +102129,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "c3079971-bd3b-11ef-9f6b-3f2ef03f5853",
-              "x": -400,
+              "x": -390,
               "y": -400
             },
             "endPoint": {
               "id": "c3079972-bd3b-11ef-9f6b-3f2ef03f5853",
-              "x": -430,
+              "x": -420,
               "y": -400
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SEMA:ENABLE}",
             "clock": "PCLK"
@@ -102703,15 +102150,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "6df45596-bd4f-11ef-85a1-532ab6b04be4",
-              "x": -400,
+              "x": -390,
               "y": -330
             },
             "endPoint": {
               "id": "6df45597-bd4f-11ef-85a1-532ab6b04be4",
-              "x": -430,
+              "x": -420,
               "y": -330
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | |",
             "clock": "PCLK"
@@ -102724,39 +102171,18 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "6df47ca1-bd4f-11ef-85a1-532ab6b04be4",
-              "x": -430,
+              "x": -420,
               "y": -330
             },
             "endPoint": {
               "id": "6df47ca2-bd4f-11ef-85a1-532ab6b04be4",
-              "x": -430,
+              "x": -420,
               "y": -400
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | | | | | | | | | | |",
             "clock": "PCLK"
-          },
-          "2ccae986-dd5c-11ef-accd-37ea211547b6": {
-            "parent_class": "connection",
-            "id": "2ccae986-dd5c-11ef-accd-37ea211547b6",
-            "uuid": "2ccae986-dd5c-11ef-accd-37ea211547b6",
-            "type": "Connection",
-            "className": "main_path drawing_path",
-            "startPoint": {
-              "id": "2ccae985-dd5c-11ef-accd-37ea211547b6",
-              "x": -600,
-              "y": -439
-            },
-            "endPoint": {
-              "id": "2ccae984-dd5c-11ef-accd-37ea211547b6",
-              "x": -610,
-              "y": -439
-            },
-            "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
-            "pathType": 1,
-            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:P0.3} = &",
-            "clock": "P0.3"
           },
           "2ccae989-dd5c-11ef-accd-37ea211547b6": {
             "parent_class": "connection",
@@ -102767,14 +102193,14 @@
             "startPoint": {
               "id": "2ccae987-dd5c-11ef-accd-37ea211547b6",
               "x": -600,
-              "y": -439
+              "y": -420
             },
             "endPoint": {
               "id": "2ccae988-dd5c-11ef-accd-37ea211547b6",
               "x": -600,
               "y": -580
             },
-            "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
+            "netID": "706136c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:P0.3} = &",
             "clock": "P0.3"
@@ -102795,7 +102221,7 @@
               "x": -600,
               "y": -580
             },
-            "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
+            "netID": "706136c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:P0.3} = &",
             "clock": "P0.3"
@@ -102816,7 +102242,7 @@
               "x": -640,
               "y": -620
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ISO} = &",
             "clock": "ISO"
@@ -102837,7 +102263,7 @@
               "x": -640,
               "y": -620
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ISO} = &",
             "clock": "ISO"
@@ -102855,10 +102281,10 @@
             },
             "endPoint": {
               "id": "fb1340a1-dda5-11ef-834b-076436d74716",
-              "x": -450,
+              "x": -440,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:ISO} = &",
             "clock": "ISO"
@@ -102879,7 +102305,7 @@
               "x": -200,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:ISO} = &",
             "clock": "ISO"
@@ -102900,7 +102326,7 @@
               "x": -920,
               "y": -1040
             },
-            "netID": "a18d2210-bff1-11f0-9837-57623fd5b582",
+            "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
@@ -102921,7 +102347,7 @@
               "x": -875,
               "y": -1060
             },
-            "netID": "a18d2210-bff1-11f0-9837-57623fd5b582",
+            "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
@@ -102942,7 +102368,7 @@
               "x": -875,
               "y": -1060
             },
-            "netID": "a18d2210-bff1-11f0-9837-57623fd5b582",
+            "netID": "70615dd0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "32KOUT"
@@ -102955,15 +102381,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "36749e26-de35-11ef-808e-1127743f20f1",
-              "x": -430,
+              "x": -420,
               "y": -400
             },
             "endPoint": {
               "id": "36749e27-de35-11ef-808e-1127743f20f1",
-              "x": -460,
+              "x": -450,
               "y": -400
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:RISC-V:ENABLE}",
             "clock": "PCLK"
@@ -102976,39 +102402,18 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "3836c086-de35-11ef-808e-1127743f20f1",
-              "x": -430,
+              "x": -420,
               "y": -330
             },
             "endPoint": {
               "id": "3836c087-de35-11ef-808e-1127743f20f1",
-              "x": -460,
+              "x": -450,
               "y": -330
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:ADC:ENABLE}",
             "clock": "PCLK"
-          },
-          "fba60852-de35-11ef-808e-1127743f20f1": {
-            "parent_class": "connection",
-            "id": "fba60852-de35-11ef-808e-1127743f20f1",
-            "uuid": "fba60852-de35-11ef-808e-1127743f20f1",
-            "type": "Connection",
-            "className": "main_path drawing_path",
-            "startPoint": {
-              "id": "fba60851-de35-11ef-808e-1127743f20f1",
-              "x": -610,
-              "y": -420
-            },
-            "endPoint": {
-              "id": "fba60850-de35-11ef-808e-1127743f20f1",
-              "x": -610,
-              "y": -439
-            },
-            "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
-            "pathType": 1,
-            "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:P0.3} = &",
-            "clock": "P0.3"
           },
           "0062cd12-de36-11ef-808e-1127743f20f1": {
             "parent_class": "connection",
@@ -103018,7 +102423,7 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "0062cd10-de36-11ef-808e-1127743f20f1",
-              "x": -610,
+              "x": -600,
               "y": -420
             },
             "endPoint": {
@@ -103026,7 +102431,7 @@
               "x": -920,
               "y": -420
             },
-            "netID": "a18cace0-bff1-11f0-9837-57623fd5b582",
+            "netID": "706136c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:P0.3} = &",
             "clock": "P0.3"
@@ -103044,10 +102449,10 @@
             },
             "endPoint": {
               "id": "6f0b3362-de36-11ef-808e-1127743f20f1",
-              "x": -410,
+              "x": -400,
               "y": -540
             },
-            "netID": "a1899fa0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ec5c0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | |",
             "clock": "SYS_CLK_DIV_2"
@@ -103068,7 +102473,7 @@
               "x": -180,
               "y": -460
             },
-            "netID": "a18d7030-bff1-11f0-9837-57623fd5b582",
+            "netID": "706184e0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE}",
             "clock": "CNN_OSC"
@@ -103089,7 +102494,7 @@
               "x": -180,
               "y": -390
             },
-            "netID": "a18d9740-bff1-11f0-9837-57623fd5b582",
+            "netID": "7061abf0-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE}",
             "clock": "CNN_OSC_DIV"
@@ -103110,7 +102515,7 @@
               "x": -520,
               "y": -680
             },
-            "netID": "a18dbe50-bff1-11f0-9837-57623fd5b582",
+            "netID": "7061d300-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "clock": "SYS_OSC"
           },
@@ -103130,7 +102535,7 @@
               "x": -340,
               "y": -710
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -103150,7 +102555,7 @@
               "x": -200,
               "y": -710
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:DMA:ENABLE}",
             "clock": "SYS_CLK"
@@ -103171,7 +102576,7 @@
               "x": -340,
               "y": -680
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:DMA:ENABLE} ${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | | ${Control:SPI0:ENABLE} | |",
             "clock": "SYS_CLK"
@@ -103192,7 +102597,7 @@
               "x": -340,
               "y": -680
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -103212,7 +102617,7 @@
               "x": -70,
               "y": -710
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI0:ENABLE}",
             "clock": "SYS_CLK"
@@ -103233,7 +102638,7 @@
               "x": -200,
               "y": -680
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | | ${Control:SPI0:ENABLE} |",
             "clock": "SYS_CLK"
@@ -103254,7 +102659,7 @@
               "x": -70,
               "y": -680
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:SYS_CLK_DIV_2} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | |",
             "clock": "SYS_CLK"
@@ -103275,7 +102680,7 @@
               "x": -710,
               "y": -1070
             },
-            "netID": "a18de560-bff1-11f0-9837-57623fd5b582",
+            "netID": "70624830-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_OSC} = &",
             "clock": "ERTCO_OSC"
@@ -103296,7 +102701,7 @@
               "x": -875,
               "y": -1110
             },
-            "netID": "a18be990-bff1-11f0-9837-57623fd5b582",
+            "netID": "70609a80-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | | ${Control:ERTCO Mux:MUX} ${String:ERTCO_CLK} = &",
             "clock": "ERTCO_CLK"
@@ -103314,10 +102719,10 @@
             },
             "endPoint": {
               "id": "e08572d1-de40-11ef-808e-1127743f20f1",
-              "x": -430,
+              "x": -420,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} | | |",
             "clock": "PCLK"
@@ -103338,7 +102743,7 @@
               "x": -450,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:PCIF:ENABLE}",
             "clock": "PCLK"
@@ -103359,7 +102764,7 @@
               "x": -580,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | | | |",
             "clock": "PCLK"
@@ -103380,7 +102785,7 @@
               "x": -580,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:OWM:ENABLE}",
             "clock": "PCLK"
@@ -103401,7 +102806,7 @@
               "x": -730,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | | |",
             "clock": "PCLK"
@@ -103422,7 +102827,7 @@
               "x": -730,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = &",
             "clock": "PCLK"
@@ -103443,7 +102848,7 @@
               "x": -860,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | |",
             "clock": "PCLK"
@@ -103464,7 +102869,7 @@
               "x": -690,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -103485,7 +102890,7 @@
               "x": -820,
               "y": -260
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:IBRO} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:IBRO} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:IBRO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:IBRO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:IBRO} = | & | | | |",
             "clock": "IBRO"
@@ -103506,7 +102911,7 @@
               "x": -320,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:PT0-3:ENABLE} | |",
             "clock": "PCLK"
@@ -103527,7 +102932,7 @@
               "x": -190,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:PT0-3:ENABLE}",
             "clock": "PCLK"
@@ -103548,7 +102953,7 @@
               "x": -40,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI1:ENABLE}",
             "clock": "PCLK"
@@ -103569,7 +102974,7 @@
               "x": 70,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI1:ENABLE}",
             "clock": "PCLK"
@@ -103590,7 +102995,7 @@
               "x": -190,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} |",
             "clock": "PCLK"
@@ -103611,7 +103016,7 @@
               "x": -40,
               "y": -220
             },
-            "netID": "a18ad820-bff1-11f0-9837-57623fd5b582",
+            "netID": "705f6200-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2S:ENABLE}",
             "clock": "PCLK"
@@ -103632,7 +103037,7 @@
               "x": -920,
               "y": -350
             },
-            "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+            "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2S:ENABLE} ${PinMux:P0.14} ${String:I2S_CLKEXT} = &",
             "clock": "I2S_CLKEXT"
@@ -103653,7 +103058,7 @@
               "x": -600,
               "y": -350
             },
-            "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+            "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2S:ENABLE} ${PinMux:P0.14} ${String:I2S_CLKEXT} = &",
             "clock": "I2S_CLKEXT"
@@ -103674,7 +103079,7 @@
               "x": -600,
               "y": -240
             },
-            "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+            "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2S:ENABLE} ${PinMux:P0.14} ${String:I2S_CLKEXT} = &",
             "clock": "I2S_CLKEXT"
@@ -103695,7 +103100,7 @@
               "x": -80,
               "y": -240
             },
-            "netID": "a18e0c70-bff1-11f0-9837-57623fd5b582",
+            "netID": "70624831-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:I2S:ENABLE} ${PinMux:P0.14} ${String:I2S_CLKEXT} = &",
             "clock": "I2S_CLKEXT"
@@ -103708,15 +103113,15 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "57e1c157-de44-11ef-80c0-3982f047d083",
-              "x": -450,
+              "x": -440,
               "y": -500
             },
             "endPoint": {
               "id": "57e1c156-de44-11ef-80c0-3982f047d083",
-              "x": -450,
+              "x": -440,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | ${Control:LPM Mux:MUX} ${String:SYS_CLK_DIV_2_ISO} = &",
             "clock": "ISO"
@@ -103729,7 +103134,7 @@
             "className": "main_path drawing_path",
             "startPoint": {
               "id": "57e1c15a-de44-11ef-80c0-3982f047d083",
-              "x": -450,
+              "x": -440,
               "y": -520
             },
             "endPoint": {
@@ -103737,7 +103142,7 @@
               "x": -640,
               "y": -520
             },
-            "netID": "a18b7460-bff1-11f0-9837-57623fd5b582",
+            "netID": "70602550-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:CNN:ENABLE} ${Control:CNN Mux:MUX} ${String:ISO} = & ${Control:AES/CRC/TRNG:TRNG_ENABLE} ${Control:AES/CRC/TRNG:CRC_ENABLE} ${Control:AES/CRC/TRNG:AES_ENABLE} | | ${Control:ADC:ENABLE} ${Control:SEMA:ENABLE} ${Control:PCIF:ENABLE} ${Control:OWM:ENABLE} ${Control:WDT0:ENABLE} ${Control:WDT0:MUX} ${String:PCLK} = & ${Control:SPI1:ENABLE} ${Control:I2S:ENABLE} ${Control:I2C0/1/2:I2C2_ENABLE} ${Control:I2C0/1/2:I2C1_ENABLE} ${Control:I2C0/1/2:I2C0_ENABLE} | | ${Control:PT0-3:ENABLE} ${Control:UART0/1/2:UART2_ENABLE} ${Control:UART0/1/2:UART2_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART1_ENABLE} ${Control:UART0/1/2:UART1_MUX} ${String:PCLK} = & ${Control:UART0/1/2:UART0_ENABLE} ${Control:UART0/1/2:UART0_MUX} ${String:PCLK} = & | | ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:PCLK} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:PCLK} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:PCLK} = | & | | | ${Control:RISC-V:ENABLE} | | | | | | | | | | | | ${Control:LPM Mux:MUX} ${String:SYS_CLK_DIV_2_ISO} = & |",
             "clock": "ISO"
@@ -103758,7 +103163,7 @@
               "x": -430,
               "y": -680
             },
-            "netID": "a18dbe51-bff1-11f0-9837-57623fd5b582",
+            "netID": "70622120-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "clock": "SYS_CLK"
           },
@@ -103778,7 +103183,7 @@
               "x": 0,
               "y": -970
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPCMP:ENABLE}",
             "clock": "IBRO"
@@ -103799,7 +103204,7 @@
               "x": -180,
               "y": -970
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = &",
             "clock": "IBRO"
@@ -103820,7 +103225,7 @@
               "x": -140,
               "y": -970
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:INRO} = &",
             "clock": "INRO"
@@ -103841,7 +103246,7 @@
               "x": -260,
               "y": -970
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -103862,7 +103267,7 @@
               "x": -620,
               "y": -1090
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & ${Control:SQWOUT:SQWOUT} ${String:DIS} != 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | | |",
             "clock": "ERTCO"
@@ -103883,7 +103288,7 @@
               "x": 71,
               "y": -1090
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = & 1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | | |",
             "clock": "ERTCO"
@@ -103904,7 +103309,7 @@
               "x": -100,
               "y": -970
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:ERTCO} = &",
             "clock": "ERTCO"
@@ -103925,7 +103330,7 @@
               "x": -260,
               "y": -860
             },
-            "netID": "a187a3d0-bff1-11f0-9837-57623fd5b582",
+            "netID": "705cf100-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:ERTCO} = & ${Control:TMR0/1/2/3:TMR3_ENABLE} ${Control:TMR0/1/2/3:TMR3a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR3b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR2_ENABLE} ${Control:TMR0/1/2/3:TMR2a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR2b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR1_ENABLE} ${Control:TMR0/1/2/3:TMR1a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR1b_MUX} ${String:ERTCO} = | & ${Control:TMR0/1/2/3:TMR0_ENABLE} ${Control:TMR0/1/2/3:TMR0a_MUX} ${String:ERTCO} = ${Control:TMR0/1/2/3:TMR0b_MUX} ${String:ERTCO} = | & | | | ${Control:LPUART0:ENABLE} ${Control:LPUART0:MUX} ${String:ERTCO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:ERTCO} = & | | |",
             "clock": "ERTCO"
@@ -103946,7 +103351,7 @@
               "x": -410,
               "y": -840
             },
-            "netID": "a1877cc1-bff1-11f0-9837-57623fd5b582",
+            "netID": "705ca306-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "1 ${Control:SYS_OSC Mux:MUX} ${String:INRO} = & ${Control:LPTMR1:ENABLE} ${Control:LPTMR1:MUX} ${String:INRO} = & ${Control:LPTMR0:ENABLE} ${Control:LPTMR0:MUX} ${String:INRO} = & | |",
             "clock": "INRO"
@@ -103967,7 +103372,7 @@
               "x": -300,
               "y": -820
             },
-            "netID": "a1884010-bff1-11f0-9837-57623fd5b582",
+            "netID": "705d6630-011b-11f1-bc2d-f194d97bc101",
             "pathType": 1,
             "condition": "${Control:LPWDT0:ENABLE} ${Control:LPWDT0:MUX} ${String:IBRO} = & ${Control:LPCMP:ENABLE} |",
             "clock": "IBRO"

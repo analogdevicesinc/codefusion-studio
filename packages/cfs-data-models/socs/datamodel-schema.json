@@ -1,7 +1,7 @@
 {
     "$schema" : "https://json-schema.org/draft/2020-12/schema",
-    "title" : "CFS Data Model Schema version 1.2.0",
-    "description" : "Schema for CFS Data Model version 1.2.0",
+    "title" : "CFS Data Model Schema version 1.4.0",
+    "description" : "Schema for CFS Data Model version 1.4.0.",
     "type" : "object",
     "properties" : {
         "Copyright" : {
@@ -22,7 +22,7 @@
         "Schema" : {
             "description" : "The version number of the data model schema.",
             "type" : "string",
-            "const" : "1.2.0"
+            "pattern" : "^1\\.[234]\\.[0-9]+$"
         },
         "Timestamp" : {
             "description" : "The time of generation of the file.",
@@ -202,40 +202,40 @@
                         "type": "object",
                         "properties" : {
                             "SupportedOps" : {
-                                "description" : "List of Operators supported on code (empty list means all are supported)",
+                                "description" : "List of Operators supported on code (empty list means all are supported).",
                                 "type" : "array",
                                 "items" : {
                                     "type" : "string"
                                 }
                             },
                             "AccelOps" : {
-                                "description" : "List of Operators that can be accelerated (empty list means none are accelerated)",
+                                "description" : "List of Operators that can be accelerated (empty list means none are accelerated).",
                                 "type" : "array",
                                 "items" : {
                                     "type" : "string"
                                 }
                             },
                             "FlashSize" : {
-                                "description" : "Total size of on-board flash (KB)",
+                                "description" : "Total size of on-board flash (KB).",
                                 "type" : "number"
                             },
                             "RamSize" : {
-                                "description" : "Total size of on-board SRAM (KB)",
+                                "description" : "Total size of on-board SRAM (KB).",
                                 "type" : "number"
                             },
                             "CoreClock" : {
-                                "description" : "Max core clock speed (MHz)",
+                                "description" : "Max core clock speed (MHz).",
                                 "type" : "number"
                             },
                             "OperatorInfos" : {
-                                "description" : "List of Operators (or Operator classes) that have performance metrics",
+                                "description" : "List of Operators (or Operator classes) that have performance metrics.",
                                 "type" : "array",
                                 "items" : {
                                     "$ref" : "#/$defs/OpInfo"
                                 }
                             },
                             "SupportedDataTypes" : {
-                                "description" : "List of Data types supported (empty list means all are supported", 
+                                "description" : "List of Data types supported (empty list means all are supported).",
                                 "type" : "array",
                                 "items" : {
                                     "type" : "string"
@@ -476,7 +476,7 @@
                                         "description" : "The description of the enumeration value.",
                                         "type" : "string",
                                         "minLength" : 1,
-                                        "maxLength" : 30
+                                        "maxLength" : 36
                                     },
                                     "Value": {
                                         "description" : "The value of the enumeration value.",
@@ -542,7 +542,6 @@
                     ],
                     "additionalProperties" : false
                 },
-                "minItems" : 1,
                 "uniqueItems" : true
             }
         },
@@ -825,8 +824,7 @@
                         "type": "object",
                         "properties": {
                         },
-                        "additionalProperties": false,
-                        "required": []
+                        "additionalProperties": false
                     }
                 },
                 "required" : [
@@ -916,11 +914,7 @@
                                     "enum" : [
                                         "R",
                                         "W",
-                                        "X",
                                         "R/W",
-                                        "R/X",
-                                        "W/X",
-                                        "R/W/X",
                                         "W1",
                                         "R/W1"
                                     ]
@@ -1195,7 +1189,7 @@
                                     "type" : "object",
                                     "properties" : {
                                         "Text" : {
-                                            "description" : "The text for the label",
+                                            "description" : "The text for the label.",
                                             "type" : "string",
                                             "minLength" : 1,
                                             "maxLength" : 10
@@ -1246,6 +1240,25 @@
            },
            "minItems" : 1,
            "uniqueItems" : true
+        },
+        "Trace": {
+            "description": "Information related to trace components and their interconnection.",
+            "type": "object",
+            "properties": {
+                "EventSources": {
+                    "$ref": "#/$defs/EventSourceGroup"
+                },
+                "Components": {
+                    "description": "List of trace components available in the SoC.",
+                    "type": "object",
+                    "additionalProperties": { "$ref": "#/$defs/TraceComponent" }
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+              "EventSources",
+              "Components"
+            ]
         }
     },
     "required" : [
@@ -1330,8 +1343,10 @@
                     "description" : "The accessibility of the memory region.",
                     "type" : "string",
                     "enum" : [
+                        "R",
                         "R/W",
-                        "R"
+                        "R/X",
+                        "R/W/X"
                     ]
                 },
                 "Type" : {
@@ -1380,8 +1395,10 @@
                     "description" : "The accessibility of the memory region.",
                     "type" : "string",
                     "enum" : [
+                        "R",
                         "R/W",
-                        "R"
+                        "R/X",
+                        "R/W/X"
                     ]
                 },
                 "AliasType" : {
@@ -1396,7 +1413,11 @@
             "additionalProperties" : false,
             "required" : [
                 "Name"
-            ]
+            ],
+            "dependentRequired" : {
+                "AliasType" : ["AliasBaseAddress"],
+                "AliasBaseAddress" : ["AliasType"]
+            }
         },
         "memoryRange" : {
             "oneOf" : [
@@ -1421,19 +1442,19 @@
             }
         },
         "OpInfo" : {
-            "description" : "Performance characteristics of an AI Operator",
+            "description" : "Performance characteristics of an AI Operator.",
             "type" : "object",
             "properties" : {
                 "Name" : {
-                    "description" : "Name of operator (or operator class)",
+                    "description" : "Name of operator (or operator class).",
                     "type" : "string"
                 },
                 "Cycles" : {
-                    "description" : "Estimated number of core cycles to perform operation",
+                    "description" : "Estimated number of core cycles to perform operation.",
                     "type" : "number"
                 },
                 "Energy" : {
-                    "description" : "Estimated energy consumed to perform operation (nJ)",
+                    "description" : "Estimated energy consumed to perform operation (nJ).",
                     "type" : "number"
                 }
             },
@@ -1485,6 +1506,372 @@
                 ],
                 "additionalProperties" : false
             }
+        },
+        "TraceSignal": {
+            "description": "Identifier used to indicate connections between trace components.",
+            "type": "string"
+        },
+        "EventSource": {
+            "description": "An event source that can be tracked by trace hardware.",
+            "type": "object",
+            "properties": {
+                "Signal": {
+                    "$ref": "#/$defs/TraceSignal"
+                },
+                "Description" : {
+                    "description" : "The description of the event source.",
+                    "type" : "string",
+                    "minLength" : 1,
+                    "maxLength" : 80
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "Signal",
+                "Description"
+            ]
+        },
+        "EventSourceGroup": {
+            "description": "A group of event sources.",
+            "type": "object",
+            "additionalProperties": {
+                "oneOf": [
+                    {
+                        "$ref": "#/$defs/EventSource"
+                    },
+                    {
+                        "$ref": "#/$defs/EventSourceGroup"
+                    }
+                ]
+            }
+        },
+        "TraceComponent": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "description": "Coresight SoC-600 ATB Funnel. Merges multiple ATB buses into a single one.",
+                    "properties": {
+                        "Type": {
+                          "type": "string",
+                          "const": "css600_atbfunnel"
+                        },
+                        "BaseAddress": {
+                            "description": "Base address of the configuration registers.",
+                            "$ref": "#/$defs/address"
+                        },
+                        "AtbReceivers": {
+                            "description": "List of ATB inputs to the funnel.",
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/$defs/TraceSignal"
+                            }
+                        },
+                        "AtbTransmitter": {
+                            "description": "ATB output from the funnel.",
+                            "$ref": "#/$defs/TraceSignal"
+                        },
+                        "ApAddress": {
+                            "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                            "$ref": "#/$defs/address"
+                        }
+                    },
+                    "required": [
+                        "Type",
+                        "BaseAddress",
+                        "AtbReceivers",
+                        "AtbTransmitter"
+                    ],
+                    "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 ATB Replicator. Replicates a single ATB bus to multiple outputs.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_atbreplicator"
+                            },
+                            "BaseAddress": {
+                                "description": "Base address of the configuration registers.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "AtbReceiver": {
+                                "description": "ATB input to the replicator.",
+                                "$ref": "#/$defs/TraceSignal"
+                            },
+                            "AtbTransmitters": {
+                                "description": "List of ATB outputs from the replicator.",
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/$defs/TraceSignal"
+                                }
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "AtbReceiver",
+                            "AtbTransmitters"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 TMC configured as ETF (Embedded Trace FIFO). Provides buffering for trace data.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_tmc_etf"
+                            },
+                            "BaseAddress": {
+                                "description": "Base address of the configuration registers.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "AtbReceiver": {
+                                "description": "ATB input to the ETF.",
+                                "$ref": "#/$defs/TraceSignal"
+                            },
+                            "AtbTransmitter": {
+                                "description": "ATB output from the ETF.",
+                                "$ref": "#/$defs/TraceSignal"
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "AtbReceiver",
+                            "AtbTransmitter"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 TMC configured as ETR (Embedded Trace Router). Stores trace data to system memory.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_tmc_etr"
+                            },
+                            "BaseAddress": {
+                                "description": "Base address of the configuration registers.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "AtbReceiver": {
+                                "description": "ATB input to the ETR.",
+                                "$ref": "#/$defs/TraceSignal"
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "AtbReceiver"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 TPIU (Trace Port Interface Unit). Outputs trace data to external pins.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_tpiu"
+                          },
+                          "BaseAddress": {
+                              "description": "Base address of the configuration registers.",
+                              "$ref": "#/$defs/address"
+                          },
+                          "AtbReceiver": {
+                              "description": "ATB input to the TPIU.",
+                              "$ref": "#/$defs/TraceSignal"
+                          },
+                          "ApAddress": {
+                              "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                              "$ref": "#/$defs/address"
+                          }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "AtbReceiver"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 Timestamp Generator. Generates timestamps for trace data.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_tsgen"
+                            },
+                            "BaseAddress": {
+                                "description": "Base address of the configuration registers.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "Frequency": {
+                                "description": "The frequency of the timestamp counter in Hz.",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "Frequency"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "STM-500 System Trace Macrocell. Generates software and hardware event trace.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "stm-500"
+                              },
+                              "BaseAddress": {
+                                  "description": "Base address of the configuration registers.",
+                                  "$ref": "#/$defs/address"
+                              },
+                              "AtbOutput": {
+                                  "description": "ATB output from the STM.",
+                                  "$ref": "#/$defs/TraceSignal"
+                              },
+                              "HwEvents": {
+                                  "description": "Hardware event inputs to the STM.",
+                                  "type": "object",
+                                  "additionalProperties": {
+                                      "$ref": "#/$defs/TraceSignal"
+                                }
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "BaseAddress",
+                            "AtbOutput",
+                            "HwEvents"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 CTM (Cross Trigger Matrix). Routes trigger channels between CTIs.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_ctm"
+                            },
+                            "Ctis": {
+                                "description": "List of CTI instances connected to this CTM.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                        "required": [
+                            "Type",
+                            "Ctis"
+                        ],
+                        "additionalProperties" : false
+                    },
+                    {
+                        "description": "Coresight SoC-600 CTI (Cross Trigger Interface). Connect trigger inputs to trigger outputs.",
+                        "properties": {
+                            "Type": {
+                                "type": "string",
+                                "const": "css600_cti"
+                            },
+                            "BaseAddress": {
+                                "description": "Base address of the configuration registers.",
+                                "$ref": "#/$defs/address"
+                            },
+                            "Ctm": {
+                                "description": "Name of the CTM this CTI connects to.",
+                                "type": "string"
+                            },
+                            "InputTriggers": {
+                                "description": "Trigger inputs to the CTI.",
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/$defs/TraceSignal"
+                                }
+                            },
+                            "OutputTriggers": {
+                                "description": "Trigger outputs from the CTI.",
+                                "type": "object",
+                                "additionalProperties": {
+                                    "$ref": "#/$defs/TraceSignal"
+                               }
+                            },
+                            "ApAddress": {
+                                "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                                "$ref": "#/$defs/address"
+                            }
+                        },
+                    "required": [
+                        "Type",
+                        "BaseAddress",
+                        "InputTriggers",
+                        "OutputTriggers"
+                    ],
+                    "additionalProperties" : false
+                },
+                {
+                    "description": "TRU (Trigger Routing Unit). Connects trigger inputs to trigger outputs.",
+                    "properties": {
+                        "Type": {
+                            "type": "string",
+                            "const": "adi_tru"
+                        },
+                        "BaseAddress": {
+                            "description": "Base address of the configuration registers.",
+                            "$ref": "#/$defs/address"
+                        },
+                        "InputTriggers": {
+                            "description": "Trigger inputs to the TRU.",
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/$defs/TraceSignal"
+                            }
+                        },
+                        "OutputTriggers": {
+                            "description": "Trigger outputs from the TRU.",
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/$defs/TraceSignal"
+                            }
+                        },
+                        "ApAddress": {
+                            "description": "Address of the AP register when component is on a different bus and needs to be accessed through an AP.",
+                            "$ref": "#/$defs/address"
+                        }
+                    },
+                    "required": [
+                        "Type",
+                        "BaseAddress",
+                        "InputTriggers",
+                        "OutputTriggers"
+                    ],
+                    "additionalProperties": false
+                }
+            ]
         }
     }
 }

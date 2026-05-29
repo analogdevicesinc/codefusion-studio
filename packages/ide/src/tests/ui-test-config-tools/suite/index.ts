@@ -14,7 +14,7 @@
  */
 import Mocha from "mocha";
 import * as path from "path";
-import * as glob from "glob";
+import * as fg from "fast-glob";
 
 export function run(): Promise<void> {
   // Create the mocha test
@@ -26,8 +26,7 @@ export function run(): Promise<void> {
   const testsRoot = path.resolve(__dirname, "..");
 
   return new Promise((c, e) => {
-    const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
-    const testFileStream = testFiles.stream();
+    const testFileStream = fg.stream("**/**.test.js", { cwd: testsRoot });
 
     testFileStream.on("data", (file) => {
       mocha.addFile(path.resolve(testsRoot, file));

@@ -1,0 +1,1119 @@
+{
+  "pluginName": "Zephyr Project Plugin",
+  "pluginId": "com.analog.project.zephyr.mock.plugin",
+  "pluginDescription": "Manually configure and create Zephyr projects.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "zephyr",
+  "supportedSocs": [
+    {
+      "name": "MAX32650",
+      "board": "EvKit_V1",
+      "package": "tqfp"
+    },
+    {
+      "name": "MAX32657",
+      "board": "EvKit_V1",
+      "package": "wlp"
+    },
+    {
+      "name": "MAX32690",
+      "board": "EvKit_V1",
+      "package": "tqfn",
+      "cores": [
+        "CM4"
+      ]
+    },
+    {
+      "name": "MAX32690",
+      "board": "FTHR",
+      "package": "tqfn",
+      "cores": [
+        "CM4"
+      ]
+    },
+    {
+      "name": "MAX32690",
+      "board": "AD-APARD32690-SL",
+      "package": "wlp",
+      "cores": [
+        "CM4"
+      ]
+    },
+    {
+      "name": "MAX78002",
+      "board": "EvKit_V1",
+      "package": "csbga",
+      "cores": [
+        "CM4"
+      ]
+    },
+    {
+      "name": "DFGTESTS",
+      "board": "DFGBoard",
+      "package": "dfg"
+    }
+  ],
+  "features": {
+    "project": {
+      "templates": [],
+      "files": []
+    },
+    "codegen": {
+      "files": [],
+      "templates": [
+        {
+          "src": "mock/generated-code-path.eta",
+          "dst": "generated/${context.coreId.toLowerCase()}/generated-file.txt"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "project": [
+      {
+        "id": "ProjectName",
+        "name": "Project Name",
+        "category": "Project Settings",
+        "default": "${context.coreId}",
+        "type": "string",
+        "required": true,
+        "readonly": false
+      },
+      {
+        "id": "ZephyrVersion",
+        "name": "Zephyr Version",
+        "default": "4.2.0",
+        "type": "array",
+        "enum": [
+          {
+            "value": "4.2.0",
+            "label": "4.2.0"
+          }
+        ],
+        "required": true
+      },
+      {
+        "id": "BuildSystem",
+        "name": "Build System",
+        "category": "Build Settings",
+        "default": "ninja",
+        "placeholder": "",
+        "type": "array",
+        "enum": [
+          {
+            "value": "ninja",
+            "label": "Ninja"
+          },
+          {
+            "value": "make",
+            "label": "Make"
+          }
+        ],
+        "required": true
+      },
+      {
+        "id": "ZephyrBoardName",
+        "name": "Zephyr Board Name",
+        "default": "",
+        "placeholder": "",
+        "type": "string",
+        "required": true
+      },
+      {
+        "id": "KConfigFlags",
+        "name": "Zephyr KConfig Flags",
+        "default": "# Build for debug (no optimizations) by default\nCONFIG_DEBUG=y\nCONFIG_NO_OPTIMIZATIONS=y\n\n# Enable thread awareness when debugging\nCONFIG_THREAD_NAME=y\nCONFIG_DEBUG_THREAD_INFO=y\nCONFIG_THREAD_ANALYZER=y\n",
+        "placeholder": "",
+        "type": "textarea",
+        "required": false
+      },
+      {
+        "id": "EnableCoreDump",
+        "name": "Enable Core Dump",
+        "default": false,
+        "type": "boolean",
+        "required": false,
+        "condition": "${['max32690','max32657','max32658'].includes(context.soc?.toLowerCase())}"
+      },
+      {
+        "id": "CMakeArgs",
+        "name": "Zephyr Additional CMake Arguments",
+        "default": "# Include compiler flags to enable source navigation with ELF File Explorer\nzephyr_cc_option(-fstack-usage)\nzephyr_cc_option(-fdump-ipa-cgraph)\nzephyr_cc_option(-gdwarf-4)\n",
+        "placeholder": "",
+        "type": "textarea",
+        "required": false
+      }
+    ],
+    "memory": {
+      "addedControls": [
+        {
+          "Id": "CHOSEN",
+          "Description": "Chosen. Multiple values can be separated by commas.",
+          "Type": "text",
+          "Pattern": "([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*"
+        },
+        {
+          "Id": "LABEL",
+          "Description": "Label",
+          "Type": "text"
+        }
+      ]
+    },
+    "pinConfig": {
+      "addedControls": [
+        {
+          "Id": "POLARITY",
+          "Description": "Polarity",
+          "EnumValues": [
+            {
+              "Id": "LOW",
+              "Description": "Active Low",
+              "Value": 0
+            },
+            {
+              "Id": "HIGH",
+              "Description": "Active High",
+              "Value": 1
+            }
+          ],
+          "Type": "enum",
+          "Condition": "${Node:Name} ${String:P[0-9]\\.[0-9]+} match"
+        },
+        {
+          "Id": "DT_NAME",
+          "Description": "Devicetree Identifier",
+          "Hint": "${String:gpio_} ${Node:Name} + lwr ${String:[.-]} ${String:_} replace",
+          "Type": "text",
+          "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+          "Condition": "${Node:Name} ${String:P[0-9]\\.[0-9]+} match"
+        },
+        {
+          "Id": "PHANDLE",
+          "Description": "phandle Identifier",
+          "Hint": "${String:gpio_} ${Node:Name} + lwr ${String:[.-]} ${String:_} replace",
+          "Type": "text",
+          "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+          "Condition": "${Node:Name} ${String:P[0-9]\\.[0-9]+} match"
+        },
+        {
+          "Id": "INPUT_CODE",
+          "Description": "Input Event Code",
+          "Hint": "${String:INPUT_KEY_0}",
+          "Type": "text",
+          "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+          "Condition": "${Control:MODE} ${String:IN} = ${Node:Name} ${String:P[0-9]\\.[0-9]+} match &"
+        },
+        {
+          "Id": "ALIAS",
+          "Description": "Alias",
+          "Hint": "${String:alias-} ${Node:Name} + lwr ${String:[_.]} ${String:-} replace",
+          "Type": "text",
+          "Pattern": "([a-z][a-z0-9-]*)?",
+          "Condition": "${Node:Name} ${String:P[0-9]\\.[0-9]+} match"
+        }
+      ],
+      "modifiedControls": [
+        {
+          "Id": "MODE",
+          "Description": "GPIO Function Attached",
+          "EnumValues": [
+            {
+              "Id": "IN",
+              "Description": "Button",
+              "Value": 0
+            },
+            {
+              "Id": "OUT",
+              "Description": "LED",
+              "Value": 1
+            }
+          ],
+          "Type": "enum"
+        }
+      ]
+    },
+    "clockConfig": {
+      "ADC": {
+        "defaultOverrides": [
+          {
+            "Id": "DIV",
+            "Value": "8",
+            "partRegexp": "MAX(32650|32655|32666|78000)"
+          }
+        ]
+      },
+      "SYS_OSC Mux": {
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "IPO",
+            "partRegexp": "MAX(32690|32655|32657|32658|78002)"
+          }
+        ]
+      },
+      "AOD_CLK": {
+        "modifiedControls": [
+          {
+            "Id": "DIV",
+            "Description": "Divider Value",
+            "EnumValues": [
+              {
+                "Id": "4",
+                "Description": "Divide by 4",
+                "Value": 0
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX32675C"
+          }
+        ]
+      },
+      "IPO": {
+        "removedControls": [
+          {
+            "Id": "CALIBRATE"
+          }
+        ]
+      },
+      "IPO PRESCALER": {
+        "modifiedControls": [
+          {
+            "Id": "DIV",
+            "Description": "Divider Value",
+            "EnumValues": [
+              {
+                "Id": "1",
+                "Description": "Divide by 1",
+                "Value": 0
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX(32662|32670|32672|32675C)"
+          }
+        ]
+      },
+      "INRO": {
+        "removedControls": [
+          {
+            "Id": "INRO_FREQ",
+            "partRegexp": "MAX(32655|78000|78002)"
+          }
+        ]
+      },
+      "TMR0/1/2/3": {
+        "modifiedControls": [
+          {
+            "Id": "TMR0b_MUX",
+            "Description": "Clock Source for TMR0b",
+            "EnumValues": [
+              {
+                "Id": "32BIT",
+                "Description": "N/A - 32-bit Mode",
+                "Value": 4
+              }
+            ],
+            "Type": "enum",
+            "Condition": "${Control:TMR0_ENABLE}"
+          },
+          {
+            "Id": "TMR1b_MUX",
+            "Description": "Clock Source for TMR1b",
+            "EnumValues": [
+              {
+                "Id": "32BIT",
+                "Description": "N/A - 32-bit Mode",
+                "Value": 4
+              }
+            ],
+            "Type": "enum",
+            "Condition": "${Control:TMR1_ENABLE}"
+          },
+          {
+            "Id": "TMR2b_MUX",
+            "Description": "Clock Source for TMR2b",
+            "EnumValues": [
+              {
+                "Id": "32BIT",
+                "Description": "N/A - 32-bit Mode",
+                "Value": 4
+              }
+            ],
+            "Type": "enum",
+            "Condition": "${Control:TMR2_ENABLE}"
+          },
+          {
+            "Id": "TMR3b_MUX",
+            "Description": "Clock Source for TMR3b",
+            "EnumValues": [
+              {
+                "Id": "32BIT",
+                "Description": "N/A - 32-bit Mode",
+                "Value": 4
+              }
+            ],
+            "Type": "enum",
+            "Condition": "${Control:TMR3_ENABLE}"
+          }
+        ]
+      },
+      "LPUART0": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:ENABLE}",
+            "EnumValues": [
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 3
+              },
+              {
+                "Id": "EXT_CLK2",
+                "Description": "EXT_CLK2 (External Clock Two)",
+                "Value": 4
+              }
+            ],
+            "partRegexp": "MAX(32670|32672)"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "ERTCO",
+            "partRegexp": "MAX(32670|32672)"
+          }
+        ]
+      },
+      "WDT0/1": {
+        "modifiedControls": [
+          {
+            "Id": "WDT0_MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:WDT0_ENABLE}",
+            "EnumValues": [
+              {
+                "Id": "PCLK",
+                "Description": "PCLK (Peripheral clock)",
+                "Value": 0
+              },
+              {
+                "Id": "EXT_CLK1",
+                "Description": "EXT_CLK1 (External Clock One)",
+                "Value": 1
+              },
+              {
+                "Id": "ERFO",
+                "Description": "ERFO (External RF Osc.)",
+                "Value": 2
+              },
+              {
+                "Id": "IBRO",
+                "Description": "IBRO (Internal Baud Rate Osc.)",
+                "Value": 3
+              },
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 4
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 6
+              }
+            ],
+            "partRegexp": "MAX(32670|32672)"
+          },
+          {
+            "Id": "WDT1_MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:WDT1_ENABLE}",
+            "EnumValues": [
+              {
+                "Id": "PCLK",
+                "Description": "PCLK (Peripheral clock)",
+                "Value": 0
+              },
+              {
+                "Id": "EXT_CLK1",
+                "Description": "EXT_CLK1 (External Clock One)",
+                "Value": 1
+              },
+              {
+                "Id": "ERFO",
+                "Description": "ERFO (External RF Osc.)",
+                "Value": 2
+              },
+              {
+                "Id": "IBRO",
+                "Description": "IBRO (Internal Baud Rate Osc.)",
+                "Value": 3
+              },
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 4
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 6
+              }
+            ],
+            "partRegexp": "MAX(32670|32672)"
+          }
+        ]
+      },
+      "WDT0": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:ENABLE}",
+            "EnumValues": [
+              {
+                "Id": "IBRO",
+                "Description": "IBRO (Internal Baud Rate Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "ERFO",
+                "Description": "External RF Oscillator",
+                "Value": 2
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 9
+              },
+              {
+                "Id": "HF_EXT_CLK",
+                "Description": "External Clock on P0.6",
+                "Value": 11
+              },
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO Digital Interface 32kHz",
+                "Value": 12
+              },
+              {
+                "Id": "PCLK",
+                "Description": "PCLK (Peripheral Clock)",
+                "Value": 14
+              }
+            ],
+            "partRegexp": "MAX(32662)"
+          }
+        ]
+      },
+      "LPTMR[01]": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:ENABLE}",
+            "partRegexp": "MAX(32670|32672)",
+            "EnumValues": [
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 3
+              },
+              {
+                "Id": "EXT_CLK2",
+                "Description": "EXT_CLK2 (External Clock Two)",
+                "Value": 4
+              }
+            ]
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "ERTCO",
+            "partRegexp": "MAX(32670|32672)"
+          }
+        ]
+      },
+      "CLK_32KHZ Mux": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "1",
+            "EnumValues": [
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 6
+              },
+              {
+                "Id": "INRO_DIV_4",
+                "Description": "INRO divided by 4",
+                "Value": 3
+              }
+            ],
+            "partRegexp": "MAX3265[78]"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "INRO_DIV_4",
+            "partRegexp": "MAX3265[78]"
+          }
+        ]
+      }
+    },
+    "peripheral": {
+      "CM4 SysTick": {
+        "removedControls": [
+          {
+            "Id": "TICKS_BETWEEN_INTS"
+          }
+        ]
+      },
+      "CM33 SysTick (S)": {
+        "removedControls": [
+          {
+            "Id": "TICKS_BETWEEN_INTS"
+          }
+        ]
+      },
+      "CM33 SysTick (NS)": {
+        "removedControls": [
+          {
+            "Id": "TICKS_BETWEEN_INTS"
+          }
+        ]
+      },
+      "RV mtime": {
+        "removedControls": [
+          {
+            "Id": "TICKS_BETWEEN_INTS"
+          }
+        ]
+      },
+      "ADC": {
+        "supportedControls": [
+          {
+            "Id": "TRACK_CNT"
+          },
+          {
+            "Id": "IDLE_CNT"
+          }
+        ]
+      },
+      "I2C[012]": {
+        "supportedControls": [],
+        "addedControls": [
+          {
+            "Id": "FREQ",
+            "Description": "Frequency",
+            "Hint": "100000",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 3400000
+          }
+        ]
+      },
+      "RTC": {
+        "supportedControls": []
+      },
+      "SPI[0-4]": {
+        "supportedControls": [],
+        "addedControls": [
+          {
+            "Id": "FREQ",
+            "Description": "Frequency",
+            "Hint": "15000000",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          }
+        ]
+      },
+      "(LP)?UART[012]": {
+        "supportedControls": [
+          {
+            "Id": "TX_RX_MODES"
+          },
+          {
+            "Id": "PARITY"
+          },
+          {
+            "Id": "CHAR_SIZE"
+          },
+          {
+            "Id": "STOP_BITS"
+          },
+          {
+            "Id": "HW_FLOW_CTRL"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "CHOSEN",
+            "Description": "Chosen. Multiple values can be separated by commas.",
+            "Type": "text",
+            "Pattern": "([a-z][a-z0-9-]*)?(,[a-z][a-z0-9-]*)*"
+          },
+          {
+            "Id": "BAUD",
+            "Description": "Baud Rate",
+            "Hint": "115200",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "HW_FLOW_CTRL",
+            "Description": "Hardware Flow Control RTS Mode",
+            "EnumValues": [
+              {
+                "Id": "DEASSERT_ON_FULL",
+                "Description": "Deassert On Full",
+                "Value": 0
+              },
+              {
+                "Id": "DISABLED",
+                "Description": "Disabled",
+                "Value": 2
+              }
+            ],
+            "Type": "enum"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "TX_RX_MODES",
+            "Value": "TX_RX"
+          }
+        ]
+      },
+      "LPTMR[01]": {
+        "supportedControls": [
+          {
+            "Id": "CONFIGURATION"
+          },
+          {
+            "Id": "CLKDIV_A"
+          },
+          {
+            "Id": "MODE_A"
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "MODE_A",
+            "Description": "Mode for Single Timer or Timer A",
+            "EnumValues": [
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              }
+            ],
+            "Type": "enum"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MODE_A",
+            "Value": "COMPARE"
+          }
+        ]
+      },
+      "OWM": {
+        "supportedControls": [
+          {
+            "Id": "INTERNAL_PULL_UP"
+          },
+          {
+            "Id": "EXTERNAL_PULL_UP"
+          },
+          {
+            "Id": "EXT_PULL_UP_MODE"
+          },
+          {
+            "Id": "LONG_LINE_MODE"
+          }
+        ]
+      },
+      "TMR[0-5]": {
+        "supportedControls": [
+          {
+            "Id": "CONFIGURATION"
+          },
+          {
+            "Id": "CLKDIV_A"
+          },
+          {
+            "Id": "MODE_A"
+          },
+          {
+            "Id": "CLKDIV"
+          },
+          {
+            "Id": "MODE"
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "CONFIGURATION",
+            "Description": "Timer Configuration",
+            "EnumValues": [
+              {
+                "Id": "SINGLE_32BIT",
+                "Description": "Single 32-bit Timer",
+                "Value": 1
+              }
+            ],
+            "Type": "enum"
+          },
+          {
+            "Id": "MODE_A",
+            "Description": "Mode for Single Timer or Timer A",
+            "EnumValues": [
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              }
+            ],
+            "Type": "enum"
+          },
+          {
+            "Id": "MODE",
+            "Description": "Mode for Single Timer",
+            "EnumValues": [
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              }
+            ],
+            "Type": "enum"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "CONFIGURATION",
+            "Value": "SINGLE_32BIT"
+          },
+          {
+            "Id": "MODE_A",
+            "Value": "COMPARE"
+          },
+          {
+            "Id": "MODE_B",
+            "Value": "COMPARE"
+          },
+          {
+            "Id": "MODE",
+            "Value": "COMPARE"
+          }
+        ]
+      },
+      "LPWDT0": {
+        "supportedControls": []
+      },
+      "WDT[01]?": {
+        "supportedControls": []
+      },
+      "I2S0?": {
+        "supportedControls": []
+      },
+      "TRNG": {
+        "supportedControls": []
+      },
+      "AES": {
+        "supportedControls": []
+      },
+      "AESKEYS": {
+        "supportedControls": []
+      },
+      "BLE": {
+        "supportedControls": []
+      },
+      "BOOST": {
+        "supportedControls": []
+      },
+      "CAN[01]": {
+        "supportedControls": []
+      },
+      "CLCD": {
+        "supportedControls": []
+      },
+      "CNN": {
+        "supportedControls": []
+      },
+      "CRC": {
+        "supportedControls": []
+      },
+      "CSI2": {
+        "supportedControls": []
+      },
+      "CSS": {
+        "supportedControls": []
+      },
+      "CTB": {
+        "supportedControls": []
+      },
+      "DDE": {
+        "supportedControls": []
+      },
+      "DMA[01]?": {
+        "supportedControls": []
+      },
+      "DSS": {
+        "supportedControls": []
+      },
+      "DVS": {
+        "supportedControls": []
+      },
+      "EMCC": {
+        "supportedControls": []
+      },
+      "FFT": {
+        "supportedControls": []
+      },
+      "FLC[01]?": {
+        "supportedControls": []
+      },
+      "HBMC": {
+        "supportedControls": []
+      },
+      "HYP": {
+        "supportedControls": []
+      },
+      "I3C0": {
+        "supportedControls": []
+      },
+      "ICC[01]?": {
+        "supportedControls": []
+      },
+      "LPCMP0?": {
+        "supportedControls": []
+      },
+      "MPC": {
+        "supportedControls": []
+      },
+      "NSPC": {
+        "supportedControls": []
+      },
+      "NSS": {
+        "supportedControls": []
+      },
+      "PCIF": {
+        "supportedControls": []
+      },
+      "PT[0-9]+": {
+        "supportedControls": []
+      },
+      "PTG": {
+        "supportedControls": []
+      },
+      "PUF": {
+        "supportedControls": []
+      },
+      "PWRSEQ": {
+        "supportedControls": []
+      },
+      "RSS": {
+        "supportedControls": []
+      },
+      "RSTZ": {
+        "supportedControls": []
+      },
+      "SDHC": {
+        "supportedControls": []
+      },
+      "SEMA": {
+        "supportedControls": []
+      },
+      "SIMO": {
+        "supportedControls": []
+      },
+      "SIR": {
+        "supportedControls": []
+      },
+      "SMON": {
+        "supportedControls": []
+      },
+      "SPC": {
+        "supportedControls": []
+      },
+      "SPIMSS": {
+        "supportedControls": []
+      },
+      "SPIXF": {
+        "supportedControls": []
+      },
+      "SPIXFC": {
+        "supportedControls": []
+      },
+      "SPIXFC_FIFO": {
+        "supportedControls": []
+      },
+      "SPIXR": {
+        "supportedControls": []
+      },
+      "TRIMSIR": {
+        "supportedControls": []
+      },
+      "USBHS": {
+        "supportedControls": []
+      },
+      "WUT[01]?": {
+        "supportedControls": []
+      }
+    },
+    "dfg": {
+      "CSS DFGStreamConfig": {
+        "addedControls": [
+          {
+            "Id": "ALIAS",
+            "Description": "Alias",
+            "Hint": "endpoint_alias",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*"
+          },
+          {
+            "Id": "INT_PRIORITY",
+            "Description": "Interrupt Priority",
+            "Type": "integer",
+            "MinimumValue": 0,
+            "MaximumValue": 7,
+            "Hint": "0",
+            "Condition": "${Control:INT_WINDOW_EN} ${Control:INT_BUFFER_EN} |"
+          }
+        ]
+      },
+      "DSS DFGStreamConfig": {
+        "addedControls": [
+          {
+            "Id": "ALIAS",
+            "Description": "Alias",
+            "Hint": "endpoint_alias",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*"
+          },
+          {
+            "Id": "INT_LINE_DEST",
+            "Description": "Interrupt Line",
+            "EnumValues": [
+              {
+                "Id": "9",
+                "Description": "Interrupt 9 (Priority 4)",
+                "Value": 9
+              },
+              {
+                "Id": "10",
+                "Description": "Interrupt 10 (Priority 1)",
+                "Value": 10
+              },
+              {
+                "Id": "11",
+                "Description": "Interrupt 11 (Priority 1)",
+                "Value": 11
+              },
+              {
+                "Id": "12",
+                "Description": "Interrupt 12 (Priority 1)",
+                "Value": 12
+              }
+            ],
+            "Type": "enum",
+            "Hint": "9",
+            "Condition": "${Control:_ENDPOINT} ${String:DESTINATION} = ${Control:INT_WINDOW_EN} ${Control:INT_BUFFER_EN} | &"
+          },
+          {
+            "Id": "INT_LINE_SRC",
+            "Description": "Interrupt Line",
+            "EnumValues": [
+              {
+                "Id": "13",
+                "Description": "Interrupt 13 (Priority 1)",
+                "Value": 13
+              },
+              {
+                "Id": "14",
+                "Description": "Interrupt 14 (Priority 1)",
+                "Value": 14
+              },
+              {
+                "Id": "15",
+                "Description": "Interrupt 15 (Priority 1)",
+                "Value": 15
+              },
+              {
+                "Id": "16",
+                "Description": "Interrupt 16 (Priority 1)",
+                "Value": 16
+              }
+            ],
+            "Type": "enum",
+            "Hint": "13",
+            "Condition": "${Control:_ENDPOINT} ${String:SOURCE} = ${Control:INT_WINDOW_EN} ${Control:INT_BUFFER_EN} | &"
+          }
+        ]
+      },
+      "CSS DFGGasketConfig": {
+        "supportedControls": []
+      },
+      "DSS DFGGasketConfig": {
+        "supportedControls": []
+      },
+      "RSS DFGGasketConfig": {
+        "supportedControls": []
+      },
+      "NSS DFGGasketConfig": {
+        "supportedControls": []
+      },
+      "FFT DFGGasketConfig": {
+        "supportedControls": []
+      },
+      "DDE DFGGasketConfig": {
+        "supportedControls": []
+      }
+    }
+  }
+}

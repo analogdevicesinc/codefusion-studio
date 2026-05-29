@@ -18,19 +18,21 @@ import {VSCodeBadge} from '@vscode/webview-ui-toolkit/react';
 import styles from './badge.module.scss';
 
 type BadgeProps = React.ComponentProps<typeof VSCodeBadge> & {
-	readonly dataTest?: string;
 	readonly appearance?: 'primary' | 'secondary';
+	readonly dataTest?: string;
+	readonly size?: 'small' | 'medium';
 };
 
 export default function Badge({
-	className,
+	className = '',
 	dataTest,
 	appearance = 'primary',
+	size = 'medium',
 	children
 }: BadgeProps) {
 	return (
 		<VSCodeBadge
-			className={`${className} ${appearance === 'secondary' ? styles.secondary : undefined}`}
+			className={`${className} ${appearance === 'secondary' ? styles.secondary : ''} ${styles[size] ?? ''}`}
 			{...(dataTest ? {'data-test': dataTest} : {})}
 		>
 			{children}

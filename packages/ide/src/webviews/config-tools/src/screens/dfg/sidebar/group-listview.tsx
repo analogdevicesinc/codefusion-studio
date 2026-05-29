@@ -13,16 +13,16 @@
  *
  */
 
-import {Button} from 'cfs-react-library';
+import {Button, Tooltip} from 'cfs-react-library';
 import {useMemo, useState} from 'react';
 
-import type {DFGStream} from 'cfs-plugins-api';
 import Accordion from '../../../../../common/components/accordion/Accordion';
 import PlusIcon from '../../../../../common/components/icons/PlusIcon';
 import SmallSettingsIcon from '../../../../../common/components/icons/SamllSettingsIcon';
 import SmallArrowRightIcon from '../../../../../common/components/icons/SmallArrowRightIcon';
 import ConflictIcon from '../../../../../common/icons/Conflict';
 import {
+	type DFGStreamUI,
 	setEditingStream,
 	setHoveredStream,
 	setSelectedStreams
@@ -34,8 +34,8 @@ import styles from './stream-sidebar.module.scss';
 
 export type StreamGroupListViewProps = {
 	readonly groupName: string;
-	readonly streams: DFGStream[];
-	readonly allStreams: DFGStream[];
+	readonly streams: DFGStreamUI[];
+	readonly allStreams: DFGStreamUI[];
 };
 
 export function StreamGroupListView({
@@ -101,7 +101,7 @@ export function StreamGroupListView({
 	);
 }
 
-function StreamListView({stream}: {readonly stream: DFGStream}) {
+function StreamListView({stream}: {readonly stream: DFGStreamUI}) {
 	const dispatch = useAppDispatch();
 
 	const handleClick = () => {
@@ -118,7 +118,7 @@ function StreamListView({stream}: {readonly stream: DFGStream}) {
 	};
 
 	const streamErrors = useStreamErrors();
-	const errors = streamErrors[stream.StreamId] ?? [];
+	const errors = streamErrors[stream.Uuid] ?? [];
 
 	return (
 		<div
@@ -145,16 +145,18 @@ function StreamListView({stream}: {readonly stream: DFGStream}) {
 				className={styles.streamListItemDescription}
 				data-test={`stream-${stream.StreamId}-description`}
 			>
-				#{stream.StreamId} {stream.Description}
+				{stream.Description}
 			</span>
-			<Button
-				appearance='icon'
-				className={styles.streamListItemButton}
-				data-test={`stream-${stream.StreamId}-edit-button`}
-				onClick={handleClick}
-			>
-				<SmallSettingsIcon />
-			</Button>
+			<Tooltip title='Configure' position='left' type='short'>
+				<Button
+					appearance='icon'
+					className={styles.streamListItemButton}
+					data-test={`stream-${stream.StreamId}-edit-button`}
+					onClick={handleClick}
+				>
+					<SmallSettingsIcon />
+				</Button>
+			</Tooltip>
 			{errors.length > 0 ? (
 				<div
 					data-test={`stream-${stream.StreamId}-error`}
@@ -171,7 +173,7 @@ function StreamListView({stream}: {readonly stream: DFGStream}) {
 }
 
 export type StreamGroupProps = {
-	readonly streams: DFGStream[];
+	readonly streams: DFGStreamUI[];
 };
 
 export function StreamGroup({streams}: StreamGroupProps) {
@@ -179,8 +181,8 @@ export function StreamGroup({streams}: StreamGroupProps) {
 	const filteredStreams = useFilteredStreams(streams);
 
 	const groupedStreams = useMemo(() => {
-		const groupedFilteredStreams: Record<string, DFGStream[]> = {};
-		const groupedAllStreams: Record<string, DFGStream[]> = {};
+		const groupedFilteredStreams: Record<string, DFGStreamUI[]> = {};
+		const groupedAllStreams: Record<string, DFGStreamUI[]> = {};
 
 		// Group filtered streams
 		filteredStreams.forEach(stream => {
@@ -206,7 +208,7 @@ export function StreamGroup({streams}: StreamGroupProps) {
 		 * 2. Output gasket name (Destinations[0].Gasket)
 		 * 3. Stream alias (Description)
 		 */
-		const sortStreams = (streams: DFGStream[]) =>
+		const sortStreams = (streams: DFGStreamUI[]) =>
 			streams.sort((a, b) => {
 				// First, sort by input gasket name
 				const inputComparison = a.Source.Gasket.localeCompare(

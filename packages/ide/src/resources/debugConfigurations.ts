@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,13 +121,6 @@ export const CORTEX_DEBUG_JLINK_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
       "tbreak _exit",
     ],
     preLaunchTask: "CFS: build",
-    overrideLaunchCommands: [
-      "monitor halt",
-      "monitor reset",
-      "-target-download",
-    ],
-    overrideResetCommands: ["monitor reset"],
-    overrideRestartCommands: ["monitor reset"],
   };
 
 export const CORTEX_DEBUG_RISCV_DEBUG_CONFIGURATION: vscode.DebugConfiguration =
@@ -212,11 +205,15 @@ export const CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION: vscode.DebugConfigur
     servertype: "external",
     linux: {
       gdbPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
+      objdumpPath:
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump",
     },
     windows: {
       gdbPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb.exe",
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py.exe",
+      objdumpPath:
+        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe",
     },
     osx: {
       gdbPath:
@@ -224,8 +221,10 @@ export const CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION: vscode.DebugConfigur
     },
     gdbTarget: "localhost:1234",
     executable: "${workspaceFolder}/build/zephyr/zephyr.elf",
+    svdPath: "${config:cfs.cmsis.svdFile}",
     cwd: "${workspaceFolder}",
     overrideLaunchCommands: [],
+    coreDump: true,
   };
 
 export const CORTEX_DEBUG_CONFIGURATIONS = [

@@ -1,7 +1,7 @@
 {
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "DataModelVersion": "0.0.1",
-  "DataModelSchemaVersion": "0.0.1",
+  "SchemaVersion": "2.1.0",
+  "DataModelVersion": "^0.0.1",
   "Timestamp": "2025-03-17T13:17:04.502Z",
   "Soc": "MAX32690",
   "WorkspacePluginId": "",
@@ -15,8 +15,8 @@
       "Name": "Arm Cortex-M4F",
       "IsPrimary": true,
       "IsEnabled": true,
-      "PluginId": "com.analog.project.zephyr40.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
       "FirmwarePlatform": "Zephyr 4.0",
       "PlatformConfig": {
         "ProjectName": "myProject",
@@ -32,8 +32,8 @@
       "Name": "RISC-V",
       "IsPrimary": false,
       "IsEnabled": true,
-      "PluginId": "com.analog.project.zephyr40.plugin",
-      "PluginVersion": "1.0.0",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
       "FirmwarePlatform": "Zephyr 4.0",
       "PlatformConfig": {
         "ProjectName": "myProject",

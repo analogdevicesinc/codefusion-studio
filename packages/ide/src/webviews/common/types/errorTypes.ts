@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import type {ControlErrorTypes as Errors} from 'cfs-plugins-api';
+import type {ControlErrorTypes as Errors} from 'cfs-types';
 
 export enum ShortDescErrors {
 	INVALID_INTEGER = 'Invalid input type',

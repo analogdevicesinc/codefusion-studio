@@ -17,15 +17,23 @@ import { ExecFileOptions } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
+import semver from "semver";
 
 import type {
 	CfsPackage,
+	CfsCachedPackage,
 	CfsInstalledPackage,
 	CfsPackageManagerProvider,
+	CfsPackageLicenseReporter,
 	CfsPackageReference,
 	CfsPackageRemote,
 	CfsPackageRemoteCredentialProvider,
-	CfsPackageInstallOptions
+	CfsPackageInstallOptions,
+	CfsInstallInput,
+	CfsInstallPlan,
+	CfsPackageFilter,
+	CfsPackageComponent
 } from "../api/api.js";
 import PackmanUtils from "../utils/utils.js";
 import { ConanRunner, ConanError } from "./conan-runner.js";
@@ -43,6 +51,7 @@ interface PackageIndexEntry {
 	cfsVersion: string;
 	soc?: string[];
 	type: string;
+	components?: CfsPackageComponent[];
 }
 
 type PackageIndex = Record<string, PackageIndexEntry | undefined>;
@@ -77,6 +86,9 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		CfsPackageRemoteCredentialProvider
 	>();
 
+	// Optional reporter used to send license acceptance to cloud backends
+	private licenseReporter?: CfsPackageLicenseReporter;
+
 	// Executes conan commands
 	private readonly _conanRun: ConanRunner;
 
@@ -102,6 +114,75 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		for (const provider of credentialProviders) {
 			this.credentialProviders.set(provider.name, provider);
 		}
+	}
+
+	private static _packageFilter(
+		pkg: Omit<CfsPackage, "reference">,
+		filter: CfsPackageFilter
+	): boolean {
+		if (filter.type) {
+			const filterTypes = Array.isArray(filter.type)
+				? filter.type
+				: [filter.type];
+			if (!pkg.type || !filterTypes.includes(pkg.type)) {
+				return false;
+			}
+		}
+		if (filter.soc) {
+			const filterSocs = Array.isArray(filter.soc)
+				? filter.soc
+				: [filter.soc];
+			if (!pkg.soc || !filterSocs.some((s) => pkg.soc?.includes(s))) {
+				return false;
+			}
+		}
+		if (filter.cfsVersion && pkg.cfsVersion !== filter.cfsVersion) {
+			return false;
+		}
+		if (filter.component) {
+			if (!pkg.components) {
+				return false;
+			}
+
+			if (
+				!pkg.components.some((pkgComponent) => {
+					if (
+						filter.component?.name &&
+						pkgComponent.name !== filter.component.name
+					) {
+						return false;
+					}
+					if (
+						filter.component?.version &&
+						pkgComponent.version !== filter.component.version
+					) {
+						if (!semver.validRange(filter.component.version)) {
+							throw new Error(
+								`Invalid semver version in filter component: ${filter.component.version}`
+							);
+						}
+						if (
+							!semver.satisfies(
+								pkgComponent.version,
+								filter.component.version
+							)
+						) {
+							return false;
+						}
+					}
+					if (
+						filter.component?.type &&
+						pkgComponent.type !== filter.component.type
+					) {
+						return false;
+					}
+					return true;
+				})
+			) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private _refToString(ref: CfsPackageReference): string {
@@ -194,9 +275,46 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			await fs.promises.access(defaultProfilePath, fs.constants.R_OK);
 			// A default profile exist, no need to do anything else
 		} catch (error) {
-			// No default profile. Run conan command to create a new one.
-			// This will only happen on a clean cache
-			await this._conanCommand(["profile", "detect"]);
+			// No default profile. Create a minimal one manually rather than invoking
+			// 'conan profile detect', because that fails if it encounters a C/C++
+			// toolchain version that Conan is not aware of yet. We don't actually
+			// need to declare a compiler, as we're not using Conan as a C/C++ package
+			// manager.
+
+			// Map node.js's OS and architecture names to Conan's.
+			const osMap: Record<string, string> = {
+				linux: "Linux",
+				win32: "Windows",
+				darwin: "Macos"
+			};
+			const archMap: Record<string, string> = {
+				x64: "x86_64",
+				arm64: "armv8"
+			};
+			const conanOs = osMap[os.platform()];
+			const conanArch = archMap[os.arch()];
+			if (!conanOs || !conanArch) {
+				throw new Error(
+					`Unsupported platform: ${os.platform()}-${os.arch()}`
+				);
+			}
+
+			const profile =
+				`[settings]\n` +
+				`os=${conanOs}\n` +
+				`arch=${conanArch}\n` +
+				`build_type=Release\n`;
+
+			try {
+				await fs.promises.mkdir(path.dirname(defaultProfilePath), {
+					recursive: true
+				});
+				await fs.promises.writeFile(defaultProfilePath, profile);
+			} catch (err) {
+				throw new Error("Failed to create Conan profile", {
+					cause: err
+				});
+			}
 		}
 
 		if (initRemotes) {
@@ -372,7 +490,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 	async list(
 		pattern?: string,
-		filter: Record<string, string | string[]> = {}
+		filter: CfsPackageFilter = {}
 	): Promise<CfsPackageReference[]> {
 		const pkgIndex = await this._readPkgIndex();
 
@@ -396,32 +514,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 				continue;
 			}
 
-			// Filter packages based on the provided filter
-			const matchesFilter = Object.entries(filter).every(
-				([key, filterValue]) => {
-					if (!(key in pkg)) {
-						return false;
-					}
-
-					const pkgValue = pkg[key as keyof PackageIndexEntry];
-
-					// Normalize filter value to an array for consistent processing
-					const filterValues = Array.isArray(filterValue)
-						? filterValue
-						: [filterValue];
-
-					// Check if any of the filter values match
-					return filterValues.some((value) => {
-						if (Array.isArray(pkgValue)) {
-							return pkgValue.includes(value);
-						} else {
-							return pkgValue === value;
-						}
-					});
-				}
-			);
-
-			if (!matchesFilter) {
+			if (!ConanPkgManager._packageFilter(pkg, filter)) {
 				continue;
 			}
 
@@ -434,6 +527,36 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		return packages;
 	}
 
+	async listCache(pattern?: string): Promise<CfsCachedPackage[]> {
+		if (pattern === undefined) {
+			pattern = "*";
+		}
+
+		// Get cached packages from conan
+		const out = await this._conanCommand([
+			"cfs",
+			"list-cache",
+			pattern
+		]);
+
+		// Parse and normalize cached package references
+		const cachedReferences = this._parsePackageReferences(out);
+
+		// Get installed packages to determine installation status
+		const installedPackages = await this.list();
+		const installedSet = new Set(
+			installedPackages.map((pkg) => `${pkg.name}/${pkg.version}`)
+		);
+
+		return cachedReferences.map((reference) => {
+			const pkgRef = `${reference.name}/${reference.version}`;
+			return {
+				reference,
+				isInstalled: installedSet.has(pkgRef)
+			};
+		});
+	}
+
 	async search(pattern: string): Promise<CfsPackageReference[]> {
 		await this._ensureRemotesReady();
 
@@ -442,12 +565,32 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		return this._parsePackageReferences(out);
 	}
 
+	async searchInfo(
+		pattern: string,
+		filter: CfsPackageFilter = {}
+	): Promise<CfsPackage[]> {
+		await this._ensureRemotesReady();
+
+		const out = await this._conanCommand([
+			"cfs",
+			"search-info",
+			pattern
+		]);
+		const pkgs = JSON.parse(out) as Record<string, CfsPackage>;
+
+		const filteredPkgs = Object.values(pkgs).filter((info) =>
+			ConanPkgManager._packageFilter(info, filter)
+		);
+
+		return filteredPkgs;
+	}
+
 	public getIndexFilePath(): string {
 		return path.join(this._indexDir, ".cfsPackages");
 	}
 
 	async getInstalledPackageInfo(
-		filter: Record<string, string | string[]> = {}
+		filter: CfsPackageFilter = {}
 	): Promise<CfsInstalledPackage[]> {
 		const pkgIndex = await this._readPkgIndex();
 		const packages: CfsInstalledPackage[] = [];
@@ -459,32 +602,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 				continue;
 			}
 
-			// Filter packages based on the provided filter
-			const matchesFilter = Object.entries(filter).every(
-				([key, filterValue]) => {
-					if (!(key in pkgEntry)) {
-						return false;
-					}
-
-					const pkgValue = pkgEntry[key as keyof PackageIndexEntry];
-
-					// Normalize filter value to an array for consistent processing
-					const filterValues = Array.isArray(filterValue)
-						? filterValue
-						: [filterValue];
-
-					// Check if any of the filter values match
-					return filterValues.some((value) => {
-						if (Array.isArray(pkgValue)) {
-							return pkgValue.includes(value);
-						} else {
-							return pkgValue === value;
-						}
-					});
-				}
-			);
-
-			if (!matchesFilter) {
+			if (!ConanPkgManager._packageFilter(pkgEntry, filter)) {
 				continue;
 			}
 
@@ -499,6 +617,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 				version,
 				path: pkgEntry.path,
 				cfsSoc,
+				components: pkgEntry.components,
 				...(pkgEntry.type ? { type: pkgEntry.type } : {})
 			});
 		}
@@ -520,17 +639,12 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	}
 
 	async install(
-		reference: CfsPackageReference | CfsPackageReference[],
+		references:
+			| CfsPackageReference
+			| CfsPackageReference[]
+			| CfsInstallPlan,
 		options?: CfsPackageInstallOptions
 	): Promise<CfsPackageReference[]> {
-		const references = Array.isArray(reference)
-			? reference
-			: [reference];
-
-		if (references.length === 0) {
-			return [];
-		}
-
 		const commandOptions: string[] = [];
 
 		if (options?.localOnly == true) {
@@ -539,10 +653,56 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			await this._ensureRemotesReady();
 		}
 
+		if (options?.acceptLicense == true) {
+			commandOptions.push("--accept-license");
+		}
+
+		// Normalize: extract refs and pre-fetched license info when a plan is passed
+		const plan =
+			!Array.isArray(references) && "toInstall" in references
+				? references
+				: undefined;
+		const refsArray: CfsPackageReference[] = plan
+			? plan.toInstall
+			: Array.isArray(references)
+				? references
+				: [references as CfsPackageReference];
+		const refsRequiringLicenseAcceptanceFromPlan:
+			| CfsPackageReference[]
+			| undefined = plan?.requiresLicenseAcceptance.map(
+			(pkg) => pkg.reference
+		);
+
+		if (refsArray.length === 0) {
+			return [];
+		}
+
+		// Only compute the install plan if we need to report license acceptance.
+		// The plan doesn't change which references are installed (we don't have transitive
+		// dependency filtering, and pre-installed refs are no-ops), so it's only needed to
+		// identify which packages require license acceptance for reporting purposes.
+		if (
+			options?.acceptLicense === true &&
+			this.licenseReporter !== undefined
+		) {
+			const refsRequiringLicenseAcceptance =
+				refsRequiringLicenseAcceptanceFromPlan ??
+				(
+					await this.getInstallPlan(refsArray)
+				).requiresLicenseAcceptance.map((pkg) => pkg.reference);
+			await this._reportAcceptedLicensesIfNeeded(
+				refsRequiringLicenseAcceptance,
+				refsArray
+			);
+		}
+
+		// Convert references to strings
+		const refStrings = refsArray.map((ref) => this._refToString(ref));
+
 		const out = await this._conanCommand([
 			"cfs",
 			"install",
-			...references.map((ref) => this._refToString(ref)),
+			...refStrings,
 			...commandOptions
 		]);
 
@@ -676,13 +836,27 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	async installFromManifest(
 		manifestPath: string,
 		options?: CfsPackageInstallOptions
-	): Promise<CfsPackageReference[]> {
+	): Promise<{
+		installed: CfsPackageReference[];
+		skipped: CfsPackageReference[];
+	}> {
 		const commandOptions: string[] = [];
 
 		if (options?.localOnly == true) {
 			commandOptions.push("--no-remote");
 		} else {
 			await this._ensureRemotesReady();
+		}
+
+		if (options?.acceptLicense === true) {
+			commandOptions.push("--accept-license");
+			if (this.licenseReporter !== undefined) {
+				const plan = await this.getInstallPlan(manifestPath);
+				await this._reportAcceptedLicensesIfNeeded(
+					plan.requiresLicenseAcceptance.map((pkg) => pkg.reference),
+					plan.toInstall
+				);
+			}
 		}
 
 		const out = await this._conanCommand([
@@ -692,7 +866,25 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			...commandOptions
 		]);
 
-		return this._parsePackageReferences(out);
+		// Handle empty output (no packages to install)
+		if (!out || out.trim() === "") {
+			return { installed: [], skipped: [] };
+		}
+
+		const result = JSON.parse(out) as {
+			installed?: string[];
+			skipped?: string[];
+		};
+
+		const parseRef = (x: string): CfsPackageReference => {
+			const [n, v] = x.split("/");
+			return { name: n, version: v };
+		};
+
+		return {
+			installed: (result.installed ?? []).map(parseRef),
+			skipped: (result.skipped ?? []).map(parseRef)
+		};
 	}
 
 	async checkManifest(
@@ -714,6 +906,60 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			}
 			return { name: pkg.name, version };
 		});
+	}
+
+	async getInstallPlan(
+		input: CfsInstallInput
+	): Promise<CfsInstallPlan> {
+		await this._ensureRemotesReady();
+
+		const args = ["cfs", "install-plan"];
+
+		if (typeof input === "string") {
+			// It's a manifest file path
+			args.push("--manifest", input);
+		} else if (Array.isArray(input)) {
+			// Array of package references
+			for (const ref of input) {
+				args.push(`${ref.name}/${ref.version}`);
+			}
+		} else {
+			// Single package reference
+			args.push(`${input.name}/${input.version}`);
+		}
+
+		const out = await this._conanCommand(args);
+
+		const result = JSON.parse(out) as CfsInstallPlan;
+
+		// Remove bracket notation from versions if present
+		const cleanVersion = (version: string): string => {
+			if (version.startsWith("[") && version.endsWith("]")) {
+				return version.slice(1, -1);
+			}
+			return version;
+		};
+
+		return {
+			toInstall: result.toInstall.map((pkg) => ({
+				name: pkg.name,
+				version: cleanVersion(pkg.version)
+			})),
+			alreadyInstalled: result.alreadyInstalled.map((pkg) => ({
+				name: pkg.name,
+				version: cleanVersion(pkg.version)
+			})),
+			requiresLicenseAcceptance: result.requiresLicenseAcceptance.map(
+				(info) => ({
+					reference: {
+						name: info.reference.name,
+						version: cleanVersion(info.reference.version)
+					},
+					license: info.license,
+					licenseText: info.licenseText
+				})
+			)
+		};
 	}
 
 	async registerCredentialProvider(
@@ -756,5 +1002,49 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		if (provider && remote) {
 			await this._enableAuthenticatedRemote(remote, provider);
 		}
+	}
+
+	registerLicenseReporter(
+		reporter: CfsPackageLicenseReporter
+	): Promise<void> {
+		this.licenseReporter = reporter;
+		return Promise.resolve();
+	}
+
+	unregisterLicenseReporter(): Promise<void> {
+		this.licenseReporter = undefined;
+		return Promise.resolve();
+	}
+
+	private async _reportAcceptedLicensesIfNeeded(
+		refsRequiringLicenseAcceptance: CfsPackageReference[],
+		references: CfsPackageReference[]
+	): Promise<void> {
+		if (
+			refsRequiringLicenseAcceptance.length === 0 ||
+			!this.licenseReporter
+		) {
+			return;
+		}
+
+		// Filter to only report licenses for packages that are actually being installed.
+		// This is necessary because callers may modify the plan's toInstall list (e.g., the IDE
+		// may exclude certain packages like MSDK), and the pre-computed license info from the plan
+		// may include packages that are no longer in the final install set.
+		const referencesToInstall = new Set(
+			references.map((reference) => this._refToString(reference))
+		);
+		const acceptedReferences = refsRequiringLicenseAcceptance.filter(
+			(reference) =>
+				referencesToInstall.has(this._refToString(reference))
+		);
+
+		if (acceptedReferences.length === 0) {
+			return;
+		}
+
+		await this.licenseReporter.reportLicenseAcceptance(
+			acceptedReferences
+		);
 	}
 }

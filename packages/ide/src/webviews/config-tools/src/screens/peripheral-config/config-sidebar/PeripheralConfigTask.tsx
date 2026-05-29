@@ -42,7 +42,7 @@ import {
 } from '../../../utils/soc-controls';
 import {useMemo} from 'react';
 import {computePeripheralResetValues} from '../../../utils/soc-peripherals';
-import {useActivePeripheralHasSignals} from '../../../hooks/useActivePeripheralHasSignals';
+import {useActivePeripheralHasPins} from '../../../hooks/useActivePeripheralHasPins';
 
 export const PERIPHERAL_PLUGIN_OPTIONS_FORM_ID =
 	'peripheral-plugin-options-form';
@@ -111,7 +111,7 @@ function PeripheralConfigTask({
 
 	const formattedControls = formatControlsForDynamicForm(
 		controls[activePeripheral] ?? [],
-		formattedData,
+		{projectId, ...formattedData},
 		modifiedFields
 	);
 
@@ -129,7 +129,7 @@ function PeripheralConfigTask({
 		return unavailable;
 	};
 
-	const showManagePinAssignments = useActivePeripheralHasSignals(
+	const showManagePinAssignments = useActivePeripheralHasPins(
 		Boolean('withCoreInfo')
 	);
 

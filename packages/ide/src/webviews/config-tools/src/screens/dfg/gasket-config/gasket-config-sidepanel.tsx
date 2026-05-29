@@ -28,12 +28,15 @@ import {getProjectInfoList} from '../../../utils/config';
 import {getControlsForProjectIds} from '../../../utils/api';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {useAppDispatch} from '../../../state/store';
-import type {GasketConfig} from 'cfs-plugins-api';
+import type {GasketConfig} from 'cfs-types';
 import {getGasketDictionary} from '../../../utils/dfg';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export function GasketConfigSidePanel() {
 	const activeGasket: GasketConfig | undefined = useEditingGasket();
 	const dispatch = useAppDispatch();
+
+	const l10n = useLocaleContext();
 
 	const [gasketModified, setGasketModified] = useState(false);
 
@@ -97,6 +100,7 @@ export function GasketConfigSidePanel() {
 							data={activeGasket.Config ?? {}}
 							socConfig={config}
 							testId='gasket-config-controls'
+							emptyMessage={l10n?.dfg.noGasketPluginSettings}
 							onControlChange={(field, value) => {
 								dispatch(
 									setEditingGasket({

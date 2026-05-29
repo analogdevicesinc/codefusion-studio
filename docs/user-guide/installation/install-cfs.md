@@ -12,11 +12,11 @@ To get started with CodeFusion Studio, first install the SDK using the CodeFusio
 
 ### Download
 
-The CodeFusion Studio installer (version 2.1.0) can be downloaded from the following links.
+The CodeFusion Studio installer (version 2.2.0) can be downloaded from the following links.
 
-- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.run){:target="_blank"}
-- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.dmg){:target="_blank"}
-- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.exe){:target="_blank"}
+- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.run){:target="_blank"}
+- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.dmg){:target="_blank"}
+- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.exe){:target="_blank"}
 
 ### Install
 
@@ -35,7 +35,7 @@ The CodeFusion Studio installer (version 2.1.0) can be downloaded from the follo
 
         To enable debugging for SHARC-FX processors, select the checkbox **ADI ICE Drivers (Requires Administrator)** during installation. When prompted, approve the Windows elevation dialog to complete driver installation. This installs the USB drivers required for ICE-1000, ICE-1500, and ICE-2000 emulators.  
 
-        If you skip this option, you can install the drivers later. For details, see [Install ICE drivers manually](../debugging/install-ice-drivers.md).
+        If you skip this option, you can install the drivers later. For details, see [Install ICE drivers manually](../debugging/debug-drivers/install-ice-drivers.md).
 
 5. Review and accept the license agreement to continue.
 6. (Windows only). Choose the Start Menu folder for the shortcut.
@@ -64,21 +64,21 @@ To run the installer from the command line, use the following:
 **macOS:**
 
 ``` bash
-hdiutil mount CodeFusionStudio_2.1.0.dmg -mountpoint cfs
-cfs/CodeFusionStudio_2.1.0.app/Contents/MacOS/CodeFusionStudio_2.1.0 install --am --al -c
+hdiutil mount CodeFusionStudio_2.2.0.dmg -mountpoint cfs
+cfs/CodeFusionStudio_2.2.0.app/Contents/MacOS/CodeFusionStudio_2.2.0 install --am --al -c
 hdiutil unmount cfs
 ```
 
 **Windows:**
 
 ``` bash
-CodeFusionStudio_2.1.0.exe install --am --al -c
+CodeFusionStudio_2.2.0.exe install --am --al -c
 ```
 
 **Linux:**
 
 ``` bash
-./CodeFusionStudio_2.1.0.run install --am --al -c
+./CodeFusionStudio_2.2.0.run install --am --al -c
 ```
 
 ## Next steps

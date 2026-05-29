@@ -38,21 +38,21 @@ $default-font-weight: var(--vscode-editor-font-weight, 400);
 }
 
 @mixin heading-h1 {
-	font-weight: 600;
+	font-weight: 700;
 	font-size: 26px;
 	line-height: 31px;
 	margin: 0;
 }
 
 @mixin heading-h2 {
-	font-weight: 500;
+	font-weight: 600;
 	font-size: 18px;
 	font-style: normal;
 	line-height: normal;
 }
 
 @mixin heading-h3 {
-	font-weight: 500;
+	font-weight: 600;
 	font-size: 14px;
 	line-height: 16px;
 	margin: 0;
@@ -66,13 +66,15 @@ $default-font-weight: var(--vscode-editor-font-weight, 400);
 
 @mixin heading-h5 {
 	font-weight: 700;
+	text-transform: uppercase;
 	font-size: $font-size-small;
 	line-height: normal;
 }
 
 @mixin heading-h6 {
 	font-size: $font-size-small;
-	font-weight: 500;
+	text-transform: uppercase;
+	font-weight: 600;
 	line-height: 13px;
 }
 
@@ -103,4 +105,11 @@ $default-font-weight: var(--vscode-editor-font-weight, 400);
 	font-size: 9px;
 	font-weight: 700;
 	line-height: normal;
+}
+
+@mixin code-regular {
+	font-family: var(--vscode-editor-font-family, monospace);
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 18px;
 }

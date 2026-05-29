@@ -47,13 +47,8 @@ import {
 	removePeripheralAssignment,
 	setActivePeripheral
 } from '../../../state/slices/peripherals/peripherals.reducer';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
-import {Button, DeleteIcon} from 'cfs-react-library';
-import {setNewPeripheralAssignment} from '../../../state/slices/app-context/appContext.reducer';
-import {
-	useNewPeripheralAssignment,
-	useNewSignalAssignment
-} from '../../../state/slices/app-context/appContext.selector';
+import {Button, DeleteIcon, Tooltip} from 'cfs-react-library';
+import {useNewPeripheralAssignment} from '../../../state/slices/app-context/appContext.selector';
 import useProjectPeripheralErrorCount from '../../../hooks/use-project-peripheral-error-count';
 
 type PeripheralAllocationCardProps = Readonly<{
@@ -85,11 +80,8 @@ function PeripheralAllocationCard({
 	const {assignable} = getSocPeripheralDictionary()[peripheral.name];
 	const [lastHovered, setLastHovered] = useState(false);
 
-	const {peripheral: peripheralName, projectId: project} =
+	const {peripheral: newlyAssignedPeripheral, projectId: project} =
 		useNewPeripheralAssignment() ?? {};
-
-	const {signal: signalName, projectId: signalProject} =
-		useNewSignalAssignment() ?? {};
 
 	const isPreassigned =
 		getPreallocatedPeripherals()[projectId]?.some(
@@ -118,28 +110,20 @@ function PeripheralAllocationCard({
 	);
 
 	useEffect(() => {
-		if (peripheral.name === peripheralName && project === projectId) {
+		if (
+			!isOpen &&
+			peripheral.name === newlyAssignedPeripheral &&
+			project === projectId
+		) {
 			// Opens accordion when new peripheral is assigned
 			setIsOpen(true);
-
-			// To dispatch activePeripheral to open sidebar
-			dispatch(setActivePeripheral(`${peripheralName}:${project}`));
-
-			// Clear the newPeripheralAssignment in appContext
-			dispatch(
-				setNewPeripheralAssignment({
-					peripheral: undefined,
-					projectId: undefined
-				})
-			);
 		}
 	}, [
-		dispatch,
-		peripheral,
-		peripheralName,
+		isOpen,
+		peripheral.name,
+		newlyAssignedPeripheral,
 		project,
-		projectId,
-		signalProject
+		projectId
 	]);
 
 	return (
@@ -170,7 +154,11 @@ function PeripheralAllocationCard({
 									<div className={styles.iconPlaceholder} />
 								)}
 
-								<Tooltip title='Configure' type='long'>
+								<Tooltip
+									title='Configure'
+									type='short'
+									position='bottom'
+								>
 									<Button
 										className={`${styles.configIcon} ${isPeripheralActive && !isSignalActive ? styles.isActive : ''}`}
 										appearance='icon'
@@ -188,7 +176,11 @@ function PeripheralAllocationCard({
 								</Tooltip>
 
 								{assignable ? (
-									<Tooltip title='Remove' type='long'>
+									<Tooltip
+										title='Remove'
+										type='short'
+										position='bottom'
+									>
 										<Button
 											className={styles.deleteIcon}
 											appearance='icon'
@@ -226,7 +218,6 @@ function PeripheralAllocationCard({
 										key={signal.name}
 										signal={signal.name}
 										peripheral={peripheral.name}
-										shouldHighlight={signal.name === signalName}
 									/>
 								))}
 							</section>

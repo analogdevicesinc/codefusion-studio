@@ -1,0 +1,28 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"tasks": [
+		{
+			"label": "test-build",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-1}/bin/gcc -o output main.c",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "test-flash",
+			"type": "shell",
+			"command": "${cfs:tool.path.mock-tool-2}/flasher --target ${config:cfs.target}",
+			"group": "build",
+			"problemMatcher": [],
+			"dependsOn": ["test-build"]
+		},
+		{
+			"label": "test-clean",
+			"type": "shell",
+			"command": "rm -rf ${workspaceFolder}/build",
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

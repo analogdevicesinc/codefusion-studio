@@ -108,6 +108,7 @@ function Step({
 					<SubStep
 						key={substep.title + index}
 						{...substep}
+						substepIndex={index}
 						disabled={step.disabled ? true : substep.disabled}
 						onClick={() => onStepClick(index)}
 					/>
@@ -128,6 +129,7 @@ function StepStatusCircle({
 }: StepStatusCircleProps): JSX.Element {
 	return (
 		<div
+			data-active={active}
 			className={`${styles.stepStatusCircle} ${active ? styles.stepStatusCircleActive : ''}`}
 		>
 			{completed && <CheckedIcon />}
@@ -136,6 +138,7 @@ function StepStatusCircle({
 }
 
 type SubStepProps = SubStep & {
+	substepIndex?: number;
 	onClick: () => void;
 };
 
@@ -143,6 +146,7 @@ function SubStep({
 	title,
 	badges,
 	disabled,
+	substepIndex,
 	onClick
 }: SubStepProps): JSX.Element {
 	return (
@@ -153,7 +157,10 @@ function SubStep({
 			onKeyDown={e => e.key === 'Enter' && !disabled && onClick()}
 		>
 			<span className={styles.substepTitle}>{title}</span>
-			<div className={styles.substepBadges}>
+			<div
+				className={styles.substepBadges}
+				data-test={`wizard-stepper:badge-container${substepIndex !== undefined ? `:${substepIndex}` : ''}`}
+			>
 				{badges?.map((badge, i) => (
 					<Badge key={badge + i}>{badge}</Badge>
 				))}

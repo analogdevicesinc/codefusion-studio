@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import { MyAnalogCloudsmithCredentialProvider } from "../../src/auth/cloudsmith-
 
 describe("MyAnalogCloudsmithCredentialProvider", () => {
 	describe("getRemoteCredential", () => {
-		it("should return object with user and password", async () => {
+		let credsProvider: MyAnalogCloudsmithCredentialProvider;
+
+		beforeEach(() => {
 			const fetchStub = {
 				POST: () =>
 					Promise.resolve({
@@ -36,15 +38,62 @@ describe("MyAnalogCloudsmithCredentialProvider", () => {
 			const apiClient = {
 				fetch: fetchStub
 			} as unknown as CfsApiClient;
-			const credsProvider = new MyAnalogCloudsmithCredentialProvider(
+			credsProvider = new MyAnalogCloudsmithCredentialProvider(
 				apiClient
 			);
+		});
 
+		it("should return object with user and password", async () => {
 			const result = await credsProvider.getRemoteCredential(
-				"some-url.cloudsmith.io/some-path/"
+				"https://some-url.cloudsmith.io/owner/repo"
 			);
 			expect(result?.password).to.equal("secure-token");
-			expect(result?.user).to.equal("some-path");
+			expect(result?.user).to.equal("owner/repo");
+		});
+
+		it("should extract the username successfully when URL path has a trailing slash", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"https://some-url.cloudsmith.io/owner/repo/"
+			);
+			expect(result?.password).to.equal("secure-token");
+			expect(result?.user).to.equal("owner/repo");
+		});
+
+		it("should extract the username successfully when URL has additional path segments", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"https://some-url.cloudsmith.io:443/owner/repo/extra/path/segments"
+			);
+			expect(result?.password).to.equal("secure-token");
+			expect(result?.user).to.equal("owner/repo");
+		});
+
+		it("should extract the username successfully when URL has a port number and query params", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"https://some-url.cloudsmith.io:443/owner/repo?query=param&another=param2"
+			);
+			expect(result?.password).to.equal("secure-token");
+			expect(result?.user).to.equal("owner/repo");
+		});
+
+		it("should return undefined for non-cloudsmith URLs", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"https://some-url.notcloudsmith.io/owner/repo"
+			);
+			expect(result).to.be.undefined;
+		});
+
+		it("should return undefined for URLs with too few path segments", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"https://some-url.cloudsmith.io/owner/"
+			);
+			expect(result).to.be.undefined;
+		});
+
+		it("should return undefined for invalid URLs", async () => {
+			const result = await credsProvider.getRemoteCredential(
+				"invalid-url.cloudsmith.io/owner/repo"
+			);
+			expect(result).to.be.undefined;
 		});
 	});
 
@@ -62,7 +111,7 @@ describe("MyAnalogCloudsmithCredentialProvider", () => {
 			);
 
 			await credsProvider.refreshRemoteCredential(
-				"some-url.cloudsmith.io/some-path/"
+				"https://some-url.cloudsmith.io/owner/repo"
 			);
 			assert(postSpy.notCalled);
 		});
@@ -95,15 +144,15 @@ describe("MyAnalogCloudsmithCredentialProvider", () => {
 				apiClient
 			);
 			const result = await credsProvider.getRemoteCredential(
-				"some-url.cloudsmith.io/some-path/"
+				"https://some-url.cloudsmith.io/owner/repo"
 			);
 			expect(result?.password).to.equal("secure-token");
 			await credsProvider.refreshRemoteCredential(
-				"some-url.cloudsmith.io/some-path/"
+				"https://some-url.cloudsmith.io/owner/repo"
 			);
 
 			const result2 = await credsProvider.getRemoteCredential(
-				"some-url.cloudsmith.io/some-path/"
+				"https://some-url.cloudsmith.io/owner/repo"
 			);
 			expect(result2?.password).to.equal("secure-token-2");
 		});

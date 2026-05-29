@@ -20,11 +20,13 @@ import {
 import {updatePersistedDfgConfig} from '../../utils/api';
 import {
 	addNewStream,
+	type DFGStreamUI,
 	removeStream,
 	updateGasketOptions,
 	updateStream
 } from '../slices/gaskets/gasket.reducer';
 import type {RootState} from '../store';
+import {type DFGStream} from 'cfs-types';
 
 export const persistedDfgActions: Array<
 	ActionCreatorWithPayload<any>
@@ -40,12 +42,29 @@ export function getDFGPersistenceListenerMiddleware(
 			actionCreator: action,
 			async effect(_, listenerApi) {
 				const state = listenerApi.getState() as RootState;
-				const streams = state.gasketsReducer.Streams;
+				const streams = formatDfgStreamsForPersistence(
+					state.gasketsReducer.Streams
+				);
 				const gaskets = state.gasketsReducer.GasketOptions;
 				await updatePersistedDfgConfig(streams, gaskets);
 			}
 		});
 
 		return listenerMiddleware.middleware;
+	});
+}
+
+/**
+ * Prepares all non-persistable data from the streams in the list.
+ * @param streams
+ * @returns A clean copy of Streams list
+ */
+function formatDfgStreamsForPersistence(
+	streams: DFGStreamUI[]
+): DFGStream[] {
+	return structuredClone(streams).map((s: DFGStreamUI) => {
+		const {Uuid, ...rest} = s;
+
+		return rest;
 	});
 }

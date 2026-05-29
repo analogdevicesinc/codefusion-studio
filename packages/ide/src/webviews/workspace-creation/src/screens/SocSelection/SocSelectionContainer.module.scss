@@ -17,13 +17,8 @@
 @use '#colors' as colors;
 
 .socSelectionContainer {
-	.searchBox {
-		margin: 24px 0 40px 0;
-		color: colors.$description-foreground;
-	}
-
 	.notification {
-		margin: 0 0 24px 0;
+		margin: 0 0 layout.$spacing-7 0;
 	}
 
 	.rightAdornment {

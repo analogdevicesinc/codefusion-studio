@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ Features:
 
 import logging
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -43,7 +42,7 @@ from cfsai_resource_profiler.exceptions import (
     ResourceProfilerError,
 )
 from cfsai_resource_profiler.schemas import (
-    AnalysisNote,
+    PROFILE_REPORT_VERSION,
     ErrorNote,
     HardwareMetrics,
     LayerPerformance,
@@ -55,6 +54,7 @@ from cfsai_resource_profiler.schemas import (
     ResourceProfileReport,
 )
 from cfsai_types.hardware_profile import HardwareProfile
+from cfsai_types.report import ReportInfo, ReportType
 
 # Default Configuration
 DEFAULT_MAX_OPTIMIZATION_LAYERS = 5
@@ -143,7 +143,7 @@ class TFLiteResourceProfiler:
         self.max_optimization_layers = DEFAULT_MAX_OPTIMIZATION_LAYERS
         self.memory_reduction_targets = DEFAULT_MEMORY_REDUCTION_TARGETS.copy()
 
-        self.logger.info("TFLite Resource Profiler initialized")
+        self.logger.debug("TFLite Resource Profiler initialized")
 
     def analyze_model(
         self,
@@ -171,31 +171,22 @@ class TFLiteResourceProfiler:
         start_time = time.time()
         model_path = Path(model_path)
         errors: list[ErrorNote] = []
-        notes: list[AnalysisNote] = []
 
         try:
-            self.logger.info(f"Starting analysis of model: {model_path}")
-            notes.append(
-                AnalysisNote(
-                    message=f"Analysis started for model: {model_path.name}",
-                    category="info",
-                )
-            )
+            self.logger.debug(f"Starting analysis of model: {model_path}")
 
             # Validate hardware profile
             self._validate_hardware_profile(hardware_profile)
 
             # Parse and analyze model
-            parsed_model = self._parse_model(model_path, notes)
+            parsed_model = self._parse_model(model_path)
             report = self._perform_analysis(
-                model_path, parsed_model, hardware_profile, notes, errors
+                model_path, parsed_model, hardware_profile, errors
             )
 
             # Add timing and save results
             analysis_duration = time.time() - start_time
-            self._finalize_analysis(report, analysis_duration, notes)
-
-            self.logger.info(
+            self.logger.debug(
                 f"Model analysis completed successfully in {analysis_duration:.2f}s"
             )
             return report
@@ -244,7 +235,7 @@ class TFLiteResourceProfiler:
             )
 
 
-    def _parse_model(self, model_path: Path, notes: list[AnalysisNote]) -> ModelDetails:
+    def _parse_model(self, model_path: Path) -> ModelDetails:
         """
         Parse a TensorFlow Lite model file into structured model details.
 
@@ -253,7 +244,6 @@ class TFLiteResourceProfiler:
 
         Args:
             model_path: Path to the TFLite model file to parse
-            notes: List to append analysis notes during processing
 
         Returns:
             ModelDetails: Structured representation of the parsed model
@@ -279,7 +269,7 @@ class TFLiteResourceProfiler:
                 "Model parsing failed - parser returned None", error_code="PARSE_FAILED"
             )
 
-        notes.append(AnalysisNote(message="Model parsed successfully", category="info"))
+        self.logger.debug("Model parsed successfully")
 
         return parsed_model
 
@@ -288,7 +278,6 @@ class TFLiteResourceProfiler:
         model_path: Path,
         parsed_model: ModelDetails,
         hardware_profile: HardwareProfile,
-        notes: list[AnalysisNote],
         errors: list[ErrorNote],
     ) -> ResourceProfileReport:
         """
@@ -306,7 +295,6 @@ class TFLiteResourceProfiler:
             model_path: Path to the model file being analyzed
             parsed_model: Structured model data from parser
             hardware_profile: Hardware specifications for performance estimation
-            notes: List to collect analysis observations
             errors: List to collect analysis errors
 
         Returns:
@@ -343,7 +331,6 @@ class TFLiteResourceProfiler:
                         latency_ms=layer_performance_metrics.get("latency_ms"),
                         energy_uj=layer_performance_metrics.get("energy_uj"),
                         power_mw=layer_performance_metrics.get("power_mw"),
-                        power_w=layer_performance_metrics.get("power_w"),
                         is_accelerated=layer_performance_metrics.get(
                             "is_accelerated", False
                         ),
@@ -404,12 +391,6 @@ class TFLiteResourceProfiler:
                 total_parameters=None,  # Could be calculated if needed
             )
 
-            notes.append(
-                AnalysisNote(
-                    message="Model analysis completed successfully", category="info"
-                )
-            )
-
             # Log optimization analysis summary
             self.logger.info(
                 "Optimization recommendations available through smart memory analysis "
@@ -423,10 +404,12 @@ class TFLiteResourceProfiler:
                 layer_performance=layer_performance,
                 optimization_suggestions=optimization_suggestions,
                 optimization_opportunities=optimization_opportunities,
-                analysis_notes=notes,
                 errors=errors,
-                timestamp=datetime.now().isoformat(),
-                hardware_profile_used=hardware_profile,
+                info=ReportInfo(
+                    type=ReportType.PROFILE,
+                    version=PROFILE_REPORT_VERSION,
+                    hardware=hardware_profile
+                )
             )
 
         except Exception as e:
@@ -458,7 +441,6 @@ class TFLiteResourceProfiler:
                 - latency_ms: Execution time in milliseconds (float)
                 - energy_uj: Energy consumption in microjoules (float)
                 - power_mw: Power consumption in milliwatts (float)
-                - power_w: Power consumption in watts (float)
                 - is_accelerated: Hardware acceleration flag (bool)
 
         Raises:
@@ -469,7 +451,6 @@ class TFLiteResourceProfiler:
             "latency_ms": 0.0,
             "energy_uj": 0.0,
             "power_mw": 0.0,
-            "power_w": 0.0,
             "is_accelerated": False,
         }
 
@@ -516,12 +497,10 @@ class TFLiteResourceProfiler:
                 )
                 performance_metrics["energy_uj"] = layer_energy_uj
 
-                # Calculate power if latency is available and non-zero
-                latency_ms = performance_metrics.get("latency_ms", 0)
-                if latency_ms > 0:
-                    power_mw = layer_energy_uj / latency_ms
-                    performance_metrics["power_mw"] = power_mw
-                    performance_metrics["power_w"] = power_mw / MILLISECONDS_PER_SECOND
+                # TODO: Power calculations are currently inaccurate
+                # Return 0 for this release to avoid confusion over
+                # validity of bad numbers
+                performance_metrics["power_mw"] = 0.0
 
         except (KeyError, ValueError, ZeroDivisionError) as e:
             error_msg = f"Error calculating layer '{layer_name}' performance: {e}"
@@ -590,8 +569,7 @@ class TFLiteResourceProfiler:
                 ),
                 total_macs=total_macs,
                 layerwise_opportunities=layerwise_opportunities,
-                macs_opportunities=macs_opportunities,
-                notes=("None"),
+                macs_opportunities=macs_opportunities
             )
 
         except Exception as e:
@@ -1617,12 +1595,10 @@ class TFLiteResourceProfiler:
             model_peak_ram_kb = getattr(parsed_model, "model_peak_ram_kb", None)
             available_ram_kb = hardware_profile.ram_size
 
-            # Calculate power metrics
+            # TODO: Power calculations are currently inaccurate
+            # Return 0 for this release to avoid confusion over
+            # validity of bad numbers
             estimated_power_mw = 0.0
-            estimated_power_w = 0.0
-            if total_latency_ms > 0 and total_energy_uj >= 0:
-                estimated_power_mw = total_energy_uj / total_latency_ms
-                estimated_power_w = estimated_power_mw / 1000
 
             # Convert peak memory to MB
             peak_memory_mb = (
@@ -1634,7 +1610,6 @@ class TFLiteResourceProfiler:
                 total_cycles=total_cycles,
                 estimated_latency_ms=total_latency_ms,
                 estimated_power_mw=estimated_power_mw,
-                estimated_power_w=estimated_power_w,
                 peak_memory_kb=model_peak_ram_kb,
                 peak_memory_mb=peak_memory_mb,
                 available_ram_kb=available_ram_kb,
@@ -1650,16 +1625,6 @@ class TFLiteResourceProfiler:
             error_msg = f"Unexpected error in performance calculation: {e}"
             self.logger.warning(error_msg)
             return None
-
-    def _finalize_analysis(
-        self, report: ResourceProfileReport, duration: float, notes: list[AnalysisNote]
-    ) -> None:
-        """Finalize analysis with timing and save if requested."""
-        notes.append(
-            AnalysisNote(
-                message=f"Analysis completed in {duration:.2f} seconds", category="info"
-            )
-        )
 
     def _handle_unexpected_error(self, error: Exception, duration: float) -> None:
         """Handle unexpected errors during analysis."""

@@ -12,6 +12,7 @@
  * limitations under the License.
  *
  */
+import { useCallback } from "react";
 import styles from './Toggle.module.scss';
 
 type ToggleProps = {
@@ -27,23 +28,28 @@ export default function Toggle({
 	isDisabled,
 	dataTest
 }: ToggleProps) {
+
+	const onToggle = useCallback(() => {
+		if (!isDisabled) handleToggle();
+	}, [isDisabled, handleToggle]);
+
 	return (
 		<label
 			className={styles.switch}
 			tabIndex={0}
-			onKeyUp={e => {
-				if (e.key === 'Enter' || e.key === ' ') handleToggle();
+			onKeyUp={(e) => {
+				if (e.key === "Enter" || e.key === " ") onToggle();
 			}}
 		>
 			<input
 				checked={isToggledOn}
-				type='checkbox'
-				onChange={handleToggle}
+				type="checkbox"
+				onChange={onToggle}
 			/>
 			<span
 				data-test={`${dataTest}-span`}
 				data-checked={isToggledOn}
-				className={`${styles.slider} ${styles.round} ${isToggledOn ? styles.active : ''} ${isDisabled ? styles.disabled : ''}`}
+				className={`${styles.slider} ${styles.round} ${isToggledOn ? styles.active : ""} ${isDisabled ? styles.disabled : ""}`}
 			/>
 		</label>
 	);

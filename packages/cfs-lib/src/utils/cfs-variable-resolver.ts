@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,33 @@
  */
 
 import { CfsToolManager } from "../managers/cfs-tool-manager.js";
+
+/**
+ * Upper bound on how many times we attempt to re-resolve variables.
+ *
+ * This protects against cyclic or self-referential substitutions across
+ * resolvers (for example, when a `${cfs:...}` expansion introduces new
+ * variables that ultimately resolve back to an earlier value). In typical
+ * configurations we only need a small number of passes (usually < 5) even
+ * with chained resolvers and nested `${cfs:manager.method.id}` references.
+ *
+ * 20 is chosen to comfortably exceed realistic nesting and indirection
+ * depths while still failing fast on pathological or accidentally cyclic
+ * templates. If callers observe values approaching this limit, it is a
+ * strong signal that configuration structure should be simplified or that
+ * a resolver is introducing unintended recursion.
+ */
+const MAX_VARIABLE_RESOLUTION_PASSES = 20;
+
+/**
+ * Function signature for host-specific variable resolvers.
+ *
+ * Resolvers receive the full string and can replace any tokens they own.
+ * They should return the original string unchanged when no replacements are made.
+ */
+export type VariableResolver = (
+	value: string
+) => Promise<string> | string;
 
 /**
  * Utility class to resolve custom template variables in configuration objects.
@@ -44,11 +71,24 @@ export class CfsVariableResolver {
 		string,
 		Record<string, (i: string) => Promise<string>> | undefined
 	> = {};
+	private resolvers: VariableResolver[] = [];
 
 	constructor(toolManager: CfsToolManager) {
 		this.managerDict.tool = {
 			path: toolManager.resolveTemplatePaths.bind(toolManager)
 		};
+
+		// Core resolver behavior in cfs-lib: only cfs-scoped variables.
+		this.registerResolver(this.resolveCfsVariables.bind(this));
+	}
+
+	/**
+	 * Registers a host-specific resolver.
+	 *
+	 * Resolvers run in registration order on each pass.
+	 */
+	public registerResolver(resolver: VariableResolver): void {
+		this.resolvers.push(resolver);
 	}
 
 	/**
@@ -125,6 +165,54 @@ export class CfsVariableResolver {
 	public async resolveStringVariables(
 		value: string
 	): Promise<string> {
+		return this.resolveStringVariablesRecursive(value, value, 0);
+	}
+
+	private async resolveStringVariablesRecursive(
+		current: string,
+		originalInput: string,
+		depth: number
+	): Promise<string> {
+		if (depth >= MAX_VARIABLE_RESOLUTION_PASSES) {
+			throw new Error(
+				"Variable resolution exceeded " +
+					String(MAX_VARIABLE_RESOLUTION_PASSES) +
+					" passes. This usually indicates a recursive or misconfigured variable chain. Input: " +
+					originalInput
+			);
+		}
+
+		let result = current;
+		for (const resolver of this.resolvers) {
+			result = await resolver(result);
+		}
+
+		if (result === current) {
+			return result;
+		}
+
+		return this.resolveStringVariablesRecursive(
+			result,
+			originalInput,
+			depth + 1
+		);
+	}
+
+	/**
+	 * Resolves CFS-scoped template variables in a string.
+	 *
+	 * Supported token format:
+	 * - `${cfs:managerId.methodId.idToProcess}`
+	 *
+	 * For each match, this method looks up `managerId` and `methodId` in
+	 * `managerDict` and invokes the mapped async method with `idToProcess`.
+	 * Unresolvable tokens are left unchanged. If a mapped method throws, the
+	 * error is logged and resolution continues for remaining matches.
+	 *
+	 * @param value - Input string that may contain CFS-scoped tokens.
+	 * @returns String with resolved CFS-scoped tokens.
+	 */
+	private async resolveCfsVariables(value: string): Promise<string> {
 		let result = value;
 
 		// First two groups allow only letters

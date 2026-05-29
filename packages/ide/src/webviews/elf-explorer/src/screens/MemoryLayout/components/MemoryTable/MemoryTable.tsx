@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  *
  */
 /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
+import type React from 'react';
 import {memo, useCallback, useMemo, useState} from 'react';
 import {capitalizeWord} from '@common/utils/string';
 import styles from './MemoryTable.module.scss';
@@ -29,7 +30,6 @@ import type {TContextMenuOption} from '../../../../common/types/generic';
 import type {TLocaleContext} from '../../../../common/types/context';
 import ElfTableHeaderCell from '../../../../components/ElfTableHeaderCell/ElfTableHeaderCell';
 import sortData from '../../../../utils/sorting-utils';
-import {formatSize} from '../../../../utils/stats-utils';
 import {
 	getColumnSizes,
 	getColumns,
@@ -38,7 +38,6 @@ import {
 
 import {COLUMNS} from '../../../../common/types/memory-layout';
 import ContextMenuPanel from '../../../../components/ContextMenu/Panel/ContextMenuPanel';
-import {convertDecimalToHex} from '../../../../utils/number';
 import {GO_TO_SOURCE_CODE} from '../../../../common/constants/statistics';
 import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 import {
@@ -50,7 +49,6 @@ import {
 	formatPath
 } from '../../../../utils/symbols-utils';
 import HelpOptionModal from '../../../../components/HelpOptionModal/HelpOptionModal';
-import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
 
 import {
 	isLayer1Flags,
@@ -58,6 +56,25 @@ import {
 	isLayer3BindVis
 } from '../../../../utils/memory-handlers';
 import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
+import MemoryTableDefaultCell from './cell-components/memory-table-default-cell';
+import MemoryTableAddressCell from './cell-components/memory-table-address-cell';
+import MemoryTableAlignCell from './cell-components/memory-table-align-cell';
+import MemoryTableNameCell from './cell-components/memory-table-name-cell';
+import MemoryTableSizeCell from './cell-components/memory-table-size-cell';
+import MemoryTableTypeCell from './cell-components/memory-table-type-cell';
+import MemoryTableVisibilityCell from './cell-components/memory-table-visibility-cell';
+
+const TABLE_CELL_CONFIGURATION: Record<string, React.ElementType> = {
+	[COLUMNS.ADDRESS]: MemoryTableAddressCell,
+	[COLUMNS.ALIGN]: MemoryTableAlignCell,
+	[COLUMNS.BIND]: MemoryTableDefaultCell,
+	[COLUMNS.FLAGS]: MemoryTableDefaultCell,
+	[COLUMNS.ID]: MemoryTableDefaultCell,
+	[COLUMNS.NAME]: MemoryTableNameCell,
+	[COLUMNS.SIZE]: MemoryTableSizeCell,
+	[COLUMNS.TYPE]: MemoryTableTypeCell,
+	[COLUMNS.VISIBILITY]: MemoryTableVisibilityCell
+};
 
 const MENU_OPTIONS: TContextMenuOption[] = [
 	{
@@ -149,9 +166,17 @@ function MemoryTable({
 		}));
 	}, []);
 
-	const sortedData = useMemo(
-		() => sortData(data, sortBy),
-		[data, sortBy]
+	const dataToDisplay = useMemo(
+		() =>
+			sortData(data, sortBy).filter(item => {
+				// Hide the symbol in table which is type section
+				if (layer === 3) {
+					return item.name !== item.section;
+				}
+
+				return true;
+			}),
+		[data, layer, sortBy]
 	);
 
 	const handleContextMenu = (
@@ -183,7 +208,7 @@ function MemoryTable({
 
 		if (layer === 3) {
 			const clonedSymbol: TSymbol = JSON.parse(
-				JSON.stringify(sortedData[index])
+				JSON.stringify(dataToDisplay[index])
 			);
 
 			if (clonedSymbol.path) {
@@ -272,44 +297,6 @@ function MemoryTable({
 		setIsMenuVisible(false);
 	};
 
-	const displayContent = (
-		column: keyof TSegment | keyof TSection | keyof TSymbol,
-		row: Record<string, any> // TSegment | TSection | TSymbol
-	) => {
-		if (column === COLUMNS.TYPE)
-			return <span className={styles.ellipsis}>{row[column]}</span>;
-
-		if (column === COLUMNS.ADDRESS) {
-			if (
-				savedOptions?.memory?.[layer]?.[COLUMNS.ADDRESS] === 'hex'
-			) {
-				return row[column];
-			}
-
-			return parseInt(row[column] as string, 16);
-		}
-
-		if (column === COLUMNS.SIZE) {
-			if (savedOptions?.memory?.[layer]?.[COLUMNS.SIZE] === 'dec') {
-				return formatSize(row[column] as number);
-			}
-
-			return convertDecimalToHex(Number(row[column]));
-		}
-
-		if (column === COLUMNS.NAME && layer === 2) {
-			return (
-				<SectionNameWithCircle
-					value={row.name}
-					bucket={row.bucket}
-					align='left'
-				/>
-			);
-		}
-
-		return row[column];
-	};
-
 	const setRightAlignToDecColumns = (column: string) => {
 		if (
 			column === COLUMNS.SIZE &&
@@ -323,27 +310,6 @@ function MemoryTable({
 		)
 			return styles['right-align'];
 		if (column === COLUMNS.ALIGN) return styles['right-align'];
-
-		return '';
-	};
-
-	const setRightAlignToDecValues = (column: string) => {
-		if (
-			column === COLUMNS.SIZE &&
-			savedOptions.memory[layer][column] === 'dec'
-		)
-			return styles['right-align'];
-
-		if (
-			column === COLUMNS.ADDRESS &&
-			savedOptions.memory[layer][column] === 'dec'
-		)
-			return `${styles['right-align']} ${styles['cell-ellipsis']}`;
-
-		if (column === COLUMNS.ALIGN) return styles['right-align'];
-		if (column === COLUMNS.TYPE) return styles['cell-ellipsis'];
-		if (column === COLUMNS.VISIBILITY) return styles['cell-ellipsis'];
-		if (column === COLUMNS.NAME) return styles['cell-ellipsis'];
 
 		return '';
 	};
@@ -390,72 +356,66 @@ function MemoryTable({
 							</DataGridCell>
 						))}
 					</DataGridRow>
-					{sortedData
-						.filter(item => {
-							// Hide the symbol in table which is type section
-							if (layer === 3) {
-								return item.name !== item.section;
-							}
+					{dataToDisplay.map((row, rowIndex) => {
+						// Check if any column in the row is an object
+						// TO DO: change this approach
+						const hasNextLayer = columns.some(
+							column => typeof row[column] === 'object'
+						);
 
-							return item;
-						})
-						.map((row, rowIndex) => {
-							// Check if any column in the row is an object
-							// TO DO: change this approach
-							const hasNextLayer = columns.some(
-								column => typeof row[column] === 'object'
-							);
+						return (
+							<DataGridRow
+								key={row.id}
+								dataTest={`memory-table:row:${row.id}`}
+								className={`${
+									hasNextLayer
+										? styles.enabledRow
+										: styles.disabledRow
+								} ${
+									row.id === hoveredItem?.id &&
+									hoverSource === 'MemoryVisual'
+										? styles.highlight
+										: ''
+								}`}
+								onClick={() => {
+									if (hasNextLayer) {
+										onClickHandler(
+											row as TSegment | TSection | TSymbol
+										);
+									}
+								}}
+								onMouseEnter={() => {
+									onHover(row, 'MemoryTable');
+								}}
+								onMouseLeave={onMouseLeave}
+							>
+								{filteredOutColumns.map(
+									(column: COLUMNS, index: number) => {
+										const CellComponent =
+											TABLE_CELL_CONFIGURATION[column] ||
+											MemoryTableDefaultCell;
 
-							return (
-								<DataGridRow
-									key={row.id}
-									dataTest={`memory-table:row:${row.id}`}
-									className={`${
-										hasNextLayer
-											? styles.enabledRow
-											: styles.disabledRow
-									} ${
-										row.id === hoveredItem?.id &&
-										hoverSource === 'MemoryVisual'
-											? styles.highlight
-											: ''
-									}`}
-									onClick={() => {
-										if (hasNextLayer) {
-											onClickHandler(
-												row as TSegment | TSection | TSymbol
-											);
-										}
-									}}
-									onMouseEnter={() => {
-										onHover(row, 'MemoryTable');
-									}}
-									onMouseLeave={onMouseLeave}
-								>
-									{filteredOutColumns.map(
-										(column: COLUMNS, index: number) => (
-											<DataGridCell
+										return (
+											<CellComponent
 												key={`${row.id}-${column}`}
-												title={displayContent(column, row)}
-												gridColumn={String(index + 1)}
-												className={setRightAlignToDecValues(column)}
-												onContextMenu={(
-													event: React.MouseEvent<HTMLElement>
-												) => {
-													handleContextMenu(event, column, rowIndex);
-												}}
-											>
-												{displayContent(column, row)}
-											</DataGridCell>
-										)
-									)}
-								</DataGridRow>
-							);
-						})}
+												columnIndex={index}
+												rowIndex={rowIndex}
+												row={row}
+												column={column}
+												savedOptions={savedOptions}
+												layer={layer}
+												handleContextMenu={handleContextMenu}
+											/>
+										);
+									}
+								)}
+							</DataGridRow>
+						);
+					})}
 				</DataGrid>
 				<DataGridRow className={styles['sticky-grid-footer']}>
 					<div data-test='memory-table:footer'>
-						<strong>{sortedData.length}</strong>
+						<strong>{dataToDisplay.length}</strong>
 						{layer === 1
 							? ' Segments'
 							: layer === 2

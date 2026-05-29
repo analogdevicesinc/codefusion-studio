@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,9 +76,14 @@ function AllocatedCore({
 			// Delete individual signal allocation
 
 			dispatch(
+				// Two Redux actions are dispatched synchronously — removeSignalAssignment and removeAppliedSignal.
+				// Each triggers its own async persistence call to the extension, which does a full document replacement.
+				// These two writes race: each reads the document, modifies only its subset, then writes the entire document back.
+				// So we discard the persistence of this action so that the stale data does not get written back.
 				removeSignalAssignment({
 					peripheral,
-					signalName
+					signalName,
+					discardPersistence: true
 				})
 			);
 			// To remove applied signal

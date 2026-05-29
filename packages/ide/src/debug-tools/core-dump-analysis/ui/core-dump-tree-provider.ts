@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 import * as vscode from "vscode";
 import { CoreDumpInfo } from "../types";
 import { CoreDumpNode } from "./core-dump-node";
-import { onCoreDumpSessionStarted } from "../../gdb-toolbox/services/debug-event-hooks";
 import { SessionManager } from "../services/core-dump-session-manager";
 import { CORE_DUMP_VIEW_VISIBLE_COMMAND_ID } from "../commands/constants";
+import { CfsDebugManager } from "../../debug-manager";
 
 /**
  * CoreDumpTreeProvider implements the tree view for core dump analysis results.
@@ -32,23 +32,23 @@ export class CoreDumpTreeProvider
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   // Stores the latest core dump info
   private info: CoreDumpInfo | null = null;
-
-  private activeSessionId: string | undefined;
   private sessionManager: SessionManager;
-  constructor(sessionManager: SessionManager) {
-    this.sessionManager = sessionManager;
+  constructor(sessionManager: SessionManager, debugManager: CfsDebugManager) {
+    this.sessionManager = sessionManager; // Listen for debug sessions starting and check if it's a core dump session
+    debugManager.onStartSession((cfsSession) => {
+      // Check if this is a core dump session
+      const config = cfsSession.vscodeSession.configuration;
+      if (config.coreDump) {
+        this.sessionManager.markSessionActive(cfsSession.vscodeSession.id);
+        // Don't refresh here - wait for session data to be available
+      }
+    });
 
-    // Listen for core dump session events
-    onCoreDumpSessionStarted(({ sessionId }) => {
-      this.sessionManager.markSessionActive(sessionId);
-      this.activeSessionId = sessionId;
-      // Don't refresh here - wait for session data to be available
-    }); // Listen for session data changes - this is when we actually have data to display
+    // Listen for session data changes - this is when we actually have data to display
     this.sessionManager.onDidSessionDataChange(({ sessionId, data }) => {
       // Update if this is an active core dump session
       const activeSessions = this.sessionManager.getActiveSessions();
       if (activeSessions.includes(sessionId)) {
-        this.activeSessionId = sessionId;
         this.setCoreDumpInfo(data);
       } else {
       }

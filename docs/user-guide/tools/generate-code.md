@@ -1,7 +1,7 @@
 ---
 description: Generate Code in CFS
 author: Analog Devices
-date: 2025-04-28
+date: 2026-05-18
 ---
 
 # Generate Code
@@ -32,4 +32,4 @@ The generated code files are added to your project automatically, and are detect
 
 !!! note
     If your project includes AI model files, regenerating code does not delete any previously generated model files.
-    If you no longer want to include an existing model, delete the files manually. The `src/adi_tflm` directory is generated for all TFLM-supported processors, while `src/adi_cnn` is generated only for MAX78002 (for CNN/PyTorch models). You can safely delete these directories before regenerating to ensure a clean output.
+    If you no longer want to include an existing model, delete the files manually. The `src/adi_tflm` directory is generated for all TFLM-supported processors, while `src/adi_cnn` is generated only for MAX78002 (for CNN/PyTorch models using the izer backend). You can safely delete these directories before regenerating to ensure a clean output.

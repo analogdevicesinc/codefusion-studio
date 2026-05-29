@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 
 import * as vscode from "vscode";
+import { type WorkspaceFolder } from "vscode";
 
 /**
  * ZephyrLogCoreDumpParser converts a Zephyr core dump log file to a bin file
@@ -22,18 +23,16 @@ import * as vscode from "vscode";
 export class ZephyrLogCoreDumpParser {
   /**
    * Converts a Zephyr core dump log file to a bin file.
-   * @param logFilePath Path to the .log file
-   * @param binFilePath Path to the output .bin file
    */
-  static async parse(logFilePath: string, binFilePath: string): Promise<void> {
+  static async parse(folder: WorkspaceFolder): Promise<void> {
     // Use VS Code task for log parsing if available
     const tasks = await vscode.tasks.fetchTasks();
     const logParserTask = tasks.find(
-      (t) => t.name === "start Zephyr core dump log parser",
+      (t) =>
+        t.name === "start Zephyr core dump log parser" &&
+        (t.scope as WorkspaceFolder).name === folder.name,
     );
     if (logParserTask) {
-      // Set task variables for log and bin file
-      logParserTask.definition.args = [logFilePath, binFilePath];
       await vscode.tasks.executeTask(logParserTask);
       return;
     }

@@ -1,0 +1,8 @@
+{
+	"Name": "VERSIONED_SOC",
+	"Package": "TEST_PKG",
+	"Version": "1.2.0",
+	"Schema": "1.0.0",
+	"Device": "VERSIONED_SOC",
+	"description": "Mock SoC data model v1.2.0 for testing semver ranges"
+}

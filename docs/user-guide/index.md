@@ -14,7 +14,7 @@ CodeFusion Studio (CFS) is an embedded software development platform based on Mi
 - [Configuring system-level settings](tools/index.md) with the System Planner
 - [Building and flashing](build-and-flash/index.md) projects
 - [Debugging](debugging/index.md) single and multi-core projects
-- Additional tools and features including [Developer Tools](developer-tools/index.md), [AI Tools](ai-tools/index.md), and [CFS Plugins](plugins/index.md)
+- Additional tools and features including [Developer Tools](developer-tools/index.md), [CFS Command Line Utility](cfsutil/index.md), and [CFS Plugins](plugins/index.md)
 - [Uninstalling](uninstall/uninstall-cfs.md)
 
 !!! note

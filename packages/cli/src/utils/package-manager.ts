@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,20 @@ import type {CfsPackageReference} from 'cfs-package-manager';
 
 import {
   CfsApiClient,
-  MyAnalogCloudsmithCredentialProvider
+  MyAnalogCloudsmithCredentialProvider,
+  PackageLicenseReporter
 } from 'cfs-lib';
 import {ConanPkgManager} from 'cfs-package-manager';
 
 import {getAuthConfig, getSessionManager} from './session-manager.js';
 
-export async function getCredentialProvider() {
+export async function getCredentialProvider(
+  apiClient?: CfsApiClient
+) {
+  if (apiClient) {
+    return new MyAnalogCloudsmithCredentialProvider(apiClient);
+  }
+
   const session = await getSessionManager().getSession();
   if (session) {
     const authcfg = getAuthConfig();
@@ -31,6 +38,23 @@ export async function getCredentialProvider() {
       new CfsApiClient({
         baseUrl: authcfg.ccmUrl,
         authorizer: session?.authorizer
+      })
+    );
+  }
+}
+
+export async function getLicenseReporter(apiClient?: CfsApiClient) {
+  if (apiClient) {
+    return new PackageLicenseReporter(apiClient);
+  }
+
+  const session = await getSessionManager().getSession();
+  if (session) {
+    const authcfg = getAuthConfig();
+    return new PackageLicenseReporter(
+      new CfsApiClient({
+        baseUrl: authcfg.ccmUrl,
+        authorizer: session.authorizer
       })
     );
   }
@@ -56,10 +80,21 @@ export async function getPackageManager<
   let credentialProvider:
     | MyAnalogCloudsmithCredentialProvider
     | undefined;
+  let licenseReporter: PackageLicenseReporter | undefined;
 
   try {
     if (includeCredentialProvider) {
-      credentialProvider = await getCredentialProvider();
+      const session = await getSessionManager().getSession();
+      if (session) {
+        const authcfg = getAuthConfig();
+        const client = new CfsApiClient({
+          baseUrl: authcfg.ccmUrl,
+          authorizer: session.authorizer
+        });
+
+        credentialProvider = await getCredentialProvider(client);
+        licenseReporter = await getLicenseReporter(client);
+      }
     }
 
     conanPackman = new ConanPkgManager({
@@ -69,6 +104,10 @@ export async function getPackageManager<
     });
 
     await conanPackman.init();
+
+    if (licenseReporter) {
+      await conanPackman.registerLicenseReporter(licenseReporter);
+    }
   } catch (error: unknown) {
     conanPackman = undefined;
     errorMessage =

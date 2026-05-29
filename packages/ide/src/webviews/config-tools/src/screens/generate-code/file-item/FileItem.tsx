@@ -19,19 +19,20 @@ import styles from './FileItem.module.scss';
 export default function FileItem({
 	item
 }: Readonly<{item: string | CodeGenerationFailure}>) {
+	const itemLabel = typeof item === 'string' ? item : item.name;
+
 	return (
 		<li className={styles.itemContainer}>
 			<span className={styles.generating}>Generating</span>
 
-			<span className={styles.content}>
-				<span
-					data-test='generated-files:file'
-					className={styles.fileName}
-				>
-					{typeof item === 'string' ? item : item.name}
-				</span>
-				<span className={styles.loading} />
+			<span
+				data-test='generated-files:file'
+				className={styles.fileName}
+				title={itemLabel}
+			>
+				{itemLabel}
 			</span>
+			<span className={styles.loading} />
 
 			{typeof item === 'string' ? (
 				<span className={styles.done}>OK</span>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,8 @@ const isError = (errors: TCodeGenError) =>
 		errors.peripheralAllocErr +
 			errors.pinConfigErr +
 			errors.clockConfigErr +
-			errors.dfgErr
+			errors.dfgErr +
+			errors.mcubootErr
 	);
 
 function ProjectItem({
@@ -175,7 +176,8 @@ function ProjectItem({
 							peripheral: errors.peripheralAllocErr,
 							pin: errors.pinConfigErr,
 							clock: errors.clockConfigErr,
-							dfg: errors.dfgErr
+							dfg: errors.dfgErr,
+							mcuboot: errors.mcubootErr
 						}
 					}}
 				/>

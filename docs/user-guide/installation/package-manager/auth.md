@@ -1,7 +1,7 @@
 ---
 description: Use your myAnalog account to access restricted packages from the Command Palette or command line.
 author: Analog Devices
-date: 2026-01-19
+date: 2026-05-23
 ---
 
 # Access restricted packages (using myAnalog login)
@@ -13,31 +13,83 @@ If you don’t already have a myAnalog account, you can create it at [:octicons-
 !!! note
     Access to some packages is restricted to authorized users. If you believe you should have access but cannot see the required packages, contact your account representative.
 
-## Add the package remote
+## Login to myAnalog
 
-Restricted packages require a custom package remote to be added before installation. Your organization  provides the remote name and URL if needed. After adding the remote, CodeFusion Studio prompts you to authenticate using your myAnalog account if required.
+Before adding the package remote, you must first log in to myAnalog.
+
+!!! tip
+    If you've logged in before, you can check your login status with:
+
+    - **Command Palette:** `(CFS) myAnalog Status`
+    - **CLI:** `cfsutil myanalog status`
 
 ### Option 1: From the Command Palette
 
 1. Open the **Command Palette** from the **Manage** gear icon or using the keyboard shortcut (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS).
-2. Type `CFS Add Custom Package Remote` and press Enter, or select it from the list.
-    ![Add Custom Package Remote ](./images/add-package-remote-dark.png#only-dark)
+    ![Open the VS Code Command Palette](../images/access-vs-code-command-palette-dark.png#only-dark)
+    ![Open the VS Code Command Palette](../images/access-vs-code-command-palette-light.png#only-light)
+2. Type `(CFS) myAnalog Login` and press Enter, or select it from the list.
+    ![Start myAnalog login from the Command Palette](./images/cfs_my_analog_login-dark.png#only-dark)
+    ![Start myAnalog login from the Command Palette](./images/cfs_my_analog_login-light.png#only-light)
+3. Click **Open** to launch the browser. If the browser does not open, use the **Copy** button to copy the link and paste it in your browser.
+
+    ![Launch browser](./images/launch-browser.png)
+
+4. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process.
+    ![My Analog Login](./images/login_with-my-analog.png)
+5. When the **Sign-in Successful** page appears, close the browser and return to VS Code.
+6. A VS Code notification confirms you are logged in. Next, proceed to [Add the package remote using the Command Palette](#option-1-add-remote-from-the-command-palette).
+
+    ![Login successful](./images/cfs_my_analog_login-successful-dark.png#only-dark)
+    ![Login successful](./images/cfs_my_analog_login-successful-light.png#only-light)
+
+### Option 2: From the command line `cfsutil`
+
+To access `cfsutil`, open a new terminal (**View > Terminal** or ``Ctrl+` ``).
+
+!!! note
+    If you want to run `cfsutil` from a system terminal outside VS Code, refer to the note in the **Add the package remote** section below for the executable path to use on your platform.
+
+Complete the following steps:
+
+1. In the terminal panel, click the dropdown arrow next to the **+** icon.
+2. Select **CFS Terminal** from the list.
+    ![Accessing cfsutil](./images/access-cfs-terminal-dark.png#only-dark)
+    ![Accessing cfsutil](./images/access-cfs-terminal-light.png#only-light)
+3. Authenticate using your myAnalog account. A browser opens automatically.
+
+    ```bash
+    cfsutil myanalog login
+    ```
+
+4. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process. If the browser does not open, copy the authentication link from the terminal and paste it into your browser manually.
+5. When the **Sign-in Successful** page appears, close the browser and return to VS Code. Next, proceed to [Add the package remote using the command line](#option-2-add-remote-from-the-command-line-cfsutil).
+
+!!! important
+    For session-expiration and reauthentication guidance, see [Restricted packages not appearing](troubleshooting-package-manager.md#restricted-packages-not-appearing).
+
+## Add the package remote
+
+Restricted packages require a custom package remote to be added. Your organization provides the remote name and URL as needed.
+
+### Option 1: Add remote from the Command Palette
+
+1. Open the **Command Palette** from the **Manage** gear icon or use the keyboard shortcut (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS).
+    ![Opening the VS Code Command Palette](../images/access-vs-code-command-palette-dark.png#only-dark)
+    ![Opening the VS Code Command Palette](../images/access-vs-code-command-palette-light.png#only-light)
+2. Type `(CFS) Add Custom Package Remote` and press Enter, or select it from the list.  
+    ![Add Custom Package Remote](./images/add-package-remote-dark.png#only-dark)
     ![Add Custom Package Remote](./images/add-package-remote-light.png#only-light)
 3. Add the remote name and URL.
-4. Choose **myAnalog** from the list of authentication options.
+4. Choose **myAnalog** from the list of authentication options. Since you are already logged in, the remote will be linked to your existing myAnalog session.
+
+    ![Authentication options with myAnalog selected](./images/authentication-options-dark.png#only-dark)
+    ![Authentication options with myAnalog selected](./images/authentication-options-light.png#only-light)
 
     !!! important
         To cancel or restart this process, press **Escape**.
 
-5. Click **Login**, then click **Open** to launch the browser. If the browser does not open, use the **Copy link** button to copy the link and paste it in your browser.
-6. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process.
-    ![My Analog Login](./images/login_with-my-analog.png)
-7. When the **Sign-in Successful** page appears, close the browser and return to VS Code.
-8. A VS Code notification confirms you are logged in.
-
-### Option 2: From the command line `cfsutil`
-
-To access `cfsutil`, open a new terminal (**View > Terminal** or ``Ctrl+` ``). Then complete the following steps:
+### Option 2: Add remote from the command line `cfsutil`
 
 1. In the terminal panel, click the dropdown arrow next to the **+** icon.
 2. Select **CFS Terminal** from the list.
@@ -67,13 +119,8 @@ To access `cfsutil`, open a new terminal (**View > Terminal** or ``Ctrl+` ``). T
         cfsutil pkg auth-remote myserver --myanalog
         ```
 
-5. Authenticate using your myAnalog account:
-
-    ```bash
-    cfsutil myanalog login
-    ```
-
-6. A browser opens automatically. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process. If the browser does not open, copy the authentication link from the terminal and paste it into your browser manually. When the **Sign-in Successful** page appears, close the browser and return to VS Code.
+    !!! note "If you haven't logged in yet"
+        If you skipped the [Login to myAnalog](#login-to-myanalog) section above, run `cfsutil myanalog login` now and complete the browser authentication before proceeding.
 
 !!! note
     To run `cfsutil` from a system terminal outside VS Code, run the following executable:  

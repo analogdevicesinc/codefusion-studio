@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,12 @@
 
 .sidePanel {
 	height: 100%;
-	overflow-x: hidden;
+	overflow-x: var(--cfs-layout-sidepanel-overflow-x, hidden);
 	overflow-y: var(--cfs-layout-sidepanel-overflow-y, auto);
+	scrollbar-gutter: var(
+		--cfs-layout-sidepanel-scrollbar-gutter,
+		auto
+	);
 	background: transparent;
 	border-right: var(
 		--cfs-layout-sidepanel-border-right,

@@ -85,6 +85,13 @@ describe('DFGControlsView', () => {
 				cy.get('#control').type('11');
 			});
 
+		// After typing 11, which is above the max allowed value, the value should still be 11
+		cy.dataTest(numberInputId)
+			.shadow()
+			.within(() => {
+				cy.get('#control').should('have.value', '11');
+			});
+
 		cy.dataTest('dfg-test-controls:control-TestNumber-error').should(
 			'exist'
 		);

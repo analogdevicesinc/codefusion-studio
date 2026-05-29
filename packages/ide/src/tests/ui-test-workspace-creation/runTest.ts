@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,31 +37,49 @@ async function main() {
     ".catalog",
   );
 
-  const isWin = process.platform === "win32";
+  let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
 
-  // @TODO: Create dedicated fixtures for extester runs.
-  const socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+  let projectPluginsPath = path.resolve(
+    process.cwd(),
+    "src",
+    "tests",
+    "fixtures",
+    "plugins",
+    "project",
+  );
+
+  let workspaceTemplatesPath = path.resolve(
+    process.cwd(),
+    "src",
+    "tests",
+    "fixtures",
+    "plugins",
+    "workspace-templates",
+  );
 
   try {
-    let pluginsPath = path.resolve(
-      process.cwd(),
-      "..",
-      "..",
-      "submodules",
-      "cfs-plugins",
-      "plugins",
-      "dist",
-    );
+    if (!fs.existsSync(projectPluginsPath)) {
+      throw new Error(
+        `Project plugin fixtures not found: ${projectPluginsPath}. See test fixture refresh instructions in DEVELOPMENT.md.`,
+      );
+    }
 
-    if (isWin) {
-      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
+    if (!fs.existsSync(workspaceTemplatesPath)) {
+      throw new Error(
+        `Workspace template fixtures not found: ${workspaceTemplatesPath}. See test fixture refresh instructions in DEVELOPMENT.md.`,
+      );
     }
 
     const settingsObj = {
-      "cfs.plugins.searchDirectories": [pluginsPath],
+      "cfs.plugins.searchDirectories": [
+        projectPluginsPath,
+        workspaceTemplatesPath,
+      ],
       "cfs.plugins.dataModelSearchDirectories": [socsPath],
       "cfs.catalogManager.checkForUpdates": false,
       "cfs.catalogManager.catalogLocation": catalogPath,
+      "cfs.telemetry.enable": false,
+      "cfs.sdk.path": "some/fake/path",
     };
 
     await fs.promises.writeFile(
@@ -70,7 +88,10 @@ async function main() {
       "utf-8",
     );
 
-    console.log("Generated path to plugins:", pluginsPath);
+    console.log("Generated plugin fixture search paths:", [
+      projectPluginsPath,
+      workspaceTemplatesPath,
+    ]);
 
     const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
 

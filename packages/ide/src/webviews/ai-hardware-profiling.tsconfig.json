@@ -1,0 +1,11 @@
+{
+	"extends": "../tsconfig.json",
+	"include": [
+		"./ai-hardware-profiling/**/*.ts",
+		"./ai-hardware-profiling/**/*.tsx",
+		"../custom.d.ts",
+		"../common/**/*.ts",
+		"../common/**/*.tsx"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ import type {
 } from '../../../common/types/soc';
 import {
 	applyPersistedClockNodeConfig,
-	applyPersistedPinConfig
+	applyPersistedPinConfig,
+	getDefaultZephelinProfilerConfig
 } from '../utils/persistence';
 import {
 	getPersistenceListenerMiddleware,
@@ -61,6 +62,7 @@ import {
 import {computeDefaultValues} from '../utils/compute-register-value';
 import {
 	getControlsForProjectIds,
+	getMemoryAccessOverrides,
 	getSocAndCfsconfigData
 } from '../utils/api';
 import {
@@ -91,9 +93,22 @@ import {
 import {profilingReducer} from './slices/profiling/profiling.reducer';
 import type {ProfilingState} from './slices/profiling/profiling.reducer';
 import {
+	applicationPackagesReducer
+} from './slices/application-packages/applicationPackages.reducer';
+import {
 	getProfilingPersistenceListenerMiddleware,
 	persistedProfilingActions
 } from './utils/profiling-persistence-middleware';
+import {
+	getMcubootPersistenceListenerMiddleware,
+	persistedMcubootActions
+} from './utils/mcuboot-persistence-middleware';
+import {type ConfiguredProject, type Zephelin} from 'cfs-types';
+import {initializeMemoryAccessOverrides} from '../utils/memory-access';
+import {
+	applyPersistedSettings,
+	applyPersistedApplicationPackages
+} from '../utils/mcuboot-persistence';
 
 type ResolvedType<T> = T extends Promise<infer R> ? R : T;
 
@@ -125,7 +140,8 @@ export const rootReducer = combineReducers({
 	partitionsReducer,
 	gasketsReducer,
 	aiModelReducer,
-	profilingReducer
+	profilingReducer,
+	applicationPackagesReducer
 });
 
 export const useAppSelector: TypedUseSelectorHook<RootState> =
@@ -258,15 +274,21 @@ export function configurePreloadedStore(
 			persistedConfig?.Projects?.filter(
 				p => p.FirmwarePlatform === 'zephyr'
 			).reduce<ProfilingState['zephelin']>((acc, project) => {
-				acc[project.ProjectId] = {
-					Enabled: project.Profiling?.Zephelin?.Enabled ?? false,
-					AIEnabled: project.Profiling?.Zephelin?.AIEnabled ?? false,
-					Port: project.Profiling?.Zephelin?.Port ?? 0
-				};
+				acc[project.ProjectId] = applyProjectProfilingConfig(project);
 
 				return acc;
-			}, {}) ?? {}
+			}, {}) ?? {},
+		errors: {}
 	};
+
+	const {mcubootEnableState, signingKeys} = applyPersistedSettings(
+		persistedConfig?.Settings
+	);
+
+	const persistedApplicationPackages =
+		applyPersistedApplicationPackages(
+			persistedConfig?.ApplicationPackages
+		);
 
 	return configureStore({
 		reducer: rootReducer,
@@ -279,6 +301,9 @@ export function configurePreloadedStore(
 				),
 				...getProfilingPersistenceListenerMiddleware(
 					persistedProfilingActions
+				),
+				...getMcubootPersistenceListenerMiddleware(
+					persistedMcubootActions
 				)
 			),
 		preloadedState: {
@@ -288,13 +313,19 @@ export function configurePreloadedStore(
 				...appContextInitialState,
 				configScreen: {
 					activeConfiguredSignalId: {}
-				}
+				},
+				mcubootEnableState,
+				signingKeys
 			},
 			clockNodesReducer: clockNodesReducerInitialState,
 			partitionsReducer: partitionReducerInitialState,
 			gasketsReducer: gasketsReducerInitialState,
 			aiModelReducer: defaultAiToolsState,
-			profilingReducer: defaultProfilingState
+			profilingReducer: defaultProfilingState,
+			applicationPackagesReducer: {
+				applicationPackages: persistedApplicationPackages,
+				activePackageId: persistedApplicationPackages[0]?.id
+			}
 		}
 	});
 }
@@ -322,6 +353,26 @@ export async function getPreloadedStateStore() {
 		);
 	}
 
+	await Promise.allSettled(
+		formattedDataModel?.Cores.map(async core => {
+			const memoryAccessOverrides = await getMemoryAccessOverrides(
+				core.Id
+			);
+
+			for (const [key, value] of Object.entries(
+				memoryAccessOverrides
+			)) {
+				configOptions.Projects.filter(
+					p => p.PluginId === key && p.CoreId === core.Id
+				).forEach(project => {
+					initializeMemoryAccessOverrides(project.ProjectId, value);
+				});
+			}
+
+			return true;
+		}) ?? []
+	);
+
 	const store = configurePreloadedStore(
 		formattedDataModel,
 		configOptions,
@@ -329,4 +380,13 @@ export async function getPreloadedStateStore() {
 	);
 
 	return store;
+}
+
+export function applyProjectProfilingConfig(
+	project?: ConfiguredProject
+): Partial<Zephelin> {
+	return {
+		...getDefaultZephelinProfilerConfig(),
+		...project?.Profiling?.Zephelin
+	};
 }

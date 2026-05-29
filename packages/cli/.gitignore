@@ -12,3 +12,7 @@ node_modules
 oclif.lock
 oclif.manifest.json
 package.json.bak
+
+# Auto-generated CatalogManager artifacts in test fixtures
+# The catalog is auto-populated from Data/SoC/catalog.zip during test runs
+test/fixtures/catalog/

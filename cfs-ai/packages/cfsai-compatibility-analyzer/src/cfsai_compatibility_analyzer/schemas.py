@@ -29,19 +29,17 @@ clear error messages for invalid compatibility analysis results.
 """
 import json
 import logging
-import re
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-# Optional dependency for enhanced table formatting
-try:
-    from rich.console import Console
-    HAS_RICH = True
-except ImportError:
-    HAS_RICH = False
+from cfsai_types.report import ReportInfo
+
+# Constant for versioning
+# Doesn't necessarily match CFS version if unchanged
+COMPAT_REPORT_VERSION = "2.2.0"
 
 # Constants for report formatting and display
 REPORT_SEPARATOR_LENGTH = 60
@@ -66,18 +64,10 @@ STATUS_FULLY_COMPATIBLE = "FULLY COMPATIBLE"
 STATUS_ISSUES_FOUND_PREFIX = "Status:"
 LOCATION_MODEL_WIDE = "Model-wide"
 
-# Rich text formatting constants
-RICH_CRITICAL_COLOR = "[red]"
-RICH_WARNING_COLOR = "[yellow]" 
-RICH_SUCCESS_COLOR = "[green]"
-RICH_INFO_COLOR = "[blue]"
-RICH_HEADER_COLOR = "[bold magenta]"
-RICH_END_TAG = "[/]"
-
 logger = logging.getLogger(__name__)
 
 
-class SeverityLevel(str, Enum):
+class SeverityLevel(StrEnum):
     """
     Severity levels for compatibility issues.
     
@@ -115,8 +105,8 @@ class OperatorIssue(BaseModel):
     operator: str = Field(
         description="Name of the problematic neural network operation"
     )
-    layer_index: int = Field(
-        ge=0, description="Zero-indexed position of the affected layer"
+    layers: list[int] = Field(
+        description="List of affected layer indices"
     )
     suggested_alternative: Optional[str] = Field(
         default=DEFAULT_SUGGESTED_ALTERNATIVE,
@@ -172,18 +162,10 @@ class MemoryIssue(BaseModel):
         description="Severity level of the constraint violation, either 'critical' \
             or 'warning'"
     )
-
     # Prioritized optimization recommendations
-    primary_recommendation: MemoryRecommendation = Field(
-        description="Primary optimization strategy"
+    recommendations: list[MemoryRecommendation] = Field(
+        description="List of memory optimization recommendations"
     )
-    secondary_recommendation: MemoryRecommendation = Field(
-        description="Secondary optimization approach"
-    )
-    alternative_recommendation: MemoryRecommendation = Field(
-        description="Alternative optimization technique"
-    )
-    
     # Direct list of optimization opportunities
     optimization_opportunities: list["OptimizationOpportunity"] = Field(
         default_factory=list,
@@ -242,8 +224,8 @@ class UnsupportedTypeIssue(BaseModel):
             'COMPLEX128')
     """
     
-    layer_index: int = Field(
-        ge=0, description="Zero-indexed position of the affected layer"
+    layers: list[int] = Field(
+        description="array of affected layer indices"
     )
     operation_type: str = Field(
         description="Operation type using incompatible data representation"
@@ -254,6 +236,24 @@ class UnsupportedTypeIssue(BaseModel):
     severity: SeverityLevel = Field(
         description="Severity level of the constraint violation, either \
             'critical' or 'warning'"
+    )
+
+class ModelSummary(BaseModel):
+    """
+    High-level model characteristics and metadata.
+
+    Provides name and path for the model.
+
+    Attributes:
+        model_name: Descriptive name or identifier for the model
+        model_path: File system path to the model file
+    """
+
+    model_name: Optional[str] = Field(
+        default=None, description="Model identifier or name"
+    )
+    model_path: Optional[str] = Field(
+        default=None, description="File system path to model"
     )
 
 class CompatibilityReport(BaseModel):
@@ -271,6 +271,8 @@ class CompatibilityReport(BaseModel):
         operator_issues: Unsupported operations requiring alternative
             implementations
         unsupported_types: Data type compatibility issues requiring conversion
+        model_summary: Metadata related to model
+        info: Metadata related to the report file.
     """
     
     memory_issues: Optional[list[MemoryIssue]] = Field(
@@ -287,25 +289,13 @@ class CompatibilityReport(BaseModel):
         description="Data type compatibility issues requiring quantization or " \
         "conversion"
     )
-    json_format: Optional[bool] = Field(
-        default=False,
-        description="Render console output in JSON format"
+    model_summary: Optional[ModelSummary] = Field(
+        default=None,
+        description="Model metadata"
     )
-
-    def set_json(self, json:bool) -> None:
-        """Set console output as JSON."""
-        self.json_format=json
-
-
-    def _rich_print(self, text: str) -> None:
-        """Print text with Rich formatting if available, otherwise plain text."""
-        if HAS_RICH and not self.json_format:
-            console = Console()
-            console.print(text)
-        else:
-            # Strip Rich markup for plain text output
-            plain_text = re.sub(r'\[/?[^\]]*\]', '', text)
-            logger.info(plain_text)
+    info: Optional[ReportInfo] = Field(
+        default=None, description="Metadata about the generated report"
+    )
 
     def print_report(self, verbose: bool = False) -> None:
         """
@@ -322,14 +312,11 @@ class CompatibilityReport(BaseModel):
         total_issues = self.count_issues()
         
         if total_issues == 0:
-            success_msg = "  Model fully compatible with target hardware platform"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{success_msg}{RICH_END_TAG}")
-            deployment_msg = "  No compatibility issues detected - ready for deployment"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{deployment_msg}{RICH_END_TAG}")
+            logger.info("  Model fully compatible with target hardware platform")
+            logger.info("  No compatibility issues detected - ready for deployment")
             return
         
-        header_msg = f"Compatibility Analysis: {total_issues} issues identified"
-        self._rich_print(f"{RICH_HEADER_COLOR}{header_msg}{RICH_END_TAG}")
+        logger.info(f"Compatibility Analysis: {total_issues} issues identified")
         logger.info("=" * REPORT_SEPARATOR_LENGTH)
         
         # Report issues in order of severity impact
@@ -351,15 +338,10 @@ class CompatibilityReport(BaseModel):
                 guidance
         """
         operator_count = len(self.operator_issues) if self.operator_issues else 0
-        section_title = f"Operator Compatibility Issues ({operator_count}):"
-        self._rich_print(f"\n{RICH_INFO_COLOR}{section_title}{RICH_END_TAG}")
-        self._rich_print("   Operations not supported by target hardware platform")
+        logger.info(f"Operator Compatibility Issues ({operator_count}):")
+        logger.info("   Operations not supported by target hardware platform")
         
         for issue in self.operator_issues:
-            # Choose color based on severity
-            severity_color = (RICH_CRITICAL_COLOR 
-                            if issue.severity == SeverityLevel.critical 
-                            else RICH_WARNING_COLOR)
             severity_indicator = issue.severity.value.upper()
             
             alternative_text = (
@@ -368,13 +350,14 @@ class CompatibilityReport(BaseModel):
                 else " (no hardware-compatible alternative identified)"
             )
             
-            issue_line = (f"   {severity_color}[{severity_indicator}]{RICH_END_TAG} "
-                         f"Layer {issue.layer_index}: {issue.operator}"
-                         f"{alternative_text}")
-            self._rich_print(issue_line)
+            layers = ",".join(str(i) for i in issue.layers)
+            logger.info(f"   [{severity_indicator}] "
+                        f"{issue.operator}"
+                        f"{alternative_text}. "
+                        f"Layer(s) {layers}.")
             
             if verbose and issue.type:
-                self._rich_print(f"      Issue Type: {issue.type}")
+                logger.info(f"      Issue Type: {issue.type}")
 
     def _print_memory_issues(self, verbose: bool = False) -> None:
         """
@@ -385,35 +368,25 @@ class CompatibilityReport(BaseModel):
                 layer-specific targets
         """
         memory_count = len(self.memory_issues) if self.memory_issues else 0
-        section_title = f"Memory Constraint Issues ({memory_count}):"
-        self._rich_print(f"\n{RICH_INFO_COLOR}{section_title}{RICH_END_TAG}")
-        self._rich_print("   Memory requirements exceed hardware limitations")
+        logger.info(f"Memory Constraint Issues ({memory_count}):")
+        logger.info("   Memory requirements exceed hardware limitations")
         
         for issue in self.memory_issues:
-            # Choose color based on severity
-            severity_color = (RICH_CRITICAL_COLOR 
-                            if issue.severity == SeverityLevel.critical 
-                            else RICH_WARNING_COLOR)
             severity_indicator = issue.severity.value.upper()
             
-            issue_line = (f"   {severity_color}[{severity_indicator}]{RICH_END_TAG} "
-                         f"{issue.type} - {issue.memory_type} memory")
-            self._rich_print(issue_line)
+            logger.info(f"   [{severity_indicator}] "
+                        f"{issue.type} - {issue.memory_type} memory")
             
             if verbose:
-                self._rich_print(f"      Technical Details: {issue.detailed_info}")
-                self._rich_print("      Optimization Strategies:")
-                self._rich_print(f"        1. {issue.primary_recommendation.method}")
-                if issue.primary_recommendation.reference:
-                    reference = issue.primary_recommendation.reference
-                    ref_line = f"           Reference: {reference}"
-                    self._rich_print(ref_line)
-                self._rich_print(f"        2. {issue.secondary_recommendation.method}")
-                alternative_method = issue.alternative_recommendation.method
-                self._rich_print(f"        3. {alternative_method}")
+                logger.info(f"      Technical Details: {issue.detailed_info}")
+                logger.info("      Optimization Strategies:")
+                for rec in issue.recommendations:
+                    logger.info(f"    {rec.method}")
+                    if rec.reference:
+                        logger.info(f"        Reference: {rec.reference}")
                 
                 if issue.optimization_opportunities:
-                    self._rich_print("      High-Impact Optimization Targets:")
+                    logger.info("      High-Impact Optimization Targets:")
                     max_opportunities = MAX_OPTIMIZATION_OPPORTUNITIES_DISPLAYED
                     for opp in issue.optimization_opportunities[:max_opportunities]:
                         savings_kb = opp.potential_savings_kb
@@ -421,7 +394,7 @@ class CompatibilityReport(BaseModel):
                         opp_line = (f"        Layer {opp.layer_index} "
                                    f"({opp.operation_type}): "
                                    f"{formatted_savings} KB potential savings")
-                        self._rich_print(opp_line)
+                        logger.info(opp_line)
 
     def _print_type_issues(self, verbose: bool = False) -> None:
         """
@@ -431,21 +404,17 @@ class CompatibilityReport(BaseModel):
             verbose: Include detailed type conversion recommendations
         """
         type_count = len(self.unsupported_types) if self.unsupported_types else 0
-        section_title = f"Data Type Compatibility Issues ({type_count}):"
-        self._rich_print(f"\n{RICH_INFO_COLOR}{section_title}{RICH_END_TAG}")
-        self._rich_print("   Model uses data types not supported by target hardware")
+        logger.info(f"Data Type Compatibility Issues ({type_count}):")
+        logger.info("   Model uses data types not supported by target hardware")
         
         for issue in self.unsupported_types:
-            # Choose color based on severity
-            severity_color = (RICH_CRITICAL_COLOR 
-                            if issue.severity == SeverityLevel.critical 
-                            else RICH_WARNING_COLOR)
             severity_indicator = issue.severity.value.upper()
             
-            issue_line = (f"   {severity_color}[{severity_indicator}]{RICH_END_TAG} "
-                         f"Layer {issue.layer_index}: {issue.operation_type} operation "
-                         f"uses {issue.data_type}")
-            self._rich_print(issue_line)
+            layers = ",".join(str(i) for i in issue.layers)
+            logger.info(f"   [{severity_indicator}] "
+                        f"{issue.operation_type} operation "
+                        f"uses {issue.data_type}. "
+                        f"Layer(s) {layers}.")
 
     def show_table(self) -> None:
         """
@@ -468,8 +437,8 @@ class CompatibilityReport(BaseModel):
         if total_issues == 0:
             console = Console()
             console.print(
-                "[green]No compatibility issues to display - "
-                "model ready for deployment[/green]"
+                "No compatibility issues to display - "
+                "model ready for deployment"
             )
             return
         
@@ -478,29 +447,25 @@ class CompatibilityReport(BaseModel):
         # Create table with Rich styling
         table = Table(
             title=f"Compatibility Issues Summary ({total_issues} total)",
-            show_header=True,
-            header_style="bold magenta"
+            show_header=True
         )
         
-        table.add_column("Issue Category", style="cyan", 
-                         width=TABLE_COLUMN_WIDTH_CATEGORY)
-        table.add_column("Location", style="blue", 
-                         width=TABLE_COLUMN_WIDTH_LOCATION)
-        table.add_column("Description", style="white", 
-                         width=TABLE_COLUMN_WIDTH_DESCRIPTION)
-        table.add_column("Severity", style="bold", 
-                         width=TABLE_COLUMN_WIDTH_SEVERITY)
+        table.add_column("Issue Category", width=TABLE_COLUMN_WIDTH_CATEGORY)
+        table.add_column("Location", width=TABLE_COLUMN_WIDTH_LOCATION)
+        table.add_column("Description", width=TABLE_COLUMN_WIDTH_DESCRIPTION)
+        table.add_column("Severity", width=TABLE_COLUMN_WIDTH_SEVERITY)
         
         def _get_severity_display(severity: SeverityLevel) -> str:
             """Helper to format severity with Rich color coding."""
-            return ("[red]CRITICAL[/red]" if severity == SeverityLevel.critical
-                    else "[yellow]WARNING[/yellow]")
+            return ("CRITICAL" if severity == SeverityLevel.critical
+                    else "WARNING")
         
         # Add operator issues
         if self.operator_issues:
             for issue in self.operator_issues:
                 severity_display = _get_severity_display(issue.severity)
-                location = f"Layer {issue.layer_index}"
+                layers = ",".join(str(i) for i in issue.layers)
+                location = f"Layer(s) {layers}"
                 description = f"{issue.operator} operation"
                 table.add_row("Operator", location, description, severity_display)
         
@@ -516,7 +481,8 @@ class CompatibilityReport(BaseModel):
         if self.unsupported_types:
             for issue in self.unsupported_types:
                 severity_display = _get_severity_display(issue.severity)
-                location = f"Layer {issue.layer_index}"
+                layers = ",".join(str(i) for i in issue.layers)
+                location = f"Layer(s) {layers}"
                 description = f"{issue.operation_type} ({issue.data_type})"
                 table.add_row("Data Type", location, description, severity_display)
         
@@ -626,38 +592,32 @@ class CompatibilityReport(BaseModel):
         """
         total_issues = self.count_issues()
         
-        summary_title = "Compatibility Analysis Summary"
-        self._rich_print(f"{RICH_HEADER_COLOR}{summary_title}{RICH_END_TAG}")
+        logger.info("Compatibility Analysis Summary")
         logger.info("=" * SUMMARY_SEPARATOR_LENGTH)
         
         if total_issues == 0:
-            status_msg = f"{STATUS_ISSUES_FOUND_PREFIX} {STATUS_FULLY_COMPATIBLE}"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{status_msg}{RICH_END_TAG}")
-            deployment_msg = "   Model ready for immediate deployment"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{deployment_msg}{RICH_END_TAG}")
-            no_issues_msg = "   No compatibility issues detected"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{no_issues_msg}{RICH_END_TAG}")
+            logger.info(f"{STATUS_ISSUES_FOUND_PREFIX} {STATUS_FULLY_COMPATIBLE}")
+            logger.info("   Model ready for immediate deployment")
+            logger.info("   No compatibility issues detected")
             return
         
         issues_message = f"{total_issues} compatibility issues identified"
         status_line = f"{STATUS_ISSUES_FOUND_PREFIX} {issues_message}"
         
-        # Color based on critical issues presence
+        # Report based on critical issues presence
         if self.has_critical_issues():
-            self._rich_print(f"{RICH_CRITICAL_COLOR}{status_line}{RICH_END_TAG}")
-            compatibility_msg = "Model incompatible with target hardware platform"
-            self._rich_print(f"{RICH_CRITICAL_COLOR}{compatibility_msg}{RICH_END_TAG}")
+            logger.error(status_line)
+            logger.error("Model incompatible with target hardware platform")
         else:
-            self._rich_print(f"{RICH_WARNING_COLOR}{status_line}{RICH_END_TAG}")
-            compatibility_msg = "Model compatible with target hardware platform"
-            self._rich_print(f"{RICH_SUCCESS_COLOR}{compatibility_msg}{RICH_END_TAG}")
+            logger.warning(status_line)
+            logger.warning("Model incompatible with target hardware platform")
         
         # Quick action items
         quick_fixes = self.get_quick_fixes()
         if quick_fixes:
-            self._rich_print(f"\n{RICH_INFO_COLOR}Priority Actions:{RICH_END_TAG}")
+            logger.info("\nPriority Actions:")
             for i, fix in enumerate(quick_fixes, 1):
-                self._rich_print(f"   {i}. {fix}")
+                logger.info(f"   {i}. {fix}")
 
     def save_as_json(self, filepath: str) -> bool:
         """
@@ -672,8 +632,13 @@ class CompatibilityReport(BaseModel):
         try:
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
             with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(self.model_dump(exclude={"json_format"}), f, indent=2)
-            logger.info(f"Compatibility report saved to {filepath}")
+                json.dump(
+                    self.model_dump(), 
+                    f, 
+                    indent=2, 
+                    default=str
+                )
+            logger.debug(f"Compatibility report saved to {filepath}")
             return True
         except Exception as e:
             logger.info(f"Failed to save compatibility report to {filepath}: {e}")

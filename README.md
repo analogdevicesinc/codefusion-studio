@@ -1,14 +1,15 @@
 # Overview
 
-CodeFusion Studio (CFS) is a modern embedded software development ecosystem that integrates with Microsoft Visual Studio Code. Designed for Analog Devices microcontrollers and digital signal processors, CFS provides a unified development environment that eliminates the complexity of working across multiple toolchains, SDKs, and build systems. It combines graphical system design, code generation, and debugging within a single development and debugging environment.
+CodeFusion Studio (CFS) is a modern embedded software development ecosystem that integrates with Microsoft Visual Studio Code. Designed for Analog Devices microcontrollers and digital signal processors, CFS provides a unified development environment that eliminates the complexity of working across multiple toolchains, SDKs, and build systems. It combines graphical system design, AI model integration, code generation, and advanced debugging — accessible through both an intuitive IDE and a command-line workflow.
 
 ## About CFS
 
-- **Easy Project Setup:** Start new single- or multi-core projects in seconds with just a few clicks using the Workspace Creation Wizard. Example applications help you get up and running fast, with secure partitioning using Arm® TrustZone® available for supported devices.
+- **Easy Project Setup:** Start new single- or multi-core projects in seconds with just a few clicks using the Workspace Creation Wizard. Example applications help you get up and running fast, with secure partitioning using Arm® TrustZone® available for supported devices. Create AI-ready workspaces directly from a model file with automatic compatibility checking and hardware configuration.
 - **Broad Hardware Support:** Build for Arm® Cortex-M, RISC-V, and SHARC-FX architectures in supported ADI products.
 - **Visual System Design:** Visually configure pins, clocks, peripherals, memory, AI models, and data flows—all with the System Planner.
-- **AI at the Edge:** Build, validate, and deploy AI models directly in System Planner or from the command line. Run compatibility and performance profiling on your target hardware and visualize inference behavior in real time with the integrated Zephelin profiler and trace viewer.
-- **Advanced Debugging:** Provides an extended debugging ecosystem for multi-core systems with breakpoints, disassembly, cross-core support, and RTOS thread awareness. Automate complex inspections with the GDB Toolbox or analyze captured crashes using Core Dump Analysis.
+- **CLI-First Workflows:** Build, flash, and configure workspaces entirely from the command line with `cfsutil`. Set up projects, run AI model workflows, manage SDKs and packages, and execute build tasks without opening the IDE.
+- **AI at the Edge:** Build, validate, and deploy AI models directly in the GUI or from the command line. Run compatibility and performance profiling on your target hardware and visualize inference behavior in real time with the integrated Zephelin profiler and trace viewer. One-click trace capture with automatic format conversion and in-IDE visualization.
+- **Advanced Debugging:** Provides an extended debugging ecosystem for multi-core systems with breakpoints, disassembly, cross-core support, and RTOS thread awareness. Automate complex inspections with the GDB Toolbox, inspect device memory with the Memory Viewer, or analyze captured crashes using Core Dump Analysis.
 - **AI Debug Assistant (Preview):** Connect any MCP-compatible AI client, such as GitHub Copilot or Claude Code, directly to your live debug sessions. The AI Debug Assistant can autonomously perform tasks such as investigating hard faults, decoding fault registers, inspecting hardware state across multiple cores, and tracing memory corruption — all in real time.
 - **Flexible Architecture:** An extensible plugin architecture and a platform-agnostic design let you customize your workflow and conceptually separate configuration and design decisions from code generation, giving you the freedom to choose RTOS, middleware, and firmware platforms.
 - **On-Demand Updates:** Download SDKs, toolchains, and plugins as needed with the integrated Package Manager so your environment is always up to date.
@@ -24,12 +25,12 @@ CodeFusion Studio currently supports the following processors in the following c
 | [MAX32655](https://www.analog.com/en/products/MAX32655.html)              | Yes            | Yes    | Yes          | No       | Yes* |
 | [MAX32657](https://www.analog.com/en/products/MAX32657.html)              | No             | Yes    | Yes          | Yes      | Yes  |
 | [MAX32658](https://www.analog.com/en/products/MAX32658.html)              | No             | Yes    | Yes          | No       | Yes‡ |
-| [MAX32660](https://www.analog.com/en/products/max32660.html)              | Yes            | Yes    | No           | No       | No   |
-| [MAX32662](https://www.analog.com/en/products/max32662.html)              | Yes            | Yes    | No           | No       | Yes* |
-| [MAX32666](https://www.analog.com/en/products/max32666.html)              | No             | Yes    | No           | No       | No   |
+| [MAX32660](https://www.analog.com/en/products/max32660.html)              | Yes            | Yes    | Yes          | No       | No   |
+| [MAX32662](https://www.analog.com/en/products/max32662.html)              | Yes            | Yes    | Yes          | No       | Yes* |
+| [MAX32666](https://www.analog.com/en/products/max32666.html)              | Yes            | Yes    | Yes          | No       | No   |
 | [MAX32670](https://www.analog.com/en/products/max32670.html)              | Yes            | Yes    | Yes          | No       | Yes  |
-| [MAX32672](https://www.analog.com/en/products/MAX32672.html)              | Yes            | Yes    | No           | No       | Yes* |
-| [MAX32675C](https://www.analog.com/en/products/max32675c.html)            | Yes            | Yes    | No           | No       | No   |
+| [MAX32672](https://www.analog.com/en/products/MAX32672.html)              | Yes            | Yes    | Yes          | No       | Yes* |
+| [MAX32675C](https://www.analog.com/en/products/max32675c.html)            | Yes            | Yes    | Yes          | No       | No   |
 | [MAX32690](https://www.analog.com/en/products/MAX32690.html)              | Yes            | Yes    | Yes          | Yes      | Yes  |
 | [MAX78000](https://www.analog.com/en/products/MAX78000.html)              | Yes            | Yes    | Yes          | No       | Yes* |
 | [MAX78002](https://www.analog.com/en/products/MAX78002.html)              | Yes            | Yes    | Yes          | Yes      | No   |
@@ -70,9 +71,9 @@ Tools VS Code extensions depend on:
 
 Download CodeFusion Studio from the [CodeFusion Studio Developer Resources](https://developer.analog.com/solutions/codefusionstudio) page or use the links below:
 
-- [Windows](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.exe)
-- [Linux](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.run)
-- [macOS](https://download.analog.com/codefusion-studio/2.1.0/CodeFusionStudio_2.1.0.dmg)
+- [Windows](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.exe)
+- [Linux](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.run)
+- [macOS](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.dmg)
 
 #### Install
 
@@ -96,7 +97,7 @@ Set or update your SDK path when prompted, or configure it manually in user sett
 
 1. Open **Settings**: select **File > Preferences > Settings** (on macOS: **Code > Settings > Settings**), or open the Command Palette (`Ctrl+Shift+P` / `⇧⌘P`) and search for **Preferences: Open Settings (UI)**, or use the keyboard shortcut (`Ctrl+,`, on Windows/Linux, `⌘,` on macOS).
 2. Search for `cfs.sdk.path`.
-3. Set the path to your CodeFusion Studio SDK installation directory, making sure it points to the correct version. For example, `C:\analog\cfs\2.1.0` on Windows.
+3. Set the path to your CodeFusion Studio SDK installation directory, making sure it points to the correct version. For example, `C:\analog\cfs\2.2.0` on Windows.
 
 > **Note:**
 > You may need to restart VS Code after setting the path.

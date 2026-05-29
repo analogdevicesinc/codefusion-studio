@@ -2,9 +2,12 @@ import {type ConfiguredProject} from '@common/api';
 import type {Soc, PinDictionary} from '@common/types/soc';
 import {type Partition} from '../state/slices/partitions/partitions.reducer';
 import {type PeripheralConfig} from '../types/peripherals';
-import {formatProjectPersistencePayload} from './persistence';
+import {
+	formatProjectPersistencePayload,
+	applyPersistedPinConfig
+} from './persistence';
 import {sysPlannerDataInit} from './sys-planner-data-init';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {formatPeripheralSignalsTargets} from './json-formatter';
 
 const MAX32690wlp = (await import('@socs/max32690-wlp.json'))
@@ -215,5 +218,122 @@ describe('Persistance', () => {
 		);
 		expect(persistedPinsConfig.OWM.signalsTargets.IO).to.equal('H5');
 		expect(persistedPinsConfig.OWM.signalsTargets.PE).to.equal('H9');
+	});
+
+	it('formatProjectPersistencePayload should correctly format numeric base values', () => {
+		const peripheralName = 'I2C0';
+		const peripheralDescription = 'Inter-Integrated Circuit 0';
+		const projectId = 'CM4-proj';
+
+		const peripheralAssigments: Record<string, PeripheralConfig> = {
+			[peripheralName]: {
+				name: peripheralName,
+				description: peripheralDescription,
+				projectId,
+				signals: {},
+				config: {
+					MODE: 'TARGET',
+					TARGET0_ADDR: '000000FF',
+					CLK_LO: '100'
+				},
+				configFormat: {
+					numericBase: {
+						TARGET0_ADDR: 'Hexadecimal',
+						CLK_LO: 'Decimal'
+					}
+				}
+			}
+		};
+
+		const partitions: Partition[] = [];
+		const pins: PinDictionary = {};
+
+		const result = formatProjectPersistencePayload(
+			partitions,
+			peripheralAssigments,
+			pins
+		);
+
+		const resultPeripheral = result[0].Peripherals?.find(
+			p => p.Name === peripheralName
+		);
+
+		expect(resultPeripheral?.Config).to.deep.equal({
+			MODE: 'TARGET',
+			TARGET0_ADDR: '0x000000FF',
+			CLK_LO: '100'
+		});
+	});
+
+	it('applyPersistedPinConfig should restore distinct PinCfg for peripherals sharing the same signal name', () => {
+		const dataModelPins: PinDictionary = {
+			G5: {pinId: 'G5', isFocused: false, appliedSignals: []},
+			H5: {pinId: 'H5', isFocused: false, appliedSignals: []}
+		};
+
+		const persistedPinConfig = [
+			{Pin: 'G5', Peripheral: 'TMR0', Signal: 'IOA'},
+			{Pin: 'H5', Peripheral: 'TMR1', Signal: 'IOA'}
+		];
+
+		const persistedCores: ConfiguredProject[] = [
+			{
+				CoreId: 'CM4',
+				ProjectId: 'CM4',
+				PluginId: '',
+				PluginVersion: '',
+				FirmwarePlatform: '',
+				ExternallyManaged: false,
+				PlatformConfig: {},
+				Partitions: [],
+				Peripherals: [
+					{
+						Name: 'TMR0',
+						Signals: [
+							{
+								Name: 'IOA',
+								Config: {
+									TMR_SIGNAL_TYPE: 'IN',
+									PWR: 'VDDIO',
+									PS: 'DIS'
+								}
+							}
+						],
+						Config: {}
+					},
+					{
+						Name: 'TMR1',
+						Signals: [
+							{
+								Name: 'IOA',
+								Config: {
+									TMR_SIGNAL_TYPE: 'OUT',
+									PWR: 'VDDIO',
+									DS: '0'
+								}
+							}
+						],
+						Config: {}
+					}
+				]
+			}
+		];
+
+		applyPersistedPinConfig(
+			dataModelPins,
+			persistedPinConfig,
+			persistedCores
+		);
+
+		expect(dataModelPins.G5.appliedSignals[0].PinCfg).to.deep.equal({
+			TMR_SIGNAL_TYPE: 'IN',
+			PWR: 'VDDIO',
+			PS: 'DIS'
+		});
+		expect(dataModelPins.H5.appliedSignals[0].PinCfg).to.deep.equal({
+			TMR_SIGNAL_TYPE: 'OUT',
+			PWR: 'VDDIO',
+			DS: '0'
+		});
 	});
 });

@@ -34,7 +34,6 @@ export class ScriptManager {
   private _onScriptsChanged = new vscode.EventEmitter<void>();
   public readonly onScriptsChanged = this._onScriptsChanged.event;
   private scripts: Array<GdbToolboxScript & { filePath: string }> = [];
-
   constructor() {
     // Determine the workspace root or set to undefined if no workspace is open
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -120,6 +119,7 @@ export class ScriptManager {
         }
       }
     };
+
     loadFromDir(this.scriptsDir);
     loadFromDir(this.userDebugConfigsDir);
     this._onScriptsChanged.fire();

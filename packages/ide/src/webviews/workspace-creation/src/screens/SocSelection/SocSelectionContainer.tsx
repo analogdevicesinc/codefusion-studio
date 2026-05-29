@@ -13,58 +13,73 @@
  *
  */
 
-import {useCallback, useState} from 'react';
-import {SearchInput} from 'cfs-react-library';
-import SocList from './SocList';
-import NotificationError from '../../components/notification-error/NotificationError';
-import {useConfigurationErrors} from '../../state/slices/workspace-config/workspace-config.selector';
+import {useCallback, useMemo} from 'react';
+import {
+	useConfigurationErrors,
+	useSelectedSoc
+} from '../../state/slices/workspace-config/workspace-config.selector';
 
-import styles from './SocSelectionContainer.module.scss';
 import {getFormattedCatalog} from '../../utils/get-catalog';
+import CfsSearchableGroupSelect from '../../../../common/components/cfs-searchable-group-select/CfsSearchableGroupSelect';
+import {type SoCFamily} from '../../common/types/catalog';
+import NotificationError from '../../components/notification-error/NotificationError';
+import {
+	setConfigErrors,
+	setSelectedSoc
+} from '../../state/slices/workspace-config/workspace-config.reducer';
+import {useAppDispatch} from '../../state/store';
+import {configErrors} from '../../common/constants/validation-errors';
 
-const socEngineList = getFormattedCatalog();
-
-let catalogItemsCount = 0;
-
-for (const group of socEngineList) {
-	catalogItemsCount += group.socs.length;
-}
+const socEngineList: SoCFamily[] = getFormattedCatalog();
 
 export default function SocSelectionContainer() {
-	const [search, setSearch] = useState<string>('');
 	const errors = useConfigurationErrors('soc');
 
-	const handleSearchChange = useCallback((newInput: string) => {
-		setSearch(newInput);
-	}, []);
+	const selectedSoc = useSelectedSoc();
+	const dispatch = useAppDispatch();
+
+	const handleSelectionChange = useCallback(
+		(socId: string) => {
+			if (socId !== selectedSoc) {
+				dispatch(setSelectedSoc(socId));
+				dispatch(
+					setConfigErrors({
+						id: configErrors.soc,
+						notifications: []
+					})
+				);
+			}
+		},
+		[dispatch, selectedSoc]
+	);
+
+	const groupedOptions = useMemo(
+		() =>
+			socEngineList.map(family => ({
+				id: family.familyId,
+				label: family.familyName,
+				options: family.socs.map(soc => ({
+					id: soc.id,
+					label: soc.name,
+					description: soc.description
+				}))
+			})),
+		[]
+	);
 
 	return (
-		<div
-			data-test='soc-selection:container'
-			className={styles.socSelectionContainer}
-		>
-			<div className={styles.searchBox}>
-				<SearchInput
-					inputVal={search}
-					placeholder='Search SoCs'
-					rightAdornment={
-						<span
-							className={styles.rightAdornment}
-						>{`${catalogItemsCount.toLocaleString('en-US')} available`}</span>
-					}
-					onClear={() => {
-						setSearch('');
-					}}
-					onInputChange={handleSearchChange}
-				/>
-			</div>
-
+		<div>
 			<NotificationError
 				error={errors}
 				testId='soc-selection-error'
 			/>
 
-			<SocList searchString={search} socEngineList={socEngineList} />
+			<CfsSearchableGroupSelect
+				selectedOption={selectedSoc}
+				setSelectedOption={handleSelectionChange}
+				groupedOptions={groupedOptions}
+				dataTest='soc-selection'
+			/>
 		</div>
 	);
 }

@@ -13,41 +13,82 @@
  *
  */
 
-/**
- * Compare two semantic version strings
- * @param a - First version string
- * @param b - Second version string
- * @returns Positive number if a > b, negative if a < b, 0 if equal
- */
-export function compareVersions(a: string, b: string): number {
-	const parseVersion = (version: string) => {
-		const parts = version.split(".").map((part) => parseInt(part, 10) || 0);
-		return {
-			major: parts[0] || 0,
-			minor: parts[1] || 0,
-			patch: parts[2] || 0
-		};
-	};
-
-	const versionA = parseVersion(a);
-	const versionB = parseVersion(b);
-
-	if (versionA.major !== versionB.major) {
-		return versionA.major - versionB.major;
-	}
-	if (versionA.minor !== versionB.minor) {
-		return versionA.minor - versionB.minor;
-	}
-	return versionA.patch - versionB.patch;
-}
+import * as semver from "semver";
 
 /**
  * Find the latest version string from a list of semantic version strings.
  * @param versions - Array of version strings (e.g., ["1.0.0", "1.2.0"])
- * @returns The highest (latest) version string.
+ * @returns The highest (latest) version string, or undefined if no valid versions found.
  */
-export function findLatestVersion(versions: string[]): string {
-	return versions.reduce((latest, current) => {
-		return compareVersions(current, latest) > 0 ? current : latest;
-	});
+export function findLatestVersion(
+	versions: string[]
+): string | undefined {
+	if (versions.length === 0) {
+		return undefined;
+	}
+
+	// Filter out invalid versions and sort descending
+	const validVersions = versions.filter((v) => semver.valid(v));
+
+	if (validVersions.length === 0) {
+		return undefined;
+	}
+
+	const sorted = semver.rsort([...validVersions]);
+
+	return sorted[0];
+}
+
+/**
+ * Find a matching version from available versions based on a version or range specification.
+ *
+ * @param versionOrRange - Either an exact version or a valid semver range
+ * See: https://www.npmjs.com/package/semver for a list of all valid range formats
+ *
+ * @param availableVersions - Array of available version strings to match against
+ * @returns The matching version string if found, undefined otherwise
+ *
+ * @example
+ * // Exact version - requires exact match
+ * findMatchingVersion("1.2.0", ["1.0.0", "1.2.0", "1.3.0"]) // "1.2.0"
+ *
+ * @example
+ * // Semver ranges - finds highest compatible version.
+ * findMatchingVersion("^1.0.0", ["1.0.0", "1.2.0", "2.0.0"]) // "1.2.0"
+ * findMatchingVersion("~1.2.0", ["1.2.0", "1.2.5", "1.3.0"]) // "1.2.5"
+ * findMatchingVersion(">=1.1.0 <2.0.0", ["1.0.0", "1.2.0", "1.5.0", "2.0.0"]) // "1.5.0"
+ *
+ * @example
+ * // No match found
+ * findMatchingVersion("3.0.0", ["1.0.0", "2.0.0"]) // undefined
+ */
+export function findMatchingVersion(
+	versionOrRange: string,
+	availableVersions: string[]
+): string | undefined {
+	// Filter to only valid semver versions
+	const validVersions = availableVersions.filter((v) =>
+		semver.valid(v)
+	);
+
+	// Check if input is an exact valid version
+	if (semver.valid(versionOrRange)) {
+		// Exact version - require exact match
+		const exactMatch = validVersions.find((v) =>
+			semver.eq(v, versionOrRange)
+		);
+
+		return exactMatch;
+	}
+
+	// Check if input is a valid range
+	if (semver.validRange(versionOrRange)) {
+		// Range - find highest satisfying version
+		return (
+			semver.maxSatisfying(validVersions, versionOrRange) ?? undefined
+		);
+	}
+
+	// Invalid version/range format
+	return undefined;
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import {
 	useSelectedCoreToConfigId,
 	useSelectedSoc
 } from '../../state/slices/workspace-config/workspace-config.selector';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 import {useAppDispatch} from '../../state/store';
 import {
 	resetCorePlatformConfig,
@@ -54,7 +54,7 @@ function CoreConfigContainer({
 }: CoreConfigContainerProps) {
 	const dispatch = useAppDispatch();
 	const selectedSocId = useSelectedSoc();
-	const {packageId, boardId} = useSelectedBoardPackage();
+	const {boardId} = useSelectedBoardPackage();
 	const configErrors = useConfigurationErrors('coreConfig');
 	const pluginsList = use(pluginsPromise);
 	const coreId = useSelectedCoreToConfigId();
@@ -105,29 +105,18 @@ function CoreConfigContainer({
 	}, [selectedPluginInfo, selectedSocId, boardId, core]);
 
 	const filteredPluginList = useMemo(() => {
-		const filter = (plugin: CfsPluginInfo) => {
-			const normalizedPackageId = packageId.replace(/[\s-]+/g, '');
-
-			return (
-				!plugin.features.workspace &&
-				(plugin.supportedSocs?.some(
-					soc =>
-						soc.name?.toLowerCase() ===
-							selectedSocId?.toLowerCase() &&
-						soc.package?.toLowerCase() ===
-							normalizedPackageId.toLowerCase() &&
-						(boardId === '' ||
-							(soc.board?.toLowerCase() ?? '') ===
-								boardId.toLowerCase()) &&
-						(!Array.isArray(soc.cores) ||
-							soc.cores?.includes(core?.coreId))
-				) ??
-					false)
-			);
-		};
+		const filter = (plugin: CfsPluginInfo) =>
+			!plugin.features.workspace &&
+			(plugin.supportedSocs?.some(
+				soc =>
+					soc.name?.toLowerCase() === selectedSocId?.toLowerCase() &&
+					(!Array.isArray(soc.cores) ||
+						soc.cores?.includes(core?.coreId))
+			) ??
+				false);
 
 		return uniquePluginsList.filter(filter);
-	}, [selectedSocId, packageId, boardId, uniquePluginsList, core]);
+	}, [selectedSocId, uniquePluginsList, core]);
 
 	const handlePluginChange = useCallback(
 		(id: string, version: string) => {

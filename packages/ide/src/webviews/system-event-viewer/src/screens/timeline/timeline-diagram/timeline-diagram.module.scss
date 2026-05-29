@@ -1,0 +1,241 @@
+/**
+ *
+* Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '@sev-common/styles/sev-variables' as sev;
+
+$cta-width: 72px;
+$gap: 24px;
+$padding: 20px;
+$border-width: 1px;
+$slider-container-height: 24px;
+$slider-border-width: 2px;
+
+.diagramRoot {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.timelineDiagramContainer {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	box-sizing: border-box;
+
+	.scrollContent {
+		display: flex;
+		align-items: stretch;
+		width: 100%;
+		min-width: 0;
+		height: max-content;
+
+		.diagram {
+			position: relative;
+			flex: 1 1 auto;
+			min-width: 0;
+
+			&.measureActiveCursor,
+			&.measureActiveCursor * {
+				cursor: crosshair;
+			}
+
+			.timelineHeader {
+				height: 28px;
+				width: auto;
+				box-sizing: border-box;
+				border-bottom: $border-width solid colors.$default-border;
+				background: colors.$default-background;
+				position: sticky;
+				top: 0;
+				z-index: sev.zIndex('timeline-row');
+			}
+
+			.timestampsChartsContainer {
+				.chartContainer {
+					width: 100%;
+					height: sev.$timeline-list-item-height;
+					display: flex;
+					flex: 0 0 auto;
+					flex-direction: row;
+					box-sizing: border-box;
+					border-bottom: $border-width solid colors.$default-border;
+
+					&[data-row-emphasized='true'] {
+						background-color: colors.$list-inactive-selection-background;
+					}
+
+					&[data-row-emphasized='true'] .emptyBlock {
+						background: colors.$list-inactive-selection-background;
+					}
+
+					.emptyBlock {
+						width: sev.$timeline-empty-block-width;
+						height: calc(sev.$timeline-list-item-height - 1px);
+						box-sizing: border-box;
+						background: colors.$default-background;
+					}
+
+					.timestampsChartRow {
+						height: sev.$timeline-list-item-height !important;
+						width: calc(100% - sev.$timeline-empty-block-width);
+						box-sizing: border-box;
+					}
+				}
+			}
+		}
+	}
+}
+
+.timelineFooterContainer {
+	display: flex;
+	gap: 24px;
+	height: sev.$timeline-footer-height;
+	padding-right: $padding;
+	padding-left: calc(
+		var(--ev-list-width, sev.$timeline-list-width) + #{$padding}
+	);
+	background: colors.$default-background;
+	border-top: 1px solid colors.$default-border;
+
+	.content {
+		flex: 1 1 auto;
+		height: inherit;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+
+		.panButton {
+			border: 1px solid colors.$default-border;
+			border-radius: layout.$border-radius-2;
+			background: colors.$default-background;
+		}
+	}
+
+	.ctaButtonsContainer {
+		display: flex;
+		align-items: center;
+		width: $cta-width;
+		box-sizing: border-box;
+
+		> * {
+			width: 24px;
+			box-sizing: border-box;
+		}
+
+		.zoomOutBtn {
+			border: 1px solid colors.$default-border;
+			border-radius: 2px 0 0 2px;
+		}
+
+		.zoomResetBtn {
+			border-top: 1px solid colors.$default-border;
+			border-bottom: 1px solid colors.$default-border;
+		}
+
+		.zoomInBtn {
+			border: 1px solid colors.$default-border;
+			border-radius: 0 2px 2px 0;
+		}
+	}
+}
+
+.timelineSliderContainer {
+	position: relative;
+	width: 100%;
+	height: calc($slider-container-height - 2px); // borders
+	border: 1px solid colors.$default-border;
+	border-radius: 2px;
+	box-sizing: border-box;
+
+	.range {
+		position: absolute;
+		top: -2px; // to cover container border at edges
+		bottom: -2px; // to cover container border at edges
+		display: flex;
+		align-items: center;
+		min-width: 18px;
+		background-color: colors.$button-primary-background;
+
+		border-color: colors.$button-primary-background;
+		border-style: solid;
+		border-top-width: $slider-border-width;
+		border-bottom-width: $slider-border-width;
+		border-left-width: 0;
+		border-right-width: 0;
+		border-radius: layout.$border-radius-2;
+		box-sizing: border-box;
+
+		&:hover {
+			border-color: colors.$button-primary-hover-background;
+			background-color: colors.$button-primary-hover-background;
+
+			.handle,
+			.inner .middle {
+				border-color: colors.$button-primary-hover-background;
+				background-color: colors.$button-primary-hover-background;
+			}
+		}
+
+		.handle {
+			width: 6px;
+			height: 100%;
+			background: colors.$button-primary-background;
+			border: 1px solid colors.$button-primary-background;
+			border-radius: layout.$border-radius-1;
+			flex-shrink: 0;
+			cursor: ew-resize;
+			box-sizing: border-box;
+		}
+
+		.inner {
+			height: 100%;
+			width: 100%;
+			background-color: colors.$editor-widget-background;
+			border-radius: layout.$border-radius-1;
+			border: 2px solid colors.$editor-widget-background;
+			box-sizing: border-box;
+
+			.middle {
+				height: 100%;
+				background: colors.$button-primary-background;
+				border: 1px solid colors.$button-primary-background;
+				border-radius: layout.$border-radius-1;
+				box-sizing: border-box;
+				cursor: default;
+			}
+
+			.cursorGrab {
+				cursor: grab;
+			}
+		}
+	}
+}
+
+// Hide tooltip when invisible to prevent layout issues (taking up space)
+.timelineTooltip[style*='visibility: hidden'] {
+	display: none !important;
+}
+
+.timelineTooltip {
+	display: block !important;
+}

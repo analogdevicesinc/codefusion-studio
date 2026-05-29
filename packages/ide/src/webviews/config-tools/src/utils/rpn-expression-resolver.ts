@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ import type {
 	ClockNodeState,
 	Expression,
 	PinState,
-	ControlCfg
+	ControlCfg,
+	AppliedSignal
 } from '@common/types/soc';
 import {
 	NOT_COMPUTED_MARKER,
@@ -27,19 +28,23 @@ import {
 } from '../screens/clock-config/constants/clocks';
 import {getClockNodeDictionary} from './clock-nodes';
 import {getSocPinDetails} from './soc-pins';
-import {getPrimaryProjectFirmwarePlatform} from './config';
+import {getProjectProperty} from './config';
+import type {PeripheralConfig} from '../types/peripherals';
 
 type ClockNodesConfig = Record<string, Partial<ClockNodeState>>;
+type PinConfig = Record<string, AppliedSignal>;
+type PeripheralCfg = Record<string, Record<string, PeripheralConfig>>;
 
 export type GlobalConfig = {
 	clockconfig: ClockNodesConfig;
-	pinconfig?: unknown; // @TODO: Implement once we have a reference in the socs.
+	pinconfig: PinConfig;
+	peripheralconfig: PeripheralCfg;
 	assignedPins?: PinState[];
 	currentNode?: string;
 	toolId?: ToolId;
 };
 
-type ToolId = 'pinconfig' | 'clockconfig';
+type ToolId = 'pinconfig' | 'clockconfig' | 'peripheralconfig';
 
 const SELECTION_OPERATOR = '?';
 const INTEGER_COERCION_OPERATOR = 'int';
@@ -49,6 +54,7 @@ const CLOCK_OPERATOR = 'clk';
 const LWR_CASE_OPERATOR = 'lwr';
 const MATCH_OPERATOR = 'match';
 const REPLACE_OPERATOR = 'replace';
+const DEFINED_OPERATOR = 'defined';
 
 const isHex = (str: string) => /^0x[0-9a-fA-F]+$/.test(str);
 
@@ -124,6 +130,13 @@ const executeUnaryOperand = (
 			return Number(operand) === 0 ? 1 : 0;
 		case LWR_CASE_OPERATOR:
 			return operand.toString().toLowerCase();
+		case DEFINED_OPERATOR:
+			return operand !== null &&
+				operand !== undefined &&
+				operand !== UNDEFINED_MARKER &&
+				operand !== UNCONFIGURED_TEXT
+				? 1
+				: 0;
 		default:
 			return null;
 	}
@@ -154,9 +167,36 @@ function processControlWithReferencedValues(
 
 		if (toolId === 'clockconfig') {
 			return (
-				currentConfig[toolId][nodeName].controlValues?.[
+				currentConfig[toolId]?.[nodeName]?.controlValues?.[
 					controlName
 				] ?? UNCONFIGURED_TEXT
+			);
+		}
+
+		if (toolId === 'peripheralconfig') {
+			// The peripheral config is per-core, but here we don't care which core is allocated.
+			let value = UNCONFIGURED_TEXT;
+
+			const coreWithPeripheral = Object.values(currentConfig[toolId]).find(peripherals => peripherals[nodeName]);
+			const configValue = coreWithPeripheral?.[nodeName].config?.[controlName]?.valueOf();
+
+			if (configValue !== undefined) {
+				if (typeof configValue === 'boolean') {
+					value = configValue ? 'TRUE' : 'FALSE';
+				} else if (typeof configValue === 'number') {
+					value = String(configValue);
+				} else {
+					value = configValue;
+				}
+			}
+
+			return value;
+		}
+
+		if (toolId === 'pinconfig') {
+			return (
+				currentConfig[toolId]?.[nodeName]?.PinCfg?.[controlName] ??
+				UNCONFIGURED_TEXT
 			);
 		}
 	}
@@ -173,8 +213,20 @@ function processTemplateString(
 	}
 
 	// eslint-disable-next-line no-template-curly-in-string
-	if (token === '${FirmwarePlatform}') {
-		return getPrimaryProjectFirmwarePlatform() ?? UNCONFIGURED_TEXT;
+	if (token === '${CoreId}') {
+		if (
+			currentConfig &&
+			typeof currentConfig === 'object' &&
+			!Array.isArray(currentConfig)
+		) {
+			const {projectId} = currentConfig as Record<string, string>;
+
+			return projectId
+				? (getProjectProperty(projectId, 'CoreId') as string)
+				: UNCONFIGURED_TEXT;
+		}
+
+		return UNCONFIGURED_TEXT;
 	}
 
 	const match =
@@ -231,7 +283,8 @@ function processTemplateString(
 			}
 
 			return formatOperand(
-				(controlConfig as Record<string, string>)[operandValue]
+				(controlConfig as Record<string, string>)[operandValue] ??
+					UNCONFIGURED_TEXT
 			);
 		}
 
@@ -264,15 +317,29 @@ function processTemplateString(
 		}
 
 		if (operandType === 'Node') {
-			const attributeValue = (
-				currentConfig as Record<string, string>
-			)[operandValue];
+			const pathParts = operandValue.split(':');
+			const attributeValue = pathParts.reduce<
+				Record<string, any> | number | string
+			>((config, part) => {
+				if (config && typeof config === 'object') {
+					return config[part];
+				}
 
-			if (attributeValue === undefined) {
+				return undefined;
+			}, currentConfig);
+
+			if (
+				attributeValue === undefined ||
+				typeof attributeValue === 'object'
+			) {
 				return UNCONFIGURED_TEXT;
 			}
 
-			return formatOperand(attributeValue);
+			return formatOperand(
+				typeof attributeValue === 'number'
+					? attributeValue
+					: attributeValue.toString()
+			);
 		}
 
 		return formatOperand(operandValue);
@@ -308,7 +375,7 @@ function baseEvaluateExpression(
 		| undefined,
 	expression: Expression | undefined
 ) {
-	if (typeof currentCfg === 'undefined' || !expression) return 1;
+	if (!expression) return 1;
 
 	const tokens = tokenizeExpression(expression.trim());
 	const stack: Array<string | number | boolean> = [];
@@ -317,12 +384,16 @@ function baseEvaluateExpression(
 		if (isNumeric(token)) {
 			stack.push(parseNumber(token));
 		} else if (token.startsWith('${')) {
-			const processedString = processTemplateString(
-				token,
-				currentCfg
-			);
+			if (typeof currentCfg === 'undefined') {
+				stack.push(UNCONFIGURED_TEXT);
+			} else {
+				const processedString = processTemplateString(
+					token,
+					currentCfg
+				);
 
-			stack.push(processedString);
+				stack.push(processedString);
+			}
 		} else if (executableOperators[token]) {
 			const operand2 = formatOperand(stack.pop() as number | string);
 			const operand1 = formatOperand(stack.pop() as number | string);
@@ -359,7 +430,8 @@ function baseEvaluateExpression(
 				INTEGER_COERCION_OPERATOR,
 				BOOLEAN_NOT_OPERATOR,
 				BITWISE_NOT_OPERATOR,
-				LWR_CASE_OPERATOR
+				LWR_CASE_OPERATOR,
+				DEFINED_OPERATOR
 			].includes(token)
 		) {
 			const operand1 = stack.pop() as string;
@@ -415,7 +487,7 @@ function baseEvaluateExpression(
 }
 
 export function evaluateCondition(
-	currentCfg: Record<string, string> | undefined,
+	currentCfg: Record<string, any> | undefined,
 	condition: Expression | undefined
 ) {
 	const result = baseEvaluateExpression(currentCfg, condition);
@@ -430,14 +502,14 @@ export function evaluateCondition(
 }
 
 /**
- * Determines if a control should be rendered based on its condition
+ * Determines if a pin config control should be rendered based on its condition
  *
  * @param control - The control configuration to check
  * @param userSelections - The current user selections
  * @param signalName - The active signal name to include in the evaluation context
  * @returns boolean indicating if the control should be rendered
  */
-export function shouldRenderControl(
+export function shouldRenderPinConfigControl(
 	control: ControlCfg,
 	userSelections: Record<string, string> = {},
 	signalName?: string
@@ -555,10 +627,7 @@ function formatOperand(operand: string | number) {
 	return operand;
 }
 
-export function computeFrequencies(
-	clockNodesConfig: Record<string, ClockNodeState>,
-	assignedPins: PinState[]
-) {
+export function computeFrequencies(globalConfig: GlobalConfig) {
 	// Initialization
 	const nodeDictionary = getClockNodeDictionary();
 
@@ -574,8 +643,7 @@ export function computeFrequencies(
 				acc.push({
 					...output,
 					CurrentCfg: {
-						clockconfig: clockNodesConfig,
-						assignedPins,
+						...globalConfig,
 						currentNode: node.Name
 					}
 				});
@@ -626,8 +694,4 @@ export function computeFrequencies(
 	}
 
 	return clockFrequencyDictionary;
-}
-
-export function getFirmwareVersion() {
-	return getPrimaryProjectFirmwarePlatform() ?? UNCONFIGURED_TEXT;
 }

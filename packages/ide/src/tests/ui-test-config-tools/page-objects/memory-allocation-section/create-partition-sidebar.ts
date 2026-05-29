@@ -32,7 +32,9 @@ export const startAddress: By = By.css('[data-test="start-address"] input');
 export const secureStartAddress: By = By.css(
   '[data-test^="software-start-address"] input',
 );
-export const sizeStepper: By = By.css("[data-test='size-stepper'] input");
+export const sizeStepper: By = By.css(
+  "[data-test='size-stepper-control-input']",
+);
 export const createConfiguredPartition: By = By.css(
   "[data-test='create-partition-button']",
 );

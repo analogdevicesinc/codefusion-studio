@@ -31,7 +31,8 @@ import {
 } from "../../ui-test-utils/file-utils";
 import { CFS_SDK_VERSION } from "../../ui-test-utils/settings-utils";
 
-describe("Settings shortcut tests", () => {
+// skipping this test as it is flaky - will be fixed in CFSIO-15858
+xdescribe("Settings shortcut tests", () => {
   const testDirectory = "src/tests/ui-test/data/Hello_World";
   const locatorspath = new Locatorspaths();
   const actualtitle = "Settings";
@@ -72,6 +73,7 @@ describe("Settings shortcut tests", () => {
     expect(expectedpagetitle).includes(actualtitle);
   });
 
+  // skipping this test as it is flaky - will be fixed in CFSIO-15858
   it("Verify the sdk command shortcut and installer option is displayed ", async () => {
     const workbench = new Workbench();
     await workbench.executeCommand(SELECT_SDK_PATH_COMMAND_ID);

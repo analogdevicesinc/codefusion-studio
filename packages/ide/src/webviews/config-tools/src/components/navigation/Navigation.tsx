@@ -25,7 +25,7 @@ import useFilteredNavigationIcons from '../../hooks/use-filtered-navigation-icon
 export default function Navigation() {
 	const dispatch = useAppDispatch();
 	const activeScreen = useActiveScreen();
-	const filteredIcons = useFilteredNavigationIcons();
+	const {mainIcons, footerIcons} = useFilteredNavigationIcons();
 
 	const handleNavItemClick = useCallback(
 		async (id: NavigationItem) => {
@@ -37,7 +37,8 @@ export default function Navigation() {
 	return (
 		<CfsNavigation
 			activeScreen={activeScreen}
-			availableIcons={filteredIcons}
+			availableIcons={mainIcons}
+			footerIcons={footerIcons}
 			onNavItemClick={handleNavItemClick}
 		/>
 	);

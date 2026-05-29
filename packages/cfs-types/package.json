@@ -1,0 +1,36 @@
+{
+	"name": "cfs-types",
+	"publisher": "adi",
+	"description": "Shared TypeScript type definitions for CodeFusion Studio",
+	"author": "Analog Devices, Inc.",
+	"version": "2.2.0",
+	"scripts": {
+		"lint": "eslint . --ext .ts",
+		"format-check": "prettier --check .",
+		"format-fix": "prettier --write ."
+	},
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^7.8.0",
+		"@typescript-eslint/parser": "^7.8.0",
+		"eslint": "^8.56.0",
+		"eslint-config-prettier": "^10.1.8",
+		"prettier": "^3.1.1",
+		"typescript": "^5"
+	},
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts"
+		},
+		"./types/*": {
+			"types": "./src/types/*.ts"
+		}
+	},
+	"files": [
+		"src",
+		"package.json",
+		"README.md"
+	],
+	"license": "Apache-2.0"
+}

@@ -1,10 +1,19 @@
 ---
 description: Troubleshooting the AI Debug Assistant in CodeFusion Studio.
 author: Analog Devices
-date: 2026-03-25
+date: 2026-05-15
 ---
 
 # Troubleshooting
+
+!!! info "Preview"
+    The AI Debug Assistant is currently in preview and may change in future releases.
+
+## Choosing the right path
+
+If you're experiencing issues with the CFS Debug chat participant, we recommend switching to the CFS MCP debug server with any MCP-compatible AI client for maximum portability and future compatibility.
+
+See [Getting started](getting-started.md#cfs-mcp-debug-server-recommended) for connection steps.
 
 ## Port conflict
 
@@ -17,7 +26,7 @@ If the OS cannot assign a port, or you need a specific port:
 
 ## No active debug session
 
-Most tools require an active debug session. Start debugging with **F5** or via the **Run** menu before asking the assistant to inspect state or control execution.
+Most tools require an active debug session. Start debugging with **F5** or via the **Run** menu before asking the assistant to inspect state or control execution. Alternatively, you can ask the assistant to start a debug session using the appropriate configuration name. For example: *"Start debugging CFS: Debug with GDB and OpenOCD (ARM Embedded)"*.
 
 ## `No Copilot model available`
 

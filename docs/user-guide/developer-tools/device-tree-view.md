@@ -22,4 +22,4 @@ Access the Device Tree View using the following methods:
 
 The Device Tree View in CodeFusion Studio is based on the Zephyr devicetree specification. For more details, refer to the [:octicons-link-external-24: Zephyr Devicetree documentation](https://docs.zephyrproject.org/latest/build/dts/index.html#devicetree-guide).
 
-You can also use the `cfsutil` command line utility to parse device tree files from the terminal. For more details, refer to [CFS command line utility](cfsutil.md#device-tree).
+You can also use the `cfsutil` command line utility to parse device tree files from the terminal. For more details, refer to [CFS command line utility](../cfsutil/device-tree.md).

@@ -21,6 +21,11 @@ import {
   Workbench,
   until,
 } from "vscode-extension-tester";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+import { readFile, writeFile } from "node:fs/promises";
+
+const execAsync = promisify(exec);
 
 export class UIUtils {
   /**
@@ -28,41 +33,73 @@ export class UIUtils {
    * Uses a Selenium `By` selector with the `findWebElement` method.
    * @param view The WebView instance.
    * @param selector The Selenium By selector to locate the element.
-   * @param timeout Time to wait after clicking (milliseconds). Default is 4000ms.
-   * @param retries Number of retries to find the element. Default is 3.
+   * @param timeout Timeout between retries in milliseconds. Default is 1000ms.
+   * @param retries Number of retries to find and click the element. Default is 3.
+   * @param wait Time to wait after clicking the element in milliseconds. Default is 1500ms.
    * @returns A Promise resolving to the clicked WebElement.
    * @throws Error if the element cannot be found after the specified retries.
    */
+
   static async clickElement(
     view: WebView,
     selector: By | string | WebElement,
-    timeout = 4000,
+    timeout = 1000,
     retries = 3,
+    wait = 1500,
   ): Promise<WebElement> {
-    let el: WebElement;
-    if (typeof selector === "string") {
-      // Use dataTest helper for data-test selectors
-      el = await UIUtils.dataTest(view, selector, retries);
-    } else if (selector instanceof By) {
-      el = await UIUtils.findWebElement(view, selector, retries);
-    } else {
-      el = selector;
+    // Retry logic to handle stale elements and transient click failures
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        let el: WebElement;
+
+        if (typeof selector === "string") {
+          // Use dataTest helper for data-test selectors
+          el = await UIUtils.dataTest(view, selector, retries);
+        } else if (selector instanceof By) {
+          el = await UIUtils.findWebElement(view, selector, retries);
+        } else {
+          el = selector;
+        }
+
+        await el.click();
+
+        if (typeof selector === "string" || selector instanceof By) {
+          console.log(`Clicked element with selector: ${selector.toString()}`);
+        } else {
+          console.log(
+            `Clicked element with data-test: ${await el.getAttribute("data-test")}`,
+          );
+        }
+
+        // Wait after click to allow UI to respond
+        await UIUtils.sleep(wait);
+
+        return el;
+      } catch (error: unknown) {
+        if (attempt < retries - 1) {
+          if (error instanceof Error) {
+            console.log(
+              `Click interaction for element with selector ${selector.toString()} failed, retrying... (attempt ${attempt + 1}/${retries})`,
+            );
+          }
+
+          await UIUtils.sleep(timeout);
+          continue;
+        } else {
+          let errorMessage = `Failed to click element with selector ${selector.toString()} after ${retries} attempts.`;
+
+          if (error instanceof Error) {
+            errorMessage += ` Last error: ${error.message}`;
+          }
+
+          throw new Error(errorMessage);
+        }
+      }
     }
 
-    const driver = view.getDriver();
-    await driver.wait(until.elementIsVisible(el), timeout);
-    await driver.wait(until.elementIsEnabled(el), timeout);
-    await el.click();
-
-    if (typeof selector === "string" || selector instanceof By) {
-      console.log(`Clicked element with selector: ${selector.toString()}`);
-    } else {
-      console.log(
-        `Clicked element with data-test: ${await el.getAttribute("data-test")}`,
-      );
-    }
-
-    return el;
+    throw new Error(
+      `Failed to click element with selector ${selector.toString()} after ${retries} attempts.`,
+    );
   }
 
   /**
@@ -201,11 +238,13 @@ export class UIUtils {
       } catch (_) {
         if (i === retries - 1) {
           throw new Error(
-            `Element not found after ${retries} retries: ${selector.toString()}`,
+            `Element ${selector.toString()} not found after ${retries} retries: ${selector.toString()}`,
           );
         }
 
-        console.log(`Element not found, retrying (${i + 1}/${retries})...`);
+        console.log(
+          `Element ${selector.toString()} not found, retrying (${i + 1}/${retries})...`,
+        );
 
         await UIUtils.sleep(1000); // 1-second delay
       }
@@ -334,9 +373,26 @@ export class UIUtils {
    * Dismisses all notifications in the Workbench and a specific C/C++ extension toast if present.
    * @param wb The Workbench instance.
    * @param browser The VSBrowser instance.
+   * @param timeout Optional implicit wait for notifications to appear (milliseconds). Default is 5000ms.
    * @returns A Promise that resolves when all dismiss actions are attempted.
    */
-  static async dismissAllNotifications(wb: Workbench, browser: VSBrowser) {
+  static async dismissAllNotifications(
+    wb: Workbench,
+    browser: VSBrowser,
+    timeout = 5000,
+  ) {
+    const driver = browser.driver;
+
+    // Wait for notifications to be displayed
+    try {
+      await driver.wait(async () => {
+        const notifications = await wb.getNotifications();
+        return notifications.length >= 0;
+      }, timeout);
+    } catch (_) {
+      console.log("Notification wait timeout");
+    }
+
     await wb.getNotifications().then(async (notifications) => {
       await Promise.all(
         notifications.map(async (notification) => {
@@ -398,5 +454,52 @@ export class UIUtils {
         "arguments[0].scrollTop = arguments[0].scrollHeight",
         scrollContainer,
       );
+  }
+
+  /**
+   * Restores a fixture file to its state on the current PR branch (HEAD).
+   * This utility respects any changes committed to the fixture file as part of a PR,
+   * while reverting modifications made during test execution.
+   *
+   * @param filePath The relative path to the fixture file from the repository root.
+   * @returns A Promise that resolves when the restoration is complete.
+   *          If the file was modified during the test, it's restored.
+   *          If the file matches HEAD (no test modifications), it's left unchanged.
+   *          If git fails, restoration is skipped gracefully.
+   *
+   * @example
+   * afterEach(async () => {
+   *   await UIUtils.restoreFixtureFileFromGit(
+   *     'path/to/some-mocked.cfsconfig'
+   *   );
+   * });
+   */
+  static async restoreFixtureFileFromGit(filePath: string): Promise<void> {
+    try {
+      // Git needs repository-relative path, prepend packages/ide/ if needed
+      const gitPath = filePath.startsWith("packages/ide/")
+        ? filePath
+        : `packages/ide/${filePath}`;
+
+      // Get baseline from the current branch HEAD
+      const { stdout: headContent } = await execAsync(
+        `git show HEAD:"${gitPath}"`,
+        { encoding: "utf-8" },
+      );
+
+      // Read current file content
+      const currentContent = await readFile(filePath, "utf-8");
+
+      // Restore only if test modified the file
+      if (headContent !== currentContent) {
+        await writeFile(filePath, headContent);
+        console.log(`Restored fixture file: ${filePath}`);
+      }
+    } catch (error) {
+      console.warn(
+        `Could not restore fixture ${filePath}. This may be normal if the file is new to this PR. Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      // Gracefully skip if git fails (e.g., file not in HEAD)
+    }
   }
 }

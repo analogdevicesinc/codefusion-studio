@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ $button-secondary-background: var(
 	#313131
 );
 
+$button-icon-foreground: var(--vscode-icon-foreground, #ccc);
+
 // Editor widget
 $editor-widget-background: var(
 	--vscode-editorWidget-background,
@@ -89,6 +91,9 @@ $editor-widget-border: var(--vscode-editorWidget-border, #454545);
 $input-background: var(--vscode-input-background, #1e1e1e);
 $input-foreground: var(--vscode-input-foreground, #d4d4d4);
 $input-border: var(--vscode-input-border, #3c3c3c);
+$input-foreground: var(--vscode-input-foreground, #ccc);
+// TODO: check if this is the right variable in SEV
+$input-border: var(--vscode-settings-dropdownBorder, #d4d4d4);
 $input-focus-border: var(--vscode-focusBorder, #3c3c3c);
 
 $dropdown-border: var(--vscode-dropdown-border, #454545);
@@ -109,6 +114,8 @@ $error-background: var(
 );
 $error-border: var(--vscode-inputValidation-errorBorder, #be1100);
 
+$info: var(--vscode-notificationsInfoIcon-foreground, #3794ff);
+
 $default-shadow: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
 
 $active-nav-item: var(--vscode-activityBar-foreground, #ffffff);
@@ -128,6 +135,11 @@ $notifications-background: var(
 $notifications-foreground: var(
 	--vscode-notifications-foreground,
 	#cccccc
+);
+
+$notification-toast-border: var(
+	--vscode-notificationToast-border,
+	#313131
 );
 
 $side-bar-title-foreground: var(
@@ -189,3 +201,14 @@ $button-secondary-hover-background: var(
 
 $checkbox-foreground: var(--vscode-checkbox-foreground, #f0f0f0);
 $checkbox-background: var(--vscode-checkbox-background, #3c3c3c);
+
+$notification-info-icon-foreground: var(
+	--vscode-notificationsInfoIcon-foreground,
+	#3794ff
+);
+$tree-indent-guide: var(--vscode-tree-indentGuidesStroke, #303031);
+
+$debug-icon-start-foreground: var(
+	--vscode-debugIcon-startForeground,
+	#89d185
+);

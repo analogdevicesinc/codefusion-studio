@@ -47,6 +47,7 @@ export default function CfsTopBar({children}: CfsTopBarProps) {
 		<div
 			className={styles.container}
 			data-test='cfs-top-bar:container'
+			id='cfs-top-bar:container'
 		>
 			<div className={styles['start-slot']}>{startSlot}</div>
 			<div className={styles.title}>{centerSlot}</div>

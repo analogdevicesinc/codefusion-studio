@@ -8,7 +8,7 @@ import {
 import {setActiveConfiguredSignal} from '../../../state/slices/app-context/appContext.reducer';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import PinConfigTask from './pin-config-task';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const mock = (await import(`@socs/max32690-tqfn.json`).then(
 	module => module.default

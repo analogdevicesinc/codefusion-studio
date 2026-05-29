@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,17 @@ export class ElfEditor
           elfMessageHandler(message, webviewPanel, parser, elfModel),
         undefined,
       );
+
+      const themeListener = vscode.window.onDidChangeActiveColorTheme((e) => {
+        webviewPanel.webview.postMessage({
+          type: "theme-changed",
+          kind: e.kind,
+        });
+      });
+
+      webviewPanel.onDidDispose(() => {
+        themeListener.dispose();
+      });
 
       const fileName = document.uri.fsPath.split("/").pop();
       const numberOfSymbols = elfModel.numberOfSymbols;

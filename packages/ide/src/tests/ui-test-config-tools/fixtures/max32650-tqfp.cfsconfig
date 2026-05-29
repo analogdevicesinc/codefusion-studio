@@ -1,0 +1,80 @@
+{
+  "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "^1.3.92",
+  "DataModelSchemaVersion": "1.2.0",
+  "Soc": "MAX32650",
+  "Package": "TQFP",
+  "BoardName": "EvKit_V1",
+  "Timestamp": "2025-11-26T15:04:56.480Z",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "CM4",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "m4",
+        "ZephyrVersion": "4.2.0",
+        "ZephyrBoardName": "max32650evkit"
+      },
+      "Family": "Cortex-M",
+      "Partitions": [
+        {
+          "Name": "m4_flash",
+          "StartAddress": "0x10000000",
+          "Size": 3145728,
+          "IsOwner": true,
+          "Access": "R",
+          "Config": {
+            "CHOSEN": "code-partition"
+          }
+        },
+        {
+          "Name": "m4_sram",
+          "StartAddress": "0x20000000",
+          "Size": 1048576,
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {
+            "CHOSEN": "sram"
+          }
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "CM4 SysTick",
+          "Signals": [],
+          "Config": {
+            "ENABLE": "TRUE",
+            "TICKS_PER_SEC": "10000"
+          }
+        }
+      ]
+    }
+  ],
+  "Pins": [],
+  "ClockNodes": [
+    {
+      "Name": "UART0/1/2",
+      "Control": "UART0_ENABLE",
+      "Value": "TRUE",
+      "Enabled": true
+    }
+  ],
+  "ClockFrequencies": {
+    "HSCLK": 120000000,
+    "INRO": 8000,
+    "APBCLK": 60000000,
+    "WDT0": 60000000,
+    "WDT1": 60000000,
+    "Cortex-M4": 120000000,
+    "SYS_OSC": 120000000,
+    "SYS_CLK": 120000000,
+    "UART0": 60000000,
+    "UART1": 60000000,
+    "UART2": 60000000,
+    "POWER SEQ": 8000
+  }
+}

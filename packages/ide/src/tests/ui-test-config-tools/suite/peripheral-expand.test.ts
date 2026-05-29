@@ -54,7 +54,7 @@ describe("Peripheral Expansion", () => {
     await view.wait();
     await view.switchToFrame();
 
-    await(await UIUtils.findWebElement(view, pinTab))
+    await (await UIUtils.findWebElement(view, pinTab))
       .click()
       .then(async () => {
         await UIUtils.sleep(3000);
@@ -76,7 +76,8 @@ describe("Peripheral Expansion", () => {
           view,
           await mainPanelPinOnLineAndColumn(1, 2),
         );
-        const secondPinToBeFocused = await UIUtils.findWebElement(view,
+        const secondPinToBeFocused = await UIUtils.findWebElement(
+          view,
           await mainPanelPinOnLineAndColumn(1, 3),
         );
         expect(
@@ -84,10 +85,12 @@ describe("Peripheral Expansion", () => {
             (await secondPinToBeFocused.getAttribute("class")),
         ).to.contain("focused");
 
-        const firstSignalToggle = await UIUtils.findWebElement(view,
+        const firstSignalToggle = await UIUtils.findWebElement(
+          view,
           await pinToggle("UART0", "RX"),
         );
-        const pinToBeActivated = await UIUtils.findWebElement(view,
+        const pinToBeActivated = await UIUtils.findWebElement(
+          view,
           await mainPanelPinOnLineAndColumn(1, 3),
         );
         await firstSignalToggle.click().then(async () => {

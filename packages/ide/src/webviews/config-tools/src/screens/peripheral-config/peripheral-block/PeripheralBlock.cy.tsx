@@ -20,7 +20,7 @@ import type {
 	Soc
 } from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 
 const soc = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -93,18 +93,16 @@ describe('Peripheral block container', () => {
 		// Open the accordion by simulating a click on the header
 		cy.dataTest(`accordion:${mock.name}`).should('exist').click();
 
-		cy.dataTest(`peripheral-signal-${mock.group}`).should(
+		cy.dataTest(`assignable-item:label:${mock.group}`).should(
 			'not.exist'
 		);
 
 		Object.entries(mock.signals).forEach(([_, signal]) => {
-			cy.dataTest(`peripheral-signal-${signal.name}`)
+			cy.dataTest(`assignable-item:label:${signal.name}`)
 				.should('exist')
-				.should('have.text', signal.name)
-				.invoke('attr', 'class')
-				.should('include', '_signal_');
+				.should('have.text', signal.name);
 
-			cy.dataTest(`peripheral-signal-${signal.name}-chevron`).should(
+			cy.dataTest(`assignable-item:chevron:${signal.name}`).should(
 				'exist'
 			);
 		});
@@ -146,9 +144,15 @@ describe('Peripheral block container', () => {
 			.should('exist')
 			.click();
 
-		cy.dataTest(`peripheral-signal-${mock.name}`).should('not.exist');
+		cy.dataTest(`assignable-item:chevron:${mock.name}`).should(
+			'exist'
+		);
 
-		cy.dataTest(`allocate-${mock.name}-button`).should('exist');
+		Object.entries(mock.signals).forEach(([_, signal]) => {
+			cy.dataTest(`assignable-item:label:${signal.name}`).should(
+				'not.exist'
+			);
+		});
 	});
 
 	it('should not show accordion when peripheral has no signal and assignable is TRUE', () => {
@@ -166,6 +170,8 @@ describe('Peripheral block container', () => {
 			.should('exist')
 			.click();
 
-		cy.dataTest(`allocate-${mock.name}-button`).should('exist');
+		cy.dataTest(`assignable-item:chevron:${mock.name}`).should(
+			'exist'
+		);
 	});
 });

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {type ConfiguredProject} from '../../../common/api';
 import {type Core} from '../../../common/types/soc';
 import {getPrimaryCoreId} from './soc-cores';
@@ -30,17 +30,20 @@ let configDict:
 	  })
 	| undefined;
 
+let supportsMCUboot = false;
+
 /**
  * Initializes configDict with the provided persisted config and dataModel.
  * Should be called once at app startup.
  */
 export function initializeConfigDict(
 	configOptions: CfsConfig | undefined,
-	dataModel: {Cores: Core[]} | undefined
+	dataModel: {Cores: Core[]; supportsMCUboot?: boolean} | undefined
 ) {
 	resetConfigDict();
 
 	if (configOptions && dataModel) {
+		supportsMCUboot = dataModel.supportsMCUboot ?? false;
 		configDict = {
 			Soc: configOptions.Soc,
 			BoardName: configOptions.BoardName,
@@ -83,6 +86,10 @@ export function getProjectInfoList(): ProjectInfo[] | undefined {
 
 export function getCfsConfigDict() {
 	return configDict;
+}
+
+export function getSupportsMCUboot(): boolean {
+	return supportsMCUboot;
 }
 
 export function getAssignedPlugin(projectId: string):
@@ -184,6 +191,23 @@ export function getPrimaryProjectFirmwarePlatform(): string {
  **/
 export function resetConfigDict() {
 	configDict = undefined;
+	supportsMCUboot = false;
+}
+
+/**
+ * Checks whether the core with the given ID is a primary core.
+ * Returns true when no core is selected or when the primary core
+ * cannot be determined, so that version/security counter fields
+ * are shown by default.
+ */
+export function isPrimaryCore(coreId: string): boolean {
+	if (!coreId) return true;
+
+	const primaryCoreId = getPrimaryCoreId();
+
+	if (!primaryCoreId) return true;
+
+	return coreId === primaryCoreId;
 }
 
 /**
@@ -193,7 +217,7 @@ export function resetConfigDict() {
  * @param projectId - The project ID to check.
  * @returns True if the project is externally managed, false otherwise.
  */
-export function getIsExternallyManagedProyect(
+export function getIsExternallyManagedProject(
 	projectId: string
 ): boolean {
 	return (

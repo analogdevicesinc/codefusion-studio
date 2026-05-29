@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 /* eslint-disable complexity */
 /* eslint-disable camelcase */
 // TODO Proper import from src
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {
   HeaderInfo,
   convertHeaderBigIntsToNumber,
@@ -31,6 +31,7 @@ import {ElfSectionHeader} from 'elf-parser/dist/ElfSectionHeader.js';
 import * as Enums from 'elf-parser/dist/enums.js';
 
 import {Logger} from '../../logger.js';
+import {BaseCommand} from '../../utils/base-command.js';
 
 const formatHeaderInfoIntoJsonStringData = (
   data: HeaderInfo[],
@@ -72,7 +73,7 @@ const getMetadataHeaderInfo = (
   return elfHeaderArray;
 };
 
-export default class Info extends Command {
+export default class Info extends BaseCommand<typeof Info> {
   static args = {
     filePath: Args.string({description: 'file path to read'})
   };
@@ -80,10 +81,6 @@ export default class Info extends Command {
   static description = 'ELF parser CLI';
   static flags = {
     // flag with a value (-n, --name=VALUE)
-    json: Flags.boolean({
-      char: 'j',
-      description: 'export to JSON format'
-    }),
     // flag with no value (-f, --force)
     header: Flags.boolean({
       char: 'h',
@@ -145,11 +142,13 @@ export default class Info extends Command {
     })
   };
 
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Info);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public async run(): Promise<any> {
+    const {args, flags} = this;
 
     if (args.filePath) {
       let isActionSet: boolean = false;
+      let jsonString: string = '{\n ';
 
       try {
         const parser = new ElfFileParser(args.filePath);
@@ -159,7 +158,10 @@ export default class Info extends Command {
         );
 
         const md = parser.getDataModel();
-        const headerInf = getMetadataHeaderInfo(md, flags.json);
+        const headerInf = getMetadataHeaderInfo(
+          md,
+          this.jsonEnabled()
+        );
 
         let flagsCount: number =
           Number(flags.header || 0) +
@@ -177,11 +179,11 @@ export default class Info extends Command {
           Number(flags.debug_dies || 0) +
           Number(flags.debug_heuristics || 0) +
           0;
-        let jsonString: string = '{\n ';
+
         if (flags.header) {
           isActionSet = true;
 
-          if (flags.json) {
+          if (this.jsonEnabled()) {
             jsonString += '"Header": {';
             for (const item of headerInf) {
               const itemVal: string = item.value.toString() || '';
@@ -223,7 +225,7 @@ export default class Info extends Command {
                 item.value !== undefined && item.value !== null
             );
 
-            if (flags.json) {
+            if (this.jsonEnabled()) {
               formatHeaderInfoIntoJsonStringData(
                 attrNotNull as HeaderInfo[],
                 '_'
@@ -260,7 +262,7 @@ export default class Info extends Command {
                 this.log(`${item.label}: ${item.value}`);
               }
             }
-          } else if (!flags.json) {
+          } else if (!this.jsonEnabled()) {
             this.log('ELF file has no ARM attributes');
           }
         }
@@ -308,7 +310,7 @@ export default class Info extends Command {
               : 'stripped'
           ];
 
-          if (flags.json) {
+          if (this.jsonEnabled()) {
             jsonString += '"FileInfo": "';
             for (const item of dataToDisplay) {
               jsonString += item;
@@ -363,7 +365,7 @@ export default class Info extends Command {
             }
           }
 
-          if (flags.json) {
+          if (this.jsonEnabled()) {
             jsonString += '"SizeInfo": {';
             for (const item of data) {
               jsonString += '\n\t"' + item[0] + '":' + item[1];
@@ -422,24 +424,23 @@ export default class Info extends Command {
           }
         }
 
-        if (isActionSet && flags.json) {
-          jsonString += '\n}';
-          this.log(JSON.stringify(JSON.parse(jsonString), null, 2));
-        }
+        jsonString += '\n}';
       } catch (error) {
-        Logger.logError(`${error}`);
+        return Logger.logError(`${error}`);
       }
 
       if (!isActionSet) {
-        Logger.logError(
+        return Logger.logError(
           `No flags provided. Please provide at least one mandatory flag.`
         );
       }
-    } else {
-      Logger.logError(
-        `No input file. Please provide a valid file path.`
-      );
+
+      return JSON.parse(jsonString);
     }
+
+    return Logger.logError(
+      `No input file. Please provide a valid file path.`
+    );
   }
 
   private printSection(section: ElfSectionHeader, prefix = '') {

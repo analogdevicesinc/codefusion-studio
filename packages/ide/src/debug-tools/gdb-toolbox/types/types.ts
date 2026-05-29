@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ export interface GdbToolboxScript {
   description: string;
   commands: GdbToolboxCommand[];
   core?: string | string[];
+  firmwarePlatform?: string | string[];
 }
 
 // Represents a rule used to validate GDB Toolbox script config files

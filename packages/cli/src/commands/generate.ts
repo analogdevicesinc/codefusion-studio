@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,15 +12,18 @@
  * limitations under the License.
  *
  */
+import type {CfsConfig} from 'cfs-types';
 
 import {Command, Flags} from '@oclif/core';
-import {type CfsConfig, getAiToolsPlugin} from 'cfs-lib';
+import {getAiToolsPlugin, parseAICodegenEvents} from 'cfs-lib';
 import {promises as fsp} from 'node:fs';
 import path from 'node:path';
 
 import {getDataModelManager} from '../utils/data-model-manager.js';
 import {getPackageManager} from '../utils/package-manager.js';
 import {getPluginManager} from '../utils/plugin-manager.js';
+import {getAuthConfig} from '../utils/session-manager.js';
+import {getVersionFromConfig} from '../utils/utils.js';
 
 export default class PinconfigGenerate extends Command {
   static description =
@@ -122,14 +125,15 @@ export default class PinconfigGenerate extends Command {
 
     // get the plugin manager
     const pluginManager = getPluginManager(
+      dmManager,
       flags['search-path'],
-      packageManager,
-      dmManager
+      packageManager
     );
 
     const soc = await dmManager.getDataModel(
       configdata.Soc,
-      configdata.Package
+      configdata.Package,
+      configdata.DataModelVersion
     );
 
     if (!soc) {
@@ -155,24 +159,37 @@ export default class PinconfigGenerate extends Command {
     // TODO change to use the Package Manager later on when cfsai is available as a package
     const cfsaiPath = path.resolve('../../Tools/cfsai');
 
-    const aiPlugin = await getAiToolsPlugin(cfsaiPath);
+    const aiPlugin = getAiToolsPlugin(
+      cfsaiPath,
+      getVersionFromConfig(this.config)
+    );
     if (
       configdata.Projects.some(
         (p) => p.AIModels && p.AIModels.length > 0
       )
     ) {
-      const aiFiles = await aiPlugin.generateCode(
-        {
-          cfsconfig: configdata,
-          datamodel: soc
-        },
-        flags.output
+      const authConfig = getAuthConfig();
+      const commandOutput = await aiPlugin.generateFromConfig(
+        configdata,
+        soc,
+        flags.output,
+        authConfig
       );
-      generatedFiles.push(
-        ...aiFiles.map((file) =>
-          typeof file === 'string' ? file : file.name
+
+      const combined = [
+        ...commandOutput.stdout,
+        ...commandOutput.stderr
+      ];
+
+      const aiFiles = parseAICodegenEvents(combined.join(''))
+        .filter(
+          (evt) =>
+            evt.event?.type === 'FILE' && evt.event.status === 'OK'
         )
-      );
+        .map((evt) => evt.event?.value)
+        .filter((value) => value !== undefined);
+
+      generatedFiles.push(...aiFiles);
     }
 
     if (!generatedFiles) {

@@ -1,9 +1,9 @@
 {
-  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.",
+  "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.98",
+  "Version": "1.3.759",
   "Schema": "1.2.0",
-  "Timestamp": "2025-11-26 14:21:23.739748",
+  "Timestamp": "2026-04-17T10:51:55.181676Z",
   "Name": "MAX32655",
   "Description": "Low-Power, Arm Cortex-M4 Processor with FPU-Based Microcontroller and Bluetooth 5.2",
   "Endianness": "Little",
@@ -34,7 +34,7 @@
       "AddressStart": "0x20000000",
       "AddressEnd": "0x20007fff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -45,7 +45,7 @@
       "AddressStart": "0x20008000",
       "AddressEnd": "0x2000ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -56,7 +56,7 @@
       "AddressStart": "0x20010000",
       "AddressEnd": "0x2001bfff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -67,7 +67,7 @@
       "AddressStart": "0x2001c000",
       "AddressEnd": "0x2001ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -78,7 +78,7 @@
       "AddressStart": "0x10000000",
       "AddressEnd": "0x1007ffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "Flash",
       "Location": "Internal",
       "MinimumAlignment": 8192
@@ -1260,7 +1260,7 @@
     },
     {
       "Name": "FLC0",
-      "Description": "Flash Memory Control",
+      "Description": "Flash Controller 0",
       "Cores": [
         "CM4",
         "RV"
@@ -2504,7 +2504,7 @@
     },
     {
       "Name": "ICC0",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 0",
       "Cores": [
         "CM4",
         "RV"
@@ -2535,7 +2535,7 @@
     },
     {
       "Name": "ICC1",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 1",
       "Cores": [
         "CM4",
         "RV"
@@ -2566,7 +2566,7 @@
     },
     {
       "Name": "LPCMP",
-      "Description": "Low Power Comparators 1,2,3",
+      "Description": "Low-Power Comparators 1,2,3",
       "Cores": [
         "CM4",
         "RV"
@@ -2652,7 +2652,7 @@
     },
     {
       "Name": "LPCMP0",
-      "Description": "Low Power Comparator 0",
+      "Description": "Low-Power Comparator 0",
       "Cores": [
         "CM4",
         "RV"
@@ -2694,7 +2694,7 @@
     },
     {
       "Name": "LPGCR",
-      "Description": "Low Power Global Control Registers",
+      "Description": "Low-Power Global Control Registers",
       "Cores": [
         "CM4",
         "RV"
@@ -3642,7 +3642,7 @@
     },
     {
       "Name": "LPUART0",
-      "Description": "Low-Power UART",
+      "Description": "Low-Power UART 0",
       "Cores": [
         "CM4",
         "RV"
@@ -4200,7 +4200,7 @@
     },
     {
       "Name": "LPWDT0",
-      "Description": "Low-Power Windowed Watchdog Timer",
+      "Description": "Low-Power Windowed Watchdog Timer 0",
       "Cores": [
         "CM4",
         "RV"
@@ -5147,7 +5147,7 @@
     },
     {
       "Name": "PWRSEQ",
-      "Description": "Power Sequencer / Low Power Control",
+      "Description": "Power Sequencer / Low-Power Control",
       "Cores": [],
       "Assignable": false
     },
@@ -13460,22 +13460,22 @@
         "EnumValues": [
           {
             "Id": "0",
-            "Description": "Drive Strength 0",
+            "Description": "1 mA",
             "Value": 0
           },
           {
             "Id": "1",
-            "Description": "Drive Strength 1",
+            "Description": "2 mA",
             "Value": 1
           },
           {
             "Id": "2",
-            "Description": "Drive Strength 2",
+            "Description": "4 mA",
             "Value": 2
           },
           {
             "Id": "3",
-            "Description": "Drive Strength 3",
+            "Description": "8 mA",
             "Value": 3
           }
         ]
@@ -14889,6 +14889,7 @@
         "Id": "POLY",
         "Description": "CRC Polynomial",
         "Type": "integer",
+        "Hint": "0xEDB88320",
         "MinimumValue": "0x0",
         "MaximumValue": "0xffffffff",
         "Increment": "0x1",
@@ -18211,12 +18212,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -19931,12 +19932,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits or 2 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -20905,7 +20906,7 @@
         {
           "Name": "LPTMR0_CLK",
           "Description": "P2.6 Pin Input",
-          "Value": "${Control:P2_6_FREQ}"
+          "Value": "${PinMux:P2.6} ${String:LPTMR0_CLK} = ${Control:P2_6_FREQ} ${Undef} ?"
         }
       ],
       "Signpost": "To configure the external clock source on P2.6, the LPTMR0_CLK signal must be assigned using the Pin Config tool.",
@@ -20930,7 +20931,7 @@
         {
           "Name": "LPTMR1_CLK",
           "Description": "P2.7 Pin Input",
-          "Value": "${Control:P2_7_FREQ}"
+          "Value": "${PinMux:P2.7} ${String:LPTMR1_CLK} = ${Control:P2_7_FREQ} ${Undef} ?"
         }
       ],
       "Signpost": "To configure the external clock source on P2.7, the LPTMR1_CLK signal must be assigned using the Pin Config tool.",
@@ -21128,7 +21129,7 @@
         {
           "Name": "EXT_CLK",
           "Description": "External Clock on P0.3",
-          "Value": "${Control:P0_3_FREQ}"
+          "Value": "${PinMux:P0.3} ${String:MISC_EXT_CLK} = ${Control:P0_3_FREQ} ${Undef} ?"
         }
       ],
       "Signpost": "To configure the external clock source on P0.3, the MISC CLKEXT signal must be assigned using the Pin Config tool.",
@@ -27010,178 +27011,6 @@
           "Documentation": "Reserved.",
           "Position": 21,
           "Length": 11,
-          "Access": "R",
-          "Reset": 0
-        }
-      ]
-    },
-    {
-      "Name": "GCR_SYSCTRL",
-      "Description": "System Control Register",
-      "Address": "0x40000000",
-      "Size": 32,
-      "Fields": [
-        {
-          "Name": "BSTAPEN",
-          "Description": "Boundary Scan Tap Enable",
-          "Documentation": "This field's reset value matches GCR_SYSST.icelock. Do not modify.",
-          "Position": 0,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 1,
-          "Length": 3,
-          "Access": "R",
-          "Reset": 1
-        },
-        {
-          "Name": "FLASH_PAGE_FLIP",
-          "Description": "Flash Page Flip Flag",
-          "Documentation": "This field flips the bottom and top halves of flash memory. This bit is controlled by hardware and should not be modified by software.",
-          "Position": 4,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "NOT_FLIPPED",
-              "Description": "Not Flipped",
-              "Value": 0,
-              "Documentation": "Physical layout matches logical layout."
-            },
-            {
-              "Name": "FLIPPED",
-              "Description": "Flipped",
-              "Value": 1,
-              "Documentation": "Top and bottom halves flipped."
-            }
-          ]
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 5,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "ICC0_FLUSH",
-          "Description": "ICC0 Cache Flush",
-          "Documentation": "Write 1 to flush the code cache and the instruction buffer for the CM4 (CPU0). This bit is automatically cleared to 0 when the flush is complete. Writing 0 has no effect and does not stop a cache flush in progress.",
-          "Position": 6,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "COMPLETE",
-              "Description": "Flush Complete",
-              "Value": 0,
-              "Documentation": "ICC0 flush complete."
-            },
-            {
-              "Name": "FLUSH",
-              "Description": "Flush Contents",
-              "Value": 1,
-              "Documentation": "Flush the contents of the ICC0 cache."
-            }
-          ]
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 7,
-          "Length": 5,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "ROMDONE",
-          "Description": "Reserved, Do Not Modify",
-          "Documentation": "Reserved, Do Not Modify.",
-          "Position": 12,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0
-        },
-        {
-          "Name": "CCHK",
-          "Description": "Calculate ROM Checksum",
-          "Documentation": "This bit is self-clearing when the ROM checksum calculation is complete, and the result is available at bit GCR_SYSCTRL.chkres. Writing a 0 has no effect.",
-          "Position": 13,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "NOOP",
-              "Description": "No Operation",
-              "Value": 0,
-              "Documentation": "No operation."
-            },
-            {
-              "Name": "START",
-              "Description": "Start Checksum",
-              "Value": 1,
-              "Documentation": "Start ROM checksum calculation."
-            }
-          ]
-        },
-        {
-          "Name": "SWD_DIS",
-          "Description": "Serial Wire Debug Disable",
-          "Documentation": "This bit is used to disable the serial wire debug interface.",
-          "Position": 14,
-          "Length": 1,
-          "Access": "R/W",
-          "Reset": 0
-        },
-        {
-          "Name": "CHKRES",
-          "Description": "ROM Checksum Calculation Pass/Fail",
-          "Documentation": "This field is the result after setting the bit GCR_SYSCTRL.cchk. This field is only valid after the ROM checksum is complete and GCR_SYSCTRL.cchk is cleared by the hardware.",
-          "Position": 15,
-          "Length": 1,
-          "Access": "R",
-          "Reset": 0,
-          "Enum": [
-            {
-              "Name": "PASS",
-              "Description": "Pass",
-              "Value": 0,
-              "Documentation": "ROM checksum calculation passed."
-            },
-            {
-              "Name": "FAIL",
-              "Description": "Fail",
-              "Value": 1,
-              "Documentation": "ROM checksum calculation failed."
-            }
-          ]
-        },
-        {
-          "Name": "OVR",
-          "Description": "Reserved, Do Not Modify",
-          "Documentation": "This field must be set to 0b10 for proper device operation.",
-          "Position": 16,
-          "Length": 2,
-          "Access": "R",
-          "Reset": 2
-        },
-        {
-          "Name": "RESERVED",
-          "Description": "Reserved",
-          "Documentation": "Reserved.",
-          "Position": 18,
-          "Length": 14,
           "Access": "R",
           "Reset": 0
         }
@@ -53632,14 +53461,14 @@
     },
     {
       "Name": "LPGCR_PCLKDIS",
-      "Description": "Low Power Peripheral Clock Disable Register",
+      "Description": "Low-Power Peripheral Clock Disable Register",
       "Address": "0x4008000C",
       "Size": 32,
       "Fields": [
         {
           "Name": "GPIO2",
-          "Description": "Low Power GPIO 2 Clock Disable",
-          "Documentation": "Low Power GPIO 2 Clock Disable.",
+          "Description": "Low-Power GPIO 2 Clock Disable",
+          "Documentation": "Low-Power GPIO 2 Clock Disable.",
           "Position": 0,
           "Length": 1,
           "Access": "R/W",
@@ -53661,8 +53490,8 @@
         },
         {
           "Name": "WDT1",
-          "Description": "Low Power Watchdog 1 Clock Disable",
-          "Documentation": "Low Power Watchdog 1 Clock Disable.",
+          "Description": "Low-Power Watchdog 1 Clock Disable",
+          "Documentation": "Low-Power Watchdog 1 Clock Disable.",
           "Position": 1,
           "Length": 1,
           "Access": "R/W",
@@ -53671,8 +53500,8 @@
         },
         {
           "Name": "TMR4",
-          "Description": "Low Power Timer 4 Clock Disable",
-          "Documentation": "Low Power Timer 4 Clock Disable.",
+          "Description": "Low-Power Timer 4 Clock Disable",
+          "Documentation": "Low-Power Timer 4 Clock Disable.",
           "Position": 2,
           "Length": 1,
           "Access": "R/W",
@@ -53681,8 +53510,8 @@
         },
         {
           "Name": "TMR5",
-          "Description": "Low Power Timer 5 Clock Disable",
-          "Documentation": "Low Power Timer 5 Clock Disable.",
+          "Description": "Low-Power Timer 5 Clock Disable",
+          "Documentation": "Low-Power Timer 5 Clock Disable.",
           "Position": 3,
           "Length": 1,
           "Access": "R/W",
@@ -53691,8 +53520,8 @@
         },
         {
           "Name": "UART3",
-          "Description": "Low Power UART 3 Clock Disable",
-          "Documentation": "Low Power UART 3 Clock Disable.",
+          "Description": "Low-Power UART 3 Clock Disable",
+          "Documentation": "Low-Power UART 3 Clock Disable.",
           "Position": 4,
           "Length": 1,
           "Access": "R/W",
@@ -53710,8 +53539,8 @@
         },
         {
           "Name": "LPCOMP",
-          "Description": "Low Power Comparator Clock Disable",
-          "Documentation": "Low Power Comparator Clock Disable.",
+          "Description": "Low-Power Comparator Clock Disable",
+          "Documentation": "Low-Power Comparator Clock Disable.",
           "Position": 6,
           "Length": 1,
           "Access": "R/W",
@@ -56715,7 +56544,7 @@
     },
     {
       "Name": "PWRSEQ_LPCN",
-      "Description": "Low Power Control Register",
+      "Description": "Low-Power Control Register",
       "Address": "0x40006800",
       "Size": 32,
       "Fields": [
@@ -56822,8 +56651,8 @@
         },
         {
           "Name": "LPMCLKSEL",
-          "Description": "Low Power Mode APB Clock Select",
-          "Documentation": "Low Power Mode APB Clock Select.",
+          "Description": "Low-Power Mode APB Clock Select",
+          "Documentation": "Low-Power Mode APB Clock Select.",
           "Position": 8,
           "Length": 1,
           "Access": "R/W",
@@ -56831,8 +56660,8 @@
         },
         {
           "Name": "LPMFAST",
-          "Description": "Low Power Mode Clock Select",
-          "Documentation": "Low Power Mode Clock Select.",
+          "Description": "Low-Power Mode Clock Select",
+          "Documentation": "Low-Power Mode Clock Select.",
           "Position": 9,
           "Length": 1,
           "Access": "R/W",
@@ -56881,8 +56710,8 @@
         },
         {
           "Name": "LPWKST_CLR",
-          "Description": "Low Power Wakeup Status Register Clear",
-          "Documentation": "Low Power Wakeup Status Register Clear.",
+          "Description": "Low-Power Wakeup Status Register Clear",
+          "Documentation": "Low-Power Wakeup Status Register Clear.",
           "Position": 31,
           "Length": 1,
           "Access": "R/W",
@@ -65206,54 +65035,16 @@
         {
           "Name": "A2",
           "Label": "P0.28",
-          "Description": "GPIO P0.28",
+          "Description": "GPIO P0.28 / SWDIO",
           "Position": {
             "X": 1,
             "Y": 0
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 28,
           "Signals": [
             {
               "Peripheral": "MISC",
-              "Name": "SWDIO",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GCR_SYSCTRL",
-                  "Field": "SWD_DIS",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDIO"
             }
           ]
         },
@@ -67523,54 +67314,16 @@
         {
           "Name": "B1",
           "Label": "P0.29",
-          "Description": "GPIO P0.29",
+          "Description": "GPIO P0.29 / SWDCLK",
           "Position": {
             "X": 0,
             "Y": 1
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 29,
           "Signals": [
             {
               "Peripheral": "MISC",
-              "Name": "SWDCLK",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GCR_SYSCTRL",
-                  "Field": "SWD_DIS",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDCLK"
             }
           ]
         },
@@ -75211,20 +74964,6 @@
           }
         ]
       },
-      "CoprogrammedSignals": [
-        [
-          {
-            "Pin": "A2",
-            "Peripheral": "MISC",
-            "Signal": "SWDIO"
-          },
-          {
-            "Pin": "B1",
-            "Peripheral": "MISC",
-            "Signal": "SWDCLK"
-          }
-        ]
-      ],
       "ClockCanvas": {
         "meta": {
           "version": "0.0.0",

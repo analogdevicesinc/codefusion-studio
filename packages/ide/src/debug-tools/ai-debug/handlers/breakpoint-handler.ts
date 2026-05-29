@@ -39,7 +39,9 @@ export class BreakpointHandler {
     if (
       lowerPrompt.includes("remove breakpoint") ||
       lowerPrompt.includes("delete breakpoint") ||
-      lowerPrompt.includes("clear breakpoint")
+      lowerPrompt.includes("clear breakpoint") ||
+      lowerPrompt.includes("all breakpoint") ||
+      lowerPrompt.includes("clear all")
     ) {
       return this.handleRemove(prompt, lowerPrompt, stream);
     }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,5 +19,6 @@ export {
     PackageRepository,
     PackageRepositoryError,
 } from './sw/repository.js';
+export { EulaClient, PackageEulaError } from './sw/eula.js';
 export { CfsApiClient, CfsApiError } from './cfsapi-client.js';
 export type { ApiOptions } from './cfsapi-client.js';

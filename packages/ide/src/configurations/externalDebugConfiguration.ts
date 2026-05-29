@@ -101,7 +101,19 @@ export class OzoneDebugConfiguration {
           if (launchJDebugFile === undefined) {
             return;
           }
-          const ozoneExe = `"${(conf.get(OZONE_EXE) as string).replace(/\\/g, "/")}"`;
+
+          let ozoneExe = conf.get(OZONE_EXE) as string;
+
+          if (platform === "darwin" && ozoneExe.endsWith(".app")) {
+            // In macOS, .app "files" are actually directories. To execute the binary,
+            // we need to point to the executable inside the .app bundle.
+            // We could check Info.plist or run it with "open" command but for the moment
+            // let's assume that the structure of Ozone installation on macOS is consistent.
+            ozoneExe += "/Contents/MacOS/Ozone";
+          }
+
+          ozoneExe = `"${ozoneExe.replace(/\\/g, "/")}"`;
+
           const launchJDebugFilePath = `"${launchJDebugFile.fsPath.replace(/\\/g, "/")}"`;
           exec(
             `${ozoneExe} ${launchJDebugFilePath}`,
@@ -191,6 +203,8 @@ export class OzoneDebugConfiguration {
 
       if (platform === "win32") {
         possibleOzonePath += ".exe";
+      } else if (platform === "darwin") {
+        possibleOzonePath += ".app";
       }
 
       if (existsSync(possibleOzonePath)) {

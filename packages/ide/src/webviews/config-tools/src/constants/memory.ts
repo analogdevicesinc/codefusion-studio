@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025 - 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,3 +16,15 @@
 import {type ByteUnit} from '../types/memory';
 
 export const BYTE_UNITS: ByteUnit[] = ['bytes', 'KB', 'MB'];
+
+export const READ_ONLY = 'R' as const;
+export const READ_WRITE = 'R/W' as const;
+export const READ_EXECUTE = 'R/X' as const;
+export const READ_WRITE_EXECUTE = 'R/W/X' as const;
+
+export const DEFAULT_PERMISSIONS = {
+	readOnly: READ_ONLY,
+	readWrite: READ_WRITE,
+	readExecute: READ_EXECUTE,
+	readWriteExecute: READ_WRITE_EXECUTE
+} as const;

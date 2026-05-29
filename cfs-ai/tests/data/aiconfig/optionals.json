@@ -65,7 +65,7 @@
     ],
     "pass": [
         {
-            "testDescription": "Check that not giving accelerator, runtime, exec mode and backend works",
+            "testDescription": "Check that not giving accelerator, and backend works",
             "Soc": "testSoc",
             "Projects" : [
                 {
@@ -86,7 +86,7 @@
             ]
         }, 
         {
-            "testDescription": "Check that not giving runtime, exec mode and backend works",
+            "testDescription": "Check that not giving backend works",
             "Soc": "testSoc",
             "Projects" : [
                 {
@@ -107,7 +107,7 @@
             ]
         },
         {
-            "testDescription": "Check that not giving exec mode and backend works",
+            "testDescription": "Check that not giving backend works",
             "Soc": "testSoc",
             "Projects" : [
                     {

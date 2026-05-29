@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import {
 } from "./constants";
 import { SessionManager } from "./core-dump-session-manager";
 import { CORE_DUMP_VIEW_VISIBLE_COMMAND_ID } from "../commands/constants";
+import { CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION } from "../../../resources/debugConfigurations";
 
 /**
  * CoreDumpEngine orchestrates the retrieval, parsing, and UI presentation
@@ -71,11 +72,9 @@ export class CoreDumpEngine {
     this.projectFolder = projectFolder;
     this.sessionManager = sessionManager;
     vscode.debug.onDidTerminateDebugSession(async (session) => {
-      if (
-        session.type === "cortex-debug" &&
-        (session.name === "CFS: Launch Core Dump Analysis" ||
-          session.name.includes("Core Dump Analysis"))
-      ) {
+      const config = session.configuration;
+
+      if (config.coreDump) {
         // Remove from active sessions
         this.sessionManager.markSessionInactive(session.id);
 
@@ -554,11 +553,8 @@ export class CoreDumpEngine {
 
         const disposable = vscode.debug.onDidStartDebugSession((session) => {
           // Match both exact name and partial name for more flexibility
-          if (
-            session.name === "CFS: Launch Core Dump Analysis" ||
-            (session.type === "cortex-debug" &&
-              session.name.includes("Core Dump Analysis"))
-          ) {
+          const config = session.configuration;
+          if (config.coreDump) {
             this.debugSession = session;
             clearTimeout(timeout);
             disposable.dispose();
@@ -570,7 +566,7 @@ export class CoreDumpEngine {
 
     const success = await vscode.debug.startDebugging(
       this.projectFolder,
-      "CFS: Launch Core Dump Analysis",
+      CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION,
     );
     if (!success) {
       console.error(

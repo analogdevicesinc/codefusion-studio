@@ -35,7 +35,8 @@ import ResolvedProjectControl from './project-list/ResolvedProjectControls';
 import {ConfirmDialog} from '../../../../common/components/confirm-dialog/ConfirmDialog';
 import {useAIModels} from '../../state/slices/ai-tools/aiModel.selector';
 import type {CodeGenerationResult} from 'cfs-lib/dist/types/code-generation';
-import {getAiBackends} from '../../utils/ai-tools';
+import {getAiBackends, loadAIBackends} from '../../utils/ai-tools';
+import {localizeMessage} from '../../../../common/utils/localization';
 
 const TEXTS = [
 	{
@@ -53,7 +54,7 @@ function GenerateCode() {
 	const [isFirstScreen, setIsFirstScreen] = useState<boolean>(true);
 	const selectedProjects = useSelectedProjects();
 	const aiModels = useAIModels();
-	const aiBackends = getAiBackends();
+	const [aiBackends, setAiBackends] = useState(getAiBackends());
 	const [isWarningModalOpen, setIsWarningModalOpen] =
 		useState<boolean>(false);
 	const [
@@ -74,22 +75,37 @@ function GenerateCode() {
 		[]
 	);
 
+	useEffect(() => {
+		if (
+			aiModels?.length > 0 &&
+			(!aiBackends || Object.keys(aiBackends).length === 0)
+		) {
+			loadAIBackends()
+				.then(backends => {
+					setAiBackends(backends ?? {});
+				})
+				.catch(err => {
+					console.error('Error loading AI backends:', err);
+				});
+		}
+	}, [aiBackends, aiModels]);
+
 	// Check if any enabled AI model is using a Slow backend
-	const shouldShowGenTimeWarning = useMemo(
+	const slowAIModelCodeGen = useMemo(
 		() =>
-			selectedProjects.some(({projectId, includeAI}) => {
-				if (!includeAI) return false;
+			selectedProjects.flatMap(({projectId, includeAI}) => {
+				if (!includeAI) return [];
 
 				const coreId = projects.find(
 					project => project.ProjectId === projectId
 				)?.CoreId;
 
-				return aiModels.some(
+				return aiModels.filter(
 					model =>
 						model.Enabled &&
 						model.Target.Core.toUpperCase() ===
 							coreId?.toUpperCase() &&
-						aiBackends[model.Backend.Name]?.Slow
+						aiBackends[model.Backend?.Name ?? '']?.Slow
 				);
 			}),
 		[aiModels, selectedProjects, projects, aiBackends]
@@ -146,11 +162,13 @@ function GenerateCode() {
 		if (!selectedProjects.length) return;
 
 		if (await getGenerateCodeWarning()) setIsWarningModalOpen(true);
-		else {
+		else if (slowAIModelCodeGen.length > 0) {
+			setIsCodeGenerationTimeModalOpen(true);
+		} else {
 			setIsWarningModalOpen(false);
 			setIsFirstScreen(false);
 		}
-	}, [selectedProjects]);
+	}, [selectedProjects, slowAIModelCodeGen]);
 
 	const handleModalCheckboxChange = (
 		event: Event | React.FormEvent<HTMLElement>
@@ -230,7 +248,7 @@ function GenerateCode() {
 										appearance='primary'
 										dataTest='generate-code:modal:overwrite'
 										onClick={async () => {
-											if (shouldShowGenTimeWarning) {
+											if (slowAIModelCodeGen.length > 0) {
 												setIsCodeGenerationTimeModalOpen(true);
 												setIsWarningModalOpen(false);
 											} else {
@@ -267,7 +285,19 @@ function GenerateCode() {
 						</Modal>
 						<ConfirmDialog
 							isOpen={isCodeGenerationTimeModalOpen}
-							message={i10n?.codeGenerationTimeModal.description}
+							message={
+								isCodeGenerationTimeModalOpen
+									? localizeMessage(
+											i10n,
+											'codeGenerationTimeModal.description',
+											{
+												models: slowAIModelCodeGen
+													.map(model => model.Name)
+													.join(', ')
+											}
+										)
+									: ''
+							}
 							title={i10n?.codeGenerationTimeModal.title}
 							showDialogPreferenceId='cfgtools.views.aiTools.showNeuroweaveCodegenTimeWarning'
 							confirmButtonText={

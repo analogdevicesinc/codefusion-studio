@@ -15,6 +15,13 @@
 
 import * as vscode from "vscode";
 import { CfsDebugManager } from "../debug-manager";
+import * as path from "path";
+
+/** Time (ms) to wait for the stop event after calling stopDebugging. */
+const STOP_CONFIRMATION_DELAY_MS = 100;
+
+/** Time (ms) to wait for a new session to appear after a restart. */
+const RESTART_TIMEOUT_MS = 10_000;
 
 /**
  * Shared executor for debug lifecycle commands.
@@ -96,7 +103,9 @@ export class DebugCommandExecutor {
     await vscode.debug.stopDebugging(session);
 
     // Wait a bit to confirm stop
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) =>
+      setTimeout(resolve, STOP_CONFIRMATION_DELAY_MS),
+    );
 
     return `✅ Stopped debug session: **${sessionName}**`;
   }
@@ -110,7 +119,7 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await vscode.commands.executeCommand("workbench.action.debug.continue");
+    await session.continue();
     return "▶️  Continuing execution";
   }
 
@@ -123,7 +132,7 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await vscode.commands.executeCommand("workbench.action.debug.stepOver");
+    await session.stepOver();
     return "⏭️  Stepped over";
   }
 
@@ -136,7 +145,7 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await vscode.commands.executeCommand("workbench.action.debug.stepInto");
+    await session.stepInto();
     return "⤵️  Stepped into function";
   }
 
@@ -149,7 +158,7 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await vscode.commands.executeCommand("workbench.action.debug.stepOut");
+    await session.stepOut();
     return "⤴️  Stepped out of function";
   }
 
@@ -162,12 +171,13 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await vscode.commands.executeCommand("workbench.action.debug.pause");
+    await session.pause();
     return "⏸️  Paused execution";
   }
 
   /**
-   * Restart debugging
+   * Restart debugging.
+   * Waits for the new session to start before returning.
    */
   async restart(): Promise<string> {
     const session = vscode.debug.activeDebugSession;
@@ -175,8 +185,33 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session to restart";
     }
 
+    const oldSessionId = session.id;
+
+    // Wait for a new session to start after restart, with a timeout
+    const sessionRestarted = new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => {
+        disposable.dispose();
+        resolve(false);
+      }, RESTART_TIMEOUT_MS);
+
+      const disposable = vscode.debug.onDidStartDebugSession((newSession) => {
+        if (newSession.id !== oldSessionId) {
+          clearTimeout(timeout);
+          disposable.dispose();
+          resolve(true);
+        }
+      });
+    });
+
     await vscode.commands.executeCommand("workbench.action.debug.restart");
-    return "🔄 Restarted debug session";
+
+    const restarted = await sessionRestarted;
+
+    if (restarted) {
+      return "🔄 Restarted debug session";
+    }
+
+    return "⚠️  Restart was initiated but the new session did not start within the expected time. Check the Debug Console for errors.";
   }
 
   /**
@@ -187,23 +222,31 @@ export class DebugCommandExecutor {
     line: number,
     condition?: string,
   ): Promise<string> {
-    // Resolve file in workspace
-    let uri: vscode.Uri;
-    const isAbsolutePath = /^[a-zA-Z]:[/\\]/.test(file);
-    if (isAbsolutePath) {
-      uri = vscode.Uri.file(file);
-    } else {
-      // Normalize to forward slashes and strip leading separators for glob matching
-      const normalizedFile = file.replace(/\\/g, "/").replace(/^\/+/, "");
-      const files = await vscode.workspace.findFiles(
-        `**/${normalizedFile}`,
-        "**/node_modules/**",
-        1,
+    if (!path.isAbsolute(file)) {
+      // We have a problem with relative paths since we have multiple
+      // workspace folders. First workspace is typically .cfs folder,
+      // but that doesn't contain any source file and vscode.workspace.findFiles
+      // won't find anything. Other workspace folders exist such as m4, etc.
+      // but these are not typically seen by the MCP clients as root folders to
+      // define relative paths against them.
+      // More specifically, MCP server was using for example `m4/src/main.c` as file
+      // path which is not relative to either /.cfs nor /m4 (it is included on it).
+      // Rather than overcomplicating things, let's request absolute paths only which
+      // should be 100% unambiguous and work regardless of the workspace folder structure.
+      throw Error(
+        `Relative paths are not supported. Please provide an absolute path.`,
       );
-      if (files.length === 0) {
-        return `❌ File not found: **${file}**`;
-      }
-      uri = files[0];
+    }
+
+    const uri = vscode.Uri.file(file);
+
+    // Technically vs code allow us to set breakpoints on files that do not exist,
+    // but for the moment let's prevent that from happening.
+    // fs.stat will throw an exception if the file does not exist.
+    const stat = await vscode.workspace.fs.stat(uri);
+    // eslint-disable-next-line no-bitwise
+    if ((stat.type & vscode.FileType.File) === 0) {
+      throw Error(`Path ${file} is not a file.`);
     }
 
     const location = new vscode.Location(uri, new vscode.Position(line - 1, 0));
@@ -213,48 +256,82 @@ export class DebugCommandExecutor {
 
     vscode.debug.addBreakpoints([breakpoint]);
 
-    const fileName = uri.fsPath.split(/[/\\]/).pop();
+    const filePath = uri.fsPath;
     return condition
-      ? `🔴 Breakpoint set at **${fileName}:${line}**\n   Condition: \`${condition}\``
-      : `🔴 Breakpoint set at **${fileName}:${line}**`;
+      ? `🔴 Breakpoint set at **${filePath}:${line}**\n   Condition: \`${condition}\``
+      : `🔴 Breakpoint set at **${filePath}:${line}**`;
   }
 
   /**
    * Remove breakpoints
    */
   async removeBreakpoints(file?: string, line?: number): Promise<string> {
-    const allBreakpoints = vscode.debug.breakpoints;
+    let breakpointsToRemove = vscode.debug.breakpoints;
 
-    if (!file) {
-      // Remove all breakpoints
-      vscode.debug.removeBreakpoints(allBreakpoints);
-      return `✅ Removed all breakpoints (${allBreakpoints.length} total)`;
-    }
-
-    // Find breakpoints matching file and optionally line
-    const toRemove = allBreakpoints.filter((bp) => {
-      if (bp instanceof vscode.SourceBreakpoint) {
-        const bpFile = bp.location.uri.fsPath.split(/[/\\]/).pop();
-        const matchesFile =
-          bpFile === file || bp.location.uri.fsPath.includes(file);
-        if (line !== undefined) {
-          return matchesFile && bp.location.range.start.line === line - 1;
-        }
-        return matchesFile;
+    if (file) {
+      if (!path.isAbsolute(file)) {
+        // Read message above about limitations with relative paths
+        throw Error(
+          `Relative paths are not supported. Please provide an absolute path.`,
+        );
       }
-      return false;
-    });
 
-    if (toRemove.length === 0) {
-      return line
-        ? `⚠️  No breakpoint found at **${file}:${line}**`
-        : `⚠️  No breakpoints found in **${file}**`;
+      const uri = vscode.Uri.file(file);
+
+      breakpointsToRemove = breakpointsToRemove.filter((bp) => {
+        if (bp instanceof vscode.SourceBreakpoint) {
+          const bpPath =
+            process.platform === "win32"
+              ? bp.location.uri.fsPath.toLowerCase()
+              : bp.location.uri.fsPath;
+          const targetPath =
+            process.platform === "win32"
+              ? uri.fsPath.toLowerCase()
+              : uri.fsPath;
+
+          if (bpPath === targetPath) {
+            return (
+              line === undefined || bp.location.range.start.line === line - 1
+            );
+          }
+        }
+        return false;
+      });
+    } else if (line !== undefined) {
+      throw Error(
+        `Line number provided without file. Please provide an absolute file path along with the line number.`,
+      );
     }
 
-    vscode.debug.removeBreakpoints(toRemove);
-    return line
-      ? `✅ Removed breakpoint at **${file}:${line}**`
-      : `✅ Removed ${toRemove.length} breakpoint(s) from **${file}**`;
+    if (breakpointsToRemove.length === 0) {
+      if (file) {
+        throw Error(
+          `No breakpoints found for the specified location: ${file}${line !== undefined ? `:${line}` : ""}.`,
+        );
+      } else {
+        // Do not consider an error in case user requested all breakpoints to be removed
+        // since the user may use this to get to a clean state without checking for breakpoint
+        // existence first.
+        return "⚠️  No breakpoints to remove";
+      }
+    }
+    vscode.debug.removeBreakpoints(breakpointsToRemove);
+    return (
+      "Removed the following breakpoints:\n" +
+      breakpointsToRemove
+        .map((bp) => {
+          if (bp instanceof vscode.SourceBreakpoint) {
+            const filePath = bp.location.uri.fsPath;
+            const line = bp.location.range.start.line + 1;
+            return `- **${filePath}:${line}**`;
+          }
+          if (bp instanceof vscode.FunctionBreakpoint) {
+            return `- Function: **${bp.functionName}**`;
+          }
+          return `- Breakpoint ID: **${bp.id}**`;
+        })
+        .join("\n")
+    );
   }
 
   /**
@@ -273,14 +350,14 @@ export class DebugCommandExecutor {
 
     breakpoints.forEach((bp, index) => {
       if (bp instanceof vscode.SourceBreakpoint) {
-        const fileName = bp.location.uri.fsPath.split(/[/\\]/).pop();
+        const filePath = bp.location.uri.fsPath;
         const line = bp.location.range.start.line + 1;
         const enabled = bp.enabled ? "🔴" : "⚪";
         const condition = bp.condition
           ? ` - Condition: \`${bp.condition}\``
           : "";
         lines.push(
-          `${index + 1}. ${enabled} **${fileName}:${line}**${condition}`,
+          `${index + 1}. ${enabled} **${filePath}:${line}**${condition}`,
         );
       }
     });

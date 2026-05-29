@@ -9,3 +9,6 @@ node_modules
 
 # Coverage directory
 coverage
+
+# Script temp storage
+**/tmp

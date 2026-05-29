@@ -1,0 +1,1884 @@
+{
+  "pluginName": "MSDK Project Plugin",
+  "pluginDescription": "MSDK project and code generation.",
+  "pluginId": "com.analog.project.msdk.mock.plugin",
+  "pluginVersion": "1.1.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "MSDK",
+  "supportedSocs": [
+    {
+      "name": "MAX32690",
+      "board": "EvKit_V1",
+      "package": "tqfn"
+    },
+    {
+      "name": "MAX32690",
+      "board": "FTHR",
+      "package": "tqfn"
+    },
+    {
+      "name": "MAX32690",
+      "board": "AD-APARD32690-SL",
+      "package": "wlp"
+    },
+    {
+      "name": "MAX78002",
+      "board": "EvKit_V1",
+      "package": "csbga"
+    }
+  ],
+  "features": {
+    "project": {
+      "templates": [],
+      "files": []
+    },
+    "codegen": {
+      "files": [],
+      "templates": [
+        {
+          "src": "mock/generated-code-path.eta",
+          "dst": "generated/${context.coreId.toLowerCase()}/generated-file.txt"
+        }
+      ]
+    }
+  },
+  "properties": {
+    "project": [
+      {
+        "id": "ProjectName",
+        "name": "Project Name",
+        "category": "Project Settings",
+        "default": "${context.coreId}",
+        "type": "string",
+        "required": true,
+        "readonly": false
+      },
+      {
+        "id": "MsdkBoardName",
+        "name": "MSDK Board Name",
+        "category": "Project Settings",
+        "default": "",
+        "type": "string",
+        "required": true,
+        "readonly": false
+      },
+      {
+        "id": "Cflags",
+        "name": "CFLAGS",
+        "type": "textarea",
+        "default": "-fdump-rtl-expand\n-fdump-rtl-dfinish\n-fdump-ipa-cgraph\n-fstack-usage\n-gdwarf-4\n",
+        "readonly": "true"
+      }
+    ],
+    "clockConfig": {
+      "ADC": {
+        "defaultOverrides": [
+          {
+            "Id": "DIV",
+            "Value": "8",
+            "partRegexp": "MAX(32650|32655|32666|78000)"
+          }
+        ]
+      },
+      "AOD_CLK": {
+        "modifiedControls": [
+          {
+            "Id": "DIV",
+            "Description": "Divider Value",
+            "EnumValues": [
+              {
+                "Id": "4",
+                "Description": "Divide by 4",
+                "Value": 0
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX32675C"
+          }
+        ]
+      },
+      "SYS_OSC Mux": {
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "IPO",
+            "partRegexp": "MAX(32655|32657|32658|32690)"
+          },
+          {
+            "Id": "MUX",
+            "Value": "HSCLK",
+            "partRegexp": "MAX32650"
+          },
+          {
+            "Id": "MUX",
+            "Value": "HSO",
+            "partRegexp": "MAX32666"
+          }
+        ]
+      },
+      "IPO": {
+        "removedControls": [
+          {
+            "Id": "CALIBRATE",
+            "partRegexp": "MAX(32650|32655|32657|32658|32660|32666|32670|32672|32675C|78000|78002)"
+          }
+        ]
+      },
+      "IPO PRESCALER": {
+        "modifiedControls": [
+          {
+            "Id": "DIV",
+            "Description": "Divider Value",
+            "EnumValues": [
+              {
+                "Id": "1",
+                "Description": "Divide by 1",
+                "Value": 0
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX(32662|32670|32675C)"
+          }
+        ]
+      },
+      "INRO": {
+        "removedControls": [
+          {
+            "Id": "INRO_FREQ",
+            "partRegexp": "MAX(32655|78000|78002)"
+          }
+        ]
+      },
+      "TMR0/1/2/3": {
+        "defaultOverrides": [
+          {
+            "Id": "TMR0b_MUX",
+            "Value": "32BIT"
+          },
+          {
+            "Id": "TMR1b_MUX",
+            "Value": "32BIT"
+          },
+          {
+            "Id": "TMR2b_MUX",
+            "Value": "32BIT"
+          },
+          {
+            "Id": "TMR3b_MUX",
+            "Value": "32BIT"
+          }
+        ]
+      },
+      "LPTMR[01]": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "Description": "Clock Source",
+            "Type": "enum",
+            "Condition": "${Control:ENABLE}",
+            "partRegexp": "MAX32670",
+            "EnumValues": [
+              {
+                "Id": "ERTCO",
+                "Description": "ERTCO (External RTC Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 3
+              },
+              {
+                "Id": "EXT_CLK2",
+                "Description": "EXT_CLK2 (External Clock Two)",
+                "Value": 4
+              }
+            ]
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MUX",
+            "Value": "ERTCO",
+            "partRegexp": "MAX32670"
+          }
+        ]
+      },
+      "LPUART0": {
+        "modifiedControls": [
+          {
+            "Id": "MUX",
+            "EnumValues": [
+              {
+                "Id": "AOD_CLK",
+                "Description": "Always on Domain Clock",
+                "Value": 0
+              },
+              {
+                "Id": "P0.12 AF2",
+                "Description": "External Clock on P0.12 AF2",
+                "Value": 6
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX32675C"
+          }
+        ]
+      },
+      "WDT0/1": {
+        "modifiedControls": [
+          {
+            "Id": "WDT0_MUX",
+            "EnumValues": [
+              {
+                "Id": "PCLK",
+                "Description": "PCLK (Peripheral Clock)",
+                "Value": 0
+              },
+              {
+                "Id": "IPO",
+                "Description": "IPO (Internal Primary Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "IBRO",
+                "Description": "IBRO (Internal Baud Rate Osc.)",
+                "Value": 2
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 3
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX32675C"
+          },
+          {
+            "Id": "WDT1_MUX",
+            "EnumValues": [
+              {
+                "Id": "PCLK",
+                "Description": "PCLK (Peripheral Clock)",
+                "Value": 0
+              },
+              {
+                "Id": "IPO",
+                "Description": "IPO (Internal Primary Osc.)",
+                "Value": 1
+              },
+              {
+                "Id": "IBRO",
+                "Description": "IBRO (Internal Baud Rate Osc.)",
+                "Value": 2
+              },
+              {
+                "Id": "INRO",
+                "Description": "INRO (Internal Nano-Ring Osc.)",
+                "Value": 3
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX32675C"
+          }
+        ]
+      }
+    },
+    "memory": {
+      "addedControls": [
+        {
+          "Id": "NAME_OVERRIDE",
+          "Description": "Memory Region Name Override",
+          "Type": "text",
+          "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*"
+        }
+      ]
+    },
+    "peripheral": {
+      "CM4 SysTick": {
+        "removedControls": [
+          {
+            "Id": "TICKS_PER_SEC"
+          }
+        ]
+      },
+      "CM33 SysTick (S)": {
+        "removedControls": [
+          {
+            "Id": "TICKS_PER_SEC"
+          }
+        ]
+      },
+      "CM33 SysTick (NS)": {
+        "removedControls": [
+          {
+            "Id": "TICKS_PER_SEC"
+          }
+        ]
+      },
+      "RV mtime": {
+        "supportedControls": []
+      },
+      "ADC": {
+        "supportedControls": [
+          {
+            "Id": "SKIP_CAL"
+          },
+          {
+            "Id": "REF_TRIM"
+          },
+          {
+            "Id": "TRACK_CNT"
+          },
+          {
+            "Id": "IDLE_CNT"
+          },
+          {
+            "Id": "TRACK_CNT"
+          },
+          {
+            "Id": "CONV_MODE"
+          },
+          {
+            "Id": "TRIG_MODE"
+          },
+          {
+            "Id": "TRIG_SEL"
+          },
+          {
+            "Id": "THRESH"
+          },
+          {
+            "Id": "AVG"
+          },
+          {
+            "Id": "LPMODE_DIV"
+          },
+          {
+            "Id": "NUM_SLOTS"
+          },
+          {
+            "Id": "SLOT0_ID"
+          },
+          {
+            "Id": "SLOT1_ID"
+          },
+          {
+            "Id": "SLOT2_ID"
+          },
+          {
+            "Id": "SLOT3_ID"
+          },
+          {
+            "Id": "SLOT4_ID"
+          },
+          {
+            "Id": "SLOT5_ID"
+          },
+          {
+            "Id": "SLOT6_ID"
+          },
+          {
+            "Id": "SLOT7_ID"
+          },
+          {
+            "Id": "SLOT8_ID"
+          },
+          {
+            "Id": "SLOT9_ID"
+          },
+          {
+            "Id": "SLOT10_ID"
+          },
+          {
+            "Id": "SLOT11_ID"
+          },
+          {
+            "Id": "SLOT12_ID"
+          },
+          {
+            "Id": "SLOT13_ID"
+          },
+          {
+            "Id": "SLOT14_ID"
+          },
+          {
+            "Id": "SLOT15_ID"
+          },
+          {
+            "Id": "SLOT16_ID"
+          },
+          {
+            "Id": "SLOT17_ID"
+          },
+          {
+            "Id": "SLOT18_ID"
+          },
+          {
+            "Id": "SLOT19_ID"
+          },
+          {
+            "Id": "SLOT20_ID"
+          },
+          {
+            "Id": "SLOT21_ID"
+          },
+          {
+            "Id": "SLOT22_ID"
+          },
+          {
+            "Id": "SLOT23_ID"
+          },
+          {
+            "Id": "SLOT24_ID"
+          },
+          {
+            "Id": "SLOT25_ID"
+          },
+          {
+            "Id": "SLOT26_ID"
+          },
+          {
+            "Id": "SLOT27_ID"
+          },
+          {
+            "Id": "SLOT28_ID"
+          },
+          {
+            "Id": "SLOT29_ID"
+          },
+          {
+            "Id": "SLOT30_ID"
+          },
+          {
+            "Id": "SLOT31_ID"
+          },
+          {
+            "Id": "SKIP_CNT"
+          },
+          {
+            "Id": "DMA_EN"
+          },
+          {
+            "Id": "READY_IE"
+          },
+          {
+            "Id": "ABORT_IE"
+          },
+          {
+            "Id": "START_DET_IE"
+          },
+          {
+            "Id": "SEQ_STARTED_IE"
+          },
+          {
+            "Id": "SEQ_DONE_IE"
+          },
+          {
+            "Id": "CONV_DONE_IE"
+          },
+          {
+            "Id": "CLIPPED_IE"
+          },
+          {
+            "Id": "FIFO_LVL_IE"
+          },
+          {
+            "Id": "FIFO_UFL_IE"
+          },
+          {
+            "Id": "FIFO_OFL_IE"
+          },
+          {
+            "Id": "DONE_IE"
+          },
+          {
+            "Id": "REF_READY_IE"
+          },
+          {
+            "Id": "HI_LIMIT_IE"
+          },
+          {
+            "Id": "LO_LIMIT_IE"
+          },
+          {
+            "Id": "OVERFLOW_IE"
+          },
+          {
+            "Id": "SCALE"
+          },
+          {
+            "Id": "CH_LO_LIMIT_EN_IDX0"
+          },
+          {
+            "Id": "CH_LO_LIMIT_EN_IDX1"
+          },
+          {
+            "Id": "CH_LO_LIMIT_EN_IDX2"
+          },
+          {
+            "Id": "CH_LO_LIMIT_EN_IDX3"
+          },
+          {
+            "Id": "CH_HI_LIMIT_EN_IDX0"
+          },
+          {
+            "Id": "CH_HI_LIMIT_EN_IDX1"
+          },
+          {
+            "Id": "CH_HI_LIMIT_EN_IDX2"
+          },
+          {
+            "Id": "CH_HI_LIMIT_EN_IDX3"
+          },
+          {
+            "Id": "CH_SEL_IDX0"
+          },
+          {
+            "Id": "CH_SEL_IDX1"
+          },
+          {
+            "Id": "CH_SEL_IDX2"
+          },
+          {
+            "Id": "CH_SEL_IDX3"
+          },
+          {
+            "Id": "CH_LO_LIMIT_IDX0"
+          },
+          {
+            "Id": "CH_LO_LIMIT_IDX1"
+          },
+          {
+            "Id": "CH_LO_LIMIT_IDX2"
+          },
+          {
+            "Id": "CH_LO_LIMIT_IDX3"
+          },
+          {
+            "Id": "CH_HI_LIMIT_IDX0"
+          },
+          {
+            "Id": "CH_HI_LIMIT_IDX1"
+          },
+          {
+            "Id": "CH_HI_LIMIT_IDX2"
+          },
+          {
+            "Id": "CH_HI_LIMIT_IDX3"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "DMA_CHAN",
+            "Description": "DMA Channel",
+            "Hint": "0",
+            "Type": "integer",
+            "MinimumValue": 0,
+            "MaximumValue": 255,
+            "Condition": "${Control:DMA_EN}"
+          }
+        ]
+      },
+      "I2C[012]": {
+        "supportedControls": [
+          {
+            "Id": "MODE"
+          },
+          {
+            "Id": "ADDR"
+          },
+          {
+            "Id": "TARGET0_ADDR"
+          },
+          {
+            "Id": "CLKSTR"
+          },
+          {
+            "Id": "SCL_TIMEOUT"
+          },
+          {
+            "Id": "GC_ADDR_EN"
+          },
+          {
+            "Id": "PRELOAD_MODE"
+          },
+          {
+            "Id": "TRANSMIT_DMA_ENABLE"
+          },
+          {
+            "Id": "RECEIVE_DMA_ENABLE"
+          },
+          {
+            "Id": "DONE_IE"
+          },
+          {
+            "Id": "IRXM_IE"
+          },
+          {
+            "Id": "GC_ADDR_MATCH_IE"
+          },
+          {
+            "Id": "ADDR_MATCH_IE"
+          },
+          {
+            "Id": "RX_THD_IE"
+          },
+          {
+            "Id": "TX_THD_IE"
+          },
+          {
+            "Id": "STOP_IE"
+          },
+          {
+            "Id": "ADDR_ACK_IE"
+          },
+          {
+            "Id": "ARB_ERR_IE"
+          },
+          {
+            "Id": "TO_ERR_IE"
+          },
+          {
+            "Id": "ADDR_NACK_ERR_IE"
+          },
+          {
+            "Id": "DATA_ERR_IE"
+          },
+          {
+            "Id": "DNR_ERR_IE"
+          },
+          {
+            "Id": "START_ERR_IE"
+          },
+          {
+            "Id": "STOP_ERR_IE"
+          },
+          {
+            "Id": "TX_LOCKOUT_IE"
+          },
+          {
+            "Id": "MAMI0_IE"
+          },
+          {
+            "Id": "MAMI1_IE"
+          },
+          {
+            "Id": "MAMI2_IE"
+          },
+          {
+            "Id": "MAMI3_IE"
+          },
+          {
+            "Id": "RD_ADDR_MATCH_IE"
+          },
+          {
+            "Id": "WR_ADDR_MATCH_IE"
+          },
+          {
+            "Id": "RX_OV_IE"
+          },
+          {
+            "Id": "TX_UN_IE"
+          },
+          {
+            "Id": "START_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "FREQ",
+            "Description": "Frequency",
+            "Hint": "100000",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 3400000
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "MODE",
+            "Description": "Controller or Target Mode",
+            "EnumValues": [
+              {
+                "Id": "TARGET",
+                "Description": "Target Mode",
+                "Value": 0
+              },
+              {
+                "Id": "CONTROLLER",
+                "Description": "Controller Mode",
+                "Value": 1
+              }
+            ],
+            "Type": "enum"
+          }
+        ]
+      },
+      "RTC": {
+        "supportedControls": [
+          {
+            "Id": "SEC"
+          },
+          {
+            "Id": "TOD_ALARM"
+          },
+          {
+            "Id": "TOD_ALARM_IE"
+          },
+          {
+            "Id": "SSEC_ALARM_IE"
+          },
+          {
+            "Id": "RDY_IE"
+          },
+          {
+            "Id": "TRIM"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "SSEC_UNITS",
+            "Description": "Units Used to Specify the Sub-second Alarm",
+            "EnumValues": [
+              {
+                "Id": "TICKS",
+                "Description": "RTC Ticks (1/4096 second)",
+                "Value": 0
+              },
+              {
+                "Id": "MS",
+                "Description": "Milliseconds",
+                "Value": 1
+              }
+            ],
+            "Type": "enum",
+            "Hint": "TICKS"
+          },
+          {
+            "Id": "SSEC_TICKS",
+            "Description": "Initial Value of Sub-seconds Counter (RTC Ticks)",
+            "Type": "integer",
+            "Hint": "0",
+            "MinimumValue": 0,
+            "MaximumValue": 999,
+            "Increment": 1,
+            "NumericBase": "Decimal",
+            "Condition": "${Control:SSEC_UNITS} ${String:TICKS} ="
+          },
+          {
+            "Id": "SSEC_ALARM_TICKS",
+            "Description": "Reload Value for the Sub-second Alarm (RTC Ticks Pending)",
+            "Type": "integer",
+            "Hint": "0",
+            "MinimumValue": 0,
+            "MaximumValue": 4294967295,
+            "Increment": 1,
+            "NumericBase": "Decimal",
+            "Condition": "${Control:SSEC_UNITS} ${String:TICKS} ="
+          },
+          {
+            "Id": "SSEC_MS",
+            "Description": "Initial Value of Sub-seconds Counter (Milliseconds)",
+            "Type": "integer",
+            "Hint": "0",
+            "MinimumValue": 0,
+            "MaximumValue": 999,
+            "Increment": 1,
+            "NumericBase": "Decimal",
+            "Condition": "${Control:SSEC_UNITS} ${String:MS} ="
+          },
+          {
+            "Id": "SSEC_ALARM_MS",
+            "Description": "Reload Value for the Sub-second Alarm (Milliseconds Pending)",
+            "Type": "integer",
+            "Hint": "0",
+            "MinimumValue": 0,
+            "MaximumValue": 1048575000,
+            "Increment": 1,
+            "NumericBase": "Decimal",
+            "Condition": "${Control:SSEC_UNITS} ${String:MS} ="
+          }
+        ]
+      },
+      "SPI[0-4]": {
+        "supportedControls": [
+          {
+            "Id": "DIRECTION"
+          },
+          {
+            "Id": "MODE"
+          },
+          {
+            "Id": "WORD_SIZE"
+          },
+          {
+            "Id": "CS0_POLARITY"
+          },
+          {
+            "Id": "CS1_POLARITY"
+          },
+          {
+            "Id": "CS2_POLARITY"
+          },
+          {
+            "Id": "CS3_POLARITY"
+          },
+          {
+            "Id": "PHASE_POL_MODE"
+          },
+          {
+            "Id": "TX_THD_IE"
+          },
+          {
+            "Id": "TX_EM_IE"
+          },
+          {
+            "Id": "RX_THD_IE"
+          },
+          {
+            "Id": "RX_FULL_IE"
+          },
+          {
+            "Id": "CSA_IE"
+          },
+          {
+            "Id": "CSD_IE"
+          },
+          {
+            "Id": "FAULT_IE"
+          },
+          {
+            "Id": "ABORT_IE"
+          },
+          {
+            "Id": "CTRL_DONE_IE"
+          },
+          {
+            "Id": "TX_OV_IE"
+          },
+          {
+            "Id": "TX_UN_IE"
+          },
+          {
+            "Id": "RX_OV_IE"
+          },
+          {
+            "Id": "RX_UN_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "FREQ",
+            "Description": "Frequency",
+            "Hint": "15000000",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          },
+          {
+            "Id": "NUM_TARGETS",
+            "Description": "Number of Targets",
+            "Hint": "1",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4,
+            "Condition": "${Control:DIRECTION} ${String:CONTROLLER} ="
+          }
+        ]
+      },
+      "(LP)?UART[012]": {
+        "supportedControls": [
+          {
+            "Id": "TX_RX_MODES"
+          },
+          {
+            "Id": "PARITY"
+          },
+          {
+            "Id": "PARITY_MD"
+          },
+          {
+            "Id": "PARITY_LEVEL"
+          },
+          {
+            "Id": "NULL_MODEM"
+          },
+          {
+            "Id": "CHAR_SIZE"
+          },
+          {
+            "Id": "STOP_BITS"
+          },
+          {
+            "Id": "HW_FLOW_CTRL"
+          },
+          {
+            "Id": "TRANSMIT_DMA_ENABLE"
+          },
+          {
+            "Id": "RECEIVE_DMA_ENABLE"
+          },
+          {
+            "Id": "RTSDC_LP_FDM"
+          },
+          {
+            "Id": "RX_FRAME_ERROR_IE"
+          },
+          {
+            "Id": "RX_PARTY_ERROR_IE"
+          },
+          {
+            "Id": "CTS_IE"
+          },
+          {
+            "Id": "RX_OVERRUN_IE"
+          },
+          {
+            "Id": "RX_THD_IE"
+          },
+          {
+            "Id": "TX_ONE_BYTE_IE"
+          },
+          {
+            "Id": "TX_HALF_EMPTY_IE"
+          },
+          {
+            "Id": "RX_FULL_IE"
+          },
+          {
+            "Id": "TX_THD_IE"
+          },
+          {
+            "Id": "BREAK_IE"
+          },
+          {
+            "Id": "RX_TO_IE"
+          },
+          {
+            "Id": "LAST_BREAK_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "BAUD",
+            "Description": "Baud Rate",
+            "Hint": "115200",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "HW_FLOW_CTRL",
+            "Description": "Hardware Flow Control RTS Mode",
+            "EnumValues": [
+              {
+                "Id": "DEASSERT_ON_FULL",
+                "Description": "Deassert On Full",
+                "Value": 0
+              },
+              {
+                "Id": "DISABLED",
+                "Description": "Disabled",
+                "Value": 2
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX(32655|32657|32658|32662|32670|32672|32675C|32690|78000|78002)"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "TX_RX_MODES",
+            "Value": "TX_RX"
+          }
+        ]
+      },
+      "LPTMR[01]": {
+        "supportedControls": [
+          {
+            "Id": "CONFIGURATION"
+          },
+          {
+            "Id": "MODE_A"
+          },
+          {
+            "Id": "CLKDIV_A"
+          },
+          {
+            "Id": "POL_A"
+          },
+          {
+            "Id": "COMPARE"
+          },
+          {
+            "Id": "COUNT"
+          },
+          {
+            "Id": "PWM"
+          },
+          {
+            "Id": "COMPARE_SINGLE"
+          },
+          {
+            "Id": "COUNT_SINGLE"
+          },
+          {
+            "Id": "PWM_SINGLE"
+          },
+          {
+            "Id": "TMRA_IE"
+          },
+          {
+            "Id": "TMRA_WE"
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "MODE_A",
+            "Description": "Mode for Single Timer or Timer A",
+            "EnumValues": [
+              {
+                "Id": "ONE_SHOT",
+                "Description": "One-Shot Mode",
+                "Value": 0
+              },
+              {
+                "Id": "CONTINUOUS",
+                "Description": "Continuous Mode",
+                "Value": 1
+              },
+              {
+                "Id": "COUNTER",
+                "Description": "Counter Mode",
+                "Value": 2
+              },
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "CAPTURE",
+                "Description": "Capture Mode",
+                "Value": 4
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              },
+              {
+                "Id": "GATED",
+                "Description": "Gated Mode",
+                "Value": 6
+              },
+              {
+                "Id": "CAPCOMP",
+                "Description": "Capture/Compare Mode",
+                "Value": 7
+              },
+              {
+                "Id": "DUAL_EDGE",
+                "Description": "Dual Edge Capture Mode",
+                "Value": 8
+              }
+            ],
+            "Type": "enum"
+          }
+        ],
+        "defaultOverrides": [
+          {
+            "Id": "MODE_A",
+            "Value": "COUNTER"
+          }
+        ]
+      },
+      "TMR[0-5]": {
+        "supportedControls": [
+          {
+            "Id": "CONFIGURATION"
+          },
+          {
+            "Id": "MODE_A"
+          },
+          {
+            "Id": "MODE_B"
+          },
+          {
+            "Id": "MODE"
+          },
+          {
+            "Id": "CLKDIV_A"
+          },
+          {
+            "Id": "CLKDIV_B"
+          },
+          {
+            "Id": "CLKDIV"
+          },
+          {
+            "Id": "POL_A"
+          },
+          {
+            "Id": "POL_B"
+          },
+          {
+            "Id": "POL"
+          },
+          {
+            "Id": "COMPARE"
+          },
+          {
+            "Id": "COMPARE_A"
+          },
+          {
+            "Id": "COMPARE_B"
+          },
+          {
+            "Id": "COUNT"
+          },
+          {
+            "Id": "COUNT_A"
+          },
+          {
+            "Id": "PWM"
+          },
+          {
+            "Id": "PWM_A"
+          },
+          {
+            "Id": "TMRA_WE"
+          },
+          {
+            "Id": "TMRB_WE"
+          }
+        ],
+        "modifiedControls": [
+          {
+            "Id": "MODE_A",
+            "Description": "Mode for Single Timer or Timer A",
+            "EnumValues": [
+              {
+                "Id": "ONE_SHOT",
+                "Description": "One-Shot Mode",
+                "Value": 0
+              },
+              {
+                "Id": "CONTINUOUS",
+                "Description": "Continuous Mode",
+                "Value": 1
+              },
+              {
+                "Id": "COUNTER",
+                "Description": "Counter Mode",
+                "Value": 2
+              },
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "CAPTURE",
+                "Description": "Capture Mode",
+                "Value": 4
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              },
+              {
+                "Id": "GATED",
+                "Description": "Gated Mode",
+                "Value": 6
+              },
+              {
+                "Id": "CAPCOMP",
+                "Description": "Capture/Compare Mode",
+                "Value": 7
+              },
+              {
+                "Id": "DUAL_EDGE",
+                "Description": "Dual Edge Capture Mode",
+                "Value": 8
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX(32655|32662|32670|32672|32675C|32690|78000|78002)"
+          },
+          {
+            "Id": "MODE_A",
+            "Description": "Mode for Single Timer or Timer A",
+            "EnumValues": [
+              {
+                "Id": "ONE_SHOT",
+                "Description": "One-Shot Mode",
+                "Value": 0
+              },
+              {
+                "Id": "CONTINUOUS",
+                "Description": "Continuous Mode",
+                "Value": 1
+              },
+              {
+                "Id": "PWM",
+                "Description": "PWM Mode",
+                "Value": 3
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              }
+            ],
+            "Type": "enum",
+            "partRegexp": "MAX(32657|32658)"
+          },
+          {
+            "Id": "MODE_B",
+            "Description": "Mode for Timer B",
+            "EnumValues": [
+              {
+                "Id": "ONE_SHOT",
+                "Description": "One-Shot Mode",
+                "Value": 0
+              },
+              {
+                "Id": "CONTINUOUS",
+                "Description": "Continuous Mode",
+                "Value": 1
+              },
+              {
+                "Id": "COMPARE",
+                "Description": "Compare Mode",
+                "Value": 5
+              }
+            ],
+            "Type": "enum"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "TMR_AB_IE",
+            "Description": "Enable Timer A and B Interrupts",
+            "Type": "boolean",
+            "Hint": "FALSE",
+            "partRegexp": "MAX(32655|32657|32658|32662|32670|32672|32675C|32690|78000|78002)"
+          }
+        ]
+      },
+      "I2S": {
+        "supportedControls": [
+          {
+            "Id": "DIRECTION"
+          },
+          {
+            "Id": "TX_RX_MODE"
+          },
+          {
+            "Id": "ALIGN"
+          },
+          {
+            "Id": "AUDIO_MODE"
+          },
+          {
+            "Id": "WSIZE"
+          },
+          {
+            "Id": "RX_THD_VAL"
+          },
+          {
+            "Id": "BITS_WORD"
+          },
+          {
+            "Id": "SMP_SIZE"
+          },
+          {
+            "Id": "ADJUST"
+          },
+          {
+            "Id": "TRANSMIT_DMA_ENABLE"
+          },
+          {
+            "Id": "RECEIVE_DMA_ENABLE"
+          },
+          {
+            "Id": "RX_OV_CH0_IE"
+          },
+          {
+            "Id": "RX_THD_CH0_IE"
+          },
+          {
+            "Id": "TX_OB_CH0_IE"
+          },
+          {
+            "Id": "TX_HE_CH0_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "SMPL_RATE",
+            "Description": "Sample Rate",
+            "Hint": "44100",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          },
+          {
+            "Id": "RAW_DATA_BUFFER_NAME",
+            "Description": "Raw Data Buffer Name",
+            "Hint": "i2s_raw_data_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:RX_ONLY} !="
+          },
+          {
+            "Id": "TX_BUFFER_NAME",
+            "Description": "Transmit Buffer Name",
+            "Hint": "i2s_tx_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:RX_ONLY} !="
+          },
+          {
+            "Id": "RX_BUFFER_NAME",
+            "Description": "Receive Buffer Name",
+            "Hint": "i2s_rx_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:TX_ONLY} !="
+          },
+          {
+            "Id": "LENGTH",
+            "Description": "Buffer Length",
+            "Hint": "256",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          }
+        ]
+      },
+      "I2S0": {
+        "supportedControls": [
+          {
+            "Id": "DIRECTION"
+          },
+          {
+            "Id": "TX_RX_MODE"
+          },
+          {
+            "Id": "ALIGN"
+          },
+          {
+            "Id": "AUDIO_MODE"
+          },
+          {
+            "Id": "WSIZE"
+          },
+          {
+            "Id": "RX_THD_VAL"
+          },
+          {
+            "Id": "BITS_WORD"
+          },
+          {
+            "Id": "SMP_SIZE"
+          },
+          {
+            "Id": "ADJUST"
+          },
+          {
+            "Id": "TRANSMIT_DMA_ENABLE"
+          },
+          {
+            "Id": "RECEIVE_DMA_ENABLE"
+          },
+          {
+            "Id": "RX_OV_CH0_IE"
+          },
+          {
+            "Id": "RX_THD_CH0_IE"
+          },
+          {
+            "Id": "TX_OB_CH0_IE"
+          },
+          {
+            "Id": "TX_HE_CH0_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "SMPL_RATE",
+            "Description": "Sample Rate",
+            "Hint": "44100",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          },
+          {
+            "Id": "RAW_DATA_BUFFER_NAME",
+            "Description": "Raw Data Buffer Name",
+            "Hint": "i2s0_raw_data_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:RX_ONLY} !="
+          },
+          {
+            "Id": "TX_BUFFER_NAME",
+            "Description": "Transmit Buffer Name",
+            "Hint": "i2s0_tx_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:RX_ONLY} !="
+          },
+          {
+            "Id": "RX_BUFFER_NAME",
+            "Description": "Receive Buffer Name",
+            "Hint": "i2s0_rx_buffer",
+            "Type": "text",
+            "Pattern": "[_a-zA-Z][_a-zA-Z0-9]*",
+            "Condition": "${Control:TX_RX_MODE} ${String:TX_ONLY} !="
+          },
+          {
+            "Id": "LENGTH",
+            "Description": "Buffer Length",
+            "Hint": "256",
+            "Type": "integer",
+            "MinimumValue": 1,
+            "MaximumValue": 4294967295
+          }
+        ]
+      },
+      "TRNG": {
+        "supportedControls": [
+          {
+            "Id": "RND_IE"
+          }
+        ]
+      },
+      "OWM": {
+        "supportedControls": [
+          {
+            "Id": "INTERNAL_PULL_UP"
+          },
+          {
+            "Id": "EXTERNAL_PULL_UP"
+          },
+          {
+            "Id": "EXT_PULL_UP_MODE"
+          },
+          {
+            "Id": "LONG_LINE_MODE"
+          },
+          {
+            "Id": "OVERDRIVE"
+          },
+          {
+            "Id": "FORCE_PRES_DET"
+          },
+          {
+            "Id": "SRA_MODE"
+          },
+          {
+            "Id": "RESET_DONE_IE"
+          },
+          {
+            "Id": "TX_DATA_EMPTY_IE"
+          },
+          {
+            "Id": "RX_DATA_READY_IE"
+          },
+          {
+            "Id": "LINE_SHORT_IE"
+          },
+          {
+            "Id": "LINE_LOW_IE"
+          }
+        ]
+      },
+      "CAN[01]": {
+        "supportedControls": [
+          {
+            "Id": "SJW"
+          },
+          {
+            "Id": "TSEG1"
+          },
+          {
+            "Id": "TSEG2"
+          },
+          {
+            "Id": "AFM"
+          },
+          {
+            "Id": "DOR_IE"
+          },
+          {
+            "Id": "BERR_IE"
+          },
+          {
+            "Id": "TX_IE"
+          },
+          {
+            "Id": "RX_IE"
+          },
+          {
+            "Id": "ERPSV_IE"
+          },
+          {
+            "Id": "ERWARN_IE"
+          },
+          {
+            "Id": "AL_IE"
+          },
+          {
+            "Id": "WU_IE"
+          },
+          {
+            "Id": "RX_THD_IE"
+          },
+          {
+            "Id": "RX_TO_IE"
+          }
+        ],
+        "addedControls": [
+          {
+            "Id": "BITRATE",
+            "Description": "Bit Rate (bps)",
+            "Hint": "500000",
+            "Type": "integer",
+            "MinimumValue": "1",
+            "MaximumValue": "1000000"
+          },
+          {
+            "Id": "UNIT_CB",
+            "Description": "Unit Event Callback Function Name",
+            "Type": "text",
+            "Pattern": "^$|[_a-zA-Z][_a-zA-Z0-9]*"
+          },
+          {
+            "Id": "OBJ_CB",
+            "Description": "Object Event Callback Function Name",
+            "Type": "text",
+            "Pattern": "^$|[_a-zA-Z][_a-zA-Z0-9]*"
+          },
+          {
+            "Id": "FILTER_ID_LENGTH_SINGLE",
+            "Description": "Message ID Length",
+            "EnumValues": [
+              {
+                "Id": "STD",
+                "Description": "11-bit Identifier",
+                "Value": "STD"
+              },
+              {
+                "Id": "EXT",
+                "Description": "29-bit Identifier",
+                "Value": "EXT"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "STD",
+            "Condition": "${Control:AFM} ${String:SINGLE} ="
+          },
+          {
+            "Id": "FILTER_TYPE_SINGLE",
+            "Description": "Filter Type",
+            "EnumValues": [
+              {
+                "Id": "EXACT",
+                "Description": "Exact Match Filter",
+                "Value": "EXACT"
+              },
+              {
+                "Id": "MASK",
+                "Description": "Maskable Filter",
+                "Value": "MASK"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "EXACT",
+            "Condition": "${Control:AFM} ${String:SINGLE} ="
+          },
+          {
+            "Id": "FILTER_ID_SINGLE",
+            "Description": "(Exact/Base) ID for Message Filter",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:SINGLE} ="
+          },
+          {
+            "Id": "FILTER_MATCH_MASK_SINGLE",
+            "Description": "ID Match Mask. Set bit to indicate must match ID, clear to ignore ID. E.g. 0x7FF represents exact 11-bit match.",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:SINGLE} = ${Control:FILTER_TYPE_SINGLE} ${String:MASK} = &"
+          },
+          {
+            "Id": "FILTER_ID_LENGTH_DUAL_1",
+            "Description": "Filter 1 Message ID Length",
+            "EnumValues": [
+              {
+                "Id": "STD",
+                "Description": "11-bit Identifier",
+                "Value": "STD"
+              },
+              {
+                "Id": "EXT",
+                "Description": "29-bit Identifier",
+                "Value": "EXT"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "STD",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_TYPE_DUAL_1",
+            "Description": "Filter 1 Type",
+            "EnumValues": [
+              {
+                "Id": "EXACT",
+                "Description": "Exact Match Filter",
+                "Value": "EXACT"
+              },
+              {
+                "Id": "MASK",
+                "Description": "Maskable Filter",
+                "Value": "MASK"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "EXACT",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_ID_DUAL_1",
+            "Description": "(Exact/Base) ID for Message Filter 1",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_MATCH_MASK_DUAL_1",
+            "Description": "ID Match Mask. Set bit to indicate must match ID, clear to ignore ID. E.g. 0x7FF represents exact 11-bit match",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:DUAL} = ${Control:FILTER_TYPE_DUAL_1} ${String:MASK} = &"
+          },
+          {
+            "Id": "FILTER_ID_LENGTH_DUAL_2",
+            "Description": "Filter 2 Message ID Length",
+            "EnumValues": [
+              {
+                "Id": "STD",
+                "Description": "11-bit Identifier",
+                "Value": "STD"
+              },
+              {
+                "Id": "EXT",
+                "Description": "29-bit Identifier",
+                "Value": "EXT"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "STD",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_TYPE_DUAL_2",
+            "Description": "Filter 2 Type",
+            "EnumValues": [
+              {
+                "Id": "EXACT",
+                "Description": "Exact Match Filter",
+                "Value": "EXACT"
+              },
+              {
+                "Id": "MASK",
+                "Description": "Maskable Filter",
+                "Value": "MASK"
+              }
+            ],
+            "Type": "enum",
+            "Hint": "EXACT",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_ID_DUAL_2",
+            "Description": "(Exact/Base) ID for Message Filter 2",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:DUAL} ="
+          },
+          {
+            "Id": "FILTER_MATCH_MASK_DUAL_2",
+            "Description": "ID Match Mask. Set bit to indicate must match ID, clear to ignore ID. E.g. 0x7FF represents exact 11-bit match",
+            "Type": "integer",
+            "NumericBase": "Hexadecimal",
+            "MinimumValue": "0x0",
+            "MaximumValue": "0x1FFFFFFF",
+            "Hint": "0x0",
+            "Condition": "${Control:AFM} ${String:DUAL} = ${Control:FILTER_TYPE_DUAL_2} ${String:MASK} = &"
+          }
+        ]
+      },
+      "AES": {
+        "supportedControls": []
+      },
+      "AESKEYS": {
+        "supportedControls": []
+      },
+      "BLE": {
+        "supportedControls": []
+      },
+      "BOOST": {
+        "supportedControls": []
+      },
+      "CLCD": {
+        "supportedControls": []
+      },
+      "CNN": {
+        "supportedControls": []
+      },
+      "CSI2": {
+        "supportedControls": []
+      },
+      "CSS": {
+        "supportedControls": []
+      },
+      "CTB": {
+        "supportedControls": []
+      },
+      "DDE": {
+        "supportedControls": []
+      },
+      "DMA[01]?": {
+        "supportedControls": []
+      },
+      "DSS": {
+        "supportedControls": []
+      },
+      "DVS": {
+        "supportedControls": []
+      },
+      "EMCC": {
+        "supportedControls": []
+      },
+      "FFT": {
+        "supportedControls": []
+      },
+      "FLC[01]?": {
+        "supportedControls": []
+      },
+      "HBMC": {
+        "supportedControls": []
+      },
+      "HYP": {
+        "supportedControls": []
+      },
+      "I3C0": {
+        "supportedControls": []
+      },
+      "ICC[01]?": {
+        "supportedControls": []
+      },
+      "LPCMP0?": {
+        "supportedControls": []
+      },
+      "MPC": {
+        "supportedControls": []
+      },
+      "NSPC": {
+        "supportedControls": []
+      },
+      "NSS": {
+        "supportedControls": []
+      },
+      "PCIF": {
+        "supportedControls": []
+      },
+      "PT[0-9]+": {
+        "supportedControls": []
+      },
+      "PTG": {
+        "supportedControls": []
+      },
+      "PUF": {
+        "supportedControls": []
+      },
+      "PWRSEQ": {
+        "supportedControls": []
+      },
+      "RSS": {
+        "supportedControls": []
+      },
+      "RSTZ": {
+        "supportedControls": []
+      },
+      "SDHC": {
+        "supportedControls": []
+      },
+      "SEMA": {
+        "supportedControls": []
+      },
+      "SIMO": {
+        "supportedControls": []
+      },
+      "SIR": {
+        "supportedControls": []
+      },
+      "SMON": {
+        "supportedControls": []
+      },
+      "SPC": {
+        "supportedControls": []
+      },
+      "SPIMSS": {
+        "supportedControls": []
+      },
+      "SPIXF": {
+        "supportedControls": []
+      },
+      "SPIXFC": {
+        "supportedControls": []
+      },
+      "SPIXFC_FIFO": {
+        "supportedControls": []
+      },
+      "SPIXR": {
+        "supportedControls": []
+      },
+      "TRIMSIR": {
+        "supportedControls": []
+      },
+      "USBHS": {
+        "supportedControls": []
+      },
+      "WUT[01]?": {
+        "supportedControls": []
+      }
+    }
+  }
+}

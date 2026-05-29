@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,12 @@ function Function({
 			Object.keys(assignedPin?.Errors ?? {}).length);
 
 	const handlePanelOpen = () => {
-		if (!activePeripheralName) {
+		if (activePeripheralName) {
+			// If the panel is open for a different signal, switch to the correct peripheral group
+			if (peripheralGroup !== activePeripheralName) {
+				dispatch(setActivePeripheral(peripheralGroup));
+			}
+		} else {
 			dispatch(setActivePeripheral(peripheralGroup));
 		}
 
@@ -386,6 +391,7 @@ function Function({
 				className={`${styles.configButtonContainer} ${openSignal === `${peripheralGroup} ${signalName}` ? styles.active : ''}`}
 			>
 				<Button
+					dataTest={`configure-${peripheralGroup}-${signalName}-button`}
 					appearance='icon'
 					disabled={!isToggledOn}
 					onClick={handlePanelOpen}

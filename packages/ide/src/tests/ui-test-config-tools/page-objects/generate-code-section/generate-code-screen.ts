@@ -33,12 +33,27 @@ export const overwriteButton: By = By.css(
   '[data-test="generate-code:modal:overwrite"]',
 );
 
+export function getErrorSignal(projectId: string): By {
+  return By.css(`[data-test='valid-status:${projectId}:error-state']`);
+}
+
+export function getReadySignal(projectId: string): By {
+  return By.css(`[data-test='valid-status:${projectId}:ready-state']`);
+}
+
+export function errorContainerSelector(projectId: string): By {
+  return By.css(
+    `[data-test='cfsSelectionCard:${projectId}:content:errors-container']`,
+  );
+}
+
 // Helper function to dismiss the overwrite modal if it appears
 export async function dismissOverwriteModal(view: WebView): Promise<void> {
   try {
-    const dismissBtn = await UIUtils
-      .findWebElement(view, overwriteButton)
-      .catch(() => null);
+    const dismissBtn = await UIUtils.findWebElement(
+      view,
+      overwriteButton,
+    ).catch(() => null);
 
     if (dismissBtn) {
       await dismissBtn.click();

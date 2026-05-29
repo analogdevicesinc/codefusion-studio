@@ -1,0 +1,54 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '../../styles/colors';
+@use '../../styles/layout';
+@use '../../styles/fonts';
+
+.inlineMessage {
+	font-family: fonts.$default-font-family;
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+	height: 32px;
+	padding: layout.$spacing-3;
+	border: 1px solid colors.$notification-toast-border;
+	border-radius: layout.$border-radius-1;
+	background: colors.$notifications-background;
+
+	.icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 16px;
+		height: 16px;
+		line-height: 0;
+		color: colors.$notifications-foreground;
+
+		.success {
+			display: inline-flex;
+			color: colors.$chart-green;
+		}
+	}
+
+	.message {
+		@include fonts.body-b3;
+		color: colors.$notifications-foreground;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		flex: 1;
+	}
+}

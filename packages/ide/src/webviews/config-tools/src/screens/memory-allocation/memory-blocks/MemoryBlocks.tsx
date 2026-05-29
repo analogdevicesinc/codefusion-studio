@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 import {
 	DropDown,
-	Stepper,
+	IntegerField,
 	HexInputField,
 	type DropDownOptions
 } from 'cfs-react-library';
@@ -66,321 +66,339 @@ const sizeOptions: DropDownOptions = [
 	{value: 'bytes', label: 'bytes'}
 ];
 
-export const MemoryBlocks = memo(({
-	blocksForType,
-	errors,
-	partition,
-	isFormTouched,
-	onChange
-}: MemoryBlockProps) => {
-	const i10n: TLocaleContext | undefined =
-		useLocaleContext()?.memory.blocks;
-	const {
-		size,
-		projects: cores,
-		startAddress: address,
-		blockNames,
-		baseBlock,
-		type: memoryType
-	} = partition;
-
-	const partitions = usePartitions();
-	const memoryBlocks: MemoryBlock[] = getCoreMemoryBlocks();
-	const {sidebarPartition} = useSidebarState();
-	const [localUnit, setLocalUnit] = useState<ByteUnit>('KB');
-	const [displaySize, setDisplaySize] = useState(
-		convertMemoryBetweenUnits(size, 'bytes', localUnit)
-	);
-
-	const blockOptions: DropDownOptions = [
-		{label: 'Select value', value: ''},
-		...memoryBlocks
-			.filter(block => block.Type === memoryType)
-			.map(block => ({
-				label: block.Name,
-				value: block.Name,
-				dataTest: block.Name,
-				disabled:
-					isBlockOccupied(block, sidebarPartition, partitions) ||
-					isBlockDisabled(block, cores, memoryType)
-			}))
-	];
-
-	const memoryAliases = useMemo(() => {
-		const coreIds = cores
-			.filter(c => isCoreSecure(c))
-			.map(c => c.coreId);
-
-		return getCoreMemoryAliases(baseBlock.Name, coreIds) ?? [];
-	}, [baseBlock.Name, cores]);
-
-	const offsetMemoryAliases = useMemo(() => {
-		const baseOffset = getAddressOffset(
-			baseBlock.AddressStart,
-			address
-		);
-
-		return memoryAliases.map(alias => ({
-			...alias,
-			OffsetAddress: offsetAddress(alias.AliasBaseAddress, baseOffset)
-		}));
-	}, [memoryAliases, address, baseBlock.AddressStart]);
-
-	const displayMemoryBlocks = useMemo(() => {
-		if (!address || !size) {
-			return false;
-		}
-
-		if (isFormTouched) {
-			return !errors?.startAddress && !errors?.size;
-		}
-
-		const formErrors = validatePartitionForm(
-			partition,
-			partitions.filter(
-				partition =>
-					parseInt(partition.startAddress, 16) !==
-					parseInt(sidebarPartition.startAddress, 16)
-			),
-			blocksForType
-		).errors;
-
-		return !formErrors?.startAddress && !formErrors?.size;
-	}, [
-		address,
+export const MemoryBlocks = memo(
+	({
 		blocksForType,
-		errors?.size,
-		errors?.startAddress,
-		isFormTouched,
+		errors,
 		partition,
-		partitions,
-		sidebarPartition.startAddress,
-		size
-	]);
+		isFormTouched,
+		onChange
+	}: MemoryBlockProps) => {
+		const i10n: TLocaleContext | undefined =
+			useLocaleContext()?.memory.blocks;
+		const {
+			size,
+			projects: cores,
+			startAddress: address,
+			blockNames,
+			baseBlock,
+			type: memoryType
+		} = partition;
 
-	const handleSizeChange = (value: number) => {
-		setDisplaySize(value);
-		handleMemoryChange(value, localUnit);
-	};
-
-	const handleUnitChange = (newUnit: ByteUnit) => {
-		handleMemoryChange(displaySize, newUnit);
-		setLocalUnit(newUnit);
-	};
-
-	const handleMemoryChange = (dSize: number, unit: ByteUnit) => {
-		const value = dSize * ByteUnitMap[unit];
-
-		const blocksRangeItems = getPartitionBlockNames(
-			memoryBlocks,
-			parseInt(address, 16),
-			value
+		const partitions = usePartitions();
+		const memoryBlocks: MemoryBlock[] = getCoreMemoryBlocks();
+		const {sidebarPartition} = useSidebarState();
+		const [localUnit, setLocalUnit] = useState<ByteUnit>('KB');
+		const [displaySize, setDisplaySize] = useState(
+			convertMemoryBetweenUnits(size, 'bytes', localUnit)
 		);
-		onChange({
-			size: value,
-			displayUnit: unit,
-			blockNames: blocksRangeItems
-		});
-	};
+		const existingPartition = Boolean(sidebarPartition.displayName);
 
-	const handleDropdown = (value: string): void => {
-		const baseBlock = memoryBlocks.find(
-			block => block.Name === value
-		);
+		const isBlockOptionDisabled = (block: MemoryBlock) =>
+			// Disabled
+			isBlockDisabled(block, cores, memoryType) ||
+			// Create partition
+			(!existingPartition &&
+				isBlockOccupied(block, sidebarPartition, partitions)) ||
+			// ...but enable when editing the partition belonging to that block
+			(existingPartition &&
+				block.Name !== sidebarPartition.baseBlock.Name &&
+				isBlockOccupied(block, sidebarPartition, partitions));
 
-		const addressFromBlockSelected = baseBlock
-			? getFirstAvailableAddressFromBlock(baseBlock, partitions)
-			: undefined;
+		const blockOptions: DropDownOptions = [
+			{label: 'Select value', value: ''},
+			...memoryBlocks
+				.filter(block => block.Type === memoryType)
+				.map(block => ({
+					label: block.Name,
+					value: block.Name,
+					dataTest: block.Name,
+					disabled: isBlockOptionDisabled(block)
+				}))
+		];
 
-		if (addressFromBlockSelected !== undefined && baseBlock) {
-			const blocksRangeItems = getPartitionBlockNames(
-				memoryBlocks,
-				addressFromBlockSelected,
-				size
-			);
-			onChange({
-				baseBlock,
-				startAddress: addressFromBlockSelected.toString(16),
-				blockNames: blocksRangeItems
-			});
-		}
-	};
+		const memoryAliases = useMemo(() => {
+			const coreIds = cores
+				.filter(c => isCoreSecure(c))
+				.map(c => c.coreId);
 
-	const onAddressChange = useCallback(
-		(value: string): void => {
-			const address = parseInt(value, 16);
+			return getCoreMemoryAliases(baseBlock.Name, coreIds) ?? [];
+		}, [baseBlock.Name, cores]);
 
-			const blockFromAddress = getBaseblockFromAddress(
-				memoryBlocks,
+		const offsetMemoryAliases = useMemo(() => {
+			const baseOffset = getAddressOffset(
+				baseBlock.AddressStart,
 				address
 			);
 
-			if (
-				blockFromAddress &&
-				!isBlockDisabled(blockFromAddress, cores, memoryType)
-			) {
+			return memoryAliases.map(alias => ({
+				...alias,
+				OffsetAddress: offsetAddress(
+					alias.AliasBaseAddress,
+					baseOffset
+				)
+			}));
+		}, [memoryAliases, address, baseBlock.AddressStart]);
+
+		const displayMemoryBlocks = useMemo(() => {
+			if (!address || !size) {
+				return false;
+			}
+
+			if (isFormTouched) {
+				return !errors?.startAddress && !errors?.size;
+			}
+
+			const formErrors = validatePartitionForm(
+				partition,
+				partitions.filter(
+					partition =>
+						parseInt(partition.startAddress, 16) !==
+						parseInt(sidebarPartition.startAddress, 16)
+				),
+				blocksForType
+			).errors;
+
+			return !formErrors?.startAddress && !formErrors?.size;
+		}, [
+			address,
+			blocksForType,
+			errors?.size,
+			errors?.startAddress,
+			isFormTouched,
+			partition,
+			partitions,
+			sidebarPartition.startAddress,
+			size
+		]);
+
+		const handleSizeChange = (value: number) => {
+			setDisplaySize(value);
+			handleMemoryChange(value, localUnit);
+		};
+
+		const handleUnitChange = (newUnit: ByteUnit) => {
+			handleMemoryChange(displaySize, newUnit);
+			setLocalUnit(newUnit);
+		};
+
+		const handleMemoryChange = (dSize: number, unit: ByteUnit) => {
+			const value = dSize * ByteUnitMap[unit];
+
+			const blocksRangeItems = getPartitionBlockNames(
+				memoryBlocks,
+				parseInt(address, 16),
+				value
+			);
+			onChange({
+				size: value,
+				displayUnit: unit,
+				blockNames: blocksRangeItems
+			});
+		};
+
+		const handleDropdown = (value: string): void => {
+			const baseBlock = memoryBlocks.find(
+				block => block.Name === value
+			);
+
+			const addressFromBlockSelected = baseBlock
+				? getFirstAvailableAddressFromBlock(baseBlock, partitions)
+				: undefined;
+
+			if (addressFromBlockSelected !== undefined && baseBlock) {
 				const blocksRangeItems = getPartitionBlockNames(
 					memoryBlocks,
-					address,
+					addressFromBlockSelected,
 					size
 				);
-
 				onChange({
-					startAddress: value,
-					baseBlock: blockFromAddress,
+					baseBlock,
+					startAddress: addressFromBlockSelected.toString(16),
 					blockNames: blocksRangeItems
 				});
-			} else {
-				onChange({
-					startAddress: value,
-					baseBlock,
-					blockNames: []
-				});
 			}
-		},
-		[baseBlock, cores, memoryBlocks, memoryType, onChange, size]
-	);
+		};
 
-	const onSoftwareAddressChange = useCallback(
-		(aliasBase: string, newAliasAddress: string): void => {
-			const aliasBaseDec = parseInt(aliasBase, 16);
-			const newAliasDec = parseInt(newAliasAddress, 16);
-			const baseBlockStart = parseInt(baseBlock.AddressStart, 16);
-			const newPhysicalAddress =
-				newAliasDec - aliasBaseDec + baseBlockStart;
+		const onAddressChange = useCallback(
+			(value: string): void => {
+				const address = parseInt(value, 16);
 
-			onAddressChange(newPhysicalAddress.toString(16));
-		},
-		[baseBlock.AddressStart, onAddressChange]
-	);
+				const blockFromAddress = getBaseblockFromAddress(
+					memoryBlocks,
+					address
+				);
 
-	useEffect(() => {
-		setDisplaySize(
-			convertMemoryBetweenUnits(size, 'bytes', localUnit)
+				if (
+					blockFromAddress &&
+					!isBlockDisabled(blockFromAddress, cores, memoryType)
+				) {
+					const blocksRangeItems = getPartitionBlockNames(
+						memoryBlocks,
+						address,
+						size
+					);
+
+					onChange({
+						startAddress: value,
+						baseBlock: blockFromAddress,
+						blockNames: blocksRangeItems
+					});
+				} else {
+					onChange({
+						startAddress: value,
+						baseBlock,
+						blockNames: []
+					});
+				}
+			},
+			[baseBlock, cores, memoryBlocks, memoryType, onChange, size]
 		);
-	}, [localUnit, size]);
 
-	// To reset the local unit in edit mode when user changes localunit without editing the partition
-	useEffect(() => {
-		// We use DisplayUnit if present
-		if (sidebarPartition.displayUnit) {
-			setLocalUnit(sidebarPartition.displayUnit);
+		const onSoftwareAddressChange = useCallback(
+			(aliasBase: string, newAliasAddress: string): void => {
+				const aliasBaseDec = parseInt(aliasBase, 16);
+				const newAliasDec = parseInt(newAliasAddress, 16);
+				const baseBlockStart = parseInt(baseBlock.AddressStart, 16);
+				const newPhysicalAddress =
+					newAliasDec - aliasBaseDec + baseBlockStart;
 
-			return;
-		}
+				onAddressChange(newPhysicalAddress.toString(16));
+			},
+			[baseBlock.AddressStart, onAddressChange]
+		);
 
-		// Fallback for when DisplayUnit isn't present
-		if (sidebarPartition.size) {
-			setLocalUnit(getCleanDivisibleSizeUnit(sidebarPartition.size));
-		}
-	}, [sidebarPartition]);
+		useEffect(() => {
+			setDisplaySize(
+				convertMemoryBetweenUnits(size, 'bytes', localUnit)
+			);
+		}, [localUnit, size]);
 
-	return (
-		<div className={styles.container}>
-			<h3>{i10n?.['memory-blocks']}</h3>
-			<div className={`${styles.section} ${styles.blockSection}`}>
-				<span className={styles.label}>{i10n?.base}</span>
-				<div className={styles.blockDropdownContainer}>
-					<DropDown
-						controlId='baseBlock'
-						dataTest='base-block-dropdown'
-						currentControlValue={baseBlock?.Name}
-						options={blockOptions}
-						error={errors?.blocks}
-						onHandleDropdown={value => {
-							handleDropdown(value);
-						}}
-					/>
+		// To reset the local unit in edit mode when user changes localunit without editing the partition
+		useEffect(() => {
+			// We use DisplayUnit if present
+			if (sidebarPartition.displayUnit) {
+				setLocalUnit(sidebarPartition.displayUnit);
+
+				return;
+			}
+
+			// Fallback for when DisplayUnit isn't present
+			if (sidebarPartition.size) {
+				setLocalUnit(
+					getCleanDivisibleSizeUnit(sidebarPartition.size)
+				);
+			}
+		}, [sidebarPartition]);
+
+		return (
+			<div className={styles.container}>
+				<h3>{i10n?.['memory-blocks']}</h3>
+				<div className={`${styles.section} ${styles.blockSection}`}>
+					<span className={styles.label}>{i10n?.base}</span>
+					<div className={styles.blockDropdownContainer}>
+						<DropDown
+							controlId='baseBlock'
+							dataTest='base-block-dropdown'
+							currentControlValue={baseBlock?.Name}
+							options={blockOptions}
+							error={errors?.blocks}
+							onHandleDropdown={value => {
+								handleDropdown(value);
+							}}
+						/>
+					</div>
 				</div>
-			</div>
-			<div className={`${styles.section} ${styles.addressSection}`}>
-				<div className={styles.startAddressheader}>
-					<span className={styles.label}>
-						{memoryAliases.length > 0
-							? i10n?.['physical-starting-address']
-							: i10n?.['starting-address']}
-					</span>
-				</div>
-				<div className={styles.stepperGap}>
-					<HexInputField
-						dataTest='start-address'
-						value={address}
-						error={errors?.startAddress}
-						onValueChange={onAddressChange}
-					/>
-				</div>
-				{offsetMemoryAliases?.map(memoryAlias => (
-					<div
-						key={`${memoryAlias.CoreId}${memoryAlias.Name}${memoryAlias.AliasBaseAddress}`}
-						className={styles.memoryAliasContainer}
-					>
-						<div className={styles.startAddressheader}>
-							<span className={styles.label}>
-								{`${memoryAlias.CoreId} ${memoryAlias.AliasType} ${i10n?.['starting-address']}`}
-							</span>
+				<div className={`${styles.section} ${styles.addressSection}`}>
+					<div className={styles.startAddressheader}>
+						<span className={styles.label}>
+							{memoryAliases.length > 0
+								? i10n?.['physical-starting-address']
+								: i10n?.['starting-address']}
+						</span>
+					</div>
+					<div className={styles.stepperGap}>
+						<HexInputField
+							dataTest='start-address'
+							value={address}
+							error={errors?.startAddress}
+							onValueChange={onAddressChange}
+						/>
+					</div>
+					{offsetMemoryAliases?.map(memoryAlias => (
+						<div
+							key={`${memoryAlias.CoreId}${memoryAlias.Name}${memoryAlias.AliasBaseAddress}`}
+							className={styles.memoryAliasContainer}
+						>
+							<div className={styles.startAddressheader}>
+								<span className={styles.label}>
+									{`${memoryAlias.CoreId} ${memoryAlias.AliasType} ${i10n?.['starting-address']}`}
+								</span>
+							</div>
+							<div className={styles.stepperGap}>
+								<HexInputField
+									dataTest={`software-start-address-${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`}
+									value={memoryAlias.OffsetAddress}
+									error={errors?.startAddress}
+									onValueChange={value => {
+										onSoftwareAddressChange(
+											memoryAlias.AliasBaseAddress,
+											value
+										);
+									}}
+								/>
+							</div>
 						</div>
-						<div className={styles.stepperGap}>
-							<HexInputField
-								dataTest={`software-start-address-${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`}
-								value={memoryAlias.OffsetAddress}
-								error={errors?.startAddress}
-								onValueChange={value => {
-									onSoftwareAddressChange(
-										memoryAlias.AliasBaseAddress,
-										value
-									);
+					))}
+				</div>
+				<div className={`${styles.section} ${styles.sizeSection}`}>
+					<div className={styles.label}>{i10n?.size}</div>
+					<div className={styles.sizeContainer}>
+						<div className={styles.sizeStepper}>
+							<IntegerField
+								value={displaySize}
+								step={getSizeStepValue(
+									baseBlock?.MinimumAlignment ?? 1,
+									localUnit
+								)}
+								allowNegative={false}
+								error={errors?.size}
+								dataTest='size-stepper'
+								onValueChange={(value: number) => {
+									handleSizeChange(value);
+								}}
+							/>
+						</div>
+						<div className={styles.sizeDropdown}>
+							<DropDown
+								controlId=''
+								dataTest='size-dropdown'
+								currentControlValue={localUnit}
+								options={sizeOptions}
+								onHandleDropdown={value => {
+									handleUnitChange(value as ByteUnit);
 								}}
 							/>
 						</div>
 					</div>
-				))}
-			</div>
-			<div className={`${styles.section} ${styles.sizeSection}`}>
-				<span className={styles.label}>{i10n?.size}</span>
-				<div className={styles.sizeContainer}>
-					<div className={styles.sizeStepper}>
-						<Stepper
-							dataTest='size-stepper'
-							stepAmount={getSizeStepValue(
-								baseBlock?.MinimumAlignment ?? 1,
-								localUnit
-							)}
-							error={errors?.size}
-							inputValue={displaySize}
-							onValueChange={(value: number) => {
-								handleSizeChange(value);
-							}}
-						/>
-					</div>
-					<div className={styles.sizeDropdown}>
-						<DropDown
-							controlId=''
-							dataTest='size-dropdown'
-							currentControlValue={localUnit}
-							options={sizeOptions}
-							onHandleDropdown={value => {
-								handleUnitChange(value as ByteUnit);
-							}}
-						/>
-					</div>
+				</div>
+				<div>
+					{displayMemoryBlocks &&
+						memoryBlocks
+							.filter(block =>
+								blockNames.some(name => name === block.Name)
+							)
+							.map(block => (
+								<div key={block.Name} className={styles.blockItem}>
+									<BlockItem
+										memoryBlock={block}
+										size={size}
+										newPartitionStartAddress={address}
+									/>
+								</div>
+							))}
 				</div>
 			</div>
-			<div>
-				{displayMemoryBlocks &&
-					memoryBlocks
-						.filter(block =>
-							blockNames.some(name => name === block.Name)
-						)
-						.map(block => (
-							<div key={block.Name} className={styles.blockItem}>
-								<BlockItem
-									memoryBlock={block}
-									size={size}
-									newPartitionStartAddress={address}
-								/>
-							</div>
-						))}
-			</div>
-		</div>
-	);
-});
+		);
+	}
+);

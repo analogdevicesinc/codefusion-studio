@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,16 @@
  *
  */
 import {navigationItems} from '../../../common/constants/navigation';
-import {availableIcons} from '../constants/navigation-icons';
+import {
+	availableIcons,
+	settingsIcon
+} from '../constants/navigation-icons';
 import {getAICores} from '../utils/ai-tools';
 import {getClockNodeDictionary} from '../utils/clock-nodes';
-import {getProjectInfoList} from '../utils/config';
+import {
+	getProjectInfoList,
+	getSupportsMCUboot
+} from '../utils/config';
 import {getGasketDictionary} from '../utils/dfg';
 import {getCoreMemoryDictionary} from '../utils/memory';
 import {getSocPinDictionary} from '../utils/soc-pins';
@@ -30,13 +36,18 @@ import {getSocPinDictionary} from '../utils/soc-pins';
  * - Memory icon: shown if any core memory entries exist.
  * - Pinmux icon: shown if more than one SoC pin exists (to avoid dummy pin-only setups).
  * - AI Tools icon: shown if AI cores are present.
+ * - MCUboot Config icon: shown if a Zephyr project exists and the SoC is in the supported list.
  * - Profiling icon: shown if any project targets the Zephyr firmware platform.
+ * - Settings icon (footer): shown if a Zephyr project exists and the SoC is MCUboot-supported.
  *
- * @returns Filtered list of navigation icons to be displayed in the UI.
+ * @returns Object containing filtered main icons and footer icons.
  */
 export default function useFilteredNavigationIcons() {
 	const aiCores = getAICores();
 	const projects = getProjectInfoList();
+	const hasZephyrProject =
+		projects?.some(p => p.FirmwarePlatform === 'zephyr') ?? false;
+	const isSupportedSoc = getSupportsMCUboot();
 
 	const filteredIcons = availableIcons.filter(icon => {
 		if (icon.id === navigationItems.dfg) {
@@ -61,6 +72,10 @@ export default function useFilteredNavigationIcons() {
 			return aiCores.length;
 		}
 
+		if (icon.id === navigationItems.mcubootConfig) {
+			return hasZephyrProject && isSupportedSoc;
+		}
+
 		if (icon.id === navigationItems.profiling) {
 			return (
 				projects?.some(p => p.FirmwarePlatform === 'zephyr') ?? false
@@ -70,5 +85,8 @@ export default function useFilteredNavigationIcons() {
 		return true;
 	});
 
-	return filteredIcons;
+	const footerIcons =
+		hasZephyrProject && isSupportedSoc ? [settingsIcon] : [];
+
+	return {mainIcons: filteredIcons, footerIcons};
 }

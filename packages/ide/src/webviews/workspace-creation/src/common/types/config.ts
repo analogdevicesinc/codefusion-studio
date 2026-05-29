@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsWorkspace} from 'cfs-lib';
+import type {CfsWorkspace} from 'cfs-types';
 import type {StatePlatformConfig} from './state';
 
 export type WorkspaceConfig = {

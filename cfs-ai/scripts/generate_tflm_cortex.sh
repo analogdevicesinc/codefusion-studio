@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -101,16 +101,21 @@ GIT_DATE=`git log -n 1 --format=%ai`
 echo "tflite-micro repo based on hash ${GIT_HASH} on ${GIT_DATE}" > git_version.txt
 
 echo "Building libs..."
-for ARCH in cortex-m4 cortex-m33; do
+for ARCH in cortex-m4 cortex-m33 cortex-m55; do
   make -j8 -f tensorflow/lite/micro/tools/make/Makefile TARGET=cortex_m_generic TARGET_ARCH=${ARCH} OPTIMIZED_KERNEL_DIR=cmsis_nn TARGET_DEFAULT_TOOLCHAIN_ROOT=${CFS_DIR}/Tools/gcc/arm-none-eabi/bin/ microlite
 done
 
 echo "Constructing package..."
 # Copy library content into output dir
 cp -r * ${OUT_DIR}/cortex-m/tflite-micro
-for ARCH in m4 m33; do
+for ARCH in m4 m33 m55; do
+  LIBFILE=gen/cortex_m_generic_cortex-${ARCH}_default_cmsis_nn_gcc/lib/libtensorflow-microlite.a 
+  if [ ! -f ${LIBFILE} ]; then
+    echo "Error: ${LIBFILE} not found!"
+    exit 1
+  fi
   mkdir -p ${OUT_DIR}/cortex-m/${ARCH}
-  cp gen/cortex_m_generic_cortex-${ARCH}_default_cmsis_nn_gcc/lib/libtensorflow-microlite.a ${OUT_DIR}/cortex-m/${ARCH}/
+  cp ${LIBFILE} ${OUT_DIR}/cortex-m/${ARCH}/
   ls -l ${OUT_DIR}/cortex-m/*
 done
 
@@ -151,6 +156,12 @@ find . -type f ! \( \
   -name '*.h'   -o \
   -name 'LICENSE' -o \
   -name 'git_version.txt' \
+\) -delete
+# Remove test files
+find . -type f \( \
+  -name "*_test.cc" -o \
+  -name "*_tests.cc" -o \
+  -name "*_test.h" \
 \) -delete
 # Remove any empty dirs
 find . -type d -empty -delete

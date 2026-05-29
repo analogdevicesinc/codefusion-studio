@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,12 @@ import type {
 	TFormFieldValue,
 	TFormNumericBase
 } from 'cfs-react-library';
-import {type FormattedPeripheralSignal} from '../../../../../common/types/soc';
 
 type PeripheralsState = {
 	peripheralSignalsTargets: Record<string, PeripheralSignalsTargets>;
 	activePeripheral: string | undefined;
 	activeSignal: string | undefined;
 	assignments: Record<string, PeripheralConfig>;
-	allocatedTarget: string | undefined;
-	title: string;
-	signals: Record<string, FormattedPeripheralSignal>;
-	projects: string[] | undefined;
-	isPeripheralSecure: string | undefined;
-	signalName: string;
 };
 
 export const peripheralsInitialState: PeripheralsState = {
@@ -45,13 +38,7 @@ export const peripheralsInitialState: PeripheralsState = {
 	>,
 	activePeripheral: undefined,
 	activeSignal: undefined,
-	assignments: {} satisfies Record<string, PeripheralConfig>,
-	allocatedTarget: undefined,
-	title: '',
-	signals: {} satisfies Record<string, FormattedPeripheralSignal>,
-	projects: undefined,
-	isPeripheralSecure: undefined,
-	signalName: ''
+	assignments: {} satisfies Record<string, PeripheralConfig>
 };
 
 /**
@@ -238,7 +225,11 @@ const peripheralsSlice = createSlice({
 			state,
 			{
 				payload
-			}: PayloadAction<{peripheral: string; signalName: string}>
+			}: PayloadAction<{
+				peripheral: string;
+				signalName: string;
+				discardPersistence?: boolean;
+			}>
 		) {
 			const peripheral = state.assignments[payload.peripheral];
 
@@ -306,28 +297,6 @@ const peripheralsSlice = createSlice({
 			if (signal) {
 				signal.description = payload.description;
 			}
-		},
-		setAllocationConfig(
-			state,
-			{
-				payload
-			}: PayloadAction<{
-				// Requires refactoring. Will be done as part of CFSIO-7001
-
-				peripheralTitle: string;
-				allocationTarget: string;
-				projects: string[];
-				signals: Record<string, FormattedPeripheralSignal>;
-				isPeripheralSecure: string;
-				signalName: string;
-			}>
-		) {
-			state.title = payload.peripheralTitle;
-			state.allocatedTarget = payload.allocationTarget;
-			state.projects = payload.projects;
-			state.signals = payload.signals;
-			state.isPeripheralSecure = payload.isPeripheralSecure;
-			state.signalName = payload.signalName;
 		}
 	}
 });
@@ -344,8 +313,7 @@ export const {
 	setSignalConfig,
 	setPeripheralConfig,
 	setPeripheralDescription,
-	setSignalDescription,
-	setAllocationConfig
+	setSignalDescription
 } = peripheralsSlice.actions;
 
 export const peripheralsReducer = peripheralsSlice.reducer;

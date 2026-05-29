@@ -13,14 +13,15 @@
  *
  */
 
-import { AuthorizerBase, AuthConfigBase } from '../authorizer.js';
-import {
+import { AuthorizerBase } from '../authorizer.js';
+import type { AuthConfigBase } from '../authorizer.js';
+import type {
     AuthFlows,
     AuthSession,
     SessionInfo,
     SessionStorage,
 } from '../session.js';
-import {
+import type {
     MiddlewareCallbackParams,
     MiddlewareOnResponse,
 } from 'openapi-fetch';

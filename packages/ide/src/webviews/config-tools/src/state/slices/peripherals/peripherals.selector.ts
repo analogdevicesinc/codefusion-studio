@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,53 +68,58 @@ export function useCurrentSignalTarget(
  *
  * @returns {Record<string, Record<string, PeripheralConfig>>} A record of peripheral assignemnts per core.
  */
-export function usePeripheralAllocations() {
-	const projects = getProjectInfoList() ?? [];
+const selectPeripheralAssignments = (state: RootState) =>
+	state.peripheralsReducer.assignments;
 
-	const assignments = useAppSelector(
-		state => state.peripheralsReducer.assignments
-	);
+export const selectPeripheralAllocations = createSelector(
+	[selectPeripheralAssignments],
+	assignments => {
+		const projects = getProjectInfoList() ?? [];
+		const projectAssignments = projects.reduce<
+			Record<string, Record<string, PeripheralConfig>>
+		>((acc, project) => {
+			acc[project.ProjectId] = {};
 
-	const projectAssignments = projects?.reduce<
-		Record<string, Record<string, PeripheralConfig>>
-	>((acc, project) => {
-		acc[project.ProjectId] = {};
+			return acc;
+		}, {});
 
-		return acc;
-	}, {});
+		Object.values(assignments).forEach(peripheral => {
+			const {projectId} = peripheral;
 
-	Object.values(assignments).forEach(peripheral => {
-		const {projectId} = peripheral;
-
-		if (projectId) {
-			if (!projectAssignments[projectId]) {
-				projectAssignments[projectId] = {};
-			}
-
-			projectAssignments[projectId][peripheral.name] = peripheral;
-		} else {
-			Object.values(peripheral.signals).forEach(signal => {
-				const {projectId} = signal;
-
+			if (projectId) {
 				if (!projectAssignments[projectId]) {
 					projectAssignments[projectId] = {};
 				}
 
-				if (!projectAssignments[projectId][peripheral.name]) {
-					projectAssignments[projectId][peripheral.name] = {
-						...peripheral,
-						signals: {}
-					};
-				}
+				projectAssignments[projectId][peripheral.name] = peripheral;
+			} else {
+				Object.values(peripheral.signals).forEach(signal => {
+					const signalProjectId = signal.projectId ?? '';
 
-				projectAssignments[projectId][peripheral.name].signals[
-					signal.name
-				] = signal;
-			});
-		}
-	});
+					if (!projectAssignments[signalProjectId]) {
+						projectAssignments[signalProjectId] = {};
+					}
 
-	return projectAssignments;
+					if (!projectAssignments[signalProjectId][peripheral.name]) {
+						projectAssignments[signalProjectId][peripheral.name] = {
+							...peripheral,
+							signals: {}
+						};
+					}
+
+					projectAssignments[signalProjectId][
+						peripheral.name
+					].signals[signal.name] = signal;
+				});
+			}
+		});
+
+		return projectAssignments;
+	}
+);
+
+export function usePeripheralAllocations() {
+	return useAppSelector(selectPeripheralAllocations);
 }
 
 // Create selector for peripheral signal assignments
@@ -319,32 +324,4 @@ export function useProjectPeripheralAllocations(projectId: string) {
 	return useAppSelector(state =>
 		selectProjectPeripheralAllocations(state, projectId)
 	);
-}
-
-export function useAllocatedTarget() {
-	return useAppSelector(
-		state => state.peripheralsReducer.allocatedTarget
-	);
-}
-
-export function usePeripheralTitle() {
-	return useAppSelector(state => state.peripheralsReducer.title);
-}
-
-export function useSignals() {
-	return useAppSelector(state => state.peripheralsReducer.signals);
-}
-
-export function usePeripheralProjects() {
-	return useAppSelector(state => state.peripheralsReducer.projects);
-}
-
-export function useIsPeripheralSecure() {
-	return useAppSelector(
-		state => state.peripheralsReducer.isPeripheralSecure
-	);
-}
-
-export function useSignalName() {
-	return useAppSelector(state => state.peripheralsReducer.signalName);
 }

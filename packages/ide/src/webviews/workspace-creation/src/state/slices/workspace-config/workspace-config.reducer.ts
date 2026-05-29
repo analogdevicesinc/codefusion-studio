@@ -24,7 +24,7 @@ import type {
 import {workspaceConfigInitialState} from '../../constants/workspace-config';
 import {getCatalogCoreInfo} from '../../../utils/core-list';
 import {getTrustZoneProjectIds} from '../../../utils/workspace-config';
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 
 import {
 	TRUSTZONE_SECURE_LABEL as S_LABEL,

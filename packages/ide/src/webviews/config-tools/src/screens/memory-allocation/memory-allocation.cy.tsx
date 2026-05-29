@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig, SocCoreMemory} from 'cfs-types';
 import type {Soc} from '../../../../common/types/soc';
 import {
 	createPartition,
@@ -246,7 +246,11 @@ describe('Memory Allocation', () => {
 				.should('be.visible')
 				.click();
 
-			cy.dataTest('size-stepper').type('80');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').type('80');
+				});
 
 			cy.dataTest('base-block-dropdown').click();
 			cy.dataTest('sysram8').click();
@@ -260,9 +264,9 @@ describe('Memory Allocation', () => {
 				.dataTest('partition-accordion-TestPartition')
 				.should('exist');
 			// Memory graph should be updated
-			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
-				'exist'
-			);
+			cy.dataTest(
+				'memory-graph-RAM-multiblock-sysram8-TestPartition'
+			).should('exist');
 			// Partition cards should be updated
 			cy.dataTest('project-view-memory-card-container').should(
 				'exist'
@@ -313,8 +317,48 @@ describe('Memory Allocation', () => {
 				.should('exist');
 			// Memory graph should be updated
 			cy.dataTest(
-				'memory-graph-RAM-multiblock-ChangedPartition'
+				'memory-graph-RAM-multiblock-sysram0-ChangedPartition'
 			).should('exist');
+		});
+		it('should not disable occupied block option on partition edit', () => {
+			// When adding a new partition, it's OK to have disabled an occupied block.
+			// In case of editing a partition, it's not needed to disable as it is
+			// occupied by the partition itself.
+
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+			reduxStore.dispatch(
+				createPartition({
+					displayName: 'TestPartition',
+					type: 'RAM',
+					baseBlock: memoryBlocks[6] as SocCoreMemory,
+					blockNames: [memoryBlocks[6].Name],
+					startAddress: memoryBlocks[6].AddressStart!,
+					size: 65536,
+					displayUnit: 'KB',
+					projects: [
+						{
+							label: mock.Cores[0].Name,
+							access: 'R/W',
+							coreId: mock.Cores[0].Id,
+							projectId: mock.Cores[0].Id + '-proj',
+							owner: true
+						}
+					]
+				})
+			);
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.dataTest('partition-details-chevron').click();
+			cy.dataTest('edit-partition-btn').should('be.visible').click();
+			cy.get('[data-test="partition-sidebar"]').should('be.visible');
+			cy.dataTest('base-block-dropdown').should(
+				'have.attr',
+				'current-value',
+				'sysram6'
+			);
 		});
 		it('should delete the partition via partition card', () => {
 			const reduxStore = configurePreloadedStore(
@@ -354,9 +398,9 @@ describe('Memory Allocation', () => {
 				.dataTest('partition-accordion-TestPartition')
 				.should('not.exist');
 			// Memory graph should be updated
-			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
-				'not.exist'
-			);
+			cy.dataTest(
+				'memory-graph-RAM-multiblock-sysram0-TestPartition'
+			).should('not.exist');
 		});
 		it('should delete the partition via sidebar', () => {
 			const reduxStore = configurePreloadedStore(
@@ -440,7 +484,11 @@ describe('Memory Allocation', () => {
 				.should('be.visible')
 				.click();
 
-			cy.dataTest('size-stepper').type('80');
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').type('80');
+				});
 
 			cy.dataTest('base-block-dropdown').click();
 			cy.dataTest('sysram8').click();
@@ -454,9 +502,9 @@ describe('Memory Allocation', () => {
 				.dataTest('partition-accordion-TestPartition')
 				.should('exist');
 			// Memory graph should be updated
-			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
-				'exist'
-			);
+			cy.dataTest(
+				'memory-graph-RAM-multiblock-sysram8-TestPartition'
+			).should('exist');
 		});
 		it('should edit the partition', () => {
 			const reduxStore = configurePreloadedStore(
@@ -502,7 +550,7 @@ describe('Memory Allocation', () => {
 				.should('exist');
 			// Memory graph should be updated
 			cy.dataTest(
-				'memory-graph-RAM-multiblock-ChangedPartition'
+				'memory-graph-RAM-multiblock-sysram0-ChangedPartition'
 			).should('exist');
 		});
 		it('should delete the partition', () => {
@@ -543,9 +591,9 @@ describe('Memory Allocation', () => {
 				.dataTest('partition-accordion-TestPartition')
 				.should('not.exist');
 			// Memory graph should be updated
-			cy.dataTest('memory-graph-RAM-multiblock-TestPartition').should(
-				'not.exist'
-			);
+			cy.dataTest(
+				'memory-graph-RAM-multiblock-sysram0-TestPartition'
+			).should('not.exist');
 		});
 		it('should select partition directly from graph', () => {
 			const reduxStore = configurePreloadedStore(
@@ -555,14 +603,62 @@ describe('Memory Allocation', () => {
 
 			cy.mount(<MemoryAllocation />, reduxStore);
 
-			cy.wait(100);
-
-			cy.dataTest('sysram3-537264128-add-button').click();
+			cy.dataTest('sysram3-537264128-add-button')
+				.should('be.visible')
+				.click();
 
 			cy.dataTest('base-block-dropdown').should('contain', 'sysram3');
 			cy.dataTest('start-address')
 				.find('input')
 				.should('have.value', '20060000');
+		});
+		it('should show correct offset on graph regardless of filtered project', () => {
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigDict
+			);
+
+			cy.mount(<MemoryAllocation />, reduxStore);
+
+			cy.dataTest('flash1-271581184-add-button')
+				.should('be.visible')
+				.click();
+
+			cy.dataTest('partition-name-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').type('TestPartition');
+				});
+
+			cy.dataTest('assigned-cores-multiselect')
+				.find('button')
+				.click();
+			cy.dataTest('multiselect-option-CM4-proj')
+				.should('be.visible')
+				.click();
+
+			cy.dataTest('size-stepper-control-input')
+				.shadow()
+				.within(() => {
+					cy.get('#control').clear().type('32');
+				});
+
+			cy.dataTest('base-block-dropdown').should('contain', 'flash1');
+			cy.dataTest('start-address')
+				.find('input')
+				.should('have.value', '10300000');
+
+			cy.dataTest('create-partition-button').click();
+
+			// Should button exist on expected offset, before project filtering
+			cy.dataTest('flash1-271613952-add-button').should('exist');
+
+			// Should button exist on expected offset, after project filtering
+			cy.dataTest('project-filter')
+				.click()
+				.dataTest('multiselect-option-RV-proj')
+				.click();
+			cy.dataTest('flash1-271613952-add-button').should('exist');
 		});
 	});
 });

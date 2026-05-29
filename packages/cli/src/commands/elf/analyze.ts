@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args} from '@oclif/core';
 import {ElfFileParser} from 'elf-parser';
 
 import {Logger} from '../../logger.js';
+import {BaseCommand} from '../../utils/base-command.js';
 
 /**
  * Capitalizes all words in the input string and removes spaces or other separators.
@@ -48,22 +49,17 @@ function capitalizeAndRemoveSeparators(
     .join(''); // Join without separators
 }
 
-export default class Analyze extends Command {
+type JsonObject = Record<string, number | string>;
+
+export default class Analyze extends BaseCommand<typeof Analyze> {
   static args = {
     filePath: Args.string({description: 'ELF file path'})
   };
 
   static description = 'Heuristics from an ELF file';
 
-  static flags = {
-    json: Flags.boolean({
-      char: 'j',
-      description: 'Export in JSON format'
-    })
-  };
-
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Analyze);
+  public async run(): Promise<JsonObject> {
+    const {args} = this;
 
     if (args.filePath) {
       try {
@@ -73,38 +69,31 @@ export default class Analyze extends Command {
         const md = parser.getDataModel();
         const heuristics = md.getHeuristics();
 
-        if (flags.json) {
-          const jsonObject: Record<string, number | string> = {
-            FirmwarePlatform: heuristics.getTargetOs(),
-            DetectedCompiler: heuristics.getCompilerDetected()
-          };
+        const jsonObject: JsonObject = {
+          FirmwarePlatform: heuristics.getTargetOs(),
+          DetectedCompiler: heuristics.getCompilerDetected()
+        };
 
-          // Add all symbol entries to the object
-          for (const [k, v] of heuristics.getSymbolEntries()) {
-            const unit = v.stringValue.split(' ').pop();
-            jsonObject[capitalizeAndRemoveSeparators(k, unit)] =
-              v.value;
-          }
+        this.log(`Firmware Platform: ${heuristics.getTargetOs()}`);
 
-          // Convert to JSON with proper formatting (2 spaces indentation)
-          console.log(JSON.stringify(jsonObject, null, 2));
-        } else {
-          console.log(
-            `Firmware Platform: ${heuristics.getTargetOs()}`
-          );
-          for (const [k, v] of heuristics.getSymbolEntries()) {
-            console.log(`${k}: ${v.stringValue}`);
-          }
-
-          console.log(
-            `Detected Compiler: ${heuristics.getCompilerDetected()}`
-          );
+        // Add all symbol entries to the object
+        for (const [k, v] of heuristics.getSymbolEntries()) {
+          this.log(`${k}: ${v.stringValue}`);
+          const unit = v.stringValue.split(' ').pop();
+          jsonObject[capitalizeAndRemoveSeparators(k, unit)] =
+            v.value;
         }
+
+        this.log(
+          `Detected Compiler: ${heuristics.getCompilerDetected()}`
+        );
+
+        return jsonObject;
       } catch (error) {
-        Logger.logError(`${error}`);
+        return Logger.logError(`${error}`);
       }
     } else {
-      Logger.logError(
+      return Logger.logError(
         `No input file. Please provide a valid file path.`
       );
     }

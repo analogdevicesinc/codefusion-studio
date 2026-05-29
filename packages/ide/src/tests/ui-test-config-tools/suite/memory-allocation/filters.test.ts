@@ -47,7 +47,6 @@ import {
   memoryTypeFilterOptionRAM,
 } from "../../page-objects/memory-allocation-section/memory-allocation-screen";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../../ui-test-utils/exec-utils";
 
 describe("Memory Allocation Filters", () => {
   let workbench: Workbench;
@@ -69,7 +68,7 @@ describe("Memory Allocation Filters", () => {
   after(async () => {
     // Teardown - reset cfsconfig file
     if (configPath) {
-      await asyncExecFile("git", "checkout", configPath);
+      await UIUtils.restoreFixtureFileFromGit(configPath);
       configPath = undefined;
     }
   });

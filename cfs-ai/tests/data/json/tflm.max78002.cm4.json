@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "name": "hello_world_f32",
+      "prj_info": { "name": "output", "workspace": ".", "out_dir": "." },
+      "files": { 
+        "Model": "examples/hello_world_f32.tflite",
+        "Dataset": "examples/hello_world_f32.bin"
+      },
+      "target": {
+        "soc": "MAX78002",
+        "core": "CM4",
+        "accelerator": null,
+        "family": "CORTEX-M",
+        "firmware_platform": null
+      },
+      "backend": { "Name": "tflm", "Extensions": null }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@
  *
  */
 
-import {type CfsConfig} from 'cfs-lib';
 import {configurePreloadedStore} from '../../state/store';
 import {ModelList} from './ModelList';
 import type {Soc} from '@common/types/soc';
-import {type AIModel} from 'cfs-plugins-api';
+import {type AIModel, type CfsConfig} from 'cfs-types';
 import type {AiSupportingBackend} from '../../../../common/types/ai-fusion-data-model';
 import {mockVsCodeApi} from '../../../../common/api';
 
@@ -29,8 +28,8 @@ const config: CfsConfig = {
 	Package: 'WLP',
 	Soc: 'MAX32690',
 	Copyright: '',
+	SchemaVersion: '2.1.0',
 	DataModelVersion: '',
-	DataModelSchemaVersion: '',
 	Pins: [],
 	ClockNodes: [],
 	Timestamp: '',
@@ -50,21 +49,137 @@ const config: CfsConfig = {
 	]
 };
 
+const configWithModels: CfsConfig = {
+	...config,
+	Projects: [
+		{
+			CoreId: 'core1',
+			ExternallyManaged: false,
+			ProjectId: 'project1',
+			FirmwarePlatform: 'MAX32690',
+			Partitions: [],
+			Peripherals: [],
+			PluginId: 'test-plugin',
+			PluginVersion: '1.0.0',
+			PlatformConfig: {},
+			AIModels: [
+				{
+					Name: 'TestModel',
+					Files: {
+						ModelFile: 'test-model.onnx'
+					},
+					Target: {
+						Core: 'core1',
+						Accelerator: 'cnn'
+					},
+					Backend: {
+						Name: 'SingleModel'
+					},
+					Enabled: true,
+					OutDir: ''
+				},
+				{
+					Name: 'TestModel2',
+					Files: {
+						ModelFile: 'test-model.onnx'
+					},
+					Target: {
+						Core: 'core1',
+						Accelerator: 'cnn'
+					},
+					Backend: {
+						Name: 'SingleModel'
+					},
+					Enabled: false,
+					OutDir: ''
+				}
+			] satisfies AIModel[]
+		},
+		{
+			CoreId: 'core2',
+			ExternallyManaged: false,
+			ProjectId: 'project1',
+			FirmwarePlatform: 'MAX32690',
+			Partitions: [],
+			Peripherals: [],
+			PluginId: 'test-plugin',
+			PluginVersion: '1.0.0',
+			PlatformConfig: {},
+			AIModels: [
+				{
+					Name: 'TestModel3',
+					Files: {
+						ModelFile: 'test-model.onnx'
+					},
+					Target: {
+						Core: 'core2'
+					},
+					Backend: {
+						Name: 'InfiniteModels'
+					},
+					Enabled: true,
+					OutDir: ''
+				},
+				{
+					Name: 'TestModel4',
+					Files: {
+						ModelFile: 'test-model.onnx'
+					},
+					Target: {
+						Core: 'core2'
+					},
+					Backend: {
+						Name: 'InfiniteModels'
+					},
+					Enabled: false,
+					OutDir: ''
+				}
+			]
+		}
+	]
+};
+
+const customCoreSoc: Soc = {
+	...soc,
+	Cores: [
+		{
+			Id: 'core1',
+			Name: 'Core 1',
+			Family: 'Cortex-M',
+			CoreNum: 0,
+			Description: '',
+			IsPrimary: false,
+			Memory: [],
+			Ai: {}
+		},
+		{
+			Id: 'core2',
+			Name: 'Core 2',
+			Family: 'Cortex-M',
+			Description: '',
+			CoreNum: 0,
+			IsPrimary: false,
+			Memory: [],
+			Ai: {}
+		}
+	]
+};
+
 const supportedBackends: Record<string, AiSupportingBackend> = {
 	InfiniteModels: {
 		Targets: [
 			{
-				Hardware: {Arch: 'arch', Accelerator: null}
+				Hardware: {Family: 'arch', Accelerator: null}
 			}
 		],
 		Docker: {Size: 1},
 		MaxModels: 99,
-		AdvancedTools: false
+		AdvancedTools: true
 	},
 	SingleModel: {
 		Targets: [
 			{
-				Hardware: {Arch: 'arch', Accelerator: 'cnn'}
+				Hardware: {Family: 'arch', Accelerator: 'cnn'}
 			}
 		],
 		Docker: {Size: 1},
@@ -108,116 +223,8 @@ describe('ModelList', () => {
 
 	it('should render tables based on targets with AI Models, can only include one for cores with accellerator', () => {
 		const reduxStore = configurePreloadedStore(
-			{
-				...soc,
-				Cores: [
-					{
-						Id: 'core1',
-						Name: 'Core 1',
-						Family: 'Cortex-M',
-						CoreNum: 0,
-						Description: '',
-						IsPrimary: false,
-						Memory: [],
-						Ai: {}
-					},
-					{
-						Id: 'core2',
-						Name: 'Core 2',
-						Family: 'Cortex-M',
-						Description: '',
-						CoreNum: 0,
-						IsPrimary: false,
-						Memory: [],
-						Ai: {}
-					}
-				]
-			},
-			{
-				...config,
-				Projects: [
-					{
-						CoreId: 'core1',
-						ExternallyManaged: false,
-						ProjectId: 'project1',
-						FirmwarePlatform: 'MAX32690',
-						Partitions: [],
-						Peripherals: [],
-						PluginId: 'test-plugin',
-						PluginVersion: '1.0.0',
-						PlatformConfig: {},
-						AIModels: [
-							{
-								Name: 'TestModel',
-								Files: {
-									ModelFile: 'test-model.onnx'
-								},
-								Target: {
-									Core: 'core1',
-									Accelerator: 'cnn'
-								},
-								Backend: {
-									Name: 'SingleModel'
-								},
-								Enabled: true
-							},
-							{
-								Name: 'TestModel2',
-								Files: {
-									ModelFile: 'test-model.onnx'
-								},
-								Target: {
-									Core: 'core1',
-									Accelerator: 'cnn'
-								},
-								Backend: {
-									Name: 'SingleModel'
-								},
-								Enabled: false
-							}
-						] satisfies AIModel[]
-					},
-					{
-						CoreId: 'core2',
-						ExternallyManaged: false,
-						ProjectId: 'project1',
-						FirmwarePlatform: 'MAX32690',
-						Partitions: [],
-						Peripherals: [],
-						PluginId: 'test-plugin',
-						PluginVersion: '1.0.0',
-						PlatformConfig: {},
-						AIModels: [
-							{
-								Name: 'TestModel3',
-								Files: {
-									ModelFile: 'test-model.onnx'
-								},
-								Target: {
-									Core: 'core2'
-								},
-								Backend: {
-									Name: 'InfiniteModels'
-								},
-								Enabled: true
-							},
-							{
-								Name: 'TestModel4',
-								Files: {
-									ModelFile: 'test-model.onnx'
-								},
-								Target: {
-									Core: 'core2'
-								},
-								Backend: {
-									Name: 'InfiniteModels'
-								},
-								Enabled: false
-							}
-						]
-					}
-				]
-			},
+			customCoreSoc,
+			configWithModels,
 			undefined
 		);
 
@@ -248,5 +255,29 @@ describe('ModelList', () => {
 		cy.dataTest('include-toggle-TestModel4-span')
 			.invoke('attr', 'data-checked')
 			.should('equal', 'true');
+	});
+
+	it('shows compatibility collumn and reporting icons correctly for advanced tools property', () => {
+		const reduxStore = configurePreloadedStore(
+			customCoreSoc,
+			configWithModels,
+			undefined
+		);
+
+		cy.mount(<ModelList />, reduxStore);
+
+		cy.dataTest('core1.cnn-table')
+			.should('exist')
+			.within(() => {
+				cy.dataTest('compatibility-column').should('not.exist');
+				cy.dataTest('report-action').should('not.exist');
+			});
+
+		cy.dataTest('core2.none-table')
+			.should('exist')
+			.within(() => {
+				cy.dataTest('compatibility-column').should('exist');
+				cy.dataTest('report-action').should('exist');
+			});
 	});
 });

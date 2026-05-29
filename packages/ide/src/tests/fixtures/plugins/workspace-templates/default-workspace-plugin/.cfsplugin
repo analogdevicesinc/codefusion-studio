@@ -1,0 +1,25 @@
+{
+  "pluginName": "Default Workspace Plugin",
+  "pluginId": "com.analog.workspace.default.plugin",
+  "pluginDescription": "Create a workspace by copying files and processing Eta templates.",
+  "pluginVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "features": {
+    "workspace": {
+      "templates": [
+        {
+          "src": "templates/.code-workspace.eta",
+          "dst": "${context.workspaceName}.code-workspace"
+        },
+        {
+          "src": "templates/.cfsconfig.eta",
+          "dst": ".cfs/${context.workspaceName}.cfsconfig",
+          "condition": "${['max32650', 'max32655', 'max32657', 'max32658', 'max32660', 'max32662', 'max32670', 'max32672', 'max32675c', 'max32690', 'max78000', 'max78002'].includes(context.soc.toLowerCase()) || context.soc.toLowerCase().startsWith('adsp')}"
+        }
+      ],
+      "files": []
+    }
+  }
+}

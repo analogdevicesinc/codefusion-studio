@@ -35,10 +35,8 @@ import {
   EXTENSION_ID,
   FIRMWARE_PLATFORM,
   FLASH_ACTION,
-  GRAPH,
   LOCK,
   OZONE_DEBUG_ACTION,
-  PROFILING_ACTION,
   PROJECT,
   SECURITY_ACTION,
   SECURITY_TASKS_SEARCH_STRING,
@@ -50,8 +48,6 @@ import { ViewContainerItem } from "./view-container-item";
 import { ContextBase } from "./context-base";
 import { OzoneDebugConfiguration } from "../configurations/externalDebugConfiguration";
 import type { CfsIDETaskProvider } from "../providers/cfs-ide-task-provider";
-import type { ZephyrTaskProvider } from "../toolchains/zephyr/tasks-provider";
-import type { MsdkTaskProvider } from "../toolchains/msdk/msdk";
 
 /**
  * The ActionTree class extends the vscode.TreeItem class and is used to create action trees for the viewContainer Actions panel.
@@ -85,23 +81,13 @@ export class ActionsViewProvider
   refreshEvent = new vscode.EventEmitter<ViewContainerItem | null>();
 
   private cfsTaskProvider: CfsIDETaskProvider;
-  // @TODO: consolidate generic tasks into the cfsTaskProvider
-  private zephyrTaskProvider?: ZephyrTaskProvider;
-
-  private msdkTaskProvider?: MsdkTaskProvider;
 
   onDidChangeTreeData: vscode.Event<ViewContainerItem | null> =
     this.refreshEvent.event;
 
-  constructor(
-    cfsTaskProvider: CfsIDETaskProvider,
-    zephyrTaskProvider?: ZephyrTaskProvider,
-    msdkTaskProvider?: MsdkTaskProvider,
-  ) {
+  constructor(cfsTaskProvider: CfsIDETaskProvider) {
     super();
     this.cfsTaskProvider = cfsTaskProvider;
-    this.zephyrTaskProvider = zephyrTaskProvider;
-    this.msdkTaskProvider = msdkTaskProvider;
   }
 
   onContextChanged(): void {
@@ -125,12 +111,8 @@ export class ActionsViewProvider
     this.refreshEvent.fire(null);
 
     try {
-      // Initialize all task providers in parallel for better performance
-      await Promise.all([
-        this.cfsTaskProvider.initializeTasks(),
-        this.zephyrTaskProvider?.initializeTasks(),
-        this.msdkTaskProvider?.initializeTasks(),
-      ]);
+      // Initialize the unified task provider
+      await this.cfsTaskProvider.initializeTasks();
 
       // Now initialize the action items
       await this.initializeActionItems();
@@ -157,10 +139,6 @@ export class ActionsViewProvider
       new ActionTree(ERASE_ACTION, vscode.TreeItemCollapsibleState.Expanded),
       new ActionTree(FLASH_ACTION, vscode.TreeItemCollapsibleState.Expanded),
       new ActionTree(DEBUG_ACTION, vscode.TreeItemCollapsibleState.Expanded),
-      new ActionTree(
-        PROFILING_ACTION,
-        vscode.TreeItemCollapsibleState.Expanded,
-      ),
     );
 
     const tasks = await vscode.tasks.fetchTasks({ type: "shell" });
@@ -316,8 +294,6 @@ export class ActionsViewProvider
         return await this.getDebugActions(workspaceFolders);
       case DOCUMENTATION_ACTION:
         return this.getActionItemsForTasks("documentation", TOOLS, false);
-      case PROFILING_ACTION:
-        return await this.getActionItemsForTasks("(zephelin)", GRAPH);
       case SECURITY_ACTION:
         return this.getActionItemsForSecurityTasks([
           SECURITY_TASKS_SEARCH_STRING.generateKey,
@@ -406,7 +382,7 @@ export class ActionsViewProvider
           "configurations",
         ) as vscode.DebugConfiguration[];
         launchConfigs.forEach((launchConfig: vscode.DebugConfiguration) => {
-          if (launchConfig.name !== "CFS: Launch Core Dump Analysis") {
+          if (!launchConfig.coreDump) {
             actions.push(
               new ViewContainerItem({
                 icon: new vscode.ThemeIcon(DEBUG_ALT),
@@ -510,7 +486,10 @@ export class ActionsViewProvider
         contextValue = DEBUG_TASK_CONTEXT;
       }
       // Hide the plus icon for documentation tasks
-      if (task.name.toLowerCase().includes(DOCUMENTATION_ACTION.toLowerCase()) && task.source === "CFS") {
+      if (
+        task.name.toLowerCase().includes(DOCUMENTATION_ACTION.toLowerCase()) &&
+        task.source === "CFS"
+      ) {
         contextValue = undefined;
       }
 

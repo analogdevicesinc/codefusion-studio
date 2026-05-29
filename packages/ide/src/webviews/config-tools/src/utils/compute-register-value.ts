@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,10 +227,18 @@ function getControlIntegerValue(
 
 	if (control?.Type === 'enum') {
 		// For enums, get the value of the enum's Value field
-		return (
-			control?.EnumValues?.find(e => e.Id === controlValue)?.Value ??
-			0
-		);
+
+		const value = control?.EnumValues?.find(
+			e => e.Id === controlValue
+		)?.Value;
+
+		if (value !== undefined) {
+			const numericValue = Number(value);
+
+			return Number.isFinite(numericValue) ? numericValue : 0;
+		}
+
+		return 0;
 	}
 
 	return parseInt(controlValue, 10);
@@ -244,6 +252,15 @@ export function getNamespacedControlIntegerValue(
 	const controls = Object.values(getSocControlsDictionary(namespace));
 
 	return getControlIntegerValue(controlId, controlValue, controls);
+}
+
+function evaluateHint(
+	pinSignalName: Record<string, string> | undefined,
+	hint: string | undefined
+): string | undefined {
+	const raw = computeEntryBoxDefaultValue(pinSignalName, hint);
+
+	return raw !== undefined && raw !== '' ? String(raw) : undefined;
 }
 
 export function computeDefaultValues(
@@ -292,106 +309,88 @@ export function computeDefaultValues(
 		return acc;
 	}, {});
 
-	if (Object.keys(filteredConfig).length) {
-		for (const [controlValueKey, controlValues] of Object.entries(
-			filteredConfig
-		)) {
-			const control = getControl(controlValueKey, controls);
-			const controlType = control?.Type;
+	for (const [controlValueKey, controlValues] of Object.entries(
+		filteredConfig
+	)) {
+		const control = getControl(controlValueKey, controls);
+		const controlType = control?.Type;
 
-			let defaultValue: string | undefined;
+		let defaultValue: string | undefined;
 
-			if (control?.Default) {
-				defaultValue = String(control.Default);
+		if (control?.Default !== undefined) {
+			defaultValue = String(control.Default);
+			defaultValueObj[controlValueKey] = defaultValue;
+			continue;
+		}
 
-				defaultValueObj[controlValueKey] = defaultValue;
+		if (controlType === 'integer') {
+			defaultValueObj[controlValueKey] =
+				evaluateHint(pinSignalName, control?.Hint) ??
+				getIntegerControlResetValue(controlValues);
 
-				continue;
-			}
+			continue;
+		} else if (controlType === 'text') {
+			defaultValueObj[controlValueKey] =
+				evaluateHint(pinSignalName, control?.Hint) ?? '';
+			continue;
+		}
 
-			if (controlType === 'integer') {
-				defaultValueObj[controlValueKey] =
-					getIntegerControlResetValue(controlValues);
-				continue;
-			} else if (controlType === 'text') {
-				const hint = controls.find(
-					control => control.Id === controlValueKey
-				)?.Hint;
+		for (const [key, configs] of Object.entries(controlValues)) {
+			const checkedItems: string[] = [];
+			defaultValue = key;
 
-				const textDefaultValue = (computeEntryBoxDefaultValue(
-					pinSignalName,
-					hint
-				) ?? '') as string;
+			for (let i = configs.length - 1; i >= 0; i--) {
+				const cfg = configs[i];
+				const cfgValue: string | undefined = cfg.Value;
 
-				defaultValueObj[controlValueKey] = textDefaultValue || '';
-				continue;
-			}
+				if (['poll', 'read'].includes(cfg.Operation.toLowerCase())) {
+					// Don't check Poll/Read operations. Poll tends to not match even if
+					// this is the default value, because the chip's reset value
+					// will normally start with the value in its opposite state
+					// but then it will have flipped by the time we get to the startup.
+					// Read operations have nothing to check.
+					continue;
+				} else if (cfg.Operation.toLowerCase() === 'withprevious') {
+					// Find the operation and register from the upcoming operations
+					for (let j = i - 1; j >= 0; j--) {
+						const prevCfg = configs[j];
 
-			for (const [key, configs] of Object.entries(controlValues)) {
-				const checkedItems: string[] = [];
-				defaultValue = key;
-
-				for (let i = configs.length - 1; i >= 0; i--) {
-					const cfg = configs[i];
-					const cfgValue: string | undefined = cfg.Value;
-
-					if (cfg.Operation.toLowerCase() === 'poll') {
-						// Don't check Poll operations. They tend to not match, even if
-						// this is the default value, because the chip's reset value
-						// will normally start with the value in its opposite state
-						// but then it will have flipped by the time we get to the
-						// startup.
-						// For example, we might enable an oscillator at reset, but the
-						// oscillator ready bit won't be set at reset, but will be by
-						// the time we got to the configuration code.
-						continue;
-					} else if (cfg.Operation.toLowerCase() === 'read') {
-						// Nothing to check.
-						continue;
-					} else if (cfg.Operation.toLowerCase() === 'withprevious') {
-						// Find the operation and register from the upcoming operations
-						for (let j = i - 1; j >= 0; j--) {
-							const prevCfg = configs[j];
-
-							if (
-								prevCfg.Operation.toLowerCase() !== 'withprevious'
-							) {
-								cfg.Register = prevCfg.Register;
-								cfg.Operation = prevCfg.Operation;
-								break;
-							}
+						if (prevCfg.Operation.toLowerCase() !== 'withprevious') {
+							cfg.Register = prevCfg.Register;
+							cfg.Operation = prevCfg.Operation;
+							break;
 						}
 					}
-
-					const value = evaluateBitfieldExpression(
-						getControlIntegerValue(controlValueKey, key, controls),
-						cfgValue!
-					);
-
-					const id = `${cfg.Register}_${cfg.Field}`;
-
-					if (checkedItems.includes(id)) {
-						continue;
-					}
-
-					const resetValue = getResetValue(cfg);
-
-					if (value !== resetValue) {
-						defaultValue = undefined;
-						break;
-					}
-
-					checkedItems.push(id);
 				}
 
-				if (defaultValue !== undefined) {
+				const value = evaluateBitfieldExpression(
+					getControlIntegerValue(controlValueKey, key, controls),
+					cfgValue!
+				);
+
+				const id = `${cfg.Register}_${cfg.Field}`;
+
+				if (checkedItems.includes(id)) {
+					continue;
+				}
+
+				const resetValue = getResetValue(cfg);
+
+				if (value !== resetValue) {
+					defaultValue = undefined;
 					break;
 				}
+
+				checkedItems.push(id);
 			}
 
-			defaultValueObj[controlValueKey] =
-				defaultValue ?? Object.keys(controlValues)[0];
+			if (defaultValue !== undefined) {
+				break;
+			}
 		}
+
+		defaultValueObj[controlValueKey] =
+			defaultValue ?? Object.keys(controlValues)[0];
 	}
 
 	return defaultValueObj;

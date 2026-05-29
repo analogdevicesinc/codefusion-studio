@@ -1,0 +1,46 @@
+{
+  "pluginName": "Zephyr Single Core Blinky (Test Fixture)",
+  "pluginDescription": "Minimal workspace template fixture plugin for test workspace creation flows.",
+  "pluginId": "mock.workspace.blinky",
+  "pluginVersion": "1.0.0-fixture",
+  "schemaVersion": "1.2.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "zephyr",
+  "supportedSocs": [
+    {
+      "name": "MAX32690",
+      "board": "EvKit_V1",
+      "package": "tqfn",
+      "dataModelVersion": "^1.3.628"
+    },
+    {
+      "name": "MAX32690",
+      "board": "AD-APARD32690-SL",
+      "package": "wlp"
+    },
+    {
+      "name": "MAX78002",
+      "board": "EvKit_V1",
+      "package": "csbga",
+      "dataModelVersion": "^1.3.628"
+    }
+  ],
+  "templateType": "workspace",
+  "templatePath": "templates",
+  "features": {
+    "workspace": {
+      "files": [],
+      "templates": [
+        {
+          "src": "templates/workspace.code-workspace.eta",
+          "dst": "${context.workspaceName}.code-workspace"
+        },
+        {
+          "src": "templates/.cfsconfig.eta",
+          "dst": ".cfs/${context.soc.toLowerCase()}-${context.package.toLowerCase()}.cfsconfig"
+        }
+      ]
+    }
+  }
+}

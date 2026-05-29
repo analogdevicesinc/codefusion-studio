@@ -32,7 +32,7 @@ import {
 import {useMemo} from 'react';
 import {getControlsForProjectIds} from '../../../utils/api';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
-import {getIsExternallyManagedProyect} from '../../../utils/config';
+import {getIsExternallyManagedProject} from '../../../utils/config';
 import ErrorCount from './error-count/error-count';
 import useProjectPeripheralErrorCount from '../../../hooks/use-project-peripheral-error-count';
 
@@ -65,7 +65,7 @@ function ConfigSidebar({isMinimised}: ConfigSidebarProps) {
 			: getPeripheralSignals(peripheralName ?? '')[signalName]
 					?.description;
 
-	const isExternalllyManagedProject = getIsExternallyManagedProyect(
+	const isExternalllyManagedProject = getIsExternallyManagedProject(
 		peripheralProjectId
 	);
 

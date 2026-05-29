@@ -13,6 +13,9 @@
  *
  */
 
+import {memo} from 'react';
+import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
+import ConfigUnavailable from '../config-unavailable/config-unavailable';
 import ConfigSection from './config-section/ConfigSection';
 
 function ConfigPanel({
@@ -34,6 +37,8 @@ function ConfigPanel({
 	variant?: 'default' | 'navigate' | 'noChevron';
 	unavailableSections?: Record<string, boolean>;
 }>) {
+	const l10n = useLocaleContext();
+
 	return (
 		<>
 			{details && (
@@ -41,17 +46,23 @@ function ConfigPanel({
 					{details}
 				</ConfigSection>
 			)}
-			{managePinAssignments && (
-				<ConfigSection
-					isExpanded
-					dataTest='config-section:manage-pin-assignments'
-					title='PIN ASSIGNMENTS'
-					variant='navigate'
-					handleHeaderClick={onManagePinAssignmentsClick}
-				>
-					{managePinAssignments}
-				</ConfigSection>
-			)}
+			<ConfigSection
+				isExpanded
+				dataTest='config-section:manage-pin-assignments'
+				title={l10n?.peripherals?.['pin-assignment']?.title}
+				variant={managePinAssignments ? 'navigate' : 'noChevron'}
+				isUnavailable={!managePinAssignments}
+				handleHeaderClick={onManagePinAssignmentsClick}
+			>
+				{managePinAssignments ?? (
+					<ConfigUnavailable
+						message={
+							l10n?.peripherals?.['pin-assignment']?.notAvailable
+						}
+						showLockIcon={false}
+					/>
+				)}
+			</ConfigSection>
 			{configuration && (
 				<ConfigSection
 					isExpanded
@@ -83,4 +94,4 @@ function ConfigPanel({
 	);
 }
 
-export default ConfigPanel;
+export default memo(ConfigPanel);

@@ -1,8 +1,9 @@
 {
 	"pluginName": "Dummy Plugin",
-	"pluginId": "1",
+	"pluginId": "com.analog.test.dummy.plugin",
 	"pluginDescription": "A dummy plugin for testing",
-	"pluginVersion": "1",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "1.0.0",
 	"pluginApiVersion": 1,
 	"author": "Analog Devices, Inc.",
 	"features": {

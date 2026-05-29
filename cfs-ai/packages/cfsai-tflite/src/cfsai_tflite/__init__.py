@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,62 @@ from typing import ClassVar
 
 from cfsai_tflite.schema.Model import Model
 from cfsai_tflite.schema.SubGraph import SubGraph
+from cfsai_tflite.schema.Tensor import Tensor
+from cfsai_tflite.schema.TensorType import TensorType
 
+TensorSizes = {
+    TensorType.BOOL:    1,
+    TensorType.INT8:    1,
+    TensorType.UINT8:   1,
+    TensorType.FLOAT16: 2,
+    TensorType.INT16:   2,
+    TensorType.UINT16:  2,
+    TensorType.FLOAT32: 4,
+    TensorType.INT32:   4,
+    TensorType.UINT32:  4,
+    TensorType.FLOAT64: 8,
+    TensorType.INT64:   8,
+    TensorType.UINT64:  8,
+    TensorType.COMPLEX64: 8,
+    TensorType.COMPLEX128: 16,
+    #TensorType.STRING: Not supported in tflite-micro
+}
+
+def _tensor_const_length(model:Model, tensor:Tensor) -> int:
+    # returns a length if tensor has a constant buffer.
+    # returns 0 if variable
+    is_variable = tensor.IsVariable()
+    if not is_variable:
+        buf_id = tensor.Buffer()
+        if buf_id > 0:
+            buf = model.Buffers(buf_id)
+            if buf:
+                return buf.DataLength()
+    return 0
+
+def _align_up(x: int, alignment: int = 16) -> int:
+    return (x + (alignment - 1)) & ~(alignment - 1)
+
+def _tensor_type_size(tensor:Tensor) -> int:
+    type = tensor.Type()
+    size = TensorSizes.get(type)
+    if size is None:
+        raise ValueError(f"Unsupported type {type} for tensor {tensor.Name()}")
+    return size
+
+def _tensor_num_elements(tensor:Tensor) -> int:
+    n = 1
+    rank = tensor.ShapeLength()
+    # Note: a length of 0 indicates a scalar. 
+    #       Don't treat it as a special case, as we'll run the loop
+    #       0 times and return n=1 as expected. 
+    for i in range(rank):
+        dim = tensor.Shape(i)
+        if dim < 1:
+            # Dimensions can't be 0 or -ve in tflite-micro.
+            raise ValueError(f'Unsupported dimension {dim} for tensor {tensor.Name()}')
+        n *= dim
+    return n
 
 class OperatorInfo:
     """
@@ -175,6 +230,12 @@ class TfliteInfo:
         self.__num_inputs: int = 0
         self.__num_outputs: int = 0
         self.__num_tensors: int = 0
+        self.__activation_size: int = 0
+        self.__param_size: int = 0
+        self.__input_width: list[int] = []
+        self.__input_len: list[int] = []
+        self.__output_width: list[int] = []
+        self.__output_len: list[int] = []
 
         # Open, parse and validate file
         with open(fname, 'rb') as f:
@@ -248,6 +309,30 @@ class TfliteInfo:
                 name = name.decode('utf-8') if name else '(no name)'
                 self.add_to_graph(f'    {j}: {name}')
 
+                # Attempt to calculate arena size
+                const_size = _tensor_const_length(model, tensor)
+                if const_size:
+                    self.add_to_params(const_size)
+                else:
+                    self.add_tensor_to_arena(tensor)
+ 
+        # Calculate input details from the first subgraphs input tensors
+        sg = model.Subgraphs(0)
+        for i in range(sg.InputsLength()):
+            idx = sg.Inputs(i)
+            tensor = sg.Tensors(idx)
+            self.__input_width.append(_tensor_type_size(tensor))
+            self.__input_len.append(_tensor_num_elements(tensor))
+
+        # Calculate output details from the last subgraphs output tensors
+        sg = model.Subgraphs(model.SubgraphsLength() - 1)
+        for i in range(sg.OutputsLength()):
+            idx = sg.Outputs(i)
+            tensor = sg.Tensors(idx)
+            self.__output_width.append(_tensor_type_size(tensor))
+            self.__output_len.append(_tensor_num_elements(tensor))
+
+
         # Update summary info
         self.add_to_summary(f'Inputs: {self.__num_inputs}')
         self.add_to_summary(f'Outputs: {self.__num_outputs}')
@@ -307,9 +392,79 @@ class TfliteInfo:
         Increment the number of graph tensors.
 
         Args:
-            n: The number by which to increment the tesnor count.
+            n: The number by which to increment the tensor count.
         """
         self.__num_tensors += n
+
+    def add_to_params(self, n:int) -> None:
+        """
+        Increment the size required for the model params.
+
+        Args:
+            n: The number by which to increment the param count.
+        """
+        self.__param_size += n
+
+    def add_tensor_to_arena(self, tensor:Tensor) -> None:
+        """
+        Increment the arena by the size of the tensor.
+
+        Args:
+            tensor: The tensor to be accounted for in the arena.
+        """
+        size = _tensor_num_elements(tensor) * _tensor_type_size(tensor)
+        self.__activation_size += _align_up(size)
+
+    @property
+    def input_width(self) -> list[int]:
+        """
+        Input tensor element width in bytes.
+
+        Returns:
+            Width of each input element in bytes.
+        """
+        return self.__input_width
+
+    @property
+    def input_len(self) -> list[int]:
+        """
+        Input tensor number of elements.
+
+        Returns:
+           Number of elements in the input tensor.
+        """
+        return self.__input_len
+
+    @property
+    def output_width(self) -> list[int]:
+        """
+        Output tensor element width in bytes.
+
+        Returns:
+            Width of each output element in bytes.
+        """
+        return self.__output_width
+
+    @property
+    def output_len(self) -> list[int]:
+        """
+        Output tensor number of elements.
+
+        Returns:
+            Number of elements in the output tensor.
+        """
+        return self.__output_len
+
+    @property
+    def arena_size(self) -> int:
+        """
+        Arena Size.
+
+        Returns:
+            Estimated size of model arena (bytes).
+        """
+        error_margin = 2
+        return (self.__activation_size + self.__param_size) * error_margin
 
     @property
     def operators(self) -> list[str]:

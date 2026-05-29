@@ -24,9 +24,15 @@ const viteConfig = defineViteConfig(() => {
     resolve: {
       alias: {
         "@common": path.resolve(process.cwd(), "./src/webviews/common/"),
+        "@constants": path.resolve(process.cwd(), "./src/constants/"),
+        "@ide-types": path.resolve(process.cwd(), "./src/types/"),
         "@wrksp-common": path.resolve(
           __dirname,
           "./src/webviews/workspace-creation/src/common/",
+        ),
+        "@sev-common": path.resolve(
+          process.cwd(),
+          "./src/webviews/system-event-viewer/src/common/",
         ),
         "@adi-ctx/harmonic-core-components-react": path.resolve(
           process.cwd(),

@@ -20,10 +20,7 @@
 	"editor.formatOnPaste": true,
 	"eslint.enable": true,
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
-	"eslint.validate": [
-		"typescript",
-		"typescriptreact"
-	],
+	"eslint.validate": ["typescript", "typescriptreact"],
 	"eslint.workingDirectories": [
 		{
 			"mode": "auto"
@@ -37,7 +34,7 @@
 	"[json]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"cfs.configureWorkspace": "No",
+	"cfs.configureWorkspace": "Never",
 	"[typescriptreact]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},

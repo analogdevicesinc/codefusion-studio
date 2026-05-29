@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
-import {type AIModel} from 'cfs-plugins-api';
+import {type AIModel} from 'cfs-types';
 import {getAiBackends} from '../../../utils/ai-tools';
 
 export const aiToolsScreens = {
@@ -62,11 +62,8 @@ export const defaultEmptyAIModel: AIModelWithId = {
 	Target: {Core: '', Accelerator: ''},
 	Files: {},
 	Enabled: true,
-	Backend: {
-		Name: '',
-		Extensions: {}
-	},
-	id: ''
+	id: '',
+	OutDir: '.'
 };
 
 const aiModelContextSlice = createSlice({
@@ -83,13 +80,21 @@ const aiModelContextSlice = createSlice({
 		saveEditingModel(state, action: PayloadAction<SaveAction>) {
 			const editingModel = action.payload.model ?? state.editingModel;
 
+			let invalidateCompatibility = false;
+
+			const originalModel = state.aiModels.find(
+				model => model.id === action.payload.model.id
+			);
+
 			if (
 				editingModel &&
 				action.payload.originalName &&
-				state.aiModels.find(
-					model => model.id === action.payload.model.id
-				)
+				originalModel
 			) {
+				invalidateCompatibility =
+					editingModel.Files.Model !== originalModel.Files.Model ||
+					editingModel.Files.Dataset !== originalModel.Files.Dataset;
+
 				state.aiModels = state.aiModels.map(model =>
 					model.id === action.payload.model.id
 						? action.payload.model
@@ -110,11 +115,13 @@ const aiModelContextSlice = createSlice({
 			state.editingModel = undefined;
 			state.editPanelOpen = false;
 
-			state.compatibilityState = Object.fromEntries(
-				Object.entries(state.compatibilityState).filter(
-					([key]) => key !== action.payload.model.id
-				)
-			);
+			if (invalidateCompatibility) {
+				state.compatibilityState = Object.fromEntries(
+					Object.entries(state.compatibilityState).filter(
+						([key]) => key !== action.payload.model.id
+					)
+				);
+			}
 		},
 		cancelEditingModel(state) {
 			state.editingModel = undefined;
@@ -174,7 +181,7 @@ function ensureMaxActiveModels(
 ) {
 	const backends = getAiBackends();
 	const maxActiveModels =
-		backends[changedModel.Backend.Name]?.MaxModels;
+		backends[changedModel.Backend?.Name ?? '']?.MaxModels;
 
 	if (!maxActiveModels) {
 		return;
@@ -184,7 +191,8 @@ function ensureMaxActiveModels(
 		m =>
 			m.Target.Core.toUpperCase() ===
 				changedModel.Target.Core.toUpperCase() &&
-			m.Target.Accelerator === changedModel.Target.Accelerator
+			(m.Backend?.Name ?? '').toUpperCase() ===
+				(changedModel.Backend?.Name ?? '').toUpperCase()
 	);
 
 	const enabledModels = relevantModels.filter(m => m.Enabled);

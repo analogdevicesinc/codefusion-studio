@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import Dashboard from '../../screens/dashboard/Dashboard';
 import {Dfg} from '../../screens/dfg/DFG';
 import {AiTools} from '../../screens/ai-tools/ai-tools';
 import {Profiling} from '../../screens/profiling/profiling';
+import MCUBootConfig from '../../screens/mcuboot-config/mcuboot-config';
+import WorkspaceSettings from '../../screens/workspace-settings/workspace-settings';
 
 function AppPanel() {
 	const activeScreen = useActiveScreen();
@@ -39,8 +41,10 @@ function AppPanel() {
 			<MemoryAllocation key={navigationItems.memory} />
 			<Registers key={navigationItems.registers} />
 			<AiTools key={navigationItems.aiTools} />
+			<MCUBootConfig key={navigationItems.mcubootConfig} />
 			<Profiling key={navigationItems.profiling} />
 			<GenerateCode key={navigationItems.generate} />
+			<WorkspaceSettings key={navigationItems.settings} />
 		</NavigationPanel>
 	);
 }

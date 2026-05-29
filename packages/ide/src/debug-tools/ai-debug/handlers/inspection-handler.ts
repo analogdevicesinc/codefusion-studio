@@ -15,6 +15,10 @@
 
 import * as vscode from "vscode";
 import { DebugToolExecutor } from "../debug-tool-executor";
+import {
+  isSessionDisconnectedError,
+  getDisconnectionMessage,
+} from "../utils/session-error-helpers";
 
 /**
  * Handles inspection commands with nice formatted output.
@@ -134,8 +138,13 @@ export class InspectionHandler {
         stream.markdown("_No variables available_\n");
       }
     } catch (error) {
+      if (isSessionDisconnectedError(error, true)) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(getDisconnectionMessage(errorMsg));
+        return;
+      }
       const errorMsg = error instanceof Error ? error.message : String(error);
-      stream.markdown(`❌ Error reading variables: ${errorMsg}\n`);
+      stream.markdown(`\u274c Error reading variables: ${errorMsg}\n`);
     }
   }
 
@@ -193,8 +202,13 @@ export class InspectionHandler {
         stream.markdown("\n```\n");
       }
     } catch (error) {
+      if (isSessionDisconnectedError(error, true)) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(getDisconnectionMessage(errorMsg));
+        return;
+      }
       const errorMsg = error instanceof Error ? error.message : String(error);
-      stream.markdown(`❌ Error reading registers: ${errorMsg}\n`);
+      stream.markdown(`\u274c Error reading registers: ${errorMsg}\n`);
     }
   }
 
@@ -238,6 +252,11 @@ export class InspectionHandler {
         stream.markdown("_No stack frames available_\n");
       }
     } catch (error) {
+      if (isSessionDisconnectedError(error, true)) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(getDisconnectionMessage(errorMsg));
+        return;
+      }
       const errorMsg = error instanceof Error ? error.message : String(error);
       stream.markdown(`❌ Error reading stack trace: ${errorMsg}\n`);
     }
@@ -287,8 +306,13 @@ export class InspectionHandler {
         stream.markdown("\n```\n");
       }
     } catch (error) {
+      if (isSessionDisconnectedError(error, true)) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        stream.markdown(getDisconnectionMessage(errorMsg));
+        return;
+      }
       const errorMsg = error instanceof Error ? error.message : String(error);
-      stream.markdown(`❌ Error reading memory: ${errorMsg}\n`);
+      stream.markdown(`\u274c Error reading memory: ${errorMsg}\n`);
     }
   }
 

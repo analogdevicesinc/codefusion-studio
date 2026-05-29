@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,9 @@
  *
  */
 import {memo} from 'react';
-import FilterControls, {type FilterOption} from './FilterControls';
+import FilterControls, {
+	type FilterOption
+} from '../../../components/filter-controls/filter-controls';
 import styles from './PeripheralGroupsFilterControls.module.scss';
 
 function PeripheralGroupsFilterControls({
@@ -25,7 +27,11 @@ function PeripheralGroupsFilterControls({
 }) {
 	return (
 		<div className={styles.peripheralGroupsFilterControlsContainer}>
-			<FilterControls options={filters} onSelect={onSelection} />
+			<FilterControls
+				id='side-peripheral-list:filterControlsContainer'
+				options={filters}
+				onSelect={onSelection}
+			/>
 		</div>
 	);
 }

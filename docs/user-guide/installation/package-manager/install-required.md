@@ -1,79 +1,76 @@
 ---
-description: Resolve missing or outdated package errors in CodeFusion Studio using the Package Manager.
+description: Resolve missing packages in CodeFusion Studio using System Planner's automated version resolution workflow or the Package Manager.
 author: Analog Devices
-date: 2025-09-11
-linked_in_ui: true
+date: 2026-05-27
+# Note: This page is linked from:
+# - System Planner Critical Error screen (packages/ide/src/webviews/config-tools/src/screens/error/version-updater/update-resolution-card/update-resolution-card.tsx)
+# - Workspace Creation Wizard empty plugins screen (packages/ide/src/webviews/workspace-creation/src/components/workspace-empty-plugins/WorkspaceEmptyPlugins.tsx)
 ---
 
 # Install required packages
 
-Over time, you may need to update packages to newer versions or install missing ones that are not included in your current setup.  
+This page helps you resolve missing or incompatible packages in CodeFusion Studio. You may arrive here from:
 
-For example, you might need to:  
+- **System Planner** — when opening a `.cfsconfig` file that requires a missing data model or plugin version
+- **Workspace Creation Wizard** — when no workspace templates are available for your selected SoC
 
-- Add or update plugins
-- Add or update SoC data models
-- Install a missing package to resolve an error message
+## How to resolve missing packages
 
-In these scenarios, use the Package Manager to install or update the required package.
+The resolution method depends on where you encountered the error:
 
-## UI error messages
+- **From System Planner?** Use the [automated version resolution](#system-planner-automated-version-resolution-recommended) workflow (recommended)
+- **From Workspace Creation Wizard?** Use [manual package installation](#manual-package-installation-fallback) to install template plugins
 
-CodeFusion Studio may notify you about missing or incompatible packages. Messages vary depending on context, but they typically indicate that:
+    !!! note "Platform compatibility"
+        Some workspace templates are only available on specific operating systems. For example, SHARC-FX templates are only supported on Windows. If the Workspace Creation Wizard shows that no workspace templates are available and you believe compatible plugins are already installed, the templates may not be available for your operating system.
 
-- **System Planner**
-    - A required plugin is missing.
-    - A required SoC data model is missing.
+## System Planner automated version resolution (recommended)
 
-- **Workspace Creation**
-    - One or more plugins are missing for Workspace templates.
-    - A plugin is missing for code generation on a core.
+When you open a `.cfsconfig` file in System Planner but do not have the required data model or plugin version, a **Critical Error** screen appears with automated resolution options.
 
-!!! note
-    The resolution is always the same: install or update the missing package.  
-    - Some error messages include the plugin or data model name and version.  
-    - Others only state that a required plugin is missing.  
+![System Planner Critical Error screen showing missing data model with resolution options menu](./images/system-planner-missing-component-light.png#only-light)
+![System Planner Critical Error screen showing missing data model with resolution options menu](./images/system-planner-missing-component-dark.png#only-dark)
 
-    In either case, use the **Package Manager** to install the required dependency.  
-    The name shown in the error message may not exactly match the package name you install. Use the package list in the Package Manager as the source of truth.
+### Resolution steps
 
-## Resolution
+1. **Review the error details**  
+   The error screen displays:
+    - The missing component type (**Missing Data Model** or **Missing Plugin**)
+    - The missing component and required version (for example, **System Planner requires MAX32690 TQFN data model version 1.2.100 which is not available**)
 
-### Option 1: Use the Command Palette (recommended)
+2. **Select a resolution option from the menu**  
+   Under **Resolution Options**, available options depend on what versions are installed locally and available remotely:
 
-1. Open the **Command Palette** from the gear icon or press `Ctrl+Shift+P` (Windows/Linux) / `Cmd+Shift+P` (macOS).
-2. In the **Command Palette**, type `CFS Install Package`.
-3. Select the missing package from the list. A progress window will appear.
-   After installation completes, a confirmation message will be shown.
+    - **Upgrade to compatible locally-available version X.X.X**  
+      A compatible version is already installed. System Planner updates your configuration file to use this version without downloading anything.
 
-### Option 2: Use the Command Line
+    - **Install requested version X.X.X**  
+      The exact version you need is available remotely. System Planner downloads and installs it.
 
-1. Open the **CFS Terminal** (see [Manage packages from the command line (`cfsutil`)](manage-packages-cfsutil.md)).  
+    - **Upgrade to latest compatible downloadable version X.X.X**  
+      A newer compatible version is available remotely. System Planner downloads and installs the latest compatible version.
 
-2. Search for available packages:  
+3. **(Optional) Configure future version handling**  
+   Check or uncheck **Allow all future compatible versions**:
 
-    ```sh
-    cfsutil pkg search "*"
-    ```  
+    - **Checked**: Uses a version range (for example, `^1.2.148`) to allow automatic compatibility with future updates
+    - **Unchecked**: Uses an exact version (for example, `1.2.148`) to prevent automatic updates
 
-    !!! note
-        Always wrap the search pattern in quotes to avoid issues with wildcard expansion.  
+4. **Click Continue**  
+   System Planner installs packages if needed and updates your configuration file. Click **Continue to System Planner** to proceed to the System Planner Configuration Tools dashboard.
 
-3. Identify the missing package and install it:  
+### Troubleshooting
 
-    ```sh
-    cfsutil pkg install <package-name>/<version>
-    ```  
+If the automated resolution fails (no menu options appear, installation errors occur, or buttons are disabled), complete the following:
 
-4. Verify installation:  
+- Verify you are logged in to myAnalog if accessing restricted packages (see [Log in to access restricted Packages](auth.md))
+- Click **Retry Updates** if available
+- Use the manual installation methods below to install packages directly
 
-    ```sh
-    cfsutil pkg list
-    ```  
+## Manual package installation (fallback)
 
-## Next steps
+If the automated resolution prompt doesn't work, or you need to install packages outside of the System Planner error flow, see:
 
-- If you are using restricted packages, make sure you are logged in with your myAnalog account. See [Log in to access restricted Packages](auth.md).
-- For full package management instructions, see:  
-    - [Manage Packages (Command Palette)](manage-packages-command-palette.md)  
-    - [Manage Packages from the command line (`cfsutil`)](manage-packages-cfsutil.md)
+- [Manage Packages (Command Palette)](manage-packages-command-palette.md)  
+- [Manage Packages from the command line (`cfsutil`)](manage-packages-cfsutil.md)
+- [Log in to access restricted Packages](auth.md)

@@ -1,14 +1,14 @@
 ---
 description: Learn how to develop custom plugins for CodeFusion Studio.
 author: Analog Devices
-date: 2025-10-30
+date: 2026-05-26
 ---
 
 # Develop plugins
 
-CFS supports custom plugins, allowing you to extend its capabilities without modifying the base application. Using the CFS plugin API, you can develop plugins tailored to specific project needs—such as upgrading an RTOS, integrating middleware, or applying custom code templates.
+CFS supports custom plugins, allowing you to extend its capabilities without modifying the base application. Using the CFS Plugins SDK, you can develop plugins tailored to specific project needs—such as upgrading an RTOS, integrating middleware, or applying custom code templates.
 
-For information on how to build your own plugins, refer to the [:octicons-link-external-24: CFS Plugins repository](https://github.com/analogdevicesinc/cfs-plugins){:target="_blank"}.
+For information on how to build your own plugins, including API reference, templating guide, and plugin structure details, see the [:octicons-link-external-24: CFS Plugins SDK README](https://github.com/analogdevicesinc/codefusion-studio/blob/main/packages/cfs-plugins-sdk/README.md){:target="_blank"}.
 
 The following information is relevant once you have built your custom plugin.
 

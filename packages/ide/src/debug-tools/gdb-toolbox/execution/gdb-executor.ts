@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import {
   GdbToolboxCommand,
   GdbToolboxInput,
 } from "../types/types";
-import { onResponseReceived } from "../services/debug-event-hooks";
+import { CfsDebugManager } from "../../debug-manager";
 import {
   substituteVars,
   convertRecordValuesToString,
@@ -43,28 +43,10 @@ import { Utils } from "../../../utils/utils";
  * execution, response handling, and all supported script actions.
  */
 export class GDBExecutor {
-  private lastResponse: { command: string; response: any } | null = null;
   private variableContext: Record<string, string | number> = {};
-  private responseBuffer: Record<string, any> = {};
-  private readonly timeout: number;
-  private extensionRoot: string;
-
-  constructor(extensionRoot: string, timeout = 10000) {
-    this.extensionRoot = extensionRoot;
-    this.timeout = timeout;
-    this.initializeResponseListener();
-  }
-
-  /**
-   * Sets up a listener for GDB command responses.
-   */
-  private initializeResponseListener(): void {
-    onResponseReceived(({ expression, response }) => {
-      if (expression && expression.trim() !== "") {
-        this.lastResponse = { command: expression, response };
-        this.responseBuffer[expression] = response;
-      }
-    });
+  private debugManager: CfsDebugManager;
+  constructor(debugManager: CfsDebugManager) {
+    this.debugManager = debugManager;
   }
 
   /**
@@ -138,7 +120,6 @@ export class GDBExecutor {
       }
     });
   }
-
   /**
    * Executes a single GDB command in the debug session.
    * Handles variable substitution, user input, and waits for the response.
@@ -147,7 +128,15 @@ export class GDBExecutor {
     cmd: GdbToolboxCommand,
     inputs: GdbToolboxInput[],
     session: vscode.DebugSession,
-  ): Promise<any> {
+  ): Promise<string> {
+    // Get the CFS debug session from the manager
+    const cfsSession = this.debugManager.getSession(session.id);
+    if (!cfsSession) {
+      throw new Error(
+        `No CFS debug session found for session ${session.id}. The debug manager may not be properly initialized.`,
+      );
+    }
+
     // Find and prompt for input placeholders in the command
     const inputPlaceholders = GDBExecutor.findInputPlaceholders(cmd.command);
     if (inputPlaceholders.length > 0) {
@@ -160,47 +149,8 @@ export class GDBExecutor {
       convertRecordValuesToString(this.variableContext),
     );
 
-    return new Promise<any>((resolve, reject) => {
-      let resolved = false;
-
-      const disposable = onResponseReceived(({ expression, response }) => {
-        if (expression === substitutedCommand && !resolved) {
-          resolved = true;
-          disposable.dispose();
-          this.responseBuffer[substitutedCommand] = response; // Store in responseBuffer
-          resolve(response);
-        }
-      });
-
-      session
-        .customRequest("evaluate", {
-          expression: substitutedCommand,
-          context: "repl",
-        })
-        .then(undefined, (error) => {
-          if (!resolved) {
-            resolved = true;
-            disposable.dispose();
-            reject(
-              new Error(
-                `Failed to execute command '${substitutedCommand}': ${error.message}`,
-              ),
-            );
-          }
-        });
-
-      setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
-          disposable.dispose();
-          reject(
-            new Error(`Timeout waiting for response to: ${substitutedCommand}`),
-          );
-        }
-      }, this.timeout);
-    });
+    return await cfsSession.evaluateREPL(substitutedCommand);
   }
-
   /**
    * Executes a sequence of GDB Toolbox commands as a script.
    */
@@ -208,8 +158,8 @@ export class GDBExecutor {
     commands: GdbToolboxCommand[],
     inputs: GdbToolboxInput[],
     session: vscode.DebugSession,
-  ): Promise<any[]> {
-    const results: any[] = [];
+  ): Promise<string[]> {
+    const results: string[] = [];
     const cfsWorkspaceFolder = vscode.workspace.workspaceFolders?.find(
       (folder) => folder.name === ".cfs",
     );
@@ -250,19 +200,18 @@ export class GDBExecutor {
         vscode.window.showErrorMessage(
           `Failed to execute command '${cmd.command}': ${error}`,
         );
-        results.push(undefined);
+        results.push("");
       }
     }
     return results;
   }
-
   /**
    * Executes a list of actions associated with a command.
    */
   private async executeActions(
     actions: GdbToolboxAction[],
     inputs: GdbToolboxInput[],
-    response: any,
+    response: string,
     session: vscode.DebugSession,
   ): Promise<void> {
     for (const action of actions) {
@@ -293,19 +242,18 @@ export class GDBExecutor {
       await this.handleAction(action, inputs, response, session);
     }
   }
-
   /**
    * Handles a single action, dispatching based on its type.
    */
   private async handleAction(
     action: GdbToolboxAction,
     inputs: GdbToolboxInput[],
-    response: any,
+    response: string,
     session: vscode.DebugSession,
   ): Promise<void> {
     const context = {
       ...this.variableContext,
-      gdbOutput: this.responseBuffer[action.command || ""] || response,
+      gdbOutput: response,
       command: action.command || "",
       timestamp: new Date().toISOString(),
     };
@@ -328,30 +276,15 @@ export class GDBExecutor {
         break;
 
       case "showMessage":
-        handleShowMessageAction(
-          action,
-          this.variableContext,
-          this.lastResponse,
-        );
+        handleShowMessageAction(action, this.variableContext, response);
         break;
 
       case "writeFile":
-        handleWriteFileAction(
-          action,
-          context,
-          this.responseBuffer,
-          this.variableContext,
-        );
+        handleWriteFileAction(action, context, this.variableContext, response);
         break;
 
       case "appendFile":
-        handleAppendFileAction(
-          action,
-          context,
-          response,
-          this.responseBuffer,
-          this.variableContext,
-        );
+        handleAppendFileAction(action, context, this.variableContext, response);
         break;
 
       case "setVariable":

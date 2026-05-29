@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
- 
+
 import {
 	sh_flags,
 	sh_type,
@@ -50,7 +50,6 @@ export const getBucket = (
 		flagsValue & sh_flags.SHF_EXECINSTR ||
 		!(flagsValue & sh_flags.SHF_WRITE)
 	) {
-		return "Text";
 		return "Text";
 	}
 

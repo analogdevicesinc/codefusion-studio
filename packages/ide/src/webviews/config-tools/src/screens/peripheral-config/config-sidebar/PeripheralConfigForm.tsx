@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ import {createPortal} from 'react-dom';
 import type {
 	TFormControl,
 	TFormData,
-	TFormFieldValue,
-	TFormNumericBase
+	TFormFieldValue
 } from 'cfs-react-library';
 import {usePeripheralConfig} from '../../../state/slices/peripherals/peripherals.selector';
 import {useAppDispatch} from '../../../state/store';
@@ -32,7 +31,10 @@ import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
 import type {ControlCfg} from '../../../../../common/types/soc';
 import {getPeripheralFormErrors} from '../../../utils/peripheral-errors';
-import {computePeripheralResetValues} from '../../../utils/soc-peripherals';
+import {
+	computePeripheralResetValues,
+	getConfigFormatFromSocControls
+} from '../../../utils/soc-peripherals';
 
 function PeripheralConfigForm({
 	formattedData: fd,
@@ -54,7 +56,12 @@ function PeripheralConfigForm({
 	pluginOptions: TFormControl[];
 }>) {
 	const dispatch = useAppDispatch();
-	const [portalTarget, setPortalTarget] = useState<HTMLElement>();
+	const [portalTarget, setPortalTarget] = useState<
+		HTMLElement | undefined
+	>(
+		document.getElementById(PERIPHERAL_PLUGIN_OPTIONS_FORM_ID) ??
+			undefined
+	);
 	const currentConfig = usePeripheralConfig(activePeripheral);
 
 	// For booleans we need to convert the string values to boolean
@@ -67,7 +74,7 @@ function PeripheralConfigForm({
 					?.type === 'boolean'
 			) {
 				if (typeof data[key] === 'string') {
-					data[key] = (data[key] as string).toUpperCase() === 'TRUE';
+					data[key] = data[key].toUpperCase() === 'TRUE';
 				} else if (typeof data[key] === 'number') {
 					/* Treat 0 as false, any other number as true. */
 					data[key] = data[key] !== 0;
@@ -119,7 +126,7 @@ function PeripheralConfigForm({
 		for (const control of fullControlSet) {
 			if (
 				evaluateCondition(
-					{...newConfig, Name: activePeripheral} as Record<
+					{projectId, ...newConfig, Name: activePeripheral} as Record<
 						string,
 						string
 					>,
@@ -164,16 +171,40 @@ function PeripheralConfigForm({
 			}
 		}
 
-		// Prepare the numeric base dictionary
-		const numericBase: Record<string, TFormNumericBase> = {};
-		formattedControls.forEach(control => {
-			if (control.base) {
-				numericBase[control.id] = control.base;
+		// Prepare the config format dictionary
+		const configFormat = getConfigFormatFromSocControls(
+			peripheralControls
+		);
+
+		// If there are enum options that are conditional in a control, then the user may have
+		// changed a setting which results in another control changing its permitted values.
+		// A problem arises if the current setting of this other control is no longer an
+		// acceptable option. We have to detect that, and if it's no longer valid, we reset it
+		// to something that _is_ valid.
+		// Of course, that change may itself cause additional changes, but we assume conditions only
+		// propagate onwards to later controls, so we should not need to iterate to convergence.
+		nextControlSet.forEach(c => {
+			if (c.Type === 'enum') {
+				if (
+					!c.EnumValues?.find(
+						e =>
+							e.Id === newConfig[c.Id] &&
+							evaluateCondition(
+								{projectId, ...newConfig} as Record<string, string>,
+								e.Condition
+							)
+					)
+				) {
+					newConfig[c.Id] =
+						c.EnumValues?.find(e =>
+							evaluateCondition(
+								{projectId, ...newConfig} as Record<string, string>,
+								e.Condition
+							)
+						)?.Id ?? '';
+				}
 			}
 		});
-
-		const configFormat =
-			Object.keys(numericBase).length > 0 ? {numericBase} : undefined;
 
 		dispatch(
 			setPeripheralConfig({

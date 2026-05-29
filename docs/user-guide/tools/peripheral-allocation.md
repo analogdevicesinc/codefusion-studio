@@ -1,7 +1,7 @@
 ---
 description: "Peripheral Allocation for CodeFusion Studio"
 author: "Analog Devices"
-date: "2025-09-15"
+date: "2026-05-25"
 ---
 
 # Peripheral Allocation
@@ -33,7 +33,7 @@ There are two types of assignments:
 
 ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-dark.png#only-dark) ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-light.png#only-light)
 
-1. In the Peripheral List, click **Allocate** (**+**) to allocate a peripheral to a project.
+1. In the Peripheral List, click **Assign** (**+**) to allocate a peripheral to a project.
 2. If there is more than one project, select the project from the list to complete the allocation.
 
 ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-allocate-dark.png#only-dark) ![Peripheral Allocation - Peripheral List](./images/peripheral-allocation-list-allocate-light.png#only-light)

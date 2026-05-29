@@ -1,7 +1,9 @@
+import type {CfsWorkspace} from 'cfs-types';
+
 import {Command, Flags} from '@oclif/core';
-import {CfsWorkspace} from 'cfs-lib';
 
 import {getDataModelManager} from '../../utils/data-model-manager.js';
+import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 import {
@@ -48,8 +50,17 @@ export default class ProjectCreate extends Command {
       readJsonFile(cfsWorkspaceFile)
     ) as CfsWorkspace;
 
+    if (
+      !cfsWorkspace.projects ||
+      cfsWorkspace.projects.length === 0
+    ) {
+      this.error(
+        'Projects cannot currently be generated from this type of workspace file.'
+      );
+    }
+
     const formattedProjects =
-      cfsWorkspace.projects?.map((project) => ({
+      cfsWorkspace.projects.map((project) => ({
         ...lowercaseFirstLetterProps(project),
         soc: cfsWorkspace.soc
       })) ?? [];
@@ -62,15 +73,21 @@ export default class ProjectCreate extends Command {
 
     const dmManager = await getDataModelManager(
       this.config,
-      packageManager
+      packageManager,
+      flags['search-path']
     );
 
     const pluginManager = getPluginManager(
+      dmManager,
       flags['search-path'],
-      packageManager,
-      dmManager
+      packageManager
     );
 
-    await pluginManager.generateProject(cfsWorkspace, projectName);
+    try {
+      await pluginManager.generateProject(cfsWorkspace, projectName);
+    } catch (error) {
+      handleMissingDependencyError(error);
+      throw error;
+    }
   }
 }

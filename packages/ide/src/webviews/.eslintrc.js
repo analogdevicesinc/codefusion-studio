@@ -1,15 +1,23 @@
 const path = require('path');
 
 const projectOverrideDescriptors = [
-	{pattern: 'config-tools', tsconfig: 'config-tools.tsconfig.json', extraExcludes: ['lib/**/*.js']},
-	{pattern: 'workspace-creation', tsconfig: 'workspace.tsconfig.json'},
-	{pattern: 'elf-explorer', tsconfig: 'elf.tsconfig.json'},
-	{pattern: 'home-page', tsconfig: 'home.tsconfig.json', extraExcludes: ['lib/**/*.js']},
-	{pattern: 'sigma-studio-plus-project', tsconfig: 'sigma-studio-plus-project.tsconfig.json', extraExcludes: ['lib/**/*.js']},
-	{pattern: 'common', tsconfig: 'common/tsconfig.json', extraExcludes: ['lib/**/*.js']}
+	{ pattern: 'config-tools', tsconfig: 'config-tools.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
+	{ pattern: 'workspace-creation', tsconfig: 'workspace.tsconfig.json' },
+	{ pattern: 'model-workspace-creation', tsconfig: 'model-workspace.tsconfig.json' },
+	{ pattern: 'ai-hardware-profiling', tsconfig: 'ai-hardware-profiling.tsconfig.json' },
+	{ pattern: 'memory-viewer', tsconfig: 'memory-viewer.tsconfig.json' },
+	{ pattern: 'trace-side-panel', tsconfig: 'trace-side-panel.tsconfig.json' },
+	{ pattern: 'trace-configuration', tsconfig: 'trace-configuration.tsconfig.json' },
+	{ pattern: 'report-viewer', tsconfig: 'report-viewer.tsconfig.json' },
+	{ pattern: 'elf-explorer', tsconfig: 'elf.tsconfig.json' },
+	{ pattern: 'home-page', tsconfig: 'home.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
+	{ pattern: 'sigma-studio-plus-project', tsconfig: 'sigma-studio-plus-project.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
+	{ pattern: 'system-event-viewer', tsconfig: 'system-event-viewer.tsconfig.json' },
+	{ pattern: 'system-event-viewer-treeview', tsconfig: 'system-event-viewer-treeview.tsconfig.json' },
+	{ pattern: 'common', tsconfig: 'common/tsconfig.json', extraExcludes: ['lib/**/*.js'] }
 ];
 
-const projectOverrides = projectOverrideDescriptors.map(({pattern, tsconfig, extraExcludes = []}) => ({
+const projectOverrides = projectOverrideDescriptors.map(({ pattern, tsconfig, extraExcludes = [] }) => ({
 	files: [`${pattern}/**/*.ts`, `${pattern}/**/*.tsx`],
 	excludedFiles: [`${pattern}/**/*.d.ts`, ...extraExcludes.map(exclude => `${pattern}/${exclude}`)],
 	parserOptions: {
@@ -19,8 +27,8 @@ const projectOverrides = projectOverrideDescriptors.map(({pattern, tsconfig, ext
 }));
 
 module.exports = {
-  root: true, // Ensure this config is treated as root and does not inherit ignore patterns
-  reportUnusedDisableDirectives: true,
+	root: true, // Ensure this config is treated as root and does not inherit ignore patterns
+	reportUnusedDisableDirectives: true,
 	overrides: [
 		// 1. Directory-specific TypeScript projects wire ESLint to the correct tsconfig
 		...projectOverrides,
@@ -65,6 +73,7 @@ module.exports = {
 				'@typescript-eslint/no-unsafe-call': 0,
 				'@typescript-eslint/no-unsafe-assignment': 0,
 				'@typescript-eslint/no-unsafe-return': 0,
+				"@typescript-eslint/prefer-regexp-exec": 0,
 				'@typescript-eslint/naming-convention': [
 					'error',
 					{

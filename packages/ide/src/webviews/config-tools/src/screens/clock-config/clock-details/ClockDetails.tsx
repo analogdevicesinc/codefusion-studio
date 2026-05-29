@@ -17,7 +17,7 @@ import {setClockNodeDetailsTargetNode} from '../../../state/slices/clock-nodes/c
 import {
 	useClockNodeState,
 	useClockNodeDetailsTargetNode,
-	useDiagramNodeData
+	useClockNodesStatus
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {useAppDispatch} from '../../../state/store';
 import ControlDropdown from '../control-dropdown/ControlDropdown';
@@ -150,9 +150,8 @@ function ClockDetails({
 		aggregatedClockNodeConfig[0]?.key
 	);
 
-	const diagramData = useDiagramNodeData(
-		clockNodeDetailsTargetNode ?? ''
-	);
+	const nodesStatus = useClockNodesStatus();
+	const nodeStatus = nodesStatus[clockNodeDetailsTargetNode ?? ''];
 
 	const computeEnabledState = useEvaluateClockCondition();
 
@@ -172,7 +171,7 @@ function ClockDetails({
 		generateOutputValueErrorString(nodeError, activeClockNodeState);
 
 	const shouldRenderError =
-		diagramData?.enabled &&
+		nodeStatus?.enabled &&
 		[
 			ShortDescErrors.UNCONFIGURED_VALUE,
 			ShortDescErrors.LOW_COMPUTED_VALUE,

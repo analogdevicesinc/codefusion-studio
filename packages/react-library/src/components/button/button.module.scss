@@ -17,6 +17,14 @@
 
 .button {
 	--contrast-active-border: transparent;
+
+	&[appearance='primary'] {
+		// Override CSS custom properties directly on the button element to ensure fallback colors are applied.
+
+		--vscode-button-background: #{colors.$button-background};
+		--vscode-button-foreground: #{colors.$button-foreground};
+	}
+
 	&[appearance='secondary'] {
 		&::part(control) {
 			color: colors.$button-secondary-foreground;

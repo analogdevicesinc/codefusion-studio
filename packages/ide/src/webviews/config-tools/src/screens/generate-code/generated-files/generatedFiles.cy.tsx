@@ -15,7 +15,7 @@
 import GeneratedFiles from './GeneratedFiles';
 import {formatGeneratedFilePaths} from '../../../utils/api';
 import {sysPlannerDataInit} from '../../../utils/sys-planner-data-init';
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import type {Soc} from '@common/types/soc';
 
 const max32690Wlp = (await import('@socs/max32690-wlp.json'))

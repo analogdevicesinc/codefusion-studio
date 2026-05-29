@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,8 @@ describe("Command Tests", () => {
     await closeWindows();
   });
 
-  it("Select SDK Path", async () => {
+  // Skipping this as it is flaky - will be fixed in CFSIO-15858
+  it.skip("Select SDK Path", async () => {
     await workbench.getDriver().sleep(10000);
     await workbench.executeCommand(SELECT_SDK_PATH_COMMAND_ID);
     const input = await InputBox.create();

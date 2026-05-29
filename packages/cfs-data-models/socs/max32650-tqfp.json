@@ -1,9 +1,9 @@
 {
-  "Copyright": "Copyright (c) 2024-2025 Analog Devices, Inc.",
+  "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.98",
+  "Version": "1.3.772",
   "Schema": "1.2.0",
-  "Timestamp": "2025-11-26 14:22:32.165546",
+  "Timestamp": "2026-04-21T11:18:01.879372Z",
   "Name": "MAX32650",
   "Description": "Ultra-Low-Power Arm Cortex-M4 Processor with FPU-Based Microcontroller (MCU) with 3MB Flash and 1MB SRAM",
   "Endianness": "Little",
@@ -34,7 +34,7 @@
       "AddressStart": "0x20000000",
       "AddressEnd": "0x200fffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "RAM",
       "Location": "Internal",
       "MinimumAlignment": 4
@@ -45,7 +45,7 @@
       "AddressStart": "0x10000000",
       "AddressEnd": "0x102fffff",
       "Width": 8,
-      "Access": "R/W",
+      "Access": "R/W/X",
       "Type": "Flash",
       "Location": "Internal",
       "MinimumAlignment": 16384
@@ -1659,6 +1659,12 @@
       "ClockNode": "Cache"
     },
     {
+      "Name": "FCR",
+      "Description": "Function Control Registers",
+      "Cores": [],
+      "Assignable": false
+    },
+    {
       "Name": "FLC",
       "Description": "Flash Controller",
       "Cores": [
@@ -1707,6 +1713,12 @@
         "ACCESS_FAIL_IE"
       ],
       "ClockNode": "FLC"
+    },
+    {
+      "Name": "GCFR",
+      "Description": "General Control Function",
+      "Cores": [],
+      "Assignable": false
     },
     {
       "Name": "GCR",
@@ -1829,16 +1841,6 @@
           "Name": "P0.27",
           "Description": "GPIO Port 0 Pin 27",
           "Group": "P0.27"
-        },
-        {
-          "Name": "P0.28",
-          "Description": "GPIO Port 0 Pin 28",
-          "Group": "P0.28"
-        },
-        {
-          "Name": "P0.29",
-          "Description": "GPIO Port 0 Pin 29",
-          "Group": "P0.29"
         },
         {
           "Name": "P0.3",
@@ -2802,7 +2804,7 @@
     },
     {
       "Name": "I2C0",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 0",
       "Cores": [
         "CM4"
       ],
@@ -3480,7 +3482,7 @@
     },
     {
       "Name": "I2C1",
-      "Description": "Inter-Integrated Circuit",
+      "Description": "Inter-Integrated Circuit 1",
       "Cores": [
         "CM4"
       ],
@@ -4158,7 +4160,7 @@
     },
     {
       "Name": "ICC0",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 0",
       "Cores": [
         "CM4"
       ],
@@ -4189,7 +4191,7 @@
     },
     {
       "Name": "ICC1",
-      "Description": "Instruction Cache Controller",
+      "Description": "Instruction Cache Controller 1",
       "Cores": [
         "CM4"
       ],
@@ -4233,8 +4235,12 @@
           "Description": "External System Reset Input"
         },
         {
-          "Name": "TCK",
-          "Description": "JTAG TCK"
+          "Name": "SWDCLK",
+          "Description": "Serial Wire Debug Clock"
+        },
+        {
+          "Name": "SWDIO",
+          "Description": "Serial Wire Debug I/O"
         },
         {
           "Name": "TDI",
@@ -4243,10 +4249,6 @@
         {
           "Name": "TDO",
           "Description": "JTAG TDO"
-        },
-        {
-          "Name": "TMS",
-          "Description": "JTAG TMS"
         }
       ]
     },
@@ -4552,7 +4554,7 @@
     },
     {
       "Name": "PT0",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 0",
       "Cores": [
         "CM4"
       ],
@@ -4570,7 +4572,7 @@
     },
     {
       "Name": "PT1",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 1",
       "Cores": [
         "CM4"
       ],
@@ -4588,7 +4590,7 @@
     },
     {
       "Name": "PT10",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 10",
       "Cores": [
         "CM4"
       ],
@@ -4606,7 +4608,7 @@
     },
     {
       "Name": "PT11",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 11",
       "Cores": [
         "CM4"
       ],
@@ -4624,7 +4626,7 @@
     },
     {
       "Name": "PT12",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 12",
       "Cores": [
         "CM4"
       ],
@@ -4642,7 +4644,7 @@
     },
     {
       "Name": "PT13",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 13",
       "Cores": [
         "CM4"
       ],
@@ -4660,7 +4662,7 @@
     },
     {
       "Name": "PT14",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 14",
       "Cores": [
         "CM4"
       ],
@@ -4678,7 +4680,7 @@
     },
     {
       "Name": "PT15",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 15",
       "Cores": [
         "CM4"
       ],
@@ -4696,7 +4698,7 @@
     },
     {
       "Name": "PT2",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 2",
       "Cores": [
         "CM4"
       ],
@@ -4714,7 +4716,7 @@
     },
     {
       "Name": "PT3",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 3",
       "Cores": [
         "CM4"
       ],
@@ -4732,7 +4734,7 @@
     },
     {
       "Name": "PT4",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 4",
       "Cores": [
         "CM4"
       ],
@@ -4750,7 +4752,7 @@
     },
     {
       "Name": "PT5",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 5",
       "Cores": [
         "CM4"
       ],
@@ -4768,7 +4770,7 @@
     },
     {
       "Name": "PT6",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 6",
       "Cores": [
         "CM4"
       ],
@@ -4786,7 +4788,7 @@
     },
     {
       "Name": "PT7",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 7",
       "Cores": [
         "CM4"
       ],
@@ -4804,7 +4806,7 @@
     },
     {
       "Name": "PT8",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 8",
       "Cores": [
         "CM4"
       ],
@@ -4822,7 +4824,7 @@
     },
     {
       "Name": "PT9",
-      "Description": "Pulse Train Engine",
+      "Description": "Pulse Train Engine 9",
       "Cores": [
         "CM4"
       ],
@@ -4848,7 +4850,7 @@
     },
     {
       "Name": "PWRSEQ",
-      "Description": "Power Sequencer / Low Power Control Register",
+      "Description": "Power Sequencer / Low-Power Control Register",
       "Cores": [],
       "Assignable": false,
       "ClockNode": "POWER SEQ"
@@ -6459,13 +6461,6 @@
         }
       ],
       "ClockNode": "SDHC"
-    },
-    {
-      "Name": "SMON",
-      "Description": "Security Monitor",
-      "Cores": [
-        "CM4"
-      ]
     },
     {
       "Name": "SPI0",
@@ -11635,17 +11630,17 @@
         {
           "Name": "SDIO1",
           "Description": "Data 1",
-          "Required": "${ControlCMD_WIDTH} ${String:DUAL} = ${Control:ADDR_WIDTH} ${String:DUAL} = ${Control:DATA_WIDTH} ${String:DUAL} = ${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | | | | |"
+          "Required": "${Control:CMD_WIDTH} ${String:DUAL} = ${Control:ADDR_WIDTH} ${String:DUAL} = ${Control:DATA_WIDTH} ${String:DUAL} = ${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | | | | |"
         },
         {
           "Name": "SDIO2",
           "Description": "Data 2",
-          "Required": "${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
+          "Required": "${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
         },
         {
           "Name": "SDIO3",
           "Description": "Data 3",
-          "Required": "${ControlCMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
+          "Required": "${Control:CMD_WIDTH} ${String:QUAD} = ${Control:ADDR_WIDTH} ${String:QUAD} = ${Control:DATA_WIDTH} ${String:QUAD} = | |"
         },
         {
           "Name": "SS0",
@@ -16837,7 +16832,7 @@
     },
     {
       "Name": "WDT0",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Windowed Watchdog Timer 0",
       "Cores": [
         "CM4"
       ],
@@ -17159,7 +17154,7 @@
     },
     {
       "Name": "WDT1",
-      "Description": "Windowed Watchdog Timer",
+      "Description": "Windowed Watchdog Timer 1",
       "Cores": [
         "CM4"
       ],
@@ -17669,7 +17664,7 @@
           },
           {
             "Id": "LPCLK",
-            "Description": "LPCLK (Low Power Osc.)",
+            "Description": "LPCLK (Low-Power Osc.)",
             "Value": 15
           },
           {
@@ -17918,22 +17913,22 @@
         "EnumValues": [
           {
             "Id": "0",
-            "Description": "Drive Strength 0",
+            "Description": "1 mA",
             "Value": 0
           },
           {
             "Id": "1",
-            "Description": "Drive Strength 1",
+            "Description": "2 mA",
             "Value": 1
           },
           {
             "Id": "2",
-            "Description": "Drive Strength 2",
+            "Description": "4 mA",
             "Value": 2
           },
           {
             "Id": "3",
-            "Description": "Drive Strength 3",
+            "Description": "8 mA",
             "Value": 3
           }
         ]
@@ -23121,12 +23116,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -23436,12 +23431,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -23751,12 +23746,12 @@
         "EnumValues": [
           {
             "Id": "1",
-            "Description": "1 Stop Bit",
+            "Description": "1",
             "Value": 0
           },
           {
             "Id": "1.5/2",
-            "Description": "1.5 Stop Bits",
+            "Description": "1.5 (Char Size 5) or 2 (Other Sizes)",
             "Value": 1
           }
         ]
@@ -26838,9 +26833,10 @@
         {
           "Name": "32KCAL",
           "Description": "Square Wave Pin Output",
-          "Value": "${Control:32KCAL} ${String:1HZ} = 1 ${Control:32KCAL} ${String:512HZ} = 512 ${Control:32KCAL} ${String:4KHZ} = 4096 ${Control:32KCAL} ${String:32KHZ} = 32768 ${Undef} ? ? ? ?"
+          "Value": "${PinMux:P0.31} ${String:OSC_32KCAL} != ${Undef} ${Control:32KCAL} ${String:1HZ} = 1 ${Control:32KCAL} ${String:512HZ} = 512 ${Control:32KCAL} ${String:4KHZ} = 4096 ${Control:32KCAL} ${String:32KHZ} = 32768 ${Undef} ? ? ? ? ?"
         }
       ],
+      "Signpost": "To configure the P0.31 clock calibration, the OSC_32KCAL signal must be assigned using the Pin Config tool.",
       "Config": {
         "32KCAL": {
           "DIS": [
@@ -29891,7 +29887,7 @@
         {
           "Name": "STN_AC_BIAS",
           "Description": "AC Bias Frequency Control",
-          "Documentation": "THis fiels sets the AC Bias Frequency output on the CLCD_VDEN pin for Color StN display mode.",
+          "Documentation": "This fiels sets the AC Bias Frequency output on the CLCD_VDEN pin for Color StN display mode.",
           "Position": 8,
           "Length": 8,
           "Access": "R/W",
@@ -82851,283 +82847,16 @@
         {
           "Name": "110",
           "Label": "P0.29",
-          "Description": "GPIO P0.29",
+          "Description": "GPIO P0.29 / SWDCLK / JTAG TCK",
           "Position": {
             "X": 35,
             "Y": 0
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 29,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.29",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "TCK",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN29",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN29",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDCLK"
             }
           ]
         },
@@ -83433,283 +83162,16 @@
         {
           "Name": "113",
           "Label": "P0.28",
-          "Description": "GPIO P0.28",
+          "Description": "GPIO P0.28 / SWDIO / JTAG TMS",
           "Position": {
             "X": 32,
             "Y": 0
           },
           "Shape": "Ball",
-          "GPIOName": "GPIO0",
-          "GPIOPort": "0",
-          "GPIOPin": 28,
           "Signals": [
             {
-              "Peripheral": "GPIO0",
-              "Name": "P0.28",
-              "PinMuxSlot": 0,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "MODE": {
-                  "IN": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "OUT": [
-                    {
-                      "Register": "GPIO0_INEN",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_OUTEN",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "PS": {
-                  "STRONG_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PD": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "DIS": [
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "STRONG_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "WEAK_PU": [
-                    {
-                      "Register": "GPIO0_PS",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_PADCTRL1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ]
-                },
-                "DS": {
-                  "0": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "1": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "2": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "3": [
-                    {
-                      "Register": "GPIO0_DS0",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    },
-                    {
-                      "Register": "GPIO0_DS1",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
-            },
-            {
               "Peripheral": "MISC",
-              "Name": "TMS",
-              "PinMuxSlot": 1,
-              "PinMuxConfig": [
-                {
-                  "Register": "GPIO0_INEN",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "1",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN1",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                },
-                {
-                  "Register": "GPIO0_EN0",
-                  "Field": "PIN28",
-                  "Value": "0",
-                  "Operation": "Write"
-                }
-              ],
-              "PinConfig": {
-                "PWR": {
-                  "VDDIO": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "0",
-                      "Operation": "Write"
-                    }
-                  ],
-                  "VDDIOH": [
-                    {
-                      "Register": "GPIO0_VSSEL",
-                      "Field": "PIN28",
-                      "Value": "1",
-                      "Operation": "Write"
-                    }
-                  ]
-                }
-              }
+              "Name": "SWDIO"
             }
           ]
         },

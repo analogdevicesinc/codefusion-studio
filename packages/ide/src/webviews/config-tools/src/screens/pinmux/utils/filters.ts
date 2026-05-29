@@ -19,7 +19,7 @@ import type {
 	PinState
 } from '@common/types/soc';
 import {isPinReserved} from '../../../utils/is-pin-reserved';
-import type {Filter} from '../../../state/slices/app-context/appContext.reducer';
+import type {AssignmentFilter} from '../../../state/slices/app-context/appContext.reducer';
 import {getConfigurablePins} from '../../../utils/soc-pins';
 import {pinInConflict} from '../../../utils/pin-error';
 
@@ -76,7 +76,7 @@ export const filterSignals = (
 			currentTarget?: string;
 		}
 	>,
-	activeFilterType: Filter,
+	activeFilterType: AssignmentFilter,
 	assignedPins: PinState[]
 ) =>
 	Object.values(peripheral.signals).reduce<

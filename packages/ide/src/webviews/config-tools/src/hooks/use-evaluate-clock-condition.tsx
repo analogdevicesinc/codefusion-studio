@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,17 +12,18 @@
  * limitations under the License.
  *
  */
-import {useClockNodesConfig} from '../state/slices/clock-nodes/clockNodes.selector';
-import {useAssignedPins} from '../state/slices/pins/pins.selector';
 import {evaluateClockCondition} from '../utils/rpn-expression-resolver';
+import {useGlobalConfig} from './use-global-config';
 
 export function useEvaluateClockCondition() {
-	const nodesConfig = useClockNodesConfig();
-	const assignedPins = useAssignedPins();
+	const globalConfig = useGlobalConfig();
 
 	const evaluateFn = (condition: string, currentNode?: string) =>
 		evaluateClockCondition(
-			{clockconfig: nodesConfig, assignedPins, currentNode},
+			{
+				...globalConfig,
+				currentNode
+			},
 			condition
 		);
 

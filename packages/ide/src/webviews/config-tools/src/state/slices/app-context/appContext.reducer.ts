@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,21 @@ import type {NavigationItem} from '@common/types/navigation';
 import {navigationItems} from '@common/constants/navigation';
 import type {RegisterDictionary} from '@common/types/soc';
 import type {CodeGenerationProject} from 'cfs-lib/dist/types/code-generation';
+import {PINCONFIG_SEARCH_SCOPES} from '../../../screens/pinmux/constants/search-scope';
+import type {
+	McubootEnableOption,
+	KeyData
+} from '../../../types/workspace-settings';
 
-export type Filter =
+export type AssignmentFilter =
 	| 'assigned'
 	| 'available'
 	| 'conflict'
 	| 'reserved'
 	| undefined;
+
+export type PinconfigSearchScope =
+	(typeof PINCONFIG_SEARCH_SCOPES)[keyof typeof PINCONFIG_SEARCH_SCOPES];
 
 type AppContextState = {
 	activeScreen: NavigationItem;
@@ -36,11 +44,15 @@ type AppContextState = {
 			pin?: string;
 		};
 	};
-	isAllocatingCore: boolean;
 	registersScreen: {
 		registers: RegisterDictionary[];
 	};
-	filter: Filter;
+	filter: {
+		pinconfig: {
+			assignment: AssignmentFilter;
+			searchScope: PinconfigSearchScope;
+		};
+	};
 	searchString: {
 		register: string;
 		pinconfig: string;
@@ -53,7 +65,7 @@ type AppContextState = {
 		openProjectCards: string[];
 		openTypeCards: string[];
 	};
-	isProjectSelectionView: boolean;
+	projectSelectionConfig: Record<string, string> | undefined;
 	newPeripheralAssignment?: {
 		peripheral: string | undefined;
 		projectId: string | undefined;
@@ -72,6 +84,10 @@ type AppContextState = {
 	peripheralScreen: {
 		openProjectCards: string[];
 	};
+	activeSettingsPage: string;
+	activeSettingsChild: string;
+	mcubootEnableState: McubootEnableOption;
+	signingKeys: KeyData[];
 };
 
 export const appContextInitialState: AppContextState = {
@@ -79,11 +95,15 @@ export const appContextInitialState: AppContextState = {
 	configScreen: {
 		activeConfiguredSignalId: {}
 	},
-	isAllocatingCore: false,
 	registersScreen: {
 		registers: []
 	},
-	filter: undefined,
+	filter: {
+		pinconfig: {
+			assignment: undefined,
+			searchScope: PINCONFIG_SEARCH_SCOPES.PINS
+		}
+	},
 	searchString: {
 		register: '',
 		pinconfig: ''
@@ -96,7 +116,7 @@ export const appContextInitialState: AppContextState = {
 		openProjectCards: [],
 		openTypeCards: []
 	},
-	isProjectSelectionView: false,
+	projectSelectionConfig: undefined,
 	newPeripheralAssignment: {
 		peripheral: undefined,
 		projectId: undefined
@@ -108,7 +128,11 @@ export const appContextInitialState: AppContextState = {
 	peripheralErrorCount: {},
 	peripheralScreen: {
 		openProjectCards: []
-	}
+	},
+	activeSettingsPage: '',
+	activeSettingsChild: '',
+	mcubootEnableState: 'default',
+	signingKeys: []
 };
 
 const appContextSlice = createSlice({
@@ -153,11 +177,17 @@ const appContextSlice = createSlice({
 						}
 					: {};
 		},
-		setIsAllocatingCore(state, {payload}: PayloadAction<boolean>) {
-			state.isAllocatingCore = payload;
+		setActivePinconfigAssignmentFilter(
+			state,
+			{payload}: PayloadAction<AssignmentFilter>
+		) {
+			state.filter.pinconfig.assignment = payload;
 		},
-		setActiveFilter(state, {payload}: PayloadAction<Filter>) {
-			state.filter = payload;
+		setActivePinconfigSearchScope(
+			state,
+			{payload}: PayloadAction<PinconfigSearchScope>
+		) {
+			state.filter.pinconfig.searchScope = payload;
 		},
 		setActiveSearchString(
 			state,
@@ -212,11 +242,11 @@ const appContextSlice = createSlice({
 		setOpenTypeCards(state, {payload}: PayloadAction<string[]>) {
 			state.memoryScreen.openTypeCards = payload;
 		},
-		setProjectSelectionView(
+		setProjectSelectionConfig(
 			state,
-			{payload}: PayloadAction<boolean>
+			{payload}: PayloadAction<Record<string, string> | undefined>
 		) {
-			state.isProjectSelectionView = payload;
+			state.projectSelectionConfig = payload;
 		},
 		setNewPeripheralAssignment(
 			state,
@@ -278,6 +308,26 @@ const appContextSlice = createSlice({
 			{payload}: PayloadAction<string[]>
 		) {
 			state.peripheralScreen.openProjectCards = payload;
+		},
+		setActiveSettingsPage(state, {payload}: PayloadAction<string>) {
+			state.activeSettingsPage = payload;
+		},
+		setActiveSettingsChild(state, {payload}: PayloadAction<string>) {
+			state.activeSettingsChild = payload;
+		},
+		setMcubootEnableState(
+			state,
+			{payload}: PayloadAction<McubootEnableOption>
+		) {
+			state.mcubootEnableState = payload;
+		},
+		addSigningKey(state, {payload}: PayloadAction<KeyData>) {
+			state.signingKeys = [...state.signingKeys, payload];
+		},
+		removeSigningKey(state, {payload}: PayloadAction<number>) {
+			state.signingKeys = state.signingKeys.filter(
+				(_, index) => index !== payload
+			);
 		}
 	}
 });
@@ -287,8 +337,8 @@ export const {
 	setActiveScreenSubscreens,
 	setActiveScreenSubscreen,
 	setActiveConfiguredSignal,
-	setIsAllocatingCore,
-	setActiveFilter,
+	setActivePinconfigAssignmentFilter,
+	setActivePinconfigSearchScope,
 	setActiveSearchString,
 	setMemoryTypeFilter,
 	setProjectFilter,
@@ -297,11 +347,16 @@ export const {
 	setMemoryScreenActiveView,
 	setOpenProjectCards,
 	setOpenTypeCards,
-	setProjectSelectionView,
+	setProjectSelectionConfig,
 	setNewPeripheralAssignment,
 	setPeripheralErrorCount,
 	setNewSignalAssignment,
-	setPeripheralScreenOpenProjectCards
+	setPeripheralScreenOpenProjectCards,
+	setActiveSettingsPage,
+	setActiveSettingsChild,
+	setMcubootEnableState,
+	addSigningKey,
+	removeSigningKey
 } = appContextSlice.actions;
 
 export const appContextReducer = appContextSlice.reducer;

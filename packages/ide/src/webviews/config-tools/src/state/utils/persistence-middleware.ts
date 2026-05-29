@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ import {
 } from '../slices/pins/pins.reducer';
 import {
 	type ClockNodeSet,
-	setClockNodeControlValue,
-	setDiagramData
+	setClockNodeControlValue
 } from '../slices/clock-nodes/clockNodes.reducer';
 import {updatePersistedConfig} from '../../utils/api';
 import {getPrimaryProjectId} from '../../utils/config';
@@ -63,11 +62,23 @@ import {
 	removeSignalAssignment
 } from '../slices/peripherals/peripherals.reducer';
 import type {
-	PinDictionary,
-	ClockNodesDictionary
+	AppliedSignal,
+	ClockNodesDictionary,
+	PinState
 } from '../../../../common/types/soc';
+import type {PeripheralConfig} from '../../types/peripherals';
 import type {ControlErrorTypes} from '@common/types/errorTypes';
 import {getClockCanvas} from '../../utils/clock-canvas';
+import {
+	computeClockNodesStatus,
+	type ClockNodeStatus
+} from '../../utils/clock-evaluation';
+import {computeFrequencies} from '../../utils/rpn-expression-resolver';
+import {
+	selectAppliedSignalsMap,
+	selectAssignedPins
+} from '../slices/pins/pins.selector';
+import {selectPeripheralAllocations} from '../slices/peripherals/peripherals.selector';
 
 export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 	[
@@ -77,6 +88,12 @@ export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 		setAppliedSignalControlValue,
 		setResetControlValues,
 		setClockNodeControlValue,
+		// NOTE: clock node Errors are stored on the clockNodes slice.
+		// When a control validation error is set/cleared, we must persist
+		// the updated ClockNodes (and derived ClockFrequencies) as well.
+		// The clock-nodes reducer reuses the same action creator type
+		// (`ClockNodeSet`) for both value and error updates, so we only
+		// need to listen to `setClockNodeControlValue` here.
 		assignCoprogrammedSignal,
 		removeAppliedCoprogrammedSignals,
 		createPartition,
@@ -89,8 +106,7 @@ export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 		setSignalAssignment,
 		setSignalGroupAssignment,
 		setPeripheralDescription,
-		setSignalDescription,
-		setDiagramData
+		setSignalDescription
 	];
 
 let lastModifiedClockNode:
@@ -102,20 +118,51 @@ let lastModifiedClockNode:
 	  }
 	| undefined;
 
-function getModifiedClockNodes(
-	clockNodes: ClockNodesDictionary,
-	pins: PinDictionary,
-	diagramData: Record<
-		string,
-		{enabled: boolean | undefined; error: boolean | undefined}
-	>
-) {
-	const assignedPins = Object.values(pins).filter(
-		pin => pin.appliedSignals.length
-	);
+type ClockPersistenceContext = {
+	clockNodes: ClockNodesDictionary;
+	assignedPins: PinState[];
+	pinConfig: Record<string, AppliedSignal>;
+	peripheralConfig: Record<string, Record<string, PeripheralConfig>>;
+	nodeStatuses: Record<string, ClockNodeStatus>;
+};
 
+function computeNodeStatuses(
+	clockNodes: ClockNodesDictionary,
+	assignedPins: PinState[],
+	pinConfig: Record<string, AppliedSignal>,
+	peripheralConfig: Record<string, Record<string, PeripheralConfig>>
+): Record<string, ClockNodeStatus> {
+	const globalConfig = {
+		clockconfig: clockNodes,
+		pinconfig: pinConfig,
+		peripheralconfig: peripheralConfig,
+		assignedPins
+	};
+
+	const computedFrequencies = computeFrequencies(globalConfig);
+
+	return computeClockNodesStatus(
+		clockNodes,
+		computedFrequencies,
+		globalConfig
+	);
+}
+
+function getModifiedClockNodes({
+	clockNodes,
+	assignedPins,
+	pinConfig,
+	peripheralConfig,
+	nodeStatuses
+}: ClockPersistenceContext) {
 	const projectId = getPrimaryProjectId();
 	const canvas = getClockCanvas();
+	const baseGlobalConfig = {
+		clockconfig: clockNodes,
+		pinconfig: pinConfig,
+		peripheralconfig: peripheralConfig,
+		assignedPins
+	};
 
 	return Object.values(clockNodes)
 		.filter(clockNode =>
@@ -125,15 +172,14 @@ function getModifiedClockNodes(
 			)
 		)
 		.filter(clockNode => {
-			const nodeData = diagramData[clockNode.Name];
+			const nodeStatus = nodeStatuses[clockNode.Name];
 
-			// Include the node only if it doesn't exist in diagram data or is explicitly enabled
-			return Boolean(nodeData?.enabled);
+			// Include the node only if it is enabled
+			return nodeStatus?.enabled ?? false;
 		})
 		.map(clockNode => {
 			const globalConfig: GlobalConfig = {
-				clockconfig: clockNodes,
-				assignedPins,
+				...baseGlobalConfig,
 				currentNode: clockNode.Name
 			};
 
@@ -194,16 +240,31 @@ export function getPersistenceListenerMiddleware(
 				let updatedPins;
 				let updatedProjects;
 				let clockFrequencies;
+				let nodeStatuses: Record<string, ClockNodeStatus> | undefined;
 
 				if (
 					action.type.includes('Pins') ||
 					action.type.includes('ClockConfig')
 				) {
-					modifiedClockNodes = getModifiedClockNodes(
+					const assignedPins = selectAssignedPins(state);
+					const pinConfig = selectAppliedSignalsMap(state);
+					const peripheralConfig = selectPeripheralAllocations(state);
+
+					// Compute node statuses and modified nodes from current state
+					nodeStatuses = computeNodeStatuses(
 						state.clockNodesReducer.clockNodes,
-						state.pinsReducer.pins,
-						state.clockNodesReducer.diagramData
+						assignedPins,
+						pinConfig,
+						peripheralConfig
 					);
+
+					modifiedClockNodes = getModifiedClockNodes({
+						clockNodes: state.clockNodesReducer.clockNodes,
+						assignedPins,
+						pinConfig,
+						peripheralConfig,
+						nodeStatuses
+					});
 
 					if (action.type.includes('Pins')) {
 						updatedPins = formatPinPersistencePayload(
@@ -218,16 +279,22 @@ export function getPersistenceListenerMiddleware(
 						if (name) {
 							lastModifiedClockNode =
 								formatClockNodePersistencePayload(payload);
-
-							return;
 						}
 
 						if (lastModifiedClockNode === undefined) return;
 
-						// Given that the diagram is updated after the sidebar selection is done
-						// we need to wait for this action to acccess correctly the last diagram state data
+						// Use latest node statuses to filter clock frequencies
+						if (!nodeStatuses) {
+							nodeStatuses = computeNodeStatuses(
+								state.clockNodesReducer.clockNodes,
+								assignedPins,
+								pinConfig,
+								peripheralConfig
+							);
+						}
+
 						clockFrequencies = filterClockFrequencies(
-							state.clockNodesReducer.diagramData,
+							nodeStatuses,
 							getClockFrequencyDictionary()
 						);
 						updatedClockNode = lastModifiedClockNode;
@@ -245,7 +312,8 @@ export function getPersistenceListenerMiddleware(
 					action.type.includes('Peripherals') ||
 					action.type === 'Pins/setAppliedSignalControlValue' ||
 					action.type === 'Pins/setResetControlValues' ||
-					action.type === 'Pins/setAppliedSignal' // NOTE we need this as a newly enabled pin gets configs assigned in this step.
+					action.type === 'Pins/setAppliedSignal' || // NOTE we need this as a newly enabled pin gets configs assigned in this step.
+					action.type === 'Pins/removeAppliedSignal' // NOTE we need this as when deleting a signal from a project, we delay persisting the project changes until we update the pins, to avoid a race condition
 				) {
 					updatedProjects = formatProjectPersistencePayload(
 						state.partitionsReducer.partitions,

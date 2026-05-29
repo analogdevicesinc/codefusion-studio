@@ -18,7 +18,7 @@ import styles from './screen-loader.module.scss';
 import useFilteredNavigationIcons from '../../hooks/use-filtered-navigation-icons';
 
 export default function ScreenLoader() {
-	const filteredIcons = useFilteredNavigationIcons();
+	const {mainIcons, footerIcons} = useFilteredNavigationIcons();
 
 	return (
 		<div className={styles.loadingContainer}>
@@ -28,7 +28,8 @@ export default function ScreenLoader() {
 			<div className={styles.mainContentLoading}>
 				<CfsNavigation
 					activeScreen=''
-					availableIcons={filteredIcons}
+					availableIcons={mainIcons}
+					footerIcons={footerIcons}
 					onNavItemClick={() => {
 						void 0;
 					}}

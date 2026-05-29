@@ -13,16 +13,21 @@
  *
  */
 @use '#colors' as colors;
+@use '#layout' as layout;
 
 .container {
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
-	width: 48px;
+	width: layout.$side-nav-width;
 	border: 1px solid colors.$default-border;
 	border-top: 0;
 	border-bottom: 0;
 	background: colors.$navigation-background;
 	color: colors.$default-foreground;
 	height: 100%;
+}
+
+.footer {
+	flex: 1;
 }

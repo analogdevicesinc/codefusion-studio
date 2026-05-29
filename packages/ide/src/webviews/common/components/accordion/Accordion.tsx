@@ -84,6 +84,7 @@ export default function Accordion({
 		>
 			<section
 				className={`${styles.header} ${highlight ? styles.highlight : ''}`}
+				tabIndex={0}
 				onClick={() => {
 					toggleExpand(id ?? title);
 				}}

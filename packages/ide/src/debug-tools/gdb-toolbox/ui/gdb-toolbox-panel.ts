@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 
 import * as vscode from "vscode";
 import { ScriptManager } from "../scripts/script-manager";
-import { onBreakpointChanged } from "../services/debug-event-hooks";
 import { EXECUTE_GDB_SCRIPT_COMMAND_ID } from "../../../commands/constants";
 import { EXECUTE_SCRIPT } from "./constants";
 import { extractSessionId } from "../../../utils/utils";
 import { GDBToolbox } from "../core/gdb-toolbox";
+import { CfsDebugManager } from "../../debug-manager";
 
 /**
  * GdbToolboxPanel provides the tree view for the GDB Toolbox in the VS Code UI.
@@ -57,7 +57,10 @@ export class GdbToolboxPanel
     this.refresh();
   }
 
-  constructor(private scriptManager: ScriptManager) {
+  constructor(
+    private scriptManager: ScriptManager,
+    private debugManager: CfsDebugManager,
+  ) {
     // Refresh the panel when scripts change or debug session events occur
     this.scriptManager.onScriptsChanged(() => this.refresh());
     vscode.debug.onDidChangeActiveDebugSession((session) => {
@@ -85,43 +88,50 @@ export class GdbToolboxPanel
       this.refresh();
     });
 
-    // Listen for breakpoint changes to update the panel, session-specific
-    onBreakpointChanged(async ({ sessionId, isHit }) => {
-      if (sessionId) {
-        this.breakpointState.set(sessionId, isHit);
-        // --- Detect and store core type on breakpoint event ---
+    // Listen for halt events (breakpoints, pauses, etc.) to update the panel
+    this.debugManager.onStartSession((cfsSession) => {
+      const sessionId = cfsSession.vscodeSession.id;
+
+      const haltDisposable = cfsSession.onHalt(async () => {
+        this.breakpointState.set(sessionId, true);
+        // --- Detect and store core type on halt event ---
         try {
           if (!(globalThis as any).sessionCoreMap) {
             (globalThis as any).sessionCoreMap = new Map();
           }
-          let session: vscode.DebugSession | undefined = undefined;
-          if (this.activeSession && this.activeSession.id === sessionId) {
-            session = this.activeSession;
+          const executor = GDBToolbox.getInstance().getExecutor();
+          const result = await executor.executeCommand(
+            { command: "show architecture" },
+            [],
+            cfsSession.vscodeSession,
+          );
+          let core = "";
+          if (typeof result === "string") {
+            const lower = result.toLowerCase();
+            if (lower.includes("arm")) core = "arm";
+            else if (lower.includes("riscv")) core = "riscv";
+            else if (lower.includes("xtensa")) core = "xtensa";
+            else core = lower.split(" ")[0];
           }
-          if (session) {
-            const executor = GDBToolbox.getInstance().getExecutor();
-            const result = await executor.executeCommand(
-              { command: "show architecture" },
-              [],
-              session,
-            );
-            let core = "";
-            if (typeof result === "string") {
-              const lower = result.toLowerCase();
-              if (lower.includes("arm")) core = "arm";
-              else if (lower.includes("riscv")) core = "riscv";
-              else if (lower.includes("xtensa")) core = "xtensa";
-              else core = lower.split(" ")[0];
-            }
-            (globalThis as any).sessionCoreMap.set(sessionId, core);
-          }
+          (globalThis as any).sessionCoreMap.set(sessionId, core);
         } catch (err) {
           if ((globalThis as any).sessionCoreMap) {
             (globalThis as any).sessionCoreMap.delete(sessionId);
           }
         }
-      }
-      this.refresh();
+        this.refresh();
+      });
+
+      const continueDisposable = cfsSession.onContinue(() => {
+        this.breakpointState.set(sessionId, false);
+        this.refresh();
+      });
+
+      // Clean up listeners when session stops
+      cfsSession.onStop(() => {
+        haltDisposable.dispose();
+        continueDisposable.dispose();
+      });
     });
   }
 
@@ -205,11 +215,21 @@ export class GdbToolboxPanel
       const filter = this.getFilter(session.id);
       if (filter) {
         const q = filter.toLowerCase();
-        scripts = scripts.filter(
-          (s) =>
+
+        const matches = (v: string | string[] | undefined) =>
+          v &&
+          (typeof v === "string"
+            ? v.toLowerCase() === q
+            : v.some((i) => i.toLowerCase() === q));
+
+        scripts = scripts.filter((s) => {
+          return (
             s.name.toLowerCase().includes(q) ||
-            (s.description && s.description.toLowerCase().includes(q)),
-        );
+            (s.description && s.description.toLowerCase().includes(q)) ||
+            matches(s.core) ||
+            matches(s.firmwarePlatform)
+          );
+        });
       }
 
       scripts.sort((a, b) => a.name.localeCompare(b.name));

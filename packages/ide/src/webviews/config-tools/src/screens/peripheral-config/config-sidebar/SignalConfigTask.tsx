@@ -34,10 +34,13 @@ import {
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {getProjectInfoList} from '../../../utils/config';
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
+import {getPinByPeripheralSignal} from '../../../utils/soc-pins';
+import {setPinDetailsTargetPin} from '../../../state/slices/pins/pins.reducer';
 
 function SignalConfigTask() {
 	const dispatch = useAppDispatch();
 	const [peripheral, signal] = useActiveSignal()?.split(' ') ?? [];
+	const activePin = getPinByPeripheralSignal(peripheral, signal);
 	const isPinAssignmentMissing = useIsPinAssignmentMissing(
 		signal,
 		peripheral
@@ -69,9 +72,10 @@ function SignalConfigTask() {
 					dispatch(
 						setActiveSearchString({
 							searchContext: 'pinconfig',
-							value: `${signal} `
+							value: ''
 						})
 					);
+					dispatch(setPinDetailsTargetPin(activePin?.Name));
 					dispatch(setActiveScreen(navigationItems.pinmux));
 				}}
 				onConfigurationClick={() => {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import type {
 	ConfiguredPeripheral as Peripheral,
 	ConfiguredProject as Project,
 	CfsConfig
-} from 'cfs-plugins-api';
+} from 'cfs-types';
 
 export type ConfiguredPin = Pin;
 
@@ -53,6 +53,13 @@ if ((window as any).acquireVsCodeApi instanceof Function) {
 
 export function mockVsCodeApi(mockImplementation: WebviewApi<any>) {
 	vscode = mockImplementation;
+}
+
+/**
+ * Signal to the extension that the SEV webview is ready to receive data
+ */
+export function signalReady() {
+	vscode?.postMessage({type: 'sev-ready'});
 }
 
 // Unique message id for each request-response message pair, used to match the response to a specific request
@@ -172,8 +179,12 @@ export async function exportCSV(
 	}) as Promise<string | undefined>;
 }
 
-export async function openFile(filePath: string) {
-	return request('open-file', {filePath}) as Promise<void>;
+export async function openFile(filePath: string, editor?: string) {
+	return request('open-file', {filePath, editor}) as Promise<void>;
+}
+
+export async function documentReload() {
+	return request('document--reload') as Promise<void>;
 }
 
 export async function selectFile(
@@ -187,6 +198,34 @@ export async function selectFile(
 	return request('select-file', options) as Promise<
 		string | undefined
 	>;
+}
+
+export async function readPemAlgorithm(filePath: string) {
+	return request('read-pem-algorithm', {
+		filePath
+	}) as Promise<string>;
+}
+
+export async function checkDirectoryExists(dirPath: string) {
+	return request('check-directory-exists', {
+		dirPath
+	}) as Promise<boolean>;
+}
+
+export async function generatePemKey(
+	filePath: string,
+	algorithm: string
+) {
+	return request('generate-pem-key', {
+		filePath,
+		algorithm
+	}) as Promise<void>;
+}
+
+export async function getFileSize(filePath: string) {
+	return request('get-file-size', {
+		filePath
+	}) as Promise<number>;
 }
 
 export async function getPreference(id: string) {

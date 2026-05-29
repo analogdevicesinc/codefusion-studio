@@ -23,14 +23,26 @@ export interface CfsPackage {
 	reference: CfsPackageReference;
 	description: string;
 	license: string;
+	/**
+	 * Full license text content associated with this package.
+	 * Contains the contents of the LICENSE file, not a filesystem path.
+	 */
+	licenseText?: string;
 	cfsVersion: string;
 	soc?: string[];
 	type?: string;
+	components?: CfsPackageComponent[];
 }
 
 export interface CfsInstalledPackage extends CfsPackageReference {
 	path: string;
 	type?: string;
+	components?: CfsPackageComponent[];
+}
+
+export interface CfsCachedPackage {
+	reference: CfsPackageReference;
+	isInstalled: boolean;
 }
 
 export interface CfsPackageRemote {
@@ -50,6 +62,19 @@ export interface CfsPackageRemoteCredential {
 	password: string;
 }
 
+export interface CfsPackageComponent {
+	name: string;
+	version: string;
+	type?: string;
+}
+
+export interface CfsPackageFilter {
+	cfsVersion?: string;
+	soc?: string | string[]; // string array for backward compatibility. We need to check if this is actually useful.
+	type?: string | string[]; // string array for backward compatibility. We need to check if this is actually useful.
+	component?: Partial<CfsPackageComponent>;
+}
+
 export type CfsPackageRemoteAuth =
 	/**
 	 * Authentication information for a remote.
@@ -63,12 +88,16 @@ export type CfsPackageRemoteAuth =
 
 export interface CfsPackageInstallOptions {
 	/**
-	 * If true, installation will be atempted only from
+	 * If true, installation will be attempted only from
 	 * local cache (No remote servers will be contacted).
 	 *
 	 * @default false
 	 */
 	localOnly?: boolean;
+	/**
+	 * If true, the license will be accepted during installation.
+	 */
+	acceptLicense?: boolean;
 }
 
 export interface CfsPackageRemoteCredentialProvider {
@@ -94,6 +123,72 @@ export interface CfsPackageRemoteCredentialProvider {
 	refreshRemoteCredential(url: string): Promise<void>;
 }
 
+/**
+ * Reports package license acceptance to an external backend.
+ */
+export interface CfsPackageLicenseReporter {
+	/**
+	 * Reports acceptance for one or more packages.
+	 *
+	 * @param packages - One or more package references to report acceptance for
+	 */
+	reportLicenseAcceptance(
+		packages: CfsPackageReference | CfsPackageReference[]
+	): Promise<void>;
+}
+
+/**
+ * Represents a package that requires license acceptance during installation.
+ */
+export interface CfsPackageLicenseInfo {
+	/** Package reference */
+	reference: CfsPackageReference;
+	/** SPDX license identifier (e.g., "Apache-2.0", "MIT") */
+	license: string;
+	/** Full license text content, if available */
+	licenseText?: string;
+}
+
+/**
+ * Installation plan returned by getInstallPlan().
+ * Provides all information needed to make UI decisions before installation.
+ */
+export interface CfsInstallPlan {
+	/**
+	 * Packages that will be installed.
+	 *
+	 * These are the directly requested packages that are not currently present
+	 * in .cfsPackages (i.e., not installed).
+	 *
+	 * NOTE: This list contains only the explicitly requested packages.
+	 * Transitive dependencies are resolved during actual installation.
+	 */
+	toInstall: CfsPackageReference[];
+
+	/**
+	 * Packages that are already installed (present in .cfsPackages) and will be skipped.
+	 */
+	alreadyInstalled: CfsPackageReference[];
+
+	/**
+	 * Subset of `toInstall` that require explicit license acceptance.
+	 * A package requires license acceptance if:
+	 * - It has a license file, AND
+	 * - It is not already in the Conan cache (meaning license was not previously accepted)
+	 *
+	 * Empty if all packages are either cached or don't require license acceptance.
+	 */
+	requiresLicenseAcceptance: CfsPackageLicenseInfo[];
+}
+
+/**
+ * Input for getInstallPlan() - accepts multiple formats for flexibility.
+ */
+export type CfsInstallInput =
+	| CfsPackageReference // Single package
+	| CfsPackageReference[] // Multiple packages
+	| string; // Manifest file path
+
 export interface CfsPackageManagerProvider {
 	/**
 	 * Initializes package manager. This method must be called before any other action is performed
@@ -108,17 +203,30 @@ export interface CfsPackageManagerProvider {
 	 * Retrieve a list of installed packages.
 	 *
 	 * @param pattern? - Optional pattern to be matched with package names.
-	 * @param filter? - Optional Record parameter with a string or an array of string values. If present, only packages
-	 *                  with metadata that matches all the provided filter properties will be returned.
-	 *                  When the package metadata property is a list of strings, it is enough if one of the elements
-	 *                  of the list match the filter
+	 * @param filter? - Optional CfsPackageFilter parameter. If present, only packages with metadata that matches
+	 *                  all the provided filter properties will be returned.
+	 *                  When soc and type is passed as a list of strings, it is enough if one of the elements
+	 *                  of the list match the filter.
+	 *                  If component is passed, the filter will match if the package contains at least one component
+	 *                  that matches all the provided component properties.
+	 *                  Component versions can be defined as version ranges using semver syntax, for example "^1.0.0"
+	 *                  or ">=1.0.0 <2.0.0". In that case, the filter will match if the package contains at least one
+	 *                  component with a version that satisfies the range.
 	 *
 	 * @returns A list of package references of all the installed packages which name match pattern if specified.
 	 */
 	list(
 		pattern?: string,
-		filter?: Record<string, string | string[]>
+		filter?: CfsPackageFilter
 	): Promise<CfsPackageReference[]>;
+
+	/**
+	 * Retrieve a list of packages in the local cache (both installed and cached-only).
+	 *
+	 * @param pattern? - Optional pattern to be matched with package names.
+	 * @returns A list of cached packages with their reference and installation status.
+	 */
+	listCache(pattern?: string): Promise<CfsCachedPackage[]>;
 
 	/**
 	 * Retrieve packages available for install.
@@ -130,6 +238,34 @@ export interface CfsPackageManagerProvider {
 	search(pattern: string): Promise<CfsPackageReference[]>;
 
 	/**
+	 * Similar to search method , but this one also returns the metadata of each of the packages so a later
+	 * call to getPackageInfo is not needed. Additionally, this method includes a filter argument
+	 * that allows to refine the returned packages based on their metadata.
+	 *
+	 * It must be noted that since this methods retrieves data for each package that matches pattern,
+	 * it may be significantly slower than search method,
+	 * so it should be used only when the additional data or filtering is needed
+	 *
+	 * @param pattern - A pattern in the form pkg_name/version that may contain '*' as a wildcard character.
+	 *                  Pattern 'my_pkg/*' will return all available versions for 'my_pkg'
+	 * @param filter? - Optional CfsPackageFilter parameter. If present, only packages with metadata that matches
+	 *                  all the provided filter properties will be returned.
+	 *                  When soc and type is passed as a list of strings, it is enough if one of the elements
+	 *                  of the list match the filter.
+	 *                  If component is passed, the filter will match if the package contains at least one component
+	 *                  that matches all the provided component properties.
+	 *                  Component versions can be defined as version ranges using semver syntax, for example "^1.0.0"
+	 *                  or ">=1.0.0 <2.0.0". In that case, the filter will match if the package contains at least one
+	 *                  component with a version that satisfies the range.
+	 * @returns A list of CfsPackage instances of all the available packages which reference match pattern and
+	 *          filter (if provided).
+	 */
+	searchInfo(
+		pattern: string,
+		filter?: CfsPackageFilter
+	): Promise<CfsPackage[]>;
+
+	/**
 	 * Retrieve a given package metadata. The package does not need to be installed for this information to be retrieved.
 	 *
 	 * @param reference - Reference of a package in the form name/version
@@ -138,18 +274,45 @@ export interface CfsPackageManagerProvider {
 	getPackageInfo(reference: CfsPackageReference): Promise<CfsPackage>;
 
 	/**
-	 * Install a package, including all its dependencies.
+	 * Install one or more packages, including all their dependencies.
 	 *
-	 * @param reference - Reference of a package in the form name/version or an array of references. Semver is supported for version.
+	 * If any package requires license acceptance and `options.acceptLicense` is not set to `true`,
+	 * an error will be thrown listing the packages that require license acceptance.
+	 *
+	 * **Recommended usage pattern:**
+	 * 1. Call `getInstallPlan()` to analyze packages and get license information
+	 * 2. Present license information to user and get acceptance
+	 * 3. Call `install()` with `acceptLicense: true` for packages the user accepted
+	 *
+	 * @example
+	 * ```typescript
+	 * const plan = await pm.getInstallPlan(input);
+	 * if (plan.requiresLicenseAcceptance.length > 0) {
+	 *   const userAccepted = await promptUserForLicense(plan);
+	 *   if (userAccepted) {
+	 *     await pm.install(plan.toInstall, { acceptLicense: true });
+	 *   }
+	 * } else {
+	 *   await pm.install(plan.toInstall, { acceptLicense: true });
+	 * }
+	 * ```
+	 *
+	 * @param references - A single package reference, an array of package references in the form name/version, or a CfsInstallPlan.
+	 *                     Semver is supported for version. When passing a CfsInstallPlan, the plan's toInstall list will be used
+	 *                     and license acceptance reporting will use the pre-computed license information.
 	 * @param options - Optional installation options. See CfsPackageInstallOptions for details.
-	 * @returns A list of package references of all the packages that where installed during this operation
+	 * @returns A list of package references of all the packages that were installed during this operation
+	 * @throws Error if any package requires license acceptance and `acceptLicense` is not true
 	 */
 	// TODO:
-	//  - Support a path to a manifest file instead of a reference
+	//  - Support version ranges
 	//  - Support version omission (with a potential "update" argument that decides
 	//    whether to go with latest available version or do nothing if already installed)
 	install(
-		reference: CfsPackageReference | CfsPackageReference[],
+		references:
+			| CfsPackageReference
+			| CfsPackageReference[]
+			| CfsInstallPlan,
 		options?: CfsPackageInstallOptions
 	): Promise<CfsPackageReference[]>;
 
@@ -187,16 +350,25 @@ export interface CfsPackageManagerProvider {
 	/**
 	 * Retrieve package information for installed packages
 	 *
-	 * @param filter - Optional filter object to filter packages by properties (e.g., { type: "tool", soc: "max32690" })
+	 * @param filter? - Optional CfsPackageFilter parameter. If present, only packages with metadata that matches
+	 *                  all the provided filter properties will be returned.
+	 *                  When soc and type is passed as a list of strings, it is enough if one of the elements
+	 *                  of the list match the filter.
+	 *                  If component is passed, the filter will match if the package contains at least one component
+	 *                  that matches all the provided component properties.
+	 *                  Component versions can be defined as version ranges using semver syntax, for example "^1.0.0"
+	 *                  or ">=1.0.0 <2.0.0". In that case, the filter will match if the package contains at least one
+	 *                  component with a version that satisfies the range.
+	 *
 	 * @returns An array of CfsInstalledPackage objects with package name, version, path, and type
 	 */
 	getInstalledPackageInfo(
-		filter?: Record<string, string | string[]>
+		filter?: CfsPackageFilter
 	): Promise<CfsInstalledPackage[]>;
 
 	/**
 	 * Retrieves a list of all the dependencies of a given package, including transitive dependencies.
-	 * This method can be run on any available package, not necesarily installed.
+	 * This method can be run on any available package, not necessarily installed.
 	 *
 	 * @param reference - Reference of a package in the form name/version.
 	 * @returns A list of package references of all packages that are needed to install for the given package
@@ -272,26 +444,79 @@ export interface CfsPackageManagerProvider {
 	logout(remote: string): Promise<void>;
 
 	/**
-	 * Install packages from a manifest file. Checks if each package is already installed,
-	 * and installs only those that are not yet installed.
+	 * Installs packages from a manifest file. For each package listed in the manifest,
+	 * checks if it is already installed and installs only those that are not yet installed.
 	 *
-	 * @param manifestPath - Path to a manifest file containing the list of packages to install
+	 * @param manifestPath - Path to a manifest file containing the list of packages to install.
 	 * @param options - Optional installation options. See CfsPackageInstallOptions for details.
-	 * @returns A list of package references of all the packages that were installed during this operation
+	 * @returns An object containing:
+	 *   - installed: A list of package references that were installed during this operation.
+	 *   - skipped: A list of package references that require license acceptance but were not installed because the license was not accepted.
 	 */
 	installFromManifest(
 		manifestPath: string,
 		options?: CfsPackageInstallOptions
-	): Promise<CfsPackageReference[]>;
+	): Promise<{
+		installed: CfsPackageReference[];
+		skipped: CfsPackageReference[];
+	}>;
 
 	/**
 	 * Checks a manifest file and returns a list of packages that need to be installed.
 	 * Does not perform any installation, only checks what's missing.
 	 *
+	 * @deprecated Use {@link getInstallPlan} instead, which provides richer information
+	 * including license requirements and already installed packages.
+	 *
 	 * @param manifestPath - Path to a manifest file containing the list of packages to check
 	 * @returns A list of package references that need to be installed
 	 */
 	checkManifest(manifestPath: string): Promise<CfsPackageReference[]>;
+
+	/**
+	 * Returns an installation plan for the requested packages without performing
+	 * any installation.
+	 *
+	 * This method analyzes only the explicitly requested (top-level) packages:
+	 * - Checks which packages are already installed (.cfsPackages)
+	 * - Checks which packages are in local cache (license previously accepted)
+	 * - Identifies which uncached packages require license acceptance
+	 * - Returns license text for packages requiring acceptance
+	 *
+	 * NOTE: This method does not expand or resolve transitive dependencies.
+	 * Dependency resolution is performed during actual installation.
+	 *
+	 * **Recommended workflow:**
+	 * 1. Call `getInstallPlan()` with desired packages or manifest
+	 * 2. If `requiresLicenseAcceptance` is non-empty, show licenses and get user consent
+	 * 3. Based on user's choice, filter `toInstall` and call `install()` with `acceptLicense: true`
+	 *
+	 * @param input - Package reference(s) or path to a manifest file
+	 * @returns Installation plan with all pre-flight information
+	 *
+	 * @example
+	 * ```typescript
+	 * // Get the plan
+	 * const plan = await pm.getInstallPlan("/path/to/.cfsdependencies");
+	 *
+	 * // Handle license acceptance
+	 * let packagesToInstall = plan.toInstall;
+	 * if (plan.requiresLicenseAcceptance.length > 0) {
+	 *   const userAccepted = await showLicensePrompt(plan.requiresLicenseAcceptance);
+	 *   if (!userAccepted) {
+	 *     // Filter out packages requiring license
+	 *     const licensedRefs = new Set(plan.requiresLicenseAcceptance.map(p => `${p.reference.name}/${p.reference.version}`));
+	 *     packagesToInstall = plan.toInstall.filter(p => !licensedRefs.has(`${p.name}/${p.version}`));
+	 *   }
+	 * }
+	 *
+	 * // Install the packages
+	 * if (packagesToInstall.length > 0) {
+	 *   await pm.install(packagesToInstall, { acceptLicense: true });
+	 * }
+	 * ```
+	 */
+	getInstallPlan(input: CfsInstallInput): Promise<CfsInstallPlan>;
 
 	/**
 	 * Registers a credential provider for use with the package manager
@@ -324,4 +549,18 @@ export interface CfsPackageManagerProvider {
 		remote: string,
 		provider: string
 	): Promise<void>;
+
+	/**
+	 * Registers a license reporter for use during install flows.
+	 *
+	 * @param reporter - The license reporter to use
+	 */
+	registerLicenseReporter(
+		reporter: CfsPackageLicenseReporter
+	): Promise<void>;
+
+	/**
+	 * Unregisters the currently configured license reporter.
+	 */
+	unregisterLicenseReporter(): Promise<void>;
 }

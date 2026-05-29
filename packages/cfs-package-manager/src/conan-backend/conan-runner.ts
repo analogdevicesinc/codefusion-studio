@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,14 @@ export class ConanRunner {
 						}
 					);
 				}
+
+				if (stderr.includes("require license acceptance")) {
+					throw new ConanError(
+						"LICENSE_NOT_ACCEPTED",
+						"The package requires license acceptance. Accept the license to proceed with installation.",
+						{ cause: error }
+					);
+				}
 				// If stderr is available, use it as error message, otherwise use a generic message
 				throw new ConanError("EXEC_ERROR", stderr, {
 					cause: error
@@ -140,7 +148,8 @@ type ConanErrorCode =
 	| "EXEC_ERROR"
 	| "NO_REMOTE"
 	| "NET_ERROR"
-	| "UNKNOWN_ERROR";
+	| "UNKNOWN_ERROR"
+	| "LICENSE_NOT_ACCEPTED";
 
 export class ConanError<T extends ConanErrorCode> extends Error {
 	code: T;

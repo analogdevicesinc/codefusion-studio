@@ -12,18 +12,36 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
+import {Args, Command, Flags} from '@oclif/core';
 import {createWriteStream} from 'node:fs';
 import {createGzip} from 'node:zlib';
 
 import {getDataModelManager} from '../../utils/data-model-manager.js';
+import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 
 export default class Export extends Command {
+  static aliases = ['soc:export'];
+
+  static args = {
+    socName: Args.string({
+      description: 'SoC to export, not including package',
+      required: false // This is conditionally required based on legacy flag usage. Should be true in future major releases.
+    })
+  };
+
   static description =
     'Output the SoC data model for the specified SoC.';
 
+  static examples: string[] = [
+    '<%= config.bin %> <%= command.id %> max32690 --package tqfn'
+  ];
+
   static flags = {
+    package: Flags.string({
+      char: 'p',
+      summary: 'Package name of the SoC to be exported'
+    }),
     format: Flags.string({
       char: 'f',
       default: 'json',
@@ -31,7 +49,7 @@ export default class Export extends Command {
       options: ['json']
     }),
     gzip: Flags.boolean({
-      description: 'Gzip the output'
+      summary: 'Gzip the output'
     }),
     indent: Flags.string({
       char: 'i',
@@ -45,8 +63,17 @@ export default class Export extends Command {
     }),
     name: Flags.string({
       char: 'n',
-      summary: 'SoC name',
-      required: true
+      summary:
+        'SoC name. [DEPRECATED] Use SOCNAME positional argument and --package flag instead.',
+      deprecated: {
+        message:
+          '--name flag is deprecated. Use SOCNAME positional argument and --package flag instead.'
+      }
+    }),
+    version: Flags.string({
+      char: 'v',
+      summary:
+        'Optional Data model version (defaults to latest if not specified)'
     }),
     output: Flags.string({
       char: 'o',
@@ -56,13 +83,13 @@ export default class Export extends Command {
     'search-path': Flags.string({
       char: 's',
       summary:
-        'Additional custom search path(s) for SoC data models.',
+        'Additional custom search path for SoC data models. Can be used multiple times',
       multiple: true
     })
   };
 
   async run() {
-    const {flags} = await this.parse(Export);
+    const {args, flags} = await this.parse(Export);
 
     const customSearchPaths = flags['search-path'] ?? [];
     const packageManager = await getPackageManager({
@@ -75,20 +102,72 @@ export default class Export extends Command {
       customSearchPaths
     );
 
-    // Parse name as {name}-{package}
-    const [socName, socPackage] = flags.name.split('-', 2);
+    let socName: string | undefined;
+    let socPackage: string | undefined;
+    // Handled legacy --name flag. This block can be removed in future major releases.
+    if (flags.name !== undefined) {
+      if (args.socName !== undefined) {
+        this.error(
+          'SoC name provided both as positional argument and via deprecated --name flag. Please provide the SoC name only as a positional argument.'
+        );
+      }
+      // Parse name as {name}-{package}
 
-    if (!socName || !socPackage) {
+      [socName, socPackage] = flags.name.split('-', 2);
+
+      if (!socName || !socPackage) {
+        this.error(
+          `Invalid SoC name format. Expected '{name}-{package}', got '${flags.name}'.`
+        );
+      }
+    } else if (args.socName === undefined) {
       this.error(
-        `Invalid SoC name format. Expected "{name}-{package}", got "${flags.name}"`
+        'Missing 1 required arg:\nsocName  SoC to export, not including package.'
       );
+    } else {
+      // End of legacy --name flag handling.
+      socName = args.socName;
+      socPackage = flags.package;
     }
 
-    const soc = await dmManager.getDataModel(socName, socPackage);
+    if (socPackage === undefined) {
+      const pkgVariants = (await dmManager.listDataModels())
+        .filter(
+          (dm) =>
+            dm.name.toLocaleLowerCase() ===
+            socName.toLocaleLowerCase()
+        )
+        .map((dm) => dm.package);
+      if (pkgVariants.length > 1) {
+        this.error(
+          `Multiple packages found for SoC '${socName}', please specify one with --package=${[...new Set(pkgVariants)].join('|')}.`
+        );
+      } else if (pkgVariants.length === 0) {
+        this.error(
+          `SoC data model not found for '${socName}', please check SoC name.`
+        );
+      } else {
+        // Only one package found, use it
+        [socPackage] = pkgVariants;
+      }
+    }
+
+    let soc;
+
+    try {
+      soc = await dmManager.getDataModel(
+        socName,
+        socPackage,
+        flags.version
+      );
+    } catch (error) {
+      handleMissingDependencyError(error);
+      throw error;
+    }
 
     if (!soc) {
       this.error(
-        `SoC data model not found for "${socName}" with package "${socPackage}" and schema "${flags.schema}"`
+        `SoC data model not found for '${socName}' with package '${socPackage}'.`
       );
     }
 

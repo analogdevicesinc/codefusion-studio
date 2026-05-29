@@ -1,0 +1,77 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Build",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Build"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "make build",
+      "label": "Compile",
+      "group": "build",
+      "options": {
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "make clean",
+      "label": "Clean",
+      "group": "build",
+      "options": {
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "make test",
+      "label": "Test",
+      "group": "test",
+      "options": {
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "capture",
+      "label": "Capture Variables",
+      "group": "test",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Capture Variables",
+          "TASK_OUTPUT_FILE": "capture-output.json",
+          "RESOLVED_CONFIG": "${config:mock.task.config}",
+          "RESOLVED_ENV": "${env:CFS_TEST_ENV_VALUE}",
+          "RESOLVED_FOLDER": "${workspaceFolderBasename}",
+          "RESOLVED_HOME": "${userHome}",
+          "RESOLVED_SEPARATOR": "${pathSeparator}"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *
  */
 
-import type {DFGEndpoint, DFGStream} from 'cfs-plugins-api';
+import type {DFGEndpoint} from 'cfs-types';
 import {
 	Button,
 	CfsSuspense,
@@ -34,6 +34,7 @@ import DeleteIcon from '../../../../../common/icons/Delete';
 import type {ConfigFields} from '../../../../../common/types/soc';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {
+	type DFGStreamUI,
 	addNewStream,
 	setEditingStream,
 	setSelectedGaskets,
@@ -59,13 +60,20 @@ import {StreamDeleteModal} from '../common/stream-delete-modal';
 import styles from './stream-config-sidepanel.module.scss';
 import {StreamGroupSelector} from './stream-groups/stream-groups-select';
 import {TiedStreamDropdown} from './tied-stream-dropdown';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {type TLocaleContext} from '../../../common/types/context';
 
 export function StreamConfigSidePanel() {
+	const i10n: TLocaleContext | undefined = useLocaleContext()?.dfg;
 	const activeStream = useEditingStream();
 	const gaskets = getGasketModel();
 	const streams = useStreams();
 	const dispatch = useAppDispatch();
 	const gasketUIProps = useGasketUIProps();
+	const [
+		hasAdditionalStreamConfigErrors,
+		setHasAdditionalStreamConfigErrors
+	] = useState(false);
 
 	// Extract gasket properties
 	const sourceGasketProps = activeStream?.Source.Gasket
@@ -80,12 +88,29 @@ export function StreamConfigSidePanel() {
 	const [streamModified, setStreamModified] = useState(false);
 	const initialSelectedDestinations =
 		activeStream?.Destinations?.map(d => d.Gasket) ?? [];
+	const initialSelectedDestinationsCount =
+		initialSelectedDestinations.length;
+
+	let streamDestinationsDropdownLabel =
+		i10n?.streamConfigSidePanel.selectDestinationDFG;
+
+	if (initialSelectedDestinationsCount === 1) {
+		streamDestinationsDropdownLabel =
+			i10n?.streamConfigSidePanel.oneDestinationSelected;
+	} else if (initialSelectedDestinationsCount > 1) {
+		streamDestinationsDropdownLabel =
+			i10n?.streamConfigSidePanel.multipleDestinationsSelected?.replace(
+				'{destinationsCount}',
+				initialSelectedDestinationsCount
+			);
+	}
 
 	const closeSidePanel = useCallback(() => {
 		dispatch(setEditingStream(undefined));
 		dispatch(setSelectedStreams([]));
 		dispatch(setSelectedGaskets([]));
 		setStreamModified(false);
+		setHasAdditionalStreamConfigErrors(false);
 	}, [dispatch]);
 
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -100,12 +125,18 @@ export function StreamConfigSidePanel() {
 	] = useState<Set<string>>(new Set());
 
 	const [streamToDelete, setStreamToDelete] = useState<
-		DFGStream | undefined
+		DFGStreamUI | undefined
 	>();
 
 	useEffect(() => {
+		/* NOTE: Reset errors when active stream changes.
+		 * We don't expect errors to be present in existing streams being edited
+		 * as users cannot create new streams with errors.
+		 */
+		setErrors({});
+		setHasAdditionalStreamConfigErrors(false);
+
 		if (activeStream === undefined) {
-			setErrors({});
 			setAdditionalAvailableInputGaskets(new Set());
 			setAdditionalAvailableOutputGaskets(new Set());
 		}
@@ -113,13 +144,16 @@ export function StreamConfigSidePanel() {
 
 	const streamExists = useMemo(
 		() =>
-			activeStream &&
-			streams.find(s => s.StreamId === activeStream.StreamId),
+			activeStream && streams.find(s => s.Uuid === activeStream.Uuid),
 		[activeStream, streams]
 	);
 
 	const handleStreamSubmit = useCallback(() => {
-		const errors = validateStream(activeStream);
+		const errors = validateStream(
+			activeStream,
+			i10n,
+			hasAdditionalStreamConfigErrors
+		);
 
 		if (activeStream && !Object.keys(errors).length) {
 			if (streamExists) {
@@ -132,7 +166,14 @@ export function StreamConfigSidePanel() {
 		} else {
 			setErrors(errors);
 		}
-	}, [activeStream, streamExists, dispatch, closeSidePanel]);
+	}, [
+		activeStream,
+		streamExists,
+		i10n,
+		dispatch,
+		closeSidePanel,
+		hasAdditionalStreamConfigErrors
+	]);
 
 	const gasketOutputStreamMap = useGasketOutputStreamMap();
 	const gasketInputStreamMap = useGasketInputStreamMap();
@@ -186,7 +227,7 @@ export function StreamConfigSidePanel() {
 		]);
 
 	const setValue = useCallback(
-		(value: Partial<DFGStream>) => {
+		(value: Partial<DFGStreamUI>) => {
 			const sourceGasketProps = value.Source?.Gasket
 				? gasketUIProps[value.Source.Gasket]
 				: undefined;
@@ -195,24 +236,28 @@ export function StreamConfigSidePanel() {
 				sourceGasketProps?.OutputBufferSizeChoices ?? [];
 
 			// Handle source gasket changes
-			if (value.Source?.Gasket) {
-				if (value.Source.Gasket !== activeStream?.Source.Gasket) {
-					value.Source.BufferSize = 0;
+			if (
+				value.Source?.Gasket &&
+				value.Source.Gasket !== activeStream?.Source.Gasket
+			) {
+				value.Source = {
+					...activeStream?.Source,
+					...value.Source,
+					BufferSize:
+						sourceBufferOutputSizeChoices.length > 0
+							? sourceBufferOutputSizeChoices[0]
+							: 0,
+					Index: -1
+				};
 
-					// If we're changing away from a previously selected gasket, mark it as additionally available
-					// This is used when we select a different gasket, that is otherwise full, it still needs to be selectable in our dropdown
-					if (activeStream?.Source.Gasket) {
-						setAdditionalAvailableOutputGaskets(prev =>
-							new Set(prev).add(activeStream.Source.Gasket)
-						);
-					}
+				value.StreamId = 0;
 
-					// A default override if there is only one choice
-					// Since the user will not be able to change the buffer size (disabled dropdown)
-					if (sourceBufferOutputSizeChoices.length === 1) {
-						value.Source.BufferSize =
-							sourceBufferOutputSizeChoices[0];
-					}
+				// If we're changing away from a previously selected gasket, mark it as additionally available
+				// This is used when we select a different gasket, that is otherwise full, it still needs to be selectable in our dropdown
+				if (activeStream?.Source.Gasket) {
+					setAdditionalAvailableOutputGaskets(prev =>
+						new Set(prev).add(activeStream.Source.Gasket)
+					);
 				}
 			}
 
@@ -263,8 +308,9 @@ export function StreamConfigSidePanel() {
 				const gasket = option.value;
 				const bufferSizeChoices =
 					gasketUIProps[gasket]?.InputBufferSizeChoices ?? [];
+				// We always default to the first buffer size
 				const bufferSize =
-					bufferSizeChoices.length === 1 ? bufferSizeChoices[0] : 0;
+					bufferSizeChoices.length > 0 ? bufferSizeChoices[0] : 0;
 
 				return {
 					Gasket: option.value,
@@ -293,7 +339,7 @@ export function StreamConfigSidePanel() {
 						?.length) ?? 0;
 
 		return getGasketDictionary()[activeStream?.Source.Gasket ?? '']
-			?.OutputStreams?.[streamIndex].Config;
+			?.OutputStreams?.[streamIndex]?.Config;
 	}, [
 		activeStream?.Source.Gasket,
 		activeStream?.Source.Index,
@@ -314,7 +360,7 @@ export function StreamConfigSidePanel() {
 								)?.Gasket ?? ''
 							]?.length) ?? 0;
 
-				return gasket?.InputStreams?.[streamIndex].Config;
+				return gasket?.InputStreams?.[streamIndex]?.Config;
 			}) ?? [],
 		[activeStream?.Destinations, gasketInputStreamMap, streamExists]
 	);
@@ -343,7 +389,9 @@ export function StreamConfigSidePanel() {
 							if (deleted) closeSidePanel();
 						}}
 					/>
-					{streamExists ? 'Edit' : 'Create'} Stream
+					{streamExists
+						? i10n?.streamConfigSidePanel.editStreamTitle
+						: i10n?.streamConfigSidePanel.createStreamTitle}
 					{streamExists && (
 						<Button
 							dataTest='delete-stream-button'
@@ -369,25 +417,29 @@ export function StreamConfigSidePanel() {
 								? 'sidepanel-edit-stream'
 								: 'sidepanel-create-stream'
 						}
-						disabled={Boolean(streamExists) && !streamModified}
+						disabled={!streamExists && !streamModified}
 						onClick={handleStreamSubmit}
 					>
-						{streamExists ? 'Update' : 'Create'}
+						{streamExists
+							? i10n?.streamConfigSidePanel.updateButton
+							: i10n?.streamConfigSidePanel.createButton}
 					</Button>
 				</div>
 			}
 		>
 			{activeStream && (
 				<div className={styles.streamConfigPanel}>
-					<h5>STREAM OPTIONS</h5>
-					<FieldWithLabel label='Source'>
+					<h5>{i10n?.streamConfigSidePanel.streamOptionsTitle}</h5>
+					<FieldWithLabel
+						label={i10n?.streamConfigSidePanel.sourceLabel}
+					>
 						<DropDown
 							controlId='stream-source'
 							currentControlValue={activeStream.Source.Gasket}
 							dataTest='stream-source'
 							error={errors['Source.Gasket']}
+							placeholder={i10n?.selectValuePlaceholder}
 							options={[
-								{label: '', value: ''},
 								...gaskets.map(g => ({
 									label: g.Name,
 									value: g.Name,
@@ -404,7 +456,9 @@ export function StreamConfigSidePanel() {
 							}}
 						/>
 					</FieldWithLabel>
-					<FieldWithLabel label='Destination'>
+					<FieldWithLabel
+						label={i10n?.streamConfigSidePanel.destinationLabel}
+					>
 						<MultiSelect
 							allowClear
 							className={styles.fullWidthMultiselect}
@@ -417,20 +471,18 @@ export function StreamConfigSidePanel() {
 							)}
 							error={errors['Destinations.Gasket']}
 							options={destinationOptions}
-							dropdownText={
-								initialSelectedDestinations.length > 0
-									? initialSelectedDestinations.length +
-										' destinations selected'
-									: 'Select Destination DFG'
-							}
+							dropdownText={streamDestinationsDropdownLabel}
 							size='lg'
 							onSelection={updateDestinations}
 						/>
 					</FieldWithLabel>
-					<FieldWithLabel label='Stream Description'>
+					<FieldWithLabel
+						label={i10n?.streamConfigSidePanel.streamDescriptionLabel}
+					>
 						<TextField
 							inputVal={activeStream.Description}
 							dataTest='stream-alias'
+							placeholder={i10n?.startTypingPlaceholder}
 							onInputChange={value => {
 								setValue({Description: value});
 							}}
@@ -447,6 +499,9 @@ export function StreamConfigSidePanel() {
 						setValue={setValue}
 						values={sourceBufferSizeChoices}
 						defaultValue={activeStream.Source.BufferSize}
+						onHasAdditionalStreamConfigErrors={
+							setHasAdditionalStreamConfigErrors
+						}
 					/>
 					<Divider />
 					{activeStream.Destinations.map((dest, index) => {
@@ -472,13 +527,18 @@ export function StreamConfigSidePanel() {
 									setValue={setValue}
 									values={destinationBufferSizeChoices}
 									destinationIndex={index}
+									onHasAdditionalStreamConfigErrors={
+										setHasAdditionalStreamConfigErrors
+									}
 								/>
 								<Divider />
 							</React.Fragment>
 						);
 					})}
-					<h5>GROUP</h5>
-					<FieldWithLabel label='Group'>
+					<h5>{i10n?.streamConfigSidePanel.groupTitle}</h5>
+					<FieldWithLabel
+						label={i10n?.streamConfigSidePanel.groupLabel}
+					>
 						<StreamGroupSelector
 							onSelect={groupName => {
 								setValue({Group: groupName});
@@ -491,18 +551,21 @@ export function StreamConfigSidePanel() {
 	);
 }
 
-type GasketOptionsSectionProps = {
-	readonly name?: string;
-	readonly fieldName: 'Source' | 'Destinations';
-	readonly isEnabled: boolean;
-	readonly stream: DFGStream;
-	readonly setValue: (value: Partial<DFGStream>) => void;
-	readonly values: number[];
-	readonly defaultValue: number | undefined;
-	readonly errors: Record<string, string>;
-	readonly streamConfig?: ConfigFields;
-	readonly destinationIndex?: number;
-};
+type GasketOptionsSectionProps = Readonly<{
+	name?: string;
+	fieldName: 'Source' | 'Destinations';
+	isEnabled: boolean;
+	stream: DFGStreamUI;
+	setValue: (value: Partial<DFGStreamUI>) => void;
+	values: number[];
+	defaultValue: number | undefined;
+	errors: Record<string, string>;
+	streamConfig?: ConfigFields;
+	destinationIndex?: number;
+	onHasAdditionalStreamConfigErrors: React.Dispatch<
+		React.SetStateAction<boolean>
+	>;
+}>;
 
 function GasketOptionsSection({
 	name,
@@ -514,8 +577,11 @@ function GasketOptionsSection({
 	errors,
 	defaultValue,
 	streamConfig,
-	destinationIndex = 0
+	destinationIndex = 0,
+	onHasAdditionalStreamConfigErrors
 }: GasketOptionsSectionProps): React.JSX.Element {
+	const i10n: TLocaleContext | undefined = useLocaleContext()?.dfg;
+
 	const setOptions = useCallback(
 		(options: Partial<DFGEndpoint>) => {
 			if (fieldName === 'Destinations') {
@@ -548,13 +614,27 @@ function GasketOptionsSection({
 		return g.Name === endpoint?.Gasket;
 	});
 
+	/* NOTE: We always want a valid option */
+	const getValidControlValue = useCallback(
+		(val?: number) => {
+			if (!values.length) return undefined;
+
+			if (val !== undefined && values.includes(val)) {
+				return val.toString();
+			}
+
+			return values[0].toString();
+		},
+		[values]
+	);
+
 	const [currentControlValue, setCurrentControlValue] = useState<
 		string | undefined
-	>(defaultValue?.toString() ?? undefined);
+	>(() => getValidControlValue(defaultValue));
 
 	useEffect(() => {
-		setCurrentControlValue(defaultValue?.toString() ?? undefined);
-	}, [defaultValue]);
+		setCurrentControlValue(getValidControlValue(defaultValue));
+	}, [defaultValue, getValidControlValue]);
 
 	const relatedProjects = useMemo(
 		() =>
@@ -580,16 +660,20 @@ function GasketOptionsSection({
 	return (
 		<>
 			<h5>
-				{fieldName === 'Source' ? 'SOURCE' : 'DESTINATION'} OPTIONS{' '}
+				{fieldName === 'Source'
+					? i10n?.streamConfigSidePanel.sourceOptionsTitle
+					: i10n?.streamConfigSidePanel.destinationOptionsTitle}{' '}
 				{fieldName === 'Destinations' ? `(${name})` : ''}
 			</h5>
 			{gasket?.InputAndOutputBuffersTied &&
 				fieldName === 'Source' && (
-					<FieldWithLabel label='Source Stream'>
+					<FieldWithLabel
+						label={i10n?.streamConfigSidePanel.sourceStreamLabel}
+					>
 						<TiedStreamDropdown
 							gasketName={gasket.Name}
 							stream={stream}
-							onChange={(value: DFGStream) => {
+							onChange={(value: DFGStreamUI) => {
 								const inputIndex =
 									value.Destinations.find(
 										d => d.Gasket === gasket.Name
@@ -613,7 +697,9 @@ function GasketOptionsSection({
 						)}
 					</FieldWithLabel>
 				)}
-			<FieldWithLabel label='Buffer Size (Bytes)'>
+			<FieldWithLabel
+				label={i10n?.streamConfigSidePanel.bufferSizeLabel}
+			>
 				<DropDown
 					currentControlValue={currentControlValue}
 					error={
@@ -629,7 +715,6 @@ function GasketOptionsSection({
 					}-buffer-size-selector`}
 					isDisabled={!isEnabled}
 					options={[
-						{label: '', value: ''},
 						...values.map(size => ({
 							label: size.toString(),
 							value: size.toString()
@@ -655,6 +740,7 @@ function GasketOptionsSection({
 					}
 					socConfig={streamConfig ?? {}}
 					testId={`${fieldName}-${name}-additionalControls`}
+					onHasErrorsChange={onHasAdditionalStreamConfigErrors}
 					onControlChange={(field, value) => {
 						setOptions({
 							Config: {
@@ -671,10 +757,10 @@ function GasketOptionsSection({
 	);
 }
 
-type FieldWithLabelProps = {
-	readonly label: string;
-	readonly children: React.ReactNode;
-};
+type FieldWithLabelProps = Readonly<{
+	label: string;
+	children: React.ReactNode;
+}>;
 
 function FieldWithLabel({
 	label,
@@ -689,39 +775,54 @@ function FieldWithLabel({
 }
 
 function validateStream(
-	stream: DFGStream | undefined
+	stream: DFGStreamUI | undefined,
+	i10n: TLocaleContext | undefined,
+	hasAdditionalStreamConfigErrors = false
 ): Record<string, string> {
+	const i10nValidationErrors =
+		i10n?.streamConfigSidePanel.validationErrors;
+
 	if (!stream) {
 		return {
-			'Source.Gasket': 'Source gasket is required',
-			'Destinations.Gasket': 'Destination gasket is required',
-			'Source.BufferSize': 'Source buffer size is required',
-			'Destinations.BufferSize': 'Destination buffer size is required'
+			'Source.Gasket': i10nValidationErrors?.sourceGasketRequired,
+			'Destinations.Gasket':
+				i10nValidationErrors?.destinationGasketRequired,
+			'Source.BufferSize':
+				i10nValidationErrors?.sourceBufferSizeRequired,
+			'Destinations.BufferSize':
+				i10nValidationErrors?.destinationBufferSizeRequired
 		};
 	}
 
 	const errors: Record<string, string> = {};
 
-	if (!stream.Source.Gasket) {
-		errors['Source.Gasket'] = 'Source gasket is required';
-	}
-
 	if (!stream.Destinations || stream.Destinations.length === 0) {
 		errors['Destinations.Gasket'] =
-			'At least one destination gasket is required';
+			i10nValidationErrors?.destinationGasketRequired;
 	}
 
 	if (!stream.Source.BufferSize) {
-		errors['Source.BufferSize'] = 'Source buffer size is required';
+		errors['Source.BufferSize'] =
+			i10nValidationErrors?.sourceBufferSizeRequired;
 	}
 
 	// Validate all destinations have buffer sizes
 	stream.Destinations.forEach((dest, index) => {
 		if (!dest.BufferSize) {
 			errors[`Destinations.${index}.BufferSize`] =
-				`Destination ${index + 1} buffer size is required`;
+				i10nValidationErrors?.destinationBufferSizeRequired_01?.replace(
+					'{destinationIndex}',
+					index + 1
+				);
 		}
 	});
+
+	if (!stream.Source.Gasket) {
+		errors['Source.Gasket'] =
+			i10nValidationErrors?.sourceGasketRequired;
+
+		return errors;
+	}
 
 	const gaskets = getGasketDictionary();
 
@@ -730,7 +831,12 @@ function validateStream(
 		(stream.Source.Index < 0 || stream.StreamId < 1)
 	) {
 		errors['Source.TiedStream'] =
-			'A valid source stream must be selected for this gasket';
+			i10nValidationErrors?.sourceTiedStreamRequired;
+	}
+
+	if (hasAdditionalStreamConfigErrors) {
+		errors.AdditionalStreamConfig =
+			i10nValidationErrors?.additionalStreamConfig;
 	}
 
 	return errors;

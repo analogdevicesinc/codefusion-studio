@@ -1,7 +1,6 @@
 {
   "Copyright": "Copyright (c) 2024 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "0.0.1",
-  "DataModelSchemaVersion": "0.0.1",
   "Timestamp": "2025-03-17T13:17:04.502Z",
   "Soc": "MAX32690",
   "WorkspacePluginId": "",

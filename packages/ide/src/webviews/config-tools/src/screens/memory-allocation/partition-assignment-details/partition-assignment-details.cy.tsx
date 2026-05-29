@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
 );
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 const mockedConfigDict = {
 	BoardName: 'AD-APARD32690-SL',
 	Package: 'WLP',
@@ -47,7 +47,8 @@ const mockedConfigDict = {
 			ProjectId: 'CM4-proj',
 			IsPrimary: true,
 			Name: 'ARM Cortex-M4',
-			PluginId: ''
+			PluginId: '',
+			Secure: false
 		},
 		{
 			CoreNum: 1,
@@ -57,7 +58,8 @@ const mockedConfigDict = {
 			CoreId: 'RV',
 			ProjectId: 'RV-proj',
 			Name: 'RISC-V (RV32)',
-			PluginId: ''
+			PluginId: '',
+			Secure: true
 		}
 	]
 } as unknown as CfsConfig;
@@ -341,6 +343,60 @@ describe('Partition-assignment-details-card', () => {
 
 			cy.dataTest('partition-project-view-button').click();
 			cy.dataTest('partition 0').should('exist');
+		});
+	});
+
+	describe('Secure labels in project view badges', () => {
+		const secureLabelsStore = configurePreloadedStore(
+			mock,
+			mockedConfigDict
+		);
+
+		beforeEach(() => {
+			secureLabelsStore.dispatch(
+				setMemoryScreenActiveView('project')
+			);
+			secureLabelsStore.dispatch(setOpenProjectCards([]));
+
+			secureLabelsStore.dispatch(
+				createPartition({
+					...createMockPartition({
+						displayName: 'SecureLabelsPartition',
+						type: 'Flash',
+						startAddress: '0x10600000',
+						blockNames: ['flash0', 'flash1'],
+						size: 1,
+						projects: [
+							{
+								label: 'ARM Cortex-M4',
+								access: 'R',
+								coreId: 'CM4',
+								projectId: 'CM4-proj',
+								owner: true
+							},
+							{
+								label: 'RISC-V (RV32)',
+								access: 'R',
+								coreId: 'RV',
+								projectId: 'RV-proj',
+								owner: false
+							}
+						]
+					})
+				})
+			);
+
+			cy.mount(<PartitionAssignmentDetails />, secureLabelsStore);
+		});
+
+		it('should show (NS) and (S) in partition project badges', () => {
+			cy.dataTest('partition-details-chevron').first().click();
+
+			cy.dataTest('partition-details-project-view-cards')
+				.should('exist')
+				.find('vscode-badge')
+				.should('contain.text', '(NS)')
+				.and('contain.text', '(S)');
 		});
 	});
 });

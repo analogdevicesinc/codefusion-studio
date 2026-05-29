@@ -49,6 +49,10 @@
 }
 
 .fieldWithLabel {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+
 	& vscode-dropdown {
 		max-width: initial;
 	}

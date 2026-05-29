@@ -24,7 +24,7 @@ function DownArrow({width, height}: SVGProps) {
 		<svg
 			width={width ?? '10'}
 			height={height ?? '5'}
-			viewBox='0 0 10 5'
+			viewBox={`0 0 ${width ?? '10'} ${height ?? '5'}`}
 			fill='none'
 			xmlns='http://www.w3.org/2000/svg'
 		>

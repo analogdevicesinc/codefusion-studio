@@ -18,6 +18,7 @@ import {StreamConfigSidePanel} from './stream-config/stream-config-sidepanel';
 import styles from './dfg-styles.module.scss';
 import {Button, SearchInput} from 'cfs-react-library';
 import {
+	type DFGStreamUI,
 	setEditingStream,
 	setSearchQuery,
 	setStreamView
@@ -45,12 +46,11 @@ import {
 	useStreams
 } from '../../state/slices/gaskets/gasket.selector';
 import {DFGCanvas, to8DigitHex} from './dfg-canvas/dfg-canvas';
-import type {DFGStream} from 'cfs-plugins-api';
 import {useFilteredStreamsBySourcesAndDest} from './hooks/useFilteredStreams';
 
 // Function to generate CSV content from stream data
 function generateStreamTableCSV(
-	streams: DFGStream[],
+	streams: DFGStreamUI[],
 	filteredDestinations: string[]
 ): string {
 	const headers = [
@@ -111,6 +111,8 @@ export function Dfg({
 		state => state.gasketsReducer.filteredDestinations ?? []
 	);
 
+	const shouldDisableExportCSV = filteredStreams.length === 0;
+
 	const handleExportCSV = useCallback(async () => {
 		try {
 			const csvContent = generateStreamTableCSV(
@@ -142,78 +144,84 @@ export function Dfg({
 		);
 	}, [dispatch, initialActiveScreenSubscreen]);
 
-	return activeScreenSubscreen &&
-		activeScreenSubscreen === navigationItems.dfgStreamList ? (
-		<SingleColumnLayout
-			header={
-				<div className={styles.headerItems}>
-					<div className={styles.headerleft}>
-						<DfgStreamTableFilter />
-					</div>
-					<div className={styles.headerRight}>
-						<Button
-							id='export-as-csv'
-							dataTest='export-as-csv'
-							appearance='secondary'
-							onClick={handleExportCSV}
+	return (
+		<>
+			{activeScreenSubscreen &&
+			activeScreenSubscreen === navigationItems.dfgStreamList ? (
+				<SingleColumnLayout
+					header={
+						<div className={styles.headerItems}>
+							<div className={styles.headerleft}>
+								<DfgStreamTableFilter />
+							</div>
+							<div className={styles.headerRight}>
+								<Button
+									id='export-as-csv'
+									dataTest='export-as-csv'
+									appearance='secondary'
+									disabled={shouldDisableExportCSV}
+									onClick={handleExportCSV}
+								>
+									{t({id: 'dfgStreamList.exportAsCsv'})}
+								</Button>
+								<Button
+									id='create-stream-button'
+									appearance='primary'
+									onClick={() => {
+										dispatch(setEditingStream({}));
+									}}
+								>
+									{t({id: 'dfg.createStream'})}
+								</Button>
+							</div>
+						</div>
+					}
+					body={
+						<div
+							data-test='dfg-stream-list'
+							className={styles.dfgStreamTable}
 						>
-							{t({id: 'dfgStreamList.exportAsCsv'})}
-						</Button>
-						<Button
-							id='create-stream-button'
-							appearance='primary'
-							onClick={() => {
-								dispatch(setEditingStream({}));
-							}}
-						>
-							{t({id: 'dfg.createStream'})}
-						</Button>
-					</div>
+							<DfgStreamTable />
+						</div>
+					}
+				/>
+			) : (
+				<div
+					data-test='dfg-visualisation'
+					className={styles.dfgVisualisation}
+				>
+					<CfsTwoColumnLayout>
+						<div slot='header' className={styles.headerItems}>
+							<div className={styles.headerleft}>
+								<LeftHeaderItems />
+							</div>
+							<div className={styles.headerRight}>
+								<Button
+									id='create-stream-button'
+									appearance='primary'
+									onClick={() => {
+										dispatch(setEditingStream({}));
+									}}
+								>
+									{t({id: 'dfg.createStream'})}
+								</Button>
+							</div>
+						</div>
+						<div slot='side-panel'>
+							<StreamSidebar />
+						</div>
+						<DFGCanvas />
+						<div slot='header' className={styles.sidePanelContainer}>
+							<GasketConfigSidePanel />
+						</div>
+					</CfsTwoColumnLayout>
 				</div>
-			}
-			body={
-				<>
-					<div data-test='dfg-stream-list'>
-						<DfgStreamTable />
-					</div>
-					<div className={styles.sidePanelContainer}>
-						<StreamConfigSidePanel />
-					</div>
-				</>
-			}
-		/>
-	) : (
-		<div
-			data-test='dfg-visualisation'
-			className={styles.dfgVisualisation}
-		>
-			<CfsTwoColumnLayout>
-				<div slot='header' className={styles.headerItems}>
-					<div className={styles.headerleft}>
-						<LeftHeaderItems />
-					</div>
-					<div className={styles.headerRight}>
-						<Button
-							id='create-stream-button'
-							appearance='primary'
-							onClick={() => {
-								dispatch(setEditingStream({}));
-							}}
-						>
-							{t({id: 'dfg.createStream'})}
-						</Button>
-					</div>
-				</div>
-				<div slot='side-panel'>
-					<StreamSidebar />
-				</div>
-				<DFGCanvas />
-				<div slot='header' className={styles.sidePanelContainer}>
-					<StreamConfigSidePanel />
-					<GasketConfigSidePanel />
-				</div>
-			</CfsTwoColumnLayout>
-		</div>
+			)}
+
+			<div className={`${styles.sidePanelContainer}`}>
+				<StreamConfigSidePanel />
+			</div>
+		</>
 	);
 }
 

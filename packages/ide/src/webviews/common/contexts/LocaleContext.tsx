@@ -14,6 +14,7 @@
  */
 import {createContext, useContext} from 'react';
 import type React from 'react';
+import {getLocalization} from '../utils/localization';
 
 export type TLocaleContext = Record<string, any>;
 
@@ -32,12 +33,7 @@ export function LocalizationProvider({
 	namespace,
 	children
 }: TLContext) {
-	const translations = (window as any)
-		.__webview_localization_resources__?.[namespace];
-
-	if (translations === undefined) {
-		console.warn('No translations found for the current namespace');
-	}
+	const translations = getLocalization(namespace);
 
 	return (
 		<LocaleContext.Provider value={translations}>

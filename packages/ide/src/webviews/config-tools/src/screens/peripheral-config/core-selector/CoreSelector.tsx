@@ -18,33 +18,35 @@ import {type ProjectInfo} from '../../../utils/config';
 import {Button, ChevronLeftIcon} from 'cfs-react-library';
 import CoreSelectorCard from './core-selector-card';
 import {type PeripheralSecurity} from '../../../types/peripherals';
+import {getSocPeripheralDictionary} from '../../../utils/soc-peripherals';
 
 export type CoreSelectorProps = Readonly<{
 	title?: string;
-	projectConfig?: ProjectInfo[];
 	signalName?: string;
-	projects: ProjectInfo[];
 	peripheralSecurity?: PeripheralSecurity;
+	projects?: ProjectInfo[];
 	onSelect: (coreId: string) => void;
 	onCancel: () => void;
 }>;
 
 function CoreSelector({
 	title,
-	projects,
-	projectConfig,
 	signalName,
 	peripheralSecurity,
+	projects,
 	onSelect,
 	onCancel
 }: CoreSelectorProps) {
-	const allocatableName = `${title} ${signalName ?? ''}`;
+	const allocatableName = `${title}${signalName ? ` ${signalName}` : ''}`;
 
 	const shouldDisableSelection = (project: ProjectInfo) => {
-		// This will show the project as disabled if it is not in the projectConfig i.e if the peripheral cannot allocated to the project
-		if (
-			!projects.some(item => item.ProjectId === project.ProjectId)
-		) {
+		const socPeripheral =
+			getSocPeripheralDictionary()[title ?? ''] ?? {};
+
+		const isPeripheralAssignableToProject =
+			socPeripheral.cores?.includes(project.CoreId ?? '');
+
+		if (!isPeripheralAssignableToProject) {
 			return true;
 		}
 
@@ -96,7 +98,7 @@ function CoreSelector({
 				data-test={`allocate-${title}-title`}
 			>{`Allocate ${allocatableName} to: `}</div>
 			<div id='core-selector' className={styles.coreSection}>
-				{projectConfig?.map(project => {
+				{projects?.map(project => {
 					const isDisabled = shouldDisableSelection(project);
 
 					return (

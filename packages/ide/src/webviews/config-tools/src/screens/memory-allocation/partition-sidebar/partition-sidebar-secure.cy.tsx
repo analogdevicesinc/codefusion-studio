@@ -25,7 +25,7 @@ const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32657-wlp.json')).default as unknown as Soc
 );
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
 import {configurePreloadedStore} from '../../../state/store';
 
@@ -163,6 +163,12 @@ describe('Partition Sidebar With Secure Projects', () => {
 					.should('exist')
 					.should('have.text', 'Secure');
 			});
+			// Contains plugin options for the two cores with S and NS secure flags
+			cy.get('h5')
+				.get('vscode-badge')
+				.should('exist')
+				.should('contain', 'S')
+				.should('contain', 'NS');
 		});
 	});
 });

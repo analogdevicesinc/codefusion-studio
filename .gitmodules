@@ -1,4 +1,0 @@
-[submodule "submodules/cfs-plugins"]
-	path = submodules/cfs-plugins
-	url = https://github.com/analogdevicesinc/cfs-plugins.git
-	branch = main

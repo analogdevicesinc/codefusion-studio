@@ -1,0 +1,1 @@
+{"FlashSize": 2560.0, "RamSize": 284.0, "CoreClock": 120.0, "SupportedOps": [], "AccelOps": [], "SupportedDataTypes": [], "OperatorInfos": [{"Name": "MAC", "Cycles": 2.0, "Energy": 15.0}], "Target": {"Soc": "MAX78002", "Core": "CM4", "Package": null, "Accelerator": null}}

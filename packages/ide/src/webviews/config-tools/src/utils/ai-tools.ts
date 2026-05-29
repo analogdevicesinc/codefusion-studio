@@ -13,7 +13,7 @@
  *
  */
 
-import type {ConfiguredProject} from 'cfs-plugins-api';
+import type {ConfiguredProject} from 'cfs-types';
 import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
 import type {Core, Peripheral} from '../../../common/types/soc';
 import {loadAiBackends} from '../state/slices/ai-tools/ai-backends';
@@ -25,17 +25,17 @@ export type AISupportingCore = Core & {
 
 export type AIBackends = Record<string, AiSupportingBackend>;
 
-let supportedBackends: AIBackends;
+let supportedBackends: AIBackends = {};
 let aiCores: AISupportingCore[] = [];
 
 export function getAiBackends(): AIBackends {
-	return supportedBackends ?? {};
+	return supportedBackends;
 }
 
 export async function loadAIBackends(): Promise<
 	AIBackends | undefined
 > {
-	if (!aiCores?.length || supportedBackends) {
+	if (!aiCores?.length || Object.keys(supportedBackends).length) {
 		return supportedBackends;
 	}
 

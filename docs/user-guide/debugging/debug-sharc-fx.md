@@ -1,7 +1,7 @@
 ---
 description: How to connect and debug SHARC-FX applications in CodeFusion Studio.
 author: Analog Devices
-date: 2025-10-25
+date: 2026-05-28
 ---
 
 # Debug a SHARC-FX application
@@ -19,7 +19,7 @@ Most of the setup steps, including toolchain installation and ICE emulator confi
 1. Install ADI ICE drivers.
     Ensure the ICE-1000, ICE-1500, or ICE-2000 drivers are installed so CodeFusion Studio can communicate with your SHARC-FX target.  
     - If you selected **ADI ICE Drivers (Requires Administrator)** during CodeFusion Studio installation, you’re all set.  
-    - If you skipped that option, see [Install ICE drivers manually](install-ice-drivers.md).
+    - If you skipped that option, see [Install ICE drivers manually](debug-drivers/install-ice-drivers.md).
 2. Log in using your myAnalog account and install the required SHARC-FX toolchain.
 
 ### Log in to access the SHARC-FX toolchain
@@ -28,12 +28,16 @@ Authentication is required to download the SHARC-FX toolchain.
 
 1. Follow the steps in [Access restricted packages (using myAnalog login)](../installation/package-manager/auth.md).
 2. Install the toolchain using one of the following methods:
-      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.4.0` in the list and click to install.
+      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.5.0` in the list and click to install.
       - **Command line:** From `cfsutil`, run
 
         ```sh
-        cfsutil pkg install xtensa_sharcfx_toolchain/15.4.0
+        cfsutil pkg install xtensa_sharcfx_toolchain/15.5.0
         ```
+
+3. When prompted to accept the license agreement, review the license text and any referenced URLs, then:
+      - **Command Palette:** Select **Accept**.
+      - **Command line:** Enter `y` at the `(y/n)` prompt (or use `--acceptLicense` for automation).
 
 ## Create a SHARC-FX workspace
 
@@ -53,6 +57,10 @@ Follow the recommended setup for your ICE emulator:
       - Attach the main USB cable from the ICE emulator to your computer.
       - Connect the emulator ribbon cable (ICE-1000, ICE-1500, or ICE-2000) to the board’s JTAG header.
       - Verify that both the board and emulator LEDs flash green, indicating that the hardware is powered and communication is established.
+
+    !!! tip
+        For detailed connection diagrams and port-specific instructions, see [Connect hardware](connect-hardware.md#sharc-fx-adsp-sc835w-with-ice-debugger).
+
 2. Open **Windows → Device Manager** and confirm that the emulator appears under CrossCore Tools:
 
     ![ICE-1000 Emulator](images/ice-emulator-sharc-fx.png)

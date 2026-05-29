@@ -119,6 +119,10 @@
 }
 
 .selectedPartition {
+	position: absolute;
+	height: 16px;
+	border-radius: 2px;
 	outline: 2px solid colors.$button-primary-background;
 	outline-offset: 2px;
+	pointer-events: none;
 }

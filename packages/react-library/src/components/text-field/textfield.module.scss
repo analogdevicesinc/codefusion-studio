@@ -14,6 +14,7 @@
  */
 @use '../../styles/colors';
 @use '../../styles/fonts';
+@use '../../styles/layout' as layout;
 
 .container {
 	display: flex;
@@ -34,13 +35,23 @@
 			box-sizing: border-box;
 			justify-content: center;
 			align-items: center;
-			gap: 8px;
+			gap: layout.$spacing-3;
 		}
 
 		&::part(control) {
 			padding: 0;
 			&::placeholder {
 				color: colors.$description-foreground;
+			}
+		}
+	}
+
+	&.small {
+		.textField {
+			--input-height: 20;
+			--type-ramp-base-font-size: 11px;
+			&::part(root) {
+				gap: layout.$spacing-2;
 			}
 		}
 	}
@@ -61,8 +72,8 @@
 	}
 
 	.errorBorder {
-		--dropdown-border: #{colors.$error};
-		--focus-border: #{colors.$error};
+		--dropdown-border: #{colors.$error-border};
+		--focus-border: #{colors.$error-border};
 	}
 
 	.errorMsg {
@@ -79,7 +90,7 @@
 	justify-content: space-between;
 	align-items: center;
 
-	& > label {
+	> label {
 		@include fonts.body-b1;
 	}
 
@@ -89,20 +100,25 @@
 	}
 }
 
+.small {
+	.labelContainer {
+		> label {
+			@include fonts.body-b2;
+			color: colors.$input-foreground;
+		}
+
+		.optionalLabel {
+			@include fonts.label-l4;
+		}
+	}
+}
+
 .horizontal {
 	align-items: center;
-
-	& label {
-		@include fonts.body-b1;
-	}
-
+	gap: layout.$spacing-3;
 	.textField {
-		min-width: 192px;
-		width: 100%;
-	}
-
-	.divider {
-		flex: 1;
+		display: flex;
+		width: var(--cfs-text-field-horizontal-width, auto);
 	}
 }
 
@@ -112,7 +128,6 @@
 	gap: var(--cfs-text-field-vertical-gap, 6px);
 
 	.textField {
-		min-width: 198px;
 		width: 100%;
 	}
 }

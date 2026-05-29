@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,26 +31,16 @@ async function main() {
   const isWin = process.platform === "win32";
 
   try {
-    let pluginsPath = path.resolve(
-      process.cwd(),
-      "..",
-      "..",
-      "submodules",
-      "cfs-plugins",
-      "plugins",
-      "dist",
-    );
-
     let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
 
     if (isWin) {
-      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
       socsPath = socsPath.replace(/\\/g, "\\\\");
     }
 
+    // ui-test does not consume plugins, so use empty search directories
     await fs.promises.writeFile(
       settingsPath,
-      `{"cfs.plugins.searchDirectories": ["${pluginsPath}"], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"]}`,
+      `{"cfs.plugins.searchDirectories": [], "cfs.plugins.dataModelSearchDirectories": ["${socsPath}"]}`,
       "utf-8",
     );
 

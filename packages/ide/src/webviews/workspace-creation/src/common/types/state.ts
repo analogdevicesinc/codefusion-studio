@@ -13,7 +13,7 @@
  *
  */
 
-import type {CfsPluginInfo} from 'cfs-lib';
+import type {CfsPluginInfo} from 'cfs-types';
 
 export type WorkspaceConfigState = {
 	socId: string;

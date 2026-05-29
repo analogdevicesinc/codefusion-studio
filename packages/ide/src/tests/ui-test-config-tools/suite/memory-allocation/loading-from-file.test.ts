@@ -66,7 +66,6 @@ import {
   Workbench,
 } from "vscode-extension-tester";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import { asyncExecFile } from "../../../ui-test-utils/exec-utils";
 import {
   getConfigPathForFile,
   parseJSONFile,
@@ -115,10 +114,9 @@ describe("CFSIO-6874 Loading from file", () => {
 
   after(async () => {
     // Teardown - reset cfsconfig file
-    if (configPath) {
-      await asyncExecFile("git", "checkout", configPath);
-      configPath = undefined;
-    }
+    await UIUtils.restoreFixtureFileFromGit(
+      getConfigPathForFile("max32690-wlp-dual-core-blinky.cfsconfig"),
+    );
   });
 
   it("Loading from file", async () => {
@@ -145,42 +143,58 @@ describe("CFSIO-6874 Loading from file", () => {
 
     await UIUtils.clickElement(view, await leftPartitionDropdown("flash0"));
 
-    const partitionNameM4 = await (
-      await UIUtils.findWebElement(view, await getPartitionName("M4_FLASH"))
-    ).getText();
-    const startAddrM4 = await (
-      await UIUtils.findWebElement(
-        view,
-        await getStartAddressForMemoryType("flash0"),
-      )
-    ).getText();
-    const endAddrM4 = await (
-      await UIUtils.findWebElement(
-        view,
-        await getEndAddressForMemoryType("flash0"),
-      )
-    ).getText();
+    const partitionNameM4Selector = await getPartitionName(
+      "M4_FLASH",
+      "m4_flash",
+    );
+    const partitionNameM4Element = await UIUtils.findWebElement(
+      view,
+      partitionNameM4Selector,
+    );
+    const partitionNameM4 = await partitionNameM4Element.getText();
+
+    const startAddrM4Selector = await getStartAddressForMemoryType("flash0");
+    const startAddrM4Element = await UIUtils.findWebElement(
+      view,
+      startAddrM4Selector,
+    );
+    const startAddrM4 = await startAddrM4Element.getText();
+
+    const endAddrM4Selector = await getEndAddressForMemoryType("flash0");
+    const endAddrM4Element = await UIUtils.findWebElement(
+      view,
+      endAddrM4Selector,
+    );
+    const endAddrM4 = await endAddrM4Element.getText();
     console.log(
       `Partition Name: ${partitionNameM4} | Start Address: ${startAddrM4} | End Address: ${endAddrM4}`,
     );
 
     await UIUtils.clickElement(view, await leftPartitionDropdown("flash1"));
 
-    const partitionNameRV = await (
-      await UIUtils.findWebElement(view, await getPartitionName("RISCV_FLASH"))
-    ).getText();
-    const startAddrRV = await (
-      await UIUtils.findWebElement(
-        view,
-        await getStartAddressForMemoryType("flash1"),
-      )
-    ).getText();
-    const endAddrRV = await (
-      await UIUtils.findWebElement(
-        view,
-        await getEndAddressForMemoryType("flash1"),
-      )
-    ).getText();
+    const partitionNameRVSelector = await getPartitionName(
+      "RISCV_FLASH",
+      "RISCV_FLASH",
+    );
+    const partitionNameRVElement = await UIUtils.findWebElement(
+      view,
+      partitionNameRVSelector,
+    );
+    const partitionNameRV = await partitionNameRVElement.getText();
+
+    const startAddrRVSelector = await getStartAddressForMemoryType("flash1");
+    const startAddrRVElement = await UIUtils.findWebElement(
+      view,
+      startAddrRVSelector,
+    );
+    const startAddrRV = await startAddrRVElement.getText();
+
+    const endAddrRVSelector = await getEndAddressForMemoryType("flash1");
+    const endAddrRVElement = await UIUtils.findWebElement(
+      view,
+      endAddrRVSelector,
+    );
+    const endAddrRV = await endAddrRVElement.getText();
 
     console.log(
       `Partition Name: ${partitionNameRV} | Start Address: ${startAddrRV} | End Address: ${endAddrRV}`,

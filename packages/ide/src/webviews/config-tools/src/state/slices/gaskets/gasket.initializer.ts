@@ -13,9 +13,10 @@
  *
  */
 
-import type {DFG} from 'cfs-plugins-api';
+import type {DFG} from 'cfs-types';
 import type {Soc} from '../../../../../common/types/soc';
 import {
+	extendUIStreams,
 	type GasketState,
 	initializeGasketErrors,
 	initializeGasketProperties
@@ -51,16 +52,20 @@ export function initializeGasketState(
 	soc: Soc,
 	persistedDfgConfig: DFG | undefined
 ) {
+	const persistedDfgConfigStreams = extendUIStreams(
+		persistedDfgConfig?.Streams ?? []
+	);
+
 	const initialGasketUIProps = initializeGasketProperties(
 		soc.Gaskets ?? []
 	);
 	const initialGasketErrors = initializeGasketErrors(
-		persistedDfgConfig?.Streams ?? [],
+		persistedDfgConfigStreams ?? [],
 		initialGasketUIProps
 	);
 
 	const {inputStreamsPerGasket, outputStreamsPerGasket} =
-		groupAndSortStreamsByGasket(persistedDfgConfig?.Streams ?? []);
+		groupAndSortStreamsByGasket(persistedDfgConfigStreams ?? []);
 
 	const gasketsReducerInitialState: GasketState = {
 		GasketOptions: [
@@ -69,7 +74,7 @@ export function initializeGasketState(
 		],
 		Streams: [
 			...gasketsInitialState.Streams,
-			...(persistedDfgConfig?.Streams ?? [])
+			...(persistedDfgConfigStreams ?? [])
 		],
 		selectedGaskets: [],
 		selectedStreams: [],

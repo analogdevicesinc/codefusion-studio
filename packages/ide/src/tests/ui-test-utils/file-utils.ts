@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,26 @@
 import { PathLike, rmSync, unlinkSync } from "fs";
 import {
   EditorView,
-  InputBox,
   Key,
   TitleBar,
+  InputBox,
   VSBrowser,
   Workbench,
 } from "vscode-extension-tester";
 const isMac = process.platform === "darwin";
+
+// Dismiss any open dialogs with using escape key once or close commands, to ensure a clean state for tests
+const dismissDialogs = async (workbench: Workbench) => {
+  try {
+    await workbench.executeCommand("workbench.action.closeQuickOpen");
+  } catch {}
+  try {
+    await workbench
+      .getDriver()
+      .findElement({ css: ".monaco-workbench" })
+      .sendKeys(Key.ESCAPE);
+  } catch {}
+};
 
 /**
  * Open the given folder
@@ -32,15 +45,27 @@ export async function openFolder(folder: string): Promise<void> {
   if (isMac) {
     await VSBrowser.instance.openResources(folder);
   } else {
+    // For Windows/Linux - use this approach to ensure dialog closes
     const titleBar = new TitleBar();
     await titleBar.select("File", "Open Folder...");
     const input = await InputBox.create();
     await input.setText(folder);
-    console.log(`Opening folder:`);
-    await new Promise((res) => setTimeout(res, 1000)); // Wait before confirm
-    await input.confirm();
-    console.log(`Confirmed`);
+    console.log(`Set folder path: ${folder}`);
+
+    // approach to activate Open button
+    try {
+      await input.sendKeys(Key.ENTER);
+      await new Promise((res) => setTimeout(res, 1000));
+    } catch (error) {
+      console.log(`Input interaction failed: ${error}`);
+    }
+    // Dismiss any remaining dialogs being open
+    const workbench = new Workbench();
+    await dismissDialogs(workbench);
+
+    console.log(`Completed folder opening sequence`);
   }
+  console.log(`Folder opening finished: ${folder}`);
 }
 
 /**
@@ -57,7 +82,7 @@ export async function closeFolder() {
       if (await fileMenu.hasItem("Close Folder")) {
         await fileMenu.select("Close Folder");
       } else {
-        fileMenu.sendKeys(Key.ESCAPE);
+        await dismissDialogs(new Workbench());
       }
     }
   }

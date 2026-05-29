@@ -1,0 +1,166 @@
+<h2>IntegerField Component</h2>
+
+<h3>Overview</h3>
+<div>
+	<code>IntegerField</code> is a controlled integer input that wraps{' '}
+	<code>TextField</code>, adding optional stepping, bounds (
+	<code>min</code>/<code>max</code>), and negative number support. It
+	normalizes user input (sanitizes, collapses leading zeros) and emits
+	numeric updates via <code>onValueChange</code>. When a step prop is
+	provided it automatically renders increment/decrement arrow buttons
+	alongside any custom <code>endSlot</code> content.
+</div>
+
+<h3>Summary</h3>
+<div>
+	<code>IntegerField</code> is designed to:
+</div>
+<ol>
+	<li>
+		Accept only integer input (digits, plus an optional leading{' '}
+		<code>-</code> when <code>allowNegative</code> is true).
+	</li>
+	<li>
+		Preserve a transitional <code>-</code> state while the user begins
+		entering a negative number.
+	</li>
+	<li>
+		Collapse leading zeros (e.g. typing <code>00042</code> displays{' '}
+		<code>42</code>).
+	</li>
+	<li>
+		Clamp values to <code>min</code>/<code>max</code> on both typing
+		and stepping.
+	</li>
+	<li>
+		Render increment/decrement arrow controls automatically when a{' '}
+		<code>step</code> prop is provided.
+	</li>
+	<li>
+		Combine any custom <code>endSlot</code> content with the stepper
+		controls (slot content appears before the arrows).
+	</li>
+	<li>
+		Pass through all layout, labeling, and styling props from{' '}
+		<code>TextField</code> without duplication.
+	</li>
+</ol>
+
+<h3>Props</h3>
+<ul>
+	<li>
+		<code>value: number</code> – Current controlled integer value.
+	</li>
+	<li>
+		<code>step?: number</code> – Increment/decrement size; when
+		present, arrow buttons are rendered.
+	</li>
+	<li>
+		<code>min?: number</code> – Inclusive lower bound.
+	</li>
+	<li>
+		<code>max?: number</code> – Inclusive upper bound.
+	</li>
+	<li>
+		<code>allowNegative?: boolean</code> (default <code>false</code>)
+		– Enables negative numbers and transitional <code>-</code>.
+	</li>
+	<li>
+		<code>endSlot?: React.ReactNode</code> – Custom trailing content;
+		merged with stepper when <code>step</code> is set.
+	</li>
+	<li>
+		<code>onValueChange?: (value: number) =&gt; void</code> – Called
+		with the parsed/clamped integer after user edits or stepping.
+	</li>
+	<li>
+		All other props: inherited directly from <code>TextField</code>{' '}
+		(e.g. <code>label</code>, <code>optional</code>,{' '}
+		<code>error</code>, <code>direction</code>,{' '}
+		<code>isDisabled</code>, <code>fullWidth</code>,{' '}
+		<code>startSlot</code>, etc.).
+	</li>
+</ul>
+
+<h3>Edge Cases</h3>
+<ul>
+	<li>
+		<strong>Transitional negative:</strong> Typing only <code>-</code>{' '}
+		(with <code>allowNegative</code>) displays <code>-</code> but
+		doesn’t emit a value yet.
+	</li>
+	<li>
+		<strong>Leading zeros:</strong> <code>000</code> → <code>0</code>,{' '}
+		<code>0012</code> → <code>12</code>.
+	</li>
+	<li>
+		<strong>Non-digit characters:</strong> Automatically stripped;
+		pasted input is sanitized (leaves <code>-</code> if it’s the
+		leading minus alone).
+	</li>
+	<li>
+		<strong>Bounds clamping:</strong> Values typed or stepped past{' '}
+		<code>max</code> snap to <code>max</code>; below <code>min</code>{' '}
+		snap to <code>min</code>.
+	</li>
+	<li>
+		<strong>Negative disabled:</strong> Any negative attempt
+		normalizes to its non-negative counterpart (e.g. <code>-5</code> →{' '}
+		<code>5</code> or <code>0</code> depending on digits).
+	</li>
+	<li>
+		<strong>Stepper disabling:</strong> Arrow buttons disable
+		automatically when the next step would exceed bounds (or drop
+		below <code>0</code> if negatives aren’t allowed).
+	</li>
+</ul>
+
+<h3>Behavior Notes</h3>
+<ul>
+	<li>
+		Input sanitation and clamping share a single pipeline, ensuring
+		consistent normalization.
+	</li>
+	<li>
+		An imperative value sync is used under the hood to keep the shadow
+		DOM of the base <code>TextField</code> consistent with the
+		normalized display.
+	</li>
+	<li>
+		The field always renders a canonical integer string (no empty
+		string state); wrap it if you need a nullable variant.
+	</li>
+</ul>
+
+<h3>Examples</h3>
+
+```tsx
+// Simple bounded counter
+<IntegerField
+  label="Retries"
+  value={retries}
+  min={0}
+  max={10}
+  step={1}
+  onValueChange={setRetries}
+/>
+
+// Negative offsets with units
+<IntegerField
+  label="Offset"
+  value={offset}
+  allowNegative
+  step={4}
+  min={-32}
+  max={32}
+  endSlot={<span>bytes</span>}
+  onValueChange={setOffset}
+/>
+
+// Unbounded (no step => no arrows)
+<IntegerField
+  label="Record ID"
+  value={recordId}
+  onValueChange={setRecordId}
+/>
+```

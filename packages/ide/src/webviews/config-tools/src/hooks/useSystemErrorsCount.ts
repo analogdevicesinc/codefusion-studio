@@ -1,13 +1,23 @@
+/**
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import {useMemo} from 'react';
-import {
-	useClockNodesConfig,
-	useDiagramData
-} from '../state/slices/clock-nodes/clockNodes.selector';
+import {useClockConfigErrorsSummary} from '../state/slices/clock-nodes/clockNodes.selector';
 import {usePeripheralAllocations} from '../state/slices/peripherals/peripherals.selector';
-import {useEvaluateClockCondition} from './use-evaluate-clock-condition';
 import {useProjectsPeripheralAssignmentsErrors} from './use-projects-peripheral-assignments-errors-count';
 import {usePinErrors} from './use-pin-errors';
-import {computeClockNodeErr} from '../utils/node-error';
 import {getProjectInfoList} from '../utils/config';
 import type {ProjectInfo} from '../utils/config';
 import type {ControlCfg} from '../../../common/types/soc';
@@ -15,12 +25,14 @@ import {
 	useGasketErrors,
 	useStreamErrors
 } from '../state/slices/gaskets/gasket.selector';
+import {useTotalApplicationPackagesErrorCount} from './use-total-application-packages-error-count';
 
 export type TCodeGenError = {
 	peripheralAllocErr: number;
 	pinConfigErr: number;
 	clockConfigErr: number;
 	dfgErr: number;
+	mcubootErr: number;
 };
 
 export function useSystemErrorsCount({
@@ -29,13 +41,12 @@ export function useSystemErrorsCount({
 	projectsControls: Record<string, Record<string, ControlCfg[]>>;
 }>) {
 	const projects = useMemo(() => getProjectInfoList() ?? [], []);
-	const clockConfig = useClockNodesConfig();
-	const diagramData = useDiagramData();
-	const computeEnabledState = useEvaluateClockCondition();
 	const allocations = usePeripheralAllocations();
 	const pinErrors = usePinErrors();
 	const gasketErrors = useGasketErrors();
 	const streamErrors = useStreamErrors();
+	const clockErrorSummary = useClockConfigErrorsSummary();
+	const mcubootErrors = useTotalApplicationPackagesErrorCount();
 
 	const peripheralErrorsByProject =
 		useProjectsPeripheralAssignmentsErrors(
@@ -43,15 +54,7 @@ export function useSystemErrorsCount({
 			projectsControls
 		);
 
-	const clockConfigError = useMemo(
-		() =>
-			computeClockNodeErr(
-				clockConfig,
-				diagramData,
-				computeEnabledState
-			) || 0,
-		[clockConfig, diagramData, computeEnabledState]
-	);
+	const clockConfigError = clockErrorSummary.totalErrors;
 
 	const errorsMap = useMemo(() => {
 		const map = new Map<string, TCodeGenError>();
@@ -61,25 +64,18 @@ export function useSystemErrorsCount({
 				peripheralErrorsByProject[project.ProjectId] ?? 0;
 			const pinConfigErr = pinErrors.get(project.ProjectId) ?? 0;
 			const clockConfigErr = clockConfigError;
-			let dfgErrorCount = 0;
 
-			// DFG errors are only counted on the primary project
-			if (project.IsPrimary) {
-				dfgErrorCount = Object.values(gasketErrors).reduce(
-					(acc, curr) => acc + curr.length,
-					0
-				);
-				dfgErrorCount += Object.values(streamErrors).reduce(
-					(acc, curr) => acc + curr.length,
-					0
-				);
-			}
+			const dfgErrorCount = [
+				...Object.values(gasketErrors),
+				...Object.values(streamErrors)
+			].reduce((acc, curr) => acc + curr.length, 0);
 
 			map.set(project.ProjectId, {
 				peripheralAllocErr,
 				pinConfigErr,
 				clockConfigErr,
-				dfgErr: dfgErrorCount
+				dfgErr: dfgErrorCount,
+				mcubootErr: mcubootErrors
 			});
 		});
 
@@ -90,7 +86,8 @@ export function useSystemErrorsCount({
 		pinErrors,
 		clockConfigError,
 		gasketErrors,
-		streamErrors
+		streamErrors,
+		mcubootErrors
 	]);
 
 	return errorsMap;

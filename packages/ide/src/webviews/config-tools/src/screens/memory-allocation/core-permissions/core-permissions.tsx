@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,16 @@ import {
 } from '@common/contexts/LocaleContext';
 import {getProjectInfoList} from '../../../utils/config';
 import {memo, useMemo} from 'react';
+import {getMemoryAccessOverrideForProject} from '../../../utils/memory-access';
+import {DEFAULT_PERMISSIONS} from '../../../constants/memory';
 
-type CorePermissionsProps = {
-	readonly core: PartitionCore;
-	readonly memoryType: string;
-	readonly onRemoveCore: (coreId: string) => void;
-	readonly onUpdateAccess: (coreId: string, value: string) => void;
-	readonly onUpdateOwner: (coreId: string, value: boolean) => void;
-};
-
-const permissions = {
-	readOnly: 'R',
-	readWrite: 'R/W',
-	readExecute: 'R/X',
-	readWriteExecute: 'R/W/X'
-};
+type CorePermissionsProps = Readonly<{
+	core: PartitionCore;
+	memoryType: string;
+	onRemoveCore: (coreId: string) => void;
+	onUpdateAccess: (coreId: string, value: string) => void;
+	onUpdateOwner: (coreId: string, value: boolean) => void;
+}>;
 
 export const CorePermissions = memo(
 	({
@@ -56,17 +51,28 @@ export const CorePermissions = memo(
 		const dataModelCore = getSocCoreList().find(
 			socCore => socCore.Id === core.coreId
 		);
-		const permissionOptions = dataModelCore
-			? Object.values(permissions).filter(permission =>
-					dataModelCore.Memory.filter(
-						block => 'Type' in block && block.Type === memoryType
-					).some(block =>
-						permission
-							.split('/')
-							.every(level => block.Access.includes(level))
-					)
-				)
-			: [];
+
+		const accessOverride = getMemoryAccessOverrideForProject(
+			core.projectId,
+			memoryType
+		);
+
+		const permissionOptions = useMemo(
+			() =>
+				dataModelCore && accessOverride === undefined
+					? Object.values(DEFAULT_PERMISSIONS).filter(permission =>
+							dataModelCore.Memory.filter(
+								block => 'Type' in block && block.Type === memoryType
+							).some(block =>
+								permission
+									.split('/')
+									// eslint-disable-next-line max-nested-callbacks
+									.every(level => block.Access.includes(level))
+							)
+						)
+					: (accessOverride ?? []),
+			[accessOverride, dataModelCore, memoryType]
+		);
 
 		const secure = useMemo(() => {
 			const project = projects?.find(
@@ -101,17 +107,28 @@ export const CorePermissions = memo(
 					</Button>
 				</div>
 				<div className={styles.row}>
-					<DropDown
-						controlId={'core-permission' + core.projectId}
-						currentControlValue={core.access}
-						options={permissionOptions.map(permission => ({
-							label: i10n?.access[permission].title,
-							value: permission
-						}))}
-						onHandleDropdown={value => {
-							onUpdateAccess(core.projectId, value);
-						}}
-					/>
+					{permissionOptions.length > 0 ? (
+						<DropDown
+							controlId={'core-permission' + core.projectId}
+							currentControlValue={core.access}
+							options={permissionOptions.map(permission => ({
+								label:
+									i10n?.access?.[permission]?.title ?? permission,
+								value: permission
+							}))}
+							onHandleDropdown={value => {
+								onUpdateAccess(core.projectId, value);
+							}}
+						/>
+					) : (
+						<span
+							data-test={`no-permission-${core.projectId}`}
+							className={styles.noPermission}
+						>
+							{i10n?.noPermissions ??
+								'Permissions handled in Plugin options'}
+						</span>
+					)}
 					<div className={styles.toggleContainer}>
 						<span>{i10n?.core?.owner}</span>
 						<Toggle

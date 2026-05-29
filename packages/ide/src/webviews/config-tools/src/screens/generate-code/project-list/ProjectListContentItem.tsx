@@ -17,7 +17,7 @@ import {useCallback} from 'react';
 import DownCarret from '@common/icons/DownCarret';
 import type {navigationItems} from '@common/constants/navigation';
 import {
-	setActiveFilter,
+	setActivePinconfigAssignmentFilter,
 	setActiveScreen
 } from '../../../state/slices/app-context/appContext.reducer';
 import {useAppDispatch} from '../../../state/store';
@@ -39,7 +39,8 @@ export default function ProjectListContentItem({
 		(id: (typeof navigationItems)[keyof typeof navigationItems]) => {
 			dispatch(setActiveScreen(id));
 
-			if (id === 'pinmux') dispatch(setActiveFilter('conflict'));
+			if (id === 'pinmux')
+				dispatch(setActivePinconfigAssignmentFilter('conflict'));
 		},
 		[dispatch]
 	);

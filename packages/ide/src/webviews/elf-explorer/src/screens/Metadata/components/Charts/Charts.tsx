@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import HeaderWithTooltip from '../../../../components/HeaderWithTooltip/HeaderWi
 import {type TSection} from '../../../../common/types/memory-layout';
 import {
 	calculateSectionSizes,
-	chartLegendColors,
 	axisColor
 } from '../../../../utils/chart-utils';
 import ChartLegend from '../../../../components/ChartLegend/ChartLegend';
@@ -27,6 +26,8 @@ import {useLocaleContext} from '@common/contexts/LocaleContext';
 import type {TLocaleContext} from '../../../../common/types/context';
 import styles from './Charts.module.scss';
 import type {ECElementEvent} from 'echarts';
+import {useChartLegendColors} from '../../../../common/hooks/use-chart-legend-colors';
+import {useMemo} from 'react';
 
 type TMainSectionChartProps = {
 	readonly sections: TSection[];
@@ -45,91 +46,96 @@ export default function Charts({sections}: TMainSectionChartProps) {
 
 	const legendData = {text, data, bss};
 
-	const getOption = (): EChartsOption => ({
-		animation: false,
-		grid: {
-			show: false,
-			top: '1%',
-			bottom: '25%',
-			left: 'left',
-			right: '4%',
-			containLabel: false
-		},
-		xAxis: {
-			type: 'value',
-			boundaryGap: [0, 0.01],
-			axisLabel: {
-				align: 'left'
+	const chartLegendColors = useChartLegendColors();
+
+	const option: EChartsOption = useMemo(
+		() => ({
+			animation: false,
+			grid: {
+				show: false,
+				top: '1%',
+				bottom: '25%',
+				left: 'left',
+				right: '4%',
+				containLabel: false
 			},
-			splitLine: {
-				show: true,
-				lineStyle: {
-					color: axisColor // Change the color of the vertical dividers to red
+			xAxis: {
+				type: 'value',
+				boundaryGap: [0, 0.01],
+				axisLabel: {
+					align: 'left'
+				},
+				splitLine: {
+					show: true,
+					lineStyle: {
+						color: axisColor // Change the color of the vertical dividers to red
+					}
 				}
-			}
-		},
-		yAxis: {
-			type: 'category',
-			data: ['Size'],
-			axisLine: {
-				show: false
 			},
-			axisTick: {
-				show: false
+			yAxis: {
+				type: 'category',
+				data: ['Size'],
+				axisLine: {
+					show: false
+				},
+				axisTick: {
+					show: false
+				},
+				axisLabel: {
+					show: false
+				}
 			},
-			axisLabel: {
-				show: false
-			}
-		},
-		tooltip: {
-			trigger: 'item',
-			className: styles.chartTooltip,
-			formatter(params: ECElementEvent) {
-				// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-				return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+			tooltip: {
+				trigger: 'item',
+				className: styles.chartTooltip,
+				formatter(params: ECElementEvent) {
+					// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+					return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+				},
+				confine: true
 			},
-			confine: true
-		},
-		series: [
-			{
-				name: 'text',
-				type: 'bar',
-				data: [chartData.text],
-				barGap: '100%',
-				itemStyle: {
-					color: chartLegendColors.text
+			series: [
+				{
+					name: 'text',
+					type: 'bar',
+					data: [chartData.text],
+					barGap: '100%',
+					itemStyle: {
+						color: chartLegendColors.text
+					},
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
 				},
-				emphasis: {
-					disabled: true
+				{
+					name: 'data',
+					type: 'bar',
+					data: [chartData.data],
+					itemStyle: {
+						color: chartLegendColors.data
+					},
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
 				},
-				cursor: 'default'
-			},
-			{
-				name: 'data',
-				type: 'bar',
-				data: [chartData.data],
-				itemStyle: {
-					color: chartLegendColors.data
-				},
-				emphasis: {
-					disabled: true
-				},
-				cursor: 'default'
-			},
-			{
-				name: 'bss',
-				type: 'bar',
-				data: [chartData.bss],
-				itemStyle: {
-					color: chartLegendColors.bss
-				},
-				emphasis: {
-					disabled: true
-				},
-				cursor: 'default'
-			}
-		]
-	});
+				{
+					name: 'bss',
+					type: 'bar',
+					data: [chartData.bss],
+					itemStyle: {
+						color: chartLegendColors.bss
+					},
+					emphasis: {
+						disabled: true
+					},
+					cursor: 'default'
+				}
+			]
+		}),
+		[chartData, chartLegendColors]
+	);
 
 	return (
 		<div className={styles.container} data-test='metadata:chart'>
@@ -140,7 +146,7 @@ export default function Charts({sections}: TMainSectionChartProps) {
 
 			<div className={styles['chart-wrapper']}>
 				<ReactECharts
-					option={getOption()}
+					option={option}
 					style={{height: '100%', width: '100%'}}
 				/>
 				<div className={styles.legendContainer}>

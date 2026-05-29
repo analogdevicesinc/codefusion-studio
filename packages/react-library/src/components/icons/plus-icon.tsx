@@ -12,15 +12,14 @@
  * limitations under the License.
  *
  */
-
 import {type SVGProps} from 'react';
 
 export default function PlusIcon(props: SVGProps<SVGSVGElement>) {
 	return (
 		<svg
-			width='16'
-			height='17'
-			viewBox='0 0 16 17'
+			width={props?.width ?? '16'}
+			height={props?.height ?? '16'}
+			viewBox={`0 0 ${props?.width ?? '16'} ${props?.height ?? '16'}`}
 			fill='none'
 			xmlns='http://www.w3.org/2000/svg'
 			{...props}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
  */
 
 import {type Soc} from '../../../../../common/types/soc';
-import {
-	setClockNodeControlValue,
-	setDiagramData
-} from '../../../state/slices/clock-nodes/clockNodes.reducer';
+import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {
 	setSignalAssignment,
 	setSignalGroupAssignment
@@ -30,7 +27,7 @@ import {resetCoreMemoryDictionary} from '../../../utils/memory';
 import {resetPinDictionary} from '../../../utils/soc-pins';
 import SystemPlannerConfigToolsList from './system-planner-config-tools-list';
 
-import type {CfsConfig} from 'cfs-plugins-api';
+import type {CfsConfig} from 'cfs-types';
 const wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
@@ -66,17 +63,22 @@ const mockedConfigDict = {
 describe('System config tools', () => {
 	beforeEach(() => {
 		cy.viewport(1280, 720);
+	});
+
+	it('should render config tools cards', () => {
 		cy.fixture('clock-config-plugin-controls.json').then(controls => {
 			window.localStorage.setItem(
 				'pluginControls:CM4-proj',
 				JSON.stringify(controls)
 			);
-		});
-	});
 
-	it('should render config tools cards', () => {
-		const reduxStore = configurePreloadedStore(wlp, mockedConfigDict);
-		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+			const reduxStore = configurePreloadedStore(
+				wlp,
+				mockedConfigDict,
+				controls
+			);
+			cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		});
 		cy.get('[data-test="peripheral-card"]').should('be.visible');
 		cy.get('[data-test="pinmux-card"]').should('be.visible');
 		cy.get('[data-test="clock-card"]').should('be.visible');
@@ -86,108 +88,128 @@ describe('System config tools', () => {
 	});
 
 	it('should not render the conflict icon when there is no pin error', () => {
-		const reduxStore = configurePreloadedStore(
-			wlp as unknown as Soc,
-			mockedConfigDict
-		);
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(controls)
+			);
 
-		reduxStore.dispatch(
-			setAppliedSignal({
-				Pin: 'F2',
-				Peripheral: 'GPIO0',
-				Name: 'P0.11'
-			})
-		);
+			const reduxStore = configurePreloadedStore(
+				wlp as unknown as Soc,
+				mockedConfigDict,
+				controls
+			);
 
-		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
-		cy.get('[data-test="pinmux-card"]').should('be.visible');
-		cy.get('[data-test="pinmux-error"]').should('not.exist');
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F2',
+					Peripheral: 'GPIO0',
+					Name: 'P0.11'
+				})
+			);
+
+			cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+			cy.get('[data-test="pinmux-card"]').should('be.visible');
+			cy.get('[data-test="pinmux-error"]').should('not.exist');
+		});
 	});
 
 	it('should not render the conflict icon when there is no clock error', () => {
-		const reduxStore = configurePreloadedStore(wlp);
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(controls)
+			);
 
-		reduxStore.dispatch(
-			setAppliedSignal({
-				Pin: 'F4',
-				Peripheral: 'MISC',
-				Name: 'CLKEXT'
-			})
-		);
+			const reduxStore = configurePreloadedStore(
+				wlp as unknown as Soc,
+				mockedConfigDict,
+				controls
+			);
 
-		reduxStore.dispatch(
-			setDiagramData({
-				'P0.23': {
-					enabled: true,
-					error: true
+			// Assign the external clock pin signal
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
+				})
+			);
+
+			// Enable P0.23 path by selecting SYS_OSC Mux to CLKEXT
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'CLKEXT'
+				})
+			);
+
+			// Set a valid frequency for P0.23 to avoid errors
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'P0.23',
+					key: 'P0_23_FREQ',
+					value: '10000'
+				})
+			);
+
+			cy.mount(<SystemPlannerConfigToolsList />, reduxStore).then(
+				() => {
+					cy.get('[data-test="clock-card"]').should('be.visible');
+					cy.get('[data-test="clock-config-error"]').should(
+						'not.exist'
+					);
 				}
-			})
-		);
-
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				name: 'SYS_OSC Mux',
-				key: 'MUX',
-				value: 'CLKEXT'
-			})
-		);
-
-		cy.mount(<SystemPlannerConfigToolsList />, reduxStore).then(
-			() => {
-				cy.get('[data-test="clock-card"]').should('be.visible');
-				cy.get('[data-test="clock-config-error"]').should(
-					'not.exist'
-				);
-			}
-		);
+			);
+		});
 	});
 
 	it('should render the conflict icon when there is a clock error', () => {
-		const reduxStore = configurePreloadedStore(
-			wlp as unknown as Soc,
-			mockedConfigDict
-		);
+		cy.fixture('clock-config-plugin-controls.json').then(controls => {
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify(controls)
+			);
 
-		reduxStore.dispatch(
-			setAppliedSignal({
-				Pin: 'F4',
-				Peripheral: 'MISC',
-				Name: 'CLKEXT'
-			})
-		);
+			const reduxStore = configurePreloadedStore(
+				wlp as unknown as Soc,
+				mockedConfigDict,
+				controls
+			);
 
-		reduxStore.dispatch(
-			setDiagramData({
-				'P0.23': {
-					enabled: true,
-					error: true
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'F4',
+					Peripheral: 'MISC',
+					Name: 'CLKEXT'
+				})
+			);
+
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'SYS_OSC Mux',
+					key: 'MUX',
+					value: 'CLKEXT'
+				})
+			);
+
+			reduxStore.dispatch(
+				setClockNodeControlValue({
+					name: 'P0.23',
+					key: 'P0_23_FREQ',
+					value: '100000000',
+					error: 'INVALID_MAX_VAL'
+				})
+			);
+
+			cy.mount(<SystemPlannerConfigToolsList />, reduxStore).then(
+				() => {
+					cy.get('[data-test="clock-card"]').should('be.visible');
+					cy.get('[data-test="clock-config-error"]').should('exist');
 				}
-			})
-		);
-
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				name: 'SYS_OSC Mux',
-				key: 'MUX',
-				value: 'CLKEXT'
-			})
-		);
-
-		reduxStore.dispatch(
-			setClockNodeControlValue({
-				name: 'P0.23',
-				key: 'P0_23_FREQ',
-				value: '100000000',
-				error: 'INVALID_MAX_VAL'
-			})
-		);
-
-		cy.mount(<SystemPlannerConfigToolsList />, reduxStore).then(
-			() => {
-				cy.get('[data-test="clock-card"]').should('be.visible');
-				cy.get('[data-test="clock-config-error"]').should('exist');
-			}
-		);
+			);
+		});
 	});
 
 	it('should render the conflict icon when there is a pin error', () => {
@@ -291,5 +313,108 @@ describe('System config tools', () => {
 		const reduxStore = configurePreloadedStore(wlp);
 		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
 		cy.get('[data-test="pinmux-card"]').should('exist');
+	});
+
+	it('should render the MCU Boot Config card when SOC is AD71270 and Zephyr project exists', () => {
+		const configWithZephyr = {
+			...mockedConfigDict,
+			Soc: 'AD71270',
+			Projects: [
+				{
+					...mockedConfigDict.Projects[0],
+					FirmwarePlatform: 'zephyr'
+				}
+			]
+		} as unknown as CfsConfig;
+
+		const socWithMcuboot = {...wlp, supportsMCUboot: true};
+		const reduxStore = configurePreloadedStore(
+			socWithMcuboot,
+			configWithZephyr
+		);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="mcuboot-card"]').should('exist');
+	});
+
+	it('should render the MCU Boot Config card when SOC is ADAU2042 and Zephyr project exists', () => {
+		const configWithZephyr = {
+			...mockedConfigDict,
+			Soc: 'ADAU2042',
+			Projects: [
+				{
+					...mockedConfigDict.Projects[0],
+					FirmwarePlatform: 'zephyr'
+				}
+			]
+		} as unknown as CfsConfig;
+
+		const socWithMcuboot = {...wlp, supportsMCUboot: true};
+		const reduxStore = configurePreloadedStore(
+			socWithMcuboot,
+			configWithZephyr
+		);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="mcuboot-card"]').should('exist');
+	});
+
+	it('should not render the MCU Boot Config card when no Zephyr projects and unsupported SoC', () => {
+		const configWithoutZephyr = {
+			...mockedConfigDict,
+			Soc: 'MAX32690',
+			Projects: [
+				{
+					...mockedConfigDict.Projects[0],
+					FirmwarePlatform: 'msdk'
+				}
+			]
+		} as unknown as CfsConfig;
+
+		const reduxStore = configurePreloadedStore(
+			wlp,
+			configWithoutZephyr
+		);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="mcuboot-card"]').should('not.exist');
+	});
+
+	it('should not render the MCU Boot Config card when Zephyr project exists but supportsMCUboot is false', () => {
+		const configWithZephyr = {
+			...mockedConfigDict,
+			Projects: [
+				{
+					...mockedConfigDict.Projects[0],
+					FirmwarePlatform: 'zephyr'
+				}
+			]
+		} as unknown as CfsConfig;
+
+		const socWithoutMcuboot = {...wlp, supportsMCUboot: false};
+		const reduxStore = configurePreloadedStore(
+			socWithoutMcuboot,
+			configWithZephyr
+		);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="mcuboot-card"]').should('not.exist');
+	});
+
+	it('should not render the MCU Boot Config card when Zephyr project exists but supportsMCUboot is undefined', () => {
+		const configWithZephyr = {
+			...mockedConfigDict,
+			Projects: [
+				{
+					...mockedConfigDict.Projects[0],
+					FirmwarePlatform: 'zephyr'
+				}
+			]
+		} as unknown as CfsConfig;
+
+		const {supportsMCUboot: _, ...socWithoutMcubootProp} =
+			wlp as typeof wlp & {supportsMCUboot?: boolean};
+		const reduxStore = configurePreloadedStore(
+			socWithoutMcubootProp as typeof wlp,
+			configWithZephyr
+		);
+		cy.mount(<SystemPlannerConfigToolsList />, reduxStore);
+		cy.get('[data-test="mcuboot-card"]').should('not.exist');
 	});
 });

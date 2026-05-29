@@ -13,5 +13,6 @@
         "resolveJsonModule": false,
         "module": "nodenext"
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
+    "references": [{ "path": "./cfs-ccm-api" }]
 }

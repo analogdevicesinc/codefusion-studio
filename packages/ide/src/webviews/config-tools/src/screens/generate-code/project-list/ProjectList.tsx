@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import {useSystemErrorsCount} from '../../../hooks/useSystemErrorsCount';
 import type {ProjectInfo} from '../../../utils/config';
 import type {ControlCfg} from '../../../../../common/types/soc';
 import {useAIModels} from '../../../state/slices/ai-tools/aiModel.selector';
-import type {AIModel} from 'cfs-plugins-api';
+import type {AIModel} from 'cfs-types';
 
 function ProjectList({
 	projects,
@@ -117,7 +117,8 @@ function ProjectList({
 						peripheralAllocErr: 0,
 						pinConfigErr: 0,
 						clockConfigErr: 0,
-						dfgErr: 0
+						dfgErr: 0,
+						mcubootErr: 0
 					};
 
 					const isValid = !(

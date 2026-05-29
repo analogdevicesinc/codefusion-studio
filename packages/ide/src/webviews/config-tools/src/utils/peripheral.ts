@@ -14,11 +14,16 @@
  */
 
 import type {
+	TFormFieldValue,
+	TFormNumericBase
+} from 'cfs-react-library';
+import type {
 	AppliedSignal,
 	FormattedPeripheral,
 	FormattedPeripheralSignal
 } from '../../../common/types/soc';
 import {type PeripheralConfig} from '../types/peripherals';
+import {convertDecimalToHex} from './memory';
 
 export function findProjectIdBySignalName(
 	name: string,
@@ -126,3 +131,53 @@ export const updateProjectCardOpenState = (
 	// Remove projectId from array
 	return openProjectCards.filter(id => id !== projectId);
 };
+
+/**
+ * Converts a value based on numeric base format
+ * @param value - The value to be formatted
+ * @param numericBase - The numeric base to format the value
+ * @returns - Formatted value as a string
+ */
+export function formatValueByNumericBase(
+  value: TFormFieldValue,
+  numericBase?: TFormNumericBase
+): string {
+	if (!numericBase) {
+		return String(value);
+	}
+
+  if (numericBase === 'Hexadecimal') {
+		if (typeof value === 'number') {
+			return convertDecimalToHex(value);
+		}
+
+		if (typeof value === 'string') {
+				return convertDecimalToHex(parseInt(value, 16));
+		}
+  }
+
+  return String(value);
+}
+
+/**
+ * Formats configuration values based on their config format
+ * @param config - Record of configuration values (can be undefined)
+ * @param configFormat - Optional configuration format containing numeric base mapping
+ * @returns - Record of formatted configuration values as strings
+ */
+export function formatPeripheralConfigValues(
+  config: Record<string, TFormFieldValue> | undefined,
+  configFormat?: PeripheralConfig['configFormat']
+): Record<string, string> {
+  if (!config) {
+    return {};
+  }
+
+  const formatEntry = ([key, value]: [string, TFormFieldValue]): [string, string] => {
+    const numericBase = configFormat?.numericBase?.[key];
+
+    return [key, formatValueByNumericBase(value, numericBase)];
+  };
+
+  return Object.fromEntries(Object.entries(config).map(formatEntry));
+}

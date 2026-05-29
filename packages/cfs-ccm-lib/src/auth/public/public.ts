@@ -13,8 +13,9 @@
  *
  */
 
-import { MiddlewareCallbackParams } from 'openapi-fetch';
-import { AuthorizerBase, AuthConfigBase } from '../authorizer.js';
+import type { MiddlewareCallbackParams } from 'openapi-fetch';
+import { AuthorizerBase } from '../authorizer.js';
+import type { AuthConfigBase } from '../authorizer.js';
 
 export interface PublicAuthConfig extends Partial<AuthConfigBase> {
     publicUser?: string;

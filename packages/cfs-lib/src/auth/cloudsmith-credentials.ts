@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import type {
 export class MyAnalogCloudsmithCredentialProvider
 	implements CfsPackageRemoteCredentialProvider
 {
-	private readonly cloudsmithBaseUrl: string = ".cloudsmith.io/";
+	private readonly cloudsmithDomain: string = ".cloudsmith.io";
 	private readonly repoClient: RepositoryClient;
 	private readonly repoCache = new Map<string, PackageRepository>();
 
@@ -41,6 +41,20 @@ export class MyAnalogCloudsmithCredentialProvider
 	async getRemoteCredential(
 		url: string
 	): Promise<CfsPackageRemoteCredential | undefined> {
+		if (!URL.canParse(url)) {
+			return undefined;
+		}
+		const parsedUrl = new URL(url);
+		const repoPath = parsedUrl.pathname
+			.split("/")
+			.filter(Boolean) // filter(Boolean) removes empty segments caused by leading/trailing slashes
+			.slice(0, 2);
+		if (
+			!parsedUrl.hostname.endsWith(this.cloudsmithDomain) || // Not a cloudsmith URL
+			repoPath.length < 2 // Not enough path segments to determine user/repo
+		) {
+			return undefined;
+		}
 		let pkgRepo = this.repoCache.get(url);
 		if (pkgRepo === undefined) {
 			pkgRepo = await this.repoClient.getRepository(url);
@@ -48,13 +62,11 @@ export class MyAnalogCloudsmithCredentialProvider
 		}
 		const token = await pkgRepo.getToken();
 		if (!token) return undefined;
-		let repoPath = url.slice(
-			url.lastIndexOf(this.cloudsmithBaseUrl) +
-				this.cloudsmithBaseUrl.length
-		);
-		if (repoPath.endsWith("/")) repoPath = repoPath.slice(0, -1);
 
-		return { user: repoPath, password: token };
+		return {
+			user: repoPath.join("/"),
+			password: token
+		};
 	}
 
 	async refreshRemoteCredential(url: string): Promise<void> {

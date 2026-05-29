@@ -86,7 +86,7 @@ describe("Local install", function () {
 		await expect(
 			api.install(testPkgRef, { localOnly: true })
 		).to.be.rejectedWith(
-			/Couldn't find the following packages:|not resolved: No remote defined|No versions found matching/
+			/Not found in local cache|Couldn't find the following packages:|not resolved: No remote defined|No versions found matching/
 		);
 	});
 
@@ -108,7 +108,7 @@ describe("Local install", function () {
 		await expect(
 			api.install(testPkgRef, { localOnly: true })
 		).to.be.rejectedWith(
-			/Couldn't find the following packages:|not resolved: No remote defined|No versions found matching/
+			/Not found in local cache|Couldn't find the following packages:|not resolved: No remote defined|No versions found matching/
 		);
 	});
 });

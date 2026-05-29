@@ -78,7 +78,7 @@ This allows you to keep using the extension version bundled with a specific CFS 
 
 ### Optional: Review dependent extensions
 
-The CodeFusion Studio extension depends on other VS Code extensions (including Microsoft C/C++ and Cortex-Debug) to provide debugging and development features.
+The CodeFusion Studio extension depends on other VS Code extensions (including Microsoft C/C++, Cortex-Debug, and Zephelin Trace Viewer) to provide debugging and development features.
 
 In most cases, no additional action is required.
 

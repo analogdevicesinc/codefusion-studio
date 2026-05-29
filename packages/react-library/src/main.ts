@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import PanelView from './components/tabs/panel-view';
 import Panels from './components/tabs/panels';
 import MultiSelect from './components/multiselect/multiselect';
 import {MultiSelectOption} from './components/multiselect/multiselect';
-import Stepper from './components/stepper/stepper';
 import StepList from './components/wizard-stepper/wizard-stepper';
 import Badge from './components/badge/badge';
 import Divider from './components/divider/divider';
@@ -49,6 +48,7 @@ import DataGridCell from './components/table/data-grid-cell';
 import DynamicForm from './components/dynamic-form/dynamic-form.js';
 import Radio from './components/radio/radio';
 import RadioGroup from './components/radio/radio-group';
+import EmptyState from './components/empty-state/empty-state.js';
 import TextArea from './components/text-area/text-area.js';
 import HexInputField from './components/hex-input-field/hex-input-field.js';
 import ClockConfigIcon from './components/icons/clock-config-icon.js';
@@ -63,9 +63,17 @@ import PlusIcon from './components/icons/plus-icon.js';
 import ErrorBoundary from './components/error-boundary/error-boundary.js';
 import ExpandAllIcon from './components/icons/expand-all-icon.js';
 import CollapseAllIcon from './components/icons/collapse-all-icon.js';
+import HexadecimalIcon from './components/icons/hexadecimal.js';
+import DecimalIcon from './components/icons/decimal.js';
 import CoreIcon from './components/icons/core-icon.js';
 import DeleteIcon from './components/icons/delete-icon.js';
 import Tooltip from './components/tooltip/tooltip.js';
+import IntegerField from './components/integer-field/integer-field.js';
+import Accordion from './components/accordion/accordion.js';
+import SegmentedControls, {
+	type SegmentOption
+} from './components/segmented-controls/segmented-controls.js';
+import LockIcon from './components/icons/lock-icon.js';
 
 import {use} from './hooks/use';
 
@@ -87,6 +95,23 @@ import HamburgerIcon from './components/icons/hamburger-icon.js';
 import DataFlowGasketIcon from './components/icons/data-flow-gasket-icon.js';
 import WarningIcon from './components/icons/warning-icon.js';
 import ExternalLinkIcon from './components/icons/external-link-icon.js';
+import {ContextMenu} from './components/context-menu/context-menu.js';
+import CopyIcon from './components/icons/copy-icon.js';
+import RefreshIcon from './components/icons/refresh-icon.js';
+import SettingsIcon from './components/icons/settings-icon.js';
+import BigEndianIcon from './components/icons/big-endian-icon.js';
+import DatabaseIcon from './components/icons/database-icon.js';
+import InlineMessage from './components/inline-message/inline-message.js';
+import MCUBootIcon from './components/icons/mcuboot-icon.js';
+import InlineEditField from './components/edit-input/InlineEditField.js';
+import DisabledIcon from './components/icons/disabled-icon.js';
+import WarningModal from './components/warning-modal/WarningModal.js';
+import type {InlineEditFieldProps} from './components/edit-input/InlineEditField.js';
+import type {WarningModalProps} from './components/warning-modal/WarningModal.js';
+import ConflictIcon from './components/icons/conflict-icon.js';
+import MeasurementIcon from './components/icons/measurement-icon.js';
+import SaveAsIcon from './components/icons/save-as-icon.js';
+import ExportIcon from './components/icons/export-icon.js';
 
 export {
 	GridCombobox,
@@ -95,6 +120,7 @@ export {
 	Chip,
 	Card,
 	CustomizableDropdown,
+	Accordion,
 	TextField,
 	HexInputField,
 	SlidingPanel,
@@ -104,7 +130,6 @@ export {
 	PanelView,
 	Panels,
 	MultiSelect,
-	Stepper,
 	StepList,
 	Badge,
 	Divider,
@@ -119,7 +144,14 @@ export {
 	DynamicForm,
 	TextArea,
 	Tooltip,
-	use
+	IntegerField,
+	SegmentedControls,
+	use,
+	ContextMenu,
+	EmptyState,
+	InlineMessage,
+	InlineEditField,
+	WarningModal
 };
 
 export type {
@@ -134,12 +166,16 @@ export type {
 	TFormNumericBase,
 	StepListProps,
 	Step,
-	SubStep
+	SubStep,
+	SegmentOption,
+	InlineEditFieldProps,
+	WarningModalProps
 };
 
 export {
 	SearchIcon,
 	CloseIcon,
+	ConflictIcon,
 	InfoIcon,
 	ChevronLeftIcon,
 	ClockConfigIcon,
@@ -159,5 +195,18 @@ export {
 	CoreIcon,
 	DeleteIcon,
 	WarningIcon,
-	ExternalLinkIcon
+	ExternalLinkIcon,
+	CopyIcon,
+	RefreshIcon,
+	SettingsIcon,
+	BigEndianIcon,
+	DatabaseIcon,
+	MCUBootIcon,
+	DisabledIcon,
+	HexadecimalIcon,
+	DecimalIcon,
+	LockIcon,
+	MeasurementIcon,
+	SaveAsIcon,
+	ExportIcon
 };

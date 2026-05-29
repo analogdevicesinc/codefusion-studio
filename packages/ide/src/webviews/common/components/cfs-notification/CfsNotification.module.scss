@@ -23,4 +23,8 @@
 	background: colors.$notifications-background;
 	padding: 8px;
 	box-sizing: border-box;
+
+	.icon svg {
+		vertical-align: middle;
+	}
 }

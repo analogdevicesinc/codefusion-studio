@@ -17,6 +17,7 @@ extra:
 
 extra_css:
   - assets/templates/pdf_overrides.css
+  - assets/stylesheets/custom.css
 
 plugins:
   - glightbox
@@ -40,6 +41,7 @@ nav:
       - Features: user-guide/about/features.md
       - Navigation: user-guide/about/navigation.md
       - Supported processors: user-guide/about/supported-processors.md
+      - Supported AI model formats: user-guide/about/supported-ai-model-formats.md
       - Telemetry: user-guide/about/telemetry.md
       - Help: user-guide/about/help.md
     - Installation:
@@ -59,10 +61,12 @@ nav:
     - Workspace Management:
       - user-guide/workspaces/index.md
       - Create a new workspace: user-guide/workspaces/create-new-workspace.md
-      - Supported templates: user-guide/workspaces/supported-templates.md
       - Open a workspace: user-guide/workspaces/open-workspace.md
       - Explore and open MSDK examples: user-guide/workspaces/open-and-migrate-example.md
       - Migrate a project to System Planner: user-guide/workspaces/migrate-project-to-system-planner.md
+      - AI workspaces:
+        - Create workspace from AI model: user-guide/workspaces/create-workspace-from-ai-model.md
+        - Deploy and profile an AI model: user-guide/workspaces/deploy-and-profile-ai-model.md
       - Target-specific setup:
         - user-guide/workspaces/targets/index.md
         - TrustZone: user-guide/workspaces/targets/trustzone.md
@@ -73,7 +77,10 @@ nav:
       - Clock Config: user-guide/tools/clock-config.md
       - Memory Allocation: user-guide/tools/memory-allocation.md
       - Registers: user-guide/tools/registers.md
-      - Embedded AI tools: user-guide/tools/manage-ai-models.md
+      - Embedded AI tools:
+        - Overview: user-guide/tools/manage-ai-models.md
+        - Compatibility Analyzer report: user-guide/tools/compat-report.md
+        - Resource Profiling report: user-guide/tools/profiling-report.md
       - Profiling: user-guide/tools/profiling.md
       - Generate Code: user-guide/tools/generate-code.md
     - Build and Flash:
@@ -83,15 +90,44 @@ nav:
       - The CFS Terminal: user-guide/build-and-flash/cfs-terminal.md
       - Zephyr RTOS: user-guide/build-and-flash/zephyr.md
       - Troubleshooting: user-guide/build-and-flash/troubleshooting.md
+    - CFS Command Line Utility:
+      - user-guide/cfsutil/index.md
+      - AI:
+        - user-guide/cfsutil/ai/index.md
+        - Backends: user-guide/cfsutil/ai/backends.md
+        - Build: user-guide/cfsutil/ai/build.md
+        - Clean cache: user-guide/cfsutil/ai/clean-cache.md
+        - Compat: user-guide/cfsutil/ai/compat.md
+        - Model management: user-guide/cfsutil/ai/model.md
+        - Profile: user-guide/cfsutil/ai/profile.md
+        - Workspace: user-guide/cfsutil/ai/workspace.md
+      - Catalog: user-guide/cfsutil/catalog.md
+      - CFS Plugins: user-guide/cfsutil/cfs-plugins.md
+      - Device Tree: user-guide/cfsutil/device-tree.md
+      - Docker: user-guide/cfsutil/docker.md
+      - ELF Utilities: user-guide/cfsutil/elf-utilities.md
+      - Generate: user-guide/cfsutil/generate.md
+      - myAnalog authentication: user-guide/cfsutil/myanalog-auth.md
+      - Package Manager: user-guide/cfsutil/package-manager.md
+      - Plugins: user-guide/cfsutil/oclif-plugins.md
+      - Port: user-guide/cfsutil/port.md
+      - Project: user-guide/cfsutil/project.md
+      - SoCs: user-guide/cfsutil/socs.md
+      - Tasks: user-guide/cfsutil/tasks.md
+      - Workspace: user-guide/cfsutil/workspace.md
     - Debugging:
       - user-guide/debugging/index.md
-      - Install Olimex JTAG drivers: user-guide/debugging/install-olimex-drivers.md
-      - Install Segger J-Link drivers: user-guide/debugging/install-jlink-drivers.md
-      - Install ICE drivers (Windows only): user-guide/debugging/install-ice-drivers.md
+      - Install debug drivers:
+        - user-guide/debugging/debug-drivers/index.md
+        - Install Olimex JTAG drivers: user-guide/debugging/debug-drivers/install-olimex-drivers.md
+        - Install Segger J-Link drivers: user-guide/debugging/debug-drivers/install-jlink-drivers.md
+        - Install ICE drivers (Windows only): user-guide/debugging/debug-drivers/install-ice-drivers.md
+      - Connect hardware: user-guide/debugging/connect-hardware.md
       - Debug an application: user-guide/debugging/debug-an-application.md
       - Debugging interface:  user-guide/debugging/debug-interface.md
       - Debug a multicore MSDK application: user-guide/debugging/debug-multi-core-application.md
       - Debug a SHARC-FX application: user-guide/debugging/debug-sharc-fx.md
+      - Debug with SEGGER Ozone: user-guide/debugging/debug-with-ozone.md
       - Debug tools:
           - user-guide/debugging/debug-tools/index.md
           - AI Debug Assistant:
@@ -112,24 +148,14 @@ nav:
               - Enable core dump support: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-enable.md
               - Analyze core dumps: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-analyze.md
               - Interpret core dump results: user-guide/debugging/debug-tools/core-dump-analysis/core-dump-interpret.md
+          - Memory Viewer:
+              - user-guide/debugging/debug-tools/memory-viewer/index.md
       - Troubleshooting: user-guide/debugging/troubleshooting.md
     - Developer Tools:
       - user-guide/developer-tools/index.md
-      - CFS Command Line Utility: user-guide/developer-tools/cfsutil.md
       - ELF File Explorer: user-guide/developer-tools/elf-file-explorer.md
       - Device Tree View: user-guide/developer-tools/device-tree-view.md
       - Catalog Manager: user-guide/developer-tools/catalog-manager.md
-    - AI Tools:
-      - user-guide/ai-tools/index.md
-      - Supported AI model formats: user-guide/ai-tools/supported-ai-model-formats.md
-      - CFSAI Command Line Utility:
-        - user-guide/ai-tools/cli/index.md
-        - Feature overview: user-guide/ai-tools/cli/cfsai.md
-        - Build command: user-guide/ai-tools/cli/cfsai-build.md
-        - Report command: user-guide/ai-tools/cli/cfsai-report.md
-        - Utility commands: user-guide/ai-tools/cli/cfsai-utility.md
-      - Compatibiity Analyzer report: user-guide/ai-tools/compat-report.md
-      - Resource Profiling report: user-guide/ai-tools/profiling-report.md
     - Plugins:
       - user-guide/plugins/index.md
       - Plugins overview: user-guide/plugins/plugin-integration-overview.md
@@ -149,6 +175,7 @@ nav:
     - Third-party: user-guide/resources/third-party-resources.md
   - Release Notes:
     - release-notes/index.md
+    - 2.2.0: release-notes/2.2.0.md
     - 2.1.0: release-notes/2.1.0.md
     - 2.0.2: release-notes/2.0.2.md
     - 2.0.1: release-notes/2.0.1.md

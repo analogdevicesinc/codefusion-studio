@@ -32,7 +32,7 @@ interface MultiSelectProps {
 	allowClear?: boolean;
 	className?: string;
 	dataTest?: string;
-	variant?: 'default' | 'round' | 'filter';
+	variant?: 'default' | 'form' | 'round' | 'filter';
 	chipText?: string;
 	size?: 'md' | 'lg';
 	onSelection: (

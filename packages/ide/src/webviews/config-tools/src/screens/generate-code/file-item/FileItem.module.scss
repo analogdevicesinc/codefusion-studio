@@ -21,31 +21,30 @@
 
 	.generating {
 		color: colors.$description-foreground;
+		padding-right: 8px;
 	}
 
-	.content {
-		width: 84%;
-		display: flex;
-		gap: 24px;
-		align-items: baseline;
-		padding: 0 24px 0 8px;
+	.fileName {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		padding-right: 24px;
+	}
 
-		.fileName {
-			white-space: nowrap;
-		}
-
-		.loading {
-			flex-grow: 1;
-			border-bottom: 1px dotted colors.$description-foreground;
-			height: 1px;
-		}
+	.loading {
+		flex-grow: 1;
+		align-self: flex-end;
+		border-bottom: 1px dotted colors.$description-foreground;
+		height: 1px;
 	}
 
 	.done {
+		padding-left: 24px;
 		color: colors.$description-foreground;
 	}
 
 	.error {
+		padding-left: 24px;
 		color: colors.$error;
 	}
 }

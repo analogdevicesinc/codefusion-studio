@@ -20,7 +20,7 @@ import {useMemo} from 'react';
 import {getControlsForProjectIds} from '../../../utils/api';
 import {CfsSuspense} from 'cfs-react-library';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
-import {getIsExternallyManagedProyect} from '../../../utils/config';
+import {getIsExternallyManagedProject} from '../../../utils/config';
 
 export const PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID =
 	'pin-config-plugin-options-form';
@@ -34,7 +34,7 @@ function PinConfigTask({peripheral, signal}: PinConfigTaskProps) {
 	const signalProjectId = useSignalProjectId(peripheral, signal);
 
 	const isExternallyManagedProject =
-		getIsExternallyManagedProyect(signalProjectId);
+		getIsExternallyManagedProject(signalProjectId);
 
 	const controlsPromise = useMemo(
 		async () =>

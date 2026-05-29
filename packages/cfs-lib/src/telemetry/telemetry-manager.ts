@@ -20,7 +20,10 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { SingleTelemetryMessage } from "../types/single-telemetry-message.js";
 import { MultipleTelemetryMessages } from "../types/multiple-telemetry-messages.js";
-import { TELEMETRY_APP_ID, TELEMETRY_URL } from "./telemetry-credentials.js";
+import {
+	TELEMETRY_APP_ID,
+	TELEMETRY_URL
+} from "./telemetry-credentials.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,11 +32,17 @@ dotenv.config({
 	path: path.resolve(__dirname, "../../../../.env")
 });
 
+export enum UserType {
+	INTERNAL = "Internal",
+	EXTERNAL = "External"
+}
+
 export class TelemetryManager {
 	private hasUserOptedIn: boolean;
 	private cfsVersion: string;
 	private vscodeVersion: string;
 	private userId: string;
+	private userType: UserType;
 	private sessionId: string;
 	// checks .env for local development, if not found uses values injected during build
 	private telemetryUrl = process.env.CFS_TELEMETRY_URL ?? TELEMETRY_URL;
@@ -44,12 +53,14 @@ export class TelemetryManager {
 		cfsVersion: string,
 		vscodeVersion: string,
 		userId: string,
+		userType: UserType,
 		sessionId: string
 	) {
 		this.hasUserOptedIn = hasUserOptedIn;
 		this.cfsVersion = cfsVersion;
 		this.vscodeVersion = vscodeVersion;
 		this.userId = userId;
+		this.userType = userType;
 		this.sessionId = sessionId;
 	}
 
@@ -136,6 +147,7 @@ export class TelemetryManager {
 			cfsVersion: this.cfsVersion,
 			vscodeVersion: this.vscodeVersion,
 			userId: this.userId,
+			userType: this.userType,
 			sessionId: this.sessionId
 		};
 	}

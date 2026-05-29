@@ -81,7 +81,7 @@ $body-gap: var(--accordion-body-gap, 13px);
 		flex-direction: column;
 		gap: 2px;
 		.title {
-			@include fonts.heading-h5;
+			@include fonts.label-l2;
 			text-transform: uppercase;
 		}
 		.subTitle {

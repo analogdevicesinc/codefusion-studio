@@ -19,7 +19,6 @@ export type Configdata = {
   ClockNodes: ConfigdataClock[];
   FirmwarePlatform: string;
   Secure?: boolean;
-  ZephyrId?: string;
 };
 
 export type ConfigdataPin = {

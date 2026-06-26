@@ -47,6 +47,12 @@ describe("ai-tools-utils", function () {
 						Description: "B"
 					}
 				]
+			},
+			{
+				Id: "SomeArray",
+				Type: "array",
+				Description: "SomeArray",
+				Default: "[]"
 			}
 		];
 
@@ -58,7 +64,8 @@ describe("ai-tools-utils", function () {
 				);
 				expect(result).to.deep.equal({
 					SomeBoolean: true,
-					SomeEnum: "A"
+					SomeEnum: "A",
+					SomeArray: "[]"
 				});
 			} finally {
 				/* empty */
@@ -74,10 +81,38 @@ describe("ai-tools-utils", function () {
 				expect(result).to.deep.equal({
 					SomeString: "xyz",
 					SomeBoolean: false,
-					SomeEnum: "A"
+					SomeEnum: "A",
+					SomeArray: "[]"
 				});
 			} finally {
 				/* empty */
+			}
+		});
+
+		it("GIVEN valid array extension WHEN getValidExtensions THEN return comma-separated string", function () {
+			try {
+				const result = getValidExtensions(
+					["SomeArray=1,2,3"],
+					exampleBackendProperties
+				);
+				expect(result).to.deep.equal({
+					SomeBoolean: true,
+					SomeEnum: "A",
+					SomeArray: "1,2,3"
+				});
+			} finally {
+				/* empty */
+			}
+		});
+
+		it("GIVEN invalid array extension WHEN getValidExtensions THEN error", function () {
+			try {
+				getValidExtensions(["SomeArray=,"], exampleBackendProperties);
+				expect.fail();
+			} catch (error) {
+				expect((error as Error).message).to.equal(
+					"Invalid value for 'somearray', expected format: key=value,value,..."
+				);
 			}
 		});
 

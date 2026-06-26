@@ -13,7 +13,7 @@
  *
  */
 import type {ConfiguredPin} from '@common/api';
-import type {ControlCfg, Soc} from '@common/types/soc';
+import type {Soc} from '@common/types/soc';
 import {setActiveConfiguredSignal} from '../../../../state/slices/app-context/appContext.reducer';
 import {setAppliedSignal} from '../../../../state/slices/pins/pins.reducer';
 import {configurePreloadedStore} from '../../../../state/store';
@@ -321,7 +321,7 @@ describe('PinconfigDisplay component', () => {
 		];
 
 		const mockControls = Promise.resolve({
-			PinConfig: controls as ControlCfg[]
+			PinConfig: controls
 		});
 
 		cy.mount(

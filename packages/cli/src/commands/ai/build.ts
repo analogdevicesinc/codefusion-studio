@@ -12,10 +12,16 @@
  * limitations under the License.
  *
  */
+import type AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import type {
+  AIModelBackend,
+  CfsConfig,
+  CfsSocDataModel,
+  SocControl
+} from 'cfs-types';
+
 import {Flags} from '@oclif/core';
 import {getAiToolsPlugin, getValidExtensions} from 'cfs-lib';
-import AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
-import {AIModelBackend, CfsConfig, CfsSocDataModel} from 'cfs-types';
 import {promises as fs} from 'node:fs';
 import path, {extname} from 'node:path';
 
@@ -273,8 +279,22 @@ export default class Build extends BaseCommand<typeof Build> {
       }
     }
 
-    const validProperties =
-      await aiPlugin.getPropertiesFromName(name);
+    let validProperties: SocControl[] = [];
+
+    try {
+      validProperties = await aiPlugin.getPropertiesFromName(name);
+    } catch (error) {
+      // swallow thrown error for recoverable one
+      throw new RecoverableError(
+        error instanceof Error
+          ? error.message
+          : `No backend properties found for '${name}'`,
+        {
+          suggestion: 'Verify the backend is properly configured',
+          run: `cfsutil ai backends list --name ${name}`
+        }
+      );
+    }
 
     const validExtensions = getValidExtensions(
       extensions,

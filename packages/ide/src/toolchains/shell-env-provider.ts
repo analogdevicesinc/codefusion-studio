@@ -15,12 +15,14 @@
 
 import * as path from "path";
 import { ShellExecutionOptions, workspace, WorkspaceFolder } from "vscode";
-import { CfsShellEnvProvider } from "cfs-lib";
+import { CfsShellEnvProvider, resolveZephyrSdkRoot } from "cfs-lib";
 
 import {
   ENVIRONMENT,
   EXTENSION_ID,
   JLINK_PATH,
+  PROJECT,
+  TOOLCHAIN_ID,
   ZEPHYR_WORKSPACE,
 } from "../constants";
 import { resolveVariables } from "../utils/resolveVariables";
@@ -31,7 +33,7 @@ import { getPropertyName } from "../properties";
 import type { CfsToolManager, ToolInfo } from "cfs-lib";
 
 /**
- * The IDEShellEnvManager class manages environment and shell configuration
+ * The IDEShellEnvProvider class manages environment and shell configuration
  * both at the workspace and user levels, as well as the ones provided by externally managed tools.
  */
 export class IDEShellEnvProvider {
@@ -111,30 +113,50 @@ export class IDEShellEnvProvider {
 
   /**
    * Get the shell environment, including the updated PATH and MAXIM_PATH variables
+   * @param workspaceFolder - Optional workspace folder for resolving resource-scoped settings
    * @returns the shell environment
    */
-  public async getShellEnvironment(): Promise<ShellExecutionOptions["env"]> {
-    const installedTools = await this.toolManager?.getInstalledTools();
+  public async getShellEnvironment(
+    workspaceFolder?: WorkspaceFolder,
+  ): Promise<ShellExecutionOptions["env"]> {
+    const installedTools = (await this.toolManager.getInstalledTools()) ?? [];
     const sdkPath = await Utils.getSdkPath();
     const shellPath = this.getShellPath(sdkPath ?? "", installedTools);
+    const config = workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
 
+    // Zephyr SDK: prefer per-project override, then toolchain ID from settings, then legacy path
     let zephyrSdkPath = "";
-    if (sdkPath) {
-      zephyrSdkPath = path.join(sdkPath, "Tools/zephyr-sdk");
+    const toolchainPathOverride = config.get<string>(
+      `${PROJECT}.toolchain.path`,
+    );
+    if (toolchainPathOverride) {
+      zephyrSdkPath = toolchainPathOverride;
+    } else {
+      const toolchainId =
+        config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`) ??
+        "arm.zephyr.eabi.toolchain";
+      const zephyrToolPath = toolchainId.includes("zephyr")
+        ? await this.toolManager.getToolPath(toolchainId)
+        : undefined;
+
+      if (zephyrToolPath) {
+        zephyrSdkPath = resolveZephyrSdkRoot(zephyrToolPath);
+      } else if (sdkPath) {
+        zephyrSdkPath = path.join(sdkPath, "Tools", "zephyr-sdk");
+      }
     }
 
     // Add zephyr-sdk to the CMAKE_PREFIX_PATH so CMake can find the zephyr toolchains.
-    let cmakePrefixPath = `${zephyrSdkPath}`;
-    if (process.env.CMAKE_PREFIX_PATH) {
-      cmakePrefixPath += `${path.delimiter}${process.env.CMAKE_PREFIX_PATH}`;
-    }
-
-    const config = workspace.getConfiguration(EXTENSION_ID);
+    const cmakePrefixPath = [zephyrSdkPath, process.env.CMAKE_PREFIX_PATH]
+      .filter((segment): segment is string => Boolean(segment))
+      .join(path.delimiter);
     const customZephyrWrksp = config.get<string>(ZEPHYR_WORKSPACE);
     let zephyrBase = customZephyrWrksp;
     if (!customZephyrWrksp) {
       const zephyrPath = await this.toolManager.getToolPath("zephyr");
-      zephyrBase = `${zephyrPath}/zephyr`;
+      if (zephyrPath) {
+        zephyrBase = path.join(zephyrPath, "zephyr");
+      }
     }
 
     let gitExecPath = "";
@@ -172,7 +194,7 @@ export class IDEShellEnvProvider {
       PATH: shellPath,
       PYTHON_CMD: "none",
       CMAKE_PREFIX_PATH: cmakePrefixPath,
-      ZEPHYR_SDK_INSTALL_DIR: `${sdkPath}/Tools/zephyr-sdk`,
+      ...(zephyrSdkPath ? { ZEPHYR_SDK_INSTALL_DIR: zephyrSdkPath } : {}),
       GIT_EXEC_PATH: gitExecPath,
       CFSAI_PATH: cfsaiPath.replace(/\\/g, "/"), // Replace backslashes with forward slashes for cross platform compatibility
       ...(zephyrBase ? { ZEPHYR_BASE: zephyrBase } : {}),

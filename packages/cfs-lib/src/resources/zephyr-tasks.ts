@@ -185,7 +185,7 @@ export default function (
 				id: "start-zephyr-core-dump-gdb-server",
 				type: "shell",
 				command:
-					'python "${config:cfs.zephyrCoreDumpScriptsPath}/coredump_gdbserver.py" "${config:cfs.coreDump.elfFile}" "${config:cfs.coreDump.binFile}" --port ${config:cfs.coreDump.gdbServerPort} -v',
+					'python "${command:cfs.tool.path.zephyr}/zephyr/scripts/coredump/coredump_gdbserver.py" "${config:cfs.coreDump.elfFile}" "${config:cfs.coreDump.binFile}" --port ${config:cfs.coreDump.gdbServerPort} -v',
 				group: {
 					kind: "analyze",
 					isDefault: false
@@ -198,7 +198,7 @@ export default function (
 				id: "coredump-serial-log-parser",
 				type: "shell",
 				command:
-					'python "${config:cfs.zephyrCoreDumpScriptsPath}/coredump_serial_log_parser.py" "${config:cfs.coreDump.logFile}" "${config:cfs.coreDump.binFile}"',
+					'python "${command:cfs.tool.path.zephyr}/zephyr/scripts/coredump/coredump_serial_log_parser.py" "${config:cfs.coreDump.logFile}" "${config:cfs.coreDump.binFile}"',
 				group: {
 					kind: "analyze",
 					isDefault: false

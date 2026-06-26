@@ -24,8 +24,6 @@ import {
   RegisterDescription,
 } from "../../../../debug-manager";
 
-const MAX_SYNC_COUNTER_BYTES = 4095;
-
 /**
  * This class allow interaction with ARM STM-500 Embedded Trace Macrocell,
  * which provides trace functionality for hardware and software events.
@@ -41,8 +39,8 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
   readonly AtbOutput: string;
   readonly HwEvents: Record<number, string>;
   readonly type: string;
-  private isUnlocked: boolean = false;
-
+  // This is the maximum value for the synchronization counter of the stm-500.
+  readonly SynchronizationCounterHardwareMaxValue = 4095;
   /**
    *
    * @param name Unique name to identify the component in the system.
@@ -63,32 +61,23 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
   }
 
   /**
-   * Writes values to a register of the STM-500 component.
-   * If the device is locked, it will attempt to unlock it before writing.
-   * If unlocking fails, an error is thrown and the write operation is aborted
-   * to prevent potential issues with locked devices.
+   * Writes values to a register, unlocking the component if necessary.
    *
-   * Note: The device needs to be unlocked to write to registers, at least for
-   * the current implementation of the STM-500 in the data model.
-   * @param register The register description.
+   * @param register The register to write to.
    * @param values The values to write to the register.
    */
-  override async writeRegister(
+  protected async writeRegister(
     register: RegisterDescription,
     values: Record<string, number>,
   ): Promise<void> {
-    if (!this.isUnlocked) {
-      await this.unlock();
-
-      if (!(await this.isLocked())) {
-        this.isUnlocked = true;
-      } else {
-        throw new Error(
-          "Failed to unlock the STM-500 for writing. Write operation aborted.",
-        );
-      }
+    // On-demand unlock: if the component is locked, unlock it immediately.
+    if (await this.isLocked()) {
+      // Use super.writeRegister to bypass this override when writing LAR.
+      await super.writeRegister(coresight.LAR, { KEY: 0xc5acce55 });
     }
-    await this.writeRegisterInternal(register, values);
+
+    // Perform the requested write.
+    return super.writeRegister(register, values);
   }
 
   async connect(input: string, output: string): Promise<void> {
@@ -255,12 +244,12 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
    *
    * Note that this is a best effort and the exact number of bytes may not be respected.
    *
-   * @param nBytes Number of bytes between synchronization packets (clamped to 4095 max).
+   * @param nBytes Number of bytes between synchronization packets. Must be between 0 and 4095.
    */
   async setSynchronizationCounter(nBytes: number): Promise<void> {
-    if (nBytes < 0 || nBytes > MAX_SYNC_COUNTER_BYTES) {
+    if (nBytes < 0 || nBytes > this.SynchronizationCounterHardwareMaxValue) {
       throw new RangeError(
-        `Synchronization counter value out of range ${nBytes} not in [0-${MAX_SYNC_COUNTER_BYTES}]`,
+        `Synchronization counter value out of range ${nBytes} not in [0-${this.SynchronizationCounterHardwareMaxValue}]`,
       );
     }
     await this.writeRegister(stm500.STMSYNCR, {

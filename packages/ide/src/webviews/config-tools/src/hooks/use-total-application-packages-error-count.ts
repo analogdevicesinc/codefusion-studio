@@ -36,8 +36,8 @@ const errorMessages = {
 	oddHexLength: 'error',
 	hexValueExceedsMax: 'error',
 	valueTooLong: 'error',
-	tagExceedsMax: 'error',
 	tagRequired: 'error',
+	tagOutOfRange: 'error',
 	valueRequired: 'error',
 	tagDuplicate: 'error'
 };

@@ -186,6 +186,7 @@ function SignKeyManagement() {
 			)}
 			{showExistingKey && (
 				<ExistingKey
+					existingKeyNames={keys.map(k => k.name)}
 					onCancel={handleCancelExistingKey}
 					onSubmit={handleKeySubmit}
 				/>

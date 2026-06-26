@@ -12,6 +12,8 @@
  * limitations under the License.
  *
  */
+import type {AIModel, SocControl} from 'cfs-types';
+
 import {Config, Flags} from '@oclif/core';
 import {
   enforceMaxActiveModels,
@@ -19,7 +21,6 @@ import {
   getValidExtensions,
   resolveSource
 } from 'cfs-lib';
-import {AIModel} from 'cfs-types';
 
 import {type CliRunResponse} from '../../../utils/base-command.js';
 import {BaseModelCommand} from '../../../utils/base-model-command.js';
@@ -213,13 +214,28 @@ export default class Update extends BaseModelCommand {
         await getCfsaiPath(config),
         getVersionFromConfig(config)
       );
-      const validProperties = await aiPlugin.getPropertiesFromName(
-        aiModel.Backend.Name ?? ''
-      );
+
+      let props: SocControl[] = [];
+      const name = aiModel.Backend.Name ?? '';
+
+      try {
+        props = await aiPlugin.getPropertiesFromName(name);
+      } catch (error) {
+        // swallow thrown error for recoverable one
+        throw new RecoverableError(
+          error instanceof Error
+            ? error.message
+            : `No backend properties found for '${name}'`,
+          {
+            suggestion: 'Verify the backend is properly configured',
+            run: `cfsutil ai backends list --name ${name}`
+          }
+        );
+      }
 
       const validExtensions = getValidExtensions(
         extensionsToSet,
-        validProperties,
+        props,
         false
       );
       aiModel.Backend.Extensions = {

@@ -71,9 +71,9 @@ Tools VS Code extensions depend on:
 
 Download CodeFusion Studio from the [CodeFusion Studio Developer Resources](https://developer.analog.com/solutions/codefusionstudio) page or use the links below:
 
-- [Windows](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.exe)
-- [Linux](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.run)
-- [macOS](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.dmg)
+- [Windows](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.exe)
+- [Linux](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.run)
+- [macOS](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.dmg)
 
 #### Install
 
@@ -97,7 +97,7 @@ Set or update your SDK path when prompted, or configure it manually in user sett
 
 1. Open **Settings**: select **File > Preferences > Settings** (on macOS: **Code > Settings > Settings**), or open the Command Palette (`Ctrl+Shift+P` / `⇧⌘P`) and search for **Preferences: Open Settings (UI)**, or use the keyboard shortcut (`Ctrl+,`, on Windows/Linux, `⌘,` on macOS).
 2. Search for `cfs.sdk.path`.
-3. Set the path to your CodeFusion Studio SDK installation directory, making sure it points to the correct version. For example, `C:\analog\cfs\2.2.0` on Windows.
+3. Set the path to your CodeFusion Studio SDK installation directory, making sure it points to the correct version. For example, `C:\analog\cfs\2.2.1` on Windows.
 
 > **Note:**
 > You may need to restart VS Code after setting the path.

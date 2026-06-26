@@ -257,15 +257,44 @@ describe("CfsShellEnvProvider", function () {
 			}
 		});
 
-		it("should include ZEPHYR_SDK_INSTALL_DIR when sdkPath provided", function () {
+		it("should derive ZEPHYR_SDK_INSTALL_DIR from sdkPath when zephyrSdkPath not provided", function () {
 			const env = provider.getBaseShellEnvironment([], {
 				sdkPath: "/opt/cfs-sdk"
 			});
 
 			expect(env).to.have.property(
 				"ZEPHYR_SDK_INSTALL_DIR",
-				path.join("/opt/cfs-sdk", "Tools/zephyr-sdk")
+				path.join("/opt/cfs-sdk", "Tools", "zephyr-sdk")
 			);
+		});
+
+		it("should use zephyrSdkPath for ZEPHYR_SDK_INSTALL_DIR when sdkPath is provided", function () {
+			const env = provider.getBaseShellEnvironment([], {
+				sdkPath: "/opt/cfs-sdk",
+				zephyrSdkPath: "/opt/packages/zephyr-sdk/1.0.1"
+			});
+
+			expect(env).to.have.property(
+				"ZEPHYR_SDK_INSTALL_DIR",
+				"/opt/packages/zephyr-sdk/1.0.1"
+			);
+		});
+
+		it("should use zephyrSdkPath even when sdkPath is not provided", function () {
+			const env = provider.getBaseShellEnvironment([], {
+				zephyrSdkPath: "/opt/packages/zephyr-sdk/1.0.1"
+			});
+
+			expect(env).to.have.property(
+				"ZEPHYR_SDK_INSTALL_DIR",
+				"/opt/packages/zephyr-sdk/1.0.1"
+			);
+		});
+
+		it("should not set ZEPHYR_SDK_INSTALL_DIR when neither sdkPath nor zephyrSdkPath provided", function () {
+			const env = provider.getBaseShellEnvironment([], {});
+
+			expect(env).to.not.have.property("ZEPHYR_SDK_INSTALL_DIR");
 		});
 
 		it("should include GIT_EXEC_PATH when provided", function () {

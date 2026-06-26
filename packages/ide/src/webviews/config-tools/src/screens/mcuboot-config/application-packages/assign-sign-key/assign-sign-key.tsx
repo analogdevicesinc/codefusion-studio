@@ -16,7 +16,9 @@ import {useMemo} from 'react';
 import {
 	DropDown,
 	EmptyState,
-	type DropDownOptions
+	Button,
+	type DropDownOptions,
+	Tooltip
 } from 'cfs-react-library';
 import {
 	type TLocaleContext,
@@ -27,6 +29,7 @@ import {setActiveScreen} from '../../../../state/slices/app-context/appContext.r
 import {useSigningKeys} from '../../../../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../../../../state/store';
 import styles from './assign-sign-key.module.scss';
+import Info from '../../../../../../common/icons/Info';
 
 export const INHERIT_VALUE = 'inherit';
 
@@ -108,7 +111,21 @@ function AssignSignKey({
 			data-test='application-package-summary:assign-sign-key'
 		>
 			<div className={styles.header}>
-				<span className={styles.title}>{l10n?.title}</span>
+				<div className={styles.titleContainer}>
+					<span className={styles.title}>{l10n?.title}</span>
+					<Tooltip
+						title={
+							l10n?.requiredKeyType ??
+							'Private RSA key used to sign the bootable image. Public keys are not supported.'
+						}
+						type='long'
+						position='bottom'
+					>
+						<Button appearance='icon'>
+							<Info />
+						</Button>
+					</Tooltip>
+				</div>
 				<span className={styles.optionalText}>{l10n?.optional}</span>
 			</div>
 			{hasKeys ? (

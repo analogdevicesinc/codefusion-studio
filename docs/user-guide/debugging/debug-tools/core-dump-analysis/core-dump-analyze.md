@@ -1,7 +1,7 @@
 ---
 description: How to retrieve Core Dumps for the Core Dump Analysis Tool
 author: Analog Devices
-date: 2025-10-23
+date: 2026-06-18
 ---
 
 # Retrieve and analyze core dumps
@@ -26,7 +26,7 @@ Before analyzing a core dump, ensure your board and toolchain are correctly conf
 
 ### macOS Python setup
 
-On macOS, the GDB binary used for Core Dump Analysis is not Python-enabled by default. Install Python 3.10 and update your `launch.json` to use the Python-enabled GDB binary. For details, see the [Release Notes](../../../../release-notes/2.0.0.md#debug-and-analysis-tools).
+On macOS, Core Dump Analysis for MAX32657 and MAX32658 with the `zephyr_arm_toolchain/1.0.1` package requires Python 3.12 installed on your system (`brew install python@3.12`). For details, see the [Release Notes](../../../../release-notes/2.2.1.md#debugging).
 
 ### UART log output
 
@@ -67,7 +67,6 @@ Before running the Core Dump Analysis tool, make sure the core dump settings in 
 | `cfs.coreDump.binFile`          | Path to save the retrieved core dump file. Default is `core-dump.bin`.             |
 | `cfs.coreDump.size`             | Size of the core dump to retrieve from flash. Default is `0x10000`.                |
 | `cfs.coreDump.projectFolder`    | Project folder used during analysis. Useful for multi-project workspaces.          |
-| `cfs.zephyrCoreDumpScriptsPath` | Path to Zephyr's Python core dump utilities. Usually set automatically by the SDK. |
 | `cfs.coreDump.gdbServerPort`    | Port number used by GDB server for core dump analysis (default 1234 for J-Link).   |
 
 !!! tip

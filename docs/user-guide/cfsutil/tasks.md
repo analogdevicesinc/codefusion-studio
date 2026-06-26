@@ -36,9 +36,9 @@ Lists the tasks available in a generated workspace.
 !!! example
 
     ```sh
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.0/MyWorkspace
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.0/MyWorkspace -p m4 -v
-    cd /home/<username>/analog/cfs/2.2.0/MyWorkspace/m4
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.1/MyWorkspace
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4 -v
+    cd /home/<username>/analog/cfs/2.2.1/MyWorkspace/m4
     cfsutil tasks list
     ```
 
@@ -66,9 +66,9 @@ Runs a task from a project inside a generated workspace.
 !!! example
 
     ```sh
-    cfsutil tasks run build -w /home/<username>/analog/cfs/2.2.0/MyWorkspace -p m4
-    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.2.0/MyWorkspace -p m4 --capture --port COM4
-    cd /home/<username>/analog/cfs/2.2.0/MyWorkspace/m4
+    cfsutil tasks run build -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4
+    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4 --capture --port COM4
+    cd /home/<username>/analog/cfs/2.2.1/MyWorkspace/m4
     cfsutil tasks run build
     ```
 
@@ -117,6 +117,7 @@ Minimal example:
 - Keep task `label` values simple and shell-friendly. The CLI resolves tasks by `label`.
 - Use `options.cwd` when the command must run from a specific project directory.
 - Use `options.env` for task-specific environment variables.
+- Use `cfs.environment` in `.vscode/settings.json` for environment variables that should apply to every task in the project. Variable references such as `${config:...}` are resolved before injection.
 - Use `linux`, `windows`, and `osx` overrides when the command or options differ by platform.
 - Keep `.vscode/settings.json` in the same project if your task uses `${config:...}` variables.
 - Treat `.vscode/settings.json` as the source of truth for CLI task settings. Changes made in the VS Code Settings UI are not written back automatically for CLI use unless the setting is explicitly stored in that file.
@@ -167,7 +168,7 @@ To customize CLI behavior, edit `config.json` in a text editor. The file uses JS
 
 ```json
 {
-    "cfsInstallPath": "/home/<username>/analog/cfs/2.2.0",
+    "cfsInstallPath": "/home/<username>/analog/cfs/2.2.1",
     "toolSearchPaths": ["/opt/toolchains/arm-gnu-toolchain/bin"],
     "env": {
         "ARM_GCC_DIR": "/opt/toolchains/arm-gnu-toolchain/bin",
@@ -183,6 +184,26 @@ Use these fields as follows:
 - `env`: CLI-wide environment variables added to every task execution.
 
 For end users, prefer project-local values in `.vscode/settings.json` whenever a setting is required to resolve a task consistently for that project. Use `config.json` for machine-wide overrides that should apply across multiple workspaces.
+
+### Project-level environment variables
+
+Use the `cfs.environment` key in `.vscode/settings.json` to define environment variables that apply to every task in that project. This is equivalent to adding `options.env` to each task individually, but maintained in a single place.
+
+```json
+{
+    "cfs.environment": {
+        "TOOLCHAIN_VER": "RJ-2025.5-linux",
+        "XTENSA_TOOLCHAIN_PATH": "/opt/toolchains/xtensa",
+        "XTENSA_CORE": "${config:cfs.xtensa.core}",
+        "ZEPHYR_BASE": "${command:cfs.tool.path.zephyr}",
+        "WORKSPACE_OUT": "${workspaceFolder}/build"
+    }
+}
+```
+
+Variable references are resolved before the variables are injected into the task process environment. All variable families supported in task commands are also supported here: `${config:...}`, `${env:...}`, `${command:...}`, `${workspaceFolder}`, `${cfs:...}`, and the predefined variables listed in [Supported variables in CLI tasks](#supported-variables-in-cli-tasks).
+
+When the same key is defined in both `cfs.environment` and a task's `options.env`, the task-level value wins.
 
 ## Supported variables in CLI tasks
 

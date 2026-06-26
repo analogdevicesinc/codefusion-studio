@@ -40,7 +40,7 @@ const mockTLVEditableField: CustomTLV = {
 	id: 'tlv-editable',
 	name: '',
 	description: '',
-	tag: 100,
+	tag: 0x00a0,
 	value: '0x0A0B'
 };
 
@@ -48,7 +48,7 @@ const mockTLV: CustomTLV = {
 	id: 'tlv-1',
 	name: 'Test TLV',
 	description: 'A test TLV description',
-	tag: 100,
+	tag: 0x00a0,
 	value: '0x0A0B'
 };
 
@@ -348,6 +348,87 @@ describe('CustomTLVCard', () => {
 
 			cy.dataTest('conflict-icon').should('not.exist');
 		});
+
+		it('should show conflict icon when tag is below minimum range (0x00A0)', () => {
+			const belowMinTLV: CustomTLV = {
+				id: 'tlv-below-min',
+				name: 'Below Min TLV',
+				tag: 0x009f,
+				value: '0xAA'
+			};
+
+			mountCustomTLVCardWithSiblings(belowMinTLV, mockPackage, [
+				belowMinTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should show conflict icon when tag is above maximum range (0xFFFE)', () => {
+			const aboveMaxTLV: CustomTLV = {
+				id: 'tlv-above-max',
+				name: 'Above Max TLV',
+				tag: 0xffff,
+				value: '0xBB'
+			};
+
+			mountCustomTLVCardWithSiblings(aboveMaxTLV, mockPackage, [
+				aboveMaxTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should not show conflict icon when tag is at minimum range boundary (0x00A0)', () => {
+			const minBoundaryTLV: CustomTLV = {
+				id: 'tlv-min-boundary',
+				name: 'Min Boundary TLV',
+				tag: 0x00a0,
+				value: '0xCC'
+			};
+
+			mountCustomTLVCardWithSiblings(minBoundaryTLV, mockPackage, [
+				minBoundaryTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should not show conflict icon when tag is at maximum range boundary (0xFFFE)', () => {
+			const maxBoundaryTLV: CustomTLV = {
+				id: 'tlv-max-boundary',
+				name: 'Max Boundary TLV',
+				tag: 0xfffe,
+				value: '0xDD'
+			};
+
+			mountCustomTLVCardWithSiblings(maxBoundaryTLV, mockPackage, [
+				maxBoundaryTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should show tag error message when tag is out of range', () => {
+			const outOfRangeTLV: CustomTLV = {
+				id: 'tlv-out-of-range',
+				name: 'Out of Range TLV',
+				tag: 0x0050,
+				value: '0xEE'
+			};
+
+			mountCustomTLVCardWithSiblings(outOfRangeTLV, mockPackage, [
+				outOfRangeTLV
+			]);
+
+			cy.dataTest(
+				`custom-tlv-card:${outOfRangeTLV.id}-header`
+			)
+				.should('exist')
+				.click();
+
+			cy.dataTest('custom-tlv-tag-error').should('exist');
+		});
 	});
 
 	describe('delete', () => {
@@ -550,7 +631,7 @@ describe('CustomTLVCard', () => {
 				.should('exist')
 				.click();
 
-			cy.dataTest('custom-tlv-tag').find('input').clear().type('2A');
+			cy.dataTest('custom-tlv-tag').find('input').clear().type('B0');
 
 			cy.then(() => {
 				const tlv = getCustomTLVFromStore(
@@ -559,7 +640,7 @@ describe('CustomTLVCard', () => {
 					mockImage.id,
 					mockTLV.id
 				);
-				expect(tlv?.tag).to.equal(0x2a);
+				expect(tlv?.tag).to.equal(0xb0);
 			});
 		});
 

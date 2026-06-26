@@ -469,7 +469,6 @@ describe('ApplicationPackages', () => {
 	});
 
 	describe('adding app package image', () => {
-
 		it('should add an image card when clicking the add image button', () => {
 			const reduxStore = createStoreWithActivePackage(mockPackage);
 
@@ -512,14 +511,14 @@ describe('ApplicationPackages', () => {
 			const tlv1: CustomTLV = {
 				id: 'img-tlv-1',
 				name: 'TLV A',
-				tag: 100,
+				tag: 0x00a0,
 				value: '0x0A0B'
 			};
 
 			const tlv2: CustomTLV = {
 				id: 'img-tlv-2',
 				name: 'TLV B',
-				tag: 100,
+				tag: 0x00a0,
 				value: '0xCCDD'
 			};
 
@@ -541,18 +540,18 @@ describe('ApplicationPackages', () => {
 			cy.dataTest('peripheral:error').should('exist');
 		});
 
-		it('should not include duplicate tag errors between image TLVs', () => {
+		it('should include duplicate tag errors between image TLVs', () => {
 			const imageTlv: CustomTLV = {
 				id: 'img-tlv-1',
 				name: 'Image TLV',
-				tag: 200,
+				tag: 0x00b0,
 				value: '0xCCDD'
 			};
 
 			const imageTlv2: CustomTLV = {
 				id: 'img-tlv-2',
 				name: 'Image TLV 2',
-				tag: 200,
+				tag: 0x00b0,
 				value: '0xAABB'
 			};
 
@@ -579,14 +578,14 @@ describe('ApplicationPackages', () => {
 			const tlv1: CustomTLV = {
 				id: 'tlv-unique-1',
 				name: 'TLV A',
-				tag: 100,
+				tag: 0x00a0,
 				value: '0x0A0B'
 			};
 
 			const tlv2: CustomTLV = {
 				id: 'tlv-unique-2',
 				name: 'TLV B',
-				tag: 200,
+				tag: 0x00b0,
 				value: '0xCCDD'
 			};
 
@@ -600,6 +599,85 @@ describe('ApplicationPackages', () => {
 				...mockPackage,
 				id: 'pkg-unique-tlv',
 				images: [imageWithUniqueTlvs]
+			};
+
+			const reduxStore = createStoreWithActivePackage(pkg);
+
+			cy.mount(<TestApplicationPackages />, reduxStore);
+
+			cy.dataTest('peripheral:error').should('not.exist');
+		});
+
+		it('should include tag range error in error count when tag is below minimum', () => {
+			const tlvBelowMin: CustomTLV = {
+				id: 'tlv-below-min',
+				name: 'TLV Below Min',
+				tag: 0x009f,
+				value: '0x0A0B'
+			};
+
+			const imageWithInvalidTag: Image = {
+				...mockImage,
+				customTLVs: [tlvBelowMin]
+			};
+
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				id: 'pkg-tag-below-min',
+				images: [imageWithInvalidTag]
+			};
+
+			const reduxStore = createStoreWithActivePackage(pkg);
+
+			cy.mount(<TestApplicationPackages />, reduxStore);
+
+			cy.dataTest('peripheral:error').should('exist');
+		});
+
+		it('should include tag range error in error count when tag is above maximum', () => {
+			const tlvAboveMax: CustomTLV = {
+				id: 'tlv-above-max',
+				name: 'TLV Above Max',
+				tag: 0xffff,
+				value: '0x0A0B'
+			};
+
+			const imageWithInvalidTag: Image = {
+				...mockImage,
+				customTLVs: [tlvAboveMax]
+			};
+
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				id: 'pkg-tag-above-max',
+				images: [imageWithInvalidTag]
+			};
+
+			const reduxStore = createStoreWithActivePackage(pkg);
+
+			cy.mount(<TestApplicationPackages />, reduxStore);
+
+			cy.dataTest('peripheral:error').should('exist');
+		});
+
+		it('should not show error when tag is within valid range', () => {
+			const validTlv: CustomTLV = {
+				id: 'tlv-valid-range',
+				name: 'Valid TLV',
+				tag: 0x0100,
+				value: '0x0A0B'
+			};
+
+			const imageWithValidTag: Image = {
+				...mockImage,
+				imageVersion: '1.0.0',
+				customTLVs: [validTlv]
+			};
+
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				id: 'pkg-valid-tag',
+				images: [imageWithValidTag]
 			};
 
 			const reduxStore = createStoreWithActivePackage(pkg);

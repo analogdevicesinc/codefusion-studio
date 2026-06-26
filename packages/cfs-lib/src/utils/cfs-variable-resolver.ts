@@ -165,6 +165,11 @@ export class CfsVariableResolver {
 	public async resolveStringVariables(
 		value: string
 	): Promise<string> {
+		// Short-circuit if there are no template variable patterns to resolve
+		if (!value.includes("${")) {
+			return value;
+		}
+
 		return this.resolveStringVariablesRecursive(value, value, 0);
 	}
 

@@ -21,6 +21,27 @@ import type { PlatformId } from "../providers/platform-constants.js";
 import { readJsonFile } from "./file-utils.js";
 
 /**
+ * Resolves the Zephyr SDK root directory from a Zephyr toolchain tool path.
+ * Handles two layouts:
+ * - Package layout: cmake/ exists at tool path (tool path IS the SDK root)
+ * - Installer layout: tool.json inside arm-zephyr-eabi subfolder (parent is SDK root)
+ *
+ * @param toolPath - Absolute path to the Zephyr toolchain as reported by the tool manager
+ * @returns The resolved Zephyr SDK root directory
+ */
+export function resolveZephyrSdkRoot(toolPath: string): string {
+	if (fs.existsSync(path.join(toolPath, "cmake"))) {
+		return toolPath;
+	}
+
+	const parentPath = path.dirname(toolPath);
+
+	return fs.existsSync(path.join(parentPath, "cmake"))
+		? parentPath
+		: toolPath;
+}
+
+/**
  * Detects the active toolchain/firmware platform for a workspace.
  *
  * Detection proceeds in order:

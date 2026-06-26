@@ -3,7 +3,7 @@
 	"publisher": "adi",
 	"description": "Shared TypeScript type definitions for CodeFusion Studio",
 	"author": "Analog Devices, Inc.",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"scripts": {
 		"lint": "eslint . --ext .ts",
 		"format-check": "prettier --check .",

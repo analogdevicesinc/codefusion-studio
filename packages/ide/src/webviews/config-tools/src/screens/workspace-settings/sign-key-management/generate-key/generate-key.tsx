@@ -31,6 +31,7 @@ import {
 } from '../../../../../../common/api';
 import {GENERATE_KEY_CONTROLS} from '../../../../constants/workspace-settings';
 import type {KeyData} from '../../../../types/workspace-settings';
+import {isDuplicateKeyName} from '../../../../utils/application-package-validation';
 import KeyFormLayout from '../key-form/key-form-layout';
 
 type GenerateKeyProps = {
@@ -68,6 +69,18 @@ function GenerateKey({
 					: value;
 
 			setFormData(prev => ({...prev, [controlId]: sanitized}));
+
+			if (controlId === 'keyName') {
+				setErrors(prev => {
+					if (prev.keyName) {
+						const {keyName: _, ...rest} = prev;
+
+						return rest;
+					}
+
+					return prev;
+				});
+			}
 		},
 		[]
 	);
@@ -91,16 +104,26 @@ function GenerateKey({
 			setErrors(prev => {
 				const next = {...prev};
 
-				if (value.trim()) {
-					delete next.destinationPath;
+				if (!value.trim()) {
+					next.destinationPath =
+						l10n?.destinationPathRequired ??
+						'Destination path is required';
+				} else if (/\s/.test(value)) {
+					next.destinationPath =
+						l10n?.destinationPathNoSpaces ??
+						'Path cannot contain spaces.';
 				} else {
-					next.destinationPath = l10n?.destinationPathRequired;
+					delete next.destinationPath;
 				}
 
 				return next;
 			});
 		},
-		[handleControlChange, l10n?.destinationPathRequired]
+		[
+			handleControlChange,
+			l10n?.destinationPathNoSpaces,
+			l10n?.destinationPathRequired
+		]
 	);
 
 	const components = useMemo(
@@ -146,24 +169,35 @@ function GenerateKey({
 			return;
 		}
 
-		const keyName = (formData.keyName as string) ?? '';
-		const destinationPath =
-			(formData.destinationPath as string) ?? '';
-		const fileName = keyName.endsWith('.pem')
+		const keyName = ((formData.keyName as string) ?? '').trim();
+		const destinationPath = (
+			(formData.destinationPath as string) ?? ''
+		).trim();
+
+		if (/\s/.test(destinationPath)) {
+			setErrors(prev => ({
+				...prev,
+				destinationPath:
+					l10n?.destinationPathNoSpaces ??
+					'Path cannot contain spaces.'
+			}));
+
+			return;
+		}
+
+		const fileName = keyName.toLowerCase().endsWith('.pem')
 			? keyName
 			: `${keyName}.pem`;
 		const trimmedPath = destinationPath.replace(/[\\/]+$/, '');
 		const separator = destinationPath.includes('\\') ? '\\' : '/';
 		const fullPath = `${trimmedPath}${separator}${fileName}`;
 
-		if (
-			existingKeyNames.some(
-				existing => existing.toLowerCase() === fileName.toLowerCase()
-			)
-		) {
+		if (isDuplicateKeyName(fileName, existingKeyNames)) {
 			setErrors(prev => ({
 				...prev,
-				keyName: l10n?.duplicateKey
+				keyName:
+					l10n?.duplicateKeyName ??
+					'A key with this name already exists. Please choose a different name.'
 			}));
 
 			return;
@@ -201,7 +235,14 @@ function GenerateKey({
 			algorithm: (formData.algorithm as string) ?? '',
 			description: (formData.description as string) || ''
 		});
-	}, [existingKeyNames, formData, l10n?.duplicateKey, l10n?.invalidPath, onSubmit]);
+	}, [
+		existingKeyNames,
+		formData,
+		l10n?.duplicateKeyName,
+		l10n?.destinationPathNoSpaces,
+		l10n?.invalidPath,
+		onSubmit
+	]);
 
 	return (
 		<KeyFormLayout

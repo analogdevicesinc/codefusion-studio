@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  *
  */
 
+import {type AiBackend} from 'cfs-types';
+
 export type AIFieldInfo = {
 	key: string;
 	format: string;
@@ -20,24 +22,6 @@ export type AIFieldInfo = {
 	tooltip: string;
 };
 
-export type AiSupportingBackend = {
-	Targets: Target[];
-	Slow?: boolean;
-	MaxModels: number;
-	AdvancedTools: boolean;
-	Docker: {
-		Size: number;
-	};
-};
+export type AiSupportingBackend = AiBackend;
 
-export type Target = {
-	Hardware: {
-		Soc?: string;
-		Core?: string;
-		Family?: string;
-		// It's required to use null here to differentiate between ignoring accellerator and checking if the core does not have an accelerator.
-		// eslint-disable-next-line @typescript-eslint/ban-types
-		Accelerator?: string | null;
-	};
-	FirmwarePlatform?: string;
-};
+export type Target = AiBackend['Targets'][number];

@@ -36,6 +36,8 @@ export interface ShellEnvOptions {
 	jlinkPath?: string;
 	/** Zephyr base directory */
 	zephyrBase?: string;
+	/** Zephyr SDK/toolchain install directory (resolved via Tool Manager or fallback) */
+	zephyrSdkPath?: string;
 	/** CMAKE_PREFIX_PATH value */
 	cmakePrefixPath?: string;
 	/** Path to git-core directory (non-Windows) */
@@ -147,11 +149,14 @@ export class CfsShellEnvProvider {
 			env.CMAKE_PREFIX_PATH = cmakePrefix;
 		}
 
-		if (options.sdkPath) {
-			env.ZEPHYR_SDK_INSTALL_DIR = path.join(
-				options.sdkPath,
-				"Tools/zephyr-sdk"
-			);
+		const resolvedZephyrSdkPath =
+			options.zephyrSdkPath ??
+			(options.sdkPath
+				? path.join(options.sdkPath, "Tools", "zephyr-sdk")
+				: undefined);
+
+		if (resolvedZephyrSdkPath) {
+			env.ZEPHYR_SDK_INSTALL_DIR = resolvedZephyrSdkPath;
 		}
 
 		if (options.gitExecPath) {

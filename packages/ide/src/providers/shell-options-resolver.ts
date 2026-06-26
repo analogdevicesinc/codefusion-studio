@@ -126,11 +126,11 @@ export class ToolchainShellOptions implements IShellOptionsResolver {
     const cwd = folder.uri.fsPath;
 
     // Get base environment from shell env provider
-    const baseEnvironment = await this.shellEnvProvider.getShellEnvironment();
+    const baseEnvironment =
+      await this.shellEnvProvider.getShellEnvironment(folder);
 
     // Merge with folder-specific CFS environment variables
-    const cfsEnvVars =
-      this.shellEnvProvider.getCfsEnvironmentVariables(folder);
+    const cfsEnvVars = this.shellEnvProvider.getCfsEnvironmentVariables(folder);
     const env = {
       ...baseEnvironment,
       ...cfsEnvVars,

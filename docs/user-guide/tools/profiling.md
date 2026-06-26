@@ -1,7 +1,7 @@
 ---
 description: Enable Zephelin profiling for Zephyr projects
 author: Analog Devices
-date: 2026-05-28
+date: 2026-06-22
 ---
 
 # Profiling
@@ -40,7 +40,7 @@ To capture profiling traces from your Zephyr project, configure the profiling op
     ![Expanded profiling configuration form](images/profiling-config-expanded-light.png#only-light)
 
 5. Configure the **Profiling Options**:
-      - **Application Callgraph** – Enables instrumentation subsystem for capturing function call graphs and application-level tracing.
+      - **Application Callgraph** – Enables instrumentation subsystem for capturing function call graphs and application-level tracing. Instrumentation starts when the trigger function enters and stops when the stopper function exits. By default, CodeFusion Studio uses the `main` function, capturing execution from when `main()` starts until it returns (if it returns). To customize these functions or learn more, see [Advanced: Customize instrumentation trigger and stopper functions](#advanced-customize-instrumentation-trigger-and-stopper-functions).
       - **AI Model Profiling** – Enables TensorFlow Lite Micro inference tracing for supported processors. Only available when AI models are configured. For details, see [Supported processors and model formats](../about/supported-ai-model-formats.md) and [Embedded AI Tools](./manage-ai-models.md).
       - **CPU Load** – Monitors CPU usage by sampling at regular intervals. When enabled, specify the profiling interval in milliseconds. The system reads the CPU load value at this interval and reports it to the host PC.
       - **Memory Usage** – Tracks memory consumption by sampling at regular intervals. When enabled, specify the profiling interval in milliseconds. The system reads the memory usage value at this interval and reports it to the host PC.
@@ -50,8 +50,8 @@ To capture profiling traces from your Zephyr project, configure the profiling op
       - **Trace Interface** – Select the UART port number for trace output (for example, 0 for UART0, 2 for UART2). Available options depend on your SoC configuration and which UART peripherals are allocated to this project in Peripheral Allocation. To manage Trace Interface UART settings, navigate to Peripheral Allocation.
       - **Baud Rate** – Displays the baud rate for the selected trace interface (typically 115200 for profiling). This value applies specifically to the selected Trace Interface for the profiling session.
 
-      !!! note "Managing UART and baud rate"
-          To allocate UART peripherals to your project or configure UART pin assignments, navigate to the **Peripheral Allocation** page. Once a peripheral is assigned to a core, you can click **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar. The baud rate can be configured in the **Code Generation Plugin** section. For complete details, see [Peripheral Allocation](./peripheral-allocation.md).
+    !!! note "Managing UART and baud rate"
+        To allocate UART peripherals to your project or configure UART pin assignments, navigate to the **Peripheral Allocation** page. Once a peripheral is assigned to a core, you can click **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar. The baud rate can be configured in the **Code Generation Plugin** section. For complete details, see [Peripheral Allocation](./peripheral-allocation.md).
 
 ### Step 2. Generate, build, and flash
 
@@ -102,13 +102,25 @@ To capture profiling traces from your Zephyr project, configure the profiling op
         If another process is using the same device, the capture will fail with an error message.
 
 5. While capture is running, the **TRACE CAPTURE** panel displays an elapsed time timer. The configuration settings are disabled until you stop the capture.
-6. Press **Reset** on your board to restart the application and begin trace data transmission. The `.ctf` file will appear in your output directory once the device begins transmitting trace data. For applications that run once and exit (for example, the MAX32690 Single Core TensorFlow AI Model example), you may need to press Reset multiple times to capture additional trace data.
-7. Click **Stop Capture** when you have collected sufficient trace data.
-8. The capture generates timestamped trace files in the configured output directory using the naming pattern `tracefile_YYYYMMDD_HHMMSS`. If you reset your board multiple times during a single capture session, a separate pair of trace files is created for each reset. Two file formats are generated:
-      - **`.ctf` file** – A binary trace file in Common Trace Format, optimized for efficient transmission over UART.
-      - **`.tef` file** – A JSON-based Trace Event Format file that can be visualized in the Zephelin Trace Viewer.
+6. Restart your application to begin trace data transmission. The two most practical approaches are:
 
-9. When the capture completes successfully, a notification displaying **Traces captured successfully** appears with a list of the generated trace files. If multiple files are converted, click **Choose a file to open** to select which `.tef` file to view in the Zephelin Trace Viewer.
+    - **Reset button** – If your board has a reset button, press it while capture is running.
+    - **CFS: flash & run** – Run the **CFS: flash & run** task and wait for flashing to complete. Depending on your runner, the target may reset more than once during the operation, which can result in multiple trace files being generated during a single capture session.
+
+    For applications that run once and exit (for example, the MAX32690 Single Core TensorFlow AI Model example), you may need to restart multiple times to capture additional trace data.
+
+7. Click **Stop Capture** when you have collected sufficient trace data.
+8. When the capture completes successfully, a notification displaying **Traces captured successfully** appears with links to the generated trace files. Click a file link to open it directly, or click **Choose a file to open** to select from the full list.
+
+    If you used **CFS: flash & run**, open the `.tef` file with the latest timestamp. If multiple `.tef` files share the latest timestamp, choose the `.tef` file created most recently (typically the one with the highest numeric suffix), for example `tracefile_20260622_161602_1.tef`.
+
+!!! note
+    Trace files are saved in your output directory using the naming pattern `tracefile_YYYYMMDD_HHMMSS[_N]`, where a numeric suffix is added if multiple traces share the same timestamp. Two formats are generated:
+
+    - **`.ctf`** – Binary trace data.
+    - **`.tef`** – JSON trace data for the Zephelin Trace Viewer.
+
+    Each application restart produces a separate pair of trace files.
 
 !!! tip "CLI-based trace capture"
     For a terminal-based workflow, you can use `cfsutil tasks run` with the `--capture` and `--port` flags to automatically capture and convert trace data:
@@ -123,7 +135,7 @@ The [:octicons-link-external-24: Zephelin Trace Viewer](https://marketplace.visu
 
 You can open trace files in two ways:
 
-- **Immediately after capture**: When the capture completes successfully, a notification displays **Traces captured successfully** with a list of the generated trace files. If multiple files are converted, click **Choose a file to open** to select which `.tef` file to view.
+- **Immediately after capture**: When the capture completes successfully, a notification displays **Traces captured successfully** with links to the generated trace files. Click a file link to open it directly, or click **Choose a file to open** to select from the full list.
 - **From Explorer** (to revisit previously captured traces): In the VS Code **Explorer** view, locate the `.tef` file and click it to open in the Zephelin Trace Viewer.
 
 For a better viewing experience, right-click the trace viewer and select **Move to New Window** to get a full-screen experience.
@@ -175,3 +187,67 @@ ld returned 1 exit status
 ```
 
 If you encounter this error, the device may not have sufficient memory to support profiling in the current application. You can try disabling some profiling options to reduce memory usage, but this may not resolve the issue.
+
+## Advanced: Customize instrumentation trigger and stopper functions
+
+When you enable the **Application Callgraph** profiling option, the instrumentation subsystem captures function call graphs and application-level tracing. Instrumentation starts when the trigger function enters and stops when the stopper function exits. By default, CodeFusion Studio uses the `main` function as both trigger and stopper, capturing the entire execution from when `main()` starts until it returns.
+
+To customize which functions control the instrumentation scope:
+
+1. **Ensure the function is not inlined.** To prevent inlining, specify the `__noinline` attribute in the function definition. This attribute is available from the `<zephyr/toolchain.h>` header.
+
+    ```c
+    #include <zephyr/toolchain.h>
+
+    __noinline void run_inference(void) {
+        // Your code here
+    }
+    ```
+
+2. **Run a pristine build** to generate the ELF file containing the function symbols.
+3. **Extract the function symbol name** from the built ELF file. For C projects, the symbol name matches the function name. For C++ projects, the function symbol is typically mangled and must be extracted from the ELF file.
+
+    ```bash
+    nm <core>/build/zephyr/zephyr.elf | grep <function_name>
+    ```
+
+    For example, if your function is named `run_inference`:
+
+    ```bash
+    nm m4/build/zephyr/zephyr.elf | grep run_inference
+    ```
+
+    The output shows the symbol name. For C projects, this is typically the function name itself (`run_inference`). For C++ projects, this will be a mangled name like `_Z13run_inferencev`.
+
+    ```text
+    10002888 T _Z13run_inferencev
+    ```
+
+4. **Open the `prj.conf` file** in your project core directory and add the configuration options using the exact symbol name from the previous step. For example, if your core is named `m4`, the file is located at `<your-project>/m4/prj.conf`.
+
+    For C projects:
+
+    ```text
+    CONFIG_INSTRUMENTATION_TRIGGER_FUNCTION="run_inference"
+    CONFIG_INSTRUMENTATION_STOPPER_FUNCTION="run_inference"
+    ```
+
+    For C++ projects (using the mangled name):
+
+    ```text
+    CONFIG_INSTRUMENTATION_TRIGGER_FUNCTION="_Z13run_inferencev"
+    CONFIG_INSTRUMENTATION_STOPPER_FUNCTION="_Z13run_inferencev"
+    ```
+
+5. Save the file.
+
+6. **Run a pristine build** to apply the configuration changes, then reflash your project using **CFS: flash** or **CFS: flash & run** (see [Generate, build, and flash](#step-2-generate-build-and-flash)).
+
+    ```bash
+    cfsutil tasks run pristine_build --project <core>
+    cfsutil tasks run <flash-task> --project <core>
+    ```
+
+7. Capture a new profiling trace following the steps in [Capture the profiler trace](#step-3-capture-the-profiler-trace).
+
+For more details about the instrumentation mechanism, see the [:octicons-link-external-24: Zephyr Instrumentation documentation](https://docs.zephyrproject.org/4.3.0/services/instrumentation/index.html){:target="_blank"}.

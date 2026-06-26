@@ -16,6 +16,10 @@
 import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {type AIModel} from 'cfs-types';
 import {getAiBackends} from '../../../utils/ai-tools';
+import {
+	enforceMaxActiveModels,
+	enforceOneActiveBackendPerTarget
+} from 'cfs-lib/dist/ai-tools/ai-tools-model-utils.js';
 
 export const aiToolsScreens = {
 	ModelList: '.model-list',
@@ -110,6 +114,11 @@ const aiModelContextSlice = createSlice({
 
 				ensureMaxActiveModels(state, newModel);
 				ensureOnlyOneModelWithSameNameIsEnabled(state, newModel);
+				enforceOneActiveBackendPerTarget(
+					getAiBackends(),
+					state.aiModels,
+					newModel
+				);
 			}
 
 			state.editingModel = undefined;
@@ -143,6 +152,11 @@ const aiModelContextSlice = createSlice({
 			ensureOnlyOneModelWithSameNameIsEnabled(
 				state,
 				action.payload.model
+			);
+			enforceOneActiveBackendPerTarget(
+				getAiBackends(),
+				state.aiModels,
+				state.aiModels.find(m => m.id === id)
 			);
 		},
 		deleteModel(state, action: PayloadAction<string>) {
@@ -187,26 +201,12 @@ function ensureMaxActiveModels(
 		return;
 	}
 
-	const relevantModels = state.aiModels.filter(
-		m =>
-			m.Target.Core.toUpperCase() ===
-				changedModel.Target.Core.toUpperCase() &&
-			(m.Backend?.Name ?? '').toUpperCase() ===
-				(changedModel.Backend?.Name ?? '').toUpperCase()
+	enforceMaxActiveModels(
+		state.aiModels,
+		changedModel,
+		maxActiveModels,
+		true // To avoid console warnings in the reducer
 	);
-
-	const enabledModels = relevantModels.filter(m => m.Enabled);
-
-	if (enabledModels.length > maxActiveModels) {
-		const modelsToDisable = enabledModels.length - maxActiveModels;
-
-		enabledModels
-			.filter(m => m.id !== changedModel.id)
-			.slice(0, modelsToDisable)
-			.forEach(m => {
-				m.Enabled = false;
-			});
-	}
 }
 
 function ensureOnlyOneModelWithSameNameIsEnabled(

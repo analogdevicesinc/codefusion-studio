@@ -2,4 +2,4 @@
 
 ## Install CodeFusion Studio SDK
 
-[Download](https://analog.com/CodeFusionStudio) and run the latest CodeFusion Studio SDK installer.
+Download and run the [CodeFusion Studio SDK installer](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/) for your operating system.

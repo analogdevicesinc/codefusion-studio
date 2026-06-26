@@ -1,0 +1,12 @@
+{
+  "cfs.mock.target": "mock-core-a",
+  "cfs.project.toolchain.id": "mock-toolchain-id",
+  "cfs.environment": {
+    "MOCK_TOOLCHAIN_VERSION": "mock-toolchain-v1",
+    "MOCK_TARGET": "${config:cfs.mock.target}",
+    "MOCK_TOOLCHAIN_PATH": "/opt/toolchains/mock-toolchain",
+    "WORKSPACE_REF": "${workspaceFolder}/build",
+    "HOME_REF": "${env:HOME}",
+    "MOCK_TOOLCHAIN_BASE": "${command:cfs.getToolchainPath}"
+  }
+}

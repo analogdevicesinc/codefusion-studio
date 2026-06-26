@@ -2,6 +2,6 @@
 
 ## System Planner
 
-Use the System Planner to allocate memory, assign peripherals, and configure clocks and pins per core across multi-core SoCs. Once configured, generate the necessary code for your application.
+Visually configure your system per core — including clocks, pins, peripherals, and memory — then generate the code to build it.
 
-To access the System Planner, open the CFSCONFIG file at the root of your workspace. See the online [User Guide](https://developer.analog.com/docs/codefusion-studio/latest/) for more information.
+Open the `.cfsconfig` file at the root of your workspace to get started. See the [User Guide](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/tools/) for more information.

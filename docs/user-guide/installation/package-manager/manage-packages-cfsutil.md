@@ -117,7 +117,7 @@ Use the caret (^) to allow minor and patch updates within the same major version
     cfsutil pkg install "cfs_base_plugins/^2.0.0"
     ```
 
-This installs the newest available 2.x.x version, such as 2.2.0.
+This installs the newest available 2.x.x version, such as 2.2.1.
 
 #### Tilde ranges (~)
 
@@ -128,7 +128,7 @@ Use the tilde (`~`) to allow patch updates within the same minor version.
     ```sh
     cfsutil pkg install "cfs_base_plugins/~2.0.0"
     ```
-This installs the newest available 2.0.x version, such as 2.0.1, but not 2.1.0 or 2.2.0.
+This installs the newest available 2.0.x version, such as 2.0.1, but not 2.1.0 or 2.2.1.
 
 #### Comparison operators
 
@@ -159,7 +159,7 @@ Use the `-l` or `--local` flag to use only packages already cached locally.
 !!! example "Install a specific package from local cache only (offline mode)"
 
     ```sh
-    cfsutil pkg install cfs_base_data_models/2.2.0 --local
+    cfsutil pkg install cfs_base_data_models/2.2.1 --local
     ```
 
 ## Verify installation

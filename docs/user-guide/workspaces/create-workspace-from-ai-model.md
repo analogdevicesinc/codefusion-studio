@@ -82,7 +82,7 @@ Ensure you have the following:
 
 ## Opening the workspace
 
-1. The workspace is generated in your configured workspace location (typically `~/cfs/2.2.0/`)
+1. The workspace is generated in your configured workspace location (typically `~/cfs/2.2.1/`)
     - The generated workspace includes a complete AI application that:
 
         - Loads your model file into memory

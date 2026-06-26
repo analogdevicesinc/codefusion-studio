@@ -33,8 +33,13 @@ import {
 	resolveSource,
 	sanitizeToCIdentifier
 } from "./ai-tools-utils.js";
-import { generateWeaver } from "./weaver.js";
+import { generateMot } from "./mot.js";
 import { AuthConfig } from "../auth/session-manager.js";
+import type {
+	CalibrationData,
+	Labels,
+	ValidationData
+} from "cfs-types/types/cfs-config";
 
 export interface AiToolsData {
 	properties: Record<string, SocControl[]>;
@@ -203,8 +208,9 @@ export default class AIToolsPlugin {
 			target.Accelerator = target.Accelerator.toUpperCase();
 		}
 
-		// Look for explicit SoC/Core/Accelerator match first
-		let backend = Object.values(aiData.SupportedBackends).find((b) =>
+		const explicitlySupportedBackends: AiBackend[] = Object.values(
+			aiData.SupportedBackends
+		).filter((b) =>
 			b.Targets.find(
 				(t) =>
 					t.Hardware.Core === target.Core &&
@@ -213,14 +219,21 @@ export default class AIToolsPlugin {
 			)
 		);
 
+		let backend =
+			explicitlySupportedBackends.find((b) => b.Default) ??
+			explicitlySupportedBackends.at(0);
+
 		// Look for a generic family match if no exact match found
 		// Not applicable to accelerators since they can vary even within the same family.
 		if (!backend && !target.Accelerator) {
-			backend = Object.values(aiData.SupportedBackends).find((b) => {
-				return b.Targets.find(
-					(t) => t.Hardware.Family === target.Family
-				);
-			});
+			const supportedFamilyBackends: AiBackend[] = Object.values(
+				aiData.SupportedBackends
+			).filter((b) =>
+				b.Targets.find((t) => t.Hardware.Family === target.Family)
+			);
+			backend =
+				supportedFamilyBackends.find((b) => b.Default) ??
+				supportedFamilyBackends.at(0);
 		}
 
 		return backend;
@@ -239,9 +252,10 @@ export default class AIToolsPlugin {
 
 		if (name in aiData.properties) {
 			props = aiData.properties[name];
+			return props;
 		}
 
-		return props;
+		throw new Error(`No backend properties found for '${name}'`);
 	}
 
 	private async runPythonCommand(
@@ -394,6 +408,60 @@ export default class AIToolsPlugin {
 		}
 	}
 
+	private sanitizeBackend(backend: AIModelBackend): AIModelBackend {
+		const calibrationSet: CalibrationData = [
+			...(backend.CalibrationData ?? [])
+		];
+		const validationSet: ValidationData = [
+			...(backend.ValidationData ?? [])
+		];
+		const labels: Labels = [...(backend.Labels ?? [])];
+
+		// string checks handle extension setting via the CLI
+		if (typeof backend.Extensions?.CalibrationSet === "string") {
+			calibrationSet.push(
+				...backend.Extensions.CalibrationSet.split(",")
+			);
+		}
+
+		if (typeof backend.Extensions?.ValidationSet === "string") {
+			const values = backend.Extensions.ValidationSet.split(",");
+
+			if (values.length % 2 !== 0) {
+				throw new Error(
+					"Invalid 'ValidationSet' value, expected an even number of items separated by commas e.g. <input_path>,<label>"
+				);
+			}
+
+			for (let i = 0; i < values.length; i += 2) {
+				validationSet.push([values[i], values[i + 1]]);
+			}
+		}
+
+		if (typeof backend.Extensions?.Labels === "string") {
+			labels.push(...backend.Extensions.Labels.split(","));
+		}
+
+		// remove dataset, label values from extensions due to how they're passed in via CLI
+		delete backend.Extensions?.CalibrationSet;
+		delete backend.Extensions?.ValidationSet;
+		delete backend.Extensions?.Labels;
+
+		return {
+			Name: backend.Name,
+			Extensions: backend.Extensions,
+			...(calibrationSet.length > 0 && {
+				CalibrationData: calibrationSet
+			}),
+			...(validationSet.length > 0 && {
+				ValidationData: validationSet
+			}),
+			...(labels.length > 0 && {
+				Labels: labels
+			})
+		};
+	}
+
 	async generateFromConfig(
 		cfsconfig: CfsConfig,
 		dataModel: CfsSocDataModel,
@@ -456,6 +524,15 @@ export default class AIToolsPlugin {
 					}
 				}
 
+				// allows us to verify core/acc values (needed for both paths below)
+				const ai = this.getAIDataFromSOCModel(
+					dataModel,
+					cfsconfig.Soc,
+					cfsconfig.Package,
+					project.CoreId,
+					aiModel.Target.Accelerator
+				);
+
 				if (specifiedBackend) {
 					be = await this.getBackendFromName(specifiedBackend);
 					if (!be) {
@@ -467,14 +544,6 @@ export default class AIToolsPlugin {
 					backendName = be.Name;
 					backendPackage = be.Package;
 				} else {
-					const ai = this.getAIDataFromSOCModel(
-						dataModel,
-						cfsconfig.Soc,
-						cfsconfig.Package,
-						project.CoreId,
-						aiModel.Target.Accelerator
-					);
-
 					if (ai.Target) {
 						be = await this.getBackendFromTarget(ai.Target);
 
@@ -501,6 +570,23 @@ export default class AIToolsPlugin {
 					properties
 				);
 
+				const backend: AIModelBackend = {
+					Name: backendName,
+					Extensions: {
+						...defaultBeExtensions,
+						...aiModel.Backend?.Extensions
+					},
+					...(aiModel.Backend?.CalibrationData && {
+						CalibrationData: aiModel.Backend.CalibrationData
+					}),
+					...(aiModel.Backend?.ValidationData && {
+						ValidationData: aiModel.Backend.ValidationData
+					}),
+					...(aiModel.Backend?.Labels && {
+						Labels: aiModel.Backend.Labels
+					})
+				};
+
 				const vcfg: VerifiedConfig = {
 					name: sanitizeToCIdentifier(aiModel.Name),
 					prj_info: {
@@ -516,13 +602,7 @@ export default class AIToolsPlugin {
 						Package: cfsconfig.Package,
 						firmware_platform: project.FirmwarePlatform
 					},
-					backend: {
-						Name: backendName,
-						Extensions: {
-							...defaultBeExtensions,
-							...aiModel.Backend?.Extensions
-						}
-					}
+					backend: this.sanitizeBackend(backend)
 				};
 
 				const key = `${backendPackage}.${backendName}.${project.CoreId}`;
@@ -544,16 +624,23 @@ export default class AIToolsPlugin {
 				dir: tmpdir()
 			});
 
-			if (vcfgs.backend.Weaver) {
-				const weaverResult = await generateWeaver(
+			if (vcfgs.backend.Mot) {
+				const motResult = await generateMot(
 					vcfgs.backend,
 					vcfgs.items,
 					this.jsonMode,
-					authConfig
+					authConfig,
+					async (value) =>
+						await resolveSource(
+							this.cfsVersion,
+							value,
+							ignoreCache,
+							cwd
+						)
 				);
-				output.stdout.push(...weaverResult.stdout);
-				output.stderr.push(...weaverResult.stderr);
-				output.code = weaverResult.code ?? output.code;
+				output.stdout.push(...motResult.stdout);
+				output.stderr.push(...motResult.stderr);
+				output.code = motResult.code ?? output.code;
 				continue;
 			} else {
 				await fs.writeFile(

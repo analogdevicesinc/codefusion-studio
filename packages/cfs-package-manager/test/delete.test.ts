@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ import { ConanPkgManager } from "../src/conan-backend/conan-backend.js";
 
 use(chaiAsPromised);
 
+const conanURL = `http://${process.env.CONAN_SERVER_HOST ?? "localhost"}:${process.env.CONAN_SERVER_PORT ?? "9300"}`;
+
 describe("Delete Method Tests", function () {
 	describe("ConanPkgManager Delete Integration Tests", function () {
-		// Increase timeout for integration tests that involve package installation
-		this.timeout(300000); // 5 minutes
 		const testConfigDir = path.join(process.cwd(), "test_config");
 		const testCacheDir = path.join(
 			process.cwd(),
@@ -33,14 +33,16 @@ describe("Delete Method Tests", function () {
 		const testConanHome = path.join(testCacheDir, "conan");
 
 		async function cleanCache() {
-			await fs.promises.rm(testCacheDir, {
-				recursive: true,
-				force: true
-			});
-			await fs.promises.rm(testConfigDir, {
-				recursive: true,
-				force: true
-			});
+			await Promise.all([
+				fs.promises.rm(testCacheDir, {
+					recursive: true,
+					force: true
+				}),
+				fs.promises.rm(testConfigDir, {
+					recursive: true,
+					force: true
+				})
+			]);
 		}
 
 		const api = new ConanPkgManager({
@@ -69,10 +71,7 @@ describe("Delete Method Tests", function () {
 			for (const { name } of remotes) {
 				await api.deleteRemote(name);
 			}
-			await api.addRemote(
-				"local-test-server",
-				"http://localhost:9300"
-			);
+			await api.addRemote("local-test-server", conanURL);
 			await api.login(
 				"local-test-server",
 				"test_user",
@@ -116,15 +115,10 @@ describe("Delete Method Tests", function () {
 					const testPkg = { name: "test_pkg1", version: "1.0" };
 					await api.install(testPkg);
 
-					try {
-						// Try to delete it while it's still installed - should fail
-						await expect(
-							api.delete("test_pkg1/1.0")
-						).to.be.rejectedWith(/cannot delete.*still installed/i);
-					} finally {
-						// Clean up - uninstall the package
-						await api.uninstall(testPkg.name);
-					}
+					// Try to delete it while it's still installed - should fail
+					await expect(
+						api.delete("test_pkg1/1.0")
+					).to.be.rejectedWith(/cannot delete.*still installed/i);
 				});
 			});
 
@@ -155,12 +149,10 @@ describe("Delete Method Tests", function () {
 						{ name: "test_pkg_dep1", version: "1.0" }
 					];
 
-					for (const pkg of testPackages) {
-						await api.install(pkg);
-					}
+					await api.install(testPackages);
 				});
 
-				afterEach(async function () {
+				after(async function () {
 					// Clean up any remaining installed packages
 					const installedPackages = await api.list();
 
@@ -230,12 +222,10 @@ describe("Delete Method Tests", function () {
 						{ name: "test_pkg1", version: "1.0" }
 					];
 
-					for (const pkg of testPackages) {
-						await api.install(pkg);
-					}
+					await api.install(testPackages);
 				});
 
-				afterEach(async function () {
+				after(async function () {
 					// Clean up
 					const installedPackages = await api.list();
 					for (const pkg of installedPackages) {
@@ -303,14 +293,9 @@ describe("Delete Method Tests", function () {
 				const testPkg = { name: "test_pkg1", version: "1.0" };
 				await api.install(testPkg);
 
-				try {
-					await expect(
-						api.delete("test_pkg1/1.0")
-					).to.be.rejectedWith(/cannot delete.*still installed/i);
-				} finally {
-					// Clean up
-					await api.uninstall(testPkg.name);
-				}
+				await expect(api.delete("test_pkg1/1.0")).to.be.rejectedWith(
+					/cannot delete.*still installed/i
+				);
 			});
 
 			it("should throw an error when no packages match wildcard pattern", async function () {
@@ -326,7 +311,8 @@ describe("Delete Method Tests", function () {
 				await api.uninstall(testPkg.name);
 
 				// Should succeed in deleting cached package
-				await expect(api.delete("test_pkg1/1.0")).to.be.fulfilled;
+				await expect(api.delete("test_pkg1/1.0")).to.eventually.be
+					.fulfilled;
 			});
 		});
 	});

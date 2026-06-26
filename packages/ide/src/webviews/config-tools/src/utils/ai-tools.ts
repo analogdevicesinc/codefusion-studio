@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,47 @@
  *
  */
 
-import type {ConfiguredProject} from 'cfs-types';
+import type {ConfiguredProject, SocCore} from 'cfs-types';
 import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
 import type {Core, Peripheral} from '../../../common/types/soc';
 import {loadAiBackends} from '../state/slices/ai-tools/ai-backends';
+import {findSupportedAiBackendsForCore} from '../screens/ai-tools/model-editor-view/ai-model-utils';
 
 export type AISupportingCore = Core & {
 	Accelerator?: string;
-	Family: string;
+	Backend: string;
 };
 
 export type AIBackends = Record<string, AiSupportingBackend>;
 
 let supportedBackends: AIBackends = {};
-let aiCores: AISupportingCore[] = [];
+let modelTargets: AISupportingCore[] = [];
+
+let aiSupportingCores: SocCore[] = [];
+let aiAccellerators: Peripheral[] = [];
 
 export function getAiBackends(): AIBackends {
 	return supportedBackends;
 }
 
+/**
+ * Loads the AI backends from the cfsai tool and generates all possible model targets.
+ * @returns A record of AI backend ID to AI backend data
+ */
 export async function loadAIBackends(): Promise<
 	AIBackends | undefined
 > {
-	if (!aiCores?.length || Object.keys(supportedBackends).length) {
+	if (
+		!aiSupportingCores?.length ||
+		Object.keys(supportedBackends).length
+	) {
 		return supportedBackends;
 	}
 
 	try {
 		supportedBackends = await loadAiBackends();
+
+		intializeModelTargets();
 	} catch (error) {
 		console.error('Failed to load AI Backends from plugin', error);
 		supportedBackends = {};
@@ -49,8 +62,12 @@ export async function loadAIBackends(): Promise<
 	return supportedBackends;
 }
 
-export function getAICores(): AISupportingCore[] {
-	return aiCores;
+export function getAICores(): SocCore[] {
+	return aiSupportingCores;
+}
+
+export function getAIModelTargets(): AISupportingCore[] {
+	return modelTargets;
 }
 
 export function initializeAiToolsData(
@@ -58,24 +75,56 @@ export function initializeAiToolsData(
 	peripherals: Peripheral[],
 	projects?: ConfiguredProject[]
 ): void {
-	const aiSupportingCores = cores.filter(
+	aiSupportingCores = cores.filter(
 		c =>
 			c.Ai &&
 			projects?.some(
 				proj => proj.CoreId === c.Id && !proj.ExternallyManaged
 			)
 	);
-	const aiAccellerators = peripherals.filter(p => p.Ai);
 
-	aiCores = aiSupportingCores.flatMap(core => [
-		core,
-		...aiAccellerators
-			.filter(acc => acc.Cores.includes(core.Id))
-			.map(acc => ({
-				...core,
-				Name: `${core.Name} + ${acc.Name} Accelerator`,
-				Accelerator: acc.Name,
-				Family: core.Family
-			}))
-	]);
+	aiAccellerators = peripherals.filter(p => p.Ai);
+}
+
+function intializeModelTargets() {
+	const supportedBackends = getAiBackends();
+	modelTargets = aiSupportingCores.flatMap(core =>
+		[
+			core,
+			...aiAccellerators
+				// Get all cores and accellerator combinations
+				.filter(acc => acc.Cores.includes(core.Id))
+				.map<Omit<AISupportingCore, 'Backend'>>(acc => ({
+					...core,
+					Name: `${core.Name} + ${acc.Name} Accelerator`,
+					Accelerator: acc.Name
+				}))
+		]
+			// Here we now have [core, core+accellerator1, ...]
+			// now we need to check what backends each supports and create entries for those
+			// If a core supports multiple backends, we want an entry for each combination
+			.flatMap(core => {
+				const coreBackends = findSupportedAiBackendsForCore(
+					supportedBackends,
+					core
+				);
+
+				if (!coreBackends.length) {
+					return [];
+				}
+
+				return coreBackends.length > 1
+					? coreBackends.map(backend => ({
+							...core,
+							Name: `${core.Name} - ${supportedBackends[backend].DisplayName ?? backend}`,
+							Backend: backend
+						}))
+					: [
+							{
+								...core,
+								Backend: coreBackends[0]
+							}
+						];
+			})
+	);
 }

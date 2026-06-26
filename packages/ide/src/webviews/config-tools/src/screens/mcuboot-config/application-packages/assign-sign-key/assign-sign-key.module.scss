@@ -32,9 +32,14 @@
 		align-items: center;
 		gap: layout.$spacing-2;
 		align-self: stretch;
+		.titleContainer {
+			display: flex;
+			align-items: center;
+			gap: layout.$spacing-1;
+			flex: 1;
+		}
 		.title {
 			display: flex;
-			flex: 1;
 			@include fonts.label-l2;
 			color: colors.$default-foreground;
 		}

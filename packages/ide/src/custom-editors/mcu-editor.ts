@@ -696,10 +696,11 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
             request = Promise.resolve(results);
           } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(
-              `An error occurred while searching packages: ${(error as Error).message}`,
+              `An error occurred while searching for packages: ${errorMessage}`,
             );
-
             request = Promise.reject(error);
           }
         } else if (

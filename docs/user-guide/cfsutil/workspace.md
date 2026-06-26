@@ -171,7 +171,7 @@ Generates a workspace from an existing `.cfsworkspace` file.
         "Package": "WLP",
         "Board": "AD-APARD32690-SL",
         "WorkspaceName": "Apard_ws",
-        "Location": "C:\\Users\\<username>\\cfs\\2.2.0",
+        "Location": "C:\\Users\\<username>\\cfs\\2.2.1",
         "WorkspacePluginId": "",
         "WorkspacePluginVersion": "",
         "Projects": [
@@ -196,7 +196,7 @@ Generates a workspace from an existing `.cfsworkspace` file.
                 }
             }
         ],
-        "DataModelVersion": "1.3.628",
+        "DataModelVersion": "1.3.759",
         "DataModelSchemaVersion": "1.2.0"
     }
     ```
@@ -217,5 +217,5 @@ Generates a workspace from command-line parameters. The generated workspace path
 
 !!! example
     ```sh
-    cfsutil workspace create -o "C:/Users/<username>/cfs/2.2.0" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
+    cfsutil workspace create -o "C:/Users/<username>/cfs/2.2.1" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
     ```

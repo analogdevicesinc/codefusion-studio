@@ -41,6 +41,9 @@ const configWithGranite = {
 } as unknown as CfsConfig;
 
 describe('Security settings Components', () => {
+	beforeEach(() => {
+		cy.viewport(1920, 1080);
+	});
 	it('renders MCUBoot Setting', () => {
 		const reduxStore = configurePreloadedStore(
 			socMax,
@@ -64,6 +67,9 @@ describe('Security settings Components', () => {
 });
 
 describe('MCUBoot settings behavior', () => {
+	beforeEach(() => {
+		cy.viewport(1920, 1080);
+	});
 	it('renders all three enable options (Enabled, Default, Disabled)', () => {
 		const reduxStore = configurePreloadedStore(
 			socMax,
@@ -211,6 +217,7 @@ describe('Sign Key Management behavior', () => {
 			getState: () => undefined,
 			setState: () => undefined as any
 		});
+		cy.viewport(1920, 1080);
 	});
 
 	it('shows empty-key state when no keys are present', () => {
@@ -732,7 +739,7 @@ describe('Sign Key Management behavior', () => {
 		);
 	});
 
-	it('shows a non-existent path error when destination path is left empty', () => {
+	it('shows required field error when destination path is left empty', () => {
 		const reduxStore = configurePreloadedStore(
 			socMax,
 			configWithGranite
@@ -773,17 +780,401 @@ describe('Sign Key Management behavior', () => {
 			.focus()
 			.type('my-test-key');
 
-
-		// Submit — checkDirectoryExists resolves falsy via the beforeEach mock
+		// Submit — required-field validation fires because destination path is empty
 		cy.get(
 			'[data-test="key-management:generate-key-form:submit"]'
 		).click();
 
 		cy.get(
 			'[data-test="generate-key:destination-path-error"]'
-		).should(
-			'contain.text',
-			'Destination Path is required'
+		).should('contain.text', 'Destination Path is required');
+	});
+
+	it('shows duplicate error when generating a key with a case-variant of an existing key name', () => {
+		const reduxStore = configurePreloadedStore(
+			socMax,
+			configWithGranite
 		);
+
+		mockVsCodeApi({
+			postMessage(message: any) {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							...(message.type === 'check-directory-exists' && {
+								body: true
+							})
+						}
+					})
+				);
+			},
+			getState: () => undefined,
+			setState: () => undefined as any
+		});
+
+		(window as any).__webview_localization_resources__ = {
+			cfgtools: {
+				settings: {
+					security: {
+						'sign-key-management': {
+							duplicateKeyName:
+								'A key with this name already exists. Please choose a different name.'
+						}
+					}
+				}
+			}
+		};
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<WorkspaceSecuritySettings />
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		// First, generate a key named 'my-key' successfully
+		cy.get(
+			'[data-test="sign-key-management:generate-new-key"]'
+		).click();
+		cy.get('[data-test="key-management:generate-key-form"]').should(
+			'exist'
+		);
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('my-key');
+
+		cy.get(
+			'[data-test="generate-key:destination-path-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/keys');
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:submit"]'
+		).click();
+
+		// Verify the first key was added
+		cy.get('[data-test="key-management:key-card-my-key.pem"]').should(
+			'exist'
+		);
+
+		// Now try to generate a key with a case-variant name 'My-Key'
+		cy.get('[data-test="sign-key-management:add-key"]').click();
+		cy.get(
+			'[data-test="event-sources:options-menu:item:generate-new-key"]'
+		).click();
+		cy.get('[data-test="key-management:generate-key-form"]').should(
+			'exist'
+		);
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('My-Key');
+
+		cy.get(
+			'[data-test="generate-key:destination-path-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/keys');
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:submit"]'
+		).click();
+
+		// Duplicate error should be shown on the key name field
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-error"]'
+		).should('exist');
+
+		// No second key card should be added
+		cy.get('[data-test="key-management:key-card-my-key.pem"]').should(
+			'have.length',
+			1
+		);
+
+		// The form should still be visible (submission was blocked)
+		cy.get('[data-test="key-management:generate-key-form"]').should(
+			'exist'
+		);
+	});
+
+	it('shows duplicate error when adding an existing key with a case-variant filename', () => {
+		const reduxStore = configurePreloadedStore(
+			socMax,
+			configWithGranite
+		);
+
+		mockVsCodeApi({
+			postMessage(message: any) {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							...(message.type === 'read-pem-algorithm' && {
+								body: 'ecdsa-p256'
+							}),
+							...(message.type === 'check-directory-exists' && {
+								body: true
+							})
+						}
+					})
+				);
+			},
+			getState: () => undefined,
+			setState: () => undefined as any
+		});
+
+		(window as any).__webview_localization_resources__ = {
+			cfgtools: {
+				settings: {
+					security: {
+						'sign-key-management': {
+							duplicateKey:
+								'A key with this name already exists. Please choose a different key.'
+						}
+					}
+				}
+			}
+		};
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<WorkspaceSecuritySettings />
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		// First, add an existing key via the form
+		cy.get(
+			'[data-test="sign-key-management:add-existing-key"]'
+		).click();
+		cy.get(
+			'[data-test="key-management:add-existing-key-form"]'
+		).should('exist');
+
+		cy.get('[data-test="existing-key:key-path-control-input"]')
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/keys/my-key.pem');
+
+		cy.get(
+			'[data-test="key-management:add-existing-key-form:submit"]'
+		).click();
+
+		// Verify the first key was added
+		cy.get('[data-test="key-management:key-card-my-key.pem"]').should(
+			'exist'
+		);
+
+		// Now try to add a key with a case-variant filename 'MY-KEY.PEM'
+		cy.get('[data-test="sign-key-management:add-key"]').click();
+		cy.get(
+			'[data-test="event-sources:options-menu:item:add-existing-key"]'
+		).click();
+		cy.get(
+			'[data-test="key-management:add-existing-key-form"]'
+		).should('exist');
+
+		cy.get('[data-test="existing-key:key-path-control-input"]')
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/some/other/path/MY-KEY.PEM');
+
+		cy.get(
+			'[data-test="key-management:add-existing-key-form:submit"]'
+		).click();
+
+		// Duplicate error should be shown on the key path field
+		cy.get('[data-test="existing-key:key-path-error"]').should(
+			'exist'
+		);
+
+		// No second key card should be added
+		cy.get('[data-test="key-management:key-card-my-key.pem"]').should(
+			'have.length',
+			1
+		);
+
+		// The form should still be visible (submission was blocked)
+		cy.get(
+			'[data-test="key-management:add-existing-key-form"]'
+		).should('exist');
+	});
+
+	it('should show error when generating a key with spaces in the destination path', () => {
+		const reduxStore = configurePreloadedStore(
+			socMax,
+			configWithGranite
+		);
+
+		mockVsCodeApi({
+			postMessage(message: any) {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							...(message.type === 'check-directory-exists' && {
+								body: true
+							})
+						}
+					})
+				);
+			},
+			getState: () => undefined,
+			setState: () => undefined as any
+		});
+
+		(window as any).__webview_localization_resources__ = {
+			cfgtools: {
+				settings: {
+					security: {
+						'sign-key-management': {
+							destinationPathNoSpaces: 'Path cannot contain spaces.'
+						}
+					}
+				}
+			}
+		};
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<WorkspaceSecuritySettings />
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		cy.get(
+			'[data-test="sign-key-management:generate-new-key"]'
+		).click();
+		cy.get('[data-test="key-management:generate-key-form"]').should(
+			'exist'
+		);
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('mytestkey');
+
+		// Enter a path with spaces
+		cy.get(
+			'[data-test="generate-key:destination-path-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/my keys');
+
+		// Wait for validation to trigger
+		cy.get(
+			'[data-test="generate-key:destination-path-error"]'
+		).should('contain.text', 'Path cannot contain spaces.');
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:submit"]'
+		).click();
+
+		// Error should still be present
+		cy.get(
+			'[data-test="generate-key:destination-path-error"]'
+		).should('contain.text', 'Path cannot contain spaces.');
+
+		// Key card should NOT be created
+		cy.get(
+			'[data-test="key-management:key-card-mytestkey.pem"]'
+		).should('not.exist');
+	});
+
+	it('should show error when adding an existing key with spaces in the path', () => {
+		const reduxStore = configurePreloadedStore(
+			socMax,
+			configWithGranite
+		);
+
+		mockVsCodeApi({
+			postMessage(message: any) {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							...(message.type === 'read-pem-algorithm' && {
+								body: 'rsa-2048'
+							})
+						}
+					})
+				);
+			},
+			getState: () => undefined,
+			setState: () => undefined as any
+		});
+
+		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
+
+		cy.get('[data-test="sign-key-management:add-key"]').click();
+		cy.get(
+			'[data-test="event-sources:options-menu:item:add-existing-key"]'
+		).click();
+		cy.get(
+			'[data-test="key-management:add-existing-key-form"]'
+		).should('exist');
+
+		// Enter a path with spaces
+		cy.get('[data-test="existing-key:key-path-control-input"]')
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/my keys/test-key.pem');
+
+		// Wait for validation to trigger
+		cy.get('[data-test="existing-key:key-path-error"]').should(
+			'contain.text',
+			'Path cannot contain spaces.'
+		);
+
+		cy.get(
+			'[data-test="key-management:add-existing-key-form:submit"]'
+		).click();
+
+		// Error should still be present
+		cy.get('[data-test="existing-key:key-path-error"]').should(
+			'contain.text',
+			'Path cannot contain spaces.'
+		);
+
+		// No key card should be added
+		cy.get(
+			'[data-test="key-management:key-card-test-key.pem"]'
+		).should('not.exist');
+
+		// The form should still be visible (submission was blocked)
+		cy.get(
+			'[data-test="key-management:add-existing-key-form"]'
+		).should('exist');
 	});
 });

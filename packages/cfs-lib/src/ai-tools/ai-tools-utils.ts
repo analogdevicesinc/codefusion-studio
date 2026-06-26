@@ -22,7 +22,7 @@ import { URL } from "node:url";
 
 import { CodeGenJsonMsg } from "./index.js";
 import { checkIfFileExists } from "../utils/file-utils.js";
-import type { AIModel, AIModelBackend, SocControl } from "cfs-types";
+import type { AIModelBackend, SocControl } from "cfs-types";
 
 export function sanitizeToCIdentifier(s: string): string {
 	s = s.trim();
@@ -144,51 +144,13 @@ async function downloadToCache(
 	return destination;
 }
 
-export function enforceMaxActiveModels(
-	models: AIModel[],
-	changedModel: AIModel,
-	maxModels: number,
-	jsonOutput = false
-): AIModel[] {
-	const disabledModels: string[] = [];
-
-	const relevantModels = models.filter(
-		(m) =>
-			m.Target.Core.toUpperCase() ===
-				changedModel.Target.Core.toUpperCase() &&
-			(m.Backend?.Name ?? "").toUpperCase() ===
-				(changedModel.Backend?.Name ?? "").toUpperCase()
-	);
-
-	const enabledModels = relevantModels.filter((m) => m.Enabled);
-
-	if (enabledModels.length > maxModels) {
-		const modelsToDisable = enabledModels.length - maxModels;
-		enabledModels
-			.filter((m) => m.Name !== changedModel.Name)
-			.slice(0, modelsToDisable)
-			.forEach((m) => {
-				disabledModels.push(m.Name);
-				m.Enabled = false;
-			});
-	}
-
-	if (!jsonOutput) {
-		disabledModels.length > 0 &&
-			console.warn(
-				`Maximum number of models exceeded. The following model ${disabledModels.length > 1 ? "s have" : "has"} been disabled: ${disabledModels.map((name) => name).join(", ")}`
-			);
-	}
-
-	return models;
-}
-
 export function getValidExtensions(
 	extensions: string[],
 	validProperties: SocControl[],
 	includeDefaults = true
-): AIModelBackend["Extensions"] {
-	const validExtensions: AIModelBackend["Extensions"] = {};
+): NonNullable<AIModelBackend["Extensions"]> {
+	const validExtensions: NonNullable<AIModelBackend["Extensions"]> =
+		{};
 	const errors: string[] = [];
 
 	const propertyMap = new Map(
@@ -251,6 +213,21 @@ export function getValidExtensions(
 			case "string":
 			case "File":
 				validExtensions[property.Id] = value;
+				break;
+			case "array":
+				const array = value
+					.split(",")
+					.map((v) => v.trim())
+					.filter((v) => v.length > 0);
+
+				if (array.length === 0) {
+					errors.push(
+						`Invalid value for '${key}', expected format: key=value,value,...`
+					);
+					break;
+				}
+
+				validExtensions[property.Id] = array.toString();
 				break;
 			default:
 				break;

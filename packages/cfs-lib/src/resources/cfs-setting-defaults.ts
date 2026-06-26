@@ -29,7 +29,7 @@ export const cfsSettingDefaults: Record<string, unknown> = {
   "cfs.mcp.runOnActivation": false,
   "cfs.traceCapture.configuration": {},
   "cfs.catalogManager.checkForUpdates": true,
-  "cfs.catalogManager.catalogLocation": "${userHome}/cfs/2.2.0/.catalog",
+  "cfs.catalogManager.catalogLocation": "${userHome}/cfs/2.2.1/.catalog",
   "cfs.cmsis.root": "${userHome}/AppData/Local/Analog/Packs",
   "cfs.cmsis.pack": null,
   "cfs.cmsis.svdFile": "",
@@ -68,7 +68,6 @@ export const cfsSettingDefaults: Record<string, unknown> = {
   "cfs.coreDump.elfFile": "${config:cfs.programFile}",
   "cfs.coreDump.logFile": "",
   "cfs.coreDump.projectFolder": "${workspaceFolder}",
-  "cfs.zephyrCoreDumpScriptsPath": "${config:cfs.sdk.path}/SDK/zephyr/zephyr/scripts/coredump",
   "cfs.coreDump.gdbServerPort": "1234",
   "cfs.sigmaStudioPlus.path": "C:/Analog Devices/SigmaStudioPlus-Rel2.4.0/"
 };

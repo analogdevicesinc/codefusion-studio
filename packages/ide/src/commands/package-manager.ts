@@ -176,7 +176,9 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
             return;
           }
 
-          // Only one version per package can be selected for install.
+          // Only one version per package name can be installed at a time.
+          // Different packages that share the same tool.json id (e.g.
+          // core-sw-sdk and core-sw-sdk-zephelin) are allowed.
           const duplicatePackageNames = new Set<string>();
           const seenPackageNames = new Set<string>();
           for (const pkg of selected) {
@@ -189,7 +191,7 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
           if (duplicatePackageNames.size > 0) {
             keepOpenAfterHide = true;
             vscode.window.showWarningMessage(
-              `Select only one version per package. Duplicates: ${Array.from(duplicatePackageNames).join(", ")}.`,
+              `Only one version per package name can be installed. Duplicates: ${Array.from(duplicatePackageNames).join(", ")}.`,
             );
             searchQuickPick.show();
             return;

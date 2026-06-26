@@ -151,6 +151,23 @@ export class CliConfigResolver {
   }
 
   /**
+   * Get a setting value by key without type coercion.
+   *
+   * Unlike `get()`, this returns the raw value as stored — preserving
+   * objects, arrays, and other non-string types. Use this for settings
+   * like `cfs.environment` whose value is a structured object
+   * (Record<string, string>) rather than a scalar string.
+   *
+   * @param key The setting key to retrieve (e.g. "cfs.environment").
+   * @returns The raw setting value, or undefined if not set or explicitly null.
+   */
+  getRaw(key: string): unknown {
+    const value = this.merged[key];
+
+    return value === undefined || value === null ? undefined : value;
+  }
+
+  /**
    * Determines the installation path for CodeFusion Studio (CFS) by locating the `cfs.json` file.
    *
    * The method searches for the `cfs.json` file on parent directories of this file.

@@ -24,6 +24,6 @@ export const TextData = {
   evkitName32690: "max32690evkit/max32690/m4",
   evkitname78XXX: "max78002evkit/max78002/m4",
   evkitname326XX: "max32657evkit/max32657",
-  cfsideversion: "2.2.0",
+  cfsideversion: "2.2.1",
   workspaceName: "TrustZone_SingleCore_Workspace",
 };

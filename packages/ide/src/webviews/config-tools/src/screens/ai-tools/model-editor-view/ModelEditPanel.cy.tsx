@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import {
 	type AISupportingCore
 } from '../../../utils/ai-tools';
 import {initializeConfigDict} from '../../../utils/config';
-import {
-	ModelEditPanel,
-	selectBackendForTarget
-} from './ModelEditPanel';
+import {ModelEditPanel} from './ModelEditPanel';
 import {configurePreloadedStore} from '../../../state/store';
 import {
 	mockVsCodeApi,
@@ -34,6 +31,7 @@ import {
 	saveEditingModel
 } from '../../../state/slices/ai-tools/aiModel.reducer';
 import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext';
+import {findSupportedAiBackendsForCore} from './ai-model-utils';
 
 const soc = (await import('@socs/max78002-csbga.json'))
 	.default as unknown as Soc;
@@ -247,7 +245,8 @@ describe('Backend Selection', () => {
 			Description: 'Cortex-M4 Core',
 			IsPrimary: false,
 			Memory: [],
-			Name: 'Cortex-M4'
+			Name: 'Cortex-M4',
+			Backend: 'backend2'
 		};
 
 		initializeConfigDict(baseCfsConfig, {
@@ -255,11 +254,11 @@ describe('Backend Selection', () => {
 		});
 
 		expect(
-			selectBackendForTarget(backendData, {
+			findSupportedAiBackendsForCore(backendData, {
 				...cm4Core,
 				Accelerator: 'cnn'
 			})
-		).to.equal('backend1');
+		).to.deep.equal(['backend1']);
 
 		initializeConfigDict(
 			{
@@ -271,9 +270,9 @@ describe('Backend Selection', () => {
 			}
 		);
 
-		expect(selectBackendForTarget(backendData, cm4Core)).to.equal(
-			'backend2'
-		);
+		expect(
+			findSupportedAiBackendsForCore(backendData, cm4Core)
+		).to.deep.equal(['backend2']);
 	});
 
 	it('shows errors correctly model name, file and symbol', () => {

@@ -174,7 +174,18 @@ function UpdateResolutionCard({
 						</div>
 
 						{status === 'LOADING_RESOLUTIONS' ? (
-							<ProgressRing position='center' />
+							<div className={styles.loadingResolution}>
+								<ProgressRing
+									width='16'
+									height='16'
+									position='start'
+									className={styles.loadingResolutionStatus}
+								/>
+								<div>
+									{i10n?.errorItem?.loadingResolutionsMessage ??
+ 										'This operation can take several minutes, please wait...'}
+								</div>
+							</div>
 						) : (
 							<>
 								<DropDown

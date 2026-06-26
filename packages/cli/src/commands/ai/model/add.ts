@@ -12,6 +12,8 @@
  * limitations under the License.
  *
  */
+import type AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+
 import {Flags} from '@oclif/core';
 import {
   enforceMaxActiveModels,
@@ -77,6 +79,30 @@ export default class Add extends BaseModelCommand {
       summary: 'Bypass cache and fetch latest remote files'
     })
   };
+
+  async getExtensions(
+    extension: string[],
+    name: string,
+    plugin: AIToolsPlugin
+  ): Promise<NonNullable<AIModelBackend['Extensions']>> {
+    try {
+      const validProperties =
+        await plugin.getPropertiesFromName(name);
+
+      return getValidExtensions(extension, validProperties);
+    } catch (error) {
+      // swallow thrown error for recoverable one
+      throw new RecoverableError(
+        error instanceof Error
+          ? error.message
+          : `No backend properties found for '${name}'`,
+        {
+          suggestion: 'Verify the backend is properly configured',
+          run: `cfsutil ai backends list --name ${name}`
+        }
+      );
+    }
+  }
 
   async run(): CliRunResponse {
     const {flags} = this;
@@ -202,16 +228,11 @@ export default class Add extends BaseModelCommand {
     };
 
     if (flags.extension) {
-      const validProperties = await aiPlugin.getPropertiesFromName(
-        be.Name
-      );
-
-      const validExtensions = getValidExtensions(
+      backend.Extensions = await this.getExtensions(
         flags.extension,
-        validProperties
+        be.Name,
+        aiPlugin
       );
-
-      backend.Extensions = validExtensions;
     }
 
     for (const project of config.Projects) {

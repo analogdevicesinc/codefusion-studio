@@ -21,6 +21,8 @@ import { ConanPkgManager } from "../src/conan-backend/conan-backend.js";
 
 use(chaiAsPromised);
 
+const conanURL = `http://${process.env.CONAN_SERVER_HOST ?? "localhost"}:${process.env.CONAN_SERVER_PORT ?? "9300"}`;
+
 describe("Local install", function () {
 	const testConfigDir = path.join(process.cwd(), "test_config");
 	const testCacheDir = path.join(process.cwd(), "test_cache");
@@ -75,7 +77,7 @@ describe("Local install", function () {
 		});
 
 		await api.init();
-		await api.addRemote("local-test-server", "http://localhost:9300");
+		await api.addRemote("local-test-server", conanURL);
 	}
 
 	before(setupConfig);

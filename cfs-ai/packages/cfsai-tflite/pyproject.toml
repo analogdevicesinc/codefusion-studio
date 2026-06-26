@@ -1,6 +1,6 @@
 [project]
 name = "cfsai-tflite"
-version = "2.2.0"
+version = "2.2.1"
 description = "Tensorflow lite parsing utilities based on the flatbuffer generated schema"
 readme = "README.md"
 authors = [

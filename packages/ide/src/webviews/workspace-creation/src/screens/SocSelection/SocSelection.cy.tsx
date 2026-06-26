@@ -44,8 +44,25 @@ describe('SocSelection', () => {
 		cy.dataTest('soc-selection:option:MAX32670').should('not.exist');
 	});
 
-	it('Should yield <NoSearchResult> component on faulty search input', () => {
+	it('Should yield <NoSearchResults> component on faulty search input', () => {
 		cy.get('#control-input').shadow().find('input').type('XXXXXX');
+
+		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
+		cy.dataTest('no-search-results').should('exist');
+	});
+
+	it('Should yield <NoSearchResults> component on escaped special characters', () => {
+		cy.get('#control-input').shadow().find('input').type('*');
+
+		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
+		cy.dataTest('no-search-results').should('exist');
+
+		cy.get('#control-input').shadow().find('input').clear().type('?');
+
+		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
+		cy.dataTest('no-search-results').should('exist');
+
+		cy.get('#control-input').shadow().find('input').clear().type('}');
 
 		cy.dataTest('soc-selection:option:MAX32655').should('not.exist');
 		cy.dataTest('no-search-results').should('exist');

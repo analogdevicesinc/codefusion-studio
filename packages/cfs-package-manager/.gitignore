@@ -4,3 +4,4 @@ dist/
 node_modules/
 test_cache*/
 test_config*/
+test_manifests*/

@@ -222,13 +222,16 @@ export default class Run extends Command {
     // Build base shell environment with tool paths and env vars
     const installedTools = await toolManager.getInstalledTools();
     const shellEnvOptions = await taskProvider.buildShellEnvOptions();
+    const cfsEnvVars =
+      await taskProvider.getCfsEnvironmentVariables();
 
     const shellEnvProvider = new CfsShellEnvProvider();
     const taskEnv = shellEnvProvider.getBaseShellEnvironment(
       installedTools,
       {
         ...shellEnvOptions,
-        additionalEnv: options?.env
+        // cfs.environment vars are applied first; task-level env wins.
+        additionalEnv: {...cfsEnvVars, ...options?.env}
       }
     );
 

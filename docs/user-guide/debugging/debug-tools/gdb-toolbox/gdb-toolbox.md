@@ -1,7 +1,7 @@
 ---
 description: How to use the GDB Toolbox in CodeFusion Studio.
 author: Analog Devices
-date: 2025-10-23
+date: 2026-06-23
 ---
 
 # Using the GDB Toolbox
@@ -9,7 +9,7 @@ date: 2025-10-23
 The following is an overview of GDB Toolbox features and how to create, edit, and run GDB Toolbox scripts.
 
 !!! note "macOS users"
-    On macOS, the GDB binary used for GDB Toolbox is not Python-enabled by default. Install Python 3.10 and update your `launch.json` to use the Python-enabled GDB binary. For details, see the [Release Notes](../../../../release-notes/2.0.0.md#debug-and-analysis-tools).
+    On macOS, using GDB Toolbox requires an update to your `.vscode/launch.json`. If your target is MAX32657 or MAX32658 and you are using the `zephyr_arm_toolchain/1.0.1` package, Python 3.12 is also required. For details, see the [Release Notes](../../../../release-notes/2.2.1.md#debugging).
 
 ## Access the GDB Toolbox
 

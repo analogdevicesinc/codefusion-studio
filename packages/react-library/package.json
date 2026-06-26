@@ -2,7 +2,7 @@
 	"name": "cfs-react-library",
 	"description": "Custom React components for CFS",
 	"private": true,
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"type": "module",
 	"scripts": {
 		"build": "tsc && vite build",

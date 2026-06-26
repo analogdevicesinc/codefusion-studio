@@ -132,7 +132,7 @@ Install a CFS package, including all its dependencies.
 
 | Argument             | Description                                         |
 |----------------------|-----------------------------------------------------|
-| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.2.0\my-sample-workspace\.cfs\.cfsdependencies`). |
+| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.2.1\my-sample-workspace\.cfs\.cfsdependencies`). |
 
 | Flag                | Description                            |
 |---------------------|----------------------------------------|
@@ -174,7 +174,7 @@ Allows updates that do not change the major version (minor and patch updates are
     cfsutil pkg install "cfs_base_plugins/^2.0.0"
     ```
 
-**Result:** Installs `cfs_base_plugins/2.2.0` (highest available version within major version 2).
+**Result:** Installs `cfs_base_plugins/2.2.1` (highest available version within major version 2).
 
 #### Tilde ranges (`~`)
 
@@ -185,7 +185,7 @@ Allows only patch-level updates within the specified minor version.
     cfsutil pkg install "cfs_base_data_models/~2.0.0"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.2.0)
+**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.2.1)
 
 #### Comparison operators (`>=`, `<=`, `>`, `<`, `=`)
 
@@ -195,7 +195,7 @@ Allows explicit version constraints using comparison operators.
     ```sh
     cfsutil pkg install "cfs_base_plugins/>=2.0.0"
     ```
-**Result:** Installs `cfs_base_plugins/2.2.0` (highest available version greater than or equal to 2.0.0).
+**Result:** Installs `cfs_base_plugins/2.2.1` (highest available version greater than or equal to 2.0.0).
 
 !!! example "Less than (<)"
     ```sh
@@ -209,7 +209,7 @@ Allows explicit version constraints using comparison operators.
     cfsutil pkg install "cfs_base_data_models/>2.0.1"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.2.0` (highest available version greater than 2.0.1).
+**Result:** Installs `cfs_base_data_models/2.2.1` (highest available version greater than 2.0.1).
 
 !!! note
     Version ranges must be enclosed in quotes to prevent shell interpretation of special characters.
@@ -224,7 +224,7 @@ Allows explicit version constraints using comparison operators.
 
 In addition to installing individual packages, you can install multiple packages using a manifest file. Manifest files also support more advanced version expressions, such as compound constraints, which are not supported in the `<packageName>/<version>` format.
 
-In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.2.0\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
+In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.2.1\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
 
 This file specifies the packages and versions required by the workspace.
 
@@ -236,15 +236,15 @@ Example manifest file:
   "packages": [
     {
       "name": "msdk",
-      "version": "2.2.0"
+      "version": "2.2.1"
     },
     {
       "name": "cfs_base_data_models",
-      "version": "2.2.0"
+      "version": "2.2.1"
     },
     {
       "name": "cfs_base_plugins",
-      "version": "2.2.0"
+      "version": "2.2.1"
     }
   ]
 }
@@ -271,7 +271,7 @@ Example:
     cfsutil pkg install /path/to/workspace/.cfs/.cfsdependencies
     ```
 
-**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.2.0`).
+**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.2.1`).
 
 ### Install from local cache
 

@@ -18,10 +18,10 @@ import type {
 	CodeGenJsonMsg,
 	VerifiedConfig
 } from "./index.js";
-import type { AiBackend } from "cfs-types";
+import type { AiBackend, AIModelBackend } from "cfs-types";
 
 import { spawn } from "child_process";
-import fs from "fs/promises";
+import fs, { constants } from "fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -33,43 +33,84 @@ import {
 	type SupportedUtils
 } from "../utils/docker-utils.js";
 import { AuthConfig } from "../auth/session-manager.js";
+import type {
+	CalibrationData,
+	Labels,
+	ValidationData
+} from "cfs-types/types/cfs-config";
+import { randomUUID } from "node:crypto";
 
-interface AiWeaverModel {
+interface AiMotModel {
 	path: string;
 	arch: string;
 	mode?: string;
+	class?: string;
+	dataset?: {
+		calibration_set: CalibrationData;
+		validation_set: ValidationData;
+		labels: Labels;
+	};
 }
 
-type Extensions = Record<string, string | number | boolean>;
-
-interface AiWeaverModelArtifacts {
+interface AiMotModelArtifacts {
 	name: string;
-	extensions: Extensions;
+	extensions: NonNullable<AIModelBackend["Extensions"]>;
 	datasetPath?: string;
 }
 
-interface AiWeaverSubsystem {
-	language: "c++";
-	os: "zephyr";
+interface AiMotSubsystem {
+	language: string;
+	os: string;
 	target: "xtsc";
 	flextcm: string;
 	compiler: string;
-	models: AiWeaverModel[];
+	models: AiMotModel[];
 }
 
-interface AiWeaverInput {
+interface AiMotInput {
 	soc: string;
-	subsystem: Record<string, AiWeaverSubsystem>;
+	subsystem: Record<string, AiMotSubsystem>;
 }
 
 async function copyToTempDir(
 	sourceFile: string,
-	targetDir: string
+	targetDir: string,
+	resolveSource: (value: string) => Promise<string>,
+	retry = 0
 ): Promise<string> {
-	const baseName: string = path.basename(sourceFile);
-	const targetPath = path.join(targetDir, baseName);
-	await fs.copyFile(sourceFile, targetPath);
-	return baseName;
+	const resolvedSource = await resolveSource(sourceFile);
+
+	try {
+		let baseName = path.basename(resolvedSource);
+		let targetPath = path.join(targetDir, baseName);
+
+		if (retry > 0) {
+			const newBaseName = baseName.split(".");
+			newBaseName[0] += `_${randomUUID().slice(0, 4)}`;
+
+			baseName = newBaseName.join(".");
+			targetPath = path.join(targetDir, baseName);
+		}
+
+		await fs.copyFile(
+			resolvedSource,
+			targetPath,
+			constants.COPYFILE_EXCL
+		);
+		return baseName;
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+			throw error;
+		}
+
+		/* file exists, retry with a new name */
+		return await copyToTempDir(
+			sourceFile,
+			targetDir,
+			resolveSource,
+			retry + 1
+		);
+	}
 }
 
 async function invokeContainer(
@@ -93,35 +134,58 @@ async function invokeContainer(
 	}
 
 	args.push(
+		// @TODO: Workaround for mot image requiring HOME to be set for compiler-mode builds. Remove once the image is fixed.
+		"-e",
+		"HOME=/host_data",
 		"-v",
 		`${dir}:/host_data`,
 		image,
 		"build",
+		"/host_data/input.json",
 		"--input",
 		"/host_data/",
 		"--output",
 		"/host_data",
-		"/host_data/input.json"
+		"--dataset",
+		"/host_data"
 	);
 
 	return new Promise((resolve, reject) => {
 		const stdout: string[] = [];
 		const stderr: string[] = [];
+		const fullOutput: string[] = [];
 
 		const proc = spawn(container, args);
 
-		if (!json) {
-			proc.stderr.on("data", (data: Buffer) => {
-				const lines = data.toString().split(/\r?\n/);
-				for (const line of lines) {
+		proc.stderr.on("data", (data: Buffer) => {
+			const lines = data.toString().split(/\r?\n/);
+			for (const line of lines) {
+				if (!json) {
 					if (line.startsWith("[")) {
 						console.log(line);
 					}
 				}
-			});
-		}
+				if (
+					line.trim().length > 0 &&
+					!(line.startsWith("[") && !json)
+				) {
+					fullOutput.push(line);
+				}
+			}
+		});
 
 		proc.on("close", (code) => {
+			if (code !== 0) {
+				// An error occurred, so report the full console output
+				for (const line of fullOutput) {
+					stdout.push(
+						logCodeGenMessage({
+							level: "ERROR",
+							msg: line
+						})
+					);
+				}
+			}
 			resolve({
 				stdout,
 				stderr,
@@ -167,7 +231,7 @@ async function removeTempDir(dir: string): Promise<void> {
 }
 
 function logCodeGenMessage(msg: CodeGenJsonMsg): string {
-	return JSON.stringify(msg);
+	return JSON.stringify(msg) + `\n`;
 }
 
 function trace(json: boolean, msg: string): void {
@@ -198,30 +262,38 @@ async function generateArray(
 }
 
 async function generateAdditionalFiles(
-	models: AiWeaverModelArtifacts[],
-	outputDir: string
+	models: AiMotModelArtifacts[],
+	outputDir: string,
+	artifactName: string
 ) {
 	const generatedAt = new Date().toUTCString();
 	let hasDatasets = false;
 
 	let headerContent = `/*
- * Generated Weaver extensions/dataset declarations on ${generatedAt}. Do not modify.
+ * Generated Mot extensions/dataset declarations on ${generatedAt}. Do not modify.
 */
 
-#if !defined(ADI_NN_HPP)
-#define ADI_NN_HPP\n\n`;
+#if !defined(${artifactName.toUpperCase()}_HPP)
+#define ${artifactName.toUpperCase()}_HPP\n\n`;
 
 	let datasetsContent = `/*
  * Generated C representation of model datasets on ${generatedAt}. Do not modify.
 */
 
-#include "adi_nn.hpp"\n\n`;
+#include "${artifactName}.hpp"\n\n`;
 
 	headerContent += `#define ADI_NN_COMPILER "${String(models[0]?.extensions?.Compiler)}"\n\n`;
 
 	for (const model of models) {
 		for (const [key, value] of Object.entries(model.extensions)) {
-			if (key === "Compiler") {
+			const keysToSkip = [
+				"Compiler",
+				"CalibrationSet",
+				"ValidationSet",
+				"Labels"
+			];
+
+			if (keysToSkip.includes(key)) {
 				continue;
 			}
 			headerContent += `#define ADI_NN_${model.name.toUpperCase()}_${key.toUpperCase()} "${String(value)}"\n`;
@@ -249,7 +321,7 @@ async function generateAdditionalFiles(
 	headerContent += `#endif`;
 
 	await fs.writeFile(
-		path.join(outputDir, "adi_nn.hpp"),
+		path.join(outputDir, `${artifactName}.hpp`),
 		headerContent
 	);
 	await fs.writeFile(
@@ -273,11 +345,135 @@ async function copyToBuild(src: string, dst: string) {
 	});
 }
 
-export async function generateWeaver(
+async function getValidationSet(
+	tmpDir: string,
+	resolveSource: (value: string) => Promise<string>,
+	validationSet: ValidationData
+): Promise<ValidationData> {
+	const errors: string[] = [];
+
+	await Promise.allSettled(
+		validationSet.map(async ([s, label], i) => {
+			const source = await copyToTempDir(s, tmpDir, resolveSource);
+			validationSet[i] = [source, label];
+		})
+	).then((results) =>
+		results.map((result) => {
+			if (result.status === "rejected") {
+				errors.push(String(result.reason));
+			}
+		})
+	);
+
+	if (errors.length) {
+		throw new Error(errors.join("\n"));
+	}
+
+	return validationSet;
+}
+
+async function getCalibrationSet(
+	tmpDir: string,
+	resolveSource: (value: string) => Promise<string>,
+	calibrationSet: CalibrationData
+): Promise<CalibrationData> {
+	const errors: string[] = [];
+
+	await Promise.allSettled(
+		calibrationSet.map(async (s, i) => {
+			const source = await copyToTempDir(s, tmpDir, resolveSource);
+			calibrationSet[i] = source;
+		})
+	).then((results) =>
+		results.map((result) => {
+			if (result.status === "rejected") {
+				errors.push(String(result.reason));
+			}
+		})
+	);
+
+	if (errors.length) {
+		throw new Error(errors.join("\n"));
+	}
+
+	return calibrationSet;
+}
+
+function validateExtensions(
+	initialExtensions: NonNullable<AIModelBackend["Extensions"]>,
+	extensions: NonNullable<AIModelBackend["Extensions"]>,
+	modelName: string
+) {
+	const errors: string[] = [];
+	const fieldsToValidate = [
+		"FlexTCM",
+		"Compiler",
+		"Os",
+		"Language"
+	] as const;
+
+	for (const field of fieldsToValidate) {
+		if (extensions[field] !== initialExtensions[field]) {
+			errors.push(
+				logCodeGenMessage({
+					level: "ERROR",
+					msg: `Inconsistent ${field} value '${String(extensions[field])}' for model '${modelName}'. Expected '${String(initialExtensions[field])}'`
+				})
+			);
+		}
+	}
+
+	if (errors.length) {
+		throw new Error(errors.join("\n"));
+	}
+}
+
+async function constructMotModelEntry(
+	extensions: NonNullable<AIModelBackend["Extensions"]>,
+	vcfg: VerifiedConfig,
+	tmpDir: string,
+	isWithDatasets: boolean,
+	resolveSource: (value: string) => Promise<string>
+): Promise<AiMotModel> {
+	const baseModel: AiMotModel = {
+		path: await copyToTempDir(
+			vcfg.files.Model,
+			tmpDir,
+			resolveSource
+		),
+		arch: extensions.Arch as string,
+		mode: extensions.Mode as string
+	};
+
+	if (isWithDatasets) {
+		return {
+			...baseModel,
+			class: extensions.Class as string,
+			dataset: {
+				labels: vcfg.backend.Labels ?? [],
+				calibration_set: await getCalibrationSet(
+					tmpDir,
+					resolveSource,
+					vcfg.backend.CalibrationData ?? []
+				),
+				validation_set: await getValidationSet(
+					tmpDir,
+					resolveSource,
+					vcfg.backend.ValidationData ?? []
+				)
+			}
+		};
+	}
+
+	return baseModel;
+}
+
+export async function generateMot(
 	backend: AiBackend,
 	vcfgs: VerifiedConfig[],
 	json: boolean,
-	authConfig: AuthConfig
+	authConfig: AuthConfig,
+	resolveSource: (value: string) => Promise<string>
 ): Promise<AiCommandResult> {
 	const output: AiCommandResult = {
 		stdout: [],
@@ -286,20 +482,18 @@ export async function generateWeaver(
 		validCodes: [0]
 	};
 
-	const models: AiWeaverModelArtifacts[] = [];
+	const models: AiMotModelArtifacts[] = [];
 
 	// Test that config inputs are valid
-	if (!backend.Weaver?.DockerImage) {
+	if (!backend.Mot?.DockerImage) {
 		throw new Error(
 			`Backend '${backend.Name}' contains no DockerImage field. Please verify backend is correct.`
 		);
 	}
-	if (!backend.Weaver.Subsystem) {
-		throw new Error(
-			`Backend '${backend.Name}' contains no Subsystem field. Please verify backend is correct.`
-		);
-	}
-	if (!vcfgs[0].target.Soc || !vcfgs[0].target.Core) {
+
+	const initialConfig = vcfgs[0];
+
+	if (!initialConfig.target.Soc || !initialConfig.target.Core) {
 		throw new Error(
 			`SoC or Core is missing from target info. Please verify backend is correct.`
 		);
@@ -308,19 +502,16 @@ export async function generateWeaver(
 	const container = await getContainerUtility();
 
 	if (
-		!(await containerImageExists(
-			container,
-			backend.Weaver.DockerImage
-		))
+		!(await containerImageExists(container, backend.Mot.DockerImage))
 	) {
 		const { registry, repo } = extractRegistryAndRepoName(
-			backend.Weaver.DockerImage
+			backend.Mot.DockerImage
 		);
 
 		const creds = await getCredentials(repo, authConfig, json);
 
 		await pullImage({
-			image: backend.Weaver.DockerImage,
+			image: backend.Mot.DockerImage,
 			registry,
 			utility: container,
 			creds,
@@ -334,25 +525,53 @@ export async function generateWeaver(
 		);
 	}
 
-	const dirName = `weaver-${vcfgs[0].target.Soc}-${String(Date.now())}`;
+	const dirName = `mot-${initialConfig.target.Soc}-${String(Date.now())}`;
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), dirName));
 
 	try {
-		const subsystem = backend.Weaver.Subsystem.toLowerCase();
-		const initialFlextcm = vcfgs[0].backend.Extensions
-			?.FlexTCM as string;
-		const initialCompiler = vcfgs[0].backend.Extensions
-			?.Compiler as string;
+		const ext = initialConfig.backend
+			.Extensions as unknown as NonNullable<
+			AIModelBackend["Extensions"]
+		>;
 
-		const inputData: AiWeaverInput = {
-			soc: backend.Weaver.Soc,
+		const subsystem =
+			initialConfig.target.Core.split("-")[0].toLowerCase();
+
+		const flexTcm = ext.FlexTCM as string;
+		const compiler = ext.Compiler as string;
+
+		const requiresDatasets = Boolean(ext.Class);
+
+		if (requiresDatasets) {
+			const errors: string[] = [];
+			const requiredFields = [
+				"CalibrationData",
+				"ValidationData",
+				"Labels"
+			] as const;
+
+			for (const field of requiredFields) {
+				if (initialConfig.backend[field] === undefined) {
+					errors.push(
+						`Backend '${backend.Name}' requires '${field}' to be set.`
+					);
+				}
+			}
+
+			if (errors.length) {
+				throw new Error(errors.join("\n"));
+			}
+		}
+
+		const inputData: AiMotInput = {
+			soc: backend.Mot.Soc,
 			subsystem: {
 				[subsystem]: {
-					language: "c++",
-					os: "zephyr",
+					language: ext.Language as string,
+					os: ext.Os as string,
 					target: "xtsc",
-					compiler: initialCompiler,
-					flextcm: initialFlextcm,
+					compiler: compiler,
+					flextcm: flexTcm,
 					models: []
 				}
 			}
@@ -376,54 +595,47 @@ export async function generateWeaver(
 				}
 			}
 
-			if (
-				vcfg.backend.Extensions?.FlexTCM &&
-				vcfg.backend.Extensions.FlexTCM !== initialFlextcm
-			) {
-				errors.push(
-					logCodeGenMessage({
-						level: "ERROR",
-						msg: `Inconsistent FlexTCM value '${vcfg.backend.Extensions.FlexTCM as string}' for model '${vcfg.name}'. Expected '${initialFlextcm}'`
-					})
-				);
-			}
+			const extensions = vcfg.backend
+				.Extensions as unknown as NonNullable<
+				AIModelBackend["Extensions"]
+			>;
 
-			if (
-				vcfg.backend.Extensions?.Compiler &&
-				vcfg.backend.Extensions.Compiler !== initialCompiler
-			) {
-				errors.push(
-					logCodeGenMessage({
-						level: "ERROR",
-						msg: `Inconsistent Compiler value '${vcfg.backend.Extensions.Compiler as string}' for model '${vcfg.name}'. Expected '${initialCompiler}'`
-					})
-				);
-			}
+			const modelDetails = await constructMotModelEntry(
+				extensions,
+				vcfg,
+				tmpDir,
+				requiresDatasets,
+				resolveSource
+			);
 
-			inputData.subsystem[subsystem].models.push({
-				arch: vcfg.backend.Extensions?.Arch as string,
-				path: await copyToTempDir(vcfg.files.Model, tmpDir),
-				mode: vcfg.backend.Extensions?.Mode as string
-			});
+			validateExtensions(ext, extensions, vcfg.name);
+
+			inputData.subsystem[subsystem].models.push(modelDetails);
 
 			models.push({
 				name: vcfg.name,
 				datasetPath: vcfg.files.Dataset,
-				extensions: vcfg.backend.Extensions as Extensions
+				extensions: extensions
 			});
 		}
+
+		const artifactName = `adi_${backend.DisplayName?.toLowerCase() ?? "nn"}`;
 
 		if (errors.length > 0) {
 			output.stderr.push(...errors);
 			output.code = 1;
 		} else {
 			if (outDir == "") {
-				outDir = path.join(vcfgs[0].prj_info.name, "src", "adi_nn");
+				outDir = path.join(
+					initialConfig.prj_info.name,
+					"src",
+					artifactName
+				);
 			}
 			const buildDir = path.isAbsolute(outDir)
 				? outDir
 				: path.resolve(
-						path.join(vcfgs[0].prj_info.workspace, outDir)
+						path.join(initialConfig.prj_info.workspace, outDir)
 					);
 
 			// Report as relative posix path
@@ -441,7 +653,7 @@ export async function generateWeaver(
 
 			const result: AiCommandResult = await invokeContainer(
 				container,
-				backend.Weaver.DockerImage,
+				backend.Mot.DockerImage,
 				tmpDir,
 				json
 			);
@@ -449,7 +661,7 @@ export async function generateWeaver(
 			output.stderr.push(...result.stderr);
 			output.code = result.code;
 
-			if (output.code) {
+			if (output.code !== 0) {
 				output.stderr.push(
 					logCodeGenMessage({
 						level: "ERROR",
@@ -460,8 +672,8 @@ export async function generateWeaver(
 				const srcDir = path.join(tmpDir, subsystem);
 				await fs.mkdir(buildDir, { recursive: true });
 
-				if (backend.Weaver.Copy) {
-					for (const item of backend.Weaver.Copy) {
+				if (backend.Mot.Copy) {
+					for (const item of backend.Mot.Copy) {
 						try {
 							const srcPath = path.join(srcDir, item);
 							const destPath = path.join(buildDir, item);
@@ -491,7 +703,7 @@ export async function generateWeaver(
 				} else {
 					await copyToBuild(srcDir, buildDir);
 				}
-				await generateAdditionalFiles(models, buildDir);
+				await generateAdditionalFiles(models, buildDir, artifactName);
 				output.stdout.push(
 					logCodeGenMessage({
 						level: "INFO",

@@ -1,7 +1,7 @@
 ---
 description: Introduction to the Core Dump Analysis Tool in CodeFusion Studio
 author: Analog Devices
-date: 2026-04-15
+date: 2026-06-18
 ---
 
 # Core Dump Analysis Tool overview
@@ -29,4 +29,4 @@ Support extends to all processor cores included in these SoCs.
 
 ## Platform support
 
-On macOS, the GDB binary used for Core Dump Analysis is not Python-enabled by default. For setup instructions, see the [Release Notes](../../../../release-notes/2.0.0.md#debug-and-analysis-tools).
+On macOS, Core Dump Analysis for MAX32657 and MAX32658 with the `zephyr_arm_toolchain/1.0.1` package requires Python 3.12 installed on your system (`brew install python@3.12`). For setup instructions, see the [Release Notes](../../../../release-notes/2.2.1.md#debugging).

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import {LocalizedMessage} from '../../../../common/components/l10n/LocalizedMess
 import {
 	type AIBackends,
 	type AISupportingCore,
-	getAICores,
+	getAIModelTargets,
 	loadAIBackends
 } from '../../utils/ai-tools';
 import loaderStyles from '../../components/screen-loader/screen-loader.module.scss';
@@ -66,26 +66,22 @@ import ViewSourceIcon from '../../../../common/icons/ViewSource';
 import {openFile} from '../../../../common/api';
 import type {AiSupportingBackend} from '../../../../common/types/ai-fusion-data-model';
 
-const unkownCore: AISupportingCore = {
-	Id: 'Unknown Core',
-	Name: 'Unknown Core',
-	Family: 'Unknown Family',
-	Description: 'Unknown Core',
-	Memory: []
-};
-
 export function ModelList() {
 	const dispatch = useAppDispatch();
 	const models = useAIModels();
-	const aiSupportingCores = getAICores();
 
 	const [aiBackends, setAiBackends] = useState<
 		AIBackends | undefined
 	>(undefined);
 
+	const [modelTargets, setModelTargets] = useState<
+		AISupportingCore[]
+	>([]);
+
 	useEffect(() => {
 		void loadAIBackends().then(backends => {
 			setAiBackends(backends);
+			setModelTargets(getAIModelTargets());
 		});
 	}, []);
 
@@ -101,26 +97,33 @@ export function ModelList() {
 				AISupportingCore,
 				AIModelWithId[]
 			>();
-			const coresById = new Map(
-				aiSupportingCores.map(core => [
-					core.Id + (core.Accelerator ?? ''),
-					core
-				])
-			);
 			models.forEach(model => {
-				const targetId =
-					model.Target.Core + (model.Target.Accelerator ?? '');
-				const core = coresById.get(targetId) ?? unkownCore;
+				const target = modelTargets.find(
+					t =>
+						t.Id === model.Target.Core &&
+						(t.Accelerator ?? 'none') ===
+							(model.Target.Accelerator ?? 'none') &&
+						t.Backend === model.Backend?.Name
+				);
 
-				if (modelsByCore.has(core)) {
-					modelsByCore.get(core)?.push(model);
-				} else {
-					modelsByCore.set(core, [model]);
+				if (!target) {
+					if (aiBackends) {
+						console.warn(
+							`Model ${model.Name} has an unknown target core ${model.Target.Core} with accelerator ${model.Target.Accelerator} and backend ${model.Backend?.Name}`
+						);
+					}
+
+					return;
 				}
+
+				modelsByCore.set(target, [
+					...(modelsByCore.get(target) ?? []),
+					model
+				]);
 			});
 
 			return modelsByCore;
-		}, [aiSupportingCores, models]);
+		}, [modelTargets, models, aiBackends]);
 
 	if (aiBackends === undefined) {
 		return (
@@ -164,7 +167,9 @@ export function ModelList() {
 				</div>
 				{models.length ? (
 					Array.from(modelsByCore.entries()).map(([core, models]) => (
-						<div key={core.Id + (core.Accelerator ?? '')}>
+						<div
+							key={core.Id + (core.Accelerator ?? '') + core.Backend}
+						>
 							<h2 className={styles.tableTitle}>{core.Name}</h2>
 							<ModelTable
 								backend={aiBackends[models[0]?.Backend?.Name ?? '']}
@@ -242,7 +247,7 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 		<DataGrid
 			gridTemplateColumns={`1fr 85px 1fr ${backend?.AdvancedTools ? '125px' : ''} ${backend?.AdvancedTools ? '150px' : '125px'}`}
 			className={styles.table}
-			dataTest={`${models[0].Target.Core}.${models[0].Target.Accelerator ?? 'none'}-table`}
+			dataTest={`${models[0].Target.Core}.${models[0].Target.Accelerator ?? 'none'}.${models[0].Backend?.Name ?? 'unknown'}-table`}
 		>
 			<DataGridRow rowType='header' className={styles.headerRow}>
 				<DataGridCell gridColumn='1'>

@@ -49,7 +49,7 @@ const config: CfsConfig = {
 	]
 };
 
-const configWithModels: CfsConfig = {
+const customConfig: CfsConfig = {
 	...config,
 	Projects: [
 		{
@@ -61,7 +61,27 @@ const configWithModels: CfsConfig = {
 			Peripherals: [],
 			PluginId: 'test-plugin',
 			PluginVersion: '1.0.0',
-			PlatformConfig: {},
+			PlatformConfig: {}
+		},
+		{
+			CoreId: 'core2',
+			ExternallyManaged: false,
+			ProjectId: 'project1',
+			FirmwarePlatform: 'MAX32690',
+			Partitions: [],
+			Peripherals: [],
+			PluginId: 'test-plugin',
+			PluginVersion: '1.0.0',
+			PlatformConfig: {}
+		}
+	]
+};
+
+const configWithModels: CfsConfig = {
+	...config,
+	Projects: [
+		{
+			...customConfig.Projects[0],
 			AIModels: [
 				{
 					Name: 'TestModel',
@@ -70,7 +90,7 @@ const configWithModels: CfsConfig = {
 					},
 					Target: {
 						Core: 'core1',
-						Accelerator: 'cnn'
+						Accelerator: 'CNN'
 					},
 					Backend: {
 						Name: 'SingleModel'
@@ -85,7 +105,7 @@ const configWithModels: CfsConfig = {
 					},
 					Target: {
 						Core: 'core1',
-						Accelerator: 'cnn'
+						Accelerator: 'CNN'
 					},
 					Backend: {
 						Name: 'SingleModel'
@@ -96,15 +116,7 @@ const configWithModels: CfsConfig = {
 			] satisfies AIModel[]
 		},
 		{
-			CoreId: 'core2',
-			ExternallyManaged: false,
-			ProjectId: 'project1',
-			FirmwarePlatform: 'MAX32690',
-			Partitions: [],
-			Peripherals: [],
-			PluginId: 'test-plugin',
-			PluginVersion: '1.0.0',
-			PlatformConfig: {},
+			...customConfig.Projects[1],
 			AIModels: [
 				{
 					Name: 'TestModel3',
@@ -162,6 +174,17 @@ const customCoreSoc: Soc = {
 			Memory: [],
 			Ai: {}
 		}
+	],
+	Peripherals: [
+		...soc.Peripherals,
+		{
+			Name: 'CNN',
+			Description: 'CNN Accellerator',
+			Cores: ['core1'],
+			Ai: {},
+			Signals: [],
+			ClockNode: ''
+		}
 	]
 };
 
@@ -169,20 +192,30 @@ const supportedBackends: Record<string, AiSupportingBackend> = {
 	InfiniteModels: {
 		Targets: [
 			{
-				Hardware: {Family: 'arch', Accelerator: null}
+				Hardware: {Family: 'Cortex-M', Accelerator: null},
+				FirmwarePlatform: null
 			}
 		],
-		Docker: {Size: 1},
+		Description: '',
+		Formats: [],
+		Module: '',
+		Name: 'InfiniteModels',
+		Package: '',
 		MaxModels: 99,
 		AdvancedTools: true
 	},
 	SingleModel: {
 		Targets: [
 			{
-				Hardware: {Family: 'arch', Accelerator: 'cnn'}
+				Hardware: {Family: 'Cortex-M', Accelerator: 'cnn'},
+				FirmwarePlatform: null
 			}
 		],
-		Docker: {Size: 1},
+		Description: '',
+		Formats: [],
+		Module: '',
+		Name: 'SingleModel',
+		Package: '',
 		MaxModels: 1,
 		AdvancedTools: false
 	}
@@ -211,8 +244,8 @@ describe('ModelList', () => {
 
 	it('should render the empty component when no AI Models exist', () => {
 		const reduxStore = configurePreloadedStore(
-			soc,
-			config,
+			customCoreSoc,
+			customConfig,
 			undefined
 		);
 
@@ -230,8 +263,8 @@ describe('ModelList', () => {
 
 		cy.mount(<ModelList />, reduxStore);
 
-		cy.dataTest('core1.cnn-table').should('exist');
-		cy.dataTest('core2.none-table').should('exist');
+		cy.dataTest('core1.CNN.SingleModel-table').should('exist');
+		cy.dataTest('core2.none.InfiniteModels-table').should('exist');
 
 		// First model is toggled on
 		cy.dataTest('include-toggle-TestModel-span')
@@ -266,14 +299,14 @@ describe('ModelList', () => {
 
 		cy.mount(<ModelList />, reduxStore);
 
-		cy.dataTest('core1.cnn-table')
+		cy.dataTest('core1.CNN.SingleModel-table')
 			.should('exist')
 			.within(() => {
 				cy.dataTest('compatibility-column').should('not.exist');
 				cy.dataTest('report-action').should('not.exist');
 			});
 
-		cy.dataTest('core2.none-table')
+		cy.dataTest('core2.none.InfiniteModels-table')
 			.should('exist')
 			.within(() => {
 				cy.dataTest('compatibility-column').should('exist');

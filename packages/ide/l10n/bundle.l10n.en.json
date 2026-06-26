@@ -688,7 +688,8 @@
           "emptyKey": "No Available Keys",
           "emptyKeyDescription": "Generate and manage Keys in",
           "noKey": "No key",
-          "inheritFromParent": "Inherit from parent"
+          "inheritFromParent": "Inherit from parent",
+          "requiredKeyType": "Private RSA key used to sign the bootable image. Public keys are not supported."
         },
         "fields": {
           "core": "Core",
@@ -734,7 +735,7 @@
             "oddHexLength": "Hex value must have an even number of digits (e.g. 0x01, not 0x1).",
             "hexValueExceedsMax": "Hex value exceeds the maximum allowed (0xFFFF).",
             "valueTooLong": "Value exceeds the maximum length of 65535 characters.",
-            "tagExceedsMax": "Tag exceeds the maximum allowed value (0xFFFF).",
+            "tagOutOfRange": "Tag must be between 0x00A0 and 0xFFFE.",
             "tagRequired": "Tag is required.",
             "tagDuplicate": "Tag already in use by another TLV.",
             "valueRequired": "Value is required."
@@ -797,6 +798,7 @@
             "headerSizeRequired": "Header size is required.",
             "pathRequired": "Path is required.",
             "imageVersionRequired": "Image version is required.",
+            "imageVersionInvalid": "Image version must be a valid version format (e.g., 1, 1.0, 1.0.0, 1.0.0+1).",
             "publicKeyFormatRequired": "Public key format is required.",
             "nameRequired": "Name is required.",
             "securityCounterInvalid": "Security counter must be a non-negative integer.",
@@ -883,7 +885,8 @@
           "missingDataModelDescription": "System Planner requires {componentName} data model version {componentVersion} which is not available.",
           "missingPluginDescription": "System Planner requires {componentName} version {componentVersion} which is not available.",
           "resolutionOptionsLabel": "Resolution Options",
-          "allowFutureVersions": "Allow all future compatible versions"
+          "allowFutureVersions": "Allow all future compatible versions",
+          "loadingResolutionsMessage": "This operation can take several minutes, please wait..."
         }
       },
       "missingDataModel": {
@@ -923,8 +926,10 @@
           "generate": "Generate",
           "cancel": "Cancel",
           "apply": "Apply",
-          "duplicateKey": "A key with this name already exists. Please choose a different name.",
+          "duplicateKeyName": "A key with this name already exists. Please choose a different name.",
+          "duplicateKey": "A key with this name already exists. Please choose a different key.",
           "destinationPathRequired": "Destination path is required.",
+          "destinationPathNoSpaces": "Path cannot contain spaces.",
           "invalidPath": "Destination path must be an existing directory."
         }
       }

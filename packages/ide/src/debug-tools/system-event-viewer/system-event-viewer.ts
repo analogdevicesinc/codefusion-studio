@@ -120,7 +120,7 @@ export class SystemEventViewer {
         const uri = vscode.Uri.parse(
           `${SEV_SCHEMA}:/${debugManager.getActiveSession()?.vscodeSession.id}`,
         );
-        vscode.commands.executeCommand("vscode.open", uri);
+        vscode.commands.executeCommand("vscode.open", uri, { preview: false });
       }),
     );
 

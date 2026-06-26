@@ -40,6 +40,7 @@ export function useImageValidation(image: Image): {
 				headerSizeRequired: l10n?.validation?.headerSizeRequired,
 				pathRequired: l10n?.validation?.pathRequired,
 				imageVersionRequired: l10n?.validation?.imageVersionRequired,
+				imageVersionInvalid: l10n?.validation?.imageVersionInvalid,
 				publicKeyFormatRequired:
 					l10n?.validation?.publicKeyFormatRequired,
 				nameRequired: l10n?.validation?.nameRequired,

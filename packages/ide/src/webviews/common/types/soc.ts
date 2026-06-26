@@ -54,9 +54,7 @@ export type Controls = Record<string, ControlCfg[]>;
 
 export type EnumValue = SocControlValue;
 
-export type ControlCfg = SocControl & {
-	Tooltip?: string;
-};
+export type ControlCfg = SocControl;
 
 export type Package = SocPackage;
 

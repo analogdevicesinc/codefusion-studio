@@ -77,10 +77,35 @@
 
 .versionUpdateWizard {
 	height: 100vh;
-	display: grid;
-	--sliding-panel-vertical-offset: 40px;
+
+	> section {
+		box-sizing: border-box;
+		height: 100%;
+		min-height: 0;
+		margin-top: 0;
+		padding-top: layout.$spacing-9;
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	&.versionUpdateWizard > section > div:first-child {
+		height: auto;
+		flex: 1 0 auto;
+		margin-bottom: layout.$spacing-9;
+	}
+
+	&.versionUpdateWizard > section > div:last-child {
+		box-sizing: border-box;
+		width: 100%;
+		padding: layout.$spacing-5
+			max(layout.$spacing-5, calc((100% - 600px) / 2));
+	}
 
 	.errorContainer {
+		height: auto;
+		min-height: 0;
+		justify-content: flex-start;
+
 		.messageTitle {
 			@include fonts.heading-h1;
 			margin-bottom: 20px;
@@ -174,6 +199,18 @@
 					max-width: unset;
 					height: 25px;
 					margin-bottom: 8px;
+				}
+
+				.loadingResolution {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					gap: 1rem;
+
+					.loadingResolutionStatus {
+						width: 16px;
+						height: 16px;
+					}
 				}
 
 				.futureVersionsLabel {

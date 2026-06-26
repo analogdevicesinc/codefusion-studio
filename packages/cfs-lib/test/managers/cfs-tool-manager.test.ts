@@ -108,6 +108,60 @@ describe("CfsToolManager", () => {
 			);
 		});
 
+		it("should resolve template path for dotted tool ID", async () => {
+			const resolved = await toolMgr.resolveTemplatePaths("tool.x");
+			const expected = path
+				.normalize(`${testFixturesPath}/pkg-man-tools/toolx`)
+				.split("\\")
+				.join("/");
+
+			expect(resolved).to.equal(expected);
+		});
+
+		it("should resolve template path for dotted tool ID with subPath", async () => {
+
+			const resolved =
+				await toolMgr.resolveTemplatePaths("tool.x.debuggerPath");
+			const expected = path
+				.normalize(
+					`${testFixturesPath}/pkg-man-tools/toolx/gnu/bin/tool-x-gdb`
+				)
+				.split("\\")
+				.join("/");
+
+			expect(resolved).to.equal(expected);
+		});
+
+		it("should resolve template path for dotted tool ID with array subPath (paths)", async () => {
+			const resolved =
+				await toolMgr.resolveTemplatePaths("tool.x.paths");
+			const expected = path
+				.normalize(
+					`${testFixturesPath}/pkg-man-tools/toolx/bin1`
+				)
+				.split("\\")
+				.join("/");
+
+			expect(resolved).to.equal(expected);
+		});
+
+		it("should resolve template path for non-dotted tool ID", async () => {
+			const resolved = await toolMgr.resolveTemplatePaths("zephyr");
+			const expected = path
+				.normalize(`${testFixturesPath}/pkg-man-tools/zephyr`)
+				.split("\\")
+				.join("/");
+
+			expect(resolved).to.equal(expected);
+		});
+
+		it("should return original string when tool ID is not found", async () => {
+			const resolved =
+				await toolMgr.resolveTemplatePaths("nonexistent.tool");
+
+			expect(resolved).to.equal("nonexistent.tool");
+		});
+
 		it("should get tools from package manager", async () => {
 			const tools = await toolMgr.getInstalledTools();
 			const toolX = tools.find((tool) => tool.id === "tool.x");
@@ -138,6 +192,202 @@ describe("CfsToolManager", () => {
 			expect(toolPath).to.be.equal(
 				path.normalize(`${testFixturesPath}/pkg-man-tools/tooly`)
 			);
+		});
+	});
+
+	describe("with duplicate tool IDs across packages", () => {
+		it("should resolve to the package with the greater name", async () => {
+			// "zephyr-max32657" > "zephyr" lexicographically, so zephyr-max32657 should win
+			const fakePkgMgrDuplicates = {
+				getInstalledPackageInfo: () =>
+					Promise.resolve([
+						{
+							name: "zephyr",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr`
+							),
+							version: "1.2.0",
+							type: "sdk"
+						} as CfsInstalledPackage,
+						{
+							name: "zephyr-max32657",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr-max32657`
+							),
+							version: "4.4.0",
+							type: "sdk",
+							cfsSoc: ["MAX32657"]
+						} as CfsInstalledPackage
+					])
+			} as unknown as CfsPackageManagerProvider;
+
+			const toolMgr = new CfsToolManager(
+				fakePkgMgrDuplicates,
+				undefined,
+				"MAX32657"
+			);
+			const zephyrTool = await toolMgr.getInstalledToolById("zephyr");
+
+			if (!zephyrTool) {
+				expect(zephyrTool).not.to.be.null;
+				return;
+			}
+
+			expect(zephyrTool.version).to.equal("4.4.0");
+		});
+
+		it("should resolve regardless of package enumeration order", async () => {
+			// Even if the more-specific package appears first, the result should be the same
+			const fakePkgMgrReversed = {
+				getInstalledPackageInfo: () =>
+					Promise.resolve([
+						{
+							name: "zephyr-max32657",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr-max32657`
+							),
+							version: "4.4.0",
+							type: "sdk",
+							cfsSoc: ["MAX32657"]
+						} as CfsInstalledPackage,
+						{
+							name: "zephyr",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr`
+							),
+							version: "1.2.0",
+							type: "sdk"
+						} as CfsInstalledPackage
+					])
+			} as unknown as CfsPackageManagerProvider;
+
+			const toolMgr = new CfsToolManager(
+				fakePkgMgrReversed,
+				undefined,
+				"MAX32657"
+			);
+			const zephyrTool = await toolMgr.getInstalledToolById("zephyr");
+
+			if (!zephyrTool) {
+				expect(zephyrTool).not.to.be.null;
+				return;
+			}
+
+			expect(zephyrTool.version).to.equal("4.4.0");
+		});
+
+		it("should pick the SoC-filtered package when only one remains", async () => {
+			// For a non-MAX32657 SoC, zephyr-max32657 is filtered out by cfsSoc
+			const fakePkgMgrFiltered = {
+				getInstalledPackageInfo: () =>
+					Promise.resolve([
+						{
+							name: "zephyr",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr`
+							),
+							version: "1.2.0",
+							type: "sdk"
+						} as CfsInstalledPackage,
+						{
+							name: "zephyr-max32657",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr-max32657`
+							),
+							version: "4.4.0",
+							type: "sdk",
+							cfsSoc: ["MAX32657"]
+						} as CfsInstalledPackage
+					])
+			} as unknown as CfsPackageManagerProvider;
+
+			const toolMgr = new CfsToolManager(
+				fakePkgMgrFiltered,
+				undefined,
+				"MAX78000"
+			);
+			const zephyrTool = await toolMgr.getInstalledToolById("zephyr");
+
+			if (!zephyrTool) {
+				expect(zephyrTool).not.to.be.null;
+				return;
+			}
+
+			expect(zephyrTool.version).to.equal("1.2.0");
+		});
+
+		it("should not exclude SoC-scoped packages when targetSoc is undefined", async () => {
+			// When no targetSoc is set, "zephyr-max32657" (SoC-scoped) must win since
+			// "zephyr-max32657" > "zephyr" lexicographically.
+			const fakePkgMgrNoSoc = {
+				getInstalledPackageInfo: () =>
+					Promise.resolve([
+						{
+							name: "zephyr",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr`
+							),
+							version: "1.2.0",
+							type: "sdk"
+						} as CfsInstalledPackage,
+						{
+							name: "zephyr-max32657",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/zephyr-max32657`
+							),
+							version: "4.4.0",
+							type: "sdk",
+							cfsSoc: ["MAX32657"]
+						} as CfsInstalledPackage
+					])
+			} as unknown as CfsPackageManagerProvider;
+
+			// No targetSoc provided
+			const toolMgr = new CfsToolManager(fakePkgMgrNoSoc);
+			const zephyrTool = await toolMgr.getInstalledToolById("zephyr");
+
+			if (!zephyrTool) {
+				expect(zephyrTool).not.to.be.null;
+				return;
+			}
+
+			// The SoC-scoped package should win
+			expect(zephyrTool.version).to.equal("4.4.0");
+		});
+
+		it("should resolve duplicates to the package with the greater name", async () => {
+			// "foobar" > "foo" lexicographically
+			const fakePkgMgrFoo = {
+				getInstalledPackageInfo: () =>
+					Promise.resolve([
+						{
+							name: "foo",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/tooly`
+							),
+							version: "1.0.0",
+							type: "tool"
+						} as CfsInstalledPackage,
+						{
+							name: "foobar",
+							path: path.normalize(
+								`${testFixturesPath}/pkg-man-tools/tooly-new`
+							),
+							version: "1.2.0",
+							type: "tool"
+						} as CfsInstalledPackage
+					])
+			} as unknown as CfsPackageManagerProvider;
+
+			const toolMgr = new CfsToolManager(fakePkgMgrFoo);
+			const tool = await toolMgr.getInstalledToolById("tool.y");
+
+			if (!tool) {
+				expect(tool).not.to.be.null;
+				return;
+			}
+
+			expect(tool.version).to.equal("1.2.0");
 		});
 	});
 

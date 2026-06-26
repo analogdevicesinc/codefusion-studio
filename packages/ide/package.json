@@ -13,7 +13,7 @@
     "name": "Analog Devices Inc"
   },
   "license": "See LICENSE",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "engines": {
     "vscode": "^1.96.0",
     "node": "^20.x"
@@ -434,6 +434,11 @@
         "category": "Workspace Creation"
       },
       {
+        "command": "cfs.newModelWorkspace",
+        "title": "(CFS) Create Workspace from AI Model",
+        "category": "Workspace Creation"
+      },
+      {
         "command": "cfs.browseMsdkExamples",
         "title": "Browse MSDK Examples",
         "category": "CFS",
@@ -848,7 +853,7 @@
           "cfs.catalogManager.catalogLocation": {
             "type": "string",
             "order": 2,
-            "default": "${userHome}/cfs/2.2.0/.catalog",
+            "default": "${userHome}/cfs/2.2.1/.catalog",
             "description": "Path to the directory where the catalog will be stored.",
             "scope": "machine-overridable"
           }
@@ -1183,12 +1188,6 @@
             "description": "Project folder for core dump analysis. Used for multi-project workspaces.",
             "scope": "resource"
           },
-          "cfs.zephyrCoreDumpScriptsPath": {
-            "type": "string",
-            "default": "${config:cfs.sdk.path}/SDK/zephyr/zephyr/scripts/coredump",
-            "description": "Path to Zephyr Python utilities/scripts for core dump analysis.",
-            "scope": "machine-overridable"
-          },
           "cfs.coreDump.gdbServerPort": {
             "type": "string",
             "default": "1234",
@@ -1242,19 +1241,19 @@
             }
           },
           {
-            "id": "configure-workspace",
-            "title": "Configure a workspace",
-            "description": "Configure your workspace.",
-            "media": {
-              "markdown": "docs-walkthrough/configure-workspace.md"
-            }
-          },
-          {
             "id": "system-planner",
             "title": "System Planner",
             "description": "Configure and generate code.",
             "media": {
               "markdown": "docs-walkthrough/system-planner.md"
+            }
+          },
+          {
+            "id": "build",
+            "title": "Build your application",
+            "description": "Compile your generated code.",
+            "media": {
+              "markdown": "docs-walkthrough/build.md"
             }
           }
         ]
@@ -1436,16 +1435,16 @@
               "request": "launch",
               "servertype": "external",
               "linux": {
-                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
-                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump"
+                "gdbPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py",
+                "objdumpPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump"
               },
               "windows": {
-                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py.exe",
-                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe"
+                "gdbPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py.exe",
+                "objdumpPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump.exe"
               },
               "osx": {
-                "gdbPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
-                "objdumpPath": "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump"
+                "gdbPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py",
+                "objdumpPath": "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump"
               },
               "gdbTarget": "localhost:${config:cfs.coreDump.gdbServerPort}",
               "svdPath": "${config:cfs.cmsis.svdFile}",

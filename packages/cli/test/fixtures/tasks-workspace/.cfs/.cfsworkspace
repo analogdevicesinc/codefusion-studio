@@ -1,0 +1,12 @@
+{
+  "Soc": "testSoC",
+  "Package": "testPackage",
+  "Board": "testBoard",
+  "WorkspaceName": "testWorkspace",
+  "Location": ".",
+  "WorkspacePluginId": "com.analog.zephyr.workspace.tdmdfgfdsptdm",
+  "WorkspacePluginVersion": "1.2.0",
+  "Projects": [],
+  "DataModelVersion": "1.3.831",
+  "DataModelSchemaVersion": "1.4.0"
+}

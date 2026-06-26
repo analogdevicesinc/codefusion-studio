@@ -1,6 +1,6 @@
 [project]
 name = "cfsai-backend-izer"
-version = "2.2.0"
+version = "2.2.1"
 description = "Code generation backend for the MAX7800x CNN"
 readme = "README.md"
 authors = [

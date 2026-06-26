@@ -204,20 +204,19 @@ export const CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION: vscode.DebugConfigur
     request: "launch",
     servertype: "external",
     linux: {
-      gdbPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py",
+      gdbPath: "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py",
       objdumpPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump",
+        "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump",
     },
     windows: {
-      gdbPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py.exe",
+      gdbPath: "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py.exe",
       objdumpPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe",
+        "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump.exe",
     },
     osx: {
-      gdbPath:
-        "${config:cfs.sdk.path}/Tools/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+      gdbPath: "${cfs:tool.path.arm.zephyr.eabi.toolchain.debuggerPath}-py",
+      objdumpPath:
+        "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump",
     },
     gdbTarget: "localhost:1234",
     executable: "${workspaceFolder}/build/zephyr/zephyr.elf",

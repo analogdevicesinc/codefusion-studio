@@ -1,6 +1,6 @@
 [project]
 name = "cfsai-types"
-version = "2.2.0"
+version = "2.2.1"
 description = "CFSAI common types to be shared among all packages"
 readme = "README.md"
 authors = [

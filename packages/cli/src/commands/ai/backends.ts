@@ -79,11 +79,16 @@ export default class Backends extends BaseCommand<typeof Backends> {
         );
       }
 
-      const props = await aiPlugin.getPropertiesFromName(flags.name);
+      let props: SocControl[] = [];
 
-      if (props.length === 0) {
+      try {
+        props = await aiPlugin.getPropertiesFromName(flags.name);
+      } catch (error) {
+        // swallow thrown error for recoverable one
         throw new RecoverableError(
-          `No backend properties found for '${flags.name}'`,
+          error instanceof Error
+            ? error.message
+            : `No backend properties found for '${flags.name}'`,
           {
             suggestion: 'Verify the backend is properly configured',
             run: `cfsutil ai backends list --name ${flags.name}`
@@ -94,6 +99,8 @@ export default class Backends extends BaseCommand<typeof Backends> {
       this.log(`${flags.name}: ${be.Description}`);
       this.log(`    Model Formats: ${be.Formats.join(', ')}`);
       this.log(`    Advanced Tool Support: ${be.AdvancedTools}`);
+      be.Default !== undefined &&
+        this.log(`    Used by default: ${be.Default}`);
 
       if (be.Targets.length > 0) {
         this.log('Supported hardware:');
@@ -125,7 +132,7 @@ export default class Backends extends BaseCommand<typeof Backends> {
       this.log('Extension fields:');
       for (const prop of props) {
         this.log(
-          `    ${prop.Id}: ${prop.Description}\n      Type: ${prop.Type}, Default: ${prop.Default}.`
+          `    ${prop.Id}: ${prop.Description}\n      Type: ${prop.Type}, Default: ${typeof prop.Default === 'string' ? prop.Default : JSON.stringify(prop.Default)}.`
         );
       }
 
@@ -154,11 +161,16 @@ export default class Backends extends BaseCommand<typeof Backends> {
       this.log(`${key}: ${value.Description}`);
 
       if (this.jsonEnabled()) {
-        const props: SocControl[] | undefined =
-          await aiPlugin.getPropertiesFromName(key);
-        if (!props) {
+        let props: SocControl[] = [];
+
+        try {
+          props = await aiPlugin.getPropertiesFromName(key);
+        } catch (error) {
+          // swallow thrown error for recoverable one
           throw new RecoverableError(
-            `No backend properties found for '${key}'`,
+            error instanceof Error
+              ? error.message
+              : `No backend properties found for '${key}'`,
             {
               suggestion: 'Verify the backend is properly configured',
               run: `cfsutil ai backends list --name ${key}`

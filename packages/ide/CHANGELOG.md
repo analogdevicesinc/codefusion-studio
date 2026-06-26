@@ -2,6 +2,29 @@
 
 # Release Notes
 
+## 2.2.1
+
+### ✨ New Features
+
+- **Zephyr 4.4.0 packages for MAX32657 and MAX32658:** Added the `zephyr/4.4.0-b.1` and `zephyr_arm_toolchain/1.0.1` packages (toolchain installed automatically as a dependency). Install using **(CFS) Install Package** or `cfsutil pkg install zephyr/4.4.0-b.1`. These packages currently target MAX32657 and MAX32658 only.
+- **Zephyr Single Core PM GPIO Wakeup template (MAX32657/MAX32658):** Added a new workspace template demonstrating Zephyr power management on MAX32657/MAX32658 — runtime idle, standby, and suspend to RAM states with GPIO wakeup. Requires `zephyr/4.4.0-b.1` to build.
+
+### 🐞 Bug fixes, Minor Improvements
+
+- **Workspace Creation Wizard:** Fixed a crash when entering special characters in the SoC filter field. The filter now escapes regex special characters before building the search pattern.
+- **Core Dump Analysis:** Removed the `cfs.zephyrCoreDumpScriptsPath` setting. The Zephyr core dump scripts path now resolves automatically from the toolchain; any existing setting is ignored.
+- **System Planner (MAX32657/MAX32658):** Fixed an issue where enabling all three I3C pins produced an undefined node for the Pull-Up Resistor (PUR) pin in generated overlay files.
+- **System Planner version resolution:** When resolving missing data models or plugins, the automated version resolution screen now shows a progress ring and a "This operation can take several minutes, please wait..." message while resolutions are loading, and displays an error notification if the package search fails.
+- General bug fixes and stability improvements.
+
+### 🚧 Experimental Features
+
+- None
+
+### 👷 CI Improvements
+
+- None
+
 ## 2.2.0
 
 ### ✨ New Features

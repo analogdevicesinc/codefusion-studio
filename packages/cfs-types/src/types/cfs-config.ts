@@ -143,12 +143,17 @@ export interface ConfiguredPartition {
 	Access: string;
 }
 
+export type CalibrationData = string[];
+export type ValidationData = [string, string][];
+export type Labels = string[];
+
 export interface AIModelBackend {
 	Name: string;
 	Extensions?: Record<string, string | number | boolean>;
-	// Only relevant for weaver backend with compiler mode
-	CalibrationData?: string[];
-	ValidationData?: [string, string][];
+	// Only relevant for Mot backend with compiler mode
+	CalibrationData?: CalibrationData;
+	ValidationData?: ValidationData;
+	Labels?: Labels;
 }
 
 export interface AIModel {

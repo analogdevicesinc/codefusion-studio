@@ -35,7 +35,7 @@ export function useCustomTlvValidation(
 	const tagError = useMemo(() => {
 		const basicError = validateCustomTlvTag(tlv.tag, {
 			tagRequired: l10n?.validation?.tagRequired,
-			tagExceedsMax: l10n?.validation?.tagExceedsMax
+			tagOutOfRange: l10n?.validation?.tagOutOfRange
 		});
 
 		if (basicError) return basicError;

@@ -1,6 +1,6 @@
 [project]
 name = "cfsai-backend-tflm"
-version = "2.1.0"
+version = "2.2.1"
 description = "Code generation backend for the MAX7800x CNN"
 readme = "README.md"
 authors = [

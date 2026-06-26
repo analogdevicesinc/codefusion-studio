@@ -112,7 +112,7 @@ function MCUBootSidebarListItem({
 			oddHexLength: 'error',
 			hexValueExceedsMax: 'error',
 			valueTooLong: 'error',
-			tagExceedsMax: 'error'
+			tagOutOfRange: 'error'
 		};
 
 		const hasTlvError = (tlvs: Array<{tag: number; value: string}>) =>

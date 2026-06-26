@@ -31,7 +31,7 @@ type FileInputFieldProps = {
 	readonly isDisabled?: boolean;
 	readonly dataTest?: string;
 	readonly onInputChange: (path: string) => void;
-	readonly onBrowse?: () => Promise<string | undefined>;
+	readonly onBrowse: () => Promise<string | undefined>;
 };
 
 export default function FileInputField({

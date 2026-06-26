@@ -127,15 +127,7 @@ export const updateProjectPluginVersion = async (
  */
 export const searchRemotePackagesForComponents = async (
 	componentList: CfsMissingComponent[]
-) => {
-	const timeoutPromise = new Promise<never>((_, reject) => {
-		setTimeout(() => {
-			reject(new Error('timeout'));
-		}, 30000);
-	});
-
-	return Promise.race([searchPackage(componentList), timeoutPromise]);
-};
+) => searchPackage(componentList);
 
 export const filterLatestCompatiblePackageForGivenComponentVersion = (
 	packages: CfsPackage[],

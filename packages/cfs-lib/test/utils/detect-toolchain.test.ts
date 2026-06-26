@@ -13,13 +13,15 @@
  *
  */
 
-import { detectToolchain } from "../../src/utils/detect-toolchain.js";
+import { detectToolchain, resolveZephyrSdkRoot } from "../../src/utils/detect-toolchain.js";
 import { MsdkTaskStrategy } from "../../src/providers/msdk-task-strategy.js";
 import { ZephyrTaskStrategy } from "../../src/providers/zephyr-task-strategy.js";
 import { PLATFORM_IDS } from "../../src/providers/platform-constants.js";
 import type { TaskDiscoveryStrategy } from "../../src/types/task-discovery-strategy.js";
 import type { Task } from "cfs-types";
 import { expect } from "chai";
+import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import { fileURLToPath } from "url";
 
@@ -188,5 +190,49 @@ describe("detectToolchain", function () {
 
 			expect(result).to.equal(PLATFORM_IDS.NONE);
 		});
+	});
+});
+
+describe("resolveZephyrSdkRoot", function () {
+	let tmpDir: string;
+
+	beforeEach(function () {
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "zephyr-sdk-test-"));
+	});
+
+	afterEach(function () {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	});
+
+	it("should return toolPath when cmake/ exists at toolPath (package layout)", function () {
+		// Simulate: <sdk-root>/cmake/Zephyr-sdkConfig.cmake
+		const sdkRoot = path.join(tmpDir, "zephyr-sdk-1.0.0");
+		fs.mkdirSync(path.join(sdkRoot, "cmake"), { recursive: true });
+
+		const result = resolveZephyrSdkRoot(sdkRoot);
+
+		expect(result).to.equal(sdkRoot);
+	});
+
+	it("should return parent when toolPath lacks cmake/ but parent has it (installer layout)", function () {
+		// Simulate: <sdk-root>/arm-zephyr-eabi (tool.json here, no cmake/)
+		// Parent <sdk-root> has cmake/
+		const sdkRoot = path.join(tmpDir, "zephyr-sdk-1.0.0");
+		const toolchainSubdir = path.join(sdkRoot, "arm-zephyr-eabi");
+		fs.mkdirSync(path.join(sdkRoot, "cmake"), { recursive: true });
+		fs.mkdirSync(toolchainSubdir, { recursive: true });
+
+		const result = resolveZephyrSdkRoot(toolchainSubdir);
+
+		expect(result).to.equal(sdkRoot);
+	});
+
+	it("should return toolPath as fallback when neither toolPath nor parent has cmake/", function () {
+		const toolchainPath = path.join(tmpDir, "unknown-toolchain");
+		fs.mkdirSync(toolchainPath, { recursive: true });
+
+		const result = resolveZephyrSdkRoot(toolchainPath);
+
+		expect(result).to.equal(toolchainPath);
 	});
 });

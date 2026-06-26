@@ -11,6 +11,8 @@ import fs from "fs/promises";
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
+const conanURL = `http://${process.env.CONAN_SERVER_HOST ?? "localhost"}:${process.env.CONAN_SERVER_PORT ?? "9300"}`;
+
 describe("ErrorHandling", () => {
 	const testCacheDir = path.join(process.cwd(), "test_cache");
 	const testConfigDir = path.join(process.cwd(), "test_config");
@@ -58,7 +60,7 @@ describe("ErrorHandling", () => {
 		for (const { name } of remotes) {
 			await api.deleteRemote(name);
 		}
-		await api.addRemote("local-test-server", "http://localhost:9300");
+		await api.addRemote("local-test-server", conanURL);
 	}
 
 	async function login() {
@@ -106,7 +108,9 @@ describe("ErrorHandling", () => {
 		it("should throw an error when installing a non-existent package", async () => {
 			await expect(
 				api.install({ name: "non_existent_pkg", version: "1.0" })
-			).to.be.rejectedWith(/(Couldn't find the following packages|No versions found matching)/i);
+			).to.be.rejectedWith(
+				/(Couldn't find the following packages|No versions found matching)/i
+			);
 		});
 
 		it("should succeed when installing an existent package", async () => {
@@ -184,7 +188,9 @@ describe("ErrorHandling", () => {
 		it("should throw an error when requesting dependencies of a non-existent package", async () => {
 			await expect(
 				api.dependencies({ name: "non_existent_pkg", version: "1.0" })
-			).to.be.rejectedWith(/(Couldn't find the following packages|No versions found matching)/i);
+			).to.be.rejectedWith(
+				/(Couldn't find the following packages|No versions found matching)/i
+			);
 		});
 
 		it("should succeed when installing an existent package", async () => {

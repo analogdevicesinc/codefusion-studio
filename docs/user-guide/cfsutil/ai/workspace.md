@@ -1,7 +1,7 @@
 ---
 description: Generate a workspace from an AI model using cfsutil ai workspace create.
 author: Analog Devices
-date: 2026-05-18
+date: 2026-06-11
 ---
 
 # Workspace
@@ -51,7 +51,7 @@ When you run `cfsutil ai workspace create`, the following actions occur automati
 
 1. **Compatibility check** — The command runs [`cfsutil ai compat`](./compat.md) to verify the model is compatible with the target hardware.
 2. **Workspace generation** — Creates a new workspace at the specified location using the appropriate template for the target SoC and board.
-3. **Model integration** — Adds the model to the workspace configuration using [`cfsutil ai model update`](./model.md#update-a-model).
+3. **Model integration** — Adds the model to the workspace configuration using [`cfsutil ai model update`](./model.md#update-command).
 4. **Initial build** — Compiles the model into C/C++ source code using [`cfsutil ai build`](./build.md).
 
 The resulting workspace is ready to open in the CodeFusion Studio IDE or build from the command line.

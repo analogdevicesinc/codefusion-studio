@@ -3,7 +3,7 @@
 	"publisher": "adi",
 	"description": "Reusable utilities for CFS components",
 	"author": "Analog Devices, Inc.",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"scripts": {
 		"build": "yarn extract-defaults && yarn build-local-deps && shx rm -rf dist && tsc -b",
 		"build-dev": "yarn workspace cfs-plugins-sdk build && tsc -b --watch",

@@ -13,7 +13,8 @@
  *
  */
 
-import { expect } from "chai";
+import { expect, use } from "chai";
+import chaiAsPromised from "chai-as-promised";
 import sinon from "sinon";
 
 import { ConanPkgManager } from "../src/conan-backend/conan-backend.js";
@@ -27,6 +28,10 @@ import type {
 	CfsPackageFilter
 } from "../src/index.js";
 
+use(chaiAsPromised);
+
+const conanURL = `http://${process.env.CONAN_SERVER_HOST ?? "localhost"}:${process.env.CONAN_SERVER_PORT ?? "9300"}`;
+
 describe("ConanPkgManager", function () {
 	const testCacheDir = path.join(process.cwd(), "test_cache");
 	const testConfigDir = path.join(process.cwd(), "test_config");
@@ -34,18 +39,20 @@ describe("ConanPkgManager", function () {
 	const testManifestDir = path.join(process.cwd(), "test_manifests"); // Separate dir for manifest test files
 
 	async function cleanCache() {
-		await fs.rm(testCacheDir, {
-			recursive: true,
-			force: true
-		});
-		await fs.rm(testConfigDir, {
-			recursive: true,
-			force: true
-		});
-		await fs.rm(testManifestDir, {
-			recursive: true,
-			force: true
-		});
+		await Promise.all([
+			fs.rm(testCacheDir, {
+				recursive: true,
+				force: true
+			}),
+			fs.rm(testConfigDir, {
+				recursive: true,
+				force: true
+			}),
+			fs.rm(testManifestDir, {
+				recursive: true,
+				force: true
+			})
+		]);
 	}
 
 	async function setupTest() {
@@ -130,32 +137,19 @@ describe("ConanPkgManager", function () {
 
 	describe("Add a new server", () => {
 		it("should complete without errors", async function () {
-			await api.addRemote(
-				"local-test-server",
-				"http://localhost:9300"
-			);
+			await api.addRemote("local-test-server", conanURL);
 		});
 	});
 
 	describe("Login to remote server", () => {
 		it("should return an error if credentials are invalid", async function () {
-			return api
-				.login(
+			await expect(
+				api.login(
 					"local-test-server",
 					"invalid_user",
 					"invalid_password"
 				)
-				.then(
-					() => {
-						expect.fail("Should not succeed");
-					},
-					(error) => {
-						expect(error).to.be.an("Error");
-						expect((error as Error).message).to.include(
-							"Wrong user or password."
-						);
-					}
-				);
+			).to.be.rejectedWith(/Wrong user or password/i);
 		});
 
 		it("should complete without errors with valid credentials", async function () {
@@ -234,14 +228,7 @@ describe("ConanPkgManager", function () {
 					expect(await api.list()).to.deep.include(dep);
 				});
 				it(`dependency ${dep.name} cannot be uninstalled`, async function () {
-					return api.uninstall(dep.name).then(
-						() => {
-							expect.fail("Should not succeed");
-						},
-						() => {
-							// Expected error
-						}
-					);
+					await expect(api.uninstall(dep.name)).to.be.rejected;
 				});
 			});
 
@@ -287,7 +274,6 @@ describe("ConanPkgManager", function () {
 		// upgraded to 2.0, which conflicts with the already-installed dep1/1.0.
 
 		before(async function () {
-			this.timeout(20000);
 			// Step 1: Install test_pkg_consumer1/1.0 which pulls in test_pkg_dep1/1.0
 			const result = await api.install({
 				name: "test_pkg_consumer1",
@@ -338,21 +324,12 @@ describe("ConanPkgManager", function () {
 			// Step 2: Try to install test_pkg_consumer1/2.0 which requires test_pkg_dep1/2.0
 			// This should fail because test_pkg_dep1/1.0 is already installed as a dependency
 			// of test_pkg_consumer1/1.0, and upgrading it would break the existing consumer
-			return api
-				.install({
+			await expect(
+				api.install({
 					name: "test_pkg_consumer1",
 					version: "2.0"
 				})
-				.then(
-					() => {
-						expect.fail(
-							"Should have failed due to dependency version conflict"
-						);
-					},
-					(error) => {
-						expect(error).to.be.an("Error");
-					}
-				);
+			).to.be.rejected;
 		});
 
 		it("should still have the original packages installed after failed upgrade", async function () {
@@ -413,13 +390,6 @@ describe("ConanPkgManager", function () {
 		});
 
 		it("should cache only resolved version for normal semver install and never the literal range", async function () {
-			// Ensure package cache starts empty for this package.
-			try {
-				await api.delete("test_pkg2/*");
-			} catch {
-				// Ignore if not present in cache
-			}
-
 			const result = await api.install({
 				name: "test_pkg2",
 				version: "^1.0.0"
@@ -715,14 +685,8 @@ describe("ConanPkgManager", function () {
 		describe("run on on test_pkg_dep1dep", function () {
 			describe("Before package is installed", function () {
 				it("must return an error", async function () {
-					return api.localConsumers("test_pkg_dep1dep").then(
-						() => {
-							expect.fail("Should not succeed");
-						},
-						() => {
-							// Expected failure
-						}
-					);
+					await expect(api.localConsumers("test_pkg_dep1dep")).to.be
+						.rejected;
 				});
 			});
 			describe("After package is installed", function () {
@@ -827,12 +791,10 @@ describe("ConanPkgManager", function () {
 			{ name: "test_pkg1", version: "1.0" },
 			{ name: "test_pkg_consumer12", version: "1.0" }
 		];
-		before(async () => {
-			for (const pkg of pkgsToInstall) {
-				await api.install(pkg);
-			}
+		before(async function () {
+			await api.install(pkgsToInstall);
 		});
-		after(async () => {
+		after(async function () {
 			for (const pkg of pkgsToInstall.reverse()) {
 				await api.uninstall(pkg.name);
 			}
@@ -909,12 +871,13 @@ describe("ConanPkgManager", function () {
 
 	describe("Manifest handling", function () {
 		before(async function () {
-			this.timeout(20000); // Increase timeout for installation
 			// Ensure the test directory exists before each test
 			await fs.mkdir(testCacheDir, { recursive: true });
 			// Install some packages to have a baseline of "installed" packages for the tests
-			await api.install({ name: "test_pkg1", version: "1.0" });
-			await api.install({ name: "test_pkg2", version: "1.0" });
+			await api.install([
+				{ name: "test_pkg1", version: "1.0" },
+				{ name: "test_pkg2", version: "1.0" }
+			]);
 		});
 
 		after(async function () {
@@ -944,6 +907,7 @@ describe("ConanPkgManager", function () {
 				const result = await api.checkManifest(manifestPath);
 				expect(result).to.be.an("array").that.is.empty;
 			});
+
 			it("should return missing packages when some packages are not installed", async function () {
 				// Create a manifest with one installed and one not installed package
 				const manifestPath = await createManifestFile([
@@ -969,25 +933,18 @@ describe("ConanPkgManager", function () {
 					JSON.stringify({ version: 1 })
 				);
 
-				return api
-					.checkManifest(invalidManifestPath)
-					.then(
-						() => {
-							expect.fail("Should not succeed with invalid format");
-						},
-						(error: Error) => {
-							expect(error).to.be.an("Error");
-							expect(error.message).to.include(
-								"Invalid manifest format. Must contain 'version' and 'packages' fields."
-							);
-						}
-					)
-					.finally(() => {
-						// Clean up invalid manifest file, ignore errors
-						fs.unlink(invalidManifestPath).catch(() => {
-							// Ignore errors during cleanup
-						});
-					});
+				await expect(
+					api.checkManifest(invalidManifestPath)
+				).to.be.rejectedWith(
+					"Invalid manifest format. Must contain 'version' and 'packages' fields."
+				);
+
+				try {
+					// Clean up invalid manifest file, ignore errors
+					await fs.unlink(invalidManifestPath);
+				} catch {
+					// Ignore cleanup errors
+				}
 			});
 		});
 
@@ -1018,11 +975,15 @@ describe("ConanPkgManager", function () {
 			}
 
 			describe("with manifest input", function () {
-				it("should return all packages as alreadyInstalled when all are installed", async function () {
+				before(async function () {
 					// Ensure packages are installed
-					await api.install({ name: "test_pkg1", version: "1.0" });
-					await api.install({ name: "test_pkg2", version: "1.0" });
+					await api.install([
+						{ name: "test_pkg1", version: "1.0" },
+						{ name: "test_pkg2", version: "1.0" }
+					]);
+				});
 
+				it("should return all packages as alreadyInstalled when all are installed", async function () {
 					const manifestPath = await createManifestFile([
 						{ name: "test_pkg1", version: "1.0" },
 						{ name: "test_pkg2", version: "1.0" }
@@ -1090,8 +1051,8 @@ describe("ConanPkgManager", function () {
 						await cleanupGetInstallPlanPackages(true);
 					});
 
-					afterEach(async function () {
-						// Clean up after each test
+					after(async function () {
+						// Clean up after test suite
 						await cleanupGetInstallPlanPackages(true);
 					});
 
@@ -1117,9 +1078,6 @@ describe("ConanPkgManager", function () {
 					});
 
 					it("should still require license on repeated range planning when package was never installed", async function () {
-						// Ensure explicit clean state for this test case.
-						await cleanupGetInstallPlanPackages(true);
-
 						const installedBefore = await api.list();
 						expect(
 							installedBefore.some(
@@ -1167,8 +1125,7 @@ describe("ConanPkgManager", function () {
 					it("should not leave package in cache after install plan when license was not accepted", async function () {
 						// A getInstallPlan call downloads the recipe to inspect the license.
 						// If the user never accepts and never installs, the recipe must
-						// be removed from cache so future plans still show the license prompt.
-						await cleanupGetInstallPlanPackages(true);
+						// be removed from cache so future plans still show the license prompt
 
 						const cachedBefore = await api.listCache(
 							"test_pkg_with_license1/*"
@@ -1197,7 +1154,6 @@ describe("ConanPkgManager", function () {
 					it("should clean all downloaded recipe refs after install plan for multiple licensed packages", async function () {
 						// When multiple packages are checked in one plan, each downloaded
 						// recipe must be removed from cache to avoid false license acceptance.
-						await cleanupGetInstallPlanPackages(true);
 
 						const manifestPath = await createManifestFile([
 							{ name: "test_pkg_with_license1", version: "1.0.0" },
@@ -1332,24 +1288,14 @@ describe("ConanPkgManager", function () {
 						JSON.stringify({ version: 1 })
 					);
 
-					return api
-						.getInstallPlan(invalidManifestPath)
-						.then(
-							() => {
-								expect.fail("Should not succeed with invalid format");
-							},
-							(error: Error) => {
-								expect(error).to.be.an("Error");
-								expect(error.message).to.include(
-									"Invalid manifest format"
-								);
-							}
-						)
-						.finally(() => {
-							fs.unlink(invalidManifestPath).catch(() => {
-								// Ignore errors during cleanup
-							});
-						});
+					await expect(
+						api.getInstallPlan(invalidManifestPath)
+					).to.be.rejectedWith("Invalid manifest format");
+					try {
+						await fs.unlink(invalidManifestPath);
+					} catch {
+						// Ignore errors during cleanup
+					}
 				});
 
 				it("should handle invalid package reference format", async function () {
@@ -1419,19 +1365,9 @@ describe("ConanPkgManager", function () {
 				}
 			});
 			it("should handle invalid manifest file paths", async function () {
-				return api
-					.installFromManifest("/non-existent-path.json")
-					.then(
-						() => {
-							expect.fail("Should not succeed with invalid path");
-						},
-						(error: Error) => {
-							expect(error).to.be.an("Error");
-							expect(error.message).to.include(
-								"Manifest file not found"
-							);
-						}
-					);
+				await expect(
+					api.installFromManifest("/non-existent-path.json")
+				).to.be.rejectedWith("Manifest file not found");
 			});
 		});
 
@@ -1773,23 +1709,11 @@ describe("ConanPkgManager", function () {
 					{ name: "test_pkg2", version: "^99.0" }
 				]);
 
-				return api
-					.installFromManifest(manifestPath, {
+				await expect(
+					api.installFromManifest(manifestPath, {
 						localOnly: true
 					})
-					.then(
-						() => {
-							expect.fail(
-								"Should have failed when package is not in cache with localOnly flag"
-							);
-						},
-						(error) => {
-							expect(error).to.be.an("Error");
-							expect((error as Error).message).to.match(
-								/not resolved: No remote defined|No versions found matching/
-							);
-						}
-					);
+				).to.be.rejectedWith(/No versions found matching/);
 			});
 
 			it("should resolve version with | in version range", async function () {
@@ -2031,18 +1955,10 @@ describe("ConanPkgManager", function () {
 
 			// Deleting the range-literal reference should fail because it should
 			// never exist as a concrete cache package reference.
-			return api.delete("test_pkg_prerelease1/^1.2.0-b.1").then(
-				() => {
-					expect.fail(
-						"Unexpected dangling cache entry: test_pkg_prerelease1/^1.2.0-b.1"
-					);
-				},
-				(error) => {
-					expect(error).to.be.an("Error");
-					expect((error as Error).message).to.include(
-						"No local packages found matching pattern"
-					);
-				}
+			await expect(
+				api.delete("test_pkg_prerelease1/^1.2.0-b.1")
+			).to.be.rejectedWith(
+				/No local packages found matching pattern/
 			);
 		});
 
@@ -2122,39 +2038,21 @@ describe("ConanPkgManager", function () {
 		});
 
 		it("should fail when pre-release range does not match any versions", async function () {
-			return api
-				.install({
+			await expect(
+				api.install({
 					name: "test_pkg_prerelease1",
 					version: ">=1.2.0-rc.1 <1.2.0"
 				})
-				.then(
-					() => {
-						expect.fail(
-							"Should not succeed when no available pre-release satisfies the requested range"
-						);
-					},
-					(error) => {
-						expect(error).to.be.an("Error");
-					}
-				);
+			).to.be.rejected;
 		});
 
 		it("should fail when pre-release version does not exist", async function () {
-			return api
-				.install({
+			await expect(
+				api.install({
 					name: "test_pkg_prerelease1",
 					version: "^2.0.0-rc.1"
 				})
-				.then(
-					() => {
-						expect.fail(
-							"Should not succeed when pre-release version does not exist"
-						);
-					},
-					(error) => {
-						expect(error).to.be.an("Error");
-					}
-				);
+			).to.be.rejected;
 		});
 	});
 
@@ -2170,10 +2068,7 @@ describe("ConanPkgManager", function () {
 		];
 
 		before(async function () {
-			this.timeout(20000); // Increase timeout for installation
-			for (const pkg of pkgsToInstall) {
-				await api.install(pkg);
-			}
+			await api.install(pkgsToInstall);
 		});
 
 		after(async function () {
@@ -2431,130 +2326,18 @@ describe("ConanPkgManager", function () {
 			{ name: "test_pkg_with_license2", version: "1.0.0" }
 		];
 
-		it("does not treat recipe-only metadata as license acceptance", async function () {
-			const licensedPkgName = "test_pkg_with_license1";
-
-			try {
-				await api.uninstall(licensedPkgName);
-			} catch {
-				// ignore if not installed
-			}
-
-			for (const pattern of [
-				`${licensedPkgName}/1.0.0`,
-				`${licensedPkgName}/1.0.0+1`,
-				`${licensedPkgName}/1.0.0*`,
-				`${licensedPkgName}/*`
-			]) {
-				try {
-					await api.delete(pattern);
-				} catch {
-					// ignore if not in cache
-				}
-			}
-
-			const cachedBefore = await api.listCache(
-				`${licensedPkgName}/*`
-			);
-			expect(cachedBefore).to.be.an("array").that.is.empty;
-
-			const searchResults = await api.searchInfo(
-				`${licensedPkgName}/*`
-			);
-			expect(
-				searchResults.some(
-					(pkg) => pkg.reference.name === licensedPkgName
-				)
-			).to.be.true;
-
-			const manifestPath = await createManifestFile([
-				{ name: licensedPkgName, version: "1.0.0" }
-			]);
-			try {
-				const plan = await api.getInstallPlan(manifestPath);
-				expect(plan.requiresLicenseAcceptance)
-					.to.be.an("array")
-					.with.length.greaterThan(0);
-			} finally {
-				await cleanupManifestFile();
-			}
-		});
-
-		it("finds licensed packages via searchInfo and rejects install without license acceptance", async function () {
-			const licensedPkgName = "test_pkg_with_license1";
-
-			// Clean up before test
-			try {
-				await api.uninstall(licensedPkgName);
-			} catch {
-				// ignore if not installed
-			}
-
-			for (const pattern of [
-				`${licensedPkgName}/1.0.0`,
-				`${licensedPkgName}/1.0.0+1`,
-				`${licensedPkgName}/1.0.0*`,
-				`${licensedPkgName}/*`
-			]) {
-				try {
-					await api.delete(pattern);
-				} catch {
-					// ignore if not in cache
-				}
-			}
-
-			// Use searchInfo to find the licensed package
-			const searchResults = await api.searchInfo(
-				`${licensedPkgName}/*`
-			);
-			expect(
-				searchResults.some(
-					(pkg) => pkg.reference.name === licensedPkgName
-				)
-			).to.be.true;
-
-			const licensedPkg: CfsPackageReference = {
-				name: licensedPkgName,
-				version: "1.0.0"
-			};
-
-			// Try to install without accepting license
-			const manifestPath = await createManifestFile([licensedPkg]);
-			try {
-				const result = await api.installFromManifest(manifestPath, {
-					acceptLicense: false
-				});
-
-				// Package should be skipped (not installed)
-				expect(result.skipped).to.be.an("array").with.lengthOf(1);
-				expect(result.skipped[0]).to.deep.equal(licensedPkg);
-				expect(result.installed).to.be.an("array").that.is.empty;
-
-				// Verify package is not actually installed
-				const installedPackages = await api.list();
-				expect(
-					installedPackages.some((p) => p.name === licensedPkgName)
-				).to.be.false;
-			} finally {
-				await cleanupManifestFile();
-				// Clean up
-				try {
-					await api.uninstall(licensedPkgName);
-				} catch {
-					// ignore
-				}
-			}
-		});
-
 		// Shared cleanup helper for licensed packages
 		async function cleanupLicensedPackages(
-			deleteFromCache = false
+			deleteFromCache = false,
+			packageName?: string
 		): Promise<void> {
-			const allPackagesToClean = [
-				...licensedPackages.map((p) => p.name),
-				"test_pkg1",
-				"test_pkg2"
-			];
+			const allPackagesToClean = packageName
+				? [packageName]
+				: [
+						...licensedPackages.map((p) => p.name),
+						"test_pkg1",
+						"test_pkg2"
+					];
 			for (const pkg of allPackagesToClean) {
 				try {
 					await api.uninstall(pkg);
@@ -2572,8 +2355,72 @@ describe("ConanPkgManager", function () {
 			}
 		}
 
-		afterEach(async function () {
-			await cleanupManifestFile();
+		describe("license metadata handling", function () {
+			const licensedPkgName = "test_pkg_with_license1";
+
+			beforeEach(async function () {
+				await cleanupLicensedPackages(true, licensedPkgName);
+				await cleanupManifestFile();
+			});
+
+			it("does not treat recipe-only metadata as license acceptance", async function () {
+				const cachedBefore = await api.listCache(
+					`${licensedPkgName}/*`
+				);
+				expect(cachedBefore).to.be.an("array").that.is.empty;
+
+				const searchResults = await api.searchInfo(
+					`${licensedPkgName}/*`
+				);
+				expect(
+					searchResults.some(
+						(pkg) => pkg.reference.name === licensedPkgName
+					)
+				).to.be.true;
+
+				const manifestPath = await createManifestFile([
+					{ name: licensedPkgName, version: "1.0.0" }
+				]);
+
+				const plan = await api.getInstallPlan(manifestPath);
+				expect(plan.requiresLicenseAcceptance)
+					.to.be.an("array")
+					.with.length.greaterThan(0);
+			});
+
+			it("finds licensed packages via searchInfo and rejects install without license acceptance", async function () {
+				// Use searchInfo to find the licensed package
+				const searchResults = await api.searchInfo(
+					`${licensedPkgName}/*`
+				);
+				expect(
+					searchResults.some(
+						(pkg) => pkg.reference.name === licensedPkgName
+					)
+				).to.be.true;
+
+				const licensedPkg: CfsPackageReference = {
+					name: licensedPkgName,
+					version: "1.0.0"
+				};
+
+				// Try to install without accepting license
+				const manifestPath = await createManifestFile([licensedPkg]);
+				const result = await api.installFromManifest(manifestPath, {
+					acceptLicense: false
+				});
+
+				// Package should be skipped (not installed)
+				expect(result.skipped).to.be.an("array").with.lengthOf(1);
+				expect(result.skipped[0]).to.deep.equal(licensedPkg);
+				expect(result.installed).to.be.an("array").that.is.empty;
+
+				// Verify package is not actually installed
+				const installedPackages = await api.list();
+				expect(
+					installedPackages.some((p) => p.name === licensedPkgName)
+				).to.be.false;
+			});
 		});
 
 		describe("license reporter integration", function () {
@@ -2613,7 +2460,7 @@ describe("ConanPkgManager", function () {
 
 				await expect(
 					api.install(pkg, { acceptLicense: true })
-				).to.eventually.be.rejectedWith("report failed");
+				).to.be.rejectedWith("report failed");
 
 				const installedPackages = await api.list();
 				expect(installedPackages.some((p) => p.name === pkg.name)).to
@@ -2722,10 +2569,7 @@ describe("ConanPkgManager", function () {
 		describe("installFromManifest with license acceptance", function () {
 			beforeEach(async function () {
 				await cleanupLicensedPackages(true);
-			});
-
-			afterEach(async function () {
-				await cleanupLicensedPackages(true);
+				await cleanupManifestFile();
 			});
 
 			it("should skip packages requiring license when acceptLicense is false", async function () {
@@ -2865,9 +2709,7 @@ describe("ConanPkgManager", function () {
 		describe("mixed manifest with licensed and unlicensed packages", function () {
 			beforeEach(async function () {
 				await cleanupLicensedPackages(true);
-			});
-			afterEach(async function () {
-				await cleanupLicensedPackages(true);
+				await cleanupManifestFile();
 			});
 
 			it("should install unlicensed packages and skip licensed packages when acceptLicense is false", async function () {
@@ -2949,12 +2791,11 @@ describe("ConanPkgManager", function () {
 		});
 
 		describe("install single package with license acceptance", function () {
-			afterEach(async function () {
-				await cleanupLicensedPackages(false);
+			beforeEach(async function () {
+				await cleanupLicensedPackages(true);
 			});
 
 			after(async function () {
-				// Final cleanup: delete from cache after all tests in this suite
 				await cleanupLicensedPackages(true);
 			});
 
@@ -3001,14 +2842,12 @@ describe("ConanPkgManager", function () {
 					await cleanupLicensedPackages(true);
 				});
 
-				afterEach(async function () {
-					// Clean up after each test
-					await cleanupLicensedPackages(false);
+				after(async function () {
+					// Clean up after test suite
+					await cleanupLicensedPackages(true);
 				});
 
 				it("should not require license acceptance for packages already in cache", async function () {
-					this.timeout(30000);
-
 					// First, download the package (which requires license acceptance)
 					const pkg = licensedPackages[0];
 					await api.install(pkg, { acceptLicense: true });
@@ -3074,11 +2913,6 @@ describe("ConanPkgManager", function () {
 				});
 
 				it("should require license for packages not in cache even if other packages are cached", async function () {
-					this.timeout(30000);
-
-					// Explicitly clean everything first
-					await cleanupLicensedPackages(true);
-
 					// Install first package (gets cached)
 					const pkg1 = licensedPackages[0];
 					await api.install(pkg1, { acceptLicense: true });
@@ -3106,11 +2940,6 @@ describe("ConanPkgManager", function () {
 				});
 
 				it("should skip cache check and prompt for license if cache listing fails", async function () {
-					this.timeout(30000);
-
-					// Explicitly clean everything first
-					await cleanupLicensedPackages(true);
-
 					// This test verifies graceful degradation when cache cannot be queried
 					// In this case, the function should fall back to checking all packages
 					const pkg = licensedPackages[0];
@@ -3126,11 +2955,6 @@ describe("ConanPkgManager", function () {
 				});
 
 				it("should handle mixed scenario with cached and uncached packages correctly", async function () {
-					this.timeout(30000);
-
-					// Explicitly clean everything first
-					await cleanupLicensedPackages(true);
-
 					// Setup: Cache first package, leave second uncached, third is unlicensed
 					const pkg1 = licensedPackages[0];
 					await api.install(pkg1, { acceptLicense: true });
@@ -3162,8 +2986,6 @@ describe("ConanPkgManager", function () {
 				});
 
 				it("should accept license and cache package for future use", async function () {
-					this.timeout(30000);
-
 					const pkg = licensedPackages[0];
 
 					// First install with license acceptance
@@ -3178,8 +3000,6 @@ describe("ConanPkgManager", function () {
 				});
 
 				it("should not prompt for license when reinstalling a cached package via single install", async function () {
-					this.timeout(30000);
-
 					const pkg = licensedPackages[0];
 
 					// Install with license acceptance
@@ -3210,15 +3030,8 @@ describe("ConanPkgManager", function () {
 				}
 			});
 
-			afterEach(async function () {
-				// Clean up packages after each test
-				for (const pkg of packagesToInstall) {
-					try {
-						await api.uninstall(pkg.name);
-					} catch {
-						// Ignore if not installed
-					}
-				}
+			before(async function () {
+				await cleanupLicensedPackages(true);
 			});
 
 			it("should install multiple packages when given an array", async function () {
@@ -3249,24 +3062,45 @@ describe("ConanPkgManager", function () {
 			});
 
 			it("should install licensed packages in array with acceptLicense", async function () {
-				// Clean up licensed packages first
-				await cleanupLicensedPackages(true);
-
 				const result = await api.install(licensedPackages, {
 					acceptLicense: true
 				});
 
 				expect(result).to.be.an("array").with.lengthOf(2);
 				expect(result).to.deep.include.members(licensedPackages);
-
-				// Clean up
-				await cleanupLicensedPackages(true);
 			});
 		});
 	});
 
 	describe("listCache", function () {
-		this.timeout(300000); // 5 minutes for integration tests
+		describe("recipe-only metadata entries", function () {
+			const pkgName = "test_pkg1";
+
+			before(async function () {
+				// Ensure clean state: uninstall and delete from cache for test packages
+				try {
+					await api.uninstall(pkgName);
+				} catch {
+					// Ignore if not installed
+				}
+
+				try {
+					await api.delete(`${pkgName}/*`);
+				} catch {
+					// Ignore if not in cache
+				}
+			});
+
+			it("should not include recipe-only metadata entries", async function () {
+				await api.init();
+				// This fetches recipe metadata without installing binaries.
+				const searchResults = await api.searchInfo(`${pkgName}/*`);
+				expect(searchResults).not.to.be.empty;
+
+				const cachedPackages = await api.listCache(`${pkgName}/*`);
+				expect(cachedPackages).to.be.an("array").that.is.empty;
+			});
+		});
 
 		describe("when cache is empty", function () {
 			before(async function () {
@@ -3307,9 +3141,7 @@ describe("ConanPkgManager", function () {
 					{ name: "test_pkg2", version: "1.0" }
 				];
 
-				for (const pkg of testPackages) {
-					await api.install(pkg);
-				}
+				await api.install(testPackages);
 			});
 
 			it("should return all cached packages (installed and uninstalled)", async function () {
@@ -3395,10 +3227,12 @@ describe("ConanPkgManager", function () {
 			before(async function () {
 				// Ensure we have test packages with different naming patterns
 				// Install known available test packages
-				await api.install({ name: "test_pkg1", version: "1.0" });
-				await api.install({ name: "test_pkg2", version: "1.0" });
-				await api.install({ name: "test_pkg2", version: "1.2.0" });
-				await api.install({ name: "test_pkg2", version: "1.3.4" });
+				await api.install([
+					{ name: "test_pkg1", version: "1.0" },
+					{ name: "test_pkg2", version: "1.0" },
+					{ name: "test_pkg2", version: "1.2.0" },
+					{ name: "test_pkg2", version: "1.3.4" }
+				]);
 			});
 
 			it("should return only packages matching wildcard pattern", async function () {

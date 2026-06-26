@@ -88,9 +88,10 @@ export abstract class BaseCommand<
   ): CodeGenJsonMsg[] {
     let raw = '';
     const combined = [...output.stdout, ...output.stderr];
+    const errLines: string[] = [];
 
     const parsed = combined
-      .join('')
+      .join('\n')
       .split('\n')
       .filter((line) => line.length > 0)
       .flatMap((line) => {
@@ -98,7 +99,7 @@ export abstract class BaseCommand<
           const parsed = JSON.parse(line) as CodeGenJsonMsg;
           switch (parsed.level) {
             case 'ERROR': {
-              this.error(parsed.msg);
+              errLines.push(parsed.msg);
               break;
             }
 
@@ -132,6 +133,12 @@ export abstract class BaseCommand<
         this.jsonEnabled() && this.logJson(parsed);
         this.error(raw);
       }
+    }
+
+    if (errLines.length > 0) {
+      this.error(errLines.join('\n'), {
+        exit: output.code || 1
+      });
     }
 
     process.exitCode = output.code ?? 0;

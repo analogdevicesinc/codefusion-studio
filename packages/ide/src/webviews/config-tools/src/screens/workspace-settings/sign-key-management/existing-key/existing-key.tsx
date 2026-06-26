@@ -30,15 +30,23 @@ import {
 } from '../../../../../../common/api';
 import {EXISTING_KEY_CONTROLS} from '../../../../constants/workspace-settings';
 import type {KeyData} from '../../../../types/workspace-settings';
-import {validatePemPath} from '../../../../utils/application-package-validation';
+import {
+	isDuplicateKeyName,
+	validatePemPath
+} from '../../../../utils/application-package-validation';
 import KeyFormLayout from '../key-form/key-form-layout';
 
 type ExistingKeyProps = {
+	readonly existingKeyNames?: string[];
 	readonly onCancel: () => void;
 	readonly onSubmit: (keyData: KeyData) => void;
 };
 
-function ExistingKey({onCancel, onSubmit}: ExistingKeyProps) {
+function ExistingKey({
+	existingKeyNames = [],
+	onCancel,
+	onSubmit
+}: ExistingKeyProps) {
 	const l10n: TLocaleContext | undefined =
 		useLocaleContext()?.settings?.security?.['sign-key-management'];
 
@@ -158,17 +166,36 @@ function ExistingKey({onCancel, onSubmit}: ExistingKeyProps) {
 			return;
 		}
 
+		const derivedName =
+			((formData.keyPath as string) ?? '')
+				.split(/[\\/]/)
+				.filter(Boolean)
+				.pop() ?? '';
+
+		if (isDuplicateKeyName(derivedName, existingKeyNames)) {
+			setErrors(prev => ({
+				...prev,
+				keyPath:
+					l10n?.duplicateKey ??
+					'A key with this name already exists. Please choose a different key.'
+			}));
+
+			return;
+		}
+
 		onSubmit({
-			name:
-				((formData.keyPath as string) ?? '')
-					.split(/[\\/]/)
-					.filter(Boolean)
-					.pop() ?? '',
+			name: derivedName,
 			path: (formData.keyPath as string) ?? '',
 			algorithm: detectedAlgorithm,
 			description: (formData.description as string) || undefined
 		});
-	}, [formData, detectedAlgorithm, onSubmit]);
+	}, [
+		formData,
+		existingKeyNames,
+		onSubmit,
+		detectedAlgorithm,
+		l10n?.duplicateKey
+	]);
 
 	return (
 		<KeyFormLayout

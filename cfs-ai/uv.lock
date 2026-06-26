@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.11.9"
 resolution-markers = [
     "sys_platform == 'darwin'",
@@ -60,7 +60,7 @@ wheels = [
 
 [[package]]
 name = "cfsai"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "cfsai-backend-izer" },
@@ -107,7 +107,7 @@ dev = [
 
 [[package]]
 name = "cfsai-backend-izer"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-backend-izer" }
 dependencies = [
     { name = "cfsai-types" },
@@ -136,7 +136,7 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-backend-tflm"
-version = "2.1.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-backend-tflm" }
 dependencies = [
     { name = "cfsai-tflite" },
@@ -151,7 +151,7 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-compatibility-analyzer"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-compatibility-analyzer" }
 dependencies = [
     { name = "cfsai-model-parser" },
@@ -162,7 +162,7 @@ requires-dist = [{ name = "cfsai-model-parser", editable = "packages/cfsai-model
 
 [[package]]
 name = "cfsai-model-parser"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-model-parser" }
 dependencies = [
     { name = "cfsai-tflite" },
@@ -177,7 +177,7 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-resource-profiler"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-resource-profiler" }
 dependencies = [
     { name = "cfsai-model-parser" },
@@ -192,7 +192,7 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-tflite"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-tflite" }
 dependencies = [
     { name = "flatbuffers" },
@@ -211,7 +211,7 @@ dev = [{ name = "hatchling", specifier = ">=1.27.0" }]
 
 [[package]]
 name = "cfsai-types"
-version = "2.2.0"
+version = "2.2.1"
 source = { editable = "packages/cfsai-types" }
 dependencies = [
     { name = "pydantic" },

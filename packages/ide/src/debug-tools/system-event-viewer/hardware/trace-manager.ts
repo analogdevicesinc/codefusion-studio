@@ -72,10 +72,10 @@ export interface HwEventInfo {
   events: HwEvent[];
 }
 
-// Default size of the synchronization counter in bytes,
-// used when no ETF is found or when the ETF does not provide
+// Default size of the ETF Buffer.
+// Used when no ETF is found or when the ETF does not provide
 // a way to know the actual size of the synchronization counter.
-const DEFAULT_SYNC_COUNTER_BYTES = 1024;
+const DEFAULT_SYNC_COUNTER_BYTES = 4096;
 
 // The trace ID that we will use for STM events.
 // This is an arbitrary value that should not conflict with other trace IDs in the system,
@@ -432,10 +432,10 @@ export class TraceManager {
    * Set up and enable the ETF for trace capture, configuring it in circular buffer mode and with the desired settings.
    * This method will also enable trace capture if it is not already enabled, but if the ETF is already enabled with the
    * desired configuration it will keep it enabled without re-enabling it (to avoid unnecessary disruptions in the trace capture).
-   * @returns The synchronization counter interval to request from STM, in bytes.
+   * @returns The buffer size in bytes that from ETF.
    * This value is derived from the ETF buffer size when an ETF is present, and it is the value passed to
    * setSynchronizationCounter(...). It is not a reserved buffer size.
-   * If no ETF is found, returns DEFAULT_SYNC_COUNTER_BYTES (1024 bytes).
+   * If no ETF is found, returns DEFAULT_SYNC_COUNTER_BYTES (4096 bytes).
    */
   private async enableAndConfigureETF(): Promise<number> {
     if (this.etf) {
@@ -453,7 +453,7 @@ export class TraceManager {
       };
 
       const [
-        bufferSize,
+        bufferSizeInBytes,
         currentConfig,
         currentMode,
         isTraceCaptureEnabledValue,
@@ -464,7 +464,6 @@ export class TraceManager {
         this.etf.isTraceCaptureEnabled(),
       ]);
 
-      const synchronizationCounterBytes = bufferSize / 4;
       const hasSameConfig = Object.entries(config).every(
         ([key, value]) =>
           currentConfig[key as keyof TmcConfiguration] === value,
@@ -493,7 +492,7 @@ export class TraceManager {
       if (!isTraceCaptureEnabled) {
         await this.etf.enableTraceCapture();
       }
-      return synchronizationCounterBytes;
+      return bufferSizeInBytes;
     }
     return DEFAULT_SYNC_COUNTER_BYTES;
   }
@@ -516,15 +515,21 @@ export class TraceManager {
         `${this.etf.name}.AtbReceiver`,
       );
     }
-
-    const synchronizationCounterBytes = await this.enableAndConfigureETF();
-
+    // Using bufferSize / 4 bounds worst-case loss to ~25%,
+    const synchronizationCounterBytes =
+      (await this.enableAndConfigureETF()) / 4;
     if (this.stm500) {
       if (this.tsGen) {
         await this.stm500.setTsFrequency(this.tsGen.frequency);
       }
+
+      // STMSYNCR.COUNT is 12-bit, so the synchronization counter maximum is 4095 bytes.
       await this.stm500.setTraceId(STM_TRACE_ID);
-      await this.stm500.setSynchronizationCounter(synchronizationCounterBytes);
+      const syncCounter = Math.min(
+        synchronizationCounterBytes,
+        this.stm500.SynchronizationCounterHardwareMaxValue,
+      );
+      await this.stm500.setSynchronizationCounter(syncCounter);
       await this.stm500.enable({ tsEnable: true, compression: true });
     }
   }
@@ -544,7 +549,7 @@ export class TraceManager {
       throw new Error("No STM-500 defined in the trace manager.");
     }
 
-    return this.router.connectSignals(signal, this.stm500?.AtbOutput);
+    return this.router.connectSignals(signal, `${this.stm500.name}.AtbOutput`);
   }
 
   /**
@@ -562,7 +567,10 @@ export class TraceManager {
       throw new Error("No STM-500 defined in the trace manager.");
     }
 
-    return this.router.disconnectSignals(signal, this.stm500?.AtbOutput);
+    return this.router.disconnectSignals(
+      signal,
+      `${this.stm500.name}.AtbOutput`,
+    );
   }
 
   /**
@@ -581,7 +589,10 @@ export class TraceManager {
       throw new Error("No STM-500 defined in the trace manager.");
     }
 
-    return this.router.areSignalsConnected(signal, this.stm500?.AtbOutput);
+    return this.router.areSignalsConnected(
+      signal,
+      `${this.stm500.name}.AtbOutput`,
+    );
   }
 
   /**
@@ -605,7 +616,10 @@ export class TraceManager {
       throw new Error("No STM-500 defined in the trace manager.");
     }
 
-    return this.router.canSignalsBeConnected(signal, this.stm500?.AtbOutput);
+    return this.router.canSignalsBeConnected(
+      signal,
+      `${this.stm500.name}.AtbOutput`,
+    );
   }
 
   /**

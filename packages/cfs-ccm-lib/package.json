@@ -1,7 +1,7 @@
 {
   "name": "cfs-ccm-lib",
   "description": "Client library for CodeFusion Studio's Cloud Catalog Management Service",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "engines": {
     "node": ">=20"
   },

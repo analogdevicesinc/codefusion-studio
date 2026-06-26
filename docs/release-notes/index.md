@@ -1,11 +1,12 @@
 ---
 description: Release Notes for CodeFusion Studio
 author: Analog Devices
-date: 2026-02-10
+date: 2026-06-02
 ---
 
 # Release Notes
 
+- [2.2.1 Release Notes](2.2.1.md)
 - [2.2.0 Release Notes](2.2.0.md)
 - [2.1.0 Release Notes](2.1.0.md)
 - [2.0.2 Release Notes](2.0.2.md)

@@ -14,7 +14,7 @@
  */
 
 import type {CfsPackageManagerProvider} from 'cfs-package-manager';
-import type {Task} from 'cfs-types';
+import type {CfsWorkspace, Task} from 'cfs-types';
 
 import {
   CfsTaskDiscoveryStrategy,
@@ -23,9 +23,11 @@ import {
   CfsVariableResolver,
   MsdkTaskStrategy,
   type ShellEnvOptions,
-  ZephyrTaskStrategy
+  ZephyrTaskStrategy,
+  checkIfFileExists,
+  readJsonFile,
+  resolveZephyrSdkRoot
 } from 'cfs-lib';
-import {checkIfFileExists} from 'cfs-lib';
 import fs from 'node:fs';
 import {readdir} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -34,7 +36,10 @@ import path from 'node:path';
 import type {CliConfig} from '../types/cli-config.js';
 
 import {GenericTaskDiscoveryStrategy} from '../utils/generic-task-discovery-strategy.js';
-import {checkProjectExists} from '../utils/utils.js';
+import {
+  checkProjectExists,
+  lowercaseFirstLetterProps
+} from '../utils/utils.js';
 import {CliConfigResolver} from './cli-config-resolver.js';
 import {CliEnvironmentVariableProvider} from './cli-environment-variable-provider.js';
 
@@ -67,10 +72,13 @@ export class CliTaskProvider {
     const sdkPath = this.resolveSdkPath();
     const toolSearchPaths = this.resolveToolSearchPaths(sdkPath);
 
+    const {soc} = this.getCfsWorkspaceFromPath(workspacePath);
+
     // Initialize tool manager with package manager and search paths
     this.toolManager = new CfsToolManager(
       packageManager,
-      toolSearchPaths
+      toolSearchPaths,
+      soc
     );
 
     this.envVarProvider = new CliEnvironmentVariableProvider(
@@ -105,7 +113,7 @@ export class CliTaskProvider {
     // Zephyr base: custom workspace or default from zephyr tool
     let zephyrBase: string | undefined;
     const customZephyrWorkspace = this.configResolver.get(
-      'cfs.zephyr.workspace'
+      'cfs.zephyr.workspace.path'
     );
     if (customZephyrWorkspace) {
       zephyrBase = customZephyrWorkspace;
@@ -116,11 +124,29 @@ export class CliTaskProvider {
       }
     }
 
-    // CMAKE_PREFIX_PATH: zephyr-sdk path
-    let cmakePrefixPath: string | undefined;
-    if (sdkPath) {
-      cmakePrefixPath = path.join(sdkPath, 'Tools/zephyr-sdk');
+    // Zephyr SDK: prefer per-project override, then toolchain ID from settings, then legacy path
+    let zephyrSdkPath: string | undefined;
+    const toolchainPathOverride = this.configResolver.get(
+      'cfs.project.toolchain.path'
+    );
+    if (toolchainPathOverride) {
+      zephyrSdkPath = toolchainPathOverride;
+    } else {
+      const toolchainId =
+        this.configResolver.get('cfs.project.toolchain.id') ??
+        'arm.zephyr.eabi.toolchain';
+      const zephyrToolPath = toolchainId.includes('zephyr')
+        ? await this.toolManager.getToolPath(toolchainId)
+        : undefined;
+
+      if (zephyrToolPath) {
+        zephyrSdkPath = resolveZephyrSdkRoot(zephyrToolPath);
+      } else if (sdkPath) {
+        zephyrSdkPath = path.join(sdkPath, 'Tools', 'zephyr-sdk');
+      }
     }
+
+    const cmakePrefixPath = zephyrSdkPath;
 
     // Git exec path (non-Windows only)
     let gitExecPath: string | undefined;
@@ -139,6 +165,7 @@ export class CliTaskProvider {
       sdkPath,
       jlinkPath,
       zephyrBase,
+      zephyrSdkPath,
       cmakePrefixPath,
       gitExecPath,
       cfsaiPath
@@ -206,7 +233,7 @@ export class CliTaskProvider {
       await this.taskProvider.discoverTasks(folders);
 
     // For each task, generate a user-friendly name by removing characters that will
-    // be problmatic on the command line, and replacing spaces with underscores
+    // be problematic on the command line, and replacing spaces with underscores
     // For example, "Build (Project1)" becomes "Build_Project1"
     for (const task of discoveredTasks) {
       task.userFriendlyName = task.label
@@ -226,6 +253,44 @@ export class CliTaskProvider {
     }
 
     return discoveredTasks; // Return all tasks if no project filter is applied
+  }
+
+  /**
+   * Extract and resolve environment variables from the `cfs.environment`
+   * setting in the workspace/project settings.json.
+   *
+   * Each value may contain variable references (`${config:...}`,
+   * `${command:...}`, `${workspaceFolder}`, `${env:...}`, etc.) which
+   * are resolved using the same resolvers as task command strings.
+   *
+   * @returns Resolved environment variables as key-value pairs.
+   */
+  async getCfsEnvironmentVariables(): Promise<
+    Record<string, string>
+  > {
+    const raw = this.configResolver.getRaw('cfs.environment');
+
+    if (
+      raw === undefined ||
+      typeof raw !== 'object' ||
+      Array.isArray(raw)
+    ) {
+      return {};
+    }
+
+    const envObject = raw as Record<string, unknown>;
+    const result: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(envObject)) {
+      if (typeof value !== 'string') {
+        continue;
+      }
+
+      result[key] =
+        await this.variableResolver.resolveStringVariables(value);
+    }
+
+    return result;
   }
 
   /**
@@ -276,6 +341,24 @@ export class CliTaskProvider {
 
       if (cmd === 'cfs.tool.path.zephyr') {
         return this.toolManager.getToolPath('zephyr');
+      }
+
+      if (cmd === 'cfs.getToolchainPath') {
+        const toolchainPath = this.configResolver.get(
+          'cfs.project.toolchain.path'
+        );
+
+        if (toolchainPath) {
+          return toolchainPath;
+        }
+
+        const toolchainId = this.configResolver.get(
+          'cfs.project.toolchain.id'
+        );
+
+        if (toolchainId) {
+          return this.toolManager.getToolPath(toolchainId);
+        }
       }
 
       if (cmd === 'cfs.jlink.setJlinkPath') {
@@ -408,6 +491,47 @@ export class CliTaskProvider {
         '${workspaceFolder}',
         this.variableResolverWorkspaceFolder
       );
+  }
+
+  /**
+   * Find the .cfsworkspace file in the current or parent directories and read its contents.
+   * TODO: This function is a copy of a similar function in utils.ts. The function in utils.ts
+   * does not search recursively in parent directories, and I didn't want to change its behavior
+   * so late in the release cycle. We should refactor this function to be shared between utils.ts and this file.
+   * @param workspacePath - Path to the workspace folder (or a subfolder inside it).
+   * @returns The workspace configuration object read from the .cfsworkspace file in the .cfs folder.
+   *
+   */
+  private getCfsWorkspaceFromPath(
+    workspacePath: string
+  ): CfsWorkspace {
+    // Check if the .cfs folder exists in this folder. If not,
+    // check the parent folder(s).	 If not, throw an error.
+    let currentPath = path.resolve(workspacePath);
+
+    while (!checkIfFileExists(path.join(currentPath, '.cfs'))) {
+      const parentPath = path.resolve(currentPath, '..');
+      if (parentPath === currentPath) {
+        throw new Error(
+          `No CFS workspace found at "${workspacePath}" or any parent directory (expected a .cfs folder).`
+        );
+      }
+
+      currentPath = parentPath;
+    }
+
+    const cfsFolder = path.join(currentPath, '.cfs');
+    const workspaceFile = path.join(cfsFolder, '.cfsworkspace');
+
+    if (!checkIfFileExists(workspaceFile)) {
+      throw new Error(
+        `No CFS workspace file found at "${workspaceFile}" (expected a .cfs/.cfsworkspace file).`
+      );
+    }
+
+    return lowercaseFirstLetterProps(
+      readJsonFile(workspaceFile)
+    ) as CfsWorkspace;
   }
 
   /**

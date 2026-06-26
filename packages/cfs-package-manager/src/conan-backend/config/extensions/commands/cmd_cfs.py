@@ -20,7 +20,7 @@ from collections.abc import MutableMapping, Sequence
 import re
 
 from conan.api.conan_api import ConanAPI
-from conan.api.output import cli_out_write, ConanOutput
+from conan.api.output import cli_out_write
 from conan.api.model import ListPattern
 from conan.cli.command import conan_command, conan_subcommand
 from conan import conan_version
@@ -504,7 +504,9 @@ def cfs_list(conan_api: ConanAPI, parser, subparser, *args):
 @conan_subcommand()
 def cfs_list_cache(conan_api: ConanAPI, parser, subparser, *args):
     """
-    Returns a list of all packages in the local cache (both installed and cached-only)
+    Returns a list of package references that have cached binaries.
+
+    Recipe-only metadata cache entries are intentionally excluded.
     """
 
     subparser.add_argument(
@@ -517,18 +519,18 @@ def cfs_list_cache(conan_api: ConanAPI, parser, subparser, *args):
     args = parser.parse_args(*args)
 
     try:
-        # Use Conan API directly instead of spawning subprocess
-        ConanOutput.define_log_level("quiet")  # suppress info messages from conan list command
-        cached_result = conan_api.list.select(ListPattern(args.pattern))
-        package_list = sorted(x.split("#", 1)[0] for x in cached_result.serialize().keys())
+        # Convert name-only patterns (e.g., "test_pkg2") to "name/*" so they
+        # match all versions consistently with existing fnmatch behavior.
+        filter_pattern = args.pattern
+        if "/" not in filter_pattern and "*" not in filter_pattern:
+            filter_pattern = f"{filter_pattern}/*"
+
+        cached_packages = get_conan_cached_packages(filter_pattern)
+        package_list = sorted(cached_packages)
         if package_list:
             cli_out_write("\n".join(package_list))
 
-    except Exception as e:
-        # If no packages match the pattern, just return empty (no output)
-        error_msg = str(e)
-        if "not found" in error_msg:
-            return
+    except ConanException as e:
         handle_and_raise_conan_exception(e)
 
 
@@ -666,27 +668,30 @@ def resolve_recipe_reference(pkg_ref: str) -> str:
     return normalized_ref
 
 
-def get_conan_cached_packages() -> set:
+def get_conan_cached_packages(pattern: str = "*") -> set:
     """
     Returns set of recipe references that have at least one cached binary
     package in Conan cache.
 
     This intentionally ignores recipe-only metadata cache entries. License
-    acceptance is tied to installable binaries, not recipe metadata fetches.
+    acceptance is tied to installable binaries, not recipe metadata.
+
+    Args:
+        pattern: Optional recipe pattern in name/version glob form.
 
     Raises:
         ConanException: If the Conan cache cannot be queried (e.g. Conan CLI
-            error) or if the output cannot be parsed. Callers should let this
-            propagate so the user sees a meaningful error rather than silently
-            skipping license checks for all packages.
+            error) or if the output cannot be parsed.
     """
-    # Use package scope (:*) so Conan includes package binaries under each recipe
-    # in the JSON output; this avoids recipe-only results from plain "*" queries.
+    # Query Conan with package scope (:*) so results only include recipes that
+    # contain binary package nodes. Use the caller pattern to avoid full-cache
+    # scans when users provide narrow list-cache filters.
+    query_pattern = pattern if pattern == "*" or "/" in pattern else f"{pattern}/*"
     try:
-        raw = check_output_runner('conan list "*:*" --format=json')
+        raw = check_output_runner(f'conan list "{query_pattern}:*" --format=json')
     except ConanException as e:
         raise ConanException(
-            f"Failed to query the Conan cache while checking license acceptance: {e}"
+            f"Failed to query the Conan cache: {e}"
         ) from e
 
     try:
@@ -1131,8 +1136,14 @@ def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None, check_up
     except ConanException as e:
         handle_and_raise_conan_exception(e)
 
+    # Derive the name and version from the package reference, because inspect()
+    # is not necessarily able to obtain the correct ones from the recipe, as any
+    # --version option or environment variables used during package creation are
+    # not available to it.
+    name, version = split_recipe_ref(reference)
+
     pkg_info = {
-        "reference": {"name": conanfile.name, "version": conanfile.version},
+        "reference": { "name": name, "version": version },
         "description": conanfile.description,
         "license": conanfile.license,
         "cfsVersion": getattr(conanfile, "cfs_version", ""),

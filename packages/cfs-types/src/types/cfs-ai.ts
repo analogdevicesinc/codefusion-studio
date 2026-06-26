@@ -16,8 +16,9 @@
 export interface AiBackend {
 	Targets: {
 		Hardware: AiTarget;
-		FirmwarePlatform: string;
+		FirmwarePlatform: string | null;
 	}[];
+	DisplayName?: string;
 	AdvancedTools: boolean;
 	Description: string;
 	Formats: string[];
@@ -26,12 +27,13 @@ export interface AiBackend {
 	MaxModels: number;
 	Name: string;
 	Slow?: boolean;
-	Weaver?: {
+	Mot?: {
 		DockerImage: string;
 		Soc: string;
 		Subsystem: string;
 		Copy?: string[];
 	};
+	Default?: boolean;
 }
 
 export interface AiTarget {
@@ -39,5 +41,5 @@ export interface AiTarget {
 	Package?: string;
 	Core?: string;
 	Family?: string;
-	Accelerator?: string;
+	Accelerator?: string | null;
 }

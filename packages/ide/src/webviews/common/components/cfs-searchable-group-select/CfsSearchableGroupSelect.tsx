@@ -40,12 +40,12 @@ function CfsSearchableGroupSelect({
 	groupedOptions,
 	selectedOption,
 	searchPlaceholder,
-	dataTest = "searchable-grouped-selection",
+	dataTest = 'searchable-grouped-selection',
 	setSelectedOption,
 	renderSelectedContent,
 	renderTitleEnhancement
 }: CfsSocSelectProps) {
-	const [search, setSearch] = useState<string>("");
+	const [search, setSearch] = useState<string>('');
 
 	const [openGroups, setOpenGroups] = useState<
 		Record<string, boolean>
@@ -54,7 +54,7 @@ function CfsSearchableGroupSelect({
 	const expandAll = useCallback(() => {
 		setOpenGroups(
 			Object.fromEntries(
-				groupedOptions.map((group) => [group.id, true])
+				groupedOptions.map(group => [group.id, true])
 			)
 		);
 	}, [groupedOptions, setOpenGroups]);
@@ -75,13 +75,13 @@ function CfsSearchableGroupSelect({
 		const searchPattern = createSearchPattern(search);
 
 		return groupedOptions
-			.map((group) => ({
+			.map(group => ({
 				...group,
-				options: group.options.filter((option) =>
+				options: group.options.filter(option =>
 					searchPattern.test(option.label)
 				)
 			}))
-			.filter((group) => group.options.length > 0);
+			.filter(group => group.options.length > 0);
 	}, [search, groupedOptions]);
 
 	const catalogItemsCount = useMemo(
@@ -107,20 +107,20 @@ function CfsSearchableGroupSelect({
 							<LocalizedMessage
 								id={
 									catalogItemsCount === 1
-										? "search.matchesAvailableSingular"
-										: "search.matchesAvailable"
+										? 'search.matchesAvailableSingular'
+										: 'search.matchesAvailable'
 								}
 								params={{
 									matchesCount:
-										catalogItemsCount.toLocaleString("en-US")
+										catalogItemsCount.toLocaleString('en-US')
 								}}
 							/>
 						</span>
 					}
 					onClear={() => {
-						setSearch("");
+						setSearch('');
 					}}
-					onInputChange={(val) => {
+					onInputChange={val => {
 						setSearch(val);
 					}}
 				/>
@@ -128,14 +128,14 @@ function CfsSearchableGroupSelect({
 					dataTest={`${dataTest}:segmented-controls`}
 					options={[
 						{
-							key: "expand",
-							tooltip: "Expand all",
+							key: 'expand',
+							tooltip: 'Expand all',
 							content: <ExpandAllIcon />,
 							onClick: expandAll
 						},
 						{
-							key: "collapse",
-							tooltip: "Collapse all",
+							key: 'collapse',
+							tooltip: 'Collapse all',
 							content: <CollapseAllIcon />,
 							onClick: collapseAll
 						}
@@ -187,14 +187,16 @@ function createSearchPattern(search: string): RegExp {
 	// Creates a regex pattern based on the search string that ignores whitespace, underscores, slashes, and dashes between characters.
 	// to something like this: "s[\\s_/-]*e[\\s_/-]*a[\\s_/-]*r[\\s_/-]*c[\\s_/-]*h" for the search string "search".
 	// For example, "adsp21834" would match "ADSP21834", "ADSP_21834", "ADSP-21834", and "ADSP/21834".
-	return new RegExp(
-		search
-			.trim()
-			.replace(/[\s_/-]+/g, '')
-			.split('')
-			.join('[\\s_/-]*'),
-		'i'
-	);
+	const pattern = search
+		.trim()
+		.replace(/[\s_/-]+/g, '')
+		// Split to single characters...
+		.split('')
+		// ...in order to map it and escape
+		.map(char => char.replace(/[\\^$*+?.()|[\]{}/-]/g, '\\$&'))
+		.join('[\\s_/-]*');
+
+	return new RegExp(pattern, 'i');
 }
 
 export default memo(CfsSearchableGroupSelect);

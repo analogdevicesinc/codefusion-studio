@@ -12,11 +12,11 @@ To get started with CodeFusion Studio, first install the SDK using the CodeFusio
 
 ### Download
 
-The CodeFusion Studio installer (version 2.2.0) can be downloaded from the following links.
+The CodeFusion Studio installer (version 2.2.1) can be downloaded from the following links.
 
-- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.run){:target="_blank"}
-- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.dmg){:target="_blank"}
-- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.2.0/CodeFusionStudio_2.2.0.exe){:target="_blank"}
+- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.run){:target="_blank"}
+- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.dmg){:target="_blank"}
+- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.2.1/CodeFusionStudio_2.2.1.exe){:target="_blank"}
 
 ### Install
 
@@ -64,21 +64,21 @@ To run the installer from the command line, use the following:
 **macOS:**
 
 ``` bash
-hdiutil mount CodeFusionStudio_2.2.0.dmg -mountpoint cfs
-cfs/CodeFusionStudio_2.2.0.app/Contents/MacOS/CodeFusionStudio_2.2.0 install --am --al -c
+hdiutil mount CodeFusionStudio_2.2.1.dmg -mountpoint cfs
+cfs/CodeFusionStudio_2.2.1.app/Contents/MacOS/CodeFusionStudio_2.2.1 install --am --al -c
 hdiutil unmount cfs
 ```
 
 **Windows:**
 
 ``` bash
-CodeFusionStudio_2.2.0.exe install --am --al -c
+CodeFusionStudio_2.2.1.exe install --am --al -c
 ```
 
 **Linux:**
 
 ``` bash
-./CodeFusionStudio_2.2.0.run install --am --al -c
+./CodeFusionStudio_2.2.1.run install --am --al -c
 ```
 
 ## Next steps

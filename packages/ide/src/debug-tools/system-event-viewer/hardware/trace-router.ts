@@ -120,6 +120,22 @@ export class TraceRouter {
   }
 
   /**
+   * Helper method to extract the component name from a signal in the form "component.signal".
+   * @param signal signal in the form "component.signal"
+   * @returns the component name or undefined if the signal is not in the correct format or is undefined
+   */
+
+  private getComponentNameFromSignal(
+    signal: string | undefined,
+  ): string | undefined {
+    if (signal === undefined) {
+      return undefined;
+    }
+    const separatorIndex = signal.indexOf(".");
+    return separatorIndex <= 0 ? undefined : signal.slice(0, separatorIndex);
+  }
+
+  /**
    * This private method is the one actually implementing the routing logic.
    *
    * There are multiple reasons for splitting it out of public getRoutes:
@@ -162,7 +178,25 @@ export class TraceRouter {
       return;
     }
 
-    const nextConnections = await component.getConnections(componentInput);
+    const nextConnections = (
+      await component.getConnections(componentInput)
+    ).map((connection) => ({
+      ...connection,
+      destComponent: this.getComponentNameFromSignal(
+        connection.destinationSignal,
+      ),
+    }));
+    // Sort connections so that the ones containing the destination component are evaluated first.
+    const destinationComponent = this.getComponentNameFromSignal(destination);
+    if (destinationComponent !== undefined) {
+      nextConnections.sort((a, b) => {
+        const aContainsDestination =
+          a.destComponent === destinationComponent ? 1 : 0;
+        const bContainsDestination =
+          b.destComponent === destinationComponent ? 1 : 0;
+        return bContainsDestination - aContainsDestination;
+      });
+    }
 
     // Note this will yield shorter routes first, if for whatever reason longer routes first are preferred,
     // A check for length > 0 with the for loop inside should be used with the content of the following if

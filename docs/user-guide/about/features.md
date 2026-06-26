@@ -14,7 +14,7 @@ Complete model-to-deployment workflow for AI on embedded hardware. Create AI-rea
 
 [Create workspace from AI model →](../workspaces/create-workspace-from-ai-model.md) | [AI model tools →](../tools/manage-ai-models.md)
 
-![Embedded AI Workflows Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-ai-tools.gif)
+![Embedded AI Workflows Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.1/packages/ide/gifs/ide-ai-tools.gif)
 
 ## AI Debug Assistant (Preview)
 
@@ -22,7 +22,7 @@ Investigate faults, inspect hardware state, decode fault registers, and coordina
 
 [Learn more →](../debugging/debug-tools/ai-debug-assistant/index.md)
 
-![AI Debug Assistant](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-ai-debug-assistant.gif)
+![AI Debug Assistant](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.1/packages/ide/gifs/ide-ai-debug-assistant.gif)
 
 ## System Planner
 
@@ -30,7 +30,7 @@ Use the System Planner to visually configure every aspect of your system — fro
 
 [Learn more →](../tools/index.md)
 
-![System Planner Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-system-planner.gif)
+![System Planner Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.1/packages/ide/gifs/ide-system-planner.gif)
 
 ## Debugging and Analysis
 
@@ -69,7 +69,7 @@ Start new single- or multi-core projects in seconds with guided setup, example t
 
 [Learn more →](../workspaces/create-new-workspace.md)
 
-![Workspace Creation Wizard Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.0/packages/ide/gifs/ide-workspace.gif)
+![Workspace Creation Wizard Walkthrough](https://raw.githubusercontent.com/analogdevicesinc/codefusion-studio/V2.2.1/packages/ide/gifs/ide-workspace.gif)
 
 ## Plugin-Based Architecture
 

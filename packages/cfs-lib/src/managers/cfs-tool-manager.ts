@@ -164,7 +164,11 @@ export class CfsToolManager {
 		);
 
 		for (const file of results) {
-			this.addTool(file);
+			const tool = this.parseTool(file);
+
+			if (tool) {
+				this.addTool(tool);
+			}
 		}
 	}
 
@@ -183,16 +187,32 @@ export class CfsToolManager {
 					type: CfsToolManager.MANAGED_PACKAGE_TYPES
 				});
 
+			// Collect all valid tool candidates from package manager packages,
+			// keyed by tool ID. When multiple packages provide the same tool ID
+			// (after SoC filtering), the package with the lexicographically
+			// greater name wins. This allows more-specific packages (e.g.
+			// "zephyr-max32657") to take precedence over generic ones (e.g.
+			// "zephyr") without requiring explicit priority metadata.
+			const candidates = new Map<
+				string,
+				{ tool: ToolInfo; pkgName: string }
+			>();
+
 			for (const pkgInfo of packageInfos) {
 				if (!pkgInfo.path) {
 					continue;
 				}
 
+				// If a target SoC is specified, skip SoC-scoped packages that don't match it.
+				const targetSoc = this.targetSoc;
+
 				if (
-				  Array.isArray(pkgInfo.cfsSoc) &&
-				  pkgInfo.cfsSoc.length > 0 &&
-				  this.targetSoc &&
-				  !pkgInfo.cfsSoc.includes(this.targetSoc)
+					Array.isArray(pkgInfo.cfsSoc) &&
+					pkgInfo.cfsSoc.length > 0 &&
+					targetSoc &&
+					!pkgInfo.cfsSoc.some(
+						(soc) => soc.toLowerCase() === targetSoc.toLowerCase()
+					)
 				) {
 					continue;
 				}
@@ -201,8 +221,24 @@ export class CfsToolManager {
 				const toolInfoPath = path.join(pkgInfo.path, "tool.json");
 
 				if (fs.existsSync(toolInfoPath)) {
-					this.addTool(toolInfoPath);
+					const tool = this.parseTool(toolInfoPath);
+
+					if (tool) {
+						const existing = candidates.get(tool.id);
+
+						if (!existing || pkgInfo.name > existing.pkgName) {
+							candidates.set(tool.id, {
+								tool,
+								pkgName: pkgInfo.name
+							});
+						}
+					}
 				}
+			}
+
+			// Add the winning candidates via addTool
+			for (const candidate of candidates.values()) {
+				this.addTool(candidate.tool);
 			}
 		}
 
@@ -220,16 +256,12 @@ export class CfsToolManager {
 	}
 
 	/**
-	 * Add the tool at the given path to the array of installed tools
-	 * @param toolInfoPath - the file path to the tool.json or toolchain.json file
+	 * Add a parsed tool to the installed tools cache.
+	 * Skips if a tool with the same ID already exists in the cache.
+	 *
+	 * @param tool - the parsed ToolInfo to cache
 	 */
-	private addTool(toolInfoPath: string) {
-		const tool = this.parseTool(toolInfoPath);
-
-		if (!tool) {
-			return;
-		}
-
+	private addTool(tool: ToolInfo) {
 		const { id } = tool;
 
 		/**
@@ -237,10 +269,6 @@ export class CfsToolManager {
 		 * to pkg manager installed tools.
 		 */
 		if (typeof this.installedTools[id] !== "undefined") {
-			console.warn(
-				`Duplicate tool detected: ${id} at path ${toolInfoPath} can't be added as its a duplicate of package at path ${this.installedTools[id].rootPath}. Skipping duplicate.`
-			);
-
 			return;
 		}
 
@@ -284,34 +312,45 @@ export class CfsToolManager {
 
 	/**
 	 * Resolves tool path variables from identifier strings
-	 * @param string - Input string with format "toolId.subPath" or "toolId"
+	 * @param string - Input string with format "toolId" or "toolId.subPath"
+	 *                 where toolId may contain dots (e.g. "arm.zephyr.eabi.toolchain")
+	 *                 and subPath is a ToolInfo property (e.g. "debuggerPath")
 	 * @returns Promise that resolves to the string with tool paths resolved
 	 */
 	public async resolveTemplatePaths(string: string): Promise<string> {
-		// Split the string to get toolId and optional subPath
-		const [toolId, subPath] = string.split(".");
+		const parts = string.split(".");
 
-		// Get the tool with the specified ID
-		const tool = await this.getInstalledToolById(toolId);
+		// Try progressively shorter prefixes as the tool ID
+		// This handles dotted IDs like "arm.zephyr.eabi.toolchain.debuggerPath"
+		// by trying "arm.zephyr.eabi.toolchain.debuggerPath", then
+		// "arm.zephyr.eabi.toolchain" (with subPath "debuggerPath"), etc.
+		for (let i = parts.length; i > 0; i--) {
+			const candidateId = parts.slice(0, i).join(".");
+			const tool = await this.getInstalledToolById(candidateId);
 
-		if (tool !== null) {
-			let resolvedPath = tool.rootPath;
+			if (tool !== null) {
+				let resolvedPath = tool.rootPath;
+				const subPath = parts.slice(i).join(".");
 
-			// If subPath is specified, try to get that property value from tool info
-			if (subPath) {
-				const info = tool;
-				// Check if the subPath exists in the tool info
-				const key = subPath as keyof ToolInfo;
+				if (subPath) {
+					const key = subPath as keyof ToolInfo;
+					const value = tool[key];
 
-				if (info[key]) {
-					if (typeof info[key] === "string") {
-						// If the property is a string, use it as a relative path
-						resolvedPath = path.join(resolvedPath, info[key]);
+					if (value) {
+						if (typeof value === "string") {
+							resolvedPath = path.join(resolvedPath, value);
+						} else if (
+							Array.isArray(value) &&
+							value.length > 0 &&
+							typeof value[0] === "string"
+						) {
+							resolvedPath = path.join(resolvedPath, value[0]);
+						}
 					}
 				}
-			}
 
-			return path.normalize(resolvedPath).split("\\").join("/");
+				return path.normalize(resolvedPath).split("\\").join("/");
+			}
 		}
 
 		// Return the original string if no tool was found
@@ -319,7 +358,9 @@ export class CfsToolManager {
 	}
 
 	/**
-	 * Get the path for a specific tool by ID, optionally specifying a version
+	 * Get the path for a specific tool by ID, optionally specifying a version.
+	 * If no tool matches the ID, or if a version is specified but does not match,
+	 * or if the path lookup fails, return an empty string.
 	 * @param id - The tool ID to look for
 	 * @param version - Optional version string; if not provided, returns the one that exists
 	 * @returns Promise that resolves to the tool path or empty string if not found

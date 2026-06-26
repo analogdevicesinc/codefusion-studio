@@ -25,7 +25,8 @@ import {getProjectInfoList} from './config';
 
 const HEX_PREFIX = '0x';
 const MAX_VALUE_LENGTH = 65535;
-const MAX_TAG_VALUE = 0xffff;
+const MIN_TAG_VALUE = 0x00a0;
+const MAX_TAG_RANGE_VALUE = 0xfffe;
 const MAX_HEX_ADDRESS_LENGTH = 8;
 const VALID_BIN_PATH_REGEX = /\.(bin)$/i;
 const VALID_PEM_PATH_REGEX = /\.(pem)$/i;
@@ -124,21 +125,45 @@ export function validatePath(path: string): string | undefined {
 }
 
 /**
- * Validates the file path for a PEM key file, ensuring it is not empty and has the correct extension.
+ * Validates the file path for a PEM key file, ensuring it is not empty, contains no whitespace,
+ * and has the correct extension.
  * @param path - The file path to validate.
  * @returns An error message if validation fails, or undefined if the path is valid.
  */
 
 export function validatePemPath(path: string): string | undefined {
-	if (!path.trim()) {
+	const trimmedPath = path.trim();
+
+	if (!trimmedPath) {
 		return 'Path is required.';
 	}
 
-	if (!VALID_PEM_PATH_REGEX.test(path)) {
+	if (/\s/.test(trimmedPath)) {
+		return 'Path cannot contain spaces.';
+	}
+
+	if (!VALID_PEM_PATH_REGEX.test(trimmedPath)) {
 		return 'Path must point to a valid key file (.pem).';
 	}
 
 	return undefined;
+}
+
+/**
+ * Checks whether a key name already exists in the list (case-insensitive).
+ * @param name - The key name to check.
+ * @param existingKeyNames - The list of existing key names.
+ * @returns true if the name already exists, false otherwise.
+ */
+export function isDuplicateKeyName(
+	name: string,
+	existingKeyNames: string[]
+): boolean {
+	const normalized = name.trim().toLowerCase();
+
+	return existingKeyNames.some(
+		existing => existing.trim().toLowerCase() === normalized
+	);
 }
 
 /**
@@ -180,8 +205,8 @@ export type CustomTlvValidationMessages = {
 	oddHexLength?: string;
 	hexValueExceedsMax?: string;
 	valueTooLong?: string;
-	tagExceedsMax?: string;
 	tagRequired?: string;
+	tagOutOfRange?: string;
 	valueRequired?: string;
 	tagDuplicate?: string;
 };
@@ -201,10 +226,10 @@ export function validateCustomTlvTag(
 		return messages.tagRequired ?? 'Tag is required.';
 	}
 
-	if (tag > MAX_TAG_VALUE) {
+	if (tag < MIN_TAG_VALUE || tag > MAX_TAG_RANGE_VALUE) {
 		return (
-			messages.tagExceedsMax ??
-			'Tag exceeds the maximum allowed (0xFFFF).'
+			messages.tagOutOfRange ??
+			'Tag must be between 0x00A0 and 0xFFFE.'
 		);
 	}
 
@@ -216,9 +241,7 @@ export function collectAllTlvsInPackage(
 ): CustomTLV[] {
 	if (!pkg) return [];
 
-	return (pkg.images ?? []).flatMap(
-		img => img.customTLVs ?? []
-	);
+	return (pkg.images ?? []).flatMap(img => img.customTLVs ?? []);
 }
 
 /**
@@ -356,6 +379,30 @@ export function validateOptionalBinPath(
 }
 
 /**
+ * Validates an optional binary key path (e.g., AES keys), ensuring it points to a valid .bin file
+ * and does not contain whitespace.
+ * @param path - The file path to validate.
+ * @param message - Optional custom error message to use instead of the default.
+ * @returns An error message if validation fails, or undefined if the path is valid or empty.
+ */
+export function validateOptionalKeyBinPath(
+	path: string | undefined,
+	message?: string
+): string | undefined {
+	if (!path?.trim()) {
+		return undefined;
+	}
+
+	const trimmedPath = path.trim();
+
+	if (/\s/.test(trimmedPath)) {
+		return 'Path cannot contain spaces.';
+	}
+
+	return validateOptionalBinPath(trimmedPath, message);
+}
+
+/**
  * Validates a security counter value, ensuring it is a non-negative integer within the valid range.
  * @param value - The security counter value to validate.
  * @param message - Optional custom error message to use instead of the default.
@@ -395,6 +442,7 @@ export type ImageValidationMessages = {
 	headerSizeRequired?: string;
 	pathRequired?: string;
 	imageVersionRequired?: string;
+	imageVersionInvalid?: string;
 	publicKeyFormatRequired?: string;
 	nameRequired?: string;
 	securityCounterInvalid?: string;
@@ -475,6 +523,33 @@ export function validateImageField(
 }
 
 /**
+ * Validates the image version format (e.g., 1, 1.0, or 1.0.0).
+ * @param version - The version string to validate.
+ * @param message - Optional custom error message.
+ * @returns An error message if validation fails, or undefined if the version is valid.
+ */
+export function validateImageVersion(
+	version: string | undefined,
+	message?: string
+): string | undefined {
+	if (!version?.trim()) {
+		return undefined;
+	}
+
+	// Version pattern: major, major.minor, major.minor.patch, or major.minor.patch+build (e.g., 1, 1.0, 1.0.0, 1.0.0+1)
+	const versionRegex = /^\d+(\.\d+)?(\.\d+)?(\+\d+)?$/;
+
+	if (!versionRegex.test(version.trim())) {
+		return (
+			message ??
+			'Image version must be a valid version format (e.g., 1, 1.0, 1.0.0, 1.0.0+1).'
+		);
+	}
+
+	return undefined;
+}
+
+/**
  * Validates the content/format of image fields that already have values.
  * This runs after required-field checks to catch format and constraint errors
  * (e.g., invalid path extension, header size bounds, slot alignment, capacity).
@@ -530,6 +605,18 @@ function validateImageContent(
 		}
 	}
 
+	// Validate image version format if it has a value
+	if (!errors.imageVersion && image.imageVersion) {
+		const versionError = validateImageVersion(
+			image.imageVersion,
+			messages.imageVersionInvalid
+		);
+
+		if (versionError) {
+			errors.imageVersion = versionError;
+		}
+	}
+
 	validateOptionalImageFields(image, errors, messages);
 }
 
@@ -553,7 +640,7 @@ function validateOptionalImageFields(
 	}
 
 	if (image.aesKwKeyPath) {
-		const aesKwError = validateOptionalBinPath(
+		const aesKwError = validateOptionalKeyBinPath(
 			image.aesKwKeyPath,
 			messages.aesKwKeyPathInvalid
 		);
@@ -564,7 +651,7 @@ function validateOptionalImageFields(
 	}
 
 	if (image.aesGcmKeyPath) {
-		const aesGcmError = validateOptionalBinPath(
+		const aesGcmError = validateOptionalKeyBinPath(
 			image.aesGcmKeyPath,
 			messages.aesGcmKeyPathInvalid
 		);

@@ -1,0 +1,8 @@
+{
+	"name": "Fake zephyr for MAX32657",
+	"description": "",
+	"id": "zephyr",
+	"vendor": "ADI",
+	"version": "4.4.0",
+	"schemaVersion": "1.0"
+}

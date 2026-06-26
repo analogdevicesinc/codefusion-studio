@@ -221,6 +221,78 @@ describe('ImageCard', () => {
 
 			cy.dataTest('conflict-icon').should('not.exist');
 		});
+
+		it('should accept valid version format: single number (1)', () => {
+			const reduxStore = mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-image-version-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('input').clear().type('1');
+				});
+
+			cy.then(() => {
+				const img = getImageFromStore(
+					reduxStore,
+					mockPackage.id,
+					mockImage.id
+				);
+				expect(img?.imageVersion).to.equal('1');
+			});
+
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should accept valid version format: major.minor (1.0)', () => {
+			const reduxStore = mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-image-version-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('input').clear().type('1.0');
+				});
+
+			cy.then(() => {
+				const img = getImageFromStore(
+					reduxStore,
+					mockPackage.id,
+					mockImage.id
+				);
+				expect(img?.imageVersion).to.equal('1.0');
+			});
+
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should show error for invalid version format with text', () => {
+			mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-image-version-control-input`
+			)
+				.shadow()
+				.within(() => {
+					cy.get('input').clear().type('abc');
+				});
+
+			cy.dataTest('conflict-icon').should('exist');
+		});
 	});
 
 	describe('delete', () => {
@@ -782,14 +854,14 @@ describe('ImageCard', () => {
 		const baseTLV: CustomTLV = {
 			id: 'img-tlv-1',
 			name: 'Image TLV 1',
-			tag: 100,
+			tag: 0x00a0,
 			value: '0x0A0B'
 		};
 
 		const duplicateTLV: CustomTLV = {
 			id: 'img-tlv-2',
 			name: 'Image TLV 2',
-			tag: 100,
+			tag: 0x00a0,
 			value: '0xCCDD'
 		};
 

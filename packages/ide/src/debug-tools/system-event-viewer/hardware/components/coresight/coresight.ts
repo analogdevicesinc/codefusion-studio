@@ -317,11 +317,13 @@ export namespace coresight {
     }
 
     /**
-     * Internal implementation of register write. Adds the component base address to the register address.
-     * This method bypasses any overrides in subclasses, ensuring consistent register access.
-     * Subclasses should call this method instead of this.writeRegister() when they need direct access.
+     * Wrapper on top of CfsDebugSession.writeRegister that adds
+     * the component base address to the register address.
+     * @param register RegisterDescription object containing register details
+     * @param values Record containing the values to write to the register
+     * @return Promise that resolves when the write operation is complete
      */
-    protected writeRegisterInternal(
+    protected writeRegister(
       register: RegisterDescription,
       values: Record<string, number>,
     ): Promise<void> {
@@ -337,18 +339,6 @@ export namespace coresight {
         },
         values,
       );
-    }
-
-    /**
-     * Wrapper on top of CfsDebugSession.writeRegister that adds
-     * the component base address to the register address.
-     * Can be overridden by subclasses to add custom behavior (e.g., unlocking).
-     */
-    writeRegister(
-      register: RegisterDescription,
-      values: Record<string, number>,
-    ): Promise<void> {
-      return this.writeRegisterInternal(register, values);
     }
 
     /**
@@ -448,8 +438,7 @@ export namespace coresight {
      */
     async unlock(): Promise<void> {
       // Unlock the component by writing the unlock key to the LAR register.
-      // Uses writeRegisterInternal to bypass any subclass overrides.
-      await this.writeRegisterInternal(coresight.LAR, {
+      await this.writeRegister(coresight.LAR, {
         KEY: 0xc5acce55,
       });
     }
@@ -462,8 +451,7 @@ export namespace coresight {
      */
     async lock(): Promise<void> {
       // Lock the component by writing 0 to the LAR register.
-      // Uses writeRegisterInternal to bypass any subclass overrides.
-      await this.writeRegisterInternal(coresight.LAR, {
+      await this.writeRegister(coresight.LAR, {
         KEY: 0x0,
       });
     }

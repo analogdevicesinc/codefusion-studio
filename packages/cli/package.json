@@ -138,7 +138,7 @@
     "clean-fixtures": "./scripts/clean-test-fixtures.sh",
     "version": "oclif readme && git add README.md"
   },
-  "version": "2.2.0",
+  "version": "2.2.1",
   "bugs": "https://github.com/analogdevicesinc/codefusion-studio/issues",
   "keywords": [
     "oclif"

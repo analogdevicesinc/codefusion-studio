@@ -80,7 +80,7 @@ export {
 // Utilities
 export { CfsVariableResolver } from "./utils/cfs-variable-resolver.js";
 export type { VariableResolver } from "./utils/cfs-variable-resolver.js";
-export { detectToolchain } from "./utils/detect-toolchain.js";
+export { detectToolchain, resolveZephyrSdkRoot } from "./utils/detect-toolchain.js";
 export { globFiles } from "./utils/file-glob.js";
 export type { GlobOptions } from "./utils/file-glob.js";
 export {
@@ -116,9 +116,12 @@ export {
 	parseAICodegenEvents,
 	resolveSource,
 	getCFSCachePath,
-	getValidExtensions,
-	enforceMaxActiveModels
+	getValidExtensions
 } from "./ai-tools/ai-tools-utils.js";
+export {
+	enforceMaxActiveModels,
+	enforceOneActiveBackendPerTarget
+} from "./ai-tools/ai-tools-model-utils.js";
 export {
 	TELEMETRY_APP_ID,
 	TELEMETRY_URL

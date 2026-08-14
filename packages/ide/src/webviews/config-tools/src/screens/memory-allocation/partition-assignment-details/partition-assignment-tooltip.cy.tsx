@@ -13,10 +13,14 @@
  *
  */
 
-import {type Soc} from '../../../../../common/types/soc';
+import {type Soc} from '@common/types/soc';
 
 const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32657-wlp.json')).default as unknown as Soc
+);
+
+const mockNoAliases = formatSocCoreMemoryBlocks(
+	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
 );
 
 import type {CfsConfig} from 'cfs-types';
@@ -42,13 +46,12 @@ const mockedConfigDict = {
 			PluginVersion: '1.0.0',
 			FirmwarePlatform: 'zephyr-4.1',
 			ExternallyManaged: false,
-			Secure: false,
 			Family: 'Cortex-M',
 			Partitions: [
 				{
 					Name: 'TestPartition',
 					StartAddress: '0x01000000',
-					Size: 1048576,
+					Size: 524288,
 					IsOwner: true,
 					Access: 'R',
 					Config: {}
@@ -76,9 +79,9 @@ const mockedConfigDict = {
 			Family: 'Cortex-M',
 			Partitions: [
 				{
-					Name: 'TestPartition',
-					StartAddress: '0x01000000',
-					Size: 1048576,
+					Name: 'TestPartition2',
+					StartAddress: '0x01080001',
+					Size: 524288,
 					IsOwner: false,
 					Access: 'R',
 					Config: {}
@@ -89,48 +92,130 @@ const mockedConfigDict = {
 	]
 } as unknown as CfsConfig;
 
-describe('Partition Assignment Tooltip', () => {
-	const reduxStore = configurePreloadedStore(
-		mock as unknown as Soc,
-		mockedConfigDict
-	);
+const mockedConfigDictNoAliases = {
+	SchemaVersion: '2.1.0',
+	DataModelVersion: '1.0.0',
+	Soc: 'MAX32690',
+	Package: 'WLP',
+	BoardName: 'EvKit_V1',
+	Timestamp: '2025-08-13T12:18:05.080Z',
+	Pins: [],
+	ClockNodes: [],
+	Projects: [
+		{
+			CoreNum: 0,
+			CoreId: 'CM4',
+			ProjectId: 'CM4-NS',
+			PluginId: 'com.analog.project.msdk.plugin',
+			PluginVersion: '1.0.0',
+			FirmwarePlatform: 'msdk',
+			ExternallyManaged: false,
+			Secure: false,
+			Family: 'Cortex-M',
+			Partitions: [
+				{
+					Name: 'TestPartition',
+					StartAddress: '0x20000000',
+					Size: 131072,
+					IsOwner: true,
+					Access: 'R/W/X',
+					Config: {}
+				}
+			],
+			Peripherals: []
+		}
+	]
+} as unknown as CfsConfig;
 
+describe('Partition Assignment Tooltip', () => {
 	describe('Partition Details Page', () => {
-		before(() => {
+		beforeEach(() => {
+			const reduxStore = configurePreloadedStore(
+				mock as unknown as Soc,
+				mockedConfigDict
+			);
 			cy.viewport(1068, 688);
 			cy.mount(<PartitionAssignmentDetails />, reduxStore);
 		});
 
-		it('should only show tooltip for Secure projects', () => {
-			// Make sure Non-Secure projects don't show tooltip
+		it('should show tooltip when alias memory entries exist and Secure flag is not set', () => {
 			cy.dataTest('partition-details-chevron').eq(0).click();
 			cy.dataTest('CM33-NS-partition-card-details-info-icon').should(
-				'not.exist'
+				'exist'
 			);
 
-			// Make sure Secure projects show tooltip
-			cy.dataTest('partition-details-chevron').eq(2).click();
-			cy.dataTest('CM33-S-partition-card-details-info-icon').trigger(
+			cy.dataTest('CM33-NS-partition-card-details-info-icon').trigger(
 				'mouseover'
 			);
 
-			// Make sure tooltip hase correct header
-			cy.dataTest('alias-tooltip-header').should(
-				'have.text',
-				'TESTPARTITION'
-			);
+			// Make sure tooltip has correct header
+			cy.dataTest('alias-tooltip-header')
+				.children()
+				.eq(0)
+				.should('have.text', 'TESTPARTITION');
 
 			// Make sure tooltip shows correct physical address
 			cy.dataTest('alias-tooltip-physical-address')
 				.children()
 				.eq(1)
-				.should('have.text', '0x01000000 - 0x010FFFFF');
+				.should('have.text', '0x01000000 - 0x0107FFFF');
 
 			// Make sure tooltip shows correct software address
 			cy.dataTest('alias-tooltip-software-address')
 				.children()
 				.eq(1)
-				.should('have.text', '0x11000000 - 0x110FFFFF');
+				.should('have.text', '0x11000000 - 0x1107FFFF');
+
+			cy.dataTest('CM33-NS-partition-card-details-info-icon').trigger(
+				'mouseout'
+			);
+		});
+
+		it('should show tooltip for Secure projects', () => {
+			cy.dataTest('partition-details-chevron').eq(1).click();
+			cy.dataTest('CM33-S-partition-card-details-info-icon').trigger(
+				'mouseover'
+			);
+
+			// Make sure tooltip has correct header
+			cy.dataTest('alias-tooltip-header')
+				.children()
+				.eq(0)
+				.should('have.text', 'TESTPARTITION2');
+
+			// Make sure tooltip shows correct physical address
+			cy.dataTest('alias-tooltip-physical-address')
+				.children()
+				.eq(1)
+				.should('have.text', '0x01080001 - 0x01100000');
+
+			// Make sure tooltip shows correct software address
+			cy.dataTest('alias-tooltip-software-address')
+				.children()
+				.eq(1)
+				.should('have.text', '0x11080001 - 0x11100000');
+		});
+	});
+});
+
+describe('Partition Assignment Tooltip - No Alias SoC', () => {
+	let noAliasStore: ReturnType<typeof configurePreloadedStore>;
+
+	describe('Partition Details Page', () => {
+		beforeEach(() => {
+			noAliasStore = configurePreloadedStore(
+				mockNoAliases as unknown as Soc,
+				mockedConfigDictNoAliases
+			);
+			cy.viewport(1068, 688);
+			cy.mount(<PartitionAssignmentDetails />, noAliasStore);
+		});
+
+		it('should not show tooltip for cores without alias memory entries and Secure flag is False', () => {
+			cy.dataTest('partition-details-chevron').eq(0).click();
+			cy.dataTest('CM4-NS-partition-card-details-info-icon').should(
+				'not.exist'
+			);
 		});
 	});
 });

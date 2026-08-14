@@ -29,7 +29,7 @@ export const cfsSettingDefaults: Record<string, unknown> = {
   "cfs.mcp.runOnActivation": false,
   "cfs.traceCapture.configuration": {},
   "cfs.catalogManager.checkForUpdates": true,
-  "cfs.catalogManager.catalogLocation": "${userHome}/cfs/2.2.1/.catalog",
+  "cfs.catalogManager.catalogLocation": "${userHome}/cfs/2.3.0/.catalog",
   "cfs.cmsis.root": "${userHome}/AppData/Local/Analog/Packs",
   "cfs.cmsis.pack": null,
   "cfs.cmsis.svdFile": "",

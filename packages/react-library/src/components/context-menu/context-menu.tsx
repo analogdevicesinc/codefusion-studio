@@ -16,6 +16,8 @@
 const DEFAULT_DISTANCE_TO_ANCHOR = 4;
 
 import {
+	type KeyboardEvent,
+	type MouseEvent,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -24,10 +26,14 @@ import {
 } from 'react';
 import styles from './context-menu.module.scss';
 
+type MenuOptionClickEvent =
+	| MouseEvent<HTMLLIElement>
+	| KeyboardEvent<HTMLLIElement>;
+
 export type MenuOption = {
 	id: string;
 	label: string;
-	onClick?: () => void;
+	onClick?: (event: MenuOptionClickEvent) => void;
 };
 
 export type ContextMenuProps = {
@@ -111,7 +117,7 @@ export function ContextMenu({
 
 	// Close menu on outside click
 	useEffect(() => {
-		function handleClickOutside(event: MouseEvent) {
+		function handleClickOutside(event: Event) {
 			const target = event.target as HTMLElement;
 			if (open && !target.closest(`.${styles.panel}`)) {
 				onClose();
@@ -126,7 +132,8 @@ export function ContextMenu({
 
 	// handle keyboard events
 	useEffect(() => {
-		function handleEscape(e: KeyboardEvent) {
+		function handleEscape(e: Event) {
+			if (!(e instanceof KeyboardEvent)) return;
 			if (e.key === 'Escape') {
 				e.preventDefault();
 				onClose();
@@ -146,8 +153,8 @@ export function ContextMenu({
 	}, [onClose]);
 
 	const handleClickOption = useCallback(
-		(option: MenuOption) => {
-			option.onClick?.();
+		(option: MenuOption, event: MenuOptionClickEvent) => {
+			option.onClick?.(event);
 			if (onSelect) {
 				onSelect(option);
 			}
@@ -188,11 +195,11 @@ export function ContextMenu({
 						data-test={`event-sources:options-menu:item:${option.id}`}
 						onKeyDown={e => {
 							if (e.key === 'Enter' || e.key === ' ') {
-								handleClickOption(option);
+								handleClickOption(option, e);
 							}
 						}}
-						onClick={() => {
-							handleClickOption(option);
+						onClick={e => {
+							handleClickOption(option, e);
 						}}
 					>
 						<div className={styles.label}>{option.label}</div>

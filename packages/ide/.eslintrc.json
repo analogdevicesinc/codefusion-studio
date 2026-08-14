@@ -65,10 +65,11 @@
   },
   "ignorePatterns": [
     "node_modules/**/*",
-    "vite.config.*.ts",
-    "vite.config.ts",
+    "vite.config.*.mts",
+    "vite.config.mts",
     "vite-*.ts",
     "vite.plugin.*.ts",
+    "native-module-closure.ts",
     "out/**/*",
     "cypress/**/*",
     "cypress.config.ts",

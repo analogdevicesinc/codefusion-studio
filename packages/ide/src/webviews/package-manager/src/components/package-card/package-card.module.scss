@@ -1,0 +1,220 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.container {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	align-self: stretch;
+	box-sizing: border-box;
+	border-radius: layout.$border-radius-2;
+	border: layout.$border-width-1 solid
+		var(--vscode-commandCenter-border);
+	margin: layout.$border-width-1;
+
+	&.active {
+		margin: 0px;
+		border-radius: layout.$border-radius-2;
+		border: layout.$border-width-2 solid colors.$active-border;
+	}
+}
+
+.cardCheckboxContainer {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.checkboxError {
+	--checkbox-border: #{colors.$error-border};
+}
+
+.cardContent {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	flex: 1 0 0;
+	border-left: layout.$border-width-1 solid colors.$default-border;
+}
+
+.cardHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	align-self: stretch;
+}
+
+.nameAndBadge {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: layout.$spacing-2;
+}
+
+.nameContainer {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-2;
+	flex-direction: row;
+	align-items: center;
+}
+
+.packageName {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 20ch;
+}
+
+.errorIcon {
+	color: colors.$error;
+}
+
+.loadingIcon {
+	--progress-background: #{colors.$foreground};
+	height: layout.$spacing-5;
+	width: layout.$spacing-5;
+}
+
+.status {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: layout.$spacing-3;
+}
+
+.versionSelection {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.errorMessage {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: colors.$error-foreground;
+	@include fonts.body-b1;
+}
+
+.packageDetailsCard {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+	border-radius: layout.$border-radius-2;
+	border: layout.$border-width-1 solid colors.$default-border;
+}
+
+.packageDetailsRow {
+	display: flex;
+	align-items: baseline;
+	gap: layout.$spacing-5;
+	align-self: stretch;
+	flex: 1 0 0;
+	flex-direction: row;
+}
+
+.detailsLoading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	align-self: stretch;
+	min-height: 80px;
+}
+
+.rowHeader {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	min-width: 120px;
+}
+
+.rowValue {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	align-self: stretch;
+	display: flex;
+	flex-direction: row;
+	flex: 1 0 0;
+	word-break: break-all;
+}
+
+.version {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: layout.$spacing-2;
+}
+
+.okIcon {
+	color: colors.$debug-icon-start-foreground;
+}
+
+.chevronDown {
+	transform: rotate(90deg);
+}
+
+.chevronUp {
+	transform: rotate(-90deg);
+}
+
+.versionDropdown {
+	display: flex;
+	width: 200px;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.requiredVersion {
+	display: flex;
+	height: 25px;
+	flex-direction: column;
+	justify-content: center;
+	@include fonts.label-l3;
+	color: colors.$description-foreground;
+}
+
+.link {
+	display: flex;
+	align-items: center;
+	margin-left: layout.$spacing-5;
+	gap: layout.$spacing-3;
+	background: none;
+	border: none;
+	padding: 0;
+	text-decoration: none;
+	color: colors.$active-cta;
+	cursor: pointer;
+
+	&:hover {
+		text-decoration: underline;
+		color: var(--vscode-textLink-activeForeground);
+	}
+
+	&:focus-visible {
+		outline: layout.$border-width-2 solid colors.$focus-border;
+		outline-offset: layout.$spacing-1;
+	}
+}

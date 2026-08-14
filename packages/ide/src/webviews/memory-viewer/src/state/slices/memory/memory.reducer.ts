@@ -19,6 +19,7 @@ import {
 	type PayloadAction
 } from '@reduxjs/toolkit';
 import {
+	getMemoryAtSymbol,
 	getMemoryData,
 	getSessionList,
 	type MemoryDataResponse
@@ -70,6 +71,27 @@ export const fetchMemoryData = createAsyncThunk(
 		length: number;
 	}) => {
 		const response = await getMemoryData(sessionId, length, address);
+
+		return response;
+	}
+);
+
+export const fetchMemoryAtSymbol = createAsyncThunk(
+	'memory/fetchMemoryAtSymbol',
+	async ({
+		sessionId,
+		length,
+		expression
+	}: {
+		sessionId: string;
+		length: number;
+		expression: string;
+	}) => {
+		const response = await getMemoryAtSymbol(
+			sessionId,
+			length,
+			expression
+		);
 
 		return response;
 	}
@@ -210,6 +232,26 @@ const MemorySlice = createSlice({
 				state.loading = false;
 				state.error = action.error.message;
 				state.reachedEndOfMemory = true;
+			})
+			.addCase(fetchMemoryAtSymbol.pending, state => {
+				state.loading = true;
+				state.error = undefined;
+				state.reachedEndOfMemory = false;
+			})
+			.addCase(
+				fetchMemoryAtSymbol.fulfilled,
+				(state, action: PayloadAction<MemoryDataResponse>) => {
+					state.loading = false;
+					const {address, data} = action.payload;
+					state.memoryBytes = {
+						address,
+						data
+					};
+				}
+			)
+			.addCase(fetchMemoryAtSymbol.rejected, (state, action) => {
+				state.loading = false;
+				state.error = action.error.message;
 			});
 	}
 });

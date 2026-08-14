@@ -14,6 +14,8 @@
  */
 
 import { expect } from "chai";
+import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 import { CfsShellEnvProvider } from "../../src/providers/cfs-shell-env-provider.js";
@@ -108,6 +110,207 @@ describe("CfsShellEnvProvider", function () {
 			const result = provider.getToolEnvVars([]);
 
 			expect(result).to.deep.equal({});
+		});
+
+		it("should set env var directly when append=true and no prior value", function () {
+			const tools: ToolInfo[] = [
+				{
+					name: "arm-gcc",
+					description: "ARM GCC Toolchain",
+					id: "arm-gcc",
+					vendor: "ARM",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/arm-gcc",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/arm-gcc/bin",
+					envVars: [
+						{
+							name: "MY_VAR",
+							value: "first_value",
+							isPath: false,
+							append: true
+						}
+					]
+				}
+			];
+
+			const result = provider.getToolEnvVars(tools);
+
+			expect(result).to.have.property("MY_VAR", "first_value");
+		});
+
+		it("should append env var with delimiter when append=true and value already exists", function () {
+			const tools: ToolInfo[] = [
+				{
+					name: "tool-a",
+					description: "Tool A",
+					id: "tool-a",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-a",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-a/bin",
+					envVars: [
+						{
+							name: "SHARED_VAR",
+							value: "value_a",
+							isPath: false,
+							append: true
+						}
+					]
+				},
+				{
+					name: "tool-b",
+					description: "Tool B",
+					id: "tool-b",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-b",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-b/bin",
+					envVars: [
+						{
+							name: "SHARED_VAR",
+							value: "value_b",
+							isPath: false,
+							append: true
+						}
+					]
+				}
+			];
+
+			const result = provider.getToolEnvVars(tools);
+
+			expect(result.SHARED_VAR).to.equal(
+				`value_a${path.delimiter}value_b`
+			);
+		});
+
+		it("should resolve path before appending when append=true and isPath=true", function () {
+			const tools: ToolInfo[] = [
+				{
+					name: "tool-a",
+					description: "Tool A",
+					id: "tool-a",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-a",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-a/bin",
+					envVars: [
+						{
+							name: "EXTRA_PATHS",
+							value: "lib",
+							isPath: true,
+							append: true
+						}
+					]
+				},
+				{
+					name: "tool-b",
+					description: "Tool B",
+					id: "tool-b",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-b",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-b/bin",
+					envVars: [
+						{
+							name: "EXTRA_PATHS",
+							value: "lib",
+							isPath: true,
+							append: true
+						}
+					]
+				}
+			];
+
+			const result = provider.getToolEnvVars(tools);
+
+			expect(result.EXTRA_PATHS).to.equal(
+				`${path.join("/opt/tools/tool-a", "lib")}${path.delimiter}${path.join("/opt/tools/tool-b", "lib")}`
+			);
+		});
+
+		it("should set env var directly when append is a custom delimiter string and no prior value", function () {
+			const tools: ToolInfo[] = [
+				{
+					name: "tool-a",
+					description: "Tool A",
+					id: "tool-a",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-a",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-a/bin",
+					envVars: [
+						{
+							name: "MY_VAR",
+							value: "only_value",
+							isPath: false,
+							append: ","
+						}
+					]
+				}
+			];
+
+			const result = provider.getToolEnvVars(tools);
+
+			expect(result).to.have.property("MY_VAR", "only_value");
+		});
+
+		it("should use custom delimiter string when appending across tools", function () {
+			const tools: ToolInfo[] = [
+				{
+					name: "tool-a",
+					description: "Tool A",
+					id: "tool-a",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-a",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-a/bin",
+					envVars: [
+						{
+							name: "FLAGS",
+							value: "valueA",
+							isPath: false,
+							append: ","
+						}
+					]
+				},
+				{
+					name: "tool-b",
+					description: "Tool B",
+					id: "tool-b",
+					vendor: "Vendor",
+					version: "1.0.0",
+					schemaVersion: "1.0.0",
+					rootPath: "/opt/tools/tool-b",
+					resolvedPaths: [],
+					binaryPath: "/opt/tools/tool-b/bin",
+					envVars: [
+						{
+							name: "FLAGS",
+							value: "valueB",
+							isPath: false,
+							append: ","
+						}
+					]
+				}
+			];
+
+			const result = provider.getToolEnvVars(tools);
+
+			expect(result).to.have.property("FLAGS", "valueA,valueB");
 		});
 	});
 
@@ -258,14 +461,42 @@ describe("CfsShellEnvProvider", function () {
 		});
 
 		it("should derive ZEPHYR_SDK_INSTALL_DIR from sdkPath when zephyrSdkPath not provided", function () {
-			const env = provider.getBaseShellEnvironment([], {
-				sdkPath: "/opt/cfs-sdk"
-			});
-
-			expect(env).to.have.property(
-				"ZEPHYR_SDK_INSTALL_DIR",
-				path.join("/opt/cfs-sdk", "Tools", "zephyr-sdk")
+			const sdkPath = fs.mkdtempSync(
+				path.join(os.tmpdir(), "cfs-sdk-")
 			);
+			const installerSdk = path.join(sdkPath, "Tools", "zephyr-sdk");
+			fs.mkdirSync(installerSdk, { recursive: true });
+
+			try {
+				const env = provider.getBaseShellEnvironment([], {
+					sdkPath
+				});
+
+				expect(env).to.have.property(
+					"ZEPHYR_SDK_INSTALL_DIR",
+					installerSdk
+				);
+			} finally {
+				fs.rmSync(sdkPath, { recursive: true, force: true });
+			}
+		});
+
+		it("should not set ZEPHYR_SDK_INSTALL_DIR when the installer zephyr-sdk directory does not exist", function () {
+			// Use a real temp dir but point sdkPath at a guaranteed-missing
+			// subdirectory so the test does not depend on machine state.
+			const tmpDir = fs.mkdtempSync(
+				path.join(os.tmpdir(), "cfs-sdk-")
+			);
+
+			try {
+				const env = provider.getBaseShellEnvironment([], {
+					sdkPath: path.join(tmpDir, "missing")
+				});
+
+				expect(env).to.not.have.property("ZEPHYR_SDK_INSTALL_DIR");
+			} finally {
+				fs.rmSync(tmpDir, { recursive: true, force: true });
+			}
 		});
 
 		it("should use zephyrSdkPath for ZEPHYR_SDK_INSTALL_DIR when sdkPath is provided", function () {

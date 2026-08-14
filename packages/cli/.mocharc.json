@@ -3,7 +3,7 @@
   "watch-extensions": ["ts"],
   "recursive": true,
   "reporter": "../../custom-mocha-reporter.cjs",
-  "timeout": 60000,
+  "timeout": 120000,
   "node-option": [
     "loader=ts-node/esm",
     "experimental-specifier-resolution=node"

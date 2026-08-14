@@ -17,6 +17,12 @@ import {Args} from '@oclif/core';
 import {BaseCommand} from '../../utils/base-command.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 
+export const pkgListCacheDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
+
 export default class CfsPackageListCache extends BaseCommand<
   typeof CfsPackageListCache
 > {
@@ -33,7 +39,7 @@ export default class CfsPackageListCache extends BaseCommand<
   static description = 'List cached packages.';
 
   async run(): Promise<void> {
-    const packman = await getPackageManager();
+    const packman = await pkgListCacheDeps.getPackageManager();
     const {args} = this;
 
     const packageRefs = await packman.listCache(args.pattern);

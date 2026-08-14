@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,22 +109,17 @@ export default class PluginList extends Command {
 
     // Create filter function based on provided flags
     const filter = (pluginInfo: CfsPluginInfo): boolean => {
-      // Filter by SoC
-      if (flags.soc) {
+      // Filter by SoC and board
+      if (flags.soc || flags.board) {
         const socMatch = pluginInfo.supportedSocs?.some(
           (soc) =>
-            soc.name?.toLowerCase() === flags.soc!.toLowerCase()
+            (!flags.soc ||
+             soc.name?.toLowerCase() === flags.soc!.toLowerCase()) &&
+            (!flags.board ||
+             !soc.board ||
+             soc.board?.toLowerCase() === flags.board!.toLowerCase())
         );
         if (!socMatch) return false;
-      }
-
-      // Filter by board
-      if (flags.board) {
-        const boardMatch = pluginInfo.supportedSocs?.some(
-          (soc) =>
-            soc.board?.toLowerCase() === flags.board!.toLowerCase()
-        );
-        if (!boardMatch) return false;
       }
 
       // Filter by service

@@ -17,24 +17,26 @@ import { NotificationType, RequestType } from "vscode-messenger-common";
 import { AIModelCfsWorkspace } from "cfs-types";
 
 export const getWorkspaceConfig: RequestType<
-	void,
-	Partial<AIModelCfsWorkspace>
+  void,
+  Partial<AIModelCfsWorkspace>
 > = {
-	method: "getWorkspaceConfig",
+  method: "getWorkspaceConfig",
 };
 
 export const updateWorkspaceConfig: NotificationType<
-	Partial<AIModelCfsWorkspace>
+  Partial<AIModelCfsWorkspace>
 > = {
-	method: "updateWorkspaceConfig",
+  method: "updateWorkspaceConfig",
 };
 
-export const generateWorkspace: NotificationType<void> = {
-	method: "generateWorkspace",
+export const generateWorkspace: NotificationType<
+  Partial<AIModelCfsWorkspace> | undefined
+> = {
+  method: "generateWorkspace",
 };
 
 export const getCatalog: RequestType<void, unknown> = {
-	method: "getCatalog",
+  method: "getCatalog",
 };
 
 /**

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@ import {Args, Command} from '@oclif/core';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
+export const pkgDeleteRemoteDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
+
 export default class CfsPackageDeleteRemote extends Command {
   static args = {
     remoteName: Args.string({
@@ -29,9 +35,13 @@ export default class CfsPackageDeleteRemote extends Command {
     'Unregister a package server so it is no longer considered for package retrieval.';
 
   async run(): Promise<void> {
-    const packman = await getPackageManager({
-      includeCredentialProvider: true
-    });
+    const packman = await pkgDeleteRemoteDeps.getPackageManager(
+      {
+        useRemotes: true
+      },
+      undefined,
+      this
+    );
     const {args} = await this.parse(CfsPackageDeleteRemote);
 
     await packman.deleteRemote(args.remoteName);

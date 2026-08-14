@@ -40,10 +40,8 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
   after(async () => {
     await view.switchBack();
-    await UIUtils.sleep(2000);
     console.log("Switched back to close editors");
     await workbench.executeCommand("View: Revert and Close Editor");
-    await UIUtils.sleep(2000);
     console.log("Closed all editors");
   });
 
@@ -55,7 +53,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     browser = VSBrowser.instance;
     await workbench.executeCommand("cfs create workspace");
     console.log("new workspace command executed");
-    await UIUtils.sleep(5000);
     await UIUtils.dismissAllNotifications(workbench, browser);
     console.log("Dismissed all notifications");
 
@@ -106,7 +103,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
-    await UIUtils.sleep(2000);
     // Manual Template Configuration Screen
     console.log("TEMPLATE SELECTION SCREEN - MANUAL CONFIGURATION");
     console.log("Waiting for manual configure option");
@@ -114,13 +110,11 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
       view,
       "workspaceOptions:card:manualConfig",
     );
-    await UIUtils.sleep(2000);
     console.log("Found manual configure option");
     const templateName = await manualConfigure.getAttribute("id");
     console.log("Template name:", templateName);
     expect(templateName).to.include("custom");
     await UIUtils.clickElement(view, manualConfigure);
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
     // Selection of arm cortex on riscv  and  cores Screen
     const armCores = await UIUtils.waitForElement(
@@ -161,7 +155,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     await UIUtils.clickElement(view, msdk);
 
-    await UIUtils.sleep(2000);
     const boarddefaultname = await UIUtils.findWebElement(
       view,
       By.xpath(
@@ -172,7 +165,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     const boardname = await boarddefaultname.getAttribute("current-value");
     console.log("Board name arm cortex is: " + boardname);
     expect(boardname).to.equal(TextData.evKitText);
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
     // MSDK Plugin Selection for RISCV cores
     const msdkRiscv = await UIUtils.dataTest(
@@ -192,9 +184,7 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
     const getBoardNameRiscv =
       await boardNameRiscv.getAttribute("current-value");
     console.log("Board name riscv is: " + getBoardNameRiscv);
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
-    await UIUtils.sleep(2000);
 
     // Workspace Input Screen
     console.log("WORKSPACE NAME DETAILS SCREEN");
@@ -221,7 +211,6 @@ describe("Workspace MAX32690 creation manual configuration MSDK", () => {
 
     console.log("Found create workspace button");
     await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
-    await UIUtils.sleep(2000);
     // Assert that the workspace is created successfully
     const userHome = os.homedir();
     const location = `${userHome}/cfs/${TextData.cfsideversion}`;

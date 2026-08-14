@@ -1,7 +1,7 @@
 {
     "$schema" : "https://json-schema.org/draft/2020-12/schema",
-    "title" : "CFS Data Model Schema version 1.4.0",
-    "description" : "Schema for CFS Data Model version 1.4.0.",
+    "title" : "CFS Data Model Schema version 1.5.0",
+    "description" : "Schema for CFS Data Model version 1.5.0.",
     "type" : "object",
     "properties" : {
         "Copyright" : {
@@ -22,7 +22,7 @@
         "Schema" : {
             "description" : "The version number of the data model schema.",
             "type" : "string",
-            "pattern" : "^1\\.[234]\\.[0-9]+$"
+            "pattern" : "^1\\.[2345]\\.[0-9]+$"
         },
         "Timestamp" : {
             "description" : "The time of generation of the file.",
@@ -825,6 +825,98 @@
                         "properties": {
                         },
                         "additionalProperties": false
+                    },
+                    "SRU" : {
+                        "description": "The information defining the SRU routings for this peripheral.",
+                        "type": "object",
+                        "properties": {
+                             "Inputs": {
+                                "description": "The SRU inputs for this peripheral.",
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "Name": {
+                                            "description": "The name of the SRU input.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 20
+                                        },
+                                        "Description": {
+                                            "description": "The description of the SRU input.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 80
+                                        },
+                                        "Config": {
+                                            "description": "The available configuration options for the SRU input.",
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "description": "The property name gives the control identifier.",
+                                                "type": "object",
+                                                "additionalProperties": {
+                                                    "description": "The property name gives the enum value of the control.",
+                                                    "$ref": "#/$defs/programmingSequence"
+                                                }
+                                            }
+                                        },
+                                        "Group": {
+                                            "description": "If provided, sub-divide the inputs into smaller groups in the UI.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 20
+                                        },
+                                        "IsPinBufferEnable": {
+                                            "description": "True if this SRU input is the signal that controls the direction of the pin buffer.",
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "required" : [
+                                        "Name",
+                                        "Description",
+                                        "Config"
+                                    ],
+                                    "additionalProperties" : false
+                                }
+                             },
+                            "Outputs": {
+                                "description": "The SRU outputs for this peripheral.",
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "Name": {
+                                            "description": "The name of the SRU output.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 20
+                                        },
+                                        "Description": {
+                                            "description": "The description of the SRU output.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 80
+                                        },
+                                        "Group": {
+                                            "description": "If provided, sub-divide the outputs into smaller groups in the UI.",
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 20
+                                        }
+                                    },
+                                    "required" : [
+                                        "Name",
+                                        "Description"
+                                    ],
+                                    "additionalProperties" : false
+                                }
+                            }
+                        },
+                        "anyOf": [
+                            { "required": ["Inputs"] },
+                            { "required": ["Outputs"] }
+                        ],
+                        "additionalProperties": false
                     }
                 },
                 "required" : [
@@ -1496,6 +1588,16 @@
                             "WithPrevious"
                         ]
                     },
+                    "SlicePosition" : {
+                        "description" : "Bit offset within the field at which the slice starts. Must be used together with SliceWidth.",
+                        "type" : "integer",
+                        "minimum" : 0
+                    },
+                    "SliceWidth" : {
+                        "description" : "Width in bits of the slice within the field. Must be used together with SlicePosition.",
+                        "type" : "integer",
+                        "minimum" : 1
+                    },
                     "Wait" : {
                         "description" : "Wait for a given number of milliseconds after the step.",
                         "type" : "integer"
@@ -1504,6 +1606,10 @@
                 "required" : [
                     "Operation"
                 ],
+                "dependentRequired" : {
+                    "SlicePosition" : ["SliceWidth"],
+                    "SliceWidth" : ["SlicePosition"]
+                },
                 "additionalProperties" : false
             }
         },

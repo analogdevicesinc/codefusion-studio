@@ -12,6 +12,7 @@ const projectOverrideDescriptors = [
 	{ pattern: 'elf-explorer', tsconfig: 'elf.tsconfig.json' },
 	{ pattern: 'home-page', tsconfig: 'home.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
 	{ pattern: 'sigma-studio-plus-project', tsconfig: 'sigma-studio-plus-project.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
+	{ pattern: 'package-manager', tsconfig: 'package-manager.tsconfig.json', extraExcludes: ['lib/**/*.js'] },
 	{ pattern: 'system-event-viewer', tsconfig: 'system-event-viewer.tsconfig.json' },
 	{ pattern: 'system-event-viewer-treeview', tsconfig: 'system-event-viewer-treeview.tsconfig.json' },
 	{ pattern: 'common', tsconfig: 'common/tsconfig.json', extraExcludes: ['lib/**/*.js'] }
@@ -19,7 +20,7 @@ const projectOverrideDescriptors = [
 
 const projectOverrides = projectOverrideDescriptors.map(({ pattern, tsconfig, extraExcludes = [] }) => ({
 	files: [`${pattern}/**/*.ts`, `${pattern}/**/*.tsx`],
-	excludedFiles: [`${pattern}/**/*.d.ts`, ...extraExcludes.map(exclude => `${pattern}/${exclude}`)],
+	excludedFiles: [`${pattern}/**/*.d.ts`, `${pattern}/**/*.cy.ts`, `${pattern}/**/*.cy.tsx`, ...extraExcludes.map(exclude => `${pattern}/${exclude}`)],
 	parserOptions: {
 		project: [path.resolve(__dirname, tsconfig)],
 		tsconfigRootDir: __dirname
@@ -106,6 +107,10 @@ module.exports = {
 		// 3. Cypress rules overrides last so specs can use more lenient rules.
 		{
 			files: ['./**/*.cy.ts', './**/*.cy.tsx'],
+			parserOptions: {
+				project: [path.resolve(__dirname, 'tsconfig.json')],
+				tsconfigRootDir: __dirname
+			},
 			rules: {
 				'@typescript-eslint/no-unsafe-argument': 'off',
 				'cypress/no-assigning-return-values': 'off',

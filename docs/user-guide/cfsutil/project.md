@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Project
 author: Analog Devices
-date: 2026-06-11
+date: 2026-07-07
 ---
 
 # Project
@@ -31,7 +31,7 @@ Refer to the example below. The `-p` flag must match the **Name** value of the p
   "Package": "WLP",
   "Board": "AD-APARD32690-SL",
   "WorkspaceName": "Apard_ws",  // Ensure that the workspace already exists
-  "Location": "C:\\Users\\<username>\\cfs\\2.2.1",
+  "Location": "C:\\Users\\<username>\\cfs\\2.3.0",
   "WorkspacePluginId": "",
   "WorkspacePluginVersion": "",
   "Projects": [
@@ -56,8 +56,8 @@ Refer to the example below. The `-p` flag must match the **Name** value of the p
       }
     }
   ],
-  "DataModelVersion": "1.3.759",
-  "DataModelSchemaVersion": "1.2.0"
+  "DataModelVersion": "1.3.893",
+  "DataModelSchemaVersion": "1.5.0"
 }
 ```
 

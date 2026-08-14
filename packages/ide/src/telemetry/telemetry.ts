@@ -31,25 +31,89 @@ import { v4 as uuid } from "uuid";
 import { promisify } from "node:util";
 import { exec } from "node:child_process";
 import { AuthConfigParser } from "../utils/auth-config";
+import { logger } from "../utils/logger";
 
+let workspaceId: string | undefined;
+let isWorkspaceIdInitialized = false;
+
+// Key under which the random per-workspace telemetry id is persisted in
+// workspaceState so it stays stable across sessions for a given workspace.
+const WORKSPACE_ID_STATE_KEY = `${EXTENSION_ID}.telemetry.workspaceId`;
+
+/**
+ * Returns a TelemetryManager instance configured with the current user's telemetry settings.
+ *
+ * @returns The TelemetryManager instance.
+ */
 export const getTelemetryManager = async () => {
-  const config = vscode.workspace.getConfiguration(EXTENSION_ID);
-  const isGlobalTelemetryEnabled = vscode.env.isTelemetryEnabled;
-  const isCfsTelemetryEnabled = config.get(CFS_TELEMETRY_ENABLE) as boolean;
-  const isTelemetryEnabled = isGlobalTelemetryEnabled && isCfsTelemetryEnabled;
-  const userId = await getUserId();
-  const userType = await determineUserType(isTelemetryEnabled);
-  const vscodeVersion = vscode.version;
-  const sessionId = vscode.env.sessionId;
+  try {
+    const config = vscode.workspace.getConfiguration(EXTENSION_ID);
+    const isGlobalTelemetryEnabled = vscode.env.isTelemetryEnabled;
+    const isCfsTelemetryEnabled = config.get(CFS_TELEMETRY_ENABLE) as boolean;
+    const isTelemetryEnabled =
+      isGlobalTelemetryEnabled && isCfsTelemetryEnabled;
+    const userId = await getUserId();
+    const userType = await determineUserType(isTelemetryEnabled);
+    const vscodeVersion = vscode.version;
+    const sessionId = vscode.env.sessionId;
 
-  return new TelemetryManager(
-    isTelemetryEnabled,
-    Utils.getExtensionVersion() ?? "",
-    vscodeVersion,
-    userId,
-    userType ?? UserType.EXTERNAL,
-    sessionId,
-  );
+    return new TelemetryManager(
+      isTelemetryEnabled,
+      Utils.getExtensionVersion() ?? "",
+      vscodeVersion,
+      userId,
+      userType ?? UserType.EXTERNAL,
+      sessionId,
+      workspaceId,
+    );
+  } catch (error) {
+    logger.warn(
+      `Failed to initialize TelemetryManager: ${error}. Telemetry will not function correctly.`,
+    );
+    return {
+      logAction: async (
+        actionName: string,
+        _metadata?: Record<string, any>,
+      ) => {
+        logger.warn(
+          `[TelemetryManager] Telemetry failed to initialize. Action "${actionName}" not logged.`,
+        );
+      },
+    } as TelemetryManager;
+  }
+};
+
+/**
+ * Initializes a random, per-workspace telemetry identifier and caches it for
+ * the extension-host lifetime. Intended to be called once during activation.
+ *
+ * The random workspace ID is stored in the extension's workspaceState so that it remains stable across sessions for a given workspace. This allows telemetry events to be associated with a specific workspace without exposing the actual workspace path.
+ * @param context - The extension context providing workspace-scoped storage.
+ */
+export const initializeWorkspaceId = (
+  context: vscode.ExtensionContext,
+): void => {
+  if (isWorkspaceIdInitialized) {
+    return;
+  }
+
+  // Only assign a workspace id when a workspace or folder is actually open.
+  const hasWorkspace =
+    vscode.workspace.workspaceFile !== undefined ||
+    (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
+
+  if (hasWorkspace) {
+    let id = context.workspaceState.get<string>(WORKSPACE_ID_STATE_KEY);
+
+    if (!id) {
+      id = uuid();
+      void context.workspaceState.update(WORKSPACE_ID_STATE_KEY, id);
+    }
+
+    workspaceId = id;
+  }
+
+  isWorkspaceIdInitialized = true;
 };
 
 /**
@@ -75,7 +139,9 @@ const getUserType = async (): Promise<UserType | undefined> => {
   const config = vscode.workspace.getConfiguration(EXTENSION_ID);
   const userType = config.get(CFS_TELEMETRY_USER_TYPE) as UserType;
 
-  return userType === UserType.INTERNAL || userType === UserType.EXTERNAL ? userType : undefined;
+  return userType === UserType.INTERNAL || userType === UserType.EXTERNAL
+    ? userType
+    : undefined;
 };
 
 /**
@@ -105,7 +171,6 @@ const generateUserId = async (
 export const determineUserType = async (
   isTelemetryEnabled: boolean,
 ): Promise<UserType | undefined> => {
-
   if (!isTelemetryEnabled) {
     return undefined;
   }
@@ -135,7 +200,7 @@ export const determineUserType = async (
       }
     }
   } catch (error) {
-    console.warn(
+    logger.warn(
       "Failed to retrieve auth session, falling back to system checks for user type",
       error,
     );
@@ -180,7 +245,10 @@ const runInternalCheck = async (
 ): Promise<string | undefined> => {
   try {
     const execPromise = promisify(exec);
-    const { stdout } = await execPromise(command, { windowsHide: true, timeout: 5000 });
+    const { stdout } = await execPromise(command, {
+      windowsHide: true,
+      timeout: 5000,
+    });
     return stdout;
   } catch (error) {
     return undefined;

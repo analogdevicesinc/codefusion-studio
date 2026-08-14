@@ -162,6 +162,7 @@ const peripheralsSlice = createSlice({
 				peripheral: string;
 				signalName: string;
 				projectId: string;
+				discardPersistence?: boolean;
 			}>
 		) {
 			if (

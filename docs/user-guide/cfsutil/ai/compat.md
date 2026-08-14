@@ -1,7 +1,7 @@
 ---
 description: Check model compatibility with a target SoC and core using cfsutil ai compat.
 author: Analog Devices
-date: 2026-05-18
+date: 2026-07-10
 ---
 
 # Compat
@@ -21,15 +21,24 @@ cfsutil ai compat [--format text|json] [-s <value>] [-p <value>] [-c <value>] [-
 To run the `cfsutil ai compat` command, you must provide:
 
 - The model path with `--model` (or `-m`)
-- The target SoC with `--soc` (or `-s`) and core with `--core` (or `-c`)
+- The target SoC with `--soc` (or `-s`)
+
+`--core` is optional for SoCs with a single AI-capable core — it is inferred automatically.
 
 ```sh
-cfsutil ai compat --soc <soc> --core <core> --model <path/to/model_file>
+cfsutil ai compat --soc <soc> --model <path/to/model_file>
 ```
+
+!!! tip
+    If the SoC has exactly one AI-capable core, `--core` is inferred automatically. If the SoC has multiple cores but only one supports AI, it is still inferred — but a warning is shown confirming which core was selected. If multiple AI-capable cores are available, you must specify `--core`. Run [`cfsutil socs info <soc> --cores`](../socs.md) to see available cores for a given SoC.
 
 !!! example
     ```sh
-    cfsutil ai compat --soc MAX32690 --core CM4 --model model.tflite
+    # --core inferred (MAX32657 has one AI-capable core)
+    cfsutil ai compat --soc MAX32657 --model model.tflite
+
+    # --core required (ADSP-SC835 has two AI-capable cores)
+    cfsutil ai compat --soc ADSP-SC835 --core FX --model model.tflite
     ```
 
 ## Flags
@@ -37,7 +46,7 @@ cfsutil ai compat --soc <soc> --core <core> --model <path/to/model_file>
 | Flag | Short | Description |
 | ---- | ----- | ----------- |
 | `--acc` | `-a` | Target accelerator. |
-| `--core` | `-c` | Target core. |
+| `--core` | `-c` | Target core (optional when only one AI-capable core exists for the SoC — inferred automatically). |
 | `--dataset` | `-d` | Path or URL to the dataset file to use for compatibility analysis. |
 | `--model` | `-m` | Path or URL to the model file. |
 | `--package` | `-p` | SoC package. |

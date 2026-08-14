@@ -1,0 +1,139 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.container {
+	font-size: fonts.$font-size-small;
+	color: colors.$default-foreground;
+}
+
+.highlight {
+	border-bottom: 1px solid colors.$default-border;
+}
+
+.header {
+	padding: 20px;
+	align-items: center;
+	gap: 10px;
+	align-self: stretch;
+
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	box-sizing: border-box;
+
+	border-bottom: 1px solid var(--vscode-commandCenter-inactiveBorder);
+
+	.leftSection {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.titleContainer {
+		.title {
+			overflow: hidden;
+			color: var(--vscode-editor-foreground);
+			text-overflow: ellipsis;
+			@include fonts.heading-h4;
+		}
+
+		.subTitle {
+			overflow: hidden;
+			color: var(--vscode-descriptionForeground);
+			text-align: right;
+			text-overflow: ellipsis;
+			@include fonts.label-l3;
+		}
+	}
+}
+
+.divider {
+	flex: 1;
+}
+
+.caption {
+	color: var(--vscode-descriptionForeground);
+	text-align: right;
+	text-overflow: ellipsis;
+
+	@include fonts.label-l3;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+}
+
+.item {
+	min-height: 36px;
+	padding: layout.$spacing-3 layout.$spacing-4;
+	gap: layout.$spacing-2;
+	align-self: stretch;
+
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-sizing: border-box;
+	cursor: pointer;
+	border-left: 2px solid transparent;
+	border-bottom: 1px solid colors.$default-border;
+
+	&:hover {
+		background-color: colors.$list-hover-background;
+	}
+
+	&.active {
+		border-left: 2px solid colors.$default-foreground;
+		background-color: colors.$list-hover-background;
+	}
+}
+
+.itemContent {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.itemTextContainer {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-self: stretch;
+
+	color: var(--vscode-editor-foreground);
+	@include fonts.body-b1;
+}
+
+.itemSubTitle {
+	align-self: stretch;
+	color: var(--vscode-descriptionForeground);
+
+	@include fonts.body-b3;
+}
+
+.icon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.errorCheckbox {
+	background-color: colors.$error-background;
+}

@@ -1,0 +1,7 @@
+{
+  "name": "cfs-skills",
+  "version": "1.0.0",
+  "description": "CodeFusion Studio Skills",
+  "license": "Apache-2.0",
+  "skills": ["./cfs-docs", "./cfs-cli"]
+}

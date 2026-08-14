@@ -17,6 +17,8 @@ import * as vscode from "vscode";
 import { CfsDebugManager, CfsDebugSession } from "../debug-manager";
 import { TraceManager } from "./hardware/trace-manager";
 import { CfsEventsFile } from "./cfsevents-schema";
+import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
+import { getTelemetryManager } from "../../telemetry/telemetry";
 
 interface EventDocumentContext {
   debugSession: CfsDebugSession;
@@ -105,18 +107,31 @@ export class EventContentProvider
     }
 
     if (debugSession.isHalted()) {
-      const hwEventInfo = await this.traceManager.readHwEvents();
+      const startTime = Date.now();
+      const eventInfo = await this.traceManager.readEvents();
       const fileEvents: Record<string, { timestamps: number[] }> = {};
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_READ_EVENTS, {
+          eventCount: eventInfo.events.length,
+          durationMs: Date.now() - startTime,
+        });
+      });
 
-      for (const event of hwEventInfo.events) {
+      if (eventInfo.events.length === 0) {
+        // No new events available yet; keep cached events but reflect current session state.
+        sessionContext.content.state = "active";
+        return JSON.stringify(sessionContext.content, undefined, 2);
+      }
+
+      for (const event of eventInfo.events) {
         if (!(event.source in fileEvents)) {
           fileEvents[event.source] = { timestamps: [] };
         }
         fileEvents[event.source].timestamps.push(event.timestamp);
       }
       sessionContext.content.events = fileEvents;
-      sessionContext.content.tickFrequency = hwEventInfo.tsFrequency;
-      sessionContext.content.ticksEpoch = hwEventInfo.tsEpoch?.toISOString();
+      sessionContext.content.tickFrequency = eventInfo.tsFrequency;
+      sessionContext.content.ticksEpoch = eventInfo.tsEpoch?.toISOString();
       sessionContext.content.state = "active";
       sessionContext.content.lastUpdate = new Date().toISOString();
     } else {

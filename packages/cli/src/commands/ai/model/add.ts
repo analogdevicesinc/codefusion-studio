@@ -12,10 +12,11 @@
  * limitations under the License.
  *
  */
-import type AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import type {AIToolsPlugin} from 'cfs-lib';
 
 import {Flags} from '@oclif/core';
 import {
+  caseInsensitiveCompare,
   enforceMaxActiveModels,
   getAiToolsPlugin,
   getValidExtensions,
@@ -112,8 +113,7 @@ export default class Add extends BaseModelCommand {
     );
 
     const modelName = this.getModelNameFromFilename(flags.model);
-    const modelExists =
-      this.getModelNamesFromConfig(config).includes(modelName);
+    const modelExists = this.isExistingModel(modelName, config);
 
     if (modelExists) {
       throw new RecoverableError(
@@ -177,9 +177,6 @@ export default class Add extends BaseModelCommand {
       );
     }
 
-    flags.core = flags.core.toUpperCase();
-    flags.acc = flags.acc?.toUpperCase();
-
     const ai: SocAi | undefined = aiPlugin.getAIDataFromSOCModel(
       dataModel,
       config.Soc,
@@ -235,42 +232,52 @@ export default class Add extends BaseModelCommand {
       );
     }
 
-    for (const project of config.Projects) {
-      if (project.CoreId === flags.core) {
-        const newModel = {
-          Name: modelName,
-          Target: {
-            Core: ai.Target?.Core ?? '',
-            Accelerator: ai.Target?.Accelerator
-          },
-          Enabled: true,
-          Files: {
-            Model: flags.model,
-            ...(flags['network-config'] && {
-              NetworkConfig: flags['network-config']
-            }),
-            ...(flags.dataset && {
-              Dataset: flags.dataset
-            })
-          },
-          Backend: backend,
-          OutDir: '.'
-        } as AIModel;
+    const matchingProjects = config.Projects.filter((project) =>
+      caseInsensitiveCompare(project.CoreId, flags.core)
+    );
 
-        project.AIModels = enforceMaxActiveModels(
-          [...(project.AIModels ?? []), newModel],
-          newModel,
-          be.MaxModels,
-          flags.json
-        );
-      }
+    if (matchingProjects.length === 0) {
+      throw new RecoverableError(
+        `No project is associated with core '${flags.core}'`,
+        {
+          suggestion:
+            'Check that your project/s is configured as expected'
+        }
+      );
+    }
+
+    const newModel = {
+      Name: modelName,
+      Target: {
+        Core: ai.Target?.Core ?? '',
+        Accelerator: ai.Target?.Accelerator
+      },
+      Enabled: true,
+      Files: {
+        Model: flags.model,
+        ...(flags['network-config'] && {
+          NetworkConfig: flags['network-config']
+        }),
+        ...(flags.dataset && {
+          Dataset: flags.dataset
+        })
+      },
+      Backend: backend,
+      OutDir: '.'
+    } as AIModel;
+
+    for (const project of matchingProjects) {
+      const modelForProject: AIModel = structuredClone(newModel);
+      project.AIModels = enforceMaxActiveModels(
+        [...(project.AIModels ?? []), modelForProject],
+        modelForProject,
+        be.MaxModels,
+        flags.json
+      );
     }
 
     await this.writeCfsConfig(pathToConfig, config);
-
     this.log(`Model '${modelName}' added successfully.`);
-    return {
-      msg: `Model '${modelName}' added successfully`
-    };
+    return {msg: `Model '${modelName}' added successfully`};
   }
 }

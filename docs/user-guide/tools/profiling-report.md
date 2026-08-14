@@ -1,7 +1,7 @@
 ---
 description: "Understanding the Resource Profiling report"
 author: "Analog Devices"
-date: "2026-05-16"
+date: 2026-07-15
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx line 195)
 ---
 
@@ -19,7 +19,7 @@ This section assumes you have already generated a Resource Profiling report from
 !!! tip
     To generate output for scripting and automation, use [`cfsutil ai profile`](../cfsutil/ai/profile.md) from the terminal to create text or JSON reports.
 
-To reopen a previously generated report, select **AI Tools** > **Open Report** from the CFS Home Page.
+To reopen a previously generated report, select **AI Tools** > **Open Report** from the **Home** section of the CFS sidebar.
 
 ![Open AI Report](./images/open-report-dark.png#only-dark)  
 ![Open AI Report](./images/open-report-light.png#only-light)

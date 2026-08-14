@@ -1,7 +1,7 @@
 ---
 description: Create a new workspace in CodeFusion Studio.
 author: Analog Devices
-date: 2026-04-28
+date: 2026-07-25
 ---
 
 # Create a new workspace
@@ -33,7 +33,12 @@ Choose this option to set up your system configuration step by step.
 1. Select a **Code Generation Plugin**. The available options depend on the core you select.
 
       - MSDK: Generates projects for MSDK platforms.
-      - Registers-only (bare-metal) Plugin: This is intended as a reference for advanced workflows. It enables code generation for platforms that do not use Zephyr or MSDK. The generated code references registers directly using MMR access. Build or debug support is not included as the generated register definitions are intended to be integrated into custom toolchains or external workflows.
+      - Registers-Only (bare-metal): This is intended as a reference for advanced workflows. It enables code generation for platforms that do not use Zephyr or MSDK. The generated code references registers directly using memory-mapped register (MMR) access. Build or debug support is not included as the generated register definitions are intended to be integrated into custom toolchains or external workflows.
+
+        !!! warning "Registers-Only Plugin deprecated"
+            The Registers-Only Plugin is deprecated and will be removed in a future release.
+
+      - SHARC-FX: Generates projects for SHARC-FX processors.
       - Zephyr: Generates projects based on the Zephyr RTOS.
 
 1. Define the **Platform Options** for each core as described below.

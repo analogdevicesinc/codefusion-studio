@@ -168,7 +168,7 @@ describe('Generate Screen', () => {
 			);
 		});
 
-		it('Should display an error message of type "clock nodes", in both cards', () => {
+		it('Should display clock configuration errors only on the primary project', () => {
 			cy.fixture('clock-config-plugin-controls.json').then(
 				controls => {
 					const reduxStore = configurePreloadedStore(
@@ -203,18 +203,33 @@ describe('Generate Screen', () => {
 					);
 
 					cy.mount(<GenerateCode />, reduxStore).then(() => {
-						[projectCm4Id, projectRvId].forEach(projectId => {
-							cy.dataTest(
-								`generate-code:core:${projectId}:endSlot:icon`
-							).click();
-							cy.dataTest(
-								`cfsSelectionCard:${projectId}:content:errors-container`
-							).should('exist');
+						// Primary project should contain the clock error.
+						cy.dataTest(
+							`generate-code:core:${projectCm4Id}:endSlot:icon`
+						).click();
 
-							cy.dataTest(
-								`cfsSelectionCard:${projectId}:content:errors-container`
-							).should('contain.text', 'Clock Config');
-						});
+						cy.dataTest(
+							`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+						)
+							.should('exist')
+							.and('contain.text', 'Clock Config');
+
+						// Non-primary project should not contain the clock error.
+						cy.dataTest(
+							`generate-code:core:${projectRvId}:endSlot:icon`
+						).click();
+
+						cy.dataTest(
+							`cfsSelectionCard:${projectRvId}:content:errors-container`
+						).should('not.exist');
+
+						cy.dataTest(`generate-code:core:${projectRvId}`).within(
+							() => {
+								cy.dataTest(
+									`valid-status:${projectRvId}:ready-state`
+								).should('have.text', 'Ready');
+							}
+						);
 					});
 				}
 			);
@@ -870,7 +885,8 @@ describe('Generate Screen', () => {
 							}
 						],
 						Group: '',
-						Uuid: `${Math.random()}-${Math.random()}`
+						Uuid: `${Math.random()}-${Math.random()}`,
+						Description: ''
 					})
 				);
 
@@ -894,7 +910,8 @@ describe('Generate Screen', () => {
 							}
 						],
 						Group: '',
-						Uuid: `${Math.random()}-${Math.random()}`
+						Uuid: `${Math.random()}-${Math.random()}`,
+						Description: ''
 					})
 				);
 
@@ -946,6 +963,72 @@ describe('Generate Screen', () => {
 					);
 				});
 			});
+		});
+
+		it('Should not assign primary project clock errors to an externally managed project', () => {
+			cy.fixture('clock-config-plugin-controls.json').then(
+				controls => {
+					const reduxStore = configurePreloadedStore(
+						wlp,
+						externallyManagedConfigDict,
+						controls
+					);
+
+					reduxStore.dispatch(
+						setAppliedSignal({
+							Pin: 'F4',
+							Peripheral: 'MISC',
+							Name: 'CLKEXT'
+						})
+					);
+
+					reduxStore.dispatch(
+						setClockNodeControlValue({
+							name: 'SYS_OSC Mux',
+							key: 'MUX',
+							value: 'CLKEXT'
+						})
+					);
+
+					reduxStore.dispatch(
+						setClockNodeControlValue({
+							name: 'P0.23',
+							key: 'P0_23_FREQ',
+							value: '100000000',
+							error: 'INVALID_MAX_VAL'
+						})
+					);
+
+					cy.mount(<GenerateCode />, reduxStore).then(() => {
+						// Clock errors belong to the primary project.
+						cy.dataTest(
+							`generate-code:core:${projectCm4Id}:endSlot:icon`
+						).click();
+
+						cy.dataTest(
+							`cfsSelectionCard:${projectCm4Id}:content:errors-container`
+						)
+							.should('exist')
+							.and('contain.text', 'Clock Config');
+
+						// The externally managed project must not inherit them.
+						cy.dataTest('generate-code:core:RV').within(() => {
+							cy.dataTest(
+								'project-item:externally-managed-badge'
+							).should('exist');
+
+							cy.dataTest('valid-status:RV:ready-state').should(
+								'have.text',
+								'Ready'
+							);
+						});
+
+						cy.dataTest('generate-code:core:RV:checkbox')
+							.should('have.attr', 'current-checked', 'false')
+							.should('have.attr', 'disabled', 'disabled');
+					});
+				}
+			);
 		});
 	});
 

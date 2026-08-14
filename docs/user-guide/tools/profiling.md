@@ -1,7 +1,7 @@
 ---
 description: Enable Zephelin profiling for Zephyr projects
 author: Analog Devices
-date: 2026-06-22
+date: 2026-08-06
 ---
 
 # Profiling
@@ -17,43 +17,79 @@ Use the Profiling feature in CodeFusion Studio to capture and visualize profiler
 
 ## Before you start
 
-Before you begin, ensure you have created a Zephyr workspace using the [**Workspace Creation Wizard**](../workspaces/create-new-workspace.md). For example, create a MAX32690 workspace using the **Zephyr Single Core TensorFlow AI Model** template.
+Before you begin, create a Zephyr workspace using the [**Workspace Creation Wizard**](../workspaces/create-new-workspace.md). What you can profile depends on your processor and template:
 
-If you create a workspace from a non-AI template (for example, **Zephyr Single Core Blinky**), you can still capture basic system traces. However, for more detailed profiling — including AI inference timing — add a model configuration as described in [Embedded AI Tools](./manage-ai-models.md).
+- **Basic system profiling** (CPU load, memory usage, and application call graph) works with **any** Zephyr project — including non-AI templates such as **Zephyr Single Core Blinky**. Just enable the Zephelin Profiler in System Planner. To add AI model profiling to an existing non-AI project, add a model configuration as described in [Embedded AI Tools](./manage-ai-models.md).
+- **AI inference profiling** (per-operator TensorFlow Lite Micro timing) requires an AI-capable processor and a configured model. The **Zephyr Single Core TensorFlow AI Inference Profiling** template is the recommended starting point. It runs the same inference as the **Zephyr Single Core TensorFlow AI Model** template, with the Zephelin Profiler already configured. Supported processors include **MAX32657**, **MAX32690**, and **MAX78002**. This template runs its inferences once at startup. Use **UART** to capture inference traces; UART is selected by default.
+- **USB trace capture** is supported on **MAX32690** on macOS and Linux hosts. Other supported processors capture traces over UART.
+
+    !!! note
+        On **MAX78002**, **MAX32650**, and **MAX32666**, USB trace capture is not available in this release because the High-Speed USB peripheral is not yet supported in the Zephyr devicetree, and selecting **USB** generates code that fails to build. Use UART to capture profiling traces on these processors. See the [release notes](../../release-notes/2.3.0.md#known-issues-and-limitations).
 
 ## Configure and capture a profiling trace
 
-To capture profiling traces from your Zephyr project, configure the profiling options in System Planner, build and flash your project, then use the Trace Capture panel to collect trace data.
+To capture profiling traces from your Zephyr project, set up the trace peripheral and configure the profiling options in System Planner, build and flash your project, then use the Trace Capture panel to collect trace data.
 
-### Step 1. Configure profiling options
+### Step 1. Set up the trace peripheral
 
-1. Open **System Planner** in your Zephyr workspace.
-2. Click the **Profiling** tab to see a list of cores in your workspace.
-3. Turn on **Enable Zephelin Profiler** for each core you want to profile.
+Open **System Planner** in your Zephyr workspace. The trace peripheral is configured in the **Peripheral Allocation** and **Clock Configuration** tools, both within System Planner. Set up the peripheral for the interface you plan to use before you configure the profiler in [Step 2](#step-2-configure-profiling-options), so it is available when you select the trace interface.
+
+#### For UART
+
+1. Open **Peripheral Allocation**. If a UART peripheral is not already allocated to the application core, allocate one and configure its pin assignments as needed.
+2. With the peripheral selected, select **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar.
+3. In the **Code Generation Plugin** section, set (or confirm) the **baud rate**. This is the single source of truth for the UART baud rate: it is compiled into your firmware during code generation, and it is the value shown (read-only) in the **Baud Rate** field on the Profiling screen.
+4. When you later capture a trace (see [Step 4](#step-4-capture-the-profiler-trace)), set the **same** baud rate in the **Trace Capture** panel. The host and the device must agree. If they do not match, the capture typically fails with a **Capture interrupted** error (see [Capture interrupted](#capture-interrupted)), or produces unreadable trace data.
+
+    For complete details on allocating and configuring peripherals, see [Peripheral Allocation](./peripheral-allocation.md).
+
+#### For USB
+
+USB trace capture is supported on **MAX32690** in this release. These steps apply to MAX32690.
+
+1. Open **Peripheral Allocation**. If the USB peripheral is not already assigned to the application core, assign it. It typically appears as **USBHS** in the peripheral list.
+2. Open **Clock Configuration**, expand the **Peripheral** section, and select and enable the USB peripheral. It typically appears as **High-Speed USB**.
+3. Complete any additional clock settings the tool exposes. On MAX32690, this includes a selectable **Clock Source for USB PHY**. CodeFusion Studio provides a valid default; if you change the system clock configuration, follow any signposts or validation messages shown in Clock Configuration to keep the USB clock within the range the peripheral requires.
+4. Connect an **additional USB cable** from your host PC to the USB device-controller connector on the board. USB trace data streams from the USB device controller on the processor, which is a **dedicated connector**, separate from the connectors used for power, debug, and serial output in your normal board setup. If this cable is not connected, the trace device does not enumerate and does not appear in the Trace Capture device list.
+
+    Connector labels differ by board — check the documentation for your board. For example, on the **MAX32690 EVKIT**, power and serial output come in over **CN2** and debug over **J3**, while USB trace data is carried on **CN1**.
+
+    Keep your normal board connections in place and add the USB trace cable in addition to them. For general guidance on connecting your board, see [Connect hardware](../debugging/connect-hardware.md).
+
+### Step 2. Configure profiling options
+
+1. In **System Planner**, click the **Profiling** tab to see a list of cores in your workspace.
+2. Turn on **Enable Zephelin Profiler** for each core you want to profile.
 
     ![Profiler Configuration showing core selection](images/profiling-core-selection-dark.png#only-dark)
     ![Profiler Configuration showing core selection](images/profiling-core-selection-light.png#only-light)
 
-4. Click the expand arrow to configure profiling options for the selected core.
+3. Click the expand arrow to configure profiling options for the selected core.
 
     ![Expanded profiling configuration form](images/profiling-config-expanded-dark.png#only-dark)
     ![Expanded profiling configuration form](images/profiling-config-expanded-light.png#only-light)
 
-5. Configure the **Profiling Options**:
+4. Configure the **Profiling Options**:
       - **Application Callgraph** – Enables instrumentation subsystem for capturing function call graphs and application-level tracing. Instrumentation starts when the trigger function enters and stops when the stopper function exits. By default, CodeFusion Studio uses the `main` function, capturing execution from when `main()` starts until it returns (if it returns). To customize these functions or learn more, see [Advanced: Customize instrumentation trigger and stopper functions](#advanced-customize-instrumentation-trigger-and-stopper-functions).
       - **AI Model Profiling** – Enables TensorFlow Lite Micro inference tracing for supported processors. Only available when AI models are configured. For details, see [Supported processors and model formats](../about/supported-ai-model-formats.md) and [Embedded AI Tools](./manage-ai-models.md).
       - **CPU Load** – Monitors CPU usage by sampling at regular intervals. When enabled, specify the profiling interval in milliseconds. The system reads the CPU load value at this interval and reports it to the host PC.
       - **Memory Usage** – Tracks memory consumption by sampling at regular intervals. When enabled, specify the profiling interval in milliseconds. The system reads the memory usage value at this interval and reports it to the host PC.
 
-6. Configure the **Interface Options**:
-      - **Select Trace Interface Type** – Choose the interface used to transmit trace data to the host PC. Options include **UART** and **USB**. (Note: USB support is disabled and is planned for a future release.)
-      - **Trace Interface** – Select the UART port number for trace output (for example, 0 for UART0, 2 for UART2). Available options depend on your SoC configuration and which UART peripherals are allocated to this project in Peripheral Allocation. To manage Trace Interface UART settings, navigate to Peripheral Allocation.
-      - **Baud Rate** – Displays the baud rate for the selected trace interface (typically 115200 for profiling). This value applies specifically to the selected Trace Interface for the profiling session.
+5. Configure the **Interface Options**:
+      - **Select Trace Interface Type** – Select the interface used to transmit trace data to the host PC. Options include **UART** and **USB**.
 
-    !!! note "Managing UART and baud rate"
-        To allocate UART peripherals to your project or configure UART pin assignments, navigate to the **Peripheral Allocation** page. Once a peripheral is assigned to a core, you can click **Configure** ![Configure](./images/icon-config-dark.png#only-dark) ![Configure](./images/icon-config-light.png#only-light) to open the Peripheral Settings Sidebar. The baud rate can be configured in the **Code Generation Plugin** section. For complete details, see [Peripheral Allocation](./peripheral-allocation.md).
+      **If you select UART:**
 
-### Step 2. Generate, build, and flash
+      - **Trace Interface** – Select the UART peripheral used for trace output (for example, **UART0**, **UART2**, or **LPTUART0**). The available options depend on your SoC and which UART peripherals are allocated to this project in Peripheral Allocation.
+      - **Baud Rate** – Displays the baud rate of the selected UART peripheral (typically 115200 for profiling). This field is read-only and reflects the value set in Peripheral Allocation.
+
+      The UART peripheral you select here is the one you allocated in [Step 1](#for-uart), and its baud rate is set there too.
+
+      **If you select USB:**
+
+      - USB requires no additional fields on this screen. You assigned the USB peripheral and configured its clock in [Step 1](#for-usb).
+
+### Step 3. Generate, build, and flash
 
 1. In System Planner, click **[Generate Code](generate-code.md)**.  
    - Enable **Generate AI Models** if your project includes an AI model.  
@@ -63,11 +99,11 @@ To capture profiling traces from your Zephyr project, configure the profiling op
 
       You can run these tasks from the Command Palette, Actions view, or using `cfsutil` from the terminal.  
 
-### Step 3. Capture the profiler trace
+### Step 4. Capture the profiler trace
 
-1. In the **CFS Home Page**, expand the **TRACE CAPTURE** section.
+1. Go to the **Trace Capture** section in the CFS sidebar.
 
-2. If you see either a **Setup required** or **Source not available** message, click **Configure capture** to open the trace capture settings and select or reselect the trace source and serial port.
+2. If you see either a **Setup required** or **Source not available** message, select **Configure capture** to open the trace capture settings and select or reselect your trace source — the serial port for UART, or the USB device for USB.
 
     ![Trace Capture setup required](./images/trace-capture-setup-required-dark.png#only-dark)
     ![Trace Capture setup required](./images/trace-capture-setup-required-light.png#only-light)
@@ -79,9 +115,16 @@ To capture profiling traces from your Zephyr project, configure the profiling op
 
     **Trace Source Options:**
 
-      - **Trace Interface Type** – Select the interface type for trace data. The UI may list **UART** and **USB**; however, only **UART** is currently supported. **USB** trace capture is currently disabled and reserved for a future release.
-      - **Serial Port** – For **UART** trace capture, select the serial port connected to your board. On Linux/WSL, this appears as `/dev/ttyUSB0` or similar. On macOS, this typically appears as `/dev/tty.usbserial*` or `/dev/cu.usbserial*`. On Windows, this appears as `COM3`, `COM4`, or another COM port. Ensure the port name matches your system exactly.
+      - **Trace Interface Type** – Select the interface used to transmit trace data.
+
+      **If you select UART:**
+
+      - **Serial Port** – Select the serial port connected to your board. On Linux/WSL, this appears as `/dev/ttyUSB0` or similar. On macOS, this typically appears as `/dev/tty.usbserial*` or `/dev/cu.usbserial*`. On Windows, this appears as `COM3`, `COM4`, or another COM port. Ensure the port name matches your system exactly.
       - **Baud Rate** – Set the baud rate for the trace interface. This field defaults to 115200. Ensure this value matches the baud rate configured in your application's firmware. Click the reset indicator to restore the setting to its default value.
+
+      **If you select USB:**
+
+      - **USB Device** – Select the connected USB device from the list. The profiler firmware advertises itself as **Zephelin**, so the entry usually appears as **Zephelin - Bus *xxx*, Device *xxx***. If the host can't read the product name, the entry falls back to **Bus *xxx*, Device *xxx*** with no name. The bus and device numbers are assigned by the host and can change when you reconnect or reflash the board, so use them only to tell devices apart, not as a fixed identifier. If no devices appear, build and flash firmware with USB tracing enabled, and confirm that the firmware is running. The **USB Device** list only shows connected Zephelin devices running on the USB bus. Reopen the list to refresh it.
 
     **General Settings:**
 
@@ -98,16 +141,23 @@ To capture profiling traces from your Zephyr project, configure the profiling op
         The **Configure** button (highlighted in the screenshot above) lets you modify trace settings in the **Trace Configuration** view after initial setup.
 
     !!! note
-        Close any serial monitor or terminal before starting capture — the trace capture needs exclusive access to the UART port.  
+        Trace capture needs exclusive access to the trace device. For **UART**, close any serial monitor or terminal using the port before starting capture. For **USB**, make sure no other application has claimed the device.  
         If another process is using the same device, the capture will fail with an error message.
 
 5. While capture is running, the **TRACE CAPTURE** panel displays an elapsed time timer. The configuration settings are disabled until you stop the capture.
-6. Restart your application to begin trace data transmission. The two most practical approaches are:
+6. Begin trace data transmission. The method depends on your trace interface.
+
+    **For UART**, restart your application while capture is running. The two most practical approaches are:
 
     - **Reset button** – If your board has a reset button, press it while capture is running.
     - **CFS: flash & run** – Run the **CFS: flash & run** task and wait for flashing to complete. Depending on your runner, the target may reset more than once during the operation, which can result in multiple trace files being generated during a single capture session.
 
-    For applications that run once and exit (for example, the MAX32690 Single Core TensorFlow AI Model example), you may need to restart multiple times to capture additional trace data.
+    For applications that run once and exit (for example, the **Zephyr Single Core TensorFlow AI Inference Profiling** template), you may need to restart multiple times to capture additional trace data.
+
+    **For USB**, trace capture is handled differently. The trace cannot start while the device is flashing or held in reset, and the device disappears from the **USB Device** list at those moments. Do not reset or reflash the board to trigger transmission. Instead, flash and start your application first, confirm it is running, then start capture. You can start capture at any point while the device is connected and running.
+
+    !!! note
+        USB captures only traced activity that occurs after capture starts. It therefore cannot capture inference traces from applications that run their inferences once at startup, such as the **Zephyr Single Core TensorFlow AI Inference Profiling** template. The inferences finish before capture can attach, and resetting the board to re-run them disconnects the USB device. Periodic metrics such as **CPU Load** and **Memory Usage** remain available. Use UART to capture traces from applications that run their inferences at startup.
 
 7. Click **Stop Capture** when you have collected sufficient trace data.
 8. When the capture completes successfully, a notification displaying **Traces captured successfully** appears with links to the generated trace files. Click a file link to open it directly, or click **Choose a file to open** to select from the full list.
@@ -128,6 +178,8 @@ To capture profiling traces from your Zephyr project, configure the profiling op
     cfsutil tasks run flash_run_JLink --capture --port /dev/ttyUSB0 --project m4
     ```
     The CLI automatically detects CTF tracing and generates TEF files when you stop capture with Ctrl+C. For more information on running tasks, see [CFS Tasks](../cfsutil/tasks.md).
+
+    The `--capture` and `--port` flags support UART serial ports only. To capture over USB, use the **Trace Capture** panel in VS Code.
 
 ## Visualize trace data
 
@@ -158,21 +210,39 @@ The trace viewer displays detailed profiling information based on the options yo
 
 ### Capture interrupted
 
-If the serial connection is lost during trace capture, the Trace Capture panel displays **Capture interrupted** with two options:
+If the connection to the trace device is lost during capture — for example, the serial connection drops or the USB device is disconnected — the Trace Capture panel displays **Capture interrupted** with two options:
 
 ![Capture interrupted error](./images/capture-interrupted-dark.png#only-dark)
 ![Capture interrupted error](./images/capture-interrupted-light.png#only-light)
 
-- **Reconnect and retry** – Attempts to reconnect to the same serial port and resume capture with your existing settings.
-- **Select source** – Opens the Trace Configuration view so you can reconfigure the serial port, baud rate, or output directory.
+- **Reconnect and retry** – Reconnects to the selected trace device and starts a new capture with your existing settings. This begins a new trace file rather than continuing the interrupted one. For USB, this works only if the device still has the same bus number and address. If it re-enumerates with a new address after disconnecting, use **Select source** to reselect it.
+- **Select source** – Opens the Trace Configuration view so you can reselect the serial port or USB device, adjust the baud rate (UART only), or change the output directory.
 
 Common causes of interrupted captures:
 
 - Another application claimed exclusive access to the serial port
 - The USB cable was disconnected or the board lost power
 - The serial port device name changed (common on Windows after reconnecting USB devices)
+- A mismatch between the baud rate in the Trace Capture panel and the baud rate compiled into the firmware (UART only), which can interrupt capture or produce unreadable trace data
 
-If reconnection fails repeatedly, verify that the correct serial port is selected and that no other application (such as a serial monitor or terminal) is using the port.
+If reconnection fails repeatedly, verify the correct trace source is selected (serial port for UART, USB device for USB) and that no other application (such as a serial monitor or terminal) is using it.
+
+### Trace file fails to open
+
+If selecting a `.tef` file produces an unexpected error — for example, a dialog similar to:
+
+```text
+Unable to open 'tracefile_YYYYMMDD_HHMMSS.tef'. Assertion Failed: Argument is undefined or null.
+```
+
+a compatibility issue with the installed version of the Zephelin Trace extension may be the cause.
+
+To recover:
+
+- **If automatic extension updates are enabled (default):**
+    1. Reload the VS Code window to apply any pending extension updates — open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **Developer: Reload Window**.
+    2. If the error persists, [disable automatic extension updates](../installation/install-extensions.md#optional-disable-automatic-extension-updates) for the Zephelin Trace Viewer extension, then [try installing a different version](../installation/install-extensions.md#install-a-specific-version).
+- **If automatic extension updates are disabled:** Try updating the Zephelin Trace Viewer extension first — the issue may already be fixed in a newer release. If that doesn't resolve it, [try installing a different version](../installation/install-extensions.md#install-a-specific-version).
 
 ### Build fails with memory overflow after enabling profiling
 
@@ -187,6 +257,12 @@ ld returned 1 exit status
 ```
 
 If you encounter this error, the device may not have sufficient memory to support profiling in the current application. You can try disabling some profiling options to reduce memory usage, but this may not resolve the issue.
+
+### USB capture shows metrics but no inference traces
+
+If USB capture shows periodic metrics such as **CPU Load** and **Memory Usage**, but no inference traces, the application likely completed its inferences before capture attached. This occurs with applications that run their traced activity once at startup, including the **Zephyr Single Core TensorFlow AI Inference Profiling** template.
+
+Capture over UART instead. Start capture, then press the reset button or run **CFS: flash & run** to re-run the inferences. The profiling template selects UART by default. For instructions, see [Capture the profiler trace](#step-4-capture-the-profiler-trace).
 
 ## Advanced: Customize instrumentation trigger and stopper functions
 
@@ -241,13 +317,13 @@ To customize which functions control the instrumentation scope:
 
 5. Save the file.
 
-6. **Run a pristine build** to apply the configuration changes, then reflash your project using **CFS: flash** or **CFS: flash & run** (see [Generate, build, and flash](#step-2-generate-build-and-flash)).
+6. **Run a pristine build** to apply the configuration changes, then reflash your project using **CFS: flash** or **CFS: flash & run** (see [Generate, build, and flash](#step-3-generate-build-and-flash)).
 
     ```bash
     cfsutil tasks run pristine_build --project <core>
     cfsutil tasks run <flash-task> --project <core>
     ```
 
-7. Capture a new profiling trace following the steps in [Capture the profiler trace](#step-3-capture-the-profiler-trace).
+7. Capture a new profiling trace following the steps in [Capture the profiler trace](#step-4-capture-the-profiler-trace).
 
 For more details about the instrumentation mechanism, see the [:octicons-link-external-24: Zephyr Instrumentation documentation](https://docs.zephyrproject.org/4.3.0/services/instrumentation/index.html){:target="_blank"}.

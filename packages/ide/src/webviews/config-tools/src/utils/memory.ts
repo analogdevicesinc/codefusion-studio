@@ -88,6 +88,11 @@ export type MemoryAlias = {
 	AliasBaseAddress: string;
 };
 
+export type MemoryAliasWithOffset = MemoryAlias & {
+	AliasStartAddress: string;
+	AliasEndAddress: string;
+};
+
 export function getCoreMemoryAliasDictionary(): Record<
 	string,
 	MemoryAlias[]
@@ -148,6 +153,29 @@ export function getAddressOffset(
 export function offsetAddress(address: string, offset: number) {
 	return (parseInt(address, 16) + offset).toString(16);
 }
+
+export const getMemoryAliasesForAddress = (
+	memoryAliases: MemoryAlias[],
+	address: string,
+	baseBlockAddress: string,
+	partitionSize: number
+): MemoryAliasWithOffset[] => {
+	const baseOffset = getAddressOffset(baseBlockAddress, address);
+
+	return memoryAliases.map(alias => {
+		const aliasStart = offsetAddress(
+			alias.AliasBaseAddress,
+			baseOffset
+		);
+		const aliasEnd = offsetAddress(aliasStart, partitionSize - 1);
+
+		return {
+			...alias,
+			AliasStartAddress: aliasStart,
+			AliasEndAddress: aliasEnd
+		};
+	});
+};
 
 export function getCoreMemoryBlocks(): MemoryBlock[] {
 	if (coreMemoryBlocks.length === 0) {

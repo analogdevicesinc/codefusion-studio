@@ -22,7 +22,23 @@ import {
 } from 'cfs-lib';
 import {CfsPackageRemoteCredential} from 'cfs-package-manager';
 
-import {getAuthConfig} from '../../utils/session-manager.js';
+import {getApiClient} from '../../utils/api-client.js';
+
+export const dockerPullDeps: {
+  extractRegistryAndRepoName: typeof extractRegistryAndRepoName;
+  getContainerUtility: typeof getContainerUtility;
+  containerImageExists: typeof containerImageExists;
+  getApiClient: typeof getApiClient;
+  getCredentials: typeof getCredentials;
+  pullImage: typeof pullImage;
+} = {
+  extractRegistryAndRepoName,
+  getContainerUtility,
+  containerImageExists,
+  getApiClient,
+  getCredentials,
+  pullImage
+};
 
 export default class Pull extends Command {
   static args = {
@@ -59,11 +75,13 @@ export default class Pull extends Command {
 
   public async run(): Promise<void> {
     const {args, flags} = await this.parse(Pull);
-    const {registry, repo} = extractRegistryAndRepoName(args.image);
+    const {registry, repo} =
+      dockerPullDeps.extractRegistryAndRepoName(args.image);
     let creds: CfsPackageRemoteCredential | undefined;
 
     // check if docker/podman is available
-    const containerUtility = await getContainerUtility();
+    const containerUtility =
+      await dockerPullDeps.getContainerUtility();
 
     if (!containerUtility) {
       this.error(
@@ -72,7 +90,7 @@ export default class Pull extends Command {
     }
 
     // check if the image already exists locally
-    const imageExists = await containerImageExists(
+    const imageExists = await dockerPullDeps.containerImageExists(
       containerUtility,
       args.image
     );
@@ -86,8 +104,18 @@ export default class Pull extends Command {
     }
 
     if (!flags.nocredential) {
-      const authConfig = getAuthConfig();
-      creds = await getCredentials(repo, authConfig, flags.quiet);
+      const apiClient = await dockerPullDeps.getApiClient(
+        {optional: true},
+        flags.quiet ? undefined : this
+      );
+      if (apiClient) {
+        creds = await dockerPullDeps.getCredentials(
+          repo,
+          apiClient,
+          flags.quiet
+        );
+      }
+
       if (!creds && !flags.quiet) {
         this.log(
           `No credentials available for registry '${repo}'. Attempting to pull without credentials.`
@@ -95,7 +123,7 @@ export default class Pull extends Command {
       }
     }
 
-    await pullImage({
+    await dockerPullDeps.pullImage({
       image: args.image,
       registry,
       utility: containerUtility,

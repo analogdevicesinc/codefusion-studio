@@ -40,10 +40,8 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
   after(async () => {
     await view.switchBack();
-    await UIUtils.sleep(2000);
     console.log("Switched back to close editors");
     await workbench.executeCommand("View: Revert and Close Editor");
-    await UIUtils.sleep(2000);
     console.log("Closed all editors");
   });
 
@@ -55,7 +53,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     browser = VSBrowser.instance;
     await workbench.executeCommand("cfs create workspace");
     console.log("new workspace command executed");
-    await UIUtils.sleep(5000);
     await UIUtils.dismissAllNotifications(workbench, browser);
     console.log("Dismissed all notifications");
 
@@ -111,7 +108,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
-    await UIUtils.sleep(2000);
     // Manual Template Configuration Screen
     console.log("TEMPLATE SELECTION SCREEN - MANUAL CONFIGURATION");
     console.log("Waiting for manual configure option");
@@ -119,14 +115,11 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
       view,
       By.xpath("//*[@data-test='workspaceOptions:card:manualConfig']"),
     );
-    await UIUtils.sleep(2000);
     console.log("Found manual configure option");
     const templateName = await manualConfigure.getAttribute("id");
     console.log("Template name:", templateName);
     expect(templateName).to.include("custom");
     await UIUtils.clickElement(view, manualConfigure);
-
-    await UIUtils.sleep(2000);
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
     // Selection of arm cortex on riscv  and  cores Screen
@@ -137,12 +130,10 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
         "//*[@data-test='coresSelection:card:corepart_01jrdgezphe4na53xk7nwssdg7']",
       ),
     );
-    await UIUtils.sleep(2000);
     console.log("Found arm cores element");
     const armCoreName = await armCores.getText();
     expect(await armCores.getText()).to.include("Arm Cortex-M4F");
     console.log("Clicked on arm cores element");
-    await UIUtils.sleep(2000);
 
     const riscvCores = await UIUtils.findWebElement(
       view,
@@ -165,7 +156,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     const pluginId = await zephyrSel.getAttribute("id");
     expect(pluginId).to.include("com.analog.project.zephyr.mock.plugin");
 
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, zephyrSel);
 
     const buildSystem = await UIUtils.dataTest(
@@ -176,7 +166,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     console.log("Build system value is: " + buildSystemValue);
     expect(buildSystemValue).to.equal(TextData.buildSystemValue);
 
-    await UIUtils.sleep(2000);
     const boardDefaultName = await UIUtils.findWebElement(
       view,
       By.xpath(
@@ -188,7 +177,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     console.log("Board name arm cortex is: " + boardName);
     expect(boardName).to.equal(TextData.evkitname78XXX);
 
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
     // MSDK Plugin Selection for RISCV cores
@@ -209,9 +197,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     const getBoardNameRiscv =
       await boardNameRiscv.getAttribute("current-value");
     console.log("Board name ricv is: " + getBoardNameRiscv);
-    await UIUtils.sleep(2000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
-    await UIUtils.sleep(2000);
 
     // Workspace Input Screen
     console.log("WORKSPACE NAME DETAILS SCREEN");
@@ -236,7 +222,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
     console.log("Found create workspace button");
     await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
-    await UIUtils.sleep(5000);
+    await UIUtils.sleep(3000);
     // Assert that the workspace is created successfully
     const userHome = os.homedir();
     const location = `${userHome}/cfs/${TextData.cfsideversion}`;
@@ -255,7 +241,6 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     const fileContent = fs.readFileSync(cfsWorkspaceFile, "utf-8");
     // Parsing json content to verify the SOC
     const workspaceData = JSON.parse(fileContent);
-    await UIUtils.sleep(3000);
     console.log("Parsed workspace data: below");
     // Assertions of Persistance of workspace data and schema verification
     if (!workspaceData) throw new Error("workspaceData is undefined or null");

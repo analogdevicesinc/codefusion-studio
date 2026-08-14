@@ -1,7 +1,7 @@
 ---
 description: "Interpreting the Compatibility report"
 author: "Analog Devices"
-date: "2026-05-17"
+date: 2026-07-15
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx line 192)
 ---
 
@@ -19,7 +19,7 @@ This section assumes you have already generated a Compatibility report from the 
 !!! tip
     To generate output for scripting and automation, use [`cfsutil ai compat`](../cfsutil/ai/compat.md) from the terminal.
 
-To reopen a previously generated report, select **AI Tools** > **Open Report** from the CFS Home Page.
+To reopen a previously generated report, select **AI Tools** > **Open Report** from the **Home** section of the CFS sidebar.
 
 ![Open AI Report](./images/open-report-dark.png#only-dark)  
 ![Open AI Report](./images/open-report-light.png#only-light)

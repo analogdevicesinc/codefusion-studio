@@ -1,7 +1,6 @@
 import { describe, before } from "mocha";
 import * as path from "path";
 import { By, EditorView, VSBrowser, Workbench } from "vscode-extension-tester";
-import { UIUtils } from "../../ui-test-utils/ui-utils";
 
 let workbench: Workbench;
 
@@ -16,7 +15,7 @@ describe("Setup test environment", () => {
       `Closing ${(await editorView.getOpenEditorTitles()).toString()}`,
     );
 
-    await editorView.closeAllEditors();
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   it("should dismiss toast notifications @smoke", async function () {
@@ -33,8 +32,6 @@ describe("Setup test environment", () => {
         "persisted-sample.cfsworkspace",
       ),
     );
-
-    await UIUtils.sleep(6000);
 
     console.log(
       `Dismissing notifications: ${(await workbench.getNotifications()).toString()}`,
@@ -67,8 +64,7 @@ describe("Setup test environment", () => {
     } catch (_) {
       console.log("No C Extension toast to dismiss");
     } finally {
-      const editor = new EditorView();
-      await editor.closeAllEditors();
+      await new Workbench().executeCommand("workbench.action.closeAllEditors");
     }
   });
 });

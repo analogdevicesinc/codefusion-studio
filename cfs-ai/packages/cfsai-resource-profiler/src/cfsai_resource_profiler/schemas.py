@@ -40,6 +40,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
+from cfsai_types.logging import EventType, log_event
 from cfsai_types.report import ReportInfo
 
 PROFILE_REPORT_VERSION = "2.2.0"
@@ -689,6 +690,18 @@ class ResourceProfileReport(BaseModel):
             return buffer.getvalue()
         return None
 
+    def log_as_text(self) -> None:
+        """
+        Log the resource profile text table line-by-line via the module logger.
+        This is used when no output file is requested but we still want the
+        report content to be emitted as structured log events.
+        """
+        buffer = self.visualize_resource_profile(to_buffer=True)
+        if buffer is None:
+            return
+        for line in buffer.split('\n'):
+            logger.info(line)
+
     def save_as_json(self, filepath: str) -> bool:
         """
         Save the resource profiler report as a JSON file.
@@ -703,7 +716,7 @@ class ResourceProfileReport(BaseModel):
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(self.model_dump(), f, indent=2, default=str)
-            logger.debug(f"Resource Profiler JSON report saved to {filepath}")
+            log_event(logger, EventType.FILE, filepath)
             return True
         except Exception as e:
             logger.error(
@@ -726,7 +739,7 @@ class ResourceProfileReport(BaseModel):
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(self.visualize_resource_profile(to_buffer=True))
-            logger.debug(f"Resource Profiler text report saved to {filepath}")
+            log_event(logger, EventType.FILE, filepath)
             return True
         except Exception as e:
             logger.error(

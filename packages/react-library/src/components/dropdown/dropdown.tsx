@@ -25,7 +25,14 @@ export type DropDownOptions = Array<{
 	label: string;
 	dataTest?: string;
 	disabled?: boolean;
+	optionGroup?: string;
 }>;
+
+type DropDownOption = DropDownOptions[number];
+
+type DropDownRenderOption =
+	| (DropDownOption & {type: 'option'; isGrouped: boolean})
+	| {type: 'group'; label: string};
 
 type DropDownProps = Readonly<{
 	controlId: string;
@@ -34,12 +41,14 @@ type DropDownProps = Readonly<{
 	options: DropDownOptions;
 	dataTest?: string;
 	size?: 'large' | 'small';
-	error?: string;
+	// When error is a boolean, the style is applied but no error message is shown.
+	error?: string | boolean;
 	placeholder?: string;
 	// Adds an option to the list when there is no value selected yet
 	noValueOption?: DropDownOptions[0];
 	onOpenDropdown?: () => void;
 	onHandleDropdown: (value: string) => void;
+	className?: string;
 }>;
 
 export default function DropDown({
@@ -51,6 +60,7 @@ export default function DropDown({
 	size = 'large',
 	error,
 	placeholder,
+	className,
 	noValueOption,
 	onOpenDropdown,
 	onHandleDropdown
@@ -59,11 +69,53 @@ export default function DropDown({
 	const [isExpanded, setIsExpanded] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasValue = !!currentControlValue;
+	const dropdownOptions =
+		noValueOption && !hasValue
+			? [noValueOption, ...options]
+			: options;
 
 	const handleDropdown = () => {
 		dropdownRef.current?.blur();
 		onHandleDropdown(dropdownRef.current?.value ?? '');
 		setIsExpanded(false);
+	};
+
+	const getGroupedOptions = (
+		items: DropDownOptions
+	): DropDownRenderOption[] => {
+		const groupedOptions = new Map<string, DropDownOption[]>();
+		const ungroupedOptions: DropDownRenderOption[] = [];
+
+		items.forEach(option => {
+			if (!option.optionGroup) {
+				ungroupedOptions.push({
+					...option,
+					type: 'option',
+					isGrouped: false
+				});
+
+				return;
+			}
+
+			const optionGroup =
+				groupedOptions.get(option.optionGroup) ?? [];
+			optionGroup.push(option);
+			groupedOptions.set(option.optionGroup, optionGroup);
+		});
+
+		return [
+			...ungroupedOptions,
+			...Array.from(groupedOptions.entries()).flatMap(
+				([label, groupOptions]) => [
+					{type: 'group' as const, label},
+					...groupOptions.map(option => ({
+						...option,
+						type: 'option' as const,
+						isGrouped: true
+					}))
+				]
+			)
+		];
 	};
 
 	useEffect(() => {
@@ -91,9 +143,13 @@ export default function DropDown({
 				id={`${controlId}-controlDropdown`}
 				data-test={dataTest}
 				disabled={isDisabled}
-				className={`${styles.dropdown} ${error ? styles.error : ''} ${
-					isExpanded ? styles.expandedDropdown : ''
-				} ${styles[size]}`}
+				className={`
+					${className ? className : ''}
+					${styles.dropdown}
+					${error ? styles.error : ''}
+					${isExpanded ? styles.expandedDropdown : ''}
+					${styles[size]}
+				`}
 				value={
 					noValueOption && !hasValue
 						? noValueOption.value
@@ -116,22 +172,39 @@ export default function DropDown({
 				>
 					<DownArrow />
 				</div>
-				{(noValueOption && !hasValue
-					? [noValueOption, ...options]
-					: options
-				).map(option => (
-					<VSCodeOption
-						key={`${controlId}_${option.value}`}
-						id={`${controlId}_${option.value}`}
-						data-test={option.dataTest}
-						value={option.value}
-						data-value={option.value}
-						className={styles.option}
-						disabled={option.disabled}
-					>
-						{option.label}
-					</VSCodeOption>
-				))}
+				{getGroupedOptions(dropdownOptions).map(option => {
+					if (option.type === 'group') {
+						const optionGroupURIEncoded = `${controlId}__optionGroup__${encodeURIComponent(option.label)}`;
+						return (
+							<VSCodeOption
+								key={optionGroupURIEncoded}
+								id={optionGroupURIEncoded}
+								value={optionGroupURIEncoded}
+								data-test={optionGroupURIEncoded}
+								className={`${styles.option} ${styles.optionGroup}`}
+								disabled
+							>
+								{option.label}
+							</VSCodeOption>
+						);
+					}
+
+					return (
+						<VSCodeOption
+							key={`${controlId}_${option.value}`}
+							id={`${controlId}_${option.value}`}
+							data-test={option.dataTest}
+							value={option.value}
+							data-value={option.value}
+							className={`${styles.option} ${
+								option.isGrouped ? styles.groupedOption : ''
+							}`}
+							disabled={option.disabled}
+						>
+							{option.label}
+						</VSCodeOption>
+					);
+				})}
 			</VSCodeDropdown>
 
 			{placeholder && !hasValue && !isExpanded && (
@@ -140,7 +213,7 @@ export default function DropDown({
 				</div>
 			)}
 
-			{error && (
+			{error && error !== true && (
 				<div
 					className={styles.errorMessage}
 					data-test={`${dataTest}-error`}

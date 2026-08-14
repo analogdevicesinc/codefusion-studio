@@ -54,7 +54,10 @@ export const CfsFeatureScopeValues = [
 ] as const;
 
 // Managers
-export { CfsPluginManager } from "./plugins/cfs-plugin-manager.js";
+export {
+	CfsPluginManager,
+	type PluginSocContext
+} from "./plugins/cfs-plugin-manager.js";
 export { CfsDataModelManager } from "./managers/cfs-data-model-manager.js";
 export { CfsToolManager } from "./managers/cfs-tool-manager.js";
 
@@ -65,22 +68,25 @@ export type {
 	TaskDiscoveryStrategy
 } from "./types/task-discovery-strategy.js";
 export { CfsShellEnvProvider } from "./providers/cfs-shell-env-provider.js";
-export type {
-	ToolEnvVar,
-	ShellEnvOptions
-} from "./providers/cfs-shell-env-provider.js";
+export type { ShellEnvOptions } from "./providers/cfs-shell-env-provider.js";
 export { CfsTaskDiscoveryStrategy } from "./providers/cfs-task-discovery-strategy.js";
 export { MsdkTaskStrategy } from "./providers/msdk-task-strategy.js";
 export { ZephyrTaskStrategy } from "./providers/zephyr-task-strategy.js";
 export {
 	PLATFORM_IDS,
+	ZEPHYR_ARM_TOOLCHAIN_TOOL_ID as ZEPHYR_HOST_TOOLS_ID,
 	type PlatformId
 } from "./providers/platform-constants.js";
 
 // Utilities
 export { CfsVariableResolver } from "./utils/cfs-variable-resolver.js";
 export type { VariableResolver } from "./utils/cfs-variable-resolver.js";
-export { detectToolchain, resolveZephyrSdkRoot } from "./utils/detect-toolchain.js";
+export {
+	detectToolchain,
+	resolveZephyrHostToolsId,
+	getZephyrSdkPath,
+	resolveZephyrSdkRoot
+} from "./utils/detect-toolchain.js";
 export { globFiles } from "./utils/file-glob.js";
 export type { GlobOptions } from "./utils/file-glob.js";
 export {
@@ -94,10 +100,19 @@ export type { DataModelMetaData } from "./managers/cfs-data-model-manager.d.ts";
 export type { ToolInfo } from "./managers/cfs-tool-manager.d.ts";
 
 export type { TokenAuthSession } from "cfs-ccm-lib";
-export { CfsApiClient, SocCatalog } from "cfs-ccm-lib";
+export {
+	CfsApiClient,
+	CfsApiError,
+	SocCatalog,
+	ApiKeyAuthorizer
+} from "cfs-ccm-lib";
 export type { AuthConfig } from "./auth/session-manager.js";
 export { SessionManager } from "./auth/session-manager.js";
 export { MyAnalogCloudsmithCredentialProvider } from "./auth/cloudsmith-credentials.js";
+export {
+	DefaultConanCloudsmithRemotesProvider,
+	MyAnalogConanCloudsmithRemotesProvider
+} from "./packages/cloudsmith-remotes.js";
 export { PackageLicenseReporter } from "./license/license-acceptance-reporter.js";
 export { CatalogManager } from "./catalog/cfs-catalog-manager.js";
 
@@ -107,20 +122,26 @@ export type { SingleTelemetryMessage } from "./types/single-telemetry-message.js
 export type { MultipleTelemetryMessages } from "./types/multiple-telemetry-messages.js";
 export { UserType } from "./telemetry/telemetry-manager.js";
 export {
-	getAiToolsPlugin,
-	type AiCommandResult,
-	type AiToolsData,
-	type CodeGenJsonMsg
-} from "./ai-tools/index.js";
+	setTelemetryLogger,
+	getTelemetryLogger
+} from "./telemetry/telemetry-logger.js";
+export type { Logger } from "./types/logger.js";
 export {
-	parseAICodegenEvents,
+	getAiToolsPlugin,
+	type AiToolsData,
+	AiCommandError
+} from "./ai-tools/index.js";
+export type { default as AIToolsPlugin } from "./ai-tools/index.js";
+export {
 	resolveSource,
 	getCFSCachePath,
 	getValidExtensions
 } from "./ai-tools/ai-tools-utils.js";
+export { generateAIWorkspace } from "./ai-tools/ai-workspace-generation.js";
 export {
 	enforceMaxActiveModels,
-	enforceOneActiveBackendPerTarget
+	enforceOneActiveBackendPerTarget,
+	MAX_MODEL_NAME_LENGTH
 } from "./ai-tools/ai-tools-model-utils.js";
 export {
 	TELEMETRY_APP_ID,
@@ -145,3 +166,28 @@ export {
 	extractRegistryAndRepoName,
 	getCredentials
 } from "./utils/docker-utils.js";
+
+// Profiler / Trace Capture
+export {
+	Recording,
+	CTF_TRACE_START_TAG
+} from "./profiler/recording.js";
+export type { RecordingOptions } from "./profiler/recording.js";
+export {
+	SerialSourceConfig,
+	UsbSourceConfig,
+	createDataSource
+} from "./profiler/data-source-factory.js";
+export type { DataSourceConfig } from "./profiler/data-source-factory.js";
+export type { IProfilerDataSource } from "./profiler/data-source.js";
+export { convertTrace } from "./profiler/trace-conversion-service.js";
+export type { TraceConversionOptions } from "./profiler/trace-conversion-service.js";
+export {
+	listUsbDevices,
+	findUsbDevice,
+	onUsbDeviceDetached
+} from "./profiler/usb-device-directory.js";
+export type { UsbDeviceDescriptor } from "./profiler/usb-device-directory.js";
+
+// String Utils
+export { caseInsensitiveCompare } from "./utils/string-utils.js";

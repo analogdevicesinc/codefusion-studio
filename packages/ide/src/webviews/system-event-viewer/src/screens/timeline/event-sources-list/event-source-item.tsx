@@ -37,11 +37,12 @@ type EventSourceItemProps = Readonly<{
 	isDragged: boolean;
 	isResizingRef: React.MutableRefObject<boolean>;
 	onRowStateChange: (update: RowStateUpdate) => void;
-	onDragStart: (index: number, e: React.DragEvent) => void;
-	onDragOver: (e: React.DragEvent) => void;
-	onDragEnter: (index: number) => void;
+	onPointerDown: (
+		index: number,
+		e: React.PointerEvent<HTMLSpanElement>
+	) => void;
+	onPointerEnterRow: (index: number) => void;
 	onOptionSelect: (action: MenuAction, index: number) => void;
-	onDragEnd: () => void;
 }>;
 
 function EventSourceItem({
@@ -51,10 +52,8 @@ function EventSourceItem({
 	isDragged,
 	isResizingRef,
 	onRowStateChange,
-	onDragStart,
-	onDragOver,
-	onDragEnter,
-	onDragEnd,
+	onPointerDown,
+	onPointerEnterRow,
 	onOptionSelect
 }: EventSourceItemProps) {
 	const [isHovered, setIsHovered] = useState(false);
@@ -81,12 +80,13 @@ function EventSourceItem({
 		setIsHovered(false);
 	}, [debouncedHover]);
 
-	const handleOnMouseEnter = useCallback(() => {
+	const handleOnPointerEnter = useCallback(() => {
+		onPointerEnterRow(index);
 		displayTooltip();
 		onRowStateChange({rowIndex: index, isHovered: true});
-	}, [index, onRowStateChange, displayTooltip]);
+	}, [index, onPointerEnterRow, displayTooltip, onRowStateChange]);
 
-	const handleOnMouseLeave = useCallback(() => {
+	const handleOnPointerLeave = useCallback(() => {
 		hideTooltip();
 		onRowStateChange({rowIndex: index, isHovered: false});
 	}, [hideTooltip, index, onRowStateChange]);
@@ -147,25 +147,15 @@ function EventSourceItem({
 					: styles.item
 			}
 			data-test={`event-sources:item:${index}`}
-			onMouseEnter={isDragged ? undefined : handleOnMouseEnter}
-			onMouseLeave={isDragged ? undefined : handleOnMouseLeave}
-			onDragEnter={() => {
-				onDragEnter(index);
-			}}
-			onDragOver={e => {
-				onDragOver(e);
-			}}
+			onPointerEnter={handleOnPointerEnter}
+			onPointerLeave={handleOnPointerLeave}
 		>
 			<span
-				draggable
 				data-test={`event-sources:item:drag-handle:${index}`}
 				className={styles.dragIcon}
 				title='Drag to reorder'
-				onDragStart={e => {
-					onDragStart(index, e);
-				}}
-				onDragEnd={() => {
-					onDragEnd();
+				onPointerDown={e => {
+					onPointerDown(index, e);
 				}}
 			>
 				<DragDropIcon />

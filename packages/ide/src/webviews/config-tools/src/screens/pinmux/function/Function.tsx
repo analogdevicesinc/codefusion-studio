@@ -390,14 +390,15 @@ function Function({
 			<div
 				className={`${styles.configButtonContainer} ${openSignal === `${peripheralGroup} ${signalName}` ? styles.active : ''}`}
 			>
-				<Button
-					dataTest={`configure-${peripheralGroup}-${signalName}-button`}
-					appearance='icon'
-					disabled={!isToggledOn}
-					onClick={handlePanelOpen}
-				>
-					{isToggledOn && <Config width='12.5' height='10.8' />}
-				</Button>
+				{isToggledOn && (
+					<Button
+						dataTest={`configure-${peripheralGroup}-${signalName}-button`}
+						appearance='icon'
+						onClick={handlePanelOpen}
+					>
+						<Config width='12.5' height='10.8' />
+					</Button>
+				)}
 			</div>
 			{/* Always display container to reserve space */}
 			<div className={styles.iconConflictContainer}>

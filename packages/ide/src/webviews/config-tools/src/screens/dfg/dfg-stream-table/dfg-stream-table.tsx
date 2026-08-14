@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import {
 import styles from './dfg-stream-table.module.scss';
 import {useStreams} from '../../../state/slices/gaskets/gasket.selector';
 import {to8DigitHex} from '../dfg-canvas/dfg-canvas';
-import SmallSettingsIcon from '../../../../../common/components/icons/SamllSettingsIcon';
+import SmallSettingsIcon from '@common/components/icons/SmallSettingsIcon';
 import {useAppDispatch, useAppSelector} from '../../../state/store';
 import {setEditingStream} from '../../../state/slices/gaskets/gasket.reducer';
 import {useFilteredStreamsBySourcesAndDest} from '../hooks/useFilteredStreams';

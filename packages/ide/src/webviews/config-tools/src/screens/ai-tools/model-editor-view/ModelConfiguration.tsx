@@ -27,7 +27,7 @@ import {
 	TextField,
 	type TFormControl
 } from 'cfs-react-library';
-import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {formatControlsForDynamicForm} from '../../../utils/soc-controls';
 import {usePartitions} from '../../../state/slices/partitions/partitions.selector';
 import {type AIModelWithId} from '../../../state/slices/ai-tools/aiModel.reducer';
@@ -36,15 +36,16 @@ import {
 	getAiBackends,
 	getAIModelTargets
 } from '../../../utils/ai-tools';
-import MultiFileSelect from '../../../../../common/components/multi-file-select/multi-file-select';
-import FileInputField from '../../../../../common/components/file-input-field/FileInputField';
-import {selectFile} from '../../../../../common/api';
+import MultiFileSelect from '@common/components/multi-file-select/multi-file-select';
+import FileInputField from '@common/components/file-input-field/FileInputField';
+import {selectFile} from '@common/api';
 import type {Partition} from '../../../state/slices/partitions/partitions.reducer';
 import type {SocControl} from 'cfs-types';
+import {type ModelZooSelectionData} from '@common/components/cfs-model-zoo/CfsModelZoo';
 
 async function browse() {
 	return selectFile({
-		title: 'Select Model File',
+		title: 'Select File',
 		filters: {files: ['*']},
 		relativeToWorkspaceRoot: true
 	});
@@ -52,16 +53,24 @@ async function browse() {
 
 type ModelConfigurationProps = {
 	readonly currentModel: AIModelWithId;
+	readonly modelZooSelection?: ModelZooSelectionData;
 	readonly isEditing?: boolean;
-	readonly setCurrentModel: Dispatch<SetStateAction<AIModelWithId>>;
+	readonly setCurrentModel: (model: AIModelWithId) => void;
 	readonly errors: Record<string, string>;
+	readonly onDynamicControlsChange?: (controls: SocControl[]) => void;
+	readonly setModelZooOpen: Dispatch<SetStateAction<boolean>>;
 };
+
+const MAX_MODEL_LENGTH = 64;
 
 export function ModelConfiguration({
 	currentModel,
+	modelZooSelection,
 	isEditing,
 	errors,
-	setCurrentModel
+	setCurrentModel,
+	onDynamicControlsChange,
+	setModelZooOpen
 }: ModelConfigurationProps) {
 	const backends = getAiBackends();
 	const modelTargets = getAIModelTargets();
@@ -82,6 +91,11 @@ export function ModelConfiguration({
 			getControlsForAiBackend(currentModel.Backend.Name)
 				.then(controls => {
 					if (controls) {
+						// Notify parent of the dynamic controls for validation purposes
+						if (onDynamicControlsChange) {
+							onDynamicControlsChange(controls);
+						}
+
 						const formattedControls = formatControlsForDynamicForm(
 							controls,
 							currentModel ?? {},
@@ -136,14 +150,17 @@ export function ModelConfiguration({
 		currentModel.Backend?.Name,
 		backends,
 		partitions,
-		setCurrentModel
+		setCurrentModel,
+		onDynamicControlsChange
 	]);
 
 	const fileComponents = useMemo(() => {
 		const fileComponents: Record<string, JSX.Element> = {};
 
 		additionalControls
-			.filter(control => control.type === 'File')
+			.filter(
+				control => control.type === 'File' && control.id !== 'Dataset'
+			)
 			.forEach(control => {
 				fileComponents[control.id] = (
 					<FileInputField
@@ -152,7 +169,9 @@ export function ModelConfiguration({
 						error={errors[control.id]}
 						onBrowse={browse}
 						onInputChange={value => {
-							// Remove the file from the model if the value is empty to avoid confusion about whether an empty string is a valid path or not since it could be relative.
+							// Remove the file from the model if the value is empty
+							// to avoid confusion about whether an empty string is a
+							// valid path or not since it could be relative.
 							if (!value) {
 								delete currentModel.Files?.[control.id];
 							}
@@ -207,11 +226,15 @@ export function ModelConfiguration({
 							isDisabled={isEditing}
 							options={modelTargets.map(core => ({
 								label: core.Name,
-								value: `${core.Id}:${core.Accelerator ?? ''}:${core.Backend}`
+								value: `${core.Id}:${core.Accelerator ?? ''}:${
+									core.Backend
+								}`
 							}))}
 							controlId='target'
 							error={errors.Target}
-							currentControlValue={`${currentModel.Target.Core}:${currentModel.Target.Accelerator ?? ''}:${currentModel.Backend?.Name ?? ''}`}
+							currentControlValue={`${currentModel.Target.Core}:${
+								currentModel.Target.Accelerator ?? ''
+							}:${currentModel.Backend?.Name ?? ''}`}
 							dataTest='model-target-dropdown'
 							onHandleDropdown={value => {
 								const [coreId, accelerator, backend] =
@@ -252,6 +275,7 @@ export function ModelConfiguration({
 							placeholder='Model Name'
 							inputVal={currentModel.Name}
 							error={errors.Name}
+							maxLength={MAX_MODEL_LENGTH}
 							dataTest='model-name'
 							onInputChange={value => {
 								const newName = value;
@@ -273,7 +297,11 @@ export function ModelConfiguration({
 									Files: {...currentModel.Files, Model: value}
 								});
 							}}
-							onBrowse={browse}
+							onBrowse={async () => {
+								setModelZooOpen(true);
+
+								return undefined;
+							}}
 						/>
 					),
 					CalibrationSet: (
@@ -347,6 +375,31 @@ export function ModelConfiguration({
 									Backend: {
 										...currentModel.Backend!,
 										Labels: value ? value.split(',') : []
+									}
+								});
+							}}
+						/>
+					),
+					Dataset: (
+						<FileInputField
+							value={
+								currentModel.Files?.Dataset ??
+								(modelZooSelection?.model
+									? `${modelZooSelection?.model.name} - sample data`
+									: '')
+							}
+							error={errors.Dataset}
+							onBrowse={browse}
+							onInputChange={value => {
+								if (!value) {
+									delete currentModel.Files?.Dataset;
+								}
+
+								setCurrentModel({
+									...currentModel,
+									Files: {
+										...currentModel.Files,
+										...(value ? {Dataset: value} : {})
 									}
 								});
 							}}

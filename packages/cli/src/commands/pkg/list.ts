@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 import {Args, Command, Flags} from '@oclif/core';
 
 import {getPackageManager} from '../../utils/package-manager.js';
+
+export const pkgListDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
 
 export default class CfsPackageList extends Command {
   static args = {
@@ -40,7 +46,7 @@ export default class CfsPackageList extends Command {
   };
 
   async run(): Promise<void> {
-    const packman = await getPackageManager();
+    const packman = await pkgListDeps.getPackageManager();
     const {args, flags} = await this.parse(CfsPackageList);
 
     const filterPairs = flags.filter?.map((x) => x.split('='));

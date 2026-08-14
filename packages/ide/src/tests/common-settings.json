@@ -1,0 +1,16 @@
+{
+  "cfs.plugins.searchDirectories": [],
+  "cfs.plugins.dataModelSearchDirectories": [],
+  "cfs.sdk.path": "some/fake/path",
+  "cfs.telemetry.enable": false,
+  "workbench.startupEditor": "none",
+  "workbench.welcomePage.walkthroughs.openOnInstall": false,
+  "chat.commandCenter.enabled": false,
+  "github.copilot.advanced": {},
+  "github.copilot.enable": {
+    "*": false
+  },
+  "chat.disableAIFeatures": true,
+  "github.copilot.chat.welcomeMessage": "never",
+  "github.copilot.advanced.debug.useElectronFetcher": false
+}

@@ -18,7 +18,7 @@ import {
 	setSideBarState,
 	updateActivePartition
 } from '../../../state/slices/partitions/partitions.reducer';
-import {type Soc} from '../../../../../common/types/soc';
+import {type Soc} from '@common/types/soc';
 
 const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32657-wlp.json')).default as unknown as Soc
@@ -47,7 +47,7 @@ const mockedConfigDict = {
 			PluginVersion: '1.0.0',
 			FirmwarePlatform: 'zephyr-4.1',
 			ExternallyManaged: false,
-			Secure: false,
+			Secure: undefined,
 			Family: 'Cortex-M',
 			Partitions: [],
 			Peripherals: [
@@ -134,7 +134,7 @@ describe('Partition Sidebar Aliases', () => {
 	});
 
 	describe('Memory Blocks Section', () => {
-		it('should not show aliases for Non-Secure cores', () => {
+		it('should show aliases for Non-Secure cores when alias memory entries exist but Secure is undefined', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
@@ -157,7 +157,7 @@ describe('Partition Sidebar Aliases', () => {
 
 			cy.dataTest(
 				'software-start-address-CM33-flash0-0x11000000'
-			).should('not.exist');
+			).should('exist');
 		});
 		it('should sync software addresses with physical address', () => {
 			cy.mount(

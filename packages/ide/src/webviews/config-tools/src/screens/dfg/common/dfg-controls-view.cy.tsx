@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,21 @@
  */
 
 import {useState} from 'react';
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import {DFGControlsView} from './dfg-controls-view';
-import type {ControlCfg} from '../../../../../common/types/soc';
+import type {
+	ConfigFields,
+	ControlCfg
+} from '../../../../../common/types/soc';
 
 describe('DFGControlsView', () => {
 	beforeEach(() => {
 		cy.viewport(1920, 1080);
+		(window as any).__webview_localization_resources__ = {
+			cfgtools: {
+				dfg: {nonDefaultValue: 'Non-default value'}
+			}
+		};
 	});
 
 	it('should render dynamic controls and show errors for invalid inputs', () => {
@@ -106,40 +115,145 @@ describe('DFGControlsView', () => {
 			'not.exist'
 		);
 	});
+
+	it('marks non-default values and removes the marker after resetting', () => {
+		const controls = fakeRequest<Record<string, ControlCfg[]>>({
+			TestProperty: [
+				{
+					Id: 'PRIORITY',
+					Type: 'integer',
+					Description: 'Stream Priority',
+					Default: 0,
+					MinimumValue: 0,
+					MaximumValue: 3,
+					Increment: 1,
+					NumericBase: 'Decimal'
+				}
+			]
+		});
+
+		cy.mount(
+			<DFGControlsViewWrapper
+				controls={controls}
+				socConfig={{PRIORITY: {VALUE: []}}}
+			/>
+		);
+
+		const controlTestId =
+			'dfg-test-controls:control-PRIORITY-control-input';
+
+		cy.dataTest('dfg-test-controls:non-default-value').should(
+			'not.exist'
+		);
+		cy.contains('Stream Priority *').should('not.exist');
+
+		cy.dataTest(controlTestId)
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('1');
+			});
+
+		cy.dataTest('dfg-test-controls:non-default-value')
+			.should('exist')
+			.and('contain.text', '*')
+			.and('contain.text', 'Non-default value');
+		cy.contains('Stream Priority *').should('exist');
+
+		cy.dataTest(controlTestId)
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('0');
+			});
+
+		cy.dataTest('dfg-test-controls:non-default-value').should(
+			'not.exist'
+		);
+		cy.contains('Stream Priority *').should('not.exist');
+	});
+
+	it('marks persisted non-default values on the initial render', () => {
+		const controls = fakeRequest<Record<string, ControlCfg[]>>({
+			TestProperty: [
+				{
+					Id: 'PRIORITY',
+					Type: 'integer',
+					Description: 'Stream Priority',
+					Default: 0,
+					MinimumValue: 0,
+					MaximumValue: 3,
+					Increment: 1,
+					NumericBase: 'Decimal'
+				}
+			]
+		});
+
+		cy.mount(
+			<DFGControlsViewWrapper
+				controls={controls}
+				socConfig={{PRIORITY: {VALUE: []}}}
+				initialData={{PRIORITY: '1'}}
+			/>
+		);
+
+		cy.dataTest('dfg-test-controls:non-default-value')
+			.should('exist')
+			.and('contain.text', '*')
+			.and('contain.text', 'Non-default value');
+		cy.contains('Stream Priority *').should('exist');
+	});
 });
 
 function DFGControlsViewWrapper({
-	controls
+	controls,
+	initialData,
+	socConfig = {
+		TestString: {},
+		TestNumber: {
+			VALUE: [
+				{
+					Register: 'CSS_DFG_IS_CTL_F0',
+					Field: 'IS_BUFFER_SIZE',
+					Value: '1',
+					Operation: 'Write'
+				}
+			]
+		}
+	}
 }: {
 	readonly controls: Promise<Record<string, ControlCfg[]>>;
+	readonly initialData?: Record<string, string | number | boolean>;
+	readonly socConfig?: ConfigFields;
 }) {
 	const [data, setData] = useState<
 		Record<string, string | number | boolean>
-	>({});
+	>(initialData ?? {});
 
 	return (
-		<DFGControlsView
-			data={data}
-			controlsPrms={controls}
-			propertyName='TestProperty'
-			testId='dfg-test-controls'
-			socConfig={{
-				TestString: {},
-				TestNumber: {
-					VALUE: [
-						{
-							Register: 'CSS_DFG_IS_CTL_F0',
-							Field: 'IS_BUFFER_SIZE',
-							Value: 'val',
-							Operation: 'Write'
+		<LocalizationProvider namespace='cfgtools'>
+			<DFGControlsView
+				data={data}
+				controlsPrms={controls}
+				propertyName='TestProperty'
+				testId='dfg-test-controls'
+				socConfig={socConfig}
+				onControlChange={(field, value) => {
+					setData(prevData => {
+						if (value === undefined) {
+							return Object.fromEntries(
+								Object.entries(prevData).filter(
+									([key]) => key !== field
+								)
+							);
 						}
-					]
-				}
-			}}
-			onControlChange={(field, value) => {
-				setData({...data, [field]: value});
-			}}
-		/>
+
+						return {
+							...prevData,
+							[field]: value
+						};
+					});
+				}}
+			/>
+		</LocalizationProvider>
 	);
 }
 

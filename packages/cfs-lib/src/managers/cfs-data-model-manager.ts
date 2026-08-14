@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -252,7 +252,7 @@ export class CfsDataModelManager {
 		// Always fetch fresh data
 		await this.discoverDataModelPackages();
 
-		const socEntry = this.dataModelIndexCache[name];
+		const socEntry = this.dataModelIndexCache[name.toLowerCase()];
 		if (socEntry) {
 			const packageIds = Object.keys(socEntry);
 			if (packageIds.length) {

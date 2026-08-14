@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,28 @@ export class ScriptManager {
   public readonly onScriptsChanged = this._onScriptsChanged.event;
   private scripts: Array<GdbToolboxScript & { filePath: string }> = [];
   constructor() {
-    // Determine the workspace root or set to undefined if no workspace is open
+    // Determine the workspace root or set to undefined if no workspace is open.
+    // For multi-root workspaces (opened via .code-workspace file), use the
+    // workspace file's directory as the root. Generated CFS .code-workspace
+    // files list .cfs as their first folder, so using workspaceFolders[0]
+    // would incorrectly resolve to <workspace>/.cfs/.cfs/gdb_toolbox/configs.
+    // For single-folder workspaces (e.g. migrated MSDK examples), fall back
+    // to workspaceFolders[0].
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    const workspaceRoot =
-      workspaceFolders && workspaceFolders.length > 0
-        ? workspaceFolders[0].uri.fsPath.replace(/\\/g, "/")
-        : undefined;
+    const workspaceFile = vscode.workspace.workspaceFile;
+    let workspaceRoot: string | undefined;
+    if (
+      workspaceFile &&
+      workspaceFile.scheme === "file"
+    ) {
+      workspaceRoot = path.dirname(workspaceFile.fsPath).replace(/\\/g, "/");
+    } else if (workspaceFolders && workspaceFolders.length > 0) {
+      workspaceRoot = workspaceFolders[0].uri.fsPath.replace(/\\/g, "/");
+    }
 
-    // User scripts are stored in the workspace's gdb_toolbox/configs directory
+    // User scripts are stored in the workspace's .cfs/gdb_toolbox/configs directory
     this.scriptsDir = workspaceRoot
-      ? `${workspaceRoot}/gdb_toolbox/configs`
+      ? `${workspaceRoot}/.cfs/gdb_toolbox/configs`
       : "";
 
     // Also watch <userHome>/cfs/gdb_toolbox/configs for scripts

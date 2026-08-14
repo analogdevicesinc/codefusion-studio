@@ -36,11 +36,19 @@ import { Utils } from "../utils/utils";
 import path from "path";
 import { VSCODE_OPEN_FOLDER_COMMAND_ID } from "../commands/constants";
 import { getCatalogManager } from "../utils/catalog";
-import { CfsPluginManager, CfsToolManager, getAiToolsPlugin } from "cfs-lib";
-import { SoC } from "cfs-ccm-api/dist/rest-types";
+import {
+  CfsPluginManager,
+  CfsToolManager,
+  generateAIWorkspace,
+  getAiToolsPlugin,
+} from "cfs-lib";
+import type { SoC } from "cfs-ccm-api/rest-types";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
-
-export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProvider {
+export class ModelWorkspaceCreationEditor
+  implements vscode.CustomTextEditorProvider
+{
   static readonly viewType = MODEL_WORKSPACE_CREATION_EDITOR_ID;
 
   private pluginManager: CfsPluginManager | undefined;
@@ -87,6 +95,12 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): Promise<void> {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "model_workspace_creation",
+      });
+    });
+
     const participant = this.messenger.registerWebviewPanel(webviewPanel);
     this.registerMessageHandlers(participant, document);
 
@@ -109,7 +123,7 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
     this.messenger.onRequest(
       getWorkspaceConfig,
       async () => {
-        const workspaceConfig = JSON.parse(document.getText() || "{}");
+        const workspaceConfig = this.getWorkspaceConfigFromDocument(document);
         return workspaceConfig;
       },
       { sender: participant },
@@ -118,22 +132,7 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
     this.messenger.onNotification(
       updateWorkspaceConfig,
       async (data) => {
-        const workspaceConfig = JSON.parse(document.getText() || "{}");
-        const updatedConfig = {
-          ...workspaceConfig,
-          ...data,
-        };
-        const edit = new vscode.WorkspaceEdit();
-        const fullRange = new vscode.Range(
-          document.positionAt(0),
-          document.positionAt(document.getText().length),
-        );
-        edit.replace(
-          document.uri,
-          fullRange,
-          JSON.stringify(updatedConfig, null, 2),
-        );
-        await vscode.workspace.applyEdit(edit);
+        await this.updateWorkspaceConfigDocument(document, data);
       },
       { sender: participant },
     );
@@ -152,8 +151,11 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
 
     this.messenger.onNotification(
       generateWorkspace,
-      async () => {
-        this.generateWorkspace(document);
+      async (update) => {
+        if (update) {
+          await this.updateWorkspaceConfigDocument(document, update);
+        }
+        await this.generateWorkspace(document);
       },
       {
         sender: participant,
@@ -161,11 +163,41 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
     );
   }
 
+  private getWorkspaceConfigFromDocument(
+    document: vscode.TextDocument,
+  ): Partial<AIModelCfsWorkspace> {
+    return JSON.parse(document.getText() || "{}");
+  }
+
+  private async updateWorkspaceConfigDocument(
+    document: vscode.TextDocument,
+    data: Partial<AIModelCfsWorkspace>,
+  ) {
+    const workspaceConfig = this.getWorkspaceConfigFromDocument(document);
+    const updatedConfig = {
+      ...workspaceConfig,
+      ...data,
+    };
+
+    const edit = new vscode.WorkspaceEdit();
+    const fullRange = new vscode.Range(
+      document.positionAt(0),
+      document.positionAt(document.getText().length),
+    );
+
+    edit.replace(
+      document.uri,
+      fullRange,
+      JSON.stringify(updatedConfig, null, 2),
+    );
+
+    await vscode.workspace.applyEdit(edit);
+  }
+
   private async generateWorkspace(document: vscode.TextDocument) {
     try {
-      const workspaceConfig: AIModelCfsWorkspace = JSON.parse(
-        document.getText() || "{}",
-      );
+      const workspaceConfig: AIModelCfsWorkspace =
+        this.getWorkspaceConfigFromDocument(document) as AIModelCfsWorkspace;
 
       // set the package based on the soc and board
       workspaceConfig.package = await this.getPackageForSoc(
@@ -178,7 +210,9 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
 
       workspaceConfig.workspaceName =
         workspaceConfig.workspaceName ||
-        `${workspaceConfig.soc}-${workspaceConfig.package.toUpperCase()}_ai_prof_${Date.now()}`;
+        `${
+          workspaceConfig.soc
+        }-${workspaceConfig.package.toUpperCase()}_ai_prof_${Date.now()}`;
 
       const plugins = await this.pluginManager?.getPluginsInfoList();
       const pluginToUse = plugins?.find(
@@ -189,7 +223,6 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
 
       workspaceConfig.workspacePluginId = pluginToUse?.pluginId;
 
-      await this.pluginManager?.generateWorkspace(workspaceConfig);
       const codeWorkspace = vscode.Uri.file(
         path.join(
           workspaceConfig.location,
@@ -197,6 +230,16 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
           `${workspaceConfig.workspaceName}.code-workspace`,
         ),
       );
+      if (!this.pluginManager) {
+        throw new Error("Plugin Manager not initialized");
+      }
+
+      await generateAIWorkspace(
+        this.pluginManager,
+        workspaceConfig,
+        codeWorkspace.fsPath,
+      );
+
       if (!process.env.SKIP_OPEN_WORKSPACE) {
         await this.context.globalState.update(
           `${OPEN_AIPROFILING_EXTENSION_STATE}:${codeWorkspace}`,
@@ -307,7 +350,7 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
       ),
     );
 
-    return cores.reduce(
+    const result = cores.reduce(
       (acc, core, index) => {
         acc[core] =
           compatResults[index].code === 0
@@ -319,6 +362,18 @@ export class ModelWorkspaceCreationEditor implements vscode.CustomTextEditorProv
       },
       {} as Record<string, boolean | "error">,
     );
+    void getTelemetryManager().then((telemetryManager) => {
+      const action = Object.values(result).some((value) => value === true)
+        ? TELEMETRY_ACTIONS.AI_MODEL_CHECK_SUCCESS
+        : TELEMETRY_ACTIONS.AI_MODEL_CHECK_FAILURE;
+      telemetryManager.logAction(action, {
+        soc: soc,
+        packageId,
+        dataModelVersion: dataModel.Version,
+        model_format: path.extname(modelFile).replace(".", ""),
+      });
+    });
+    return result;
   }
 
   private async getAiSupportingPlugins() {

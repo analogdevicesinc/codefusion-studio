@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.777",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-23T11:23:50.520414Z",
+  "Version": "1.0.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T16:54:34.028484Z",
   "Name": "MAX32662",
   "Description": "Arm Cortex-M4 Processor with FPU-Based Microcontroller (MCU) with 256KB Flash and 80KB SRAM",
   "Endianness": "Little",
@@ -1689,12 +1689,6 @@
       "ClockNode": "CAN"
     },
     {
-      "Name": "CM4",
-      "Description": "ARM Cortex-M4",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "CM4 SysTick",
       "Description": "SysTick Timer on ARM Cortex-M4",
       "Cores": [
@@ -1726,12 +1720,6 @@
         "CM4"
       ],
       "ClockNode": "DMA"
-    },
-    {
-      "Name": "FCR",
-      "Description": "Function Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "FLC",
@@ -1819,12 +1807,6 @@
         "ACCESS_FAIL_IE",
         "PROT_IE"
       ]
-    },
-    {
-      "Name": "GCR",
-      "Description": "Global Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "GPIO0",
@@ -5081,12 +5063,6 @@
         }
       ],
       "ClockNode": "LPTMR0"
-    },
-    {
-      "Name": "MCR",
-      "Description": "MIscelaneous Control",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "MISC",
@@ -13424,6 +13400,7 @@
         ]
       }
     ],
+    "GPIO0": [],
     "TMR0": [
       {
         "Id": "CONFIGURATION",
@@ -16002,6 +15979,7 @@
         "Type": "boolean"
       }
     ],
+    "DMA": [],
     "FLC": [
       {
         "Id": "LOW_VOLTAGE",
@@ -16748,6 +16726,11 @@
         "Type": "boolean"
       }
     ],
+    "PTG": [],
+    "PT0": [],
+    "PT1": [],
+    "PT2": [],
+    "PT3": [],
     "UART0": [
       {
         "Id": "TX_RX_MODES",
@@ -19158,7 +19141,8 @@
         "Description": "Enable Timer A Wake-Up",
         "Type": "boolean"
       }
-    ]
+    ],
+    "AES": []
   },
   "ClockNodes": [
     {
@@ -28151,35 +28135,748 @@
     },
     {
       "Name": "GPIO0_EN3",
-      "Description": "GPIO Alternate Function Enable Register",
+      "Description": "GPIO Alternate Function Select 3 Register",
       "Address": "0x40008080",
       "Size": 32,
       "Fields": [
         {
-          "Name": "GPIO_EN3",
-          "Description": "Mask of All of the Pins on the Port",
-          "Documentation": "Mask of All of the Pins on the Port.",
+          "Name": "PIN0",
+          "Description": "Function Selection Bit [n] for Pin 0",
+          "Documentation": "Function Selection Bit [n] for Pin 0.",
           "Position": 0,
-          "Length": 32,
+          "Length": 1,
           "Access": "R/W",
           "Reset": 0,
           "Enum": [
             {
-              "Name": "PRIMARY",
-              "Description": "Primary Function Selected",
+              "Name": "CLEAR",
+              "Description": "Clear",
               "Value": 0,
-              "Documentation": "Primary Function Selected."
+              "Documentation": "GPIO pin 0 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
             },
             {
-              "Name": "SECONDARY",
-              "Description": "Secondary Function Selected",
+              "Name": "SET",
+              "Description": "Set",
               "Value": 1,
-              "Documentation": "Secondary Function Selected."
+              "Documentation": "GPIO pin 0 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN1",
+          "Description": "Function Selection Bit [n] for Pin 1",
+          "Documentation": "Function Selection Bit [n] for Pin 1.",
+          "Position": 1,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 1 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 1 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN2",
+          "Description": "Function Selection Bit [n] for Pin 2",
+          "Documentation": "Function Selection Bit [n] for Pin 2.",
+          "Position": 2,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 2 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 2 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN3",
+          "Description": "Function Selection Bit [n] for Pin 3",
+          "Documentation": "Function Selection Bit [n] for Pin 3.",
+          "Position": 3,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 3 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 3 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN4",
+          "Description": "Function Selection Bit [n] for Pin 4",
+          "Documentation": "Function Selection Bit [n] for Pin 4.",
+          "Position": 4,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 4 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 4 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN5",
+          "Description": "Function Selection Bit [n] for Pin 5",
+          "Documentation": "Function Selection Bit [n] for Pin 5.",
+          "Position": 5,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 5 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 5 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN6",
+          "Description": "Function Selection Bit [n] for Pin 6",
+          "Documentation": "Function Selection Bit [n] for Pin 6.",
+          "Position": 6,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 6 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 6 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN7",
+          "Description": "Function Selection Bit [n] for Pin 7",
+          "Documentation": "Function Selection Bit [n] for Pin 7.",
+          "Position": 7,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 7 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 7 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN8",
+          "Description": "Function Selection Bit [n] for Pin 8",
+          "Documentation": "Function Selection Bit [n] for Pin 8.",
+          "Position": 8,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 8 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 8 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN9",
+          "Description": "Function Selection Bit [n] for Pin 9",
+          "Documentation": "Function Selection Bit [n] for Pin 9.",
+          "Position": 9,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 9 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 9 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN10",
+          "Description": "Function Selection Bit [n] for Pin 10",
+          "Documentation": "Function Selection Bit [n] for Pin 10.",
+          "Position": 10,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 10 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 10 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN11",
+          "Description": "Function Selection Bit [n] for Pin 11",
+          "Documentation": "Function Selection Bit [n] for Pin 11.",
+          "Position": 11,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 11 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 11 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN12",
+          "Description": "Function Selection Bit [n] for Pin 12",
+          "Documentation": "Function Selection Bit [n] for Pin 12.",
+          "Position": 12,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 12 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 12 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN13",
+          "Description": "Function Selection Bit [n] for Pin 13",
+          "Documentation": "Function Selection Bit [n] for Pin 13.",
+          "Position": 13,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 13 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 13 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN14",
+          "Description": "Function Selection Bit [n] for Pin 14",
+          "Documentation": "Function Selection Bit [n] for Pin 14.",
+          "Position": 14,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 14 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 14 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN15",
+          "Description": "Function Selection Bit [n] for Pin 15",
+          "Documentation": "Function Selection Bit [n] for Pin 15.",
+          "Position": 15,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 15 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 15 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN16",
+          "Description": "Function Selection Bit [n] for Pin 16",
+          "Documentation": "Function Selection Bit [n] for Pin 16.",
+          "Position": 16,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 16 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 16 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN17",
+          "Description": "Function Selection Bit [n] for Pin 17",
+          "Documentation": "Function Selection Bit [n] for Pin 17.",
+          "Position": 17,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 17 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 17 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN18",
+          "Description": "Function Selection Bit [n] for Pin 18",
+          "Documentation": "Function Selection Bit [n] for Pin 18.",
+          "Position": 18,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 18 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 18 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN19",
+          "Description": "Function Selection Bit [n] for Pin 19",
+          "Documentation": "Function Selection Bit [n] for Pin 19.",
+          "Position": 19,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 19 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 19 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN20",
+          "Description": "Function Selection Bit [n] for Pin 20",
+          "Documentation": "Function Selection Bit [n] for Pin 20.",
+          "Position": 20,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 20 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 20 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN21",
+          "Description": "Function Selection Bit [n] for Pin 21",
+          "Documentation": "Function Selection Bit [n] for Pin 21.",
+          "Position": 21,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 21 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 21 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN22",
+          "Description": "Function Selection Bit [n] for Pin 22",
+          "Documentation": "Function Selection Bit [n] for Pin 22.",
+          "Position": 22,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 22 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 22 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN23",
+          "Description": "Function Selection Bit [n] for Pin 23",
+          "Documentation": "Function Selection Bit [n] for Pin 23.",
+          "Position": 23,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 23 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 23 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN24",
+          "Description": "Function Selection Bit [n] for Pin 24",
+          "Documentation": "Function Selection Bit [n] for Pin 24.",
+          "Position": 24,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 24 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 24 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN25",
+          "Description": "Function Selection Bit [n] for Pin 25",
+          "Documentation": "Function Selection Bit [n] for Pin 25.",
+          "Position": 25,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 25 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 25 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN26",
+          "Description": "Function Selection Bit [n] for Pin 26",
+          "Documentation": "Function Selection Bit [n] for Pin 26.",
+          "Position": 26,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 26 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 26 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN27",
+          "Description": "Function Selection Bit [n] for Pin 27",
+          "Documentation": "Function Selection Bit [n] for Pin 27.",
+          "Position": 27,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 27 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 27 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN28",
+          "Description": "Function Selection Bit [n] for Pin 28",
+          "Documentation": "Function Selection Bit [n] for Pin 28.",
+          "Position": 28,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 28 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 28 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN29",
+          "Description": "Function Selection Bit [n] for Pin 29",
+          "Documentation": "Function Selection Bit [n] for Pin 29.",
+          "Position": 29,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 29 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 29 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN30",
+          "Description": "Function Selection Bit [n] for Pin 30",
+          "Documentation": "Function Selection Bit [n] for Pin 30.",
+          "Position": 30,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 30 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 30 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            }
+          ]
+        },
+        {
+          "Name": "PIN31",
+          "Description": "Function Selection Bit [n] for Pin 31",
+          "Documentation": "Function Selection Bit [n] for Pin 31.",
+          "Position": 31,
+          "Length": 1,
+          "Access": "R/W",
+          "Reset": 0,
+          "Enum": [
+            {
+              "Name": "CLEAR",
+              "Description": "Clear",
+              "Value": 0,
+              "Documentation": "GPIO pin 31 alternate function bit [n] is clear. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
+            },
+            {
+              "Name": "SET",
+              "Description": "Set",
+              "Value": 1,
+              "Documentation": "GPIO pin 31 alternate function bit [n] is set. The alternate function is specified using both the GPIOn_EN1 and GPIOn_EN2 registers."
             }
           ]
         }
       ],
-      "Documentation": "Each bit in this register selects between primary/secondary functions for the associated GPIO pin in this port."
+      "Documentation": "The bits in the GPIOn_EN1 and GPIOn_EN2 registers between them select between the different alternate functions for the associated GPIO pin in this port. The fields can be modified directly by writing to this register or indirectly through GPIOn_EN3_SET or GPIOn_EN3_CLR."
     },
     {
       "Name": "GPIO0_INEN",

@@ -37,16 +37,62 @@ const mockCatalog = [
 			id: 'MAX78xxx',
 			name: 'MAX78xxx'
 		},
-		boards: [{
-			id: 'MAX78000EVKIT',
-			name: 'MAX78000EVKIT',
-			packageIDs: ['WLP'],
-		}],
+		boards: [
+			{
+				id: 'MAX78000EVKIT',
+				name: 'MAX78000EVKIT',
+				packageIDs: ['WLP']
+			},
+			{
+				id: 'MAX32690EVKIT',
+				name: 'MAX32690EVKIT',
+				packageIDs: ['WLP']
+			}
+		],
 		packages: ['WLP', 'TQFN'],
 		cores: [
-			{id: 'cm4', name: 'Cortex-M4', aiSupported: true},
-			{id: 'cm5', name: 'Cortex-M5', aiSupported: true},
-			{id: 'riscv', name: 'RISC-V', aiSupported: false}
+			{
+				id: 'cm4',
+				name: 'Cortex-M4',
+				aiSupported: true,
+				dataModelCoreID: 'cm4'
+			},
+			{
+				id: 'cm5',
+				name: 'Cortex-M5',
+				aiSupported: true,
+				dataModelCoreID: 'cm5'
+			},
+			{
+				id: 'riscv',
+				name: 'RISC-V',
+				aiSupported: false,
+				dataModelCoreID: 'riscv'
+			}
+		]
+	},
+	{
+		id: 'MAX78001',
+		name: 'MAX78001',
+		family: {
+			id: 'MAX78xxx',
+			name: 'MAX78xxx'
+		},
+		boards: [
+			{
+				id: 'MAX78001EVKIT',
+				name: 'MAX78001EVKIT',
+				packageIDs: ['WLP']
+			}
+		],
+		packages: ['WLP'],
+		cores: [
+			{
+				id: 'cm4',
+				name: 'Cortex-M4',
+				aiSupported: true,
+				dataModelCoreID: 'cm4'
+			}
 		]
 	}
 ];
@@ -59,15 +105,13 @@ const defaultMockCompatibilityResult: Record<
 	cm5: false
 };
 
-const l10n = await import(
-	'../../../../l10n/bundle.l10n.en.json'
-);
+const l10n = await import('../../../../l10n/bundle.l10n.en.json');
 
 const {validationErrors} = l10n.default['model-wrksp'];
 
 (window as any).__webview_localization_resources__ = l10n.default;
 
-let workspaceConfig: Partial<AIModelCfsWorkspace>
+let workspaceConfig: Partial<AIModelCfsWorkspace>;
 let compatibilityResult: Record<string, boolean | 'error'> =
 	defaultMockCompatibilityResult;
 
@@ -91,7 +135,7 @@ describe('ModelWorkspaceCreation', () => {
 	});
 
 	it('should render the empty form', () => {
-		workspaceConfig = {}
+		workspaceConfig = {};
 
 		cy.mount(<App />);
 
@@ -112,10 +156,12 @@ describe('ModelWorkspaceCreation', () => {
 			'searchable-grouped-selection:segmented-controls:expand'
 		).click();
 
-		cy.dataTest('searchable-grouped-selection:option:MAX78000').should(
-			'exist'
-		);
-		cy.dataTest('searchable-grouped-selection:option:MAX78000').click();
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).should('exist');
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).click();
 
 		cy.dataTest('select-soc-board-select').should('exist');
 
@@ -124,7 +170,6 @@ describe('ModelWorkspaceCreation', () => {
 			.and('contain.text', 'Cortex-M5')
 			.and('contain.text', 'RISC-V')
 			.and('contains.text', 'Unsupported');
-
 	});
 
 	it('should show compatibility results for cores after selection', () => {
@@ -244,7 +289,146 @@ describe('ModelWorkspaceCreation', () => {
 			'have.value',
 			mockWorkspaceConfig.board
 		);
+	});
 
+	it('should auto-select the board when the SoC has only one board option', () => {
+		cy.mount(<App />);
+
+		cy.dataTest(
+			'searchable-grouped-selection:segmented-controls:expand'
+		).click();
+
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78001'
+		).click();
+
+		cy.dataTest('select-soc-board-select').should(
+			'have.value',
+			'MAX78001EVKIT'
+		);
+	});
+
+	it('should auto-select the first AI-supported core when no compatibility check has run', () => {
+		cy.mount(<App />);
+
+		cy.dataTest(
+			'searchable-grouped-selection:segmented-controls:expand'
+		).click();
+
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).click();
+
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(0)
+			.should('be.checked');
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(1)
+			.should('not.be.checked');
+	});
+
+	it('should auto-select the first compatible AI-supported core after compatibility check', () => {
+		compatibilityResult = {cm4: true, cm5: false};
+
+		cy.mount(<App />);
+
+		cy.dataTest('model-file-control-input')
+			.shadow()
+			.find('input')
+			.type('/new/model.tflite');
+
+		cy.dataTest(
+			'searchable-grouped-selection:segmented-controls:expand'
+		).click();
+
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).click();
+
+		cy.dataTest('select-soc-board-select').click();
+		cy.dataTest('select-soc-board-select')
+			.find('> vscode-option')
+			.contains('MAX78000EVKIT')
+			.click();
+
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(0)
+			.should('be.checked');
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(1)
+			.should('not.be.checked');
+	});
+
+	it('should auto-select the second compatible core when the first is incompatible', () => {
+		compatibilityResult = {cm4: false, cm5: true};
+
+		cy.mount(<App />);
+
+		cy.dataTest('model-file-control-input')
+			.shadow()
+			.find('input')
+			.type('/new/model.tflite');
+
+		cy.dataTest(
+			'searchable-grouped-selection:segmented-controls:expand'
+		).click();
+
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).click();
+
+		cy.dataTest('select-soc-board-select').click();
+		cy.dataTest('select-soc-board-select')
+			.find('> vscode-option')
+			.contains('MAX78000EVKIT')
+			.click();
+
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(0)
+			.should('not.be.checked');
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(1)
+			.should('be.checked');
+	});
+
+	it('should clear the core selection when no compatible AI-supported cores exist', () => {
+		compatibilityResult = {cm4: false, cm5: false};
+
+		cy.mount(<App />);
+
+		cy.dataTest('model-file-control-input')
+			.shadow()
+			.find('input')
+			.type('/new/model.tflite');
+
+		cy.dataTest(
+			'searchable-grouped-selection:segmented-controls:expand'
+		).click();
+
+		cy.dataTest(
+			'searchable-grouped-selection:option:MAX78000'
+		).click();
+
+		cy.dataTest('select-soc-board-select').click();
+		cy.dataTest('select-soc-board-select')
+			.find('> vscode-option')
+			.contains('MAX78000EVKIT')
+			.click();
+
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(0)
+			.should('not.be.checked');
+		cy.get('[class*="selectedContent"]')
+			.find('input[type="checkbox"]')
+			.eq(1)
+			.should('not.be.checked');
 	});
 
 	it('should show and clear validation errors after filling required fields and validating again', () => {
@@ -280,10 +464,6 @@ describe('ModelWorkspaceCreation', () => {
 		cy.dataTest('create-workspace-button').click();
 
 		cy.dataTest('model-file-error').should('not.exist');
-		cy.dataTest('select-soc-board-select-error').should(
-			'not.exist',
-		);
+		cy.dataTest('select-soc-board-select-error').should('not.exist');
 	});
-
 });
-

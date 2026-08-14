@@ -20,9 +20,117 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { URL } from "node:url";
 
-import { CodeGenJsonMsg } from "./index.js";
 import { checkIfFileExists } from "../utils/file-utils.js";
 import type { AIModelBackend, SocControl } from "cfs-types";
+
+export const C_CPP_RESERVED_KEYWORDS = new Set<string>([
+	"alignas",
+	"alignof",
+	"and",
+	"and_eq",
+	"asm",
+	"auto",
+	"bitand",
+	"bitor",
+	"bool",
+	"break",
+	"case",
+	"catch",
+	"char",
+	"char8_t",
+	"char16_t",
+	"char32_t",
+	"class",
+	"compl",
+	"concept",
+	"const",
+	"consteval",
+	"constexpr",
+	"constinit",
+	"const_cast",
+	"continue",
+	"co_await",
+	"co_return",
+	"co_yield",
+	"decltype",
+	"default",
+	"delete",
+	"do",
+	"double",
+	"dynamic_cast",
+	"else",
+	"enum",
+	"explicit",
+	"export",
+	"extern",
+	"false",
+	"float",
+	"for",
+	"friend",
+	"goto",
+	"if",
+	"inline",
+	"int",
+	"long",
+	"mutable",
+	"namespace",
+	"new",
+	"noexcept",
+	"not",
+	"not_eq",
+	"nullptr",
+	"operator",
+	"or",
+	"or_eq",
+	"private",
+	"protected",
+	"public",
+	"register",
+	"reinterpret_cast",
+	"requires",
+	"return",
+	"short",
+	"signed",
+	"sizeof",
+	"static",
+	"static_assert",
+	"static_cast",
+	"struct",
+	"switch",
+	"template",
+	"this",
+	"thread_local",
+	"throw",
+	"true",
+	"try",
+	"typedef",
+	"typeid",
+	"typename",
+	"union",
+	"unsigned",
+	"using",
+	"virtual",
+	"void",
+	"volatile",
+	"wchar_t",
+	"while",
+	"xor",
+	"xor_eq",
+	"_Alignas",
+	"_Alignof",
+	"_Atomic",
+	"_BitInt",
+	"_Bool",
+	"_Complex",
+	"_Decimal32",
+	"_Decimal64",
+	"_Decimal128",
+	"_Generic",
+	"_Imaginary",
+	"_Noreturn",
+	"_Static_assert",
+	"_Thread_local"
+]);
 
 export function sanitizeToCIdentifier(s: string): string {
 	s = s.trim();
@@ -32,25 +140,11 @@ export function sanitizeToCIdentifier(s: string): string {
 		s = "_" + s;
 	}
 
+	if (C_CPP_RESERVED_KEYWORDS.has(s)) {
+		s = "_" + s;
+	}
+
 	return s;
-}
-
-export function parseAICodegenEvents(
-	output: string
-): CodeGenJsonMsg[] {
-	const parsed = output
-		.split("\n")
-		.filter((line) => line.length > 0)
-		.flatMap((line) => {
-			try {
-				const parsed = JSON.parse(line) as CodeGenJsonMsg;
-				return [parsed];
-			} catch (e) {
-				return [];
-			}
-		});
-
-	return parsed;
 }
 
 export function getCFSCachePath(cfsVersion: string): string {
@@ -209,6 +303,45 @@ export function getValidExtensions(
 
 				validExtensions[property.Id] = value;
 				break;
+			case "integer":
+				const trimmed = String(value).trim();
+				if (trimmed.length === 0) {
+					errors.push(
+						`Invalid value for '${key}', expected an integer.`
+					);
+					break;
+				}
+				const numValue = Number(trimmed);
+
+				if (isNaN(numValue) || !Number.isInteger(numValue)) {
+					errors.push(
+						`Invalid value for '${key}', expected an integer.`
+					);
+					break;
+				}
+
+				if (
+					(property.MinimumValue !== undefined &&
+						numValue < Number(property.MinimumValue)) ||
+					(property.MaximumValue !== undefined &&
+						numValue > Number(property.MaximumValue))
+				) {
+					errors.push(
+						`Invalid value for '${key}', expected a value between ${
+							property.MinimumValue !== undefined
+								? String(property.MinimumValue)
+								: "-∞"
+						} and ${
+							property.MaximumValue !== undefined
+								? String(property.MaximumValue)
+								: "∞"
+						}.`
+					);
+					break;
+				}
+
+				validExtensions[property.Id] = numValue;
+				break;
 			// Trust user input & file path checks
 			case "string":
 			case "File":
@@ -239,4 +372,29 @@ export function getValidExtensions(
 	}
 
 	return validExtensions;
+}
+
+export function getGeneratedFileComment({
+	soc,
+	Package
+}: {
+	soc: string;
+	Package: string;
+}): string {
+	const date = new Date();
+	const target =
+		Package.length > 0
+			? `${soc.toUpperCase()}-${Package.toUpperCase()}`
+			: soc.toUpperCase();
+	return `/**
+ * Generated for ${target}.
+ *
+ * This file was generated using Analog Devices CodeFusion Studio.
+ * https://github.com/analogdevicesinc/codefusion-studio
+ *
+ * Generated at: ${date.toISOString()}
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) ${String(date.getFullYear())} Analog Devices, Inc.
+ */\n
+`;
 }

@@ -13,56 +13,86 @@
  *
  */
 
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
+
+import {portListDeps} from '../../../src/commands/port/list.js';
 
 /**
  * Test suite for port:list command.
  *
  * Tests cover:
- * - Basic command execution (port list is accepted)
- * - Verbose flag (-v) is accepted
- * - Invalid flags are rejected (e.g., -w is not accepted)
+ * - No ports found: verify appropriate message
+ * - Ports found without -v or --verbose: verify paths are listed, verbose details absent
+ * - Ports found with -v and --verbose: verify both flags produce identical verbose output
  */
 
 describe('port:list', () => {
-  describe('command acceptance', () => {
-    test
-      .stdout()
-      .command(['port:list'], {
-        root: '..'
-      })
-      .it('accepts port list command', (ctx) => {
-        // Command should execute without errors
-        // Output should contain either port listing or "No serial ports found"
-        expect(ctx.stdout).to.match(
-          /Available serial ports:|No serial ports found/
-        );
-      });
+  const mockPorts = [
+    {
+      path: '/dev/ttyUSB0',
+      manufacturer: 'Big Corp 1',
+      serialNumber: '12345678',
+      pnpId: 'myID1',
+      locationId: '0x1234',
+      vendorId: '10c4',
+      productId: 'ea60'
+    },
+    {
+      path: '/dev/ttyUSB1',
+      manufacturer: 'Big Corp 2',
+      serialNumber: 'ABCDEF',
+      pnpId: 'myID2',
+      locationId: '0x5678',
+      vendorId: '0403',
+      productId: '6001'
+    }
+  ];
+
+  const originalListPorts = portListDeps.listPorts;
+
+  afterEach(() => {
+    portListDeps.listPorts = originalListPorts;
   });
 
-  describe('flag acceptance', () => {
-    test
-      .stdout()
-      .command(['port:list', '-v'], {
-        root: '..'
-      })
-      .it('accepts -v (verbose) flag', (ctx) => {
-        // Command should execute without errors with -v flag
-        expect(ctx.stdout).to.match(
-          /Available serial ports:|No serial ports found/
-        );
-      });
+  describe('no ports found', () => {
+    it('displays "No serial ports found" when no ports are available', async () => {
+      portListDeps.listPorts = async () => [];
+      const {stdout} = await runCommand(['port:list'], {root: '..'});
+      expect(stdout).to.contain('No serial ports found');
+      expect(stdout).not.to.contain('Available serial ports');
+    });
+  });
 
-    test
-      .stdout()
-      .command(['port:list', '--verbose'], {
-        root: '..'
-      })
-      .it('accepts --verbose flag', (ctx) => {
-        // Command should execute without errors with --verbose flag
-        expect(ctx.stdout).to.match(
-          /Available serial ports:|No serial ports found/
-        );
+  describe('ports found', () => {
+    it('lists port paths without verbose details', async () => {
+      portListDeps.listPorts = async () => mockPorts;
+      const {stdout} = await runCommand(['port:list'], {root: '..'});
+      expect(stdout).to.contain('Available serial ports:');
+      expect(stdout).to.contain('/dev/ttyUSB0');
+      expect(stdout).to.contain('/dev/ttyUSB1');
+      // Verbose details should not be present
+      expect(stdout).not.to.contain('Manufacturer:');
+      expect(stdout).not.to.contain('Serial Number:');
+      expect(stdout).not.to.contain('Big Corp 1');
+    });
+
+    for (const flag of ['-v', '--verbose']) {
+      it(`displays verbose details with ${flag} flag`, async () => {
+        portListDeps.listPorts = async () => mockPorts;
+        const {stdout} = await runCommand(['port:list', flag], {
+          root: '..'
+        });
+        expect(stdout).to.contain('Available serial ports:');
+        expect(stdout).to.contain('/dev/ttyUSB0');
+        expect(stdout).to.contain('/dev/ttyUSB1');
+        expect(stdout).to.contain('Manufacturer:');
+        expect(stdout).to.contain('Big Corp 1');
+        expect(stdout).to.contain('12345678');
+        expect(stdout).to.contain('myID1');
+        expect(stdout).to.contain('myID2');
+        expect(stdout).to.contain('0x5678');
       });
+    }
   });
 });

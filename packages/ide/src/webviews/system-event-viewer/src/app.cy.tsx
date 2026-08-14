@@ -13,42 +13,55 @@
  *
  */
 
-import {INITIAL_DATA_ZOOM} from './common/constants/timeline';
+import {configureStore} from '@reduxjs/toolkit';
 import {AppContent} from './components/app-content/app-content';
-import {setJsonValidationErrors} from './state/slices/event-sources/event-sources.reducer';
-import {setDataZoom} from './state/slices/timeline/timeline.reducer';
-import {store} from './state/store';
+import {appContextReducer} from './state/slices/app-context/app-context.reducer';
+import {
+	eventSourcesReducer,
+	setJsonValidationErrors,
+	setLoading
+} from './state/slices/event-sources/event-sources.reducer';
+import {timelineReducer} from './state/slices/timeline/timeline.reducer';
+
+const createTestStore = () =>
+	configureStore({
+		reducer: {
+			appContextReducer,
+			eventSourcesReducer,
+			timelineReducer
+		}
+	});
+
+type TestStore = ReturnType<typeof createTestStore>;
 
 function TestComponent() {
 	return <AppContent />;
 }
 
 describe('AppContent', () => {
+	let testStore: TestStore;
+
 	beforeEach(() => {
 		cy.viewport(1200, 800);
-	});
-
-	afterEach(() => {
-		store.dispatch(setDataZoom(INITIAL_DATA_ZOOM));
+		testStore = createTestStore();
 	});
 
 	it('Should show loading first, then renders the timeline content', () => {
-		const testStore = store;
+		cy.mount(<TestComponent />, testStore);
 
-		cy.mount(<TestComponent />, testStore).then(() => {
-			cy.dataTest('app-content:loading').should('exist');
-		});
-
-		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('app-content:loading').should('exist');
+		cy.get('body')
+			.dataTest('app-content:loading')
+			.should('not.exist');
 		cy.dataTest('timeline:container').should('exist');
 		cy.dataTest('timeline-diagram').should('exist');
 	});
 
 	it('Should render JSON validation errors instead of the timeline content', () => {
-		const testStore = store;
 		cy.mount(<TestComponent />, testStore);
 
 		cy.then(() => {
+			testStore.dispatch(setLoading(false));
 			testStore.dispatch(
 				setJsonValidationErrors(['Invalid JSON payload', 'Line: 3'])
 			);
@@ -63,21 +76,21 @@ describe('AppContent', () => {
 	});
 
 	it('Should return to timeline content after clearing JSON errors', () => {
-		const testStore = store;
 		cy.mount(<TestComponent />, testStore);
 
 		cy.then(() => {
+			testStore.dispatch(setLoading(false));
 			testStore.dispatch(setJsonValidationErrors(['Invalid JSON']));
-		});
 
-		cy.dataTest('json-error:0').should('exist');
+			cy.dataTest('json-error:0').should('exist');
+		});
 
 		cy.then(() => {
 			testStore.dispatch(setJsonValidationErrors([]));
-		});
 
-		cy.dataTest('json-error:0').should('not.exist');
-		cy.dataTest('timeline:container').should('exist');
-		cy.dataTest('timeline-diagram').should('exist');
+			cy.dataTest('json-error:0').should('not.exist');
+			cy.dataTest('timeline:container').should('exist');
+			cy.dataTest('timeline-diagram').should('exist');
+		});
 	});
 });

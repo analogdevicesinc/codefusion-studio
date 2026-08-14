@@ -40,5 +40,6 @@
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	}
+	},
+	"chat.useNestedAgentsMdFiles": true
 }

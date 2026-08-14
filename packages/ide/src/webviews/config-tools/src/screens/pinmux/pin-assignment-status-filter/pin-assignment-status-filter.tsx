@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,16 @@ function PinAssignmentStatusFilter() {
 		return Object.values(pinsState);
 	}, [activePeripheral, peripherals, pinDetailsTargetId, pinsState]);
 
-	const categorizedPins = computePinState(targetPinSet);
+	const categorizedPins = useMemo(
+		() => computePinState(targetPinSet),
+		[targetPinSet]
+	);
+	const computedPins = useMemo(
+		() => computePinState(Object.values(pinsState)),
+		[pinsState]
+	);
 
-	const {assigned, available, conflict} = categorizedPins;
+	const {assigned, available, conflict} = computedPins;
 
 	const handleFilterState = (
 		selectedFilterType: AssignmentFilter
@@ -94,10 +101,11 @@ function PinAssignmentStatusFilter() {
 	useEffect(() => {
 		if (
 			activeFilterType &&
-			categorizedPins[activeFilterType].length === 0
-		)
+			computedPins[activeFilterType].length === 0
+		) {
 			dispatch(setActivePinconfigAssignmentFilter(undefined));
-	}, [activeFilterType, categorizedPins, dispatch]);
+		}
+	}, [activeFilterType, computedPins, dispatch]);
 
 	return (
 		<div className={styles.filterControlsContainer}>

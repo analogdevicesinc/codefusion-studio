@@ -207,13 +207,7 @@ export async function generateMulticoreTemplatesPromise(
 		} else {
 			fetchMulticoreTemplates(socId, packageId, boardId)
 				.then(templates => {
-					const uniqueTemplateList = new Set();
-					const templateList = templates.filter(
-						template =>
-							!uniqueTemplateList.has(template.pluginId) &&
-							uniqueTemplateList.add(template.pluginId)
-					);
-					resolve(templateList);
+					resolve(templates);
 				})
 				.catch(e => {
 					console.error(e);

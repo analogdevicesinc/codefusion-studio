@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,13 @@
 import {Args, Command} from '@oclif/core';
 
 import {getPackageManager} from '../../utils/package-manager.js';
+
+export const pkgDeleteDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
+
 export default class CfsPackageDelete extends Command {
   static args = {
     pattern: Args.string({
@@ -31,7 +38,7 @@ export default class CfsPackageDelete extends Command {
     'Delete packages from the local cache. To use a deleted package again, reinstall it using the `cfsutil pkg install` command.';
 
   async run() {
-    const packman = await getPackageManager();
+    const packman = await pkgDeleteDeps.getPackageManager();
     const {args} = await this.parse(CfsPackageDelete);
 
     this.log('Deleting packages...');

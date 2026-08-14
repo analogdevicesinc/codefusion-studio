@@ -13,7 +13,7 @@
  *
  */
 
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState, type MouseEvent} from 'react';
 
 import {Badge, MeasurementIcon, Tooltip} from 'cfs-react-library';
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
@@ -22,6 +22,7 @@ import {Direction} from '@common/components/tooltip/Tooltip';
 import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 import SevHeaderFileButtons from './sev-header-file-buttons';
 
+import {useEventSources} from '../../state/slices/event-sources/event-sources.selector';
 import {
 	useActiveScreen,
 	useLastUpdate,
@@ -34,7 +35,10 @@ import {useAppDispatch} from '../../state/store';
 import {createFile} from '../../common/api';
 import {FILE_TYPES} from '../../common/types/files';
 import {isMeasureModeActive} from '../../common/utils/measurement-tool';
-import {formatElapsedTime} from '../../common/utils/status-time';
+import {
+	formatElapsedTime,
+	formatAbsoluteDate
+} from '../../common/utils/status-time';
 import {MEASURE_PHASE} from '../../common/constants/timeline';
 import {navigationItems} from '../../common/constants/navigation';
 
@@ -55,7 +59,7 @@ type Status = {
 const statusDictionary: Record<CfsEventState, Status> = {
 	active: {
 		label: 'Active',
-		tooltip: 'Last updated',
+		tooltip: '',
 		dot: 'active'
 	},
 	running: {
@@ -65,12 +69,12 @@ const statusDictionary: Record<CfsEventState, Status> = {
 	},
 	ended: {
 		label: 'Session Ended',
-		tooltip: 'Session ended',
+		tooltip: '',
 		dot: undefined
 	},
 	file: {
 		label: 'Local File',
-		tooltip: 'Opened local file',
+		tooltip: '',
 		dot: undefined
 	}
 };
@@ -84,30 +88,53 @@ export default function SevHeader() {
 	const dispatch = useAppDispatch();
 	const activeScreen = useActiveScreen();
 	const measurePhase = useMeasurePhase();
+	const eventSources = useEventSources();
 	const isMeasureActive = isMeasureModeActive(measurePhase);
 	const toolState = useToolState();
 	const lastUpdate = useLastUpdate();
 	const status = toolState ? statusDictionary[toolState] : null;
-	const [now, setNow] = useState(() => Date.now());
-	const isStateActiveOrEnded =
-		toolState === 'active' || toolState === 'ended';
-
+	const [elapsedTimeComputedAt, setElapsedTimeComputedAt] = useState(
+		() => Date.now()
+	);
 	const elapsedTime = useMemo(
-		() => formatElapsedTime(lastUpdate, new Date(now)),
-		[lastUpdate, now]
+		() =>
+			formatElapsedTime(lastUpdate, new Date(elapsedTimeComputedAt)),
+		[lastUpdate, elapsedTimeComputedAt]
+	);
+
+	const absoluteDate = useMemo(
+		() => formatAbsoluteDate(lastUpdate),
+		[lastUpdate]
 	);
 
 	const tooltip = useMemo(() => {
-		if (!toolState || !status || !elapsedTime) {
+		if (!toolState || !status) {
 			return undefined;
 		}
 
-		if (isStateActiveOrEnded) {
-			return `${status.tooltip} ${elapsedTime} ago`;
-		}
+		switch (toolState) {
+			case 'active':
+				if (eventSources.length === 0) {
+					return 'No events have been received yet';
+				}
 
-		return status?.tooltip ?? '';
-	}, [status, toolState, elapsedTime, isStateActiveOrEnded]);
+				return elapsedTime
+					? `Last updated ${elapsedTime}`
+					: undefined;
+			case 'running':
+				return status.tooltip;
+			case 'ended':
+				return elapsedTime
+					? `Last updated ${elapsedTime}`
+					: undefined;
+			case 'file':
+				return absoluteDate
+					? `Opened local file. Last updated ${absoluteDate}`
+					: status.tooltip;
+			default:
+				return undefined;
+		}
+	}, [toolState, status, eventSources, elapsedTime, absoluteDate]);
 
 	const onMeasureToolClick = useCallback(() => {
 		const nextPhase = isMeasureActive
@@ -116,6 +143,13 @@ export default function SevHeader() {
 
 		dispatch(setMeasurePhase(nextPhase));
 	}, [dispatch, isMeasureActive]);
+
+	const handleMeasureButtonMouseDown = useCallback(
+		(ev: MouseEvent<HTMLDivElement>) => {
+			ev.preventDefault();
+		},
+		[]
+	);
 
 	const onSaveAs = useCallback(async () => {
 		try {
@@ -133,19 +167,9 @@ export default function SevHeader() {
 		}
 	}, []);
 
-	// The purpose of this effect is to trigger a re-render of the component every minute when the session is active or ended,
-	// so that the elapsed time tooltip is updated accordingly.
-	useEffect(() => {
-		if (!isStateActiveOrEnded || !lastUpdate) return;
-
-		const intervalId = window.setInterval(() => {
-			setNow(Date.now());
-		}, 60_000);
-
-		return () => {
-			window.clearInterval(intervalId);
-		};
-	}, [isStateActiveOrEnded, lastUpdate]);
+	const handleStatusMouseEnter = useCallback(() => {
+		setElapsedTimeComputedAt(Date.now());
+	}, []);
 
 	const headerContentDict: Record<NavigationItem, TopBarSlots> = {
 		[navigationItems.timeline]: {
@@ -154,6 +178,7 @@ export default function SevHeader() {
 					className={
 						isMeasureActive ? styles.measureButtonActive : ''
 					}
+					onMouseDownCapture={handleMeasureButtonMouseDown}
 				>
 					<TopbarButton
 						title='Measure'
@@ -187,9 +212,18 @@ export default function SevHeader() {
 	);
 
 	const showStatus = (
-		<div className={styles.statusContainer}>
+		<div
+			className={styles.statusContainer}
+			data-test='sev-header:status-badge'
+			onMouseEnter={handleStatusMouseEnter}
+		>
 			{tooltip ? (
-				<Tooltip title={tooltip} position='right' type='short'>
+				<Tooltip
+					title={tooltip}
+					position='right'
+					type='short'
+					dataTest='sev-header:status-tooltip'
+				>
 					{badge}
 				</Tooltip>
 			) : (

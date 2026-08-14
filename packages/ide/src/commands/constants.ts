@@ -53,7 +53,10 @@ export const OPEN_PROJECT_SETTING_COMMAND_ID = "cfs.projectSetting";
 export const OPEN_SDK_SETTINGS_COMMAND_ID = "cfs.openSettings";
 export const OPEN_WALKTHROUGH_COMMAND_ID = "cfs.openWalkthrough";
 export const QUICK_ACCESS_TREE_VIEW_ID = "cfs.quickAccessTree";
+export const QUICK_ACCESS_ITEM_INVOKED_COMMAND_ID =
+  "cfs.quickAccessItemInvoked";
 export const CONTEXT_VIEW_ID = "cfs.contextPanelView";
+export const OPEN_PACKAGE_MANAGER_COMMAND_ID = "cfs.openPackageManager";
 export const DEVICE_TREE_VIEW_ID = "cfs.deviceTreeView";
 export const RUN_BUILD_TASK_COMMAND_ID = "cfs.runBuildTask";
 export const RUN_CLEAN_TASK_COMMAND_ID = "cfs.runCleanTask";

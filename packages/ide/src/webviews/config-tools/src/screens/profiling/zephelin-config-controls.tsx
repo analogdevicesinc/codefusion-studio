@@ -52,7 +52,7 @@ export type ZephelinConfigDropdownProps = BaseZephelinInputProps & {
 	readonly description?: string;
 	readonly controlId: string;
 	readonly options: DropDownOptions;
-	readonly placeholder?: string;
+	readonly noValueOption?: DropDownOptions[0];
 	readonly onChange: (value: string) => void;
 };
 
@@ -90,7 +90,7 @@ export function ZephelinConfigCheckbox({
 	);
 
 	return (
-		<div className={styles.checkbox}>
+		<div className={`${styles.checkbox} ${styles.zephelinControl}`}>
 			<div className={`${styles.input} ${disabledStateClass}`}>
 				<CheckBox
 					className={styles.input}
@@ -139,7 +139,7 @@ export function ZephelinConfigDropdown({
 	isDisabled,
 	controlId,
 	options,
-	placeholder,
+	noValueOption,
 	value,
 	onChange
 }: ZephelinConfigDropdownProps) {
@@ -147,7 +147,7 @@ export function ZephelinConfigDropdown({
 
 	return (
 		<div
-			className={`${styles.dropdown} ${disabledStateClass}`}
+			className={`${styles.dropdown} ${styles.zephelinControl} ${disabledStateClass}`}
 			data-test={dataTest}
 		>
 			<div className={styles.labelContainer}>
@@ -161,7 +161,7 @@ export function ZephelinConfigDropdown({
 				<DropDown
 					controlId={controlId}
 					options={options}
-					placeholder={placeholder}
+					noValueOption={noValueOption}
 					currentControlValue={value}
 					isDisabled={Boolean(isDisabled)}
 					onHandleDropdown={onChange}
@@ -200,7 +200,7 @@ export function ZephelinConfigNumberInput({
 
 	return (
 		<div
-			className={`${styles.numberInput} ${disabledClass}`}
+			className={`${styles.numberInput} ${styles.zephelinControl} ${disabledClass}`}
 			data-test={dataTest}
 		>
 			<div className={styles.labelContainer}>
@@ -254,7 +254,7 @@ export function ZephelinConfigTextInput({
 
 	return (
 		<div
-			className={`${styles.textInput} ${disabledClass}`}
+			className={`${styles.textInput} ${styles.zephelinControl} ${disabledClass}`}
 			data-test={dataTest}
 		>
 			<div className={styles.labelContainer}>

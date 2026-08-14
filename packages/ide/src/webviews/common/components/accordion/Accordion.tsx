@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  *
  */
 import {useEffect, useRef} from 'react';
+import {Tooltip} from 'cfs-react-library';
 import ChevronRight from '../../icons/ChevronRight';
 import styles from './Accordion.module.scss';
 
 type AccordionProps = Readonly<{
 	title: string;
+	titleTooltip?: string;
 	body: React.ReactNode;
 	subTitle?: React.ReactNode;
 	caption?: React.ReactNode;
@@ -33,6 +35,7 @@ type AccordionProps = Readonly<{
 export default function Accordion({
 	id,
 	title,
+	titleTooltip,
 	body,
 	subTitle,
 	caption,
@@ -74,6 +77,8 @@ export default function Accordion({
 		}
 	}, [isOpen]);
 
+	const titleElement = <span className={styles.title}>{title}</span>;
+
 	return (
 		<div
 			ref={peripheralRef}
@@ -96,7 +101,13 @@ export default function Accordion({
 						<ChevronRight />
 					</div>
 					<div className={styles.titleContainer}>
-						<span className={styles.title}>{title}</span>
+						{titleTooltip ? (
+							<Tooltip title={titleTooltip} type='short'>
+								{titleElement}
+							</Tooltip>
+						) : (
+							titleElement
+						)}
 						{subTitle && (
 							<div className={styles.subTitle}>{subTitle}</div>
 						)}

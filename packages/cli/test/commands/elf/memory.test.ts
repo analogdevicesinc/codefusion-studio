@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {ElfFileParser} from 'elf-parser';
@@ -25,13 +26,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('elf memory', () => {
-  test.stdout().it('text', (ctx) => {
-    expect(ctx.stdout).to.contain('');
+  it('text', async () => {
+    const {stdout} = await runCommand([]);
+    expect(stdout).to.contain('');
   });
 
-  test
-    .stdout()
-    .command(
+  it('json', async () => {
+    const {stdout} = await runCommand(
       [
         'elf:memory',
         '-s',
@@ -42,18 +43,16 @@ describe('elf memory', () => {
         '--format=json'
       ],
       {root: '..'}
-    )
-    .it('json', (ctx) => {
-      const json = JSON.parse(ctx.stdout);
-      expect(json).to.be.an('object');
-      expect(json).to.have.property('Segments');
-      expect(json.Segments).to.be.an('array');
-      expect(Object.keys(json).length).to.be.equal(1);
-    });
+    );
+    const json = JSON.parse(stdout);
+    expect(json).to.be.an('object');
+    expect(json).to.have.property('Segments');
+    expect(json.Segments).to.be.an('array');
+    expect(Object.keys(json).length).to.be.equal(1);
+  });
 
-  test
-    .stdout()
-    .command(
+  it('sections filtered by segment id', async () => {
+    const {stdout} = await runCommand(
       [
         'elf:memory',
         '-t',
@@ -66,19 +65,17 @@ describe('elf memory', () => {
         '--format=json'
       ],
       {root: '..'}
-    )
-    .it('sections filtered by segment id', (ctx) => {
-      const json = JSON.parse(ctx.stdout);
-      expect(json).to.be.an('object');
-      // Should only contain sections for segment 0
-      expect(json).to.have.property('0');
-      // Should not contain other segments
-      expect(json).to.not.have.property('1');
-    });
+    );
+    const json = JSON.parse(stdout);
+    expect(json).to.be.an('object');
+    // Should only contain sections for segment 0
+    expect(json).to.have.property('0');
+    // Should not contain other segments
+    expect(json).to.not.have.property('1');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('symbols filtered by section id', async () => {
+    const {stdout} = await runCommand(
       [
         'elf:memory',
         '-y',
@@ -91,15 +88,14 @@ describe('elf memory', () => {
         '--format=json'
       ],
       {root: '..'}
-    )
-    .it('symbols filtered by section id', (ctx) => {
-      const json = JSON.parse(ctx.stdout);
-      expect(json).to.be.an('object');
-      expect(json).to.have.property('Sections');
-      expect(json.Sections).to.be.an('array');
-      // Should only contain section with id 0
-      expect(json.Sections.length).to.be.at.least(1);
-      expect(json.Sections.every((section: any) => section.id === 0))
-        .to.be.true;
-    });
+    );
+    const json = JSON.parse(stdout);
+    expect(json).to.be.an('object');
+    expect(json).to.have.property('Sections');
+    expect(json.Sections).to.be.an('array');
+    // Should only contain section with id 0
+    expect(json.Sections.length).to.be.at.least(1);
+    expect(json.Sections.every((section: any) => section.id === 0)).to.be
+      .true;
+  });
 });

@@ -208,11 +208,11 @@ describe('Profiling Configuration View', () => {
 				'contain.text',
 				'USB'
 			);
-			// Currently disabled due to missing USB support. Re-enable when USB support is added.
-			// cy.dataTest('profiling-trace-interface-field').should(
-			// 	'not.exist'
-			// );
-			// cy.dataTest('profiling-baud-rate-field').should('not.exist');
+			// USB needs neither a port nor a baud rate, so those fields are hidden.
+			cy.dataTest('profiling-trace-interface-field').should(
+				'not.exist'
+			);
+			cy.dataTest('profiling-baud-rate-field').should('not.exist');
 		});
 	});
 });

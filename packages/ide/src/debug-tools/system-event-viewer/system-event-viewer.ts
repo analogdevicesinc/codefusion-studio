@@ -28,6 +28,8 @@ import {
 } from "../../constants";
 import { TraceManager } from "./hardware/trace-manager";
 import { SystemEventViewerWebviewProvider } from "./webview-provider";
+import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
+import { getTelemetryManager } from "../../telemetry/telemetry";
 
 /*
  * This class wraps and registers all the other components of system event viewer
@@ -82,6 +84,10 @@ export class SystemEventViewer {
           } else if (checkboxState === vscode.TreeItemCheckboxState.Unchecked) {
             await this.disableEvent(element.path);
           }
+
+          // Trigger a tree provider refresh since enabling/disabling an event may change
+          // whether other events can be enabled or not.
+          treeDataProvider.refresh(element);
         }
       }),
     );
@@ -109,6 +115,16 @@ export class SystemEventViewer {
         SEV_SUPPORTED_SOCS_CONTEXT_ID,
         supportedSocs,
       );
+      const supportedSoc = vscode.workspace
+        .getConfiguration()
+        .get<string>("cfs.project.target");
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_SUPPORTED, {
+          supported: supportedSoc
+            ? supportedSocs.includes(supportedSoc ?? "").toString()
+            : "Unknown",
+        });
+      });
     });
 
     // Command Registration
@@ -158,13 +174,27 @@ export class SystemEventViewer {
   }
 
   private async enableEvent(eventPath: string): Promise<void> {
+    const startTime = Date.now();
     await this.traceManager.enableEvent(`*.${eventPath}`);
     // Enable all trace. This is temporary until we have proper trace configuration
     // management in place.
     await this.traceManager.enableTrace();
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_ENABLED, {
+        eventPath,
+        durationMs: Date.now() - startTime,
+      });
+    });
   }
 
   private async disableEvent(eventPath: string): Promise<void> {
+    const startTime = Date.now();
     await this.traceManager.disableEvent(`*.${eventPath}`);
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_DISABLED, {
+        eventPath,
+        durationMs: Date.now() - startTime,
+      });
+    });
   }
 }

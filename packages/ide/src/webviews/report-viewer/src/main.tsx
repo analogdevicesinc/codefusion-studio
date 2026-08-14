@@ -15,8 +15,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import GenericError from '../../config-tools/src/screens/error/generic-error';
-import type {WebviewError} from '../../common/types/errors';
+import GenericError from '@common/components/generic-error/GenericError';
+import type {WebviewError} from '@common/types/errors';
 
 const root = document.getElementById('root');
 const errorDiv = document.getElementById('error');

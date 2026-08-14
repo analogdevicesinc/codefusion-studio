@@ -18,7 +18,10 @@ import {mkdirSync, existsSync, rmSync, writeFileSync} from 'node:fs';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import {resolveWorkspaceFolders} from '../../src/utils/workspace-utils.js';
+import {
+  getValidTemplate,
+  resolveWorkspaceFolders
+} from '../../src/utils/workspace-utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -306,6 +309,133 @@ describe('workspace-utils', () => {
           rmSync(workspacePath, {recursive: true, force: true});
         }
       }
+    });
+  });
+
+  describe('getValidTemplate', () => {
+    it('returns older compatible version when newer version targets a different package', async () => {
+      const mockPluginManager = {
+        getPluginsInfoList: async () => [
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v1',
+            pluginVersion: '1.0.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'APARD', package: 'WLP', cores: ['CM4']}
+            ],
+            features: {}
+          },
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v2',
+            pluginVersion: '2.0.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'EvKit_V1', package: 'TQFN', cores: ['CM4']}
+            ],
+            features: {}
+          }
+        ]
+      } as any;
+
+      const errors: string[] = [];
+      const result = await getValidTemplate(
+        {
+          soc: 'MAX32690',
+          board: 'APARD',
+          package: 'WLP',
+          'template-id': 'com.test.plugin',
+          core: 'CM4'
+        },
+        mockPluginManager,
+        errors
+      );
+
+      expect(errors).to.have.lengthOf(0);
+      expect(result).to.not.be.undefined;
+      expect(result?.pluginVersion).to.equal('1.0.0');
+    });
+
+    it('returns newest compatible version when multiple match', async () => {
+      const mockPluginManager = {
+        getPluginsInfoList: async () => [
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v1',
+            pluginVersion: '1.0.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'APARD', package: 'WLP', cores: ['CM4']}
+            ],
+            features: {}
+          },
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v1.1',
+            pluginVersion: '1.1.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'APARD', package: 'WLP', cores: ['CM4']}
+            ],
+            features: {}
+          },
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v2',
+            pluginVersion: '2.0.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'APARD2', package: 'WLP', cores: ['CM4']}
+            ],
+            features: {}
+          }
+        ]
+      } as any;
+
+      const errors: string[] = [];
+      const result = await getValidTemplate(
+        {
+          soc: 'MAX32690',
+          board: 'APARD',
+          package: 'WLP',
+          'template-id': 'com.test.plugin',
+          core: 'CM4'
+        },
+        mockPluginManager,
+        errors
+      );
+
+      expect(errors).to.have.lengthOf(0);
+      expect(result).to.not.be.undefined;
+      expect(result?.pluginVersion).to.equal('1.1.0');
+    });
+
+    it('reports error when no version is compatible', async () => {
+      const mockPluginManager = {
+        getPluginsInfoList: async () => [
+          {
+            pluginId: 'com.test.plugin',
+            pluginName: 'Test Plugin v2',
+            pluginVersion: '2.0.0',
+            supportedSocs: [
+              {name: 'MAX32690', board: 'EvKit_V1', package: 'TQFN', cores: ['CM4']}
+            ],
+            features: {}
+          }
+        ]
+      } as any;
+
+      const errors: string[] = [];
+      const result = await getValidTemplate(
+        {
+          soc: 'MAX32690',
+          board: 'EvKit_V1',
+          package: 'WLP',
+          'template-id': 'com.test.plugin',
+          core: 'CM4'
+        },
+        mockPluginManager,
+        errors
+      );
+
+      expect(result).to.be.undefined;
+      expect(errors).to.have.lengthOf(1);
     });
   });
 });

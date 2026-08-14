@@ -13,59 +13,20 @@
  *
  */
 
-import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import { defineConfig } from "vite";
+import { viteWebviewConfigGenerator } from "./vite-webview-config-generator";
 
-export default defineConfig(({ command, mode }) => {
-  return (async () => {
-    const isWatchMode = process.argv.includes("--watch");
-    const isDev = mode === "development";
-
-    return {
-      root: path.resolve(__dirname, "./src/webviews/ai-hardware-profiling"),
-      plugins: [react()],
-      resolve: {
-        alias: {
-          "@common": path.resolve(__dirname, "./src/webviews/common/"),
-          "@wrksp-common": path.resolve(
-            __dirname,
-            "./src/webviews/ai-hardware-profiling/src/common/",
-          ),
-          "@constants": path.resolve(__dirname, "./src/constants/"),
-          "@ide-types": path.resolve(__dirname, "./src/types/"),
-        },
-      },
-      build: {
-        outDir: path.resolve(__dirname, "./out/ai-hardware-profiling"),
-        emptyOutDir: true,
-        target: "esnext",
-        sourcemap: isDev ? "inline" : false,
-        minify: isDev ? false : "terser",
-        rollupOptions: {
-          input: path.resolve(
-            __dirname,
-            "./src/webviews/ai-hardware-profiling/index.html",
-          ),
-          output: {
-            entryFileNames: `assets/[name].js`,
-            chunkFileNames: `assets/[name].js`,
-            assetFileNames: `assets/[name][extname]`,
-          },
-        },
-        ...(isWatchMode && {
-          watch: {
-            include: "src/webviews/ai-hardware-profiling/**",
-            exclude: "src/webviews/ai-hardware-profiling/**/*.cy.ts*",
-            clearScreen: true,
-          },
-        }),
-      },
-      css: {
-        preprocessorOptions: {
-          loadPaths: [path.resolve(__dirname, "./src/webviews/common/styles")],
-        },
-      },
-    };
-  })();
-});
+export default defineConfig(
+  viteWebviewConfigGenerator({
+    name: "ai-hardware-profiling",
+    aliases: {
+      "@wrksp-common": path.resolve(
+        __dirname,
+        "./src/webviews/ai-hardware-profiling/src/common/",
+      ),
+      "@constants": path.resolve(__dirname, "./src/constants/"),
+      "@ide-types": path.resolve(__dirname, "./src/types/"),
+    },
+  }),
+);

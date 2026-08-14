@@ -19,12 +19,19 @@ import type {
 } from 'cfs-package-manager';
 
 import {Args, Command, Flags} from '@oclif/core';
+import {getSkippedPackageReasonMessage} from 'cfs-package-manager';
 import * as fs from 'node:fs';
 
 import {
   getPackageManager,
   parsePackageReference
 } from '../../utils/package-manager.js';
+
+export const pkgInstallDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
 
 export default class CfsPackageInstall extends Command {
   static args = {
@@ -57,9 +64,13 @@ export default class CfsPackageInstall extends Command {
     const {args, flags} = await this.parse(CfsPackageInstall);
 
     // Get the package manager instance
-    const packman = await getPackageManager({
-      includeCredentialProvider: !flags.local
-    });
+    const packman = await pkgInstallDeps.getPackageManager(
+      {
+        useRemotes: !flags.local
+      },
+      undefined,
+      this
+    );
 
     const input = args.reference;
     const isManifest = this.isManifestFile(input);
@@ -74,14 +85,29 @@ export default class CfsPackageInstall extends Command {
 
     // Check if there's anything to install
     if (plan.toInstall.length === 0) {
+      const skippedWithReason = plan.skipped ?? [];
+
       if (plan.alreadyInstalled.length > 0) {
         this.log(
           isManifest
-            ? 'All packages in the manifest are already installed.'
+            ? skippedWithReason.length > 0
+              ? 'Some packages in the manifest are already installed; others were skipped (see below).'
+              : 'All packages in the manifest are already installed.'
             : `Package ${args.reference} is already installed.`
         );
       } else {
         this.log('No packages to install.');
+      }
+
+      if (skippedWithReason.length > 0) {
+        this.log(
+          '\nThe following packages were skipped (not installable on this platform):'
+        );
+        for (const pkg of skippedWithReason) {
+          this.log(
+            `- ${pkg.reference.name}/${pkg.reference.version}: ${getSkippedPackageReasonMessage(pkg.reasonCode)}`
+          );
+        }
       }
 
       return;
@@ -169,7 +195,13 @@ export default class CfsPackageInstall extends Command {
     skipped: CfsPackageReference[],
     plan: CfsInstallPlan
   ): void {
-    if (installed.length === 0 && skipped.length === 0) {
+    const skippedWithReason = plan.skipped ?? [];
+
+    if (
+      installed.length === 0 &&
+      skipped.length === 0 &&
+      skippedWithReason.length === 0
+    ) {
       this.log(
         'No packages were installed. The package may already be installed; use command "cfsutil pkg list" to check.'
       );
@@ -189,6 +221,17 @@ export default class CfsPackageInstall extends Command {
       );
       for (const pkg of skipped) {
         this.log(`- ${pkg.name}/${pkg.version}`);
+      }
+    }
+
+    if (skippedWithReason.length > 0) {
+      this.log(
+        '\nThe following packages were skipped (not installable on this platform):'
+      );
+      for (const pkg of skippedWithReason) {
+        this.log(
+          `- ${pkg.reference.name}/${pkg.reference.version}: ${getSkippedPackageReasonMessage(pkg.reasonCode)}`
+        );
       }
     }
 

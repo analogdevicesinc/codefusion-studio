@@ -1,20 +1,20 @@
 ---
 description: Debug Troubleshooting
 author: Analog Devices
-date: 2024-09-23
+date: 2026-07-16
 ---
 
 # Troubleshooting
 
 ## Debugging
 
-- Failure to select an option from the quick pick menu results in the debug session ending and an error notification allowing allowing you another opportunity to set the required setting from a quick pick menu:
+- If you don't select an option from the quick pick menu, the debug session ends. An error notification lets you reopen the menu and select the required setting:
 
 !!! example
 
     ![Arm Program File Notification](images/program-file-notification.png)
 
-- No SVD Files present in the CMSIS Pack directory results in an error notification allowing you to to browse your file directory for an SVD File:
+- If no SVD files are present in the CMSIS Pack directory, an error notification allows you to browse your file system for an SVD file:
 
 !!! example
 

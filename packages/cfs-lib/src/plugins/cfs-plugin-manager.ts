@@ -54,6 +54,18 @@ import fg from "fast-glob";
 const DEFAULT_WORKSPACE_PLUGIN_ID =
 	"com.analog.workspace.default.plugin";
 
+/**
+ * SoC context used to filter plugins to those supporting a specific SoC.
+ * When provided, only plugins whose supportedSocs include a matching entry
+ * will be considered during resolution. However, if no supportedSocs are defined for a plugin,
+ * it will be considered valid for all SoCs.
+ */
+export interface PluginSocContext {
+	name: string;
+	package?: string;
+	board?: string;
+}
+
 interface PluginManagerOptions {
 	/**
 	 * List of paths to be searched by the plugin manager
@@ -143,7 +155,11 @@ export class CfsPluginManager {
 		}
 
 		return new Promise<CfsPluginInfo[]>((resolve) => {
-			resolve(ret);
+			resolve(
+				ret
+					.slice()
+					.sort((a, b) => a.pluginName.localeCompare(b.pluginName))
+			);
 		});
 	}
 
@@ -163,16 +179,18 @@ export class CfsPluginManager {
 
 			if (existsSync(pluginPath)) {
 				try {
-					const require = createRequire(import.meta.url);
+					const pluginRequire = createRequire(import.meta.url);
 
 					// Clear the require cache for this plugin, so we always import the latest plugin
-					const resolvedPath = require.resolve(pluginPath);
-					if (require.cache[resolvedPath]) {
+					const resolvedPath = pluginRequire.resolve(pluginPath);
+					if (pluginRequire.cache[resolvedPath]) {
 						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-						delete require.cache[resolvedPath];
+						delete pluginRequire.cache[resolvedPath];
 					}
 
-					const pluginModule = require(pluginPath) as CfsPlugin<T>;
+					const pluginModule = pluginRequire(
+						pluginPath
+					) as CfsPlugin<T>;
 
 					const instance = new pluginModule(info);
 
@@ -195,12 +213,38 @@ export class CfsPluginManager {
 	}
 
 	/**
+	 * Resolve the best matching plugin for a given ID, optional
+	 * version/range, and optional SoC context.
+	 * When no version is provided the highest available version
+	 * is returned. Returns undefined when no match is found.
+	 * @param pluginId - The plugin ID to resolve
+	 * @param versionOrRange - Exact version, semver range, or undefined for latest
+	 * @param socContext - Optional SoC context to restrict results
+	 * @returns The matching plugin info, or undefined
+	 */
+	public async resolvePlugin(
+		pluginId: string,
+		versionOrRange?: string,
+		socContext?: PluginSocContext
+	): Promise<CfsPluginInfo | undefined> {
+		if (this.pluginInfo.length === 0) await this.refresh();
+
+		return this.findPluginByVersionOrRange(
+			pluginId,
+			versionOrRange,
+			socContext
+		);
+	}
+
+	/**
 	 * Validate that all plugins required by the configuration are available.
 	 * Throws MissingDependencyError if any plugins are missing.
 	 * @param cfsConfig - The configuration to validate
+	 * @param socContext - Optional SoC context to restrict plugin resolution
 	 */
 	public async validateConfigPlugins(
-		cfsConfig: CfsConfig
+		cfsConfig: CfsConfig,
+		socContext?: PluginSocContext
 	): Promise<void> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
@@ -221,12 +265,14 @@ export class CfsPluginManager {
 
 			const pluginInfo = this.findPluginByVersionOrRange(
 				project.PluginId,
-				project.PluginVersion
+				project.PluginVersion,
+				socContext
 			);
 
 			if (!pluginInfo) {
 				const availableVersions = this.getAvailableVersions(
-					project.PluginId
+					project.PluginId,
+					socContext
 				);
 
 				// Check if already in missing list to avoid duplicates
@@ -262,23 +308,29 @@ export class CfsPluginManager {
 	 * @param pluginVersion - The version of the plugin to retrieve properties from.
 	 * @param scope - The scope of the properties to retrieve, such as "workspace", "project", "code", or "memory".
 	 * @param context - Context the plugin will use to parse defaults and conditions
+	 * @param socContext - Optional SoC context to restrict plugin resolution
 	 * @returns The properties supported by the plugin.
 	 */
 	public async getProperties(
 		pluginId: string,
 		pluginVersion: string,
 		scope: CfsFeatureScope,
-		context?: Record<string, unknown>
+		context?: Record<string, unknown>,
+		socContext?: PluginSocContext
 	): Promise<CfsPluginProperty[]> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
 		const pluginInfo = this.findPluginByVersionOrRange(
 			pluginId,
-			pluginVersion
+			pluginVersion,
+			socContext
 		);
 
 		if (!pluginInfo) {
-			const availableVersions = this.getAvailableVersions(pluginId);
+			const availableVersions = this.getAvailableVersions(
+				pluginId,
+				socContext
+			);
 
 			throw new MissingDependencyError("plugin", {
 				plugins: [
@@ -320,23 +372,35 @@ export class CfsPluginManager {
 	 * @param pluginVersion - The version of the plugin to retrieve properties from.
 	 * @param scope - The scope of the properties to retrieve, such as "workspace", "project", "code", or "memory".
 	 * @param soc - Soc data used to override controls
+	 * @param packageId - Package ID used to restrict plugin resolution
 	 * @returns The properties supported by the plugin.
 	 */
 	public async overrideSocControls(
 		pluginId: string,
 		pluginVersion: string,
 		scope: CfsFeatureScope,
-		soc: CfsSocDataModel
+		soc: CfsSocDataModel,
+		packageId: string
 	): Promise<Record<string, SocControl[]>> {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
+		const socContext = CfsPluginManager.buildSocContext(
+			soc.Name,
+			packageId,
+			undefined
+		);
+
 		const pluginInfo = this.findPluginByVersionOrRange(
 			pluginId,
-			pluginVersion
+			pluginVersion,
+			socContext
 		);
 
 		if (!pluginInfo) {
-			const availableVersions = this.getAvailableVersions(pluginId);
+			const availableVersions = this.getAvailableVersions(
+				pluginId,
+				socContext
+			);
 			throw new MissingDependencyError("plugin", {
 				plugins: [
 					{
@@ -423,6 +487,19 @@ export class CfsPluginManager {
 		const workspacePluginVersion =
 			cfsWorkspace.workspacePluginVersion;
 
+		const socContext = CfsPluginManager.buildSocContext(
+			cfsWorkspace.soc,
+			cfsWorkspace.package,
+			cfsWorkspace.board
+		);
+
+		// Project plugins resolve by SoC + package only (board-agnostic)
+		const projectSocContext = CfsPluginManager.buildSocContext(
+			cfsWorkspace.soc,
+			cfsWorkspace.package,
+			undefined
+		);
+
 		// Generate the workspace
 		if (cfsWorkspace.soc && cfsWorkspace.package) {
 			const { soc, package: socPackage } = cfsWorkspace;
@@ -449,7 +526,8 @@ export class CfsPluginManager {
 		const workspaceGenerator =
 			await this.getPlugin<CfsWorkspaceGenerationService>(
 				workspacePluginId,
-				workspacePluginVersion
+				workspacePluginVersion,
+				socContext
 			);
 
 		if (typeof workspaceGenerator.generateWorkspace !== "function") {
@@ -500,7 +578,8 @@ export class CfsPluginManager {
 				const primaryPlugin =
 					await this.getPlugin<CfsSystemConfigService>(
 						primaryPluginId,
-						primaryPluginVersion
+						primaryPluginVersion,
+						projectSocContext
 					);
 
 				if (typeof primaryPlugin.configureSystem === "function") {
@@ -523,7 +602,7 @@ export class CfsPluginManager {
 
 				const projectPlugin = await this.getPlugin<
 					CfsProjectConfigService & CfsProjectGenerationService
-				>(project.pluginId, project.pluginVersion);
+				>(project.pluginId, project.pluginVersion, projectSocContext);
 
 				// Consult plugins for contributions to .cfsconfig
 				if (cfsConfig !== undefined) {
@@ -555,8 +634,13 @@ export class CfsPluginManager {
 					path
 						.join(
 							workspacePath,
-							(project.platformConfig as { ProjectName?: string })
-								.ProjectName ?? ""
+							(
+								project.platformConfig as
+									| { ProjectName?: string }
+									| undefined
+							)?.ProjectName ??
+								project.name ??
+								""
 						)
 						.replace(/\\/g, "/"),
 					augmentedProject
@@ -598,9 +682,22 @@ export class CfsPluginManager {
 			cfsWorkspace.workspaceName
 		);
 
+		const socContext = CfsPluginManager.buildSocContext(
+			cfsWorkspace.soc,
+			cfsWorkspace.package,
+			// We don't pass in board, since project plugins should be agnostic to the board
+			undefined
+		);
+
 		if (Array.isArray(cfsWorkspace.projects)) {
 			const projectToBeGenerated = cfsWorkspace.projects.find(
-				(project) => project.name === projectName
+				(project) =>
+					(
+						project.platformConfig as
+							| { ProjectName?: string }
+							| undefined
+					)?.ProjectName === projectName ||
+					project.name === projectName
 			);
 
 			if (!projectToBeGenerated) {
@@ -612,7 +709,8 @@ export class CfsPluginManager {
 			const projectGenerator =
 				await this.getPlugin<CfsProjectGenerationService>(
 					projectToBeGenerated.pluginId,
-					projectToBeGenerated.pluginVersion
+					projectToBeGenerated.pluginVersion,
+					socContext
 				);
 
 			if (typeof projectGenerator.generateProject !== "function") {
@@ -623,7 +721,16 @@ export class CfsPluginManager {
 
 			await projectGenerator.generateProject(
 				path
-					.join(workspacePath, projectToBeGenerated.name ?? "")
+					.join(
+						workspacePath,
+						(
+							projectToBeGenerated.platformConfig as
+								| { ProjectName?: string }
+								| undefined
+						)?.ProjectName ??
+							projectToBeGenerated.name ??
+							""
+					)
 					.replace(/\\/g, "/"),
 				projectToBeGenerated as CfsProject
 			);
@@ -668,9 +775,8 @@ export class CfsPluginManager {
 
 	/**
 	 * Generate code using the specified plugin
-	 * @param cfsConfig - The CfsConfig to generate the code from
-	 * @param socData - The SoC data model
-	 *
+	 * @param data - The CfsConfig and SoC data model to generate code from
+	 * @param baseDir - The base directory to generate code into
 	 */
 	public async generateConfigCode(
 		data: {
@@ -680,6 +786,13 @@ export class CfsPluginManager {
 		baseDir: string
 	): Promise<string[]> {
 		const { cfsconfig } = data;
+
+		const socContext = CfsPluginManager.buildSocContext(
+			cfsconfig.Soc,
+			cfsconfig.Package,
+			// We don't pass in board, since project plugins should be agnostic to the board
+			undefined
+		);
 
 		const result: string[] = [];
 
@@ -693,7 +806,8 @@ export class CfsPluginManager {
 
 			const plugin = await this.getPlugin<CfsCodeGenerationService>(
 				project.PluginId,
-				project.PluginVersion
+				project.PluginVersion,
+				socContext
 			);
 
 			if (typeof plugin.generateCode === "function") {
@@ -787,7 +901,8 @@ export class CfsPluginManager {
 
 	private async getPlugin<T>(
 		pluginId?: string,
-		pluginVersion?: string
+		pluginVersion?: string,
+		socContext?: PluginSocContext
 	) {
 		if (this.pluginInfo.length === 0) await this.refresh();
 
@@ -812,14 +927,18 @@ export class CfsPluginManager {
 
 		const pluginInfo = this.findPluginByVersionOrRange(
 			pluginId,
-			normalizedVersion
+			normalizedVersion,
+			socContext
 		);
 
 		if (pluginInfo) {
 			return CfsPluginManager.loadPlugin<T>(pluginInfo);
 		}
 
-		const availableVersions = this.getAvailableVersions(pluginId);
+		const availableVersions = this.getAvailableVersions(
+			pluginId,
+			socContext
+		);
 		throw new MissingDependencyError("plugin", {
 			plugins: [
 				{
@@ -837,20 +956,47 @@ export class CfsPluginManager {
 	/**
 	 * Find a plugin by ID and version or semver range.
 	 * If versionOrRange is undefined, returns the latest version (uses "*" range).
+	 * When socContext is provided, only plugins whose supportedSocs include a
+	 * matching entry are considered. If no plugin matches the SoC filter,
+	 * undefined is returned (no fallback to unfiltered results).
 	 * @param pluginId - The plugin ID
 	 * @param versionOrRange - Exact version, semver range (e.g., "^1.0.0", "~1.2.0"), or undefined for latest
+	 * @param socContext - Optional SoC context to restrict results to plugins supporting a specific SoC
 	 * @returns The matching plugin info, or undefined if not found
 	 */
 	private findPluginByVersionOrRange(
 		pluginId: string,
-		versionOrRange?: string
+		versionOrRange?: string,
+		socContext?: PluginSocContext
 	): CfsPluginInfo | undefined {
-		const matchingPlugins = this.pluginInfo.filter(
+		let matchingPlugins = this.pluginInfo.filter(
 			(info) => info.pluginId === pluginId
 		);
 
 		if (matchingPlugins.length === 0) {
 			return undefined;
+		}
+
+		// When SoC context is provided, filter to plugins supporting that SoC.
+		// Plugins without supportedSocs are considered universal (backward compat).
+		if (socContext) {
+			const socFiltered = matchingPlugins.filter((info) => {
+				const socs = info.supportedSocs;
+
+				if (!Array.isArray(socs) || socs.length === 0) {
+					return true;
+				}
+
+				return socs.some((entry) =>
+					CfsPluginManager.matchesSocEntry(entry, socContext)
+				);
+			});
+
+			if (socFiltered.length > 0) {
+				matchingPlugins = socFiltered;
+			} else {
+				return undefined;
+			}
 		}
 
 		const availableVersions = matchingPlugins.map(
@@ -874,9 +1020,88 @@ export class CfsPluginManager {
 	 * @param pluginId - The plugin ID
 	 * @returns Array of available version strings
 	 */
-	private getAvailableVersions(pluginId: string): string[] {
+	private getAvailableVersions(
+		pluginId: string,
+		socContext?: PluginSocContext
+	): string[] {
 		return this.pluginInfo
-			.filter((info) => info.pluginId === pluginId)
+			.filter(
+				(info) =>
+					info.pluginId === pluginId &&
+					(!socContext ||
+						!Array.isArray(info.supportedSocs) ||
+						info.supportedSocs.length === 0 ||
+						info.supportedSocs.some((entry) =>
+							CfsPluginManager.matchesSocEntry(entry, socContext)
+						))
+			)
 			.map((info) => info.pluginVersion);
+	}
+
+	/**
+	 * Build a PluginSocContext from raw SoC name, package, and board values.
+	 * Returns undefined when no SoC name is provided.
+	 */
+	public static buildSocContext(
+		soc: string | undefined,
+		pkg: string | undefined,
+		board: string | undefined
+	): PluginSocContext | undefined {
+		return soc
+			? {
+					name: soc,
+					package: pkg ?? undefined,
+					board: board ?? undefined
+				}
+			: undefined;
+	}
+
+	/**
+	 * Check whether a single supportedSocs entry matches
+	 * the given SoC context. Encapsulates the matching
+	 * rules (including the MAX32675C TQFN/LGA backward
+	 * compatibility workaround) so they live in one place.
+	 * @param entry - A supportedSocs entry from a plugin manifest
+	 * @param context - The SoC context to match against
+	 * @returns true if the entry satisfies the context
+	 */
+	public static matchesSocEntry(
+		entry: {
+			name: string;
+			package: string;
+			board?: string;
+			cores?: string[];
+		},
+		context: PluginSocContext & { core?: string }
+	): boolean {
+		const nameMatches =
+			entry.name.toLowerCase() === context.name.toLowerCase();
+
+		const packageMatches =
+			!context.package ||
+			entry.package.toLowerCase() === context.package.toLowerCase() ||
+			// Backwards compatibility: MAX32675C plugins declaring
+			// TQFN match a requested package of LGA.
+			(entry.name.toLowerCase() === "max32675c" &&
+				entry.package.toLowerCase() === "tqfn" &&
+				context.package.toLowerCase() === "lga");
+
+		// If no board requested, then any board entry will do.
+		// If entry has no board, assume it applies to all boards.
+		const boardMatches =
+			!context.board ||
+			!entry.board ||
+			entry.board.toLowerCase() === context.board.toLowerCase();
+
+		const coreMatches =
+			!context.core ||
+			!Array.isArray(entry.cores) ||
+			entry.cores.some(
+				(c) => c.toLowerCase() === context.core?.toLowerCase()
+			);
+
+		return (
+			nameMatches && packageMatches && boardMatches && coreMatches
+		);
 	}
 }

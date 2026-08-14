@@ -96,10 +96,8 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
   after(async () => {
     try {
       if (view) await view.switchBack();
-      await UIUtils.sleep(2000);
       if (workbench)
         await workbench.executeCommand("View: Revert and Close Editor");
-      await UIUtils.sleep(2000);
     } catch (error) {
       console.error("Error in after() hook:", error);
     }
@@ -112,7 +110,6 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
     //--- Given I run the workbench command "cfs create workspace"---
     await workbench.executeCommand("cfs create workspace");
     console.log("new workspace command executed");
-    await UIUtils.sleep(3000);
     //--- And I wait for the webview to load---
 
     await UIUtils.dismissAllNotifications(workbench, browser);

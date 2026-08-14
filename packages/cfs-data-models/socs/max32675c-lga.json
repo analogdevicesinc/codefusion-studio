@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.759",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-17T10:49:53.239945Z",
+  "Version": "1.0.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T16:45:58.933560Z",
   "Name": "MAX32675C",
   "Description": "Ultra-Low-Power Arm Cortex-M4F with Precision Analog Front-End for Industrial and Medical Sensors",
   "Endianness": "Little",
@@ -287,12 +287,6 @@
       "ClockNode": "AES/CRC"
     },
     {
-      "Name": "AESKEYS",
-      "Description": "AES Keys",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "CM4",
       "Description": "ARM Cortex-M4",
       "Cores": [],
@@ -524,12 +518,6 @@
       ]
     },
     {
-      "Name": "FCR",
-      "Description": "Function Control Registers",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "FLC0",
       "Description": "Flash Controller 0",
       "Cores": [
@@ -615,12 +603,6 @@
         "ACCESS_FAIL_IE",
         "PROT_IE"
       ]
-    },
-    {
-      "Name": "GCR",
-      "Description": "Global Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "GPIO0",
@@ -4891,12 +4873,6 @@
       "ClockNode": "LPUART0"
     },
     {
-      "Name": "MCR",
-      "Description": "Miscellaneous Control Registers",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "MISC",
       "Description": "Miscellaneous",
       "Cores": [],
@@ -4958,12 +4934,6 @@
       "Cores": [],
       "Assignable": false,
       "ClockNode": "PWR SEQ"
-    },
-    {
-      "Name": "SIR",
-      "Description": "System Initialization",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "SPI0",
@@ -15790,6 +15760,10 @@
         "NumericBase": "Decimal"
       }
     ],
+    "DAC": [],
+    "HART": [],
+    "ADC0": [],
+    "ADC1": [],
     "WDT0": [
       {
         "Id": "WDT_RST_EN",
@@ -16552,6 +16526,9 @@
         ]
       }
     ],
+    "AES": [],
+    "GPIO0": [],
+    "GPIO1": [],
     "CRC": [
       {
         "Id": "DMA_EN",
@@ -19765,6 +19742,7 @@
         "Type": "boolean"
       }
     ],
+    "DMA": [],
     "FLC0": [
       {
         "Id": "LOW_VOLTAGE",

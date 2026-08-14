@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,10 +149,25 @@ const profilingContextSlice = createSlice({
 				projectId: string;
 			}>
 		) {
-			if (state.zephelin[action.payload.projectId]) {
-				state.zephelin[action.payload.projectId].Interface =
-					action.payload.interface;
+			const config = state.zephelin[action.payload.projectId];
+
+			if (!config) {
+				return;
 			}
+
+			if (action.payload.interface === 'USB') {
+				config.Interface = {Type: 'USB'};
+			} else {
+				const existingPort =
+					config.Interface?.Type === 'UART'
+						? config.Interface.Port
+						: '';
+				config.Interface = {Type: 'UART', Port: existingPort};
+			}
+
+			// Drop the deprecated top-level Port; the port now lives inside
+			// the interface object.
+			delete config.Port;
 		},
 		setUARTPort(
 			state,
@@ -161,10 +176,14 @@ const profilingContextSlice = createSlice({
 				projectId: string;
 			}>
 		) {
-			if (state.zephelin[action.payload.projectId]) {
-				state.zephelin[action.payload.projectId].Port =
-					action.payload.port;
+			const config = state.zephelin[action.payload.projectId];
+
+			if (!config) {
+				return;
 			}
+
+			config.Interface = {Type: 'UART', Port: action.payload.port};
+			delete config.Port;
 		},
 		setValidationErrors(
 			state,

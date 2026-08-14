@@ -259,4 +259,138 @@ describe("CfsSocControlsOverride", () => {
 			service.overrideControls("workspace", createSocDataModel())
 		).to.deep.equal({});
 	});
+
+	it("merges enum values for modified controls", () => {
+		const service = new CfsSocControlsOverride(
+			createMockPluginInfo({
+				properties: {
+					peripheral: {
+						UART0: {
+							modifiedControls: [
+								{
+									Id: "MODE",
+									Description: "updated",
+									Type: "enum",
+									EnumValues: [
+										{
+											Id: "MODERN",
+											Description: "Modern Mode",
+											Value: 10
+										},
+										{
+											Id: "PLUGIN_ONLY",
+											Description: "Plugin Only Mode",
+											Value: 20
+										}
+									],
+									partRegexp: "MAX32690"
+								}
+							]
+						}
+					} as unknown
+				} as unknown as Record<CfsFeatureScope, CfsPluginProperty[]>
+			})
+		);
+
+		const soc = createSocDataModel();
+		soc.Controls.UART0 = [
+			{
+				Id: "MODE",
+				Description: "legacy",
+				Type: "enum",
+				Default: "LEGACY",
+				EnumValues: [
+					{
+						Id: "LEGACY",
+						Description: "Legacy Mode",
+						Value: 0
+					},
+					{
+						Id: "MODERN",
+						Description: "Data Model Modern Mode",
+						Value: 1
+					}
+				]
+			}
+		];
+
+		const overrides = service.overrideControls("peripheral", soc);
+		const modeControl = overrides.UART0.find(
+			(control) => control.Id === "MODE"
+		);
+
+		expect(modeControl?.EnumValues).to.deep.equal([
+			{
+				Id: "MODERN",
+				Description: "Modern Mode",
+				Value: 10
+			},
+			{
+				Id: "PLUGIN_ONLY",
+				Description: "Plugin Only Mode",
+				Value: 20,
+				IsPluginAddedOption: true
+			},
+			{
+				Id: "LEGACY",
+				Description: "Legacy Mode",
+				Value: 0,
+				Inactive: true
+			}
+		]);
+	});
+
+	it("preserves enum values when a modified control omits EnumValues", () => {
+		const service = new CfsSocControlsOverride(
+			createMockPluginInfo({
+				properties: {
+					peripheral: {
+						UART0: {
+							modifiedControls: [
+								{
+									Id: "MODE",
+									Description: "updated metadata only",
+									Type: "enum",
+									partRegexp: "MAX32690"
+								}
+							]
+						}
+					} as unknown
+				} as unknown as Record<CfsFeatureScope, CfsPluginProperty[]>
+			})
+		);
+
+		const soc = createSocDataModel();
+		const originalEnumValues = [
+			{
+				Id: "LEGACY",
+				Description: "Legacy Mode",
+				Value: 0
+			},
+			{
+				Id: "MODERN",
+				Description: "Modern Mode",
+				Value: 1
+			}
+		];
+
+		soc.Controls.UART0 = [
+			{
+				Id: "MODE",
+				Description: "legacy",
+				Type: "enum",
+				EnumValues: originalEnumValues
+			}
+		];
+
+		const overrides = service.overrideControls("peripheral", soc);
+		const modeControl = overrides.UART0.find(
+			(control) => control.Id === "MODE"
+		);
+
+		expect(modeControl?.Description).to.equal(
+			"updated metadata only"
+		);
+		expect(modeControl?.EnumValues).to.deep.equal(originalEnumValues);
+	});
 });

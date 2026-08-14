@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.792",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-30T10:28:14.756131Z",
+  "Version": "1.0.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T17:48:41.332113Z",
   "Name": "MAX32660",
   "Description": "Tiny, Ultra-Low-Power Arm Cortex-M4 Processor with FPU-Based Microcontroller",
   "Endianness": "Little",
@@ -113,12 +113,6 @@
   ],
   "Peripherals": [
     {
-      "Name": "CM4",
-      "Description": "ARM Cortex-M4",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "CM4 SysTick",
       "Description": "SysTick Timer on ARM Cortex-M4",
       "Cores": [
@@ -219,12 +213,6 @@
         "ACCESS_FAIL_IE"
       ],
       "ClockNode": "FLC"
-    },
-    {
-      "Name": "GCR",
-      "Description": "Global Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "GPIO0",
@@ -2047,12 +2035,6 @@
         "RDY_IE"
       ],
       "ClockNode": "RTC"
-    },
-    {
-      "Name": "SIR",
-      "Description": "System Initialization",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "SPI0",
@@ -6404,6 +6386,7 @@
         "Type": "boolean"
       }
     ],
+    "GPIO0": [],
     "TMR0": [
       {
         "Id": "MODE",
@@ -7837,6 +7820,7 @@
         "Type": "boolean"
       }
     ],
+    "DMA": [],
     "FLC": [
       {
         "Id": "LOW_VOLTAGE",

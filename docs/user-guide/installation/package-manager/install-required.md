@@ -1,7 +1,7 @@
 ---
 description: Resolve missing packages in CodeFusion Studio using System Planner's automated version resolution workflow or the Package Manager.
 author: Analog Devices
-date: 2026-05-27
+date: 2026-07-10
 # Note: This page is linked from:
 # - System Planner Critical Error screen (packages/ide/src/webviews/config-tools/src/screens/error/version-updater/update-resolution-card/update-resolution-card.tsx)
 # - Workspace Creation Wizard empty plugins screen (packages/ide/src/webviews/workspace-creation/src/components/workspace-empty-plugins/WorkspaceEmptyPlugins.tsx)
@@ -44,11 +44,14 @@ When you open a `.cfsconfig` file in System Planner but do not have the required
     - **Upgrade to compatible locally-available version X.X.X**  
       A compatible version is already installed. System Planner updates your configuration file to use this version without downloading anything.
 
+    !!! note "No remote access or not logged in to myAnalog"
+        If CodeFusion Studio can't access the remote package repository — because of a network issue or because you aren't logged in to myAnalog — only locally installed compatible versions (if available) appear in the menu. See [Troubleshooting](#troubleshooting) if you're stuck.
+
     - **Install requested version X.X.X**  
       The exact version you need is available remotely. System Planner downloads and installs it.
 
     - **Upgrade to latest compatible downloadable version X.X.X**  
-      A newer compatible version is available remotely. System Planner downloads and installs the latest compatible version.
+      A compatible version is available remotely, and either no compatible version is installed locally or the remote version is newer than the best compatible version installed locally. System Planner downloads and installs the latest compatible version.
 
 3. **(Optional) Configure future version handling**  
    Check or uncheck **Allow all future compatible versions**:

@@ -79,6 +79,7 @@ import {
 	selectAssignedPins
 } from '../slices/pins/pins.selector';
 import {selectPeripheralAllocations} from '../slices/peripherals/peripherals.selector';
+import {reportPersistedActionTelemetry} from './telemetry-reporter';
 
 export const persistedActions: Array<ActionCreatorWithPayload<any>> =
 	[
@@ -123,7 +124,6 @@ type ClockPersistenceContext = {
 	assignedPins: PinState[];
 	pinConfig: Record<string, AppliedSignal>;
 	peripheralConfig: Record<string, Record<string, PeripheralConfig>>;
-	nodeStatuses: Record<string, ClockNodeStatus>;
 };
 
 function computeNodeStatuses(
@@ -152,8 +152,7 @@ function getModifiedClockNodes({
 	clockNodes,
 	assignedPins,
 	pinConfig,
-	peripheralConfig,
-	nodeStatuses
+	peripheralConfig
 }: ClockPersistenceContext) {
 	const projectId = getPrimaryProjectId();
 	const canvas = getClockCanvas();
@@ -171,12 +170,6 @@ function getModifiedClockNodes({
 					controlVal !== clockNode.initialControlValues?.[control]
 			)
 		)
-		.filter(clockNode => {
-			const nodeStatus = nodeStatuses[clockNode.Name];
-
-			// Include the node only if it is enabled
-			return nodeStatus?.enabled ?? false;
-		})
 		.map(clockNode => {
 			const globalConfig: GlobalConfig = {
 				...baseGlobalConfig,
@@ -234,13 +227,20 @@ export function getPersistenceListenerMiddleware(
 					return;
 
 				const state = listenerApi.getState() as RootState;
+
+				// Report a telemetry event for this config edit from a single point.
+				// A util function formats each individual Redux action into a telemetry event with the correct metadata.
+				reportPersistedActionTelemetry(
+					action as {type: string; payload: unknown},
+					listenerApi.getOriginalState() as RootState
+				);
+
 				let modifiedClockNodes;
 				let updatedClockNode;
 				let initialControlValues;
 				let updatedPins;
 				let updatedProjects;
 				let clockFrequencies;
-				let nodeStatuses: Record<string, ClockNodeStatus> | undefined;
 
 				if (
 					action.type.includes('Pins') ||
@@ -250,20 +250,11 @@ export function getPersistenceListenerMiddleware(
 					const pinConfig = selectAppliedSignalsMap(state);
 					const peripheralConfig = selectPeripheralAllocations(state);
 
-					// Compute node statuses and modified nodes from current state
-					nodeStatuses = computeNodeStatuses(
-						state.clockNodesReducer.clockNodes,
-						assignedPins,
-						pinConfig,
-						peripheralConfig
-					);
-
 					modifiedClockNodes = getModifiedClockNodes({
 						clockNodes: state.clockNodesReducer.clockNodes,
 						assignedPins,
 						pinConfig,
-						peripheralConfig,
-						nodeStatuses
+						peripheralConfig
 					});
 
 					if (action.type.includes('Pins')) {
@@ -283,15 +274,12 @@ export function getPersistenceListenerMiddleware(
 
 						if (lastModifiedClockNode === undefined) return;
 
-						// Use latest node statuses to filter clock frequencies
-						if (!nodeStatuses) {
-							nodeStatuses = computeNodeStatuses(
-								state.clockNodesReducer.clockNodes,
-								assignedPins,
-								pinConfig,
-								peripheralConfig
-							);
-						}
+						const nodeStatuses = computeNodeStatuses(
+							state.clockNodesReducer.clockNodes,
+							assignedPins,
+							pinConfig,
+							peripheralConfig
+						);
 
 						clockFrequencies = filterClockFrequencies(
 							nodeStatuses,

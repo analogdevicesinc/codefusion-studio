@@ -74,6 +74,9 @@ export class GdbToolboxPanel
       if (this.activeSession?.id === session?.id) {
         this.activeSession = undefined;
       }
+
+      (globalThis as any).sessionArchMap?.delete(session.id);
+
       this.refresh();
     });
     vscode.debug.onDidStartDebugSession((session) => {
@@ -94,10 +97,10 @@ export class GdbToolboxPanel
 
       const haltDisposable = cfsSession.onHalt(async () => {
         this.breakpointState.set(sessionId, true);
-        // --- Detect and store core type on halt event ---
+        // --- Detect and store architecture on halt event ---
         try {
-          if (!(globalThis as any).sessionCoreMap) {
-            (globalThis as any).sessionCoreMap = new Map();
+          if (!(globalThis as any).sessionArchMap) {
+            (globalThis as any).sessionArchMap = new Map();
           }
           const executor = GDBToolbox.getInstance().getExecutor();
           const result = await executor.executeCommand(
@@ -105,18 +108,18 @@ export class GdbToolboxPanel
             [],
             cfsSession.vscodeSession,
           );
-          let core = "";
+          let arch = "";
           if (typeof result === "string") {
             const lower = result.toLowerCase();
-            if (lower.includes("arm")) core = "arm";
-            else if (lower.includes("riscv")) core = "riscv";
-            else if (lower.includes("xtensa")) core = "xtensa";
-            else core = lower.split(" ")[0];
+            if (lower.includes("arm")) arch = "arm";
+            else if (lower.includes("riscv")) arch = "riscv";
+            else if (lower.includes("xtensa")) arch = "xtensa";
+            else arch = lower.split(" ")[0];
           }
-          (globalThis as any).sessionCoreMap.set(sessionId, core);
+          (globalThis as any).sessionArchMap.set(sessionId, arch);
         } catch (err) {
-          if ((globalThis as any).sessionCoreMap) {
-            (globalThis as any).sessionCoreMap.delete(sessionId);
+          if ((globalThis as any).sessionArchMap) {
+            (globalThis as any).sessionArchMap.delete(sessionId);
           }
         }
         this.refresh();
@@ -182,6 +185,7 @@ export class GdbToolboxPanel
     // Unified script list
     if (!element) {
       let scripts = this.scriptManager.getAllScripts();
+      const hasConfiguredScripts = scripts.length > 0;
 
       scripts = scripts.filter((s: any) => {
         if (
@@ -205,11 +209,18 @@ export class GdbToolboxPanel
         }
       });
 
-      // --- Filter scripts by core if session has a core value ---
-      const sessionCore = (globalThis as any).sessionCoreMap?.get(session.id);
-      if (sessionCore) {
+      // --- Filter scripts by architecture if session has an arch value ---
+      const sessionArch = (globalThis as any).sessionArchMap?.get(session.id);
+      if (sessionArch) {
+        /**
+         * `core` has been deprecated in favour of `arch`. Keeping this in for
+         * the moment for backwards compatibility
+         */
         scripts = scripts.filter(
-          (s: any) => !s.core || s.core.includes(sessionCore),
+          (s: any) =>
+            (!s.arch && !s.core) ||
+            s.arch?.includes(sessionArch) ||
+            s.core?.includes(sessionArch),
         );
       }
       const filter = this.getFilter(session.id);
@@ -226,6 +237,7 @@ export class GdbToolboxPanel
           return (
             s.name.toLowerCase().includes(q) ||
             (s.description && s.description.toLowerCase().includes(q)) ||
+            matches(s.arch) ||
             matches(s.core) ||
             matches(s.firmwarePlatform)
           );
@@ -259,25 +271,36 @@ export class GdbToolboxPanel
       }
 
       // Add script items (still executable)
-      items.push(
-        ...scripts.map((script) => {
-          const treeItem = new vscode.TreeItem(
-            script.name,
-            vscode.TreeItemCollapsibleState.None,
-          );
-          treeItem.command = {
-            command: EXECUTE_GDB_SCRIPT_COMMAND_ID,
-            title: EXECUTE_SCRIPT,
-            arguments: [script, session],
-          };
-          treeItem.contextValue = "gdbScript";
-          treeItem.iconPath = new vscode.ThemeIcon("file-code");
-          treeItem.tooltip = script.description;
-          (treeItem as any).script = script;
-          treeItem.resourceUri = vscode.Uri.file(script.filePath);
-          return treeItem;
-        }),
-      );
+      if (scripts.length === 0) {
+        const noScriptsItem = new vscode.TreeItem(
+          !hasConfiguredScripts
+            ? "No scripts found. Please add scripts to the GDB Toolbox."
+            : "No scripts match the current filter.",
+          vscode.TreeItemCollapsibleState.None,
+        );
+        noScriptsItem.iconPath = new vscode.ThemeIcon("info");
+        items.push(noScriptsItem);
+      } else {
+        items.push(
+          ...scripts.map((script) => {
+            const treeItem = new vscode.TreeItem(
+              script.name,
+              vscode.TreeItemCollapsibleState.None,
+            );
+            treeItem.command = {
+              command: EXECUTE_GDB_SCRIPT_COMMAND_ID,
+              title: EXECUTE_SCRIPT,
+              arguments: [script, session],
+            };
+            treeItem.contextValue = "gdbScript";
+            treeItem.iconPath = new vscode.ThemeIcon("file-code");
+            treeItem.tooltip = script.description;
+            (treeItem as any).script = script;
+            treeItem.resourceUri = vscode.Uri.file(script.filePath);
+            return treeItem;
+          }),
+        );
+      }
 
       return items;
     }

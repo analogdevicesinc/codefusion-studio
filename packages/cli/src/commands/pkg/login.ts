@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,17 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags, ux} from '@oclif/core';
+
+import {input, password} from '@inquirer/prompts';
+import {Args, Command, Flags} from '@oclif/core';
 
 import {getPackageManager} from '../../utils/package-manager.js';
+
+export const pkgLoginDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
 
 export default class CfsPackageLogin extends Command {
   static args = {
@@ -46,11 +54,6 @@ export default class CfsPackageLogin extends Command {
         'User password, API key or token to authenticate into the server. If not provided it will be prompted (and properly hidden) during command execution',
       multiple: false,
       required: false
-    }),
-    'with-myanalog': Flags.boolean({
-      description: 'Use myAnalog session to obtain credentials',
-      required: false,
-      exclusive: ['password', 'user']
     })
   };
 
@@ -61,22 +64,20 @@ export default class CfsPackageLogin extends Command {
     const {args, flags} = await this.parse(CfsPackageLogin);
     const {remoteName} = args;
 
-    const packman = await getPackageManager({
-      includeCredentialProvider: true
-    });
-    if (flags['with-myanalog']) {
-      await packman.setRemoteCredentialProvider(
-        remoteName,
-        'myAnalog'
-      );
-    } else {
-      const username = flags.user ?? (await ux.ux.prompt('User'));
-      const password =
-        flags.password ??
-        (await ux.ux.prompt('Password', {type: 'hide'}));
-      await packman.login(remoteName, username, password);
-    }
+    const packman = await pkgLoginDeps.getPackageManager(
+      {
+        useRemotes: true
+      },
+      undefined,
+      this
+    );
 
-    this.log(`Log in successful!`);
+    const username = flags.user ?? (await input({message: 'User'}));
+    const pswd =
+      flags.password ??
+      (await password({message: 'Password (hidden)', mask: true}));
+    await packman.login(remoteName, username, pswd);
+
+    this.log(`Log in successful`);
   }
 }

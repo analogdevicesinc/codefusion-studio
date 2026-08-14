@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.792",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-30T10:27:52.995018Z",
+  "Version": "1.0.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T17:44:13.991070Z",
   "Name": "MAX32666",
   "Description": "Low-Power Arm Cortex-M4 with FPU-Based Microcontroller with Bluetooth 5 for Wearables",
   "Endianness": "Little",
@@ -1212,12 +1212,6 @@
       "ClockNode": "ADC"
     },
     {
-      "Name": "AESKEYS",
-      "Description": "AES Keys",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "AUDIO",
       "Description": "Audio Subsystem",
       "Cores": [
@@ -1276,12 +1270,6 @@
       "ClockNode": "Bluetooth"
     },
     {
-      "Name": "CM4-0",
-      "Description": "ARM Cortex-M4 0",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "CM4-0 SysTick",
       "Description": "SysTick Timer on ARM Cortex-M4",
       "Cores": [
@@ -1305,12 +1293,6 @@
         "TICKS_PER_SEC",
         "TICKS_BETWEEN_INTS"
       ]
-    },
-    {
-      "Name": "CM4-1",
-      "Description": "ARM Cortex-M4 1",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "CM4-1 SysTick",
@@ -1354,12 +1336,6 @@
         "CM4-1"
       ],
       "ClockNode": "DMA0/1"
-    },
-    {
-      "Name": "FCR",
-      "Description": "Function Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "FLC0",
@@ -1460,12 +1436,6 @@
         "DONE_IE",
         "ACCESS_FAIL_IE"
       ]
-    },
-    {
-      "Name": "GCR",
-      "Description": "Global Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "GPIO0",
@@ -5085,12 +5055,6 @@
       ]
     },
     {
-      "Name": "MCR",
-      "Description": "Miscellaneous Control Registers",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "MISC",
       "Description": "Miscellaneous",
       "Cores": [],
@@ -7544,12 +7508,6 @@
         "RANGED",
         "VSETD"
       ]
-    },
-    {
-      "Name": "SIR",
-      "Description": "System Initialization",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "SPI0",
@@ -18719,6 +18677,7 @@
         ]
       }
     ],
+    "BLE": [],
     "CM4-0 SysTick": [
       {
         "Id": "ENABLE",
@@ -18789,6 +18748,7 @@
         "Type": "boolean"
       }
     ],
+    "TPU": [],
     "WDT0": [
       {
         "Id": "WDT_RST_EN",
@@ -19643,6 +19603,8 @@
         ]
       }
     ],
+    "GPIO0": [],
+    "GPIO1": [],
     "TMR0": [
       {
         "Id": "MODE",
@@ -22744,6 +22706,8 @@
         "Type": "boolean"
       }
     ],
+    "DMA0": [],
+    "DMA1": [],
     "FLC0": [
       {
         "Id": "DONE_IE",
@@ -23872,6 +23836,23 @@
         "Type": "boolean"
       }
     ],
+    "PTG": [],
+    "PT0": [],
+    "PT1": [],
+    "PT2": [],
+    "PT3": [],
+    "PT4": [],
+    "PT5": [],
+    "PT6": [],
+    "PT7": [],
+    "PT8": [],
+    "PT9": [],
+    "PT10": [],
+    "PT11": [],
+    "PT12": [],
+    "PT13": [],
+    "PT14": [],
+    "PT15": [],
     "OWM": [
       {
         "Id": "INTERNAL_PULL_UP",
@@ -23997,6 +23978,7 @@
         "Type": "boolean"
       }
     ],
+    "SEMA": [],
     "UART0": [
       {
         "Id": "ENABLE",
@@ -26146,6 +26128,7 @@
         "Type": "boolean"
       }
     ],
+    "AUDIO": [],
     "TRNG": [
       {
         "Id": "RND_IE",
@@ -26158,6 +26141,7 @@
         "Type": "boolean"
       }
     ],
+    "USBHS": [],
     "SDHC": [
       {
         "Id": "PRESET_VAL",
@@ -26605,6 +26589,7 @@
         "Type": "boolean"
       }
     ],
+    "SPIXFM_FIFO": [],
     "SPI0": [
       {
         "Id": "ENABLE",

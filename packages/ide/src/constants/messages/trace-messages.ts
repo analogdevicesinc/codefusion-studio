@@ -18,6 +18,7 @@ import {
   SerialPort,
   TraceConfiguration,
   TraceRecordingState,
+  UsbDevice,
 } from "@ide-types/trace-types";
 
 export const traceConfigRequest: RequestType<void, TraceConfiguration> = {
@@ -56,6 +57,10 @@ export const traceRecordingStateChangedNotification: NotificationType<TraceRecor
 
 export const traceSerialPortsRequest: RequestType<void, SerialPort[]> = {
   method: "trace-get-serial-ports",
+};
+
+export const traceUsbDevicesRequest: RequestType<void, UsbDevice[]> = {
+  method: "trace-get-usb-devices",
 };
 
 export const traceOpenConfigurationViewNotification: NotificationType<void> = {

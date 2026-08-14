@@ -16,6 +16,8 @@ import type {AIModel, SocControl} from 'cfs-types';
 
 import {Config, Flags} from '@oclif/core';
 import {
+  MAX_MODEL_NAME_LENGTH,
+  caseInsensitiveCompare,
   enforceMaxActiveModels,
   getAiToolsPlugin,
   getValidExtensions,
@@ -61,9 +63,9 @@ export default class Update extends BaseModelCommand {
       flags.workspace
     );
 
-    const existingModelNames = this.getModelNamesFromConfig(config);
+    const modelExists = this.isExistingModel(flags.name, config);
 
-    if (!existingModelNames.includes(flags.name)) {
+    if (!modelExists) {
       throw new RecoverableError(
         `Model '${flags.name}' does not exist`,
         {
@@ -79,9 +81,13 @@ export default class Update extends BaseModelCommand {
       getVersionFromConfig(this.config)
     );
 
+    const existingModelNames = this.getModelNamesFromConfig(config);
+
+    let updatedModelName = '';
+
     for (const project of config.Projects) {
       for (let aiModel of project.AIModels ?? []) {
-        if (aiModel.Name === flags.name) {
+        if (caseInsensitiveCompare(aiModel.Name, flags.name)) {
           const be = await aiPlugin.getBackendFromName(
             aiModel.Backend?.Name ?? ''
           );
@@ -96,6 +102,8 @@ export default class Update extends BaseModelCommand {
             }
           );
 
+          updatedModelName = aiModel.Name;
+
           if (be) {
             project.AIModels = enforceMaxActiveModels(
               project.AIModels ?? [],
@@ -104,16 +112,16 @@ export default class Update extends BaseModelCommand {
               flags.json
             );
           }
-
-          await this.writeCfsConfig(pathToConfig, config);
-
-          this.log(`Model '${aiModel.Name}' updated successfully.`);
-          return {
-            msg: `Model '${aiModel.Name}' updated successfully`
-          };
         }
       }
     }
+
+    await this.writeCfsConfig(pathToConfig, config);
+
+    this.log(`Model '${updatedModelName}' updated successfully.`);
+    return {
+      msg: `Model '${updatedModelName}' updated successfully`
+    };
   }
 
   async updateModel(
@@ -143,7 +151,21 @@ export default class Update extends BaseModelCommand {
 
       switch (key) {
         case 'name': {
-          if (options.existingModelNames.includes(value)) {
+          if (value.length > MAX_MODEL_NAME_LENGTH) {
+            throw new RecoverableError(
+              `Model name must not exceed ${MAX_MODEL_NAME_LENGTH} characters`,
+              {
+                suggestion: 'Use a shorter model name'
+              }
+            );
+          }
+
+          if (
+            !caseInsensitiveCompare(value, aiModel.Name) &&
+            options.existingModelNames.some((n) =>
+              caseInsensitiveCompare(n, value)
+            )
+          ) {
             throw new RecoverableError(
               'A model with this name already exists',
               {

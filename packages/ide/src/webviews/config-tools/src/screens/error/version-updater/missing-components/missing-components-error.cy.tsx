@@ -320,6 +320,52 @@ describe('MissingComponentsError', () => {
 		});
 	});
 
+	describe('locally available version resolution when no access to remote', () => {
+		const componentWithLocalVersions: CfsMissingComponent[] = [
+			{
+				id: 'max32690-plugin',
+				version: '1.0.0',
+				type: 'plugin',
+				availableVersions: ['1.0.0', '1.0.1', '1.0.2']
+			}
+		];
+
+		beforeEach(() => {
+			mockVsCodeApi({
+				postMessage(message: any) {
+					if (message.type === 'packager--search') {
+						window.dispatchEvent(
+							new MessageEvent('message', {
+								data: {
+									type: 'api-response',
+									id: message.id,
+									error: 'The remote repository is not reachable.'
+								}
+							})
+						);
+					}
+				},
+				getState() {
+					return undefined;
+				},
+				setState<T>(newState: T) {
+					return newState;
+				}
+			});
+		});
+
+		it('should show the locally available version option', () => {
+			mountComponent(componentWithLocalVersions);
+
+			cy.get(
+				'#component-resolution-max32690-plugin-controlDropdown'
+			).click();
+			cy.contains(
+				'Upgrade to compatible locally-available version 1.0.2'
+			).should('be.visible');
+		});
+	});
+
 	describe('remote version resolution', () => {
 		const componentWithRemoteVersion: CfsMissingComponent[] = [
 			{
@@ -488,6 +534,75 @@ describe('MissingComponentsError', () => {
 
 			cy.contains(
 				'Upgrade to latest compatible downloadable version'
+			).should('not.exist');
+		});
+
+		it('should not show an older remote version when a newer compatible local version is available', () => {
+			mockRemoteVersion('1.0.100');
+			mountComponent([
+				{
+					id: 'max32690-plugin',
+					version: '1.0.99',
+					type: 'plugin',
+					availableVersions: ['1.0.100', '1.0.101']
+				}
+			]);
+
+			cy.get(
+				'#component-resolution-max32690-plugin-controlDropdown'
+			).click();
+			cy.contains(
+				'Upgrade to compatible locally-available version 1.0.101'
+			).should('be.visible');
+			cy.contains(
+				'Upgrade to latest compatible downloadable version 1.0.100'
+			).should('not.exist');
+		});
+
+		it('should show a remote version newer than the latest compatible local version', () => {
+			mockRemoteVersion('1.0.102');
+			mountComponent([
+				{
+					id: 'max32690-plugin',
+					version: '1.0.99',
+					type: 'plugin',
+					availableVersions: ['1.0.100', '1.0.101']
+				}
+			]);
+
+			cy.get(
+				'#component-resolution-max32690-plugin-controlDropdown'
+			).click();
+			cy.contains(
+				'Upgrade to compatible locally-available version 1.0.101'
+			).should('be.visible');
+			cy.contains(
+				'Upgrade to latest compatible downloadable version 1.0.102'
+			).should('be.visible');
+		});
+
+		it('should preserve the exact requested remote version option when a newer compatible local version is available', () => {
+			mockRemoteVersion('1.0.99');
+			mountComponent([
+				{
+					id: 'max32690-plugin',
+					version: '1.0.99',
+					type: 'plugin',
+					availableVersions: ['1.0.100', '1.0.101']
+				}
+			]);
+
+			cy.get(
+				'#component-resolution-max32690-plugin-controlDropdown'
+			).click();
+			cy.contains(
+				'Upgrade to compatible locally-available version 1.0.101'
+			).should('be.visible');
+			cy.contains('Install requested version 1.0.99').should(
+				'be.visible'
+			);
+			cy.contains(
+				'Upgrade to latest compatible downloadable version 1.0.99'
 			).should('not.exist');
 		});
 	});

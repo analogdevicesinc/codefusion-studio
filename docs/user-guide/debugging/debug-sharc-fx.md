@@ -1,7 +1,7 @@
 ---
 description: How to connect and debug SHARC-FX applications in CodeFusion Studio.
 author: Analog Devices
-date: 2026-05-28
+date: 2026-07-28
 ---
 
 # Debug a SHARC-FX application
@@ -28,11 +28,11 @@ Authentication is required to download the SHARC-FX toolchain.
 
 1. Follow the steps in [Access restricted packages (using myAnalog login)](../installation/package-manager/auth.md).
 2. Install the toolchain using one of the following methods:
-      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.5.0` in the list and click to install.
+      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.5.1` in the list and click to install.
       - **Command line:** From `cfsutil`, run
 
         ```sh
-        cfsutil pkg install xtensa_sharcfx_toolchain/15.5.0
+        cfsutil pkg install xtensa_sharcfx_toolchain/15.5.1
         ```
 
 3. When prompted to accept the license agreement, review the license text and any referenced URLs, then:

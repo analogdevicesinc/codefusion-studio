@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -543,6 +543,26 @@ describe("CfsDataModelManager", () => {
 						.availableVersions as string[];
 					expect(availVersions).to.have.lengthOf(0);
 				}
+			});
+		});
+
+		describe("getFirstPackageIdForSoc", () => {
+			it("should return packageId for a valid SoC (case insensitive)", async () => {
+				const result =
+					await dataModelManager.getFirstPackageIdForSoc(
+						"VERSIONED_soc"
+					);
+
+				expect(result).to.equal("test_pkg");
+			});
+
+			it("should return undefined for an invalid SoC", async () => {
+				const result =
+					await dataModelManager.getFirstPackageIdForSoc(
+						"NONEXISTENT"
+					);
+
+				expect(result).to.equal(undefined);
 			});
 		});
 	});

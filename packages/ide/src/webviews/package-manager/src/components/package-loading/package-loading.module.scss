@@ -1,0 +1,103 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+$skeleton-base: var(--vscode-inputOption-hoverBackground);
+$skeleton-highlight: colors.$editor-widget-background;
+
+.packageLoading {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	align-self: stretch;
+	box-sizing: border-box;
+	border-radius: layout.$border-radius-2;
+	border: layout.$border-width-1 solid
+		var(--vscode-commandCenter-border);
+	margin: 0.5px;
+	background: colors.$input-background;
+}
+
+.checkbox {
+	display: flex;
+	padding: layout.$spacing-5; // 16px
+	width: 14px;
+}
+
+.content {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	flex: 1 0 0;
+	border-left: layout.$border-width-1 solid colors.$default-border;
+}
+
+.contentHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	align-self: stretch;
+}
+
+.contentBody {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+}
+
+.skeletonTextSm {
+	height: 14px;
+	width: 135px;
+	border-radius: layout.$border-radius-1;
+	background: linear-gradient(
+		90deg,
+		$skeleton-base 0%,
+		$skeleton-base 30%,
+		$skeleton-highlight 50%,
+		$skeleton-base 70%,
+		$skeleton-base 100%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s linear infinite;
+}
+
+.skeletonTextLg {
+	width: 184px;
+	height: 23px;
+	border-radius: layout.$border-radius-1;
+	background: linear-gradient(
+		90deg,
+		$skeleton-base 0%,
+		$skeleton-base 30%,
+		$skeleton-highlight 50%,
+		$skeleton-base 70%,
+		$skeleton-base 100%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s linear infinite;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 100% 0;
+	}
+	100% {
+		background-position: -100% 0;
+	}
+}

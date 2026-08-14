@@ -61,6 +61,27 @@ const getDataZoom = (instance: any) => {
 		: null;
 };
 
+const waitForTimelineCharts = () => {
+	const chart0Key = chartKeyFromTestId(ROW1_TEST_ID);
+	const chart1Key = chartKeyFromTestId(ROW2_TEST_ID);
+	const chart2Key = chartKeyFromTestId(ROW3_TEST_ID);
+
+	return cy.window().should((win: any) => {
+		const instMap = win.__timelineEcharts;
+
+		expect(instMap?.has('header'), 'header chart').to.eq(true);
+		expect(instMap?.has(chart0Key), 'chart0').to.eq(true);
+		expect(instMap?.has(chart1Key), 'chart1').to.eq(true);
+		expect(instMap?.has(chart2Key), 'chart2').to.eq(true);
+	});
+};
+
+const expectTickValue = (expected: string) => {
+	cy.dataTest('event-source-list:empty-block-item').should(item => {
+		expect(item.text().trim()).to.eq(expected);
+	});
+};
+
 function TestComponent() {
 	return <AppContent />;
 }
@@ -187,20 +208,25 @@ describe('Timeline', () => {
 
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest(ROW1_TEST_ID).should('exist', {timeout: 10000});
+		waitForTimelineCharts();
+
+		cy.dataTest('app-content:loading').should('not.exist');
+
+		let chartKeys: string[];
 
 		cy.window().then(win => {
+			chartKeys = [
+				chartKeyFromTestId(ROW1_TEST_ID),
+				chartKeyFromTestId(ROW2_TEST_ID),
+				chartKeyFromTestId(ROW3_TEST_ID),
+				'header'
+			];
+
 			const instMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
 			>;
 			const chart0Key = chartKeyFromTestId(ROW1_TEST_ID);
-			const chart1Key = chartKeyFromTestId(ROW2_TEST_ID);
-			const chart2Key = chartKeyFromTestId(ROW3_TEST_ID);
-
 			const chart0 = instMap.get(chart0Key);
 			assert.exists(chart0, `${chart0Key} instance`);
 
@@ -219,10 +245,15 @@ describe('Timeline', () => {
 
 				container.dispatchEvent(evt);
 			});
+		});
 
-			cy.wait(300);
+		cy.window().then(win => {
+			const instMap = (win as any).__timelineEcharts as Map<
+				string,
+				any
+			>;
 
-			[chart0Key, chart1Key, chart2Key, 'header'].forEach(id => {
+			chartKeys.forEach(id => {
 				const inst = instMap.get(id);
 				const dz = inst.getOption().dataZoom[0];
 
@@ -237,10 +268,9 @@ describe('Timeline', () => {
 
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest(ROW1_TEST_ID).should('exist', {timeout: 10000});
+		waitForTimelineCharts();
+
+		cy.dataTest('app-content:loading').should('not.exist');
 
 		cy.window().then(win => {
 			const instMap = (win as any).__timelineEcharts as Map<
@@ -249,7 +279,6 @@ describe('Timeline', () => {
 			>;
 			const chart0Key = chartKeyFromTestId(ROW1_TEST_ID);
 			const chart0 = instMap.get(chart0Key);
-			assert.exists(chart0, `${chart0Key} instance`);
 
 			const dom = chart0.getDom();
 			const canvas = dom.querySelector('canvas') as HTMLCanvasElement;
@@ -301,9 +330,6 @@ describe('Timeline', () => {
 			const chart0 = instMap.get(chart0Key);
 			const chart1 = instMap.get(chart1Key);
 			const chart2 = instMap.get(chart2Key);
-			assert.exists(chart0, `${chart0Key} instance`);
-			assert.exists(chart1, `${chart1Key} instance`);
-			assert.exists(chart2, `${chart2Key} instance`);
 
 			const dz0 = getDataZoom(chart0);
 			const dz1 = getDataZoom(chart1);
@@ -620,12 +646,10 @@ describe('Timeline', () => {
 
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist');
+
+		waitForTimelineCharts();
 
 		cy.window().then(win => {
 			const chartInstanceMap = (win as any).__timelineEcharts as Map<
@@ -679,6 +703,9 @@ describe('Timeline', () => {
 		const testStore = {...store};
 
 		cy.mount(<TestComponent />, testStore);
+
+		waitForTimelineCharts();
+
 		cy.dataTest('app-content:loading').should('not.exist', {
 			timeout: 10000
 		});
@@ -691,12 +718,8 @@ describe('Timeline', () => {
 				string,
 				any
 			>;
-			assert.exists(chartInstanceMap, '__timelineEcharts map exists');
 
-			const headerChart = chartInstanceMap.get('header');
-			assert.exists(headerChart, 'header chart instance');
-
-			const xAxis = getXAxisOptions(headerChart);
+			const xAxis = getXAxisOptions(chartInstanceMap.get('header'));
 			const xMin = Number(xAxis?.min);
 			const xMax = Number(xAxis?.max);
 
@@ -718,32 +741,18 @@ describe('Timeline', () => {
 
 		triggerZoomInFromFooter(14);
 
-		cy.dataTest('event-source-list:empty-block-item')
-			.invoke('text')
-			.then(textContent => {
-				expect(textContent.trim()).to.eq(`9${UNITS_LABEL.s}`);
-			});
+		expectTickValue(`9${UNITS_LABEL.s}`);
 
 		triggerZoomInFromFooter(40);
 		cy.wait(200);
 
-		cy.dataTest('event-source-list:empty-block-item')
-			.invoke('text')
-			.then(textContent => {
-				expect(textContent.trim()).to.eq(
-					`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms}`
-				);
-			});
+		expectTickValue(`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms}`);
 
 		triggerZoomInFromFooter(25);
 		cy.wait(200);
 
-		cy.dataTest('event-source-list:empty-block-item')
-			.invoke('text')
-			.then(textContent => {
-				expect(textContent.trim()).to.eq(
-					`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms} 999${UNITS_LABEL.us}`
-				);
-			});
+		expectTickValue(
+			`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms} 999${UNITS_LABEL.us}`
+		);
 	});
 });

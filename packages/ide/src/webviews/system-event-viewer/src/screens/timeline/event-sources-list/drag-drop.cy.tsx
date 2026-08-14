@@ -14,7 +14,10 @@
  */
 
 import {navigationItems} from '../../../common/constants/navigation';
-import {INITIAL_DATA_ZOOM} from '../../../common/constants/timeline';
+import {
+	INITIAL_DATA_ZOOM,
+	TIMELINE_DRAG_ACTIVE
+} from '../../../common/constants/timeline';
 import {AppContent} from '../../../components/app-content/app-content';
 import {setActiveScreen} from '../../../state/slices/app-context/app-context.reducer';
 import {setDataZoom} from '../../../state/slices/timeline/timeline.reducer';
@@ -42,7 +45,7 @@ describe('Timeline Drag and Drop', () => {
 		store.dispatch(setDataZoom(INITIAL_DATA_ZOOM));
 	});
 
-	it('Should update the list order when drop happens outside allowed area', () => {
+	it('Should update the list order when pointer up happens outside allowed area', () => {
 		cy.mount(<AppContent />, store);
 
 		cy.dataTest('app-content:loading').should('not.exist', {
@@ -57,41 +60,54 @@ describe('Timeline Drag and Drop', () => {
 
 		assertListOrder(initialOrder);
 
-		cy.dataTest('event-sources:item:0').within(() => {
-			cy.dataTest('event-sources:item:drag-handle:0').trigger(
-				'dragstart',
-				{
-					dataTransfer: new DataTransfer(),
+		cy.dataTest('event-sources:item:drag-handle:0')
+			.should('exist')
+			.then(handle => {
+				const rect = handle[0].getBoundingClientRect();
+
+				cy.wrap(handle).trigger('pointerdown', {
+					button: 0,
+					buttons: 1,
+					pointerId: 1,
+					pointerType: 'mouse',
+					clientX: rect.left + rect.width / 2,
+					clientY: rect.top + rect.height / 2,
 					force: true
-				}
-			);
-		});
+				});
+			});
 
-		cy.get('body').should('have.class', 'timeline-drag-active');
+		cy.get('body').should('have.class', TIMELINE_DRAG_ACTIVE);
 
-		cy.dataTest('event-sources:item:1').trigger('dragenter', {
-			dataTransfer: new DataTransfer(),
+		cy.dataTest('event-sources:item:1').trigger('pointerover', {
+			pointerId: 1,
+			pointerType: 'mouse',
 			force: true
 		});
 
-		// Drop outside diagram bounds to trigger drag cancel/reset path.
+		// Release pointer outside diagram bounds to trigger drag cancel/reset path.
 		cy.dataTest('timeline-diagram').then(diagram => {
 			const rect = diagram[0].getBoundingClientRect();
 
 			cy.window().then(win => {
-				const outsideDropEvent = new win.DragEvent('drop', {
-					bubbles: true,
-					cancelable: true,
-					clientX: rect.left,
-					clientY: rect.top - 200, // Above the diagram
-					dataTransfer: new DataTransfer()
-				});
+				const outsidePointerUpEvent = new win.PointerEvent(
+					'pointerup',
+					{
+						bubbles: true,
+						cancelable: true,
+						button: 0,
+						buttons: 0,
+						pointerId: 1,
+						pointerType: 'mouse',
+						clientX: rect.left,
+						clientY: rect.top - 200 // Above the diagram
+					}
+				);
 
-				win.dispatchEvent(outsideDropEvent);
+				win.dispatchEvent(outsidePointerUpEvent);
 			});
 		});
 
-		cy.get('body').should('not.have.class', 'timeline-drag-active');
+		cy.get('body').should('not.have.class', TIMELINE_DRAG_ACTIVE);
 
 		assertListOrder([
 			'Event Source Alias 2',

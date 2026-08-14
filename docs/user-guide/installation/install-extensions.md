@@ -1,7 +1,7 @@
 ---
 description: Install the CodeFusion Studio VS Code extension
 author: Analog Devices
-date: 2026-01-12
+date: 2026-07-16
 ---
 
 # Install the CodeFusion Studio VS Code extension
@@ -74,7 +74,19 @@ To disable auto-update for this extension only:
 This allows you to keep using the extension version bundled with a specific CFS SDK.
 
 !!! tip
-    If the CFS extension updated unexpectedly, disable automatic extension updates and revert to a previous version. To revert to a previous version, open the **Extensions** panel, click the gear icon next to the CodeFusion Studio extension, and choose **Install Specific Version…**. You can also install a specific version using **Install from VSIX…**, as documented above.
+    If the CFS extension updated unexpectedly, disable automatic extension updates and [install a specific version](#install-a-specific-version).
+
+### Install a specific version
+
+You can install a specific version of the CodeFusion Studio extension or any of its dependent extensions (such as Zephelin Trace Viewer or Cortex-Debug) from the VS Code Extensions panel.
+
+1. Open **Extensions** (`Ctrl+Shift+X` / `Cmd+Shift+X`) and search for the extension by name.
+2. Select the extension to open the details page, then clear the **Auto Update** checkbox to prevent VS Code from overwriting your selection.
+3. Right-click the extension (or Ctrl+click on macOS) and select **Install Specific Version**.
+4. Select the version you want to install.
+5. Reload the VS Code window: open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **Developer: Reload Window**.
+
+For the CFS extension, you can also install a specific version using **Install from VSIX**, as documented above.
 
 ### Optional: Review dependent extensions
 
@@ -88,7 +100,7 @@ In most cases, no additional action is required.
 
 To view all dependent extensions, open the **Extensions** panel, select **CodeFusion Studio**, and open the **Dependencies** tab.
 
-If you encounter issues, you can update dependent extensions manually from the VS Code Extensions view.
+If you encounter issues with a dependent extension, select **Update** if available, or install a specific version. See [Install a specific version](#install-a-specific-version).
 
 ## Next steps
 

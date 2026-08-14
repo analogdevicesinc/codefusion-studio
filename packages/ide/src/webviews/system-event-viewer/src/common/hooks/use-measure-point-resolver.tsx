@@ -247,6 +247,65 @@ export function useMeasurePointResolver({
 		[getClampedLocalPoint, resolvePreviewCore]
 	);
 
+	// Returns the resolved snapped point enriched with the row-local Y of the snap,
+	// so the overlay can keep the marker aligned to the source row after reorder.
+	const resolveSnappedPointWithRowLocalY = useCallback(
+		(
+			snappedCandidate: MeasureSnapCandidate,
+			containerRect: DOMRect
+		): MeasureResolvedPoint => {
+			const resolvedSnappedPoint =
+				resolvePointFromCandidate(snappedCandidate);
+			const chart = getChartInstance(snappedCandidate.sourceId);
+
+			if (!chart) return resolvedSnappedPoint;
+
+			const chartRect = chart.getDom().getBoundingClientRect();
+			const rowLocalY =
+				snappedCandidate.y - (chartRect.top - containerRect.top);
+
+			return {...resolvedSnappedPoint, rowLocalY};
+		},
+		[getChartInstance]
+	);
+
+	// Returns the resolved background point enriched with the source row it falls in
+	// (sourceId + row-local Y), so the overlay can keep unsnapped commits anchored
+	// to their original row after reorder.
+	const resolveBackgroundPointWithSourceRow = useCallback(
+		(
+			rawPoint: MeasurePoint,
+			containerRect: DOMRect,
+			timestamp: number | undefined
+		): MeasureResolvedPoint => {
+			const resolvedBackgroundPoint = resolvePointFromBackground(
+				rawPoint,
+				timestamp
+			);
+
+			for (const source of eventSources) {
+				const sourceId = String(source.id);
+				const chart = getChartInstance(sourceId);
+				if (!chart) continue;
+
+				const chartRect = chart.getDom().getBoundingClientRect();
+				const rowTop = chartRect.top - containerRect.top;
+				const rowBottom = rowTop + chartRect.height;
+
+				if (rawPoint.y >= rowTop && rawPoint.y < rowBottom) {
+					return {
+						...resolvedBackgroundPoint,
+						sourceId,
+						rowLocalY: rawPoint.y - rowTop
+					};
+				}
+			}
+
+			return resolvedBackgroundPoint;
+		},
+		[eventSources, getChartInstance]
+	);
+
 	// This is the main function to resolve the mouse event to a point on the chart
 	// It check if the point is within bound or in the chart header component,
 	// then it checks if it should snap to a locked candidate,
@@ -280,7 +339,10 @@ export function useMeasurePointResolver({
 			);
 
 			if (snappedCandidate) {
-				return resolvePointFromCandidate(snappedCandidate);
+				return resolveSnappedPointWithRowLocalY(
+					snappedCandidate,
+					containerRect
+				);
 			}
 
 			const timestamp = getBackgroundTimestamp(
@@ -288,9 +350,19 @@ export function useMeasurePointResolver({
 				containerRect
 			);
 
-			return resolvePointFromBackground(rawPoint, timestamp);
+			return resolveBackgroundPointWithSourceRow(
+				rawPoint,
+				containerRect,
+				timestamp
+			);
 		},
-		[buildSnapCandidates, getRawLocalPoint, getBackgroundTimestamp]
+		[
+			buildSnapCandidates,
+			getBackgroundTimestamp,
+			getRawLocalPoint,
+			resolveBackgroundPointWithSourceRow,
+			resolveSnappedPointWithRowLocalY
+		]
 	);
 
 	return {

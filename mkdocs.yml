@@ -30,6 +30,21 @@ plugins:
       cover_page_template: "docs/assets/templates/cover_page.tpl"
   - mike:
       alias_type: copy
+  - llmstxt:
+      full_output: llms-full.txt
+      base_url: !ENV [DOCS_BASE_URL, "https://developer.analog.com/docs/codefusion-studio/latest/"]
+      markdown_description: CodeFusion Studio is a powerful, easy-to-use development environment for Analog Devices' microcontrollers and DSPs. It provides tools for system configuration, code generation, building, flashing, debugging, and AI model integration.
+      sections:
+        Overview:
+          - index.md
+        User Guide:
+          - user-guide/index.md
+          - user-guide/**/*.md
+        Tutorials:
+          - tutorials/index.md
+          - tutorials/**/*.md
+        Release Notes:
+          - release-notes/*.md
 
 
 nav:
@@ -52,12 +67,14 @@ nav:
       - Set up CFS: user-guide/installation/set-up-cfs.md
       - Package Manager:
           - Overview: user-guide/installation/package-manager/index.md
-          - Manage packages from the Command Palette: user-guide/installation/package-manager/manage-packages-command-palette.md
-          - Manage packages from the command line (`cfsutil`): user-guide/installation/package-manager/manage-packages-cfsutil.md
+          - Manage packages from the Package Manager UI: user-guide/installation/package-manager/manage-packages-ide.md
           - Available packages: user-guide/installation/package-manager/available-packages.md
-          - Install required packages: user-guide/installation/package-manager/install-required.md
-          - Log in to access restricted packages: user-guide/installation/package-manager/auth.md
-          - Troubleshoot package issues: user-guide/installation/package-manager/troubleshooting-package-manager.md
+          - More options:
+              - Manage packages from the Command Palette: user-guide/installation/package-manager/manage-packages-command-palette.md
+              - Manage packages from the command line (`cfsutil`): user-guide/installation/package-manager/manage-packages-cfsutil.md
+              - Install required packages: user-guide/installation/package-manager/install-required.md
+              - Log in to access restricted packages: user-guide/installation/package-manager/auth.md
+              - Troubleshoot package issues: user-guide/installation/package-manager/troubleshooting-package-manager.md
     - Workspace Management:
       - user-guide/workspaces/index.md
       - Create a new workspace: user-guide/workspaces/create-new-workspace.md
@@ -108,6 +125,7 @@ nav:
       - ELF Utilities: user-guide/cfsutil/elf-utilities.md
       - Generate: user-guide/cfsutil/generate.md
       - myAnalog authentication: user-guide/cfsutil/myanalog-auth.md
+      - API key authentication: user-guide/cfsutil/apikey-auth.md
       - Package Manager: user-guide/cfsutil/package-manager.md
       - Plugins: user-guide/cfsutil/oclif-plugins.md
       - Port: user-guide/cfsutil/port.md
@@ -156,6 +174,7 @@ nav:
       - ELF File Explorer: user-guide/developer-tools/elf-file-explorer.md
       - Device Tree View: user-guide/developer-tools/device-tree-view.md
       - Catalog Manager: user-guide/developer-tools/catalog-manager.md
+      - AI-Assisted Development Skills: user-guide/developer-tools/cfs-ai-skills.md
     - Plugins:
       - user-guide/plugins/index.md
       - Plugins overview: user-guide/plugins/plugin-integration-overview.md
@@ -179,6 +198,7 @@ nav:
     - Third-party: user-guide/resources/third-party-resources.md
   - Release Notes:
     - release-notes/index.md
+    - 2.3.0: release-notes/2.3.0.md
     - 2.2.1: release-notes/2.2.1.md
     - 2.2.0: release-notes/2.2.0.md
     - 2.1.0: release-notes/2.1.0.md

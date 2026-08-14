@@ -2,6 +2,50 @@
 
 # Release Notes
 
+## 2.3.0
+
+### ✨ New Features
+
+- **Quick Access Panel:** The CFS sidebar now includes a **Help and Support** section with links to the Getting Started walkthrough, online documentation, Engineer Zone, and technical support.
+- **Workspace Creation Wizard:** Templates in the **Workspace Template** section are now listed in alphabetical order. A search bar lets you filter templates by name or description.
+- **Package Manager UI:** A new graphical interface for managing packages directly from VS Code. Browse, filter by name, status, SoC, or type, view package details and version history, and install or uninstall packages - all without leaving the editor.
+- **CLI API key authentication:** `cfsutil` commands now support API key authentication through the `CFS_API_KEY` environment variable for use in CI/CD and automated workflows. New commands `cfsutil myanalog apikey create`, `list`, and `delete` manage keys.
+- **Peripheral Allocation — automatic signal assignment:** Allocating a peripheral to a project automatically assigns required signals that have a single possible pin, reducing manual setup.
+- **Telemetry:** Anonymous, opt-in telemetry covers System Planner configuration, code generation, build, flash, debug, and artificial intelligence (AI) model workflows. Disabled by default; no personally identifying information is collected. View the Telemetry documentation for more information about the collected data.
+- **AI-Assisted Development Skills:** New `cfs-docs` and `cfs-cli` skills give your AI assistant doc-backed, product-specific answers about CodeFusion Studio. They are bundled with the extension for GitHub Copilot (requires VS Code 1.109 or later), and follow the open Agent Skills standard so they also work in Claude Code, OpenAI Codex, and other supported agents.
+- **Model Zoo:** The **Browse** button in the Embedded AI Tools and the Workspace from AI Model wizard now opens the Model Zoo, a library of AI models hosted by Analog Devices. Search and filter models by platform, core, and category, compare sizes across quantizations, and select a model to populate its file and, when available, sample data fields. Local model files and URLS are still supported, and you can add custom repositories through the `cfs.modelZoo.urls` setting.
+- **Profiling — USB trace capture:** Capture Zephelin profiling traces over USB in addition to UART. Select **USB** as the trace interface in System Planner and select the connected USB device in the Trace Capture panel.
+- **Machine-readable documentation (`llms.txt`):** The online User Guide is available in an AI-friendly format that follows the `llms.txt` standard. Point your AI assistant at [`llms.txt`](https://developer.analog.com/docs/codefusion-studio/latest/llms.txt) for an indexed list of documentation sections, or [`llms-full.txt`](https://developer.analog.com/docs/codefusion-studio/latest/llms-full.txt) for the full documentation content in a single file.
+
+### 📦 Workspace Templates
+
+- Added new MSDK templates: MSDK Single Core AES, MSDK Single Core Coremark, MSDK Single Core CRC, MSDK Single Core CTB AES, MSDK Single Core ECC, MSDK Single Core Flash, MSDK Single Core GPIO, MSDK Single Core Hash, MSDK Single Core RTC Backup, MSDK Single Core SPI.
+- Added new Zephyr templates: Zephyr Single Core ADC Devicetree, Zephyr Single Core CRC, Zephyr Single Core Eventfd, Zephyr Single Core Hello World User, Zephyr Single Core LVGL Basic, Zephyr Single Core UART Async API.
+- Extended existing Zephyr templates (Basic Synchronization, Hello World C++, Synchronization C++, Dining Philosophers, Counter Alarm) to support MAX32657, MAX32658, MAX32666, MAX32672, and MAX78000.
+- Extended existing MSDK template (MSDK Single Core ICC — Instruction Cache Controller) to support MAX32672 and MAX78000.
+
+### ⛔ Breaking Changes
+
+- **Registers-Only Plugin deprecated:** The Registers-Only (bare-metal) Plugin is deprecated and will be removed in a future release. It remains available in this release for advanced workflows that generate code accessing memory-mapped registers (MMRs) directly.
+
+### 🐞 Bug fixes, Minor Improvements
+
+- **Build command output:** Build commands display output in a new format. Underlying build behavior is unchanged.
+- **`cfsutil ai` commands — optional `--core` flag:** `cfsutil ai build`, `cfsutil ai compat`, and `cfsutil ai profile` no longer require `--core` when the target SoC has only one AI-capable core. The core is inferred automatically. For SoCs with multiple AI-capable cores, `--core` is still required.
+- **`cfsutil workspace configure` — optional `--board` flag:** `cfsutil workspace configure` no longer requires `--board` when `--package` is specified. Provide `--board`, `--package`, or both; at least one is required. If you provide only `--board`, the package is inferred from the board.
+- **Memory Viewer — go to symbol:** The **Go to** field in the Memory Viewer now accepts symbol names (for example, `count`) in addition to hex and decimal addresses. Symbol lookup requires a halted debug session.
+- **System Planner version resolution:** When the remote package repository can't be accessed (no network access or not logged in to myAnalog), the version resolution screen now shows compatible locally installed versions (if available) instead of an empty menu. The **Upgrade to latest compatible downloadable version** option now appears when no compatible version is installed locally or when the remote version is newer than the best compatible version installed locally.
+- **Workspace from AI Model — automatic board and core selection:** When creating a workspace from an AI model, the board is selected automatically when only one board is available for the selected SoC. A supported processor core is initially pre-selected. When compatibility results are available, the selection is updated to a compatible core if one is found; otherwise, it is cleared. You can change the core selection or target additional cores.
+- **Embedded AI Tools — model name length limit:** AI model names are limited to 64 characters. The **Model Name** field in the model editor stops accepting input at 64 characters, and the `cfsutil ai model add`, `cfsutil ai model update`, and `cfsutil ai build` commands report an error when a name (including one derived from a model file name) exceeds the limit.
+
+### 🚧 Experimental Features
+
+- None
+
+### 👷 CI Improvements
+
+- None
+
 ## 2.2.1
 
 ### ✨ New Features
@@ -102,23 +146,23 @@
 ## ✨ New Features
 
 - Develop AI-enabled applications with the new suite of **Embedded AI Tools** for supported processors, including MAX32657, MAX32690, MAX78002, and the SHARC-FX (ADSP-2183x/SC83x family).
-  - Import and configure AI models directly in the **System Planner**, assign them to cores, run compatibility and profiling checks, and generate deployment code.  
-  - Access the same capabilities from the terminal using the new **`cfsai` command-line utility**, supporting model builds, compatibility reports, and profiling workflows.  
-  - Capture runtime and AI inference-level performance data with **Zephelin profiling**, and visualize traces in the **Zephelin Trace Viewer**.  
-- Accelerate setup and updates with the new **Package Manager**, which lets you download SDKs, toolchains, and plugins on demand without requiring a full reinstallation.  
-- Debug faster with new and enhanced **Debugging Tools**.  
-  - Use the **Core Dump Analysis Tool** to inspect captured core dumps and identify crash causes directly in CodeFusion Studio.  
-  - Run default or custom GDB or Python scripts with the new **GDB Toolbox** to automate inspection and debugging during halted sessions.  
-- Benefit from major UX improvements in **System Planner** for faster, more intuitive hardware setup.  
-  - Define memory partitions using an interactive memory bar, allowing direct editing from the visual layout.  
+  - Import and configure AI models directly in the **System Planner**, assign them to cores, run compatibility and profiling checks, and generate deployment code.
+  - Access the same capabilities from the terminal using the new **`cfsai` command-line utility**, supporting model builds, compatibility reports, and profiling workflows.
+  - Capture runtime and AI inference-level performance data with **Zephelin profiling**, and visualize traces in the **Zephelin Trace Viewer**.
+- Accelerate setup and updates with the new **Package Manager**, which lets you download SDKs, toolchains, and plugins on demand without requiring a full reinstallation.
+- Debug faster with new and enhanced **Debugging Tools**.
+  - Use the **Core Dump Analysis Tool** to inspect captured core dumps and identify crash causes directly in CodeFusion Studio.
+  - Run default or custom GDB or Python scripts with the new **GDB Toolbox** to automate inspection and debugging during halted sessions.
+- Benefit from major UX improvements in **System Planner** for faster, more intuitive hardware setup.
+  - Define memory partitions using an interactive memory bar, allowing direct editing from the visual layout.
   - Allocate and configure peripherals through a guided setup flow with clearer navigation, visual cues, and simplified deletion. Pins can also be enabled directly from the Peripheral Allocation page for a faster, more cohesive workflow.
-- Simplify workspace setup with the improved **Workspace Creation Wizard**.  
-  - A guided sidebar now shows your progress at every step for easier navigation.  
-  - Manual configuration has been streamlined with an intuitive per-core sequence.  
-  - Added **Arm® TrustZone® support**, available through templates or manual setup for supported devices.  
-- Extended platform and processor support.  
-  - Access the latest RTOS features with Zephyr plugins now compatible with **Zephyr 4.2**.  
-  - Introduced build and debug support for **ADSP-2183x / SC83x SHARC-FX** devices on Windows.  
+- Simplify workspace setup with the improved **Workspace Creation Wizard**.
+  - A guided sidebar now shows your progress at every step for easier navigation.
+  - Manual configuration has been streamlined with an intuitive per-core sequence.
+  - Added **Arm® TrustZone® support**, available through templates or manual setup for supported devices.
+- Extended platform and processor support.
+  - Access the latest RTOS features with Zephyr plugins now compatible with **Zephyr 4.2**.
+  - Introduced build and debug support for **ADSP-2183x / SC83x SHARC-FX** devices on Windows.
 - Anonymous telemetry added to improve the functionality and user experience of CodeFusion Studio.
 
 ## 🐞 Bug fixes, Minor Improvements

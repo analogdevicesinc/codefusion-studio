@@ -14,7 +14,7 @@
  */
 
 import {clampYWithinList} from './floating-card';
-import {formatElapsedTime} from './status-time';
+import {formatAbsoluteDate, formatElapsedTime} from './status-time';
 import {
 	DEFAULT_VISIBLE_WIDTH_PX,
 	UNITS_ID as UNITS
@@ -49,26 +49,63 @@ describe('floating-card', () => {
 });
 
 describe('Status', () => {
-	it('Should round partial minutes up', () => {
+	it('Should round partial minutes down', () => {
 		const now = new Date('2026-04-08T10:00:00.000Z');
 
 		const result = formatElapsedTime('2026-04-08T09:54:30.000Z', now);
 
-		expect(result).to.equal('6 min');
+		expect(result).to.equal('5 minutes ago');
 	});
 
-	it('Should format values above sixty minutes as hours and minutes', () => {
+	it('Should format values at sixty minutes or above as hours only', () => {
 		const now = new Date('2026-04-08T10:00:00.000Z');
 
 		const result = formatElapsedTime('2026-04-08T08:55:00.000Z', now);
 
-		expect(result).to.equal('1 h 5 min');
+		expect(result).to.equal('1 hour ago');
+	});
+
+	it('Should format elapsed time below one minute as seconds', () => {
+		const now = new Date('2026-04-08T10:00:30.000Z');
+
+		const result = formatElapsedTime('2026-04-08T10:00:00.000Z', now);
+
+		expect(result).to.equal('30 seconds ago');
+	});
+
+	it('Should format elapsed time at exactly one minute as minutes', () => {
+		const now = new Date('2026-04-08T10:01:00.000Z');
+
+		const result = formatElapsedTime('2026-04-08T10:00:00.000Z', now);
+
+		expect(result).to.equal('1 minute ago');
 	});
 
 	it('Should return undefined for invalid values', () => {
 		const result = formatElapsedTime('invalid-date');
 
 		expect(result).to.equal(undefined);
+	});
+
+	it('Should format a valid ISO timestamp using browser locale date/time order', () => {
+		const iso = '2026-05-20T10:00:00.000Z';
+		const parsed = new Date(iso);
+
+		const expectedDate = new Intl.DateTimeFormat(undefined, {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit'
+		}).format(parsed);
+
+		const expectedTime = new Intl.DateTimeFormat(undefined, {
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		}).format(parsed);
+
+		const result = formatAbsoluteDate(iso);
+
+		expect(result).to.equal(expectedDate + ' at ' + expectedTime);
 	});
 });
 

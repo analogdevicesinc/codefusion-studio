@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,17 @@
 		border-bottom: 1px solid colors.$default-border;
 	}
 
+	vscode-data-grid-cell {
+		&:focus {
+			outline: none;
+			border-color: transparent;
+		}
+
+		&:focus-visible {
+			border-color: colors.$focus-border;
+		}
+	}
+
 	.sortable-title {
 		display: flex;
 		gap: layout.$spacing-3;
@@ -78,6 +89,10 @@
 		display: flex;
 		gap: layout.$spacing-2;
 		justify-items: center;
+		span {
+			line-height: 16px;
+			white-space: nowrap;
+		}
 	}
 }
 

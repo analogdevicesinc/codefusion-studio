@@ -1,3 +1,16 @@
+/**
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 export default `<%
 // Get the common base processor for this part in the project.
 it.projectInflectionPoint = function(soc) {
@@ -78,6 +91,28 @@ it.tfmInflectionPoint = function(soc) {
   switch (soc) {
     case "MAX32658":
       return "MAX32657";
+  }
+  return soc;
+};
+
+
+// Get the common base processor for the sharcfx board name utility.
+it.sharcfxBoardNameInflectionPoint = function(soc) {
+  switch (soc) {
+    case "ADSP-21834":
+    case "ADSP-21834W":
+    case "ADSP-21835":
+    case "ADSP-21835W":
+    case "ADSP-21836":
+    case "ADSP-21836W":
+    case "ADSP-21837":
+    case "ADSP-21837W":
+      return "ADSP21835W";
+    case "ADSP-SC834":
+    case "ADSP-SC834W":
+    case "ADSP-SC835":
+    case "ADSP-SC835W":
+      return "ADSPSC835W";
   }
   return soc;
 };

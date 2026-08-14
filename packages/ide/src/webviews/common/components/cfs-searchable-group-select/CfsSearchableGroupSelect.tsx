@@ -25,6 +25,7 @@ import CfsGroupedRadioSelection, {
 	type SelectionGroup
 } from '../cfs-grouped-radio-selection/CfsGroupedRadioSelection';
 import {LocalizedMessage} from '../l10n/LocalizedMessage';
+import NoSearchResults from '../no-search-results/NoSearchResults';
 
 type CfsSocSelectProps = Readonly<{
 	groupedOptions: SelectionGroup[];
@@ -159,27 +160,6 @@ function CfsSearchableGroupSelect({
 				<NoSearchResults search={search} />
 			)}
 		</div>
-	);
-}
-
-function NoSearchResults({search}: {readonly search: string}) {
-	return (
-		<aside
-			className={styles.noSearchResults}
-			data-test='no-search-results'
-		>
-			<h2>
-				<LocalizedMessage id='search.noResults' />
-			</h2>
-			<p data-test='no-results-description'>
-				<LocalizedMessage id='search.couldntFindResults' />{' '}
-				<span className={styles.searchString}>
-					&quot;{search}&quot;
-				</span>
-				{', '}
-				<LocalizedMessage id='search.pleaseChangeQuery' />
-			</p>
-		</aside>
 	);
 }
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ import { CfsApiClient, CfsApiError } from '../cfsapi-client.js';
 import { CfsCcmError } from '../../error/error.js';
 
 import type { SWPackageRepo } from 'cfs-ccm-api/rest-types';
+import { zSWPackageRepo } from 'cfs-ccm-api/rest-types/zod';
 
 type PackageRepositoryErrorType =
     | 'SERVICE_ERROR'
@@ -53,20 +54,58 @@ export class RepositoryClient {
 
     /**
      * Fetches all available package repository URLs.
+     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
      * @returns Promise<string[]>
      */
-    public async getRepositoryUrls(): Promise<string[]> {
+    public async getRepositoryUrls({
+        format,
+    }: { format?: string } = {}): Promise<string[]> {
+        if (format) {
+            const repos = await this.getRepositoryInfo({ format });
+            return repos.map((repo) => repo.repoUrl);
+        }
         const repos =
             await this.cfsApiClient.rest.swPackagesRepos.getAll();
-        return repos.map((repo: SWPackageRepo) => repo.repoUrl);
+        return repos.map((repo) => repo.repoUrl);
+    }
+
+    /**
+     * Fetches info about available package repositories.
+     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
+     * @returns Promise<SWPackageRepo[]>
+     */
+    public async getRepositoryInfo({
+        format,
+    }: { format?: string } = {}): Promise<SWPackageRepo[]> {
+        const repos =
+            await this.cfsApiClient.rest.swPackagesRepos.getAll();
+        try {
+            const filteredRepos = format
+                ? repos.filter(
+                      (repo) => repo.packageFormat === format,
+                  )
+                : repos;
+            return filteredRepos.map((repo) =>
+                zSWPackageRepo.parse(repo),
+            );
+        } catch (error) {
+            throw new PackageRepositoryError({
+                type: 'UNHANDLED_ERROR',
+                message: 'Failed to parse repository info',
+                cause: error,
+            });
+        }
     }
 
     /**
      * Fetches all available package repositories
+     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
      * @returns Promise<PackageRepository[]>
      */
-    public async getRepositories(): Promise<PackageRepository[]> {
-        const repoUrls = await this.getRepositoryUrls();
+    public async getRepositories({
+        format,
+    }: { format?: string } = {}): Promise<PackageRepository[]> {
+        const repoUrls = await this.getRepositoryUrls({ format });
         return Promise.all(
             repoUrls.map((repoUrl: string) =>
                 this.getRepository(repoUrl),

@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from cfsai_types.logging import EventType, log_event
 from cfsai_types.report import ReportInfo
 
 # Constant for versioning
@@ -638,7 +639,7 @@ class CompatibilityReport(BaseModel):
                     indent=2, 
                     default=str
                 )
-            logger.debug(f"Compatibility report saved to {filepath}")
+            log_event(logger, EventType.FILE, filepath)
             return True
         except Exception as e:
             logger.info(f"Failed to save compatibility report to {filepath}: {e}")

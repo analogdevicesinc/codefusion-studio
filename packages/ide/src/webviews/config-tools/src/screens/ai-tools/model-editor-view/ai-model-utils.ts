@@ -17,28 +17,59 @@ import {
 	type Target,
 	type AiSupportingBackend
 } from '../../../../../common/types/ai-fusion-data-model';
-import {getLocalization} from '../../../../../common/utils/localization';
+import {
+	getLocalization,
+	localizeMessage
+} from '../../../../../common/utils/localization';
+import {C_CPP_RESERVED_KEYWORDS} from '../../../constants/cpp-reserved-keywords';
 import {type AIModelWithId} from '../../../state/slices/ai-tools/aiModel.reducer';
 import {type AISupportingCore} from '../../../utils/ai-tools';
 import {getCfsConfigDict} from '../../../utils/config';
+import type {SocControl} from 'cfs-types';
+import {getFormErrors} from '../../../utils/soc-controls';
+import type {TLocaleContext} from '../../../../../common/types/l10n';
+
+const MAX_MODEL_NAME_LENGTH = 64;
 
 function isValidCIdentifier(name: string): boolean {
-	return /^[a-zA-Z0-9_]+$/.test(name);
+	return (
+		/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name) &&
+		!C_CPP_RESERVED_KEYWORDS.has(name)
+	);
 }
+
+// Fields that are not supposed to be validated when going through the dynamic Fields
+// (e.g. because they have their own dedicated validation logic)
+const dynamicValidationExemptFields = new Set(['Symbol']);
 
 export function validateModel(
 	currentModel: AIModelWithId,
 	models: AIModelWithId[],
-	originalModel?: AIModelWithId
+	originalModel?: AIModelWithId,
+	dynamicControls?: SocControl[]
 ): Record<string, string> {
-	const errors: Record<string, string> = {};
+	let errors: Record<string, string> = {};
 
 	const l10n =
 		getLocalization('cfgtools')?.aitools.modelConfig.errors;
 
 	// Fail if model name is empty
-	if (!currentModel.Name) {
+	if (!currentModel.Name?.trim()) {
 		errors.Name = l10n?.modelNameRequired;
+	}
+
+	// Fail if model name > MAX_MODEL_NAME_LENGTH
+	if (
+		currentModel.Name &&
+		currentModel.Name.length > MAX_MODEL_NAME_LENGTH
+	) {
+		errors.Name = localizeMessage(
+			l10n as TLocaleContext,
+			'modelNameTooLong',
+			{
+				maxLength: String(MAX_MODEL_NAME_LENGTH)
+			}
+		);
 	}
 
 	// Fail if model name already exists (and is not the original name when editing)
@@ -66,9 +97,40 @@ export function validateModel(
 		errors.Symbol = l10n?.invalidCIdentifier;
 	}
 
-	if (!currentModel.Files.Model) {
+	// Model file
+	if (!currentModel.Files.Model?.trim()) {
 		errors.ModelFile = l10n?.modelFileRequired;
 	}
+
+	// Validate dynamic controls
+	dynamicControls?.forEach(control => {
+		if (dynamicValidationExemptFields.has(control.Id)) {
+			return;
+		}
+
+		const value =
+			control.Type === 'File'
+				? currentModel.Files[control.Id]
+				: currentModel.Backend?.Extensions?.[control.Id];
+
+		if (value !== undefined && value !== null && value !== '') {
+			errors = getFormErrors(
+				errors,
+				{
+					...control,
+					Type:
+						control.Type.toLowerCase() === 'file' ||
+						control.Type.toLowerCase() === 'string'
+							? 'text'
+							: control.Type.toLowerCase()
+				},
+				value
+			);
+		} else if (control.Pattern) {
+			// If control is required (has a pattern) but value is empty, add error
+			errors[control.Id] = l10n?.fieldRequired;
+		}
+	});
 
 	return errors;
 }

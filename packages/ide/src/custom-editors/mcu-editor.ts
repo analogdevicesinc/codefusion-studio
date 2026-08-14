@@ -40,15 +40,13 @@ import type {
   GasketConfig,
   AIModel,
   Profiling,
+  Zephelin,
 } from "cfs-types";
 import { resolveVariables } from "../utils/resolveVariables";
 import { tmpdir } from "os";
 import { type CfsDataModelManager } from "cfs-lib";
 import Path from "node:path";
-import {
-  CodeGenerationFailure,
-  CodeGenerationProject,
-} from "cfs-lib/dist/types/code-generation";
+import { CodeGenerationProject } from "cfs-lib/dist/types/code-generation";
 import { getAiToolsPlugin } from "cfs-lib";
 import { createPrivateKey } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
@@ -57,6 +55,9 @@ import { AIToolsService, getCfsaiPath } from "../services/ai-tools-service";
 import { Utils } from "../utils/utils";
 import { CfsMissingComponent } from "cfs-types";
 import { getCatalogManager } from "../utils/catalog";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
+import { mergePeripheralProjectUpdates } from "../utils/project-persistence";
 
 const messageTypes = {
   getSocAndConfig: "get-soc-and-config",
@@ -101,6 +102,7 @@ const messageTypes = {
   packager_update_persisted_cfsconfig_plugin_version:
     "packager--update--persisted--cfsconfig--plugin--version",
   document_reload: "document--reload",
+  logTelemetry: "log-telemetry",
 };
 
 type ClockNodesPayload = Partial<{
@@ -164,6 +166,17 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
       const socName = cfsconfig.Soc ?? "";
       const packageId = cfsconfig.Package ?? "";
       const dmVersion = cfsconfig.DataModelVersion ?? "";
+
+      // Report that the config tools editor was opened for this SoC.
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.CONFIG_TOOLS_OPENED, {
+          socName,
+          package: packageId,
+          coreConfiguration: (cfsconfig.Projects ?? [])
+            .map((project) => project.CoreId)
+            .join(","),
+        });
+      });
 
       webviewPanel.webview.options = {
         enableScripts: true,
@@ -271,7 +284,11 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
       // Validate all project plugins are available
       try {
-        await pluginManager.validateConfigPlugins(cfsconfig);
+        await pluginManager.validateConfigPlugins(
+          cfsconfig,
+          // We don't pass board in here, because that is irrelevant for project plugins.
+          CfsPluginManager.buildSocContext(socName, packageId, undefined),
+        );
       } catch (error) {
         if (
           error instanceof MissingDependencyError &&
@@ -404,6 +421,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             request = Promise.resolve(null);
           }
         } else if (message.type === messageTypes.generateCode) {
+          const codeGenStart = Date.now();
           try {
             const dm = await this.dataModelManager.getDataModel(
               socName,
@@ -474,7 +492,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               ? path.dirname(workspaceFile.fsPath)
               : path.join(tmpdir(), "cfs").replace(/\\/g, "/");
 
-            const generatedFilesPath: (string | CodeGenerationFailure)[] =
+            const generatedFilesPath: string[] =
               (await pluginManager?.generateConfigCode(
                 {
                   cfsconfig,
@@ -521,22 +539,31 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
             request = Promise.resolve(generatedFilesPath);
 
-            const failures = generatedFilesPath.filter(
-              (file) => typeof file !== "string",
+            const telemetryManager = await getTelemetryManager();
+            telemetryManager.logAction(TELEMETRY_ACTIONS.CODE_GENERATED, {
+              selectedProjectCount: (selectedProjects ?? []).length,
+              includesAiModel: (selectedProjects ?? []).some(
+                (project) => project.includeAI,
+              ),
+              generatedFileCount: generatedFilesPath.length,
+              durationMs: Date.now() - codeGenStart,
+            });
+            vscode.window.showInformationMessage(
+              `Code generation completed successfully. ${generatedFilesPath.length} files created.`,
             );
-            if (failures.length) {
-              vscode.window.showErrorMessage(
-                `Code generation completed with errors. ${
-                  generatedFilesPath.length - failures.length
-                } files created.`,
-              );
-            } else {
-              vscode.window.showInformationMessage(
-                `Code generation completed successfully. ${generatedFilesPath.length} files created.`,
-              );
-            }
           } catch (e) {
             console.error("Code generation error", e);
+
+            const telemetryManager = await getTelemetryManager();
+            telemetryManager.logAction(
+              TELEMETRY_ACTIONS.CODE_GENERATION_FAILED,
+              {
+                errorType: "CodeGenerationFailure",
+                failureCount: 1,
+                durationMs: Date.now() - codeGenStart,
+              },
+            );
+
             vscode.window.showErrorMessage(
               `Code generation failed with error: ${(e as Error).message}`,
             );
@@ -581,6 +608,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               pluginVersion,
               scope as CfsFeatureScope,
               socData,
+              packageId,
             );
 
             request = Promise.resolve(controls);
@@ -624,6 +652,25 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               "workbench.action.closeActiveEditor",
             );
             await vscode.commands.executeCommand("vscode.open", uri);
+            request = Promise.resolve();
+          } catch (error) {
+            request = Promise.reject(error);
+          }
+        } else if (message.type === messageTypes.logTelemetry) {
+          // Generic telemetry channel: the webview emits a known action name
+          // and a metadata object, which is forwarded to the telemetry manager.
+          try {
+            const { action, metadata } = message.body as {
+              action?: string;
+              metadata?: Record<string, unknown>;
+            };
+
+            // Only forward recognized action names to avoid typos or arbitrary action names.
+            if (action && Object.values(TELEMETRY_ACTIONS).includes(action)) {
+              const telemetryManager = await getTelemetryManager();
+              telemetryManager.logAction(action, metadata ?? {});
+            }
+
             request = Promise.resolve();
           } catch (error) {
             request = Promise.reject(error);
@@ -924,6 +971,17 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
           ).getProperties(scope);
         } else if (message.type === messageTypes.validateAIModel) {
           try {
+            const aiModel = message.body.aiModel as AIModel;
+
+            const telemetryManager = await getTelemetryManager();
+            telemetryManager.logAction(
+              TELEMETRY_ACTIONS.AI_COMPAT_CHECK_STARTED,
+              {
+                targetCore: aiModel.Target.Core,
+                targetAccelerator: aiModel.Target.Accelerator,
+              },
+            );
+
             const dm = await this.dataModelManager.getDataModel(
               socName,
               packageId,
@@ -935,11 +993,31 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
 
             const valid = await aiToolsService.validateAiModel(
-              message.body.aiModel as AIModel,
+              aiModel,
               dm,
               socName,
               packageId,
             );
+            telemetryManager.logAction(
+              valid.isValid
+                ? TELEMETRY_ACTIONS.AI_MODEL_CHECK_SUCCESS
+                : TELEMETRY_ACTIONS.AI_MODEL_CHECK_FAILURE,
+              {
+                soc: socName,
+                packageId,
+                dataModelVersion: dmVersion,
+                model_format: path
+                  .extname(message.body.aiModel?.Files?.Model ?? "")
+                  .replace(".", ""),
+              },
+            );
+
+            if (!valid.isValid) {
+              telemetryManager.logAction(
+                TELEMETRY_ACTIONS.AI_COMPAT_REPORT_OPEN,
+                {},
+              );
+            }
 
             request = Promise.resolve(valid);
           } catch (error) {
@@ -949,7 +1027,14 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             request = Promise.reject(error);
           }
         } else if (message.type === messageTypes.analyzeAIModel) {
+          let aiModel: AIModel | undefined;
+          let telemetryManager:
+            | Awaited<ReturnType<typeof getTelemetryManager>>
+            | undefined;
           try {
+            aiModel = message.body.aiModel as AIModel;
+            telemetryManager = await getTelemetryManager();
+
             const dm = await this.dataModelManager.getDataModel(
               socName,
               packageId,
@@ -961,16 +1046,21 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
 
             const reportPath = await aiToolsService.profileAiModel(
-              message.body.aiModel as AIModel,
+              aiModel,
               dm,
               socName,
               packageId,
             );
 
-            vscode.commands.executeCommand(
+            await vscode.commands.executeCommand(
               "vscode.openWith",
               vscode.Uri.file(reportPath),
               "cfs.reportViewer",
+            );
+
+            telemetryManager.logAction(
+              TELEMETRY_ACTIONS.AI_PROFILING_REPORT_OPEN,
+              {},
             );
           } catch (error) {
             vscode.window.showErrorMessage(
@@ -1235,7 +1325,10 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     }
 
     if (updatedProjects) {
-      parsedDoc.Projects = updatedProjects;
+      parsedDoc.Projects = mergePeripheralProjectUpdates(
+        parsedDoc.Projects ?? [],
+        updatedProjects,
+      );
     }
 
     if (clockFrequencies) {
@@ -1248,6 +1341,17 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
           (model) =>
             model.Target.Core.toUpperCase() === project.CoreId.toUpperCase(),
         );
+        project.AIModels.forEach((model) => {
+          const extensions = model.Backend?.Extensions;
+          if (extensions) {
+            Object.keys(extensions).forEach((key) => {
+              const value = extensions[key];
+              if (typeof value === "string") {
+                extensions[key] = value.trim();
+              }
+            });
+          }
+        });
       });
     }
 
@@ -1332,9 +1436,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     Zephelin: {
       Enabled: false,
       Format: "Text",
-      Interface: "UART",
+      Interface: { Type: "UART", Port: "" },
       AIEnabled: false,
-      Port: "",
       RtosEventsEnabled: false,
       ProfilingMemoryUsageEnabled: false,
       ProfilingMemoryUsageInterval: 0,
@@ -1369,6 +1472,17 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
       ...project.Profiling[type],
       ...config,
     } as Profiling[keyof Profiling];
+
+    if (type === "Zephelin") {
+      const zephelin = project.Profiling[type] as Zephelin;
+
+      // The legacy top-level Port is superseded by Interface.Port once the
+      // interface has been normalized to the object form; a plain merge
+      // can't express removing it, so it must be dropped explicitly here.
+      if (typeof zephelin.Interface === "object") {
+        delete zephelin.Port;
+      }
+    }
 
     edit.replace(
       document.uri,

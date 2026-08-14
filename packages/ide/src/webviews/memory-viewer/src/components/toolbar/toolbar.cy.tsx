@@ -74,6 +74,23 @@ describe('Toolbar', () => {
 						})
 					);
 				}
+
+				if (message.type === 'get-memory-at-symbol') {
+					window.dispatchEvent(
+						new MessageEvent('message', {
+							data: {
+								type: 'api-response',
+								id: message.id,
+								body: {
+									sessionId: message.body.sessionId,
+									address: 0x5000,
+									data: new Array(message.body.length).fill(255)
+								},
+								error: undefined
+							}
+						})
+					);
+				}
 			});
 
 		mockVsCodeApi({
@@ -159,17 +176,6 @@ describe('Toolbar', () => {
 		);
 	});
 
-	it('does not fetch memory data when user enters invalid address', () => {
-		mountToolbar();
-
-		cy.dataTest('address-control-input')
-			.shadow()
-			.find('input')
-			.type('invalid{enter}');
-
-		cy.get('@postMessage').should('not.have.been.called');
-	});
-
 	it('does not fetch memory data when user enters address with no halted sessions', () => {
 		const store = configureTestStore({
 			memoryReducer: {
@@ -213,5 +219,94 @@ describe('Toolbar', () => {
 			.type('0x3000{enter}');
 
 		cy.get('@postMessage').should('not.have.been.called');
+	});
+
+	it('fetches memory at symbol when user enters non-numeric address', () => {
+		mountToolbar();
+
+		cy.dataTest('address-control-input')
+			.shadow()
+			.find('input')
+			.type('myVariable{enter}');
+
+		cy.get('@postMessage').should(
+			'have.been.calledWithMatch',
+			Cypress.sinon.match({
+				type: 'get-memory-at-symbol',
+				body: {
+					sessionId: 'current',
+					expression: 'myVariable',
+					length: 16 * 1024
+				}
+			})
+		);
+	});
+
+	it('disables refresh when active session is running even if another session is halted', () => {
+		const store = configureTestStore({
+			memoryReducer: {
+				memoryBytes: {
+					address: MOCK_ADDRESS,
+					data: new Array(MOCK_DATA_LENGTH).fill(0)
+				},
+				sessions: [
+					{
+						sessionId: 'running-session',
+						name: 'Running Session',
+						isRunning: true,
+						isLive: true
+					},
+					{
+						sessionId: 'halted-session',
+						name: 'Halted Session',
+						isRunning: false,
+						isLive: true
+					}
+				],
+				activeSessionId: 'running-session',
+				loading: false,
+				error: undefined,
+				reachedEndOfMemory: false
+			}
+		});
+
+		cy.mount(
+			<Provider store={store}>
+				<Toolbar />
+			</Provider>
+		);
+
+		cy.get('[data-test="refresh-button"]')
+			.should('be.disabled')
+			.click({force: true});
+
+		cy.get('@postMessage').should('not.have.been.called');
+	});
+
+	it('displays error when symbol lookup fails', () => {
+		// Override the stub to return an error for this test
+		postMessageStub.callsFake((message: any) => {
+			if (message.type === 'get-memory-at-symbol') {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							error: 'No symbol "invalidSymbol" in current context'
+						}
+					})
+				);
+			}
+		});
+
+		mountToolbar();
+
+		cy.dataTest('address-control-input')
+			.shadow()
+			.find('input')
+			.type('invalidSymbol{enter}');
+
+		cy.dataTest('address-error-symbolNotFound').should('exist');
 	});
 });

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import {
 } from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {DropDown, type DropDownOptions} from 'cfs-react-library';
 import type {EnumValue} from '@common/types/soc';
+import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 
 type ControlConfig = {
 	key: string;
@@ -80,9 +81,18 @@ export default function ControlDropdown({
 		dispatch(setClockNodeControlValue(changedClockNode));
 	};
 
+	const l10nOptionGroupNotSupportedByPlugin = t({
+		id: 'common.optionGroupNotSupportedByPlugin'
+	});
+
 	const options: DropDownOptions = enums.map(e => ({
 		label: e.Description,
-		value: e.Id
+		value: e.Id,
+		dataTest: `${controlId}-option-${e.Id}`,
+		disabled: e.Inactive,
+		optionGroup: e.Inactive
+			? l10nOptionGroupNotSupportedByPlugin
+			: undefined
 	}));
 
 	return (

@@ -1,15 +1,17 @@
 {
 	"extends": "./tsconfig.json",
 	"include": [
-		"./report-view/**/*.ts",
-		"./report-view/**/*.tsx",
+		"./report-viewer/**/*.ts",
+		"./report-viewer/**/*.tsx",
+		"../constants/**/*.ts",
+		"../types/**/*.ts",
 		"./custom.d.ts",
 		"./common/**/*.ts",
 		"./common/**/*.tsx",
 		"../webviews-messages/**/*.ts"
 	],
 	"exclude": [
-		"./report-view/**/lib/**/*",
-		"./report-view/**/*.cy.ts*"
+		"./report-viewer/**/lib/**/*",
+		"./report-viewer/**/*.cy.ts*"
 	]
 }

@@ -1,0 +1,211 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.container :global([class*="modalHeader"]) {
+	padding-bottom: 0;
+}
+
+.container :global([class*="modalFooter"]) {
+	height: fit-content;
+}
+
+.uninstallModalContent {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-6;
+	height: fit-content;
+	@include fonts.body-b1;
+
+	overflow: hidden;
+}
+
+.uninstallModalDescription {
+	color: colors.$description-foreground;
+
+	// Override default margin
+	margin-block-end: 0;
+}
+
+.uninstallModalCheckbox {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+}
+
+.dependentsList {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	column-gap: layout.$spacing-5;
+	row-gap: layout.$spacing-3;
+	align-self: stretch;
+	max-height: 200px;
+	width: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
+
+	// Override default list styles
+	margin-block-start: 0;
+	margin-block-end: 0;
+	padding-inline-start: 0;
+}
+
+.dependentItem {
+	// display: contents lets the two child spans become direct grid items,
+	// so all names share one column and all versions share another.
+	display: contents;
+}
+
+.dependentItemName,
+.dependentItemVersion {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	align-self: center;
+}
+
+.dependentItemName {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dependentItemVersion {
+	white-space: nowrap;
+}
+
+.removalSection {
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	gap: layout.$spacing-4;
+}
+
+.removalLabel {
+	@include fonts.label-l3;
+	color: colors.$description-foreground;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.removalSection .removalAccordion {
+	align-self: stretch;
+	border-radius: 0;
+	border: none;
+	border-top: layout.$border-width-1 solid colors.$default-border;
+	border-left: layout.$border-width-3 solid colors.$default-foreground;
+
+	display: flex;
+	padding: layout.$spacing-3 layout.$spacing-4 layout.$spacing-3 layout.$spacing-3;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	gap: layout.$spacing-2;
+	align-self: stretch;
+}
+
+.removalSection .removalAccordion :global([class*="body"]) {
+	padding: 0;
+}
+
+.removalSection .removalAccordion :global([class*="titleContainer"]) {
+	flex: 1;
+	min-width: 0;
+}
+
+.removalSection .removalAccordion :global([class*="header"]) {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+	padding: 0;
+}
+
+.removalSection .removalAccordion :global([class*="tooltipContainer"]) {
+	order: -1;
+}
+
+.removalSection .removalAccordion :global([class*="parentList"]) {
+	display: flex;
+	padding-left: layout.$spacing-7;
+	align-items: center;
+	margin-left: layout.$spacing-3;
+	align-self: stretch;
+}
+
+.accordionTitle {
+	display: flex;
+	align-items: baseline;
+	gap: layout.$spacing-3;
+	min-width: 0;
+}
+
+.accordionName {
+	@include fonts.body-b1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.accordionVersion {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	white-space: nowrap;
+}
+
+.parentList {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-3;
+
+	// Override default list styles
+	margin-block-start: 0;
+	margin-block-end: 0;
+	padding-inline-start: 0;
+}
+
+.parentItem {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+}
+
+.parentArrow {
+	width: 14px;
+	height: 15px;
+	aspect-ratio: 14/15;
+	color: colors.$description-foreground;
+}
+
+.parentName {
+	@include fonts.body-b2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.parentVersion {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	white-space: nowrap;
+}
+
+.parentBadge {
+	margin-inline-start: layout.$spacing-2;
+	flex-shrink: 0;
+}

@@ -31,7 +31,6 @@
       "PlatformConfig": {
         "ProjectName": "m4"
       },
-      "Family": "Cortex-M",
       "Partitions": [],
       "Peripherals": [
         {

@@ -17,10 +17,12 @@
 @use '#fonts' as fonts;
 @use '#layout' as layout;
 
-vscode-checkbox,
-vscode-dropdown,
-vscode-text-field {
-	opacity: 1;
+.zephelinControl {
+	vscode-checkbox,
+	vscode-dropdown,
+	vscode-text-field {
+		opacity: 1;
+	}
 }
 
 .locked,

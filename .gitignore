@@ -33,5 +33,16 @@ packages/ide/cypress/screenshots
 # environment files
 .env
 
-# personal copilot prompts
+# generated docs bundle for the docs skill (build artifact; regenerate with `yarn skills:sync-docs`)
+packages/cfs-skills/cfs-docs/references/
+
+# skills copied into the IDE package during vscode:prepublish (build artifact)
+packages/ide/skills/
+
+# personal memory files
 .github/prompts
+.github/plans
+.claude/prompts
+.claude/plans
+
+sample-workspaces

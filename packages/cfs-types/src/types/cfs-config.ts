@@ -174,6 +174,17 @@ export interface Profiling {
 
 export type ZephelinInterface = "UART" | "USB";
 
+/**
+ * Configuration for the interface used to transfer Zephelin profiling data.
+ *
+ * The transport is discriminated by `Type`. A `UART` interface additionally
+ * carries the `Port` (the UART instance name from the data model), while a
+ * `USB` interface requires no further configuration.
+ */
+export type ZephelinInterfaceConfig =
+	| { Type: "UART"; Port: string }
+	| { Type: "USB" };
+
 export interface Zephelin {
 	Enabled: boolean;
 	RtosEventsEnabled: boolean;
@@ -183,7 +194,11 @@ export interface Zephelin {
 	ProfilingCpuLoadInterval: number;
 	AIEnabled: boolean;
 	InstrumentationSubsystemEnabled: boolean;
-	Interface: ZephelinInterface;
+	Interface: ZephelinInterfaceConfig;
+	/**
+	 * @deprecated Legacy top-level UART port. The port is now carried inside
+	 * {@link ZephelinInterfaceConfig}. Retained only for reading older configs.
+	 */
 	Port?: string;
 	Format: string;
 }

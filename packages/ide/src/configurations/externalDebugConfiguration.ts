@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import {
   EXTENSION_ID,
   JLINK_PATH,
   OZONE_EXE,
+  WORKSPACE_CONTEXT,
 } from "../constants";
 import { existsSync } from "node:fs";
 import { Utils } from "../utils/utils";
 import { LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID } from "../commands/constants";
 import { exec } from "node:child_process";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 /**
  * Provides/sets up CFS for launching Ozone Debug session
@@ -44,9 +47,26 @@ export class OzoneDebugConfiguration {
     await OzoneDebugConfiguration.setOzoneInstallationDirectory();
     const config = vscode.workspace.getConfiguration(EXTENSION_ID);
     const context = config.get(ACTIVE_CONTEXT) as string;
-    const workspaceFolder = vscode.workspace.workspaceFolders?.find(
-      (folder) => folder.name === context,
-    );
+    let workspaceFolder: vscode.WorkspaceFolder | undefined;
+    if (context === WORKSPACE_CONTEXT) {
+      // Find the first workspace folder that actually contains a .jdebug file
+      // so that action discovery and command execution use the same criterion.
+      for (const folder of vscode.workspace.workspaceFolders ?? []) {
+        const debugFiles = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(folder, "*.jdebug"),
+          undefined,
+          1,
+        );
+        if (debugFiles.length > 0) {
+          workspaceFolder = folder;
+          break;
+        }
+      }
+    } else {
+      workspaceFolder = vscode.workspace.workspaceFolders?.find(
+        (folder) => folder.name === context,
+      );
+    }
     vscode.window.setStatusBarMessage(
       "CFS: Launching Ozone Debug...",
       OzoneDebugConfiguration.launchOzoneConfiguration(workspaceFolder),
@@ -113,6 +133,10 @@ export class OzoneDebugConfiguration {
           }
 
           ozoneExe = `"${ozoneExe.replace(/\\/g, "/")}"`;
+
+          getTelemetryManager().then((telemetryManager) => {
+            telemetryManager.logAction(TELEMETRY_ACTIONS.OZONE_LAUNCHED, {});
+          });
 
           const launchJDebugFilePath = `"${launchJDebugFile.fsPath.replace(/\\/g, "/")}"`;
           exec(

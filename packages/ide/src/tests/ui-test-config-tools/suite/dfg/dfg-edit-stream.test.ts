@@ -18,13 +18,7 @@
  */
 
 import { expect } from "chai";
-import {
-  By,
-  EditorView,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import {
   dfgSection,
   createStreamButton,
@@ -81,7 +75,7 @@ describe("dfg - edit the stream and verify its persistence", () => {
 
   before(async () => {
     browser = VSBrowser.instance;
-    await new EditorView().closeAllEditors();
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
     await UIUtils.sleep(3000);
   });
 

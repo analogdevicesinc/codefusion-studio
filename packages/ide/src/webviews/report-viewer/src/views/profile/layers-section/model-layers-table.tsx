@@ -252,7 +252,6 @@ export function DataTableBody({
 							layerRowDetailDataRecord[row.layer_idx] &&
 							expandedRows[row.layer_idx] && (
 								<LayerRowDetail
-									layerIdx={row.layer_idx}
 									columns={totalColumns}
 									data={layerRowDetailDataRecord[row.layer_idx]}
 								/>

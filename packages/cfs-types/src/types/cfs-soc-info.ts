@@ -24,8 +24,9 @@ export interface CfsSocInfo {
 
 	/**
 	 * The firmware platform board name, e.g. "EvKit_V1" for MSDK or "max32690evkit/max32690/m4"
+	 * May be missing in project plugins used for supporting packages only available on custom boards.
 	 */
-	board: string;
+	board?: string;
 
 	/**
 	 * The SoC package name, e.g. "WLP"

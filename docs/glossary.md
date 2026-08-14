@@ -6,6 +6,8 @@
 
 *[AEABI]: Arm Embedded Application Binary Interface
 
+*[Agent Skills]: An open, cross-agent standard for packaging reusable instructions (a `SKILL.md` file with metadata) that AI assistants such as GitHub Copilot, Claude Code, and OpenAI Codex load on demand.
+
 *[AI]: Artificial Intelligence
 
 *[API]: Application Programming Interface
@@ -93,6 +95,8 @@
 *[MMFAR]: MemManage Fault Address Register. An ARM Cortex-M register that contains the memory address that caused a MemManage fault, such as an MPU violation. Valid only when the MMARVALID bit in the CFSR is set.
 
 *[MSDK]: Microcontroller Software Development Kit. A collection of software and tools used to develop firmware for Analog Devices' MAX32xxx and MAX78xxx microcontrollers.
+
+*[Model Zoo]: A library of AI models hosted by Analog Devices that you can browse, search, and filter from CodeFusion Studio.
 
 *[NSS]: Neural Subsystem
 

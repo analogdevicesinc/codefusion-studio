@@ -96,6 +96,22 @@
 	}
 }
 
+.groupedOption {
+	&::part(content) {
+		padding-left: 2rem;
+	}
+}
+
+.optionGroup {
+	color: colors.$description-foreground;
+	font-weight: 600;
+	cursor: default;
+
+	&::part(content) {
+		cursor: default;
+	}
+}
+
 .errorMessage {
 	margin-top: 4px;
 	@include fonts.body-b1;

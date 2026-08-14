@@ -25,8 +25,8 @@ import {
   type ShellEnvOptions,
   ZephyrTaskStrategy,
   checkIfFileExists,
-  readJsonFile,
-  resolveZephyrSdkRoot
+  getZephyrSdkPath,
+  readJsonFile
 } from 'cfs-lib';
 import fs from 'node:fs';
 import {readdir} from 'node:fs/promises';
@@ -124,27 +124,12 @@ export class CliTaskProvider {
       }
     }
 
-    // Zephyr SDK: prefer per-project override, then toolchain ID from settings, then legacy path
-    let zephyrSdkPath: string | undefined;
-    const toolchainPathOverride = this.configResolver.get(
-      'cfs.project.toolchain.path'
+    const zephyrSdkPath = await getZephyrSdkPath(
+      sdkPath,
+      this.configResolver.get('cfs.project.toolchain.path'),
+      this.configResolver.get('cfs.project.toolchain.id'),
+      this.toolManager
     );
-    if (toolchainPathOverride) {
-      zephyrSdkPath = toolchainPathOverride;
-    } else {
-      const toolchainId =
-        this.configResolver.get('cfs.project.toolchain.id') ??
-        'arm.zephyr.eabi.toolchain';
-      const zephyrToolPath = toolchainId.includes('zephyr')
-        ? await this.toolManager.getToolPath(toolchainId)
-        : undefined;
-
-      if (zephyrToolPath) {
-        zephyrSdkPath = resolveZephyrSdkRoot(zephyrToolPath);
-      } else if (sdkPath) {
-        zephyrSdkPath = path.join(sdkPath, 'Tools', 'zephyr-sdk');
-      }
-    }
 
     const cmakePrefixPath = zephyrSdkPath;
 
@@ -541,6 +526,8 @@ export class CliTaskProvider {
    * 2. cfs.sdk.path from workspace config
    * 3. cfsInstallPath from user config file
    * @returns SDK path or throws error if not defined.
+   * On Windows, the user config file is at %LOCALAPPDATA%\cfsutil\config.json.
+   * On Linux/macOS, it is at ~/.config/cfsutil/config.json.
    */
   private resolveSdkPath(): string {
     // 1. Check environment variable
@@ -587,7 +574,7 @@ export class CliTaskProvider {
       'SDK path not defined. Please set one of the following:\n' +
         '  - CFS_INSTALL_DIR environment variable\n' +
         '  - cfs.sdk.path in the .code-workspace file at the root of the CFS workspace\n' +
-        '  - cfsInstallPath in user config file (~/.config/cfsutil/config.json)'
+        `  - cfsInstallPath in user config file (${process.platform === 'win32' ? '%LOCALAPPDATA%\\cfsutil\\config.json' : '~/.config/cfsutil/config.json'})`
     );
   }
 

@@ -17,7 +17,7 @@ import * as vscode from "vscode";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import CfsCustomEditor from "./cfs-custom-editor";
 import type { CfsPluginInfo, CfsWorkspace } from "cfs-types";
-import { getHostPlatform } from "cfs-lib";
+import { getHostPlatform, CfsPluginManager } from "cfs-lib";
 import type { CfsPackageManagerProvider } from "cfs-package-manager";
 import { CfsDataModelManager } from "cfs-lib";
 
@@ -31,6 +31,7 @@ import {
   getTelemetryManager,
   handleSensitiveTelemetryData,
 } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 import { getCatalogManager } from "../utils/catalog";
 import { createPluginManager } from "../utils/plugin-manager";
 
@@ -89,6 +90,12 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "workspace_creation",
+      });
+    });
+
     webviewPanel.webview.options = {
       enableScripts: true,
     };
@@ -106,17 +113,12 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
       boardId: string,
     ): (plugin: CfsPluginInfo) => boolean {
       return (plugin: CfsPluginInfo) =>
-        plugin.supportedSocs?.some(
-          (soc) =>
-            soc.name.toLowerCase() === selectedSocId?.toLowerCase() &&
-            (soc.package.toLowerCase() === packageId.toLowerCase() ||
-              // Backwards compatibility for MAX32675C TQFN/LGA packageId mismatch.
-              // Allow LGA name from catalog to match old plugins using TQFN.
-              (soc.name.toLowerCase() === "max32675c" &&
-                soc.package.toLowerCase() === "tqfn" &&
-                packageId.toLowerCase() === "lga")) &&
-            (boardId === "" ||
-              soc.board?.toLowerCase() === boardId.toLowerCase()),
+        plugin.supportedSocs?.some((soc) =>
+          CfsPluginManager.matchesSocEntry(soc, {
+            name: selectedSocId ?? "",
+            package: packageId,
+            board: boardId || undefined,
+          }),
         );
     }
 
@@ -141,8 +143,10 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
       }
     }
 
-    let pluginManager =
-      createPluginManager(this.pkgManager, this.dataModelManager);
+    let pluginManager = createPluginManager(
+      this.pkgManager,
+      this.dataModelManager,
+    );
 
     webviewPanel.webview.onDidReceiveMessage(async (message) => {
       let request;
@@ -237,11 +241,13 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
 
         case messageTypes.getPlugins:
           if (pluginManager) {
-            const { socId, packageId, boardId } = message.body;
+            const { socId, packageId } = message.body;
 
             try {
+              // This endpoint is only used to obtain project plugins.
+              // We don't check board, as that's irrelevant for project plugins.
               const plugins = await pluginManager?.getPluginsInfoList(
-                getBoardPackagePluginFilter(socId, packageId, boardId),
+                getBoardPackagePluginFilter(socId, packageId, ""),
               );
               request = Promise.resolve(plugins ?? []);
             } catch (error) {
@@ -261,11 +267,21 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
           if (pluginManager) {
             try {
               const { pluginInfo, scope, context } = message.body;
+              // Project plugins resolve by SoC + package only;
+              // workspace plugins also need board.
+              const socContext = CfsPluginManager.buildSocContext(
+                context?.soc as string | undefined,
+                context?.packageId as string | undefined,
+                scope === "workspace"
+                  ? (context?.boardId as string | undefined)
+                  : undefined,
+              );
               const properties = await pluginManager?.getProperties(
                 pluginInfo.pluginId,
                 pluginInfo.pluginVersion,
                 scope,
                 context,
+                socContext,
               );
               request = Promise.resolve(properties ?? []);
             } catch (error) {
@@ -286,20 +302,18 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
           const workspacePath = vscode.Uri.file(
             path.join(workspaceConfig.location, workspaceConfig.workspaceName),
           );
+          const soc = catalogData?.find(
+            (soc) => soc.name === workspaceConfig.soc,
+          );
           if (fs.existsSync(workspacePath.fsPath)) {
             await vscode.window.showErrorMessage(
               `Workspace path already exists: ${workspacePath.fsPath}`,
             );
+            await logWorkspaceCreationTelemetry(workspaceConfig, soc, false);
           } else {
             try {
               await vscode.workspace.save(Utils.getTempCfsWorkspacePath());
-              const soc = catalogData?.find(
-                (soc) => soc.name === workspaceConfig.soc,
-              );
 
-              if (soc) {
-                await logWorkspaceCreationTelemetry(workspaceConfig, soc);
-              }
               await pluginManager
                 ?.generateWorkspace(workspaceConfig)
                 .then(async () => {
@@ -317,6 +331,8 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
                     );
                   }
 
+                  await logWorkspaceCreationTelemetry(workspaceConfig, soc);
+
                   catalogManager?.dispose();
                   request = Promise.resolve("success");
                 });
@@ -327,6 +343,7 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
                   force: true,
                 });
               }
+              await logWorkspaceCreationTelemetry(workspaceConfig, soc, false);
               request = Promise.reject(error);
               await vscode.window.showErrorMessage(
                 `Failed to create workspace: ${error}`,
@@ -403,15 +420,18 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
 
 const logWorkspaceCreationTelemetry = async (
   workspaceConfig: CfsWorkspace,
-  soc: SoC,
+  soc: SoC | undefined,
+  success: boolean = true,
 ) => {
   const workspaceData: Partial<CfsWorkspace> = {
     soc: workspaceConfig.soc,
     package: workspaceConfig.package,
-    board: handleSensitiveTelemetryData(
-      workspaceConfig.board,
-      Utils.isAdiBoard(workspaceConfig.board, soc),
-    ),
+    board: soc
+      ? handleSensitiveTelemetryData(
+          workspaceConfig.board,
+          Utils.isAdiBoard(workspaceConfig.board, soc),
+        )
+      : "Unknown",
     pluginId: handleSensitiveTelemetryData(
       workspaceConfig.workspacePluginId ?? "",
       Utils.isAdiDevelopedPlugin(workspaceConfig.workspacePluginId ?? ""),
@@ -425,11 +445,13 @@ const logWorkspaceCreationTelemetry = async (
       pluginVersion: project.pluginVersion,
       firmwarePlatform: project.firmwarePlatform,
     })),
-    hostOS: require("os").platform(),
   };
 
   const telemetryManager = await getTelemetryManager();
-  await telemetryManager.logAction("Workspace created", workspaceData);
+  const telemetryAction = success
+    ? TELEMETRY_ACTIONS.WORKSPACE_CREATE_SUCCESS
+    : TELEMETRY_ACTIONS.WORKSPACE_CREATE_FAILURE;
+  await telemetryManager.logAction(telemetryAction, workspaceData);
 };
 
 export default WorkspaceCreationEditor;

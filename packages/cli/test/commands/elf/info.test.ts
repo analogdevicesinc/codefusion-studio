@@ -12,21 +12,18 @@
  * limitations under the License.
  *
  */
+
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {expect, test} from '@oclif/test';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('elf info', () => {
-  test.stdout().it('text', (ctx) => {
-    expect(ctx.stdout).to.contain('');
-  });
-
-  test
-    .stdout()
-    .command(
+  it('json', async () => {
+    const {stdout} = await runCommand(
       [
         'elf:info',
         '-a',
@@ -37,10 +34,9 @@ describe('elf info', () => {
         '--format=json'
       ],
       {root: '..'}
-    )
-    .it('json', (ctx) => {
-      const json = JSON.parse(ctx.stdout);
-      expect(json).to.be.an('object');
-      expect(json).to.have.property('AttributesInfo');
-    });
+    );
+    const json = JSON.parse(stdout);
+    expect(json).to.be.an('object');
+    expect(json).to.have.property('AttributesInfo');
+  });
 });

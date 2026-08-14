@@ -30,6 +30,7 @@ type EmptyStateProps = {
 	readonly linkText?: string;
 	readonly onLinkClick?: () => void;
 	readonly hasBorder?: boolean;
+	readonly className?: string;
 };
 
 const iconMap = {
@@ -53,7 +54,8 @@ export default function EmptyState({
 	linkText,
 	onLinkClick,
 	hasBorder = true,
-	dataTest
+	dataTest,
+	className
 }: EmptyStateProps) {
 	const bodySlot: ReactNode[] = [];
 	const footerSlot: ReactNode[] = [];
@@ -72,7 +74,7 @@ export default function EmptyState({
 
 	return (
 		<div
-			className={`${styles.emptyStateContainer} ${hasBorder ? styles.withBorder : ''}`}
+			className={`${styles.emptyStateContainer} ${hasBorder ? styles.withBorder : ''} ${className ?? ''}`}
 			data-test={dataTest}
 		>
 			{iconMap[type]}

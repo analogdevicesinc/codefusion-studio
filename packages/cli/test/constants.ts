@@ -5,10 +5,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Paths relative to this file's location (packages/cli/test/)
-export const CFS_PLUGINS_PATH = path.resolve(
+const TEST_FIXTURES_ROOT = path.resolve(
   __dirname,
-  './fixtures/plugins'
+  '../../../test-fixtures/plugins'
 );
+
+export const CFS_PROJECT_PLUGINS_PATH = path.resolve(
+  TEST_FIXTURES_ROOT,
+  'project'
+);
+
+export const CFS_WORKSPACE_TEMPLATES_PATH = path.resolve(
+  TEST_FIXTURES_ROOT,
+  'workspace-templates'
+);
+
+/** @deprecated Use CFS_PROJECT_PLUGINS_PATH and CFS_WORKSPACE_TEMPLATES_PATH */
+export const CFS_PLUGINS_PATH = CFS_PROJECT_PLUGINS_PATH;
 
 export const CFS_DATA_MODELS_PATH = path.resolve(
   __dirname,

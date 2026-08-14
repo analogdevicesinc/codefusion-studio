@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
  */
 
 import {useMemo} from 'react';
-import CfsTooltip from '../../../../../../common/components/cfs-tooltip/CfsTooltip';
-import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
+import CfsTooltip from '@common/components/cfs-tooltip/CfsTooltip';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import type {TLocaleContext} from '../../../../common/types/context';
 import {
 	convertDecimalToHex,
-	getAddressOffset,
 	getCoreMemoryAliases,
+	getMemoryAliasesForAddress,
 	offsetAddress
 } from '../../../../utils/memory';
 import type {Partition} from '../../../../state/slices/partitions/partitions.reducer';
@@ -48,34 +48,21 @@ export function MemoryAliasTooltip({
 		[baseBlock.Name, coreIds]
 	);
 
-	const offsetMemoryAliases = useMemo(() => {
-		const baseOffset = getAddressOffset(
+	const offsetMemoryAliases = useMemo(
+		() =>
+			getMemoryAliasesForAddress(
+				memoryAliases,
+				startAddress,
+				baseBlock.AddressStart,
+				partition.size
+			),
+		[
 			baseBlock.AddressStart,
-			startAddress
-		);
-
-		return memoryAliases.map(alias => {
-			const addressStart = offsetAddress(
-				alias.AliasBaseAddress,
-				baseOffset
-			);
-			const addressEnd = offsetAddress(
-				addressStart,
-				partition.size - 1
-			);
-
-			return {
-				...alias,
-				OffsetAddress: addressStart,
-				OffsetEndAddress: addressEnd
-			};
-		});
-	}, [
-		baseBlock.AddressStart,
-		startAddress,
-		memoryAliases,
-		partition.size
-	]);
+			startAddress,
+			memoryAliases,
+			partition.size
+		]
+	);
 
 	return (
 		<div className={styles.container}>
@@ -110,7 +97,7 @@ export function MemoryAliasTooltip({
 
 				{offsetMemoryAliases.map(alias => (
 					<div
-						key={alias.OffsetAddress}
+						key={alias.AliasStartAddress}
 						data-test='alias-tooltip-software-address'
 						className={`${styles.content} ${styles.gap}`}
 					>
@@ -118,10 +105,12 @@ export function MemoryAliasTooltip({
 							{`${alias.CoreId} ${alias.AliasType} ${i10n?.address}`}
 						</div>
 						<div className={styles.value}>
-							{convertDecimalToHex(parseInt(alias.OffsetAddress, 16))}{' '}
+							{convertDecimalToHex(
+								parseInt(alias.AliasStartAddress, 16)
+							)}{' '}
 							-{' '}
 							{convertDecimalToHex(
-								parseInt(alias.OffsetEndAddress, 16)
+								parseInt(alias.AliasEndAddress, 16)
 							)}
 						</div>
 					</div>

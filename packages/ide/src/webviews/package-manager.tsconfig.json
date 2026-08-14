@@ -1,0 +1,13 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./package-manager/**/*.ts",
+		"./package-manager/**/*.tsx",
+		"../constants/**/*.ts",
+		"../types/**/*.ts",
+		"./custom.d.ts",
+		"./common/**/*.ts",
+		"./common/**/*.tsx"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

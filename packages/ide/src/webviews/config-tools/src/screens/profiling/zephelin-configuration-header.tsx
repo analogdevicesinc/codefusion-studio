@@ -40,7 +40,11 @@ export default function ZephelinConfigurationHeader({
 	onToggleExpand
 }: Props) {
 	const {zephelin, errors} = useProfilingConfig(project.ProjectId);
-	const baudRate = usePeripheralAllocationBaudRate(zephelin.Port);
+	const uartPort =
+		zephelin.Interface?.Type === 'UART'
+			? zephelin.Interface.Port
+			: undefined;
+	const baudRate = usePeripheralAllocationBaudRate(uartPort);
 
 	if (!zephelin) {
 		return null;
@@ -48,7 +52,7 @@ export default function ZephelinConfigurationHeader({
 
 	const isInvalid =
 		Object.values(errors).some(error => error !== undefined) ||
-		baudRate === undefined;
+		(zephelin.Interface?.Type === 'UART' && baudRate === undefined);
 
 	return (
 		<Accordion

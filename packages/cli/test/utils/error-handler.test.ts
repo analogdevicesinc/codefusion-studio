@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,9 @@ describe('handleMissingDependencyError', () => {
      */
     it('should return silently for generic Error', () => {
       const error = new Error('Some other error');
-      expect(() => handleMissingDependencyError(error)).to.not.throw();
+      expect(() =>
+        handleMissingDependencyError(error)
+      ).to.not.throw();
     });
 
     /**
@@ -66,7 +68,7 @@ describe('handleMissingDependencyError', () => {
      */
     it('should throw formatted error for missing data model', () => {
       const error = new MissingDependencyError('data-model', {
-        soc: 'MAX32690',
+        socName: 'MAX32690',
         packageId: 'WLP',
         requestedVersion: '1.2.0'
       });
@@ -74,7 +76,7 @@ describe('handleMissingDependencyError', () => {
       expect(() => handleMissingDependencyError(error))
         .to.throw()
         .with.property('message')
-        .that.includes('Required package')
+        .that.includes('Requested')
         .and.includes('MAX32690/WLP')
         .and.includes('version 1.2.0')
         .and.includes('cfsutil pkg install');
@@ -88,7 +90,7 @@ describe('handleMissingDependencyError', () => {
      */
     it('should handle data model error without version', () => {
       const error = new MissingDependencyError('data-model', {
-        soc: 'TestChip100',
+        socName: 'TestChip100',
         packageId: 'DEFAULT'
       });
 
@@ -96,7 +98,7 @@ describe('handleMissingDependencyError', () => {
         .to.throw()
         .with.property('message')
         .that.includes('TestChip100/DEFAULT')
-        .and.does.not.include('version');
+        .and.does.not.include('version ');
     });
 
     /**

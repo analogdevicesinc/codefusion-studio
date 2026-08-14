@@ -15,23 +15,23 @@
 
 import { By } from "selenium-webdriver";
 
-  // Menu Items
-  export const peripheralTab: By = By.css(`[data-test='nav-item:peripherals']`);
-  export const pinTab: By = By.css('[data-test="nav-item:pinmux"]');
-  export const clockTab: By = By.css(`[data-test='nav-item:clockconfig']`);
-  export const memoryAllocationTab: By = By.css(`[data-test="nav-item:memory"]`);
-  export const generateCodeTab: By = By.css(`[data-test="nav-item:generate"]`);
+// Menu Items
+export const peripheralTab: By = By.css(`[data-test='nav-item:peripherals']`);
+export const pinTab: By = By.css('[data-test="nav-item:pinmux"]');
+export const clockTab: By = By.css(`[data-test='nav-item:clockconfig']`);
+export const memoryAllocationTab: By = By.css(`[data-test="nav-item:memory"]`);
+export const generateCodeTab: By = By.css(`[data-test="nav-item:generate"]`);
 
-  // Filters
-  export const availableFilterControl: By = By.css(
-    "[data-test='filter-control:available']",
-  );
-  export const conflictFilterControl: By = By.css(
-    "[data-test='filter-control:conflicts']",
-  );
-  export const assignedFilterControl: By = By.css(
-    "[data-test='filter-control:assigned']",
-  );
-  export const allocatedFilterControl: By = By.css(
-    "[data-test='filter-control:allocated']",
-  );
+// Filters
+export const availableFilterControl: By = By.css(
+  "[data-test='filter-control:available']",
+);
+export const conflictFilterControl: By = By.css(
+  "[data-test='filter-control:conflicts']",
+);
+export const assignedFilterControl: By = By.css(
+  "[data-test='filter-control:assigned']",
+);
+export const allocatedFilterControl: By = By.css(
+  "[data-test='filter-control:allocated']",
+);

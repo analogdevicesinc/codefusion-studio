@@ -15,7 +15,10 @@
 import {TextField} from 'cfs-react-library';
 import {useCallback, useMemo, useState} from 'react';
 import {useAppDispatch, useAppSelector} from '../../../state/store';
-import {fetchMemoryData} from '../../../state/slices/memory/memory.reducer';
+import {
+	fetchMemoryAtSymbol,
+	fetchMemoryData
+} from '../../../state/slices/memory/memory.reducer';
 import {setTargetAddress} from '../../../state/slices/app-context/app-context.reducer';
 import {
 	useActiveSession,
@@ -29,13 +32,28 @@ import {type DebugSessionInfo} from '../../../types/debug';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {INITIAL_DATA_SIZE} from '../../../constants/data-read';
 
-enum AddressInputError {
-	InvalidAddress = 'invalidAddress',
-	NoActiveSessions = 'noSessions',
-	NotHalted = 'notHalted',
-	LoadingData = 'loadingData',
-	ReadFailed = 'readFailed'
-}
+const AddressInputError = {
+	// Frontend errors
+	InvalidAddress: 'invalidAddress',
+	NoActiveSessions: 'noSessions',
+	NotHalted: 'notHalted',
+	LoadingData: 'loadingData',
+	ReadFailed: 'readFailed',
+	SymbolNotFound: 'symbolNotFound',
+	// Backend error codes
+	NoRequestBody: 'noRequestBody',
+	InvalidAddressSize: 'invalidAddressSize',
+	InvalidSessionId: 'invalidSessionId',
+	InvalidLength: 'invalidLength',
+	NoSessionIdFound: 'noSessionIdFound',
+	CannotReadMemory: 'cannotReadMemory',
+	NoRequestSessionId: 'noRequestSessionId',
+	SessionNotFound: 'sessionNotFound',
+	InvalidExpression: 'invalidExpression',
+	MalformedExpression: 'malformedExpression',
+	SymbolQueryTimeout: 'symbolQueryTimeout',
+	MemoryReadTimeout: 'memoryReadTimeout'
+} as const;
 
 export default function AddressInput() {
 	const dispatch = useAppDispatch();
@@ -55,15 +73,95 @@ export default function AddressInput() {
 		[debugSessions.length]
 	);
 
+	function setMemoryViewerError(err: unknown) {
+		const message =
+			typeof err === 'object' &&
+			err !== null &&
+			'message' in err &&
+			typeof (err as {message?: unknown}).message === 'string'
+				? (err.message as string)
+				: String(err);
+
+		const pattern = /No symbol ".+?" in current context/;
+
+		// This needs to be done because we cannot control the
+		// error output from cortex debug
+		if (pattern.test(message)) {
+			setError(AddressInputError.SymbolNotFound);
+		} else {
+			const key = String(message);
+
+			if (
+				Object.prototype.hasOwnProperty.call(AddressInputError, key)
+			) {
+				setError(
+					AddressInputError[key as keyof typeof AddressInputError]
+				);
+			} else {
+				setError(AddressInputError.ReadFailed);
+			}
+		}
+	}
+
 	const goToAddress = useCallback(
-		(value: string) => {
+		async (value: string) => {
+			const sessionId =
+				activeSession && !activeSession?.isRunning
+					? activeSession.sessionId
+					: haltedSessions[0]?.sessionId;
+
 			let parsedAddress;
 			const strippedValue = value.trim();
 
-			if (/^0[xX][0-9a-fA-F]+$/.test(strippedValue)) {
+			if (strippedValue.length === 0) {
+				setError(AddressInputError.InvalidAddress);
+
+				return;
+			}
+
+			if (/^[+-]?0[xX][0-9a-fA-F]+$/.test(strippedValue)) {
 				parsedAddress = parseInt(strippedValue, 16);
-			} else if (/^\d+$/.test(strippedValue)) {
+			} else if (/^[+-]?\d+$/.test(strippedValue)) {
 				parsedAddress = parseInt(strippedValue, 10);
+			} else {
+				if (debugSessions.length === 0) {
+					setError(AddressInputError.NoActiveSessions);
+
+					return;
+				}
+
+				if (debugSessions.every(session => session.isRunning)) {
+					setError(AddressInputError.NotHalted);
+
+					return;
+				}
+
+				if (isLoading) {
+					setError(AddressInputError.LoadingData);
+
+					return;
+				}
+
+				if (!sessionId) {
+					setError(AddressInputError.NotHalted);
+
+					return;
+				}
+
+				setError(undefined);
+				dispatch(
+					fetchMemoryAtSymbol({
+						sessionId,
+						length: INITIAL_DATA_SIZE,
+						expression: strippedValue
+					})
+				)
+					.unwrap()
+					.catch(err => {
+						setMemoryViewerError(err);
+					});
+
+				return;
 			}
 
 			if (
@@ -94,17 +192,14 @@ export default function AddressInput() {
 				setError(undefined);
 				dispatch(
 					fetchMemoryData({
-						sessionId:
-							activeSession && !activeSession?.isRunning
-								? activeSession.sessionId
-								: haltedSessions[0]?.sessionId,
+						sessionId,
 						address: parsedAddress,
 						length: INITIAL_DATA_SIZE
 					})
 				)
 					.unwrap()
-					.catch(() => {
-						setError(AddressInputError.ReadFailed);
+					.catch(err => {
+						setMemoryViewerError(err);
 					});
 			}
 		},
@@ -133,7 +228,7 @@ export default function AddressInput() {
 				}}
 				onKeyUp={e => {
 					if (e.key === 'Enter') {
-						goToAddress(addressInput);
+						void goToAddress(addressInput);
 					} else if (error) {
 						setError(undefined);
 					}

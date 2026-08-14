@@ -39,25 +39,60 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
   readonly AtbOutput: string;
   readonly HwEvents: Record<number, string>;
   readonly type: string;
+  readonly eventsSourceSignal = "SWStimulusEvents";
+  readonly SWsourceSignal?: string;
+
   // This is the maximum value for the synchronization counter of the stm-500.
   readonly SynchronizationCounterHardwareMaxValue = 4095;
+  readonly HwEventNumberLimit = 63;
+
+  // Concurrent accesses to hardware event registers need to be serialized by first writing
+  // the bank select register, so we use a mutex to ensure that only one access to hardware
+  // event registers is active at a time, and that the correct bank is selected for each access.
+  private bankSelectMutex: Promise<void> = Promise.resolve();
+
   /**
    *
    * @param name Unique name to identify the component in the system.
    *             This is currently only used on error messages with no logic associated.
    * @param socTraceInfo Record containing information from the data model.
    * @param debugManager Debug manager used to read and write registers of the component.
+   * @param sourceSignal Optional signal name to use as source for software stimulus events. If not provided, software stimulus events will not be supported.
    */
   constructor(
     public name: string,
     socTraceInfo: SocTraceComponentInfo,
     debugManager: CfsDebugManager,
+    sourceSignal: string,
   ) {
     super(debugManager, socTraceInfo);
 
     this.type = socTraceInfo.Type as string;
     this.AtbOutput = socTraceInfo.AtbOutput as string;
     this.HwEvents = socTraceInfo.HwEvents;
+    this.SWsourceSignal = sourceSignal;
+  }
+
+  /**
+   * Ensures that the specified hardware event bank is selected before executing the
+   * provided function.
+   *
+   * Used to serialize access to hardware event registers which are divided into two
+   * banks of 32 events each and require a bank select register to be set before accessing them.
+   * This prevents concurrent accesses from switching banks mid-operation.
+   * @param hwEventBank The hardware event bank to select.
+   * @param fn The function to execute with the selected bank.
+   */
+  private async withSelectedBank<T>(
+    hwEventBank: number,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    const result = this.bankSelectMutex.then(async () => {
+      await this.writeRegister(stm500.STMHEBSR, { HEBS: hwEventBank });
+      return await fn();
+    });
+    this.bankSelectMutex = result.then(() => {}).catch(() => {});
+    return result;
   }
 
   /**
@@ -82,9 +117,22 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
 
   async connect(input: string, output: string): Promise<void> {
     const [first, second] = input.split(/\.(.*)/);
-    if (first !== "HwEvents") {
-      throw new Error(`Only HwEvents inputs are supported for ${this.name}.`);
+    if (first !== "HwEvents" && first !== this.eventsSourceSignal) {
+      throw new Error(
+        `Only HwEvents or ${this.eventsSourceSignal} inputs are supported for ${this.name}.`,
+      );
     }
+
+    if (first === this.eventsSourceSignal) {
+      if (output !== "AtbOutput") {
+        throw new Error(
+          `${output} is not a valid output for ${this.name}. Only AtbOutput is supported.`,
+        );
+      }
+      await this.enableSWStimulusEvents();
+      return;
+    }
+
     if (Object.keys(this.HwEvents).includes(second) === false) {
       throw new Error(
         `${second} is not a valid HwEvent input for ${this.name}.`,
@@ -100,9 +148,22 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
 
   async disconnect(input: string, output: string): Promise<void> {
     const [first, second] = input.split(/\.(.*)/);
-    if (first !== "HwEvents") {
-      throw new Error(`Only HwEvents inputs are supported for ${this.name}.`);
+    if (first !== "HwEvents" && first !== this.eventsSourceSignal) {
+      throw new Error(
+        `Only HwEvents or ${this.eventsSourceSignal} inputs are supported for ${this.name}.`,
+      );
     }
+
+    if (first === this.eventsSourceSignal) {
+      if (output !== "AtbOutput") {
+        throw new Error(
+          `${output} is not a valid output for ${this.name}. Only AtbOutput is supported.`,
+        );
+      }
+      await this.disableSWStimulusEvents();
+      return;
+    }
+
     if (Object.keys(this.HwEvents).includes(second) === false) {
       throw new Error(
         `${second} is not a valid HwEvent input for ${this.name}.`,
@@ -128,6 +189,19 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
     const [first, second] = signal.split(/\.(.*)/);
 
     switch (first) {
+      case this.eventsSourceSignal:
+        if (this.SWsourceSignal === undefined) {
+          return [];
+        }
+        return [
+          {
+            sourceSignal: this.SWsourceSignal,
+            componentSourceSignal: signal,
+            componentDestinationSignal: "AtbOutput",
+            destinationSignal: this.AtbOutput,
+            isActive: await this.isSWStimulusEventsEnabled(),
+          },
+        ];
       case "HwEvents":
         const eventNumber = parseInt(second, 10);
         if (Object.keys(this.HwEvents).includes(second)) {
@@ -372,21 +446,23 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
    * @param eventNumber The hardware event number to enable (0-63)
    */
   async enableHwEvent(eventNumber: number): Promise<void> {
-    if (eventNumber < 0 || eventNumber > 63) {
+    if (eventNumber < 0 || eventNumber > this.HwEventNumberLimit) {
       throw new Error(
-        `Invalid event number ${eventNumber}. Must be between 0 and 63.`,
+        `Invalid event number ${eventNumber}. Must be between 0 and ${this.HwEventNumberLimit}.`,
       );
     }
-    // First select the proper bank
+
     const hwEventBank = Math.floor(eventNumber / 32);
     const hwEventBit = eventNumber % 32;
-    await this.writeRegister(stm500.STMHEBSR, { HEBS: hwEventBank });
+    // Select the bank and read the current event to avoid overwriting other enabled events in the same bank
+    await this.withSelectedBank(hwEventBank, async () => {
+      // Then enable the event
+      const currentHeer = await this.readRegister(stm500.STMHEER);
+      // eslint-disable-next-line no-bitwise
+      const newHeerValue = (currentHeer.HEE | (1 << hwEventBit)) >>> 0;
+      await this.writeRegister(stm500.STMHEER, { HEE: newHeerValue });
+    });
 
-    // Then enable the event
-    const currentHeer = await this.readRegister(stm500.STMHEER);
-    // eslint-disable-next-line no-bitwise
-    const newHeerValue = (currentHeer.HEE | (1 << hwEventBit)) >>> 0;
-    await this.writeRegister(stm500.STMHEER, { HEE: newHeerValue });
     await this.writeRegister(stm500.STMHEMCR, { EN: 1, COMPEN: 1 });
   }
 
@@ -396,21 +472,21 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
    * @param eventNumber The hardware event number to disable (0-63)
    */
   async disableHwEvent(eventNumber: number): Promise<void> {
-    if (eventNumber < 0 || eventNumber > 63) {
+    if (eventNumber < 0 || eventNumber > this.HwEventNumberLimit) {
       throw new Error(
-        `Invalid event number ${eventNumber}. Must be between 0 and 63.`,
+        `Invalid event number ${eventNumber}. Must be between 0 and ${this.HwEventNumberLimit}.`,
       );
     }
-    // First select the proper bank
+
     const hwEventBank = Math.floor(eventNumber / 32);
     const hwEventBit = eventNumber % 32;
-    await this.writeRegister(stm500.STMHEBSR, { HEBS: hwEventBank });
-
-    // Then disable the event
-    const currentHeer = await this.readRegister(stm500.STMHEER);
-    // eslint-disable-next-line no-bitwise
-    const newHeerValue = (currentHeer.HEE & ~(1 << hwEventBit)) >>> 0;
-    await this.writeRegister(stm500.STMHEER, { HEE: newHeerValue });
+    // Select the bank and read the current hw event enable register to avoid disabling other events
+    await this.withSelectedBank(hwEventBank, async () => {
+      const currentHeer = await this.readRegister(stm500.STMHEER);
+      // eslint-disable-next-line no-bitwise
+      const newHeerValue = (currentHeer.HEE & ~(1 << hwEventBit)) >>> 0;
+      await this.writeRegister(stm500.STMHEER, { HEE: newHeerValue });
+    });
   }
 
   /**
@@ -421,8 +497,11 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
   async getEnabledHwEvents(): Promise<number[]> {
     const enabledEvents: number[] = [];
     for (const hwEventBank of [0, 1]) {
-      await this.writeRegister(stm500.STMHEBSR, { HEBS: hwEventBank });
-      const heer = await this.readRegister(stm500.STMHEER);
+      // Select the bank and read the current hw event enable register to retrieve the enabled events in this bank
+      const heer = await this.withSelectedBank(hwEventBank, async () => {
+        return this.readRegister(stm500.STMHEER);
+      });
+
       for (let hwEventBit = 0; hwEventBit < 32; hwEventBit++) {
         // eslint-disable-next-line no-bitwise
         if ((heer.HEE & (1 << hwEventBit)) !== 0) {
@@ -440,6 +519,11 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
    * @returns True if the event is enabled, false otherwise
    */
   async isHwEventEnabled(eventNumber: number): Promise<boolean> {
+    if (eventNumber < 0 || eventNumber > this.HwEventNumberLimit) {
+      throw new Error(
+        `Invalid event number ${eventNumber}. Must be between 0 and ${this.HwEventNumberLimit}.`,
+      );
+    }
     const hemcr = await this.readRegister(stm500.STMHEMCR);
     if (hemcr.EN === 0) {
       return false;
@@ -448,9 +532,11 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
     // Select the proper bank
     const hwEventBank = Math.floor(eventNumber / 32);
     const hwEventBit = eventNumber % 32;
-    await this.writeRegister(stm500.STMHEBSR, { HEBS: hwEventBank });
+    // Select the bank and read the current event enable register to retrieve the event status of this specific event
+    const heer = await this.withSelectedBank(hwEventBank, () => {
+      return this.readRegister(stm500.STMHEER);
+    });
 
-    const heer = await this.readRegister(stm500.STMHEER);
     /* eslint-disable no-bitwise */
     const eventMask = 1 << hwEventBit;
     return (heer.HEE & eventMask) !== 0;
@@ -465,6 +551,38 @@ export class Stm500 extends coresight.Component implements SoCTraceComponent {
    */
   async getHwEventStpMasterId(): Promise<number> {
     return (await this.readRegister(stm500.STMHEMASTR)).MASTER;
+  }
+
+  /**
+   * Enables trace generation for software stimulus events.
+   * This allows software to generate trace events by writing to the STM-500 stimulus ports.
+   */
+  async enableSWStimulusEvents(): Promise<void> {
+    await this.writeRegister(stm500.STMSPSCR, { PORTCTL: 0x0, PORTSEL: 0x0 });
+    await this.writeRegister(stm500.STMSPER, { SPE: 0xffffffff });
+  }
+
+  /**
+   * Disables trace generation for software stimulus events.
+   * This prevents software from generating trace events by writing to the STM-500 stimulus ports.
+   */
+  async disableSWStimulusEvents(): Promise<void> {
+    await this.writeRegister(stm500.STMSPSCR, {
+      PORTCTL: 0x0,
+      PORTSEL: 0x0,
+    });
+
+    await this.writeRegister(stm500.STMSPER, { SPE: 0x0 });
+  }
+
+  /**
+   * Checks if trace generation for software stimulus events is currently enabled.
+   *
+   * @returns True if software stimulus events are enabled, false otherwise
+   */
+  async isSWStimulusEventsEnabled(): Promise<boolean> {
+    const sper = await this.readRegister(stm500.STMSPER);
+    return sper.SPE !== 0;
   }
 }
 

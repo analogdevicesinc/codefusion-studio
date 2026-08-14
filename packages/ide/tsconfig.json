@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+    "skipLibCheck": true,
     "module": "ESNext",
     "target": "ESNext",
     "outDir": "out",
@@ -17,12 +18,15 @@
     "noImplicitAny": true,
     "noEmit": false,
     "jsx": "react-jsx",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "paths": {
       "@common/*": ["./src/webviews/common/*"],
       "@ide-types/*": ["./src/types/*"],
-      "@constants/*": ["./src/constants/*"]
+      "@constants/*": ["./src/constants/*"],
+      "@serialport/bindings-interface": [
+        "../../node_modules/@serialport/bindings-interface/dist/index.d.ts"
+      ]
     }
   },
   "include": ["src/**/*.ts", "../cfs-lib/src/ai-tools/cfsai.ts"],

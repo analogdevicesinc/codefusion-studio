@@ -21,7 +21,6 @@ import {
 	type CompatibilityIssue
 } from '@ide-types/report-view-types';
 import styles from './compatibility-issues.module.scss';
-import DownArrow from '../../../../../common/icons/DownArrow';
 import {useState} from 'react';
 import {type TLocaleContext} from '../../../../../common/types/l10n';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';

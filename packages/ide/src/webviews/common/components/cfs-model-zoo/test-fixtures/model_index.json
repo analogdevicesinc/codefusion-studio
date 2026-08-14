@@ -1,0 +1,105 @@
+{
+	"$schema": "./models.schema.json",
+	"version": "1.0.0",
+	"lastUpdated": "2026-07-13",
+	"models": [
+		{
+			"uniqueId": "bb653b9c-5af1-4e6f-976e-8dec1ded903d",
+			"name": "DS CNN",
+			"displayName": "DS-CNN Small",
+			"description": "DS-CNN Small model by Arm for keyword spotting. Trained on Google Speech Commands V2 dataset containing one-second .wav audio files of spoken commands.",
+			"task": "Keyword Spotting",
+			"taskType": "Audio",
+			"framework": "tensorflow",
+			"license": "Apache-2.0",
+			"owner": "ADI",
+			"supportedPlatforms": [
+				{
+					"soc": "MAX32690",
+					"board": "EvKit_V1",
+					"family": "Cortex-M",
+					"core": "CM4",
+					"modelPaths": {
+						"int8": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_int8.tflite",
+						"int16": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_int16.tflite",
+						"float32": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_float32.tflite"
+					},
+					"sizeInKb": {
+						"int8": 46.5,
+						"int16": 54.094,
+						"float32": 96.441
+					},
+					"sample_binary": {
+						"float32": "audio_models/audio_keyword_spotting/ds_cnn/data/input/kws_ds-cnn_float32.bin"
+					},
+					"compilation": {
+						"hardwareParameters": [],
+						"optimization": {
+							"values": ["-O0", "-O2", "-O3"],
+							"default": "-O0"
+						},
+						"quantization": {
+							"values": ["int8", "int16", "float32"],
+							"default": "int8"
+						}
+					}
+				},
+				{
+					"soc": "ADSP-SC835",
+					"board": "ADSPSC835-EV-SOM",
+					"family": "SHARC-FX",
+					"core": "FX",
+					"modelPaths": {
+						"int8": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_int8.tflite",
+						"int16": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_int16.tflite",
+						"float32": "audio_models/audio_keyword_spotting/ds_cnn/data/model/ds_cnn_s_float32.tflite"
+					},
+					"sizeInKb": {
+						"int8": 46.5,
+						"int16": 54.094,
+						"float32": 96.441
+					},
+					"sample_binary": {
+						"float32": "audio_models/audio_keyword_spotting/ds_cnn/data/input/kws_ds-cnn_float32.bin"
+					},
+					"compilation": {
+						"hardwareParameters": [],
+						"optimization": {
+							"values": ["-O0", "-O2", "-O3"],
+							"default": "-O0"
+						},
+						"quantization": {
+							"values": ["int8", "int16", "float32"],
+							"default": "int8"
+						}
+					}
+				}
+			],
+			"networkInputs": [
+				{
+					"name": "input",
+					"shape": "(1, 490)",
+					"description": "Processed MFCCs from a one-second audio clip."
+				}
+			],
+			"networkOutputs": [
+				{
+					"name": "Identity",
+					"shape": "(1, 12)",
+					"description": "Probability distribution over 12 keyword classes."
+				}
+			],
+			"accuracy": {
+				"dataset": "Google Speech Commands test set",
+				"metrics": [
+					{
+						"name": "Accuracy",
+						"value": "94.52%"
+					}
+				]
+			},
+			"createdAt": "2026-07-06T00:00:00Z",
+			"updatedAt": "2026-07-06T00:00:00Z"
+		}
+	]
+}

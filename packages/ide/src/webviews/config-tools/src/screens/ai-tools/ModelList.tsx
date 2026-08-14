@@ -17,8 +17,8 @@ import emptyComponentStyle from '../../components/empty-table-view/EmptyTableVie
 import styles from './ModelList.module.scss';
 import baseStyles from './BaseAiFusionStyles.module.scss';
 import {useEffect, useMemo, useState} from 'react';
-import DownFilledArrow from 'cfs-ide/src/webviews/common/icons/DownFilledArrow';
-import DownArrow from 'cfs-ide/src/webviews/common/icons/DownArrow';
+import DownFilledArrow from '@common/icons/DownFilledArrow';
+import DownArrow from '@common/icons/DownArrow';
 import {
 	useAIModels,
 	useCompatibilityState
@@ -245,7 +245,7 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 
 	return (
 		<DataGrid
-			gridTemplateColumns={`1fr 85px 1fr ${backend?.AdvancedTools ? '125px' : ''} ${backend?.AdvancedTools ? '150px' : '125px'}`}
+			gridTemplateColumns={`1fr 90px 1fr ${backend?.AdvancedTools ? '125px' : ''} ${backend?.AdvancedTools ? '150px' : '125px'}`}
 			className={styles.table}
 			dataTest={`${models[0].Target.Core}.${models[0].Target.Accelerator ?? 'none'}.${models[0].Backend?.Name ?? 'unknown'}-table`}
 		>

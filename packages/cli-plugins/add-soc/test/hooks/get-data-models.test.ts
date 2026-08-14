@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,19 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai'
+import {runHook} from '@oclif/test'
+import type {Hook} from '@oclif/core'
 
 describe('hooks', () => {
-  const config = {root: process.cwd()}; 
-  test
-    .loadConfig(config)
-    .stdout()
-    .hook('get-data-models', {argv: []}, config)
-    .do((output) => {
-      // @ts-expect-error: hook output.returned is of type unknown
-      const {result} = output.returned.successes[0];
-      expect(result).to.have.all.keys('soc1234', 'soc5678');
-    })
-    .it('should run hook');
-});
+	const config = {root: process.cwd()}
+
+	it('should run hook', async () => {
+		const {result} = await runHook<Hook.Result<string>>('get-data-models', {argv: []}, config)
+		expect(result?.successes).to.be.an('array').of.length(1)
+		const pluginSuccess = result?.successes[0]
+		expect(pluginSuccess?.plugin.name).to.equal('add-soc')
+		const pluginResult = pluginSuccess?.result
+		expect(pluginResult).to.have.all.keys('soc1234', 'soc5678')
+	})
+})

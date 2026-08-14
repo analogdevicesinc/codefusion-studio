@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,12 +102,27 @@ export function GasketConfigSidePanel() {
 							testId='gasket-config-controls'
 							emptyMessage={l10n?.dfg.noGasketPluginSettings}
 							onControlChange={(field, value) => {
+								const currentConfig = activeGasket.Config ?? {};
+
+								const updatedConfig =
+									value === undefined
+										? Object.fromEntries(
+												Object.entries(currentConfig).filter(
+													([key]) => key !== field
+												)
+											)
+										: {
+												...currentConfig,
+												[field]: value
+											};
+
 								dispatch(
 									setEditingGasket({
 										Name: activeGasket.Name,
-										Config: {...activeGasket.Config, [field]: value}
+										Config: updatedConfig
 									})
 								);
+
 								setGasketModified(true);
 							}}
 						/>

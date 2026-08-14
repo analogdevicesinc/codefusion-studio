@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseJson} from '../../utils/parse-json.js';
@@ -26,17 +27,18 @@ describe('elf analyze', () => {
     '../../../../elf-parser/test/data/input.elf'
   );
 
-  test
-    .stdout()
-    .command(['elf:analyze', elfPath, '--format=json'], {root: '..'})
-    .it('produces valid JSON output', (ctx) => {
-      // Verify the output is valid JSON
-      const output = parseJson(ctx.stdout);
-      expect(output).to.be.an('object');
+  it('produces valid JSON output', async () => {
+    const {stdout} = await runCommand(
+      ['elf:analyze', elfPath, '--format=json'],
+      {root: '..'}
+    );
+    // Verify the output is valid JSON
+    const output = parseJson(stdout);
+    expect(output).to.be.an('object');
 
-      // Verify no trailing commas in JSON
-      const jsonString = ctx.stdout;
-      expect(jsonString).to.not.match(/,\s*}/); // No trailing comma before closing brace
-      expect(jsonString).to.not.match(/,\s*]/); // No trailing comma before closing bracket
-    });
+    // Verify no trailing commas in JSON
+    const jsonString = stdout;
+    expect(jsonString).to.not.match(/,\s*}/); // No trailing comma before closing brace
+    expect(jsonString).to.not.match(/,\s*]/); // No trailing comma before closing bracket
+  });
 });

@@ -114,47 +114,8 @@ export interface RegisterDescription {
   fields: Record<string, RegisterField>;
 }
 
-// This was introduced to work around the fact that some debug adapters (e.g. cortex-debug with JLink)
-// do not provide built-in DAP requests to read or write AP registers, but do allow custom monitor commands
-// that can be used to perform DP-AP transactions. The script defines two monitor command sequences to perform
-// read and write transactions on AP registers, as well as a command to read the DP ID register as a sanity
-// check to confirm that the script is loaded correctly and that the monitor commands are working as expected.
-// This script is loaded on demand when the first AP read/write operation is attempted, and only once per
-// debug session. These commands are defined to maintain the atomicity of AP transactions, which is important
-// to avoid issues caused by interleaved monitor commands from other operations. If another command interrupts
-// the sequence of monitor commands required for an AP transaction, the transaction can fail, and the cause
-// can be difficult to diagnose because the output of the monitor commands would be mixed with the output of
-// other monitor commands or debug operations.
 const CONF_READ_TRANSACTION_FUNCTION = "configureSendAPReadTransaction";
 const CONF_WRITE_TRANSACTION_FUNCTION = "configureSendAPWriteTransaction";
-const READ_DP_ID_FUNCTION = "readDPIDRegister";
-const READWRITE_AP_FUNCTIONS_SCRIPT = `define ${CONF_READ_TRANSACTION_FUNCTION}
-      set $addr = $arg1
-      set $endAddr =  $arg1 + $arg2
-      monitor writeDP 2 $arg0
-      monitor writeAP 0 0x80000012
-      monitor writeAP 1 $arg1
-      while $addr < $endAddr
-        monitor readAP 3
-        set $addr = $addr + 4
-      end
-    end
-    define ${CONF_WRITE_TRANSACTION_FUNCTION}
-      monitor writeDP 2 $arg0
-      monitor writeAP 0 0x80000012
-      monitor writeAP 1 $arg1
-      set $i = 2
-      while $i < $argc
-        eval "monitor writeAP 3 $arg%d", $i
-        set $i = $i + 1
-      end
-    end
-    define ${READ_DP_ID_FUNCTION}
-      monitor writeDP 8 0x00000000
-      monitor writeDP 0 0
-      monitor readDP 12
-    end`;
-
 /**
  * Provides a higher level interface than vscode.debug namespace
  * This is achieved mainly by providing CfsDebugSession instances
@@ -273,7 +234,7 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
   private running: boolean = false;
   private stopInfo: StopInfo | undefined = undefined;
   private evaluateOutputBuffer: string | undefined = undefined;
-  private isGDBScriptLoaded: boolean = false;
+  private gdbScriptLoadPromise: Promise<void> | undefined = undefined;
 
   /**
    * Whether the debugged program is currently executing.
@@ -398,34 +359,85 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
    * Ensures that the GDB script with AP read/write functions is loaded in the debug adapter.
    * This is necessary for AP read/write operations, which rely on custom monitor commands defined in the script.
    * The script is loaded only once per debug session.
-   * @param script - The GDB script content to load
    * @returns A promise that resolves when the script is loaded
    */
-  private async ensureGDBScriptIsLoaded(script: string): Promise<void> {
-    if (this.isGDBScriptLoaded) {
+  private async ensureGDBScriptIsLoaded(): Promise<void> {
+    // This was introduced to work around the fact that some debug adapters (e.g. cortex-debug with JLink)
+    // do not provide built-in DAP requests to read or write AP registers, but do allow custom monitor commands
+    // that can be used to perform DP-AP transactions. The script defines two monitor command sequences to perform
+    // read and write transactions on AP registers, as well as a command to read the DP ID register as a sanity
+    // check to confirm that the script is loaded correctly and that the monitor commands are working as expected.
+    // This script is loaded on demand when the first AP read/write operation is attempted, and only once per
+    // debug session. These commands are defined to maintain the atomicity of AP transactions, which is important
+    // to avoid issues caused by interleaved monitor commands from other operations. If another command interrupts
+    // the sequence of monitor commands required for an AP transaction, the transaction can fail, and the cause
+    // can be difficult to diagnose because the output of the monitor commands would be mixed with the output of
+    // other monitor commands or debug operations.
+    if (this.gdbScriptLoadPromise) {
+      await this.gdbScriptLoadPromise;
       return;
     }
+    const READ_DP_ID_FUNCTION = "readDPIDRegister";
+    const READWRITE_AP_FUNCTIONS_SCRIPT = `define ${CONF_READ_TRANSACTION_FUNCTION}
+      set $addr = $arg1
+      set $endAddr =  $arg1 + $arg2
+      monitor writeDP 2 $arg0
+      monitor writeAP 0 0x80000012
+      monitor writeAP 1 $arg1
+      while $addr < $endAddr
+        monitor readAP 3
+        set $addr = $addr + 4
+      end
+    end
+    define ${CONF_WRITE_TRANSACTION_FUNCTION}
+      monitor writeDP 2 $arg0
+      monitor writeAP 0 0x80000012
+      monitor writeAP 1 $arg1
+      set $i = 2
+      while $i < $argc
+        eval "monitor writeAP 3 $arg%d", $i
+        set $i = $i + 1
+      end
+    end
+    define ${READ_DP_ID_FUNCTION}
+      monitor writeDP 8 0x00000000
+      monitor writeDP 0 0
+      monitor readDP 12
+    end`;
 
-    const tempDir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), "gdb-script-"),
-    );
-    const tempFilePath = path.join(tempDir, "script.gdb");
-    const gdbPath = tempFilePath.replace(/\\/g, "/");
+    const loadFile = async () => {
+      const tempDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), "gdb-script-"),
+      );
+      const tempFilePath = path.join(tempDir, "script.gdb");
+      const gdbPath = tempFilePath.replace(/\\/g, "/");
 
-    try {
-      await fs.promises.writeFile(tempFilePath, script, {
-        encoding: "utf-8",
-        flag: "wx",
-      });
+      try {
+        await fs.promises.writeFile(
+          tempFilePath,
+          READWRITE_AP_FUNCTIONS_SCRIPT,
+          {
+            encoding: "utf-8",
+            flag: "wx",
+          },
+        );
 
-      await this.evaluateREPL(`source ${gdbPath}`);
-    } finally {
-      await fs.promises.rm(tempDir, { recursive: true, force: true });
-    }
+        await this.evaluateREPL(`source ${gdbPath}`);
+      } finally {
+        await fs.promises.rm(tempDir, { recursive: true, force: true });
+      }
 
-    await this.evaluateREPL(`${READ_DP_ID_FUNCTION}`, /O.K.:(0x[0-9a-fA-F]+)/);
+      await this.evaluateREPL(
+        `${READ_DP_ID_FUNCTION}`,
+        /O.K.:(0x[0-9a-fA-F]+)/,
+      );
+    };
 
-    this.isGDBScriptLoaded = true;
+    this.gdbScriptLoadPromise = loadFile().catch((err) => {
+      this.gdbScriptLoadPromise = undefined;
+      throw err;
+    });
+    await this.gdbScriptLoadPromise;
   }
   /**
    * Reads memory from an AP (Access Port).
@@ -473,7 +485,7 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
 
     // Ensure the GDB script with AP read/write functions is loaded,
     // to ensure the required monitor commands are available.
-    await this.ensureGDBScriptIsLoaded(READWRITE_AP_FUNCTIONS_SCRIPT);
+    await this.ensureGDBScriptIsLoaded();
 
     // 0xd00 is _CSW_REG_OFF DP reg to configure communication between the DP and AP.
     // eslint-disable-next-line no-bitwise
@@ -685,7 +697,7 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
 
     // Ensure the GDB script with AP read/write functions is loaded,
     // to ensure the required monitor commands are available.
-    await this.ensureGDBScriptIsLoaded(READWRITE_AP_FUNCTIONS_SCRIPT);
+    await this.ensureGDBScriptIsLoaded();
 
     // 0xd00 is _CSW_REG_OFF DP reg to configure comm between DP-AP
     // eslint-disable-next-line no-bitwise
@@ -764,7 +776,22 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
    * @returns A promise that resolves when the pause request is sent
    */
   async pause(threadId?: number): Promise<void> {
-    const tid = threadId ?? (await this.getThreadId());
+    let tid = threadId;
+
+    if (tid === undefined) {
+      try {
+        tid = await this.getThreadId();
+      } catch {
+        if (this.stopInfo?.threadId) {
+          tid = this.stopInfo.threadId;
+        } else {
+          throw new Error(
+            "Unable to determine a valid thread ID for pause request",
+          );
+        }
+      }
+    }
+
     await this.vscodeSession.customRequest("pause", { threadId: tid });
   }
 

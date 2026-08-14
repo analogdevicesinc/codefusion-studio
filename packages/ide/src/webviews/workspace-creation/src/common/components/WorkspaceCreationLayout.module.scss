@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@
 	padding: 16px;
 }
 
-:has(> .workspaceLayoutMainPanel) {
-	padding: layout.$spacing-9 layout.$spacing-9 0 layout.$spacing-9;
-}
-
 .workspaceLayoutMainPanel {
 	min-width: 400px;
 	max-width: 800px;
 	margin: 0 auto;
+	box-sizing: border-box;
+	padding: layout.$spacing-9 layout.$spacing-9 0 layout.$spacing-9;
 
 	.layoutHeader {
 		display: flex;

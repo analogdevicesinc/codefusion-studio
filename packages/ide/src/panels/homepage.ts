@@ -207,12 +207,14 @@ export class HomePagePanel {
     const scriptUri = getUri(webview, extensionUri, [
       "out",
       "home-page",
+      "assets",
       "index.js",
     ]);
 
     const stylesUri = getUri(webview, extensionUri, [
       "out",
       "home-page",
+      "assets",
       "index.css",
     ]);
     const nonce = getNonce();

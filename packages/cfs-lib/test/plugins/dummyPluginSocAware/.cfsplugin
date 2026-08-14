@@ -1,0 +1,49 @@
+{
+	"pluginName": "SoC-Aware Test Plugin",
+	"pluginId": "com.analog.test.soc.plugin",
+	"pluginDescription": "A dummy plugin for SoC/board/package resolution testing",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "1.0.0",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"supportedSocs": [
+		{
+			"name": "max32690",
+			"board": "EvKit_V1",
+			"package": "WLP",
+			"cores": ["CM4"]
+		},
+		{
+			"name": "max32655",
+			"board": "EvKit_V1",
+			"package": "WLP",
+			"cores": ["CM4"]
+		},
+		{
+			"name": "max32690",
+			"package": "BGA",
+			"cores": ["CM4"]
+		},
+		{
+			"name": "max32690",
+			"board": "EvKit_V1",
+			"package": "TQFN",
+			"cores": ["CM4"]
+		},
+		{
+			"name": "max32675c",
+			"package": "TQFN",
+			"cores": ["CM4"]
+		}
+	],
+	"features": {
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

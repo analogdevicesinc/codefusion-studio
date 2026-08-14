@@ -26,6 +26,7 @@ export type {
     Package,
     Resource,
     SWPackageRepo,
+    SWPackageRepoMetadata,
     SWPackageTag,
     SoC,
     SoCFamily,

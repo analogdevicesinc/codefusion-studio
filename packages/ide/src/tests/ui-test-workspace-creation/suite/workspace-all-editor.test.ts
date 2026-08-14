@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,9 +85,7 @@ describe("Editor Customization", () => {
     driver = browser.driver;
     editor = new EditorView();
 
-    await editor.closeAllEditors();
-
-    await UIUtils.sleep(3000);
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   it("Should restore the persisted workspace configuration from a *.cfsworkspace file @smoke", async () => {
@@ -112,18 +110,14 @@ describe("Editor Customization", () => {
       `Test parameters - Board ID: ${boardId}, Core ID: ${firstCoreId}`,
     );
 
-    console.log("Waiting for workspace to load (10 seconds)");
-    await UIUtils.sleep(10000);
     console.log("Closing all notifications");
     await closeAllNotifications();
 
     console.log("Creating WebView instance");
     const view = new WebView();
-    await UIUtils.sleep(10000);
     console.log("Switching to webview frame");
     await view.switchToFrame().then(async () => {
-      console.log("Waiting for DOM elements to load (10 seconds)");
-      await UIUtils.sleep(10000);
+      console.log("Waiting for DOM elements to load - finding expand button");
 
       console.log("expand all soc groups");
       const expandAllBtn = await UIUtils.findWebElement(
@@ -131,7 +125,6 @@ describe("Editor Customization", () => {
         By.css('[data-test="soc-selection:segmented-controls:expand"]'),
       );
       await UIUtils.clickElement(view, expandAllBtn);
-      await UIUtils.sleep(1000);
 
       console.log("SoC Selection Screen - Finding MAX32690 card");
       const mainSocCard = await UIUtils.findWebElement(
@@ -143,9 +136,6 @@ describe("Editor Customization", () => {
       console.log(`SoC card MAX32690 active state: ${isActive}`);
       expect(isActive).to.equal("true");
 
-      console.log("Waiting after SoC validation (5 seconds)");
-      await UIUtils.sleep(5000);
-
       console.log("Finding continue button");
       const continueBtn = await UIUtils.findWebElement(
         view,
@@ -154,7 +144,6 @@ describe("Editor Customization", () => {
 
       console.log("Closing any remaining notifications");
       await closeAllNotifications();
-      await UIUtils.sleep(10000);
 
       console.log("Clicking continue button to proceed to board selection");
       await UIUtils.clickElement(view, continueBtn);
@@ -195,13 +184,9 @@ describe("Editor Customization", () => {
       console.log(`Core card ${firstCoreId} active state: ${coreActive}`);
       expect(coreActive).to.equal("true");
 
-      console.log("Brief pause before proceeding (1 second)");
-      await UIUtils.sleep(1000);
-
       console.log("Proceeding to core details screen");
       await UIUtils.clickElement(view, continueBtn);
       console.log("Core Details Screen - Configuring first core");
-      await UIUtils.sleep(1000);
       console.log("Finding Zephyr plugin for first core");
       const firstCodeGenPluginZephyr = await UIUtils.findWebElement(
         view,
@@ -212,8 +197,6 @@ describe("Editor Customization", () => {
 
       console.log("Selecting Zephyr plugin for first core");
       await UIUtils.clickElement(view, firstCodeGenPluginZephyr);
-
-      await UIUtils.sleep(1000);
 
       console.log("Proceeding to second core configuration");
       await UIUtils.clickElement(view, continueBtn);
@@ -228,7 +211,6 @@ describe("Editor Customization", () => {
 
       console.log("Selecting MSDK plugin for second core");
       await UIUtils.clickElement(view, secondCodeGenPluginZephyr);
-      await UIUtils.sleep(1000);
 
       console.log("Proceeding to confirmation screen");
       await UIUtils.clickElement(view, continueBtn);
@@ -322,8 +304,6 @@ describe("Editor Customization", () => {
       await wb.wait();
       await wb.executeCommand("view: close all editors");
 
-      await UIUtils.sleep(1000);
-
       console.log("Handling save dialog - selecting Don't Save");
       const dialog = new ModalDialog();
       await dialog.pushButton("Don't Save");
@@ -358,8 +338,6 @@ describe("Editor Customization", () => {
         "persisted-sample.cfsworkspace",
       ),
     );
-    console.log("Waiting for workspace to load (10 seconds)");
-    await UIUtils.sleep(10000);
     console.log("Closing all notifications");
     await closeAllNotifications();
 
@@ -371,7 +349,6 @@ describe("Editor Customization", () => {
         By.css('[data-test="soc-selection:segmented-controls:expand"]'),
       );
       await UIUtils.clickElement(view, expandAllBtn);
-      await UIUtils.sleep(3000);
 
       console.log(`Finding main SoC card: ${mainSoC}`);
       const mainSocCard = await UIUtils.findWebElement(
@@ -394,14 +371,8 @@ describe("Editor Customization", () => {
       console.log(`Switching to ${secondarySoC} to test reset behavior`);
       await UIUtils.clickElement(view, newSelectedSocCard);
 
-      console.log("Waiting for SoC change to process (4 seconds)");
-      await UIUtils.sleep(4000);
-
       console.log(`Switching back to original SoC: ${mainSoC}`);
       await UIUtils.clickElement(view, mainSocCard);
-
-      console.log("Waiting for SoC change to complete (4 seconds)");
-      await UIUtils.sleep(4000);
 
       console.log("Finding continue button");
       const continueBtn = await UIUtils.findWebElement(
@@ -411,9 +382,6 @@ describe("Editor Customization", () => {
 
       console.log("Clicking continue button to proceed to board selection");
       await UIUtils.clickElement(view, continueBtn);
-
-      console.log("Waiting for board selection screen to load (5 seconds)");
-      await UIUtils.sleep(5000);
 
       console.log(`Finding previously selected board card: ${boardId}`);
       const selectedBoardCard = await UIUtils.findWebElement(
@@ -445,9 +413,6 @@ describe("Editor Customization", () => {
       console.log("Proceeding to workspace options");
       await UIUtils.clickElement(view, continueBtn);
 
-      console.log("Waiting for workspace options screen (5 seconds)");
-      await UIUtils.sleep(5000);
-
       console.log("Workspace Options Screen - Finding manual config card");
       const selectedWorkspaceCard = await UIUtils.findWebElement(
         view,
@@ -457,14 +422,8 @@ describe("Editor Customization", () => {
       console.log("Selecting manual configuration");
       await UIUtils.clickElement(view, selectedWorkspaceCard);
 
-      console.log("Waiting after workspace option selection (5 seconds)");
-      await UIUtils.sleep(5000);
-
       console.log("Proceeding to cores selection");
       await UIUtils.clickElement(view, continueBtn);
-
-      console.log("Waiting for cores selection screen (5 seconds)");
-      await UIUtils.sleep(5000);
 
       console.log(`Finding core card: ${firstCoreId}`);
       const firstSelectedCoreCard = await UIUtils.findWebElement(
@@ -489,7 +448,6 @@ describe("Editor Customization", () => {
       console.log("Closing all editors");
       await wb.executeCommand("view: close all editors");
 
-      console.log("Brief pause before dialog handling");
       await new Promise((res) => {
         setTimeout(res, 1000);
       });
@@ -520,14 +478,8 @@ describe("Editor Customization", () => {
       ),
     );
 
-    console.log("Waiting for workspace to load (10 seconds)");
-    await UIUtils.sleep(10000);
-
     console.log("Closing all notifications");
     await closeAllNotifications();
-
-    console.log("Additional wait for UI stabilization (10 seconds)");
-    await UIUtils.sleep(10000);
 
     console.log("Finding Show Source quick access button via XPath");
     const quickAccess = await driver.findElement(
@@ -552,7 +504,7 @@ describe("Editor Customization", () => {
       expect(openTitles).to.include("persisted-sample.cfsworkspace");
 
       console.log("Closing all editors");
-      await editor.closeAllEditors();
+      await new Workbench().executeCommand("workbench.action.closeAllEditors");
 
       console.log(
         "Test completed successfully: Should display Show Source quick access button",
@@ -576,23 +528,14 @@ describe("Editor Customization", () => {
       ),
     );
 
-    console.log("Waiting for workspace to load (10 seconds)");
-    await UIUtils.sleep(10000);
-
     console.log("Closing all notifications");
     await closeAllNotifications();
 
     console.log("Creating WebView instance");
     const view = new WebView();
 
-    console.log("Additional wait for WebView initialization (10 seconds)");
-    await UIUtils.sleep(10000);
-
     console.log("Switching to webview frame");
     await view.switchToFrame();
-
-    console.log("Waiting for DOM elements to stabilize (10 seconds)");
-    await UIUtils.sleep(10000);
 
     console.log("Finding continue button");
     const continueBtn = await UIUtils.findWebElement(
@@ -603,18 +546,10 @@ describe("Editor Customization", () => {
     console.log("Navigating through SoC selection screen");
     await UIUtils.clickElement(view, continueBtn);
 
-    console.log("Brief pause between screen transitions");
-    await UIUtils.sleep(1000);
-
     console.log(
       "Navigating through board selection to workspace options screen",
     );
     await UIUtils.clickElement(view, continueBtn);
-
-    console.log(
-      "Waiting for workspace options screen to fully load (10 seconds)",
-    );
-    await UIUtils.sleep(10000);
 
     console.log("Finding Zephyr Blinky template card");
     const selectedTemplateCard = await UIUtils.findWebElement(
@@ -628,20 +563,11 @@ describe("Editor Customization", () => {
       selectedTemplateCard,
     );
 
-    console.log("Brief pause after scrolling");
-    await UIUtils.sleep(500);
-
     console.log("Selecting Zephyr Blinky template");
     await UIUtils.clickElement(view, selectedTemplateCard);
 
-    console.log("Waiting after template selection");
-    await UIUtils.sleep(1000);
-
     console.log("Proceeding to confirmation screen");
     await UIUtils.clickElement(view, continueBtn);
-
-    console.log("Waiting for confirmation screen to load");
-    await UIUtils.sleep(1000);
 
     console.log("Finding Create Workspace button");
     const createWrkspBtn = await UIUtils.findWebElement(
@@ -658,18 +584,12 @@ describe("Editor Customization", () => {
     console.log("Initiating workspace creation process");
     await UIUtils.clickElement(view, createWrkspBtn);
 
-    console.log("Waiting for workspace generation to complete (20 seconds)");
-    await UIUtils.sleep(20000);
-
     console.log("Validating workspace file creation on disk");
     const workspaceFilePath = path.join(
       __dirname,
       "../../../../../ide/test/test-workspace-name/.cfs/.cfsworkspace",
     );
     console.log(`Expected workspace file path: ${workspaceFilePath}`);
-
-    console.log("Additional wait before file validation (5 seconds)");
-    await UIUtils.sleep(5000);
 
     console.log("Checking if workspace file exists");
     const fileExists = fs.existsSync(workspaceFilePath);
@@ -682,17 +602,11 @@ describe("Editor Customization", () => {
     );
     console.log(`Workspace file successfully created at: ${workspaceFilePath}`);
 
-    console.log("Brief pause before cleanup (5 seconds)");
-    await UIUtils.sleep(5000);
-
     console.log("Starting workspace cleanup process");
     cleanupWorkspace();
 
     console.log("Switching back from webview frame");
     await view.switchBack();
-
-    console.log("Waiting after frame switch (2 seconds)");
-    await UIUtils.sleep(2000);
 
     console.log("Closing all editors via Workbench");
     const wb = new Workbench();

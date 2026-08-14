@@ -383,6 +383,32 @@ export class UIUtils {
   ) {
     const driver = browser.driver;
 
+    // Races `action` against a timer. If `action` neither resolves nor
+    // rejects within `timeoutMs`, we stop waiting on it and move on instead
+    // of hanging forever.
+    const withTimeout = async <T>(
+      action: Promise<T>,
+      timeoutMs: number,
+      label: string,
+    ): Promise<T | undefined> => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          action,
+          new Promise<undefined>((resolve) => {
+            timer = setTimeout(() => {
+              console.log(`${label} timed out after ${timeoutMs}ms`);
+              resolve(undefined);
+            }, timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      }
+    };
+
     // Wait for notifications to be displayed
     try {
       await driver.wait(async () => {
@@ -396,11 +422,13 @@ export class UIUtils {
     await wb.getNotifications().then(async (notifications) => {
       await Promise.all(
         notifications.map(async (notification) => {
-          await new Promise((resolve) => {
-            notification.dismiss().then(() => {
-              resolve("closed");
-            });
-          });
+          await withTimeout(
+            notification.dismiss().catch((error) => {
+              console.log("Failed to dismiss notification:", error);
+            }),
+            3000,
+            "Notification dismiss",
+          );
         }),
       );
     });
@@ -412,7 +440,11 @@ export class UIUtils {
 
       // Dismisses the c extension toast notification
       if (cExtensionToast) {
-        await cExtensionToast.click();
+        await withTimeout(
+          cExtensionToast.click(),
+          2000,
+          "C Extension toast dismiss",
+        );
         console.log("C Extension toast dismissed");
       } else {
         console.log("No C Extension toast found");

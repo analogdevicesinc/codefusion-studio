@@ -23,6 +23,7 @@ import WarningIcon from '../icons/warning-icon';
 import styles from './inline-message.module.scss';
 
 type InlineMessageProps = Readonly<{
+	className?: string;
 	children?: ReactNode;
 	type?: 'info' | 'warning' | 'error' | 'success';
 	dataTest?: string;
@@ -40,12 +41,18 @@ const iconMap = {
 };
 
 export default function InlineMessage({
+	className,
 	children,
 	type = 'info',
 	dataTest
 }: InlineMessageProps) {
 	return (
-		<div className={styles.inlineMessage} data-test={dataTest}>
+		<div
+			className={
+				styles.inlineMessage + (className ? ` ${className}` : '')
+			}
+			data-test={dataTest}
+		>
 			<div className={styles.icon}>{iconMap[type]}</div>
 			<div className={styles.message}>{children}</div>
 		</div>

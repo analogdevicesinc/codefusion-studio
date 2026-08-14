@@ -13,7 +13,7 @@
  *
  */
 
-import {type CoreType} from 'cfs-ccm-lib';
+import type {CoreType} from 'cfs-ccm-api/rest-types';
 import type {CfsPluginInfo} from 'cfs-types';
 
 export type SoCFamily = {

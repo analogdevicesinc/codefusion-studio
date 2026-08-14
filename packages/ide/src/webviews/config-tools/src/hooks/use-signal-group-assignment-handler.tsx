@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import {
 	setSignalGroupAssignment,
 	setActivePeripheral
 } from '../state/slices/peripherals/peripherals.reducer';
-import {setMultiSignalConfig} from '../state/slices/pins/pins.reducer';
+import {
+	setAppliedSignal,
+	setMultiSignalConfig
+} from '../state/slices/pins/pins.reducer';
 import {usePinsByPeripheral} from '../state/slices/pins/pins.selector';
-import {useAppDispatch} from '../state/store';
+import {type AppDispatch, useAppDispatch} from '../state/store';
 import {getControlsForProjectIds} from '../utils/api';
 import {getIsExternallyManagedProject} from '../utils/config';
 import {computeInitialPinConfig} from '../utils/pin-reset-controls';
@@ -31,6 +34,39 @@ import {
 	computePeripheralResetValues,
 	getPeripheralSignals
 } from '../utils/soc-peripherals';
+
+/* Apply multiple signal assignments in a batch.
+ * Persistence applies the entire pin state at once, so only the final
+ * assignment triggers persistence to avoid race conditions.
+ */
+const applyMultiSignals = (
+	dispatch: AppDispatch,
+	{
+		peripheral,
+		pinAssignments
+	}: {
+		peripheral: string;
+		pinAssignments: Array<{
+			signalName: string;
+			pinId: string;
+			pinCfg: Record<string, string>;
+		}>;
+	}
+) => {
+	pinAssignments.forEach(({signalName, pinId, pinCfg}, index) => {
+		dispatch(
+			setAppliedSignal({
+				Pin: pinId,
+				Peripheral: peripheral,
+				Name: signalName,
+				PinCfg: pinCfg,
+				...(index < pinAssignments.length - 1
+					? {discardPersistence: true}
+					: {})
+			})
+		);
+	});
+};
 
 export function useSignalGroupAssignmentHandler(peripheral: string) {
 	const dispatch = useAppDispatch();
@@ -165,6 +201,47 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 					})
 				);
 			}
+
+			// Assign signals to pins
+			const signalsData = getPeripheralSignals(peripheral);
+
+			const signalsToPinAssign = peripheralSignals.flatMap(
+				signalName => {
+					const availablePins = signalsData[signalName]?.pins ?? [];
+					if (
+						availablePins.length !== 1 ||
+						signalsData[signalName]?.required !== '1'
+					)
+						return [];
+
+					const pinId = availablePins[0].Name;
+					const alreadyAssignedToPin = peripheralPins.some(
+						pin =>
+							pin.pinId === pinId &&
+							pin.appliedSignals.some(
+								(s: any) =>
+									s.Peripheral === peripheral && s.Name === signalName
+							)
+					);
+					if (alreadyAssignedToPin) return [];
+
+					return [{signalName, pinId}];
+				}
+			);
+
+			const pinAssignments = await Promise.all(
+				signalsToPinAssign.map(async ({signalName, pinId}) => {
+					const pinCfg = await computeInitialPinConfig({
+						Pin: pinId,
+						Peripheral: peripheral,
+						Signal: signalName,
+						ProjectId: projectId
+					});
+
+					return {signalName, pinId, pinCfg};
+				})
+			);
+			applyMultiSignals(dispatch, {peripheral, pinAssignments});
 
 			// Open the config sidebar after assignment
 			dispatch(setActivePeripheral(`${peripheral}:${projectId}`));

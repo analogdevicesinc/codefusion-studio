@@ -17,9 +17,12 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 import {
 	getListWidth,
-	getChartSnapshot,
-	setTransparentDragImage
+	getChartSnapshot
 } from '../utils/timeline-diagram';
+import {
+	TIMELINE_DRAG_ACTIVE,
+	TIMELINE_DRAG_OUTSIDE
+} from '../constants/timeline';
 
 import type {SevEventSource} from '../types/events';
 
@@ -32,6 +35,7 @@ type CardOverlay = Readonly<{
 	rowHeight: number;
 	name: string;
 	chartImageSrc?: string;
+	chartImageWidth: number;
 }>;
 
 type DragFinalizePayload = Readonly<{
@@ -46,7 +50,8 @@ const initial: CardOverlay = {
 	listWidth: 0,
 	rowHeight: 0,
 	name: '',
-	chartImageSrc: undefined
+	chartImageSrc: undefined,
+	chartImageWidth: 0
 };
 
 export function useFloatingCardOverlay(
@@ -76,22 +81,25 @@ export function useFloatingCardOverlay(
 	);
 
 	const setOutsideCursorClass = useCallback((isOutside: boolean) => {
-		document.body.classList.toggle(
-			'timeline-drag-outside',
-			isOutside
-		);
+		document.body.classList.toggle(TIMELINE_DRAG_OUTSIDE, isOutside);
 	}, []);
 
 	const cleanupListeners = useCallback(
 		(
-			handleWindowDragOver: (ev: DragEvent) => void,
-			handleWindowDrop: (ev: DragEvent) => void,
-			handleWindowDragEnd: (ev: DragEvent) => void,
+			handleWindowPointerMove: (ev: PointerEvent) => void,
+			handleWindowPointerUp: (ev: PointerEvent) => void,
+			handleWindowPointerCancel: () => void,
 			handleWindowBlur: () => void
 		) => {
-			window.removeEventListener('dragover', handleWindowDragOver);
-			window.removeEventListener('drop', handleWindowDrop);
-			window.removeEventListener('dragend', handleWindowDragEnd);
+			window.removeEventListener(
+				'pointermove',
+				handleWindowPointerMove
+			);
+			window.removeEventListener('pointerup', handleWindowPointerUp);
+			window.removeEventListener(
+				'pointercancel',
+				handleWindowPointerCancel
+			);
 			window.removeEventListener('blur', handleWindowBlur);
 		},
 		[]
@@ -99,17 +107,18 @@ export function useFloatingCardOverlay(
 
 	// Track pointer during drag
 	const beginDragOverlay = useCallback(
-		(evSource: SevEventSource, e: React.DragEvent) => {
+		(evSource: SevEventSource, e: PointerEvent) => {
 			if (!diagramContainerRef.current) return;
 
-			let pendingDragOverRafId: number | undefined;
+			let pendingRafId: number | undefined;
+			let latestClientY = e.clientY;
+
 			activeCancelRef.current?.();
 			activeCancelRef.current = undefined;
 			activeDragCleanupRef.current?.();
 			activeDragCleanupRef.current = undefined;
-			setTransparentDragImage(e);
 
-			const {canvasSrc, rowHeight} = getChartSnapshot(
+			const {canvasSrc, rowHeight, canvasWidth} = getChartSnapshot(
 				String(evSource.id)
 			);
 			const safeRowHeight = Math.max(rowHeight, 1);
@@ -127,28 +136,28 @@ export function useFloatingCardOverlay(
 				listWidth,
 				rowHeight: safeRowHeight,
 				name: evSource.name,
-				chartImageSrc: canvasSrc
+				chartImageSrc: canvasSrc,
+				chartImageWidth: canvasWidth
 			});
 
-			document.body.classList.add('timeline-drag-active');
+			document.body.classList.add(TIMELINE_DRAG_ACTIVE);
 			setOutsideCursorClass(
 				!isPointerInsideDiagram(e.clientX, e.clientY)
 			);
 
 			let didFinalize = false;
-			let didHandleDrop = false;
-			let handleWindowDragOver: (ev: DragEvent) => void = () =>
+			let handleWindowPointerMove: (ev: PointerEvent) => void = () =>
 				undefined;
-			let handleWindowDrop: (ev: DragEvent) => void = () => undefined;
-			let handleWindowDragEnd: (ev: DragEvent) => void = () =>
+			let handleWindowPointerUp: (ev: PointerEvent) => void = () =>
 				undefined;
+			let handleWindowPointerCancel: () => void = () => undefined;
 			let handleWindowBlur: () => void = () => undefined;
 
 			const cleanupActiveListeners = () => {
 				cleanupListeners(
-					handleWindowDragOver,
-					handleWindowDrop,
-					handleWindowDragEnd,
+					handleWindowPointerMove,
+					handleWindowPointerUp,
+					handleWindowPointerCancel,
 					handleWindowBlur
 				);
 
@@ -159,11 +168,11 @@ export function useFloatingCardOverlay(
 				activeCancelRef.current = undefined;
 			};
 
-			const cancelPendingDragOverRaf = () => {
-				if (pendingDragOverRafId === undefined) return;
+			const cancelPendingRaf = () => {
+				if (pendingRafId === undefined) return;
 
-				cancelAnimationFrame(pendingDragOverRafId);
-				pendingDragOverRafId = undefined;
+				cancelAnimationFrame(pendingRafId);
+				pendingRafId = undefined;
 			};
 
 			const finalizeDrag = (isInsideDiagram: boolean) => {
@@ -174,12 +183,12 @@ export function useFloatingCardOverlay(
 			};
 
 			const endDrag = () => {
-				cancelPendingDragOverRaf();
+				cancelPendingRaf();
 				setCardOverlay(prev => ({...prev, visible: false}));
 
 				document.body.classList.remove(
-					'timeline-drag-active',
-					'timeline-drag-outside'
+					TIMELINE_DRAG_ACTIVE,
+					TIMELINE_DRAG_OUTSIDE
 				);
 
 				cleanupActiveListeners();
@@ -193,39 +202,31 @@ export function useFloatingCardOverlay(
 			activeCancelRef.current = cancelDragSession;
 
 			// This is a high-frequency event, keep as cheap as possible
-			handleWindowDragOver = (ev: DragEvent) => {
-				ev.preventDefault();
-
+			handleWindowPointerMove = (ev: PointerEvent) => {
 				const isInsideDiagram = isPointerInsideDiagram(
 					ev.clientX,
 					ev.clientY
 				);
-
 				setOutsideCursorClass(!isInsideDiagram);
 
-				if (ev.dataTransfer) {
-					ev.dataTransfer.dropEffect = isInsideDiagram
-						? 'move'
-						: 'none';
-				}
+				latestClientY = ev.clientY;
 
-				pendingDragOverRafId = requestAnimationFrame(() => {
-					pendingDragOverRafId = undefined;
+				if (pendingRafId !== undefined) return;
+
+				pendingRafId = requestAnimationFrame(() => {
+					pendingRafId = undefined;
 
 					setCardOverlay(prev => {
-						if (!prev.visible || prev.y === ev.clientY) {
+						if (!prev.visible || prev.y === latestClientY) {
 							return prev;
 						}
 
-						return {...prev, y: ev.clientY};
+						return {...prev, y: latestClientY};
 					});
 				});
 			};
 
-			handleWindowDrop = (ev: DragEvent) => {
-				ev.preventDefault();
-				didHandleDrop = true;
-
+			handleWindowPointerUp = (ev: PointerEvent) => {
 				const isInsideDiagram = isPointerInsideDiagram(
 					ev.clientX,
 					ev.clientY
@@ -235,27 +236,24 @@ export function useFloatingCardOverlay(
 				endDrag();
 			};
 
-			handleWindowDragEnd = () => {
-				if (!didHandleDrop) {
-					finalizeDrag(false);
-				}
-
-				endDrag();
+			handleWindowPointerCancel = () => {
+				cancelDragSession();
 			};
 
 			handleWindowBlur = () => {
 				cancelDragSession();
 			};
 
-			window.addEventListener('dragover', handleWindowDragOver, {
-				passive: false
-			});
-			window.addEventListener('drop', handleWindowDrop, {
-				passive: false
-			});
-			window.addEventListener('dragend', handleWindowDragEnd, {
-				passive: false
-			});
+			window.addEventListener(
+				'pointermove',
+				handleWindowPointerMove,
+				{passive: true}
+			);
+			window.addEventListener('pointerup', handleWindowPointerUp);
+			window.addEventListener(
+				'pointercancel',
+				handleWindowPointerCancel
+			);
 			window.addEventListener('blur', handleWindowBlur);
 
 			activeDragCleanupRef.current = cleanupActiveListeners;
@@ -277,8 +275,8 @@ export function useFloatingCardOverlay(
 			activeDragCleanupRef.current = undefined;
 
 			document.body.classList.remove(
-				'timeline-drag-active',
-				'timeline-drag-outside'
+				TIMELINE_DRAG_ACTIVE,
+				TIMELINE_DRAG_OUTSIDE
 			);
 		},
 		[]

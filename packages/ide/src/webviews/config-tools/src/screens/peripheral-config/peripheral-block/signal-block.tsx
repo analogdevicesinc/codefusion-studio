@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,17 +76,21 @@ function SignalBlock({
 	}, [dispatch, peripheralName, signal.name]);
 
 	return (
-		<AssignableItem
-			name={signal.name}
-			isSelected={isSelected}
-			isHighlighted={isHighlighted}
-			allocatedProjectId={allocatedProjectId}
-			className={styles.signalItem}
-			isAssignmentEnabled={isAssignmentEnabled}
-			onConfigure={handleSignalConfigure}
-			onDelete={handleSignalDelete}
-			onAllocate={handleSignalAllocate}
-		/>
+		// NOTE AssignableItem expects "peripheral" in id, as it's used for tooltip positioning.
+		<div id={`peripheral-${signal.name}`}>
+			<AssignableItem
+				name={signal.name}
+				description={signal.description}
+				isSelected={isSelected}
+				isHighlighted={isHighlighted}
+				allocatedProjectId={allocatedProjectId}
+				className={styles.signalItem}
+				isAssignmentEnabled={isAssignmentEnabled}
+				onConfigure={handleSignalConfigure}
+				onDelete={handleSignalDelete}
+				onAllocate={handleSignalAllocate}
+			/>
+		</div>
 	);
 }
 

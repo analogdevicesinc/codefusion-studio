@@ -1,0 +1,37 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.warningContainer {
+	display: flex;
+	padding: layout.$spacing-3;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+	flex-shrink: 0;
+	border-radius: layout.$border-radius-1;
+	border: layout.$border-width-1 solid
+		colors.$notification-toast-border;
+	background: colors.$notifications-background;
+}
+
+.warningText {
+	flex: 1 0 0;
+	color: colors.$notifications-foreground;
+	@include fonts.body-b2;
+}

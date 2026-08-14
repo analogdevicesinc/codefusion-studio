@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,9 @@
  *
  */
 
-import type {CodeGenerationFailure} from 'cfs-lib/dist/types/code-generation';
 import styles from './FileItem.module.scss';
 
-export default function FileItem({
-	item
-}: Readonly<{item: string | CodeGenerationFailure}>) {
-	const itemLabel = typeof item === 'string' ? item : item.name;
-
+export default function FileItem({item}: Readonly<{item: string}>) {
 	return (
 		<li className={styles.itemContainer}>
 			<span className={styles.generating}>Generating</span>
@@ -28,19 +23,13 @@ export default function FileItem({
 			<span
 				data-test='generated-files:file'
 				className={styles.fileName}
-				title={itemLabel}
+				title={item}
 			>
-				{itemLabel}
+				{item}
 			</span>
 			<span className={styles.loading} />
 
-			{typeof item === 'string' ? (
-				<span className={styles.done}>OK</span>
-			) : (
-				<span className={styles.error} title={item.error}>
-					Error
-				</span>
-			)}
+			<span className={styles.done}>OK</span>
 		</li>
 	);
 }

@@ -113,3 +113,10 @@ $default-font-weight: var(--vscode-editor-font-weight, 400);
 	font-weight: 400;
 	line-height: 18px;
 }
+
+@mixin markdown-h6 {
+	font-size: 9px;
+	font-style: normal;
+	font-weight: 400;
+	line-height: 120%; /* 10.8px */
+}

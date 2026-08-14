@@ -1,0 +1,53 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+
+$point-handle-size: 18px;
+$point-inner-size: 12px;
+$point-middle-size: 8px;
+
+.markerPointContainer {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	z-index: 2;
+
+	.handle {
+		width: $point-handle-size;
+		height: $point-handle-size;
+		border-radius: 50%;
+		background: colors.$button-primary-hover-background;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.inner {
+			width: $point-inner-size;
+			height: $point-inner-size;
+			border-radius: 50%;
+			background: colors.$editor-widget-background;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			.middle {
+				width: $point-middle-size;
+				height: $point-middle-size;
+				border-radius: 50%;
+				background: colors.$button-primary-hover-background;
+			}
+		}
+	}
+}

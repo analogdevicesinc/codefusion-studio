@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@ import {use} from 'cfs-react-library';
 import FileItem from '../file-item/FileItem';
 import {memo} from 'react';
 import styles from './GeneratedFile.module.scss';
-import type {CodeGenerationResult} from 'cfs-lib/dist/types/code-generation';
 
 function GeneratedFiles({
 	promise
 }: Readonly<{
-	promise: Promise<CodeGenerationResult | string>;
+	promise: Promise<string[] | string>;
 }>) {
 	const generatedCodeFiles = use(promise);
 
@@ -44,10 +43,7 @@ function GeneratedFiles({
 				? generatedCodeFiles
 				: []
 			).map(item => (
-				<FileItem
-					key={typeof item === 'string' ? item : item.name}
-					item={item}
-				/>
+				<FileItem key={item} item={item} />
 			))}
 		</ul>
 	);

@@ -16,7 +16,11 @@
 import type {Task} from 'cfs-types';
 
 import {Args, Command, Flags} from '@oclif/core';
-import {CfsShellEnvProvider, checkIfFileExists} from 'cfs-lib';
+import {
+  CfsShellEnvProvider,
+  checkIfFileExists,
+  convertTrace
+} from 'cfs-lib';
 import {spawn} from 'node:child_process';
 import {type WriteStream, createWriteStream} from 'node:fs';
 import path from 'node:path';
@@ -473,28 +477,15 @@ export default class Run extends Command {
       ctfFile,
       zephyrTraceFile
     } = params;
-    const envFile =
-      process.platform === 'win32'
-        ? 'zephyr-env.cmd'
-        : 'zephyr-env.sh';
 
-    // ZEPHYR_BASE needs to be set so we can source the zephyr-env script
+    // ZEPHYR_BASE needs to be set for the conversion to resolve the Zephyr tooling.
     if (!taskEnv.ZEPHYR_BASE) {
       this.error(
         'Zephyr base directory is not set. Please set the ZEPHYR_BASE environment variable.'
       );
     }
 
-    const zephyrEnvPath = path.join(taskEnv.ZEPHYR_BASE, envFile);
-
-    // Construct the command: execute zephyr-env.sh and west zpl-prepare-trace <zephyrTraceFile>
     const cwd = options?.cwd ?? workspacePath;
-    const shell =
-      process.platform === 'win32'
-        ? (process.env.COMSPEC ?? 'cmd.exe')
-        : '/bin/bash';
-    const shellArgs =
-      process.platform === 'win32' ? ['/d', '/c'] : ['-c'];
 
     const buildDir = path.resolve(workspacePath, 'build');
     const zephyrElfPath = path.resolve(
@@ -518,89 +509,42 @@ export default class Run extends Command {
       );
     }
 
-    const buildDirArg = buildDirExists
-      ? ` --build-dir "${buildDir}"`
-      : '';
-    const zephyrElfArg = zephyrElfExists
-      ? ` --zephyr-elf-path "${zephyrElfPath}"`
-      : '';
+    this.log(
+      `Performing post-processing of the .ctf file. This may take a few moments...`
+    );
 
-    const westArgs = `west zpl-prepare-trace "${ctfFile}" -o "${zephyrTraceFile}"${buildDirArg}${zephyrElfArg}`;
-    const command =
-      process.platform === 'win32'
-        ? `call "${zephyrEnvPath}" && ${westArgs}`
-        : `source "${zephyrEnvPath}" && ${westArgs}`;
-
-    const cppFiltPath = taskEnv.ZEPHYR_SDK_INSTALL_DIR
-      ? path.join(
-          taskEnv.ZEPHYR_SDK_INSTALL_DIR,
-          'arm-zephyr-eabi',
-          'bin',
-          process.platform === 'win32'
-            ? 'arm-zephyr-eabi-c++filt.exe'
-            : 'arm-zephyr-eabi-c++filt'
-        )
-      : undefined;
-
-    const spawnEnv = {...process.env, ...taskEnv};
-    if (checkIfFileExists(cppFiltPath)) {
-      spawnEnv.ZPL_DEMANGLE_CMD = cppFiltPath;
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      let stderrOutput = '';
-
-      this.log(
-        `Performing post-processing of the .ctf file. This may take a few moments...`
-      );
-
-      const child = spawn(shell, [...shellArgs, command], {
+    try {
+      await convertTrace(ctfFile, taskEnv, {
         cwd,
-        env: spawnEnv,
-        stdio: verbose ? 'inherit' : ['ignore', 'pipe', 'pipe'],
-        windowsVerbatimArguments:
-          process.platform === 'win32' &&
-          path.basename(shell).toLowerCase() === 'cmd.exe'
+        outputPath: zephyrTraceFile,
+        ...(buildDirExists && {buildDir}),
+        ...(zephyrElfExists && {zephyrElfPath}),
+        ...(verbose && {
+          onStdout: (chunk: string) => process.stdout.write(chunk),
+          onStderr: (chunk: string) => process.stderr.write(chunk)
+        })
       });
+    } catch (error) {
+      const stderrOutput =
+        error instanceof Error &&
+        'stderr' in error &&
+        typeof error.stderr === 'string'
+          ? error.stderr
+          : '';
 
-      if (!verbose) {
-        child.stdout?.on('data', () => {
-          // Drain stdout without printing in non-verbose mode.
-        });
+      if (!verbose && stderrOutput.trim()) {
+        this.log('Post-processing error output:');
+        this.log(stderrOutput.trim());
       }
 
-      child.stderr?.on('data', (chunk) => {
-        stderrOutput += chunk.toString();
-      });
+      throw new Error(
+        `Post-processing failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
 
-      child.on('error', (err) => {
-        reject(
-          new Error(
-            `Failed to spawn post-processing process: ${err.message}`
-          )
-        );
-      });
-
-      child.on('close', (code: null | number) => {
-        if (code === 0) {
-          this.log(
-            `Zephyr output post-processing completed successfully and stored in ${zephyrTraceFile}.`
-          );
-          resolve();
-        } else {
-          if (!verbose && stderrOutput.trim()) {
-            this.log('Post-processing error output:');
-            this.log(stderrOutput.trim());
-          }
-
-          reject(
-            new Error(
-              `Post-processing failed with exit code ${code ?? 1}`
-            )
-          );
-        }
-      });
-    });
+    this.log(
+      `Zephyr output post-processing completed successfully and stored in ${zephyrTraceFile}.`
+    );
   }
 
   /**

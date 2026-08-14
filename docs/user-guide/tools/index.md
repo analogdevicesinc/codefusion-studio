@@ -1,7 +1,7 @@
 ---
 description: Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2025-08-29
+date: 2026-07-15
 ---
 
 # System Planner Configuration Tools
@@ -14,7 +14,7 @@ CodeFusion Studio (CFS) provides a dashboard for the System Planner Configuratio
 To open the System Planner Configuration Tools dashboard:
 
 - Click the appropriate `.cfsconfig` file in your workspace, or:
-- Go to **Config Tools > Open Config File** on the CFS Home page to open the Config Tool.
+- Select **Config Tools > Open Config File** from the **Home** section of the CFS sidebar.
 
 !!! tip
     For information on creating a new workspace, see [Create a new workspace](../workspaces/create-new-workspace.md) or enter **cfs.createWorkspace** in the command palette.

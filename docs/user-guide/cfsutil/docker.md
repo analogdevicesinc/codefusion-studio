@@ -1,12 +1,12 @@
 ---
 description: CFSUtil - Docker
 author: Analog Devices
-date: 2026-05-05
+date: 2026-07-27
 ---
 
 # Docker
 
-The CLI can be used to pull Docker images from the Analog Devices registry. Credentials from your myAnalog account will be used for authentication if you are logged in. See [myAnalog authentication](./myanalog-auth.md) for more information on myAnalog authentication.
+The CLI can be used to pull Docker images from the Analog Devices registry. If you are logged in to myAnalog or have set the `CFS_API_KEY` environment variable with a valid API key, your credentials are used for authentication. See [myAnalog authentication](./myanalog-auth.md) and [API key authentication](./apikey-auth.md) for more information.
 
 ## Requirements
 

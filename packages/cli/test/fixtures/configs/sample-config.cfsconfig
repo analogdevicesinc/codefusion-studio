@@ -1,0 +1,39 @@
+{
+  "Copyright": "Test configuration",
+  "DataModelVersion": "1.1.44",
+  "DataModelSchemaVersion": "1.1.0",
+  "Soc": "ai_single_core",
+  "Pins": [],
+  "ClockNodes": [],
+  "Timestamp": "2026-01-15T10:30:00.000Z",
+  "Package": "wlp",
+  "BoardName": "Test Board",
+  "Projects": [
+    {
+      "CoreId": "CM4",
+      "ProjectId": "test-project",
+      "PlatformConfig": {
+        "ProjectName": "test-project"
+      },
+      "FirmwarePlatform": "cfsai",
+      "ExternallyManaged": false,
+      "Partitions": [],
+      "Peripherals": [],
+      "PluginId": "cfsai",
+      "PluginVersion": "0.0.0",
+      "AIModels": [
+        {
+          "Name": "test-model",
+          "Files": {
+            "Model": "test-model.tflite"
+          },
+          "OutDir": ".",
+          "Target": {
+            "Core": "CM4"
+          },
+          "Enabled": true
+        }
+      ]
+    }
+  ]
+}

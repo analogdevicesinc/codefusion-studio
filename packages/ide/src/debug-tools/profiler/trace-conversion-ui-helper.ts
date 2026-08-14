@@ -14,8 +14,7 @@
  */
 import * as vscode from "vscode";
 import { getWorkspaceRoot } from "../../utils/utils";
-import { convertTrace, TraceConversionOptions } from "./trace-conversion-service";
-import { Recording } from "./recording";
+import { convertTrace, Recording, TraceConversionOptions } from "cfs-lib";
 import { IDEShellEnvProvider } from "../../toolchains/shell-env-provider";
 import path from "node:path";
 
@@ -35,11 +34,16 @@ export async function startTraceConversion(
       try {
         const workspaceRoot = getWorkspaceRoot() ?? "";
 
+        const environment = await shellEnvProvider.getShellEnvironment();
+        if (!environment) {
+          throw new Error("Failed to get shell environment.");
+        }
+
         const files = await Promise.all(
           recording.capturedFiles.map((file) =>
             convertTrace(
               file,
-              shellEnvProvider,
+              environment,
               options && {
                 buildDir: options.buildDir && (path.isAbsolute(options.buildDir)
                   ? options.buildDir

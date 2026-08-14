@@ -17,6 +17,7 @@ import * as fg from "fast-glob";
 import * as path from "path";
 import * as vscode from "vscode";
 import { tmpdir } from "os";
+import { logger } from "./logger";
 
 import {
   SELECT_CMSIS_PACK_COMMAND_ID,
@@ -883,4 +884,47 @@ export function getWorkspaceRoot(): string | undefined {
   return vscode.workspace.workspaceFile
     ? path.dirname(vscode.workspace.workspaceFile?.fsPath)
     : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+}
+
+/**
+ * Reads the SoC, package, board, creation timestamp, and project count for
+ * the current CFS workspace from the `.cfsworkspace` file located in the
+ * `.cfs` workspace folder.
+ * @returns The soc, package, board, timestamp and projectCount, or an empty object if unavailable.
+ */
+export async function getWorkspaceSocInfo(): Promise<{
+  soc?: string;
+  package?: string;
+  board?: string;
+  projectCount?: number;
+}> {
+  const cfsFolder = vscode.workspace.workspaceFolders?.find(
+    (folder) => folder.name === ".cfs",
+  );
+  if (!cfsFolder) {
+    return {};
+  }
+
+  try {
+    const workspaceFileUri = vscode.Uri.joinPath(
+      cfsFolder.uri,
+      ".cfsworkspace",
+    );
+    const fileContent = await vscode.workspace.fs.readFile(workspaceFileUri);
+    const workspaceConfig = JSON.parse(
+      Buffer.from(fileContent).toString("utf8"),
+    );
+
+    return {
+      soc: workspaceConfig.Soc,
+      package: workspaceConfig.Package,
+      board: workspaceConfig.Board,
+      projectCount: Array.isArray(workspaceConfig.Projects)
+        ? workspaceConfig.Projects.length
+        : undefined,
+    };
+  } catch (error) {
+    logger.warn(`Failed to read workspace SoC info: ${error}`);
+    return {};
+  }
 }

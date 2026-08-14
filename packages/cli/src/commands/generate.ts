@@ -14,18 +14,20 @@
  */
 import type {CfsConfig} from 'cfs-types';
 
-import {Command, Flags} from '@oclif/core';
-import {getAiToolsPlugin, parseAICodegenEvents} from 'cfs-lib';
+import {Flags} from '@oclif/core';
+import {getAiToolsPlugin} from 'cfs-lib';
 import {promises as fsp} from 'node:fs';
-import path from 'node:path';
 
+import {getApiClient} from '../utils/api-client.js';
+import {BaseCommand} from '../utils/base-command.js';
 import {getDataModelManager} from '../utils/data-model-manager.js';
 import {getPackageManager} from '../utils/package-manager.js';
 import {getPluginManager} from '../utils/plugin-manager.js';
-import {getAuthConfig} from '../utils/session-manager.js';
-import {getVersionFromConfig} from '../utils/utils.js';
+import {getCfsaiPath, getVersionFromConfig} from '../utils/utils.js';
 
-export default class PinconfigGenerate extends Command {
+export default class PinconfigGenerate extends BaseCommand<
+  typeof PinconfigGenerate
+> {
   static description =
     'Generate source code from the provided .cfsconfig file.';
 
@@ -113,9 +115,15 @@ export default class PinconfigGenerate extends Command {
       isPinUsed[pin.Pin] = true;
     }
 
-    const packageManager = await getPackageManager({
-      acceptUndefined: true
-    });
+    const apiClient = await getApiClient({optional: true}, this);
+
+    const packageManager = await getPackageManager(
+      {
+        acceptUndefined: true
+      },
+      apiClient,
+      this
+    );
 
     const dmManager = await getDataModelManager(
       this.config,
@@ -156,40 +164,28 @@ export default class PinconfigGenerate extends Command {
       throw new Error(`Failed to generate the files.\n${error}`);
     }
 
-    // TODO change to use the Package Manager later on when cfsai is available as a package
-    const cfsaiPath = path.resolve('../../Tools/cfsai');
-
-    const aiPlugin = getAiToolsPlugin(
-      cfsaiPath,
-      getVersionFromConfig(this.config)
-    );
     if (
       configdata.Projects.some(
         (p) => p.AIModels && p.AIModels.length > 0
       )
     ) {
-      const authConfig = getAuthConfig();
-      const commandOutput = await aiPlugin.generateFromConfig(
+      const cfsaiPath = await getCfsaiPath(this.config);
+
+      const aiPlugin = getAiToolsPlugin(
+        cfsaiPath,
+        getVersionFromConfig(this.config)
+      );
+
+      const result = await aiPlugin.generateFromConfig(
         configdata,
         soc,
         flags.output,
-        authConfig
+        apiClient
       );
 
-      const combined = [
-        ...commandOutput.stdout,
-        ...commandOutput.stderr
-      ];
-
-      const aiFiles = parseAICodegenEvents(combined.join(''))
-        .filter(
-          (evt) =>
-            evt.event?.type === 'FILE' && evt.event.status === 'OK'
-        )
-        .map((evt) => evt.event?.value)
-        .filter((value) => value !== undefined);
-
-      generatedFiles.push(...aiFiles);
+      for (const file of result?.artifacts?.files ?? []) {
+        generatedFiles.push(file);
+      }
     }
 
     if (!generatedFiles) {

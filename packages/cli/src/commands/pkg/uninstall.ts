@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,12 @@ import {
   validatePackageName
 } from '../../utils/package-manager.js';
 
+export const pkgUninstallDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
+
 export default class CfsPackageUninstall extends Command {
   static args = {
     name: Args.string({
@@ -34,7 +40,7 @@ export default class CfsPackageUninstall extends Command {
     'Uninstall a package. Package will remain stored on local cache so it can be used again without triggering another download.';
 
   async run(): Promise<void> {
-    const packman = await getPackageManager();
+    const packman = await pkgUninstallDeps.getPackageManager();
     const {args} = await this.parse(CfsPackageUninstall);
 
     validatePackageName(args.name);

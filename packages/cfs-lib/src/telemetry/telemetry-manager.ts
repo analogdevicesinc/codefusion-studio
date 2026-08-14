@@ -24,6 +24,11 @@ import {
 	TELEMETRY_APP_ID,
 	TELEMETRY_URL
 } from "./telemetry-credentials.js";
+import {
+	formatTelemetryLog,
+	getTelemetryLogger
+} from "./telemetry-logger.js";
+import { getHostPlatform } from "../utils/node-utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,9 +49,12 @@ export class TelemetryManager {
 	private userId: string;
 	private userType: UserType;
 	private sessionId: string;
+	private workspaceId?: string;
 	// checks .env for local development, if not found uses values injected during build
-	private telemetryUrl = process.env.CFS_TELEMETRY_URL ?? TELEMETRY_URL;
-	private telemetryAppId = process.env.CFS_TELEMETRY_APP_ID ?? TELEMETRY_APP_ID;
+	private telemetryUrl =
+		process.env.CFS_TELEMETRY_URL ?? TELEMETRY_URL;
+	private telemetryAppId =
+		process.env.CFS_TELEMETRY_APP_ID ?? TELEMETRY_APP_ID;
 
 	constructor(
 		hasUserOptedIn: boolean,
@@ -54,7 +62,8 @@ export class TelemetryManager {
 		vscodeVersion: string,
 		userId: string,
 		userType: UserType,
-		sessionId: string
+		sessionId: string,
+		workspaceId?: string
 	) {
 		this.hasUserOptedIn = hasUserOptedIn;
 		this.cfsVersion = cfsVersion;
@@ -62,29 +71,48 @@ export class TelemetryManager {
 		this.userId = userId;
 		this.userType = userType;
 		this.sessionId = sessionId;
+		this.workspaceId = workspaceId;
 	}
 
 	getTelemetryAppId = (): string => {
 		return this.telemetryAppId;
 	};
 
-	logAction = async (action: string, metadata: object) => {
+	logAction = async (
+		action: string,
+		metadata: Record<string, unknown>
+	) => {
+		const logger = getTelemetryLogger();
 		if (this.telemetryAppId) {
 			const request = this.buildSingleRequestBody(action, metadata);
+
+			if (this.shouldSendTelemetry()) {
+				logger?.info(formatTelemetryLog(action, metadata));
+			}
+
 			return this.sendRequest(request);
 		} else {
-			console.error("Telemetry App ID is not set.");
+			logger?.warn("[Telemetry] Telemetry App ID is not set.");
 		}
 	};
 
 	logActions = async (
-		actions: { action: string; metadata: object }[]
+		actions: { action: string; metadata: Record<string, unknown> }[]
 	) => {
-		if (this.telemetryAppId) {
+		const logger = getTelemetryLogger();
+		if (this.telemetryAppId && actions.length > 0) {
 			const request = this.buildMultipleRequestsBody(actions);
+			if (logger && this.shouldSendTelemetry()) {
+				actions.forEach(({ action, metadata }) => {
+					logger.info(formatTelemetryLog(action, metadata));
+				});
+			}
+
 			return this.sendRequest(request);
+		} else if (actions.length === 0) {
+			logger?.debug("[Telemetry] No telemetry actions to send.");
 		} else {
-			console.error("Telemetry App ID is not set.");
+			logger?.warn("[Telemetry] Telemetry App ID is not set.");
 		}
 	};
 
@@ -92,16 +120,25 @@ export class TelemetryManager {
 		this.hasUserOptedIn = hasUserOptedIn;
 	};
 
+	private shouldSendTelemetry = (): boolean => {
+		return (
+			this.hasUserOptedIn &&
+			!!this.telemetryUrl &&
+			!!this.telemetryAppId
+		);
+	};
+
 	private sendRequest = async (
 		requestBody: SingleTelemetryMessage | MultipleTelemetryMessages
 	): Promise<Response | undefined> => {
-		if (this.hasUserOptedIn && this.telemetryUrl) {
+		if (this.shouldSendTelemetry()) {
 			return fetch(this.telemetryUrl, {
 				body: JSON.stringify(requestBody),
 				method: "POST",
 				headers: { "Content-Type": "application/json" }
 			}).catch((error: unknown) => {
-				console.error("Telemetry request failed:", error);
+				const logger = getTelemetryLogger();
+				logger?.warn("[Telemetry] Telemetry request failed:", error);
 				return undefined;
 			});
 		}
@@ -110,7 +147,7 @@ export class TelemetryManager {
 
 	private buildSingleRequestBody(
 		action: string,
-		metadata: object
+		metadata: Record<string, unknown>
 	): SingleTelemetryMessage {
 		return {
 			appId: this.telemetryAppId,
@@ -125,7 +162,7 @@ export class TelemetryManager {
 	}
 
 	private buildMultipleRequestsBody = (
-		actions: { action: string; metadata: object }[]
+		actions: { action: string; metadata: Record<string, unknown> }[]
 	): MultipleTelemetryMessages => {
 		return {
 			appId: this.telemetryAppId,
@@ -141,14 +178,18 @@ export class TelemetryManager {
 		};
 	};
 
-	private createMetadataObj(metadata: object) {
+	private createMetadataObj(
+		metadata: Record<string, unknown>
+	): Record<string, unknown> {
 		return {
 			...metadata,
 			cfsVersion: this.cfsVersion,
 			vscodeVersion: this.vscodeVersion,
 			userId: this.userId,
 			userType: this.userType,
-			sessionId: this.sessionId
+			sessionId: this.sessionId,
+			workspaceId: this.workspaceId,
+			hostOS: getHostPlatform()
 		};
 	}
 }

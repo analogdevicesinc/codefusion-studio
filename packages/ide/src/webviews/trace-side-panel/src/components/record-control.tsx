@@ -34,11 +34,16 @@ import {
 type Props = {
 	readonly configuration: TraceConfiguration;
 	readonly recordingState: TraceRecordingState;
+	// The configured USB device's label (e.g. "0456:aa55, Bus 001,
+	// Device 012"), matching what the configuration UI's dropdown
+	// shows for it. Undefined while the device list hasn't loaded yet.
+	readonly usbDeviceLabel?: string;
 };
 
 export default function RecordControl({
 	configuration,
-	recordingState
+	recordingState,
+	usbDeviceLabel
 }: Props) {
 	const messenger = useMessenger();
 	const l10n = useLocaleContext()?.sidePanel;
@@ -92,7 +97,7 @@ export default function RecordControl({
 						<LocalizedMessage
 							id='sidePanel.configurationFor'
 							params={{
-								source: configuration.interfaceType.toUpperCase()
+								source: configuration.source.type.toUpperCase()
 							}}
 						/>
 					</span>
@@ -113,15 +118,24 @@ export default function RecordControl({
 					</Tooltip>
 				</div>
 
-				<div className={styles.entry}>
-					<span>{l10n?.serialPort}:</span>
-					<span>{configuration?.serialPort.trim()}</span>
-				</div>
+				{configuration.source.type === 'uart' ? (
+					<>
+						<div className={styles.entry}>
+							<span>{l10n?.serialPort}:</span>
+							<span>{configuration.source.serialPort.trim()}</span>
+						</div>
 
-				<div className={styles.entry}>
-					<span>{l10n?.baudRate}:</span>
-					<span>{configuration?.baudRate}</span>
-				</div>
+						<div className={styles.entry}>
+							<span>{l10n?.baudRate}:</span>
+							<span>{configuration.source.baudRate}</span>
+						</div>
+					</>
+				) : (
+					<div className={styles.entry}>
+						<span>{l10n?.usbDevice}:</span>
+						<span>{usbDeviceLabel ?? '-'}</span>
+					</div>
+				)}
 
 				<div className={styles.entry}>
 					<span className={styles.label}>{l10n?.output}:</span>

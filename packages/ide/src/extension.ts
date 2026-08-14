@@ -48,6 +48,7 @@ import {
   SELECT_ZEPHYR_WORKSPACE,
   LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
   QUICK_ACCESS_TREE_VIEW_ID,
+  QUICK_ACCESS_ITEM_INVOKED_COMMAND_ID,
   RUN_JLINK_FLASH_TASK_COMMAND_ID,
   DEVICE_TREE_VIEW_ID,
   CONTEXT_VIEW_ID,
@@ -87,7 +88,8 @@ import {
 } from "./configurations/configureWorkspace";
 import { HomePagePanel } from "./panels/homepage";
 import * as msdk from "./toolchains/msdk/msdk";
-import { Utils } from "./utils/utils";
+import { Utils, getWorkspaceSocInfo } from "./utils/utils";
+import { logger } from "./utils/logger";
 import {
   ActionsViewProvider,
   QuickAccessProvider,
@@ -95,7 +97,7 @@ import {
   ViewContainerItem,
   ContextPanelProvider,
 } from "./view-container";
-import { extractSessionId } from "./utils/utils";
+import { extractSessionId, getWorkspaceRoot } from "./utils/utils";
 import {
   ADI_CONFIGURE_WORKSPACE_SETTING,
   BOARD,
@@ -150,7 +152,7 @@ import type {
   CfsPackageLicenseReporter,
   CfsPackageManagerProvider,
   CfsPackageReference,
-  CfsPackageRemoteCredentialProvider,
+  CfsPackageRemotesProvider,
 } from "cfs-package-manager";
 import { ConanPkgManager, MANIFEST_FILE_NAME } from "cfs-package-manager";
 import { registerPackageManagerCommands } from "./commands/package-manager";
@@ -159,7 +161,11 @@ import { handleTelemetryNotification } from "./utils/notifications";
 import { registerCoreDumpCommands } from "./debug-tools/core-dump-analysis/commands/register-core-dump-commands";
 import { openWithSSPlusCommand } from "./commands/sigma-studio-plus";
 import { SigmaStudioPlusProjectEditor } from "./custom-editors/sigma-studio-plus-project-editor";
-import { CfsDataModelManager, CfsToolManager } from "cfs-lib";
+import {
+  CfsDataModelManager,
+  CfsToolManager,
+  setTelemetryLogger,
+} from "cfs-lib";
 import { resolveVariables } from "./utils/resolveVariables";
 import { registerGDBToolboxValidator } from "./debug-tools/gdb-toolbox/scripts/config-validator";
 import * as fg from "fast-glob";
@@ -169,21 +175,32 @@ import {
   getPackageManagerProviders,
   getManifestPackages,
   promptForPackageLicenseAcceptance,
+  showSkippedPackagesWarning,
 } from "./utils/package-manager";
-import { getTelemetryManager } from "./telemetry/telemetry";
+import {
+  getTelemetryManager,
+  initializeWorkspaceId,
+} from "./telemetry/telemetry";
 import { ReportViewer } from "./custom-editors/report-viewer";
 import { SystemEventViewer } from "./debug-tools/system-event-viewer/system-event-viewer";
 import MemoryViewerWebviewProvider from "./providers/memory-viewer-webview-provider";
 import { CfsDebugAssistant } from "./debug-tools/ai-debug/debug-assistant";
 import { ModelWorkspaceCreationEditor } from "./custom-editors/model-workspace-creation-editor";
 import { AiHardwareProfilingEditor } from "./custom-editors/ai-hardware-profiling-editor";
-import { regsiterVSCodeApiMessageHandlers } from "./providers/vscode-api-message-handler";
+import { registerVSCodeApiMessageHandlers } from "./providers/vscode-api-message-handler";
 import {
   TraceCaptureService,
   TraceConfigurationProvider,
   TraceSidePanelProvider,
 } from "./providers/trace-capture-webview-provider";
 import { registerGlobalCfsMessageHandlers } from "./providers/global-cfs-message-handlers";
+import { registerAuthSessionFileWatcher } from "./providers/auth-session-file-watcher";
+import { registerPackageManagerRemotesFileWatcher } from "./providers/package-manager-remotes-file-watcher";
+import { TELEMETRY_ACTIONS } from "./telemetry/action-names";
+import {
+  sendTaskEndTelemetry,
+  sendTaskStartTelemetry,
+} from "./telemetry/task-telemetry";
 
 // Feature flags - values are replaced at build time by Vite
 const MEMORY_VIEWER_ENABLED =
@@ -276,6 +293,22 @@ export async function activate(
   // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#ticking_during_sleep
   const activationStart = Date.now();
 
+  // Initialize the output channel logger and mirror telemetry actions to it
+  context.subscriptions.push(logger);
+  setTelemetryLogger(logger);
+
+  // Assign a random, per-workspace telemetry id once so it can be used as
+  // standard metadata without exposing the workspace path.
+  initializeWorkspaceId(context);
+
+  const McpConfig = vscode.workspace.getConfiguration("cfs.mcp");
+  void getTelemetryManager().then((telemetryManager) => {
+    telemetryManager.logAction(TELEMETRY_ACTIONS.ACTIVATION_SETTINGS, {
+      runMCPOnActivation: McpConfig.get<boolean>("runOnActivation", false),
+      McpPort: McpConfig.get<number>("port", 0),
+    });
+  });
+
   // Set context keys for build-time feature flags
   await vscode.commands.executeCommand(
     "setContext",
@@ -315,22 +348,17 @@ export async function activate(
 
   let pkgManagerConfig: ConstructorParameters<typeof ConanPkgManager>[0] =
     installDir ? { cfsInstallDir: installDir } : {};
-  let packageManagerCredsProvider:
-    | CfsPackageRemoteCredentialProvider
-    | undefined;
+  let packageManagerRemotesProvider: CfsPackageRemotesProvider | undefined;
   let packageManagerLicenseReporter: CfsPackageLicenseReporter | undefined;
   try {
-    const providers = await getPackageManagerProviders();
-    if (providers) {
-      [packageManagerCredsProvider, packageManagerLicenseReporter] = providers;
-    }
+    [packageManagerRemotesProvider, packageManagerLicenseReporter] =
+      await getPackageManagerProviders();
   } catch (error) {
     console.error("Failed to get package manager providers:", error);
   }
 
-  if (packageManagerCredsProvider) {
-    pkgManagerConfig.credentialProviders = [packageManagerCredsProvider];
-  }
+  // Create top level vscode messenger object to pass to services and webview provider
+  const messenger = new Messenger();
 
   /**
    * Managers Initialization step
@@ -340,16 +368,19 @@ export async function activate(
     pkgManagerConfig,
   );
   try {
-    await pkgManager.init();
     if (packageManagerLicenseReporter) {
       await pkgManager.registerLicenseReporter(packageManagerLicenseReporter);
     }
+    if (packageManagerRemotesProvider) {
+      await pkgManager.registerRemotesProvider(packageManagerRemotesProvider);
+    }
+    await pkgManager.init();
   } catch (error) {
     console.error(error);
     vscode.window.showWarningMessage(WARNING.packageManagerInitError);
     pkgManager = undefined;
   }
-  registerPackageManagerCommands(context, pkgManager);
+  registerPackageManagerCommands(context, pkgManager, messenger);
 
   // Data model manager initialization.
   const dataModelManager: CfsDataModelManager = new CfsDataModelManager(
@@ -389,9 +420,29 @@ export async function activate(
 
   const actionsViewProvider = new ActionsViewProvider(cfsTaskProvider);
 
+  // Read workspace SoC info once at activation; the value is static for the
+  // lifetime of this extension activation (tied to the .cfsworkspace file).
+  const { soc: workspaceSoc, package: workspaceSocPackage } =
+    await getWorkspaceSocInfo();
+
   // Debug providers registration
   const debugManager = new CfsDebugManager();
   context.subscriptions.push(debugManager);
+  context.subscriptions.push(
+    debugManager.onStartSession(async (session) => {
+      if (session.vscodeSession.type !== "cortex-debug") {
+        return;
+      }
+      const telemetryManager = await getTelemetryManager();
+
+      await telemetryManager.logAction(TELEMETRY_ACTIONS.DEBUG_FW_STARTED, {
+        debugSessionId: session.vscodeSession.id,
+        servertype: session.vscodeSession.configuration.servertype,
+        soc: workspaceSoc,
+        socPackage: workspaceSocPackage,
+      });
+    }),
+  );
 
   const debugConfigProvider = new CortexDebugConfigurationProvider(toolManager);
   context.subscriptions.push(
@@ -434,9 +485,7 @@ export async function activate(
   // Terminal provider registration
   registerTerminalProvider(shellEnvProvider);
 
-  const messenger = new Messenger();
-
-  regsiterVSCodeApiMessageHandlers(messenger);
+  registerVSCodeApiMessageHandlers(messenger);
   registerGlobalCfsMessageHandlers(messenger);
 
   /**
@@ -517,7 +566,7 @@ export async function activate(
     debugManager,
   );
   registerAllCommands(context);
-  AuthCommandManager.registerAllCommands(context, pkgManager);
+  AuthCommandManager.registerAllCommands(context);
 
   // Register AI Debug Assistant (MCP Server + Chat Participant)
   const debugAssistant = new CfsDebugAssistant(
@@ -532,7 +581,7 @@ export async function activate(
     vscode.commands.registerCommand(
       BROWSE_MSDK_EXAMPLES_COMMAND_ID,
       async () => {
-        browseExamples(pkgManager);
+        browseExamples(toolManager);
       },
     ),
   );
@@ -552,8 +601,9 @@ export async function activate(
    * Custom listeners registration step
    **/
   registerGDBToolboxValidator(context);
+  await registerAuthSessionFileWatcher(context, messenger, pkgManager);
 
-  // Register file watcher for package index changes
+  // Register file watchers for package manager related file changes
   if (pkgManager !== undefined) {
     await registerPackageIndexFileWatcher(
       context,
@@ -562,25 +612,61 @@ export async function activate(
       shellEnvProvider,
       actionsViewProvider,
     );
+
+    await registerPackageManagerRemotesFileWatcher(
+      context,
+      messenger,
+      pkgManager,
+    );
   }
 
   const activationEnd = Date.now();
   getTelemetryManager().then((telemetryManager) => {
     const activationDuration = activationEnd - activationStart;
-    telemetryManager.logAction("Extension activated", {
+    telemetryManager.logAction(TELEMETRY_ACTIONS.EXTENSION_ACTIVATED, {
       activationDuration,
     });
   });
 
+  // Track start times of CFS build/flash tasks so we can report the run
+  // duration when the task process ends.
+  const taskStartTimes = new Map<vscode.TaskExecution, number>();
+
+  const taskStartListener = vscode.tasks.onDidStartTaskProcess(
+    async (event) => {
+      const task = event.execution.task;
+      taskStartTimes.set(event.execution, Date.now());
+      await sendTaskStartTelemetry(task);
+    },
+  );
+
+  const taskEndListener = vscode.tasks.onDidEndTaskProcess(async (event) => {
+    const task = event.execution.task;
+
+    const startTime = taskStartTimes.get(event.execution);
+    taskStartTimes.delete(event.execution);
+    const durationMs =
+      startTime !== undefined ? Date.now() - startTime : undefined;
+    await sendTaskEndTelemetry(
+      task,
+      workspaceSoc,
+      workspaceSocPackage,
+      event.exitCode,
+      durationMs,
+    );
+  });
+
+  context.subscriptions.push(taskStartListener, taskEndListener);
+
   /**
-   * Defered actions
+   * Deferred actions
    * Workspace specific operations that can be decoupled from the extension activation process can go here.
    **/
   try {
     setTimeout(async () => {
       vscode.commands.executeCommand(SHOW_HOME_PAGE_AT_STARTUP_COMMAND_ID);
 
-      // Defered task provider and panel initialization
+      // Deferred task provider and panel initialization
       // If any package installation is required from manifest, the package index watcher
       // will trigger a tasks refresh after installation is complete.
       await actionsViewProvider.taskActionsInit();
@@ -593,7 +679,7 @@ export async function activate(
       // Deferred opening of system planner after manifests are checked.
       vscode.commands.executeCommand(SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID);
 
-      // Defered opening of AI profiling view after workspace generation is checked.
+      // Deferred opening of AI profiling view after workspace generation is checked.
       vscode.commands.executeCommand(
         SHOW_AI_PROFILING_VIEW_AT_STARTUP_COMMAND_ID,
       );
@@ -607,7 +693,9 @@ export async function activate(
   } catch (error) {
     console.error(error);
     vscode.window.showErrorMessage(
-      `Workspace activation failed with error: ${error instanceof Error ? error.message : String(error)}`,
+      `Workspace activation failed with error: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 }
@@ -617,7 +705,10 @@ export async function activate(
  */
 export async function deactivate(): Promise<Response | undefined> {
   const telemetryManager = await getTelemetryManager();
-  return telemetryManager.logAction("Extension deactivated", {});
+  return telemetryManager.logAction(
+    TELEMETRY_ACTIONS.EXTENSION_DEACTIVATED,
+    {},
+  );
 }
 
 // --- Terminal Provider ---
@@ -670,6 +761,25 @@ function registerPreActivationCommands(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(OPEN_HOME_PAGE_COMMAND_ID, () => {
       HomePagePanel.render(context.extensionUri);
     }),
+  );
+
+  // Decorates a command to log telemetry when a quick access item is invoked.
+  // There is no event we can listen to for quick access item invocations,
+  // so we need to wrap the command to track usage.
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      QUICK_ACCESS_ITEM_INVOKED_COMMAND_ID,
+      async (itemLabel: string, commandId: string, commandArgs: unknown[]) => {
+        void getTelemetryManager().then((telemetryManager) => {
+          telemetryManager.logAction(TELEMETRY_ACTIONS.SIDEBAR_ITEM_CLICKED, {
+            item: itemLabel,
+            command: commandId,
+          });
+        });
+
+        return vscode.commands.executeCommand(commandId, ...commandArgs);
+      },
+    ),
   );
 
   context.subscriptions.push(
@@ -891,6 +1001,9 @@ async function registerCommands(
     vscode.commands.registerCommand(
       RUN_DEFAULT_BUILD_TASKS_COMMAND_ID,
       async () => {
+        getTelemetryManager().then((telemetryManager) => {
+          telemetryManager.logAction(TELEMETRY_ACTIONS.BUILD_ALL_STARTED, {});
+        });
         await Utils.runDefaultBuildTasks();
       },
     ),
@@ -1029,8 +1142,11 @@ async function registerCommands(
   context.subscriptions.push(
     vscode.commands.registerCommand(
       EXECUTE_GDB_SCRIPT_COMMAND_ID,
-      (script, session) => {
+      async (script, session) => {
         executor.executeScript(script.commands, script.inputs, session);
+
+        const telemetryManager = await getTelemetryManager();
+        telemetryManager.logAction(TELEMETRY_ACTIONS.GDB_TOOLBOX_USED, {});
       },
     ),
   );
@@ -1358,10 +1474,11 @@ async function handleWorkspacePackageManifests(
 
     // All packages from installPlan.toInstall are missing and need installation
     const missingPackages = installPlan.toInstall;
+    const skippedPackages = installPlan.skipped ?? [];
 
     // If there are no missing packages, return
     if (missingPackages.length === 0) {
-      // All packages are already installed
+      showSkippedPackagesWarning(skippedPackages);
       return;
     }
 
@@ -1371,8 +1488,12 @@ async function handleWorkspacePackageManifests(
       .map((pkg) => `${pkg.name} (${pkg.version})`)
       .join(", ");
 
-    const message = `Found ${missingPackages.length} required package${missingPackages.length > 1 ? "s" : ""} that need to be installed: ${packageList}`;
-    const installAction = `Install ${missingPackages.length > 1 ? "All" : "Package"}`;
+    const message = `Found ${missingPackages.length} required package${
+      missingPackages.length > 1 ? "s" : ""
+    } that need to be installed: ${packageList}`;
+    const installAction = `Install ${
+      missingPackages.length > 1 ? "All" : "Package"
+    }`;
 
     const selection = await vscode.window.showInformationMessage(
       message,
@@ -1382,6 +1503,9 @@ async function handleWorkspacePackageManifests(
 
     if (selection === installAction) {
       let accepted = false;
+
+      //Show skipped packages with reason
+      showSkippedPackagesWarning(skippedPackages);
 
       // Filter license requirements to only those packages that are actually missing
       const licensesForMissing = installPlan.requiresLicenseAcceptance.filter(
@@ -1427,7 +1551,6 @@ async function handleWorkspacePackageManifests(
                 acceptLicense: accepted,
               },
             );
-
             if (installedPackages.length === 0) {
               return;
             }
@@ -1436,7 +1559,11 @@ async function handleWorkspacePackageManifests(
               .map((pkg) => `${pkg.name} (${pkg.version})`)
               .join(", ");
             vscode.window.showInformationMessage(
-              `Successfully installed ${installedPackages.length} required package${installedPackages.length > 1 ? "s" : ""}: ${installedList}.`,
+              `Successfully installed ${
+                installedPackages.length
+              } required package${
+                installedPackages.length > 1 ? "s" : ""
+              }: ${installedList}.`,
             );
           } catch (error) {
             const isLoggedIn = await vscode.commands.executeCommand(
@@ -1481,7 +1608,9 @@ async function handleWorkspacePackageManifests(
     }
   } catch (error) {
     vscode.window.showErrorMessage(
-      `Error handling workspace package manifests: ${error instanceof Error ? error.message : String(error)}`,
+      `Error handling workspace package manifests: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 }
@@ -1529,6 +1658,20 @@ async function activateWorkspace(
         await conf.update(ADI_CONFIGURE_WORKSPACE_SETTING, choice, false);
         choiceSelected = true;
       });
+  } else if (
+    configureWorkspaceSetting ===
+    ConfigureWorkspaceOptionEnum[ConfigureWorkspaceOptionEnum.Yes]
+  ) {
+    // In a CFS workspace, log telemetry for workspace opened event
+    Promise.all([getWorkspaceSocInfo(), getTelemetryManager()]).then(
+      ([{ soc, package: socPackage, projectCount }, telemetryManager]) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.WORKSPACE_OPENED, {
+          soc,
+          socPackage,
+          projectCount,
+        });
+      },
+    );
   }
 
   conf = vscode.workspace.getConfiguration(EXTENSION_ID);
@@ -1643,18 +1786,16 @@ async function getUserScriptsDir(): Promise<string | null> {
   let scriptsDir: string;
 
   // Determine the base directory based on workspace configuration
+  const workspaceRoot = getWorkspaceRoot();
   if (
+    workspaceRoot &&
     workspaceFolders &&
     workspaceFolders.length > 0 &&
     configureWorkspaceSetting ===
       ConfigureWorkspaceOptionEnum[ConfigureWorkspaceOptionEnum.Yes]
   ) {
     // CFS Workspace: use <workspace>/.cfs/gdb_toolbox/configs
-    scriptsDir = path.join(
-      workspaceFolders[0].uri.fsPath,
-      "gdb_toolbox",
-      "configs",
-    );
+    scriptsDir = path.join(workspaceRoot, ".cfs", "gdb_toolbox", "configs");
   } else {
     // Non-CFS Workspace or No Workspace: use ~/cfs/gdb_toolbox/configs
     scriptsDir = path.join(os.homedir(), "cfs", "gdb_toolbox", "configs");
@@ -1700,20 +1841,8 @@ async function getScriptFilePath(
 /**
  * Opens MSDK examples directory so user can browse example projects
  */
-const browseExamples = async (pkgManager?: CfsPackageManagerProvider) => {
-  let msdkPath: string | undefined;
-  try {
-    msdkPath = await pkgManager?.getPath("msdk");
-  } catch (error) {
-    // Ignore error and fallback to SDK path
-  }
-
-  if (!msdkPath) {
-    // Fallback to SDK path
-    const conf = vscode.workspace.getConfiguration(EXTENSION_ID);
-    const sdkPath = conf.get(SDK_PATH);
-    msdkPath = path.join(sdkPath as string, "SDK", "MAX");
-  }
+const browseExamples = async (toolManager: CfsToolManager) => {
+  const msdkPath = await toolManager.getToolPath("msdk");
 
   const options: vscode.OpenDialogOptions = {
     canSelectMany: false,
@@ -1743,12 +1872,30 @@ const browseExamples = async (pkgManager?: CfsPackageManagerProvider) => {
       )
     )?.label;
 
+    if (!destinationFolder) {
+      return;
+    }
+
+    const defaultLocation = Utils.getDefaultLocation();
+
     if (destinationFolder === BROWSE_STRING) {
+      // Ensure the default location exists before using it as the Browse dialog's defaultUri,
+      // otherwise fall back to the user's home directory
+      let browseDefaultUri: vscode.Uri;
+      try {
+        if (!fs.existsSync(defaultLocation)) {
+          fs.mkdirSync(defaultLocation, { recursive: true });
+        }
+        browseDefaultUri = vscode.Uri.file(defaultLocation);
+      } catch {
+        browseDefaultUri = vscode.Uri.file(os.homedir());
+      }
+
       const options: vscode.OpenDialogOptions = {
         canSelectMany: false,
         canSelectFiles: false,
         canSelectFolders: true,
-        defaultUri: vscode.Uri.file(Utils.getDefaultLocation()),
+        defaultUri: browseDefaultUri,
         openLabel: "Select Folder",
       };
 
@@ -1758,6 +1905,20 @@ const browseExamples = async (pkgManager?: CfsPackageManagerProvider) => {
         destinationFolder = destinationUri[0].fsPath;
       } else {
         destinationFolder = "";
+      }
+    } else {
+      // User selected the default location — ensure it exists
+      try {
+        if (!fs.existsSync(defaultLocation)) {
+          fs.mkdirSync(defaultLocation, { recursive: true });
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Failed to create default location "${defaultLocation}": ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        return;
       }
     }
 
@@ -1793,6 +1954,16 @@ const browseExamples = async (pkgManager?: CfsPackageManagerProvider) => {
     } catch (error) {
       vscode.window.showErrorMessage(
         `Could not copy example project: ${error}`,
+      );
+      return;
+    }
+
+    // Migrate the copied MSDK example project to CFS format
+    try {
+      await msdk.migrateProject(workspaceLocation);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Could not migrate example project: ${error}`,
       );
       return;
     }

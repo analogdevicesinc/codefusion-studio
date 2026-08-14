@@ -18,7 +18,7 @@ import type {
 	MeasurementState
 } from '../../../../../common/types/timeline';
 
-import styles from '../../measurement-overlay.module.scss';
+import styles from './measurement-guide.module.scss';
 
 export default function MeasurementGuides({
 	state,
@@ -39,6 +39,7 @@ export default function MeasurementGuides({
 			{state.startLine && (
 				<div
 					className={`${styles.measureGuide} ${styles.solidLine}`}
+					data-test='timeline-diagram:measurement-guide:start'
 					style={{left: state.startLine.x}}
 				/>
 			)}
@@ -48,17 +49,34 @@ export default function MeasurementGuides({
 					className={`${styles.measureGuide} ${
 						state.isFixedPhase ? styles.solidLine : styles.dashedLine
 					}`}
+					data-test='timeline-diagram:measurement-guide:end'
 					style={{left: state.endLine.x}}
 				/>
 			)}
 
-			{state.horizontalLine &&
-				layout.horizontalLineTop !== undefined && (
+			{layout.horizontalLineTop !== undefined &&
+				layout.horizontalLineLeft !== undefined &&
+				layout.horizontalLineWidth !== undefined && (
 					<div
 						className={styles.horizontalLine}
 						style={{
-							...state.horizontalLine,
+							left: layout.horizontalLineLeft,
+							width: layout.horizontalLineWidth,
 							top: layout.horizontalLineTop
+						}}
+					/>
+				)}
+
+			{layout.deltaStemLeft !== undefined &&
+				layout.deltaStemTop !== undefined &&
+				layout.deltaStemHeight !== undefined && (
+					<div
+						className={styles.deltaStem}
+						data-test='timeline-diagram:measurement-stem'
+						style={{
+							left: layout.deltaStemLeft,
+							top: layout.deltaStemTop,
+							height: layout.deltaStemHeight
 						}}
 					/>
 				)}

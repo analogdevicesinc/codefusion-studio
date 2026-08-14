@@ -18,6 +18,7 @@ import {
 	removeAppliedSignal,
 	setAppliedSignal
 } from '../../../state/slices/pins/pins.reducer';
+import {setActivePinconfigAssignmentFilter} from '../../../state/slices/app-context/appContext.reducer';
 import PinAssignmentStatusFilter from './pin-assignment-status-filter';
 
 const mock = (await import(`@socs/max32690-tqfn.json`))
@@ -137,5 +138,139 @@ describe('Filter Controls', () => {
 				);
 			});
 		});
+	});
+
+	it('Resets assigned filter when all signals are removed', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'ADC',
+				Name: 'AIN0'
+			})
+		);
+
+		reduxStore.dispatch(
+			setActivePinconfigAssignmentFilter('assigned')
+		);
+
+		cy.mount(<PinAssignmentStatusFilter />, reduxStore);
+
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'appearance')
+			.and('equal', 'primary');
+
+		cy.then(() => {
+			reduxStore.dispatch(
+				removeAppliedSignal({
+					Pin: '39',
+					Peripheral: 'ADC',
+					Name: 'AIN0'
+				})
+			);
+		});
+
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'appearance')
+			.and('equal', 'secondary');
+	});
+
+	it('Does not reset filter until all assigned signals are removed', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(
+			setActivePinconfigAssignmentFilter(undefined)
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '40',
+				Peripheral: 'ADC',
+				Name: 'AIN1'
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'ADC',
+				Name: 'AIN0'
+			})
+		);
+
+		reduxStore.dispatch(
+			setActivePinconfigAssignmentFilter('assigned')
+		);
+
+		cy.mount(<PinAssignmentStatusFilter />, reduxStore)
+			.then(() =>
+				cy
+					.dataTest('filter-control:assigned')
+					.should('have.attr', 'appearance')
+					.and('equal', 'primary')
+			)
+			.then(() => {
+				reduxStore.dispatch(
+					removeAppliedSignal({
+						Pin: '39',
+						Peripheral: 'ADC',
+						Name: 'AIN0'
+					})
+				);
+				cy.dataTest('filter-control:assigned')
+					.should('have.attr', 'appearance')
+					.and('equal', 'primary');
+
+				reduxStore.dispatch(
+					removeAppliedSignal({
+						Pin: '40',
+						Peripheral: 'ADC',
+						Name: 'AIN1'
+					})
+				);
+				cy.wrap(null).should(() => {
+					expect(
+						reduxStore.getState().appContextReducer.filter.pinconfig
+							.assignment
+					).to.eq(undefined);
+				});
+				cy.dataTest('filter-control:assigned')
+					.should('have.attr', 'appearance')
+					.and('equal', 'secondary');
+			});
+	});
+
+	it('Resets assigned filter when only conflict pins have signals', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		// Create a conflict on a configurable pin
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'ADC',
+				Name: 'AIN0'
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '39',
+				Peripheral: 'GPIO3',
+				Name: 'P3.0'
+			})
+		);
+
+		reduxStore.dispatch(
+			setActivePinconfigAssignmentFilter('assigned')
+		);
+
+		cy.mount(<PinAssignmentStatusFilter />, reduxStore);
+
+		// Assigned filter should be reset because there are no non-conflict
+		// assigned pins (conflicts are counted under the "conflict" filter)
+		cy.dataTest('filter-control:assigned')
+			.should('have.attr', 'appearance')
+			.and('equal', 'secondary');
 	});
 });

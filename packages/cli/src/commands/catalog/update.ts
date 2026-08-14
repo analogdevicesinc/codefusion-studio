@@ -16,9 +16,15 @@ import {Command} from '@oclif/core';
 
 import {getSocCatalog} from '../../utils/catalog-manager.js';
 
+export const catalogUpdateDeps: {
+  getSocCatalog: typeof getSocCatalog;
+} = {
+  getSocCatalog
+};
+
 export default class Update extends Command {
   static description =
-    'Updates the catalog to the latest version available online. Requires an active session with a myAnalog account.';
+    'Updates the catalog to the latest version available online. Requires either an active session with a myAnalog account or the CFS_API_KEY environment variable set with a valid API key.';
 
   static examples = ['<%= config.bin %> <%= command.id %>'];
 
@@ -26,7 +32,7 @@ export default class Update extends Command {
 
   public async run(): Promise<void> {
     try {
-      await getSocCatalog(this.config, true);
+      await catalogUpdateDeps.getSocCatalog(this.config, true);
     } catch (error) {
       this.error(
         `Failed to update catalog.` +

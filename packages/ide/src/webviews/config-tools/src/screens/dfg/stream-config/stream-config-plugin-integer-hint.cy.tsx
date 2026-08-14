@@ -15,7 +15,10 @@
 
 import {useState} from 'react';
 import {DFGControlsView} from '../common/dfg-controls-view';
-import type {ConfigFields, ControlCfg} from '../../../../../common/types/soc';
+import type {
+	ConfigFields,
+	ControlCfg
+} from '../../../../../common/types/soc';
 
 /**
  * Tests that integer-typed DFG stream controls provided by a plugin (PluginOption: true)
@@ -114,7 +117,18 @@ function DFGStreamPluginControlWrapper({
 			testId='dfg-stream-controls'
 			socConfig={socConfig}
 			onControlChange={(field, value) => {
-				setData(prev => ({...prev, [field]: value}));
+				setData(prev => {
+					if (value === undefined) {
+						return Object.fromEntries(
+							Object.entries(prev).filter(([key]) => key !== field)
+						);
+					}
+
+					return {
+						...prev,
+						[field]: value
+					};
+				});
 			}}
 		/>
 	);

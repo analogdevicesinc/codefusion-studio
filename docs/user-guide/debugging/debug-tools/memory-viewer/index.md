@@ -1,7 +1,7 @@
 ---
 description: Inspect and navigate device memory during live and retrospective debug sessions using the Memory Viewer.
 author: Analog Devices
-date: 2026-05-19
+date: 2026-07-10
 ---
 
 # Memory Viewer
@@ -26,20 +26,27 @@ You can also open it at any time from the Command Palette: press `Ctrl+Shift+P` 
 
 ![Memory Viewer with no memory loaded, showing Go to field and LIVE/Halted session badges in the toolbar](./images/memory-viewer-initial-state-light.png#only-light) ![Memory Viewer with no memory loaded, showing Go to field and LIVE/Halted session badges in the toolbar](./images/memory-viewer-initial-state-dark.png#only-dark)
 
-## Navigate to an address
+## Navigate to an address or symbol
 
 Use the **Go to** field in the toolbar to jump to a specific memory location.
 
-1. In the **Go to** field, enter an address in hexadecimal (for example, `0x20000000`) or decimal (for example, `536870912`) format.
+1. In the **Go to** field, enter one of the following:
+    - A hexadecimal address (for example, `0x20000000`)
+    - A decimal address (for example, `536870912`)
+    - A symbol name (for example, `count`)
 2. Press **Enter**.
 
-The memory grid loads data starting from that address. If the address is already within the loaded region, the grid scrolls to it without fetching new data.
+For hex and decimal addresses, if the address is already within the loaded region, the grid scrolls to it without fetching new data. Otherwise, the memory grid loads data starting from that address.
 
-If the input is invalid or the session is not in a state that allows a read, the **Go to** field shows an inline error:
+For symbol names, the viewer resolves the symbol to a memory address using a halted debug session and then loads memory at that address. In a multi-core environment, it uses the halted debug session selected in the Call Stack view, or falls back to the first available halted session.
+
+If the input cannot be resolved or the session is not in a state that allows a read, the **Go to** field shows an inline error:
 
 | Error | Message |
 |---|---|
 | Invalid address | Enter a valid hex or decimal address (e.g., 0x2000 or 1024). |
+| Symbol not found | Could not find symbol in the current context. |
+| Symbol lookup timed out | Symbol query timed out. |
 | No active session | No active debug session. Start a debug session to view memory. |
 | Target running | Target not halted / Cannot execute this command while the target is running. |
 | Read in progress | Already reading memory data. Please wait. |
@@ -91,10 +98,9 @@ static int count = 0;
 
 Then, once your debug session is halted at a breakpoint:
 
-1. Get the variable's memory address — either add `&count` as a Watch expression in the debug sidebar, or run `print &count` in the **Debug Console**.
-2. Enter that address in the **Go to** field in the Memory Viewer.
-3. Set the footer to **1 Byte** grouping and **Decimal** display for easier reading.
-4. Press F10 (**Step Over**) in the debug toolbar to advance one line at a time without descending into library function calls.
+1. In the **Go to** field in the Memory Viewer, enter the symbol name `count` directly, or get its address by adding `&count` as a Watch expression in the debug sidebar or running `print &count` in the **Debug Console** and entering the address instead. Press **Enter**.
+2. Set the footer to **1 Byte** grouping and **Decimal** display for easier reading.
+3. Press F10 (**Step Over**) in the debug toolbar to advance one line at a time without descending into library function calls.
 
 Each time execution halts, the Memory Viewer re-reads the address automatically. You can watch the bytes at `count`'s address change as the value increments — without pressing **Refresh** manually.
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 	width: 100%;
 	--wrksp-table-core-width: 190px;
 	--wrksp-table-workspace-width: 225px;
-	--wrksp-table-col-header-width: 80px;
+	--wrksp-table-col-header-width: 90px;
 	vscode-data-grid-cell:focus {
 		border-color: transparent;
 	}
@@ -82,7 +82,7 @@
 }
 
 .colHeader {
-	width: var(--wrksp-table-col-header-width, 80px);
+	width: var(--wrksp-table-col-header-width, 90px);
 }
 
 .col {

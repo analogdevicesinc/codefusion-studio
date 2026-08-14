@@ -1,7 +1,7 @@
 ---
 description: Introduction to the GDB Toolbox and how to use it with CodeFusion Studio.
 author: Analog Devices
-date: 2025-09-17
+date: 2026-08-05
 ---
 
 # About the GDB Toolbox
@@ -27,18 +27,18 @@ The `configs` directory contains the default GDB Toolbox JSON scripts that defin
 
 The following default scripts are added to your workspace when it's created and cover common tasks such as dumping memory, analyzing stack usage, or detecting system faults:
 
-| Script name                       | Description                                                                                                                                               | Supported cores | Supported firmware platform[^1] |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|---------------------------------|
-| **Analyze Crash** | Analyzes a crash and generates a JSON report of faulting threads. | Core agnostic | Zephyr |
-| **Analyze Faults**                | Analyzes system faults and exceptions such as hard faults or bus errors. Reads and decodes fault status registers, and prints a fault summary.            | ARM             | MSDK, Zephyr                    |
-| **Analyze Global Heap**           | Analyzes heap usage and prints a JSON report showing total heap size (total), currently used memory (used), and the peak memory usage (max).              | Core agnostic   | Zephyr                          |
-| **Analyze Stack**                 | Performs a detailed analysis of stack usage. Traverses stack frames, prints local variables and arguments, and calculates used and remaining stack space. | Core agnostic   | MSDK                            |
-| **Analyze Stack High-water Mark** | Analyzes the maximum stack depth reached during runtime using a known fill pattern. Requires the stack painter to be run beforehand.                      | Core agnostic   | MSDK                            |
-| **Analyze Threads**               | Analyzes all active threads and extracts each thread’s stack usage, register state, and call trace. Requires OpenOCD (see note below).                    | Core agnostic   | Zephyr                          |
-| **Dump Memory**                   | Dumps the current memory state to a log file.                                                                                                             | Core agnostic   | MSDK, Zephyr, SHARC-FX          |
-| **Dump Registers**                | Dumps the current register state to a log file.                                                                                                           | Core agnostic   | MSDK, Zephyr, SHARC-FX          |
-| **Interrupt Status**              | Analyzes IRQ and system handlers by reading the NVIC state to identify enabled, active, and pending interrupts, and their associated handlers.            | ARM             | MSDK                            |
-| **Paint Stack**                   | Fills the stack with a known pattern (`0xDEADBEEF`) to enable runtime analysis of maximum stack usage. Must be run before the High-water Mark script.     | Core agnostic   | MSDK                            |
+| Script name                       | Description                                                                                                                                               | Supported architecture | Supported firmware platform[^1] |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|---------------------------------|
+| **Analyze Crash** | Analyzes a crash and generates a JSON report of faulting threads. | Architecture agnostic | Zephyr |
+| **Analyze Faults**                | Analyzes system faults and exceptions such as hard faults or bus errors. Reads and decodes fault status registers, and prints a fault summary.            | ARM             | Firmware agnostic               |
+| **Analyze Global Heap**           | Analyzes heap usage and prints a JSON report showing total heap size (total), currently used memory (used), and the peak memory usage (max).              | Architecture agnostic   | Zephyr                          |
+| **Analyze Stack**                 | Performs a detailed analysis of stack usage. Traverses stack frames, prints local variables and arguments, and calculates used and remaining stack space. | ARM   | MSDK                            |
+| **Analyze Stack High-water Mark** | Analyzes the maximum stack depth reached during runtime using a known fill pattern. Requires the stack painter to be run beforehand.                      | ARM   | MSDK                            |
+| **Analyze Threads**               | Analyzes all active threads and extracts each thread’s stack usage, register state, and call trace. Requires OpenOCD (see note below).                    | Architecture agnostic   | Zephyr                          |
+| **Dump Memory**                   | Dumps the current memory state to a log file.                                                                                                             | ARM, RISC-V, SHARC-FX   | Firmware agnostic               |
+| **Dump Registers**                | Dumps the current register state to a log file.                                                                                                           | ARM, RISC-V, SHARC-FX   | Firmware agnostic               |
+| **Interrupt Status**              | Analyzes IRQ and system handlers by reading the NVIC state to identify enabled, active, and pending interrupts, and their associated handlers.            | ARM             | Firmware agnostic               |
+| **Paint Stack**                   | Fills the stack with a known pattern (`0xDEADBEEF`) to enable runtime analysis of maximum stack usage. Must be run before the High-water Mark script.     | ARM   | MSDK                            |
 
 [^1]:Only compatible scripts are shown during a debug session. This context-awareness ensures you only run scripts that are supported by the active project.
 
@@ -51,16 +51,16 @@ The `gdb` directory stores optional GDB scripts that are referenced by the JSON 
 
 GDB scripts (`.gdb` files) are plain text files that contain either raw GDB commands or Python code using the GDB Python API. Most scripts in this directory use native GDB commands, but advanced scripts such as **Analyze Threads** leverage Python for intelligent analysis. These scripts are referenced in Toolbox JSON configs.
 
-For example, the **Analyze Threads** Toolbox script includes a `source` field that points to a `thread-analyzer.gdb` GDB script in the `gdb` directory:
+For example, the **Analyze Threads** Toolbox script includes a `source` command that points to a `thread-analyzer.gdb` GDB script in the `gdb` directory:
 
 ```json
 {
   "name": "Analyze Threads",
   "description": "Analyzes threads in the target application.",
+  "version": "1.0.0",
   "commands": [
     {
-      "command": "source {defaultScriptsDirectory}/thread-analyzer.gdb",
-      "actions": [{}]
+      "command": "source {defaultScriptsDirectory}/thread-analyzer.gdb"
     }
   ]
 }

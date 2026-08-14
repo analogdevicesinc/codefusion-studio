@@ -49,7 +49,11 @@ import {
 	useStreams
 } from '../../../state/slices/gaskets/gasket.selector';
 import {useAppDispatch} from '../../../state/store';
-import {getControlsForProjectIds} from '../../../utils/api';
+import {
+	getControlsForProjectIds,
+	logTelemetryEvent
+} from '../../../utils/api';
+import {CONFIG_TOOLS_TELEMETRY_ACTIONS} from '../../../state/utils/telemetry-reporter';
 import {getProjectInfoList} from '../../../utils/config';
 import {
 	getGasketDictionary,
@@ -62,6 +66,10 @@ import {StreamGroupSelector} from './stream-groups/stream-groups-select';
 import {TiedStreamDropdown} from './tied-stream-dropdown';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {type TLocaleContext} from '../../../common/types/context';
+import {
+	hasRemovedTiedStreamDependency,
+	validateStream
+} from '../../../utils/dfg-stream-validator';
 
 export function StreamConfigSidePanel() {
 	const i10n: TLocaleContext | undefined = useLocaleContext()?.dfg;
@@ -155,10 +163,30 @@ export function StreamConfigSidePanel() {
 			hasAdditionalStreamConfigErrors
 		);
 
+		if (
+			activeStream &&
+			streamExists &&
+			hasRemovedTiedStreamDependency(
+				streamExists,
+				activeStream,
+				streams
+			)
+		) {
+			errors['Destinations.Gasket'] =
+				i10n?.streamConfigSidePanel.validationErrors.destinationGasketTiedStreamRequired;
+		}
+
 		if (activeStream && !Object.keys(errors).length) {
 			if (streamExists) {
 				dispatch(updateStream({updatedStream: activeStream}));
 			} else {
+				void logTelemetryEvent(
+					CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_CREATED,
+					{
+						sourceGasket: activeStream.Source?.Gasket,
+						destinationCount: activeStream.Destinations?.length ?? 0
+					}
+				);
 				dispatch(addNewStream(activeStream));
 			}
 
@@ -172,7 +200,8 @@ export function StreamConfigSidePanel() {
 		i10n,
 		dispatch,
 		closeSidePanel,
-		hasAdditionalStreamConfigErrors
+		hasAdditionalStreamConfigErrors,
+		streams
 	]);
 
 	const gasketOutputStreamMap = useGasketOutputStreamMap();
@@ -742,13 +771,25 @@ function GasketOptionsSection({
 					testId={`${fieldName}-${name}-additionalControls`}
 					onHasErrorsChange={onHasAdditionalStreamConfigErrors}
 					onControlChange={(field, value) => {
+						const currentConfig =
+							fieldName === 'Source'
+								? stream.Source.Config
+								: stream.Destinations?.[destinationIndex]?.Config;
+
+						const updatedConfig =
+							value === undefined
+								? Object.fromEntries(
+										Object.entries(currentConfig ?? {}).filter(
+											([key]) => key !== field
+										)
+									)
+								: {
+										...(currentConfig ?? {}),
+										[field]: value
+									};
+
 						setOptions({
-							Config: {
-								...(fieldName === 'Source'
-									? stream.Source.Config
-									: stream.Destinations?.[destinationIndex]?.Config),
-								[field]: value
-							}
+							Config: updatedConfig
 						});
 					}}
 				/>
@@ -774,70 +815,3 @@ function FieldWithLabel({
 	);
 }
 
-function validateStream(
-	stream: DFGStreamUI | undefined,
-	i10n: TLocaleContext | undefined,
-	hasAdditionalStreamConfigErrors = false
-): Record<string, string> {
-	const i10nValidationErrors =
-		i10n?.streamConfigSidePanel.validationErrors;
-
-	if (!stream) {
-		return {
-			'Source.Gasket': i10nValidationErrors?.sourceGasketRequired,
-			'Destinations.Gasket':
-				i10nValidationErrors?.destinationGasketRequired,
-			'Source.BufferSize':
-				i10nValidationErrors?.sourceBufferSizeRequired,
-			'Destinations.BufferSize':
-				i10nValidationErrors?.destinationBufferSizeRequired
-		};
-	}
-
-	const errors: Record<string, string> = {};
-
-	if (!stream.Destinations || stream.Destinations.length === 0) {
-		errors['Destinations.Gasket'] =
-			i10nValidationErrors?.destinationGasketRequired;
-	}
-
-	if (!stream.Source.BufferSize) {
-		errors['Source.BufferSize'] =
-			i10nValidationErrors?.sourceBufferSizeRequired;
-	}
-
-	// Validate all destinations have buffer sizes
-	stream.Destinations.forEach((dest, index) => {
-		if (!dest.BufferSize) {
-			errors[`Destinations.${index}.BufferSize`] =
-				i10nValidationErrors?.destinationBufferSizeRequired_01?.replace(
-					'{destinationIndex}',
-					index + 1
-				);
-		}
-	});
-
-	if (!stream.Source.Gasket) {
-		errors['Source.Gasket'] =
-			i10nValidationErrors?.sourceGasketRequired;
-
-		return errors;
-	}
-
-	const gaskets = getGasketDictionary();
-
-	if (
-		gaskets[stream.Source.Gasket].InputAndOutputBuffersTied &&
-		(stream.Source.Index < 0 || stream.StreamId < 1)
-	) {
-		errors['Source.TiedStream'] =
-			i10nValidationErrors?.sourceTiedStreamRequired;
-	}
-
-	if (hasAdditionalStreamConfigErrors) {
-		errors.AdditionalStreamConfig =
-			i10nValidationErrors?.additionalStreamConfig;
-	}
-
-	return errors;
-}

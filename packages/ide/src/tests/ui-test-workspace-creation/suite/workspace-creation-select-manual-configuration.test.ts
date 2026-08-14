@@ -41,10 +41,8 @@ describe("Workspace MAX32690 creation manual configuration", () => {
   after(async () => {
     try {
       if (view) await view.switchBack();
-      await UIUtils.sleep(2000);
       if (workbench)
         await workbench.executeCommand("View: Revert and Close Editor");
-      await UIUtils.sleep(2000);
     } catch (error) {
       console.error("Error in after() hook:", error);
     }

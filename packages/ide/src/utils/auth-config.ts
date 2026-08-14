@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import path from "node:path";
 import envPaths from "env-paths";
 import { fileURLToPath } from "node:url";
 
-import { AuthConfig, checkIfFileExists, readJsonFile } from "cfs-lib";
+import { type AuthConfig, checkIfFileExists, readJsonFile } from "cfs-lib";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 

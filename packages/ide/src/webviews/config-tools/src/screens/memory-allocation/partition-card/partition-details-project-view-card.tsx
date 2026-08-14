@@ -21,7 +21,7 @@ import {
 	setSideBarState
 } from '../../../state/slices/partitions/partitions.reducer';
 import MemoryCard from '../memory-card/memory-card';
-import DeleteIcon from '../../../../../common/icons/Delete';
+import DeleteIcon from '@common/icons/Delete';
 import styles from './partition-details-view-card.module.scss';
 import type {TLocaleContext} from '../../../common/types/context';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
@@ -34,15 +34,15 @@ import {
 import {useAppDispatch} from '../../../state/store';
 import {type ProjectInfo} from '../../../utils/config';
 import {useFilteredCores} from '../../../state/slices/app-context/appContext.selector';
-import ConfigIcon16px from '../../../../../common/icons/Config16px';
+import ConfigIcon16px from '@common/icons/Config16px';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {MemoryAliasTooltip} from './memory-alias-tooltip/memory-alias-tooltip';
-import {isProjectSecure} from '../../../utils/soc-cores';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
+import {shouldDisplayCoreMemoryAliases} from '../../../utils/soc-cores';
+import Tooltip from '@common/components/tooltip/Tooltip';
 import {
 	NON_SECURE_ABBR,
 	SECURE_ABBR
-} from '../../../../../common/constants/core-properties';
+} from '@common/constants/core-properties';
 import {getMemoryAccessOverrideForProject} from '../../../utils/memory-access';
 
 type PartitionDetailsProjectViewCardProp = Readonly<{
@@ -129,13 +129,15 @@ export default function PartitionDetailsProjectViewCard({
 			? undefined
 			: currentProject.access;
 
-	const secureCoreId = isProjectSecure(currentProject.projectId)
-		? currentProject.coreId
-		: '';
+	const coresWithAliases = shouldDisplayCoreMemoryAliases(
+		currentProject
+	)
+		? [currentProject.coreId]
+		: [];
 
 	const showInfoIcon = Boolean(
-		secureCoreId &&
-			getCoreMemoryAliases(partition.baseBlock.Name, [secureCoreId])
+		coresWithAliases.length > 0 &&
+			getCoreMemoryAliases(partition.baseBlock.Name, coresWithAliases)
 				.length > 0
 	);
 
@@ -199,7 +201,7 @@ export default function PartitionDetailsProjectViewCard({
 								<MemoryAliasTooltip
 									position={graphMousePosition.current}
 									partition={partition}
-									coreIds={[secureCoreId]}
+									coreIds={coresWithAliases}
 								/>
 							)}
 						</p>

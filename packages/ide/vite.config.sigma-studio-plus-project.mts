@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,37 +13,11 @@
  *
  */
 
-import react from "@vitejs/plugin-react-swc";
-import path from "node:path";
 import { defineConfig } from "vite";
+import { viteWebviewConfigGenerator } from "./vite-webview-config-generator";
 
-export default defineConfig({
-  root: path.resolve(__dirname, "./src/webviews/sigma-studio-plus-project"),
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@common": path.resolve(__dirname, "./src/webviews/common/"),
-    },
-  },
-  build: {
-    outDir: path.resolve(__dirname, "./out/sigma-studio-plus-project"),
-    emptyOutDir: true,
-    target: "esnext",
-    rollupOptions: {
-      input: path.resolve(
-        __dirname,
-        "./src/webviews/sigma-studio-plus-project/index.html",
-      ),
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "[name].js",
-        assetFileNames: "[name].[ext]",
-      },
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      loadPaths: [path.resolve(__dirname, "./src/webviews/common/styles")],
-    },
-  },
-});
+export default defineConfig(
+  viteWebviewConfigGenerator({
+    name: "sigma-studio-plus-project",
+  }),
+);

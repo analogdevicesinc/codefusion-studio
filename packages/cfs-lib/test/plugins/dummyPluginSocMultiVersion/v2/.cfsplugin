@@ -1,0 +1,27 @@
+{
+	"pluginName": "SoC Multi-Version Plugin v2",
+	"pluginId": "com.analog.test.soc.multiversion",
+	"pluginDescription": "Newer version supporting only max32655 WLP",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "2.0.0",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"supportedSocs": [
+		{
+			"name": "max32655",
+			"board": "EvKit_V1",
+			"package": "WLP",
+			"cores": ["CM4"]
+		}
+	],
+	"features": {
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

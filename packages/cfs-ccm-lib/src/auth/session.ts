@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 
 import type { Authorizer } from './authorizer.js';
+import { CfsCcmError } from '../error/error.js';
 
 // A session is the means to obtain access to the API
 // sessions are long-lived and can be revoked
@@ -45,3 +46,13 @@ export interface AuthFlows<T extends SessionInfo, P> {
     revoke(session: T): Promise<void>;
     refresh(session: T): Promise<P>;
 }
+
+type FlowErrorType =
+    | 'REFRESH_REJECTED'
+    | 'CALLBACK_TIMEOUT'
+    | 'CONFIGURATION_ERROR'
+    | 'SETUP_FAILED'
+    | 'UNEXPECTED_RESPONSE'
+    | 'UNHANDLED_ERROR';
+
+export class AuthFlowError extends CfsCcmError<FlowErrorType> {}

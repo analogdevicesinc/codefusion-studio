@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import {
     TokenSessionFileStorage,
     TokenAuthSession,
     TokenAuthSessionConfig,
+    AuthFlowError,
 } from '../../src/auth/index.js';
 import nock from 'nock';
 import temp from 'temp';
@@ -476,11 +477,67 @@ describe('TokenSessionFileStorage tests', () => {
                 userEmail: 'e',
                 scopes: ['s'],
                 refreshToken: 'r',
+                clientId: 'c',
             },
         ];
         await store.set(sessions);
         const loaded = await store.get();
         expect(loaded).to.deep.equal(sessions);
+    });
+
+    it('should preserve invalid entries from file when set() is called', async () => {
+        const invalidEntries: unknown[] = [
+            { foo: 'bar' },
+            { userId: 'missing-required-fields' },
+            'invalid-session',
+            123,
+            null,
+        ];
+        await fs.writeFile(tmpFile, JSON.stringify(invalidEntries));
+
+        const store =
+            await TokenSessionFileStorage.createTokenStore(tmpFile);
+        const sessions = [
+            {
+                userId: 'u',
+                userEmail: 'e',
+                scopes: ['s'],
+                refreshToken: 'r',
+                clientId: 'c',
+            },
+        ];
+
+        await store.set(sessions);
+
+        const raw = JSON.parse(await fs.readFile(tmpFile, 'utf-8'));
+        expect(raw).to.be.an('array');
+        expect(raw).to.deep.include.members(invalidEntries);
+        expect(raw).to.deep.include.members(sessions);
+    });
+
+    it('should not return invalid entries from file in get()', async () => {
+        const validSession = {
+            userId: 'u',
+            userEmail: 'e',
+            scopes: ['s'],
+            refreshToken: 'r',
+            clientId: 'c',
+        };
+        const mixedEntries: unknown[] = [
+            validSession,
+            { foo: 'bar' },
+            { userId: 'missing-required-fields' },
+            'invalid-session',
+            123,
+            null,
+        ];
+        await fs.writeFile(tmpFile, JSON.stringify(mixedEntries));
+
+        const store =
+            await TokenSessionFileStorage.createTokenStore(tmpFile);
+        const loaded = await store.get();
+
+        expect(loaded).to.deep.equal([validSession]);
     });
 
     it('should create the file with permissions 0600', async function () {
@@ -527,6 +584,7 @@ describe('TokenSessionFileStorage tests', () => {
                 userEmail: 'e',
                 scopes: ['s'],
                 refreshToken: 'r',
+                clientId: 'c',
             },
         ];
         await store.set(sessions);
@@ -541,6 +599,7 @@ describe('TokenAuthSession tests', () => {
         userEmail: string;
         scopes: string[];
         refreshToken: string;
+        clientId: string;
     };
     type TokenType = { accessToken: string; expiresAt: Date };
 
@@ -549,6 +608,7 @@ describe('TokenAuthSession tests', () => {
         userEmail: 'e',
         scopes: ['s'],
         refreshToken: 'r',
+        clientId: 'c',
     };
     const baseToken: TokenType = {
         accessToken: 'tok',
@@ -566,25 +626,30 @@ describe('TokenAuthSession tests', () => {
                     ...baseSession,
                     userId: 'other',
                     refreshToken: 'r2',
+                    clientId: 'c2',
                 },
                 {
                     ...baseSession,
                     userEmail: 'other',
                     refreshToken: 'r3',
+                    clientId: 'c3',
                 },
                 {
                     ...baseSession,
                     scopes: ['other'],
                     refreshToken: 'r4',
+                    clientId: 'c4',
                 },
             ],
             set: async () => {},
         };
         const refreshSpy = sinon.spy(async () => baseToken);
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -603,18 +668,68 @@ describe('TokenAuthSession tests', () => {
         expect(createSpy.called).to.be.false;
     });
 
-    it('should not return sessions if refresh fails for matching sessions', async () => {
+    it('should only return sessions matching clientId when provided', async () => {
+        const fakeStorage = {
+            get: async () => [
+                {
+                    ...baseSession,
+                    refreshToken: 'r1',
+                    clientId: 'c1',
+                },
+                {
+                    ...baseSession,
+                    refreshToken: 'r2',
+                    clientId: 'c2',
+                },
+            ],
+            set: async () => {},
+        };
+        const refreshSpy = sinon.spy(async () => baseToken);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
+        const config: TokenAuthSessionConfig = {
+            storage: fakeStorage,
+            flows: {
+                refresh: refreshSpy,
+                revoke: async () => {},
+                create: createSpy,
+            },
+        };
+
+        const sessions = await TokenAuthSession.getSessions(config, {
+            userId: 'u',
+            userEmail: 'e',
+            scopes: ['s'],
+            clientId: 'c2',
+        });
+
+        expect(sessions).to.have.lengthOf(1);
+        expect(sessions[0].clientId).to.equal('c2');
+        expect(refreshSpy.calledOnce).to.be.true;
+        expect(createSpy.called).to.be.false;
+    });
+
+    it('should not return sessions when refresh is rejected for matching sessions', async () => {
         const fakeStorage = {
             get: async () => [{ ...baseSession }],
             set: async () => {},
         };
-        const refreshSpy = sinon
-            .stub()
-            .rejects(new Error('refresh failed'));
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const refreshSpy = sinon.stub().rejects(
+            new AuthFlowError({
+                message: 'refresh failed',
+                type: 'REFRESH_REJECTED',
+            }),
+        );
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -633,10 +748,10 @@ describe('TokenAuthSession tests', () => {
         expect(createSpy.called).to.be.false;
     });
 
-    it('should remove sessions which fail to refresh from storage', async () => {
-        const setSpy = sinon.spy(async () => {});
+    it('should remove sessions from storage when they are rejected during refresh', async () => {
+        const setSpy = sinon.spy(async (_: SessionType[]) => {});
         const fakeStorage = {
-            get: async () => [
+            get: async (): Promise<SessionType[]> => [
                 {
                     ...baseSession,
                     userId: 'other',
@@ -646,13 +761,18 @@ describe('TokenAuthSession tests', () => {
             ],
             set: setSpy,
         };
-        const refreshSpy = sinon
-            .stub()
-            .rejects(new Error('refresh failed'));
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const refreshSpy = sinon.stub().rejects(
+            new AuthFlowError({
+                message: 'refresh failed',
+                type: 'REFRESH_REJECTED',
+            }),
+        );
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -675,6 +795,88 @@ describe('TokenAuthSession tests', () => {
         ]);
     });
 
+    it('should return an error when refresh fails matching sessions', async () => {
+        const fakeStorage = {
+            get: async () => [{ ...baseSession }],
+            set: async () => {},
+        };
+        const refreshSpy = sinon.stub().rejects(
+            new AuthFlowError({
+                message: 'some error',
+                type: 'UNHANDLED_ERROR',
+            }),
+        );
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
+        const config: TokenAuthSessionConfig = {
+            storage: fakeStorage,
+            flows: {
+                refresh: refreshSpy,
+                revoke: async () => {},
+                create: createSpy,
+            },
+        };
+        await expect(
+            TokenAuthSession.getSessions(config, {
+                userId: 'u',
+                userEmail: 'e',
+                scopes: ['s'],
+            }),
+        ).to.be.rejectedWith(AuthFlowError);
+
+        expect(refreshSpy.calledOnce).to.be.true;
+        expect(createSpy.called).to.be.false;
+    });
+
+    it('should return an error and not remove sessions from storage when they fail to refresh', async () => {
+        const setSpy = sinon.spy(async (_: SessionType[]) => {});
+        const fakeStorage = {
+            get: async (): Promise<SessionType[]> => [
+                {
+                    ...baseSession,
+                    userId: 'other',
+                    refreshToken: 'r2',
+                },
+                { ...baseSession },
+            ],
+            set: setSpy,
+        };
+        const refreshSpy = sinon.stub().rejects(
+            new AuthFlowError({
+                message: 'some error',
+                type: 'UNHANDLED_ERROR',
+            }),
+        );
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
+        const config: TokenAuthSessionConfig = {
+            storage: fakeStorage,
+            flows: {
+                refresh: refreshSpy,
+                revoke: async () => {},
+                create: createSpy,
+            },
+        };
+        await expect(
+            TokenAuthSession.getSessions(config, {
+                userId: 'u',
+                userEmail: 'e',
+                scopes: ['s'],
+            }),
+        ).to.be.rejectedWith(AuthFlowError);
+        expect(refreshSpy.calledOnce).to.be.true;
+        expect(createSpy.called).to.be.false;
+        expect(setSpy.called).to.be.false;
+    });
+
     it('should return all matching sessions, sorted by scopes length', async () => {
         const session1 = { ...baseSession, scopes: ['a'] };
         const session2 = {
@@ -695,10 +897,12 @@ describe('TokenAuthSession tests', () => {
         refreshSpy.onCall(0).resolves(baseToken);
         refreshSpy.onCall(1).resolves(baseToken);
         refreshSpy.onCall(2).resolves(baseToken);
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -722,16 +926,18 @@ describe('TokenAuthSession tests', () => {
     });
 
     it('should create and store if create=true and no match', async () => {
-        const setSpy = sinon.spy(async () => {});
+        const setSpy = sinon.spy(async (_: SessionType[]) => {});
         const fakeStorage = {
             get: async () => [],
             set: setSpy,
         };
         const refreshSpy = sinon.spy(async () => baseToken);
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -765,7 +971,7 @@ describe('TokenAuthSession tests', () => {
     it('should provide a TokenAuthorizer via authorizer getter', async () => {
         const fakeStorage = {
             get: async () => [{ ...baseSession }],
-            set: async () => {},
+            set: async (_: SessionType[]) => {},
         };
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
@@ -790,7 +996,7 @@ describe('TokenAuthSession tests', () => {
     });
 
     it('should revoke and remove session on endSession', async () => {
-        const setSpy = sinon.spy(async () => {});
+        const setSpy = sinon.spy(async (_: SessionType[]) => {});
         const fakeStorage = {
             get: async () => [
                 { ...baseSession },
@@ -804,10 +1010,12 @@ describe('TokenAuthSession tests', () => {
         };
         const refreshSpy = sinon.spy(async () => baseToken);
         const revokeSpy = sinon.spy(async () => {});
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {
@@ -839,10 +1047,12 @@ describe('TokenAuthSession tests', () => {
         };
         const refreshSpy = sinon.spy(async () => baseToken);
         const revokeSpy = sinon.spy(async () => {});
-        const createSpy = sinon.spy(async () => [
-            baseSession,
-            baseToken,
-        ]);
+        const createSpy = sinon.spy(
+            async (): Promise<[SessionType, TokenType]> => [
+                baseSession,
+                baseToken,
+            ],
+        );
         const config: TokenAuthSessionConfig = {
             storage: fakeStorage,
             flows: {

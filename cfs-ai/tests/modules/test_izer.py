@@ -156,7 +156,7 @@ def test_bad_models():
     assert result.returncode == expected_exit_code
     # Izer backend doesn't test if model exists, returns
     # indexing error later.
-    assert "list index out of range" in result.stderr
+    assert "list index out of range" in result.stdout
 
     # Network file not found
     c = create_backend_config(
@@ -165,7 +165,7 @@ def test_bad_models():
     )
     result = invoke_model_with_class(c)
     assert result.returncode == expected_exit_code
-    assert "YAML configuration file missing does not exist" in result.stderr
+    assert "YAML configuration file missing does not exist" in result.stdout
 
     # Model not a valid pytorch
     c = create_backend_config(
@@ -174,7 +174,7 @@ def test_bad_models():
     )
     result = invoke_model_with_class(c)
     assert result.returncode == expected_exit_code
-    assert "valid" in result.stderr
+    assert "valid" in result.stdout
 
     # Network not valid
     c = create_backend_config(
@@ -183,5 +183,5 @@ def test_bad_models():
     )
     result = invoke_model_with_class(c)
     assert result.returncode == expected_exit_code
-    assert "valid" in result.stderr
+    assert "valid" in result.stdout
 

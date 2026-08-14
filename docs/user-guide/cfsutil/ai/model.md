@@ -1,7 +1,7 @@
 ---
 description: Add, list, update, and remove AI models within a workspace using cfsutil ai model commands.
 author: Analog Devices
-date: 2026-04-20
+date: 2026-07-31
 ---
 <!-- markdownlint-disable MD024 -->
 
@@ -30,10 +30,10 @@ Adds a model to a workspace. The command adds a new entry to the `AIModels` arra
 }
 ```
 
-The model name is derived from the filename.
+The model name is derived from the file name.
 
 !!! note
-    A model with the same name cannot be added twice. The name is taken from the model filename (without extension).
+    A model with the same name cannot be added twice. The name is taken from the model file name (without extension) and must not exceed 64 characters. If the derived name is longer, rename the model file to a shorter name.
 
 ```sh
 cfsutil ai model add --core <value> -m <value> [--format text|json] [-w <value>] [--config <value>] [--dataset <value>] [-a <value>] [--network-config <value>] [-e <value>...] [--ignore-cache]
@@ -120,7 +120,7 @@ cfsutil ai model list [--format text|json] [-w <value>] [--config <value>] [-c <
 | ---- | ----- | ----------- |
 | `--core` | `-c` | Filter models by target core. |
 | `--format` | | Output format: `text` (default) or `json`. |
-| `--verbose` | | Show filename, backend, and extension details for each model. |
+| `--verbose` | | Show file name, backend, and extension details for each model. |
 
 !!! example
     ```sh
@@ -199,7 +199,7 @@ cfsutil ai model update --name <value> --set <value>... [--format text|json] [-w
 | --- | ----------- |
 | `enabled` | Enable or disable the model (`true` or `false`). |
 | `model` | Replace the model file path or URL. |
-| `name` | Rename the model. Must not conflict with an existing model name. |
+| `name` | Rename the model. Must not conflict with an existing model name and must not exceed 64 characters. |
 
 !!! example "Update core fields"
     ```sh

@@ -37,3 +37,11 @@ export const selectFileRequest: RequestType<
 > = {
   method: "selectFile",
 };
+
+/**
+ * Gets a vscode preference in the cfs scope.
+ * The preference ID should not include the 'cfs.' prefix.
+ */
+export const getPreferenceRequest: RequestType<{ id: string }, any> = {
+  method: "getPreference",
+};

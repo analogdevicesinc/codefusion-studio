@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,12 @@ import {
   getPackageManager,
   parsePackageReference
 } from '../../utils/package-manager.js';
+
+export const pkgInfoDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
 
 export default class CfsPackageInformation extends Command {
   static args = {
@@ -43,9 +49,13 @@ export default class CfsPackageInformation extends Command {
   };
 
   async run(): Promise<void> {
-    const packman = await getPackageManager({
-      includeCredentialProvider: true
-    });
+    const packman = await pkgInfoDeps.getPackageManager(
+      {
+        useRemotes: true
+      },
+      undefined,
+      this
+    );
     const {args, flags} = await this.parse(CfsPackageInformation);
     const pkgRef = parsePackageReference(args.packageReference);
 

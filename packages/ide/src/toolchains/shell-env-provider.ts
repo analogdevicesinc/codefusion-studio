@@ -15,7 +15,7 @@
 
 import * as path from "path";
 import { ShellExecutionOptions, workspace, WorkspaceFolder } from "vscode";
-import { CfsShellEnvProvider, resolveZephyrSdkRoot } from "cfs-lib";
+import { CfsShellEnvProvider, getZephyrSdkPath } from "cfs-lib";
 
 import {
   ENVIRONMENT,
@@ -124,27 +124,12 @@ export class IDEShellEnvProvider {
     const shellPath = this.getShellPath(sdkPath ?? "", installedTools);
     const config = workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
 
-    // Zephyr SDK: prefer per-project override, then toolchain ID from settings, then legacy path
-    let zephyrSdkPath = "";
-    const toolchainPathOverride = config.get<string>(
-      `${PROJECT}.toolchain.path`,
+    const zephyrSdkPath = await getZephyrSdkPath(
+      sdkPath,
+      config.get<string>(`${PROJECT}.toolchain.path`),
+      config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`),
+      this.toolManager
     );
-    if (toolchainPathOverride) {
-      zephyrSdkPath = toolchainPathOverride;
-    } else {
-      const toolchainId =
-        config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`) ??
-        "arm.zephyr.eabi.toolchain";
-      const zephyrToolPath = toolchainId.includes("zephyr")
-        ? await this.toolManager.getToolPath(toolchainId)
-        : undefined;
-
-      if (zephyrToolPath) {
-        zephyrSdkPath = resolveZephyrSdkRoot(zephyrToolPath);
-      } else if (sdkPath) {
-        zephyrSdkPath = path.join(sdkPath, "Tools", "zephyr-sdk");
-      }
-    }
 
     // Add zephyr-sdk to the CMAKE_PREFIX_PATH so CMake can find the zephyr toolchains.
     const cmakePrefixPath = [zephyrSdkPath, process.env.CMAKE_PREFIX_PATH]

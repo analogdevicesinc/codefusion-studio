@@ -84,6 +84,7 @@ CFSUtil provides various command categories for different tasks:
 - **[ELF Utilities](./elf-utilities.md)** - Analyze and inspect ELF files
 - **[Generate](./generate.md)** - Generate source code from configuration files
 - **[myAnalog Authentication](./myanalog-auth.md)** - Authenticate with myAnalog for package access
+- **[API Key Authentication](./apikey-auth.md)** - Create and manage API keys for use in automated workflows
 - **[Package Manager](./package-manager.md)** - Install and manage SDKs, plugins, and toolchains
 - **[Plugins](./oclif-plugins.md)** - Extend CFSUtil with additional CLI plugins
 - **[Port](./port.md)** - Information about active serial ports

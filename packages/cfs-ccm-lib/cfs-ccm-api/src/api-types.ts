@@ -2558,6 +2558,311 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    '/sw/packages/repos/metadata': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists Stored SWPackageRepo Metadata
+         * @description Returns a list of stored software package repository metadata
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Continuation token from previous response */
+                    continue?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['main.ListStoredSWPackageReposOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create SwPackageRepo Metadata
+         * @description Creates a new software package repository metadata entity
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Details of the software package repo metadata entity to be created */
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['main.CreateSWPackageRepoRequest'];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['swpackagerepo.CreateSWPackageRepoOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    '/sw/packages/repos/metadata/{metadataID}': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete SWPackageRepo Metadata
+         * @description Deletes a software package repo metadata entity
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description ID of the software package repo metadata entity to be deleted */
+                    metadataID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['swpackagerepo.DeleteSWPackageRepoOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Patch SwPackageRepo Metadata
+         * @description Updates an existing software package repo metadata entity
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description ID of the software package repo metadata entity to update */
+                    metadataID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Parameters for updating software package repo metadata entity */
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['main.PatchSWPackageRepoRequest'];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['swpackagerepo.UpdateSWPackageRepoOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     '/sw/packages/tags': {
         parameters: {
             query?: never;
@@ -3896,6 +4201,15 @@ export interface components {
             packages?: components['schemas']['soc.CreateInputPackage'][];
             supportsMCUboot?: boolean;
         };
+        'main.CreateSWPackageRepoRequest': {
+            accessTag: components['schemas']['types.AccessTag'];
+            authRequired?: boolean;
+            disabledByDefault?: boolean;
+            packageFormat?: string;
+            repoDescription?: string;
+            repoName?: string;
+            repoUrl: string;
+        };
         'main.CreateSWPackageTagRequest': {
             accessTag: components['schemas']['types.AccessTag'];
             description?: string;
@@ -3951,6 +4265,11 @@ export interface components {
             continuationToken?: string;
             count: number;
             items: components['schemas']['types.SoC'][];
+        };
+        'main.ListStoredSWPackageReposOutput': {
+            continuationToken?: string;
+            count: number;
+            items: components['schemas']['types.SWPackageRepoMetadata'][];
         };
         'main.ListSWPackageReposOutput': {
             continuationToken?: string;
@@ -4024,6 +4343,14 @@ export interface components {
             media?: components['schemas']['types.Media'][];
             name?: string;
             supportsMCUboot?: boolean | null;
+        };
+        'main.PatchSWPackageRepoRequest': {
+            accessTag?: components['schemas']['types.AccessTag'];
+            authRequired?: boolean;
+            disabledByDefault?: boolean;
+            packageFormat?: string | null;
+            repoDescription?: string | null;
+            repoName?: string | null;
         };
         'main.PatchSWPackageTagRequest': {
             accessTag?: components['schemas']['types.AccessTag'];
@@ -4165,7 +4492,19 @@ export interface components {
         'socfamily.UpdateSoCFamilyOutput': {
             item?: components['schemas']['types.SoCFamily'];
         };
+        'swpackagerepo.CreateSWPackageRepoOutput': {
+            item: components['schemas']['types.SWPackageRepoMetadata'];
+        };
+        'swpackagerepo.DeleteSWPackageRepoOutput': {
+            item: components['schemas']['types.SWPackageRepoMetadata'];
+        };
+        'swpackagerepo.UpdateSWPackageRepoOutput': {
+            item: components['schemas']['types.SWPackageRepoMetadata'];
+        };
         'swpackagetag.CreateSWPackageTagOutput': {
+            item: components['schemas']['types.SWPackageTag'];
+        };
+        'swpackagetag.DeleteSWPackageTagOutput': {
             item: components['schemas']['types.SWPackageTag'];
         };
         'swpackagetag.UpdateSWPackageTagOutput': {
@@ -4300,7 +4639,24 @@ export interface components {
             name: string;
         };
         'types.SWPackageRepo': {
+            accessTag?: components['schemas']['types.AccessTag'];
+            authRequired: boolean;
+            disabledByDefault: boolean;
             id: string;
+            metadataId?: string;
+            packageFormat: string;
+            repoDescription?: string;
+            repoName?: string;
+            repoUrl: string;
+        };
+        'types.SWPackageRepoMetadata': {
+            accessTag?: components['schemas']['types.AccessTag'];
+            authRequired: boolean;
+            disabledByDefault: boolean;
+            id: string;
+            packageFormat: string;
+            repoDescription?: string;
+            repoName?: string;
             repoUrl: string;
         };
         'types.SWPackageTag': {

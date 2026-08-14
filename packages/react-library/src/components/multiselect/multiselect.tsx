@@ -35,6 +35,7 @@ interface MultiSelectProps {
 	variant?: 'default' | 'form' | 'round' | 'filter';
 	chipText?: string;
 	size?: 'md' | 'lg';
+	alignment?: 'left' | 'right';
 	onSelection: (
 		options: MultiSelectOption[]
 	) => void | MultiSelectOption[];
@@ -51,6 +52,7 @@ export default function MultiSelect({
 	chipText,
 	allowClear,
 	size = 'md',
+	alignment = 'left',
 	className,
 	onSelection
 }: MultiSelectProps): JSX.Element {
@@ -153,7 +155,7 @@ export default function MultiSelect({
 				<div
 					className={`${styles.optionsContainer} ${
 						size === 'lg' ? styles.largeOptionsContainer : ''
-					}`}
+					} ${styles[`align-${alignment}`]}`}
 				>
 					{options.map((option, index) => {
 						return (

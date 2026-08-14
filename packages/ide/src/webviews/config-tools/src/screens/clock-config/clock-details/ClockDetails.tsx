@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import {useEvaluateClockCondition} from '../../../hooks/use-evaluate-clock-condi
 import {memo, useMemo} from 'react';
 import {getClockNodeConfig} from '../../../utils/clock-nodes';
 import {use} from 'cfs-react-library';
-import type {ControlCfg} from '../../../../../common/types/soc';
+import type {ControlCfg} from '@common/types/soc';
 
 const toggleControlInTitle = 'ENABLE';
 
@@ -74,12 +74,14 @@ function ClockDetails({
 			let enumValues = control.EnumValues;
 
 			if (control.EnumValues) {
-				enumValues = control.EnumValues.filter(enumValue =>
-					Boolean(
-						activeClockNodeDetails.Config?.[control.Id]?.[
-							enumValue.Id
-						]
-					)
+				enumValues = control.EnumValues.filter(
+					enumValue =>
+						enumValue.IsPluginAddedOption ??
+						Boolean(
+							activeClockNodeDetails.Config?.[control.Id]?.[
+								enumValue.Id
+							]
+						)
 				);
 				acc[control.Id] = {...control, EnumValues: enumValues};
 			} else {

@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.857",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-06-12T14:31:50.842944Z",
+  "Version": "1.3.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T16:45:36.866943Z",
   "Name": "MAX32658",
   "Description": "Nano-Power Arm Cortex-M33 MCU with BLE for CGM and Wearable Applications",
   "Endianness": "Little",
@@ -189,12 +189,6 @@
         }
       ],
       "ClockNode": "Bluetooth"
-    },
-    {
-      "Name": "CM33",
-      "Description": "ARM Cortex-M33",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "CM33 SysTick (NS)",
@@ -9805,6 +9799,7 @@
         "Type": "boolean"
       }
     ],
+    "BLE": [],
     "CM33 SysTick (S)": [
       {
         "Id": "ENABLE",
@@ -9863,6 +9858,9 @@
         "NumericBase": "Decimal"
       }
     ],
+    "GCR": [],
+    "SIR": [],
+    "FCR": [],
     "WDT": [
       {
         "Id": "WDT_RST_EN",
@@ -10533,6 +10531,11 @@
         ]
       }
     ],
+    "PWRSEQ": [],
+    "MCR": [],
+    "AES": [],
+    "AESKEYS": [],
+    "GPIO0": [],
     "CRC": [
       {
         "Id": "DMA_EN",
@@ -13869,6 +13872,8 @@
         "Condition": "${Control:MODE} ${String:TARGET} = ${Control:MODE} ${String:SECONDARY} = |"
       }
     ],
+    "DMA0": [],
+    "DMA1": [],
     "UART0": [
       {
         "Id": "TX_RX_MODES",
@@ -14744,6 +14749,8 @@
         "Type": "boolean"
       }
     ],
+    "NSPC": [],
+    "RSTZ": [],
     "FLC": [
       {
         "Id": "LOW_VOLTAGE",
@@ -14767,7 +14774,9 @@
         "Description": "Enable Cache",
         "Type": "boolean"
       }
-    ]
+    ],
+    "SPC": [],
+    "MPC": []
   },
   "ClockNodes": [
     {
@@ -16227,7 +16236,7 @@
             {
               "Register": "TMR0_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
@@ -16235,7 +16244,7 @@
             {
               "Register": "TMR0_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]
@@ -16253,7 +16262,7 @@
             {
               "Register": "TMR1_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
@@ -16261,7 +16270,7 @@
             {
               "Register": "TMR1_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]
@@ -16279,7 +16288,7 @@
             {
               "Register": "TMR2_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
@@ -16287,7 +16296,7 @@
             {
               "Register": "TMR2_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]
@@ -16305,7 +16314,7 @@
             {
               "Register": "TMR3_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
@@ -16313,7 +16322,7 @@
             {
               "Register": "TMR3_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]
@@ -16331,7 +16340,7 @@
             {
               "Register": "TMR4_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
@@ -16339,7 +16348,7 @@
             {
               "Register": "TMR4_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]
@@ -16357,15 +16366,15 @@
             {
               "Register": "TMR5_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "2",
+              "Value": "1",
               "Operation": "Write"
             }
           ],
           "CLK_32KHZ": [
             {
-              "Register": "TMR4_CTRL1",
+              "Register": "TMR5_CTRL1",
               "Field": "CLKSEL_A",
-              "Value": "3",
+              "Value": "2",
               "Operation": "Write"
             }
           ]

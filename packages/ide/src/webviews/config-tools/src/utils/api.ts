@@ -41,10 +41,7 @@ import type {
 	ConfiguredApplicationPackage,
 	CfsMissingComponent
 } from 'cfs-types';
-import type {
-	CodeGenerationProject,
-	CodeGenerationResult
-} from 'cfs-lib/dist/types/code-generation';
+import type {CodeGenerationProject} from 'cfs-lib/dist/types/code-generation';
 import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
 import type {
 	CfsPackage,
@@ -62,7 +59,27 @@ export async function generateCode(
 ) {
 	return request('generate-code', {
 		selectedProjects
-	}) as Promise<CodeGenerationResult>;
+	}) as Promise<string[]>;
+}
+
+/**
+ * Emit a telemetry event to the extension backend.
+ * The backend forwards recognized action names to the telemetry manager.
+ * Specific user-entered values must not be included in metadata as they
+ * can leak sensitive data.
+ * @param action - A known telemetry action name (see TELEMETRY_ACTIONS).
+ * @param metadata - Non-sensitive contextual metadata for the event.
+ */
+export async function logTelemetryEvent(
+	action: string,
+	metadata?: Record<string, unknown>
+): Promise<void> {
+	return request('log-telemetry', {
+		action,
+		metadata
+	})
+		.then(() => undefined) // Catching errors to avoid unhandled promise rejections in the UI
+		.catch(() => undefined);
 }
 
 export type CfsUpdateFileStatus = {
@@ -394,19 +411,15 @@ export function getControlsFromCache(
  * @returns Array of formatted file paths
  */
 export function formatGeneratedFilePaths(
-	files: CodeGenerationResult,
+	files: string[],
 	projectNames: string[]
-): CodeGenerationResult {
+): string[] {
 	if (!files.length || !projectNames.length) {
 		return files;
 	}
 
 	return files.map(file => {
-		if (typeof file !== 'string') {
-			return file;
-		}
-
-		const pathSegments = file.split('/');
+		const pathSegments = file.split(/[/\\]/).filter(Boolean);
 
 		for (const projectName of projectNames) {
 			if (pathSegments.includes(projectName)) {
@@ -445,7 +458,7 @@ export async function createCodeGenerationPromise(
 		});
 	}
 
-	return new Promise<CodeGenerationResult | string>(resolve => {
+	return new Promise<string[] | string>(resolve => {
 		generateCode(selectedProjects)
 			.then(files => {
 				if (!Array.isArray(files) || files.length === 0) {
@@ -479,16 +492,12 @@ export async function createCodeGenerationPromise(
 				);
 
 				// Resolve the promise with the formatted files
-				resolve(
-					formattedFiles.filter(
-						result => typeof result !== 'string' || result !== ''
-					)
-				);
+				resolve(formattedFiles.filter(result => result !== ''));
 			})
 			.catch(error => {
 				console.error('Error generating code:', error);
 
-				return 'Error generating code';
+				resolve('Error generating code');
 			});
 	});
 }

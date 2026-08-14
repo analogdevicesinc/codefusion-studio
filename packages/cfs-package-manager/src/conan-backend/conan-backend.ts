@@ -19,6 +19,7 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 import semver from "semver";
+import { withLock } from "@ster5/global-mutex";
 
 import type {
 	CfsPackage,
@@ -28,8 +29,9 @@ import type {
 	CfsPackageLicenseReporter,
 	CfsPackageReference,
 	CfsPackageRemote,
-	CfsPackageRemoteCredentialProvider,
 	CfsPackageInstallOptions,
+	CfsPackageDependenciesOptions,
+	CfsPackageRemotesProvider,
 	CfsInstallInput,
 	CfsInstallPlan,
 	CfsPackageFilter,
@@ -37,10 +39,7 @@ import type {
 } from "../api/api.js";
 import PackmanUtils from "../utils/utils.js";
 import { ConanRunner, ConanError } from "./conan-runner.js";
-import {
-	ConanRemoteManager,
-	ConanRemoteInfo
-} from "./conan-remote.js";
+import { ConanRemoteManager } from "./conan-remote.js";
 
 interface PackageIndexEntry {
 	full_ref: string;
@@ -80,11 +79,8 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	// Initialization state flag for remotes
 	private _remotesReady = false;
 
-	// Registered credential providers
-	private readonly credentialProviders = new Map<
-		string,
-		CfsPackageRemoteCredentialProvider
-	>();
+	// Optional remote provider
+	private remotesProvider?: CfsPackageRemotesProvider;
 
 	// Optional reporter used to send license acceptance to cloud backends
 	private licenseReporter?: CfsPackageLicenseReporter;
@@ -93,14 +89,13 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	private readonly _conanRun: ConanRunner;
 
 	// Manages conan remotes
-	private readonly remoteMgr: ConanRemoteManager;
+	private remoteMgr: ConanRemoteManager;
 
 	constructor({
 		conanHome = defaultConanHomePath,
 		indexDir = defaultIndexDir,
 		cfsInstallDir = PackmanUtils.getCFSInstallPath(),
-		conanConfigPath = defaultConanConfigPath,
-		credentialProviders = new Array<CfsPackageRemoteCredentialProvider>()
+		conanConfigPath = defaultConanConfigPath
 	} = {}) {
 		this._indexDir = indexDir;
 		this._conanHomePath = conanHome;
@@ -110,10 +105,72 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			this._conanRun,
 			this._conanHomePath
 		);
-		// Register initial credential providers
-		for (const provider of credentialProviders) {
-			this.credentialProviders.set(provider.name, provider);
-		}
+
+		// Lockfile to prevent concurrent executions
+		const lockFilePath = path.join(
+			this._conanHomePath,
+			".packman.lock"
+		);
+
+		// Functions to exclude from locking
+		// These references are used instead of method names to avoid
+		// issues with minification or bundling renaming them
+		/* eslint-disable @typescript-eslint/unbound-method */
+		const lockExemptMethods = new WeakSet([
+			ConanPkgManager.prototype.getIndexFilePath as object
+		]);
+		/* eslint-enable @typescript-eslint/unbound-method */
+
+		// Returns a proxy which wraps (non-exempt) instance methods defined on ConanPkgManager.prototype
+		// in a lock to prevent concurrent executions across processes.
+		// Note: wrapped methods always return a promise
+		return new Proxy(this, {
+			get(target: ConanPkgManager, prop: string | symbol): unknown {
+				const member = Reflect.get(target, prop) as unknown;
+
+				// Only wrap functions in the lock,
+				// return other properties directly
+				if (typeof member !== "function" || prop === "constructor") {
+					return member;
+				}
+
+				const method = member as (
+					this: ConanPkgManager,
+					...fnArgs: unknown[]
+				) => unknown;
+
+				// Check if the method is exempt from locking
+				if (
+					// Only lock methods defined in ConanPkgManager, not inherited ones
+					typeof prop !== "string" ||
+					!Object.prototype.hasOwnProperty.call(
+						ConanPkgManager.prototype,
+						prop
+					) ||
+					lockExemptMethods.has(method as object)
+				) {
+					return (...args: unknown[]) => {
+						// Calls the method as usual with the correct 'this' context and the provided arguments
+						return method.call(target, ...args);
+					};
+				}
+
+				return async (...args: unknown[]) => {
+					// The lockfile directory must exist
+					await fs.promises.mkdir(path.dirname(lockFilePath), {
+						recursive: true
+					});
+					return await withLock(
+						{ fileToLock: lockFilePath },
+						async () => {
+							// Calls the method once the lock is obtained,
+							// with the correct 'this' context and the provided arguments
+							return await method.call(target, ...args);
+						}
+					);
+				};
+			}
+		});
 	}
 
 	private static _packageFilter(
@@ -228,8 +285,11 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 				if (retry == maxTries) throw error;
 				if (error instanceof ConanError) {
 					if (error.code == "AUTH_ERROR") {
-						// Re-authenticate the remotes with credential providers
-						await this._reAuthWithProvider(error.remotes);
+						// Re-configure/authenticate the remotes
+						await this.remoteMgr.applyRemotesConfig({
+							refreshCredentials: true,
+							remoteNames: error.remotes
+						});
 
 						// retry the command
 						continue;
@@ -318,6 +378,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		}
 
 		if (initRemotes) {
+			this._remotesReady = false;
 			await this._ensureRemotesReady();
 		}
 	}
@@ -326,166 +387,20 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	 * Ensures remotes are configured and authenticated.
 	 * This is required for operations that access remote repositories.
 	 */
-	private async _ensureRemotesReady(): Promise<void> {
+	private async _ensureRemotesReady({
+		applyConfig = true
+	}: { applyConfig?: boolean } = {}): Promise<void> {
 		if (this._remotesReady) return;
 
 		// Ensure remotes are initialized before running any conan command
 		await this.remoteMgr.init();
 
 		// Ensure remotes config is up to date
-		await this.remoteMgr.applyRemotesConfig();
-
-		// Update remotes status based on their authentication
-		// This will enable/disable remotes based on the registered credential providers
-		// and will try to authenticate with them if needed.
-		await this._authUpdateRemoteStatus(
-			await this.remoteMgr.listRemotes()
-		);
+		if (applyConfig) {
+			await this.remoteMgr.applyRemotesConfig();
+		}
 
 		this._remotesReady = true;
-	}
-
-	// Re-authenticates the given remotes with refreshed credentials
-	// from their registered credential providers
-	// Accepts an optional list of remote names to re-authenticate
-	// Ignores non-provider remotes
-	private async _reAuthWithProvider(
-		remoteNames?: string[]
-	): Promise<void> {
-		// Get the list of remotes to re-authenticate
-		// either the list provided or all remotes that have a provider
-		const remotes = (await this.remoteMgr.listRemotes())
-			.filter((r) =>
-				remoteNames && remoteNames.length > 0
-					? remoteNames.includes(r.name)
-					: true
-			)
-			.filter((r) => r.provider !== undefined);
-
-		// If we received a list with only non-provider remotes, do nothing
-		if (remotes.length === 0) {
-			return;
-		}
-
-		// attempt to fetch new credentials and re-authenticate
-		await this._authUpdateRemoteStatus(remotes, true);
-	}
-
-	// Logs in using credentials from the provider, refreshes and retries if needed
-	// returns true if authentication was successful, false if the provider did not have credentials
-	// throws if some other error happened
-	private async _authWithProvider(
-		remote: ConanRemoteInfo,
-		provider: CfsPackageRemoteCredentialProvider
-	): Promise<boolean> {
-		const maxTries = 2;
-		for (let retry = 1; retry <= maxTries; retry++) {
-			const creds = await provider.getRemoteCredential(remote.url);
-			if (creds) {
-				try {
-					await this._login(remote.name, creds.user, creds.password);
-					return true;
-				} catch (error) {
-					if (retry == maxTries) throw error;
-					if (error instanceof ConanError) {
-						if (error.code === "AUTH_ERROR") {
-							// try refreshing the credential
-							await provider.refreshRemoteCredential(remote.url);
-							continue;
-						}
-					}
-
-					throw error; // rethrow error if we cannot handle it
-				}
-			}
-			return false;
-		}
-		return false;
-	}
-
-	// Updates the status of the given remotes based on their authentication
-	// This will try to authenticate remotes that have a registered credential provider
-	// and will enable/disable them based on the authentication result
-	// remotes without a provider will be enabled
-	// remotes with a provider but no credentials will be disabled
-	// remotes with a provider and valid credentials will be enabled
-	// remotes with a provider that isn't registered will be disabled
-	private async _authUpdateRemoteStatus(
-		remotes: ConanRemoteInfo[],
-		refresh = false
-	): Promise<void> {
-		// group by provider
-		const byProvider = new Map<
-			string | undefined,
-			ConanRemoteInfo[]
-		>();
-		for (const remote of remotes) {
-			// Group remotes by provider
-			// remotes without a provider will be grouped under undefined
-			const provider = remote.provider;
-			if (!byProvider.has(provider)) {
-				byProvider.set(provider, []);
-			}
-			byProvider.get(provider)?.push(remote);
-		}
-
-		// for each provider, try to authenticate and enable all the remotes that belong to it
-		for (const [providerName, providerRemotes] of byProvider) {
-			if (providerName) {
-				const provider = this.credentialProviders.get(providerName);
-				if (provider) {
-					for (const r of providerRemotes) {
-						if (refresh) {
-							// if refresh is true, we want to re-authenticate even if already authenticated
-							r.authenticated = false;
-							await provider.refreshRemoteCredential(r.url);
-						}
-						// try to authenticate and enable/disable the remote based on the result
-						await this._enableAuthenticatedRemote(r, provider);
-					}
-				} else {
-					// disable all remotes that belong to a non-registered provider
-					for (const r of providerRemotes) {
-						if (r.enabled) {
-							await this.remoteMgr.disableRemote(r.name);
-						}
-					}
-				}
-			} else {
-				// enable all non-provider remotes
-				for (const r of providerRemotes) {
-					if (!r.enabled) {
-						await this.remoteMgr.enableRemote(r.name);
-					}
-				}
-			}
-		}
-	}
-
-	// Ensures the given remote is enabled if authenticated, disabled if not
-	private async _enableAuthenticatedRemote(
-		remote: ConanRemoteInfo,
-		provider: CfsPackageRemoteCredentialProvider
-	): Promise<void> {
-		if (!remote.authenticated) {
-			// try to authenticate with the provider
-			if (await this._authWithProvider(remote, provider)) {
-				// authentication successful
-				if (!remote.enabled) {
-					await this.remoteMgr.enableRemote(remote.name);
-				}
-			} else {
-				// disable remote if we could not authenticate
-				if (remote.enabled) {
-					await this.remoteMgr.disableRemote(remote.name);
-				}
-			}
-		} else {
-			// remote is already authenticated, ensure it's enabled
-			if (!remote.enabled) {
-				await this.remoteMgr.enableRemote(remote.name);
-			}
-		}
 	}
 
 	async list(
@@ -627,15 +542,29 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 	async getPackageInfo(
 		reference: CfsPackageReference
-	): Promise<CfsPackage> {
+	): Promise<CfsPackage>;
+	async getPackageInfo(
+		references: CfsPackageReference[]
+	): Promise<CfsPackage[]>;
+	async getPackageInfo(
+		reference: CfsPackageReference | CfsPackageReference[]
+	): Promise<CfsPackage | CfsPackage[]> {
+		const isBatch = Array.isArray(reference);
+		const references = isBatch ? reference : [reference];
+
+		if (references.length === 0) {
+			return [];
+		}
+
 		await this._ensureRemotesReady();
 
 		const out = await this._conanCommand([
 			"cfs",
 			"get-pkg-info",
-			this._refToString(reference)
+			...references.map((ref) => this._refToString(ref))
 		]);
-		return JSON.parse(out) as CfsPackage;
+		const parsed = JSON.parse(out) as CfsPackage[];
+		return isBatch ? parsed : parsed[0];
 	}
 
 	async install(
@@ -720,17 +649,75 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	}
 
 	async dependencies(
-		reference: CfsPackageReference
+		reference: CfsPackageReference,
+		options?: CfsPackageDependenciesOptions
 	): Promise<CfsPackageReference[]> {
-		await this._ensureRemotesReady();
+		const commandOptions: string[] = [];
+
+		if (options?.localOnly === true) {
+			commandOptions.push("--no-remote");
+		} else {
+			await this._ensureRemotesReady();
+		}
+
+		if (options?.unresolved === true) {
+			commandOptions.push("--unresolved");
+		}
 
 		const out = await this._conanCommand([
 			"cfs",
 			"dependencies",
-			this._refToString(reference)
+			this._refToString(reference),
+			...commandOptions
 		]);
 
 		return this._parsePackageReferences(out);
+	}
+
+	async dependenciesBatch(
+		references: CfsPackageReference[],
+		options?: CfsPackageDependenciesOptions
+	): Promise<Record<string, CfsPackageReference[]>> {
+		if (references.length === 0) {
+			return {};
+		}
+
+		const commandOptions: string[] = [];
+
+		if (options?.localOnly === true) {
+			commandOptions.push("--no-remote");
+		} else {
+			await this._ensureRemotesReady();
+		}
+
+		if (options?.unresolved === true) {
+			commandOptions.push("--unresolved");
+		}
+
+		const out = await this._conanCommand([
+			"cfs",
+			"dependencies-batch",
+			...references.map((ref) => this._refToString(ref)),
+			...commandOptions
+		]);
+
+		const parsed = JSON.parse(out) as Record<string, string[]>;
+
+		// Build the result from the requested references rather than the parsed
+		// keys, so every caller-supplied reference is present regardless of what
+		// the backend echoed back.
+		const result: Record<string, CfsPackageReference[]> = {};
+
+		for (const reference of references) {
+			const key = this._refToString(reference);
+			const dependencies = parsed[key] ?? [];
+
+			result[key] = this._parsePackageReferences(
+				dependencies.join("\n")
+			);
+		}
+
+		return result;
 	}
 
 	async localConsumers(
@@ -767,25 +754,13 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	}
 
 	async listRemotes(): Promise<CfsPackageRemote[]> {
-		await this._ensureRemotesReady();
-		const remotes = await this.remoteMgr.listRemotes();
-		return remotes.map((r) => ({
-			name: r.name,
-			url: new URL(r.url),
-			// auth is an object with either username or provider, or is undefined
-			auth: r.provider
-				? ({ credentialProvider: r.provider } as {
-						username: never;
-						credentialProvider: string;
-					})
-				: r.authenticated
-					? ({ username: r.user_name } as {
-							username: string;
-							credentialProvider: never;
-						})
-					: undefined,
-			custom: !r.managed
-		}));
+		await this._ensureRemotesReady({ applyConfig: false }); // listing the remotes also applies the config
+		try {
+			return await this.remoteMgr.listRemotes();
+		} catch (error) {
+			this._remotesReady = false;
+			throw error;
+		}
 	}
 
 	async login(
@@ -794,43 +769,22 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		password: string
 	): Promise<void> {
 		await this._ensureRemotesReady();
-		await this.remoteMgr.setCustomRemoteCredentialProvider(
-			remote,
-			undefined
-		); // remove provider
-		await this._login(remote, user, password);
-	}
-
-	private async _login(
-		remote: string,
-		user: string,
-		password: string
-	): Promise<void> {
-		await this._conanRun.execute(
-			["remote", "login", "-p", password, remote, user],
-			{ cwd: this._indexDir }
-		);
+		await this.remoteMgr.loginRemote(remote, user, password);
 	}
 
 	async logout(remoteName: string): Promise<void> {
 		await this._ensureRemotesReady();
-		const remote = await this.remoteMgr.getRemote(remoteName);
-		if (!remote) {
-			throw new Error(`Remote '${remoteName}' does not exist.`);
-		}
-		if (remote.provider) {
-			await this.remoteMgr.setCustomRemoteCredentialProvider(
-				remoteName,
-				undefined
-			); // remove provider
-		}
-		if (!remote.enabled) {
-			// cannot logout from a disabled remote, enable it first
-			await this.remoteMgr.enableRemote(remoteName);
-		}
-		await this._conanRun.execute(["remote", "logout", remoteName], {
-			cwd: this._indexDir
-		});
+		await this.remoteMgr.logoutRemote(remoteName);
+	}
+
+	async enableRemote(name: string): Promise<void> {
+		await this._ensureRemotesReady();
+		await this.remoteMgr.enableRemote(name);
+	}
+
+	async disableRemote(name: string): Promise<void> {
+		await this._ensureRemotesReady();
+		await this.remoteMgr.disableRemote(name);
 	}
 
 	async installFromManifest(
@@ -940,21 +894,25 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			return version;
 		};
 
+		const mapPackageReference = (
+			pkg: CfsPackageReference
+		): CfsPackageReference => ({
+			name: pkg.name,
+			version: cleanVersion(pkg.version)
+		});
+
 		return {
-			toInstall: result.toInstall.map((pkg) => ({
-				name: pkg.name,
-				version: cleanVersion(pkg.version)
-			})),
-			alreadyInstalled: result.alreadyInstalled.map((pkg) => ({
-				name: pkg.name,
-				version: cleanVersion(pkg.version)
+			toInstall: result.toInstall.map(mapPackageReference),
+			alreadyInstalled: result.alreadyInstalled.map(
+				mapPackageReference
+			),
+			skipped: (result.skipped ?? []).map((info) => ({
+				reference: mapPackageReference(info.reference),
+				reasonCode: info.reasonCode
 			})),
 			requiresLicenseAcceptance: result.requiresLicenseAcceptance.map(
 				(info) => ({
-					reference: {
-						name: info.reference.name,
-						version: cleanVersion(info.reference.version)
-					},
+					reference: mapPackageReference(info.reference),
 					license: info.license,
 					licenseText: info.licenseText
 				})
@@ -962,46 +920,28 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		};
 	}
 
-	async registerCredentialProvider(
-		provider: CfsPackageRemoteCredentialProvider
+	async registerRemotesProvider(
+		provider: CfsPackageRemotesProvider
 	): Promise<void> {
-		this.credentialProviders.set(provider.name, provider);
-		// enable all the remotes that use this provider
-		// which are either already authenticated, or we can authenticate now
-		const remotes = await this.remoteMgr.listRemotes(provider.name);
-		for (const remote of remotes) {
-			await this._enableAuthenticatedRemote(remote, provider);
-		}
-	}
-
-	async unregisterCredentialProvider(
-		provider: string | CfsPackageRemoteCredentialProvider
-	): Promise<void> {
-		const providerName =
-			typeof provider === "string" ? provider : provider.name;
-		this.credentialProviders.delete(providerName);
-		// disable all the remotes that use this provider
-		const remotes = await this.remoteMgr.listRemotes(providerName);
-		for (const remote of remotes) {
-			if (remote.enabled) {
-				await this.remoteMgr.disableRemote(remote.name);
-			}
-		}
-	}
-
-	async setRemoteCredentialProvider(
-		remoteName: string,
-		providerName: string
-	): Promise<void> {
-		await this.remoteMgr.setCustomRemoteCredentialProvider(
-			remoteName,
-			providerName
+		this.remotesProvider = provider;
+		this.remoteMgr = new ConanRemoteManager(
+			this._conanRun,
+			this._conanHomePath,
+			this.remotesProvider
 		);
-		const remote = await this.remoteMgr.getRemote(remoteName);
-		const provider = this.credentialProviders.get(providerName);
-		if (provider && remote) {
-			await this._enableAuthenticatedRemote(remote, provider);
-		}
+		this._remotesReady = false;
+		return Promise.resolve();
+	}
+
+	async unregisterRemotesProvider(): Promise<void> {
+		this.remotesProvider = undefined;
+		this.remoteMgr = new ConanRemoteManager(
+			this._conanRun,
+			this._conanHomePath,
+			this.remotesProvider
+		);
+		this._remotesReady = false;
+		await this._ensureRemotesReady();
 	}
 
 	registerLicenseReporter(

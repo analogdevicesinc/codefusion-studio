@@ -65,7 +65,12 @@ def version_satisfies(installed_version: str, required_range: str) -> bool:
             range_with_prerelease = f"{required_range}, include_prerelease"
 
         version_range = VersionRange(range_with_prerelease)
-        version = Version(installed_version)
+
+        # Build metadata does not affect SemVer precedence. Conan VersionRange
+        # matching can reject versions containing '+' for some expressions, so
+        # evaluate using the precedence portion only.
+        normalized_installed_version = installed_version.split("+", 1)[0]
+        version = Version(normalized_installed_version)
         return version_range.contains(version, None)
     except (ValueError, TypeError):
         # VersionRange or Version raises ValueError/TypeError for malformed version
@@ -164,12 +169,24 @@ def handle_and_raise_conan_exception(e):
             f"The following packages are not available and cannot be installed: {', '.join(missing_recipe_errors)}"
         )
 
-    # Check for packages not found
-    unresolved_error_pattern = re.compile(r"Unable to find '(.*)' in remotes")
-    unresolved_errors = unresolved_error_pattern.findall(error_msg)
-    if unresolved_errors:
+    # Check for packages not found. Conan can report this in multiple forms:
+    # 1) "Unable to find '<ref>' in remotes"
+    # 2) "<ref>: Not found in local cache, looking in remotes"
+    missing_refs = []
+
+    unresolved_error_pattern = re.compile(r"Unable to find '([^']+)' in remotes")
+    missing_refs.extend(unresolved_error_pattern.findall(error_msg))
+
+    local_cache_miss_pattern = re.compile(
+        r"([^\s:]+): Not found in local cache, looking in remotes"
+    )
+    missing_refs.extend(local_cache_miss_pattern.findall(error_msg))
+
+    if missing_refs:
+        # Preserve order while removing duplicates.
+        normalized_missing_refs = list(dict.fromkeys(missing_refs))
         raise ConanException(
-            f"Couldn't find the following packages: {', '.join(unresolved_errors)}"
+            f"Couldn't find the following packages: {', '.join(normalized_missing_refs)}"
         )
 
     # Check for version range resolution errors (no available version satisfies the requested range)
@@ -592,14 +609,17 @@ def get_package_license_info(conan_api: ConanAPI, pkg_ref: str) -> dict | None:
             unknown reference). This allows callers to detect and handle real failures;
             the actual install step will surface detailed errors if truly unresolvable.
     """
-    remotes = conan_api.remotes.list()
-    app = ConanApp(conan_api)
-    layout, _, _ = app.proxy.get_recipe(
-        RecipeReference.loads(pkg_ref), remotes, True, True
-    )
-    conanfile = conan_api.local.inspect(
-        layout.conanfile(), remotes=remotes, lockfile=None
-    )
+    try:
+        remotes = conan_api.remotes.list()
+        app = ConanApp(conan_api)
+        layout, _, _ = app.proxy.get_recipe(
+            RecipeReference.loads(pkg_ref), remotes, True, True
+        )
+        conanfile = conan_api.local.inspect(
+            layout.conanfile(), remotes=remotes, lockfile=None
+        )
+    except Exception as e:
+        handle_and_raise_conan_exception(e)
 
     pkg_license = getattr(conanfile, "license", None)
     license_file = Path(layout.conanfile()).parent / "LICENSE"
@@ -742,6 +762,95 @@ def split_recipe_ref(pkg_ref: str) -> tuple[str, str] | tuple[None, None]:
         return None, None
 
 
+def _normalize_dependency_ref(ref: str | None) -> str | None:
+    """
+    Normalize a dependency reference to a stable name/version output string.
+    """
+    if not ref:
+        return None
+
+    name, version = split_recipe_ref(ref)
+    if not name or not version:
+        return None
+
+    # Convert Conan bracket range syntax to plain constraint text
+    # used by the CFS API and CLI output.
+    if version.startswith("[") and version.endswith("]"):
+        version = version[1:-1]
+
+    # Conan may append include_prerelease to range expressions.
+    # Keep output focused on the original version requirement.
+    version = version.replace(", include_prerelease", "")
+
+    return f"{name}/{version}"
+
+
+def _dependency_output_ref(
+    dep: dict,
+    resolved_node_ref: str | None,
+    installed_versions: dict[str, str],
+    unresolved: bool,
+    no_remote: bool,
+) -> str | None:
+    """
+    Select the dependency reference representation for command output.
+
+    Default behavior is concrete resolution (installed version if compatible),
+    otherwise the concrete version already resolved in the current dependency
+    graph. With unresolved=True, output keeps the declared requirement
+    expression when available.
+    """
+    requirement_ref = dep.get("require")
+    resolved_ref = resolved_node_ref or dep.get("ref")
+
+    if unresolved:
+        # "Unresolved" mode preserves declared constraints when available
+        # (e.g. ^1.2.0), rather than forcing a concrete resolved version.
+        return _normalize_dependency_ref(requirement_ref) or _normalize_dependency_ref(
+            resolved_ref
+        )
+
+    # Normalize once so downstream logic always compares canonical requirement
+    # text (strip [..] wrappers and include_prerelease marker).
+    normalized_requirement_ref = _normalize_dependency_ref(requirement_ref)
+    req_name, req_version = (
+        split_recipe_ref(normalized_requirement_ref)
+        if normalized_requirement_ref
+        else (None, None)
+    )
+    if req_name and req_version:
+        installed_version = installed_versions.get(req_name)
+
+        if installed_version:
+            if has_version_range(req_version):
+                # Prefer local installed version when it already satisfies the
+                # requested range. This avoids unnecessary remote/cache lookup
+                # and keeps output aligned with active local state.
+                if version_satisfies(installed_version, req_version):
+                    return f"{req_name}/{installed_version}"
+            elif installed_version == req_version:
+                return f"{req_name}/{installed_version}"
+
+        if has_version_range(req_version):
+            # Requirement is still non-concrete. Reuse the concrete ref already
+            # resolved in the current graph instead of spawning a fresh
+            # `conan graph info` process per dependency.
+            normalized_requirement = normalize_reference(f"{req_name}/{req_version}")
+            resolved_requirement = resolved_ref
+            if no_remote and resolved_requirement == normalized_requirement:
+                # In offline mode, unresolved ranges mean cache-only resolution
+                # could not determine a concrete dependency version.
+                raise ConanException(
+                    f"Dependency '{req_name}/{req_version}' could not be resolved from local cache"
+                )
+
+            return _normalize_dependency_ref(resolved_requirement)
+
+        return normalized_requirement_ref
+
+    return _normalize_dependency_ref(resolved_ref)
+
+
 def is_requirement_cached(pkg_ref: str, cached_packages: set) -> bool:
     """
     Return True if the requirement has a cached binary representation.
@@ -767,6 +876,80 @@ def is_requirement_cached(pkg_ref: str, cached_packages: set) -> bool:
             return True
 
     return False
+
+
+def _has_binary_packages_in_list_output(node) -> bool:
+    """
+    Return True when a Conan `list --format=json` result contains at least one
+    binary package entry.
+    """
+    if isinstance(node, dict):
+        packages = node.get("packages")
+        if isinstance(packages, dict) and packages:
+            return True
+        return any(_has_binary_packages_in_list_output(value) for value in node.values())
+
+    if isinstance(node, list):
+        return any(_has_binary_packages_in_list_output(value) for value in node)
+
+    return False
+
+
+def _has_recipe_in_list_output(node) -> bool:
+    """
+    Return True when a Conan `list --format=json` result contains at least one
+    recipe entry, even if there are no matching binary packages for the current
+    host profile.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if isinstance(key, str) and "/" in key and isinstance(value, dict):
+                return True
+            if _has_recipe_in_list_output(value):
+                return True
+
+    if isinstance(node, list):
+        return any(_has_recipe_in_list_output(value) for value in node)
+
+    return False
+
+
+def has_supported_binary_for_reference(pkg_ref: str, remote_names: Sequence[str]) -> bool | None:
+    """
+    Check whether the given package has at least one binary matching the current
+    platform on any enabled remote.
+
+    The remote query uses `conan list <ref>:* -fp default --format=json` so Conan
+    filters binary results using the current host profile rather than returning
+    binaries for every platform.
+
+    ``pkg_ref`` must already be in normalized Conan form (e.g. ``name/1.2.3`` or
+    ``name/[^1.0]``); callers are responsible for normalization so this function
+    never re-normalizes and cannot accidentally double-wrap bracket ranges.
+
+    Returns:
+    - True when a matching binary is found.
+    - False when a recipe is visible on at least one remote but no compatible
+      binary exists for the current platform.
+    - None when no remote returned any matching recipe entry.
+
+    """
+    query_pattern = f"{pkg_ref}:*"
+    saw_recipe = False
+
+    for remote_name in remote_names:
+        raw = check_output_runner(
+            f'conan list -r "{remote_name}" "{query_pattern}" -fp default --format=json'
+        )
+        list_result = json.loads(raw)
+
+        if _has_binary_packages_in_list_output(list_result):
+            return True
+
+        if _has_recipe_in_list_output(list_result):
+            saw_recipe = True
+
+    return False if saw_recipe else None
 
 
 def get_installed_packages() -> set:
@@ -806,6 +989,12 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
     {
         "toInstall": [{"name": "pkg", "version": "1.0.0"}, ...],
         "alreadyInstalled": [{"name": "pkg", "version": "2.0.0"}, ...],
+        "skipped": [
+            {
+                "reference": {"name": "pkg", "version": "1.0.0"},
+                "reasonCode": "UNSUPPORTED_BINARY_FOR_PLATFORM"
+            }
+        ],
         "requiresLicenseAcceptance": [
             {
                 "reference": {"name": "pkg", "version": "1.0.0"},
@@ -847,6 +1036,7 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
         cli_out_write(json.dumps({
             "toInstall": [],
             "alreadyInstalled": [],
+            "skipped": [],
             "requiresLicenseAcceptance": []
         }))
         return
@@ -856,6 +1046,9 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
 
     # Get cached packages that have binaries available in Conan cache.
     cached_packages = get_conan_cached_packages()
+    enabled_remote_names = [
+        remote.name for remote in conan_api.remotes.list(only_enabled=True)
+    ]
 
     # Separate installed vs to-install.
     # Keep this logic aligned with get_required_packages_from_manifest() so
@@ -867,6 +1060,10 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
         name, version = installed_ref.split("/", 1)
         installed_package_versions[name] = version
 
+    # Packages skipped for genuine exclusion reasons (e.g. no compatible binary
+    # for the current platform). Already-installed packages are NOT skipped; they
+    # are reported separately in `alreadyInstalled`.
+    skipped_packages = []
     already_installed = []
     to_install = []
     for pkg_ref in pkg_refs:
@@ -901,28 +1098,46 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
     requires_license = []
     for pkg in to_install:
         pkg_ref = f"{pkg['name']}/{pkg['version']}"
-        # Only require license acceptance if not already in Conan cache
-        if not is_requirement_cached(pkg_ref, cached_packages):
-            resolved_ref = (
-                resolve_recipe_reference(pkg_ref)
-                if has_version_range(pkg["version"])
-                else normalize_reference(pkg_ref)
+        # Cached packages can always be reused locally.
+        if is_requirement_cached(pkg_ref, cached_packages):
+            continue
+
+        resolved_ref = (
+            resolve_recipe_reference(pkg_ref)
+            if has_version_range(pkg["version"])
+            else normalize_reference(pkg_ref)
+        )
+
+        try:
+            binary_support = has_supported_binary_for_reference(
+                resolved_ref,
+                enabled_remote_names,
             )
-            license_info = get_package_license_info(conan_api, resolved_ref)
+        except Exception as e:
+            handle_and_raise_conan_exception(e)
 
-            # Always schedule cleanup of the concrete ref that was actually downloaded.
-            # get_package_license_info downloads the recipe into the Conan cache as
-            # a side effect (via app.proxy.get_recipe), even when it returns None.
-            # Without this the recipe leaks into cache and subsequent install-plan
-            # calls will skip the license prompt (cached == previously accepted).
-            packages_downloaded_for_license_check.add(resolved_ref)
+        if binary_support is False:
+            skipped_packages.append({
+                "reference": pkg,
+                "reasonCode": "UNSUPPORTED_BINARY_FOR_PLATFORM"
+            })
+            continue
 
-            if license_info:
-                requires_license.append({
-                    "reference": pkg,
-                    "license": license_info["license"],
-                    "licenseText": license_info.get("licenseText")
-                })
+        license_info = get_package_license_info(conan_api, resolved_ref)
+
+        # Always schedule cleanup of the concrete ref that was actually downloaded.
+        # get_package_license_info downloads the recipe into the Conan cache as
+        # a side effect (via app.proxy.get_recipe), even when it returns None.
+        # Without this the recipe leaks into cache and subsequent install-plan
+        # calls will skip the license prompt (cached == previously accepted).
+        packages_downloaded_for_license_check.add(resolved_ref)
+
+        if license_info:
+            requires_license.append({
+                "reference": pkg,
+                "license": license_info["license"],
+                "licenseText": license_info.get("licenseText")
+            })
 
     # Clean up any recipes we downloaded during license checking
     # This prevents polluting the cache with packages the user hasn't accepted yet
@@ -937,9 +1152,18 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
             # already-removed cache entries.
             continue
 
+    skipped_ref_set = {
+        f"{x['reference']['name']}/{x['reference']['version']}"
+        for x in skipped_packages
+    }
+
     result = {
-        "toInstall": to_install,
+        "toInstall": [
+            pkg for pkg in to_install
+            if f"{pkg['name']}/{pkg['version']}" not in skipped_ref_set
+        ],
         "alreadyInstalled": already_installed,
+        "skipped": skipped_packages,
         "requiresLicenseAcceptance": requires_license
     }
 
@@ -1188,16 +1412,30 @@ def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None, check_up
 @conan_subcommand()
 def cfs_get_pkg_info(conan_api: ConanAPI, parser, subparser, *args):
     """
-    Returns metadata of a given CFS package.
-    This method doesn't require the package to be installed.
-    """
+    Returns metadata for one or more CFS packages in a single call.
 
-    subparser.add_argument("reference", help="CFS package reference")
+    Accepts one or more package references in name/version format and writes a
+    JSON array of package metadata, in the same order as the input references.
+    The packages do not need to be installed.
+    """
+    subparser.add_argument(
+        "references",
+        nargs="+",
+        help="CFS package references in name/version format",
+    )
     args = parser.parse_args(*args)
 
-    pkg_info = _get_recipe_info(conan_api, normalize_reference(args.reference))
+    # Resolve remotes once so they are not re-fetched for every package.
+    remotes = conan_api.remotes.list()
 
-    cli_out_write(json.dumps(pkg_info, indent=2))
+    pkg_infos = [
+        _get_recipe_info(
+            conan_api, normalize_reference(ref), remotes, check_update=False
+        )
+        for ref in args.references
+    ]
+
+    cli_out_write(json.dumps(pkg_infos, indent=2))
 
 
 @conan_subcommand()
@@ -1227,28 +1465,181 @@ def cfs_dependencies(conan_api: ConanAPI, parser, subparser, *args):
     """
 
     subparser.add_argument("reference", help="CFS package reference")
+    subparser.add_argument(
+        "-nr",
+        "--no-remote",
+        "--offline",
+        action="store_true",
+        help="Resolve dependencies only from local cache and installed packages",
+    )
+    subparser.add_argument(
+        "-u",
+        "--unresolved",
+        "--non-concrete",
+        action="store_true",
+        help="Show unresolved dependency requirements instead of concrete resolved versions",
+    )
     args = parser.parse_args(*args)
     normalized_reference = normalize_reference(args.reference)
 
     try:
+        # Build dependency graph for the requested package.
+        # This is the primary source for transitive dependency edges.
+        graph_cmd = (
+            f'conan graph info --requires="{normalized_reference}" --format=json'
+        )
+        if args.no_remote:
+            graph_cmd += " --no-remote"
+
         pkg_dict = json.loads(
-            check_output_runner(
-                f'conan graph info --requires="{normalized_reference}" --format=json'
-            )
+            check_output_runner(graph_cmd)
         )
     except ConanException as e:
         handle_and_raise_conan_exception(e)
 
-    for info in pkg_dict["graph"]["nodes"].values():
+    installed_versions: dict[str, str] = {}
+    # Load installed versions once so range dependencies can prefer already
+    # installed compatible versions over newly resolved concrete versions.
+    for installed_ref in get_installed_packages():
+        name, version = split_recipe_ref(installed_ref)
+        if name and version:
+            installed_versions[name] = version
+
+    graph_nodes = pkg_dict["graph"]["nodes"]
+
+    for info in graph_nodes.values():
         if info["ref"] == "conanfile":
             # The first node is the conanfile, which should be the same that the requested package,
             # since we only requested one package, but just in case lets skip it
             continue
 
         if info["label"] in {args.reference, normalized_reference}:
-            dependencies = {x["ref"] for x in info["dependencies"].values()}
+            dependencies = []
+            seen = set()
+            for dep_node_id, dep in info["dependencies"].items():
+                dep_node = graph_nodes.get(dep_node_id, {})
+                # Convert each dependency edge to output form according to
+                # unresolved/offline flags and installed-version preference.
+                dep_ref = _dependency_output_ref(
+                    dep,
+                    dep_node.get("ref"),
+                    installed_versions,
+                    unresolved=args.unresolved,
+                    no_remote=args.no_remote,
+                )
+                if dep_ref and dep_ref not in seen:
+                    seen.add(dep_ref)
+                    dependencies.append(dep_ref)
+
             if dependencies:
                 cli_out_write("\n".join(dependencies))
+
+
+@conan_subcommand()
+def cfs_dependencies_batch(conan_api: ConanAPI, parser, subparser, *args):
+    """
+    Returns the dependency closure of each of several packages at once.
+
+    Same result as running `cfs dependencies` per reference, but resolves every
+    requested package as a root of a single dependency graph, so the whole batch
+    costs one `conan graph info` instead of one per package. Writes a JSON object
+    mapping each requested reference to its list of dependencies.
+
+    Note that resolving the roots together also resolves version conflicts
+    between them, which per-reference resolution cannot see. For callers that
+    install the whole set as a unit this matches what the install will actually
+    do, but it means a conflict between two requested packages fails the batch
+    rather than yielding two individually-valid answers.
+    """
+    subparser.add_argument(
+        "references",
+        nargs="+",
+        help="CFS package references in name/version format",
+    )
+    subparser.add_argument(
+        "-nr",
+        "--no-remote",
+        "--offline",
+        action="store_true",
+        help="Resolve dependencies only from local cache and installed packages",
+    )
+    subparser.add_argument(
+        "-u",
+        "--unresolved",
+        "--non-concrete",
+        action="store_true",
+        help="Show unresolved dependency requirements instead of concrete resolved versions",
+    )
+    args = parser.parse_args(*args)
+
+    # Preserve the caller's spelling as the output key, so the caller does not
+    # have to reproduce our normalization to look results up.
+    normalized_by_requested = {
+        reference: normalize_reference(reference)
+        for reference in args.references
+    }
+
+    try:
+        requires = " ".join(
+            f'--requires="{normalized}"'
+            for normalized in normalized_by_requested.values()
+        )
+        graph_cmd = f"conan graph info {requires} --format=json"
+        if args.no_remote:
+            graph_cmd += " --no-remote"
+
+        pkg_dict = json.loads(check_output_runner(graph_cmd))
+    except ConanException as e:
+        handle_and_raise_conan_exception(e)
+
+    installed_versions: dict[str, str] = {}
+    # Load installed versions once so range dependencies can prefer already
+    # installed compatible versions over newly resolved concrete versions.
+    for installed_ref in get_installed_packages():
+        name, version = split_recipe_ref(installed_ref)
+        if name and version:
+            installed_versions[name] = version
+
+    graph_nodes = pkg_dict["graph"]["nodes"]
+
+    # Index the graph by label once, rather than rescanning it per requested
+    # reference. The synthetic root that aggregates the --requires arguments is
+    # not a package and is skipped.
+    node_by_label = {}
+    for info in graph_nodes.values():
+        if info["ref"] == "conanfile":
+            continue
+        node_by_label.setdefault(info["label"], info)
+
+    result: dict[str, list[str]] = {}
+
+    for requested, normalized in normalized_by_requested.items():
+        info = node_by_label.get(requested) or node_by_label.get(normalized)
+
+        dependencies = []
+        if info is not None:
+            seen = set()
+            for dep_node_id, dep in info["dependencies"].items():
+                dep_node = graph_nodes.get(dep_node_id, {})
+                # Convert each dependency edge to output form according to
+                # unresolved/offline flags and installed-version preference.
+                dep_ref = _dependency_output_ref(
+                    dep,
+                    dep_node.get("ref"),
+                    installed_versions,
+                    unresolved=args.unresolved,
+                    no_remote=args.no_remote,
+                )
+                if dep_ref and dep_ref not in seen:
+                    seen.add(dep_ref)
+                    dependencies.append(dep_ref)
+
+        # Always emit a key per requested reference, so an absent package is
+        # reported as "no dependencies" rather than silently missing from the
+        # response.
+        result[requested] = dependencies
+
+    cli_out_write(json.dumps(result, indent=2))
 
 
 @conan_subcommand()

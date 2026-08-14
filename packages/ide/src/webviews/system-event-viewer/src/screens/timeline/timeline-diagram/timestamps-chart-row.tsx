@@ -38,7 +38,7 @@ import type {
 } from '../../../common/types/timeline';
 import type {SevEventSource} from '../../../common/types/events';
 
-import styles from './timeline-diagram.module.scss';
+import styles from './timestamps-chart-row.module.scss';
 
 type EventsDiagramProps = {
 	id: string;
@@ -102,10 +102,9 @@ function TimestampsChartRow({
 				show: true,
 				trigger: 'item',
 				renderMode: 'html',
-				enterable: true,
+				enterable: false,
 				confine: false,
 				appendTo: () => containerRef.current ?? document.body,
-				className: `${styles.timelineTooltip}`,
 				transitionDuration: 0,
 				displayTransition: false,
 				backgroundColor: colors.editorWidgetBackground,
@@ -132,7 +131,9 @@ function TimestampsChartRow({
 					moveOnMouseWheel: false,
 					moveOnMouseMove: false,
 					preventDefaultMouseMove: false,
-					zoomLock: false
+					zoomLock: false,
+					cursorGrab: 'default',
+					cursorGrabbing: 'default'
 				}
 			],
 			grid: {
@@ -142,17 +143,14 @@ function TimestampsChartRow({
 			},
 			xAxis: {
 				type: 'value',
+				show: false,
 				data: [],
 				boundaryGap: false,
 				animation: false,
 				animationDurationUpdate: 0,
 				animationEasingUpdate: 'linear',
 				splitLine: {
-					show: false,
-					lineStyle: {
-						color: colors.borderColor,
-						width: 1
-					}
+					show: false
 				},
 				axisLine: {
 					show: false
@@ -243,7 +241,6 @@ function TimestampsChartRow({
 		};
 	}, [handleDataZoom]);
 
-	// Unregister chart instance
 	useEffect(
 		() => () => {
 			unregisterChart(id);

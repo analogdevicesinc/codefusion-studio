@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,27 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 import react from "@vitejs/plugin-react";
 import { copyConanFiles } from "./vite.plugin.cfs-package-manager";
-import { copySerialport } from "./vite.plugin.copy-serialport";
+import { copyNativeModules } from "./vite.plugin.copy-native-modules";
+import {
+  createExternalPredicate,
+  resolveNativeModuleClosure,
+} from "./native-module-closure";
+
+// serialport and usb ship platform-specific native `.node` bindings that
+// cannot be bundled; their whole dependency closures must stay external to the
+// bundle and be resolved from node_modules at runtime. See
+// native-module-closure.ts.
+const NATIVE_MODULE_ROOTS = ["serialport", "usb"];
+const nativeModuleClosure = resolveNativeModuleClosure(NATIVE_MODULE_ROOTS);
+const nativeModuleExternals = nativeModuleClosure.map((pkg) => pkg.name);
+const isNativeModuleExternal = createExternalPredicate(nativeModuleClosure);
 
 // Bundle the extension and all it's depencencies to CJS
 const extensionConfig = {
   plugins: [
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     copyConanFiles(),
-    copySerialport(),
+    copyNativeModules(nativeModuleClosure),
   ],
   build: {
     ssr: true, // the server side rendering preset uses rollup settings that support node modules properly
@@ -35,6 +48,7 @@ const extensionConfig = {
       // Ignoring leaves the require statements intact (e.g. not hoisted to the top of the module)
       ignore: ["react-native-fs", "react-native-fetch-blob"],
     },
+    cssMinify: "esbuild",
     rollupOptions: {
       input: {
         extension: "src/extension.ts",
@@ -50,7 +64,19 @@ const extensionConfig = {
         exports: "named",
         dynamicImportInCjs: false, // not supported in vscode-loader
       },
-      external: ["vscode"], // prevent error when rollup can't resolve vscode module
+      external: (source: string) => {
+        const staticExternals = [
+          "vscode", // prevent error when rollup can't resolve vscode module
+          "proper-lockfile", // unused optional dependency of @ster5/global-mutex
+          "react-native-fs",
+          "react-native-fetch-blob",
+          "encoding", // optional peer dependency of node-fetch
+        ];
+
+        return (
+          staticExternals.includes(source) || isNativeModuleExternal(source)
+        );
+      },
       watch: {
         exclude: [
           "node_modules/**",
@@ -78,7 +104,10 @@ const extensionConfig = {
     extensions: [".ts", ".tsx", ".js", ".jsx", "..."],
   },
   ssr: {
-    external: ["vscode"], // do not attempt to bundle (or resolve)
+    // do not attempt to bundle (or resolve) these; the serialport and usb
+    // native closures must be require()'d from node_modules at runtime. In Vite
+    // SSR, `external` entries win over `noExternal: true`.
+    external: ["vscode", ...nativeModuleExternals],
     noExternal: true, // bundle all the other dependencies
     target: "node",
   },
@@ -99,6 +128,7 @@ const webviewConfig = {
         inlineDynamicImports: true,
       },
     },
+    cssMinify: "esbuild",
     cssCodeSplit: false,
     commonjsOptions: {
       transformMixedEsModules: true,

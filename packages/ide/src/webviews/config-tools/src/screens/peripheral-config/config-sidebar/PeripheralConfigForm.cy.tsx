@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,17 @@ import {
 	setPeripheralAssignment
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {PERIPHERAL_PLUGIN_OPTIONS_FORM_ID} from './PeripheralConfigTask';
+import ConfigurationForm from './ConfigurationForm';
+import {type TFormControl} from 'cfs-react-library';
 
 const max32690 = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
+
+const l10n = await import(
+	'../../../../../../../l10n/bundle.l10n.en.json'
+);
+
+(window as any).__webview_localization_resources__ = l10n.default;
 
 const configDict = {
 	BoardName: '',
@@ -233,9 +241,9 @@ const controlsMock: Record<string, ControlCfg[]> = {
 		{
 			Id: 'TARGET0_ADDR',
 			Description: 'Target Address 0',
-			MinimumValue: "0x0",
-			MaximumValue: "0x3ff",
-			NumericBase: "Hexadecimal",
+			MinimumValue: '0x0',
+			MaximumValue: '0x3ff',
+			NumericBase: 'Hexadecimal',
 			Type: 'integer',
 			Condition: ''
 		},
@@ -470,6 +478,108 @@ describe('Peripheral Config Form', () => {
 		);
 
 		cy.dataTest('peripheral-config:form:no-settings').should('exist');
+	});
+
+	it('Shows non-default helper and reset action only when a plugin enum value differs from default', () => {
+		const polarityControl: TFormControl = {
+			id: 'POLARITY',
+			name: 'Polarity',
+			type: 'enum',
+			description: 'Polarity',
+			pluginOption: true,
+			default: 'ACTIVE_HIGH',
+			enum: [
+				{
+					label: 'Active High',
+					value: 'ACTIVE_HIGH'
+				},
+				{
+					label: 'Active Low',
+					value: 'ACTIVE_LOW'
+				}
+			],
+			required: true
+		};
+
+		cy.mount(
+			<ConfigurationForm
+				controls={[polarityControl]}
+				data={{POLARITY: 'ACTIVE_HIGH'}}
+				resetValues={{POLARITY: 'ACTIVE_HIGH'}}
+				testId='plugin-options:plugin-form'
+				onControlChange={cy.stub().as('onControlChange')}
+				onReset={cy.stub().as('onReset')}
+			/>
+		);
+
+		cy.contains('Polarity').should('not.contain', '*');
+		cy.dataTest('package-display-info').should('not.exist');
+		cy.dataTest('plugin-options:plugin-form:reset-to-default').should(
+			'not.exist'
+		);
+
+		cy.mount(
+			<ConfigurationForm
+				controls={[{...polarityControl, name: 'Polarity *'}]}
+				data={{POLARITY: 'ACTIVE_LOW'}}
+				resetValues={{POLARITY: 'ACTIVE_HIGH'}}
+				testId='plugin-options:plugin-form'
+				onControlChange={cy.stub().as('onControlChange')}
+				onReset={cy.stub().as('onReset')}
+			/>
+		);
+
+		cy.contains('Polarity *').should('exist');
+		cy.dataTest('package-display-info').should(
+			'have.text',
+			'Non-default value'
+		);
+		cy.dataTest('plugin-options:plugin-form:reset-to-default').should(
+			'exist'
+		);
+	});
+
+	it('Does not show reset action when boolean form data matches string reset value', () => {
+		const booleanControl: TFormControl = {
+			id: 'CLKSTR',
+			name: 'Target Clock Stretching',
+			type: 'boolean',
+			description: 'Target Clock Stretching',
+			default: '',
+			required: true
+		};
+
+		cy.mount(
+			<ConfigurationForm
+				controls={[booleanControl]}
+				data={{CLKSTR: false}}
+				resetValues={{CLKSTR: 'FALSE'}}
+				testId='peripheral-config:form'
+				onControlChange={cy.stub().as('onControlChange')}
+				onReset={cy.stub().as('onReset')}
+			/>
+		);
+
+		cy.dataTest('package-display-info').should('not.exist');
+		cy.dataTest('peripheral-config:form:reset-to-default').should(
+			'not.exist'
+		);
+
+		cy.mount(
+			<ConfigurationForm
+				controls={[booleanControl]}
+				data={{CLKSTR: true}}
+				resetValues={{CLKSTR: 'TRUE'}}
+				testId='peripheral-config:form'
+				onControlChange={cy.stub().as('onControlChange')}
+				onReset={cy.stub().as('onReset')}
+			/>
+		);
+
+		cy.dataTest('package-display-info').should('not.exist');
+		cy.dataTest('peripheral-config:form:reset-to-default').should(
+			'not.exist'
+		);
 	});
 
 	it('Evaluate conditions to show/hide controls', () => {
@@ -871,5 +981,172 @@ describe('Peripheral Config Form', () => {
 		cy.dataTest(
 			'plugin-options:plugin-form:control-CHOSEN-error'
 		).should('exist');
+	});
+
+	it('Should render inactive peripheral enum values as disabled options', () => {
+		const reduxStore = configurePreloadedStore(max32690);
+
+		reduxStore.dispatch(
+			setPeripheralAssignment({
+				peripheral: 'UART0',
+				projectId: 'CM4-proj',
+				config: {
+					PARITY: 'PLUGIN_EVEN'
+				}
+			})
+		);
+
+		cy.mount(
+			<PeripheralConfigForm
+				projectId='CM4-proj'
+				activePeripheral='UART0'
+				formattedControls={[
+					{
+						id: 'PARITY',
+						name: 'Parity',
+						type: 'enum',
+						description: 'Parity',
+						default: '',
+						enum: [
+							{
+								label: 'Even Parity',
+								value: 'EVEN',
+								disabled: true,
+								optionGroup:
+									l10n.default.cfgtools.common
+										.optionGroupNotSupportedByPlugin
+							},
+							{
+								label: 'Plugin Even Parity',
+								value: 'PLUGIN_EVEN'
+							}
+						],
+						required: true
+					}
+				]}
+				formattedData={{
+					PARITY: 'PLUGIN_EVEN'
+				}}
+				peripheralControls={controlsMock.UART0}
+				resetValues={{
+					PARITY: 'PLUGIN_EVEN'
+				}}
+				peripheralOptions={[
+					{
+						id: 'PARITY',
+						name: 'Parity',
+						type: 'enum',
+						description: 'Parity',
+						default: '',
+						enum: [
+							{
+								label: 'Even Parity',
+								value: 'EVEN',
+								disabled: true,
+								optionGroup:
+									l10n.default.cfgtools.common
+										.optionGroupNotSupportedByPlugin
+							},
+							{
+								label: 'Plugin Even Parity',
+								value: 'PLUGIN_EVEN'
+							}
+						],
+						required: true
+					}
+				]}
+				pluginOptions={[]}
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('peripheral-config:form:control-PARITY').click();
+
+		cy.dataTest('peripheral-config:form:control-PARITY')
+			.contains(
+				'vscode-option',
+				l10n.default.cfgtools.common.optionGroupNotSupportedByPlugin
+			)
+			.should('have.attr', 'disabled');
+
+		cy.dataTest('peripheral-config:form:control-PARITY:EVEN')
+			.should('contain.text', 'Even Parity')
+			.and('have.attr', 'disabled');
+
+		cy.dataTest('peripheral-config:form:control-PARITY:PLUGIN_EVEN')
+			.should('contain.text', 'Plugin Even Parity')
+			.and('not.have.attr', 'disabled');
+	});
+
+	it('Should not disable enum values when an enum control is modified without EnumValues', () => {
+		const reduxStore = configurePreloadedStore(max32690);
+
+		cy.mount(
+			<PeripheralConfigForm
+				projectId='CM4-proj'
+				activePeripheral='UART0'
+				formattedControls={[
+					{
+						id: 'PARITY',
+						name: 'Plugin Parity Label',
+						type: 'enum',
+						description: 'Plugin Parity Label',
+						default: '',
+						enum: [
+							{
+								label: 'Even Parity',
+								value: 'EVEN'
+							},
+							{
+								label: 'Odd Parity',
+								value: 'ODD'
+							}
+						],
+						required: true
+					}
+				]}
+				formattedData={{
+					PARITY: 'EVEN'
+				}}
+				peripheralControls={controlsMock.UART0}
+				resetValues={{
+					PARITY: 'EVEN'
+				}}
+				peripheralOptions={[
+					{
+						id: 'PARITY',
+						name: 'Plugin Parity Label',
+						type: 'enum',
+						description: 'Plugin Parity Label',
+						default: '',
+						enum: [
+							{
+								label: 'Even Parity',
+								value: 'EVEN'
+							},
+							{
+								label: 'Odd Parity',
+								value: 'ODD'
+							}
+						],
+						required: true
+					}
+				]}
+				pluginOptions={[]}
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('peripheral-config:form:control-PARITY').click();
+
+		cy.dataTest('peripheral-config:form:control-PARITY:EVEN').should(
+			'not.have.attr',
+			'disabled'
+		);
+
+		cy.dataTest('peripheral-config:form:control-PARITY:ODD').should(
+			'not.have.attr',
+			'disabled'
+		);
 	});
 });

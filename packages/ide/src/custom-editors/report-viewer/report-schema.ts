@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { z } from "zod";
+import { z, type ZodSafeParseError } from "zod";
 import type { Report } from "../../types/report-view-types";
 
 const operatorInfoSchema = z
@@ -139,7 +139,7 @@ const profileReportSchema = reportBaseSchema
         .object({
           message: z.string(),
           code: z.string().optional(),
-          details: z.record(z.unknown()).optional(),
+          details: z.record(z.string(), z.unknown()).optional(),
         })
         .passthrough(),
     ),
@@ -147,7 +147,7 @@ const profileReportSchema = reportBaseSchema
   .superRefine((value, ctx) => {
     if (value.info.type !== "profile") {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Expected info.type to be 'profile'",
         path: ["info", "type"],
       });
@@ -211,14 +211,14 @@ const compatibilityReportSchema = reportBaseSchema
   .superRefine((value, ctx) => {
     if (value.info.type !== "compat") {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Expected info.type to be 'compat'",
         path: ["info", "type"],
       });
     }
   });
 
-function formatValidationErrors(result: z.SafeParseError<unknown>) {
+function formatValidationErrors(result: ZodSafeParseError<unknown>) {
   return result.error.issues
     .slice(0, 8)
     .map((issue) => {

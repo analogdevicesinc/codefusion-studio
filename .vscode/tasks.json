@@ -205,6 +205,32 @@
 			"dependsOn": ["extension: build", "react-lib: build"]
 		},
 		{
+			"label": "package-manager: build",
+			"type": "shell",
+			"command": "yarn ws:ide packman:build",
+			"isBackground": true,
+			"problemMatcher": [
+				{
+					"pattern": {
+						"regexp": ".*",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					},
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": "vite v[0-9\\.]+ building",
+						"endsPattern": "built in [0-9\\.]+m?s"
+					}
+				}
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["extension: build", "react-lib: build"]
+		},
+		{
 			"label": "extension: build",
 			"type": "shell",
 			"command": "yarn vite:extension",
@@ -258,9 +284,18 @@
 			"dependsOn": ["ide: deps"]
 		},
 		{
+			"label": "vite: extension",
+			"type": "shell",
+			"command": "yarn vite:extension",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
 			"label": "elf: build",
 			"type": "shell",
-			"command": "yarn vite:extension && yarn elf:build",
+			"command": "yarn elf:build",
 			"problemMatcher": [
 				{
 					"pattern": [
@@ -281,7 +316,9 @@
 			"group": {
 				"kind": "build",
 				"isDefault": true
-			}
+			},
+			"dependsOn": ["vite: extension"],
+			"dependsOrder": "sequence"
 		},
 		{
 			"label": "report-viewer: build",
@@ -315,14 +352,26 @@
 			"dependsOn": ["extension: build", "react-lib: build"]
 		},
 		{
-			"label": "ide: deps",
+			"label": "ide: install",
 			"type": "shell",
-			"command": "yarn install --immutable && yarn ws:ide build-local-deps",
+			"command": "yarn install --immutable",
 			"isBackground": true,
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "ide: deps",
+			"type": "shell",
+			"command": "yarn ws:ide build-local-deps",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"dependsOn": ["ide: install"],
+			"dependsOrder": "sequence"
 		},
 		{
 			"label": "cfs-lib: build",
@@ -440,7 +489,8 @@
 				"home-page: build",
 				"trace-side-panel: build",
 				"trace-configuration: build",
-				"mem-viewer: build"
+				"mem-viewer: build",
+				"package-manager: build"
 			],
 			"dependsOrder": "parallel"
 		}

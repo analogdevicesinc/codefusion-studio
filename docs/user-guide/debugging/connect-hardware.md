@@ -1,7 +1,7 @@
 ---
 description: Physical hardware connections for debugging, profiling, and serial communication
 author: Analog Devices
-date: 2026-04-23
+date: 2026-07-10
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx lines 83, 95)
 ---
 
@@ -162,6 +162,7 @@ After connecting the UART cable, identify which serial port your board is using:
 **Issue**: Debug probe not recognized by my computer
 
 - Verify debug probe drivers are installed correctly
+- Connect the debug probe directly to a USB port on your computer — USB hubs and docking stations can prevent the probe from being recognized
 - Try a different USB cable or USB port on your computer
 - Check that the debug probe has power (look for LED indicators)
 - For J-Link, ensure you're using an official Segger probe or compatible clone

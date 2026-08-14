@@ -12,24 +12,22 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 
 import {parseJson} from '../../utils/parse-json.js';
 
 describe('soc list (legacy format)', () => {
-  test
-    .stdout()
-    .command(['socs:list', '--legacy'], {
+  it('text, no verbose', async () => {
+    const {stdout} = await runCommand(['socs:list', '--legacy'], {
       root: '..'
-    })
-    .it('text, no verbose', (ctx) => {
-      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
-      expect(ctx.stdout).not.to.contain('soc1234');
     });
+    expect(stdout).to.contain('test_soc_b-tqfn');
+    expect(stdout).not.to.contain('soc1234');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('json, no verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--format',
@@ -39,15 +37,13 @@ describe('soc list (legacy format)', () => {
         '--legacy'
       ],
       {root: '..'}
-    )
-    .it('json, no verbose', (ctx) => {
-      expect(parseJson(ctx.stdout)).to.be.an('array');
-      expect(parseJson(ctx.stdout)).to.include('test_soc_b-tqfn');
-    });
+    );
+    expect(parseJson(stdout)).to.be.an('array');
+    expect(parseJson(stdout)).to.include('test_soc_b-tqfn');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('text, verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--verbose',
@@ -56,19 +52,17 @@ describe('soc list (legacy format)', () => {
         '--legacy'
       ],
       {root: '..'}
-    )
-    .it('text, verbose', (ctx) => {
-      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
-      expect(ctx.stdout).to.contain('Version');
-      expect(ctx.stdout).to.contain('Timestamp');
-      expect(ctx.stdout).to.contain('Name');
-      expect(ctx.stdout).to.contain('Description');
-      expect(ctx.stdout).to.contain('Schema');
-    });
+    );
+    expect(stdout).to.contain('test_soc_b-tqfn');
+    expect(stdout).to.contain('Version');
+    expect(stdout).to.contain('Timestamp');
+    expect(stdout).to.contain('Name');
+    expect(stdout).to.contain('Description');
+    expect(stdout).to.contain('Schema');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('json, verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--format',
@@ -81,29 +75,23 @@ describe('soc list (legacy format)', () => {
       {
         root: '..'
       }
-    )
-    .it('json, verbose', (ctx) => {
-      expect(parseJson(ctx.stdout)).to.be.an('object');
-      expect(Object.keys(parseJson(ctx.stdout))).to.include(
-        'test_soc_b-tqfn'
-      );
-    });
+    );
+    expect(parseJson(stdout)).to.be.an('object');
+    expect(Object.keys(parseJson(stdout))).to.include('test_soc_b-tqfn');
+  });
 });
 
 describe('soc list', () => {
-  test
-    .stdout()
-    .command(['socs:list'], {
+  it('text, no verbose', async () => {
+    const {stdout} = await runCommand(['socs:list'], {
       root: '..'
-    })
-    .it('text, no verbose', (ctx) => {
-      expect(ctx.stdout).to.contain('test_soc_b (tqfn, wlp)');
-      expect(ctx.stdout).not.to.contain('soc1234');
     });
+    expect(stdout).to.contain('test_soc_b (tqfn, wlp)');
+    expect(stdout).not.to.contain('soc1234');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('json, no verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--format',
@@ -112,19 +100,14 @@ describe('soc list', () => {
         './test/fixtures/socs'
       ],
       {root: '..'}
-    )
-    .it('json, no verbose', (ctx) => {
-      const parsedJson = parseJson(ctx.stdout);
-      expect(parsedJson).to.deep.property('test_soc_a', ['wlp']);
-      expect(parsedJson).to.deep.property('test_soc_b', [
-        'tqfn',
-        'wlp'
-      ]);
-    });
+    );
+    const parsedJson = parseJson(stdout);
+    expect(parsedJson).to.deep.property('test_soc_a', ['wlp']);
+    expect(parsedJson).to.deep.property('test_soc_b', ['tqfn', 'wlp']);
+  });
 
-  test
-    .stdout()
-    .command(
+  it('text, verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--verbose',
@@ -132,20 +115,18 @@ describe('soc list', () => {
         './test/fixtures/socs'
       ],
       {root: '..'}
-    )
-    .it('text, verbose', (ctx) => {
-      expect(ctx.stdout).to.contain('Name');
-      expect(ctx.stdout).to.contain('Package');
-      expect(ctx.stdout).to.contain('Version');
-      expect(ctx.stdout).to.contain('Timestamp');
-      expect(ctx.stdout).to.contain('Description');
-      expect(ctx.stdout).to.contain('Schema');
-      expect(ctx.stdout).to.contain('AI Compatible cores');
-    });
+    );
+    expect(stdout).to.contain('Name');
+    expect(stdout).to.contain('Package');
+    expect(stdout).to.contain('Version');
+    expect(stdout).to.contain('Timestamp');
+    expect(stdout).to.contain('Description');
+    expect(stdout).to.contain('Schema');
+    expect(stdout).to.contain('AI Compatible cores');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('json, verbose', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:list',
         '--format',
@@ -157,27 +138,26 @@ describe('soc list', () => {
       {
         root: '..'
       }
-    )
-    .it('json, verbose', (ctx) => {
-      const parsedJson = parseJson(ctx.stdout);
-      const reducedJson = parsedJson.map(
-        (soc: {Name: string; Package: string}) => ({
-          Name: soc.Name,
-          Package: soc.Package
-        })
-      );
-      expect(parsedJson).to.be.an('Array');
-      expect(reducedJson).to.deep.include({
-        Name: 'test_soc_a',
-        Package: 'wlp'
-      });
-      expect(reducedJson).to.deep.include({
-        Name: 'test_soc_b',
-        Package: 'tqfn'
-      });
-      expect(reducedJson).to.deep.include({
-        Name: 'test_soc_b',
-        Package: 'wlp'
-      });
+    );
+    const parsedJson = parseJson(stdout);
+    const reducedJson = parsedJson.map(
+      (soc: {Name: string; Package: string}) => ({
+        Name: soc.Name,
+        Package: soc.Package
+      })
+    );
+    expect(parsedJson).to.be.an('Array');
+    expect(reducedJson).to.deep.include({
+      Name: 'test_soc_a',
+      Package: 'wlp'
     });
+    expect(reducedJson).to.deep.include({
+      Name: 'test_soc_b',
+      Package: 'tqfn'
+    });
+    expect(reducedJson).to.deep.include({
+      Name: 'test_soc_b',
+      Package: 'wlp'
+    });
+  });
 });

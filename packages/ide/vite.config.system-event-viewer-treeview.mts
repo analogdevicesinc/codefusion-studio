@@ -13,37 +13,11 @@
  *
  */
 
-import react from "@vitejs/plugin-react-swc";
-import path from "node:path";
 import { defineConfig } from "vite";
+import { viteWebviewConfigGenerator } from "./vite-webview-config-generator";
 
-export default defineConfig({
-  root: path.resolve(__dirname, "./src/webviews/system-event-viewer-treeview"),
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@common": path.resolve(__dirname, "./src/webviews/common/"),
-    },
-  },
-  build: {
-    outDir: path.resolve(__dirname, "./out/system-event-viewer-treeview"),
-    emptyOutDir: true,
-    target: "esnext",
-    rollupOptions: {
-      input: path.resolve(
-        __dirname,
-        "./src/webviews/system-event-viewer-treeview/index.html",
-      ),
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "[name].js",
-        assetFileNames: "[name].[ext]",
-      },
-    },
-  },
-  css: {
-    preprocessorOptions: {
-      loadPaths: [path.resolve(__dirname, "./src/webviews/common/styles")],
-    },
-  },
-});
+export default defineConfig(
+  viteWebviewConfigGenerator({
+    name: "system-event-viewer-treeview",
+  }),
+);

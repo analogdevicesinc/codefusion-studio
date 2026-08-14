@@ -17,6 +17,8 @@ import * as vscode from "vscode";
 import { CfsDebugManager } from "../debug-manager";
 import { DebugToolExecutor } from "./debug-tool-executor";
 import { DebugPromptBuilder } from "./debug-prompt-builder";
+import type { DebugCommandExecutor } from "./debug-command-executor";
+
 import {
   BreakpointHandler,
   LifecycleHandler,
@@ -42,14 +44,18 @@ export class DebugChatParticipant implements vscode.Disposable {
   private analysisHandler: AnalysisHandler;
   private inspectionHandler: InspectionHandler;
 
-  constructor(extensionUri: vscode.Uri, debugManager: CfsDebugManager) {
+  constructor(
+    extensionUri: vscode.Uri,
+    debugManager: CfsDebugManager,
+    commandExecutor: DebugCommandExecutor,
+  ) {
     this.debugManager = debugManager;
     this.toolExecutor = new DebugToolExecutor(this.debugManager);
     this.promptBuilder = new DebugPromptBuilder();
 
     // Initialize handlers
     this.breakpointHandler = new BreakpointHandler();
-    this.lifecycleHandler = new LifecycleHandler(debugManager);
+    this.lifecycleHandler = new LifecycleHandler(commandExecutor);
     this.analysisHandler = new AnalysisHandler(
       this.toolExecutor,
       this.promptBuilder,

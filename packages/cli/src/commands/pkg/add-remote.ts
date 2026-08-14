@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 import {Args, Command} from '@oclif/core';
 
 import {getPackageManager} from '../../utils/package-manager.js';
+
+export const pkgAddRemoteDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
 
 export default class CfsPackageAddRemote extends Command {
   static args = {
@@ -34,13 +40,17 @@ export default class CfsPackageAddRemote extends Command {
     'Registers a new package server to retrieve packages.';
 
   async run(): Promise<void> {
-    const packman = await getPackageManager({
-      includeCredentialProvider: true
-    });
+    const packman = await pkgAddRemoteDeps.getPackageManager(
+      {
+        useRemotes: true
+      },
+      undefined,
+      this
+    );
 
     const {args} = await this.parse(CfsPackageAddRemote);
     await packman.addRemote(args.remoteName, args.url);
 
-    this.log(`Added remote package server successfully!`);
+    this.log(`Added remote package server successfully`);
   }
 }

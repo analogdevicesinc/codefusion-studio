@@ -8,10 +8,10 @@
 			"type": "string",
 			"description": "Copyright notice for this file"
 		},
-		"SchemaVersion" : {
-			"description" : "The version number of this cfsconfig schema.",
-			"type" : "string",
-			"const" : "2.1.0"
+		"SchemaVersion": {
+			"description": "The version number of this cfsconfig schema.",
+			"type": "string",
+			"const": "2.1.0"
 		},
 		"DataModelVersion": {
 			"type": "string",
@@ -92,10 +92,7 @@
 								"Access": {
 									"type": "string",
 									"description": "Access type for the partition (e.g., read, write, execute)",
-									"enum": [
-										"R",
-										"R/W"
-									]
+									"enum": ["R", "R/W"]
 								},
 								"Config": {
 									"$ref": "#/$defs/ConfigOptions",
@@ -146,11 +143,7 @@
 								}
 							},
 							"additionalProperties": false,
-							"required": [
-								"Name",
-								"Signals",
-								"Config"
-							]
+							"required": ["Name", "Signals", "Config"]
 						}
 					},
 					"Profiling": {
@@ -170,23 +163,58 @@
 										"description": "AI profiling is enabled"
 									},
 									"Interface": {
-										"type": "string",
 										"description": "Interface used to transfer profiling data i.e. UART",
-										"enum": [
-											"UART"
+										"oneOf": [
+											{
+												"$comment": "Kept for backwards compatibility: Interface as a plain string. Port is supplied via the sibling Port property.",
+												"type": "string",
+												"enum": ["UART"]
+											},
+											{
+												"type": "object",
+												"required": ["Type"],
+												"properties": {
+													"Type": {
+														"type": "string",
+														"description": "The transport type of the interface",
+														"enum": ["UART", "USB"]
+													}
+												},
+												"oneOf": [
+													{
+														"properties": {
+															"Type": {
+																"const": "UART"
+															},
+															"Port": {
+																"type": "string",
+																"description": "The name of the UART instance used to transfer profiling data, as specified in the data model."
+															}
+														},
+														"required": ["Port"],
+														"additionalProperties": false
+													},
+													{
+														"properties": {
+															"Type": {
+																"const": "USB"
+															}
+														},
+														"additionalProperties": false
+													}
+												]
+											}
 										]
 									},
 									"Port": {
-										"type": "number",
-										"description": "Instance of the interface used to transfer profiling data i.e. 0"
+										"$comment": "Kept for backwards compatibility: top-level Port sibling to a plain-string Interface. Superseded by the Port nested under the Interface object form.",
+										"type": "string",
+										"description": "The name of the UART instance used to transfer profiling data, as specified in the data model."
 									},
 									"Format": {
 										"type": "string",
 										"description": "Format for profiling (CTF or text)",
-										"enum": [
-											"CTF",
-											"TEXT"
-										]
+										"enum": ["CTF", "TEXT"]
 									}
 								},
 								"additionalProperties": false,
@@ -194,9 +222,19 @@
 									"Enabled",
 									"AIEnabled",
 									"Interface",
-									"Port",
 									"Format"
-								]
+								],
+								"if": {
+									"$comment": "Backwards compatibility: If the Interface is a string and is 'UART', then the Port property must be present.",
+									"properties": {
+										"Interface": {
+											"const": "UART"
+										}
+									}
+								},
+								"then": {
+									"required": ["Port"]
+								}
 							}
 						}
 					},
@@ -208,7 +246,8 @@
 							"properties": {
 								"Name": {
 									"type": "string",
-									"description": "Name of the AI module"
+									"maxLength": 64,
+									"description": "Name of the AI model"
 								},
 								"Model": {
 									"type": "object",
@@ -224,10 +263,7 @@
 										}
 									},
 									"additionalProperties": false,
-									"required": [
-										"File",
-										"Name"
-									]
+									"required": ["File", "Name"]
 								},
 								"Target": {
 									"type": "object",
@@ -308,11 +344,7 @@
 					}
 				},
 				"additionalProperties": false,
-				"required": [
-					"Pin",
-					"Peripheral",
-					"Signal"
-				]
+				"required": ["Pin", "Peripheral", "Signal"]
 			}
 		},
 		"ClockNodes": {
@@ -339,12 +371,7 @@
 					}
 				},
 				"additionalProperties": false,
-				"required": [
-					"Name",
-					"Control",
-					"Value",
-					"Enabled"
-				]
+				"required": ["Name", "Control", "Value", "Enabled"]
 			}
 		},
 		"DFG": {
@@ -383,11 +410,7 @@
 							}
 						},
 						"additionalProperties": false,
-						"required": [
-								"StreamId",
-								"Source",
-								"Destinations"
-						]
+						"required": ["StreamId", "Source", "Destinations"]
 					}
 				},
 				"Gaskets": {
@@ -407,16 +430,11 @@
 						}
 					},
 					"additionalProperties": false,
-					"required": [
-						"Name"
-					]
+					"required": ["Name"]
 				}
 			},
 			"additionalProperties": false,
-			"required": [
-				"Streams",
-				"Gaskets"
-			]
+			"required": ["Streams", "Gaskets"]
 		},
 		"ClockFrequencies": {
 			"type": "object",

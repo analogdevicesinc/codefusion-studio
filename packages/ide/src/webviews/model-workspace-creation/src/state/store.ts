@@ -29,8 +29,8 @@ import {
 import {workspaceConfigReducer} from './slices/workspace-reducer';
 import {getModelWorkspacePersistenceListenerMiddleware} from './persistence-middleware';
 import {messenger} from '../../../common/contexts/MessengerContext';
-import { getWorkspaceConfig } from "@constants/messages/model-to-workspace";
-import { checkCompatibility } from "./thunks/workspace-thunks";
+import {getWorkspaceConfig} from '@constants/messages/model-to-workspace';
+import {checkCompatibility} from './thunks/workspace-thunks';
 
 type ResolvedType<T> = T extends Promise<infer R> ? R : T;
 export type Store = ResolvedType<
@@ -67,15 +67,15 @@ export async function getPreloadedStateStore() {
 
 	const store = configureStore({
 		reducer: rootReducer,
-		middleware: (getDefaultMiddleware) =>
+		middleware: getDefaultMiddleware =>
 			getDefaultMiddleware().prepend(
 				...getModelWorkspacePersistenceListenerMiddleware()
 			),
 		preloadedState: {
 			workspaceConfigReducer: {
-				modelFile: workspaceConfig.modelFile ?? "",
-				sampleData: workspaceConfig.sampleData ?? "",
-				workspaceName: workspaceConfig.workspaceName ?? "",
+				modelFile: workspaceConfig.modelFile ?? '',
+				sampleData: workspaceConfig.sampleData ?? '',
+				workspaceName: workspaceConfig.workspaceName ?? '',
 				soc: workspaceConfig.soc,
 				board: workspaceConfig.board,
 				runModelOn: [],
@@ -83,7 +83,7 @@ export async function getPreloadedStateStore() {
 			}
 		}
 	});
-		void (store.dispatch as AppDispatch)(checkCompatibility());
+	void (store.dispatch as AppDispatch)(checkCompatibility());
 
-		return store;
+	return store;
 }

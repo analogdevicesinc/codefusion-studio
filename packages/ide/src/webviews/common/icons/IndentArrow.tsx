@@ -1,0 +1,30 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+export default function IndentArrow() {
+	return (
+		<svg
+			width='11'
+			height='9'
+			viewBox='0 0 11 9'
+			fill='none'
+			xmlns='http://www.w3.org/2000/svg'
+		>
+			<path
+				d='M0.438375 0C0.554407 0 0.665687 0.0493861 0.747734 0.137294C0.829781 0.225201 0.875875 0.34443 0.875875 0.46875V3.28125C0.875875 4.05656 1.46475 4.6875 2.18837 4.6875H9.00725L6.692 2.20687C6.61231 2.11847 6.56821 2.00006 6.56921 1.87716C6.5702 1.75425 6.61621 1.63668 6.69733 1.54977C6.77845 1.46286 6.88818 1.41356 7.00289 1.4125C7.1176 1.41143 7.22811 1.45868 7.31063 1.54406L10.3731 4.82531C10.4551 4.91322 10.5012 5.03242 10.5012 5.15672C10.5012 5.28101 10.4551 5.40022 10.3731 5.48812L7.31063 8.76937C7.26999 8.81303 7.22171 8.84766 7.16855 8.87129C7.1154 8.89492 7.05842 8.90709 7.00088 8.90709C6.94333 8.90709 6.88635 8.89492 6.8332 8.87129C6.78004 8.84766 6.73176 8.81303 6.69112 8.76937C6.60911 8.68147 6.56303 8.56226 6.56303 8.43797C6.56303 8.31367 6.60911 8.19447 6.69112 8.10656L9.00638 5.62594H2.1875C1.60734 5.62594 1.05094 5.37901 0.640704 4.93947C0.230468 4.49993 0 3.90379 0 3.28219V0.469687C0 0.345367 0.0460936 0.226139 0.128141 0.138231C0.210188 0.0503235 0.321468 0.000937432 0.4375 0.000937432L0.438375 0Z'
+				fill='currentColor'
+			/>
+		</svg>
+	);
+}

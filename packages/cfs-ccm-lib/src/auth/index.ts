@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,26 @@
 export type { Authorizer } from './authorizer.js';
 export { ApiKeyAuthorizer } from './key/api-key.js';
 export type { ApiKeyAuthConfig } from './key/api-key.js';
-export {
-    TokenAuthorizer,
-    TokenAuthSession,
-    TokenCodeExchangeFlows,
-    TokenSessionFileStorage,
-} from './token/token.js';
+export { TokenAuthorizer } from './token/token-authorizer.js';
 export type {
     AccessToken,
-    BrowserResponse,
     TokenAuthConfig,
+} from './token/token-authorizer.js';
+export {
+    TokenAuthSession,
+    TokenSessionFileStorage,
+} from './token/token-session.js';
+export type {
     TokenAuthSessionConfig,
     TokenSessionInfo,
+} from './token/token-session.js';
+export { TokenCodeExchangeFlows } from './token/token-flows.js';
+export type {
+    BrowserResponse,
     TokenCodeExchangeInitiator,
     TokenCodeExchangeReporter,
     TokenCodeExchangeValidator,
-} from './token/token.js';
+} from './token/token-flows.js';
 export { PublicAuthorizer } from './public/public.js';
 export type { PublicAuthConfig } from './public/public.js';
-export type { SessionInfo } from './session.js';
+export { AuthFlowError, type SessionInfo } from './session.js';

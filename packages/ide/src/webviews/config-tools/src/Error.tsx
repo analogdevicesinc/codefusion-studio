@@ -15,10 +15,10 @@
 
 import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import type {WebviewError} from '@common/types/errors';
+import GenericError from '@common/components/generic-error/GenericError';
 import UnknownError from './screens/error/unknown-error';
 import MissingComponentsError from './screens/error/version-updater/missing-components/missing-components-error';
 import {useInitializationError} from './hooks/use-initialization-error';
-import GenericError from './screens/error/generic-error';
 import type {CfsMissingComponent} from 'cfs-types';
 
 type ErrorViewProps = {

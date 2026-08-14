@@ -3,6 +3,8 @@
 	"include": [
 		"./trace-side-panel/**/*.ts",
 		"./trace-side-panel/**/*.tsx",
+		"../constants/**/*.ts",
+		"../types/**/*.ts",
 		"./common/**/*.ts",
 		"./common/**/*.tsx",
 		"./custom.d.ts"

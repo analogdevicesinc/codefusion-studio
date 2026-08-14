@@ -23,19 +23,31 @@ import type {
 	CfsPackageRemoteCredentialProvider
 } from "cfs-package-manager";
 
+/**
+ * Minimal interface for a package repository client, used to decouple
+ * the credential provider from the concrete {@link RepositoryClient} class.
+ */
+export interface PackageRepositoryClient {
+	getRepository(repoUrl: string): Promise<PackageRepository>;
+}
+
 export class MyAnalogCloudsmithCredentialProvider
 	implements CfsPackageRemoteCredentialProvider
 {
 	private readonly cloudsmithDomain: string = ".cloudsmith.io";
-	private readonly repoClient: RepositoryClient;
 	private readonly repoCache = new Map<string, PackageRepository>();
+	private readonly repoClient: PackageRepositoryClient;
 
 	public static readonly name: string = "myAnalog";
 	public readonly name: string =
 		MyAnalogCloudsmithCredentialProvider.name;
 
-	constructor(ccmClient: CfsApiClient) {
-		this.repoClient = new RepositoryClient(ccmClient);
+	constructor(client: CfsApiClient | PackageRepositoryClient) {
+		if (client instanceof CfsApiClient) {
+			this.repoClient = new RepositoryClient(client);
+		} else {
+			this.repoClient = client;
+		}
 	}
 
 	async getRemoteCredential(

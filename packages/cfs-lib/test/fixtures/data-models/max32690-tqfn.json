@@ -16,7 +16,8 @@
 			"Id": "CM4",
 			"Name": "ARM Cortex-M4",
 			"CoreNum": 0,
-			"IsPrimary": true
+			"IsPrimary": true,
+			"Ai": {}
 		},
 		{
 			"Id": "RV",

@@ -16,7 +16,7 @@ import sys
 
 from cfsai_compatibility_analyzer import CompatibilityAnalyzer
 from cfsai_types.hardware_profile import HardwareProfile
-from cfsai_types.logging import setup_logger
+from cfsai_types.logging import dump_logs, setup_logger
 
 logger = logging.getLogger("cfsai_compatibility_analyzer")
 
@@ -74,4 +74,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f'{e.__class__.__name__}{e}')
         sys.exit(1)
+    finally:
+        print(dump_logs())
       

@@ -19,7 +19,6 @@
         "ZephyrVersion": "4.2.0",
         "ZephyrBoardName": "max32650evkit"
       },
-      "Family": "Cortex-M",
       "Partitions": [
         {
           "Name": "m4_flash",

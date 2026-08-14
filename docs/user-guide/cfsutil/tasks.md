@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Tasks
 author: Analog Devices
-date: 2026-05-21
+date: 2026-07-07
 ---
 
 # Tasks
@@ -36,9 +36,9 @@ Lists the tasks available in a generated workspace.
 !!! example
 
     ```sh
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.1/MyWorkspace
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4 -v
-    cd /home/<username>/analog/cfs/2.2.1/MyWorkspace/m4
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.3.0/MyWorkspace
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4 -v
+    cd /home/<username>/analog/cfs/2.3.0/MyWorkspace/m4
     cfsutil tasks list
     ```
 
@@ -66,9 +66,9 @@ Runs a task from a project inside a generated workspace.
 !!! example
 
     ```sh
-    cfsutil tasks run build -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4
-    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.2.1/MyWorkspace -p m4 --capture --port COM4
-    cd /home/<username>/analog/cfs/2.2.1/MyWorkspace/m4
+    cfsutil tasks run build -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4
+    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4 --capture --port COM4
+    cd /home/<username>/analog/cfs/2.3.0/MyWorkspace/m4
     cfsutil tasks run build
     ```
 
@@ -168,7 +168,7 @@ To customize CLI behavior, edit `config.json` in a text editor. The file uses JS
 
 ```json
 {
-    "cfsInstallPath": "/home/<username>/analog/cfs/2.2.1",
+    "cfsInstallPath": "/home/<username>/analog/cfs/2.3.0",
     "toolSearchPaths": ["/opt/toolchains/arm-gnu-toolchain/bin"],
     "env": {
         "ARM_GCC_DIR": "/opt/toolchains/arm-gnu-toolchain/bin",

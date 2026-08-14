@@ -41,7 +41,122 @@
     }
   ],
   "DFG": {
-    "Streams": [],
+    "Streams": [
+      {
+        "StreamId": 1,
+        "Source": {
+          "Gasket": "ASS",
+          "Index": 0,
+          "BufferAddress": 0,
+          "Config": {},
+          "BufferSize": 128
+        },
+        "Destinations": [
+          {
+            "Gasket": "DSS",
+            "Index": 0,
+            "BufferAddress": 0,
+            "Config": {},
+            "BufferSize": 128
+          }
+        ],
+        "Group": "Group1",
+        "Description": "ASS_to_DSS"
+      },
+      {
+        "StreamId": 2,
+        "Source": {
+          "Gasket": "ASS",
+          "Index": 1,
+          "BufferAddress": 128,
+          "Config": {},
+          "BufferSize": 128
+        },
+        "Destinations": [
+          {
+            "Gasket": "DSS",
+            "Index": 1,
+            "BufferAddress": 128,
+            "Config": {},
+            "BufferSize": 128
+          }
+        ],
+        "Group": "Group1",
+        "Description": "ASS_to_DSS"
+      },
+      {
+        "StreamId": 161,
+        "Source": {
+          "Gasket": "GSS",
+          "Index": 0,
+          "BufferAddress": 0,
+          "Config": {},
+          "BufferSize": 256
+        },
+        "Destinations": [
+          {
+            "Gasket": "ESS",
+            "Index": 0,
+            "BufferAddress": 0,
+            "Config": {},
+            "BufferSize": 4096
+          }
+        ],
+        "Group": "",
+        "Description": "GSS_to_ESS"
+      },
+      {
+        "StreamId": 162,
+        "Source": {
+          "Gasket": "GSS",
+          "Index": 1,
+          "BufferAddress": 256,
+          "Config": {},
+          "BufferSize": 256
+        },
+        "Destinations": [
+          {
+            "Gasket": "ESS",
+            "Index": 1,
+            "BufferAddress": 4096,
+            "Config": {},
+            "BufferSize": 4096
+          }
+        ],
+        "Group": "",
+        "Description": "GSS_to_ESS"
+      },
+      {
+        "StreamId": 33,
+        "Source": {
+          "Gasket": "DSS",
+          "Index": 0,
+          "BufferAddress": 0,
+          "Config": {
+            "INT_WINDOW_EN": "TRUE",
+            "INT_WINDOW_SIZE": "1",
+            "INT_LINE_SRC": "14"
+          },
+          "BufferSize": 64
+        },
+        "Destinations": [
+          {
+            "Gasket": "DSS",
+            "Index": 2,
+            "BufferAddress": 256,
+            "Config": {
+              "INT_BUFFER_EN": "TRUE",
+              "INT_BUFFER_SIZE": "1",
+              "INT_WINDOW_EN": "TRUE",
+              "INT_WINDOW_SIZE": "2"
+            },
+            "BufferSize": 64
+          }
+        ],
+        "Group": "",
+        "Description": "DSS-DSS"
+      }
+    ],
     "Gaskets": []
   }
 }

@@ -1,18 +1,34 @@
-import {test, expect} from '@oclif/test';
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import type {CfsWorkspace} from 'cfs-types';
 import fs, {promises as fsp} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   CFS_DATA_MODELS_PATH,
-  CFS_PLUGINS_PATH
+  CFS_PROJECT_PLUGINS_PATH
 } from '../../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('project:create', () => {
-  const pluginsPath = CFS_PLUGINS_PATH;
+  const pluginsPath = CFS_PROJECT_PLUGINS_PATH;
   const dataModelsPath = CFS_DATA_MODELS_PATH;
   const workspacePath = path.resolve(
     __dirname,
@@ -52,9 +68,8 @@ describe('project:create', () => {
     }
   });
 
-  test
-    .stderr()
-    .command(
+  it('should create the projects', async () => {
+    const {stderr} = await runCommand(
       [
         'project:create',
         '--workspace-file-path',
@@ -69,17 +84,15 @@ describe('project:create', () => {
       {
         root: '..'
       }
-    )
-    .it('should create the projects', (ctx) => {
-      // This fixture validates the CLI contract (successful command execution)
-      // because generated project trees are plugin-dependent and not stable
-      // across environments for deterministic assertions here.
-      expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-    });
+    );
+    // This fixture validates the CLI contract (successful command execution)
+    // because generated project trees are plugin-dependent and not stable
+    // across environments for deterministic assertions here.
+    expect(stderr, 'stderr should be empty').to.be.empty;
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('should throw an error if invalid project name is provided', async () => {
+    const {error} = await runCommand(
       [
         'project:create',
         '--workspace-file-path',
@@ -94,17 +107,14 @@ describe('project:create', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.include(
-        `Project: ${invalidProject} was not found in the workspace projects list`
-      );
-    })
-    .it('should throw an error if invalid project name is provided');
+    );
+    expect(error?.message).to.include(
+      `Project: ${invalidProject} was not found in the workspace projects list`
+    );
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('should throw an error if projects array is empty', async () => {
+    const {error} = await runCommand(
       [
         'project:create',
         '--workspace-file-path',
@@ -119,11 +129,9 @@ describe('project:create', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.include(
-        'Projects cannot currently be generated from this type of workspace file.'
-      );
-    })
-    .it('should throw an error if projects array is empty');
+    );
+    expect(error?.message).to.include(
+      'Projects cannot currently be generated from this type of workspace file.'
+    );
+  });
 });

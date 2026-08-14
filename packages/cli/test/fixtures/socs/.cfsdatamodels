@@ -23,5 +23,32 @@
       "description": "Test fixture for TEST_SOC_B",
       "path": "test-soc-b-wlp.json"
     }
+  },
+  "AI_SINGLE_CORE": {
+    "WLP": {
+      "version": "1.1.44",
+      "schema": "1.1.0",
+      "timestamp": "2026-01-15T10:30:00.000Z",
+      "description": "Test fixture for single-core SoC with AI support",
+      "path": "ai-single-core-wlp.json"
+    }
+  },
+  "AI_MULTI_SINGLE": {
+    "WLP": {
+      "version": "1.1.44",
+      "schema": "1.1.0",
+      "timestamp": "2026-01-15T10:30:00.000Z",
+      "description": "Test fixture for multi-core SoC with single AI support",
+      "path": "ai-multi-single-wlp.json"
+    }
+  },
+  "AI_MULTI_MULTIPLE": {
+    "WLP": {
+      "version": "1.1.44",
+      "schema": "1.1.0",
+      "timestamp": "2026-01-15T10:30:00.000Z",
+      "description": "Test fixture for multi-core SoC with multiple AI support",
+      "path": "ai-multi-multiple-wlp.json"
+    }
   }
 }

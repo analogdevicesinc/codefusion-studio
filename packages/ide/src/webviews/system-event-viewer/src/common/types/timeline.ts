@@ -84,6 +84,7 @@ export type MeasureResolvedPoint = MeasurePoint & {
 	sourceId?: string;
 	eventIndex?: number;
 	isSnapped: boolean;
+	rowLocalY?: number;
 };
 
 export type MeasureSnapCandidate = MeasurePoint & {
@@ -125,5 +126,10 @@ export type MeasureLabelLayout = Readonly<{
 	horizontalLabelLeft: number | undefined;
 	horizontalLabelTop: number | undefined;
 	horizontalLineTop: number | undefined;
+	horizontalLineLeft: number | undefined;
+	horizontalLineWidth: number | undefined;
+	deltaStemLeft: number | undefined;
+	deltaStemTop: number | undefined;
+	deltaStemHeight: number | undefined;
 	verticalLabelTop: number;
 }>;

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ type ButtonProps = {
 	readonly type?: 'button' | 'submit' | 'reset';
 	readonly dataTest?: string;
 	readonly dataValue?: number | boolean;
+	readonly ariaLabel?: string;
 	readonly className?: string;
 	readonly onClick?: MouseEventHandler<HTMLElement>;
 	readonly children?: ReactNode;
@@ -36,6 +37,7 @@ export default function Button({
 	type,
 	dataTest,
 	dataValue,
+	ariaLabel,
 	className,
 	onClick,
 	children
@@ -51,6 +53,7 @@ export default function Button({
 			appearance={appearance}
 			{...(dataValue ? {'data-value': dataValue} : {})}
 			{...(dataTest ? {'data-test': dataTest} : {})}
+			aria-label={ariaLabel}
 			className={`${className ? `${className}` : ''} ${styles.button}`}
 			onClick={handleButtonClick}
 		>

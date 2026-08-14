@@ -15,31 +15,29 @@
 
 import { describe, it } from "mocha";
 import { expect, assert } from "chai";
-import { spy, stub } from "sinon";
-import { CfsApiClient } from "cfs-ccm-lib";
-import { MyAnalogCloudsmithCredentialProvider } from "../../src/auth/cloudsmith-credentials.js";
+import { stub } from "sinon";
+import type { PackageRepository } from "cfs-ccm-lib";
+import {
+	MyAnalogCloudsmithCredentialProvider,
+	type PackageRepositoryClient
+} from "../../src/auth/cloudsmith-credentials.js";
 
 describe("MyAnalogCloudsmithCredentialProvider", () => {
 	describe("getRemoteCredential", () => {
 		let credsProvider: MyAnalogCloudsmithCredentialProvider;
 
 		beforeEach(() => {
-			const fetchStub = {
-				POST: () =>
-					Promise.resolve({
-						response: {
-							status: 200
-						},
-						data: {
-							token: "secure-token"
-						}
-					})
+			const mockRepo: PackageRepository = {
+				getToken: () => Promise.resolve("secure-token"),
+				refreshToken: () => Promise.resolve()
+			} as unknown as PackageRepository;
+
+			const repoClient: PackageRepositoryClient = {
+				getRepository: () => Promise.resolve(mockRepo)
 			};
-			const apiClient = {
-				fetch: fetchStub
-			} as unknown as CfsApiClient;
+
 			credsProvider = new MyAnalogCloudsmithCredentialProvider(
-				apiClient
+				repoClient
 			);
 		});
 
@@ -98,50 +96,38 @@ describe("MyAnalogCloudsmithCredentialProvider", () => {
 	});
 
 	describe("refreshRemoteCredentials", () => {
-		it("should not to anything if there is nothing in the cache", async () => {
-			const fetchStub = {
-				POST: () => Promise.resolve("")
+		it("should not do anything if there is nothing in the cache", async () => {
+			const getRepositoryStub = stub();
+			const repoClient: PackageRepositoryClient = {
+				getRepository: getRepositoryStub
 			};
-			const postSpy = spy(fetchStub, "POST");
-			const apiClient = {
-				fetch: fetchStub
-			} as unknown as CfsApiClient;
+
 			const credsProvider = new MyAnalogCloudsmithCredentialProvider(
-				apiClient
+				repoClient
 			);
 
 			await credsProvider.refreshRemoteCredential(
 				"https://some-url.cloudsmith.io/owner/repo"
 			);
-			assert(postSpy.notCalled);
+			assert(getRepositoryStub.notCalled);
 		});
 
 		it("should refresh the token if repo exists in cache", async () => {
-			const fetchStub = {
-				POST: stub()
+			const getTokenStub = stub();
+			getTokenStub.onCall(0).resolves("secure-token");
+			getTokenStub.onCall(1).resolves("secure-token-2");
+
+			const mockRepo: PackageRepository = {
+				getToken: getTokenStub,
+				refreshToken: stub().resolves()
+			} as unknown as PackageRepository;
+
+			const repoClient: PackageRepositoryClient = {
+				getRepository: () => Promise.resolve(mockRepo)
 			};
 
-			fetchStub.POST.onCall(0).resolves({
-				response: {
-					status: 200
-				},
-				data: {
-					token: "secure-token"
-				}
-			});
-			fetchStub.POST.onCall(1).resolves({
-				response: {
-					status: 200
-				},
-				data: {
-					token: "secure-token-2"
-				}
-			});
-			const apiClient = {
-				fetch: fetchStub
-			} as unknown as CfsApiClient;
 			const credsProvider = new MyAnalogCloudsmithCredentialProvider(
-				apiClient
+				repoClient
 			);
 			const result = await credsProvider.getRemoteCredential(
 				"https://some-url.cloudsmith.io/owner/repo"

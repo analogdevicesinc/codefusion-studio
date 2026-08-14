@@ -75,7 +75,11 @@ export interface GdbToolboxScript {
   name: string;
   description: string;
   commands: GdbToolboxCommand[];
+  /**
+   * @deprecated Use `arch` instead.
+   */
   core?: string | string[];
+  arch?: string | string[];
   firmwarePlatform?: string | string[];
 }
 

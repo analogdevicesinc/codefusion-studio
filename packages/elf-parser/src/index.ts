@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
  *
  */
 export { ElfFileParser } from "./ElfFileParser.js";
+export type { ElfDataModel } from "./ElfDataModel.js";
+export type { ElfProgramHeader } from "./ElfProgramHeader.js";
+export type { ElfSectionHeader } from "./ElfSectionHeader.js";
+export type { ElfHeuristics } from "./ElfHeuristics.js";
 export { SYMBOLS_TABLE_ID } from "./constants/symbols.js";
 export {
 	sh_flags,

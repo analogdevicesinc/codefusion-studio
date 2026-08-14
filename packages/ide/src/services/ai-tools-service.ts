@@ -16,14 +16,13 @@
 import * as vscode from "vscode";
 import {
   CfsToolManager,
+  MAX_MODEL_NAME_LENGTH,
   getAiToolsPlugin,
-  parseAICodegenEvents,
 } from "cfs-lib";
 import { tmpdir } from "os";
 import path from "path";
 import { AIModel, CfsConfig, CfsSocDataModel } from "cfs-types";
 import AIToolsPlugin from "cfs-lib/dist/ai-tools";
-import { CodeGenerationFailure } from "cfs-lib/dist/types/code-generation";
 import { Utils } from "../utils/utils";
 import { AuthConfigParser } from "../utils/auth-config";
 
@@ -93,7 +92,9 @@ export class AIToolsService {
 
     if (result.code !== 0) {
       throw new Error(
-        `AI Model profiling failed with exit code ${result.code?.toString() ?? "unknown"}.`,
+        `AI Model profiling failed with exit code ${
+          result.code?.toString() ?? "unknown"
+        }.`,
       );
     }
 
@@ -132,7 +133,9 @@ export class AIToolsService {
 
     if (result.code !== 0 && result.code !== 10) {
       throw new Error(
-        `AI Model analysis failed with exit code ${result.code?.toString() ?? "unknown"}.`,
+        `AI Model analysis failed with exit code ${
+          result.code?.toString() ?? "unknown"
+        }.`,
       );
     }
 
@@ -146,42 +149,17 @@ export class AIToolsService {
     cfsconfig: CfsConfig,
     dataModel: CfsSocDataModel,
     workspacePath: string,
-  ): Promise<(string | CodeGenerationFailure)[]> {
+  ): Promise<string[]> {
     const authConfig = new AuthConfigParser().getConfig();
-    const aiOutput = await this.aiToolsPlugin.generateFromConfig(
+
+    const result = await this.aiToolsPlugin.generateFromConfig(
       cfsconfig,
       dataModel,
       workspacePath,
       authConfig,
     );
 
-    if (
-      aiOutput.code !== null &&
-      !aiOutput.validCodes.includes(aiOutput.code)
-    ) {
-      throw new Error(
-        aiOutput.stderr.join("\n") ||
-          `AI code generation failed with exit code ${aiOutput.code.toString()}`,
-      );
-    }
-
-    const combined = [...aiOutput.stdout, ...aiOutput.stderr];
-
-    const aiEvents = parseAICodegenEvents(combined.join(""));
-
-    const aiGeneratedFiles = aiEvents
-      .filter((evt) => evt.event?.status === "OK" && evt.event.type === "FILE")
-      .map((evt) => evt.event?.value)
-      .filter((value) => value !== undefined);
-
-    const aiFailures: CodeGenerationFailure[] = aiEvents
-      .filter((evt) => evt.event && evt.event.status !== "OK")
-      .map((evt) => ({
-        name: evt.event?.value ?? "",
-        error: `Failed to create file: ${evt.event?.value}`,
-      }));
-
-    return [...aiGeneratedFiles, ...aiFailures];
+    return result.artifacts?.files ?? [];
   }
 
   private getReportPath(
@@ -190,7 +168,10 @@ export class AIToolsService {
   ): string {
     return path.join(
       DEFAULT_REPORT_TMP_DIR,
-      `${model.Name.replace(/\s+/g, "_")}_${type}_report.cfsreport`,
+      `${model.Name.replace(/[\s\\\/<>:"|?*]+/g, "_").substring(
+        0,
+        MAX_MODEL_NAME_LENGTH,
+      )}_${type}_report.cfsreport`,
     );
   }
 }

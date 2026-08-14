@@ -127,7 +127,7 @@ const TreeRow = memo(
 			);
 		}, [dispatch, isExpanded, isCache, node, isGroupNode]);
 
-		const onCheckboxChange = useCallback(async () => {
+		const onCheckboxClick = useCallback(async () => {
 			if (!node || node.isGroup || isNodeDisabled) return;
 
 			await setNodeCheckbox(node, !isNodeChecked(node));
@@ -156,7 +156,7 @@ const TreeRow = memo(
 				className={styles.checkbox}
 				checked={isNodeChecked(node)}
 				isDisabled={isNodeDisabled}
-				onChange={onCheckboxChange}
+				onClick={onCheckboxClick}
 			>
 				{nodeLabel}
 			</CheckBox>

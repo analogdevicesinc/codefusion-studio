@@ -1,10 +1,27 @@
-import {test, expect} from '@oclif/test';
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import type {CfsWorkspace} from 'cfs-types';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
-  CFS_PLUGINS_PATH,
+  CFS_PROJECT_PLUGINS_PATH,
+  CFS_WORKSPACE_TEMPLATES_PATH,
   CFS_DATA_MODELS_PATH
 } from '../../constants.js';
 
@@ -18,7 +35,16 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const pluginsPath = path.resolve(__dirname, '..', CFS_PLUGINS_PATH);
+const pluginsPath = path.resolve(
+  __dirname,
+  '..',
+  CFS_PROJECT_PLUGINS_PATH
+);
+const workspaceTemplatesPath = path.resolve(
+  __dirname,
+  '..',
+  CFS_WORKSPACE_TEMPLATES_PATH
+);
 const dataModelsPath = CFS_DATA_MODELS_PATH;
 const workspaceFilenamePath = path.resolve(
   __dirname,
@@ -60,9 +86,8 @@ describe('workspace:create', () => {
       }
     });
 
-    test
-      .stderr({print: true})
-      .command(
+    it('should create a workspace.', async () => {
+      const {stderr} = await runCommand(
         [
           'workspace:create',
           '--workspace-file-path',
@@ -70,26 +95,21 @@ describe('workspace:create', () => {
           '--search-path',
           pluginsPath,
           '--search-path',
+          workspaceTemplatesPath,
+          '--search-path',
           dataModelsPath
         ],
         {
           root: '..'
         }
-      )
-      .it('should create a workspace.', (ctx) => {
-        expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-        expect(fs.statSync(cfsworkspace.location).isDirectory()).to.be
-          .true;
-      });
+      );
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(fs.statSync(cfsworkspace.location).isDirectory()).to.be
+        .true;
+    });
   });
 
   describe('create workspace from command line args', () => {
-    const pluginsPath = path.resolve(
-      __dirname,
-      '..',
-      CFS_PLUGINS_PATH
-    );
-
     after(async () => {
       try {
         fs.rmSync(path.resolve(__dirname, fullWorkspacePath), {
@@ -102,9 +122,8 @@ describe('workspace:create', () => {
       }
     });
 
-    test
-      .stderr({print: true})
-      .command(
+    it('should create a workspace from parameters', async () => {
+      const {stderr} = await runCommand(
         [
           'workspace:create',
           '-o=' + __dirname,
@@ -114,18 +133,18 @@ describe('workspace:create', () => {
           '--search-path',
           pluginsPath,
           '--search-path',
+          workspaceTemplatesPath,
+          '--search-path',
           dataModelsPath,
           '--template-id=com.analog.sharcfx.mock.example'
         ],
         {
           root: '..'
         }
-      )
-      .it('should create a workspace from parameters', (ctx) => {
-        expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-        expect(fs.statSync(fullWorkspacePath).isDirectory()).to.be
-          .true;
-      });
+      );
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(fs.statSync(fullWorkspacePath).isDirectory()).to.be.true;
+    });
   });
 
   describe('error handling - incompatible flag combinations', () => {
@@ -197,9 +216,8 @@ describe('workspace:create', () => {
 
     invalidCombinations.forEach(
       ({flags, errorMessages, description}) => {
-        test
-          .stderr({print: true})
-          .command(
+        it(description, async () => {
+          const {error} = await runCommand(
             [
               'workspace:create',
               ...flags,
@@ -209,14 +227,12 @@ describe('workspace:create', () => {
               dataModelsPath
             ],
             {root: '..'}
-          )
-          .catch((error) => {
-            // Check that expected error messages are present
-            for (const errorMessage of errorMessages) {
-              expect(error.message).to.contain(errorMessage);
-            }
-          })
-          .it(description);
+          );
+          // Check that expected error messages are present
+          for (const errorMessage of errorMessages) {
+            expect(error?.message).to.contain(errorMessage);
+          }
+        });
       }
     );
   });

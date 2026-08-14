@@ -300,6 +300,9 @@
     }
   },
   "cfgtools": {
+    "common": {
+      "optionGroupNotSupportedByPlugin": "Not Supported by Plugin:"
+    },
     "dashboard": {
       "title": "System Planner Configuration Tools dashboard",
       "description": "<p>Get a complete overview of your system configuration with the System Planner Configuration tools dashboard.<ul><li><strong>Navigate to system tools pages</strong>: Use the links to access tools for allocating peripherals, assigning pins, configuring clocks, partitioning memory, and viewing registers. Once your setup is complete, generate code for your project.</li><br /><li><strong>Review existing configurations</strong>: Use the Workspace Projects table to review resource assignments for each core and ensure proper configuration before code generation. If a conflict is detected, an error icon will appear. Click the chevron (>) in any cell to jump to the relevant configuration page and resolve issues.</li><br /><li><strong>Access documentation</strong>: View board-specific documentation links that provide quick access to product information, datasheets, and user guides.</li></ul></p>",
@@ -364,6 +367,7 @@
       }
     },
     "dfg": {
+      "nonDefaultValue": "Non-default value",
       "title": "DFG",
       "description": "<p>The DFG Configuration tool lets you create and manage data streams between gaskets on supported SoCs. Use this tool to connect processing units such as cores, DMA engines, and accelerators.</p><br /><p>The DFG Configuration tool includes two tabs:</p><ul>  <li><strong>DFG Visualization</strong>: Create, view, and manage streams using a graphical network view.</li>  <li><strong>Stream List</strong>: Create and review streams in a tabular format, and export stream data.</li></ul><br /><h2>DFG Visualization overview</h2><p>The DFG Visualization tab is divided into the following areas:</p><ul>  <li><strong>Streams summary list</strong> (left panel): View inbound and outbound streams for each gasket, and add and configure streams.</li>  <li><strong>DFG toolbar</strong>: Search for gaskets, switch views, and create streams.</li>  <li><strong>Network diagram</strong> (central panel): Review active stream connections and buffer usage.</li></ul><br /><h2>Stream List overview</h2><p>The Stream List tab displays configured streams in a table.</p><ul>  <li>Use <strong>Search</strong> and filters to find streams by source, destination, or group.</li>  <li>Optionally, click <strong>Export as CSV</strong> to export the currently displayed streams for offline review (for example, in Excel).</li></ul><br /><h2>Creating a stream</h2><p>To create a data stream, click <strong>Create Stream</strong> in either tab.</p><ul>  <li>Select a source gasket and one or more destination gaskets.</li>  <li>Configure buffer sizes and other available stream options.</li>  <li>Optionally assign the stream to a group.</li>  <li>Click <strong>Create</strong> to add the stream.</li></ul><p><i><strong>Note:</strong> Some gaskets tie their output streams to a corresponding input stream in the gasket. When configuring such gaskets as a <strong>Source</strong>, it is necessary to select this corresponding input stream. In this case, you must create the corresponding input stream before creating the output stream.</i></p><br /><h2>Managing streams and gaskets</h2><ul>  <li>Click <strong>Configure</strong> in either tab to update stream settings.</li>  <li>To delete a stream, click <strong>Configure</strong>, then click <strong>Delete</strong>.</li><li>To configure gasket settings, click a gasket (for example, CSS) in the network diagram. Some gaskets may not expose configurable settings.</li></ul>",
       "help": {
@@ -402,6 +406,7 @@
           "sourceGasketRequired": "Source gasket is required",
           "sourceBufferSizeRequired": "Source buffer size is required",
           "sourceTiedStreamRequired": "The corresponding input stream must be selected for this gasket. Please create it first if necessary.",
+          "destinationGasketTiedStreamRequired": "Cannot remove this destination because another stream is tied to it. Update or delete the dependent stream first.",
           "destinationGasketRequired": "At least one destination gasket is required",
           "destinationBufferSizeRequired": "Destination buffer size is required",
           "destinationBufferSizeRequired_01": "Destination {destinationIndex} buffer size is required",
@@ -601,8 +606,11 @@
           "targetRequired": "Target is required",
           "modelNameRequired": "Name is required",
           "modelNameExists": "A model with this name already exists",
-          "invalidCIdentifier": "Enter a valid C identifier. Only letters, numbers and underscores are allowed.",
-          "modelFileRequired": "Model file is required"
+          "modelNameTooLong": "Model name must not exceed {maxLength} characters",
+          "invalidCIdentifier": "Enter a valid C identifier. Only letters, numbers and underscores are allowed. Reserved C/C++ keywords are not allowed.",
+          "modelFileRequired": "Model file is required",
+          "fieldRequired": "Field is required",
+          "modelDoesNotSupportPlatform": "The selected model does not support the selected platform"
         }
       },
       "modelList": {
@@ -646,7 +654,7 @@
     },
     "mcubootConfig": {
       "title": "MCUboot Config",
-      "description": "<p> TBD.</p>",
+      "description": "<p>Configure MCUboot and manage single or multi-image application packages. An <strong>application package</strong> is a combined firmware image containing one or more binaries for single or multi-core applications. Packages can optionally be signed at the package level, the image level, or both.</p><br /><h2>Application packages</h2><p>Add an App Pack using the <strong>+</strong> button in the sidebar, or the <strong>Add an App Pack</strong> button in the main view. Click a package name or description to edit it.</p><p>Each package requires a <strong>Core</strong> selection — this determines which processor runs the application package. A primary-core package containing multiple images also requires a <strong>Version</strong>.</p><br /><h2>Signing keys</h2><p>Signing is optional. You can assign a sign key at the package level, the image level, or both — or select <strong>No key</strong> to generate an unsigned package. Generate and manage keys in <strong>Security Settings</strong> (cog icon in the sidebar, or the Security Settings link in the Sign Key section).</p><br /><h2>Images</h2><p>Add the first image using the <strong>Add Image</strong> button, or the <strong>+</strong> icon in the top right for additional images. Required fields for each image:</p><ul><li><strong>Name</strong>: Descriptive name for the image.</li><li><strong>Binary Path</strong>: Path to a <code>.bin</code> firmware file.</li><li><strong>Location Address</strong>: Hex address where the image is loaded.</li><li><strong>Image Version</strong>: Firmware version string (for example, 1.0.0).</li><li><strong>Slot Size</strong>: Flash slot size. Must be sector-aligned (multiple of 4,096 bytes) and large enough for the binary, header, and TLVs.</li><li><strong>Header Size</strong>: MCUboot header size (32–4,096 bytes; default: 32). Must be less than slot size and a multiple of swap alignment.</li><li><strong>Swap Alignment</strong>: Memory alignment for image swapping (default: 4 bytes).</li></ul><br /><h3>Custom TLVs</h3><p>Click the <strong>+</strong> icon to add a custom TLV (Type-Length-Value) field. Custom TLVs embed additional metadata in the image's TLV area. Each TLV requires a unique <strong>Tag</strong> (0x00A0–0xFFFE) and a <strong>Value</strong> (plain text or hex with <code>0x</code> prefix).</p><br /><h2>Build output</h2><p>After generating code and building, combined <code>.bin</code> packages are written to <code>build/zephyr/package/</code>. Output filenames match the app pack names you configured.</p>",
       "banner": {
         "disabled": "MCUboot configuration is disabled. System Planner will not generate any App Packs.",
         "default": "MCUboot configuration is set to default. System Planner will use the default Zephyr configuration.",
@@ -831,7 +839,9 @@
       "interface": {
         "title": "Interface Options",
         "interface-type": "Select Trace Interface Type",
+        "interface-type-placeholder": "Select Type",
         "interface-port": "Trace Interface",
+        "interface-port-placeholder": "Select Port",
         "interface-port-description": "To manage Trace Interface UART settings, go to",
         "peripheral-allocation": "Peripheral Allocation",
         "baud-rate": "Baud Rate",
@@ -900,7 +910,7 @@
     },
     "settings": {
       "title": "Workspace Settings",
-      "description": "<p>TBD</p>",
+      "description": "<p>Configure workspace-level security settings for MCUboot, including the MCUboot state and signing key management.</p><br /><h2>MCUboot state</h2><p>Select the MCUboot state to control how System Planner handles MCUboot during the build:</p><ul><li><strong>Enabled</strong>: System Planner generates MCUboot build flags based on your MCUboot Config settings.</li><li><strong>Default</strong>: Uses Zephyr's default MCUboot configuration. Your MCUboot Config settings are not applied during the build.</li><li><strong>Disabled</strong>: Explicitly disables application package generation.</li></ul><p>When MCUboot is set to <strong>Default</strong> or <strong>Disabled</strong>, you can still configure options in MCUboot Config, but the settings are not applied during the build.</p><br /><h2>Sign Key Management</h2><p>Create and manage the signing keys used to sign your application packages and images.</p><br /><h3>Generate New Key</h3><p>Click <strong>Generate New Key</strong> and fill in the following fields:</p><ul><li><strong>Key Name</strong>: Descriptive name that appears in the Sign Key dropdown in MCUboot Config.</li><li><strong>Destination Path</strong>: Existing directory where the generated key file is saved. Paths containing spaces are not supported.</li><li><strong>Algorithm</strong>: Signing algorithm — rsa-2048, rsa-3072, ecdsa-p256, or ed25519.</li><li><strong>Description</strong>: Optional notes about the key.</li></ul><p>Click <strong>Generate</strong> to create the key. It will be available in the Sign Key dropdown in MCUboot Config.</p><br /><h3>Add Existing Key</h3><p>Click <strong>Add Existing Key</strong> to import a key generated outside of CodeFusion Studio:</p><ul><li><strong>Path to Key</strong>: Full path to an existing <code>.pem</code> key file. Paths containing spaces are not supported.</li><li><strong>Description</strong>: Optional notes about the key.</li></ul><p>Click <strong>Apply</strong> to add the key. It will be available in the Sign Key dropdown in MCUboot Config.</p>",
       "help": {
         "title": "Workspace Settings Help"
       },
@@ -950,6 +960,7 @@
       "configure": "Configure",
       "serialPort": "Serial Port",
       "baudRate": "Baud Rate",
+      "usbDevice": "USB Device",
       "output": "Output",
       "startCapture": "Start Capture",
       "stopCapture": "Stop Capture"
@@ -965,7 +976,10 @@
         "serialPort": "Serial Port",
         "serialPortPlaceholder": "Select Port",
         "selectPort": "Select Port",
-        "baudRate": "Baud Rate"
+        "baudRate": "Baud Rate",
+        "usbDevice": "USB Device",
+        "usbDevicePlaceholder": "Select Device",
+        "noUsbDevice": "No device detected"
       },
       "generalSettings": {
         "title": "General Settings",
@@ -1209,7 +1223,20 @@
       "loadingData": "Already reading memory data. Please wait.",
       "noSessions": "No active debug session. Start a debug session to view memory.",
       "notHalted": "Target not halted / Cannot execute this command while the target is running.",
-      "readFailed": "Memory read failed. Check the address and try again."
+      "readFailed": "Memory read failed. Check the address and try again.",
+      "symbolNotFound": "Could not find symbol in the current context.",
+      "noRequestBody": "Memory read failed. No body provided in the request.",
+      "invalidAddressSize": "Enter a valid hex or decimal address less than or equal to 0xFFFFFFFF.",
+      "invalidSessionId": "Invalid session ID.",
+      "invalidLength": "Invalid memory read length.",
+      "noSessionIdFound": "Memory read failed. Session ID not found.",
+      "cannotReadMemory": "Error reading memory at the requested address.",
+      "noRequestSessionId": "Memory read failed. No session ID provided in the request.",
+      "sessionNotFound": "Memory read failed. Session not found.",
+      "invalidExpression": "Invalid expression.",
+      "malformedExpression": "Expression must not contain semicolons, line breaks, parentheses, quotes, or backticks.",
+      "symbolQueryTimeout": "Symbol query timed out.",
+      "memoryReadTimeout": "Memory read timed out."
     },
     "empty": {
       "noSessions": {
@@ -1298,7 +1325,8 @@
       "workspace-template": {
         "title": "Workspace Template",
         "description": "Choose from SoC predefined templates pre-populated with ADI recommended configuration options",
-        "no-templates": "No plugins available for your current SoC/Package/Board selection."
+        "no-templates": "No plugins available for your current SoC/Package/Board selection.",
+        "search-placeholder": "Search templates..."
       }
     },
     "cores-config": {
@@ -1446,7 +1474,11 @@
       "pleaseSelectFile": "Please select a file.",
       "selectSocRequired": "Please select a SoC.",
       "selectBoardRequired": "Please select a board.",
-      "invalidFilenameCharacters": "Workspace name contains invalid filename characters."
+      "selectedCoreRequired": "Please select a core to run the model on.",
+      "invalidFilenameCharacters": "Workspace name contains invalid filename characters.",
+      "modelDoesNotSupportPlatform": "The selected model does not support the selected SoC, board, and core configuration.",
+      "socConfigurationError": "Error with the selected SoC configuration. Please check the selected SoC.",
+      "compatibilityCheckFailed": "Model file seems to not be a valid tflite file. Please choose a different model file"
     }
   },
   "model-profiling": {
@@ -1483,6 +1515,143 @@
       "stopped": "Running stopped"
     }
   },
+  "packman": {
+    "header": {
+      "title": "CFS Package Manager",
+      "helpButton": "Help",
+      "helpModalTitle": "Package Manager Help",
+      "helpModalBody": "<p>The Package Manager lets you browse, install, and uninstall CodeFusion Studio packages. </p><h3>Sign in</h3><p>Some packages require a myAnalog account. If you are not signed in, a prompt appears at the top of the panel. Select <strong>Sign In</strong> and follow the browser authentication flow. You can dismiss the prompt to browse public packages without signing in.</p><h3>Browse and filter</h3><p>Use the search bar to filter packages by name. Use the filter chips to narrow results by <strong>Status</strong>, <strong>SoC</strong>, or <strong>Type</strong>. Select <strong>Required</strong> to show only packages required by your current workspace.</p><h3>Install packages</h3><ol><li>Select the checkbox on one or more package cards.</li><li>Select <strong>Continue</strong>.</li><li>Review the summary — any required dependencies are resolved and listed automatically. Select <strong>Continue</strong>.</li><li>If any packages require license acceptance, review each license and select <strong>Accept License(s) and Install</strong>.</li></ol><h3>Uninstall packages</h3><p>Select the delete icon to the right of an installed package card. If other installed packages depend on it, a confirmation dialog lists them before proceeding. Built-in packages that ship with CFS cannot be uninstalled.</p><h3>Select a version</h3><p>Each package card includes a version menu. Select a version before installing if you need something other than the latest. If your workspace requires a specific version range, it is shown beneath the version menu.</p>"
+    },
+    "filters": {
+      "title": "Manage your Packages",
+      "subtitle": "Select the package(s) that you would like to install.",
+      "searchPlaceholder": "Search by name",
+      "requiredChip": "Required",
+      "availableCount": "{count} available",
+      "clear": "Clear All",
+      "status": {
+        "label": "Status",
+        "installed": "Installed",
+        "notInstalled": "Not Installed",
+        "updateAvailable": "Update Available"
+      },
+      "soc": {
+        "label": "SoC",
+        "searchPlaceholder": "Search SoCs",
+        "noResults": "No matching SoCs"
+      },
+      "type": {
+        "label": "Type",
+        "dataModel": "Data Model",
+        "plugin": "Plugin",
+        "sdk": "SDK",
+        "toolchain": "Toolchain"
+      }
+    },
+    "packageList": {
+      "missingAccess": "You are missing access to some required packages:",
+      "contactAdmin": "Please contact your Systems Administrator with this list so they can grant the necessary permissions.",
+      "selectAll": "Select All",
+      "selectedCount": "{count} items selected",
+      "selectedCountSingular": "{count} item selected",
+      "noSelectionError": "Please make a selection in order to continue.",
+      "alreadyInstalledError": "Some selected packages are already installed."
+    },
+    "packageCard": {
+      "updateAvailable": "Update Available",
+      "versionInstalled": "{version} Installed",
+      "versionBuiltin": "{version} Built-in",
+      "versionLatest": "{version} (Latest)",
+      "versionUpdateRequired": "{version} (Update Required)",
+      "versionSingleRequired": "{version} Required",
+      "versionRangeRequired": "{min} - {max} Required",
+      "required": "Required",
+      "versionOutOfRange": "Version outside of recommended range",
+      "versionAlreadyInstalled": "This version is already installed. Select a different version to continue.",
+      "builtinPackageTooltip": "This package is built-in and cannot be uninstalled.",
+      "uninstallPackageTooltip": "Uninstall this package",
+      "status": {
+        "installed": "{version} Installed",
+        "installing": "{version} Installing",
+        "notInstalled": "",
+        "installationFailed": "Installation failed"
+      },
+      "detail": {
+        "description": "Description",
+        "type": "Type",
+        "cfsCompatibility": "CFS Compatibility",
+        "license": "License",
+        "viewLicense": "View License",
+        "cachedVersions": "Cached Versions",
+        "supportedSocs": "Supported SOCs"
+      },
+      "uninstallModal": {
+        "title": "Uninstall package?",
+        "cancel": "Cancel",
+        "confirm": "Uninstall",
+        "message": "Are you sure you want to uninstall the following package?",
+        "dependentsMessage": "\"{name}\" is required by other installed packages. If you continue, the following parent packages will also be uninstalled:",
+        "confirmAll": "Yes, Uninstall All",
+        "continue": "Do you want to continue?",
+        "dontShowAgain": "Don't show this message again",
+        "batchTitle": "Uninstall packages?",
+        "batchMessage": "Are you sure you want to uninstall the following packages?",
+        "countMessage": "{count} packages will be uninstalled.",
+        "packageForRemoval": "Package selected for removal:",
+        "parentPackage": "Parent Package"
+      }
+    },
+    "actionBar": {
+      "back": "Back",
+      "continue": "Continue",
+      "acceptLicense": "Accept License(s) and Install",
+      "finish": "Finish"
+    },
+    "installProgress": {
+      "title": "Installing Packages",
+      "subtitle": "If this takes longer than expected, please do not close this tab.",
+      "installingLabel": "Installing",
+      "statusInProgress": "In Progress",
+      "statusInstalled": "OK",
+      "statusAlreadyInstalled": "Already Installed",
+      "statusFailed": "Failed"
+    },
+    "onboarding": {
+      "title": "Sign in to view all packages",
+      "description": "You will not be able to view or install certain packages until you sign in to your account.",
+      "signIn": "Sign In",
+      "dismiss": "Dismiss"
+    },
+    "emptyPackageContainer": {
+      "emptyPackageTitle": "No packages to display",
+      "emptyPackageDescription": "Packages you have access to will appear here.",
+      "emptyPackageSignInNote": "You may need to sign in to view all packages.",
+      "emptyPackageFilterTitle": "No packages match your criteria",
+      "emptyPackageFilterDescription": "Try adjusting your filters or clearing your search to see more results.",
+      "clearFilters": "Clear Filters"
+    },
+    "reviewSummary": {
+      "title": "Review Summary",
+      "description": "Review the package details before installation.",
+      "packageDependencies": "Package Dependencies",
+      "packageDependenciesDescription": "These required dependencies will be installed automatically to ensure proper functionality.",
+      "noDependencies": "This package has no dependencies."
+    },
+    "license": {
+      "appliesTo": "Applies to",
+      "urlLabel": "URL:",
+      "downloadPdf": "Download PDF",
+      "version": "Version {version}",
+      "reviewLicensesTitle": "Review Licenses",
+      "sidebarTitle": "Licenses",
+      "sidebarInfo": "View each license to enable installation.",
+      "reviewedCount": "{reviewed} of {total} reviewed",
+      "acceptAll": "Accept All",
+      "acceptError": "You must accept the license to continue",
+      "fallbackLicenseText": "This package uses the {license} license.",
+      "fetchError": "Failed to load license data."
+    }
+  },
   "common": {
     "multiFileSelect": {
       "browse": "Browse",
@@ -1502,6 +1671,59 @@
       "description": "List description",
       "help": {
         "title": "List Help"
+      }
+    }
+  },
+  "model-zoo": {
+    "title": "Model Zoo",
+    "description": "This is a library of AI models hosted by ADI. Browse, search or select your own model locally.",
+    "closeButtonAriaLabel": "Close model zoo",
+    "noModelSelectedError": "Please make a selection below",
+    "search": {
+      "placeholder": "Search by name or tags",
+      "noResults": "No models matched your search."
+    },
+    "filter": {
+      "platforms": "Platforms",
+      "cores": "Cores",
+      "category": "Category"
+    },
+    "browse": {
+      "localFileButton": "Browse local models",
+      "selectFileTitle": "Select File",
+      "modelAvailable": "Already have an AI Model?",
+      "useSelectedModel": "Use selected model"
+    },
+    "summary": {
+      "details": {
+        "title": "Details",
+        "ownerLabel": "Owner:",
+        "licenseLabel": "License:",
+        "sizeLabel": "Size:",
+        "quantizationLabel": "Quantization:",
+        "platformsLabel": "Platforms:",
+        "noneLabel": "None",
+        "unknownSize": "Unknown",
+        "kbUnit": "KB",
+        "mbUnit": "MB"
+      },
+      "accuracy": {
+        "title": "Accuracy",
+        "noMetrics": "No accuracy metrics available."
+      },
+      "io": {
+        "title": "Inputs / Outputs",
+        "inputLabel": "In:",
+        "outputLabel": "Out:",
+        "none": "No inputs or outputs defined."
+      },
+      "quantization": {
+        "title": "Quantizations",
+        "platformHeader": "Platform",
+        "unsupportedMarker": "—"
+      },
+      "actions": {
+        "useModel": "Use model"
       }
     }
   }

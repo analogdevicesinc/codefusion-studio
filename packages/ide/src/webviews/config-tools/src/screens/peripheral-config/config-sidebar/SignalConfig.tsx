@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@ import Lock from '@common/icons/Lock';
 import styles from './SignalConfig.module.scss';
 
 type SignalConfigProps = {
-	readonly isMissingPinAssignement: boolean;
+	readonly isMissingPinAssignment: boolean;
 	readonly signal: string;
 };
 
 function SignalConfig({
-	isMissingPinAssignement,
+	isMissingPinAssignment,
 	signal
 }: SignalConfigProps) {
 	return (
 		<div>
-			{isMissingPinAssignement && (
+			{isMissingPinAssignment && (
 				<div className={styles.unassignedPin}>
 					<p data-test='config-unavailable:signal'>
 						Configuration unavailable until {signal} is assigned to a

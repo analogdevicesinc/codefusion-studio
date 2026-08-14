@@ -161,7 +161,7 @@ def test_invalid_models():
         "tests/missing.tflite" 
     )
     assert result.returncode == expected_exit_code
-    assert "Model file not found" in result.stderr
+    assert "Model file not found" in result.stdout
 
     # Model not a tflite
     result = invoke_model_with_class(
@@ -169,7 +169,7 @@ def test_invalid_models():
         "tests/data/models/ai85-catsdogs-qat8-q.pth.tar" 
     )
     assert result.returncode == expected_exit_code
-    assert "Unsupported file extension" in result.stderr
+    assert "Unsupported file extension" in result.stdout
 
     # tflite file is corrupt
     result = invoke_model_with_class(
@@ -177,4 +177,4 @@ def test_invalid_models():
         "tests/data/models/corrupt.tflite" 
     )
     assert result.returncode == expected_exit_code
-    assert "File does not have correct magic bytes" in result.stderr
+    assert "File does not have correct magic bytes" in result.stdout

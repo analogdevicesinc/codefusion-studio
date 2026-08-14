@@ -212,12 +212,14 @@ export class SystemEventViewerWebviewProvider
     const scriptUri = getUri(webview, extensionUri, [
       "out",
       "system-event-viewer-treeview",
+      "assets",
       "index.js",
     ]);
 
     const stylesUri = getUri(webview, extensionUri, [
       "out",
       "system-event-viewer-treeview",
+      "assets",
       "index.css",
     ]);
     const nonce = getNonce();

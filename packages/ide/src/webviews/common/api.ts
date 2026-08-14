@@ -48,7 +48,11 @@ export type ConfigOptionsReturn = {
 let vscode: WebviewApi<any> | undefined;
 
 if ((window as any).acquireVsCodeApi instanceof Function) {
-	vscode = (window as any).acquireVsCodeApi?.();
+	try {
+		vscode = (window as any).acquireVsCodeApi?.();
+	} catch (error) {
+		console.error('Error acquiring VS Code API:', error);
+	}
 }
 
 export function mockVsCodeApi(mockImplementation: WebviewApi<any>) {
@@ -228,6 +232,11 @@ export async function getFileSize(filePath: string) {
 	}) as Promise<number>;
 }
 
+/**
+ * Gets a vscode preference in the cfs scope. Meaning you can drop the first cfs from the id
+ * @param id preference id
+ * @returns the preference value
+ */
 export async function getPreference(id: string) {
 	return request('get-preference', {id});
 }

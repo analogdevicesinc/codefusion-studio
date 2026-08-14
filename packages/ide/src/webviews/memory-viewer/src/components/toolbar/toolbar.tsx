@@ -47,9 +47,10 @@ export default function Toolbar() {
 	const isRefreshDisabled = useMemo(
 		() =>
 			haltedSessions.length === 0 ||
+			Boolean(activeSession?.isRunning) ||
 			startAddress === undefined ||
 			memoryLength === 0,
-		[haltedSessions.length, startAddress, memoryLength]
+		[haltedSessions.length, activeSession?.isRunning, startAddress, memoryLength]
 	);
 
 	const copyContent = async () => {
@@ -62,6 +63,7 @@ export default function Toolbar() {
 	const refreshContent = () => {
 		if (
 			haltedSessions.length !== 0 &&
+			!activeSession?.isRunning &&
 			startAddress !== undefined &&
 			memoryLength > 0
 		) {

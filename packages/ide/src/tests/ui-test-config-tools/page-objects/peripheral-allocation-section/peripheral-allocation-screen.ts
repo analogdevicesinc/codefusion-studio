@@ -224,19 +224,22 @@ export async function verifySidebarSections(
   isSignal: boolean,
 ): Promise<void> {
   console.log("Verifying sidebar sections...");
+  // Check for the presence of the details section based on whether it's a signal or peripheral
   if (isSignal) {
     expect(await UIUtils.findWebElement(view, await detailsSectionSignal())).to
       .exist;
+    expect(await UIUtils.findWebElement(view, await configSection())).to.exist;
   } else {
     expect(await UIUtils.findWebElement(view, await detailsSectionPeripheral()))
       .to.exist;
+    // Configuration section is conditionally hidden for peripherals with no
+    // controls (intentional behavior from CFSIO-4073), so it is not asserted here.
   }
   expect(await UIUtils.findWebElement(view, await allocatedCoreCard())).to
     .exist;
   expect(await UIUtils.findWebElement(view, await detailsInput())).to.exist;
   expect(await UIUtils.findWebElement(view, await pinAssignmentsSection())).to
     .exist;
-  expect(await UIUtils.findWebElement(view, await configSection())).to.exist;
 }
 
 export async function sidebarChecks(
@@ -262,6 +265,7 @@ export async function sidebarChecks(
     const expectedProjectName = `${signal} ${subSignal}`;
     // Check for the sidebar project card title
     expect(projectName).to.equal(expectedProjectName.trim());
+    // Determine if it's a signal or peripheral based on the presence of subSignal
     if (subSignal == "") {
       isSignal = false;
     }

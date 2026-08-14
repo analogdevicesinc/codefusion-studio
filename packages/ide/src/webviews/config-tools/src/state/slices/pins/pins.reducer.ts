@@ -17,8 +17,9 @@ import type {
 	AppliedSignal,
 	ControlCfg,
 	PinCanvas,
-	PinDictionary
-,ConfigFields} from '@common/types/soc';
+	PinDictionary,
+	ConfigFields
+} from '@common/types/soc';
 import {getControlsFromCache} from '../../../utils/api';
 import type {ControlErrorTypes} from '@common/types/errorTypes';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
@@ -336,17 +337,27 @@ const pinsSlice = createSlice({
 				);
 
 				if (targetAssignedPin) {
-					targetAssignedPin.Errors = {
-						...targetAssignedPin.Errors,
-						[controlKey]: errType
+					let nextErrors = {
+						...(targetAssignedPin.Errors ?? {})
 					};
 
-					if (
-						Object.values(targetAssignedPin.Errors).every(
-							error => !error
-						)
-					)
-						delete targetAssignedPin.Errors;
+					if (errType) {
+						nextErrors = {
+							...nextErrors,
+							[controlKey]: errType
+						};
+					} else {
+						// Remove stale validation errors when a control becomes valid again.
+						const remainingErrors = {...nextErrors};
+						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+						delete remainingErrors[controlKey];
+
+						nextErrors = remainingErrors;
+					}
+
+					targetAssignedPin.Errors = Object.keys(nextErrors).length
+						? nextErrors
+						: undefined;
 				}
 
 				if (sourcePinCfg && targetAssignedPin) {
@@ -368,6 +379,24 @@ const pinsSlice = createSlice({
 						...targetAssignedPin.PinCfg,
 						[controlKey]: controlValue
 					};
+				}
+
+				if (targetAssignedPin?.Errors) {
+					// Drop errors for controls that were removed by config recomputation,
+					// for example plugin fields hidden after another control changes.
+					const nextErrors = Object.fromEntries(
+						Object.entries(targetAssignedPin.Errors).filter(
+							([errorControlId]) =>
+								Object.prototype.hasOwnProperty.call(
+									targetAssignedPin.PinCfg ?? {},
+									errorControlId
+								)
+						)
+					);
+
+					targetAssignedPin.Errors = Object.keys(nextErrors).length
+						? nextErrors
+						: undefined;
 				}
 			}
 		},

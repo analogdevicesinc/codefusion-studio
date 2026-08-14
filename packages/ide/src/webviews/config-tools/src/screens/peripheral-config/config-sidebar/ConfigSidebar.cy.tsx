@@ -596,7 +596,7 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		);
 	});
 
-	it('Should disable closing the plugin options if there are no plugin options', () => {
+	it('Should not show the configuration sections if there are no options', () => {
 		const controlMock: Record<string, ControlCfg[]> = {
 			'CM4 SysTick': []
 		};
@@ -621,19 +621,14 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 				cy.dataTest('config-sidebar:peripheral-config').should(
 					'exist'
 				);
-				cy.dataTest('config-panel:plugin-options').should('exist');
-
-				cy.dataTest('plugin-options:plugin-form:container')
-					.scrollIntoView()
-					.wait(1000)
-					.should('be.visible');
-
-				cy.dataTest('config-panel:plugin-options').click({
-					force: true
-				});
-
-				cy.dataTest('plugin-options:plugin-form:container').should(
-					'be.visible'
+				cy.dataTest('config-section:manage-pin-assignments').should(
+					'not.exist'
+				);
+				cy.dataTest('config-section:configuration').should(
+					'not.exist'
+				);
+				cy.dataTest('config-panel:plugin-options').should(
+					'not.exist'
 				);
 			}
 		);

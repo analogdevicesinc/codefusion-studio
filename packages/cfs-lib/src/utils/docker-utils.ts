@@ -23,7 +23,7 @@ import path from "node:path";
 import { CfsApiClient } from "cfs-ccm-lib";
 import { MyAnalogCloudsmithCredentialProvider } from "../auth/cloudsmith-credentials.js";
 import {
-	AuthConfig,
+	type AuthConfig,
 	SessionManager
 } from "../auth/session-manager.js";
 
@@ -199,28 +199,37 @@ export function extractRegistryAndRepoName(image: string): {
 }
 
 async function getCredentialProvider(
-	authConfig: AuthConfig
+	apiAccess: CfsApiClient | AuthConfig
 ): Promise<MyAnalogCloudsmithCredentialProvider | undefined> {
-	const session = await new SessionManager(authConfig).getSession();
+	let apiClient: CfsApiClient | undefined;
 
-	if (session) {
-		return new MyAnalogCloudsmithCredentialProvider(
-			new CfsApiClient({
-				baseUrl: authConfig.ccmUrl,
+	if (apiAccess instanceof CfsApiClient) {
+		apiClient = apiAccess;
+	} else {
+		const session = await new SessionManager(apiAccess).getSession();
+
+		if (session) {
+			apiClient = new CfsApiClient({
+				baseUrl: apiAccess.ccmUrl,
 				authorizer: session.authorizer
-			})
-		);
+			});
+		}
+	}
+	if (!apiClient || apiClient.isAnonymous) {
+		return undefined;
 	}
 
-	return undefined;
+	return new MyAnalogCloudsmithCredentialProvider(apiClient);
 }
 
 export async function getCredentials(
 	repo: string,
-	authConfig: AuthConfig,
+	apiAccess: CfsApiClient | AuthConfig | undefined,
 	quiet = false
 ): Promise<CfsPackageRemoteCredential | undefined> {
-	const credentialProvider = await getCredentialProvider(authConfig);
+	const credentialProvider = apiAccess
+		? await getCredentialProvider(apiAccess)
+		: undefined;
 
 	if (!credentialProvider) {
 		!quiet &&

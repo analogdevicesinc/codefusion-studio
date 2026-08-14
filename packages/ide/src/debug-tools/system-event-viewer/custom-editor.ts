@@ -20,6 +20,8 @@ import { ViewProviderPanel } from "../../view-provider/view-provider-panel";
 import { cfsEventsSchema, type CfsEventsFile } from "./cfsevents-schema";
 import { SaveDialogOptions } from "vscode";
 import path from "path";
+import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
+import { getTelemetryManager } from "../../telemetry/telemetry";
 
 const CREATE_FILE_REQ_ID = "sev-create-file";
 const SEV_READY = "sev-ready";
@@ -100,7 +102,6 @@ class EventEditor {
           resolve();
         }
       });
-      console.log("Waiting for webview ready message...");
     });
   }
 
@@ -115,6 +116,16 @@ class EventEditor {
       void this.postMessage({
         type: "sev-data",
         body: this.content,
+      });
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_FILE_STATISTICS, {
+          state: this.content?.state,
+          eventCounts: Object.values(this.content?.events ?? {}).reduce(
+            (acc: number[], entry) => [...acc, entry.timestamps.length],
+            [],
+          ),
+          eventSourceCount: Object.keys(this.content?.events ?? {}).length,
+        });
       });
     } catch (error) {
       let errMessage;
@@ -199,6 +210,12 @@ class EventEditor {
       new TextEncoder().encode(parser(this.content)),
     );
 
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_FILE_SAVED, {
+        saveType,
+      });
+    });
+
     vscode.window
       .showInformationMessage(`Events saved at ${saveUri.fsPath}`, "Open")
       .then((selection) => {
@@ -229,6 +246,12 @@ export class EventEditorProvider implements vscode.CustomTextEditorProvider {
   ) {
     // TODO: Handle cancellation
     void token;
+
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "system_event_viewer",
+      });
+    });
 
     const editor = new EventEditor(this.context, document, webviewPanel);
     // The idea here was to return editor.isReady() in a similar way on  how it is done on the

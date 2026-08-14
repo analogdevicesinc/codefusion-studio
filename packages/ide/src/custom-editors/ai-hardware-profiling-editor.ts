@@ -30,22 +30,24 @@ import type {
   BuildStatus,
   DeployStatus,
 } from "../types/ai-hardware-profiling-types";
-import { CfsSerialPortManager } from "../debug-tools/serial-port-manager";
 import { MessageParticipant } from "vscode-messenger-common";
 import { Utils } from "../utils/utils";
 import { CfsAiProfilingData, CfsConfig } from "cfs-types";
-import { Recording } from "../debug-tools/profiler/recording";
-import { SerialSourceConfig } from "../debug-tools/profiler/data-source-factory";
 import { IDEShellEnvProvider } from "../toolchains/shell-env-provider";
 import {
   CfsDataModelManager,
   CfsToolManager,
   globFiles,
   readJsonFile,
+  Recording,
+  SerialSourceConfig,
 } from "cfs-lib";
+import { SerialPort } from "serialport";
 import { AIToolsService, getCfsaiPath } from "../services/ai-tools-service";
-import { CodeGenerationFailure } from "cfs-lib/dist/types/code-generation";
 import { startTraceConversion } from "../debug-tools/profiler/trace-conversion-ui-helper";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
+import { logger } from "../utils/logger";
 
 export class AiHardwareProfilingEditor
   implements vscode.CustomTextEditorProvider
@@ -55,6 +57,7 @@ export class AiHardwareProfilingEditor
   private buildStatus: BuildStatus = "idle";
   private deployStatus: DeployStatus = "undeployed";
   private recording: Recording | undefined;
+  private deployStartTime: number | undefined;
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -93,6 +96,12 @@ export class AiHardwareProfilingEditor
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): Promise<void> {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "ai_hardware_profiling",
+      });
+    });
+
     webviewPanel.webview.options = {
       enableScripts: true,
     };
@@ -125,9 +134,7 @@ export class AiHardwareProfilingEditor
         return {
           hardwareResources: {
             debuggers: Object.keys(aiProfilingData.Debuggers ?? {}),
-            usbPorts: (await CfsSerialPortManager.listPorts()).map(
-              (port) => port.path,
-            ),
+            usbPorts: (await SerialPort.list()).map((port) => port.path),
             port: aiProfilingData.Output?.Port,
           },
           profilingConfig: {
@@ -188,6 +195,10 @@ export class AiHardwareProfilingEditor
           return;
         }
 
+        const telemetryManager = await getTelemetryManager();
+        telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_STARTED, {});
+        this.deployStartTime = Date.now();
+
         this.updateDeployStatus("deploying");
         try {
           await Utils.executeAndWaitForCFSTask(
@@ -200,10 +211,19 @@ export class AiHardwareProfilingEditor
           );
 
           this.updateDeployStatus("running");
+          telemetryManager.logAction(
+            TELEMETRY_ACTIONS.AI_HW_DEPLOY_RUNNING,
+            {},
+          );
         } catch (error) {
           vscode.window.showErrorMessage(`Model Deployment failed: ${error}`);
           console.error("Error during deployment process:", error);
           this.updateDeployStatus("error");
+
+          telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_FAILED, {
+            errorType: error instanceof Error ? error.name : "UnknownError",
+            stageReached: "deploy",
+          });
         }
       },
       { sender: participant },
@@ -228,6 +248,11 @@ export class AiHardwareProfilingEditor
   ): Promise<void> {
     try {
       const sourceConfig = new SerialSourceConfig(serialPort, 115200);
+
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.HW_PROFILING_STARTED, {});
+      });
+
       this.recording = await Recording.start({
         source: sourceConfig,
         outputFolder,
@@ -236,9 +261,16 @@ export class AiHardwareProfilingEditor
       this.recording.onError((error) => {
         this.updateDeployStatus("error");
         vscode.window.showErrorMessage(`Recording error: ${error.message}`);
+        void getTelemetryManager().then((telemetryManager) => {
+          telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_FAILED, {
+            stageReached: "recording",
+          });
+        });
       });
     } catch (error: unknown) {
-      const errorMessage = `Failed to start recording: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to start recording: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
       throw new Error(errorMessage);
     }
   }
@@ -248,15 +280,31 @@ export class AiHardwareProfilingEditor
       return;
     }
 
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.HW_PROFILING_COMPLETED, {});
+    });
+
+    const sessionDurationMs = this.deployStartTime
+      ? Date.now() - this.deployStartTime
+      : undefined;
+    const telemetryManager = await getTelemetryManager();
+
     try {
       await this.recording.stop();
       this.updateDeployStatus("stopped");
     } catch (error: unknown) {
-      const errorMessage = `Failed to stop recording: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to stop recording: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
       this.recording = undefined;
       this.updateDeployStatus("error");
       vscode.window.showErrorMessage(errorMessage);
-      console.error("Error during trace stop/conversion process:", error);
+      logger.error("Error during trace stop/conversion process:", error);
+
+      telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_FAILED, {
+        errorType: error instanceof Error ? error.name : "UnknownError",
+        stageReached: "stop",
+      });
     }
 
     if (!this.recording) {
@@ -265,6 +313,10 @@ export class AiHardwareProfilingEditor
 
     await startTraceConversion(this.recording, this.shellEnvProvider);
     this.recording = undefined;
+
+    telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_STOPPED, {
+      sessionDurationMs,
+    });
   }
 
   private async startBuild() {
@@ -309,19 +361,31 @@ export class AiHardwareProfilingEditor
         );
       }
 
-      const codeGenRes = await aiToolsService.generateAiModelCode(
-        cfsConfig,
-        datamodel,
-        workspacePath,
-      );
-
-      if (codeGenRes.some((res) => typeof res === "object" && "error" in res)) {
-        throw new Error(
-          `Code generation failed: ${codeGenRes
-            .filter((res) => typeof res === "object" && "error" in res)
-            .map((res) => (res as CodeGenerationFailure).error)
-            .join(", ")}`,
+      const codeGenStart = Date.now();
+      try {
+        const codeGenRes = await aiToolsService.generateAiModelCode(
+          cfsConfig,
+          datamodel,
+          workspacePath,
         );
+
+        const telemetryManager = await getTelemetryManager();
+        telemetryManager.logAction(TELEMETRY_ACTIONS.AI_CODE_GENERATED, {
+          generatedFileCount: codeGenRes.length,
+          durationMs: Date.now() - codeGenStart,
+        });
+      } catch (codeGenError) {
+        const telemetryManager = await getTelemetryManager();
+        telemetryManager.logAction(
+          TELEMETRY_ACTIONS.AI_CODE_GENERATION_FAILED,
+          {
+            errorType: "CodeGenerationFailure",
+            failureCount: 1,
+            durationMs: Date.now() - codeGenStart,
+          },
+        );
+
+        throw codeGenError;
       }
 
       const exitCode = await Utils.executeAndWaitForCFSTask(

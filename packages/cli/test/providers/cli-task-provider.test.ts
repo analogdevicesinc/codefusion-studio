@@ -309,12 +309,19 @@ describe('CliTaskProvider getCfsEnvironmentVariables', () => {
  *   So that projects with a custom path behave consistently with the IDE extension
  */
 describe('CliTaskProvider cfs.getToolchainPath command resolution', () => {
+  const originalInstallDir = process.env.CFS_INSTALL_DIR;
+
   beforeEach(() => {
     process.env.CFS_INSTALL_DIR = '/mock/cfs-install';
   });
 
   afterEach(() => {
-    delete process.env.CFS_INSTALL_DIR;
+    if (originalInstallDir === undefined) {
+      delete process.env.CFS_INSTALL_DIR;
+      return;
+    }
+
+    process.env.CFS_INSTALL_DIR = originalInstallDir;
   });
 
   /** Resolve the cfs.getToolchainPath command with injected settings and an optional tool-path stub. */
@@ -394,5 +401,159 @@ describe('CliTaskProvider cfs.getToolchainPath command resolution', () => {
     const result = await resolveGetToolchainPath({});
 
     expect(result).to.be.undefined;
+  });
+});
+
+/**
+ * Feature: cfs.environment extraction and variable resolution
+ *   As a CLI user
+ *   I want env vars from cfs.environment to be resolved and injected
+ *   So that tasks can access toolchain paths and config values
+ */
+describe('CliTaskProvider getCfsEnvironmentVariables', () => {
+  const originalInstallDir = process.env.CFS_INSTALL_DIR;
+  const projectWithEnvPath = path.resolve(
+    workspacePath,
+    'project-with-env'
+  );
+
+  beforeEach(() => {
+    process.env.CFS_INSTALL_DIR = '/mock/cfs-install';
+  });
+
+  afterEach(() => {
+    if (originalInstallDir === undefined) {
+      delete process.env.CFS_INSTALL_DIR;
+      return;
+    }
+
+    process.env.CFS_INSTALL_DIR = originalInstallDir;
+  });
+
+  it('returns empty object when cfs.environment is not defined', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(
+      path.resolve(workspacePath, 'project1')
+    );
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    expect(envVars).to.deep.equal({});
+  });
+
+  it('extracts literal env var values from cfs.environment', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(projectWithEnvPath);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    expect(envVars).to.have.property(
+      'TOOLCHAIN_VER',
+      'RJ-2025.5-linux'
+    );
+    expect(envVars).to.have.property(
+      'XTENSA_TOOLCHAIN_PATH',
+      '/opt/toolchains/xtensa'
+    );
+  });
+
+  it('resolves ${config:...} references in env var values', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(projectWithEnvPath);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    // ${config:cfs.xtensa.core} should resolve to "H5s_RJ25_05_prod"
+    expect(envVars).to.have.property(
+      'XTENSA_CORE',
+      'H5s_RJ25_05_prod'
+    );
+  });
+
+  it('resolves ${workspaceFolder} in env var values', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(projectWithEnvPath);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    // ${workspaceFolder} should resolve to the workspace path
+    expect(envVars)
+      .to.have.property('WORKSPACE_REF')
+      .that.includes('/build');
+    expect(envVars.WORKSPACE_REF).to.not.include(
+      '${workspaceFolder}'
+    );
+  });
+
+  it('resolves ${env:...} references in env var values', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(projectWithEnvPath);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    // ${env:HOME} should resolve to process.env.HOME
+    const expectedHome = process.env.HOME ?? '';
+    expect(envVars).to.have.property('HOME_REF', expectedHome);
+  });
+
+  it('returns empty object when cfs.environment is not an object', async () => {
+    const provider = new CliTaskProvider(workspacePath, undefined, {
+      'cfs.environment': 'not-an-object'
+    } as unknown as CliConfig);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    expect(envVars).to.deep.equal({});
+  });
+
+  it('skips non-string values within cfs.environment', async () => {
+    const provider = new CliTaskProvider(workspacePath, undefined, {
+      'cfs.environment': {
+        VALID: 'value',
+        INVALID_NUMBER: 42,
+        INVALID_NULL: null
+      }
+    } as unknown as CliConfig);
+
+    const envVars = await provider.getCfsEnvironmentVariables();
+
+    expect(envVars).to.have.property('VALID', 'value');
+    expect(envVars).to.not.have.property('INVALID_NUMBER');
+    expect(envVars).to.not.have.property('INVALID_NULL');
+  });
+
+  it('resolves ${command:...} references in env var values via toolManager', async () => {
+    const provider = new CliTaskProvider(workspacePath);
+    const configResolver = provider.getConfigResolver();
+    configResolver.addProjectSettings(projectWithEnvPath);
+
+    // Stub getToolPath on the private toolManager instance
+    const toolManager = Reflect.get(
+      provider as unknown as Record<string, unknown>,
+      'toolManager'
+    ) as {getToolPath: (id: string) => Promise<string>};
+    const originalGetToolPath =
+      toolManager.getToolPath.bind(toolManager);
+    toolManager.getToolPath = async (id: string) => {
+      if (id === 'zephyr') return '/opt/zephyr-sdk';
+      return originalGetToolPath(id);
+    };
+
+    try {
+      const envVars = await provider.getCfsEnvironmentVariables();
+
+      // ${command:cfs.tool.path.zephyr} should resolve to the stubbed path
+      expect(envVars).to.have.property(
+        'ZEPHYR_BASE',
+        '/opt/zephyr-sdk'
+      );
+    } finally {
+      toolManager.getToolPath = originalGetToolPath;
+    }
   });
 });

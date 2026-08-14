@@ -25,7 +25,12 @@ import type {
 	TStandardBoard,
 	TCustomBoard
 } from '../common/types/catalog';
-import type {Board, CorePart, Package, SoC} from 'cfs-ccm-lib';
+import type {
+	Board,
+	CorePart,
+	Package,
+	SoC
+} from 'cfs-ccm-api/rest-types';
 
 export default function formatCatalog(
 	catalogRawData: SoC[]
@@ -51,10 +56,7 @@ export default function formatCatalog(
 			templates: [], // Multicore templates are fetched from Plugin Manager
 			board: {
 				standard:
-					formatStandardBoards(
-						rawSoC.boards,
-						rawSoC.packages
-					) || [],
+					formatStandardBoards(rawSoC.boards, rawSoC.packages) || [],
 				custom: formatCustomBoards(rawSoC.packages) || []
 			},
 			cores: formatCores(rawSoC.cores) || []

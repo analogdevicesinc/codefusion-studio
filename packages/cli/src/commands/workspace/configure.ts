@@ -31,7 +31,6 @@ import {getPluginManager} from '../../utils/plugin-manager.js';
 import {
   convertToPascalCase,
   findSocByName,
-  getLatestPluginVersion,
   getPackageName
 } from '../../utils/utils.js';
 import {
@@ -45,7 +44,7 @@ interface CoreInfo extends CfsProject {
 }
 
 interface TemplateValidationInfo {
-  board: string;
+  board?: string;
   cores: CoreInfo[];
   soc: string;
   socPackage?: string;
@@ -81,12 +80,14 @@ export default class WorkspaceConfigure extends Command {
       summary: 'SoC name'
     }),
     board: Flags.string({
-      required: true,
-      summary: 'Board name'
+      required: false,
+      summary:
+        'Board name. Required if a package is not specified with --package.'
     }),
     package: Flags.string({
       required: false,
-      summary: 'Package name'
+      summary:
+        'Package name. Required if a board is not specified with --board.'
     }),
     core: Flags.string({
       required: true,
@@ -200,7 +201,7 @@ export default class WorkspaceConfigure extends Command {
       name: string;
       output: string;
       soc: string;
-      board: string;
+      board?: string;
       socPackage: string;
     },
     cores: CoreInfo[]
@@ -211,7 +212,7 @@ export default class WorkspaceConfigure extends Command {
       Timestamp: new Date().toISOString(),
       soc: flags.soc.toUpperCase(),
       package: flags.socPackage,
-      board: flags.board,
+      board: flags.board ?? '',
       workspaceName: flags.name,
       location: flags.output,
       workspacePluginId: '',
@@ -257,7 +258,7 @@ export default class WorkspaceConfigure extends Command {
     packageName: string,
     dataModel: CfsSocDataModel,
     pluginManager: ReturnType<typeof getPluginManager>,
-    board: string,
+    board: string | undefined,
     errors: string[]
   ): Promise<CoreInfo[]> {
     const cores: CoreInfo[] = [];
@@ -267,16 +268,26 @@ export default class WorkspaceConfigure extends Command {
     const soc = findSocByName(socs, socName);
     const pluginListInfo = await pluginManager.getPluginsInfoList();
 
+    const socContext = {
+      name: socName,
+      package: packageName,
+      board: board || undefined
+    };
+
     for (let i = 0; i < (coreNames?.length ?? 0); i++) {
       const coreId = coreNames?.[i];
       let templateVersion: string | undefined = templateVersions[i];
       if (coreId) {
-        // If template version is not specified, get the latest one we can find
+        // If template version is not specified, resolve the latest
+        // compatible version considering SoC/board/package context.
         if (!templateVersion) {
-          templateVersion = getLatestPluginVersion(
+          const resolvedPlugin = await pluginManager.resolvePlugin(
             templateIds[i],
-            pluginListInfo
+            undefined,
+            socContext
           );
+          templateVersion = resolvedPlugin?.pluginVersion;
+
           if (!templateVersion) {
             // If we get an error at this point, we can't really continue for this core
             errors.push(
@@ -292,7 +303,8 @@ export default class WorkspaceConfigure extends Command {
             templateIds[i],
             templateVersion,
             'project',
-            {soc: socName, boardId: board, package: packageName}
+            {soc: socName, boardId: board, package: packageName},
+            socContext
           );
 
         // For each property, extract the id and the default value into a simple record
@@ -379,7 +391,7 @@ export default class WorkspaceConfigure extends Command {
     );
 
     // If the package name is not provided, attempt to find it based on the provided board and SoC names
-    if (!flags.package) {
+    if (!flags.package && flags.board) {
       flags.package = await getPackageName(
         this.config,
         flags.board,
@@ -394,11 +406,12 @@ export default class WorkspaceConfigure extends Command {
     // If there are any errors, display them all and exit
     checkErrors(errors, this);
 
-    // The error checking above will have caught this already, but TypeScript doesn't know that,
-    // so we have to assert that flags.package is defined for the rest of the function.
+    // If the package name is not defined, issue an error. Ideally, we would use the
+    // errors.push/checkErrors pattern, but the compiler doesn't recognise that doing so would
+    // guarantee that flags.package is defined, so we have to do this check here.
     if (!flags.package) {
       this.error(
-        `Package name is required but could not be determined from the provided board and SoC names. Please specify the package name using the --package flag.`
+        `Package name is required but could not be determined. Please specify the package name using the --package flag or provide a board name with the --board flag.`
       );
     }
 

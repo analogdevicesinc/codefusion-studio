@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,16 @@ import {
 } from '../../../../state/slices/peripherals/peripherals.reducer';
 import type {CfsConfig} from 'cfs-types';
 import {computeInitialPinConfig} from '../../../../utils/pin-reset-controls';
+import {LocalizationProvider} from '../../../../../../common/contexts/LocaleContext';
 
 const mock = (await import(`@socs/max32690-tqfn.json`))
 	.default as unknown as Soc;
 
+const l10n = await import(
+	'../../../../../../../../l10n/bundle.l10n.en.json'
+);
+
+(window as any).__webview_localization_resources__ = l10n.default;
 const mockControlsPromise = Promise.resolve({
 	PinConfig: mock.Controls?.PinConfig || []
 });
@@ -363,6 +369,112 @@ describe('PinconfigDisplay component', () => {
 		cy.dataTest('ALIAS-P0.7-error').should('not.exist');
 	});
 
+	it('Shows reset action and non-default marker only when a plugin enum differs from its default', () => {
+		cy.document().then(doc => {
+			const elem = doc.createElement('div');
+			elem.setAttribute('id', 'pin-config-plugin-options-form');
+			doc.body.appendChild(elem);
+		});
+
+		const reduxStore = configurePreloadedStore(mock, configDict);
+
+		reduxStore.dispatch(
+			setSignalAssignment({
+				peripheral: 'GPIO0',
+				signalName: 'P0.7',
+				projectId: 'CM4-proj'
+			})
+		);
+
+		reduxStore.dispatch(setActivePeripheral('GPIO0'));
+
+		reduxStore.dispatch(
+			setActiveSignal({
+				peripheral: 'GPIO0',
+				signal: 'P0.7',
+				keepActivePeripheral: true
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '7',
+				Peripheral: 'GPIO0',
+				Name: 'P0.7',
+				PinCfg: {
+					MODE: 'IN',
+					PWR: 'VDDIO',
+					PS: 'DIS'
+				}
+			})
+		);
+		reduxStore.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'GPIO0',
+				signalName: 'P0.7',
+				pinId: '7'
+			})
+		);
+
+		const controls = [
+			...(mock.Controls?.PinConfig || []),
+			{
+				Id: 'POLARITY',
+				Description: 'Polarity',
+				Type: 'enum',
+				PluginOption: true,
+				EnumValues: [
+					{
+						Id: 'ACTIVE_HIGH',
+						Description: 'Active High',
+						Value: 1
+					},
+					{
+						Id: 'ACTIVE_LOW',
+						Description: 'Active Low',
+						Value: 0
+					}
+				]
+			}
+		];
+
+		localStorage.setItem(
+			'pluginControls:CM4-proj',
+			JSON.stringify({
+				...mock.Controls,
+				PinConfig: controls
+			})
+		);
+
+		cy.mount(
+			<PinconfigDisplay
+				controlsPromise={Promise.resolve({
+					PinConfig: controls
+				})}
+				projectId='CM4-proj'
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('POLARITY-P0.7-control-dropdown').should(
+			'have.value',
+			'ACTIVE_HIGH'
+		);
+		cy.contains('label', 'Polarity').should('not.contain', '*');
+		cy.dataTest('package-display-info').should('not.exist');
+		cy.dataTest('reset-to-default').should('not.exist');
+
+		cy.dataTest('POLARITY-P0.7-control-dropdown').click();
+		cy.dataTest('P0.7-7-ACTIVE_LOW').click();
+
+		cy.contains('label', 'Polarity').should('contain', '*');
+		cy.dataTest('package-display-info')
+			.find('p')
+			.first()
+			.should('have.text', '* non-default value');
+		cy.dataTest('reset-to-default').should('exist');
+	});
+
 	it('Correctly resets invalid signal configuration on pin change', () => {
 		const persistedPinConfig: ConfiguredPin[] = [
 			{
@@ -433,5 +545,99 @@ describe('PinconfigDisplay component', () => {
 			'current-value',
 			'VDDIO'
 		);
+	});
+
+	it('Should render plugin-added pin config enum values and disable unsupported data-model values', () => {
+		const reduxStore = configurePreloadedStore(mock, configDict);
+
+		reduxStore.dispatch(
+			setSignalAssignment({
+				peripheral: 'GPIO0',
+				signalName: 'P0.7',
+				projectId: 'CM4-proj'
+			})
+		);
+
+		reduxStore.dispatch(setActivePeripheral('GPIO0'));
+
+		reduxStore.dispatch(
+			setActiveSignal({
+				peripheral: 'GPIO0',
+				signal: 'P0.7',
+				keepActivePeripheral: true
+			})
+		);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '7',
+				Peripheral: 'GPIO0',
+				Name: 'P0.7',
+				PinCfg: {
+					MODE: 'OUT'
+				}
+			})
+		);
+
+		reduxStore.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'GPIO0',
+				signalName: 'P0.7',
+				pinId: '7'
+			})
+		);
+
+		const controls = (mock.Controls?.PinConfig ?? []).map(control =>
+			control.Id === 'MODE'
+				? {
+						...control,
+						EnumValues: [
+							{
+								Id: 'IN',
+								Description: 'Input',
+								Value: 0,
+								Inactive: true
+							},
+							{
+								Id: 'OUT',
+								Description: 'Plugin Output',
+								Value: 1
+							},
+							{
+								Id: 'PLUGIN_ONLY',
+								Description: 'Plugin Only Mode',
+								Value: 2,
+								IsPluginAddedOption: true
+							}
+						]
+					}
+				: control
+		);
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<PinconfigDisplay
+					controlsPromise={Promise.resolve({
+						PinConfig: controls
+					})}
+					projectId='CM4-proj'
+				/>
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		cy.dataTest('MODE-P0.7-control-dropdown').click();
+
+		cy.dataTest('P0.7-7-OUT').should('contain.text', 'Plugin Output');
+		cy.dataTest('MODE-P0.7-control-dropdown')
+			.contains('vscode-option', 'Not Supported by Plugin:')
+			.should('have.attr', 'disabled');
+		cy.dataTest('P0.7-7-PLUGIN_ONLY').should(
+			'contain.text',
+			'Plugin Only Mode'
+		);
+		cy.dataTest('P0.7-7-IN')
+			.should('contain.text', 'Input')
+			.and('have.attr', 'disabled');
 	});
 });

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,19 +35,65 @@ import {
 import {getProjectInfoList} from '../../../utils/config';
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
 import {setPinDetailsTargetPin} from '../../../state/slices/pins/pins.reducer';
-import {type ControlCfg} from '../../../../../common/types/soc';
+import {type ControlCfg} from '@common/types/soc';
 import {
 	categorizeControls,
 	formatControlsForDynamicForm
 } from '../../../utils/soc-controls';
-import {useMemo} from 'react';
-import {computePeripheralResetValues} from '../../../utils/soc-peripherals';
+import {useEffect, useMemo} from 'react';
+import {
+	computePeripheralResetValues,
+	getConfigFormatFromSocControls
+} from '../../../utils/soc-peripherals';
 import {useActivePeripheralHasPins} from '../../../hooks/useActivePeripheralHasPins';
+import {areControlValuesEqual} from '../../../utils/control-defaults';
+import {setPeripheralConfig} from '../../../state/slices/peripherals/peripherals.reducer';
 
 export const PERIPHERAL_PLUGIN_OPTIONS_FORM_ID =
 	'peripheral-plugin-options-form';
+
 type PeripheralConfigTaskProps = {
 	readonly controlsPromise: Promise<Record<string, ControlCfg[]>>;
+};
+
+const getActiveConfigValues = (
+	config: Record<string, TFormFieldValue> | undefined,
+	controls: ControlCfg[]
+): Record<string, TFormFieldValue> => {
+	const activeConfig: Record<string, TFormFieldValue> = {
+		...(config ?? {})
+	};
+
+	for (const control of controls) {
+		if (control.Type !== 'enum') continue;
+
+		if (
+			!Object.prototype.hasOwnProperty.call(activeConfig, control.Id)
+		) {
+			continue;
+		}
+
+		const currentValue =
+			activeConfig[control.Id] === undefined
+				? undefined
+				: String(activeConfig[control.Id]);
+
+		const currentEnumValue = control.EnumValues?.find(
+			enumValue => enumValue.Id === currentValue
+		);
+
+		if (currentEnumValue && !currentEnumValue.Inactive) {
+			continue;
+		}
+
+		activeConfig[control.Id] =
+			control.EnumValues?.find(enumValue => !enumValue.Inactive)
+				?.Id ??
+			currentValue ??
+			'';
+	}
+
+	return activeConfig;
 };
 
 function PeripheralConfigTask({
@@ -78,7 +124,10 @@ function PeripheralConfigTask({
 	): Record<string, boolean> =>
 		Object.keys(formData ?? {}).reduce<Record<string, boolean>>(
 			(acc, key) => {
-				acc[key] = formData[key] !== resetValues[key];
+				acc[key] = !areControlValuesEqual(
+					formData[key],
+					resetValues[key]
+				);
 
 				return acc;
 			},
@@ -87,30 +136,37 @@ function PeripheralConfigTask({
 
 	const currentConfig = usePeripheralConfig(activePeripheral);
 
+	const peripheralControls = useMemo(
+		() => controls[activePeripheral] ?? [],
+		[activePeripheral, controls]
+	);
+
 	const resetValues = useMemo(
 		() =>
 			isExternallyManaged
 				? {}
 				: computePeripheralResetValues(
 						activePeripheral,
-						controls[activePeripheral]
+						peripheralControls
 					),
-		[activePeripheral, controls, isExternallyManaged]
+		[activePeripheral, isExternallyManaged, peripheralControls]
+	);
+
+	const activeCurrentConfig = useMemo(
+		() => getActiveConfigValues(currentConfig, peripheralControls),
+		[currentConfig, peripheralControls]
 	);
 
 	// Used to dynamically highlight the fields that have diverged from the default values
 	const modifiedFields = useMemo(
-		() => getModifiedFields(currentConfig, resetValues),
-		[currentConfig, resetValues]
+		() => getModifiedFields(activeCurrentConfig, resetValues),
+		[activeCurrentConfig, resetValues]
 	);
 
-	const formattedData =
-		Object.keys(currentConfig ?? {}).length === 0
-			? {...resetValues}
-			: {...currentConfig};
+	const formattedData = {...resetValues, ...activeCurrentConfig};
 
 	const formattedControls = formatControlsForDynamicForm(
-		controls[activePeripheral] ?? [],
+		peripheralControls,
 		{projectId, ...formattedData},
 		modifiedFields
 	);
@@ -120,18 +176,65 @@ function PeripheralConfigTask({
 		[formattedControls]
 	);
 
-	const unavailableSections = () => {
-		const unavailable: Record<string, boolean> = {};
+	const showManagePinAssignments = useActivePeripheralHasPins(true);
 
+	const unavailableSections = () => {
+		const unavailable: Record<
+			'pinAssignment' | 'configuration' | 'plugin',
+			boolean
+		> = {
+			pinAssignment: false,
+			configuration: false,
+			plugin: false
+		};
+
+		unavailable.pinAssignment = !showManagePinAssignments;
 		unavailable.configuration = peripheralOptions.length === 0;
 		unavailable.plugin = pluginOptions.length === 0;
 
 		return unavailable;
 	};
 
-	const showManagePinAssignments = useActivePeripheralHasPins(
-		Boolean('withCoreInfo')
-	);
+	/**
+	 * Syncs existing stored config values if they point to inactive enum options.
+	 */
+	useEffect(() => {
+		if (isExternallyManaged) return;
+		if (!activePeripheral) return;
+		if (Object.keys(currentConfig ?? {}).length === 0) return;
+
+		const didConfigChange = Object.keys({
+			...currentConfig,
+			...activeCurrentConfig
+		}).some(
+			key =>
+				!areControlValuesEqual(
+					currentConfig?.[key],
+					activeCurrentConfig[key]
+				)
+		);
+
+		if (!didConfigChange) return;
+
+		const configFormat = getConfigFormatFromSocControls(
+			peripheralControls
+		);
+
+		dispatch(
+			setPeripheralConfig({
+				config: activeCurrentConfig,
+				peripheralId: activePeripheral,
+				...(configFormat && {configFormat})
+			})
+		);
+	}, [
+		activeCurrentConfig,
+		activePeripheral,
+		currentConfig,
+		dispatch,
+		isExternallyManaged,
+		peripheralControls
+	]);
 
 	return (
 		<div data-test='config-sidebar:peripheral-config'>
@@ -154,7 +257,7 @@ function PeripheralConfigTask({
 							key={`${activePeripheral}:${projectId}`}
 							formattedData={formattedData}
 							formattedControls={formattedControls}
-							peripheralControls={controls[activePeripheral] ?? []}
+							peripheralControls={peripheralControls}
 							resetValues={resetValues}
 							peripheralOptions={peripheralOptions}
 							pluginOptions={pluginOptions}
@@ -171,6 +274,7 @@ function PeripheralConfigTask({
 						/>
 					)
 				}
+				isExternallyManaged={isExternallyManaged}
 				unavailableSections={unavailableSections()}
 				onManagePinAssignmentsClick={() => {
 					dispatch(setPinDetailsTargetPin(undefined));

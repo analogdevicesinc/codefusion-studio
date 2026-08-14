@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,12 @@
  * limitations under the License.
  *
  */
+import {useEffect, useMemo, useRef} from 'react';
 import LabelsFrame from './labels-frame/LabelsFrame';
 import PinGrid from './pin-grid/PinGrid';
-import ZoomableAreaControl from '../../../components/zoomable-area/ZoomableAreaControl';
+import ZoomableAreaControl, {
+	type ZoomableAreaControlRef
+} from '../../../components/zoomable-area/ZoomableAreaControl';
 import {
 	createPinGridDataStructure,
 	generateLabelGroups
@@ -26,17 +29,22 @@ import {
 import {useAppDispatch} from '../../../state/store';
 import {setPinDetailsTargetPin} from '../../../state/slices/pins/pins.reducer';
 import {setActiveSearchString} from '../../../state/slices/app-context/appContext.reducer';
-import {useMemo} from 'react';
 import PinTooltip from '../../../components/pin-tooltip/PinTooltip';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {getPinCanvas} from '../../../utils/pin-canvas';
 
 function PackageDisplayContainer() {
+	const zoomableAreaRef = useRef<ZoomableAreaControlRef>(null);
+
 	const pins = getSocPinDictionary();
 	const canvas = getPinCanvas();
 	const dispatch = useAppDispatch();
 	const pinDetailsTargetPin = usePinDetailsTargetPin();
 	const hoveredPinId = useHoveredPin();
+
+	useEffect(() => {
+		zoomableAreaRef.current?.resetZoom();
+	}, []);
 
 	const onContainerClick = (e: React.SyntheticEvent<HTMLElement>) => {
 		if (
@@ -78,7 +86,7 @@ function PackageDisplayContainer() {
 			}}
 			onClick={onContainerClick}
 		>
-			<ZoomableAreaControl>
+			<ZoomableAreaControl ref={zoomableAreaRef} resetZoomLevel={0.9}>
 				<LabelsFrame labelGroups={labelGroups}>
 					<PinGrid pinArray={pinGridDataStructure} />
 				</LabelsFrame>

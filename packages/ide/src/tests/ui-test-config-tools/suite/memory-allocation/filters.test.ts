@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,7 @@
 //     Then all memory types should be visible again
 
 import { expect } from "chai";
-import {
-  By,
-  VSBrowser,
-  WebView,
-  Workbench,
-  EditorView,
-} from "vscode-extension-tester";
+import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import {
   memoryAllocationTab,
@@ -52,7 +46,6 @@ describe("Memory Allocation Filters", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let editor: EditorView;
   browser = VSBrowser.instance;
 
   let configPath: string | undefined;
@@ -60,13 +53,15 @@ describe("Memory Allocation Filters", () => {
   before(async function () {
     this.timeout(10000);
     browser = VSBrowser.instance;
-    editor = new EditorView();
-    await editor.closeAllEditors();
-    await UIUtils.sleep(3000);
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   after(async () => {
-    // Teardown - reset cfsconfig file
+    if (view) {
+      await view.switchBack();
+    }
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+
     if (configPath) {
       await UIUtils.restoreFixtureFileFromGit(configPath);
       configPath = undefined;
@@ -79,24 +74,21 @@ describe("Memory Allocation Filters", () => {
     );
     await browser.openResources(configPath);
     workbench = new Workbench();
-    console.log("Opened the cfsconfig file");
 
     await UIUtils.dismissAllNotifications(workbench, browser);
-    await UIUtils.sleep(5000);
-    console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
-    console.log("max32690-wlp-dual-core-blinky UI loaded");
+    await view.wait(5000);
     await view.switchToFrame();
 
+    const memTabElements = await view.findWebElements(memoryAllocationTab);
     expect(
-      await view.findWebElement(memoryAllocationTab),
-      "Could not find Memory link in Nav Bar",
-    ).to.exist;
+      memTabElements.length,
+      "Memory Allocation tab should be visible in the navigation bar after opening config file",
+    ).to.be.greaterThan(0);
     await UIUtils.clickElement(view, memoryAllocationTab);
 
     await UIUtils.clickElement(view, await memoryTypeFilterButton);
     await UIUtils.clickElement(view, await memoryTypeFilterOptionRAM);
-    console.log("Selected memory type filter - RAM");
 
     // Check if filter works correctly
     let flashAccordions = await view.findWebElements(
@@ -104,7 +96,7 @@ describe("Memory Allocation Filters", () => {
     );
     expect(
       flashAccordions.length,
-      "accordion:flash weren't filtered out",
+      "Flash accordions should be filtered out (count should be 0) after selecting RAM filter",
     ).to.be.equal(0);
 
     let sysramAccordions = await view.findWebElements(
@@ -112,24 +104,24 @@ describe("Memory Allocation Filters", () => {
     );
     expect(
       sysramAccordions.length,
-      "No accordion:sysram elements found",
+      "SYSRAM accordions should be visible (count > 0) after selecting RAM filter",
     ).to.be.greaterThan(0);
 
-    // Exit memory alloaction
+    // Exit memory allocation
+    const peripheralTabElements = await view.findWebElements(peripheralTab);
     expect(
-      await view.findWebElement(peripheralTab),
-      "Could not find Peripheral link in Nav Bar",
-    ).to.exist;
+      peripheralTabElements.length,
+      "Peripheral tab should be visible in the navigation bar",
+    ).to.be.greaterThan(0);
     await UIUtils.clickElement(view, peripheralTab);
-    console.log("Exited memory alloaction");
 
-    // Re-enter memory alloaction
+    // Re-enter memory allocation
+    const memTabElements2 = await view.findWebElements(memoryAllocationTab);
     expect(
-      await view.findWebElement(memoryAllocationTab),
-      "Could not find Memory link in Nav Bar",
-    ).to.exist;
+      memTabElements2.length,
+      "Memory Allocation tab should still be visible in the navigation bar",
+    ).to.be.greaterThan(0);
     await UIUtils.clickElement(view, memoryAllocationTab);
-    console.log("Re-entered memory alloaction");
 
     // Check if filter was reset correctly
     flashAccordions = await view.findWebElements(
@@ -137,7 +129,7 @@ describe("Memory Allocation Filters", () => {
     );
     expect(
       flashAccordions.length,
-      "No accordion:flash elements found",
+      "Flash accordions should be visible again (count > 0) after re-entering Memory tab - filter should reset",
     ).to.be.greaterThan(0);
 
     sysramAccordions = await view.findWebElements(
@@ -145,7 +137,7 @@ describe("Memory Allocation Filters", () => {
     );
     expect(
       sysramAccordions.length,
-      "No accordion:sysram elements found",
+      "SYSRAM accordions should still be visible (count > 0) after re-entering Memory tab",
     ).to.be.greaterThan(0);
 
     await view.switchBack();

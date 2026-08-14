@@ -22,9 +22,16 @@ import {configurePreloadedStore} from '../../../state/store';
 import ClockDetails from './ClockDetails';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import type {CfsConfig} from 'cfs-types';
+import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext';
 
 const mock = (await import(`@socs/max32690-wlp.json`))
 	.default as unknown as Soc;
+
+const l10n = await import(
+	'../../../../../../../l10n/bundle.l10n.en.json'
+);
+
+(window as any).__webview_localization_resources__ = l10n.default;
 
 // Helper function to convert Cypress fixture to a standard Promise
 async function getControlsPromise(): Promise<
@@ -270,5 +277,91 @@ describe('Clock details component', () => {
 					});
 			});
 		});
+	});
+
+	it('Should render plugin-added clock enum values and disable unsupported data-model values', () => {
+		cy.fixture('clock-config-plugin-controls.json').then(
+			rawControls => {
+				const controls = rawControls as Record<string, ControlCfg[]>;
+
+				const patchedControls: Record<string, ControlCfg[]> = {
+					...controls,
+					'TMR0/1/2/3': (controls['TMR0/1/2/3'] ?? []).map(control =>
+						control.Id === 'TMR0a_MUX'
+							? {
+									...control,
+									EnumValues: [
+										{
+											Id: 'Peripheral Clock',
+											Description: 'Peripheral Clock',
+											Value: 0,
+											Inactive: true
+										},
+										{
+											Id: 'Plugin Clock',
+											Description: 'Plugin Clock',
+											Value: 1,
+											IsPluginAddedOption: true
+										}
+									]
+								}
+							: control
+					)
+				};
+
+				const patchedSoc = structuredClone(mock);
+				const clockNode = patchedSoc.ClockNodes.find(
+					node => node.Name === 'TMR0/1/2/3'
+				);
+
+				if (clockNode) {
+					clockNode.Config = {
+						...(clockNode.Config ?? {}),
+						TMR0a_MUX: {
+							...(clockNode.Config?.TMR0a_MUX ?? {}),
+							'Peripheral Clock': []
+						}
+					};
+				}
+
+				const store = configurePreloadedStore(
+					patchedSoc,
+					configDict,
+					patchedControls
+				);
+
+				store.dispatch(setClockNodeDetailsTargetNode('TMR0/1/2/3'));
+
+				cy.mount(
+					<LocalizationProvider namespace='cfgtools'>
+						<ClockDetails
+							controlsPromise={Promise.resolve(patchedControls)}
+						/>
+					</LocalizationProvider>,
+					store
+				);
+
+				cy.dataTest('TMR0_ENABLE-TMR0/1/2/3').within(() => {
+					cy.get('span').click();
+				});
+
+				cy.dataTest('TMR0a_MUX-TMR0/1/2/3')
+					.should('have.attr', 'aria-disabled', 'false')
+					.click();
+
+				cy.dataTest('TMR0a_MUX-TMR0/1/2/3')
+					.contains('vscode-option', 'Not Supported by Plugin:')
+					.should('have.attr', 'disabled');
+
+				cy.get('[id="TMR0a_MUX_Peripheral Clock"]')
+					.should('contain.text', 'Peripheral Clock')
+					.and('have.attr', 'disabled');
+
+				cy.get('[id="TMR0a_MUX_Plugin Clock"]').should(
+					'contain.text',
+					'Plugin Clock'
+				);
+			}
+		);
 	});
 });

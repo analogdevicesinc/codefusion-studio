@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 // The interface accepted by the dynamic form
 export type TFormControl = {
 	id: string;
@@ -25,7 +40,12 @@ export type TFormControl = {
 	/** Placeholder text */
 	placeholder?: string;
 	/** Valid options, presented as a drop down list */
-	enum?: Array<{label: string; value: string}>;
+	enum?: Array<{
+		label: string;
+		value: string;
+		disabled?: boolean;
+		optionGroup?: string;
+	}>;
 	/** Disabled state of the control in the UI */
 	disabled?: boolean;
 	/** Required fields will be checked at runtime to ensure they are set */

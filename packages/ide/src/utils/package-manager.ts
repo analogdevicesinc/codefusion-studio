@@ -15,22 +15,29 @@
 
 import {
   CfsApiClient,
+  DefaultConanCloudsmithRemotesProvider,
   PackageLicenseReporter,
   SessionManager,
-  MyAnalogCloudsmithCredentialProvider,
+  MyAnalogConanCloudsmithRemotesProvider,
+  type AuthConfig,
+  type TokenAuthSession,
 } from "cfs-lib";
 import type {
   CfsPackageLicenseReporter,
   CfsPackageLicenseInfo,
   CfsPackageManifest,
+  CfsPackageManagerProvider,
   CfsPackageReference,
-  CfsPackageRemoteCredentialProvider,
+  CfsPackageRemotesProvider,
+  CfsSkippedPackageInfo,
 } from "cfs-package-manager";
+import { getSkippedPackageReasonMessage } from "cfs-package-manager";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { AuthConfigParser } from "../utils/auth-config";
 import { Utils } from "./utils";
+import type { Authorizer } from "cfs-ccm-lib";
 
 type LicenseAction =
   | "accept"
@@ -400,23 +407,113 @@ export async function promptForPackageLicenseAcceptance(
   });
 }
 
-export async function getPackageManagerProviders(): Promise<
-  [CfsPackageRemoteCredentialProvider, CfsPackageLicenseReporter] | undefined
-> {
-  const authConfig = new AuthConfigParser().getConfig();
-  const sessionManager = new SessionManager(authConfig);
-  const session = await sessionManager.getSession();
-  if (session) {
+export async function getPackageManagerProviders(
+  apiClient?: CfsApiClient,
+): Promise<[CfsPackageRemotesProvider, CfsPackageLicenseReporter | undefined]> {
+  let authConfig: AuthConfig | undefined;
+  let authorizer: Authorizer | undefined;
+
+  if (!apiClient) {
+    try {
+      authConfig = new AuthConfigParser().getConfig();
+    } catch (error) {
+      // IDE may have been built without auth config
+      // a notification will already have been shown to the user
+      console.warn("Failed to get auth config:", error);
+    }
+
+    try {
+      if (authConfig) {
+        const sessionManager = new SessionManager(authConfig);
+        const session = await sessionManager.getSession();
+        authorizer = session?.authorizer;
+      }
+    } catch (error) {
+      console.warn("Failed to get session:", error);
+      vscode.window.showWarningMessage(
+        "Failed to get myAnalog session for package manager.",
+      );
+    }
+
+    apiClient = new CfsApiClient({
+      baseUrl: authConfig?.ccmUrl,
+      authorizer,
+    });
+  }
+
+  let remotesProvider: CfsPackageRemotesProvider;
+
+  try {
+    const myAnalogProvider = new MyAnalogConanCloudsmithRemotesProvider(
+      apiClient,
+    );
+    await myAnalogProvider.init();
+    remotesProvider = myAnalogProvider;
+  } catch (error) {
+    console.error(error);
+    vscode.window.showWarningMessage(
+      `Failed to initialize cloud package remotes provider, falling back to default remotes`,
+    );
+
+    remotesProvider = new DefaultConanCloudsmithRemotesProvider();
+  }
+
+  return [
+    remotesProvider,
+    apiClient.isAnonymous ? undefined : new PackageLicenseReporter(apiClient),
+  ];
+}
+
+/** Serializes concurrent calls to {@link syncPackageManagerCredentials}. */
+let syncCredentialsQueue: Promise<void> = Promise.resolve();
+
+/**
+ * Syncs credential provider and license reporter on the package manager
+ * to match the current auth session. Registers providers when logged in,
+ * unregisters or replaces them when logged out or switching accounts.
+ * Call this after any login or logout event, whether triggered by the IDE
+ * commands or the CLI.
+ *
+ * All concurrent calls are serialized to prevent interleaved
+ * register/unregister cycles from leaving stale credentials.
+ *
+ * @param pkgManager - The package manager provider instance
+ * @param session - The currently registered session, if any; undefined when logged out
+ * @returns Tuple of [remotes provider, license reporter | undefined]. The remotes
+ * provider is always returned (uses anonymous auth when logged out). License
+ * reporter is only present when logged in.
+ */
+export async function syncPackageManagerCredentials(
+  pkgManager: CfsPackageManagerProvider,
+  session?: TokenAuthSession,
+): Promise<[CfsPackageRemotesProvider, CfsPackageLicenseReporter | undefined]> {
+  let releaseLock!: () => void;
+  const previousSync = syncCredentialsQueue;
+  syncCredentialsQueue = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+  await previousSync;
+
+  try {
+    await pkgManager.unregisterLicenseReporter();
+    await pkgManager.unregisterRemotesProvider();
+
+    const authConfig = new AuthConfigParser().getConfig();
     const apiClient = new CfsApiClient({
       baseUrl: authConfig.ccmUrl,
-      authorizer: session.authorizer,
+      authorizer: session?.authorizer,
     });
-    return [
-      new MyAnalogCloudsmithCredentialProvider(apiClient),
-      new PackageLicenseReporter(apiClient),
-    ];
+
+    const [remotesProvider, licenseReporter] =
+      await getPackageManagerProviders(apiClient);
+    await pkgManager.registerRemotesProvider(remotesProvider);
+    if (licenseReporter) {
+      await pkgManager.registerLicenseReporter(licenseReporter);
+    }
+    return [remotesProvider, licenseReporter];
+  } finally {
+    releaseLock();
   }
-  return undefined;
 }
 
 /**
@@ -461,4 +558,53 @@ export function getManifestPackages(
   }
 
   return (manifest as CfsPackageManifest).packages;
+}
+
+/**
+ * Shows a warning message for packages that were skipped due to platform compatibility.
+ * @param compatibilitySkipped - Array of skipped packages
+ */
+export function showSkippedPackagesWarning(
+  compatibilitySkipped: CfsSkippedPackageInfo[],
+): void {
+  if (compatibilitySkipped.length > 0) {
+    const skippedList = compatibilitySkipped
+      .map(
+        (s) =>
+          `${s.reference.name}/${
+            s.reference.version
+          }: ${getSkippedPackageReasonMessage(s.reasonCode)}`,
+      )
+      .join("; ");
+    vscode.window.showWarningMessage(
+      `CFS: Skipped ${compatibilitySkipped.length} package${
+        compatibilitySkipped.length > 1 ? "s" : ""
+      }: ${skippedList}`,
+    );
+  }
+}
+
+/**
+ * Normalizes an error message for user-facing display:
+ * - Replaces uppercase "ERROR:" prefixes with "Error:"
+ * - Ensures the message ends with a sentence-terminating punctuation mark
+ * - Prepends a leading space so it can be appended directly to a base message
+ *
+ * Returns an empty string when the error is not an Error instance or string,
+ * or has no message.
+ */
+export function formatErrorForDisplay(error: unknown): string {
+  const rawMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+  const errorMessage = rawMessage
+    .replace(/(^|\s)ERROR:\s*/gi, "$1Error: ")
+    .trim();
+  if (!errorMessage) {
+    return "";
+  }
+  return /[.!?]$/.test(errorMessage) ? ` ${errorMessage}` : ` ${errorMessage}.`;
 }

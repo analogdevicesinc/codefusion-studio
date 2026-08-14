@@ -76,6 +76,11 @@ const mockImageWithError: Image = {
 	swapAlignment: '4'
 };
 
+const mockImageEmptyVersion: Image = {
+	...mockImage,
+	imageVersion: '',
+};
+
 const mockPackage: ApplicationPackage = {
 	id: 'pkg-1',
 	name: 'Test Package',
@@ -223,25 +228,29 @@ describe('ImageCard', () => {
 		});
 
 		it('should accept valid version format: single number (1)', () => {
-			const reduxStore = mountImageCard(mockImage, mockPackage);
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImageEmptyVersion]
+			};
+			const reduxStore = mountImageCard(mockImageEmptyVersion, pkg);
 
-			cy.dataTest(`image-card:${mockImage.id}-header`)
+			cy.dataTest(`image-card:${mockImageEmptyVersion.id}-header`)
 				.should('exist')
 				.click();
 
 			cy.dataTest(
-				`image:${mockImage.name}-image-version-control-input`
+				`image:${mockImageEmptyVersion.name}-image-version-control-input`
 			)
 				.shadow()
 				.within(() => {
-					cy.get('input').clear().type('1');
+					cy.get('input').type('1');
 				});
 
 			cy.then(() => {
 				const img = getImageFromStore(
 					reduxStore,
-					mockPackage.id,
-					mockImage.id
+					pkg.id,
+					mockImageEmptyVersion.id
 				);
 				expect(img?.imageVersion).to.equal('1');
 			});
@@ -250,25 +259,29 @@ describe('ImageCard', () => {
 		});
 
 		it('should accept valid version format: major.minor (1.0)', () => {
-			const reduxStore = mountImageCard(mockImage, mockPackage);
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImageEmptyVersion]
+			};
+			const reduxStore = mountImageCard(mockImageEmptyVersion, pkg);
 
-			cy.dataTest(`image-card:${mockImage.id}-header`)
+			cy.dataTest(`image-card:${mockImageEmptyVersion.id}-header`)
 				.should('exist')
 				.click();
 
 			cy.dataTest(
-				`image:${mockImage.name}-image-version-control-input`
+				`image:${mockImageEmptyVersion.name}-image-version-control-input`
 			)
 				.shadow()
 				.within(() => {
-					cy.get('input').clear().type('1.0');
+					cy.get('input').type('1.0');
 				});
 
 			cy.then(() => {
 				const img = getImageFromStore(
 					reduxStore,
-					mockPackage.id,
-					mockImage.id
+					pkg.id,
+					mockImageEmptyVersion.id
 				);
 				expect(img?.imageVersion).to.equal('1.0');
 			});
@@ -277,18 +290,22 @@ describe('ImageCard', () => {
 		});
 
 		it('should show error for invalid version format with text', () => {
-			mountImageCard(mockImage, mockPackage);
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImageEmptyVersion]
+			};
+			mountImageCard(mockImageEmptyVersion, pkg);
 
-			cy.dataTest(`image-card:${mockImage.id}-header`)
+			cy.dataTest(`image-card:${mockImageEmptyVersion.id}-header`)
 				.should('exist')
 				.click();
 
 			cy.dataTest(
-				`image:${mockImage.name}-image-version-control-input`
+				`image:${mockImageEmptyVersion.name}-image-version-control-input`
 			)
 				.shadow()
 				.within(() => {
-					cy.get('input').clear().type('abc');
+					cy.get('input').type('abc');
 				});
 
 			cy.dataTest('conflict-icon').should('exist');

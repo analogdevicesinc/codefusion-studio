@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ def convert_checkpoint(input_file, output_file, arguments):
         params = None
 
     print("Converting checkpoint file", input_file, "to", output_file)
-    checkpoint = torch.load(input_file, map_location='cpu')
+    checkpoint = torch.load(input_file, map_location='cpu', weights_only=False)
 
     if 'state_dict' not in checkpoint:
         raise IzerError("No `state_dict` in checkpoint file.")

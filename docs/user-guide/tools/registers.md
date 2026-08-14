@@ -1,7 +1,7 @@
 ---
 description: Registers in CFS
 author: Analog Devices
-date: 2025-04-28
+date: 2026-07-16
 ---
 
 # Registers
@@ -19,7 +19,7 @@ Use the **Search** field to locate registers by name or address. Use the preset 
 
 Click a register name to view its bit-level details, including individual bit values, access types, and descriptions.
 
-1. **Hexadecmial values**: Displays the current and reset hexadecimal values.
+1. **Hexadecimal values**: Displays the current and reset hexadecimal values.
 1. **Binary values**: Shows the reset value in binary. Modified bits are highlighted with a distinct border.
 1. **Field details**: Click a bit group or register field to view details such as access type (R/W), bit range, and description.
 

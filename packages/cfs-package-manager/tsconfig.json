@@ -16,7 +16,8 @@
 		"forceConsistentCasingInFileNames": true
 	},
 	"ts-node": {
-		"esm": true
+		"esm": true,
+		"files": true
 	},
 	"include": ["./src/**/*"]
 }

@@ -13,6 +13,8 @@
  *
  */
 
+import { SKIPPED_PACKAGE_REASON_MESSAGES } from "../utils/package-manager-skipped-reasons.js";
+
 export interface CfsPackageReference {
 	name: string;
 	version: string;
@@ -45,12 +47,46 @@ export interface CfsCachedPackage {
 	isInstalled: boolean;
 }
 
-export interface CfsPackageRemote {
+export type CfsPackageRemoteConfigErrorCode =
+	| "REMOTE_ADD_FAILED"
+	| "REMOTE_REMOVE_FAILED"
+	| "REMOTE_CONFIGURE_FAILED"
+	| "REMOTE_AUTH_FAILED";
+
+export interface CfsPackageRemoteConfigError extends Error {
+	code: CfsPackageRemoteConfigErrorCode;
+	message: string;
+}
+
+interface CfsPackageRemoteBase {
 	name: string;
 	url: URL;
-	auth?: CfsPackageRemoteAuth; // only private remotes will have auth info
-	custom: boolean; // true for user added remotes, false for managed (default) remotes
+	disabled: boolean; // true if user has disabled the remote (or it was disabled by default)
+	configError?: CfsPackageRemoteConfigError; // present when remote configuration fails
 }
+
+export interface CfsManagedPackageRemote
+	extends CfsPackageRemoteBase {
+	auth: CfsManagedPackageRemoteAuth; // managed remotes always have auth info
+	custom: false;
+	provider: string; // indicates which provider this remote belongs to
+}
+
+export interface CfsCustomPackageRemote extends CfsPackageRemoteBase {
+	auth?: CfsCustomPackageRemoteAuth; // only enabled custom remotes can have auth info
+	custom: true; // custom remotes are user added
+}
+
+export type CfsPackageRemote =
+	| CfsManagedPackageRemote
+	| (CfsCustomPackageRemote &
+			(
+				| {
+						disabled: false;
+						auth: CfsCustomPackageRemoteAuth;
+				  }
+				| { disabled: true; auth?: never }
+			));
 
 export interface CfsPackageManifest {
 	version: number;
@@ -75,16 +111,23 @@ export interface CfsPackageFilter {
 	component?: Partial<CfsPackageComponent>;
 }
 
-export type CfsPackageRemoteAuth =
-	/**
-	 * Authentication information for a remote.
-	 * Contains either the username of the user that
-	 * has logged in manually, or the name of the
-	 * credential provider that is being used to
-	 * provide authentication for this remote.
-	 */
-	| { username: string; credentialProvider: never }
-	| { credentialProvider: string; username: never };
+/**
+ * Authentication information for a managed remote.
+ * Can be public or authenticated via a named credential provider.
+ * Username and password are never used for managed remotes.
+ */
+export type CfsManagedPackageRemoteAuth =
+	| { public: true }
+	| { public: false; credentialProvider: string };
+
+/**
+ * Authentication information for a custom remote.
+ * Can be public or authenticated via a username and password.
+ * Credential providers are never used for custom remotes.
+ */
+export type CfsCustomPackageRemoteAuth =
+	| { public: true }
+	| { public: false; username: string };
 
 export interface CfsPackageInstallOptions {
 	/**
@@ -100,9 +143,28 @@ export interface CfsPackageInstallOptions {
 	acceptLicense?: boolean;
 }
 
+export interface CfsPackageDependenciesOptions {
+	/**
+	 * If true, resolves dependencies from local cache/installed state only.
+	 *
+	 * @default false
+	 */
+	localOnly?: boolean;
+	/**
+	 * If true, returns unresolved dependency requirements (for example "^2.1.0")
+	 * instead of concrete resolved versions.
+	 *
+	 * @default false
+	 */
+	unresolved?: boolean;
+}
+
+/**
+ * Retrieves credentials for package remotes.
+ */
 export interface CfsPackageRemoteCredentialProvider {
 	/**
-	 * Unique name used to identify the credential provider
+	 * Name used to identify the source of the credentials
 	 *
 	 */
 	readonly name: string;
@@ -121,6 +183,49 @@ export interface CfsPackageRemoteCredentialProvider {
 	 * @param url - The remote URL to refresh credentials for
 	 */
 	refreshRemoteCredential(url: string): Promise<void>;
+}
+
+/**
+ * Client that provides credentials for a specific remote, along with the name of the credential provider it belongs to.
+ */
+export interface CfsPackageRemoteCredentialClient {
+	/**
+	 * Name of the provider supplying the credentials
+	 *
+	 */
+	auth: { public: false; credentialProvider: string };
+	/**
+	 * Retrieves the credentials for the remote
+	 *
+	 * @returns The credentials for the remote, or undefined if no credentials are available
+	 */
+	getCredential(): Promise<CfsPackageRemoteCredential | undefined>;
+	/**
+	 * Refreshes the credentials for the remote
+	 */
+	refreshCredential(): Promise<void>;
+}
+
+/**
+ * Provides a list of remotes to be used for package retrieval, along with their credentials if needed.
+ */
+export interface CfsPackageRemotesProvider {
+	/**
+	 * Name used to identify the source of the remotes
+	 *
+	 */
+	readonly name: string;
+	/**
+	 * Retrieves a list of remotes to be used for package retrieval, along with their credentials if needed.
+	 *
+	 * @returns An array of CfsManagedPackageRemote elements. Those with authentication are also CfsPackageRemoteCredentialClients.
+	 */
+	getRemotes(): Promise<
+		(
+			| (CfsManagedPackageRemote & { auth: { public: true } })
+			| (CfsManagedPackageRemote & CfsPackageRemoteCredentialClient)
+		)[]
+	>;
 }
 
 /**
@@ -149,6 +254,19 @@ export interface CfsPackageLicenseInfo {
 	licenseText?: string;
 }
 
+export type CfsSkippedPackageReasonCode =
+	keyof typeof SKIPPED_PACKAGE_REASON_MESSAGES;
+
+/**
+ * Package excluded from installation plan with a machine-readable reason.
+ */
+export interface CfsSkippedPackageInfo {
+	/** Package reference */
+	reference: CfsPackageReference;
+	/** Reason code for why this package was skipped */
+	reasonCode: CfsSkippedPackageReasonCode;
+}
+
 /**
  * Installation plan returned by getInstallPlan().
  * Provides all information needed to make UI decisions before installation.
@@ -169,6 +287,14 @@ export interface CfsInstallPlan {
 	 * Packages that are already installed (present in .cfsPackages) and will be skipped.
 	 */
 	alreadyInstalled: CfsPackageReference[];
+
+	/**
+	 * Requested packages excluded from this install plan because they cannot be
+	 * installed (e.g. no compatible binary for the current platform).
+	 *
+	 * Already-installed packages are reported in `alreadyInstalled`, not here.
+	 */
+	skipped?: CfsSkippedPackageInfo[];
 
 	/**
 	 * Subset of `toInstall` that require explicit license acceptance.
@@ -266,12 +392,20 @@ export interface CfsPackageManagerProvider {
 	): Promise<CfsPackage[]>;
 
 	/**
-	 * Retrieve a given package metadata. The package does not need to be installed for this information to be retrieved.
+	 * Retrieve package metadata for one or more packages. Packages do not need
+	 * to be installed for this information to be retrieved.
 	 *
-	 * @param reference - Reference of a package in the form name/version
-	 * @returns Package metadata
+	 * Pass a single reference to get a single {@link CfsPackage}, or an array
+	 * to fetch metadata for multiple packages in a single backend call (e.g.
+	 * the visible page of a paginated list). Results preserve input order.
+	 *
+	 * @param reference - A single package reference or an array of references
+	 * @returns Package metadata matching the shape of `reference`
 	 */
 	getPackageInfo(reference: CfsPackageReference): Promise<CfsPackage>;
+	getPackageInfo(
+		references: CfsPackageReference[]
+	): Promise<CfsPackage[]>;
 
 	/**
 	 * Install one or more packages, including all their dependencies.
@@ -371,11 +505,39 @@ export interface CfsPackageManagerProvider {
 	 * This method can be run on any available package, not necessarily installed.
 	 *
 	 * @param reference - Reference of a package in the form name/version.
+	 * @param options - Optional dependency resolution options.
 	 * @returns A list of package references of all packages that are needed to install for the given package
 	 */
 	dependencies(
-		reference: CfsPackageReference
+		reference: CfsPackageReference,
+		options?: CfsPackageDependenciesOptions
 	): Promise<CfsPackageReference[]>;
+
+	/**
+	 * Batched form of {@link dependencies}: resolves the dependency closure of
+	 * several packages at once.
+	 *
+	 * Every requested package is resolved as a root of a single dependency graph,
+	 * so the whole batch costs one backend invocation instead of one per package.
+	 * Prefer this whenever more than one closure is needed at the same time.
+	 *
+	 * Because the roots are resolved together, a version conflict *between* the
+	 * requested packages fails the call, where resolving them one at a time would
+	 * have produced two individually-valid answers. For callers that go on to
+	 * install the whole set together this matches what the install would do
+	 * anyway; callers that need per-package isolation should use
+	 * {@link dependencies}.
+	 *
+	 * @param references - References of packages in the form name/version.
+	 * @param options - Optional dependency resolution options.
+	 * @returns A record keyed by `name/version` of each *requested* reference,
+	 * mapping to that package's dependencies. Every requested reference is
+	 * present as a key; a package with no dependencies maps to an empty array.
+	 */
+	dependenciesBatch(
+		references: CfsPackageReference[],
+		options?: CfsPackageDependenciesOptions
+	): Promise<Record<string, CfsPackageReference[]>>;
 
 	/**
 	 * Retrieves a list of all installed packages that depend on a given package, including transitive consumers.
@@ -414,6 +576,20 @@ export interface CfsPackageManagerProvider {
 	 * @param name - Local name given to the server on addRemote
 	 */
 	deleteRemote(name: string): Promise<void>;
+
+	/**
+	 * Enables a package server so it is considered for package retrieval
+	 *
+	 * @param name - Local name given to the server on addRemote
+	 */
+	enableRemote(name: string): Promise<void>;
+
+	/**
+	 * Disables a package server so it is no longer considered for package retrieval
+	 *
+	 * @param name - Local name given to the server on addRemote
+	 */
+	disableRemote(name: string): Promise<void>;
 
 	/**
 	 * Returns an array of all package servers that are currently registered
@@ -519,36 +695,20 @@ export interface CfsPackageManagerProvider {
 	getInstallPlan(input: CfsInstallInput): Promise<CfsInstallPlan>;
 
 	/**
-	 * Registers a credential provider for use with the package manager
-	 * Enables remotes configured to use that provider
+	 * Registers a remotes provider for use with the package manager.
 	 *
-	 * @param provider - The credential provider to use
+	 * @param provider - The remotes provider to use
 	 */
-	registerCredentialProvider(
-		provider: CfsPackageRemoteCredentialProvider
+	registerRemotesProvider(
+		provider: CfsPackageRemotesProvider
 	): Promise<void>;
 
 	/**
-	 * Unregisters a credential provider
-	 * Disables remotes configured to use that provider
+	 * Unregisters the currently configured remotes provider and
+	 * removes all remotes that were added by that provider.
 	 *
-	 * @param provider - The credential provider to unregister
 	 */
-	unregisterCredentialProvider(
-		provider: string | CfsPackageRemoteCredentialProvider
-	): Promise<void>;
-
-	/**
-	 * Sets a credential provider to be used to provide authentication for a given remote.
-	 * Calling login() or logout() on the remote will clear the provider configuration
-	 *
-	 * @param remote name of the remote
-	 * @param provider name of the provider
-	 */
-	setRemoteCredentialProvider(
-		remote: string,
-		provider: string
-	): Promise<void>;
+	unregisterRemotesProvider(): Promise<void>;
 
 	/**
 	 * Registers a license reporter for use during install flows.

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 
 import * as vscode from "vscode";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 export class SigmaStudioPlusProjectEditor
   implements vscode.CustomTextEditorProvider
@@ -40,6 +42,12 @@ export class SigmaStudioPlusProjectEditor
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken,
   ): Promise<void> {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "sigma_studio_plus_project",
+      });
+    });
+
     webviewPanel.webview.options = {
       enableScripts: true,
     };

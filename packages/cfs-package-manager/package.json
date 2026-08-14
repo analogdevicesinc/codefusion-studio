@@ -3,14 +3,15 @@
 	"publisher": "adi",
 	"description": "Reusable utilities for CFS components",
 	"author": "Analog Devices",
-	"version": "2.2.1",
+	"version": "2.3.0",
 	"dependencies": {
+		"@ster5/global-mutex": "^3.3.0",
 		"env-paths": "^3"
 	},
 	"devDependencies": {
 		"@types/chai": "^5.2.0",
 		"@types/chai-as-promised": "^8.0.2",
-		"@types/node": "^22.13.10",
+		"@types/node": "^22.20.0",
 		"chai": "^5.2.0",
 		"chai-as-promised": "^8.0.1",
 		"mocha": "11.1.0",

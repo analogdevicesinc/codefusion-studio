@@ -21,7 +21,10 @@ import {localizeMessage} from '@common/utils/localization';
 import UpdateResolutionCard from '../update-resolution-card/update-resolution-card';
 import EightColumnLayout from '../../../../components/eight-column-layout/EightColumnLayout';
 import {Button} from 'cfs-react-library';
-import {installPackage} from '../../../../utils/api';
+import {
+	installPackage,
+	type SearchPackageResult
+} from '../../../../utils/api';
 import {configureStore} from '@reduxjs/toolkit';
 import {Provider} from 'react-redux';
 import type {CfsPackageReference} from 'cfs-package-manager';
@@ -158,6 +161,10 @@ function MissingComponentsError({
 			state.latestLocalCompatibleComponentVersion &&
 			isAtLeastRequired(state.latestLocalCompatibleComponentVersion);
 
+		const isNewerThanLocalOption = (v: string) =>
+			!state.latestLocalCompatibleComponentVersion ||
+			semver.gt(v, state.latestLocalCompatibleComponentVersion);
+
 		if (
 			state.latestLocalCompatibleComponentVersion &&
 			hasLocalOption
@@ -189,7 +196,10 @@ function MissingComponentsError({
 
 		if (
 			state.latestRemoteVersion &&
-			isAtLeastRequired(state.latestRemoteVersion.componentVersion)
+			isAtLeastRequired(state.latestRemoteVersion.componentVersion) &&
+			isNewerThanLocalOption(
+				state.latestRemoteVersion.componentVersion
+			)
 		) {
 			options = appendDropdownOption(options, {
 				value: 'UPDATE_CFS_FILE_AND_INSTALL_LATEST_COMPATIBLE',
@@ -412,76 +422,78 @@ function MissingComponentsError({
 		async function fetchVersions() {
 			setIsLoading(true);
 
+			const remotePackagesForComponents: SearchPackageResult[] = [];
+
 			try {
-				const remotePackagesForComponents =
+				const searchResult =
 					await searchRemotePackagesForComponents(components);
-
-				for (const component of components) {
-					const packagesForComponent =
-						remotePackagesForComponents.find(
-							p => p.id === component.id
-						);
-
-					// Locally available
-					const latestLocalCompatibleComponentVersion = component
-						.availableVersions?.length
-						? getLatestCompatible(
-								component.version,
-								component.availableVersions
-							)
-						: undefined;
-
-					const formattedComponentName =
-						component.type === 'data-model'
-							? `${component.soc}:${component.id}`.toLowerCase()
-							: component.id;
-
-					// Latest compatible, available on remote for download
-					const latestRemoteVersion = packagesForComponent
-						? filterLatestCompatiblePackageForGivenComponentVersion(
-								packagesForComponent.packages,
-								formattedComponentName,
-								component.version
-							)
-						: undefined;
-
-					// Required, available on remote for download
-					const requiredVersionList = packagesForComponent
-						? filterPackagesForGivenComponentVersion(
-								packagesForComponent.packages,
-								formattedComponentName,
-								component.version
-							)
-						: undefined;
-					const requiredVersion = requiredVersionList?.[0];
-
-					const currentState = getComponentState(component.id);
-					const updatedState: ComponentResolutionState = {
-						...currentState,
-						latestLocalCompatibleComponentVersion,
-						latestRemoteVersion,
-						requiredVersion
-					};
-
-					const options = generateResolutionOptions(updatedState);
-
-					updateComponentState(component.id, {
-						latestLocalCompatibleComponentVersion,
-						latestRemoteVersion,
-						requiredVersion,
-						...(options.length > 0 && {
-							resolution: options[0].value
-						})
-					});
-				}
+				remotePackagesForComponents.push(...searchResult);
 			} catch (error) {
-				console.log(
+				console.error(
 					'Failed to fetch remote versions for components.',
 					error
 				);
-			} finally {
-				setIsLoading(false);
 			}
+
+			for (const component of components) {
+				const packagesForComponent = remotePackagesForComponents.find(
+					p => p.id === component.id
+				);
+
+				// Locally available
+				const latestLocalCompatibleComponentVersion = component
+					.availableVersions?.length
+					? getLatestCompatible(
+							component.version,
+							component.availableVersions
+						)
+					: undefined;
+
+				const formattedComponentName =
+					component.type === 'data-model'
+						? `${component.soc}:${component.id}`.toLowerCase()
+						: component.id;
+
+				// Latest compatible, available on remote for download
+				const latestRemoteVersion = packagesForComponent
+					? filterLatestCompatiblePackageForGivenComponentVersion(
+							packagesForComponent.packages,
+							formattedComponentName,
+							component.version
+						)
+					: undefined;
+
+				// Required, available on remote for download
+				const requiredVersionList = packagesForComponent
+					? filterPackagesForGivenComponentVersion(
+							packagesForComponent.packages,
+							formattedComponentName,
+							component.version
+						)
+					: undefined;
+				const requiredVersion = requiredVersionList?.[0];
+
+				const currentState = getComponentState(component.id);
+				const updatedState: ComponentResolutionState = {
+					...currentState,
+					latestLocalCompatibleComponentVersion,
+					latestRemoteVersion,
+					requiredVersion
+				};
+
+				const options = generateResolutionOptions(updatedState);
+
+				updateComponentState(component.id, {
+					latestLocalCompatibleComponentVersion,
+					latestRemoteVersion,
+					requiredVersion,
+					...(options.length > 0 && {
+						resolution: options[0].value
+					})
+				});
+			}
+
+			setIsLoading(false);
 		}
 
 		void fetchVersions();

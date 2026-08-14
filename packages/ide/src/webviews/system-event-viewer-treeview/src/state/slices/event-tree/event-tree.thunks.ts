@@ -21,7 +21,8 @@ import type {RootState} from '../../store';
 import {
 	clearTree,
 	setNodeChildren,
-	setRootChildren
+	setRootChildren,
+	updateNodeTreeItem
 } from './event-tree.reducer';
 import {
 	selectExpandedNodeIds,
@@ -87,6 +88,26 @@ export const refreshVisibleTreeThunk = createAsyncThunk<
 	);
 });
 
+export const refreshSingleNodeThunk = createAsyncThunk<
+	void,
+	{nodeId: string},
+	{state: RootState}
+>(
+	'eventTree/refreshSingleNode',
+	async ({nodeId}, {dispatch, getState}) => {
+		const node = selectNodeById(getState(), nodeId);
+
+		if (!node) return;
+
+		try {
+			const treeItem = await getTreeItem(node);
+			dispatch(updateNodeTreeItem({nodeId, treeItem}));
+		} catch {
+			// Keep current state if tree-item fetch fails.
+		}
+	}
+);
+
 export const refreshTreeThunk = createAsyncThunk<
 	void,
 	{body?: string},
@@ -103,6 +124,12 @@ export const refreshTreeThunk = createAsyncThunk<
 					element: node
 				})
 			);
+
+			return;
+		}
+
+		if (node) {
+			await dispatch(refreshSingleNodeThunk({nodeId: body}));
 
 			return;
 		}

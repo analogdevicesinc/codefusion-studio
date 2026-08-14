@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 
 /**
  * Validate that 'cfs soc' and 'cfs socs' (without commands)
@@ -22,18 +23,13 @@ for (const command of ['soc', 'socs']) {
   describe(command, () => {
     describe('output with no command', () => {
       //   Display the help text when no command is given.
-      test
-        .stdout()
-        .command(['help', command], {root: '..'})
-        .it(
-          'displays help text when no command is given',
-          (ctx) => {
-            expect(ctx.stdout).to.contain('SoC data model and catalog operations');
-            expect(ctx.stdout).to.contain(`${command} export`);
-            expect(ctx.stdout).to.contain(`${command} list`);
-            expect(ctx.stdout).to.contain(`${command} info`);
-          }
-        );
+      it('displays help text when no command is given', async () => {
+        const {stdout} = await runCommand(['help', command], {root: '..'});
+        expect(stdout).to.contain('SoC data model and catalog operations');
+        expect(stdout).to.contain(`${command} export`);
+        expect(stdout).to.contain(`${command} list`);
+        expect(stdout).to.contain(`${command} info`);
+      });
     });
   });
 }

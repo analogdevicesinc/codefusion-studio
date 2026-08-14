@@ -27,6 +27,8 @@ import {
   assertPersistedStreamForSource,
   PersistedDFGStream,
 } from "./dfg-persistence-assertions";
+import { statSync } from "fs";
+import { existsSync, readFileSync, unlinkSync } from "fs";
 
 export const homePageTitle = By.css("div[class*='_socDetailsContainer'] h1");
 
@@ -157,6 +159,8 @@ export async function getStreamRowCount(view: WebView): Promise<number> {
 }
 
 export const mainCreateStreamButton = By.id("create-stream-button");
+
+export const quickInputWidget: By = By.css(".quick-input-widget");
 
 export const exportAsCsvButton = By.css('[data-test="export-as-csv"]');
 
@@ -532,5 +536,36 @@ export async function selectStreamToDelete(
       console.log("Going for next iteration");
       continue;
     }
+  }
+
+  return undefined;
+}
+
+export async function validateExportedCsvContent(
+  filename: string,
+  expectedStreamValues: string[],
+): Promise<[number, string[], boolean]> {
+  try {
+    const csvContent = readFileSync(filename, "utf-8");
+    const csvLines = csvContent
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const fileSize = statSync(filename).size;
+
+    // Verify at least one data row contains expected source, destination and buffer sizes
+    const hasExpectedStreamRow = csvLines.slice(1).some((line) => {
+      const columns = line
+        .split(",")
+        .map((col) => col.trim().replace(/^"|"$/g, ""));
+      return expectedStreamValues.every((v) => columns.includes(v));
+    });
+    return [fileSize, csvLines, hasExpectedStreamRow];
+  } catch (error) {
+    console.error("Error while reading CSV file:", error);
+    return [0, [], false];
+  } finally {
+    if (existsSync(filename)) unlinkSync(filename);
   }
 }

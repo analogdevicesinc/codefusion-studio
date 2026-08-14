@@ -10,7 +10,7 @@ date: 2026-05-23
 
 Before installing CodeFusion Studio, install:
 
-- [**Microsoft Visual Studio Code**](https://code.visualstudio.com/) version **1.100** or later (recommended).
+- [**Microsoft Visual Studio Code**](https://code.visualstudio.com/) version **1.101** or later (recommended).
 
 !!! note
     Older versions of VS Code (such as 1.98 and earlier) are not supported due to known layout issues in the **System Planner > Pin Config** canvas.
@@ -19,7 +19,7 @@ Before installing CodeFusion Studio, install:
 
 CodeFusion Studio and its extension are supported on the following host operating systems:
 
-- Windows 11 (64-bit)  
+- Windows 11 (64-bit)
 - macOS 15 and macOS 26 (ARM64)
 - Ubuntu 22.04 and 24.04 (64-bit)
 

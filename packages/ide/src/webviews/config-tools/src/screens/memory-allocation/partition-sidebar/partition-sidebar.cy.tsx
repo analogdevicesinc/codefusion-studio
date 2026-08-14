@@ -17,6 +17,7 @@
 import {
 	createPartition,
 	setSideBarState,
+	updateActivePartition,
 	type Partition
 } from '../../../state/slices/partitions/partitions.reducer';
 import {PartitionSidebar} from './partition-sidebar';
@@ -51,6 +52,32 @@ const mockedConfigDict = {
 			ProjectId: 'RV-proj',
 			PluginId: '',
 			PluginVersion: ''
+		}
+	]
+} as unknown as CfsConfig;
+
+const mockedConfigDictNoAliases = {
+	SchemaVersion: '2.1.0',
+	DataModelVersion: '1.0.0',
+	Soc: 'MAX32690',
+	Package: 'WLP',
+	BoardName: 'EvKit_V1',
+	Timestamp: '2025-08-13T12:18:05.080Z',
+	Pins: [],
+	ClockNodes: [],
+	Projects: [
+		{
+			CoreNum: 0,
+			CoreId: 'CM4',
+			ProjectId: 'CM4-NS',
+			PluginId: 'com.analog.project.msdk.plugin',
+			PluginVersion: '1.0.0',
+			FirmwarePlatform: 'msdk',
+			ExternallyManaged: false,
+			Secure: false,
+			Family: 'Cortex-M',
+			Partitions: [],
+			Peripherals: []
 		}
 	]
 } as unknown as CfsConfig;
@@ -1451,4 +1478,89 @@ describe('Partition Sidebar', () => {
 			)
 		);
 	}
+});
+
+describe('Partition Sidebar - No Alias SoC', () => {
+	let noAliasStore: ReturnType<typeof configurePreloadedStore>;
+
+	before(() => {
+		noAliasStore = configurePreloadedStore(
+			mock as unknown as Soc,
+			mockedConfigDictNoAliases
+		);
+		noAliasStore.dispatch(
+			setSideBarState({
+				isSidebarMinimised: false,
+				sidebarPartition: {
+					displayName: '',
+					type: '',
+					baseBlock: {
+						Name: '',
+						Description: '',
+						AddressStart: '',
+						AddressEnd: '',
+						Width: 0,
+						MinimumAlignment: undefined,
+						Access: '',
+						Location: '',
+						Type: ''
+					},
+					blockNames: [],
+					startAddress: '',
+					size: 0,
+					projects: [],
+					config: undefined
+				}
+			})
+		);
+		cy.viewport(262, 688);
+	});
+
+	describe('Memory Blocks Section', () => {
+		it('should not show aliases for cores without alias memory entries', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				noAliasStore
+			);
+
+			cy.wrap(
+				noAliasStore.dispatch(
+					updateActivePartition(
+						createMockPartition({
+							displayName: 'TestPartition',
+							type: 'RAM',
+							baseBlock: {
+								Access: 'R/W/X',
+								AddressEnd: '0x2001ffff',
+								AddressStart: '0x20000000',
+								Description: 'System RAM Block 0',
+								Location: 'Internal',
+								MinimumAlignment: 4,
+								Name: 'sysram0',
+								Type: 'RAM',
+								Width: 8
+							},
+							blockNames: ['sysram0'],
+							startAddress: '0x20000000',
+							size: 131072
+						})
+					)
+				)
+			);
+
+			cy.dataTest('assigned-cores-multiselect').get('button').click();
+			cy.dataTest('multiselect-option-CM4-NS')
+				.should('be.visible')
+				.click();
+
+			cy.dataTest('start-address').should('exist');
+			cy.get('[data-test^="software-start-address-"]').should(
+				'not.exist'
+			);
+		});
+	});
 });

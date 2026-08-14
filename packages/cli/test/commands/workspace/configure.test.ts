@@ -13,14 +13,16 @@
  *
  */
 
-import {test, expect} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import type {CfsWorkspace, CfsProject} from 'cfs-types';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   CFS_DATA_MODELS_PATH,
-  CFS_PLUGINS_PATH
+  CFS_PROJECT_PLUGINS_PATH,
+  CFS_WORKSPACE_TEMPLATES_PATH
 } from '../../constants.js';
 
 /**
@@ -34,7 +36,8 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const pluginsPath = path.resolve(__dirname, '..', CFS_PLUGINS_PATH);
+const pluginsPath = path.resolve(__dirname, '..', CFS_PROJECT_PLUGINS_PATH);
+const workspaceTemplatesPath = path.resolve(__dirname, '..', CFS_WORKSPACE_TEMPLATES_PATH);
 const dataModelsPath = path.resolve(__dirname, CFS_DATA_MODELS_PATH);
 
 const outputPath = __dirname;
@@ -53,10 +56,8 @@ describe('workspace:configure', () => {
   });
 
   describe('successful configuration generation for SC835', () => {
-    test
-      .stdout()
-      .stderr({print: true})
-      .command(
+    it('should create a cfsworkspace.json with projects for FX and CM33 cores', async () => {
+      const {stdout, stderr} = await runCommand(
         [
           'workspace:configure',
           '--soc=ADSP-SC835',
@@ -76,48 +77,40 @@ describe('workspace:configure', () => {
         {
           root: '..'
         }
-      )
-      .it(
-        'should create a cfsworkspace.json with projects for FX and CM33 cores',
-        (ctx) => {
-          expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-          expect(ctx.stdout).to.contain('generated successfully');
-          expect(
-            fs.existsSync(configFilePath),
-            'config file should exist'
-          ).to.be.true;
-
-          const workspace: CfsWorkspace = JSON.parse(
-            fs.readFileSync(configFilePath, 'utf8')
-          );
-
-          expect(workspace.Soc).to.equal('ADSP-SC835');
-          expect(workspace.Board).to.equal('ADSPSC835-EV-SOM');
-          expect(workspace.WorkspaceName).to.equal('test-workspace');
-          expect(workspace.Package).to.equal('BGA_ED');
-
-          expect(workspace.Projects).to.have.lengthOf(2);
-
-          const projects =
-            workspace.Projects as Partial<CfsProject>[];
-          expect(projects[0].Core).to.equal('CM33');
-          expect(projects[0].PluginId).to.equal(
-            'com.analog.project.sharcfx.mock.plugin'
-          );
-          expect(projects[0].IsPrimary).to.equal(false);
-
-          expect(projects[1].Core).to.equal('FX');
-          expect(projects[1].PluginId).to.equal(
-            'com.analog.project.sharcfx.mock.plugin'
-          );
-          expect(projects[1].IsPrimary).to.equal(true);
-        }
       );
 
-    test
-      .stdout()
-      .stderr({print: true})
-      .command(
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(stdout).to.contain('generated successfully');
+      expect(fs.existsSync(configFilePath), 'config file should exist').to
+        .be.true;
+
+      const workspace: CfsWorkspace = JSON.parse(
+        fs.readFileSync(configFilePath, 'utf8')
+      );
+
+      expect(workspace.Soc).to.equal('ADSP-SC835');
+      expect(workspace.Board).to.equal('ADSPSC835-EV-SOM');
+      expect(workspace.WorkspaceName).to.equal('test-workspace');
+      expect(workspace.Package).to.equal('BGA_ED');
+
+      expect(workspace.Projects).to.have.lengthOf(2);
+
+      const projects = workspace.Projects as Partial<CfsProject>[];
+      expect(projects[0].Core).to.equal('CM33');
+      expect(projects[0].PluginId).to.equal(
+        'com.analog.project.sharcfx.mock.plugin'
+      );
+      expect(projects[0].IsPrimary).to.equal(false);
+
+      expect(projects[1].Core).to.equal('FX');
+      expect(projects[1].PluginId).to.equal(
+        'com.analog.project.sharcfx.mock.plugin'
+      );
+      expect(projects[1].IsPrimary).to.equal(true);
+    });
+
+    it('should create a cfsworkspace.json with template version', async () => {
+      const {stderr} = await runCommand(
         [
           'workspace:configure',
           '--soc=ADSP-SC835',
@@ -136,32 +129,25 @@ describe('workspace:configure', () => {
         {
           root: '..'
         }
-      )
-      .it(
-        'should create a cfsworkspace.json with template version',
-        (ctx) => {
-          expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-          expect(
-            fs.existsSync(configFilePath),
-            'config file should exist'
-          ).to.be.true;
-
-          const workspace = JSON.parse(
-            fs.readFileSync(configFilePath, 'utf8')
-          ) as CfsWorkspace;
-
-          const project = (
-            workspace.Projects as Partial<CfsProject>[]
-          )[0];
-
-          expect(project.PluginVersion).to.equal('1.0.0');
-        }
       );
 
-    test
-      .stdout()
-      .stderr({print: true})
-      .command(
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(fs.existsSync(configFilePath), 'config file should exist').to
+        .be.true;
+
+      const workspace = JSON.parse(
+        fs.readFileSync(configFilePath, 'utf8')
+      ) as CfsWorkspace;
+
+      const project = (
+        workspace.Projects as Partial<CfsProject>[]
+      )[0];
+
+      expect(project.PluginVersion).to.equal('1.0.0');
+    });
+
+    it('should create a cfsworkspace.json with specified package', async () => {
+      const {stderr} = await runCommand(
         [
           'workspace:configure',
           '--soc=ADSP-SC835',
@@ -180,31 +166,62 @@ describe('workspace:configure', () => {
         {
           root: '..'
         }
-      )
-      .it(
-        'should create a cfsworkspace.json with specified package',
-        (ctx) => {
-          expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-          expect(
-            fs.existsSync(configFilePath),
-            'config file should exist'
-          ).to.be.true;
+      );
 
-          const workspace: CfsWorkspace = JSON.parse(
-            fs.readFileSync(configFilePath, 'utf8')
-          );
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(fs.existsSync(configFilePath), 'config file should exist').to
+        .be.true;
 
-          expect(workspace.Package).to.equal('BGA_ED');
+      const workspace: CfsWorkspace = JSON.parse(
+        fs.readFileSync(configFilePath, 'utf8')
+      );
+
+      expect(workspace.Package).to.equal('BGA_ED');
+    });
+
+    it('should create a cfsworkspace.json with --package and no --board', async () => {
+      const {stdout, stderr} = await runCommand(
+        [
+          'workspace:configure',
+          '--soc=ADSP-SC835',
+          '--package=BGA_ED',
+          '--core=CM33',
+          '--template-id=com.analog.project.sharcfx.mock.plugin',
+          '--name=no-board-workspace',
+          '--output=' + outputPath,
+          '-w=' + configFilePath,
+          '--search-path',
+          pluginsPath,
+          '--search-path',
+          dataModelsPath
+        ],
+        {
+          root: '..'
         }
       );
+
+      expect(stderr, 'stderr should be empty').to.be.empty;
+      expect(stdout).to.contain('generated successfully');
+      expect(fs.existsSync(configFilePath), 'config file should exist').to
+        .be.true;
+
+      const workspace: CfsWorkspace = JSON.parse(
+        fs.readFileSync(configFilePath, 'utf8')
+      );
+
+      expect(workspace.Package).to.equal('BGA_ED');
+      expect(workspace.Soc).to.equal('ADSP-SC835');
+      // When --board is omitted, Board is serialized as an empty string
+      // (not omitted), matching the IDE's workspace representation.
+      expect(workspace).to.have.property('Board');
+      expect(workspace.Board).to.equal('');
+    });
   });
 });
 
 describe('successful configuration generation for MAX78002 Zephyr and MSDK', () => {
-  test
-    .stdout()
-    .stderr({print: true})
-    .command(
+  it('should create a cfsworkspace.json with projects for CM4 and RV cores', async () => {
+    const {stdout, stderr} = await runCommand(
       [
         'workspace:configure',
         '--soc=MAX78002',
@@ -224,45 +241,39 @@ describe('successful configuration generation for MAX78002 Zephyr and MSDK', () 
       {
         root: '..'
       }
-    )
-    .it(
-      'should create a cfsworkspace.json with projects for CM4 and RV cores',
-      (ctx) => {
-        expect(ctx.stderr, 'stderr should be empty').to.be.empty;
-        expect(ctx.stdout).to.contain('generated successfully');
-        expect(
-          fs.existsSync(configFilePath),
-          'config file should exist'
-        ).to.be.true;
-        const workspace: CfsWorkspace = JSON.parse(
-          fs.readFileSync(configFilePath, 'utf8')
-        );
-        expect(workspace.Soc).to.equal('MAX78002');
-        expect(workspace.Board).to.equal('EvKit_V1');
-        expect(workspace.WorkspaceName).to.equal('test-workspace');
-        expect(workspace.Projects).to.have.lengthOf(2);
-
-        const projects = workspace.Projects as Partial<CfsProject>[];
-
-        expect(projects[0].IsPrimary).to.equal(true);
-        expect(projects[0].Core).to.equal('CM4');
-        expect(projects[0].PluginId).to.equal(
-          'com.analog.project.zephyr.mock.plugin'
-        );
-
-        expect(projects[1].IsPrimary).to.equal(false);
-        expect(projects[1].Core).to.equal('RV');
-        expect(projects[1].PluginId).to.equal(
-          'com.analog.project.msdk.mock.plugin'
-        );
-      }
     );
+
+    expect(stderr, 'stderr should be empty').to.be.empty;
+    expect(stdout).to.contain('generated successfully');
+    expect(fs.existsSync(configFilePath), 'config file should exist').to
+      .be.true;
+    const workspace: CfsWorkspace = JSON.parse(
+      fs.readFileSync(configFilePath, 'utf8')
+    );
+    expect(workspace.Soc).to.equal('MAX78002');
+    expect(workspace.Board).to.equal('EvKit_V1');
+    expect(workspace.WorkspaceName).to.equal('test-workspace');
+    expect(workspace.Projects).to.have.lengthOf(2);
+
+    const projects = workspace.Projects as Partial<CfsProject>[];
+
+    expect(projects[0].IsPrimary).to.equal(true);
+    expect(projects[0].Core).to.equal('CM4');
+    expect(projects[0].PluginId).to.equal(
+      'com.analog.project.zephyr.mock.plugin'
+    );
+
+    expect(projects[1].IsPrimary).to.equal(false);
+    expect(projects[1].Core).to.equal('RV');
+    expect(projects[1].PluginId).to.equal(
+      'com.analog.project.msdk.mock.plugin'
+    );
+  });
 });
 
 describe('error handling - flag validation', () => {
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when --template-id is missing after --core', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -279,17 +290,12 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        'Missing required flag template-id'
-      );
-    })
-    .it('shows error when --template-id is missing after --core');
+    );
+    expect(error?.message).to.contain('Missing required flag template-id');
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when core and template-id counts do not match', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -306,16 +312,13 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain('Mismatch between --core');
-      expect(error.message).to.contain('--template-id');
-    })
-    .it('shows error when core and template-id counts do not match');
+    );
+    expect(error?.message).to.contain('Mismatch between --core');
+    expect(error?.message).to.contain('--template-id');
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when no core/template-id pairs are specified', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -331,18 +334,16 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-       expect(error.message).to.contain('Missing required flag');
-       expect(
-         error.message.includes('core') || error.message.includes('template-id')
-       ).to.be.true;
-    })
-    .it('shows error when no core/template-id pairs are specified');
+    );
+    expect(error?.message).to.contain('Missing required flag');
+    expect(
+      error?.message.includes('core') ||
+        error?.message.includes('template-id')
+    ).to.be.true;
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when flags are in wrong order (template-id before core)', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -360,17 +361,12 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain('Invalid flag order');
-    })
-    .it(
-      'shows error when flags are in wrong order (template-id before core)'
     );
+    expect(error?.message).to.contain('Invalid flag order');
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when multiple --core flags appear without intermediate --template-id', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -389,19 +385,14 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        '--template-id must immediately follow --core'
-      );
-    })
-    .it(
-      'shows error when multiple --core flags appear without intermediate --template-id'
     );
+    expect(error?.message).to.contain(
+      '--template-id must immediately follow --core'
+    );
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when --template-version must immediately follow --template-id', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -419,22 +410,17 @@ describe('error handling - flag validation', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain('Invalid flag order');
-      expect(error.message).to.contain(
-        '--template-version must immediately follow --template-id'
-      );
-    })
-    .it(
-      'shows error when --template-version must immediately follow --template-id'
     );
+    expect(error?.message).to.contain('Invalid flag order');
+    expect(error?.message).to.contain(
+      '--template-version must immediately follow --template-id'
+    );
+  });
 });
 
 describe('error handling - missing required flags', () => {
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when --soc is missing', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         // Missing --soc
@@ -451,19 +437,16 @@ describe('error handling - missing required flags', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain('Missing required flag soc');
-    })
-    .it('shows error when --soc is missing');
+    );
+    expect(error?.message).to.contain('Missing required flag soc');
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when --board and --package are both missing', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
-        // Missing --board
+        // Missing --board and --package
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--name=no-board-workspace',
@@ -476,17 +459,14 @@ describe('error handling - missing required flags', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain('Missing required flag board');
-    })
-    .it('shows error when --board is missing');
+    );
+    expect(error?.message).to.contain('Package name is required');
+  });
 });
 
 describe('error handling - invalid values', () => {
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when invalid SoC is specified', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=INVALID-SOC',
@@ -503,20 +483,17 @@ describe('error handling - invalid values', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.satisfy(
-        (msg: string) =>
-          msg.includes('not found') ||
-          msg.includes('invalid') ||
-          msg.includes('INVALID-SOC')
-      );
-    })
-    .it('shows error when invalid SoC is specified');
+    );
+    expect(error?.message).to.satisfy(
+      (msg: string) =>
+        msg.includes('not found') ||
+        msg.includes('invalid') ||
+        msg.includes('INVALID-SOC')
+    );
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when invalid board is specified', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -533,19 +510,14 @@ describe('error handling - invalid values', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.satisfy((msg: string) =>
-        msg.includes(
-          'Please ensure that the board and SoC names are correct'
-        )
-      );
-    })
-    .it('shows error when invalid board is specified');
+    );
+    expect(error?.message).to.satisfy((msg: string) =>
+      msg.includes('Please ensure that the board and SoC names are correct')
+    );
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when invalid core is specified', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -562,20 +534,17 @@ describe('error handling - invalid values', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.satisfy(
-        (msg: string) =>
-          msg.includes('not found') ||
-          msg.includes('invalid') ||
-          msg.includes('core')
-      );
-    })
-    .it('shows error when invalid core is specified');
+    );
+    expect(error?.message).to.satisfy(
+      (msg: string) =>
+        msg.includes('not found') ||
+        msg.includes('invalid') ||
+        msg.includes('core')
+    );
+  });
 
-  test
-    .stderr({print: true})
-    .command(
+  it('shows error when invalid template-id is specified', async () => {
+    const {error} = await runCommand(
       [
         'workspace:configure',
         '--soc=ADSP-SC835',
@@ -592,14 +561,12 @@ describe('error handling - invalid values', () => {
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.satisfy(
-        (msg: string) =>
-          msg.includes('not found') || msg.includes('Template')
-      );
-    })
-    .it('shows error when invalid template-id is specified');
+    );
+    expect(error?.message).to.satisfy(
+      (msg: string) =>
+        msg.includes('not found') || msg.includes('Template')
+    );
+  });
 });
 
 describe('edge cases', () => {

@@ -106,10 +106,8 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
   afterEach(async () => {
     try {
       if (view) await view.switchBack();
-      await UIUtils.sleep(2000);
       if (workbench)
         await workbench.executeCommand("View: Revert and Close Editor");
-      await UIUtils.sleep(2000);
     } catch (error) {
       console.error("Error in after() hook:", error);
     }
@@ -122,7 +120,6 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
     //--- Given I run the workbench command "cfs create workspace"---
     await workbench.executeCommand("cfs create workspace");
     console.log("new workspace command executed");
-    await UIUtils.sleep(2000);
     //--- And dismiss all notifications---
 
     await UIUtils.dismissAllNotifications(workbench, browser);
@@ -387,7 +384,6 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
 
     //---  When I switch to the webview frame to see loaded cfsconfig file---
     await view.switchToFrame();
-    await UIUtils.sleep(200);
 
     //--- When I click on peripheral tab on cfsconfig file webview---
     await UIUtils.clickElement(view, peripheralTab);

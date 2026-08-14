@@ -114,11 +114,19 @@ export function isTemplateValid(
             (core) => core.toLowerCase() === flags.core?.toLowerCase()
           )
         : true) &&
-      supportedSoc.board.toLowerCase() ===
-        flags.board?.toLowerCase() &&
+      (flags.board
+        ? !supportedSoc.board ||
+          supportedSoc.board.toLowerCase() ===
+            flags.board.toLowerCase()
+        : true) &&
       (flags.package
         ? supportedSoc.package.toLowerCase() ===
-          flags.package?.toLowerCase()
+            flags.package?.toLowerCase() ||
+          // Backwards compatibility: MAX32675C plugins declaring
+          // TQFN match a requested package of LGA.
+          (supportedSoc.name.toLowerCase() === 'max32675c' &&
+            supportedSoc.package.toLowerCase() === 'tqfn' &&
+            flags.package.toLowerCase() === 'lga')
         : true)
   );
 }
@@ -165,9 +173,12 @@ export async function validatePaths(
 
   if (isNew) {
     // Validate workspace name (should not contain invalid characters)
-    if (flags.name && !/^[\w-]+$/.test(flags.name)) {
+    if (
+      flags.name &&
+      (!/^[\w.-]+$/.test(flags.name) || flags.name.includes('..'))
+    ) {
       errors.push(
-        `Workspace name ${flags.name} can only contain letters, numbers, underscores, and hyphens`
+        `Workspace name ${flags.name} can only contain letters, numbers, underscores, periods and hyphens, and must not contain ".."`
       );
     }
 

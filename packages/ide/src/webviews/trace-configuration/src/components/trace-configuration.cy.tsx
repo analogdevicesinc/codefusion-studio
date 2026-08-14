@@ -20,12 +20,18 @@ import {
 } from '../../../common/test-utils/messenger-mock';
 import {
 	traceConfigRequest,
+	traceConfigUpdateNotification,
 	traceRecordingStateRequest,
 	traceRecordingStateChangedNotification,
-	traceConfigChangedNotification
+	traceConfigChangedNotification,
+	traceUsbDevicesRequest
 } from '../../../../constants/messages/trace-messages';
 import {getAvailableAiModelsRequest} from '../../../../constants/messages/global-cfs-messages';
-import type {TraceConfiguration, TraceRecordingState} from '../../../../types/trace-types';
+import type {
+	TraceConfiguration,
+	TraceRecordingState,
+	UsbDevice
+} from '../../../../types/trace-types';
 import type {AIModel} from 'cfs-types';
 
 const l10n = await import('../../../../../l10n/bundle.l10n.en.json');
@@ -34,6 +40,8 @@ const l10n = await import('../../../../../l10n/bundle.l10n.en.json');
 let traceConfiguration: TraceConfiguration;
 let recordingState: TraceRecordingState;
 let availableAiModels: AIModel[];
+let availableUsbDevices: UsbDevice[];
+let updatedConfiguration: TraceConfiguration | undefined;
 
 describe('TraceConfiguration', () => {
 	before(() => {
@@ -46,15 +54,25 @@ describe('TraceConfiguration', () => {
 			},
 			[getAvailableAiModelsRequest.method]() {
 				return availableAiModels;
+			},
+			[traceUsbDevicesRequest.method]() {
+				return availableUsbDevices;
+			},
+			[traceConfigUpdateNotification.method](message: {
+				params: TraceConfiguration;
+			}) {
+				updatedConfiguration = message.params;
 			}
 		});
 	});
 
 	beforeEach(() => {
 		traceConfiguration = {
-			interfaceType: 'uart',
-			serialPort: '/dev/ttyUSB0',
-			baudRate: 115200,
+			source: {
+				type: 'uart',
+				serialPort: '/dev/ttyUSB0',
+				baudRate: 115200
+			},
 			outputDirectory: '/tmp/trace',
 			autoReset: false,
 			elfFile: '/path/to/firmware.elf',
@@ -63,7 +81,12 @@ describe('TraceConfiguration', () => {
 		};
 
 		recordingState = {isRecording: false};
-		availableAiModels = [{Name: 'model-a'}, {Name: 'model-b'}] as AIModel[];
+		availableAiModels = [
+			{Name: 'model-a'},
+			{Name: 'model-b'}
+		] as AIModel[];
+		availableUsbDevices = [];
+		updatedConfiguration = undefined;
 	});
 
 	it('should render all form fields', () => {
@@ -83,27 +106,103 @@ describe('TraceConfiguration', () => {
 	it('should update the form when a configuration changed notification is received', () => {
 		cy.mount(<App />);
 
-		cy.dataTest('baud-rate-control-input').should('have.value', '115200');
-		cy.dataTest('output-directory-control-input').should('have.value', '/tmp/trace');
+		cy.dataTest('baud-rate-control-input').should(
+			'have.value',
+			'115200'
+		);
+		cy.dataTest('output-directory-control-input').should(
+			'have.value',
+			'/tmp/trace'
+		);
 
 		cy.then(() => {
 			sendMockMessage(traceConfigChangedNotification.method, {
 				...traceConfiguration,
-				baudRate: 9600,
+				source: {
+					type: 'uart',
+					serialPort: '/dev/ttyUSB0',
+					baudRate: 9600
+				},
 				outputDirectory: '/tmp/new-trace'
 			} satisfies TraceConfiguration);
 		});
 
-		cy.dataTest('baud-rate-control-input').should('have.value', '9600');
-		cy.dataTest('output-directory-control-input').should('have.value', '/tmp/new-trace');
+		cy.dataTest('baud-rate-control-input').should(
+			'have.value',
+			'9600'
+		);
+		cy.dataTest('output-directory-control-input').should(
+			'have.value',
+			'/tmp/new-trace'
+		);
+	});
+
+	it('should hide the baud rate field and show a USB device dropdown when the USB interface is selected', () => {
+		cy.mount(<App />);
+
+		cy.dataTest('baud-rate-control-input').should('exist');
+		cy.get('#usb-device-controlDropdown').should('not.exist');
+
+		cy.get('#interface-type-controlDropdown').click();
+		cy.get('#interface-type-controlDropdown')
+			.find('> vscode-option')
+			.contains('USB')
+			.click();
+
+		cy.get('#interface-type-controlDropdown').should(
+			'have.value',
+			'usb'
+		);
+		cy.get('#serial-port-controlDropdown').should('not.exist');
+		cy.dataTest('baud-rate-control-input').should('not.exist');
+		cy.get('#usb-device-controlDropdown').should('exist');
+	});
+
+	it('should persist the selected USB device when chosen from the dropdown', () => {
+		availableUsbDevices = [
+			{
+				busNumber: 1,
+				deviceAddress: 5,
+				label: 'Analog Devices Trace Probe'
+			}
+		];
+
+		cy.mount(<App />);
+
+		cy.get('#interface-type-controlDropdown').click();
+		cy.get('#interface-type-controlDropdown')
+			.find('> vscode-option')
+			.contains('USB')
+			.click();
+
+		cy.get('#usb-device-controlDropdown').click();
+		cy.get('#usb-device-controlDropdown')
+			.find('> vscode-option')
+			.contains('Analog Devices Trace Probe')
+			.click();
+
+		cy.wrap(null).should(() => {
+			expect(updatedConfiguration?.source).to.deep.equal({
+				type: 'usb',
+				usbDevice: {busNumber: 1, deviceAddress: 5}
+			});
+		});
 	});
 
 	it('should reflect recording state when a recording state changed notification is received', () => {
 		cy.mount(<App />);
 
 		cy.dataTest('active-recording-banner').should('not.exist');
-		cy.dataTest('source-options-section').should('have.css', 'pointer-events', 'auto');
-		cy.dataTest('general-settings-section').should('have.css', 'pointer-events', 'auto');
+		cy.dataTest('source-options-section').should(
+			'have.css',
+			'pointer-events',
+			'auto'
+		);
+		cy.dataTest('general-settings-section').should(
+			'have.css',
+			'pointer-events',
+			'auto'
+		);
 
 		cy.then(() => {
 			sendMockMessage(traceRecordingStateChangedNotification.method, {
@@ -113,8 +212,15 @@ describe('TraceConfiguration', () => {
 		});
 
 		cy.dataTest('active-recording-banner').should('exist');
-		cy.dataTest('source-options-section').should('have.css', 'pointer-events', 'none');
-		cy.dataTest('general-settings-section').should('have.css', 'pointer-events', 'none');
+		cy.dataTest('source-options-section').should(
+			'have.css',
+			'pointer-events',
+			'none'
+		);
+		cy.dataTest('general-settings-section').should(
+			'have.css',
+			'pointer-events',
+			'none'
+		);
 	});
 });
-

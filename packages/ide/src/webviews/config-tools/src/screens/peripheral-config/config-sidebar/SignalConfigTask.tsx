@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,14 +60,13 @@ function SignalConfigTask() {
 						<ConfigUnavailable message='This signal is allocated to a core that is externally managed' />
 					) : (
 						<SignalConfig
-							isMissingPinAssignement={Boolean(
-								isPinAssignmentMissing
-							)}
+							isMissingPinAssignment={Boolean(isPinAssignmentMissing)}
 							signal={signal}
 						/>
 					)
 				}
 				variant={isPinAssignmentMissing ? 'noChevron' : 'navigate'}
+				isExternallyManaged={projectConfig?.ExternallyManaged}
 				onManagePinAssignmentsClick={() => {
 					dispatch(
 						setActiveSearchString({

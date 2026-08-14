@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 import {Button, Tooltip} from 'cfs-react-library';
 import {useMemo, useState} from 'react';
 
-import Accordion from '../../../../../common/components/accordion/Accordion';
-import PlusIcon from '../../../../../common/components/icons/PlusIcon';
-import SmallSettingsIcon from '../../../../../common/components/icons/SamllSettingsIcon';
-import SmallArrowRightIcon from '../../../../../common/components/icons/SmallArrowRightIcon';
-import ConflictIcon from '../../../../../common/icons/Conflict';
+import Accordion from '@common/components/accordion/Accordion';
+import PlusIcon from '@common/components/icons/PlusIcon';
+import SmallSettingsIcon from '@common/components/icons/SmallSettingsIcon';
+import SmallArrowRightIcon from '@common/components/icons/SmallArrowRightIcon';
+import ConflictIcon from '@common/icons/Conflict';
 import {
 	type DFGStreamUI,
 	setEditingStream,

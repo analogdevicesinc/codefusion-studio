@@ -7,7 +7,7 @@
   "Package": "TQFN",
   "Pins": [],
   "ClockNodes": [],
-  "BoardName": "AD-APARD32690-SL",
+  "BoardName": "EvKit_V1",
   "Projects": [
     {
       "CoreId": "CM4",

@@ -32,12 +32,7 @@
  */
 
 import { expect } from "chai";
-import {
-  EditorView,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
@@ -89,7 +84,6 @@ describe("DFG Tests", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let editor: EditorView;
   const source: string = "ESS";
   const destination: string = "ESS";
   const sourceBufferSize: number = 64;
@@ -124,8 +118,7 @@ describe("DFG Tests", () => {
 
   before(async () => {
     browser = VSBrowser.instance;
-    editor = new EditorView();
-    await editor.closeAllEditors();
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   afterEach(async function () {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,16 +44,23 @@ export class EventTreeDataProvider
   readonly onDidChangeTreeData: vscode.Event<EventNode | void> =
     this._onDidChangeTreeData.event;
 
-  private traceManager: TraceManager;
+  private readonly traceManager: TraceManager;
+  private readonly checkboxStateCache = new Map<
+    string,
+    vscode.TreeItemCheckboxState | undefined
+  >();
 
   constructor(traceManager: TraceManager, debugManager: CfsDebugManager) {
     this.traceManager = traceManager;
 
     vscode.debug.onDidChangeActiveDebugSession(async () => {
+      this.checkboxStateCache.clear();
       this._onDidChangeTreeData.fire();
     });
 
     debugManager.onStartSession(async (session) => {
+      this.checkboxStateCache.clear();
+
       const disposables: vscode.Disposable[] = [];
       disposables.push(
         session.onHalt(() => {
@@ -68,6 +75,7 @@ export class EventTreeDataProvider
       disposables.push(
         // No need to fire, already handled by onDidChangeActiveDebugSession
         session.onStop(() => {
+          this.checkboxStateCache.clear();
           disposables.forEach((d) => d.dispose());
         }),
       );
@@ -84,10 +92,12 @@ export class EventTreeDataProvider
     } else {
       try {
         if (await this.traceManager.isEventEnabled(`*.${element.path}`)) {
+          const checkboxState = vscode.TreeItemCheckboxState.Checked;
+          this.checkboxStateCache.set(element.path, checkboxState);
           return {
             label: element.name,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
-            checkboxState: vscode.TreeItemCheckboxState.Checked,
+            checkboxState,
           };
         } else {
           // TODO: add mechanism to report why it cannot be enabled,
@@ -97,13 +107,14 @@ export class EventTreeDataProvider
           const canBeEnabled = await this.traceManager.canEventBeEnabled(
             `*.${element.path}`,
           );
-
+          const checkboxState = canBeEnabled
+            ? vscode.TreeItemCheckboxState.Unchecked
+            : undefined;
+          this.checkboxStateCache.set(element.path, checkboxState);
           return {
             label: element.name,
             collapsibleState: vscode.TreeItemCollapsibleState.None,
-            checkboxState: canBeEnabled
-              ? vscode.TreeItemCheckboxState.Unchecked
-              : undefined,
+            checkboxState,
             isDisabled: !canBeEnabled,
             tooltip: canBeEnabled
               ? undefined
@@ -114,9 +125,9 @@ export class EventTreeDataProvider
         return {
           label: element.name,
           collapsibleState: vscode.TreeItemCollapsibleState.None,
-          checkboxState: undefined,
+          checkboxState: this.checkboxStateCache.get(element.path),
           isDisabled: true,
-          tooltip: `Cannot be enabled: ${(error as Error).message}`,
+          tooltip: `Could not determine current state due to error: ${(error as Error).message}`,
         };
       }
     }
@@ -138,5 +149,9 @@ export class EventTreeDataProvider
         isGroup: source.isGroup,
       };
     });
+  }
+
+  public refresh(node?: EventNode): void {
+    this._onDidChangeTreeData.fire(node);
   }
 }

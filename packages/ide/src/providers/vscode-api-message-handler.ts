@@ -15,11 +15,14 @@
 
 import * as vscode from "vscode";
 import { Messenger } from "vscode-messenger";
-import { selectFileRequest } from "../constants/messages/vscode-api-messages";
+import {
+  selectFileRequest,
+  getPreferenceRequest,
+} from "../constants/messages/vscode-api-messages";
 import Path from "node:path";
 import { getWorkspaceRoot } from "../utils/utils";
 
-export function regsiterVSCodeApiMessageHandlers(messenger: Messenger) {
+export function registerVSCodeApiMessageHandlers(messenger: Messenger) {
   messenger.onRequest(
     selectFileRequest,
     async ({ title, filters, selectionTarget, relativeToWorkspaceRoot }) => {
@@ -52,9 +55,16 @@ export function regsiterVSCodeApiMessageHandlers(messenger: Messenger) {
         }
       } catch (error) {
         throw new Error(
-          `File selection failed: ${error instanceof Error ? error.message : String(error)}`,
+          `File selection failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
         );
       }
     },
   );
+
+  messenger.onRequest(getPreferenceRequest, async ({ id }) => {
+    const config = vscode.workspace.getConfiguration("cfs");
+    return config.get(id);
+  });
 }

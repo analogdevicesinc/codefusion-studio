@@ -1,7 +1,7 @@
 ---
 description: Package Manager in CodeFusion Studio
 author: Analog Devices
-date: 2025-12-05
+date: 2026-07-20
 ---
 
 # Package Manager
@@ -10,19 +10,17 @@ You can use the Package Manager to install updates, add new SDKs, or manage plug
 
 Each component is delivered as a package — a versioned unit that can be downloaded on demand from a remote server. This means you don’t need to rerun the full installer when updates are released. Instead, you can keep your environment up to date by installing only the packages you need, when you need them.
 
-To get started with packages in CodeFusion Studio, follow these steps:
+To get started with packages in CodeFusion Studio:
 
-!!! note
-    If you use restricted packages first [log in with your myAnalog account](auth.md) to enable access.
+1. Install and remove packages from the [Package Manager UI](manage-packages-ide.md).
+2. View the [available packages](available-packages.md) you can install.
 
-1. Install and remove packages using:
-      - [VS Code Command Palette](manage-packages-command-palette.md)
-      - [command line (`cfsutil`)](manage-packages-cfsutil.md)
-2. See the [available packages](available-packages.md) you can install.
+## More options
 
-## Additional reference
+If you prefer not to use the Package Manager UI, or need to resolve an issue, the following articles support the package workflow:
 
-The following articles support the package workflow and can help resolve issues:
-
+- [Manage packages from the Command Palette](manage-packages-command-palette.md)
+- [Manage packages from the command line (`cfsutil`)](manage-packages-cfsutil.md)
 - [Install required packages](install-required.md)
+- [Log in to access restricted packages](auth.md)
 - [Troubleshoot package issues](troubleshooting-package-manager.md)

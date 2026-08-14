@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ export function extractPositionFromPath(
 ): [number, number] | undefined {
 	// Use a regular expression to match the position pattern
 	const regex = /:(\d+)(?::(\d+))?$/;
-	// eslint-disable-next-line @typescript-eslint/prefer-regexp-exec
 	const match = path.match(regex);
 
 	if (match) {

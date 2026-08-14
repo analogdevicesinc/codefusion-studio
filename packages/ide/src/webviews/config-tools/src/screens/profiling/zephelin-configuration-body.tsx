@@ -42,8 +42,10 @@ import {
 	ZephelinConfigTextInput
 } from './zephelin-config-controls';
 import {type Zephelin, type ZephelinInterface} from 'cfs-types';
+import {type NavigationItem} from '@common/types/navigation';
 import {navigationItems} from '@common/constants/navigation';
 import {useAIModels} from '../../state/slices/ai-tools/aiModel.selector';
+import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
 
 type Props = {
 	readonly projectId: string;
@@ -74,6 +76,15 @@ export default function ZephelinConfigurationBody({
 			: undefined;
 
 	const globalDisabled = zephelin.Enabled ? false : 'global';
+
+	const screenLink = (screen: NavigationItem, label: string) => (
+		<a
+			className={styles.link}
+			onClick={() => dispatch(setActiveScreen(screen))}
+		>
+			{label}
+		</a>
+	);
 
 	return (
 		<div
@@ -217,23 +228,15 @@ export default function ZephelinConfigurationBody({
 						label={l10n.interface['interface-type']}
 						dataTest='profiling-select-trace-interface-field'
 						controlId={`select-trace-interface-${coreId}`}
-						options={[
-							...(zephelin.Interface
-								? []
-								: [
-										{
-											label: 'Select...',
-											value: ''
-										}
-									]),
-							...getInterfaces().map(iface => ({
-								label: iface,
-								value: iface,
-								// USB is currently disabled due to missing compatibility. Will be re-enabled in the future once compatible
-								disabled: iface === 'USB'
-							}))
-						]}
-						value={zephelin.Interface ?? ''}
+						options={getInterfaces().map(iface => ({
+							label: iface,
+							value: iface
+						}))}
+						noValueOption={{
+							label: l10n.interface['interface-type-placeholder'],
+							value: ''
+						}}
+						value={zephelin.Interface?.Type ?? ''}
 						isDisabled={globalDisabled}
 						onChange={value => {
 							dispatch(
@@ -245,55 +248,71 @@ export default function ZephelinConfigurationBody({
 						}}
 					/>
 
-					{zephelin.Interface === 'UART' && (
-						<ZephelinConfigDropdown
-							label={l10n.interface['interface-port']}
-							dataTest='profiling-trace-interface-field'
-							description={
-								l10n.interface['interface-port-description']
-							}
-							reference={{
-								label: `${l10n.interface['peripheral-allocation']}.`,
-								target: navigationItems.peripherals
-							}}
-							controlId={`trace-interface:${coreId}`}
-							options={Object.entries(getUARTPorts())
-								.filter(([_, peripheral]) =>
-									peripheral.Cores.includes(coreId)
-								)
-								.map(([port, _]) => ({
-									label: port,
-									value: port
-								}))}
-							placeholder='Select Port'
-							value={zephelin.Port ?? ''}
-							isDisabled={globalDisabled}
-							onChange={value => {
-								dispatch(
-									setUARTPort({
-										projectId,
-										port: value
-									})
-								);
-							}}
-						/>
+					{zephelin.Interface?.Type === 'USB' && (
+						<p>
+							Assign the USB peripheral to the application&apos;s core
+							in {screenLink('peripherals', 'Peripheral Allocation')}{' '}
+							and configure its clock in{' '}
+							{screenLink('clockconfig', 'Clock Configuration')}
+						</p>
 					)}
 
-					{zephelin.Interface === 'UART' && (
-						<ZephelinConfigTextInput
-							isDisabled={globalDisabled || 'locked'}
-							label={l10n.interface['baud-rate']}
-							reference={{
-								label: `${l10n.interface['peripheral-allocation']}.`,
-								target: navigationItems.peripherals
-							}}
-							dataTest='profiling-baud-rate-field'
-							description={l10n.interface['baud-rate-description']}
-							textValue={
-								baudRate ? baudRate.toString(10) : 'Undefined'
-							}
-							error={baudRateError}
-						/>
+					{zephelin.Interface?.Type === 'UART' && (
+						<>
+							<ZephelinConfigDropdown
+								label={l10n.interface['interface-port']}
+								dataTest='profiling-trace-interface-field'
+								description={
+									l10n.interface['interface-port-description']
+								}
+								reference={{
+									label: `${l10n.interface['peripheral-allocation']}.`,
+									target: navigationItems.peripherals
+								}}
+								controlId={`trace-interface:${coreId}`}
+								options={Object.entries(getUARTPorts())
+									.filter(([_, peripheral]) =>
+										peripheral.Cores.includes(coreId)
+									)
+									.map(([port, _]) => ({
+										label: port,
+										value: port
+									}))}
+								noValueOption={{
+									label: l10n.interface['interface-port-placeholder'],
+									value: ''
+								}}
+								value={
+									zephelin.Interface?.Type === 'UART'
+										? zephelin.Interface.Port
+										: ''
+								}
+								isDisabled={globalDisabled}
+								onChange={value => {
+									dispatch(
+										setUARTPort({
+											projectId,
+											port: value
+										})
+									);
+								}}
+							/>
+
+							<ZephelinConfigTextInput
+								isDisabled={globalDisabled || 'locked'}
+								label={l10n.interface['baud-rate']}
+								reference={{
+									label: `${l10n.interface['peripheral-allocation']}.`,
+									target: navigationItems.peripherals
+								}}
+								dataTest='profiling-baud-rate-field'
+								description={l10n.interface['baud-rate-description']}
+								textValue={
+									baudRate ? baudRate.toString(10) : 'Undefined'
+								}
+								error={baudRateError}
+							/>
+						</>
 					)}
 				</div>
 			</div>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 @use '#colors' as colors;
 @use '#layout' as layout;
+@use '#fonts' as fonts;
 @use 'sass:color';
 
 .modal {
@@ -47,6 +48,12 @@
 	align-items: center;
 	box-sizing: border-box;
 	padding-bottom: 12px;
+}
+
+.modalTitle {
+	@include fonts.heading-h2;
+	color: colors.$notifications-foreground;
+	flex-grow: 1;
 }
 
 .modalBody {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,10 @@ import type {
 	TControlTypes,
 	TNumericBase
 } from '@common/types/errorTypes';
+import {
+	getLocalization,
+	localizeMessage
+} from '@common/utils/localization';
 
 let socControls: Controls = {};
 
@@ -90,6 +94,11 @@ export function formatControlsForDynamicForm(
 ): TFormControl[] {
 	const formattedControls: TFormControl[] = [];
 
+	const l10nOptionGroupNotSupportedByPlugin = localizeMessage(
+		getLocalization('cfgtools'),
+		'common.optionGroupNotSupportedByPlugin'
+	);
+
 	for (const control of controls) {
 		if (control.Condition) {
 			const shouldMount = evaluateCondition(
@@ -126,7 +135,11 @@ export function formatControlsForDynamicForm(
 							)
 							.map(value => ({
 								label: value.Description,
-								value: value.Id
+								value: value.Id,
+								disabled: value.Inactive,
+								optionGroup: value.Inactive
+									? l10nOptionGroupNotSupportedByPlugin
+									: undefined
 							}))
 					}
 				: {}),

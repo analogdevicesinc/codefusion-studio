@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.759",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-17T10:40:51.828238Z",
+  "Version": "1.0.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T17:42:54.824843Z",
   "Name": "MAX32672",
   "Description": "High-Reliability, Tiny, Ultra-Low-Power Arm Cortex-M4F Microcontroller with 12-Bit, 1Msps ADC",
   "Endianness": "Little",
@@ -2960,12 +2960,6 @@
         "CM4"
       ],
       "ClockNode": "AES/CTB/TRNG"
-    },
-    {
-      "Name": "CM4",
-      "Description": "ARM Cortex-M4",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "CM4 SysTick",
@@ -19726,6 +19720,10 @@
         ]
       }
     ],
+    "USR_AESKEYS": [],
+    "GCR": [],
+    "FCR": [],
+    "CTB": [],
     "WDT0": [
       {
         "Id": "WDT_RST_EN",
@@ -20488,6 +20486,8 @@
         ]
       }
     ],
+    "GPIO0": [],
+    "GPIO1": [],
     "TMR0": [
       {
         "Id": "CONFIGURATION",
@@ -24092,6 +24092,7 @@
         "Type": "boolean"
       }
     ],
+    "DMA": [],
     "FLC0": [
       {
         "Id": "LOW_VOLTAGE",
@@ -28660,6 +28661,8 @@
         "Type": "boolean"
       }
     ],
+    "PWRSEQ": [],
+    "MCR": [],
     "LPTMR0": [
       {
         "Id": "CONFIGURATION",
@@ -29488,7 +29491,9 @@
         "Description": "Enable Wake-Up for RX FIFO Threshold Met",
         "Type": "boolean"
       }
-    ]
+    ],
+    "SYS_AESKEYS": [],
+    "AES": []
   },
   "ClockNodes": [
     {

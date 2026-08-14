@@ -163,7 +163,7 @@ This allows you to step through the CLI logic and inspect how the command execut
 **Development test scripts** (no coverage, no auto-cleanup, accepts mocha flags):
 
 ```bash
-yarn ws:cli test:dev                    # All command tests
+yarn ws:cli test:dev                       # All command tests
 
 # Development scripts support mocha flags:
 yarn ws:cli test:dev --grep "socs info"   # Run specific test
@@ -206,3 +206,67 @@ The test suite uses several environment variables to configure the test environm
 - **`PRESERVE_TEST_FIXTURES`** – When set to `1`, skips automatic cleanup of test artifacts after test runs
 
 These are configured in `test/setup.js` and the test scripts in `package.json`.
+
+### Running CLI `pkg` tests locally
+
+CLI `pkg` tests (under `test/commands/pkg/`) are integration tests and are skipped by default. They require a local Conan server when enabled.
+
+For detailed Conan server setup instructions, see [cfs-package-manager README](../cfs-package-manager/README.md).
+
+Setup flow:
+
+1. Start the local Conan server in a separate terminal:
+
+```bash
+conan_server -d packages/cfs-package-manager/test/.conan_server
+```
+
+1. Enable the pkg tests for the current shell:
+
+```bash
+export CFS_RUN_PKG_TESTS=1
+```
+
+1. Run tests using the commands under [Running tests](#running-tests) (for example, `yarn ws:cli test:dev --grep "pkg"`).
+
+1. Optionally clean generated fixtures after the run:
+
+```bash
+yarn ws:cli clean-fixtures
+```
+
+Pkg tests remain skipped unless `CFS_RUN_PKG_TESTS=1`.
+
+- Linux/macOS (bash/zsh):
+
+```bash
+CFS_RUN_PKG_TESTS=1 yarn ws:cli test:dev --grep "pkg"
+```
+
+- Windows PowerShell:
+
+```powershell
+$env:CFS_RUN_PKG_TESTS = "1"
+yarn ws:cli test:dev --grep "pkg"
+```
+
+- Windows Command Prompt:
+
+```cmd
+set CFS_RUN_PKG_TESTS=1 && yarn ws:cli test:dev --grep "pkg"
+```
+
+### Troubleshooting pkg tests
+
+If the first `pkg list` test finishes close to 60 seconds, the next test can fail due to the default mocha timeout. Run the same tests with a larger timeout:
+
+```bash
+CFS_RUN_PKG_TESTS=1 yarn ws:cli test:dev --grep "pkg" --timeout 180000
+```
+
+If you are running in PowerShell, use:
+
+```powershell
+$env:CFS_RUN_PKG_TESTS = "1"
+yarn ws:cli test:dev --grep "pkg" --timeout 180000
+```

@@ -398,24 +398,27 @@ export class ActionsViewProvider
       });
 
     // Add Ozone debug action if applicable
-    if (this.activeContext !== WORKSPACE_CONTEXT) {
-      const workspaceFolder = vscode.workspace.workspaceFolders?.find(
-        (folder) => folder.name === this.activeContext,
-      );
-      if (workspaceFolder) {
-        const jdebugFile =
-          await OzoneDebugConfiguration.getJdebugFileToLaunch(workspaceFolder);
-        if (jdebugFile) {
-          actions.push(
-            new ViewContainerItem({
-              icon: new vscode.ThemeIcon(DEBUG_ALT),
-              label: OZONE_DEBUG_ACTION,
-              commandId: LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
-              commandArgs: [],
-              collapsible: vscode.TreeItemCollapsibleState.None,
-            }),
-          );
-        }
+    const foldersToCheck =
+      this.activeContext === WORKSPACE_CONTEXT
+        ? (vscode.workspace.workspaceFolders ?? [])
+        : (vscode.workspace.workspaceFolders?.filter(
+            (folder) => folder.name === this.activeContext,
+          ) ?? []);
+
+    for (const folder of foldersToCheck) {
+      const jdebugFile =
+        await OzoneDebugConfiguration.getJdebugFileToLaunch(folder);
+      if (jdebugFile) {
+        actions.push(
+          new ViewContainerItem({
+            icon: new vscode.ThemeIcon(DEBUG_ALT),
+            label: OZONE_DEBUG_ACTION,
+            commandId: LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
+            commandArgs: [],
+            collapsible: vscode.TreeItemCollapsibleState.None,
+          }),
+        );
+        break;
       }
     }
 

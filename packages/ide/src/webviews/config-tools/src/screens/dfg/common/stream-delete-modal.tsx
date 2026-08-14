@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 import {Modal} from '../../../../../common/components/modal/Modal';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {useMemo} from 'react';
-import {getGasketDictionary} from '../../../utils/dfg';
-import {useGasketOutputStreamMap} from '../../../state/slices/gaskets/gasket.selector';
+import {useStreams} from '../../../state/slices/gaskets/gasket.selector';
 import {Button} from 'cfs-react-library';
 import {useAppDispatch} from '../../../state/store';
 import {
 	type DFGStreamUI,
 	removeStream
 } from '../../../state/slices/gaskets/gasket.reducer';
+import {hasTiedStreamDependency} from '../../../utils/dfg-stream-validator';
 import styles from './stream-delete-modal.module.scss';
 
 type StreamDeleteModalProps = {
@@ -38,25 +38,17 @@ export function StreamDeleteModal({
 	onClose
 }: StreamDeleteModalProps) {
 	const i10n = useLocaleContext();
-	const streams = useGasketOutputStreamMap();
+	const streams = useStreams();
 	const dispatch = useAppDispatch();
 
 	const hasTiedStream = useMemo(() => {
 		if (!stream) return false;
-		const gaskets = getGasketDictionary();
 
-		for (const destination of stream.Destinations) {
-			if (
-				gaskets[destination.Gasket]?.InputAndOutputBuffersTied &&
-				streams[destination.Gasket]?.some(
-					s => s.Source.Index === destination.Index
-				)
-			) {
-				return true;
-			}
-		}
+		const persistedStream = streams.find(s => s.Uuid === stream.Uuid);
 
-		return false;
+		if (!persistedStream) return false;
+
+		return hasTiedStreamDependency(persistedStream, streams);
 	}, [stream, streams]);
 
 	return (

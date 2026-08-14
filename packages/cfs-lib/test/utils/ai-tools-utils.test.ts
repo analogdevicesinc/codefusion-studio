@@ -167,5 +167,85 @@ describe("ai-tools-utils", function () {
 				);
 			}
 		});
+
+		it("GIVEN valid integer extension value WHEN getValidExtensions THEN include parsed integer", function () {
+			const integerBackendProperties: SocControl[] = [
+				{
+					Id: "SomeInteger",
+					Type: "integer",
+					Description: "SomeInteger",
+					Default: 5,
+					MinimumValue: 1,
+					MaximumValue: 10
+				}
+			];
+
+			try {
+				const result = getValidExtensions(
+					["someinteger=7"],
+					integerBackendProperties
+				);
+				expect(result).to.deep.equal({
+					SomeInteger: 7
+				});
+			} finally {
+				/* empty */
+			}
+		});
+
+		it("GIVEN invalid integer extension type WHEN getValidExtensions THEN error", function () {
+			const integerBackendProperties: SocControl[] = [
+				{
+					Id: "SomeInteger",
+					Type: "integer",
+					Description: "SomeInteger",
+					MinimumValue: 1,
+					MaximumValue: 10
+				}
+			];
+			const extensions: string[] = ["someinteger=abc"];
+
+			try {
+				getValidExtensions(extensions, integerBackendProperties);
+				expect.fail();
+			} catch (error) {
+				expect((error as Error).message).to.equal(
+					"Invalid value for 'someinteger', expected an integer."
+				);
+			}
+
+			const extensions2: string[] = ["someinteger=7.5"];
+
+			try {
+				getValidExtensions(extensions2, integerBackendProperties);
+				expect.fail();
+			} catch (error) {
+				expect((error as Error).message).to.equal(
+					"Invalid value for 'someinteger', expected an integer."
+				);
+			}
+		});
+
+		it("GIVEN out-of-range integer extension value WHEN getValidExtensions THEN error", function () {
+			const integerBackendProperties: SocControl[] = [
+				{
+					Id: "SomeInteger",
+					Type: "integer",
+					Description: "SomeInteger",
+					MinimumValue: 1,
+					MaximumValue: 10
+				}
+			];
+			const extensions: string[] = ["someinteger=42"];
+
+			try {
+				getValidExtensions(extensions, integerBackendProperties);
+				expect.fail();
+			} catch (error) {
+				expect((error as Error).message).to.equal(
+					"Invalid value for 'someinteger', expected a value between 1 and 10."
+				);
+			}
+		});
 	});
 });

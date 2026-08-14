@@ -49,6 +49,9 @@ export const DATA_TEST_E = 'data-test-dz-end';
 export const TIMELINE_CONTAINER_ID = 'timeline-container';
 export const DIAGRAM_CONTAINER_ID = 'timeline-diagram-container';
 export const DATA_ROW_EMPHASIS_ATTR = 'data-row-emphasized';
+export const TIMELINE_DRAG_ACTIVE = 'timeline-drag-active';
+export const TIMELINE_MEASURE_ACTIVE = 'timeline-measure-active';
+export const TIMELINE_DRAG_OUTSIDE = 'timeline-drag-outside';
 
 export const UNITS_ID: Record<'S' | 'MS' | 'US' | 'NS', Unit> = {
 	S: 's',
@@ -90,3 +93,4 @@ export const HEADER_LABEL_TOP =
 	(HEADER_HEIGHT - TIMESTAMP_LABEL_HEIGHT) / 2;
 export const HORIZONTAL_LABEL_MARGIN = 6;
 export const HORIZONTAL_LINE_HEIGHT = 2;
+export const LABEL_GAP = 2;

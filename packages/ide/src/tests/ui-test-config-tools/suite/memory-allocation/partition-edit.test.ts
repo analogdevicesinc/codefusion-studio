@@ -64,17 +64,29 @@ import {
   WebView,
   Workbench,
 } from "vscode-extension-tester";
-import { Locatorspaths } from "../../pageObjectsConfig/memory-page-objects";
+import { Key } from "selenium-webdriver";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import * as fs from "node:fs";
 import {
   memoryTypeDropdown,
   memoryTypeSelector,
+  partitionNameTextBox,
+  assignedCoresDropdown,
+  assignedCoresSelector,
+  sizeStepper,
+  createConfiguredPartition,
+  pluginOptionLabel,
+  physicalStartAddress,
 } from "../../page-objects/memory-allocation-section/create-partition-sidebar";
+import {
+  partitionDetailsChevron,
+  getDeletePartitionButton,
+  getEditPartitionButton,
+} from "../../page-objects/memory-allocation-section/memory-allocation-screen";
+import { memoryAllocationTab } from "../../page-objects/main-menu";
 
 describe("CFSIO-6338 Partition editing", () => {
-  const locatorspath = new Locatorspaths();
   const configPath = getConfigPathForFile(
     "max32690-wlp-dual-core-blinky.cfsconfig",
   );
@@ -104,62 +116,61 @@ describe("CFSIO-6338 Partition editing", () => {
 
   it("Partition editing", async () => {
     await browser.openResources(configPath);
-    console.log("Opened the cfsconfig file");
 
     await UIUtils.dismissAllNotifications(workbench, browser);
-    await UIUtils.sleep(5000);
-    console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
-    console.log("max32690-wlp-dual-core-blinky UI loaded");
+    await view.wait(5000);
     await view.switchToFrame();
 
-    await UIUtils.clickElement(view, locatorspath.memoryMenu);
-    await UIUtils.clickElement(view, locatorspath.partitionDetailsChevron(2));
-    await UIUtils.clickElement(view, locatorspath.getDeletePartitionButton(1));
-    await UIUtils.clickElement(view, locatorspath.partitionDetailsChevron(1));
-    await UIUtils.clickElement(view, locatorspath.getEditPartitionButton(2));
+    await UIUtils.clickElement(view, memoryAllocationTab);
+    await UIUtils.clickElement(view, await partitionDetailsChevron(2));
+    await UIUtils.clickElement(view, await getDeletePartitionButton(1));
+    await UIUtils.clickElement(view, await partitionDetailsChevron(1));
+    await UIUtils.clickElement(view, await getEditPartitionButton(2));
     await UIUtils.selectOptionFromDropdown(
       view,
       memoryTypeDropdown,
       await memoryTypeSelector("Flash"),
     );
-    await UIUtils.clickElement(view, locatorspath.partitionNameTextBox);
-    const locators = new Locatorspaths();
-    await locators.setPartitionName(driver, "testEditPartition");
+    await UIUtils.clickElement(view, partitionNameTextBox);
+
+    // Clear and set partition name
+    const input = await driver.findElement(partitionNameTextBox);
+    const modifierKey =
+      process.platform === "darwin" ? Key.COMMAND : Key.CONTROL;
+    await input.sendKeys(Key.chord(modifierKey, "a"));
+    await input.sendKeys(Key.DELETE);
+    await input.sendKeys("testEditPartition");
 
     await UIUtils.selectOptionFromDropdown(
       view,
-      locatorspath.assignedCoresDropdown,
-      locatorspath.assignedCoresSelector("multiselect-option-CM4"),
+      assignedCoresDropdown,
+      await assignedCoresSelector("multiselect-option-CM4"),
     );
 
     await UIUtils.sendKeysToElements(
       view,
-      locatorspath.chosenControlInput,
+      await pluginOptionLabel("CHOSEN"),
       "editpartition",
     );
     await UIUtils.sendKeysToElements(
       view,
-      locatorspath.labelControlInput,
+      await pluginOptionLabel("LABEL"),
       "editpartition2",
     );
 
-    await UIUtils.clickElement(view, locatorspath.startAddress);
-    await UIUtils.sendKeysToElements(
-      view,
-      locatorspath.startAddress,
-      "10300000",
-    );
+    await UIUtils.clickElement(view, physicalStartAddress);
+    await UIUtils.sendKeysToElements(view, physicalStartAddress, "10300000");
 
-    await UIUtils.clickElement(view, locatorspath.sizeStepper);
-    await UIUtils.sendKeysToElements(view, locatorspath.sizeStepper, "32");
-    await UIUtils.clickElement(view, locatorspath.createConfiguredPartition);
+    await UIUtils.clickElement(view, sizeStepper);
+    await UIUtils.sendKeysToElements(view, sizeStepper, "32");
+    await UIUtils.clickElement(view, createConfiguredPartition);
 
     try {
       // save document
       await view.switchBack();
       await workbench.executeCommand("File: Save without formatting");
-      await UIUtils.sleep(1000);
+      await UIUtils.sleep(500);
       console.log("Saved the file");
     } catch {
       console.error("Error saving the file");

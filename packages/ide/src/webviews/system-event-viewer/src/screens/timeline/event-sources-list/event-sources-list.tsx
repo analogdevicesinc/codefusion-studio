@@ -49,12 +49,11 @@ import styles from './event-sources-list.module.scss';
 type EventSourcesProps = Readonly<{
 	diagramContainerRef: React.RefObject<HTMLDivElement>;
 	events: SevEventSource[];
-	onDragEndSignal: () => void;
 	onReorder: (orderedList: SevEventSource[]) => void;
 	onRowStateChange: (update: RowStateUpdate) => void;
 	onBeginDragOverlay: (
 		evSource: SevEventSource,
-		e: React.DragEvent
+		e: PointerEvent
 	) => void;
 }>;
 
@@ -66,7 +65,6 @@ const EventSourcesList = forwardRef<
 		{
 			diagramContainerRef: containerRef,
 			events,
-			onDragEndSignal,
 			onReorder,
 			onRowStateChange,
 			onBeginDragOverlay
@@ -125,10 +123,13 @@ const EventSourcesList = forwardRef<
 			[clearDragItems, commitDraggedReorder]
 		);
 
-		const handleDragStart = useCallback(
-			(index: number, e: React.DragEvent) => {
+		const handlePointerDown = useCallback(
+			(index: number, e: React.PointerEvent<HTMLSpanElement>) => {
+				// Only respond to left click
+				if (e.button !== 0) return;
+
 				currentDragIndexRef.current = index;
-				onBeginDragOverlay(localEvents[index], e);
+				onBeginDragOverlay(localEvents[index], e.nativeEvent);
 
 				dragStartRafRef.current = requestAnimationFrame(() => {
 					dragStartRafRef.current = undefined;
@@ -138,7 +139,7 @@ const EventSourcesList = forwardRef<
 			[onBeginDragOverlay, localEvents]
 		);
 
-		const handleDragEnter = useCallback(
+		const handlePointerEnterRow = useCallback(
 			(index: number) => {
 				const from = currentDragIndexRef.current;
 
@@ -151,14 +152,6 @@ const EventSourcesList = forwardRef<
 			},
 			[reorder]
 		);
-
-		const handleDragOver = useCallback((e: React.DragEvent) => {
-			e.preventDefault();
-		}, []);
-
-		const handleDragEnd = useCallback(() => {
-			onDragEndSignal();
-		}, [onDragEndSignal]);
 
 		const handleOptionSelect = useCallback(
 			(action: MenuAction, index: number) => {
@@ -204,10 +197,8 @@ const EventSourcesList = forwardRef<
 						isDragged={draggedItem === index}
 						isResizingRef={isResizing}
 						onRowStateChange={onRowStateChange}
-						onDragStart={handleDragStart}
-						onDragOver={handleDragOver}
-						onDragEnter={handleDragEnter}
-						onDragEnd={handleDragEnd}
+						onPointerDown={handlePointerDown}
+						onPointerEnterRow={handlePointerEnterRow}
 						onOptionSelect={handleOptionSelect}
 					/>
 				)),
@@ -215,10 +206,8 @@ const EventSourcesList = forwardRef<
 				localEvents,
 				draggedItem,
 				onRowStateChange,
-				handleDragStart,
-				handleDragOver,
-				handleDragEnter,
-				handleDragEnd,
+				handlePointerDown,
+				handlePointerEnterRow,
 				handleOptionSelect
 			]
 		);

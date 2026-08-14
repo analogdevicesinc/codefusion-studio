@@ -80,14 +80,17 @@ type FetchClient = Pick<OpenApiClient, FetchProxyMethod>;
 export class CfsApiClient {
     #restClient?: RestClient;
     #fetchProxy?: FetchClient;
-    private openapiClient: OpenApiClient;
+    #openapiClient: OpenApiClient;
+    public readonly baseUrl: string;
+    public readonly isAnonymous: boolean;
 
     /**
      * Constructs a new CfsApiClient instance.
      * @param options - The options for configuring the API client.
      */
     public constructor({
-        baseUrl = 'https://ccm.codefusion.app.analog.com',
+        baseUrl = process.env.CFS_API_URL ??
+            'https://ccm.codefusion.app.analog.com',
         authorizer = new PublicAuthorizer(),
         isCache = false, // disable for interim release
         // default cache db file in OS-appropriate location
@@ -105,16 +108,16 @@ export class CfsApiClient {
         }
 
         // Validate the base URL
-        const apiUrl = new URL(baseUrl).toString();
+        this.baseUrl = new URL(baseUrl).toString();
 
-        this.openapiClient = createClient<paths>({
-            baseUrl: apiUrl,
+        this.#openapiClient = createClient<paths>({
+            baseUrl: this.baseUrl,
             fetch: nodeFetch,
             Request: NodeFetchRequest,
         });
-        if (authorizer) {
-            this.openapiClient.use(authorizer);
-        }
+
+        this.#openapiClient.use(authorizer);
+        this.isAnonymous = authorizer instanceof PublicAuthorizer;
     }
 
     /**
@@ -149,15 +152,41 @@ export class CfsApiClient {
      * @throws An error if the client is unable to connect to the API.
      */
     public async testConnection(timeout = 0): Promise<void> {
-        const { error } = await this.fetch.GET('/pingAuth', {
-            signal:
-                timeout > 0
-                    ? AbortSignal.timeout(timeout)
-                    : undefined,
-        });
+        const { error, response } = await this.fetch.GET(
+            '/pingAuth',
+            {
+                signal:
+                    timeout > 0
+                        ? AbortSignal.timeout(timeout)
+                        : undefined,
+            },
+        );
 
-        if (error) {
-            throw new Error(error.message, { cause: error });
+        if (
+            error ||
+            ![200, 201, 202, 204].includes(response.status)
+        ) {
+            switch (response.status) {
+                case 401:
+                    throw new CfsApiError({
+                        type: 'AUTHN_REQUIRED',
+                        message:
+                            error?.message ||
+                            'Authentication required',
+                        cause: response,
+                    });
+                case 403:
+                    throw new CfsApiError({
+                        type: 'FORBIDDEN',
+                        message: error?.message || 'Access forbidden',
+                        cause: response,
+                    });
+                default:
+                    throw new Error(
+                        error?.message || 'Unknown error',
+                        { cause: response },
+                    );
+            }
         }
     }
 
@@ -166,7 +195,7 @@ export class CfsApiClient {
      * @returns The REST client.
      */
     public get rest(): RestClient {
-        this.#restClient ??= new RestClient(this.openapiClient);
+        this.#restClient ??= new RestClient(this.#openapiClient);
         return this.#restClient;
     }
 
@@ -175,7 +204,7 @@ export class CfsApiClient {
      * @returns The fetch client.
      */
     public get fetch(): FetchClient {
-        this.#fetchProxy ??= new Proxy(this.openapiClient, {
+        this.#fetchProxy ??= new Proxy(this.#openapiClient, {
             get: function (target: OpenApiClient, prop: string) {
                 if (isFetchProxyMethod(prop)) {
                     return target[prop];

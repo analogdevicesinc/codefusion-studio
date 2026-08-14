@@ -346,7 +346,7 @@ export async function getPackageName(
       pkg.id ===
       soc?.boards.find(
         (board) =>
-          board.name.toLowerCase() === (boardName ?? '').toLowerCase()
+          board.name.toLowerCase() === boardName.toLowerCase()
       )?.packageIDs[0]
   )?.dataModelPackageID;
 

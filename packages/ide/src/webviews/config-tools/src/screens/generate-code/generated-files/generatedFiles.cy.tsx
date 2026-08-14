@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -181,6 +181,16 @@ describe('GeneratedFiles component', () => {
 				files: ['/home/m4/projects/m4/src/main.c'],
 				projectNames: ['m4'],
 				expected: ['m4/projects/m4/src/main.c']
+			},
+			{
+				description:
+					'should handle Windows-style paths with backslash separators',
+				files: [
+					'C:\\Users\\user\\projects\\m4\\src\\main.c',
+					'C:\\Users\\user\\projects\\riscv\\app.c'
+				],
+				projectNames: ['m4', 'riscv'],
+				expected: ['m4/src/main.c', 'riscv/app.c']
 			}
 		];
 

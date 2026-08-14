@@ -47,7 +47,7 @@ export class ConanRunner {
 	 */
 	async execute(
 		args: string[],
-		options: Omit<ExecFileOptions, "shell"> = {}
+		options: Omit<ExecFileOptions, "shell" | "encoding"> = {}
 	): Promise<string> {
 		const asyncExecFile = util.promisify(execFile);
 		try {
@@ -55,6 +55,7 @@ export class ConanRunner {
 				await asyncExecFile("conan", args, {
 					env: this.env,
 					...options,
+					encoding: "utf8",
 					shell: false // Make sure caller cannot re-enable shell interpretation
 				})
 			).stdout
@@ -64,8 +65,10 @@ export class ConanRunner {
 			const execError = error as Error & {
 				stderr?: string;
 			};
+			execError.stderr = execError.stderr?.trim().replace(/\r/g, "");
+
 			if (execError.stderr !== undefined) {
-				const stderr = execError.stderr.trim().replace(/\r/g, "");
+				const { stderr } = execError;
 				if (stderr.includes("ERROR: Wrong user or password")) {
 					const remoteNameMatches = Array.from(
 						stderr.matchAll(/\[Remote: ([^\]]+)\]/g)
@@ -98,10 +101,17 @@ export class ConanRunner {
 						cause: error
 					});
 				}
-				if (stderr.match(/ERROR: No remotes defined/)) {
-					throw new ConanError("NO_REMOTE", "No remotes defined", {
-						cause: error
-					});
+				if (
+					stderr.includes("ERROR: No remotes defined") ||
+					stderr.includes("ERROR: There are no remotes")
+				) {
+					throw new ConanError(
+						"NO_REMOTE",
+						`No remotes ${stderr.includes("defined") ? "defined" : "available"}`,
+						{
+							cause: error
+						}
+					);
 				}
 				if (stderr.includes("Unable to connect to remote")) {
 					const remoteNameMatches = Array.from(
@@ -116,6 +126,23 @@ export class ConanRunner {
 						{
 							remotes:
 								remoteNames.length > 0 ? remoteNames : undefined,
+							cause: error
+						}
+					);
+				}
+
+				if (stderr.match(/ERROR: Remote '([^']+)' can't be found/i)) {
+					const remoteName = stderr.match(
+						/ERROR: Remote '([^']+)' can't be found/i
+					)?.[1];
+
+					throw new ConanError(
+						"REMOTE_NOT_FOUND",
+						remoteName
+							? `Remote '${remoteName}' does not exist`
+							: "Remote does not exist",
+						{
+							remotes: remoteName ? [remoteName] : [],
 							cause: error
 						}
 					);
@@ -147,6 +174,7 @@ type ConanErrorCode =
 	| "PROFILE_EXISTS"
 	| "EXEC_ERROR"
 	| "NO_REMOTE"
+	| "REMOTE_NOT_FOUND"
 	| "NET_ERROR"
 	| "UNKNOWN_ERROR"
 	| "LICENSE_NOT_ACCEPTED";

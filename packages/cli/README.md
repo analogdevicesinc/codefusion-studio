@@ -1660,8 +1660,8 @@ Generate a CFS configuration file from the command line options. The file can be
 
 ```
 USAGE
-  $ cfsutil workspace configure --soc <value> --board <value> --core <value>... --template-id <value>... [-w <value>]
-    [--name <value>] [-o <value>] [--package <value>] [--template-version <value>...] [-s <value>...] [-v]
+  $ cfsutil workspace configure --soc <value> --core <value>... --template-id <value>... [-w <value>]
+    [--name <value>] [-o <value>] [--board <value>] [--package <value>] [--template-version <value>...] [-s <value>...] [-v]
 
 FLAGS
   -o, --output=<value>               Output directory for the workspace.
@@ -1669,7 +1669,7 @@ FLAGS
   -v, --verbose                      Verbose output.
   -w, --workspace-file=<value>       [default: cfsworkspace.json] Name of the generated CFS workspace configuration
                                      file.
-      --board=<value>                (required) Board name
+      --board=<value>                Board name
       --core=<value>...              (required) Core name. Can be specified more than once, each followed by
                                      --template-id
       --name=<value>                 Name for new workspace

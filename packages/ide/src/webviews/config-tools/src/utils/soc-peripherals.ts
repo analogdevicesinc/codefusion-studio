@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import {computeDefaultValues} from './compute-register-value';
 import {getProjectInfoList} from './config';
 import type {TNumericBase} from '../../../common/types/errorTypes';
 import type {CfsSocDataModel} from 'cfs-types';
+import {getTypeBasedDefault} from './control-defaults';
 
 let peripheralDict: Record<
 	string,
@@ -385,7 +386,11 @@ export function computePeripheralResetValues(
 	if (availableControls?.length) {
 		availableControls.forEach(control => {
 			computedDefaultValues[control.Id] =
-				control.Hint ?? computedDefaultValues[control.Id] ?? '';
+				control.Default !== undefined && control.Default !== null
+					? String(control.Default)
+					: (control.Hint ??
+						computedDefaultValues[control.Id] ??
+						getTypeBasedDefault(control));
 		});
 	}
 

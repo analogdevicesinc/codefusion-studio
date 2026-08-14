@@ -20,8 +20,8 @@
       "AdvancedTools": true,
       "Description": "Generation for Tflite-micro run-time",
       "Formats": ["tflite"],
-      "Package": "cfsai",
-      "Module": "cfsai_backend_tflm",
+      "Package": "cfs-lib",
+      "Module": "tflm",
       "MaxModels": 999,
       "Slow": false,
       "Name": "tflm"
@@ -43,9 +43,10 @@
       },
       {
         "Id": "ArenaSize",
-        "Type": "string",
+        "Type": "integer",
         "Description": "Arena size for model",
-        "Tooltip": "Arena size (bytes) for model. Estimated if omitted"
+        "Tooltip": "Arena size (bytes) for model. Estimated if omitted",
+        "MinimumValue": 0
       },
       {
         "Id": "ArenaSection",

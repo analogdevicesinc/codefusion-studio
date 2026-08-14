@@ -1,0 +1,142 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	align-self: stretch;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	align-self: stretch;
+
+	border-radius: layout.$border-radius-2;
+	border: layout.$border-width-1 solid
+		var(--vscode-commandCenter-border);
+}
+
+.cardContent {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	flex: 1 0 0;
+	align-self: stretch;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	align-self: stretch;
+	align-items: center;
+}
+
+.cardBody {
+	display: flex;
+	padding: layout.$spacing-5;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+	border-radius: 4px;
+	border: layout.$border-width-1 solid colors.$default-border;
+}
+
+.nameAndBadge {
+	display: flex;
+	width: 326px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-2;
+}
+
+.name {
+	color: colors.$default-foreground;
+	@include fonts.heading-h3;
+}
+
+.status {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 16px;
+}
+
+.version {
+	color: colors.$default-foreground;
+	@include fonts.label-l3;
+}
+
+.expandedIcon {
+	transform: rotate(-90deg);
+}
+
+.collapsedIcon {
+	transform: rotate(90deg);
+}
+
+.packageDetailsRow {
+	display: flex;
+	align-items: baseline;
+	gap: layout.$spacing-5;
+	align-self: stretch;
+	flex: 1 0 0;
+	flex-direction: row;
+}
+
+.rowHeader {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	min-width: 120px;
+}
+
+.rowValue {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+	align-self: stretch;
+	display: flex;
+	flex-direction: row;
+	flex: 1 0 0;
+}
+
+.link {
+	display: flex;
+	align-items: center;
+	margin-left: layout.$spacing-5;
+	gap: layout.$spacing-3;
+	padding: 0;
+	border: none;
+	background: none;
+	cursor: pointer;
+	color: colors.$active-cta;
+	text-decoration: none;
+}
+
+.detailsLoading {
+	display: flex;
+	justify-content: center;
+	align-self: stretch;
+	padding: layout.$spacing-5;
+}

@@ -13,6 +13,8 @@
  *
  */
 
+import type { AIModelBackend } from "./cfs-config.js";
+
 export interface AiBackend {
 	Targets: {
 		Hardware: AiTarget;
@@ -42,4 +44,38 @@ export interface AiTarget {
 	Core?: string;
 	Family?: string;
 	Accelerator?: string | null;
+}
+
+export interface VerifiedConfig {
+	name: string;
+	prj_info: {
+		name: string;
+		workspace: string;
+		out_dir: string;
+	};
+	files: Record<string, string>;
+	target: AiTarget & {
+		firmware_platform: string;
+	};
+	backend: AIModelBackend;
+}
+
+type AiEvent =
+	| {
+			type: "FILE";
+			message: string;
+			value: string; // file path
+	  }
+	| {
+			type: "INFO" | "WARN" | "ERROR";
+			message: string;
+	  };
+
+export interface AiCommandResult {
+	code: number;
+	validCodes: number[];
+	events: AiEvent[];
+	artifacts?: {
+		files: string[];
+	};
 }

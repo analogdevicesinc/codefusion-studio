@@ -20,14 +20,12 @@
 import { expect } from "chai";
 import {
   By,
-  EditorView,
   ModalDialog,
   VSBrowser,
   WebView,
   Workbench,
 } from "vscode-extension-tester";
 import {
-  dfgSection,
   createStreamButton,
   panelHeading,
   streamSourceDropdown,
@@ -81,6 +79,10 @@ import {
   assertPersistedStreamForSource,
   type PersistedDFGStream,
 } from "../../page-objects/dfg-section/dfg-persistence-assertions";
+import {
+  dfgTab,
+  homePageTitle,
+} from "../../page-objects/dfg-section/dfg-inbound-outbound-stream-creation-screen";
 
 /*
  * Feature: System Planner Data Flow Gasket (DFG) Creation and Configuration
@@ -98,6 +100,8 @@ describe("dfg - create stream via create stream button and verify its persistenc
   // === Test Configuration setup ===
   const configFile = "dfgTests-dfg.cfsconfig";
   const configPath = getConfigPathForFile(configFile);
+  //===TestData===
+  const groupName = "Group1";
 
   let workbench: Workbench;
   let browser: VSBrowser;
@@ -105,32 +109,44 @@ describe("dfg - create stream via create stream button and verify its persistenc
 
   before(async () => {
     browser = VSBrowser.instance;
-    await new EditorView().closeAllEditors();
-    await UIUtils.sleep(3000);
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
-  //===TestData===
-  const groupName = "Group1";
-
-  // === Reusable Test Utilities ===
-  const setupWebViewEnvironment = async (
-    configPath: string,
-    navigationSelector: By,
-  ) => {
+  async function openDfgTab(): Promise<void> {
     await browser.openResources(configPath);
+    await browser.waitForWorkbench();
     workbench = new Workbench();
     view = new WebView();
-    await view.wait(8000);
-    await UIUtils.dismissAllNotifications(workbench, browser);
-    await view.switchToFrame(5000);
-    await UIUtils.clickElement(view, navigationSelector);
-  };
+    await view.wait();
 
-  after(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
+    // === Then dismiss all notifications ,wait for the webview to load===
+    await UIUtils.dismissAllNotifications(workbench, browser);
+
+    // ===Then switch to frame===
+    await view.switchToFrame(4000);
+    const pageTitle = await UIUtils.waitForElementToBeVisible(
+      view,
+      homePageTitle,
+      5000,
+    );
+
+    // Verify the page title "DFGTESTS" in the DFG webview
+    const pageTitleText = await pageTitle.getText();
+    expect(pageTitleText).to.equal(
+      "DFGTESTS",
+      "DFGTESTS title should be visible in the WebView",
+    );
+
+    // Click on the DFG tab
+    await UIUtils.clickElement(view, dfgTab);
+  }
+
+  after(async function () {
+    this.timeout(60000);
+    await view.switchBack();
+    const wb = new Workbench();
+    await wb.wait();
+    await wb.executeCommand("View: revert and close editor");
   });
 
   // * Scenario: User has loaded the DFG page and clicks on create button
@@ -163,7 +179,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
     // === GIVEN: The existing cfsconfig file with DFG configuration is opened ===
     // === THEN: Switch to frame ===
     // === AND: I click on the "DFG" navigation tab ===
-    await setupWebViewEnvironment(configPath, dfgSection);
+    await openDfgTab();
 
     // === THEN: I click on the create stream button and verify sidebar has been opened and create button is disabled ===
     const sidebarHeading = await openSidebar(
@@ -414,7 +430,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
     // === THEN: Switch to frame ===
     // === AND: I click on the "DFG" navigation tab ===
     // === THEN: I click on the create stream button and verify sidebar has been opened ===
-    await setupWebViewEnvironment(configPath, dfgSection);
+    await openDfgTab();
     const sidebarHeading = await openSidebar(
       view,
       createStreamButton,

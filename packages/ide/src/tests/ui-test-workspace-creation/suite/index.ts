@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,43 +12,42 @@
  * limitations under the License.
  *
  */
-import * as path from 'path';
-import * as Mocha from 'mocha';
-import * as glob from 'glob';
+import * as path from "path";
+import Mocha from "mocha";
+import * as fg from "fast-glob";
 
 export function run(): Promise<void> {
-	// Create the mocha test
-	const mocha = new Mocha({
-		ui: 'tdd',
-		color: true
-	});
+  // Create the mocha test
+  const mocha = new Mocha({
+    ui: "tdd",
+    color: true,
+  });
 
-	const testsRoot = path.resolve(__dirname, '..');
+  const testsRoot = path.resolve(__dirname, "..");
 
-	return new Promise((c, e) => {
-		const testFiles = new glob.Glob("**/**.test.js", { cwd: testsRoot });
-		const testFileStream = testFiles.stream();
+  return new Promise((c, e) => {
+    const testFileStream = fg.stream("**/**.test.js", { cwd: testsRoot });
 
-		testFileStream.on("data", (file) => {
-			mocha.addFile(path.resolve(testsRoot, file));
-		});
-		testFileStream.on("error", (err) => {
-			e(err);
-		});
-		testFileStream.on("end", () => {
-			try {
-				// Run the mocha test
-				mocha.run(failures => {
-					if (failures > 0) {
-						e(new Error(`${failures} tests failed.`));
-					} else {
-						c();
-					}
-				});
-			} catch (err) {
-				console.error(err);
-				e(err);
-			}
-		});
-	});
+    testFileStream.on("data", (file) => {
+      mocha.addFile(path.resolve(testsRoot, file));
+    });
+    testFileStream.on("error", (err) => {
+      e(err);
+    });
+    testFileStream.on("end", () => {
+      try {
+        // Run the mocha test
+        mocha.run((failures) => {
+          if (failures > 0) {
+            e(new Error(`${failures} tests failed.`));
+          } else {
+            c();
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        e(err);
+      }
+    });
+  });
 }

@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-/* eslint-disable max-depth */
 /* eslint-disable no-bitwise */
 import type {
 	ConfigField,
@@ -108,13 +107,16 @@ export default function computeRegisterValue(
 		);
 
 		if (socField) {
-			const position = BigInt(socField.position);
-			const length = BigInt(socField.length);
 			const value = BigInt(
 				evaluateBitfieldExpression(
 					modifiedField.ControlValue,
 					modifiedField.Value!
 				)
+			);
+
+			const {position, length} = getEffectiveSliceBounds(
+				socField,
+				modifiedField
 			);
 
 			computedValue =
@@ -197,18 +199,35 @@ export function computeFieldValue(
 
 	const mergedConfigs = [...pinsConfig, ...otherConfig];
 
-	// Find the last modified field value for the current field
-	const targetedRegisterField = mergedConfigs
-		.reverse()
-		.find(mergedConfig => mergedConfig?.Field === field.name);
+	// Apply all writes for this field in chronological order.
+	// Full-field writes naturally reset everything; slices overlay on top.
+	for (const targetField of mergedConfigs) {
+		if (targetField?.Field !== field.name) {
+			continue;
+		}
 
-	if (targetedRegisterField) {
-		computedValue = BigInt(
+		const value = BigInt(
 			evaluateBitfieldExpression(
-				targetedRegisterField.ControlValue,
-				targetedRegisterField.Value!
+				targetField.ControlValue,
+				targetField.Value!
 			)
 		);
+
+		if (
+			targetField.SlicePosition !== undefined &&
+			targetField.SliceWidth !== undefined
+		) {
+			const slicePos = BigInt(targetField.SlicePosition);
+			const sliceLen = BigInt(targetField.SliceWidth);
+			const sliceMask =
+				((BigInt(1) << sliceLen) - BigInt(1)) << slicePos;
+
+			computedValue =
+				(computedValue & ~sliceMask) |
+				((value << slicePos) & sliceMask);
+		} else {
+			computedValue = value;
+		}
 	}
 
 	return '0x' + computedValue.toString(16);
@@ -335,56 +354,17 @@ export function computeDefaultValues(
 			continue;
 		}
 
+		defaultValue = undefined;
+
 		for (const [key, configs] of Object.entries(controlValues)) {
-			const checkedItems: string[] = [];
-			defaultValue = key;
-
-			for (let i = configs.length - 1; i >= 0; i--) {
-				const cfg = configs[i];
-				const cfgValue: string | undefined = cfg.Value;
-
-				if (['poll', 'read'].includes(cfg.Operation.toLowerCase())) {
-					// Don't check Poll/Read operations. Poll tends to not match even if
-					// this is the default value, because the chip's reset value
-					// will normally start with the value in its opposite state
-					// but then it will have flipped by the time we get to the startup.
-					// Read operations have nothing to check.
-					continue;
-				} else if (cfg.Operation.toLowerCase() === 'withprevious') {
-					// Find the operation and register from the upcoming operations
-					for (let j = i - 1; j >= 0; j--) {
-						const prevCfg = configs[j];
-
-						if (prevCfg.Operation.toLowerCase() !== 'withprevious') {
-							cfg.Register = prevCfg.Register;
-							cfg.Operation = prevCfg.Operation;
-							break;
-						}
-					}
-				}
-
-				const value = evaluateBitfieldExpression(
-					getControlIntegerValue(controlValueKey, key, controls),
-					cfgValue!
-				);
-
-				const id = `${cfg.Register}_${cfg.Field}`;
-
-				if (checkedItems.includes(id)) {
-					continue;
-				}
-
-				const resetValue = getResetValue(cfg);
-
-				if (value !== resetValue) {
-					defaultValue = undefined;
-					break;
-				}
-
-				checkedItems.push(id);
-			}
-
-			if (defaultValue !== undefined) {
+			if (configMatchesResetValues(
+					configs,
+					controlValueKey,
+					key,
+					controls
+				)
+			) {
+				defaultValue = key;
 				break;
 			}
 		}
@@ -394,6 +374,101 @@ export function computeDefaultValues(
 	}
 
 	return defaultValueObj;
+}
+
+/**
+ * Checks whether a config sequence matches the register reset values.
+ * Returns true if write steps produce the expected reset values.
+ *
+ * Iterates backwards (newest first). Tracks which bits per field have
+ * been covered by newer slice writes. When a full-field write is
+ * encountered, only the uncovered bits are compared against reset.
+ */
+function configMatchesResetValues(
+	configs: ConfigField[],
+	controlValueKey: string,
+	key: string,
+	controls: ControlCfg[]
+): boolean {
+	// Track which bits have been covered by newer writes per field.
+	// Key: "Register_Field", Value: bigint bitmask of covered bits.
+	const coveredBits = new Map<string, bigint>();
+
+	for (let i = configs.length - 1; i >= 0; i--) {
+		const cfg = configs[i];
+		const cfgValue: string | undefined = cfg.Value;
+
+		if (['poll', 'read'].includes(cfg.Operation.toLowerCase())) {
+			continue;
+		} else if (cfg.Operation.toLowerCase() === 'withprevious') {
+			resolveWithPrevious(cfg, configs, i);
+		}
+
+		const fieldKey = `${cfg.Register}_${cfg.Field}`;
+		const covered = coveredBits.get(fieldKey) ?? BigInt(0);
+		const isSliced =
+			cfg.SlicePosition !== undefined &&
+			cfg.SliceWidth !== undefined;
+
+		// Determine the write mask and uncovered bits
+		const writeMask = isSliced
+			? ((BigInt(1) << BigInt(cfg.SliceWidth!)) - BigInt(1)) <<
+				BigInt(cfg.SlicePosition!)
+			: BigInt(-1); // Full-field write covers all bits
+
+		const uncovered = writeMask & ~covered;
+
+		if (uncovered === BigInt(0)) {
+			continue; // All bits written by this step are already covered
+		}
+
+		const value = evaluateBitfieldExpression(
+			getControlIntegerValue(controlValueKey, key, controls),
+			cfgValue!
+		);
+
+		const resetValue = getResetValue(cfg);
+
+		if (typeof resetValue === 'undefined') {
+			return false;
+		}
+
+		// For slices, shift value into field position for comparison
+		const positionedValue = isSliced
+			? BigInt(value) << BigInt(cfg.SlicePosition!)
+			: BigInt(value);
+
+		if (
+			(positionedValue & uncovered) !==
+			(BigInt(resetValue) & uncovered)
+		) {
+			return false;
+		}
+
+		coveredBits.set(fieldKey, covered | writeMask);
+	}
+
+	return true;
+}
+
+/**
+ * Resolves WithPrevious operations by copying the register and operation
+ * from the preceding non-WithPrevious step.
+ */
+function resolveWithPrevious(
+	cfg: ConfigField,
+	configs: ConfigField[],
+	currentIndex: number
+): void {
+	for (let j = currentIndex - 1; j >= 0; j--) {
+		const prevCfg = configs[j];
+
+		if (prevCfg.Operation.toLowerCase() !== 'withprevious') {
+			cfg.Register = prevCfg.Register;
+			cfg.Operation = prevCfg.Operation;
+			break;
+		}
+	}
 }
 
 function getIntegerControlResetValue(
@@ -423,7 +498,7 @@ function getIntegerControlResetValue(
 		return '';
 	}
 
-	let resetValue = getResetValue(valueCfg);
+	let resetValue = getSlicedResetValue(valueCfg);
 
 	if (typeof resetValue !== 'undefined' && valueCfg.InverseValue) {
 		resetValue = evaluateBitfieldExpression(
@@ -459,4 +534,56 @@ function getResetValue(valueCfg: ConfigField) {
 	}
 
 	return resetValue;
+}
+
+/**
+ * Returns the reset value for a ConfigField, extracting only the slice
+ * portion if SlicePosition and SliceWidth are specified.
+ * Uses BigInt shifting/masking to avoid JS 32-bit bitwise coercion issues.
+ */
+function getSlicedResetValue(valueCfg: ConfigField) {
+	let resetValue = getResetValue(valueCfg);
+
+	if (
+		typeof resetValue !== 'undefined' &&
+		valueCfg.SlicePosition !== undefined &&
+		valueCfg.SliceWidth !== undefined
+	) {
+		resetValue = Number(
+			(BigInt(resetValue) >> BigInt(valueCfg.SlicePosition)) &
+				((BigInt(1) << BigInt(valueCfg.SliceWidth)) - BigInt(1))
+		);
+	}
+
+	return resetValue;
+}
+
+/**
+ * Computes effective bit position and length for a ConfigField within its
+ * register, accounting for optional SlicePosition/SliceWidth.
+ *
+ * The slice is assumed to be valid (fits within the bitfield) as this is
+ * enforced by the data model schema validation.
+ */
+function getEffectiveSliceBounds(
+	socField: FieldDictionary,
+	configField: ConfigField
+): {position: bigint; length: bigint} {
+	if (
+		configField.SlicePosition !== undefined &&
+		configField.SliceWidth !== undefined
+	) {
+		const slicePosition = configField.SlicePosition;
+		const sliceWidth = configField.SliceWidth;
+
+		return {
+			position: BigInt(socField.position + slicePosition),
+			length: BigInt(sliceWidth)
+		};
+	}
+
+	return {
+		position: BigInt(socField.position),
+		length: BigInt(socField.length)
+	};
 }

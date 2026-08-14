@@ -112,7 +112,7 @@ export async function migrateProjects(folder: string) {
  * Migrate the given project to use the new CFS settings
  * @param folder - the project folder path
  */
-async function migrateProject(folder: string, prompt: boolean = false) {
+export async function migrateProject(folder: string, prompt: boolean = false) {
   type Settings = {
     [key: string]: any;
   };
@@ -273,6 +273,17 @@ async function migrateProject(folder: string, prompt: boolean = false) {
       });
 
       fs.writeFileSync(makefilePath, contents);
+    }
+
+  }
+
+  // Create .cfs/gdb_toolbox directory structure
+  const cfsGdbToolboxDir = path.join(folder, ".cfs", "gdb_toolbox");
+  const cfsGdbConfigsDir = path.join(cfsGdbToolboxDir, "configs");
+  const cfsGdbGdbDir = path.join(cfsGdbToolboxDir, "gdb");
+  for (const dir of [cfsGdbToolboxDir, cfsGdbConfigsDir, cfsGdbGdbDir]) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
   }
 }

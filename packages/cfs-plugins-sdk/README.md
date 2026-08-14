@@ -26,7 +26,7 @@ Plugins are dynamically loaded by CodeFusion Studio at runtime. For more informa
 
 ## Dependencies
 
-- [Node.js](https://nodejs.org/) v18 or later
+- [Node.js](https://nodejs.org/) v22 or later
 - [yarn](https://yarnpkg.com/)
 
 ---

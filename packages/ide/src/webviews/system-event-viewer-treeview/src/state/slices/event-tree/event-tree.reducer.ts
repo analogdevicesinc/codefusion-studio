@@ -22,6 +22,12 @@ import type {
 
 import {ROOT_NODE_ID} from '../../../common/utils/constants';
 
+/**
+ * Purpose for this dictionary is to solve a false positive risk raised by the agent regarding prototype pollution
+ */
+const createDictionary = <T>(): Record<string, T> =>
+	Object.create(null) as Record<string, T>;
+
 type EventTreeState = {
 	rootIds: string[];
 	nodesById: Record<string, EventNode>;
@@ -33,10 +39,10 @@ type EventTreeState = {
 
 export const eventTreeInitialState: EventTreeState = {
 	rootIds: [],
-	nodesById: {},
-	childrenByParentId: {},
-	expandedIds: {},
-	cacheById: {},
+	nodesById: createDictionary<EventNode>(),
+	childrenByParentId: createDictionary<string[]>(),
+	expandedIds: createDictionary<boolean>(),
+	cacheById: createDictionary<boolean>(),
 	card: undefined
 };
 
@@ -75,6 +81,19 @@ const eventTreeSlice = createSlice({
 			state.childrenByParentId[parentId] = childIds;
 			state.cacheById[parentId] = true;
 		},
+		updateNodeTreeItem(
+			state,
+			action: PayloadAction<{
+				nodeId: string;
+				treeItem: EventNode['treeItem'];
+			}>
+		) {
+			const {nodeId, treeItem} = action.payload;
+
+			if (!state.nodesById[nodeId]) return;
+
+			state.nodesById[nodeId].treeItem = treeItem;
+		},
 		toggleNodeExpanded(state, action: PayloadAction<string>) {
 			state.expandedIds[action.payload] =
 				!state.expandedIds[action.payload];
@@ -94,10 +113,10 @@ const eventTreeSlice = createSlice({
 		},
 		clearTree(state) {
 			state.rootIds = [];
-			state.nodesById = {};
-			state.childrenByParentId = {};
-			state.cacheById = {};
-			state.expandedIds = {};
+			state.nodesById = createDictionary<EventNode>();
+			state.childrenByParentId = createDictionary<string[]>();
+			state.cacheById = createDictionary<boolean>();
+			state.expandedIds = createDictionary<boolean>();
 		}
 	}
 });
@@ -105,6 +124,7 @@ const eventTreeSlice = createSlice({
 export const {
 	setRootChildren,
 	setNodeChildren,
+	updateNodeTreeItem,
 	toggleNodeExpanded,
 	setNodeExpanded,
 	setCard,

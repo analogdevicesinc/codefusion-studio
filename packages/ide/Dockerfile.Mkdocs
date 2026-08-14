@@ -1,6 +1,6 @@
 FROM python:3
 
-RUN pip install mkdocs mkdocs-techdocs-core
+RUN pip install "mkdocs>=1.6.0,<2.0" "mkdocs-techdocs-core==1.5.4"
 RUN mkdocs new letscloud
 
 EXPOSE 8000

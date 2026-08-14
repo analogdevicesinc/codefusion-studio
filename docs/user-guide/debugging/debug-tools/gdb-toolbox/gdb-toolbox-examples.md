@@ -1,7 +1,7 @@
 ---
 description: Examples of scripts used in the GDB Toolbox 
 author: Analog Devices
-date: 2025-07-31
+date: 2026-08-05
 ---
 
 # GDB Toolbox examples
@@ -16,6 +16,7 @@ The following example shows a simple GDB Toolbox script. It runs a single comman
 {
   "name": "Dump Stack",
   "description": "Dump top of stack and log it.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "x/32x $sp",
@@ -38,6 +39,7 @@ Each command can have more than one action. In this example, in addition to writ
 {
   "name": "Dump Stack to File",
   "description": "Dump the top of the stack, write to the log file and open it.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "x/32x $sp",
@@ -74,11 +76,22 @@ This example uses `appendFile` to append the output to a file  and `showMessage`
 {
   "name": "Dump Stack and Registers",
   "description": "Dump the top of the stack, write to the log file and open it. Append the registers to a log file and display a message in the UI",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "x/32x $sp",
       "actions": [
-        // Reuse actions from the previous example
+        { "type": "log", "message": "Stack contents dumped." },
+        {
+          "type": "writeFile",
+          "filePath": "gdb_toolbox/reports/stack_output.log",
+          "content": "${gdbOutput}"
+        },
+        {
+          "type": "openFile",
+          "filePath": "gdb_toolbox/reports/stack_output.log",
+          "lineNumber": 5
+        }
       ]
     },
     {
@@ -125,6 +138,7 @@ You can use the `setVariable` action to capture a value from the output of a GDB
 {
   "name": "Capture Register Value",
   "description": "Extracts the PC register value from GDB output.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "info registers pc",
@@ -157,6 +171,7 @@ This example demonstrates how to use the previously shown `setVariable` action t
 {
   "name": "Test Conditional Action",
   "description": "Demonstrates the use of the conditional action with Jexl expressions.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "echo 42",
@@ -195,6 +210,7 @@ This script opens the disassembly view at the current program counter using the 
 {
   "name": "Open Disassembly at PC",
   "description": "Opens the disassembly view at the current program counter.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "info registers pc",
@@ -215,7 +231,8 @@ This example shows how the `appendFile` action is used to store a formatted Mark
 {
   "name": "Analyze Faults",
   "description": "Analyzes faults and exceptions in the target application.",
-  "core": "arm",
+  "version": "1.0.0",
+  "arch": "arm",
   "commands": [
     {
       "command": "source {defaultScriptsDirectory}/fault-analyzer-arm.gdb",

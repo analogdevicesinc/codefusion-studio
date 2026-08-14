@@ -13,49 +13,13 @@
  *
  */
 
-import { By, WebView } from "vscode-extension-tester";
-import { expect } from "chai";
-import { UIUtils } from "../../../ui-test-utils/ui-utils";
-import {
-  memoryTypeDropdown,
-  memoryTypeSelector,
-} from "./create-partition-sidebar";
-
-// Memory type dropdown can be slow to render options, so we use more retries than default
-const MEMORY_TYPE_DROPDOWN_RETRIES = 3;
-
-/**
- * Selects a memory type from the dropdown with enhanced reliability.
- * Waits for dropdown readiness then selects with extra retries for stability.
- * This function addresses intermittent failures with the memory type dropdown
- * by ensuring element readiness before interaction.
- *
- * @param view - The WebView instance representing the current UI context
- * @param memoryType - The type of memory to select ("Flash" or "RAM")
- * @returns A Promise that resolves when the memory type is successfully selected
- * @throws Error if the dropdown selection fails after all retry attempts
- */
-async function selectMemoryTypeWithRetry(
-  view: WebView,
-  memoryType: "Flash" | "RAM",
-): Promise<void> {
-  await UIUtils.waitForElement(view, memoryTypeDropdown);
-  await UIUtils.selectOptionFromDropdown(
-    view,
-    memoryTypeDropdown,
-    await memoryTypeSelector(memoryType),
-    MEMORY_TYPE_DROPDOWN_RETRIES,
-  );
-}
+import { By } from "vscode-extension-tester";
 
 export const partitionDetailsDropdowns: By = By.css(
   `[data-test="partition-details-chevron"]`,
 );
 export const cm4PartitionCardTitles: By = By.css(
   `[data-test="CM4-partition-card-title"] `,
-);
-export const createPartitionButton: By = By.css(
-  "[data-test='create-partition-btn']",
 );
 export const deletePartitionButton: By = By.css(
   "[data-test='delete-partition-btn']",
@@ -85,10 +49,7 @@ export async function getEditPartitionButton(index: number): Promise<By> {
   return By.xpath(`(//*[@data-test='edit-partition-btn'])[${index}]`);
 }
 
-export async function getBaseBlockOption(optionText: string): Promise<By> {
-  return By.css(`[data-test='${optionText}']`);
-}
-
+// Note: chosenControlInput can also be obtained via pluginOptionLabel("CHOSEN") from create-partition-sidebar
 export const chosenControlInput: By = By.css(
   "[data-test='plugin-options-form:control-CHOSEN-control-input']",
 );
@@ -137,100 +98,16 @@ export async function leftPartitionDropdown(
   return By.css(`[data-test="accordion:${partitionName}"]`);
 }
 
-/**
- * Creates a memory partition in the UI with the specified options and verifies its existence
- * @param view - The WebView instance representing the current UI context.
- * @param options - An object containing:
- *   @property memoryType - The type of memory (e.g., "Flash" or "RAM").
- *   @property partitionName - The name of the partition to create (e.g., "smoketest").
- *   @property coreName - The name of the core to assign the partition to (e.g., "arm_cortex").
- *   @property baseBlock - The base block to select (e.g., "flash1").
- *   @property sizeKB - The size of the partition in KB (e.g., "8").
- * @returns A Promise that resolves when the partition is created and verified.
- */
-export async function createAndVerifyMemoryPartition(
-  view: WebView,
-  options: {
-    memoryType: "Flash" | "RAM";
-    partitionName: string;
-    coreName: string;
-    baseBlock: string;
-    sizeKB: string;
-  },
-): Promise<void> {
-  const { partitionName, coreName, baseBlock, sizeKB } = options;
+export const cm33SecureStartAddress: By = By.css(
+  '[data-test*="software-start-address-CM33-flash0"] input',
+);
 
-  // ===Open partition creation dialog===
-  const createPartitionBtnClick = await UIUtils.waitForElement(
-    view,
-    createPartitionButton,
-  );
-  await createPartitionBtnClick.click();
+export const physicalStartAddressError: By = By.css(
+  '[data-test="start-address-error"]',
+);
 
-  // ===Select memory type===
-  await selectMemoryTypeWithRetry(view, options.memoryType);
+export const cm33SecureAddressError: By = By.css(
+  'span[data-test*="software-start-address-CM33"]',
+);
 
-  // ===Enter partition name===
-  await UIUtils.sendKeysToElements(
-    view,
-    By.css('[data-test="partition-name-control-input"]'),
-    partitionName,
-  );
-
-  // ===Assign core===
-  const assignedCoresSelector = await UIUtils.waitForElement(
-    view,
-    By.css("[data-test='assigned-cores-multiselect']"),
-  );
-  await assignedCoresSelector.click();
-  const coreOptionSelector = await UIUtils.waitForElement(
-    view,
-    By.css(`[data-test='multiselect-option-${coreName}']`),
-  );
-  await coreOptionSelector.click();
-
-  // ===Select base block===
-  const baseBlockSelector = await UIUtils.waitForElement(
-    view,
-    By.css("[data-test='base-block-dropdown']"),
-  );
-  await baseBlockSelector.click();
-  const baseBlockOptionSelector = await UIUtils.waitForElement(
-    view,
-    By.css(`[data-test='${baseBlock}']`),
-  );
-  await baseBlockOptionSelector.click();
-
-  // ===Enter size===
-  await UIUtils.sendKeysToElements(
-    view,
-    By.css("[data-test='size-stepper-control-input']"),
-    sizeKB,
-  );
-
-  // ===Create partition and expand details===
-  const saveToCreatePartition = await UIUtils.waitForElement(
-    view,
-    By.css("[data-test='create-partition-button']"),
-  );
-  await saveToCreatePartition.click();
-  const partitionDetailsChevron = await UIUtils.waitForElement(
-    view,
-    By.css("[data-test='partition-details-chevron']"),
-  );
-  await partitionDetailsChevron.click();
-
-  // ===Verify partition card exists===
-  const partitionTitleCss = `[data-test='${coreName}-partition-card-title'] > h3`;
-  const partitionTitleElem = await UIUtils.waitForElement(
-    view,
-    By.css(partitionTitleCss),
-  );
-  await partitionTitleElem.click();
-  const displayedText = await partitionTitleElem.getText();
-
-  expect(displayedText).to.include(
-    partitionName,
-    ` Partition '${partitionName}' not found for core '${coreName}'`,
-  );
-}
+export const sizeStepperError: By = By.css('[data-test="size-stepper-error"]');

@@ -27,6 +27,9 @@ import DropDown, {
 	type DropDownOptions
 } from './components/dropdown/dropdown';
 import Chip from './components/chip/chip';
+import ChipDropdown, {
+	type ChipDropdownOption
+} from './components/chip-dropdown/chip-dropdown';
 import Card from './components/card/card';
 import TextField from './components/text-field/textfield';
 import {SlidingPanel} from './components/sliding-panel/sliding-panel';
@@ -37,6 +40,7 @@ import PanelView from './components/tabs/panel-view';
 import Panels from './components/tabs/panels';
 import MultiSelect from './components/multiselect/multiselect';
 import {MultiSelectOption} from './components/multiselect/multiselect';
+import SearchableMultiSelect from './components/searchable-multiselect/searchable-multiselect';
 import StepList from './components/wizard-stepper/wizard-stepper';
 import Badge from './components/badge/badge';
 import Divider from './components/divider/divider';
@@ -74,6 +78,9 @@ import SegmentedControls, {
 	type SegmentOption
 } from './components/segmented-controls/segmented-controls.js';
 import LockIcon from './components/icons/lock-icon.js';
+import ButtonWithOptions, {
+	type ButtonWithOptionsProps
+} from './components/button-with-options/button-with-options.js';
 
 import {use} from './hooks/use';
 
@@ -109,15 +116,23 @@ import WarningModal from './components/warning-modal/WarningModal.js';
 import type {InlineEditFieldProps} from './components/edit-input/InlineEditField.js';
 import type {WarningModalProps} from './components/warning-modal/WarningModal.js';
 import ConflictIcon from './components/icons/conflict-icon.js';
+import CompletedIcon from './components/icons/completed-icon.js';
+import FilledCircledCheckmarkIcon from './components/icons/filled-circled-checkmark-icon.js';
+import DownloadIcon from './components/icons/download-icon.js';
 import MeasurementIcon from './components/icons/measurement-icon.js';
 import SaveAsIcon from './components/icons/save-as-icon.js';
 import ExportIcon from './components/icons/export-icon.js';
+import JumpFirstIcon from './components/icons/jump-first-icon.js';
+import JumpLastIcon from './components/icons/jump-last-icon.js';
+import NextItemIcon from './components/icons/next-item-icon.js';
+import PreviousItemIcon from './components/icons/previous-item-icon.js';
 
 export {
 	GridCombobox,
 	SearchInput,
 	DropDown,
 	Chip,
+	ChipDropdown,
 	Card,
 	CustomizableDropdown,
 	Accordion,
@@ -130,6 +145,7 @@ export {
 	PanelView,
 	Panels,
 	MultiSelect,
+	SearchableMultiSelect,
 	StepList,
 	Badge,
 	Divider,
@@ -146,6 +162,7 @@ export {
 	Tooltip,
 	IntegerField,
 	SegmentedControls,
+	ButtonWithOptions,
 	use,
 	ContextMenu,
 	EmptyState,
@@ -159,6 +176,7 @@ export type {
 	GridComboboxProp,
 	DropDownOptions,
 	MultiSelectOption,
+	ChipDropdownOption,
 	TFormControl,
 	TFormControlType,
 	TFormData,
@@ -168,6 +186,7 @@ export type {
 	Step,
 	SubStep,
 	SegmentOption,
+	ButtonWithOptionsProps,
 	InlineEditFieldProps,
 	WarningModalProps
 };
@@ -206,7 +225,14 @@ export {
 	HexadecimalIcon,
 	DecimalIcon,
 	LockIcon,
+	CompletedIcon,
+	FilledCircledCheckmarkIcon,
+	DownloadIcon,
 	MeasurementIcon,
 	SaveAsIcon,
-	ExportIcon
+	ExportIcon,
+	JumpFirstIcon,
+	JumpLastIcon,
+	NextItemIcon,
+	PreviousItemIcon
 };

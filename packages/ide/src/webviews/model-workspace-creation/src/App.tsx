@@ -35,6 +35,10 @@ import {
 	getLocalization,
 	localizeMessage
 } from '../../common/utils/localization';
+import {
+	CatalogProvider,
+	useCatalogContext
+} from './contexts/CatalogContext';
 
 function App() {
 	const [store, setStore] = useState<Store>();
@@ -70,7 +74,9 @@ function App() {
 		<LocalizationProvider namespace='model-wrksp'>
 			<MessengerProvider>
 				<Provider store={store}>
-					<ModelWorkspaceCreation />
+					<CatalogProvider>
+						<ModelWorkspaceCreation />
+					</CatalogProvider>
 				</Provider>
 			</MessengerProvider>
 		</LocalizationProvider>
@@ -82,6 +88,7 @@ export default App;
 function ModelWorkspaceCreation() {
 	const i10n = useLocaleContext();
 	const dispatch = useAppDispatch();
+	const {catalog} = useCatalogContext();
 
 	return (
 		<div className={styles.content}>
@@ -93,7 +100,7 @@ function ModelWorkspaceCreation() {
 					<Button
 						dataTest='create-workspace-button'
 						onClick={async () => {
-							await dispatch(validateAndGenerateWorkspace());
+							await dispatch(validateAndGenerateWorkspace(catalog));
 						}}
 					>
 						{i10n?.footer.create}

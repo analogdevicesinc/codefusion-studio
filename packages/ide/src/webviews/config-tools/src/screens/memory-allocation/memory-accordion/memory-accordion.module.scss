@@ -45,11 +45,13 @@
 }
 .attribute {
 	display: flex;
+	gap: 8px;
 }
 
 .label,
 .value {
-	flex: 1;
+	flex: 1 1 0%;
+	min-width: 0;
 	@include fonts.label-l3;
 }
 

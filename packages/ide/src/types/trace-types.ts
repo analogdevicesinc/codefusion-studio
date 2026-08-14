@@ -13,19 +13,36 @@
  *
  */
 
+export type UsbDeviceSelection = {
+  busNumber: number;
+  deviceAddress: number;
+};
+
+export type TraceSourceConfiguration =
+  | {
+      type: "uart";
+      serialPort: string;
+      baudRate: number;
+    }
+  | {
+      type: "usb";
+      // Undefined until a device has been selected from the USB dropdown.
+      usbDevice?: UsbDeviceSelection;
+    };
+
 export type TraceConfiguration = {
-  interfaceType: "uart" | "usb";
-  serialPort: string;
-  baudRate: number;
+  source: TraceSourceConfiguration;
   outputDirectory: string;
   autoReset: boolean;
-
   elfFile: string;
   buildDir: string;
   // Ai model file paths
   aiModels: string[];
 };
 
+export type UsbDevice = UsbDeviceSelection & {
+  label: string;
+};
 
 export type TraceRecordingState =
   | {

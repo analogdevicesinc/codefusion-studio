@@ -1,0 +1,14 @@
+{
+	"name": "adi-codefusion-studio",
+	"description": "Plugins for developing using CodeFusion Studio IDE",
+	"owner": {
+		"name": "Analog Devices, Inc."
+	},
+	"plugins": [
+		{
+			"name": "cfs-skills",
+			"description": "Skills for CodeFusion Studio",
+			"source": "./packages/cfs-skills"
+		}
+	]
+}

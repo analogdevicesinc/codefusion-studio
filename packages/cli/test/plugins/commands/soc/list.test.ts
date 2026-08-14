@@ -12,16 +12,15 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 // @TODO: skiping until cli plugins are removed as they will be deprecated now.
 describe.skip('socs list (with add-soc plugin)', () => {
-  test
-    .stdout()
-    .command(['socs:list'], {
+  it('returns an example custom SoC', async () => {
+    const {stdout} = await runCommand(['socs:list'], {
       root: '..'
-    })
-    .it('returns an example custom SoC', (ctx) => {
-      expect(ctx.stdout).to.contain('test_soc_b-tqfn');
-      expect(ctx.stdout).to.contain('soc1234');
     });
+    expect(stdout).to.contain('test_soc_b-tqfn');
+    expect(stdout).to.contain('soc1234');
+  });
 });

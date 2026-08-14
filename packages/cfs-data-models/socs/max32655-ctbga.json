@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.759",
-  "Schema": "1.2.0",
-  "Timestamp": "2026-04-17T10:41:40.229857Z",
+  "Version": "1.3.893",
+  "Schema": "1.5.0",
+  "Timestamp": "2026-06-19T17:09:21.279684Z",
   "Name": "MAX32655",
   "Description": "Low-Power, Arm Cortex-M4 Processor with FPU-Based Microcontroller and Bluetooth 5.2",
   "Endianness": "Little",
@@ -1423,12 +1423,6 @@
       ]
     },
     {
-      "Name": "FCR",
-      "Description": "Function Control Registers",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "FLC0",
       "Description": "Flash Controller 0",
       "Cores": [
@@ -1515,18 +1509,6 @@
         "ACCESS_FAIL_IE",
         "PROT_IE"
       ]
-    },
-    {
-      "Name": "GCFR",
-      "Description": "Global Control Function Register",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
-      "Name": "GCR",
-      "Description": "Global Control Registers",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "GPIO0",
@@ -7656,12 +7638,6 @@
       "ClockNode": "LPWDT0"
     },
     {
-      "Name": "MCR",
-      "Description": "Miscellaneous Control Registers",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "MISC",
       "Description": "Miscellaneous",
       "Cores": [],
@@ -8092,12 +8068,6 @@
       "Group": "Pulse Train"
     },
     {
-      "Name": "PWRSEQ",
-      "Description": "Power Sequencer / Low-Power Control",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "RTC",
       "Description": "Real Time Clock and Alarm",
       "Cores": [
@@ -8463,12 +8433,6 @@
         "RANGED",
         "VSETD"
       ]
-    },
-    {
-      "Name": "SIR",
-      "Description": "System Initialization",
-      "Cores": [],
-      "Assignable": false
     },
     {
       "Name": "SPI0",
@@ -14930,12 +14894,6 @@
       "ClockNode": "TMR0/1/2/3"
     },
     {
-      "Name": "TRIMSIR",
-      "Description": "Trim System Initialization",
-      "Cores": [],
-      "Assignable": false
-    },
-    {
       "Name": "TRNG",
       "Description": "Random Number Generator",
       "Cores": [
@@ -18192,6 +18150,7 @@
         "Type": "boolean"
       }
     ],
+    "BLE": [],
     "LPCMP0": [
       {
         "Id": "EN_IDX0",
@@ -18970,6 +18929,9 @@
         ]
       }
     ],
+    "AES": [],
+    "GPIO0": [],
+    "GPIO1": [],
     "CRC": [
       {
         "Id": "DMA_EN",
@@ -22597,6 +22559,7 @@
         "Type": "boolean"
       }
     ],
+    "DMA": [],
     "FLC0": [
       {
         "Id": "LOW_VOLTAGE",
@@ -22633,6 +22596,7 @@
         "Type": "boolean"
       }
     ],
+    "DVS": [],
     "ADC": [
       {
         "Id": "REF_SEL",
@@ -23187,6 +23151,11 @@
         ]
       }
     ],
+    "PTG": [],
+    "PT0": [],
+    "PT1": [],
+    "PT2": [],
+    "PT3": [],
     "OWM": [
       {
         "Id": "INTERNAL_PULL_UP",
@@ -23312,6 +23281,7 @@
         "Type": "boolean"
       }
     ],
+    "SEMA": [],
     "UART0": [
       {
         "Id": "PARITY",
@@ -24956,6 +24926,9 @@
         "Condition": "${Control:TX_RX_MODE} ${String:RX_ONLY} !="
       }
     ],
+    "LPGCR": [],
+    "GPIO2": [],
+    "GPIO3": [],
     "LPWDT0": [
       {
         "Id": "WDT_RST_EN",

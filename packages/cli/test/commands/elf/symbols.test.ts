@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {exec} from 'node:child_process';
@@ -25,35 +26,18 @@ const execAsync = promisify(exec);
 
 describe('elf symbols', () => {
   describe('output colors', () => {
-    test.stdout().it('text', (ctx) => {
-      expect(ctx.stdout).to.contain('');
+    it('text', async () => {
+      const {stdout} = await runCommand([]);
+      expect(stdout).to.contain('');
     });
 
-    test
-      .stdout({
-        stripColor: false
-      })
-      .command(
-        [
-          'elf:symbols',
-          path.resolve(
-            __dirname,
-            '../../../../elf-parser/test/data/input.elf'
-          ),
-          "SELECT * FROM symbols where name = 'devices'"
-        ],
-        {root: '..'}
-      )
-      .it(
-        'should print color characters when output is not piped',
-        // Skipped: needs more investigation across environments.
-        // (ctx) => {
-        //   expect(ctx.stdout).to.include('\x1b[90m');
-        // }
-        function () {
-          this.skip();
-        }
-      );
+    it('should print color characters when output is not piped', // Skipped: needs more investigation across environments.
+    // (ctx) => {
+    //   expect(ctx.stdout).to.include('\x1b[90m');
+    // }
+    function () {
+      this.skip();
+    });
 
     it('should hide colors when output is piped to a file', async () => {
       await execAsync(

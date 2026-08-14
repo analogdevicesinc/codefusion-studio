@@ -41,7 +41,16 @@ export interface ToolInfo {
 	/** Paths to add to the Path environment variable */
 	paths?: string[];
 	/** Environment variables to set */
-	envVars?: { name: string; value: string; isPath: boolean }[];
+	envVars?: {
+		name: string;
+		value: string;
+		isPath: boolean;
+		/** When set to true, the value will be appended to values provided by other tools using
+		 * OS path separator.
+		 * A string can be passed to be used as a custom separator.
+		 * If set to false or undefined, the value will override any values provided by other tools. */
+		append?: boolean | string;
+	}[];
 	/** Relative path to the toolchain compiler, e.g. gcc */
 	compilerPath?: string;
 	/** Relative path to the debugger, e.g. gdb */

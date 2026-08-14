@@ -16,12 +16,12 @@
 import {Button, Tooltip} from 'cfs-react-library';
 import {useState} from 'react';
 
-import Accordion from '../../../../../common/components/accordion/Accordion';
-import PlusIcon from '../../../../../common/components/icons/PlusIcon';
-import SmallSettingsIcon from '../../../../../common/components/icons/SamllSettingsIcon';
-import SmallArrowRightIcon from '../../../../../common/components/icons/SmallArrowRightIcon';
-import ConflictIcon from '../../../../../common/icons/Conflict';
-import type {Gasket} from '../../../../../common/types/soc';
+import Accordion from '@common/components/accordion/Accordion';
+import PlusIcon from '@common/components/icons/PlusIcon';
+import SmallSettingsIcon from '@common/components/icons/SmallSettingsIcon';
+import SmallArrowRightIcon from '@common/components/icons/SmallArrowRightIcon';
+import ConflictIcon from '@common/icons/Conflict';
+import type {Gasket} from '@common/types/soc';
 import {
 	type DFGStreamUI,
 	setEditingStream,
@@ -153,6 +153,7 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 		<Accordion
 			key={gasket.Name}
 			title={gasket.Name}
+			titleTooltip={gasket.Description}
 			icon={
 				hasErrors || hasStreamErrors ? (
 					<div

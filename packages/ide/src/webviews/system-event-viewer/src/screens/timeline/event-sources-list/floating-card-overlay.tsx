@@ -21,13 +21,14 @@ import styles from './floating-card-overlay.module.scss';
 
 type FloatingCardOverlayProps = Readonly<{
 	cardOverlay: {
-		y: number; // Viewport Y position
-		containerLeft: number; // Viewport X of scrollContent
+		y: number;
+		containerLeft: number;
 		containerWidth: number;
 		listWidth: number;
 		rowHeight: number;
 		name: string;
-		chartImageSrc?: string; // Snapshot of the chart canvas
+		chartImageSrc?: string;
+		chartImageWidth: number;
 	};
 }>;
 
@@ -43,7 +44,8 @@ function FloatingCardOverlay({
 		listWidth,
 		rowHeight,
 		name,
-		chartImageSrc
+		chartImageSrc,
+		chartImageWidth
 	}
 }: FloatingCardOverlayProps) {
 	const floatingCardStyle: React.CSSProperties = {
@@ -51,6 +53,9 @@ function FloatingCardOverlay({
 		top: `${y - rowHeight / 2}px`,
 		width: `${containerWidth}px`,
 		height: `${rowHeight}px`
+	};
+	const chartImageStyle: React.CSSProperties = {
+		width: `${chartImageWidth}px`
 	};
 
 	const card = () => (
@@ -74,6 +79,7 @@ function FloatingCardOverlay({
 							src={chartImageSrc}
 							alt='chart snapshot'
 							className={styles.chartImage}
+							style={chartImageStyle}
 						/>
 					) : null}
 				</div>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ import {useAppDispatch} from '../../../../state/store';
 import {setAppliedSignalControlValue} from '../../../../state/slices/pins/pins.reducer';
 import styles from './ControlDropdown.module.scss';
 import {DropDown, type DropDownOptions} from 'cfs-react-library';
+import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 
 type ControlDropdownProps = {
 	readonly isDefaultValue: boolean;
@@ -64,10 +65,18 @@ export default function ControlDropdown({
 		);
 	};
 
+	const l10nOptionGroupNotSupportedByPlugin = t({
+		id: 'common.optionGroupNotSupportedByPlugin'
+	});
+
 	const options: DropDownOptions = EnumValues.map(e => ({
 		value: e.Id,
 		label: e.Description,
-		dataTest: `${signal}-${pinId}-${e.Id}`
+		dataTest: `${signal}-${pinId}-${e.Id}`,
+		disabled: e.Inactive,
+		optionGroup: e.Inactive
+			? l10nOptionGroupNotSupportedByPlugin
+			: undefined
 	}));
 
 	return (

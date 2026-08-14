@@ -232,6 +232,28 @@ export class BreakpointHandler {
         return false;
       }
 
+      // Check if a breakpoint already exists at this location
+      const targetFsPath = uri.fsPath.toLowerCase();
+      const existingBreakpoint = vscode.debug.breakpoints.find((bp) => {
+        if (bp instanceof vscode.SourceBreakpoint) {
+          return (
+            bp.location.uri.fsPath.toLowerCase() === targetFsPath &&
+            bp.location.range.start.line === line - 1
+          );
+        }
+        return false;
+      });
+
+      if (existingBreakpoint) {
+        const existing = existingBreakpoint as vscode.SourceBreakpoint;
+        if (condition && existing.condition !== condition) {
+          vscode.debug.removeBreakpoints([existing]);
+        } else {
+          // Breakpoint already exists at this location
+          return true;
+        }
+      }
+
       const location = new vscode.Location(
         uri,
         new vscode.Position(line - 1, 0),

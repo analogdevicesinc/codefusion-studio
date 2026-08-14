@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,44 @@ export function Default(args: React.ComponentProps<typeof DropDown>) {
 	return <DropDown {...args} />;
 }
 
+export function WithOptionGroups(
+	args: React.ComponentProps<typeof DropDown>
+) {
+	return <DropDown {...args} />;
+}
+
 const options: DropDownOptions = [
 	{label: '1', value: 'Value 1'},
 	{label: '2', value: 'Value 2'},
 	{label: '3', value: 'Value 3'}
 ];
+
+const groupedOptions: DropDownOptions = [
+	{label: 'Ungrouped', value: 'ungrouped'},
+	{
+		label: 'First grouped option',
+		value: 'first',
+		optionGroup: 'Group A'
+	},
+	{
+		label: 'Second grouped option',
+		value: 'second',
+		optionGroup: 'Group A'
+	},
+	{
+		label: 'Another group option',
+		value: 'third',
+		optionGroup: 'Group B'
+	}
+];
+
+WithOptionGroups.args = {
+	controlId: 'GroupedTest',
+	isDisabled: false,
+	currentControlValue: groupedOptions[0].value,
+	options: groupedOptions,
+	onHandleDropdown: fn()
+};
 
 Default.args = {
 	controlId: 'Test',

@@ -14,13 +14,14 @@
  */
 
 import type {
-	AiCommandResult,
-	CodeGenJsonMsg,
-	VerifiedConfig
-} from "./index.js";
-import type { AiBackend, AIModelBackend } from "cfs-types";
+	AiBackend,
+	AIModelBackend,
+	VerifiedConfig,
+	AiCommandResult
+} from "cfs-types";
 
 import { spawn } from "child_process";
+import { AiCommandError } from "./ai-command-error.js";
 import fs, { constants } from "fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -32,13 +33,14 @@ import {
 	getCredentials,
 	type SupportedUtils
 } from "../utils/docker-utils.js";
-import { AuthConfig } from "../auth/session-manager.js";
+import type { AuthConfig } from "../auth/session-manager.js";
 import type {
 	CalibrationData,
 	Labels,
 	ValidationData
 } from "cfs-types/types/cfs-config";
 import { randomUUID } from "node:crypto";
+import { CfsApiClient } from "cfs-ccm-lib";
 
 interface AiMotModel {
 	path: string;
@@ -117,7 +119,8 @@ async function invokeContainer(
 	container: SupportedUtils,
 	image: string,
 	dir: string,
-	json: boolean
+	json: boolean,
+	output: AiCommandResult
 ): Promise<AiCommandResult> {
 	const args: string[] = ["run", "--rm"];
 
@@ -151,8 +154,6 @@ async function invokeContainer(
 	);
 
 	return new Promise((resolve, reject) => {
-		const stdout: string[] = [];
-		const stderr: string[] = [];
 		const fullOutput: string[] = [];
 
 		const proc = spawn(container, args);
@@ -176,22 +177,16 @@ async function invokeContainer(
 
 		proc.on("close", (code) => {
 			if (code !== 0) {
+				output.code = code ?? 1;
 				// An error occurred, so report the full console output
 				for (const line of fullOutput) {
-					stdout.push(
-						logCodeGenMessage({
-							level: "ERROR",
-							msg: line
-						})
-					);
+					output.events.push({
+						type: "ERROR",
+						message: line
+					});
 				}
 			}
-			resolve({
-				stdout,
-				stderr,
-				code,
-				validCodes: [0]
-			});
+			resolve(output);
 		});
 
 		proc.on("error", (error) => {
@@ -230,16 +225,6 @@ async function removeTempDir(dir: string): Promise<void> {
 	});
 }
 
-function logCodeGenMessage(msg: CodeGenJsonMsg): string {
-	return JSON.stringify(msg) + `\n`;
-}
-
-function trace(json: boolean, msg: string): void {
-	if (!json) {
-		console.log(msg);
-	}
-}
-
 async function generateArray(
 	inputPath: string,
 	cols = 16
@@ -261,25 +246,33 @@ async function generateArray(
 	return { size, outStr };
 }
 
+function addFileCreatedEvent(
+	output: AiCommandResult,
+	outputDir: string,
+	file: string
+) {
+	const outputPath = path.join(outputDir, file).replace(/\\/g, "/");
+	output.events.push({
+		type: "FILE",
+		message: `Created file: ${outputPath}`,
+		value: outputPath
+	});
+	output.artifacts?.files.push(outputPath);
+}
+
 async function generateAdditionalFiles(
 	models: AiMotModelArtifacts[],
 	outputDir: string,
-	artifactName: string
+	artifactName: string,
+	output: AiCommandResult
 ) {
-	const generatedAt = new Date().toUTCString();
 	let hasDatasets = false;
 
-	let headerContent = `/*
- * Generated Mot extensions/dataset declarations on ${generatedAt}. Do not modify.
-*/
-
+	let headerContent = `
 #if !defined(${artifactName.toUpperCase()}_HPP)
 #define ${artifactName.toUpperCase()}_HPP\n\n`;
 
-	let datasetsContent = `/*
- * Generated C representation of model datasets on ${generatedAt}. Do not modify.
-*/
-
+	let datasetsContent = `
 #include "${artifactName}.hpp"\n\n`;
 
 	headerContent += `#define ADI_NN_COMPILER "${String(models[0]?.extensions?.Compiler)}"\n\n`;
@@ -324,10 +317,15 @@ async function generateAdditionalFiles(
 		path.join(outputDir, `${artifactName}.hpp`),
 		headerContent
 	);
+
+	addFileCreatedEvent(output, outputDir, `${artifactName}.hpp`);
+
 	await fs.writeFile(
 		path.join(outputDir, "datasets.cpp"),
 		datasetsContent
 	);
+
+	addFileCreatedEvent(output, outputDir, "datasets.cpp");
 }
 
 async function copyToBuild(src: string, dst: string) {
@@ -402,9 +400,9 @@ async function getCalibrationSet(
 function validateExtensions(
 	initialExtensions: NonNullable<AIModelBackend["Extensions"]>,
 	extensions: NonNullable<AIModelBackend["Extensions"]>,
-	modelName: string
+	modelName: string,
+	output: AiCommandResult
 ) {
-	const errors: string[] = [];
 	const fieldsToValidate = [
 		"FlexTCM",
 		"Compiler",
@@ -414,17 +412,12 @@ function validateExtensions(
 
 	for (const field of fieldsToValidate) {
 		if (extensions[field] !== initialExtensions[field]) {
-			errors.push(
-				logCodeGenMessage({
-					level: "ERROR",
-					msg: `Inconsistent ${field} value '${String(extensions[field])}' for model '${modelName}'. Expected '${String(initialExtensions[field])}'`
-				})
-			);
+			output.events.push({
+				type: "ERROR",
+				message: `Inconsistent ${field} value '${String(extensions[field])}' for model '${modelName}'. Expected '${String(initialExtensions[field])}'`
+			});
+			output.code = 1;
 		}
-	}
-
-	if (errors.length) {
-		throw new Error(errors.join("\n"));
 	}
 }
 
@@ -472,31 +465,37 @@ export async function generateMot(
 	backend: AiBackend,
 	vcfgs: VerifiedConfig[],
 	json: boolean,
-	authConfig: AuthConfig,
+	apiAccess: CfsApiClient | AuthConfig | undefined,
 	resolveSource: (value: string) => Promise<string>
 ): Promise<AiCommandResult> {
 	const output: AiCommandResult = {
-		stdout: [],
-		stderr: [],
-		code: 0, // Assume success unless we encounter errors during processing
-		validCodes: [0]
+		code: 0,
+		validCodes: [0],
+		events: [],
+		artifacts: { files: [] }
 	};
 
 	const models: AiMotModelArtifacts[] = [];
 
 	// Test that config inputs are valid
 	if (!backend.Mot?.DockerImage) {
-		throw new Error(
-			`Backend '${backend.Name}' contains no DockerImage field. Please verify backend is correct.`
-		);
+		output.code = 1;
+		output.events.push({
+			type: "ERROR",
+			message: `Backend '${backend.Name}' contains no DockerImage field. Please verify backend is correct.`
+		});
+		throw new AiCommandError(output);
 	}
 
 	const initialConfig = vcfgs[0];
 
 	if (!initialConfig.target.Soc || !initialConfig.target.Core) {
-		throw new Error(
-			`SoC or Core is missing from target info. Please verify backend is correct.`
-		);
+		output.code = 1;
+		output.events.push({
+			type: "ERROR",
+			message: `SoC or Core is missing from target info. Please verify backend is correct.`
+		});
+		throw new AiCommandError(output);
 	}
 
 	const container = await getContainerUtility();
@@ -508,7 +507,7 @@ export async function generateMot(
 			backend.Mot.DockerImage
 		);
 
-		const creds = await getCredentials(repo, authConfig, json);
+		const creds = await getCredentials(repo, apiAccess, json);
 
 		await pullImage({
 			image: backend.Mot.DockerImage,
@@ -520,9 +519,12 @@ export async function generateMot(
 	}
 
 	if (vcfgs.length > backend.MaxModels) {
-		throw new Error(
-			`Too many models provided. Backend '${backend.Name}' supports a maximum of ${String(backend.MaxModels)} models.`
-		);
+		output.code = 1;
+		output.events.push({
+			type: "ERROR",
+			message: `Too many models provided. Backend '${backend.Name}' supports a maximum of ${String(backend.MaxModels)} models.`
+		});
+		throw new AiCommandError(output);
 	}
 
 	const dirName = `mot-${initialConfig.target.Soc}-${String(Date.now())}`;
@@ -559,7 +561,14 @@ export async function generateMot(
 			}
 
 			if (errors.length) {
-				throw new Error(errors.join("\n"));
+				output.code = 1;
+				for (const err of errors) {
+					output.events.push({
+						type: "ERROR",
+						message: err
+					});
+				}
+				throw new AiCommandError(output);
 			}
 		}
 
@@ -577,19 +586,18 @@ export async function generateMot(
 			}
 		};
 
-		const errors: string[] = [];
 		let outDir = "";
 
 		for (const vcfg of vcfgs) {
 			if (vcfg.prj_info.out_dir != ".") {
 				// Non default output directory, check for consistency across models
 				if (outDir != "" && vcfg.prj_info.out_dir !== outDir) {
-					errors.push(
-						logCodeGenMessage({
-							level: "ERROR",
-							msg: `Inconsistent output directories across models. Found '${vcfg.prj_info.out_dir}' for model '${vcfg.name}', but previously found '${outDir}'.`
-						})
-					);
+					output.code = 1;
+					output.events.push({
+						type: "ERROR",
+						message: `Inconsistent output directories across models. Found '${vcfg.prj_info.out_dir}' for model '${vcfg.name}', but previously found '${outDir}'.`
+					});
+					throw new AiCommandError(output);
 				} else {
 					outDir = vcfg.prj_info.out_dir;
 				}
@@ -608,7 +616,11 @@ export async function generateMot(
 				resolveSource
 			);
 
-			validateExtensions(ext, extensions, vcfg.name);
+			validateExtensions(ext, extensions, vcfg.name, output);
+
+			if (output.code) {
+				throw new AiCommandError(output);
+			}
 
 			inputData.subsystem[subsystem].models.push(modelDetails);
 
@@ -621,10 +633,7 @@ export async function generateMot(
 
 		const artifactName = `adi_${backend.DisplayName?.toLowerCase() ?? "nn"}`;
 
-		if (errors.length > 0) {
-			output.stderr.push(...errors);
-			output.code = 1;
-		} else {
+		if (output.code === 0) {
 			if (outDir == "") {
 				outDir = path.join(
 					initialConfig.prj_info.name,
@@ -638,36 +647,32 @@ export async function generateMot(
 						path.join(initialConfig.prj_info.workspace, outDir)
 					);
 
-			// Report as relative posix path
-			const reportDir = outDir.split(path.sep).join(path.posix.sep);
-
 			await fs.writeFile(
 				path.join(tmpDir, "input.json"),
 				JSON.stringify(inputData, null, 2)
 			);
 
-			trace(
-				json,
-				`INFO: Invoking code generation may take several minutes. Please wait...`
-			);
+			if (!json) {
+				console.log(
+					"INFO: Invoking code generation may take several minutes. Please wait..."
+				);
+			}
 
-			const result: AiCommandResult = await invokeContainer(
+			const result = await invokeContainer(
 				container,
 				backend.Mot.DockerImage,
 				tmpDir,
-				json
+				json,
+				output
 			);
-			output.stdout.push(...result.stdout);
-			output.stderr.push(...result.stderr);
 			output.code = result.code;
 
 			if (output.code !== 0) {
-				output.stderr.push(
-					logCodeGenMessage({
-						level: "ERROR",
-						msg: `Container execution failed with code ${String(output.code)}.`
-					})
-				);
+				output.events.push({
+					type: "ERROR",
+					message: `Container execution failed with code ${String(output.code)}.`
+				});
+				throw new AiCommandError(output);
 			} else {
 				const srcDir = path.join(tmpDir, subsystem);
 				await fs.mkdir(buildDir, { recursive: true });
@@ -690,30 +695,24 @@ export async function generateMot(
 								});
 								await fs.copyFile(srcPath, destPath);
 							}
+							addFileCreatedEvent(output, buildDir, item);
 						} catch {
-							output.stderr.push(
-								logCodeGenMessage({
-									level: "ERROR",
-									msg: `Failed to copy '${item}' to '${buildDir}'`
-								})
-							);
+							output.events.push({
+								type: "ERROR",
+								message: `Failed to copy '${item}' to '${buildDir}'`
+							});
 							output.code = 1;
+							throw new AiCommandError(output);
 						}
 					}
 				} else {
 					await copyToBuild(srcDir, buildDir);
 				}
-				await generateAdditionalFiles(models, buildDir, artifactName);
-				output.stdout.push(
-					logCodeGenMessage({
-						level: "INFO",
-						msg: `Created files at '${reportDir}'.`,
-						event: {
-							status: "OK",
-							type: "FILE",
-							value: reportDir
-						}
-					})
+				await generateAdditionalFiles(
+					models,
+					buildDir,
+					artifactName,
+					output
 				);
 			}
 		}

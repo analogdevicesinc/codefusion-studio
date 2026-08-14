@@ -18,6 +18,7 @@
  */
 
 export const EXTENSION_ID = "cfs";
+export const LOGGER_CHANNEL_NAME = "CodeFusion Studio";
 export const CONFIG_TOOLS_ID = "cfgtools";
 export const CONFIG_FILE_EXTENSION = "cfsconfig";
 export const WORKSPACE_CONFIG_FILE_EXTENSION = "cfsworkspace";
@@ -130,9 +131,6 @@ export const CATALOG_LOCATION = "catalogLocation";
 export const CHECK_FOR_UPDATES = "checkForUpdates";
 export const CATALOG_API_URL = "https://ccm.codefusion.app.analog.com";
 
-// Package Manager
-export const PACKAGE_MANAGER_CREDENTIAL_PROVIDER = "myAnalog";
-
 // Action Panel Actions
 //TODO: export the following in an ACTION_PANEL object
 export const BUILD_ALL_ACTION = "Build All";
@@ -167,7 +165,7 @@ export const GRAPH = "graph";
 export const LOCK = "lock";
 
 export const PIN_CONFIG_USER_GUIDE_URL =
-  "https://developer.analog.com/docs/codefusion-studio/latest/";
+  "https://developer.analog.com/docs/codefusion-studio/latest/user-guide/tools/";
 
 export enum SECURITY_TASKS_SEARCH_STRING {
   generateKey = "generate mcuboot key",

@@ -1,0 +1,93 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '@sev-common/styles/sev-variables' as sev;
+
+$slider-container-height: 24px;
+$slider-border-width: 2px;
+
+.timelineSliderContainer {
+	position: relative;
+	width: 100%;
+	height: calc($slider-container-height - 2px); // borders
+	border: 1px solid colors.$default-border;
+	border-radius: layout.$border-radius-1;
+	box-sizing: border-box;
+
+	.range {
+		position: absolute;
+		top: -2px; // to cover container border at edges
+		bottom: -2px; // to cover container border at edges
+		display: flex;
+		align-items: center;
+		min-width: 18px;
+		background-color: colors.$button-primary-background;
+
+		border-color: colors.$button-primary-background;
+		border-style: solid;
+		border-top-width: $slider-border-width;
+		border-bottom-width: $slider-border-width;
+		border-left-width: 0;
+		border-right-width: 0;
+		border-radius: layout.$border-radius-2;
+		box-sizing: border-box;
+
+		&:hover {
+			border-color: colors.$button-primary-hover-background;
+			background-color: colors.$button-primary-hover-background;
+
+			.handle,
+			.inner .middle {
+				border-color: colors.$button-primary-hover-background;
+				background-color: colors.$button-primary-hover-background;
+			}
+		}
+
+		.handle {
+			width: 6px;
+			height: 100%;
+			background: colors.$button-primary-background;
+			border: 1px solid colors.$button-primary-background;
+			border-radius: layout.$border-radius-1;
+			flex-shrink: 0;
+			cursor: ew-resize;
+			box-sizing: border-box;
+		}
+
+		.inner {
+			height: 100%;
+			width: 100%;
+			background-color: colors.$editor-widget-background;
+			border-radius: layout.$border-radius-1;
+			border: 2px solid colors.$editor-widget-background;
+			box-sizing: border-box;
+
+			.middle {
+				height: 100%;
+				background: colors.$button-primary-background;
+				border: 1px solid colors.$button-primary-background;
+				border-radius: layout.$border-radius-1;
+				box-sizing: border-box;
+				cursor: default;
+			}
+
+			.cursorGrab {
+				cursor: grab;
+			}
+		}
+	}
+}

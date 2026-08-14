@@ -14,67 +14,51 @@
  */
 
 import { promises as fs } from "node:fs";
-import {
+import type {
 	AIModelBackend,
 	AiBackend,
+	AiCommandResult,
 	AiTarget,
 	CfsConfig,
 	CfsSocDataModel,
 	SocAi,
-	SocControl
+	SocControl,
+	VerifiedConfig
 } from "cfs-types";
+import type { CfsApiClient } from "cfs-ccm-lib";
 import * as path from "path";
-import { spawn } from "child_process";
 import { tmpdir } from "node:os";
-import { glob } from "glob";
+import fg from "fast-glob";
 import temp from "temp";
 import {
 	getValidExtensions,
 	resolveSource,
-	sanitizeToCIdentifier
+	sanitizeToCIdentifier,
+	getGeneratedFileComment
 } from "./ai-tools-utils.js";
+import { MAX_MODEL_NAME_LENGTH } from "./ai-tools-model-utils.js";
 import { generateMot } from "./mot.js";
-import { AuthConfig } from "../auth/session-manager.js";
+import type { AuthConfig } from "../auth/session-manager.js";
 import type {
 	CalibrationData,
 	Labels,
 	ValidationData
 } from "cfs-types/types/cfs-config";
+import { caseInsensitiveCompare } from "../utils/string-utils.js";
+import { execFile } from "node:child_process";
+import { AiCommandError } from "./ai-command-error.js";
+import { generateTflm } from "./tflm/tflm.js";
+export { AiCommandError } from "./ai-command-error.js";
 
 export interface AiToolsData {
 	properties: Record<string, SocControl[]>;
 	SupportedBackends: Record<string, AiBackend>;
 }
 
-export interface CodeGenJsonMsg {
-	level: "INFO" | "WARNING" | "ERROR";
-	msg: string;
-	event?: {
-		status: "NA" | "OK" | "SKIPPED" | "FAILED";
-		type: "FILE" | "MODEL";
-		value: string;
-	}; // for type file
-}
-
-export interface AiCommandResult {
-	stdout: string[];
-	stderr: string[];
-	code: number | null;
-	validCodes: number[];
-}
-
-export interface VerifiedConfig {
-	name: string;
-	prj_info: {
-		name: string;
-		workspace: string;
-		out_dir: string;
+interface SocAiWithTarget extends SocAi {
+	Target: Required<Omit<AiTarget, "Accelerator">> & {
+		Accelerator?: string;
 	};
-	files: Record<string, string>;
-	target: AiTarget & {
-		firmware_platform: string;
-	};
-	backend: AIModelBackend;
 }
 
 let instance: AIToolsPlugin | undefined;
@@ -120,9 +104,9 @@ export default class AIToolsPlugin {
 		packageId: string,
 		coreId: string,
 		accId?: string
-	): SocAi {
-		const core = dataModel.Cores.find(
-			(c) => c.Id.toUpperCase() === coreId.toUpperCase()
+	): SocAiWithTarget {
+		const core = dataModel.Cores.find((c) =>
+			caseInsensitiveCompare(c.Id, coreId)
 		);
 		if (!core) {
 			const availableCores = dataModel.Cores.filter((c) => c.Ai).map(
@@ -136,9 +120,10 @@ export default class AIToolsPlugin {
 
 		let AiData: SocAi;
 		if (accId) {
-			accId = accId.toUpperCase();
 			// Look up accelerator
-			const acc = dataModel.Peripherals.find((p) => p.Name === accId);
+			const acc = dataModel.Peripherals.find((p) =>
+				caseInsensitiveCompare(p.Name, accId)
+			);
 			if (!acc) {
 				throw new Error(
 					`Peripheral '${accId}' is not found for '${dataModel.Name}'.`
@@ -163,18 +148,18 @@ export default class AIToolsPlugin {
 		// Add the Target metadata fields to the AiData object for use by advanced AI tools
 		// or save additional lookups later.
 
-		AiData = {
+		return {
 			...AiData,
 			Target: {
 				Soc: soc,
-				Core: coreId,
+				Core: core.Id,
 				Family: core.Family,
 				Package: packageId,
-				Accelerator: accId
+				Accelerator: dataModel.Peripherals.find((p) =>
+					caseInsensitiveCompare(p.Name, accId)
+				)?.Name
 			}
 		};
-
-		return AiData;
 	}
 
 	public async getBackendFromName(
@@ -186,9 +171,14 @@ export default class AIToolsPlugin {
 			throw new Error("Failed to read configuration JSON.");
 		}
 
-		if (name in aiData.SupportedBackends) {
-			return aiData.SupportedBackends[name];
+		for (const [key, backend] of Object.entries(
+			aiData.SupportedBackends
+		)) {
+			if (caseInsensitiveCompare(key, name)) {
+				return backend;
+			}
 		}
+
 		return undefined;
 	}
 
@@ -201,21 +191,17 @@ export default class AIToolsPlugin {
 			throw new Error("Failed to read configuration JSON.");
 		}
 
-		// Correct case for inputs
-		target.Soc = target.Soc?.toLowerCase();
-		target.Core = target.Core?.toUpperCase();
-		if (target.Accelerator) {
-			target.Accelerator = target.Accelerator.toUpperCase();
-		}
-
 		const explicitlySupportedBackends: AiBackend[] = Object.values(
 			aiData.SupportedBackends
 		).filter((b) =>
 			b.Targets.find(
 				(t) =>
-					t.Hardware.Core === target.Core &&
-					t.Hardware.Soc === target.Soc &&
-					t.Hardware.Accelerator === target.Accelerator
+					caseInsensitiveCompare(t.Hardware.Core, target.Core) &&
+					caseInsensitiveCompare(t.Hardware.Soc, target.Soc) &&
+					caseInsensitiveCompare(
+						t.Hardware.Accelerator,
+						target.Accelerator
+					)
 			)
 		);
 
@@ -229,7 +215,9 @@ export default class AIToolsPlugin {
 			const supportedFamilyBackends: AiBackend[] = Object.values(
 				aiData.SupportedBackends
 			).filter((b) =>
-				b.Targets.find((t) => t.Hardware.Family === target.Family)
+				b.Targets.find((t) =>
+					caseInsensitiveCompare(t.Hardware.Family, target.Family)
+				)
 			);
 			backend =
 				supportedFamilyBackends.find((b) => b.Default) ??
@@ -248,10 +236,12 @@ export default class AIToolsPlugin {
 			throw new Error("Failed to read configuration JSON.");
 		}
 
-		let props: SocControl[] = [];
+		const entry = Object.entries(aiData.properties).find(([key]) =>
+			caseInsensitiveCompare(key, name)
+		);
 
-		if (name in aiData.properties) {
-			props = aiData.properties[name];
+		if (entry) {
+			const [, props] = entry;
 			return props;
 		}
 
@@ -266,39 +256,78 @@ export default class AIToolsPlugin {
 		cwd?: string
 	): Promise<AiCommandResult> {
 		const pythonPath = await this.getPythonExecutable(packageName);
-		const fullArgs = ["-m", module, ...args];
 
 		return new Promise((resolve, reject) => {
-			const stdout: string[] = [];
-			const stderr: string[] = [];
+			const fullArgs = ["-m", module, ...args];
 
 			// Clear PYTHONHOME and PYTHONPATH to avoid conflicts with any existing settings
 			const env = { ...process.env };
 			delete env.PYTHONHOME;
 			delete env.PYTHONPATH;
 
-			const proc = spawn(pythonPath, fullArgs, { env, cwd });
+			execFile(
+				pythonPath,
+				fullArgs,
+				{ env, cwd, maxBuffer: 256 * 1024 * 1024 },
+				(error, stdout, stderr) => {
+					let code = 0;
 
-			proc.stdout.on("data", (data: Buffer) => {
-				stdout.push(data.toString());
-			});
+					if (error) {
+						code = typeof error.code === "number" ? error.code : 1;
+					}
 
-			proc.stderr.on("data", (data: Buffer) => {
-				stderr.push(data.toString());
-			});
+					const output: AiCommandResult = {
+						code: code,
+						validCodes: validCodes ?? [0],
+						events: [],
+						artifacts: { files: [] }
+					};
 
-			proc.on("close", (code) => {
-				resolve({
-					stdout,
-					stderr,
-					code,
-					validCodes: validCodes ?? [0]
-				});
-			});
+					try {
+						const parsed = JSON.parse(
+							stdout
+						) as AiCommandResult["events"];
 
-			proc.on("error", (error) => {
-				reject(error);
-			});
+						output.events.push(...parsed);
+
+						const artifacts = parsed
+							.filter((event) => event.type === "FILE")
+							.filter((event) => typeof event.value === "string")
+							.map((event) => event.value);
+
+						artifacts.length > 0
+							? output.artifacts?.files.push(...artifacts)
+							: delete output.artifacts;
+
+						const validOutput = output.validCodes.includes(code);
+
+						validOutput
+							? resolve(output)
+							: reject(new AiCommandError(output));
+					} catch {
+						reject(
+							new AiCommandError({
+								code: code ? code : 1,
+								events: [
+									{
+										type: "ERROR",
+										message:
+											[
+												stdout && `Failed to parse output: ${stdout}`,
+												stderr,
+												error?.message
+											]
+												.filter(Boolean)
+												.join("\n") ||
+											"AI command failed without output."
+									}
+								],
+								validCodes: validCodes ?? [0]
+							})
+						);
+					}
+				}
+			);
 		});
 	}
 
@@ -466,16 +495,17 @@ export default class AIToolsPlugin {
 		cfsconfig: CfsConfig,
 		dataModel: CfsSocDataModel,
 		cwd: string,
-		authConfig: AuthConfig,
+		apiAccess?: CfsApiClient | AuthConfig,
 		onlyCore?: string,
 		ignoreCache = false
 	): Promise<AiCommandResult> {
 		const output: AiCommandResult = {
-			stdout: [],
-			stderr: [],
-			code: null,
-			validCodes: [0]
+			code: 0,
+			validCodes: [0],
+			events: [],
+			artifacts: { files: [] }
 		};
+
 		const configApiMap = new Map<
 			string,
 			{ items: VerifiedConfig[]; backend: AiBackend }
@@ -502,6 +532,12 @@ export default class AIToolsPlugin {
 
 				if (String(aiModel.Enabled).toLowerCase() === "false") {
 					continue;
+				}
+
+				if (aiModel.Name.length > MAX_MODEL_NAME_LENGTH) {
+					throw new Error(
+						`Model name "${aiModel.Name}" exceeds the maximum length of ${String(MAX_MODEL_NAME_LENGTH)} characters.`
+					);
 				}
 
 				for (const [key, value] of Object.entries(aiModel.Files)) {
@@ -537,27 +573,21 @@ export default class AIToolsPlugin {
 					be = await this.getBackendFromName(specifiedBackend);
 					if (!be) {
 						throw new Error(
-							`Specified backend '${specifiedBackend}' not found for '${aiModel.Name}' on Core '${project.CoreId}'.`
+							`Specified backend '${specifiedBackend}' not found for '${aiModel.Name}' on Core '${ai.Target.Core}'.`
 						);
 					}
 
 					backendName = be.Name;
 					backendPackage = be.Package;
 				} else {
-					if (ai.Target) {
-						be = await this.getBackendFromTarget(ai.Target);
+					be = await this.getBackendFromTarget(ai.Target);
 
-						if (be) {
-							backendName = be.Name;
-							backendPackage = be.Package;
-						} else {
-							throw new Error(
-								`No AI Backend found for model '${aiModel.Name}' on Core ${project.CoreId}.`
-							);
-						}
+					if (be) {
+						backendName = be.Name;
+						backendPackage = be.Package;
 					} else {
 						throw new Error(
-							`No AI Target data found for model '${aiModel.Name}' on Core '${project.CoreId}'.`
+							`No AI Backend found for model '${aiModel.Name}' on Core ${ai.Target.Core}.`
 						);
 					}
 				}
@@ -597,15 +627,15 @@ export default class AIToolsPlugin {
 					files: aiModel.Files,
 					target: {
 						Soc: cfsconfig.Soc,
-						Core: project.CoreId,
-						Accelerator: aiModel.Target.Accelerator,
+						Core: ai.Target.Core,
+						Accelerator: ai.Target.Accelerator,
 						Package: cfsconfig.Package,
 						firmware_platform: project.FirmwarePlatform
 					},
 					backend: this.sanitizeBackend(backend)
 				};
 
-				const key = `${backendPackage}.${backendName}.${project.CoreId}`;
+				const key = `${backendPackage}.${backendName}.${ai.Target.Core}`;
 				const entry = configApiMap.get(key);
 
 				if (entry) {
@@ -624,24 +654,64 @@ export default class AIToolsPlugin {
 				dir: tmpdir()
 			});
 
-			if (vcfgs.backend.Mot) {
-				const motResult = await generateMot(
-					vcfgs.backend,
-					vcfgs.items,
-					this.jsonMode,
-					authConfig,
-					async (value) =>
-						await resolveSource(
-							this.cfsVersion,
-							value,
-							ignoreCache,
-							cwd
-						)
-				);
-				output.stdout.push(...motResult.stdout);
-				output.stderr.push(...motResult.stderr);
-				output.code = motResult.code ?? output.code;
-				continue;
+			if (vcfgs.backend.Package === "cfs-lib") {
+				if (vcfgs.backend.Mot) {
+					const motResult = await generateMot(
+						vcfgs.backend,
+						vcfgs.items,
+						this.jsonMode,
+						apiAccess,
+						async (value) =>
+							await resolveSource(
+								this.cfsVersion,
+								value,
+								ignoreCache,
+								cwd
+							)
+					);
+					output.code = motResult.code;
+					output.events.push(...motResult.events);
+					output.artifacts?.files.push(
+						...(motResult.artifacts?.files ?? [])
+					);
+				} else if (vcfgs.backend.Module === "tflm") {
+					try {
+						const tflmResult = await generateTflm(vcfgs.items);
+
+						output.code = tflmResult.code;
+						output.events.push(...tflmResult.events);
+						output.artifacts?.files.push(
+							...(tflmResult.artifacts?.files ?? [])
+						);
+
+						if (output.code !== 0) {
+							throw new AiCommandError(output);
+						}
+					} catch (error) {
+						if (error instanceof AiCommandError) {
+							throw error;
+						}
+
+						throw new AiCommandError({
+							code: 1,
+							validCodes: [0],
+							events: [
+								...output.events,
+								{
+									type: "ERROR",
+									message:
+										error instanceof Error
+											? error.message
+											: "Build failed with unknown error."
+								}
+							]
+						});
+					}
+				} else {
+					throw new Error(
+						`Unsupported backend "${vcfgs.backend.Module}" for "cfs-lib" Package.`
+					);
+				}
 			} else {
 				await fs.writeFile(
 					tmpFile,
@@ -657,12 +727,27 @@ export default class AIToolsPlugin {
 						undefined,
 						cwd
 					);
-					output.stdout.push(...result.stdout);
-					output.stderr.push(...result.stderr);
 					output.code = result.code;
+					output.events.push(...result.events);
+					output.artifacts?.files.push(
+						...(result.artifacts?.files ?? [])
+					);
 				} finally {
 					await fs.unlink(tmpFile);
 				}
+			}
+		}
+
+		const comment = getGeneratedFileComment({
+			soc: cfsconfig.Soc,
+			Package: cfsconfig.Package
+		});
+
+		for (const file of output.artifacts?.files ?? []) {
+			const stat = await fs.stat(file);
+			if (stat.isFile()) {
+				const content = await fs.readFile(file, "utf-8");
+				await fs.writeFile(file, comment + content);
 			}
 		}
 
@@ -690,7 +775,7 @@ export default class AIToolsPlugin {
 			.join(this.cfsAiPath, "backends", "*")
 			.replace(/\\/g, "/");
 
-		const files = await glob(configPathPattern);
+		const files = await fg(configPathPattern);
 		if (files.length === 0) {
 			console.error(
 				`No backend JSON files found in path: ${configPathPattern}`

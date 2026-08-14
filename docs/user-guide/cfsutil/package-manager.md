@@ -1,22 +1,29 @@
 ---
 description: CFSUtil - Package Manager
 author: Analog Devices
-date: 2026-05-20
+date: 2026-07-27
 ---
 
 # Package Manager
 
 The CFS Package Manager allows you to retrieve, install, and manage SDKs, plugins, and toolchains directly from a remote server, enabling access to new features and updates independently of full IDE releases. For additional information see [Install CFS components using the Package Manager](../installation/package-manager/index.md).
 
+Package remotes can be either managed or custom.
+
+- Managed remotes are configured automatically by CodeFusion Studio.
+- Custom remotes are user-defined remotes that you add manually.
+
+Managed remotes cannot be deleted or edited, but you can enable or disable them. Additional managed remotes may be available when logged in with a myAnalog account or using an API key.
+
 ## Add remote
 
 `cfsutil pkg add-remote <remote-name> <url>`
 
-Registers a new package server to retrieve packages.
+Registers a new custom package server to retrieve packages from.
 
 | Argument        | Description                                                                                                                                           |
 |-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `<remote-name>` | The name used to identify the remote, such as `myserver`. This name is required to use other commands such as `login`, `logout`, and `delete-remote`. |
+| `<remote-name>` | The name used to identify the remote, such as `myserver`. This name is required to use other commands such as `auth-remote`, `disable-remote`, and `delete-remote`. |
 | `<url>`         | The URL of the package server.                                                                                                                        |
 
 !!! example
@@ -24,13 +31,18 @@ Registers a new package server to retrieve packages.
     cfsutil pkg add-remote myserver https://my.server.url
     ```
 
+!!! note
+    CodeFusion Studio configures managed remotes automatically. If you log in with a myAnalog account, `cfsutil` can configure additional remotes for restricted content. To check the configured remotes, run `cfsutil pkg list-remotes`.
+
 ## Authenticate remote
 
 `cfsutil pkg auth-remote <remote-name>`
 
 Configures authentication for a remote package server.
 
-This command defines how `cfsutil` authenticates when accessing the specified remote, using either credentials, a myAnalog session, or no authentication.
+This command defines how `cfsutil` authenticates when accessing the specified remote, using either credentials you specify, or no authentication.
+
+This command can only be used with custom remotes. Managed remotes authenticate automatically and cannot be configured with `auth-remote`.
 
 | Argument        | Description                                                                                |
 | --------------- | ------------------------------------------------------------------------------------------ |
@@ -40,18 +52,16 @@ This command defines how `cfsutil` authenticates when accessing the specified re
 | ----------------------- | ---------------------------------------------------------------------- |
 | `--user <username>`     | Authenticate using a username. Prompts for a password if not provided. |
 | `--password <password>` | Password, API key, or token for authentication.                        |
-| `--myanalog`            | Authenticate automatically using your active myAnalog session.         |
 | `--none`                | Disable authentication for the remote.                                 |
 
 !!! example
     ```sh
     cfsutil pkg auth-remote myserver --user USERNAME --password PASSWORD
-    cfsutil pkg auth-remote myserver --myanalog
     cfsutil pkg auth-remote myserver --none
     ```
 
 !!! note
-    `--myanalog` uses your current myAnalog session. If you are not logged in, run `cfsutil myanalog status` to check your session and `cfsutil myanalog login` to sign in, then run the command again.
+    Some managed remotes obtain credentials automatically when you are logged in to myAnalog or have set the `CFS_API_KEY` environment variable with a valid API key. Run `cfsutil myanalog status` to check your session and `cfsutil myanalog login` to sign in, then run `cfsutil pkg list-remotes` to check which remotes are using managed credentials.
 
 ## Delete
 
@@ -78,7 +88,7 @@ Deletes packages from the local cache.
 
 `cfsutil pkg delete-remote <remote-name>`
 
-Unregisters a package server so it is no longer considered for package retrieval.
+Unregisters a custom package server so it is no longer considered for package retrieval.
 
 | Argument        | Description                                                                                                          |
 |-----------------|----------------------------------------------------------------------------------------------------------------------|
@@ -87,6 +97,39 @@ Unregisters a package server so it is no longer considered for package retrieval
 !!! example
     ```sh
     cfsutil pkg delete-remote myserver
+    ```
+
+!!! note
+    Managed remotes cannot be deleted. Use `cfsutil pkg disable-remote <remote-name>` if you want to prevent a managed remote from being used.
+
+## Enable remote
+
+`cfsutil pkg enable-remote <remote-name>`
+
+Enables a previously disabled remote package server.
+
+| Argument        | Description                                  |
+|-----------------|----------------------------------------------|
+| `<remote-name>` | The name of the remote to enable.            |
+
+!!! example
+    ```sh
+    cfsutil pkg enable-remote myserver
+    ```
+
+## Disable remote
+
+`cfsutil pkg disable-remote <remote-name>`
+
+Disables a remote package server.
+
+| Argument        | Description                                  |
+|-----------------|----------------------------------------------|
+| `<remote-name>` | The name of the remote to disable.           |
+
+!!! example
+    ```sh
+    cfsutil pkg disable-remote myserver
     ```
 
 ## View dependencies
@@ -132,7 +175,7 @@ Install a CFS package, including all its dependencies.
 
 | Argument             | Description                                         |
 |----------------------|-----------------------------------------------------|
-| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.2.1\my-sample-workspace\.cfs\.cfsdependencies`). |
+| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.3.0\my-sample-workspace\.cfs\.cfsdependencies`). |
 
 | Flag                | Description                            |
 |---------------------|----------------------------------------|
@@ -174,7 +217,7 @@ Allows updates that do not change the major version (minor and patch updates are
     cfsutil pkg install "cfs_base_plugins/^2.0.0"
     ```
 
-**Result:** Installs `cfs_base_plugins/2.2.1` (highest available version within major version 2).
+**Result:** Installs `cfs_base_plugins/2.3.0` (highest available version within major version 2).
 
 #### Tilde ranges (`~`)
 
@@ -185,7 +228,7 @@ Allows only patch-level updates within the specified minor version.
     cfsutil pkg install "cfs_base_data_models/~2.0.0"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.2.1)
+**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.3.0)
 
 #### Comparison operators (`>=`, `<=`, `>`, `<`, `=`)
 
@@ -195,7 +238,7 @@ Allows explicit version constraints using comparison operators.
     ```sh
     cfsutil pkg install "cfs_base_plugins/>=2.0.0"
     ```
-**Result:** Installs `cfs_base_plugins/2.2.1` (highest available version greater than or equal to 2.0.0).
+**Result:** Installs `cfs_base_plugins/2.3.0` (highest available version greater than or equal to 2.0.0).
 
 !!! example "Less than (<)"
     ```sh
@@ -209,7 +252,7 @@ Allows explicit version constraints using comparison operators.
     cfsutil pkg install "cfs_base_data_models/>2.0.1"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.2.1` (highest available version greater than 2.0.1).
+**Result:** Installs `cfs_base_data_models/2.3.0` (highest available version greater than 2.0.1).
 
 !!! note
     Version ranges must be enclosed in quotes to prevent shell interpretation of special characters.
@@ -224,7 +267,7 @@ Allows explicit version constraints using comparison operators.
 
 In addition to installing individual packages, you can install multiple packages using a manifest file. Manifest files also support more advanced version expressions, such as compound constraints, which are not supported in the `<packageName>/<version>` format.
 
-In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.2.1\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
+In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.3.0\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
 
 This file specifies the packages and versions required by the workspace.
 
@@ -236,15 +279,15 @@ Example manifest file:
   "packages": [
     {
       "name": "msdk",
-      "version": "2.2.1"
+      "version": "2.3.0"
     },
     {
       "name": "cfs_base_data_models",
-      "version": "2.2.1"
+      "version": "2.3.0"
     },
     {
       "name": "cfs_base_plugins",
-      "version": "2.2.1"
+      "version": "2.3.0"
     }
   ]
 }
@@ -271,7 +314,7 @@ Example:
     cfsutil pkg install /path/to/workspace/.cfs/.cfsdependencies
     ```
 
-**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.2.1`).
+**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.3.0`).
 
 ### Install from local cache
 
@@ -377,19 +420,26 @@ Lists all remote servers that have been registered for package retrieval.
 
 !!! example
     ```sh
-    Name           URL                                 Authentication  Default
-    ────────────── ─────────────────────────────────── ─────────────── ───────
-    my-remote      https://packages.example.com        None            Yes
+    ┌────────────────┬───────────────────────────────────────────────────────┬──────────────────┬────────┬────────────────────┐
+    │ Name           │ URL                                                   │ Auth             │ Custom │ Status             │
+    ├────────────────┼───────────────────────────────────────────────────────┼──────────────────┼────────┼────────────────────┤
+    │ cfs-public     │ https://conan.cloudsmith.io/adi/codefusion-public     │ None             │ No     │ OK                 │
+    ├────────────────┼───────────────────────────────────────────────────────┼──────────────────┼────────┼────────────────────┤
+    │ my-remote      │ https://packages.example.com/                         │ username: user1  │ Yes    │ OK                 │
+    ├────────────────┼───────────────────────────────────────────────────────┼──────────────────┼────────┼────────────────────┤
+    │ old-remote     │ https://old-server.example.com/                       │ N/A              │ Yes    │ Disabled           │
+    └────────────────┴───────────────────────────────────────────────────────┴──────────────────┴────────┴────────────────────┘
     ```
 
 ### Output fields
 
-| Column             | Description                                                    |
-|--------------------|----------------------------------------------------------------|
-| **Name**           | The name of the remote. |
-| **URL**            | The URL of the package server.             |
-| **Authentication** | Shows the authentication method configured for the remote. This may be `None`, `myAnalog session` (or `myAnalog session (inactive)` if not logged in), or a username-based authentication method. |
-| **Default**        | Indicates whether the remote is a pre-configured remote (not user-added).           |
+| Column    | Description |
+|-----------|-------------|
+| **Name**  | The name of the remote. |
+| **URL**   | The URL of the package server. |
+| **Auth**  | Shows the configured authentication method for the remote. This may be `None`, `myAnalog session`, `username: <username>`, or `N/A` for disabled custom remotes. |
+| **Custom** | Indicates whether the remote is user-defined (`Yes`) or managed by CodeFusion Studio (`No`). |
+| **Status** | The remote status. This may be `OK`, `Disabled`, or an error status if remote configuration fails. |
 
 ## Local consumers
 

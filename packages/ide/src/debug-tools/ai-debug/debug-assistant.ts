@@ -24,6 +24,9 @@ import {
   STOP_MCP_SERVER_COMMAND_ID,
   MCP_SERVER_STATUS_COMMAND_ID,
 } from "../../commands/constants";
+import { logger } from "../../utils/logger";
+import { getTelemetryManager } from "../../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
 
 /**
  * Manages the AI Debug Assistant functionality including:
@@ -41,6 +44,7 @@ export class CfsDebugAssistant
     this.onDidChangeMcpServerDefinitionsEmitter.event;
 
   private mcpDebugServer: McpDebugStreamableWebServer;
+  private runOnActivation: boolean = false;
   private disposables: vscode.Disposable[] = [
     this.onDidChangeMcpServerDefinitionsEmitter,
   ];
@@ -60,13 +64,19 @@ export class CfsDebugAssistant
       );
     }
 
-    this.disposables.push(new DebugChatParticipant(extensionUri, debugManager));
+    this.disposables.push(
+      new DebugChatParticipant(
+        extensionUri,
+        debugManager,
+        mcpDeps.commandExecutor,
+      ),
+    );
 
     this.registerMcpServerCommands();
 
     const config = vscode.workspace.getConfiguration("cfs.mcp");
-    const runOnActivation = config.get<boolean>("runOnActivation", false);
-    if (runOnActivation) {
+    this.runOnActivation = config.get<boolean>("runOnActivation", false);
+    if (this.runOnActivation) {
       this.startServer();
     }
   }
@@ -129,13 +139,16 @@ export class CfsDebugAssistant
     const mcpPort = config.get<number>("port", 0);
 
     if (this.mcpDebugServer.isRunning()) {
-      vscode.window.showInformationMessage(
+      logger.info(
         `MCP server is already running on ${this.mcpDebugServer.getUri()}`,
       );
       return;
     }
     try {
       await this.mcpDebugServer.start(mcpPort);
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.MCP_SERVER_STARTED, {});
+      });
       this.onDidChangeMcpServerDefinitionsEmitter.fire();
       vscode.window.showInformationMessage(
         `MCP server started on ${this.mcpDebugServer.getUri()}`,

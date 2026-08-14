@@ -35,8 +35,8 @@ We recommend using NVM to install and manage NodeJS on your machine.
 
 2. Install NodeJS.
 
-    - `nvm install 20`
-    - `nvm use 20`
+    - `nvm install 22`
+    - `nvm use 22`
 
 3. Install the dependencies.
 
@@ -92,6 +92,10 @@ To debug the CFS IDE extension, select **Run IDE Extension** from the VS Code la
 3. Click the **Views and More Actions** menu (...) and select **Install from VSIX**.
 4. Select your **cfs-ide\<version\>.vsix** file, and click **install**.
 
+## AI Coding Tools
+
+This repository is configured for AI-assisted development with Claude Code and GitHub Copilot. See [AI_CODING_GUIDELINES.md](./AI_CODING_GUIDELINES.md) for setup instructions, available skills, and best practices.
+
 ## Getting help
 
 For more information about the project, see the [User documentation](https://developer.analog.com/docs/codefusion-studio/latest/).
@@ -116,6 +120,19 @@ The project is configured to access all main scripts used by all workspaces from
 ## Additional VS Code extensions
 
 After installation, you will get prompted to install some VS Code extensions. Its important to install these extensions in case you are planning to contribute to the code base as they will keep the code consistent with the project's code style.
+
+### Using code snippets
+
+The project includes custom code snippets to maintain consistency across the codebase. The `adiHeader` snippet automatically inserts the ADI copyright header with the current year:
+
+To use the `adiHeader` snippet:
+
+1. Open a new TypeScript or JavaScript file
+2. Start typing `adiHeader`
+3. Press `Tab` or `Enter` to expand the snippet
+4. The copyright header will be inserted with the current year automatically filled in
+
+This snippet is configured in [.vscode/cfs.code-snippets](.vscode/cfs.code-snippets) and ensures all new files have the proper license header.
 
 ## Start the UI or CLI in development mode
 

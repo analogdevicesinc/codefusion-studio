@@ -1,30 +1,35 @@
+/**
+ *
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 import { describe, before } from "mocha";
-import {
-  By,
-  EditorView,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 
 describe("Setup test environment", () => {
   before(async function () {
     this.timeout(60000);
-    const editorView = new EditorView();
-    await editorView.closeAllEditors();
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   it("should dismiss toast notifications @smoke", async function () {
     this.timeout(60000);
-
     const browser = VSBrowser.instance;
     const view = new WebView();
     const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
     await browser.openResources(configPath);
-
     await view.wait();
     await view.switchBack();
     await UIUtils.sleep(3000);

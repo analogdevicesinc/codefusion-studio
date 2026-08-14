@@ -1,7 +1,7 @@
 ---
-description: List of common GDM commands.
+description: List of common GDB commands.
 author: Analog Devices
-date: 2024-09-02
+date: 2026-07-16
 ---
 
 # GDB Commands
@@ -105,7 +105,7 @@ FMT is a repeat count, followed by a format and size letter.
 | Command          | Shortcut    | Description                            |
 |------------------|-------------|----------------------------------------|
 | examine/[FMT]    | x           | Examine the count in format and size   |
-| examine variable | x foo       | Show address of variabe foo            |
+| examine variable | `x foo`       | Examine memory at the address given by `foo` |
 | examine ()       | x/4c 0x581F | Show four characters at address 0x581F |
 | examine ()       | x/4xw &main | Show four words in hex at main()       |
 
@@ -113,9 +113,9 @@ FMT is a repeat count, followed by a format and size letter.
 
 | Command            | Description                        |
 |--------------------|------------------------------------|
-| list               | Show scr for the current location  |
+| list               | Show source for the current location  |
 | list *0x1234       | Show source for address 0x1234     |
-| list main.C:func   | Show source for func() from main.C |
+| `list main.c:func` | Show source for `func()` from `main.c` |
 | disas func         | List ASM code for func() |
 | find /b 0x0, 0x10000, 'H', 'e', 'l', 'l', 'o' 0x581f | search for a byte pattern between 0x0 to 0x10000 |
 | x/s 0x581f         | Examine string at address 0x581f    |

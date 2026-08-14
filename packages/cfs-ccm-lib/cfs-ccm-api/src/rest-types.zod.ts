@@ -171,7 +171,25 @@ export const zSoCFamily = z.object({
 });
 
 export const zSWPackageRepo = z.object({
+    accessTag: zAccessTag.optional(),
+    authRequired: z.boolean(),
+    disabledByDefault: z.boolean(),
     id: z.string(),
+    metadataId: z.string().optional(),
+    packageFormat: z.string(),
+    repoDescription: z.string().optional(),
+    repoName: z.string().optional(),
+    repoUrl: z.string(),
+});
+
+export const zSWPackageRepoMetadata = z.object({
+    accessTag: zAccessTag.optional(),
+    authRequired: z.boolean(),
+    disabledByDefault: z.boolean(),
+    id: z.string(),
+    packageFormat: z.string(),
+    repoDescription: z.string().optional(),
+    repoName: z.string().optional(),
     repoUrl: z.string(),
 });
 

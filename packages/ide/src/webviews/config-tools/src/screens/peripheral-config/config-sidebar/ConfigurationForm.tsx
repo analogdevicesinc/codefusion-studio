@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import {memo, useMemo} from 'react';
 import styles from './PeripheralConfigForm.module.scss';
 import BooleanControl from '../../../components/boolean-control/BooleanControl';
 import {HexInputField} from 'cfs-react-library';
+import {areControlValuesEqual} from '../../../utils/control-defaults';
 
 type ConfigurationFormProps = Readonly<{
 	controls: TFormControl[];
@@ -50,7 +51,10 @@ function ConfigurationForm({
 			Object.entries(data ?? {}).some(
 				([controlId, controlValue]) =>
 					controls.some(({id}) => id === controlId) &&
-					controlValue !== resetValues?.[controlId]
+					!areControlValuesEqual(
+						controlValue,
+						resetValues?.[controlId]
+					)
 			),
 		[data, resetValues, controls]
 	);

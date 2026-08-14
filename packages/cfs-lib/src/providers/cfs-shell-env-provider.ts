@@ -13,18 +13,10 @@
  *
  */
 
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import type { ToolInfo } from "../managers/cfs-tool-manager.js";
-
-/**
- * Environment variable defined by an installed tool.
- */
-export interface ToolEnvVar {
-	name: string;
-	value: string;
-	isPath: boolean;
-}
 
 /**
  * Options for composing a base shell environment.
@@ -65,9 +57,24 @@ export class CfsShellEnvProvider {
 		for (const tool of tools) {
 			if (tool.envVars) {
 				for (const envVar of tool.envVars) {
-					env[envVar.name] = envVar.isPath
+					const variableValue = envVar.isPath
 						? path.join(tool.rootPath, envVar.value)
 						: envVar.value;
+					if (
+						envVar.append === true ||
+						typeof envVar.append === "string"
+					) {
+						const delimiter =
+							typeof envVar.append === "string"
+								? envVar.append
+								: path.delimiter;
+						// Note this avoids the delimiter if the env var was set to an empty string.
+						env[envVar.name] = env[envVar.name]
+							? `${env[envVar.name]}${delimiter}${variableValue}`
+							: variableValue;
+					} else {
+						env[envVar.name] = variableValue;
+					}
 				}
 			}
 		}
@@ -151,7 +158,8 @@ export class CfsShellEnvProvider {
 
 		const resolvedZephyrSdkPath =
 			options.zephyrSdkPath ??
-			(options.sdkPath
+			(options.sdkPath &&
+			fs.existsSync(path.join(options.sdkPath, "Tools", "zephyr-sdk"))
 				? path.join(options.sdkPath, "Tools", "zephyr-sdk")
 				: undefined);
 

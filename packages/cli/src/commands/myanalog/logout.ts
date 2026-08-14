@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 import {Command} from '@oclif/core';
 
+import {getPackageManager} from '../../utils/package-manager.js';
 import {getSessionManager} from '../../utils/session-manager.js';
 
 export default class CfsMyAnalogLogout extends Command {
@@ -47,6 +48,28 @@ export default class CfsMyAnalogLogout extends Command {
 
     try {
       await session.endSession();
+
+      // Reconfigure package manager
+      try {
+        delete process.env.CFS_API_KEY;
+        await getPackageManager(
+          {
+            acceptUndefined: false,
+            useRemotes: true
+          },
+          undefined,
+          this
+        );
+      } catch (pkgError) {
+        this.warn(
+          new Error(
+            'An error occurred while reconfiguring the package manager.',
+            {
+              cause: pkgError
+            }
+          )
+        );
+      }
 
       this.log('You have been logged out of myAnalog successfully.');
     } catch (error) {

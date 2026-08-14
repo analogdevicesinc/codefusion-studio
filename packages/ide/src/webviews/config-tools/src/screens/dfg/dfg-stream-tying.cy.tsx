@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@
 import {Dfg} from './DFG';
 import type {CfsConfig} from 'cfs-lib';
 import {configurePreloadedStore} from '../../state/store';
-import {addNewStream} from '../../state/slices/gaskets/gasket.reducer';
+import {
+	addNewStream,
+	setEditingStream
+} from '../../state/slices/gaskets/gasket.reducer';
 import {LocalizationProvider} from '../../../../common/contexts/LocaleContext';
+
+const l10n = await import(
+	'../../../../../../l10n/bundle.l10n.en.json'
+).then(module => module.default);
 
 const ESSStartID = 129;
 const ASSStartID = 1;
@@ -34,45 +41,7 @@ function TestCfgtoolsTopBar() {
 
 describe('DFG Stream Tying Feature', () => {
 	beforeEach(() => {
-		(window as any).__webview_localization_resources__ = {
-			cfgtools: {
-				dfg: {
-					title: 'DFG',
-					description:
-						'<p>This screen allows you to view the Data Flow Gaskets.</p>',
-					help: {
-						title: 'Data Flow Gaskets Help'
-					},
-					createStream: 'Create Stream',
-					deleteConfirmation: {
-						deleteButton: 'Delete',
-						cancelButton: 'Cancel',
-						title: 'Are you sure you want to delete this stream?',
-						errorTitle: 'Error: Cannot delete stream',
-						tiedErrorMessage:
-							'Another stream is tied to the stream you are trying to delete. Please remove the tied stream before deleting this stream.'
-					},
-					noGasketPluginSettings:
-						'No settings found for this gasket.',
-					streamConfigSidePanel: {
-						selectDestinationDFG: 'Select Destination DFG',
-						validationErrors: {
-							sourceGasketRequired: 'Source gasket is required',
-							sourceBufferSizeRequired:
-								'Source buffer size is required',
-							sourceTiedStreamRequired:
-								'The corresponding input stream must be selected for this gasket. Please create it first if necessary.',
-							destinationGasketRequired:
-								'At least one destination gasket is required',
-							destinationBufferSizeRequired:
-								'Destination buffer size is required',
-							destinationBufferSizeRequired_01:
-								'Destination {destinationIndex} buffer size is required'
-						}
-					}
-				}
-			}
-		};
+		(window as any).__webview_localization_resources__ = l10n;
 
 		cy.viewport(1920, 1080);
 
@@ -140,6 +109,84 @@ describe('DFG Stream Tying Feature', () => {
 					expect(stream).to.have.property('StreamId', ESSStartID + 2);
 					expect(stream).to.have.nested.property('Source.Index', 2);
 				});
+		});
+	});
+
+	it('blocks removing a destination used by a tied output stream', function () {
+		const reduxStore = configurePreloadedStore(
+			this.soc,
+			{} as CfsConfig
+		);
+
+		reduxStore.dispatch(createTestInputStreamAddEvent(0));
+		reduxStore.dispatch(
+			addNewStream({
+				Description: 'tied ESS output',
+				StreamId: ESSStartID,
+				Group: '',
+				Source: {
+					Gasket: 'ESS',
+					BufferAddress: 0,
+					BufferSize: 128,
+					Index: 0
+				},
+				Destinations: [
+					{
+						Gasket: 'DSS',
+						BufferAddress: 0,
+						BufferSize: 32,
+						Index: 0
+					}
+				],
+				Uuid: `${Math.random()}-${Math.random()}`
+			})
+		);
+
+		cy.mount(<TestCfgtoolsTopBar />, reduxStore).then(() => {
+			const inputStream = reduxStore
+				.getState()
+				.gasketsReducer.Streams.find(
+					stream => stream.Description === 'input 1'
+				);
+
+			if (!inputStream) {
+				throw new Error('Expected input stream to be available');
+			}
+
+			reduxStore.dispatch(setEditingStream(inputStream));
+		});
+
+		cy.get('[data-test="stream-destination"]')
+			.children()
+			.eq(0)
+			.click({force: true});
+		cy.get('[data-test="multiselect-option-ESS"]').click();
+		cy.get('[data-test="multiselect-option-FSS"]').click();
+		cy.get('[data-test="stream-destination"]')
+			.children()
+			.eq(0)
+			.click({force: true});
+
+		cy.get('#sidepanel-edit-stream').click();
+		cy.contains(
+			l10n.cfgtools.dfg.streamConfigSidePanel.validationErrors
+				.destinationGasketTiedStreamRequired
+		).should('be.visible');
+
+		cy.then(() => {
+			const streams = reduxStore.getState().gasketsReducer.Streams;
+			const inputStream = streams.find(
+				stream => stream.Description === 'input 1'
+			);
+			const outputStream = streams.find(
+				stream => stream.Description === 'tied ESS output'
+			);
+
+			expect(inputStream?.Destinations[0].Gasket).to.equal('ESS');
+			expect(outputStream?.Source).to.include({
+				Gasket: 'ESS',
+				Index: 0
+			});
 		});
 	});
 });

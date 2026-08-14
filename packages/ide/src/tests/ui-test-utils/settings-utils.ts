@@ -18,7 +18,7 @@ import { InputBox, Workbench } from "vscode-extension-tester";
 
 import { SELECT_SDK_PATH_COMMAND_ID } from "../../commands/constants";
 
-export const CFS_SDK_VERSION = "2.2.1";
+export const CFS_SDK_VERSION = "2.3.0";
 
 /**
  * Select the SDK path using the quick pick option

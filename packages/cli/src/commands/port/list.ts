@@ -15,6 +15,12 @@
 import {Command, Flags} from '@oclif/core';
 import {SerialPort} from 'serialport';
 
+export const portListDeps: {
+  listPorts: typeof SerialPort.list;
+} = {
+  listPorts: SerialPort.list
+};
+
 export default class List extends Command {
   static description = 'List available serial ports.';
 
@@ -29,7 +35,7 @@ export default class List extends Command {
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(List);
-    const ports = await SerialPort.list();
+    const ports = await portListDeps.listPorts();
 
     if (ports.length === 0) {
       this.log('No serial ports found.');

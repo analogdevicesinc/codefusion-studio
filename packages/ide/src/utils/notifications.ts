@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 
 import * as vscode from "vscode";
 import { EXTENSION_ID, CFS_TELEMETRY_ENABLE } from "../constants";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 export const handleTelemetryNotification = async (): Promise<void> => {
   const config = vscode.workspace.getConfiguration(EXTENSION_ID);
@@ -31,6 +33,12 @@ export const handleTelemetryNotification = async (): Promise<void> => {
 
     if (result === shareData) {
       await config.update(CFS_TELEMETRY_ENABLE, true, true);
+      await getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(
+          TELEMETRY_ACTIONS.TELEMETRY_CONSENT_GIVEN,
+          {},
+        );
+      });
     } else if (result === dontShareData) {
       await config.update(CFS_TELEMETRY_ENABLE, false, true);
     }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ import SignalConfig from './SignalConfig';
 describe('Signal Config', () => {
 	const mockSignalName = 'PO.1';
 
-	it('should render configuration unavaiable when there is no pin assignment', () => {
+	it('should render configuration unavailable when there is no pin assignment', () => {
 		cy.mount(
-			<SignalConfig isMissingPinAssignement signal={mockSignalName} />
+			<SignalConfig isMissingPinAssignment signal={mockSignalName} />
 		);
 
 		cy.get('[data-test="config-unavailable:signal"]')
@@ -30,10 +30,10 @@ describe('Signal Config', () => {
 			);
 	});
 
-	it('should not render configuration unavaiable when there is a pin assignment', () => {
+	it('should not render configuration unavailable when there is a pin assignment', () => {
 		cy.mount(
 			<SignalConfig
-				isMissingPinAssignement={false}
+				isMissingPinAssignment={false}
 				signal={mockSignalName}
 			/>
 		);

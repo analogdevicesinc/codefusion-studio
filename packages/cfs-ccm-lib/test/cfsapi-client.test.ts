@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,14 @@ import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { CfsApiClient } from '../src/sdk/cfsapi-client.js';
+import {
+    CfsApiClient,
+    CfsApiError,
+} from '../src/sdk/cfsapi-client.js';
+import {
+    ApiKeyAuthorizer,
+    PublicAuthorizer,
+} from '../src/auth/index.js';
 import nock from 'nock';
 
 const API_URL: string = 'http://api.test.me';
@@ -38,14 +45,64 @@ describe('CfsApiClient', () => {
         });
     });
 
+    describe('constructor', () => {
+        it('should normalize and expose configured baseUrl', () => {
+            const configuredBaseUrl = `${API_URL}/v1`;
+            client = new CfsApiClient({
+                baseUrl: configuredBaseUrl,
+                isCache: false,
+            });
+
+            expect(client.baseUrl).to.equal(
+                new URL(configuredBaseUrl).toString(),
+            );
+        });
+
+        it('should use the configured baseUrl for requests', async () => {
+            const configuredBaseUrl = 'http://alt.api.test.me/root';
+            client = new CfsApiClient({
+                baseUrl: configuredBaseUrl,
+                isCache: false,
+            });
+
+            nockScope = nock('http://alt.api.test.me')
+                .get('/root/ping')
+                .reply(200, 'Healthy Connection');
+
+            await expect(client.isOnline()).to.eventually.be.true;
+            expect(nockScope.isDone()).to.be.true;
+        });
+
+        it('should set isAnonymous to true with PublicAuthorizer', () => {
+            client = new CfsApiClient({
+                baseUrl: API_URL,
+                authorizer: new PublicAuthorizer(),
+                isCache: false,
+            });
+
+            expect(client.isAnonymous).to.be.true;
+        });
+
+        it('should set isAnonymous to false with non-public authorizer', () => {
+            client = new CfsApiClient({
+                baseUrl: API_URL,
+                authorizer: new ApiKeyAuthorizer({
+                    apiKey: 'test-api-key',
+                }),
+                isCache: false,
+            });
+
+            expect(client.isAnonymous).to.be.false;
+        });
+    });
+
     describe('testConnection', () => {
         it('should return if the connection is successful', async () => {
             nockScope = nock(API_URL).get('/pingAuth').reply(202, {
                 message: 'test',
             });
 
-            await expect(client.testConnection()).to.eventually.not.be
-                .rejected;
+            await expect(client.testConnection()).to.not.be.rejected;
         });
 
         it('should throw if the API is unavailable', async () => {
@@ -53,8 +110,7 @@ describe('CfsApiClient', () => {
                 message: 'test',
             });
 
-            await expect(client.testConnection()).to.eventually.be
-                .rejected;
+            await expect(client.testConnection()).to.be.rejected;
         });
 
         it('should throw if the client is not authorized', async () => {
@@ -62,8 +118,9 @@ describe('CfsApiClient', () => {
                 message: 'test',
             });
 
-            await expect(client.testConnection()).to.eventually.be
-                .rejected;
+            await expect(client.testConnection())
+                .to.eventually.be.rejectedWith(CfsApiError)
+                .with.property('type', 'AUTHN_REQUIRED');
         });
 
         it('should throw if there is a client-side error', async () => {
@@ -73,8 +130,7 @@ describe('CfsApiClient', () => {
                 isCache: false,
             });
 
-            await expect(client.testConnection(0)).to.eventually.be
-                .rejected;
+            await expect(client.testConnection(0)).to.be.rejected;
         });
 
         it('should throw if the timeout is exceeded', async () => {
@@ -85,8 +141,7 @@ describe('CfsApiClient', () => {
                     message: 'test',
                 });
             const startTime = process.hrtime();
-            await expect(client.testConnection(200)).to.eventually.be
-                .rejected; // 200ms timeout
+            await expect(client.testConnection(200)).to.be.rejected; // 200ms timeout
             const elapsed = process.hrtime(startTime); // [seconds, nanoseconds]
             expect(
                 elapsed[0] * 1000 + elapsed[1] / 1e6,
@@ -100,7 +155,7 @@ describe('CfsApiClient', () => {
                 .get('/ping')
                 .reply(200, 'Healthy Connection');
 
-            await expect(client.isOnline()).eventually.be.true;
+            await expect(client.isOnline()).to.eventually.be.true;
         });
 
         it('should return false if the API is offline', async () => {
@@ -108,7 +163,7 @@ describe('CfsApiClient', () => {
                 .get('/ping')
                 .reply(500, 'Connection Error');
 
-            await expect(client.isOnline()).eventually.be.false;
+            await expect(client.isOnline()).to.eventually.be.false;
         });
 
         it('should return false if there is a client-side error (and not throw)', async () => {
@@ -118,7 +173,7 @@ describe('CfsApiClient', () => {
                 isCache: false,
             });
 
-            await expect(client.isOnline(0)).eventually.be.false;
+            await expect(client.isOnline(0)).to.eventually.be.false;
         });
 
         it('should return false if the timeout is exceeded', async () => {
@@ -127,7 +182,7 @@ describe('CfsApiClient', () => {
                 .delay(500) // 500ms delay
                 .reply(200, 'Healthy Connection');
             const startTime = process.hrtime();
-            await expect(client.isOnline(200)).eventually.be.false; // 200ms timeout
+            await expect(client.isOnline(200)).to.eventually.be.false; // 200ms timeout
             const elapsed = process.hrtime(startTime); // [seconds, nanoseconds]
             expect(
                 elapsed[0] * 1000 + elapsed[1] / 1e6,

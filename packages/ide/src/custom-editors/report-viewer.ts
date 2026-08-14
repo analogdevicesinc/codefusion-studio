@@ -26,6 +26,8 @@ import {
   handleLayerDataQuery,
 } from "./report-viewer/query-handler";
 import { parseAndValidateReport } from "./report-viewer/report-schema";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 export class ReportViewer implements vscode.CustomTextEditorProvider {
   public static readonly viewType = "cfs.reportViewer";
@@ -71,6 +73,12 @@ export class ReportViewer implements vscode.CustomTextEditorProvider {
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "report_viewer",
+      });
+    });
+
     const viewProviderPanel = new ViewProviderPanel(this.context, {
       distDir: "out/report-viewer",
       indexPath: "out/report-viewer/index.html",

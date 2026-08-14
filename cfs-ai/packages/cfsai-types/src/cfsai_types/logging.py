@@ -10,13 +10,15 @@
 # limitations under the License.
 
 
+import json
 import logging
-import sys
 from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, FieldSerializationInfo, field_serializer
+
+_logs: list[str] = []
 
 
 def cfsai_log_message_filter(record: logging.LogRecord) -> bool:
@@ -38,10 +40,8 @@ class EventType(StrEnum):
 
     Attributes:
         FILE: A file has been created.
-        MODEL: A model has been created.
     """
     FILE='Created file'
-    MODEL='Created model'
 
 
 class EventStatus(StrEnum):
@@ -82,15 +82,16 @@ class LogEvent(BaseModel):
 
 class LogMessage(BaseModel):
     """
-    Log message type.
+    Log message type matching the AiEvent interface.
 
     Attributes:
-        level: Level of the log message.
-        msg: Log message.
+        type: Event type (FILE, INFO, WARN, or ERROR).
+        message: Log message.
+        value: Optional associated value (e.g. file path, model name).
     """
-    level: str
-    msg: str
-    event: Optional[LogEvent] = None
+    type: str
+    message: str
+    value: Optional[str] = None
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -108,12 +109,46 @@ class JsonLogFormatter(logging.Formatter):
         msg = str(record.exc_info[1]) if record.exc_info else record.getMessage()
         event: Optional[LogEvent] = \
             getattr(record, 'event', None)
-        
+
+        if event:
+            _type_map = {'FILE': 'FILE'}
+            event_type = _type_map.get(event.type.name, 'INFO')
+            value: Optional[str] = str(event.value) if event.value else None
+        else:
+            _level_map = {'WARNING': 'WARN', 'ERROR': 'ERROR'}
+            event_type = _level_map.get(record.levelname, 'INFO')
+            value = None
+
         return LogMessage(
-            level=record.levelname,
-            msg=msg,
-            event=event
-        ).model_dump_json()
+            type=event_type,
+            message=msg,
+            value=value
+        ).model_dump_json(exclude_none=True)
+
+class MemoryLogHandler(logging.Handler):
+    """Handler that stores log records in memory."""
+    def emit(self, record: logging.LogRecord) -> None:
+        """
+        Store formatted log record in memory.
+
+        Args:
+            record: Logging record.
+        """
+        if self.formatter:
+            _logs.append(self.formatter.format(record))
+
+
+def dump_logs() -> str:
+    """
+    Retrieve all collected logs and clear the buffer.
+
+    Returns:
+        JSON array string of formatted log messages.
+    """
+    global _logs
+    logs = _logs.copy()
+    _logs.clear()
+    return json.dumps([json.loads(log) for log in logs])
 
 def log_event(
         logger: logging.Logger, 
@@ -138,7 +173,7 @@ def log_event(
         pass
     metadata = LogEvent(status=status, type=type, value=val)
     logger.info(
-        f'{type.value} "{val}"',
+        f'{type.value} {val}',
         extra={'event' : metadata}
     )
 
@@ -154,19 +189,10 @@ def setup_logger(
     """
     logger = logging.getLogger()
     logger.handlers.clear()
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stderr_handler = logging.StreamHandler(sys.stderr)
-
-    stdout_handler.setFormatter(JsonLogFormatter())
-    stderr_handler.setFormatter(JsonLogFormatter())
-
-    stdout_handler.addFilter(lambda record: record.levelno < logging.ERROR)
-    stdout_handler.addFilter(cfsai_log_message_filter)
-    logger.addHandler(stdout_handler)
-
-    stderr_handler.addFilter(lambda record: record.levelno >= logging.ERROR)
-    stderr_handler.addFilter(cfsai_log_message_filter)
-    logger.addHandler(stderr_handler)
+    memory_handler = MemoryLogHandler()
+    memory_handler.setFormatter(JsonLogFormatter())
+    memory_handler.addFilter(cfsai_log_message_filter)
+    logger.addHandler(memory_handler)
 
     level = logging.DEBUG if debug_level else logging.INFO
     logger.setLevel(level)

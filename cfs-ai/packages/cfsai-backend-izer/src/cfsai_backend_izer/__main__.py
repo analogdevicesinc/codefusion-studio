@@ -21,7 +21,7 @@ from cfsai_backend_izer.exceptions import IzerError
 from cfsai_backend_izer.extensions import CfsaiIzerExtensions
 from cfsai_backend_izer.izer import CNNGeneratorArgs, codegen
 from cfsai_types.config.verified import VerifiedBackendConfig
-from cfsai_types.logging import EventType, log_event, setup_logger
+from cfsai_types.logging import EventType, dump_logs, log_event, setup_logger
 
 logger = logging.getLogger("cfsai_backend_izer")
 
@@ -162,4 +162,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f'{e.__class__.__name__}{e}')
         sys.exit(1)
+    finally:
+        print(dump_logs())
 

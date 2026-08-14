@@ -10,7 +10,7 @@ It also supports models in the PyTorch format for execution on the MAX78002's CN
 
 ## Supported Processors
 
-For a list of supported processors and model formats, see the [User Guide](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/ai-tools/supported-ai-model-formats/).
+For a list of supported processors and model formats, see the [User Guide](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/about/supported-ai-model-formats/).
 
 ## Compiling models to C/C++ source
 
@@ -140,7 +140,7 @@ Optimization recommendations available through smart memory analysis and layerwi
 +----------------------------------------------------------------------------------------------------------------------+
 ```
 
-By default, `cfsutil ai profile` prints a human-readable summary to the console. 
-To write the output to a file instead, use `--report-file <file>` to generate a 
+By default, `cfsutil ai profile` prints a human-readable summary to the console.
+To write the output to a file instead, use `--report-file <file>` to generate a
 JSON formatted report.
 For the Resource Profiler, the `--report-format=text` flag can be used to generate a text report instead of JSON.

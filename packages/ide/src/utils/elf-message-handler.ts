@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,13 @@ import { SYMBOLS_TABLE_ID } from "elf-parser";
 import type { WebviewPanel } from "vscode";
 import * as vscode from "vscode";
 
-import type { ElfDataModel } from "elf-parser/src/ElfDataModel";
-import type { ElfFileParser } from "elf-parser/src/ElfFileParser";
-import type { ElfProgramHeader } from "elf-parser/src/ElfProgramHeader";
-import type { ElfSectionHeader } from "elf-parser/src/ElfSectionHeader";
-import type { ElfHeuristics } from "elf-parser/src/ElfHeuristics";
+import type {
+  ElfDataModel,
+  ElfFileParser,
+  ElfProgramHeader,
+  ElfSectionHeader,
+  ElfHeuristics,
+} from "elf-parser";
 import { ELF_EXPLORER_COMMANDS } from "../commands/constants";
 
 const SEGM_FLAG_READ_ONLY = "R";

@@ -29,7 +29,7 @@ import PluginInfo from '../../../components/plugin-info/plugin-info';
 import {getControlsFromCache} from '../../../utils/api';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
-import type {ControlCfg} from '../../../../../common/types/soc';
+import type {ControlCfg} from '@common/types/soc';
 import {getPeripheralFormErrors} from '../../../utils/peripheral-errors';
 import {
 	computePeripheralResetValues,
@@ -220,7 +220,7 @@ function PeripheralConfigForm({
 			PERIPHERAL_PLUGIN_OPTIONS_FORM_ID
 		);
 		setPortalTarget(portalTarget ? portalTarget : undefined);
-	}, []);
+	}, [pluginOptions.length]);
 
 	const handleReset = useCallback(() => {
 		dispatch(
@@ -248,27 +248,23 @@ function PeripheralConfigForm({
 
 			{
 				/* Renders the plugin options form as a portal in its corresponding section of the DOM */
-				(() =>
-					portalTarget ? (
-						createPortal(
-							<>
-								<ConfigurationForm
-									controls={pluginOptions}
-									data={formattedData}
-									errors={formErrors}
-									resetValues={resetValues}
-									testId='plugin-options:plugin-form'
-									emptyMessage='No plugin options available.'
-									onControlChange={handleOnChange}
-									onReset={handleReset}
-								/>
-								<PluginInfo projectId={projectId} />
-							</>,
-							portalTarget
-						)
-					) : (
-						<span>Plugins section missing.</span>
-					))()
+				portalTarget &&
+					createPortal(
+						<>
+							<ConfigurationForm
+								controls={pluginOptions}
+								data={formattedData}
+								errors={formErrors}
+								resetValues={resetValues}
+								testId='plugin-options:plugin-form'
+								emptyMessage='No plugin options available.'
+								onControlChange={handleOnChange}
+								onReset={handleReset}
+							/>
+							<PluginInfo projectId={projectId} />
+						</>,
+						portalTarget
+					)
 			}
 		</>
 	);

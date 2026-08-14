@@ -24,6 +24,14 @@ export async function loadAiBackends(): Promise<
 
 let cachedControls: Record<string, ControlCfg[]> = {};
 
+/**
+ * For testing purposes only
+ * resets the cached controls so that they will be re-fetched on the next call to getControlsForAiBackend
+ */
+export function resetCachedAiBackendControls() {
+	cachedControls = {};
+}
+
 export async function getControlsForAiBackend(
 	backendName: string
 ): Promise<ControlCfg[]> {

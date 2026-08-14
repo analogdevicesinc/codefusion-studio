@@ -18,7 +18,8 @@ import {
 	SNAP_RADIUS_X,
 	SNAP_RADIUS_Y,
 	UNITS_ID as UNITS,
-	UNITS_LABEL as LABELS
+	UNITS_LABEL as LABELS,
+	LABEL_GAP
 } from '../constants/timeline';
 import type {
 	DataZoom,
@@ -168,17 +169,19 @@ export const formatTimeDiff = (
 };
 
 export const clampLabelLeft = (
-	lineX: number,
+	centerX: number,
 	labelWidth: number,
 	overlayWidth: number
 ) => {
 	if (labelWidth <= 0 || overlayWidth <= 0) {
-		return lineX;
+		return centerX;
 	}
 
-	const proposedX = lineX - labelWidth / 2;
+	const proposedLeft = centerX - labelWidth / 2;
 
-	return Math.max(0, Math.min(proposedX, overlayWidth - labelWidth));
+	const maxLabelLeft = overlayWidth - labelWidth - LABEL_GAP;
+
+	return Math.max(LABEL_GAP, Math.min(proposedLeft, maxLabelLeft));
 };
 
 const toTimeParts = (timestamp: number): TimeParts => {

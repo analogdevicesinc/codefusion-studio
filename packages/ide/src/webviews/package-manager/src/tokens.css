@@ -1,0 +1,43 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+/**
+ * Harmonic spacing scale (4px base unit).
+ * These are fallback values for when hmc-* web components are not mounted
+ * and therefore do not inject their own CSS custom properties.
+ */
+ 
+ :root {
+   /* Spacing Scale */
+   --hmc-space-1: 2px;
+   --hmc-space-2: 4px;
+   --hmc-space-3: 8px;
+   --hmc-space-4: 12px;
+   --hmc-space-5: 16px;
+   --hmc-space-6: 20px;
+   --hmc-space-7: 24px;
+   --hmc-space-8: 32px;
+   --hmc-space-9: 40px;
+
+   /* Border Radius Scale */
+   --hmc-border-radius-1: 2px;
+   --hmc-border-radius-2: 5px;
+   --hmc-border-radius-3: 999px;
+
+   /** Border width */
+   --hmc-border-width-1: 0.5px;
+   --hmc-border-width-2: 1px;
+   --hmc-border-width-3: 2px;
+}

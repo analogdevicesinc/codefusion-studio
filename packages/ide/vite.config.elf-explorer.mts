@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,35 +12,11 @@
  * limitations under the License.
  *
  */
-import {defineConfig} from 'vite';
-import react from '@vitejs/plugin-react-swc';
-import path from 'path';
+import { defineConfig } from "vite";
+import { viteWebviewConfigGenerator } from "./vite-webview-config-generator";
 
-export default defineConfig({
-	root: path.resolve(__dirname, './src/webviews/elf-explorer'),
-	plugins: [react()],
-	server: {
-		port: 3201
-	},
-	resolve: {
-		alias: {
-			'@common': path.resolve(__dirname, './src/webviews/common/')
-		}
-	},
-	build: {
-		outDir: path.resolve(__dirname, './out/elf-explorer'),
-		emptyOutDir: true,
-		target: 'esnext',
-		rollupOptions: {
-			input: path.resolve(
-				__dirname,
-				'./src/webviews/elf-explorer/index.html'
-			)
-		}
-	},
-	css: {
-		preprocessorOptions: {
-			loadPaths: [path.resolve(__dirname, './common/styles')]
-		}
-	}
-});
+export default defineConfig(
+  viteWebviewConfigGenerator({
+    name: "elf-explorer",
+  }),
+);

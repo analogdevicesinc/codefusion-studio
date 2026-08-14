@@ -23,6 +23,12 @@ const EXTENSIONS_DIR = path.resolve(
   "ui-test-workspace-creation",
   ".vscode",
 );
+const COMMON_SETTINGS_PATH = path.resolve(
+  process.cwd(),
+  "src",
+  "tests",
+  "common-settings.json",
+);
 process.env.SKIP_OPEN_WORKSPACE = "true"; // Skip opening workspace in tests
 
 async function main() {
@@ -41,18 +47,18 @@ async function main() {
 
   let projectPluginsPath = path.resolve(
     process.cwd(),
-    "src",
-    "tests",
-    "fixtures",
+    "..",
+    "..",
+    "test-fixtures",
     "plugins",
     "project",
   );
 
   let workspaceTemplatesPath = path.resolve(
     process.cwd(),
-    "src",
-    "tests",
-    "fixtures",
+    "..",
+    "..",
+    "test-fixtures",
     "plugins",
     "workspace-templates",
   );
@@ -70,17 +76,22 @@ async function main() {
       );
     }
 
-    const settingsObj = {
-      "cfs.plugins.searchDirectories": [
-        projectPluginsPath,
-        workspaceTemplatesPath,
-      ],
-      "cfs.plugins.dataModelSearchDirectories": [socsPath],
-      "cfs.catalogManager.checkForUpdates": false,
-      "cfs.catalogManager.catalogLocation": catalogPath,
-      "cfs.telemetry.enable": false,
-      "cfs.sdk.path": "some/fake/path",
-    };
+    const commonSettingsRaw = await fs.promises.readFile(
+      COMMON_SETTINGS_PATH,
+      "utf-8",
+    );
+    const settingsObj = JSON.parse(commonSettingsRaw) as Record<
+      string,
+      unknown
+    >;
+
+    settingsObj["cfs.plugins.searchDirectories"] = [
+      projectPluginsPath,
+      workspaceTemplatesPath,
+    ];
+    settingsObj["cfs.plugins.dataModelSearchDirectories"] = [socsPath];
+    settingsObj["cfs.catalogManager.checkForUpdates"] = false;
+    settingsObj["cfs.catalogManager.catalogLocation"] = catalogPath;
 
     await fs.promises.writeFile(
       settingsPath,
@@ -93,24 +104,60 @@ async function main() {
       workspaceTemplatesPath,
     ]);
 
+    // Support TEST_PATTERN environment variable for grouping tests by folder.
+    const testPattern = process.env.TEST_PATTERN ?? "suite/*.test.js";
+    console.log(`Using test pattern: ${testPattern}`);
+
     const tester = new ExTester(undefined, undefined, EXTENSIONS_DIR);
 
-    await tester.setupAndRunTests(
-      path.resolve(__dirname, "suite/*.test.js"),
-
-      "max",
-      {
-        useYarn: false,
-        installDependencies: false,
-      },
-      {
-        config: path.resolve(process.cwd(), ".mocharc.js"),
-        resources: [],
-        settings: settingsPath,
-        cleanup: true,
-        logLevel: "debug" as any,
-      },
+    // Download VS Code and ChromeDriver only (these are cached)
+    // We skip setupRequirements() because it triggers the prepublish script and rebuilds the extension
+    console.log(
+      "⬇️  Downloading VS Code and ChromeDriver (cached after first run)...",
     );
+    await tester.downloadCode();
+    await tester.downloadChromeDriver();
+    console.log("✅ VS Code and ChromeDriver ready!\n");
+
+    // Install the VSIX so VS Code properly registers extension contributions.
+    console.log("📥 Installing extension...");
+    const findVsix = async (dir: string): Promise<string | undefined> => {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith(".vsix")) {
+          return path.join(dir, entry.name);
+        }
+        if (entry.isDirectory()) {
+          const found = await findVsix(path.join(dir, entry.name));
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+
+    const vsixPath = await findVsix(process.cwd());
+    if (!vsixPath) {
+      throw new Error(
+        `No VSIX file found under ${process.cwd()}. ` +
+          `Run 'yarn build:extension && yarn package' to generate the VSIX.`,
+      );
+    }
+    console.log(`Found extension: ${vsixPath}`);
+    await tester.installVsix({ vsixFile: vsixPath });
+    console.log("✅ Extension installed!\n");
+
+    // Run tests
+    const testGlob = path.resolve(__dirname, testPattern);
+    console.log(`Running tests matching: ${testPattern}\n`);
+
+    await tester.runTests(testGlob, {
+      config: path.resolve(process.cwd(), ".mocharc.js"),
+      resources: [],
+      settings: settingsPath,
+      cleanup: true,
+      logLevel: "debug" as any,
+      vscodeVersion: "max",
+    });
     const reportPath = path.resolve(
       process.cwd(),
       "coverage",

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import {useState} from 'react';
 import {
 	type TLocaleContext,
 	useLocaleContext
-} from '../../../../../common/contexts/LocaleContext';
+} from '@common/contexts/LocaleContext';
 
 function ConfigSection({
 	title,

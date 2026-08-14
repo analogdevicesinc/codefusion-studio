@@ -13,6 +13,7 @@
  *
  */
 import {Flags} from '@oclif/core';
+import {caseInsensitiveCompare} from 'cfs-lib';
 import {AIModel} from 'cfs-types';
 
 import {type CliRunResponse} from '../../../utils/base-command.js';
@@ -43,8 +44,7 @@ export default class List extends BaseModelCommand {
 
     for (const project of config.Projects) {
       if (flags.core) {
-        flags.core = flags.core.toLowerCase();
-        if (project.CoreId.toLowerCase() === flags.core) {
+        if (caseInsensitiveCompare(project.CoreId, flags.core)) {
           for (const aiModel of project.AIModels ?? []) {
             this.logModel(aiModel, flags.verbose);
             output.push(aiModel);

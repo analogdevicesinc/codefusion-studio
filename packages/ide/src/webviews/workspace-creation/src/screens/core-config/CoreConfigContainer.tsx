@@ -21,6 +21,7 @@ import {
 	Suspense
 } from 'react';
 import {ProgressRing, use} from 'cfs-react-library';
+import semver from 'semver';
 import CodeGenPlugin from './core-config-components/code-gen-plugin/CodeGenPlugin';
 import NotificationError from '../../components/notification-error/NotificationError';
 import PluginProperties from './PluginProperties';
@@ -54,7 +55,7 @@ function CoreConfigContainer({
 }: CoreConfigContainerProps) {
 	const dispatch = useAppDispatch();
 	const selectedSocId = useSelectedSoc();
-	const {boardId} = useSelectedBoardPackage();
+	const {boardId, packageId} = useSelectedBoardPackage();
 	const configErrors = useConfigurationErrors('coreConfig');
 	const pluginsList = use(pluginsPromise);
 	const coreId = useSelectedCoreToConfigId();
@@ -62,27 +63,12 @@ function CoreConfigContainer({
 	const persistedPluginVersion = useCorePluginVersion(coreId ?? '');
 	const core = useConfiguredCore(coreId ?? '');
 
-	// Remove duplicates from plugins List
-	const uniquePluginsList = useMemo(() => {
-		const processedPluginIds = new Set<string>();
-
-		return pluginsList.filter(plugin => {
-			if (processedPluginIds.has(plugin.pluginId)) {
-				return false;
-			}
-
-			processedPluginIds.add(plugin.pluginId);
-
-			return true;
-		});
-	}, [pluginsList]);
-
 	const [selectedPluginInfo, setSelectedPluginInfo] = useState<
 		CfsPluginInfo | undefined
 	>(() => {
 		if (persistedPluginId) {
 			return findPluginInfo(
-				uniquePluginsList,
+				pluginsList,
 				persistedPluginId,
 				persistedPluginVersion
 			);
@@ -97,30 +83,59 @@ function CoreConfigContainer({
 				soc: selectedSocId,
 				coreId: core.coreId,
 				boardId,
+				packageId,
 				secure: core.Secure
 			});
 		}
 
 		return [];
-	}, [selectedPluginInfo, selectedSocId, boardId, core]);
+	}, [selectedPluginInfo, selectedSocId, boardId, packageId, core]);
 
+	// Remove duplicates from plugins list, keeping the highest version per plugin ID
+	// Applied after SoC/core filtering to ensure only compatible plugins are considered
 	const filteredPluginList = useMemo(() => {
-		const filter = (plugin: CfsPluginInfo) =>
-			!plugin.features.workspace &&
-			(plugin.supportedSocs?.some(
-				soc =>
-					soc.name?.toLowerCase() === selectedSocId?.toLowerCase() &&
-					(!Array.isArray(soc.cores) ||
-						soc.cores?.includes(core?.coreId))
-			) ??
-				false);
+		const compatible = pluginsList.filter(
+			plugin =>
+				!plugin.features.workspace &&
+				(plugin.supportedSocs?.some(
+					soc =>
+						soc.name.toLowerCase() ===
+							selectedSocId?.toLowerCase() &&
+						(!Array.isArray(soc.cores) ||
+							soc.cores?.includes(core?.coreId)) &&
+						// Board is irrelevant for project plugins — match on
+						// SoC and package only.
+						(soc.package.toLowerCase() ===
+							packageId.toLowerCase() ||
+							(soc.name.toLowerCase() === 'max32675c' &&
+								soc.package.toLowerCase() === 'tqfn' &&
+								packageId.toLowerCase() === 'lga'))
+				) ??
+					false)
+		);
 
-		return uniquePluginsList.filter(filter);
-	}, [selectedSocId, uniquePluginsList, core]);
+		const bestByPluginId = new Map<string, CfsPluginInfo>();
+
+		for (const plugin of compatible) {
+			const existing = bestByPluginId.get(plugin.pluginId);
+
+			if (
+				!existing ||
+				semver.gt(
+					plugin.pluginVersion,
+					existing.pluginVersion
+				)
+			) {
+				bestByPluginId.set(plugin.pluginId, plugin);
+			}
+		}
+
+		return [...bestByPluginId.values()];
+	}, [selectedSocId, pluginsList, core, packageId]);
 
 	const handlePluginChange = useCallback(
 		(id: string, version: string) => {
-			const targetPluginInfo = uniquePluginsList.find(
+			const targetPluginInfo = pluginsList.find(
 				p => p.pluginId === id && p.pluginVersion === version
 			);
 
@@ -145,7 +160,7 @@ function CoreConfigContainer({
 			}
 		},
 		[
-			uniquePluginsList,
+			pluginsList,
 			configErrors.notifications,
 			dispatch,
 			coreId,
@@ -157,7 +172,7 @@ function CoreConfigContainer({
 		if (persistedPluginId) {
 			setSelectedPluginInfo(
 				findPluginInfo(
-					uniquePluginsList,
+					pluginsList,
 					persistedPluginId,
 					persistedPluginVersion
 				)
@@ -169,7 +184,7 @@ function CoreConfigContainer({
 		coreId,
 		persistedPluginId,
 		persistedPluginVersion,
-		uniquePluginsList
+		pluginsList
 	]);
 
 	return (

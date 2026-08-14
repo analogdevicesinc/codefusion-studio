@@ -1352,9 +1352,7 @@ class APBTopLevel(APB):
         """
         Write copyright headers.
         """
-        if self.apifile is not None:
-            toplevel.copyright_header(self.apifile)
-        toplevel.copyright_header(self.memfile)
+        pass
 
     def header(
             self,

@@ -1358,4 +1358,17 @@ describe('RPN Expression Resolver', () => {
 
 		cy.wrap(trueRes).should('equal', true);
 	});
+
+	it('Should compare boolean controls with string boolean values', () => {
+		const condition = '${Control:DMA_EN} ${String:TRUE} =';
+
+		cy.wrap(evaluateCondition({DMA_EN: true}, condition)).should(
+			'equal',
+			true
+		);
+		cy.wrap(evaluateCondition({DMA_EN: false}, condition)).should(
+			'equal',
+			false
+		);
+	});
 });

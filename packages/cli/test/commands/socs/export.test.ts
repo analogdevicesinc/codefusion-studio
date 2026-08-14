@@ -12,15 +12,15 @@
  * limitations under the License.
  *
  */
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import {existsSync, unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 
 describe('soc export (legacy arguments)', () => {
-  test
-    .stdout()
-    .command(
+  it('runs socs export --name test_soc_b-tqfn', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         '--name',
@@ -31,14 +31,12 @@ describe('soc export (legacy arguments)', () => {
       {
         root: '..'
       }
-    )
-    .it('runs socs export --name test_soc_b-tqfn', (ctx) => {
-      expect(ctx.stdout).to.contain('"Name": "TEST_SOC_B"');
-    });
+    );
+    expect(stdout).to.contain('"Name": "TEST_SOC_B"');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('exports output to file without gzip', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         '--name',
@@ -51,21 +49,19 @@ describe('soc export (legacy arguments)', () => {
       {
         root: '..'
       }
-    )
-    .it('exports output to file without gzip', (ctx) => {
-      const outputFile = join(tmpdir(), 'test-output.json');
-      expect(ctx.stdout).to.contain('Output written to:');
-      expect(existsSync(outputFile)).to.be.true;
+    );
+    const outputFile = join(tmpdir(), 'test-output.json');
+    expect(stdout).to.contain('Output written to:');
+    expect(existsSync(outputFile)).to.be.true;
 
-      // Clean up
-      if (existsSync(outputFile)) {
-        unlinkSync(outputFile);
-      }
-    });
+    // Clean up
+    if (existsSync(outputFile)) {
+      unlinkSync(outputFile);
+    }
+  });
 
-  test
-    .stdout()
-    .command(
+  it('exports gzipped output to file', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         '--name',
@@ -79,49 +75,40 @@ describe('soc export (legacy arguments)', () => {
       {
         root: '..'
       }
-    )
-    .it('exports gzipped output to file', (ctx) => {
-      const outputFile = join(tmpdir(), 'test-output.gz');
-      expect(ctx.stdout).to.contain('Output written to:');
-      expect(existsSync(outputFile)).to.be.true;
+    );
+    const outputFile = join(tmpdir(), 'test-output.gz');
+    expect(stdout).to.contain('Output written to:');
+    expect(existsSync(outputFile)).to.be.true;
 
-      // Clean up
-      if (existsSync(outputFile)) {
-        unlinkSync(outputFile);
-      }
-    });
+    // Clean up
+    if (existsSync(outputFile)) {
+      unlinkSync(outputFile);
+    }
+  });
 
-  test
-    .stdout()
-    .command(
+  it('fails due to both positional and --name flag', async () => {
+    const {error} = await runCommand(
       ['socs:export', 'test_soc_b', '--name', 'test_soc_b-tqfn'],
       {
         root: '..'
       }
-    )
-    .catch((error) => {
-      expect(error.message).to.contain(
-        'SoC name provided both as positional argument and via deprecated --name flag.'
-      );
-    })
-    .it('fails due to both positional and --name flag');
+    );
+    expect(error?.message).to.contain(
+      'SoC name provided both as positional argument and via deprecated --name flag.'
+    );
+  });
 });
 
 describe('soc export', () => {
-  test
-    .stdout()
-    .command(['socs:export'], {
+  it('fails due to missing positional argument', async () => {
+    const {error} = await runCommand(['socs:export'], {
       root: '..'
-    })
-    .catch((error) => {
-      console.log(error.message);
-      expect(error.message).to.contain('Missing 1 required arg');
-    })
-    .it('fails due to missing positional argument');
+    });
+    expect(error?.message).to.contain('Missing 1 required arg');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('runs socs export test_soc_b --package tqfn', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         'test_soc_b',
@@ -133,15 +120,13 @@ describe('soc export', () => {
       {
         root: '..'
       }
-    )
-    .it('runs socs export test_soc_b --package tqfn', (ctx) => {
-      expect(ctx.stdout).to.contain('"Name": "TEST_SOC_B"');
-      expect(ctx.stdout).to.contain('"Package": "TQFN"');
-    });
+    );
+    expect(stdout).to.contain('"Name": "TEST_SOC_B"');
+    expect(stdout).to.contain('"Package": "TQFN"');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('runs socs export test_soc_b --package wlp', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         'test_soc_b',
@@ -153,15 +138,13 @@ describe('soc export', () => {
       {
         root: '..'
       }
-    )
-    .it('runs socs export test_soc_b --package wlp', (ctx) => {
-      expect(ctx.stdout).to.contain('"Name": "TEST_SOC_B"');
-      expect(ctx.stdout).to.contain('"Package": "WLP"');
-    });
+    );
+    expect(stdout).to.contain('"Name": "TEST_SOC_B"');
+    expect(stdout).to.contain('"Package": "WLP"');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('runs socs export test_soc_a', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         'test_soc_a',
@@ -171,14 +154,12 @@ describe('soc export', () => {
       {
         root: '..'
       }
-    )
-    .it('runs socs export test_soc_a', (ctx) => {
-      expect(ctx.stdout).to.contain('"Name": "TEST_SOC_A"');
-    });
+    );
+    expect(stdout).to.contain('"Name": "TEST_SOC_A"');
+  });
 
-  test
-    .stdout()
-    .command(
+  it('exports output to file without gzip', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         'test_soc_b',
@@ -192,21 +173,19 @@ describe('soc export', () => {
       {
         root: '..'
       }
-    )
-    .it('exports output to file without gzip', (ctx) => {
-      const outputFile = join(tmpdir(), 'test-output.json');
-      expect(ctx.stdout).to.contain('Output written to:');
-      expect(existsSync(outputFile)).to.be.true;
+    );
+    const outputFile = join(tmpdir(), 'test-output.json');
+    expect(stdout).to.contain('Output written to:');
+    expect(existsSync(outputFile)).to.be.true;
 
-      // Clean up
-      if (existsSync(outputFile)) {
-        unlinkSync(outputFile);
-      }
-    });
+    // Clean up
+    if (existsSync(outputFile)) {
+      unlinkSync(outputFile);
+    }
+  });
 
-  test
-    .stdout()
-    .command(
+  it('exports gzipped output to file', async () => {
+    const {stdout} = await runCommand(
       [
         'socs:export',
         'test_soc_b',
@@ -221,15 +200,14 @@ describe('soc export', () => {
       {
         root: '..'
       }
-    )
-    .it('exports gzipped output to file', (ctx) => {
-      const outputFile = join(tmpdir(), 'test-output.gz');
-      expect(existsSync(outputFile)).to.be.true;
-      expect(ctx.stdout).to.contain('Output written to:');
+    );
+    const outputFile = join(tmpdir(), 'test-output.gz');
+    expect(existsSync(outputFile)).to.be.true;
+    expect(stdout).to.contain('Output written to:');
 
-      // Clean up
-      if (existsSync(outputFile)) {
-        unlinkSync(outputFile);
-      }
-    });
+    // Clean up
+    if (existsSync(outputFile)) {
+      unlinkSync(outputFile);
+    }
+  });
 });

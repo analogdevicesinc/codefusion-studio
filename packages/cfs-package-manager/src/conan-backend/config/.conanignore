@@ -1,2 +1,6 @@
 customRemotes.json
 remotes.json
+managedRemotes.json
+userRemotesCfg.json
+.packman
+.packman.*

@@ -21,17 +21,17 @@ import {
 	useState
 } from 'react';
 
-import ZoomButtonsFooter from './zoom-buttons-footer';
-import TimelineSlider from './timeline-slider';
-import TimelineFooterPanButton from './timeline-footer-pan-button';
+import ZoomButtonsFooter from './components/footer/zoom-buttons-footer';
+import TimelineSlider from './components/footer/timeline-slider';
+import TimelineFooterPanButton from './components/footer/timeline-footer-pan-button';
 import {
 	INITIAL_DATA_ZOOM,
 	PAN_PERCENTAGE
 } from '../../../common/constants/timeline';
+import {store} from '../../../state/store';
 import type {DataZoom} from '../../../common/types/timeline';
 
-import styles from './timeline-diagram.module.scss';
-import {store} from '../../../state/store';
+import styles from './timeline-footer.module.scss';
 
 type TimelineFooterProps = Readonly<{
 	timestampRange: {min: number; max: number};

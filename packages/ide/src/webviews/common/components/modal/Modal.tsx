@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@ export type ModalProps = {
 	readonly handleModalClose: () => void;
 	readonly children: ReactNode;
 	readonly footer?: ReactNode;
+	readonly title?: ReactNode;
+	readonly titleId?: string;
 };
 
 export function Modal({
 	isOpen,
 	footer,
+	title,
+	titleId,
 	handleModalClose,
 	children
 }: ModalProps) {
@@ -51,6 +55,8 @@ export function Modal({
 		<dialog
 			ref={modalRef}
 			className={styles.modal}
+			aria-modal='true'
+			aria-labelledby={titleId}
 			onClick={e => {
 				if (e.target === modalRef.current) {
 					modalRef.current?.close();
@@ -66,6 +72,11 @@ export function Modal({
 		>
 			<div className={styles.innerModal} data-test='inner-modal'>
 				<div className={styles.modalHeader}>
+					{title && (
+						<div className={styles.modalTitle} id={titleId}>
+							{title}
+						</div>
+					)}
 					<Button
 						appearance='icon'
 						className={styles.closeButton}

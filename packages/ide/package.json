@@ -13,10 +13,10 @@
     "name": "Analog Devices Inc"
   },
   "license": "See LICENSE",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "engines": {
-    "vscode": "^1.96.0",
-    "node": "^20.x"
+    "vscode": "^1.101.0",
+    "node": ">=22"
   },
   "keywords": [
     "Analog Devices",
@@ -65,6 +65,14 @@
             "description": "Execute a GDB command in the active debug session"
           }
         ]
+      }
+    ],
+    "chatSkills": [
+      {
+        "path": "./skills/cfs-cli/SKILL.md"
+      },
+      {
+        "path": "./skills/cfs-docs/SKILL.md"
       }
     ],
     "customEditors": [
@@ -203,13 +211,13 @@
     "views": {
       "CodeFusionStudio": [
         {
-          "id": "cfs.contextPanelView",
-          "name": "Context",
+          "id": "cfs.quickAccessTree",
+          "name": "Home",
           "type": "tree"
         },
         {
-          "id": "cfs.quickAccessTree",
-          "name": "Home",
+          "id": "cfs.contextPanelView",
+          "name": "Context Filter",
           "type": "tree"
         },
         {
@@ -452,6 +460,10 @@
         "command": "cfs.refreshActionsPanel",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "cfs.openPackageManager",
+        "title": "(CFS) Open Package Manager"
       },
       {
         "command": "cfs.installPackage",
@@ -804,18 +816,34 @@
             "description": "Trace capture configuration for CodeFusion Studio.",
             "scope": "window",
             "properties": {
-              "interfaceType": {
-                "type": "string",
-                "enum": [
-                  "uart",
-                  "usb"
-                ]
-              },
-              "serialPort": {
-                "type": "string"
-              },
-              "baudRate": {
-                "type": "number"
+              "source": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "uart",
+                      "usb"
+                    ]
+                  },
+                  "serialPort": {
+                    "type": "string"
+                  },
+                  "baudRate": {
+                    "type": "number"
+                  },
+                  "usbDevice": {
+                    "type": "object",
+                    "properties": {
+                      "busNumber": {
+                        "type": "number"
+                      },
+                      "deviceAddress": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
               },
               "outputDirectory": {
                 "type": "string"
@@ -853,7 +881,7 @@
           "cfs.catalogManager.catalogLocation": {
             "type": "string",
             "order": 2,
-            "default": "${userHome}/cfs/2.2.1/.catalog",
+            "default": "${userHome}/cfs/2.3.0/.catalog",
             "description": "Path to the directory where the catalog will be stored.",
             "scope": "machine-overridable"
           }
@@ -1207,6 +1235,23 @@
             "scope": "machine-overridable"
           }
         }
+      },
+      {
+        "id": "cfs-model-zoo",
+        "title": "Model Zoo URLs",
+        "properties": {
+          "cfs.modelZoo.urls": {
+            "type": "array",
+            "default": [
+              "https://raw.githubusercontent.com/analogdevicesinc/adi-model-zoo/refs/heads/main"
+            ],
+            "description": "List of URLs to search for AI models. Requires a model_index.json at the root",
+            "items": {
+              "type": "string"
+            },
+            "scope": "resource"
+          }
+        }
       }
     ],
     "walkthroughs": [
@@ -1500,77 +1545,101 @@
     "useYarn": false
   },
   "scripts": {
-    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.ts ./src/webviews/config-tools/**/*.tsx && tsc --noEmit -p ./src/webviews/config-tools.tsconfig.json",
+    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.{ts,tsx}",
     "cfgtools:open-cypress": "cypress open --component",
-    "cfgtools:run-cypress": "cypress run --component --browser electron --spec './src/webviews/config-tools/**/*.cy.ts*'",
+    "cfgtools:run-cypress": "cypress run --component --browser electron --spec './src/webviews/config-tools/**/*.cy.{ts,tsx}'",
     "cfgtools:run-extester": "yarn cfgtools:compile-tests && node out/tests/ui-test-config-tools/runTest.js",
     "cfgtools:build": "vite build --config ./vite.config.config-tools.mts",
     "cfgtools:build-dev": "vite build --mode development --config ./vite.config.config-tools.mts --watch",
+    "cfgtools:typecheck": "tsc --noEmit -p ./src/webviews/config-tools.tsconfig.json",
     "cfgtools:compile-tests": "tsc -p src/tests/ui-test-config-tools/tsconfig.json && yarn ws:data-models generate-index",
     "ide:build": "vite build --config ./vite.config.config-tools.mts && copyfiles .env out/",
     "ide:dev": "vite --config ./vite.config.config-tools.mts",
-    "ide:lint": "eslint --ext .ts --ignore-path .gitignore --ignore-pattern \"src/webviews/**\" .",
+    "ide:lint": "eslint --ext .ts --ignore-path .gitignore --ignore-pattern \"src/webviews/**\" . && echo \"No linting errors found.\"",
+    "ide:typecheck": "tsc --noEmit -p tsconfig.json && echo \"No type errors found.\"",
+    "ide:tests-typecheck": "tsc --noEmit -p src/tests/ui-test/tsconfig.json && tsc --noEmit -p src/tests/ui-test-config-tools/tsconfig.json && tsc --noEmit -p src/tests/ui-test-system-event-viewer/tsconfig.json && tsc --noEmit -p src/tests/ui-test-workspace-creation/tsconfig.json && echo \"No test type errors found.\"",
+    "ide:webviews-typecheck": "yarn webviews:typecheck-common && yarn cfgtools:typecheck && yarn elf:typecheck && yarn report-viewer:typecheck && yarn home-page:typecheck && yarn mem-viewer:typecheck && yarn packman:typecheck && yarn trace-side-panel:typecheck && yarn trace-configuration:typecheck && yarn sev:typecheck && yarn sev-treeview:typecheck && yarn wrksp:typecheck && yarn model-wrksp:typecheck && yarn ai-profiling:typecheck && yarn ssplus:typecheck && echo \"No webview type errors found.\"",
+    "ide:webviews-lint": "yarn cfgtools:lint && yarn elf:lint && yarn report-viewer:lint && yarn home-page:lint && yarn mem-viewer:lint && yarn packman:lint && yarn trace-side-panel:lint && yarn trace-configuration:lint && yarn sev:lint && yarn sev-treeview:lint && yarn wrksp:lint && yarn model-wrksp:lint && yarn ai-profiling:lint && yarn ssplus:lint && yarn webviews:lint-common",
+    "ide:webviews-code-quality": "yarn ide:webviews-typecheck && yarn ide:webviews-lint",
     "ide:run-extester": "yarn ide:compile-tests && node out/tests/ui-test/runTest.js",
     "ide:compile-tests": "tsc -p src/tests/ui-test/tsconfig.json",
     "ide:compile-unit-tests": "tsc -p tsconfig.unit-tests.json",
     "ide:test-unit": "yarn run build:extension && yarn run ide:compile-unit-tests && vscode-test",
     "elf:dev": "vite --config ./vite.config.elf-explorer.mts",
     "elf:build": "vite build --config ./vite.config.elf-explorer.mts",
-    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.ts src/webviews/elf-explorer/**/*.tsx && tsc --noEmit -p ./src/webviews/elf.tsconfig.json",
-    "elf:run-cypress": "cypress run --component --browser electron --spec './src/webviews/elf-explorer/**/*.cy.ts*'",
+    "elf:typecheck": "tsc --noEmit -p ./src/webviews/elf.tsconfig.json",
+    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.{ts,tsx}",
+    "elf:run-cypress": "cypress run --component --browser electron --spec './src/webviews/elf-explorer/**/*.cy.{ts,tsx}'",
     "report-viewer:dev": "vite --config ./vite.config.report-viewer.mts",
     "report-viewer:build": "vite build --config ./vite.config.report-viewer.mts",
     "report-viewer:build-dev": "vite build --mode development --config ./vite.config.report-viewer.mts --watch",
-    "report-viewer:lint": "eslint ./src/webviews/report-viewer/**/*.ts src/webviews/report-viewer/**/*.tsx && tsc --noEmit -p ./src/webviews/report-viewer.tsconfig.json",
-    "report-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/report-viewer/**/*.cy.ts*'",
+    "report-viewer:typecheck": "tsc --noEmit -p ./src/webviews/report-viewer.tsconfig.json",
+    "report-viewer:lint": "eslint ./src/webviews/report-viewer/**/*.{ts,tsx}",
+    "report-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/report-viewer/**/*.cy.{ts,tsx}'",
     "home-page:dev": "vite --config ./vite.config.home-page.mts",
     "home-page:build": "vite build --config ./vite.config.home-page.mts",
     "home-page:build-dev": "vite build --mode development --config ./vite.config.home-page.mts --watch",
-    "home-page:lint": "eslint ./src/webviews/home-page/**/*.ts ./src/webviews/home-page/**/*.tsx && tsc --noEmit -p ./src/webviews/home.tsconfig.json",
+    "home-page:typecheck": "tsc --noEmit -p ./src/webviews/home.tsconfig.json",
+    "home-page:lint": "eslint ./src/webviews/home-page/**/*.{ts,tsx}",
     "mem-viewer:dev": "vite --config ./vite.config.memory-viewer.mts",
     "mem-viewer:build": "vite build --config ./vite.config.memory-viewer.mts",
     "mem-viewer:build-dev": "vite build --mode development --config ./vite.config.memory-viewer.mts --watch",
-    "mem-viewer:lint": "eslint ./src/webviews/memory-viewer/**/*.ts ./src/webviews/memory-viewer/**/*.tsx && tsc --noEmit -p ./src/webviews/memory-viewer.tsconfig.json",
+    "mem-viewer:typecheck": "tsc --noEmit -p ./src/webviews/memory-viewer.tsconfig.json",
+    "mem-viewer:lint": "eslint ./src/webviews/memory-viewer/**/*.{ts,tsx}",
     "mem-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/memory-viewer/**/*.cy.tsx'",
     "mem-viewer:run-extester": "yarn mem-viewer:compile-tests && node out/tests/ui-test-memory-viewer/runTest.js",
     "mem-viewer:compile-tests": "tsc -p src/tests/ui-test-memory-viewer/tsconfig.json && yarn ws:data-models generate-index",
+    "packman:build": "vite build --config ./vite.config.package-manager.mts",
+    "packman:build-dev": "vite build --mode development --config ./vite.config.package-manager.mts --watch",
+    "packman:dev": "vite --config ./vite.config.package-manager.mts",
+    "packman:lint": "eslint ./src/webviews/package-manager/**/*.{ts,tsx}",
+    "packman:typecheck": "tsc --noEmit -p ./src/webviews/package-manager.tsconfig.json",
     "trace-side-panel:dev": "vite --config ./vite.config.trace-side-panel.mts",
     "trace-side-panel:build": "vite build --config ./vite.config.trace-side-panel.mts",
     "trace-side-panel:build-dev": "vite build --mode development --config ./vite.config.trace-side-panel.mts --watch",
-    "trace-side-panel:lint": "eslint ./src/webviews/trace-side-panel/**/*.ts ./src/webviews/trace-side-panel/**/*.tsx && tsc --noEmit -p ./src/webviews/trace-side-panel.tsconfig.json",
+    "trace-side-panel:typecheck": "tsc --noEmit -p ./src/webviews/trace-side-panel.tsconfig.json",
+    "trace-side-panel:lint": "eslint ./src/webviews/trace-side-panel/**/*.{ts,tsx}",
     "trace-configuration:dev": "vite --config ./vite.config.trace-configuration.mts",
     "trace-configuration:build": "vite build --config ./vite.config.trace-configuration.mts",
     "trace-configuration:build-dev": "vite build --mode development --config ./vite.config.trace-configuration.mts --watch",
-    "trace-configuration:lint": "eslint ./src/webviews/trace-configuration/**/*.ts ./src/webviews/trace-configuration/**/*.tsx && tsc --noEmit -p ./src/webviews/trace-configuration.tsconfig.json",
+    "trace-configuration:typecheck": "tsc --noEmit -p ./src/webviews/trace-configuration.tsconfig.json",
+    "trace-configuration:lint": "eslint ./src/webviews/trace-configuration/**/*.{ts,tsx}",
     "sev:build": "vite build --config ./vite.config.system-event-viewer.mts",
-    "sev:lint": "eslint ./src/webviews/system-event-viewer/**/*.ts* && tsc --noEmit -p ./src/webviews/system-event-viewer.tsconfig.json",
+    "sev:typecheck": "tsc --noEmit -p ./src/webviews/system-event-viewer.tsconfig.json",
+    "sev:lint": "eslint ./src/webviews/system-event-viewer/**/*.{ts,tsx}",
     "sev:run-extester": "yarn sev:compile-tests && node out/tests/ui-test-system-event-viewer/runTest.js",
     "sev:compile-tests": "tsc -p src/tests/ui-test-system-event-viewer/tsconfig.json && yarn ws:data-models generate-index",
     "sev:dev": "vite build --mode development --config ./vite.config.system-event-viewer.mts --watch",
-    "sev:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer/**/*.cy.ts*'",
+    "sev:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer/**/*.cy.{ts,tsx}'",
     "sev-treeview:build": "vite build --config ./vite.config.system-event-viewer-treeview.mts",
-    "sev-treeview:lint": "eslint ./src/webviews/system-event-viewer-treeview/**/*.ts* && tsc --noEmit -p ./src/webviews/system-event-viewer-treeview.tsconfig.json",
+    "sev-treeview:typecheck": "tsc --noEmit -p ./src/webviews/system-event-viewer-treeview.tsconfig.json",
+    "sev-treeview:lint": "eslint ./src/webviews/system-event-viewer-treeview/**/*.{ts,tsx}",
     "sev-treeview:dev": "vite build --mode development --config ./vite.config.system-event-viewer-treeview.mts --watch",
-    "sev-treeview:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer-treeview/**/*.cy.ts*'",
+    "sev-treeview:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer-treeview/**/*.cy.{ts,tsx}'",
     "wrksp:build": "vite build --config ./vite.config.workspace-creation.mts",
     "wrksp:build-dev": "vite build --mode development --config ./vite.config.workspace-creation.mts --watch",
-    "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.ts ./src/webviews/workspace-creation/**/*.tsx && tsc --noEmit -p ./src/webviews/workspace.tsconfig.json",
+    "wrksp:typecheck": "tsc --noEmit -p ./src/webviews/workspace.tsconfig.json",
+    "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.{ts,tsx}",
     "wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/workspace-creation/**/*.cy.tsx'",
     "wrksp:run-extester": "yarn wrksp:compile-tests && node out/tests/ui-test-workspace-creation/runTest.js",
     "wrksp:compile-tests": "tsc -p src/tests/ui-test-workspace-creation/tsconfig.json && yarn ws:data-models generate-index",
     "model-wrksp:build": "vite build --config ./vite.config.model-workspace-creation.mts",
     "model-wrksp:build-dev": "vite build --mode development --config ./vite.config.model-workspace-creation.mts --watch",
-    "model-wrksp:lint": "eslint ./src/webviews/model-workspace/**/*.ts ./src/webviews/model-workspace/**/*.tsx && tsc --noEmit -p ./src/webviews/model-workspace.tsconfig.json",
-    "model-wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/model-workspace/**/*.cy.tsx'",
+    "model-wrksp:typecheck": "tsc --noEmit -p ./src/webviews/model-workspace.tsconfig.json",
+    "model-wrksp:lint": "eslint ./src/webviews/model-workspace-creation/**/*.{ts,tsx}",
+    "model-wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/model-workspace-creation/**/*.cy.tsx'",
     "ai-profiling:build": "vite build --config ./vite.config.ai-hardware-profiling.mts",
     "ai-profiling:build-dev": "vite build --mode development --config ./vite.config.ai-hardware-profiling.mts --watch",
-    "ai-profiling:lint": "eslint ./src/webviews/ai-hardware-profiling/**/*.ts ./src/webviews/ai-hardware-profiling/**/*.tsx && tsc --noEmit -p ./src/webviews/ai-hardware-profiling.tsconfig.json",
+    "ai-profiling:typecheck": "tsc --noEmit -p ./src/webviews/ai-hardware-profiling.tsconfig.json",
+    "ai-profiling:lint": "eslint ./src/webviews/ai-hardware-profiling/**/*.{ts,tsx}",
     "ai-profiling:run-cypress": "cypress run --component --browser electron --spec './src/webviews/ai-hardware-profiling/**/*.cy.tsx'",
     "ssplus:build": "vite build --config ./vite.config.sigma-studio-plus-project.mts",
-    "ssplus:lint": "eslint ./src/webviews/sigma-studio-plus-project/**/*.tsx && tsc --noEmit -p ./src/webviews/sigma-studio-plus-project.tsconfig.json",
-    "webviews:lint-common": "eslint src/webviews/common/**/*.ts src/webviews/common/**/*.tsx && tsc --noEmit -p src/webviews/common/tsconfig.json",
+    "ssplus:typecheck": "tsc --noEmit -p ./src/webviews/sigma-studio-plus-project.tsconfig.json",
+    "ssplus:lint": "eslint ./src/webviews/sigma-studio-plus-project/**/*.{ts,tsx}",
+    "webviews:typecheck-common": "tsc --noEmit -p src/webviews/common/tsconfig.json",
+    "webviews:lint-common": "eslint src/webviews/common/**/*.{ts,tsx}",
     "build-local-deps": "yarn ws:react-lib build && yarn ws:elf-parser build && yarn ws:lib build && yarn ws:ccm-lib build",
-    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests && yarn sev:compile-tests",
+    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests && yarn sev:compile-tests && node ../../scripts/skills-docs/sync-docs.js && node ../../scripts/skills-docs/stage-skills.js",
     "vite:extension": "vite build --mode extension",
     "vite:watch": "vite build --watch",
     "dev:config-tools": "vite --config ./vite.config.config-tools.mts",
@@ -1579,8 +1648,8 @@
     "test:cy-run-component": "cypress run --component --browser electron",
     "test:ui": "extest setup-and-run \"out/tests/ui-test/**/*-test.js\" -c 1.85.2 -u --mocha_config .mocharc.js",
     "package": "vsce package --baseImagesUrl https://github.com/analogdevicesinc/codefusion-studio/raw/HEAD/packages/ide",
-    "auth-cfg": "node build-scripts/auth-config.js > auth.json",
-    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn mem-viewer:build && yarn home-page:build && yarn wrksp:build && yarn && yarn trace-side-panel:build && yarn trace-configuration:build && yarn report-viewer:build && yarn model-wrksp:build && yarn ai-profiling:build && yarn && yarn ssplus:build && yarn sev:build && yarn sev-treeview:build && yarn ide:build && yarn auth-cfg"
+    "auth-cfg": "yarn run -T auth-config > auth.json",
+    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn mem-viewer:build && yarn packman:build && yarn home-page:build && yarn wrksp:build && yarn && yarn trace-side-panel:build && yarn trace-configuration:build && yarn report-viewer:build && yarn model-wrksp:build && yarn ai-profiling:build && yarn && yarn ssplus:build && yarn sev:build && yarn sev-treeview:build && yarn ide:build && yarn auth-cfg"
   },
   "devDependencies": {
     "@types/chai": "^4.3.10",
@@ -1588,33 +1657,32 @@
     "@types/lodash.debounce": "^4.0.8",
     "@types/lodash.throttle": "^4.0.8",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^20.11.27",
+    "@types/node": "^22.20.0",
     "@types/path-browserify": "^1.0.2",
     "@types/react": "^18.2.62",
     "@types/react-dom": "^18.2.19",
     "@types/styled-components": "^5.1.29",
-    "@types/vscode": "^1.96.0",
+    "@types/vscode": "^1.101.0",
     "@types/vscode-webview": "^1.57.3",
-    "@typescript-eslint/eslint-plugin": "^6.18.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.1",
-    "@vitejs/plugin-react": "^4.2.1",
-    "@vitejs/plugin-react-swc": "^3.5.0",
+    "@vitejs/plugin-react": "6.0.2",
     "@vscode/codicons": "^0.0.35",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "2.3.8",
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "^3.9.2",
     "cfs-types": "workspace:^",
     "chai": "^4.3.7",
     "clipboardy": "2.3.0",
     "concurrently": "^8.2.2",
     "copyfiles": "^2.4.1",
     "css-loader": "^6.8.1",
-    "cypress": "^13.8.1",
-    "cypress-real-events": "^1.13.0",
+    "cypress": "^15.17.0",
+    "cypress-real-events": "^1.15.0",
     "dotenv": "16.5.0",
-    "eslint": "^8.53.0",
+    "eslint": "^8.56.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-config-standard-with-typescript": "^34.0.1",
+    "eslint-config-standard-with-typescript": "^43.0.1",
     "eslint-config-xo": "^0.43.1",
     "eslint-config-xo-react": "^0.27.0",
     "eslint-config-xo-typescript": "^1.0.1",
@@ -1623,7 +1691,7 @@
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-jsonc": "^2.11.2",
     "eslint-plugin-markdown": "^3.0.0",
-    "eslint-plugin-n": "^15.7.0",
+    "eslint-plugin-n": "^16.0.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-react": "^7.33.2",
@@ -1648,8 +1716,8 @@
     "stylelint-config-standard": "^36.0.0",
     "stylelint-config-standard-scss": "^13.0.0",
     "typescript": "^5.4.0",
-    "vite": "^5.2.11",
-    "vite-plugin-node-polyfills": "^0.19.0",
+    "vite": "^8.1.0",
+    "vite-plugin-node-polyfills": "^0.28.0",
     "vite-tsconfig-paths": "^4.3.2",
     "vscode-extension-tester": "^8.21.0"
   },
@@ -1660,12 +1728,13 @@
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
+    "cfs-ccm-api": "workspace:*",
     "cfs-ccm-lib": "workspace:*",
     "cfs-lib": "workspace:*",
     "cfs-package-manager": "workspace:^",
     "cfs-react-library": "workspace:^",
-    "echarts": "^5.5.0",
-    "echarts-for-react": "^3.0.2",
+    "echarts": "^6.1.0",
+    "echarts-for-react": "^3.0.6",
     "elf-parser": "workspace:^",
     "fast-glob": "^3.3.3",
     "htmlparser2": "^9.1.0",
@@ -1676,19 +1745,16 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
-    "react-router-dom": "^6.21.1",
     "react-window": "^2.2.7",
     "react-window-infinite-loader": "^2.0.1",
     "recharts": "^2.12.6",
     "semver": "^7.7.3",
     "serialport": "^13.0.0",
-    "swiper": "^11.0.5",
+    "swiper": "^12.1.2",
+    "usb": "^2.18.0",
     "vscode-messenger": "^0.6.0",
     "vscode-messenger-webview": "^0.6.0",
-    "zod": "^3.25.76"
-  },
-  "resolutions": {
-    "@types/react": "^18.2.62"
+    "zod": "^4.4.3"
   },
   "__metadata": {
     "publisherDisplayName": "Analog Devices"

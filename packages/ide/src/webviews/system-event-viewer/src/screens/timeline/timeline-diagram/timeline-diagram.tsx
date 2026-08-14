@@ -33,7 +33,8 @@ import TimelineFooter from './timeline-footer';
 import XTicksChartRow from './xticks-chart-row';
 import TimestampsChartRow from './timestamps-chart-row';
 import ListContainer from '../event-sources-list/list-container';
-import MeasurementContainer from './measurement-container';
+import MeasurementContainer from './components/measurement-tool/measurement-container';
+import {useTimelineChartsResize} from './hooks/use-timeline-charts-resize';
 
 import {
 	setChartToWindow,
@@ -84,7 +85,13 @@ function TimelineDiagram({
 		setDataZoom: (_: DataZoom) => null
 	});
 	const diagramContainerRef = useRef<HTMLDivElement>(null); // The purpose is to set test attributes on the container for testing
+	const chartAreaRef = useRef<HTMLElement>(null);
 	const rowInteractionRef = useRef<RowInteraction>({});
+
+	useTimelineChartsResize({
+		chartAreaRef,
+		timestampChartsRef: chartsRef
+	});
 
 	const handleRowStateChange = useCallback(
 		({rowIndex, isHovered, isActive}: RowStateUpdate) => {
@@ -97,16 +104,16 @@ function TimelineDiagram({
 		[]
 	);
 
-	const onResetRowInteraction = useCallback(() => {
+	const handleOnDragStart = useCallback(() => {
 		resetRowInteraction(rowInteractionRef, diagramContainerRef);
 	}, []);
 
 	const handleReorder = useCallback(
 		(orderedList: SevEventSource[]) => {
-			dispatch(setMeasurePhase(MEASURE_PHASE.IDLE));
 			setOrderedEvSources(orderedList);
+			resetRowInteraction(rowInteractionRef, diagramContainerRef);
 		},
-		[dispatch]
+		[]
 	);
 
 	const updateHeaderChart = useCallback(
@@ -205,6 +212,10 @@ function TimelineDiagram({
 				newDz.start !== persistedDataZoom.start ||
 				newDz.end !== persistedDataZoom.end
 			) {
+				dispatch(setTimelineDataZoom(newDz));
+				footerRef.current.setDataZoom(newDz);
+				setContainerTestDataZoomAttrs(newDz);
+
 				// StartTransition and requestAnimationFrame are used to batch the updates to avoid blocking the main thread
 				startTransition(() => {
 					requestAnimationFrame(() => {
@@ -212,11 +223,6 @@ function TimelineDiagram({
 
 						updateHeaderChart(newDz);
 						updateTimestampsCharts(newDz, chartId ?? '');
-						dispatch(setTimelineDataZoom(newDz));
-
-						footerRef.current.setDataZoom(newDz);
-						setContainerTestDataZoomAttrs(newDz);
-
 						syncingRef.current = false;
 					});
 				});
@@ -282,12 +288,13 @@ function TimelineDiagram({
 						diagramContainerRef={diagramContainerRef}
 						handleReorder={handleReorder}
 						onRowStateChange={handleRowStateChange}
-						onDragStart={onResetRowInteraction}
+						onDragStart={handleOnDragStart}
 					/>
 
 					<MeasurementContainer
 						eventSources={orderedEvSources}
 						timestampRange={timestampRange}
+						measurementContainerRef={chartAreaRef}
 						getChartInstance={getChartInstance}
 						getHeaderChartInstance={getHeaderChartInstance}
 					>
@@ -297,24 +304,22 @@ function TimelineDiagram({
 							unregisterHeaderChart={unregisterHeaderChart}
 						/>
 
-						<div className={styles.timestampsChartsContainer}>
-							{orderedEvSources.map((evSource, index) => (
-								<TimestampsChartRow
-									key={evSource.id}
-									id={String(evSource.id)}
-									rowIndex={index}
-									eventSource={evSource}
-									timestampRange={timestampRange}
-									containerRef={diagramContainerRef}
-									registerChart={registerChart}
-									unregisterChart={unregisterChart}
-									onRowStateChange={handleRowStateChange}
-									onDataZoomChange={(dz: DataZoom) => {
-										handleChartDataZoom(dz, String(evSource.id));
-									}}
-								/>
-							))}
-						</div>
+						{orderedEvSources.map((evSource, index) => (
+							<TimestampsChartRow
+								key={evSource.id}
+								id={String(evSource.id)}
+								rowIndex={index}
+								eventSource={evSource}
+								timestampRange={timestampRange}
+								containerRef={diagramContainerRef}
+								registerChart={registerChart}
+								unregisterChart={unregisterChart}
+								onRowStateChange={handleRowStateChange}
+								onDataZoomChange={(dz: DataZoom) => {
+									handleChartDataZoom(dz, String(evSource.id));
+								}}
+							/>
+						))}
 					</MeasurementContainer>
 				</div>
 			</div>

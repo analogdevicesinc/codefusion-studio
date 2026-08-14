@@ -15,10 +15,22 @@
 
 export { ConanPkgManager } from "./conan-backend/conan-backend.js";
 export { MANIFEST_FILE_NAME } from "./constants/manifest.js";
+export {
+	getSkippedPackageReasonMessage,
+	SKIPPED_PACKAGE_REASON_MESSAGES
+} from "./utils/package-manager-skipped-reasons.js";
 
 // types
 export type {
+	CfsCustomPackageRemote,
+	CfsCustomPackageRemoteAuth,
 	CfsPackageManagerProvider,
+	CfsManagedPackageRemote,
+	CfsManagedPackageRemoteAuth,
+	CfsPackageRemotesProvider,
+	CfsPackageRemoteConfigError,
+	CfsPackageRemoteConfigErrorCode,
+	CfsPackageRemoteCredentialClient,
 	CfsPackageRemoteCredentialProvider,
 	CfsPackageRemoteCredential,
 	CfsPackageRemote,
@@ -28,10 +40,13 @@ export type {
 	CfsInstalledPackage,
 	CfsPackageManifest,
 	CfsPackageInstallOptions,
+	CfsPackageDependenciesOptions,
 	CfsInstallInput,
 	CfsInstallPlan,
+	CfsSkippedPackageInfo,
+	CfsSkippedPackageReasonCode,
 	CfsPackageLicenseInfo,
 	CfsPackageLicenseReporter,
 	CfsPackageFilter,
 	CfsPackageComponent
-} from "./api/api.d.ts";
+} from "./api/api.js";

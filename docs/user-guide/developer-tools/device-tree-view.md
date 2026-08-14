@@ -1,7 +1,7 @@
 ---
 description: Device Tree for CodeFusion Studio
 author: Analog Devices
-date: 2025-04-28
+date: 2026-07-15
 ---
 
 # Device Tree View
@@ -12,7 +12,7 @@ Use the Device Tree View in CodeFusion Studio to review hardware components and 
 
 Access the Device Tree View using the following methods:
 
-- Build a Zephyr project, then select the project in the **Context** menu. The Device Tree View automatically displays the project's `zephyr.dts` file.
+- Build a Zephyr project, then select the project from the **Context Filter** in the CFS sidebar. The Device Tree View automatically displays the project's `zephyr.dts` file.
 - Open any Device Tree file (`*.dtsi` or `*.overlay`) in the VS Code window.
 
 ![Device Tree View](images/device-tree-view-dark.png#only-dark)

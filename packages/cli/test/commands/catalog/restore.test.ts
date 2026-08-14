@@ -13,7 +13,8 @@
  *
  */
 
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -42,13 +43,14 @@ const hiddenZipFile = `${catalogZipFile}.hidden`;
 
 describe('catalog:restore', () => {
   describe('help', () => {
-    test
-      .stdout()
-      .command(['help', 'catalog:restore'], {root: '..'})
-      .it('displays the command description', (ctx) => {
-        expect(ctx.stdout).to.contain('Restore the catalog');
-        expect(ctx.stdout).to.contain('catalog.zip');
+    it('displays the command description', async () => {
+      const {stdout} = await runCommand(['help', 'catalog:restore'], {
+        root: '..'
       });
+
+      expect(stdout).to.contain('Restore the catalog');
+      expect(stdout).to.contain('catalog.zip');
+    });
   });
 
   describe('successful restore from ZIP', () => {
@@ -57,37 +59,32 @@ describe('catalog:restore', () => {
       fs.rmSync(catalogStoreDir, {recursive: true, force: true});
     });
 
-    test
-      .stdout()
-      .stderr()
-      .command(['catalog:restore'], {root: '..'})
-      .it(
-        'logs success and recreates the catalog store from the backup ZIP',
-        (ctx) => {
-          expect(ctx.stdout).to.contain(
-            'Catalog restored successfully'
-          );
-          expect(
-            fs.existsSync(catalogStoreDir),
-            'catalog store directory should exist after restore'
-          ).to.be.true;
-          // expect the catalog store directory to contain a file called lowdb-soc-data.json
-          const catalogFiles = fs.readdirSync(catalogStoreDir);
+    it('logs success and recreates the catalog store from the backup ZIP', async () => {
+      const {stdout} = await runCommand(['catalog:restore'], {
+        root: '..'
+      });
 
-          // confirm that $catalogFiles/soc/db/A/lowdb-soc-data.json exists in the restored catalog store
-          const catalogFile = path.join(
-            catalogStoreDir,
-            'soc',
-            'db',
-            'A',
-            'lowdb-soc-data.json'
-          );
-          expect(
-            fs.existsSync(catalogFile),
-            'lowdb-soc-data.json should exist in the restored catalog store'
-          ).to.be.true;
-        }
+      expect(stdout).to.contain('Catalog restored successfully');
+      expect(
+        fs.existsSync(catalogStoreDir),
+        'catalog store directory should exist after restore'
+      ).to.be.true;
+      // expect the catalog store directory to contain a file called lowdb-soc-data.json
+      const catalogFiles = fs.readdirSync(catalogStoreDir);
+
+      // confirm that $catalogFiles/soc/db/A/lowdb-soc-data.json exists in the restored catalog store
+      const catalogFile = path.join(
+        catalogStoreDir,
+        'soc',
+        'db',
+        'A',
+        'lowdb-soc-data.json'
       );
+      expect(
+        fs.existsSync(catalogFile),
+        'lowdb-soc-data.json should exist in the restored catalog store'
+      ).to.be.true;
+    });
   });
 
   describe('restore failure when backup ZIP is missing', () => {
@@ -105,18 +102,16 @@ describe('catalog:restore', () => {
       }
     });
 
-    test
-      .stderr()
-      .command(['catalog:restore'], {root: '..'})
-      .catch(/Failed to restore catalog/)
-      .it(
-        'reports an error and preserves the existing catalog when the backup ZIP is missing',
-        () => {
-          expect(
-            fs.existsSync(catalogStoreDir),
-            'catalog store should be preserved when restore fails'
-          ).to.be.true;
-        }
-      );
+    it('reports an error and preserves the existing catalog when the backup ZIP is missing', async () => {
+      const {error} = await runCommand(['catalog:restore'], {
+        root: '..'
+      });
+      expect(error).to.not.be.undefined;
+      expect(error?.message).to.match(/Failed to restore catalog/);
+      expect(
+        fs.existsSync(catalogStoreDir),
+        'catalog store should be preserved when restore fails'
+      ).to.be.true;
+    });
   });
 });

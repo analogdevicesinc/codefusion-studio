@@ -85,6 +85,8 @@ export interface SocControlValue {
 	Description: string;
 	Value: number | string;
 	Condition?: string;
+	IsPluginAddedOption?: boolean;
+	Inactive?: boolean;
 }
 
 export interface SocPackage {
@@ -134,6 +136,8 @@ export interface SocPinConfig {
 	Value: string;
 	Operation?: string;
 	Wait?: number;
+	SlicePosition?: number;
+	SliceWidth?: number;
 }
 
 export interface SocPinSignal {
@@ -331,6 +335,8 @@ export interface SocConfigField {
 	Value?: Expression;
 	InverseValue?: Expression;
 	Operation: string;
+	SlicePosition?: number;
+	SliceWidth?: number;
 }
 
 export type Expression = string;

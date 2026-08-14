@@ -1,0 +1,63 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.container {
+	position: relative;
+	display: flex;
+	height: 161px;
+	padding: layout.$spacing-4;
+	justify-content: center;
+	align-items: center;
+	align-self: stretch;
+	border-bottom: 0.5px solid colors.$default-border;
+	background: colors.$notifications-background;
+}
+
+.dismissButton {
+	position: absolute;
+	top: layout.$spacing-3;
+	right: layout.$spacing-3;
+}
+
+.frame {
+	display: flex;
+	max-width: 566px;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-5;
+	flex: 1 0 0;
+}
+
+.textFrame {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+	align-self: stretch;
+}
+
+.signInHeader {
+	@include fonts.heading-h2;
+	color: colors.$notifications-foreground;
+}
+
+.signInDesc {
+	@include fonts.body-b1;
+	color: colors.$description-foreground;
+}

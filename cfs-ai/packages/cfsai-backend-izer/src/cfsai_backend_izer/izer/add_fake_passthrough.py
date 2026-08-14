@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ def main():
     args = parse_arguments()
     device = torch.device('cpu')
 
-    checkpoint = torch.load(args.input_checkpoint_path)
+    checkpoint = torch.load(args.input_checkpoint_path, map_location='cpu', weights_only=False)
     passthrough_kernel = passthrough_faker(args.layer_depth, args.low_memory_footprint)
 
     new_checkpoint = copy.deepcopy(checkpoint)

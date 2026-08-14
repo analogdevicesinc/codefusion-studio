@@ -1,7 +1,7 @@
 ---
 description: Package Manager Troubleshooting
 author: Analog Devices
-date: 2026-01-19
+date: 2026-07-27
 ---
 
 # Package Manager Troubleshooting
@@ -11,9 +11,9 @@ Most issues occur when required packages are missing, incompatible, or cannot be
 Common issues include:
 
 - Package integrity problems
-- Restricted packages not appearing  
-- Out-of-date authentication sessions
-- Incorrect or stale remotes  
+- Restricted packages not appearing
+- Out-of-date authentication sessions or expired API keys
+- Incorrect or stale remotes
 - Missing SoCs in the Workspace Creation Wizard
 
 ## Package integrity issues
@@ -65,7 +65,7 @@ If old or corrupted packages accumulate over time, they can cause Package Manage
 
 ## Restricted packages not appearing
 
-This usually happens when your myAnalog login session has expired.
+This usually happens when your myAnalog login session has expired, or — if you use `cfsutil` with the `CFS_API_KEY` environment variable — when the API key is expired or not valid.
 
 ### Check login status Command Palette
 
@@ -83,9 +83,14 @@ If you are logged out:
     ![Check your login status ](./images/cfs_my_analog_login-light.png#only-light)
 
 2. Click **Open** to launch the browser. If the browser does not open, use the **Copy** button to copy the link and paste it in your browser.
-3. On the myAnalog login page, under **Or continue with your**, choose **Analog Devices Account** and, if prompted, enter your Analog Devices credentials to complete the login process.
+3. On the myAnalog login page, use the sign-in method associated with your account:
 
-    ![My Analog Login](./images/login_with-my-analog.png)
+    - **Email and password:** Enter your registered email address and password, then select **Log in**. If you don’t have a myAnalog account, [:octicons-link-external-24: register at analog.com/myAnalog](https://www.analog.com/myAnalog){:target="_blank"}.
+    - **Google Account:** Select **Google Account**, then sign in with your Google credentials.
+    - **LinkedIn Account:** Select **LinkedIn Account**, then sign in with your LinkedIn credentials.
+    - **Analog Devices Account:** If you are an Analog Devices employee or contractor on a managed device, select **Analog Devices Account**, then sign in with your Analog Devices credentials.
+
+    ![myAnalog login page](./images/login_with-my-analog.png)
 
 4. When the **Sign-in Successful** page appears, close the browser and return to VS Code.
 5. A VS Code notification confirms you are logged in.
@@ -110,6 +115,48 @@ If you are logged out:
     cfsutil pkg list-remotes
     ```
 
+### Check API key validity (command line)
+
+If you authenticate `cfsutil` using the `CFS_API_KEY` environment variable, an expired or incorrect key produces the same symptoms as a missing login session.
+
+1. Confirm the variable is set and contains a value:
+
+    !!! warning
+        Never share your full API key. To check that the variable is set without displaying the entire key, use this masked view:
+
+    On Linux or macOS:
+
+    ```bash
+    key=$CFS_API_KEY; echo "${key:0:6}...${key: -3}"
+    ```
+
+    On Windows PowerShell:
+
+    ```powershell
+    $key = $env:CFS_API_KEY; '{0}...{1}' -f $key.Substring(0, 6), $key.Substring($key.Length - 3)
+    ```
+
+    This shows only the first 6 and last 3 characters of your key (for example: `abc123...xyz`).
+
+2. List your API keys to check whether the key in use is still active. This requires an active myAnalog session:
+
+    ```bash
+    cfsutil myanalog login
+    cfsutil myanalog apikey list
+    ```
+
+    Check the **Masked Key** column to identify your key. If the key has expired or does not appear in the list, it is no longer valid.
+
+3. Create a replacement key:
+
+    ```bash
+    cfsutil myanalog apikey create --description "<descriptive label>"
+    ```
+
+    The key value is shown once when the command succeeds. Save it immediately.
+
+4. Update `CFS_API_KEY` with the new value and retry the failing command.
+
 ## Remote management issues
 
 If downloads fail or restricted packages disappear unexpectedly, a remote may be misconfigured.
@@ -119,9 +166,9 @@ To manage remotes:
 1. Open the **Command Palette**.
 2. Run `Manage Package Remotes`.
 3. Highlight a remote to:
-    - Log out and log in again (reauthenticate)
-    - Remove the remote
-    - Add it again
+    - Reauthenticate a custom remote
+    - Reenable a disabled remote
+    - Disable a remote which has an error
 
     ![Manage Package Remotes](./images/manage-package-remote-dark.png#only-dark)
     ![Manage Package Remotes](./images/manage-package-remote-light.png#only-light)
@@ -148,7 +195,7 @@ Follow these steps in order.
     - Search for `cfs.catalogManager.checkForUpdates`.
     - Make sure this option is enabled so the catalog can refresh when CFS checks for updates.
 
-    ![Enable Catalog Manager](./images/catalog-manager-updates-dark.png#only-dark "Enable Catalog Manager updates")  
+    ![Enable Catalog Manager](./images/catalog-manager-updates-dark.png#only-dark "Enable Catalog Manager updates")
     ![Enable Catalog Manager](./images/catalog-manager-updates-light.png#only-light "Enable Catalog Manager updates")
 
 4. If the new SoC is from a restricted package, make sure you are logged in with your myAnalog account. See [Restricted packages not appearing](#restricted-packages-not-appearing) for login steps.

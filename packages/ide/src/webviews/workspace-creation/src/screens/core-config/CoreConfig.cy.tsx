@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import {store} from '../../state/store';
 import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer';
 import {navigationItems} from '../../common/constants/navigation';
@@ -127,6 +142,54 @@ const mockedPlugins = [
 			}
 		],
 		firmwarePlatform: 'baremetal',
+		features: [],
+		properties: {project: []},
+		configOverrides: []
+	}
+];
+
+// Two versions of the same plugin where only v1.0.0 supports wlp
+const multiVersionPlugins = [
+	{
+		pluginId: 'MAX32690_MultiVer.plugin',
+		pluginName: 'MAX32690 Multi-Version v1',
+		pluginPath: '',
+		pluginDescription: 'Older version supporting wlp',
+		pluginVersion: '1.0.0',
+		pluginApiVersion: 0,
+		minConfigSchema: 0,
+		maxConfigSchema: 0,
+		author: '',
+		supportedSocs: [
+			{
+				name: 'MAX32690',
+				board: 'AD-APARD32690-SL',
+				package: 'wlp'
+			}
+		],
+		firmwarePlatform: 'zephyr',
+		features: [],
+		properties: {project: []},
+		configOverrides: []
+	},
+	{
+		pluginId: 'MAX32690_MultiVer.plugin',
+		pluginName: 'MAX32690 Multi-Version v2',
+		pluginPath: '',
+		pluginDescription: 'Newer version supporting tqfn only',
+		pluginVersion: '2.0.0',
+		pluginApiVersion: 0,
+		minConfigSchema: 0,
+		maxConfigSchema: 0,
+		author: '',
+		supportedSocs: [
+			{
+				name: 'MAX32690',
+				board: 'EvKit_V1',
+				package: 'tqfn'
+			}
+		],
+		firmwarePlatform: 'zephyr',
 		features: [],
 		properties: {project: []},
 		configOverrides: []
@@ -472,6 +535,40 @@ describe('Core Configuration Screen', () => {
 			cy.dataTest('coreConfig:card:MAX32690_MSDK.plugin').should(
 				'not.exist'
 			);
+		});
+	});
+
+	it('Should show only the compatible version when a newer version targets a different package', () => {
+		localStorage.setItem(
+			'plugins',
+			JSON.stringify(multiVersionPlugins)
+		);
+
+		const testStore = {...store};
+		testStore.dispatch(setActiveScreen(navigationItems.coreConfig));
+		testStore.dispatch(setSelectedSoc('MAX32690'));
+		testStore.dispatch(
+			setSelectedBoardPackage({
+				boardId: '',
+				packageId: 'wlp'
+			})
+		);
+		testStore.dispatch(setCoresInitialState(['CM4']));
+		testStore.dispatch(setCoreToConfigId('CM4'));
+
+		cy.mount(<TestComponent />, testStore).then(() => {
+			// V1.0.0 supports wlp — its card should appear
+			cy.dataTest(
+				'coreConfig:card:MAX32690_MultiVer.plugin'
+			).should('exist');
+
+			// The compatible v1.0.0 should be the only card rendered,
+			// not the incompatible v2.0.0 that targets tqfn
+			cy.dataTest(
+				'coreConfig:card:MAX32690_MultiVer.plugin'
+			)
+				.should('have.length', 1)
+				.and('contain.text', 'v1.0.0');
 		});
 	});
 });

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ type TooltipProps = {
 	readonly children: ReactNode;
 	/** Optional container element ID to which bounding box this tooltip reacts */
 	readonly containerId?: string;
+	readonly dataTest?: string;
 	readonly position?: 'top' | 'bottom' | 'left' | 'right';
 	readonly width?: number;
 	readonly type?: 'short' | 'long';
@@ -38,6 +39,7 @@ function Tooltip({
 	children,
 	position = 'top',
 	containerId,
+	dataTest,
 	width = 192,
 	type = 'long',
 	disabled = false
@@ -130,6 +132,8 @@ function Tooltip({
 			ref={el => setTooltipContainerElement(el)}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
+			onMouseDown={handleMouseLeave}
+			data-test={dataTest ? dataTest : undefined}
 		>
 			{children}
 			{visible && !disabled && (

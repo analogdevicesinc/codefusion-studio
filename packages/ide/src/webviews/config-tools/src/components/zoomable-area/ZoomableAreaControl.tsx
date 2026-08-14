@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ import {
 	memo,
 	type MouseEventHandler,
 	useEffect,
-	useCallback
+	useCallback,
+	forwardRef,
+	useImperativeHandle
 } from 'react';
 import ZoomInIcon from '@common/icons/ZoomIn';
 import ZoomOutIcon from '@common/icons/ZoomOut';
@@ -28,6 +30,16 @@ import ZoomControls from '../zoom-controls/ZoomControls';
 import styles from './zoomableArea.module.scss';
 
 const zoomStep = 0.1;
+
+export type ZoomableAreaControlRef = {
+	resetZoom: () => void;
+};
+
+type ZoomableAreaControlProps = Readonly<{
+	onZoom?: (zoomLevel: number) => void;
+	resetZoomLevel?: number;
+	children: ReactNode;
+}>;
 
 function getComputedTranslateValues(
 	ref: React.RefObject<HTMLDivElement>
@@ -44,13 +56,10 @@ function getComputedTranslateValues(
 	return translateValues as [string, string];
 }
 
-function ZoomableAreaControl({
-	onZoom,
-	children
-}: {
-	readonly onZoom?: (zoomLevel: number) => void;
-	readonly children: ReactNode;
-}) {
+const ZoomableAreaControl = forwardRef<
+	ZoomableAreaControlRef,
+	ZoomableAreaControlProps
+>(({onZoom, children, resetZoomLevel = 1}, ref) => {
 	const zoomableAreaRef = useRef<HTMLDivElement>(null);
 	const zoomableAreaParentRef = useRef<HTMLDivElement>(null);
 	const zoomLevel = useRef(1);
@@ -86,8 +95,8 @@ function ZoomableAreaControl({
 			const centerX = (parentRect.width - childRect.width) / 2;
 			const centerY = (parentRect.height - childRect.height) / 2;
 
-			child.style.transform = `scale(1) translate(${centerX}px, ${centerY}px)`;
-			zoomLevel.current = 1;
+			child.style.transform = `scale(${resetZoomLevel}) translate(${centerX}px, ${centerY}px)`;
+			zoomLevel.current = resetZoomLevel;
 			startTransformX.current = centerX;
 			startTransformY.current = centerY;
 			startX.current = 0;
@@ -96,7 +105,15 @@ function ZoomableAreaControl({
 			parent.style.cursor = 'default';
 			onZoom?.(zoomLevel.current);
 		}
-	}, [onZoom]);
+	}, [onZoom, resetZoomLevel]);
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			resetZoom
+		}),
+		[resetZoom]
+	);
 
 	const zoomOut = useCallback(() => {
 		const currentZoom = zoomLevel.current;
@@ -214,6 +231,6 @@ function ZoomableAreaControl({
 			<ZoomControls controls={zoomControls} />
 		</>
 	);
-}
+});
 
 export default memo(ZoomableAreaControl);

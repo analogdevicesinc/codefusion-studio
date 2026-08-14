@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024 - 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
 
 @use '#colors' as colors;
 @use '#fonts' as fonts;
+@use '#layout' as layout;
 
 .templateHeader {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	margin-bottom: 40px;
+	margin-bottom: 20px;
 
 	h2 {
 		@include fonts.heading-h2;
@@ -53,6 +54,21 @@
 			color: colors.$description-foreground;
 			font-size: fonts.$font-size-m;
 		}
+	}
+
+	.searchInputContainer {
+		padding: 12px 0;
+		margin-bottom: 28px;
+	}
+
+	.rightAdornment {
+		@include fonts.body-b1;
+		white-space: nowrap;
+		padding-right: layout.$spacing-3;
+	}
+
+	.highlightable::highlight(template-search-highlight) {
+		background-color: colors.$button-background;
 	}
 }
 

@@ -23,13 +23,11 @@ export type LayerRowDetailData = {
 };
 
 export type LayerRowDetailProps = {
-	readonly layerIdx: number;
 	readonly columns: number;
 	readonly data?: LayerRowDetailData;
 };
 
 export function LayerRowDetail({
-	layerIdx,
 	columns,
 	data
 }: LayerRowDetailProps) {

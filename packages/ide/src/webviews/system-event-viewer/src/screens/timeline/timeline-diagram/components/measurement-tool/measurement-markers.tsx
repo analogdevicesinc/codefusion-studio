@@ -18,7 +18,7 @@ import type {
 	MeasurePoint
 } from '../../../../../common/types/timeline';
 
-import styles from '../../measurement-overlay.module.scss';
+import styles from './measurement-markers.module.scss'; 
 
 const markerPoint = (point: MeasurePoint, dataTest: string) => (
 	<div

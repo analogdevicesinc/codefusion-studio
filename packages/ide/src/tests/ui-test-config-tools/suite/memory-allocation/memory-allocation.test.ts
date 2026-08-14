@@ -52,7 +52,6 @@
 import { expect } from "chai";
 import {
   By,
-  EditorView,
   ModalDialog,
   VSBrowser,
   WebView,
@@ -76,7 +75,7 @@ describe("Memory Allocation", () => {
   let browser: VSBrowser;
   let view: WebView;
 
-  let editor: EditorView;
+  // let editor: EditorView;
   browser = VSBrowser.instance;
 
   let configPath: string | undefined;
@@ -84,9 +83,17 @@ describe("Memory Allocation", () => {
   before(async function () {
     this.timeout(10000);
     browser = VSBrowser.instance;
+    workbench = new Workbench();
+
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   afterEach(async () => {
+    if (view) {
+      await view.switchBack();
+    }
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+
     if (configPath) {
       await UIUtils.restoreFixtureFileFromGit(configPath);
       configPath = undefined;
@@ -96,62 +103,60 @@ describe("Memory Allocation", () => {
   it("Renders existing partitions from the config file", async () => {
     configPath = getConfigPathForFile("max32690-wlp-core-config.cfsconfig");
     await browser.openResources(configPath);
-    await UIUtils.sleep(5000);
-    console.log("Waiting for the element to be located in the DOM");
+    console.log("Opened config file: " + configPath);
+
+    await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
-    console.log("max32690-wlp-core-config UI loaded");
+    await view.wait(5000);
     await view.switchToFrame();
 
+    const memTabElements = await view.findWebElements(memoryAllocationTab);
     expect(
-      await UIUtils.findWebElement(view, memoryAllocationTab),
-      "Could not find Memory link in Nav Bar",
-    ).to.exist;
+      memTabElements.length,
+      "Memory Allocation tab should be visible in the navigation bar after opening config file",
+    ).to.be.greaterThan(0);
     await UIUtils.clickElement(view, memoryAllocationTab);
 
+    const partitionCardsElements = await view.findWebElements(
+      partitionDetailsDropdowns,
+    );
     expect(
-      await UIUtils.findWebElement(view, partitionDetailsDropdowns, 2),
-      "Could not find partition details cards",
-    ).to.exist;
+      partitionCardsElements.length,
+      "Partition details cards should be displayed in the memory allocation view after clicking Memory tab",
+    ).to.be.greaterThan(0);
 
     const dropdowns = await view.findWebElements(partitionDetailsDropdowns);
     await dropdowns[dropdowns.length - 1].click();
-    console.log("Expanded the last partition card");
-    await UIUtils.sleep(3000);
+
+    const partitionTitleElements = await view.findWebElements(
+      cm4PartitionCardTitles,
+    );
     expect(
-      await UIUtils.findWebElement(view, cm4PartitionCardTitles),
-      "Could not find Partition Card Title",
-    ).to.exist;
+      partitionTitleElements.length,
+      "Partition card title should appear after expanding the partition dropdown",
+    ).to.be.greaterThan(0);
 
     const cardItem = await UIUtils.findWebElement(view, cm4PartitionCardTitles);
     const title = await cardItem.findElement(By.css(`h3`));
+    const titleText = await title.getText();
     expect(
-      await title.getText(),
-      "Partition found does not match expected shared partition",
+      titleText,
+      "Expected partition name 'Shared_Partition' but found '" +
+        titleText +
+        "'. Verify partition was loaded correctly from config file.",
     ).to.contain("Shared_Partition");
-
-    await UIUtils.sleep(3000);
-    await view.switchBack();
-    const ev = new EditorView();
-    await ev.closeAllEditors();
   }).timeout(60000);
 
   it("Deletes the existing partition and verifies the schema", async () => {
-    editor = new EditorView();
-    await editor.closeAllEditors();
-    await UIUtils.sleep(3000);
-
     configPath = getConfigPathForFile(
       "max32690-wlp-dual-core-blinky.cfsconfig",
     );
     await browser.openResources(configPath);
     workbench = new Workbench();
-    console.log("Opened the cfsconfig file");
 
     await UIUtils.dismissAllNotifications(workbench, browser);
-    await UIUtils.sleep(5000);
-    console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
-    console.log("max32690-wlp-dual-core-blinky UI loaded");
+    await view.wait(5000);
     await view.switchToFrame();
 
     await UIUtils.clickElement(view, memoryAllocationTab);
@@ -163,7 +168,6 @@ describe("Memory Allocation", () => {
     await UIUtils.clickElement(view, await partitionDetailsChevron(2));
     await UIUtils.clickElement(view, await getDeletePartitionButton(1));
 
-    console.log("Save the configuration file changes");
     await view.switchBack();
     await workbench.executeCommand("view: close all editors");
     const dialog = new ModalDialog();

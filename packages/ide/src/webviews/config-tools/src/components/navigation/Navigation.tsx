@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import {setActiveScreen} from '../../state/slices/app-context/appContext.reducer
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../../state/store';
 import useFilteredNavigationIcons from '../../hooks/use-filtered-navigation-icons';
+import {logTelemetryEvent} from '../../utils/api';
+import {CONFIG_TOOLS_TELEMETRY_ACTIONS} from '../../state/utils/telemetry-reporter';
 
 export default function Navigation() {
 	const dispatch = useAppDispatch();
@@ -29,6 +31,10 @@ export default function Navigation() {
 
 	const handleNavItemClick = useCallback(
 		async (id: NavigationItem) => {
+			void logTelemetryEvent(
+				CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_SCREEN_NAVIGATED,
+				{screenName: id}
+			);
 			dispatch(setActiveScreen(id));
 		},
 		[dispatch]

@@ -16,12 +16,34 @@
 import {mockVsCodeApi} from '@common/api';
 import {navigationItems} from '../../common/constants/navigation';
 import {FILE_TYPES, type SevSaveType} from '../../common/types/files';
-import {setActiveScreen} from '../../state/slices/app-context/app-context.reducer';
+import {
+	setActiveScreen,
+	setLastUpdate,
+	setToolState
+} from '../../state/slices/app-context/app-context.reducer';
+import {setEventSources} from '../../state/slices/event-sources/event-sources.reducer';
 import {store} from '../../state/store';
 
 import SevHeader from './sev-header';
 
-describe('SevHeader', () => {
+const mountSevHeader = () => {
+	store.dispatch(setActiveScreen(navigationItems.timeline));
+	store.dispatch(setToolState(undefined));
+	store.dispatch(setLastUpdate(undefined));
+	store.dispatch(setEventSources([]));
+
+	mockVsCodeApi({
+		postMessage() {
+			return undefined;
+		},
+		getState: cy.stub(),
+		setState: cy.stub()
+	});
+
+	cy.mount(<SevHeader />, store);
+};
+
+describe('SevHeader CTA', () => {
 	let createFileRequests: Array<{
 		type: string;
 		id?: number;
@@ -29,7 +51,6 @@ describe('SevHeader', () => {
 	}> = [];
 
 	beforeEach(() => {
-		store.dispatch(setActiveScreen(navigationItems.timeline));
 		createFileRequests = [];
 
 		mockVsCodeApi({
@@ -56,6 +77,11 @@ describe('SevHeader', () => {
 			setState: cy.stub()
 		});
 
+		store.dispatch(setActiveScreen(navigationItems.timeline));
+		store.dispatch(setToolState(undefined));
+		store.dispatch(setLastUpdate(undefined));
+		store.dispatch(setEventSources([]));
+
 		cy.mount(<SevHeader />, store);
 	});
 
@@ -80,5 +106,46 @@ describe('SevHeader', () => {
 	it('Should request .csv file creation', () => {
 		cy.dataTest('sev-header:export-action').find('button').click();
 		assertCreateFileRequest(FILE_TYPES.EXPORT);
+	});
+});
+
+describe('Status tooltip', () => {
+	beforeEach(() => {
+		mountSevHeader();
+		cy.clock(new Date('2026-05-20T12:00:00.000Z').getTime());
+	});
+
+	const hoverStatusBadge = () => {
+		cy.dataTest('sev-header:status-badge')
+			.dataTest('sev-header:status-tooltip')
+			.trigger('mouseover')
+			.trigger('mousemove')
+			.trigger('mouseenter');
+		cy.tick(500);
+	};
+
+	it('Should show "No events have been received yet" when active with no event sources', () => {
+		store.dispatch(setToolState('active'));
+		store.dispatch(setLastUpdate('2026-05-20T10:00:00.000Z'));
+		store.dispatch(setEventSources([]));
+
+		hoverStatusBadge();
+		cy.contains('No events have been received yet').should('exist');
+	});
+
+	it('Should show elapsed time tooltip when session has ended', () => {
+		store.dispatch(setToolState('ended'));
+		store.dispatch(setLastUpdate('2026-05-20T09:00:00.000Z'));
+
+		hoverStatusBadge();
+		cy.contains(/Last updated .* ago/).should('exist');
+	});
+
+	it('Should show absolute date tooltip when a local file is open', () => {
+		store.dispatch(setToolState('file'));
+		store.dispatch(setLastUpdate('2026-05-20T10:00:00.000Z'));
+
+		hoverStatusBadge();
+		cy.contains('Opened local file. Last updated').should('exist');
 	});
 });

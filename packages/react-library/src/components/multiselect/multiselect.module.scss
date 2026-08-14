@@ -136,6 +136,14 @@
 		max-height: 270px;
 	}
 
+	&:has(.align-right) {
+		position: relative;
+	}
+
+	.align-right {
+		right: 0;
+	}
+
 	.chip {
 		background-color: colors.$editor-widget-background;
 		color: colors.$editor-widget-foreground;

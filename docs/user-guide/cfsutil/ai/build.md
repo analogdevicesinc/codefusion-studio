@@ -1,7 +1,7 @@
 ---
 description: Compile an AI model into C/C++ source code using cfsutil ai build.
 author: Analog Devices
-date: 2026-04-20
+date: 2026-07-31
 ---
 
 # Build
@@ -24,7 +24,7 @@ For details on supported processors, see [supported processors and model formats
 ## Build options
 
 - Build with a `.cfsconfig` file. The configuration file can define one or more models along with the target SoC, core, and firmware platform.
-- Build a single model using required flags. Provide the model path with `--model` and the target with `--soc`, `--core`, and optionally `--package` and `--acc`. For CNN accelerator builds, see [CNN accelerator (Izer backend)](#cnn-accelerator-izer-backend).
+- Build a single model using required flags. Provide the model path with `--model` and the target with `--soc`, and optionally `--core`, `--package`, and `--acc`. For CNN accelerator builds, see [CNN accelerator (Izer backend)](#cnn-accelerator-izer-backend).
 
 !!! note
     When `--config` is provided, `--model`, `--soc`, and `--core` are ignored. Pass these flags only when building without a `.cfsconfig` file.
@@ -52,24 +52,32 @@ cfsutil ai build --config <path/to/project.cfsconfig>
 
 ### Build using flags
 
-Supply the model path with `--model` (`-m`) and the target using `--soc` (`-s`), `--core` (`-c`), and optionally `--package` (`-p`) and `--acc` (`-a`). Only one model is compiled per command using this method.
+Supply the model path with `--model` (`-m`) and the target using `--soc` (`-s`), and optionally `--core` (`-c`), `--package` (`-p`), and `--acc` (`-a`). Only one model is compiled per command using this method.
 
 | Flag | Short | Description | Example |
 | ---- | ----- | ----------- | ------- |
 | `--acc` | `-a` | Hardware AI accelerator (optional). For CNN builds, see [CNN accelerator (Izer backend)](#cnn-accelerator-izer-backend). | `CNN` |
-| `--core` | `-c` | Target processor core | `CM4`, `FX`, `CM33` |
+| `--core` | `-c` | Target processor core (optional when only one AI-capable core exists for the SoC — inferred automatically). | `CM4`, `FX`, `CM33` |
 | `--model` | `-m` | Path or URL to the model file | `model.tflite`, `https://example.com/model.tflite` |
 | `--package` | `-p` | Package variant of the SoC (optional) | `WLP`, `TQFN` |
 | `--soc` | `-s` | Target SoC | `MAX78002`, `MAX32690`, `ADSP-SC835` |
 
 ```sh
-cfsutil ai build --model <path/to/model> --soc <soc> --core <core>
+cfsutil ai build --model <path/to/model> --soc <soc>
 ```
+
+!!! tip
+    If the SoC has exactly one AI-capable core, `--core` is inferred automatically. If the SoC has multiple cores but only one supports AI, it is still inferred — but a warning is shown confirming which core was selected. If multiple AI-capable cores are available, you must specify `--core`. Run [`cfsutil socs info <soc> --cores`](../socs.md) to see available cores for a given SoC.
 
 !!! example
     ```sh
-    cfsutil ai build --model model.tflite --soc MAX78002 --core CM4
-    cfsutil ai build --model model.tflite --soc MAX32690 --package WLP --core CM4
+    # Single core, single AI core — inferred silently
+    cfsutil ai build --model model.tflite --soc MAX32657
+
+    # Multiple cores, one AI core — inferred with a warning
+    cfsutil ai build --model model.tflite --soc MAX32690
+
+    # Multiple AI cores — --core required
     cfsutil ai build --model model.tflite --soc ADSP-SC835 --core FX
     ```
 
@@ -79,15 +87,17 @@ cfsutil ai build --model <path/to/model> --soc <soc> --core <core>
 The `--model` flag accepts both local file paths and remote URLs. Remote files are cached for offline reuse and refreshed after one hour if the URL is available.
 Use [`cfsutil ai clean-cache`](./clean-cache.md) to clear the cache and force a re-download.
 
+Model names must not exceed 64 characters. When building from `--config`, this applies to each enabled model name in the `.cfsconfig` file. When building directly from `--model`, the name is derived from the model file name — if the derived name is too long, rename the model file to a shorter name.
+
 !!! note "Remote URLs"
     Use raw download URLs, not repository page URLs. For example, use `https://raw.githubusercontent.com/org/repo/branch/file.tflite`, not `https://github.com/org/repo/blob/branch/file.tflite`.
 
 ### Additional flags
 
 | Flag | Short | Description |
-|------|-------|-------------|
-| `--backend` | `-b` | Name of the backend to use. Required if `--extension` is provided. |
-| `--extension` | `-e` | Backend-specific fields as `key=value` pairs. Can be repeated. |
+| ------ | ------- | ------------- |
+| `--backend` | `-b` | Name of the backend to use. Inferred from `--soc`, `--core`, and `--acc` when not specified. Specify explicitly to override the inferred value. |
+| `--extension` | `-e` | Backend-specific fields as `key=value` pairs. Can be repeated. Requires a backend — either inferred from `--soc`, `--core`, and `--acc`, or specified with `--backend`. |
 | `--output-path` | `-o` | Output directory for generated files, relative to `--cwd`. |
 | `--search-path` | `-x` | Additional search path for templates and data models. Can be repeated. |
 | `--cwd` | | Change the working directory. Used as the base path for relative file paths. |
@@ -176,6 +186,11 @@ cfsutil ai build \
 
 !!! tip
     The `-e` / `--extension` flag can be repeated to pass multiple key-value pairs. For example: `-e InputShape=1,32,32 -e Softmax=True`.
+
+!!! note "Authentication"
+    If a build needs to pull a backend's compiler image from ADI, authenticate
+    first with `cfsutil myanalog login`, or set the `CFS_API_KEY` environment
+    variable. See [API key authentication](../apikey-auth.md).
 
 ### JSON output
 

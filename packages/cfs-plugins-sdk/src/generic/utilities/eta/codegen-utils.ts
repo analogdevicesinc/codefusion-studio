@@ -608,11 +608,24 @@ export function isZephelinAIEnabled() {
 // Return the name of the UART configured for Zephelin profiling.
 // The name corresponds to the entry in the data model.
 export function getZephelinPort() {
-  return getProject()?.Profiling?.Zephelin?.Port;
+  const zephelin = getProject()?.Profiling?.Zephelin;
+  const iface = zephelin?.Interface as
+    | string
+    | {Type: string; Port?: string}
+    | undefined;
+  // New object form stores the port inside the interface object.
+  // Legacy form stores it as a sibling Port property.
+  return iface && typeof iface === "object" ? iface.Port : zephelin?.Port;
 }
 
 export function getZephelinTraceInterface() {
-  return getProject()?.Profiling?.Zephelin?.Interface;
+  const iface = getProject()?.Profiling?.Zephelin?.Interface as
+    | string
+    | {Type: string; Port?: string}
+    | undefined;
+  // New object form carries the transport in `Type`;
+  // the legacy form is the interface string itself.
+  return iface && typeof iface === "object" ? iface.Type : iface;
 }
 
 // Does the project have Zephelin RTOS events enabled
@@ -820,15 +833,28 @@ export function genCode(
             `Could not find field: "${op.Field}" in register: "${register}"`
           );
         }
-        const mask = (1 << field.Length) - 1;
+
+        // If a slice is specified, use its position/width relative to the field.
+        // Otherwise use the full field bounds.
+        const effectivePosition =
+          field.Position + (op.SlicePosition ?? 0);
+        const effectiveLength = op.SliceWidth ?? field.Length;
+
+        // Use unsigned 32-bit arithmetic (>>> 0) to avoid sign issues at bit 31.
+        // Special-case 32-bit: (1 << 32) wraps to 1 in JS, so use 0xFFFFFFFF directly.
+        const mask =
+          effectiveLength >= 32
+            ? 0xffffffff
+            : (((1 << effectiveLength) - 1) >>> 0);
+
         let valueString;
         let maskString;
         // Work out what the op value is from the step's Value field.
         const opValue = evaluateExpression(op.Value, ctrlValue);
 
         if (pending || accumMask != 0) {
-          accumValue |= opValue << field.Position;
-          accumMask |= ((1 << field.Length) - 1) << field.Position;
+          accumValue = (accumValue | ((opValue << effectivePosition) >>> 0)) >>> 0;
+          accumMask = (accumMask | (mask << effectivePosition)) >>> 0;
         }
 
         if (!pending) {
@@ -836,8 +862,8 @@ export function genCode(
           if (accumMask != 0) {
             shift = 0;
           } else {
-            shift = field.Position;
-            accumValue = Number(opValue);
+            shift = effectivePosition;
+            accumValue = Number(opValue) >>> 0;
             accumMask = mask;
           }
 
@@ -847,7 +873,7 @@ export function genCode(
           else maskString = `0x${accumMask.toString(16)}U`;
 
           if (operation === "Write") {
-            if (field.Length == 32) {
+            if (effectiveLength == 32) {
               // Replace entire register value
               if (code) code += "\n";
               code += `${indent}${register_macro} = ${valueString};`;
@@ -879,7 +905,7 @@ export function genCode(
           } else if (operation === "Poll") {
             // Loop until field takes desired value
             if (code) code += "\n";
-            if (field.Length < 32) {
+            if (effectiveLength < 32) {
               if (shift > 0) {
                 code += `${indent}while (((${register_macro} >> ${String(shift)}) & ${maskString}) != ${valueString}) {\n`;
               } else {

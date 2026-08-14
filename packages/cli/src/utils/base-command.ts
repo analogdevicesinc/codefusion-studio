@@ -12,10 +12,8 @@
  * limitations under the License.
  *
  */
-import type {AiCommandResult, CodeGenJsonMsg} from 'cfs-lib';
 
 import {Command, Flags, Interfaces} from '@oclif/core';
-import {type CommandError} from '@oclif/core/lib/interfaces/errors.js';
 
 import {RecoverableError} from './recoverable-error.js';
 
@@ -25,9 +23,8 @@ interface CliResponse<T = never> {
   msg?: string;
 }
 
-export type CliRunResponse<T = never> = Promise<
-  CliResponse<T> | CodeGenJsonMsg[] | void
->;
+export type CliRunResponse<T = never> =
+  Promise<CliResponse<T> | void>;
 
 export type Flags<T extends typeof Command> =
   Interfaces.InferredFlags<
@@ -37,9 +34,6 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<
   T['args']
 >;
 
-// @TODO: Refactor the base command class to make it truly generic.
-// We are currently forcing AI logic into all commands that extend BaseCommand, which is not ideal.
-// This breaks SOLID principles and makes it harder to maintain and test non-AI commands.
 export abstract class BaseCommand<
   T extends typeof Command
 > extends Command {
@@ -62,7 +56,7 @@ export abstract class BaseCommand<
   protected args!: Args<T>;
   protected flags!: Flags<T>;
 
-  async catch(error: CommandError | RecoverableError) {
+  async catch(error: Interfaces.CommandError | RecoverableError) {
     const isRecoverableError = error instanceof RecoverableError;
 
     process.exitCode = isRecoverableError
@@ -73,7 +67,7 @@ export abstract class BaseCommand<
       const formattedError = {
         level: 'ERROR',
         msg: error instanceof Error ? error.message : String(error)
-      } as CodeGenJsonMsg;
+      };
 
       this.logJson(
         isRecoverableError ? error.toJson() : formattedError
@@ -81,68 +75,6 @@ export abstract class BaseCommand<
     } else {
       this.error(isRecoverableError ? error.toText() : error);
     }
-  }
-
-  protected handlePythonOutput(
-    output: AiCommandResult
-  ): CodeGenJsonMsg[] {
-    let raw = '';
-    const combined = [...output.stdout, ...output.stderr];
-    const errLines: string[] = [];
-
-    const parsed = combined
-      .join('\n')
-      .split('\n')
-      .filter((line) => line.length > 0)
-      .flatMap((line) => {
-        try {
-          const parsed = JSON.parse(line) as CodeGenJsonMsg;
-          switch (parsed.level) {
-            case 'ERROR': {
-              errLines.push(parsed.msg);
-              break;
-            }
-
-            case 'WARNING': {
-              this.warn(parsed.msg);
-              break;
-            }
-
-            default: {
-              this.log(parsed.msg);
-            }
-          }
-
-          return [parsed];
-        } catch {
-          raw += line + '\n';
-          return [];
-        }
-      });
-
-    if (raw.length > 0) {
-      if (
-        output.code === 0 ||
-        (output.code !== null &&
-          output.validCodes.includes(output.code))
-      ) {
-        this.jsonEnabled()
-          ? parsed.push({level: 'INFO', msg: raw})
-          : this.log(raw);
-      } else {
-        this.jsonEnabled() && this.logJson(parsed);
-        this.error(raw);
-      }
-    }
-
-    if (errLines.length > 0) {
-      this.error(errLines.join('\n'), {
-        exit: output.code || 1
-      });
-    }
-
-    process.exitCode = output.code ?? 0;
-    return parsed;
   }
 
   public async init() {

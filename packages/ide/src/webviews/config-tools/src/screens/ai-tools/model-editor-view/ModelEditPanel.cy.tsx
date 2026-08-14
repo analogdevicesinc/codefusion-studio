@@ -32,6 +32,7 @@ import {
 } from '../../../state/slices/ai-tools/aiModel.reducer';
 import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext';
 import {findSupportedAiBackendsForCore} from './ai-model-utils';
+import {resetCachedAiBackendControls} from '../../../state/slices/ai-tools/ai-backends';
 
 const soc = (await import('@socs/max78002-csbga.json'))
 	.default as unknown as Soc;
@@ -50,12 +51,17 @@ const backendData: Record<string, AiSupportingBackend> = {
 					Soc: 'MAX78002',
 					Core: 'CM4',
 					Accelerator: 'cnn'
-				}
+				},
+				FirmwarePlatform: null
 			}
 		],
 		AdvancedTools: false,
-		Docker: {Size: 1},
-		MaxModels: 9999
+		MaxModels: 9999,
+		Description: '',
+		Formats: [],
+		Package: '',
+		Module: '',
+		Name: ''
 	},
 	backend2: {
 		Targets: [
@@ -63,18 +69,24 @@ const backendData: Record<string, AiSupportingBackend> = {
 				Hardware: {
 					Family: 'sharcfx',
 					Accelerator: null
-				}
+				},
+				FirmwarePlatform: null
 			},
 			{
 				Hardware: {
 					Family: 'cortex-m',
 					Accelerator: null
-				}
+				},
+				FirmwarePlatform: null
 			}
 		],
 		AdvancedTools: false,
-		Docker: {Size: 1},
-		MaxModels: 9999
+		MaxModels: 9999,
+		Description: '',
+		Formats: [],
+		Package: '',
+		Module: '',
+		Name: ''
 	}
 };
 
@@ -111,11 +123,50 @@ const cfsconfig: ConfigOptionsReturn['configOptions'] = {
 	Soc: 'MAX78002'
 };
 
+type MockBackendProperty = {
+	Id: string;
+	Type: string;
+	Description: string;
+	Tooltip: string;
+	Pattern?: string;
+};
+
+const getDefaultBackendProperties = (): MockBackendProperty[] => [
+	{
+		Id: 'Symbol',
+		Type: 'string',
+		Description: 'Symbol for data',
+		Tooltip:
+			'The C symbol used for the data array and generated files.'
+	},
+	{
+		Id: 'CalibrationSet',
+		Type: 'array',
+		Description: 'Calibration dataset',
+		Tooltip:
+			'List of paths to the sample input data used for quantization calibration.'
+	},
+	{
+		Id: 'ValidationSet',
+		Type: 'array',
+		Description: 'Validation dataset',
+		Tooltip:
+			'List of paths to the sample input data used for quantization validation.'
+	}
+];
+
+let backendPropertiesResponse = getDefaultBackendProperties();
+
 let selectFileResponses: Array<string | undefined> = [];
 let selectFileCallCount = 0;
 
 describe('Backend Selection', () => {
 	// Mock backend request
+	beforeEach(() => {
+		backendPropertiesResponse = getDefaultBackendProperties();
+		resetCachedAiBackendControls();
+	});
+
 	before(() => {
 		mockVsCodeApi({
 			postMessage(message: any) {
@@ -135,29 +186,7 @@ describe('Backend Selection', () => {
 							data: {
 								type: 'api-response',
 								id: message.id,
-								body: [
-									{
-										Id: 'Symbol',
-										Type: 'string',
-										Description: 'Symbol for data',
-										Tooltip:
-											'The C symbol used for the data array and generated files.'
-									},
-									{
-										Id: 'CalibrationSet',
-										Type: 'array',
-										Description: 'Calibration dataset',
-										Tooltip:
-											'List of paths to the sample input data used for quantization calibration.'
-									},
-									{
-										Id: 'ValidationSet',
-										Type: 'array',
-										Description: 'Validation dataset',
-										Tooltip:
-											'List of paths to the sample input data used for quantization validation.'
-									}
-								]
+								body: backendPropertiesResponse
 							}
 						})
 					);
@@ -177,6 +206,7 @@ describe('Backend Selection', () => {
 			setState: cy.stub()
 		});
 	});
+
 	it('can create Model', () => {
 		const reduxStore = configurePreloadedStore(
 			soc,
@@ -475,5 +505,78 @@ describe('Backend Selection', () => {
 		cy.dataTest('calibration-set')
 			.contains('calibration2.npy')
 			.should('exist');
+	});
+
+	it('validates Pattern-based dynamic fields from backend properties', () => {
+		backendPropertiesResponse = [
+			...getDefaultBackendProperties(),
+			{
+				Id: 'ModelPrefix',
+				Type: 'string',
+				Pattern: '[A-Za-z_][A-Za-z0-9_]*',
+				Description: 'Model prefix',
+				Tooltip: 'Prefix used in generated model artifacts.'
+			}
+		];
+
+		const reduxStore = configurePreloadedStore(
+			soc,
+			cfsconfig,
+			undefined
+		);
+		loadAIBackends().catch(() =>
+			cy.contains('Could not load backends').should('not.exist')
+		);
+		initializeConfigDict(cfsconfig, soc);
+
+		reduxStore.dispatch(createNewModel());
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ModelEditPanel />
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		cy.dataTest('model-edit-panel').should('exist');
+
+		cy.dataTest('model-name-control-input')
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('Pattern Validation Model');
+			});
+
+		cy.dataTest('model-file-control-input')
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('/tmp/pattern-model.tflite');
+			});
+
+		cy.dataTest('model-config-form:control-ModelPrefix-control-input')
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear();
+			});
+
+		cy.dataTest('model-save-button').click();
+		cy.contains('Field is required').should('exist');
+
+		cy.dataTest('model-config-form:control-ModelPrefix-control-input')
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('123-invalid-prefix');
+			});
+
+		cy.dataTest('model-save-button').click();
+		cy.contains('Invalid format for field').should('exist');
+
+		cy.dataTest('model-config-form:control-ModelPrefix-control-input')
+			.shadow()
+			.within(() => {
+				cy.get('#control').clear().type('Valid_Prefix_1');
+			});
+
+		cy.dataTest('model-save-button').click();
+		cy.contains('Field is required').should('not.exist');
+		cy.contains('Invalid format for field').should('not.exist');
 	});
 });

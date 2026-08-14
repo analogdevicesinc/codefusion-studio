@@ -24,9 +24,9 @@ import {
 	setSoc,
 	setWorkspaceName,
 	toggleRunModelOnCore
-} from "./slices/workspace-reducer";
+} from './slices/workspace-reducer';
 import {messenger} from '../../../common/contexts/MessengerContext';
-import { updateWorkspaceConfig } from "@constants/messages/model-to-workspace";
+import {updateWorkspaceConfig} from '@constants/messages/model-to-workspace';
 import {type RootState} from './store';
 
 export const persistedModelWorkspaceActions: Array<
@@ -47,16 +47,17 @@ export function getModelWorkspacePersistenceListenerMiddleware() {
 		listenerMiddleware.startListening({
 			actionCreator: action,
 			async effect(_, listenerApi) {
-
 				const state = (listenerApi.getState() as RootState)
 					.workspaceConfigReducer;
 
-
 				messenger.sendNotification(
 					updateWorkspaceConfig,
-					{ type: "extension" },
+					{type: 'extension'},
 					{
-						modelFile: state.modelFile,
+						modelFile:
+							typeof state.modelFile === 'string'
+								? state.modelFile
+								: undefined,
 						sampleData: state.sampleData,
 						workspaceName: state.workspaceName,
 						soc: state.soc,

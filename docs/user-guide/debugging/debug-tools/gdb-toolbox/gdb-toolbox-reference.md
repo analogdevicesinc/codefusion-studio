@@ -1,7 +1,7 @@
 ---
 description: Available action types for the GDB Toolbox
 author: Analog Devices
-date: 2025-09-21
+date: 2026-08-05
 ---
 
 # GDB Toolbox reference
@@ -12,27 +12,28 @@ Each GDB Toolbox script is defined in a JSON file. The following GDB Toolbox scr
 {
   "name": "Analyze Faults",                                  // ①
   "description": "Analyzes faults and exceptions...",        // ②
-  "core": "arm",                                              // ③
-  "firmwarePlatform": "zephyr",                               // ④
-  "soc": "MAX32690",                                          // ⑤
-  "commands": [                                               // ⑥
+  "version": "1.0.0",                                         // ③
+  "arch": "arm",                                              // ④
+  "firmwarePlatform": "zephyr",                               // ⑤
+  "soc": "MAX32690",                                          // ⑥
+  "commands": [                                               // ⑦
     {
-      "command": "source {defaultScriptsDirectory}/fault-analyzer-arm.gdb", // ⑫
-      "actions": [                                            // ⑬
+      "command": "source {defaultScriptsDirectory}/fault-analyzer-arm.gdb", // ⑬
+      "actions": [                                            // ⑭
         {
-          "type": "appendFile",                               // ⑭
-          "filePath": "gdb_toolbox/reports/${input:filename}.md", // ⑮
+          "type": "appendFile",                               // ⑮
+          "filePath": "gdb_toolbox/reports/${input:filename}.md", // ⑯
           "content": "${markdownReport}"
         }
       ]
     }
   ],
-  "inputs": [                                                 // ⑦
+  "inputs": [                                                 // ⑧
     {
-      "id": "filename",                                       // ⑧
-      "type": "inputBox",                                     // ⑨
-      "title": "Log Filename",                                // ⑩
-      "prompt": "Enter a name for the log file"               // ⑪
+      "id": "filename",                                       // ⑨
+      "type": "inputBox",                                     // ⑩
+      "title": "Log Filename",                                // ⑪
+      "prompt": "Enter a name for the log file"               // ⑫
     }
   ]
 }
@@ -44,35 +45,36 @@ Each GDB Toolbox script is defined in a JSON file. The following GDB Toolbox scr
 |---|--------------------|--------|-----------------------------------------------------------------------------------------------------------|----------|
 | 1 | `name`             | string | The display name of the script as shown in the GDB Toolbox UI.                                            | ✅ Yes    |
 | 2 | `description`      | string | A short description of the script. Appears in the Toolbox UI tooltip.                                     | ✅ Yes    |
-| 3 | `core`             | array  | Specifies the supported core type, for example: `arm`, `riscv`. Filters visibility during debug sessions. | ❌ No     |
-| 4 | `firmwarePlatform` | string | Filters script visibility by platform. For example: `zephyr`, `msdk`.                                     | ❌ No     |
-| 5 | `soc`              | string | Filters script visibility by SoC name. For example: `MAX32690`.                                           | ❌ No     |
-| 6 | `commands`         | array  | A list of GDB commands to run when the script is executed.                                                | ✅ Yes    |
-| 7 | `inputs`           | array  | A list of user input prompts.                                                                             | ❌ No     |
+| 3 | `version`          | string | The version of the script. For example: `1.0.0`.                                                          | ✅ Yes    |
+| 4 | `arch`             | string or array | Specifies the supported architecture, for example: `arm`, `riscv`. Accepts a single value or an array of values. Filters visibility during debug sessions. | ❌ No     |
+| 5 | `firmwarePlatform` | string or array | Filters script visibility by platform. Accepts a single value or an array of values. For example: `zephyr`, `msdk`. | ❌ No     |
+| 6 | `soc`              | string or array | Filters script visibility by SoC name. Accepts a single value or an array of values. For example: `MAX32690`. | ❌ No     |
+| 7 | `commands`         | array  | A list of GDB commands to run when the script runs.                                                       | ✅ Yes    |
+| 8 | `inputs`           | array  | A list of user input prompts.                                                                             | ❌ No     |
 
 ## Fields inside each `inputs` object
 
 | #  | Field     | Type   | Description                                                                                                                                 |Required |
 |----|-----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| 8  | `id`      | string | Unique identifier for the prompt, referenced as `${input:<id>}` in the `commands[]` and `actions[]` sections.                               |✅ Yes    |
-| 9  | `type`    | string | The type of input prompt: `inputBox` for text entry or `quickPick` for predefined choices.                                                  |✅ Yes    |
-| 10 | `title`   | string | The title of the input prompt displayed in the UI.                                                                                          |❌ No     |
-| 11 | `prompt`  | string | The message displayed to the user, asking for input.                                                                                        |❌ No     |
+| 9  | `id`      | string | Unique identifier for the prompt, referenced as `${input:<id>}` in the `commands[]` and `actions[]` sections.                               |✅ Yes    |
+| 10 | `type`    | string | The type of input prompt: `inputBox` for text entry or `quickPick` for predefined choices.                                                  |✅ Yes    |
+| 11 | `title`   | string | The title of the input prompt displayed in the UI.                                                                                          |❌ No     |
+| 12 | `prompt`  | string | The message displayed to the user, asking for input.                                                                                        |❌ No     |
 | -  | `choices` | array  | A list of predefined choices for `quickPick` inputs, such as `["A", "B", "C"]`.                                                             |✅ Yes    |
 
 ## Fields inside each `commands` object
 
 | #  | Field     | Type   | Description                                                                                                                | Required |
 |----|-----------|--------|----------------------------------------------------------------------------------------------------------------------------|----------|
-| 12 | `command` | string | The GDB command to execute. Supports variables like `${input}` or `${gdbOutput}`. See [Variables](#variables) for details. | ✅ Yes    |
-| 13 | `actions` | array  | A list of actions to run after the command.                                                                                | ❌ No     |
+| 13 | `command` | string | The GDB command to run. Supports variables like `${input}` or `${gdbOutput}`. See [Variables](#variables) for details. | ✅ Yes    |
+| 14 | `actions` | array  | A list of actions to run after the command.                                                                                | ❌ No     |
 
 ## Fields inside each `actions` object
 
 | #  | Field    | Type   | Description                                                                                                                             | Required |
 |----|----------|--------|-----------------------------------------------------------------------------------------------------------------------------------------|----------|
-| 14  | `type`   | string | The type of action to perform, such as: `log`, `writeFile`, `appendFile`, `showMessage`. See [Action types](#action-types) for details. | ✅ Yes    |
-| 15 | (varies) | varies | Additional fields required depend on the `type`.                                                                                        | ✅ Yes    |
+| 15  | `type`   | string | The type of action to perform, such as: `log`, `writeFile`, `appendFile`, `showMessage`. See [Action types](#action-types) for details. | ✅ Yes    |
+| 16 | (varies) | varies | Additional fields required depend on the `type`.                                                                                        | ✅ Yes    |
 
 ### Action types
 
@@ -114,6 +116,7 @@ For example, this script prompts the user for a command, then writes the GDB out
 {
   "name": "Run GDB Command and Save Output",
   "description": "Lets you choose a GDB command and saves the output to a log file.",
+  "version": "1.0.0",
   "commands": [
     {
       "command": "${input:command}",

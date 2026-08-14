@@ -18,10 +18,18 @@ import { CfsDebugManager } from "../debug-manager";
 import * as path from "path";
 
 /** Time (ms) to wait for the stop event after calling stopDebugging. */
-const STOP_CONFIRMATION_DELAY_MS = 100;
+const STOP_CONFIRMATION_TIMEOUT_MS = 5_000;
 
 /** Time (ms) to wait for a new session to appear after a restart. */
 const RESTART_TIMEOUT_MS = 10_000;
+
+/** Time (ms) to wait for early termination after a successful start. */
+const EARLY_TERMINATION_TIMEOUT_MS = 5_000;
+
+export interface DebugConfig {
+  name: string;
+  workspaceFolder: vscode.WorkspaceFolder;
+}
 
 /**
  * Shared executor for debug lifecycle commands.
@@ -30,84 +38,333 @@ const RESTART_TIMEOUT_MS = 10_000;
 export class DebugCommandExecutor {
   constructor(private debugManager: CfsDebugManager) {}
 
+  private static readonly START_FAILURE_CAUSES =
+    "**Common causes:**\n" +
+    "- Target hardware is not connected or powered on\n" +
+    "- Debug probe (J-Link, OpenOCD, etc.) is not detected\n" +
+    "- Incorrect debug configuration settings\n\n" +
+    "Please check the **Debug Console** and **Terminal** output for detailed error information.\n";
+
   /**
-   * Start a debug session
+   * Gets all debug configurations from workspace.
    */
-  async startDebugging(configName?: string): Promise<string> {
+  private getConfigurations(): DebugConfig[] {
+    const configs: DebugConfig[] = [];
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return "❌ No workspace folder open";
+
+    if (!workspaceFolders) {
+      return configs;
     }
 
-    // If config name provided, find and start it
-    if (configName) {
-      for (const folder of workspaceFolders) {
-        const launchConfig = vscode.workspace.getConfiguration(
-          "launch",
-          folder,
-        );
-        const configurations = launchConfig.get<any[]>("configurations", []);
-        const config = configurations.find((c) =>
-          c.name.toLowerCase().includes(configName.toLowerCase()),
-        );
-
-        if (config) {
-          const success = await vscode.debug.startDebugging(
-            folder,
-            config.name,
-          );
-          return success
-            ? `✅ Started debugging with configuration: **${config.name}**`
-            : `❌ Failed to start debugging with configuration: **${config.name}**`;
-        }
-      }
-      return `❌ Debug configuration not found: **${configName}**`;
-    }
-
-    // Get all available configurations
-    const allConfigs: Array<{ name: string; folder: vscode.WorkspaceFolder }> =
-      [];
     for (const folder of workspaceFolders) {
       const launchConfig = vscode.workspace.getConfiguration("launch", folder);
       const configurations = launchConfig.get<any[]>("configurations", []);
-      configurations.forEach((config) => {
-        allConfigs.push({ name: config.name, folder });
-      });
+
+      for (const config of configurations) {
+        configs.push({
+          name: config.name,
+          workspaceFolder: folder,
+        });
+      }
     }
 
-    if (allConfigs.length === 0) {
-      return "❌ No debug configurations found. Please configure debugging first.";
+    return configs;
+  }
+
+  /**
+   * Shows list of available configurations.
+   */
+  private showConfigList(configs?: DebugConfig[]): string {
+    const configList = configs ?? this.getConfigurations();
+
+    if (configList.length === 0) {
+      return "❌ No debug configurations found. Please create a launch.json file.";
     }
 
-    // Start with first available config
-    const firstConfig = allConfigs[0];
-    const success = await vscode.debug.startDebugging(
-      firstConfig.folder,
-      firstConfig.name,
+    const configLines = configList
+      .map((config, index) => `${index + 1}. ${config.name}`)
+      .join("\n");
+
+    return configLines.concat(
+      `\n\nSay "start debugging <config name>" to begin.\n`,
     );
-    return success
-      ? `✅ Started debugging with configuration: **${firstConfig.name}**`
-      : `❌ Failed to start debugging`;
+  }
+
+  /**
+   * Matches a configuration from user prompt.
+   *
+   * Matching is done in three passes with decreasing confidence:
+   * 1. Exact substring match (config name found verbatim in prompt)
+   * 2. Normalized substring match (after stripping debug-related keywords)
+   * 3. Fuzzy word-overlap match (best score above 60% threshold wins)
+   */
+  private matchConfiguration(
+    prompt: string,
+    configs: DebugConfig[],
+  ): DebugConfig | null {
+    const lowerPrompt = prompt.toLowerCase();
+
+    const normalizeText = (text: string) =>
+      text
+        .toLowerCase()
+        .replace(/start|debug|begin|launch|debugging|session/gi, "")
+        .replace(/[^a-z0-9]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const normalizedPrompt = normalizeText(lowerPrompt);
+
+    // Pass 1: exact substring match (highest confidence)
+    for (const config of configs) {
+      if (lowerPrompt.includes(config.name.toLowerCase())) {
+        return config;
+      }
+    }
+
+    // If the prompt normalizes to empty (e.g. "start debugging"),
+    // there is nothing to match against — let the caller show the
+    // configuration list so the user can pick one explicitly.
+    if (!normalizedPrompt) {
+      return null;
+    }
+
+    // Pass 2: normalized substring containment
+    for (const config of configs) {
+      const normalizedConfigName = normalizeText(config.name);
+
+      if (
+        (normalizedPrompt.includes(normalizedConfigName) ||
+          normalizedConfigName.includes(normalizedPrompt)) &&
+        normalizedConfigName !== ""
+      ) {
+        return config;
+      }
+    }
+
+    // Pass 3: fuzzy word-overlap — pick the best match above threshold
+    const FUZZY_THRESHOLD = 0.6;
+    let bestMatch: DebugConfig | null = null;
+    let bestScore = 0;
+
+    const promptWords = normalizedPrompt.split(" ").filter((w) => w.length > 2);
+
+    for (const config of configs) {
+      const normalizedConfigName = normalizeText(config.name);
+      const configWords = normalizedConfigName
+        .split(" ")
+        .filter((w) => w.length > 2);
+
+      if (configWords.length > 0) {
+        const matchingWords = configWords.filter((word) =>
+          promptWords.includes(word),
+        );
+        const score = matchingWords.length / configWords.length;
+
+        if (score > FUZZY_THRESHOLD && score > bestScore) {
+          bestScore = score;
+          bestMatch = config;
+        }
+      }
+    }
+
+    return bestMatch;
+  }
+
+  private async startDebugSession(
+    configName: string,
+    workspaceFolder: vscode.WorkspaceFolder,
+  ): Promise<string> {
+    // Register termination listener before starting to avoid a race
+    // where the session terminates before we begin listening.
+    let terminationDisposable: vscode.Disposable | undefined;
+    let terminationTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const earlyTermination = new Promise<boolean>((resolve) => {
+      terminationTimeout = setTimeout(() => {
+        terminationDisposable?.dispose();
+        resolve(false);
+      }, EARLY_TERMINATION_TIMEOUT_MS);
+
+      terminationDisposable = vscode.debug.onDidTerminateDebugSession(
+        (terminated) => {
+          if (terminated.name === configName) {
+            clearTimeout(terminationTimeout);
+            terminationDisposable?.dispose();
+            resolve(true);
+          }
+        },
+      );
+    });
+
+    const success = await vscode.debug.startDebugging(
+      workspaceFolder,
+      configName,
+    );
+
+    if (!success) {
+      clearTimeout(terminationTimeout);
+      terminationDisposable?.dispose();
+
+      return (
+        "❌ Failed to start debug session.\n\n" +
+        DebugCommandExecutor.START_FAILURE_CAUSES
+      );
+    }
+
+    const terminatedEarly = await earlyTermination;
+
+    if (terminatedEarly) {
+      return (
+        "❌ Debug session started but terminated immediately.\n\n" +
+        "This usually means the debugger could not connect to the target.\n\n" +
+        DebugCommandExecutor.START_FAILURE_CAUSES
+      );
+    } else {
+      return `✅ Started debugging with configuration: **${configName}**\n`;
+    }
+  }
+
+  /**
+   * Start a debug session
+   *
+   * Resolution order:
+   * 1. If `configName` is provided, find and start that configuration
+   * 2. If `prompt` is provided, match configuration from natural language
+   * 3. Otherwise, start the first available configuration
+   */
+  async startDebugging(
+    configName?: string,
+    workspaceFolder?: vscode.WorkspaceFolder,
+    prompt?: string,
+  ): Promise<string> {
+    let response: string = "";
+
+    if (!vscode.workspace.workspaceFolders) {
+      return "❌ No workspace folders open.";
+    }
+
+    const configs = this.getConfigurations();
+
+    if (configs.length === 0) {
+      return "❌ No debug configurations found. Please create a launch.json file.";
+    }
+
+    response = response.concat(
+      `Found ${configs.length} debug configuration(s).\n`,
+    );
+
+    let selectedConfig: DebugConfig | null = null;
+
+    // Priority 1: Explicit config name
+    if (configName) {
+      if (workspaceFolder) {
+        selectedConfig = { name: configName, workspaceFolder };
+      } else {
+        selectedConfig =
+          configs.find((c) =>
+            c.name.toLowerCase().includes(configName.toLowerCase()),
+          ) ?? null;
+      }
+
+      if (!selectedConfig) {
+        return response.concat(
+          `❌ Debug configuration not found: **${configName}**`,
+        );
+      }
+    }
+
+    // Priority 2: Match from prompt
+    if (!selectedConfig && prompt) {
+      selectedConfig = this.matchConfiguration(prompt, configs);
+
+      if (!selectedConfig) {
+        return response.concat(
+          "⚠️ Could not match a configuration from your request.\nAvailable debug configurations:\n\n",
+          this.showConfigList(configs),
+        );
+      }
+    }
+
+    // Priority 3: Fall back to first config
+    if (!selectedConfig) {
+      selectedConfig = configs[0];
+    }
+
+    // Check for duplicate sessions
+    const isDuplicate = this.debugManager
+      .getAllSessions()
+      .some(
+        (s) => s.vscodeSession.configuration?.name === selectedConfig!.name,
+      );
+
+    if (isDuplicate) {
+      return response.concat(
+        `A debug session with configuration **${selectedConfig.name}** is already running.\n\n` +
+          "Please stop the current session first or use the `restart` command.\n\n" +
+          "Examples:\n" +
+          "- `@cfs-debug stop`\n" +
+          "- `@cfs-debug restart`\n",
+      );
+    }
+
+    const result = await this.startDebugSession(
+      selectedConfig.name,
+      selectedConfig.workspaceFolder,
+    );
+
+    return response.concat(result);
   }
 
   /**
    * Stop the current debug session
    */
   async stopDebugging(): Promise<string> {
-    const session = vscode.debug.activeDebugSession;
-    if (!session) {
-      return "⚠️  No active debug session to stop";
+    const activeSession = vscode.debug.activeDebugSession;
+
+    if (!activeSession) {
+      return "⚠️  No active debug session to stop\n";
     }
 
-    const sessionName = session.name;
-    await vscode.debug.stopDebugging(session);
+    const sessionId = activeSession.id;
+    const sessionName = activeSession.name;
 
-    // Wait a bit to confirm stop
-    await new Promise((resolve) =>
-      setTimeout(resolve, STOP_CONFIRMATION_DELAY_MS),
-    );
+    let disposable: vscode.Disposable | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
 
-    return `✅ Stopped debug session: **${sessionName}**`;
+    try {
+      const sessionStopped = new Promise<boolean>((resolve) => {
+        timeout = setTimeout(() => {
+          resolve(false);
+        }, STOP_CONFIRMATION_TIMEOUT_MS);
+
+        disposable = vscode.debug.onDidTerminateDebugSession((session) => {
+          if (session.id === sessionId) {
+            clearTimeout(timeout);
+            resolve(true);
+          }
+        });
+      });
+
+      await vscode.debug.stopDebugging(activeSession);
+
+      const stopped = await sessionStopped;
+
+      if (!stopped) {
+        return (
+          "❌ Failed to stop the active debug session.\n\n" +
+          "Please stop it manually before trying again.\n"
+        );
+      }
+
+      return `✅ Stopped debug session: **${sessionName}**\n`;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return `❌ Error stopping debug session: ${message}\n`;
+    } finally {
+      // always clean up, regardless of success or failure
+      clearTimeout(timeout);
+      disposable?.dispose();
+    }
   }
 
   /**
@@ -171,8 +428,13 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session";
     }
 
-    await session.pause();
-    return "⏸️  Paused execution";
+    try {
+      await session.pause();
+      return "⏸️  Paused execution";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return `❌ Failed to pause execution: ${message}`;
+    }
   }
 
   /**
@@ -185,33 +447,98 @@ export class DebugCommandExecutor {
       return "⚠️  No active debug session to restart";
     }
 
+    const sessionName = session.name;
     const oldSessionId = session.id;
+    const oldSessionConfigName = session.configuration.name;
+    const oldSessionWsFolder = session.workspaceFolder;
 
-    // Wait for a new session to start after restart, with a timeout
+    /**
+     * Cortex debug uses custom events to track the restarting of debug sessions. Counter intuitively a
+     * `custom-continued` event is fired first when the old session stops, and `custom-stop` is fired when the new
+     * session starts
+     */
+
     const sessionRestarted = new Promise<boolean>((resolve) => {
+      const disposables: vscode.Disposable[] = [];
+
+      const cleanup = () => {
+        disposables.forEach((d) => d.dispose());
+      };
+
       const timeout = setTimeout(() => {
-        disposable.dispose();
+        cleanup();
         resolve(false);
       }, RESTART_TIMEOUT_MS);
 
-      const disposable = vscode.debug.onDidStartDebugSession((newSession) => {
-        if (newSession.id !== oldSessionId) {
-          clearTimeout(timeout);
-          disposable.dispose();
-          resolve(true);
-        }
-      });
+      let terminated = false;
+
+      disposables.push(
+        vscode.debug.onDidReceiveDebugSessionCustomEvent((event) => {
+          if (
+            event.session.id === oldSessionId &&
+            event.event === "custom-continued"
+          ) {
+            terminated = true;
+          }
+        }),
+      );
+
+      /**
+       * listen for the stopped event which indicates the session is ready this
+       * handles in-place restarts where no new session is created
+       */
+      disposables.push(
+        vscode.debug.onDidReceiveDebugSessionCustomEvent((event) => {
+          if (
+            event.session.id === oldSessionId &&
+            event.event === "custom-stop" &&
+            terminated === true
+          ) {
+            clearTimeout(timeout);
+            cleanup();
+            resolve(true);
+          }
+        }),
+      );
+
+      /**
+       * Future proof the restart handler in the case of the DAP moving away
+       * from custom events to standard VSCode termination and start events
+       */
+      disposables.push(
+        vscode.debug.onDidTerminateDebugSession((session) => {
+          if (session.id === oldSessionId) {
+            terminated = true;
+          }
+        }),
+      );
+
+      disposables.push(
+        vscode.debug.onDidStartDebugSession((session) => {
+          if (
+            session.id !== oldSessionId &&
+            session.configuration.name === oldSessionConfigName &&
+            session.workspaceFolder === oldSessionWsFolder &&
+            terminated === true
+          ) {
+            clearTimeout(timeout);
+            cleanup();
+            resolve(true);
+          }
+        }),
+      );
     });
 
-    await vscode.commands.executeCommand("workbench.action.debug.restart");
+    // fire and forget. awaiting on this command causes indefinite hanging
+    void vscode.commands.executeCommand("workbench.action.debug.restart");
 
     const restarted = await sessionRestarted;
 
     if (restarted) {
-      return "🔄 Restarted debug session";
+      return `🔄 Restarted debug session: **${sessionName}**`;
     }
 
-    return "⚠️  Restart was initiated but the new session did not start within the expected time. Check the Debug Console for errors.";
+    return "⚠️  Restart was initiated but could not confirm completion. Check the Debug Console for errors.";
   }
 
   /**

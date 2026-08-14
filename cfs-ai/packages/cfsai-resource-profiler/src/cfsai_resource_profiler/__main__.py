@@ -16,7 +16,7 @@ import sys
 
 from cfsai_resource_profiler import TFLiteResourceProfiler
 from cfsai_types.hardware_profile import HardwareProfile
-from cfsai_types.logging import setup_logger
+from cfsai_types.logging import dump_logs, setup_logger
 
 logger = logging.getLogger("cfsai_resource_profiler")
 
@@ -42,7 +42,7 @@ def _run_profile(
     if text_file:
         profiling_report.save_as_text(text_file)
     if not json_file and not text_file:
-        profiling_report.visualize_resource_profile()
+        profiling_report.log_as_text()
 
 
 if __name__ == "__main__":
@@ -70,4 +70,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f'{e.__class__.__name__}{e}')
         sys.exit(1)
+    finally:
+        print(dump_logs())
 

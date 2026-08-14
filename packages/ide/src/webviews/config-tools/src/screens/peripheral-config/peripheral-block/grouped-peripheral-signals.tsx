@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,12 @@ import type {
 } from '../../../../../common/types/soc';
 import type {PeripheralConfig} from '../../../types/peripherals';
 import {Tooltip} from 'cfs-react-library';
-import {PERIPHERAL_LIST_CONTAINER_ID} from '../constants';
+import {
+	PERIPHERAL_LIST_CONTAINER_ID,
+	TOOLTIP_HOVER_DEBOUNCE_MS
+} from '../constants';
+import {useTooltipDebouncedHover} from '../../../hooks/use-tooltip-debounced-hover';
+import PeripheralAllocTooltip from './peripheral-alloc-tooltip/peripheral-alloc-tooltip';
 
 type Props = Readonly<{
 	allocatedCore?: string;
@@ -57,6 +62,10 @@ function GroupedPeripheralSignals({
 	assignable
 }: Props) {
 	const dispatch = useAppDispatch();
+
+	const {isHovered, displayTooltip, hideTooltip} =
+		useTooltipDebouncedHover(TOOLTIP_HOVER_DEBOUNCE_MS);
+
 	// eslint-disable-next-line react/hook-use-state
 	const [allocatedTarget] = useState<string | undefined>(undefined);
 
@@ -127,64 +136,81 @@ function GroupedPeripheralSignals({
 	);
 
 	return (
-		<div
-			data-test={`peripheral-block-${name}`}
-			className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
-			id={`peripheral-${name}`}
-		>
-			<Accordion
-				highlight={isHighlighted}
-				icon={
-					categorizedAllocations.get(name) ? (
-						<div
-							data-test={`accordion:allocated:${name}`}
-							id={`${name}-allocated`}
-							className={styles.config}
-						>
-							<Tooltip
-								title='Configure'
-								position='bottom'
-								type='short'
-								containerId={PERIPHERAL_LIST_CONTAINER_ID}
-							>
-								<ConfigIcon16px
-									onClick={e => {
-										e.stopPropagation();
-										const projectId =
-											categorizedAllocations.get(name)?.projectId;
-
-										if (projectId) {
-											dispatch(
-												setActivePeripheral(`${name}:${projectId}`)
-											);
-										} else {
-											dispatch(setActivePeripheral(name));
-										}
-									}}
-								/>
-							</Tooltip>
-						</div>
-					) : null
-				}
-				isOpen={isOpen}
-				title={name}
-				subTitle={
-					<span>
-						{categorizedAllocations.get(name)?.signals
-							? `${Object.keys(categorizedAllocations.get(name)?.signals ?? {}).length} allocated`
-							: null}
-					</span>
-				}
-				body={
-					<div className={styles.peripheralSignalsContainer}>
-						{bodyContent}
-					</div>
-				}
-				toggleExpand={() => {
-					setIsOpen(!isOpen);
+		<>
+			<div
+				data-test={`peripheral-block-${name}`}
+				className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
+				id={`peripheral-${name}`}
+				onMouseEnter={() => {
+					if (!isOpen) displayTooltip();
 				}}
-			/>
-		</div>
+				onMouseLeave={() => {
+					hideTooltip();
+				}}
+				onClick={() => {
+					hideTooltip();
+				}}
+			>
+				<Accordion
+					highlight={isHighlighted}
+					icon={
+						categorizedAllocations.get(name) ? (
+							<div
+								data-test={`accordion:allocated:${name}`}
+								id={`${name}-allocated`}
+								className={styles.config}
+							>
+								<Tooltip
+									title='Configure'
+									position='bottom'
+									type='short'
+									containerId={PERIPHERAL_LIST_CONTAINER_ID}
+								>
+									<ConfigIcon16px
+										onClick={e => {
+											e.stopPropagation();
+											const projectId =
+												categorizedAllocations.get(name)?.projectId;
+
+											if (projectId) {
+												dispatch(
+													setActivePeripheral(`${name}:${projectId}`)
+												);
+											} else {
+												dispatch(setActivePeripheral(name));
+											}
+										}}
+									/>
+								</Tooltip>
+							</div>
+						) : null
+					}
+					isOpen={isOpen}
+					title={name}
+					subTitle={
+						<span>
+							{categorizedAllocations.get(name)?.signals
+								? `${Object.keys(categorizedAllocations.get(name)?.signals ?? {}).length} allocated`
+								: null}
+						</span>
+					}
+					body={
+						<div className={styles.peripheralSignalsContainer}>
+							{bodyContent}
+						</div>
+					}
+					toggleExpand={() => {
+						setIsOpen(!isOpen);
+					}}
+				/>
+			</div>
+			{isHovered && (
+				<PeripheralAllocTooltip
+					title={name}
+					description={description}
+				/>
+			)}
+		</>
 	);
 }
 

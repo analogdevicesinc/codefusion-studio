@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Workspace
 author: Analog Devices
-date: 2026-05-20
+date: 2026-07-28
 ---
 
 # Workspace
@@ -12,8 +12,8 @@ The workspace commands allow you to configure and create a CFS workspace from th
 
 Before configuring a workspace, you will need the following information:
 
-- The SoC name and package
-- The board identifier
+- The SoC name
+- Either the board identifier or the SoC package (when you provide only the board, the package is inferred from it)
 - The core name(s)
 - The template ID for each core
 
@@ -28,13 +28,16 @@ Use the following commands to discover these values:
 ## Configure workspace
 
 ```sh
-cfsutil workspace configure --soc <value> --board <value> --core <value> --template-id <value> [-w <value>] [--name <value>] [-o <value>] [--package <value>] [--template-version <value>] [-s <value>...] [-v]
+cfsutil workspace configure --soc <value> --core <value>... --template-id <value>... [-w <value>] [--name <value>] [-o <value>] [--board <value>] [--package <value>] [--template-version <value>...] [-s <value>...] [-v]
 ```
 
 Generates a workspace configuration file from command-line options. The file can be reviewed and edited before being passed to `cfsutil workspace create -i` to create the workspace.
 
 !!! note
     `--core` and `--template-id` are paired flags. Each `--core` must be immediately followed by `--template-id`. For multi-core projects, repeat the pair for each core.
+
+!!! note
+    Provide `--board`, `--package`, or both; at least one is required. If you specify only `--board`, the package is inferred from the board. If you specify only `--package`, the generated file contains an empty `Board` value.
 
 !!! note
     `--name` and `-o` are optional flags but must be provided either here or edited into the generated file before passing it to `workspace create`. Without them, `workspace create` will fail.
@@ -45,10 +48,10 @@ Generates a workspace configuration file from command-line options. The file can
 | `-s, --search-path=<value>...`  | Additional search path for plugins and data models. Can be used multiple times.                                |
 | `-v, --verbose`                 | Verbose output.                                                                                                |
 | `-w, --workspace-file=<value>`  | Name of the generated workspace configuration file. Default: `cfsworkspace.json`.                              |
-| `--board=<value>`               | **Required.** Board name.                                                                                      |
+| `--board=<value>`               | Board name. Required unless `--package` is specified.                                                          |
 | `--core=<value>`                | **Required.** Core name. Repeat for each core, each followed by `--template-id`.                               |
 | `--name=<value>`                | Name for the new workspace. **Recommended**.                                                                     |
-| `--package=<value>`             | Package name.                                                                                                  |
+| `--package=<value>`             | Package name. Required unless `--board` is specified. When only `--board` is given, the package is inferred from the board.  |
 | `--soc=<value>`                 | **Required.** SoC name.                                                                                        |
 | `--template-id=<value>`         | **Required.** Template ID for the preceding `--core`. Must be specified for each `--core`.                     |
 | `--template-version=<value>`    | Optional template version for the preceding `--template-id`. Can be specified more than once.                  |
@@ -171,7 +174,7 @@ Generates a workspace from an existing `.cfsworkspace` file.
         "Package": "WLP",
         "Board": "AD-APARD32690-SL",
         "WorkspaceName": "Apard_ws",
-        "Location": "C:\\Users\\<username>\\cfs\\2.2.1",
+        "Location": "C:\\Users\\<username>\\cfs\\2.3.0",
         "WorkspacePluginId": "",
         "WorkspacePluginVersion": "",
         "Projects": [
@@ -196,8 +199,8 @@ Generates a workspace from an existing `.cfsworkspace` file.
                 }
             }
         ],
-        "DataModelVersion": "1.3.759",
-        "DataModelSchemaVersion": "1.2.0"
+        "DataModelVersion": "1.3.893",
+        "DataModelSchemaVersion": "1.5.0"
     }
     ```
 
@@ -217,5 +220,5 @@ Generates a workspace from command-line parameters. The generated workspace path
 
 !!! example
     ```sh
-    cfsutil workspace create -o "C:/Users/<username>/cfs/2.2.1" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
+    cfsutil workspace create -o "C:/Users/<username>/cfs/2.3.0" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
     ```

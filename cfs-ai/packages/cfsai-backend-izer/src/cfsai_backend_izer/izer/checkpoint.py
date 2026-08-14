@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ def load(
     bias_size = []
     final_scale = {}
 
-    checkpoint = torch.load(checkpoint_file, map_location='cpu')
+    checkpoint = torch.load(checkpoint_file, map_location='cpu', weights_only=False)
     logger.debug(f'Reading {checkpoint_file} to configure network weights...')
 
     if 'state_dict' not in checkpoint:

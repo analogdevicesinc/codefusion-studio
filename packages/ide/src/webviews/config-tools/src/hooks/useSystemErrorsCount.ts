@@ -54,21 +54,25 @@ export function useSystemErrorsCount({
 			projectsControls
 		);
 
-	const clockConfigError = clockErrorSummary.totalErrors;
-
 	const errorsMap = useMemo(() => {
 		const map = new Map<string, TCodeGenError>();
+
+		const dfgErrorCount = [
+			...Object.values(gasketErrors),
+			...Object.values(streamErrors)
+		].reduce((acc, curr) => acc + curr.length, 0);
 
 		projects.forEach((project: ProjectInfo) => {
 			const peripheralAllocErr =
 				peripheralErrorsByProject[project.ProjectId] ?? 0;
-			const pinConfigErr = pinErrors.get(project.ProjectId) ?? 0;
-			const clockConfigErr = clockConfigError;
 
-			const dfgErrorCount = [
-				...Object.values(gasketErrors),
-				...Object.values(streamErrors)
-			].reduce((acc, curr) => acc + curr.length, 0);
+			const pinConfigErr = pinErrors.get(project.ProjectId) ?? 0;
+
+			const clockConfigErr =
+				!project.ExternallyManaged &&
+				clockErrorSummary.primaryProjectId === project.ProjectId
+					? clockErrorSummary.totalErrors
+					: 0;
 
 			map.set(project.ProjectId, {
 				peripheralAllocErr,
@@ -84,7 +88,8 @@ export function useSystemErrorsCount({
 		projects,
 		peripheralErrorsByProject,
 		pinErrors,
-		clockConfigError,
+		clockErrorSummary.primaryProjectId,
+		clockErrorSummary.totalErrors,
 		gasketErrors,
 		streamErrors,
 		mcubootErrors

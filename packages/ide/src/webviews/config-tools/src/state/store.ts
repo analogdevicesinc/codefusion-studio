@@ -103,7 +103,12 @@ import {
 	getMcubootPersistenceListenerMiddleware,
 	persistedMcubootActions
 } from './utils/mcuboot-persistence-middleware';
-import {type ConfiguredProject, type Zephelin} from 'cfs-types';
+import {
+	type ConfiguredProject,
+	type Zephelin,
+	type ZephelinInterface,
+	type ZephelinInterfaceConfig
+} from 'cfs-types';
 import {initializeMemoryAccessOverrides} from '../utils/memory-access';
 import {
 	applyPersistedSettings,
@@ -387,6 +392,42 @@ export function applyProjectProfilingConfig(
 ): Partial<Zephelin> {
 	return {
 		...getDefaultZephelinProfilerConfig(),
-		...project?.Profiling?.Zephelin
+		...normalizeZephelinInterface(project?.Profiling?.Zephelin)
+	};
+}
+
+/**
+ * Normalizes a persisted Zephelin config into the object interface form.
+ *
+ * Older configs stored the interface as a plain string (`Interface: "UART"`)
+ * with a sibling top-level `Port`. This converts that legacy shape into the
+ * current {@link ZephelinInterfaceConfig} object form, leaving configs that are
+ * already in the object form untouched.
+ */
+function normalizeZephelinInterface(
+	zephelin?: Partial<Zephelin>
+): Partial<Zephelin> | undefined {
+	if (!zephelin) {
+		return undefined;
+	}
+
+	const legacy = zephelin as Partial<Omit<Zephelin, 'Interface'>> & {
+		Interface?: ZephelinInterfaceConfig | ZephelinInterface;
+		Port?: string;
+	};
+
+	if (typeof legacy.Interface !== 'string') {
+		return zephelin;
+	}
+
+	const {Port, ...rest} = legacy;
+	const normalizedInterface: ZephelinInterfaceConfig =
+		legacy.Interface === 'USB'
+			? {Type: 'USB'}
+			: {Type: 'UART', Port: Port ?? ''};
+
+	return {
+		...rest,
+		Interface: normalizedInterface
 	};
 }

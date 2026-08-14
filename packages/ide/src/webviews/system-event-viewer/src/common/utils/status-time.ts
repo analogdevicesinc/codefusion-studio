@@ -13,10 +13,28 @@
  *
  */
 
-const ONE_MINUTE_MS = 60 * 1000;
+const SECOND_MS = 1000;
+const MINUTE_MS = 60 * SECOND_MS;
+const HOUR_MS = 60 * MINUTE_MS;
+
+const RELATIVE_TIME = new Intl.RelativeTimeFormat(undefined, {
+	numeric: 'always'
+});
+
+const LOCALE_DATE = new Intl.DateTimeFormat(undefined, {
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit'
+});
+
+const LOCALE_TIME = new Intl.DateTimeFormat(undefined, {
+	hour: '2-digit',
+	minute: '2-digit',
+	second: '2-digit'
+});
 
 /**
- * Format elapsed time from a ISO timestamp
+ * Format elapsed time from an ISO timestamp
  */
 export function formatElapsedTime(
 	lastUpdate: string | undefined,
@@ -38,18 +56,37 @@ export function formatElapsedTime(
 		return undefined;
 	}
 
-	const elapsedMins = Math.max(1, Math.ceil(diffMs / ONE_MINUTE_MS));
+	if (diffMs < MINUTE_MS) {
+		const seconds = Math.max(1, Math.floor(diffMs / SECOND_MS));
 
-	if (elapsedMins > 60) {
-		const hours = Math.floor(elapsedMins / 60);
-		const minutes = elapsedMins % 60;
-
-		if (minutes === 0) {
-			return `${hours} h`;
-		}
-
-		return `${hours} h ${minutes} min`;
+		return RELATIVE_TIME.format(-seconds, 'second');
 	}
 
-	return `${elapsedMins} min`;
+	if (diffMs < HOUR_MS) {
+		const minutes = Math.max(1, Math.floor(diffMs / MINUTE_MS));
+
+		return RELATIVE_TIME.format(-minutes, 'minute');
+	}
+
+	const hours = Math.floor(diffMs / HOUR_MS);
+
+	return RELATIVE_TIME.format(-hours, 'hour');
+}
+
+/**
+ * Format an ISO timestamp using browser/device locale.
+ * Date ordering adapts automatically
+ */
+export function formatAbsoluteDate(
+	isoString?: string
+): string | undefined {
+	if (!isoString) return undefined;
+
+	const parsed = new Date(isoString);
+
+	if (Number.isNaN(parsed.getTime())) return undefined;
+
+	return (
+		LOCALE_DATE.format(parsed) + ' at ' + LOCALE_TIME.format(parsed)
+	);
 }

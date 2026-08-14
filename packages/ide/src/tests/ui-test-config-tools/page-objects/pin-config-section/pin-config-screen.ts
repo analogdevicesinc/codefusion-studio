@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,13 @@ export const pinTooltipTitle: By = By.css(
   "#pin-details-title > div:first-of-type > h3:first-of-type",
 );
 export const focusedPinBackdrop: By = By.css("#focused-pin-backdrop");
+export const pinConflictError: By = By.css(
+  '[data-test="pin:tooltip:conflictMarker"]',
+);
+
+export const detailsContainerBackButton: By = By.xpath(
+  '//div[@data-test="details-view:container"]//span[contains(text(),"Back")]',
+);
 
 export async function pinDropdown(pinName: string): Promise<By> {
   return By.css(`[data-test="accordion:${pinName}"]`);
@@ -35,6 +42,12 @@ export async function pinToggle(
   signalName: string,
 ): Promise<By> {
   return By.css(`[data-test="${peripheralName}-${signalName}-span"]`);
+}
+
+export async function peripheralConflictIcon(
+  peripheralName: string,
+): Promise<By> {
+  return By.css(`[data-test="accordion:conflict:${peripheralName}"]`);
 }
 
 export async function pinConfigButton(

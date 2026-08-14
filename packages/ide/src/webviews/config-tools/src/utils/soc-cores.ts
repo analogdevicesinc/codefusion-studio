@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,23 +107,42 @@ export function resetCoreDict() {
 	});
 }
 
-export function isCoreSecure(core: PartitionCore): boolean {
+/**
+ * Determines whether memory aliases should be displayed for a core.
+ * The rules for the Secure alias are:
+ * - If Project.Secure is undefined: show both aliases
+ * - If Project.Secure is true: show both aliases
+ * - If Project.Secure is false: do not show the secure alias.
+ */
+export function shouldDisplayCoreMemoryAliases(
+	core: PartitionCore
+): boolean {
+	if (!isProjectTreatedAsSecure(core.projectId)) {
+		return false;
+	}
+
+	const definition = getSocCoreDefinition(core.coreId);
+	const hasMemoryAliases = definition?.Memory.some(
+		item => 'AliasType' in item
+	);
+
+	return Boolean(hasMemoryAliases);
+}
+
+/**
+ * Check if project is treated as secure,
+ * Project is secure if flag Secure is not set (undefined) or it is set as True
+ * @param projectId string
+ * @returns Returns True if Secure is not set or it is set as True
+ */
+export function isProjectTreatedAsSecure(projectId: string): boolean {
 	const projects = getProjectInfoList();
 
 	return (
 		projects?.some(
 			project =>
-				project.ProjectId === core.projectId && project.Secure
-		) ?? false
-	);
-}
-
-export function isProjectSecure(projectId: string): boolean {
-	const projects = getProjectInfoList();
-
-	return (
-		projects?.some(
-			project => project.ProjectId === projectId && project.Secure
+				project.ProjectId === projectId &&
+				(project.Secure === undefined || project.Secure)
 		) ?? false
 	);
 }

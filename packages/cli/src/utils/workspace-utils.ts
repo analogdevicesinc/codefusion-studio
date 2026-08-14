@@ -160,7 +160,7 @@ export function getPackageNameFromTemplate(
   const packageName = template?.supportedSocs.find(
     (supportedSoc) =>
       supportedSoc.name.toLowerCase() === soc.toLowerCase() &&
-      supportedSoc.board.toLowerCase() === board.toLowerCase()
+      supportedSoc.board?.toLowerCase() === board.toLowerCase()
   )?.package;
 
   if (!packageName) {
@@ -223,7 +223,13 @@ export async function getValidTemplate(
         : plugin.features?.aiprof
     );
 
-    for (const plugin of plugins) {
+    // Filter to plugins compatible with the SoC/board/package
+    // context first, then select the best version from that subset.
+    const compatiblePlugins = plugins.filter((plugin) =>
+      isTemplateValid(plugin, flags)
+    );
+
+    for (const plugin of compatiblePlugins) {
       let versionMatches = false;
 
       if (flags['template-version']) {
@@ -232,23 +238,23 @@ export async function getValidTemplate(
       } else {
         const latestVersion = getLatestPluginVersion(
           plugin.pluginId,
-          pluginListInfo
+          compatiblePlugins
         );
         versionMatches = plugin.pluginVersion === latestVersion;
       }
 
-      if (versionMatches && isTemplateValid(plugin, flags)) {
+      if (versionMatches) {
         return plugin;
       }
     }
 
     if (flags['template-id']) {
       errors.push(
-        `Template '${flags['template-id']}' version '${flags['template-version'] ?? 'latest'}' not suitable for SoC '${flags.soc}', Board '${flags.board}'${flags.core ? `, Core '${flags.core}'.` : ''}${flags.package ? `, Package '${flags.package}'.` : ''}`
+        `Template '${flags['template-id']}' version '${flags['template-version'] ?? 'latest'}' not suitable for SoC '${flags.soc}'${flags.board ? `, Board '${flags.board}'` : ''}${flags.core ? `, Core '${flags.core}'` : ''}${flags.package ? `, Package '${flags.package}'` : ''}.`
       );
     } else {
       errors.push(
-        `Valid Template not found in available plugins list for SoC '${flags.soc}', Board '${flags.board}', Core: '${flags.core}'.`
+        `Valid Template not found in available plugins list for SoC '${flags.soc}'${flags.board ? `, Board '${flags.board}'` : ''}${flags.core ? `, Core: '${flags.core}'` : ''}.`
       );
     }
 

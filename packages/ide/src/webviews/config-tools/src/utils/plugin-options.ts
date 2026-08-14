@@ -14,6 +14,7 @@
  */
 import type {ControlCfg} from '@common/types/soc';
 import type {PartitionCore} from '../state/slices/partitions/partitions.reducer';
+import {getTypeBasedDefault} from './control-defaults';
 
 export const getAllPluginOptions = (
 	config: Record<string, Record<string, string | number | boolean>>,
@@ -33,25 +34,23 @@ export const getAllPluginOptions = (
 		const controls = pluginOptions[projectId];
 		allDataInner[projectId] = projectConfig;
 
-		Object.keys(projectConfig).forEach(controlId => {
-			const control = controls?.memory?.find(c => c.Id === controlId);
-
-			if (control?.Type === 'boolean') {
-				if (typeof projectConfig[controlId] === 'string') {
-					projectConfig[controlId] =
-						projectConfig[controlId].toUpperCase() === 'TRUE';
-				} else if (typeof projectConfig[controlId] === 'number') {
-					/* Treat 0 as false, any other number as true. */
-					projectConfig[controlId] = projectConfig[controlId] !== 0;
-				}
-			}
-		});
-
-		// Any controls that don't have a value set, use the Hint if available
 		controls?.memory?.forEach(control => {
 			if (projectConfig[control.Id] === undefined) {
-				if (control.Hint !== undefined) {
+				if (control.Hint) {
 					projectConfig[control.Id] = control.Hint;
+				} else {
+					projectConfig[control.Id] = getTypeBasedDefault(control);
+				}
+			}
+
+			if (control.Type === 'boolean') {
+				if (typeof projectConfig[control.Id] === 'string') {
+					projectConfig[control.Id] =
+						(projectConfig[control.Id] as string).toUpperCase() ===
+						'TRUE';
+				} else if (typeof projectConfig[control.Id] === 'number') {
+					/* Treat 0 as false, any other number as true. */
+					projectConfig[control.Id] = projectConfig[control.Id] !== 0;
 				}
 			}
 		});

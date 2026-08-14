@@ -13,7 +13,7 @@
  *
  */
 
-import { useAppSelector, type RootState } from "../store";
+import {useAppSelector, type RootState} from '../store';
 
 export const useModelFile = () =>
 	useAppSelector(

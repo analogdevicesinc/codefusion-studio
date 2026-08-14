@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ $body-gap: var(--accordion-body-gap, 13px);
 		flex-direction: column;
 		gap: 2px;
 		.title {
-			@include fonts.label-l2;
+			@include fonts.heading-h5;
 			text-transform: uppercase;
 		}
 		.subTitle {

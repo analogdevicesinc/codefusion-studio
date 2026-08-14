@@ -13,63 +13,92 @@
  *
  */
 
-import type {CfsPackageReference} from 'cfs-package-manager';
+import type {
+  CfsPackageReference,
+  CfsPackageRemotesProvider
+} from 'cfs-package-manager';
 
+import {Command} from '@oclif/core';
 import {
-  CfsApiClient,
+  type CfsApiClient,
+  DefaultConanCloudsmithRemotesProvider,
   MyAnalogCloudsmithCredentialProvider,
+  MyAnalogConanCloudsmithRemotesProvider,
   PackageLicenseReporter
 } from 'cfs-lib';
 import {ConanPkgManager} from 'cfs-package-manager';
 
-import {getAuthConfig, getSessionManager} from './session-manager.js';
+import {getApiClient} from './api-client.js';
 
 export async function getCredentialProvider(
-  apiClient?: CfsApiClient
+  apiClient?: CfsApiClient,
+  command?: Command
 ) {
-  if (apiClient) {
-    return new MyAnalogCloudsmithCredentialProvider(apiClient);
-  }
+  const client =
+    apiClient ??
+    (await getApiClient(
+      {
+        auth: ['api-key', 'session']
+      },
+      command
+    ));
 
-  const session = await getSessionManager().getSession();
-  if (session) {
-    const authcfg = getAuthConfig();
-    return new MyAnalogCloudsmithCredentialProvider(
-      new CfsApiClient({
-        baseUrl: authcfg.ccmUrl,
-        authorizer: session?.authorizer
-      })
-    );
+  if (!client.isAnonymous) {
+    return new MyAnalogCloudsmithCredentialProvider(client);
   }
 }
 
-export async function getLicenseReporter(apiClient?: CfsApiClient) {
-  if (apiClient) {
-    return new PackageLicenseReporter(apiClient);
+export async function getRemotesProvider(
+  apiClient?: CfsApiClient,
+  command?: Command
+) {
+  let remotesProvider: CfsPackageRemotesProvider;
+
+  try {
+    apiClient ??= await getApiClient({}, command);
+
+    const myAnalogProvider =
+      new MyAnalogConanCloudsmithRemotesProvider(apiClient);
+    await myAnalogProvider.init();
+    remotesProvider = myAnalogProvider;
+  } catch (error) {
+    command?.warn(
+      `Failed to initialize cloud package remotes provider, falling back to default remotes\n${error instanceof Error ? error.message : String(error)}`
+    );
+
+    remotesProvider = new DefaultConanCloudsmithRemotesProvider();
   }
 
-  const session = await getSessionManager().getSession();
-  if (session) {
-    const authcfg = getAuthConfig();
-    return new PackageLicenseReporter(
-      new CfsApiClient({
-        baseUrl: authcfg.ccmUrl,
-        authorizer: session.authorizer
-      })
-    );
+  return remotesProvider;
+}
+
+export async function getLicenseReporter(
+  apiClient?: CfsApiClient,
+  command?: Command
+) {
+  const client =
+    apiClient ??
+    (await getApiClient(
+      {
+        auth: ['api-key', 'session']
+      },
+      command
+    ));
+
+  if (!client.isAnonymous) {
+    return new PackageLicenseReporter(client);
   }
 }
 
 export async function getPackageManager<
   T extends {
     acceptUndefined?: boolean;
-    includeCredentialProvider?: boolean;
+    useRemotes?: boolean;
   } = object
 >(
-  {
-    acceptUndefined = false,
-    includeCredentialProvider = false
-  }: T = {} as T
+  {acceptUndefined = false, useRemotes = false}: T = {} as T,
+  apiClient?: CfsApiClient,
+  command?: Command
 ): Promise<
   T extends {acceptUndefined: true}
     ? ConanPkgManager | undefined
@@ -77,50 +106,46 @@ export async function getPackageManager<
 > {
   let conanPackman: ConanPkgManager | undefined;
   let errorMessage: string | undefined;
-  let credentialProvider:
-    | MyAnalogCloudsmithCredentialProvider
-    | undefined;
-  let licenseReporter: PackageLicenseReporter | undefined;
 
   try {
-    if (includeCredentialProvider) {
-      const session = await getSessionManager().getSession();
-      if (session) {
-        const authcfg = getAuthConfig();
-        const client = new CfsApiClient({
-          baseUrl: authcfg.ccmUrl,
-          authorizer: session.authorizer
-        });
+    conanPackman = new ConanPkgManager();
 
-        credentialProvider = await getCredentialProvider(client);
-        licenseReporter = await getLicenseReporter(client);
+    if (useRemotes) {
+      const client =
+        apiClient ?? (await getApiClient({optional: true}, command));
+      const licenseReporter = await getLicenseReporter(
+        client,
+        command
+      );
+      const remotesProvider = await getRemotesProvider(
+        client,
+        command
+      );
+
+      if (licenseReporter) {
+        // License reporter is only available when authenticated as a user
+        await conanPackman.registerLicenseReporter(licenseReporter);
       }
+
+      await conanPackman.registerRemotesProvider(remotesProvider);
     }
 
-    conanPackman = new ConanPkgManager({
-      credentialProviders: credentialProvider
-        ? [credentialProvider]
-        : undefined
-    });
-
-    await conanPackman.init();
-
-    if (licenseReporter) {
-      await conanPackman.registerLicenseReporter(licenseReporter);
-    }
+    await conanPackman.init({initRemotes: useRemotes});
   } catch (error: unknown) {
     conanPackman = undefined;
     errorMessage =
       error instanceof Error ? error.message : String(error);
   }
 
-  if (!conanPackman && !acceptUndefined) {
+  if (conanPackman === undefined && !acceptUndefined) {
     throw new Error(
-      `Package manager failed to initialize with ${`Error: ${errorMessage ?? 'unknown error'}`}`
+      `Package manager failed to initialize with Error: ${errorMessage ?? 'unknown error'}`
     );
   }
 
-  return conanPackman as never;
+  return conanPackman as T extends {acceptUndefined: true}
+    ? ConanPkgManager | undefined
+    : ConanPkgManager;
 }
 
 // Package names may contain:

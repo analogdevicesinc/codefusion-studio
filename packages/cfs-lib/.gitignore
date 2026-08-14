@@ -3,3 +3,4 @@
 /dist
 node_modules
 src/resources/cfs-setting-defaults.json
+src/ai-tools/tflm/schema

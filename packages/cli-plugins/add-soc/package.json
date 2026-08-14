@@ -1,14 +1,14 @@
 {
 	"dependencies": {
-		"@oclif/core": "^3"
+		"@oclif/core": "^4.10.6"
 	},
 	"description": "cfsutil plugin that adds one or multiple SoC data models",
 	"devDependencies": {
 		"@oclif/prettier-config": "^0.2.1",
-		"@oclif/test": "^3",
+		"@oclif/test": "^4",
 		"@types/chai": "^4",
 		"@types/mocha": "^10",
-		"@types/node": "^20",
+		"@types/node": "^22.20.0",
 		"chai": "^4",
 		"eslint": "^8",
 		"eslint-config-oclif": "^5",
@@ -21,7 +21,7 @@
 		"typescript": "^5"
 	},
 	"engines": {
-		"node": "^20.x"
+		"node": ">=22"
 	},
 	"files": [
 		"/dist",
@@ -46,7 +46,7 @@
 		"test": "mocha --forbid-only \"test/**/*.test.ts\"",
 		"version": "oclif readme && git add README.md"
 	},
-	"version": "2.2.1",
+	"version": "2.3.0",
 	"bugs": "https://github.com/adi-ctx/cfs-cfsutil/issues",
 	"keywords": [
 		"oclif",

@@ -115,6 +115,30 @@ describe("CfsPluginManager", () => {
 		await CfsPluginManager.loadPlugin(plugins[0]);
 	});
 
+	it("getPluginsInfoList returns plugins sorted alphabetically by name", async () => {
+		const manager = new CfsPluginManager(
+			dataModelManagerMock,
+			undefined,
+			{ pluginsCustomSearchPaths: [...pluginDirs, ...dataModelDirs] }
+		);
+
+		const result = await manager.getPluginsInfoList();
+
+		// If we have multiple plugins, verify they are sorted
+		if (result.length > 1) {
+			for (let i = 0; i < result.length - 1; i++) {
+				const currentName = result[i].pluginName;
+				const nextName = result[i + 1].pluginName;
+				const comparisonResult = currentName.localeCompare(nextName);
+
+				expect(comparisonResult).to.be.lessThanOrEqual(
+					0,
+					`Plugin "${currentName}" should come before or equal to "${nextName}"`
+				);
+			}
+		}
+	});
+
 	it("generateWorkspace", async () => {
 		const manager = new CfsPluginManager(
 			dataModelManagerMock,
@@ -179,6 +203,98 @@ describe("CfsPluginManager", () => {
 				"invalid-project-name"
 			)
 		).to.be.rejected;
+	});
+
+	it("generateProject resolves project by ProjectName and generates into ProjectName folder", async () => {
+		const manager = new CfsPluginManager(
+			dataModelManagerMock,
+			undefined,
+			{ pluginsCustomSearchPaths: pluginDirs }
+		);
+
+		const generateProjectSpy = sinon.spy();
+		const loadPluginStub = sinon
+			.stub(CfsPluginManager, "loadPlugin")
+			.resolves({
+				generateProject: generateProjectSpy
+			});
+
+		try {
+			// Use ProjectName ("riscv") to look up the project whose
+			// display name is "test-project"
+			await manager.generateProject(
+				{
+					...dummyWorkspace,
+					projects
+				},
+				projects[0].platformConfig.ProjectName
+			);
+
+			expect(generateProjectSpy.calledOnce).to.be.true;
+
+			const baseDirArg = generateProjectSpy.firstCall
+				.args[0] as string;
+			const projectArg = generateProjectSpy.firstCall
+				.args[1] as (typeof projects)[0];
+
+			// baseDir must end with the ProjectName folder, not the display name
+			expect(baseDirArg).to.include(
+				projects[0].platformConfig.ProjectName
+			);
+			expect(baseDirArg).to.not.include(projects[0].name);
+
+			// The correct project should have been selected
+			expect(projectArg.name).to.equal(projects[0].name);
+		} finally {
+			loadPluginStub.restore();
+		}
+	});
+
+	it("generateProject falls back to project.name when ProjectName is missing", async () => {
+		const manager = new CfsPluginManager(
+			dataModelManagerMock,
+			undefined,
+			{ pluginsCustomSearchPaths: pluginDirs }
+		);
+
+		const generateProjectSpy = sinon.spy();
+		const loadPluginStub = sinon
+			.stub(CfsPluginManager, "loadPlugin")
+			.resolves({
+				generateProject: generateProjectSpy
+			});
+
+		const projectsWithoutProjectName = [
+			{
+				...projects[0],
+				platformConfig: {
+					Cflags: projects[0].platformConfig.Cflags
+					// ProjectName intentionally omitted
+				}
+			}
+		];
+
+		try {
+			await manager.generateProject(
+				{
+					...dummyWorkspace,
+					projects: projectsWithoutProjectName
+				},
+				projectsWithoutProjectName[0].name
+			);
+
+			expect(generateProjectSpy.calledOnce).to.be.true;
+
+			const baseDirArg = generateProjectSpy.firstCall
+				.args[0] as string;
+
+			// baseDir must use the display name as fallback
+			expect(baseDirArg).to.include(
+				projectsWithoutProjectName[0].name
+			);
+		} finally {
+			loadPluginStub.restore();
+		}
 	});
 
 	describe("validateConfigPlugins()", () => {
@@ -496,6 +612,592 @@ describe("CfsPluginManager", () => {
 				// No versions available for a completely unknown plugin — normalized to undefined
 				expect(plugin0.availableVersions).to.be.undefined;
 			}
+		});
+	});
+
+	describe("SoC-aware plugin resolution", () => {
+		// Single fixture with multiple supportedSocs entries:
+		//   {name: "max32690", board: "EvKit_V1", package: "WLP"}
+		//   {name: "max32655", board: "EvKit_V1", package: "WLP"}
+		//   {name: "max32690", package: "BGA"}               (no board)
+		//   {name: "max32690", board: "EvKit_V1", package: "TQFN"}
+		const socPluginDirs = [
+			path.join(
+				dirname(fileURLToPath(import.meta.url)),
+				"dummyPluginSocAware"
+			)
+		];
+
+		it("should resolve correct plugin when SoC context matches", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+
+			const allPlugins = await manager.getPluginsInfoList();
+			const socPlugins = allPlugins.filter(
+				(p) => p.pluginId === "com.analog.test.soc.plugin"
+			);
+			expect(socPlugins).to.have.lengthOf(1);
+
+			const config = {
+				Soc: "max32690",
+				Package: "WLP",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// Should succeed: plugin has a supportedSocs entry for max32690
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "WLP"
+			});
+		});
+
+		it("should reject when SoC context does not match any plugin", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32670",
+				Package: "TQFN",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// Should throw: no supportedSocs entry for max32670
+			try {
+				await manager.validateConfigPlugins(config, {
+					name: "max32670",
+					package: "TQFN"
+				});
+				expect.fail(
+					"Expected MissingDependencyError to be thrown"
+				);
+			} catch (error) {
+				expect(error).to.be.instanceOf(MissingDependencyError);
+			}
+		});
+
+		it("should not fall back to unfiltered results when SoC is provided", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32670",
+				Package: "TQFN",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			try {
+				await manager.validateConfigPlugins(config, {
+					name: "max32670"
+				});
+				expect.fail(
+					"Expected MissingDependencyError — should not fall back"
+				);
+			} catch (error) {
+				expect(error).to.be.instanceOf(MissingDependencyError);
+				const pluginError = error as MissingDependencyError;
+				const details = pluginError.details as {
+					plugins: unknown[];
+				};
+				expect(details.plugins).to.have.lengthOf(1);
+			}
+		});
+
+		it("should match SoC name case-insensitively", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "MAX32690",
+				Package: "WLP",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// Should succeed with uppercase SoC name
+			await manager.validateConfigPlugins(config, {
+				name: "MAX32690",
+				package: "wlp"
+			});
+		});
+
+		it("should resolve without SoC context for backward compatibility", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "WLP",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// Without SoC context, should resolve (backward compat)
+			await manager.validateConfigPlugins(config);
+		});
+
+		it("should match a no-board entry when only package is specified", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "BGA",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// The BGA entry has no board — should match with package only
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "BGA"
+			});
+		});
+
+		it("should match a no-board entry when a board is specified", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "BGA",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// The BGA entry has no board, but it should still match when
+			// the context specifies a board
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "BGA",
+				board: "EvKit_V1"
+			});
+		});
+
+		it("should match a board-specified entry when that board is queried", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "TQFN",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// The TQFN entry has board "EvKit_V1" — should match exact board
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "TQFN",
+				board: "EvKit_V1"
+			});
+		});
+
+		it("should match a board-specified entry when board is undefined", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "TQFN",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// The TQFN entry has board "EvKit_V1" — should also match when
+			// only the package is specified (board undefined)
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "TQFN"
+			});
+		});
+
+		it("should match MAX32675C plugin declaring TQFN when LGA is requested", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "MAX32675C",
+				Package: "LGA",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId: "com.analog.test.soc.plugin",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// Backward compatibility: LGA request should resolve against TQFN declaration
+			await manager.validateConfigPlugins(config, {
+				name: "MAX32675C",
+				package: "LGA"
+			});
+		});
+	});
+
+	describe("Multi-version SoC-aware plugin resolution", () => {
+		// Three versions of the same plugin:
+		//   v1.0.0 supports max32690/EvKit_V1/WLP
+		//   v1.1.0 supports max32690/EvKit_V1/WLP
+		//   v2.0.0 supports max32655/EvKit_V1/WLP
+		const multiVersionDirs = [
+			path.join(
+				dirname(fileURLToPath(import.meta.url)),
+				"dummyPluginSocMultiVersion"
+			)
+		];
+
+		it("should resolve highest compatible version when newest version targets a different SoC", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+
+			// v2.0.0 is the globally newest but only supports max32655.
+			// For max32690, the resolver should skip v2.0.0 and pick
+			// v1.1.0 (highest among the two compatible versions).
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.multiversion",
+				undefined,
+				{ name: "max32690", package: "WLP", board: "EvKit_V1" }
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("1.1.0");
+		});
+
+		it("should resolve newer version when its SoC context matches", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.multiversion",
+				undefined,
+				{ name: "max32655", package: "WLP", board: "EvKit_V1" }
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("2.0.0");
+		});
+
+		it("should resolve newest version when no SoC context is provided", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.multiversion"
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("2.0.0");
+		});
+
+		it("should return undefined when no version matches the SoC context", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.multiversion",
+				undefined,
+				{ name: "max32670", package: "TQFN" }
+			);
+
+			expect(resolved).to.be.undefined;
+		});
+
+		it("should resolve via semver range independently of SoC filter", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+
+			// Both v1.0.0 and v1.1.0 match the max32690 SoC context.
+			// The range ^1.0.0 matches 1.x but not 2.x, so it must
+			// pick v1.1.0 — proving the range selects the highest
+			// match within the SoC-filtered candidates.
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.multiversion",
+				"^1.0.0",
+				{ name: "max32690", package: "WLP", board: "EvKit_V1" }
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("1.1.0");
+		});
+
+		it("should validate config with older compatible version", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "WLP",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId:
+							"com.analog.test.soc.multiversion",
+						PluginVersion: "1.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// v1.0.0 supports max32690 — should succeed
+			await manager.validateConfigPlugins(config, {
+				name: "max32690",
+				package: "WLP",
+				board: "EvKit_V1"
+			});
+		});
+
+		it("should reject newer version when it does not match SoC context", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: multiVersionDirs }
+			);
+			await manager.getPluginsInfoList();
+
+			const config = {
+				Soc: "max32690",
+				Package: "WLP",
+				Projects: [
+					{
+						ProjectId: "proj1",
+						CoreId: "core1",
+						PluginId:
+							"com.analog.test.soc.multiversion",
+						PluginVersion: "2.0.0",
+						ExternallyManaged: false
+					}
+				],
+				Pins: [],
+				ClockNodes: []
+			} as unknown as CfsConfig;
+
+			// v2.0.0 only supports max32655 — should fail for max32690
+			try {
+				await manager.validateConfigPlugins(config, {
+					name: "max32690",
+					package: "WLP",
+					board: "EvKit_V1"
+				});
+				expect.fail(
+					"Expected MissingDependencyError to be thrown"
+				);
+			} catch (error) {
+				expect(error).to.be.instanceOf(
+					MissingDependencyError
+				);
+			}
+		});
+	});
+
+	describe("Project vs workspace plugin board resolution", () => {
+		const socPluginDirs = [
+			path.join(
+				dirname(fileURLToPath(import.meta.url)),
+				"dummyPluginSocAware"
+			)
+		];
+
+		it("should resolve project plugin regardless of board (board not in context)", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+
+			// Project plugin resolution: SoC + package only, no board
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.plugin",
+				undefined,
+				{ name: "max32690", package: "WLP" }
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("1.0.0");
+		});
+
+		it("should resolve workspace plugin when board matches", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+
+			// Workspace plugin resolution: SoC + package + board
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.plugin",
+				undefined,
+				{ name: "max32690", package: "WLP", board: "EvKit_V1" }
+			);
+
+			expect(resolved).to.exist;
+			expect(resolved?.pluginVersion).to.equal("1.0.0");
+		});
+
+		it("should NOT resolve workspace plugin when board does not match", async () => {
+			const manager = new CfsPluginManager(
+				dataModelManagerMock,
+				undefined,
+				{ pluginsCustomSearchPaths: socPluginDirs }
+			);
+
+			// Workspace plugin resolution with wrong board
+			const resolved = await manager.resolvePlugin(
+				"com.analog.test.soc.plugin",
+				undefined,
+				{ name: "max32690", package: "WLP", board: "NonExistentBoard" }
+			);
+
+			expect(resolved).to.be.undefined;
 		});
 	});
 });

@@ -33,6 +33,7 @@ export type {
 	AIModelBackend,
 	Profiling,
 	ZephelinInterface,
+	ZephelinInterfaceConfig,
 	Zephelin,
 	PluginConfig,
 	ControlErrorTypes,
@@ -141,7 +142,12 @@ export type {
 } from "./types/cfs-workspace.d.ts";
 
 // AI Types
-export type { AiBackend, AiTarget } from "./types/cfs-ai.d.ts";
+export type {
+	AiBackend,
+	AiTarget,
+	VerifiedConfig,
+	AiCommandResult,
+} from "./types/cfs-ai.d.ts";
 
 // AI profiling types
 export type { CfsAiProfilingData } from "./types/cfs-ai-profiling.d.ts";

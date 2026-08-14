@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,12 +59,7 @@
 //     And I restore the configuration file from git
 
 import { expect } from "chai";
-import {
-  EditorView,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import {
   getConfigPathForFile,
@@ -87,7 +82,7 @@ import {
   memoryTypeDropdown,
   partitionNameTextBox,
   sizeStepper,
-  startAddress,
+  physicalStartAddress as startAddress,
 } from "../../page-objects/memory-allocation-section/create-partition-sidebar";
 
 import {
@@ -99,7 +94,6 @@ describe("CFSIO-6874 Loading from file", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let editor: EditorView;
   browser = VSBrowser.instance;
 
   let configPath: string | undefined;
@@ -107,13 +101,15 @@ describe("CFSIO-6874 Loading from file", () => {
   before(async function () {
     this.timeout(10000);
     browser = VSBrowser.instance;
-    editor = new EditorView();
-    await editor.closeAllEditors();
-    await UIUtils.sleep(3000);
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   after(async () => {
-    // Teardown - reset cfsconfig file
+    if (view) {
+      await view.switchBack();
+    }
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+
     await UIUtils.restoreFixtureFileFromGit(
       getConfigPathForFile("max32690-wlp-dual-core-blinky.cfsconfig"),
     );
@@ -127,13 +123,9 @@ describe("CFSIO-6874 Loading from file", () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
 
-    console.log("Opened the cfsconfig file");
     await UIUtils.dismissAllNotifications(workbench, browser);
-    await UIUtils.sleep(5000);
-    console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
-
-    console.log("max32690-wlp-dual-core-blinky UI loaded");
+    await view.wait(5000);
     await view.switchToFrame();
 
     const norm = (s: string) => s.trim().toLowerCase();

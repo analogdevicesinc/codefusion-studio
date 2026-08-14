@@ -132,7 +132,7 @@ def test_invalid_models():
         "tests/missing.tflite"
     )
     assert result.returncode == expected_exit_code
-    assert "Model file not found" in result.stderr
+    assert "Model file not found" in result.stdout
 
     # Model not a tflite
     result = invoke_model_with_class(
@@ -140,7 +140,7 @@ def test_invalid_models():
         "tests/data/models/ai85-catsdogs-qat8-q.pth.tar" 
     )
     assert result.returncode == expected_exit_code
-    assert "Unsupported file extension" in result.stderr
+    assert "Unsupported file extension" in result.stdout
 
     # tflite file is corrupt
     result = invoke_model_with_class(
@@ -148,7 +148,7 @@ def test_invalid_models():
         "tests/data/models/corrupt.tflite" 
     )
     assert result.returncode == expected_exit_code
-    assert "File does not have correct magic bytes" in result.stderr
+    assert "File does not have correct magic bytes" in result.stdout
 
 
 def test_incompatible_memory():
@@ -295,7 +295,7 @@ def test_dataset_file_not_found():
     )
 
     assert result.returncode == expected_exit_code
-    assert "Dataset file not found" in result.stderr
+    assert "Dataset file not found" in result.stdout
 
 
 def test_dataset_unsupported_format():
@@ -326,8 +326,8 @@ def test_dataset_unsupported_format():
         )
 
         assert result.returncode == expected_exit_code
-        assert "Unsupported dataset format" in result.stderr
-        assert "Only binary (.bin) files are supported" in result.stderr
+        assert "Unsupported dataset format" in result.stdout
+        assert "Only binary (.bin) files are supported" in result.stdout
     finally:
         # Clean up temporary dataset file
         if os.path.exists(dataset_path):

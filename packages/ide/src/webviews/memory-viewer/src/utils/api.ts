@@ -34,6 +34,18 @@ export async function getMemoryData(
 	}) as Promise<MemoryDataResponse>;
 }
 
+export async function getMemoryAtSymbol(
+	sessionId: string,
+	length: number,
+	expression: string
+): Promise<MemoryDataResponse> {
+	return request('get-memory-at-symbol', {
+		sessionId,
+		length,
+		expression
+	}) as Promise<MemoryDataResponse>;
+}
+
 export async function getSessionList(): Promise<DebugSessionInfo[]> {
 	return request('get-session-list') as Promise<DebugSessionInfo[]>;
 }

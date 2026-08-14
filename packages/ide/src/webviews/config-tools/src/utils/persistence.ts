@@ -592,6 +592,8 @@ export function filterClockFrequencies(
 }
 
 export function getDefaultZephelinProfilerConfig(): Partial<Zephelin> {
+	const defaultInterface = getInterfaces()[0];
+
 	return {
 		Enabled: false,
 		RtosEventsEnabled: false,
@@ -601,7 +603,12 @@ export function getDefaultZephelinProfilerConfig(): Partial<Zephelin> {
 		ProfilingCpuLoadInterval: getDefaultProfilingInterval(),
 		AIEnabled: false,
 		InstrumentationSubsystemEnabled: false,
-		Interface: getInterfaces()[0],
-		Port: Object.keys(getUARTPorts())[0]
+		Interface:
+			defaultInterface === 'USB'
+				? {Type: 'USB'}
+				: {
+						Type: 'UART',
+						Port: Object.keys(getUARTPorts())[0] ?? ''
+					}
 	};
 }

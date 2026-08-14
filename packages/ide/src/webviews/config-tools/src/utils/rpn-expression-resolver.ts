@@ -177,8 +177,13 @@ function processControlWithReferencedValues(
 			// The peripheral config is per-core, but here we don't care which core is allocated.
 			let value = UNCONFIGURED_TEXT;
 
-			const coreWithPeripheral = Object.values(currentConfig[toolId]).find(peripherals => peripherals[nodeName]);
-			const configValue = coreWithPeripheral?.[nodeName].config?.[controlName]?.valueOf();
+			const coreWithPeripheral = Object.values(
+				currentConfig[toolId]
+			).find(peripherals => peripherals[nodeName]);
+			const configValue =
+				coreWithPeripheral?.[nodeName].config?.[
+					controlName
+				]?.valueOf();
 
 			if (configValue !== undefined) {
 				if (typeof configValue === 'boolean') {
@@ -609,7 +614,11 @@ function tokenizeExpression(expression: string | undefined) {
 	return splitTokens;
 }
 
-function formatOperand(operand: string | number) {
+function formatOperand(operand: string | number | boolean) {
+	if (typeof operand === 'boolean') {
+		return operand ? 1 : 0;
+	}
+
 	if (typeof operand === 'string') {
 		if (operand.toLowerCase() === 'true') {
 			return 1;

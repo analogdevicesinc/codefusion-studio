@@ -43,29 +43,3 @@
 	white-space: nowrap;
 	padding-right: layout.$spacing-3;
 }
-
-.noSearchResults {
-	text-align: center;
-	padding: 20px 64px;
-	border: 1px solid colors.$default-border;
-	border-radius: 4px;
-
-	h2 {
-		@include fonts.heading-h2;
-		margin: 0 0 layout.$spacing-3 0;
-	}
-
-	p {
-		@include fonts.body-b1;
-		color: colors.$description-foreground;
-	}
-
-	.searchString {
-		display: inline-block;
-		max-width: 50%;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		vertical-align: bottom;
-	}
-}

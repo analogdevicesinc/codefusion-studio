@@ -71,16 +71,10 @@ function ListContainer({
 		[finalizeDrag]
 	);
 
-	const {beginDragOverlay, cardOverlay, cancelActiveDragSession} =
-		useFloatingCardOverlay(
-			diagramContainerRef,
-			handleOverlayFinalize
-		);
-
-	const handleListNativeDragEnd = useCallback(() => {
-		finalizeDrag(false);
-		cancelActiveDragSession();
-	}, [cancelActiveDragSession, finalizeDrag]);
+	const {beginDragOverlay, cardOverlay} = useFloatingCardOverlay(
+		diagramContainerRef,
+		handleOverlayFinalize
+	);
 
 	return (
 		<>
@@ -88,12 +82,9 @@ function ListContainer({
 				ref={listRef}
 				diagramContainerRef={diagramContainerRef}
 				events={orderedEvSources}
-				onDragEndSignal={handleListNativeDragEnd}
 				onReorder={handleReorder}
 				onRowStateChange={update => {
-					if (!cardOverlay.visible) {
-						onRowStateChange(update);
-					}
+					onRowStateChange(update);
 				}}
 				onBeginDragOverlay={(evSource, e) => {
 					resetFinalizeGuard();

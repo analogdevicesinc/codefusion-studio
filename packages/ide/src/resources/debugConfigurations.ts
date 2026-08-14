@@ -218,7 +218,7 @@ export const CORTEX_DEBUG_CORE_DUMP_ANALYSIS_CONFIGURATION: vscode.DebugConfigur
       objdumpPath:
         "${cfs:tool.path.arm.zephyr.eabi.toolchain.paths}/arm-zephyr-eabi-objdump",
     },
-    gdbTarget: "localhost:1234",
+    gdbTarget: "localhost:${config:cfs.coreDump.gdbServerPort}",
     executable: "${workspaceFolder}/build/zephyr/zephyr.elf",
     svdPath: "${config:cfs.cmsis.svdFile}",
     cwd: "${workspaceFolder}",

@@ -28,7 +28,7 @@ import {
 import useXAxisBase from '../../../common/hooks/use-x-axis-base';
 import useColors from '../../../common/hooks/use-colors';
 
-import styles from './timeline-diagram.module.scss';
+import styles from './xticks-chart-row.module.scss';
 
 type DiagramHeaderProps = {
 	timestampRange: {min: number; max: number};
@@ -109,7 +109,11 @@ function XTicksChartRow({
 				{
 					type: 'inside',
 					xAxisIndex: 0,
-					minValueSpan: MIN_VALUE_SPAN
+					minValueSpan: MIN_VALUE_SPAN,
+					cursorGrab: 'default',
+					cursorGrabbing: 'default',
+					zoomLock: false,
+					zoomOnMouseWheel: false
 				}
 			],
 			series: []

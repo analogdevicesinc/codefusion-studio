@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 import type {ControlCfg} from '@common/types/soc';
 import {computeDefaultValues} from './compute-register-value';
 import {getSocPinDictionary} from './soc-pins';
-import {
-	computeEntryBoxDefaultValue,
-	evaluateCondition
-} from './rpn-expression-resolver';
+import {evaluateCondition} from './rpn-expression-resolver';
 import {getControlsForProjectIds} from './api';
 import {CONTROL_SCOPES} from '../constants/scopes';
 import {getIsExternallyManagedProject} from './config';
+import {getControlDefaultValue} from './control-defaults';
 
 export function getSocPinResetControlValues(
 	pinId: string | undefined,
@@ -38,9 +36,32 @@ export function getSocPinResetControlValues(
 		)?.PinConfig;
 
 		if (sourcePinCfg) {
-			return computeDefaultValues(sourcePinCfg, controls, {
-				Name: signalName
-			});
+			const resetValues = computeDefaultValues(
+				sourcePinCfg,
+				controls,
+				{
+					Name: signalName
+				}
+			);
+
+			controls
+				.filter(control => control.PluginOption)
+				.forEach(control => {
+					if (
+						!Object.prototype.hasOwnProperty.call(
+							resetValues,
+							control.Id
+						)
+					) {
+						resetValues[control.Id] = getControlDefaultValue(
+							control,
+							resetValues,
+							signalName
+						);
+					}
+				});
+
+			return resetValues;
 		}
 	}
 
@@ -86,7 +107,7 @@ export async function computeInitialPinConfig({
 	const controls = await getControlsForProjectIds(
 		[ProjectId],
 		CONTROL_SCOPES.PIN_CONFIG
-	).then(({PinConfig}) => PinConfig);
+	).then(({PinConfig}) => PinConfig ?? []);
 
 	const controlsDict = controls.reduce<Record<string, ControlCfg>>(
 		(acc, control) => {
@@ -149,28 +170,13 @@ export async function computeInitialPinConfig({
 			}
 		}
 
-		const {Type, EnumValues, Hint, Id} = control;
-		let defaultValue = '';
+		const {Id} = control;
 
-		// For enum types, use the first enum value
-		if (Type === 'enum' && EnumValues?.length) {
-			defaultValue = String(EnumValues[0].Id ?? '');
-		}
-		// For controls with a hint, attempt parsing the hint using the condition parser
-		else if (Hint) {
-			// Create context with Name for hint evaluation
-			const context = {...initialPinCfg};
-
-			if (Signal) {
-				context.Name = Signal;
-			}
-
-			const parsedHint = computeEntryBoxDefaultValue(context, Hint);
-
-			defaultValue = typeof parsedHint === 'string' ? parsedHint : '';
-		}
-
-		initialPinCfg[Id] = defaultValue;
+		initialPinCfg[Id] = getControlDefaultValue(
+			control,
+			initialPinCfg,
+			Signal
+		);
 	}
 
 	return initialPinCfg;
@@ -269,25 +275,8 @@ function applyPluginOptionDefaults(
 	Name: string
 ) {
 	for (const control of pluginOptions) {
-		const {Type, EnumValues, Hint, Id, Default} = control;
-		let defaultValue = '';
+		const {Id} = control;
 
-		if (Type === 'enum' && EnumValues?.length) {
-			defaultValue = String(EnumValues[0].Id ?? '');
-		} else if (Default) {
-			defaultValue = String(Default);
-		} else if (Hint) {
-			const context = {...defaults};
-
-			if (Name) {
-				context.Name = Name;
-			}
-
-			const parsedHint = computeEntryBoxDefaultValue(context, Hint);
-
-			defaultValue = String(parsedHint ?? '');
-		}
-
-		defaults[Id] = defaultValue;
+		defaults[Id] = getControlDefaultValue(control, defaults, Name);
 	}
 }

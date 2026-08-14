@@ -40,10 +40,8 @@ describe("Workspace MAX78XXX creation using predefined template", () => {
 
   after(async () => {
     await view.switchBack();
-    await UIUtils.sleep(2000);
     console.log("Switched back to close editors");
     await workbench.executeCommand("View: Revert and Close Editor");
-    await UIUtils.sleep(2000);
     console.log("Closed all editors");
   });
 
@@ -54,8 +52,6 @@ describe("Workspace MAX78XXX creation using predefined template", () => {
     await workbench.executeCommand("cfs create workspace");
 
     console.log("new workspace command executed");
-
-    await UIUtils.sleep(5000);
 
     await UIUtils.dismissAllNotifications(workbench, browser);
 
@@ -120,7 +116,6 @@ describe("Workspace MAX78XXX creation using predefined template", () => {
 
     // Predefined template option already selected TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE
     console.log("TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE");
-    await UIUtils.sleep(2000);
 
     await UIUtils.clickElement(view, locatorspath.continueButton, 5000);
 
@@ -142,7 +137,6 @@ describe("Workspace MAX78XXX creation using predefined template", () => {
     );
 
     await UIUtils.clickElement(view, blinkyTemplate);
-    await await UIUtils.sleep(3000);
     await UIUtils.clickElement(view, locatorspath.continueButton);
     console.log("Waiting for confirmation screen");
     const pluginDescription = await UIUtils.dataTest(
@@ -187,7 +181,6 @@ describe("Workspace MAX78XXX creation using predefined template", () => {
     const location = `${userHome}/cfs/${TextData.cfsideversion}`;
     console.log(`location is ${location}`);
     const workspacePath = `${location}/${workspaceName}`;
-    await UIUtils.sleep(2000);
     console.log(`workspacePath is ${workspacePath}`);
     await VSBrowser.instance.driver.wait(
       () => existsSync(workspacePath),

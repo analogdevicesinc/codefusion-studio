@@ -21,7 +21,9 @@ import {
 	INITIAL_DATA_ZOOM,
 	EV_LIST_WIDTH_PROPERTY,
 	DIAGRAM_CHART_ROW_ID,
-	DATA_ROW_EMPHASIS_ATTR
+	DATA_ROW_EMPHASIS_ATTR,
+	TIMELINE_DRAG_ACTIVE,
+	TIMELINE_MEASURE_ACTIVE
 } from '../constants/timeline';
 import type {
 	DataZoom,
@@ -29,6 +31,27 @@ import type {
 	RowInteraction,
 	RowStateUpdate
 } from '../types/timeline';
+
+const escapeHtml = (value: string | number | undefined): string => {
+	const text = String(value ?? '');
+
+	return text.replace(/[&<>"']/g, character => {
+		switch (character) {
+			case '&':
+				return '&amp;';
+			case '<':
+				return '&lt;';
+			case '>':
+				return '&gt;';
+			case '"':
+				return '&quot;';
+			case "'":
+				return '&#39;';
+			default:
+				return character;
+		}
+	});
+};
 
 export function formatTimestampTooltip(
 	eventSource: SevEventSource,
@@ -39,11 +62,16 @@ export function formatTimestampTooltip(
 		item => item.id === dataIndex
 	);
 
+	const eventName = escapeHtml(eventSource.name);
+	const timestampName = escapeHtml(timestamp?.name);
+	const timestampValue = escapeHtml(timestamp?.value);
+	const timestampDescription = escapeHtml(timestamp?.description);
+
 	return `
-		<div style="font-weight: 700; color: ${colors.editorWidgetForeground}; font-size: 13px;">${eventSource.name}</div>
-		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestamp?.name}</div>
-		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestamp?.value}s</div>
-		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestamp?.description}</div>
+		<div style="font-weight: 700; color: ${colors.editorWidgetForeground}; font-size: 13px;">${eventName}</div>
+		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestampName}</div>
+		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestampValue}s</div>
+		<div style="font-weight: 600; color: ${colors.descriptionForeground}; font-size: 11px;">${timestampDescription}</div>
 	`;
 }
 
@@ -176,17 +204,6 @@ export const getListWidth = (container: HTMLDivElement) => {
 	return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export const setTransparentDragImage = (e: React.DragEvent) => {
-	const canvas = document.createElement('canvas');
-	canvas.width = 1;
-	canvas.height = 1;
-
-	const img = new Image();
-	img.src = canvas.toDataURL();
-
-	e.dataTransfer?.setDragImage(img, 0, 0);
-};
-
 export const getChartSnapshot = (evSourceId: string) => {
 	const rowEl = document.querySelector(
 		`[data-test='${DIAGRAM_CHART_ROW_ID}:${evSourceId}']`
@@ -199,12 +216,14 @@ export const getChartSnapshot = (evSourceId: string) => {
 		rowEl?.querySelector('div canvas');
 
 	let canvasSrc;
+	let canvasWidth = 0;
 
 	if (canvas instanceof HTMLCanvasElement) {
 		canvasSrc = canvas.toDataURL('image/png');
+		canvasWidth = canvas.getBoundingClientRect().width;
 	}
 
-	return {canvasSrc, rowHeight};
+	return {canvasSrc, rowHeight, canvasWidth};
 };
 
 // Helpers to manage the active/hovered state of the rows (list item and chart rows)
@@ -271,11 +290,26 @@ export const resetRowInteraction = (
 	rowInteractionRef.current.activeRowIndex = undefined;
 };
 
+export const clearAllRowEmphasis = (root: ParentNode = document) => {
+	root
+		.querySelectorAll<HTMLElement>(`[${DATA_ROW_EMPHASIS_ATTR}]`)
+		.forEach(el => {
+			el.removeAttribute(DATA_ROW_EMPHASIS_ATTR);
+		});
+};
+
 const applyRowEmphasis = (
 	rowIndex: number,
 	rowInteractionRef: React.MutableRefObject<RowInteraction>,
 	diagramContainerRef: RefObject<HTMLDivElement>
 ) => {
+	const body = diagramContainerRef.current?.ownerDocument?.body;
+	const isInteractionSuppressed =
+		(body?.classList.contains(TIMELINE_DRAG_ACTIVE) ?? false) ||
+		(body?.classList.contains(TIMELINE_MEASURE_ACTIVE) ?? false);
+
+	if (isInteractionSuppressed) return;
+
 	const {hoveredRowIndex, activeRowIndex} = rowInteractionRef.current;
 
 	const isEmphasized =

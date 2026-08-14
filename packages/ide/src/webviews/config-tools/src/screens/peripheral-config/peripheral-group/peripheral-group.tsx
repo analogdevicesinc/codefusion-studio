@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import {categorizeAllocationsByName} from '../../../utils/soc-peripherals';
 import {useNewPeripheralAssignment} from '../../../state/slices/app-context/appContext.selector';
 import {usePeripheralHighlight} from '../../../hooks/use-peripheral-highlight';
 import styles from './peripheral-group.module.scss';
+import {useTooltipDebouncedHover} from '../../../hooks/use-tooltip-debounced-hover';
+import {TOOLTIP_HOVER_DEBOUNCE_MS} from '../constants';
+import PeripheralAllocTooltip from '../peripheral-block/peripheral-alloc-tooltip/peripheral-alloc-tooltip';
 
 type PeripheralGroupProps = Readonly<{
 	group: string;
@@ -32,6 +35,8 @@ type PeripheralGroupProps = Readonly<{
 
 function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 	const [isOpen, setIsOpen] = useState(false);
+	const {isHovered, displayTooltip, hideTooltip} =
+		useTooltipDebouncedHover(TOOLTIP_HOVER_DEBOUNCE_MS);
 
 	const allocations = usePeripheralAllocations();
 	const categorizedAllocations = useMemo(
@@ -64,6 +69,7 @@ function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 					<PeripheralBlock
 						key={`grouped-peripheral-${p.name}`}
 						{...p}
+						description={p.description}
 					/>
 				))}
 			</div>
@@ -78,22 +84,37 @@ function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 	}, [peripherals, peripheralName, triggerHighlight]);
 
 	return (
-		<div
-			className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
-		>
-			<Accordion
-				title={group}
-				isOpen={isOpen}
-				highlight={highlighted}
-				toggleExpand={toggleExpand}
-				subTitle={
-					allocatedCount ? (
-						<span>{allocatedCount} allocated</span>
-					) : null
-				}
-				body={peripheralBlocks}
-			/>
-		</div>
+		<>
+			<div
+				id={`peripheral-${group}`}
+				className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
+				onMouseEnter={() => {
+					if (!isOpen) displayTooltip();
+				}}
+				onMouseLeave={() => {
+					hideTooltip();
+				}}
+				onClick={() => {
+					hideTooltip();
+				}}
+			>
+				<Accordion
+					title={group}
+					isOpen={isOpen}
+					highlight={highlighted}
+					toggleExpand={toggleExpand}
+					subTitle={
+						allocatedCount ? (
+							<span>{allocatedCount} allocated</span>
+						) : null
+					}
+					body={peripheralBlocks}
+				/>
+			</div>
+			{isHovered && (
+				<PeripheralAllocTooltip title={group} description={group} />
+			)}
+		</>
 	);
 }
 

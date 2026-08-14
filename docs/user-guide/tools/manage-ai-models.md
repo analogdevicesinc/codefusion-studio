@@ -1,7 +1,7 @@
 ---
 description: How to use the Embedded AI Tools panel in System Planner
 author: Analog Devices
-date: "2026-05-28"
+date: 2026-07-31
 ---
 
 # Embedded AI Tools
@@ -29,11 +29,35 @@ To add a new model:
   ![Embedded AI Tools tab](./images/embedded-ai-tools-overview-dark.png#only-dark) ![Embedded AI Tools tab](./images/embedded-ai-tools-overview-light.png#only-light)
 2. Select a **Target** core. For example, ARM Cortex-M4.
 3. Enter a **Model Name**. This name is used to identify the model configuration.
-4. Click **Browse** to upload and select a model file, or enter a relative file path or URL.
+4. Click **Browse** to open the **Model Zoo**, then select a model from the library or a local file. See [Select a model from the Model Zoo](#select-a-model-from-the-model-zoo). You can also enter a relative file path or URL directly in the **Model File** field.
 5. (Optional) Configure backend-specific settings:
     - For TensorFlow Lite Micro models, see [Configure TFLM settings](#configure-tensorflow-lite-micro-tflm-model-settings)
     - For izer backend models, see [Configure izer backend settings](#configure-izer-backend-settings)
 6. Click **Add** to add the model to the list.
+
+### Select a model from the Model Zoo
+
+The **Model Zoo** is a library of AI models hosted by Analog Devices. When you click **Browse** on the model file field, the Model Zoo opens so you can browse, search, and filter models, or select your own model from a local file.
+
+![Model Zoo with an expanded model card](./images/model-zoo-expanded-card-dark.png#only-dark)
+![Model Zoo with an expanded model card](./images/model-zoo-expanded-card-light.png#only-light)
+
+To select a model from the library:
+
+1. Use the **Search** field to find models by name or tag, or filter the list with the **Platforms**, **Cores**, and **Category** filters. The filters are pre-set to match the SoC and target core of the model configuration.
+2. Expand a model card to view its details, including the description, owner, license, accuracy metrics, network inputs and outputs, and the **Quantizations** table of model sizes per platform.
+3. From the quantization menu in the card header, select the quantization to deploy (for example, `int8`). The **Quantizations** table shows the model size for each platform and quantization.
+4. Select the model card, then click **Use selected model**.
+
+The model file field is populated in the model configuration, along with the dataset file field when the model provides sample data for the chosen quantization.
+
+To use a model that isn't in the library, click **Browse local models** and select a file from your workspace.
+
+#### Use a custom model zoo
+
+By default, the Model Zoo lists models hosted by Analog Devices. To add a custom source, set **Model Zoo: Urls** (`cfs.modelZoo.urls`) in the CodeFusion Studio settings to one or more base URLs. Each URL must expose `model_index.json` at its root without authentication and allow cross-origin GET requests. The Model Zoo aggregates models from every configured source.
+
+To see the expected structure, refer to the [:octicons-link-external-24: ADI Model Zoo](https://github.com/analogdevicesinc/adi-model-zoo){:target="_blank"} repository, which hosts the default source.
 
 ### Configure TensorFlow Lite Micro (TFLM) model settings
 
@@ -89,8 +113,8 @@ For izer backend models on the MAX78002 CNN accelerator, you can configure the f
 | Field                       | Backend  | Description                                                                                                                 |
 |-----------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------|
 | **Target**                  | All      | The processing core that will run the model. For example, ARM Cortex-M4.                                                    |
-| **Model Name**              | All      | Name used to identify the model configuration.                                                                              |
-| **Model File**              | All      | The path or URL of the model file. The path can be absolute or relative to the workspace.                                   |
+| **Model Name**              | All      | Name used to identify the model configuration. Maximum 64 characters.                                                       |
+| **Model File**              | All      | The model to deploy. Select a model from the [Model Zoo](#select-a-model-from-the-model-zoo) or a local file, or enter a path or URL. The path can be absolute or relative to the workspace. |
 | **Memory section for data** | TFLM     | The memory section used to map the model data.                                                                              |
 | **Symbol for data**         | TFLM     | C symbol name used for the model data array. Appears in the generated code.                                                 |
 | **Arena size for model**    | TFLM     | Arena size in bytes for the model. If omitted, the size will be estimated automatically.                                    |
@@ -122,7 +146,7 @@ To generate reports for your model:
 
 By default, reports are stored in the temp directory. Use the **Save As** option in Visual Studio Code to store the report in a different location.
 
-To reopen the report at a later time, select **AI Tools** > **Open Report** from the CFS Home Page.
+To reopen the report at a later time, select **AI Tools** > **Open Report** from the **Home** section of the CFS sidebar.
 
 ![Open AI Report](./images/open-report-dark.png#only-dark)  
 ![Open AI Report](./images/open-report-light.png#only-light)

@@ -14,12 +14,13 @@
  */
 import {Flags} from '@oclif/core';
 import {getAiToolsPlugin} from 'cfs-lib';
-import {CfsSocDataModel, SocAi} from 'cfs-types';
+import {AiCommandResult, SocAi} from 'cfs-types';
 
 import {
-  BaseCommand,
-  type CliRunResponse
-} from '../../utils/base-command.js';
+  ensureOrTryInferCoreFlags,
+  getAndEnsureDataModel
+} from '../../utils/ai-command-utils.js';
+import {BaseAiCommand} from '../../utils/base-ai-command.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {RecoverableError} from '../../utils/recoverable-error.js';
@@ -28,7 +29,7 @@ import {
   getVersionFromConfig
 } from '../../utils/utils.js';
 
-export default class Profile extends BaseCommand<typeof Profile> {
+export default class Profile extends BaseAiCommand<typeof Profile> {
   static description = `Profile model resources with target SoC and core.`;
 
   static examples: string[] = [
@@ -85,8 +86,9 @@ export default class Profile extends BaseCommand<typeof Profile> {
     })
   };
 
-  async run(): CliRunResponse {
+  async run(): Promise<AiCommandResult> {
     const {flags, config} = this;
+    const warnings: string[] = [];
 
     if (flags.acc) {
       throw new RecoverableError(
@@ -98,16 +100,11 @@ export default class Profile extends BaseCommand<typeof Profile> {
     }
 
     // validate inputs
-    if (!flags.soc || !flags.core || !flags.model) {
-      throw new RecoverableError(
-        '--soc, --core, and --model are required',
-        {
-          suggestion:
-            'Provide all three required flags to check model profiling',
-          example:
-            'cfsutil ai profile --core CM4 --soc MAX32690 --model <model>'
-        }
-      );
+    if (!flags.soc || !flags.model) {
+      throw new RecoverableError('--soc and --model are required', {
+        suggestion: 'Provide both required flags to profile model',
+        example: 'cfsutil ai profile --soc MAX32690 --model <model>'
+      });
     }
 
     const aiPlugin = getAiToolsPlugin(
@@ -125,12 +122,6 @@ export default class Profile extends BaseCommand<typeof Profile> {
       flags['search-path']
     );
 
-    // Change cases to match datamodel expectations
-    flags.soc = flags.soc?.toLowerCase();
-    flags.core = flags.core?.toUpperCase();
-    flags.package = flags.package?.toLowerCase();
-    flags.acc = flags.acc?.toUpperCase();
-
     if (!flags.package) {
       flags.package = await dmManager.getFirstPackageIdForSoc(
         flags.soc
@@ -147,28 +138,20 @@ export default class Profile extends BaseCommand<typeof Profile> {
       }
     }
 
-    // get datamodel
-    const dataModel: CfsSocDataModel | undefined =
-      await dmManager.getDataModel(
-        flags.soc as string,
-        flags.package as string
-      );
-    if (!dataModel) {
-      throw new RecoverableError(
-        `Could not load data model for SoC '${flags.soc}', Package '${flags.package}'`,
-        {
-          suggestion: 'Verify the SoC and Package are compatible',
-          run: `cfsutil socs info ${flags.soc} --packages`
-        }
-      );
-    }
+    const dataModel = await getAndEnsureDataModel(
+      flags.soc,
+      flags.package,
+      dmManager
+    );
+
+    ensureOrTryInferCoreFlags(flags, dataModel, warnings);
 
     const ai: SocAi | undefined = aiPlugin.getAIDataFromSOCModel(
       dataModel,
       flags.soc,
       flags.package,
       flags.core,
-      flags.acc as string
+      flags.acc
     );
     if (!ai) {
       throw new RecoverableError(
@@ -186,6 +169,6 @@ export default class Profile extends BaseCommand<typeof Profile> {
       ignoreCache: flags['ignore-cache']
     });
 
-    return this.handlePythonOutput(output);
+    return this.handleResult(output, warnings);
   }
 }

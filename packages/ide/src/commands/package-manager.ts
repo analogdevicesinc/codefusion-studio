@@ -16,11 +16,21 @@ import type {
   CfsPackageManagerProvider,
   CfsPackageReference,
   CfsPackageRemote,
+  CfsSkippedPackageInfo,
 } from "cfs-package-manager";
 import * as vscode from "vscode";
-import { CLOUD_CATALOG_AUTH, PACKAGE_MANAGER_COMMANDS } from "./constants";
-import { PACKAGE_MANAGER_CREDENTIAL_PROVIDER } from "../constants";
-import { promptForPackageLicenseAcceptance } from "../utils/package-manager";
+import {
+  CLOUD_CATALOG_AUTH,
+  OPEN_PACKAGE_MANAGER_COMMAND_ID,
+  PACKAGE_MANAGER_COMMANDS,
+} from "./constants";
+import {
+  promptForPackageLicenseAcceptance,
+  showSkippedPackagesWarning,
+  formatErrorForDisplay,
+} from "../utils/package-manager";
+import { PackageManagerPagePanel } from "../panels/package-manager";
+import { Messenger } from "vscode-messenger";
 
 interface InstallPackageItem extends vscode.QuickPickItem {
   pkg: CfsPackageReference;
@@ -30,6 +40,7 @@ interface InstallPackageItem extends vscode.QuickPickItem {
 export function registerPackageManagerCommands(
   context: vscode.ExtensionContext,
   pkgManager?: CfsPackageManagerProvider,
+  messenger?: Messenger,
 ) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -76,6 +87,16 @@ export function registerPackageManagerCommands(
       PACKAGE_MANAGER_COMMANDS.MANAGE_REMOTES,
       () => manageRemotes(pkgManager),
     ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(OPEN_PACKAGE_MANAGER_COMMAND_ID, () => {
+      PackageManagerPagePanel.render(
+        context,
+        messenger ? messenger : new Messenger(),
+        pkgManager,
+      );
+    }),
   );
 }
 
@@ -284,13 +305,20 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
           acceptLicense: acceptedRequestedPackageLicenses,
         });
 
-        if (installed.length === 0) {
+        const compatibilitySkipped: CfsSkippedPackageInfo[] =
+          plan.skipped ?? [];
+
+        if (installed.length === 0 && compatibilitySkipped.length === 0) {
           return;
         }
 
-        vscode.window.showInformationMessage(
-          `CFS: Successfully installed ${installed.map((r) => r.name).join(", ")}.`,
-        );
+        if (installed.length > 0) {
+          vscode.window.showInformationMessage(
+            `CFS: Successfully installed ${installed.map((r) => r.name).join(", ")}.`,
+          );
+        }
+
+        showSkippedPackagesWarning(compatibilitySkipped);
       },
     );
   } catch (err) {
@@ -397,19 +425,9 @@ async function uninstallPackage(pkgManager?: CfsPackageManagerProvider) {
     });
   } catch (err) {
     console.error(err);
-    // Conan errors can include an uppercase "ERROR:" prefix; normalize it for UI readability.
-    const uninstallErrorMessage =
-      err instanceof Error
-        ? err.message.replace(/(^|\s)ERROR:\s*/gi, "$1Error: ").trim()
-        : "";
-    // Ensure the detail sentence is properly terminated before appending to the base message.
-    const uninstallErrorWithPeriod = uninstallErrorMessage
-      ? /[.!?]$/.test(uninstallErrorMessage)
-        ? ` ${uninstallErrorMessage}`
-        : ` ${uninstallErrorMessage}.`
-      : "";
+    const errorDetail = formatErrorForDisplay(err);
     vscode.window.showErrorMessage(
-      `CFS: Failed to uninstall package.${uninstallErrorWithPeriod}`,
+      `CFS: Failed to uninstall package.${errorDetail}`,
     );
   }
 }
@@ -578,6 +596,9 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
     return;
   }
 
+  // encourage the user to log in to myAnalog if they are not already
+  void promptMyAnalogLogin();
+
   // Show UX
   const manageRemotesQuickPick = vscode.window.createQuickPick();
   manageRemotesQuickPick.title = "CFS: Manage Package Remotes";
@@ -588,79 +609,89 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
 
   let remotes: CfsPackageRemote[] = [];
 
+  let selected: [string, string?] | undefined; // [action, remoteName?]
+
   // Display the list of remotes with action buttons
   try {
     remotes = await pkgManager.listRemotes();
-    if (remotes.length === 0) {
-      manageRemotesQuickPick.placeholder = "";
-      manageRemotesQuickPick.busy = false;
-      manageRemotesQuickPick.items = [{ label: "No remotes found" }];
-      // Wait for user to dismiss (or select the dummy item) before closing the quick pick
-      await new Promise<void>((resolve) => {
-        manageRemotesQuickPick.onDidHide(() => resolve());
-        manageRemotesQuickPick.onDidAccept(() => resolve());
-      });
 
-      manageRemotesQuickPick.dispose();
-      return;
-    }
-
-    const mapCustomRemote = (
+    const mapRemoteButtons = (
       remote: CfsPackageRemote,
-    ): vscode.QuickPickItem => ({
-      ...mapRemote(remote),
-      buttons: [
+    ): vscode.QuickPickItem => {
+      const mapped = {
+        ...mapRemote(remote),
+        buttons: [
+          {
+            iconPath: new vscode.ThemeIcon("debug-disconnect"),
+            tooltip: remote.disabled ? "Enable" : "Disable",
+          },
+        ],
+      };
+
+      if (remote.custom) {
         // Custom remotes can be removed
-        {
+        mapped.buttons.push({
           iconPath: new vscode.ThemeIcon("trash"),
           tooltip: "Remove",
-        },
-        // Custom remotes can have their auth set
-        {
-          iconPath: new vscode.ThemeIcon("account"),
-          tooltip: "Set Auth",
-        },
-      ],
-    });
+        });
+
+        if (!remote.disabled) {
+          // Custom remotes can have their auth set (when enabled)
+          mapped.buttons.push({
+            iconPath: new vscode.ThemeIcon("account"),
+            tooltip: "Set Auth",
+          });
+        }
+      }
+
+      return mapped;
+    };
 
     const displayRemotes: vscode.QuickPickItem[] = [
-      { kind: vscode.QuickPickItemKind.Separator, label: "default" },
-      ...remotes.filter((remote) => !remote.custom).map(mapRemote),
-      { kind: vscode.QuickPickItemKind.Separator, label: "custom" },
-      ...remotes.filter((remote) => remote.custom).map(mapCustomRemote),
+      ...(remotes.length === 0
+        ? [
+            { label: "No remotes found" },
+            { kind: vscode.QuickPickItemKind.Separator, label: "custom" },
+          ]
+        : [
+            ...remotes
+              .filter((remote) => !remote.custom)
+              .map(mapRemoteButtons)
+              .sort((a, b) => a.label.localeCompare(b.label)),
+            { kind: vscode.QuickPickItemKind.Separator, label: "custom" },
+            ...remotes
+              .filter((remote) => remote.custom)
+              .map(mapRemoteButtons)
+              .sort((a, b) => a.label.localeCompare(b.label)),
+          ]),
       {
         alwaysShow: true,
-        label: "$(add) Add Custom Remote",
+        iconPath: new vscode.ThemeIcon("add"),
+        label: "Add Custom Remote",
       },
     ];
-    // prompt the user if there are any myAnalog remotes and they are not logged in
-    void promptMyAnalogLogin(remotes);
 
-    manageRemotesQuickPick.placeholder = "Highlight a remote to view actions";
+    manageRemotesQuickPick.placeholder =
+      remotes.length === 0 ? "" : "Highlight a remote to view actions";
     manageRemotesQuickPick.items = displayRemotes;
     manageRemotesQuickPick.ignoreFocusOut = false;
     manageRemotesQuickPick.busy = false;
-  } catch (err) {
-    let errorMessage = "CFS: Failed to retrieve remotes.";
-    if (err instanceof Error && err.message) {
-      errorMessage += ` ${err.message}`;
-    }
-    console.error(err);
-    vscode.window.showErrorMessage(errorMessage);
-    manageRemotesQuickPick.dispose();
-    return;
-  }
 
-  // Let the user pick an action
-  try {
-    const selected = await new Promise<[string, string?] | undefined>(
-      (resolve) => {
+    // Let the user pick an action
+    selected = await new Promise<[string, string?] | undefined>(
+      (resolve, reject) => {
         manageRemotesQuickPick.onDidAccept(() => {
           if (
             manageRemotesQuickPick.selectedItems[0].label ===
-            "$(add) Add Custom Remote"
+            "Add Custom Remote"
           ) {
             resolve(["add"]);
+          }
+
+          if (
+            manageRemotesQuickPick.selectedItems[0].label === "No remotes found"
+          ) {
+            resolve(undefined);
           }
         });
         manageRemotesQuickPick.onDidTriggerItemButton((e) => {
@@ -672,9 +703,17 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
               case "Set Auth":
                 resolve(["auth", e.item.label]);
                 break;
+              case "Enable":
+                resolve(["enable", e.item.label]);
+                break;
+              case "Disable":
+                resolve(["disable", e.item.label]);
+                break;
               default:
-                throw new Error(
-                  `Unknown button action "${e.button.tooltip}" triggered.`,
+                reject(
+                  new Error(
+                    `Unknown button action "${e.button.tooltip}" triggered.`,
+                  ),
                 );
             }
           }
@@ -684,22 +723,31 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
         });
       },
     );
-
+  } catch (err) {
+    console.error(err);
+    let errorMessage = "CFS: Failed to display remotes.";
+    if (err instanceof Error && err.message) {
+      errorMessage += ` ${err.message}`;
+    }
+    void vscode.window.showErrorMessage(errorMessage);
+    return;
+  } finally {
     manageRemotesQuickPick.dispose();
+  }
 
+  // Perform the selected action
+  try {
     if (!selected) {
       return; // User cancelled
     }
     const [action, remoteName] = selected;
     if (action === "add") {
       await addRemote(pkgManager);
-      return;
-    }
-    if (remoteName) {
+    } else if (remoteName) {
       // Handle button actions
       const remote = remotes.find((r) => r.name === remoteName);
       if (!remote) {
-        return;
+        throw new Error(`Selected remote "${remoteName}" not found.`);
       }
       switch (action) {
         case "remove":
@@ -712,9 +760,15 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
           }
           await authRemoteAction(pkgManager, remote, authSelection);
           break;
+        case "enable":
+        case "disable":
+          await toggleRemoteEnabledAction(pkgManager, remote);
+          break;
         default:
           throw new Error(`Unknown action "${action}" selected.`);
       }
+    } else {
+      throw new Error(`Unknown action "${action}" selected.`);
     }
   } catch (err) {
     console.error(err);
@@ -722,34 +776,37 @@ async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
       `CFS: Failed to manage remote. ${err instanceof Error ? err.message : String(err)}`,
     );
   }
+
+  // Completed action, refresh the remotes view by re-invoking the command
+  void vscode.commands.executeCommand(PACKAGE_MANAGER_COMMANDS.MANAGE_REMOTES);
 }
 
-async function promptMyAnalogLogin(remotes: CfsPackageRemote[]): Promise<void> {
-  // check if any are myAnalog remotes
-  const myAnalogRemotes = remotes
-    .filter(
-      (r) => r.auth?.credentialProvider === PACKAGE_MANAGER_CREDENTIAL_PROVIDER,
-    )
-    .map((r) => r.name);
-  if (myAnalogRemotes.length === 0) {
-    return;
-  }
+export async function promptMyAnalogLogin(): Promise<void> {
   // check if logged in to myAnalog session
   const isLoggedIn = await vscode.commands.executeCommand(
     CLOUD_CATALOG_AUTH.STATUS,
+    false, // we will show our own notification if not logged in, so don't show the built-in notification
   );
-  if (!isLoggedIn) {
+  if (isLoggedIn === false) {
+    // isLoggedIn can be true, false, or undefined (if built without auth support)
     // If not logged in, show a prompt with a login button
     const selection = await vscode.window.showInformationMessage(
-      `Login with your myAnalog account to enable ` +
-        `remote${myAnalogRemotes.length === 1 ? "" : "s"}: ` +
-        `${myAnalogRemotes.slice(0, -1).join(", ")}` +
-        `${myAnalogRemotes.length > 1 ? " and " + myAnalogRemotes.slice(-1) : myAnalogRemotes[0]}.`,
-      "Login",
+      "Log in with your myAnalog account to enable automatic remotes configuration.",
+      "Log in",
     );
 
-    if (selection === "Login") {
+    if (selection === "Log in") {
       await vscode.commands.executeCommand(CLOUD_CATALOG_AUTH.LOGIN);
+      const loggedIn = await vscode.commands.executeCommand(
+        CLOUD_CATALOG_AUTH.STATUS,
+        false,
+      );
+      if (loggedIn === true) {
+        // Refresh the manage remotes view after a successful login.
+        void vscode.commands.executeCommand(
+          PACKAGE_MANAGER_COMMANDS.MANAGE_REMOTES,
+        );
+      }
     }
   }
 }
@@ -820,19 +877,26 @@ async function addRemote(pkgManager?: CfsPackageManagerProvider) {
       cancellable: false,
     };
 
-    let remote: CfsPackageRemote;
-    await vscode.window.withProgress(progressOptions, async () => {
-      await pkgManager.addRemote(remoteName, remoteUrl);
-      remote = (await pkgManager.listRemotes()).find(
-        (r) => r.name === remoteName,
-      )!;
-      if (!remote) {
-        throw new Error(`Failed to verify addition of remote "${remoteName}".`);
-      }
-    });
+    const remote = await vscode.window.withProgress(
+      progressOptions,
+      async () => {
+        await pkgManager.addRemote(remoteName, remoteUrl);
+        const findRemote = (await pkgManager.listRemotes()).find(
+          (r) => r.name.toLowerCase() === remoteName.toLowerCase(),
+        );
 
-    // Set authentication method for remote (prompts user to perform myAnalog login if needed)
-    await authRemoteAction(pkgManager, remote!, authSelection);
+        if (!findRemote) {
+          throw new Error(
+            `Failed to verify addition of remote "${remoteName}".`,
+          );
+        }
+
+        return findRemote;
+      },
+    );
+
+    // Set authentication method for remote
+    await authRemoteAction(pkgManager, remote, authSelection);
 
     void vscode.window.showInformationMessage(
       `CFS: Successfully added remote "${remoteName}" with URL "${remoteUrl}".`,
@@ -853,17 +917,10 @@ async function removeRemote(pkgManager?: CfsPackageManagerProvider) {
     return;
   }
 
-  // Show UX
-  const customRemotesQuickPick = vscode.window.createQuickPick();
-  customRemotesQuickPick.title = "CFS: Remove Custom Package Remote";
-  customRemotesQuickPick.placeholder = "Finding custom remotes...";
-  customRemotesQuickPick.busy = true;
-  customRemotesQuickPick.ignoreFocusOut = true;
-  customRemotesQuickPick.show();
-
   // Let the user pick a remote to remove
   const remote = await pickRemote(
-    customRemotesQuickPick,
+    "CFS: Remove Custom Package Remote",
+    "Finding custom remotes...",
     pkgManager,
     undefined,
     () => false, // Only show custom remotes
@@ -904,6 +961,35 @@ async function removeRemoteAction(
   }
 }
 
+async function toggleRemoteEnabledAction(
+  pkgManager: CfsPackageManagerProvider,
+  remote: CfsPackageRemote,
+) {
+  try {
+    // Show progress while toggling remote enabled state
+    const progressOptions: vscode.ProgressOptions = {
+      location: vscode.ProgressLocation.Window,
+      title: `CFS: ${remote.disabled ? "Enabling" : "Disabling"} remote "${remote.name}"...`,
+      cancellable: false,
+    };
+
+    await vscode.window.withProgress(progressOptions, async () => {
+      remote.disabled
+        ? await pkgManager.enableRemote(remote.name)
+        : await pkgManager.disableRemote(remote.name);
+    });
+
+    void vscode.window.showInformationMessage(
+      `CFS: Successfully ${remote.disabled ? "enabled" : "disabled"} remote "${remote.name}".`,
+    );
+  } catch (err) {
+    console.error(err);
+    void vscode.window.showErrorMessage(
+      `CFS: Failed to ${remote.disabled ? "enable" : "disable"} remote. ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
 async function authRemote(pkgManager?: CfsPackageManagerProvider) {
   if (!pkgManager) {
     void vscode.window.showErrorMessage(
@@ -912,25 +998,17 @@ async function authRemote(pkgManager?: CfsPackageManagerProvider) {
     return;
   }
 
-  // Show UX
-  const customRemotesQuickPick = vscode.window.createQuickPick();
-  customRemotesQuickPick.title =
-    "CFS: Set Custom Package Remote Authentication";
-  customRemotesQuickPick.placeholder = "Finding remotes...";
-  customRemotesQuickPick.busy = true;
-  customRemotesQuickPick.ignoreFocusOut = true;
-  customRemotesQuickPick.show();
-
   // Let the user pick a remote to set auth on
   const remote = await pickRemote(
-    customRemotesQuickPick,
+    "CFS: Set Custom Package Remote Authentication",
+    "Finding enabled custom remotes...",
     pkgManager,
-    // Can sign into any custom remote
-    undefined,
+    // Can sign into any enabled custom remote
+    (remote) => remote.custom && !remote.disabled,
     // Don't show managed remotes
     () => false,
     "Choose a remote to set up authentication",
-    "No custom remotes available",
+    "No enabled custom remotes available",
   );
 
   if (!remote) {
@@ -948,7 +1026,7 @@ async function authRemote(pkgManager?: CfsPackageManagerProvider) {
 // Prompt user for authentication method
 async function promptAuthMethod(remoteName: string): Promise<
   | {
-      authMethod: "No Authentication" | "myAnalog";
+      authMethod: "No Authentication";
     }
   | {
       authMethod: "Username/Password";
@@ -957,19 +1035,14 @@ async function promptAuthMethod(remoteName: string): Promise<
     }
   | undefined
 > {
-  // Offer the user the choice of no auth, myAnalog, or username/password
+  // Offer the user the choice of no auth or username/password
   const authChoices: {
-    label: "No Authentication" | "myAnalog" | "Username/Password";
+    label: "No Authentication" | "Username/Password";
     description: string;
   }[] = [
     {
       label: "No Authentication",
       description: "Do not use any authentication",
-    },
-    {
-      label: "myAnalog",
-      description:
-        "Obtain credentials automatically using your myAnalog session",
     },
     {
       label: "Username/Password",
@@ -1033,7 +1106,7 @@ async function authRemoteAction(
   pkgManager: CfsPackageManagerProvider,
   remote: CfsPackageRemote,
   authSelection:
-    | { authMethod: "No Authentication" | "myAnalog" }
+    | { authMethod: "No Authentication" }
     | {
         authMethod: "Username/Password";
         username: string;
@@ -1062,22 +1135,6 @@ async function authRemoteAction(
             authSelection.password,
           );
           break;
-        case "myAnalog":
-          // Use myAnalog session
-          await pkgManager.setRemoteCredentialProvider(
-            remote.name,
-            PACKAGE_MANAGER_CREDENTIAL_PROVIDER,
-          );
-          const updatedRemote = (await pkgManager.listRemotes()).find(
-            (r) => r.name === remote.name,
-          );
-          if (!updatedRemote) {
-            throw new Error(
-              `Failed to verify setting credential provider for remote "${remote.name}".`,
-            );
-          }
-          void promptMyAnalogLogin([updatedRemote]);
-          break;
         default:
           throw new Error(
             `Unknown auth method "${(authSelection as { authMethod: string }).authMethod}" selected.`,
@@ -1099,18 +1156,30 @@ async function authRemoteAction(
 // Retrieve and display remotes for selection, with optional filtering
 // handles empty list and disposal of the QuickPick
 async function pickRemote(
-  quickPick: vscode.QuickPick<vscode.QuickPickItem>,
+  title: string,
+  loadingPlaceholder: string,
   pkgManager: CfsPackageManagerProvider,
   filterCustom: (remote: CfsPackageRemote) => boolean = (r) => r.custom,
   filterManaged: (remote: CfsPackageRemote) => boolean = (r) => !r.custom,
   placeHolder: string = "Select a remote",
   emptyMessage: string = "No remotes found",
 ): Promise<CfsPackageRemote | undefined> {
+  // Show UX
+  const quickPick = vscode.window.createQuickPick();
+  quickPick.title = title;
+  quickPick.placeholder = loadingPlaceholder;
+  quickPick.busy = true;
+  quickPick.ignoreFocusOut = true;
+  quickPick.show();
   try {
     // Fetch registered remotes, filter and map for display
     const remotes = await pkgManager.listRemotes();
-    const customRemotes = remotes.filter(filterCustom);
-    const managedRemotes = remotes.filter(filterManaged);
+    const customRemotes = remotes
+      .filter(filterCustom)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const managedRemotes = remotes
+      .filter(filterManaged)
+      .sort((a, b) => a.name.localeCompare(b.name));
     const displayRemotes = managedRemotes.map(mapRemote);
     if (customRemotes.length > 0) {
       if (managedRemotes.length > 0) {
@@ -1171,12 +1240,20 @@ async function pickRemote(
 // auth status
 const mapRemote = (remote: CfsPackageRemote): vscode.QuickPickItem => ({
   label: remote.name,
-  description: `${
-    remote.auth
-      ? remote.auth.username
-        ? `authenticates using a password as user ${remote.auth.username}`
-        : `authenticates using your ${remote.auth.credentialProvider} session`
-      : "no authentication"
+  iconPath: remote.disabled
+    ? new vscode.ThemeIcon("circle-slash")
+    : remote.configError
+      ? new vscode.ThemeIcon("alert")
+      : undefined,
+  description:
+    remote.custom && remote.disabled
+      ? ""
+      : remote.auth.public
+        ? "no authentication"
+        : "username" in remote.auth
+          ? `authenticates using a password as user ${remote.auth.username}`
+          : `authenticates using your ${remote.auth.credentialProvider} session`,
+  detail: `${remote.url.href}${
+    remote.configError ? ` (error: ${remote.configError.message})` : ""
   }`,
-  detail: remote.url.href,
 });

@@ -23,6 +23,8 @@ import {
   CfsDebugSession,
   MemoryReadStrategy,
 } from "../debug-tools/debug-manager";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 interface WebviewRequest {
   id: number;
@@ -78,6 +80,28 @@ interface CfsDebugSessionData {
   isLive: boolean;
 }
 
+interface VariableAddressResponse {
+  sessionId: string;
+  expression: string;
+  address: number;
+}
+
+enum MemoryViewerErrorCode {
+  NoRequestBody = "NoRequestBody",
+  InvalidAddressSize = "InvalidAddressSize",
+  InvalidSessionId = "InvalidSessionId",
+  InvalidLength = "InvalidLength",
+  NoSessionIdFound = "NoSessionIdFound",
+  CannotReadMemory = "CannotReadMemory",
+  NoRequestSessionId = "NoRequestSessionId",
+  SessionNotFound = "SessionNotFound",
+  InvalidExpression = "InvalidExpression",
+  MalformedExpression = "MalformedExpression",
+  SymbolNotFound = "SymbolNotFound",
+  SymbolQueryTimeout = "SymbolQueryTimeout",
+  MemoryReadTimeout = "MemoryReadTimeout",
+}
+
 class MemoryViewerWebviewProvider implements WebviewViewProvider {
   public static readonly viewType = "cfs.memory.view";
 
@@ -86,6 +110,7 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
   private debugManager: CfsDebugManager;
 
   private static readonly MEMORY_READ_TIMEOUT_MS = 5000;
+  private static readonly MAX_ADDRESS = 0xffffffff;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
@@ -194,7 +219,7 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
 
     const timeout = new Promise<never>((_resolve, reject) => {
       timeoutId = setTimeout(() => {
-        const err: Error = new Error("Memory read request timed out");
+        const err: Error = new Error(MemoryViewerErrorCode.MemoryReadTimeout);
         reject(err);
       }, timeoutMs);
     });
@@ -207,7 +232,7 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
   private async getMemoryData(message: WebviewRequest): Promise<MemoryPacket> {
     const body = message.body;
     if (!body) {
-      throw new Error("No body provided in request");
+      throw new Error(MemoryViewerErrorCode.NoRequestBody);
     }
 
     const address: number = body.address as number;
@@ -218,13 +243,14 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
       typeof address !== "number" ||
       address < 0 ||
       !Number.isInteger(address) ||
-      !Number.isFinite(address)
+      !Number.isFinite(address) ||
+      address > MemoryViewerWebviewProvider.MAX_ADDRESS
     ) {
-      throw new Error("Invalid address");
+      throw new Error(MemoryViewerErrorCode.InvalidAddressSize);
     }
 
     if (typeof sessionId !== "string") {
-      throw new Error("Invalid sessionId");
+      throw new Error(MemoryViewerErrorCode.InvalidSessionId);
     }
 
     if (
@@ -233,13 +259,13 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
       !Number.isInteger(length) ||
       !Number.isFinite(length)
     ) {
-      throw new Error("Invalid length");
+      throw new Error(MemoryViewerErrorCode.InvalidLength);
     }
 
     const session = this.debugManager.getSession(sessionId);
 
     if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
+      throw new Error(MemoryViewerErrorCode.NoSessionIdFound);
     }
 
     const results = await session.readMemoryFaultTolerant(
@@ -251,9 +277,7 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     const firstNullIndex = results.data.indexOf(null);
 
     if (firstNullIndex === 0) {
-      throw new Error(
-        `Cannot read memory at address 0x${address.toString(16)}`,
-      );
+      throw new Error(MemoryViewerErrorCode.CannotReadMemory);
     }
 
     const readableData =
@@ -292,12 +316,12 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     const activeSession = this.debugManager.getActiveSession();
     const sessionId = message.body?.sessionId as string;
     if (!sessionId) {
-      throw new Error("No sessionId provided");
+      throw new Error(MemoryViewerErrorCode.NoRequestSessionId);
     }
 
     const session = this.debugManager.getSession(sessionId);
     if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
+      throw new Error(MemoryViewerErrorCode.SessionNotFound);
     }
 
     return {
@@ -307,6 +331,94 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
       name: session.vscodeSession.name,
       sessionId,
     };
+  }
+
+  private async getVariableAddress(
+    message: WebviewRequest,
+  ): Promise<VariableAddressResponse> {
+    const body = message.body;
+    if (!body) {
+      throw new Error(MemoryViewerErrorCode.NoRequestBody);
+    }
+
+    if (!body.expression || typeof body.expression !== "string") {
+      throw new Error(MemoryViewerErrorCode.InvalidExpression);
+    }
+
+    if (
+      !body.sessionId ||
+      typeof body.sessionId !== "string" ||
+      body.sessionId.length === 0
+    ) {
+      throw new Error(MemoryViewerErrorCode.InvalidSessionId);
+    }
+
+    let expression: string = body.expression;
+    const sessionId: string = body.sessionId;
+
+    expression = expression.trim();
+
+    if (expression.length === 0) {
+      throw new Error(MemoryViewerErrorCode.InvalidExpression);
+    }
+
+    if (/[;\r\n\u2028\u2029()"'`]/.test(expression)) {
+      throw new Error(MemoryViewerErrorCode.MalformedExpression);
+    }
+
+    if (expression[0] !== "&") {
+      expression = "&" + expression;
+    }
+
+    const session = this.debugManager.getSession(sessionId);
+    if (!session) {
+      throw new Error(MemoryViewerErrorCode.NoSessionIdFound);
+    }
+
+    const output = await session.evaluateREPL(`p/x ${expression}`);
+    const addrMatch = output?.match(/=\s*(?:\([^)]*\)\s*)?(0x[0-9a-f]+)/i);
+
+    if (addrMatch) {
+      return {
+        sessionId,
+        expression,
+        address: parseInt(addrMatch[1], 16),
+      };
+    }
+
+    throw new Error(MemoryViewerErrorCode.SymbolNotFound);
+  }
+
+  private async getVariableAddressWithTimeout(message: WebviewRequest) {
+    let timeoutId: NodeJS.Timeout;
+
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timeoutId = setTimeout(() => {
+        const err: Error = new Error(MemoryViewerErrorCode.SymbolQueryTimeout);
+        reject(err);
+      }, MemoryViewerWebviewProvider.MEMORY_READ_TIMEOUT_MS);
+    });
+
+    return Promise.race([this.getVariableAddress(message), timeout]).finally(
+      () => {
+        clearTimeout(timeoutId);
+      },
+    );
+  }
+
+  private async getMemoryAtSymbol(message: WebviewRequest) {
+    if (!message.body) {
+      throw new Error(MemoryViewerErrorCode.NoRequestBody);
+    }
+
+    const response = await this.getVariableAddressWithTimeout(message);
+
+    message.body.address = response.address;
+
+    return this.getMemoryDataWithTimeout(
+      message,
+      MemoryViewerWebviewProvider.MEMORY_READ_TIMEOUT_MS,
+    );
   }
 
   private async handleWebviewRequest(
@@ -328,6 +440,9 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
       case "get-session-status":
         request = this.getSessionStatus(message);
         break;
+      case "get-memory-at-symbol":
+        request = this.getMemoryAtSymbol(message);
+        break;
       default:
         request = Promise.reject(
           new Error(`Unknown request type: ${message.type}`),
@@ -344,10 +459,6 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
         }),
       );
 
-      if (message.type === "get-memory-data" && error) {
-        void vscode.window.showErrorMessage(`Memory Viewer: ${error}`);
-      }
-
       await webview.postMessage({
         id: message.id,
         type: "api-response",
@@ -362,6 +473,12 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     _context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken,
   ) {
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+        feature: "memory_viewer",
+      });
+    });
+
     const extensionUri = this._extensionUri;
 
     const { webview } = webviewView;

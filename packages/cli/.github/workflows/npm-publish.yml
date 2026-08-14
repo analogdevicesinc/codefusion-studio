@@ -44,9 +44,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.githubTag }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.nodeVersion }}
+          cache: "yarn"
+          cache-dependency-path: "**/yarn.lock"
       - name: Is published
         id: is-published
         run: |
@@ -69,10 +71,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.githubTag }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.nodeVersion }}
           cache: yarn
+          cache-dependency-path: "**/yarn.lock"
       - run: yarn install --network-timeout 600000
       - run: yarn ws:cli build
       - run: npm install sfdx-cli -g @salesforce/plugin-release-management --omit=dev

@@ -12,34 +12,41 @@
  * limitations under the License.
  *
  */
-import type AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import type {AIToolsPlugin} from 'cfs-lib';
 import type {
   AIModelBackend,
+  AiCommandResult,
   CfsConfig,
   CfsSocDataModel,
   SocControl
 } from 'cfs-types';
 
 import {Flags} from '@oclif/core';
-import {getAiToolsPlugin, getValidExtensions} from 'cfs-lib';
+import {
+  getAiToolsPlugin,
+  getValidExtensions,
+  resolveSource
+} from 'cfs-lib';
 import {promises as fs} from 'node:fs';
-import path, {extname} from 'node:path';
 
 import {
-  BaseCommand,
-  type CliRunResponse
-} from '../../utils/base-command.js';
+  ensureOrTryInferCoreFlags,
+  getAndEnsureDataModel,
+  getBaseName,
+  inferBackendFromFlags
+} from '../../utils/ai-command-utils.js';
+import {getApiClient} from '../../utils/api-client.js';
+import {BaseAiCommand} from '../../utils/base-ai-command.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {RecoverableError} from '../../utils/recoverable-error.js';
-import {getAuthConfig} from '../../utils/session-manager.js';
 import {
   getCfsConfig,
   getCfsaiPath,
   getVersionFromConfig
 } from '../../utils/utils.js';
 
-export default class Build extends BaseCommand<typeof Build> {
+export default class Build extends BaseAiCommand<typeof Build> {
   static description = `Compile a model into source code.`;
 
   static examples: string[] = [
@@ -119,16 +126,24 @@ export default class Build extends BaseCommand<typeof Build> {
     })
   };
 
-  async run(): Promise<CliRunResponse> {
+  async run(): Promise<AiCommandResult> {
     const {flags} = this;
+    const warnings: string[] = [];
 
     const aiPlugin = getAiToolsPlugin(
       await getCfsaiPath(this.config),
       getVersionFromConfig(this.config)
     );
-    const packageManager = await getPackageManager({
-      acceptUndefined: true
-    });
+
+    const apiClient = await getApiClient({optional: true}, this);
+
+    const packageManager = await getPackageManager(
+      {
+        acceptUndefined: true
+      },
+      apiClient,
+      this
+    );
 
     const dmManager = await getDataModelManager(
       this.config,
@@ -136,24 +151,25 @@ export default class Build extends BaseCommand<typeof Build> {
       flags['search-path']
     );
 
+    let dataModel: CfsSocDataModel | undefined;
     let config: CfsConfig;
     // Config file provided, read into structure
     if (flags.config) {
       if (flags.soc || flags.core || flags.model) {
-        this.warn(
+        warnings.push(
           '--soc, --core and --model are ignored if --config is provided.'
         );
       }
 
-      const fileContent = await fs.readFile(flags.config, 'utf8');
-      config = JSON.parse(fileContent) as CfsConfig;
-    } else if (flags.soc && flags.core && flags.model) {
-      // Change cases to match datamodel expectations
-      flags.soc = flags.soc?.toLowerCase();
-      flags.core = flags.core?.toUpperCase();
-      flags.package = flags.package?.toLowerCase();
-      flags.acc = flags.acc?.toUpperCase();
+      const resolvedConfig = await resolveSource(
+        getVersionFromConfig(this.config),
+        flags.config,
+        flags['ignore-cache'] ?? false
+      );
 
+      const fileContent = await fs.readFile(resolvedConfig, 'utf8');
+      config = JSON.parse(fileContent) as CfsConfig;
+    } else if (flags.soc && flags.model) {
       if (!flags.package) {
         flags.package = await dmManager.getFirstPackageIdForSoc(
           flags.soc
@@ -170,11 +186,19 @@ export default class Build extends BaseCommand<typeof Build> {
         }
       }
 
+      dataModel = await getAndEnsureDataModel(
+        flags.soc,
+        flags.package,
+        dmManager
+      );
+
+      ensureOrTryInferCoreFlags(flags, dataModel, warnings);
+
       const backend: AIModelBackend | undefined =
         await this.createAIModelBackend(
           aiPlugin,
           flags.extension ?? [],
-          flags.backend
+          await inferBackendFromFlags(aiPlugin, flags, dataModel)
         );
 
       // Construct CfsConfig
@@ -230,32 +254,24 @@ export default class Build extends BaseCommand<typeof Build> {
     }
 
     // get datamodel
-    const dataModel: CfsSocDataModel | undefined =
-      await dmManager.getDataModel(config.Soc, config.Package);
-    if (!dataModel) {
-      throw new RecoverableError(
-        `Could not load data model for SoC '${config.Soc}', Package '${config.Package}'`,
-        {
-          suggestion: 'Verify the SoC and Package are compatible',
-          run: `cfsutil socs info ${config.Soc} --packages`
-        }
-      );
-    }
+    dataModel ??= await getAndEnsureDataModel(
+      config.Soc,
+      config.Package,
+      dmManager
+    );
 
     aiPlugin.setJsonMode(this.jsonEnabled());
 
-    const authConfig = getAuthConfig();
-
-    const output = await aiPlugin.generateFromConfig(
+    const result = await aiPlugin.generateFromConfig(
       config,
       dataModel,
       flags.cwd,
-      authConfig,
+      apiClient,
       undefined,
       flags['ignore-cache']
     );
 
-    return this.handlePythonOutput(output);
+    return this.handleResult(result, warnings);
   }
 
   private async createAIModelBackend(
@@ -305,16 +321,5 @@ export default class Build extends BaseCommand<typeof Build> {
       Name: name,
       Extensions: validExtensions
     };
-  }
-}
-
-function getBaseName(filename: string): string {
-  try {
-    // If it's a URL, parse it
-    const url = new URL(filename);
-    return path.basename(url.pathname, path.extname(url.pathname));
-  } catch {
-    // Not a URL → treat as local path
-    return path.basename(filename, extname(filename));
   }
 }

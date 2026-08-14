@@ -32,7 +32,7 @@
 
 import { expect } from "chai";
 import {
-  EditorView,
+  InputBox,
   VSBrowser,
   WebView,
   Workbench,
@@ -81,7 +81,12 @@ import {
   selectStreamToDelete,
   mainCreateStreamButton,
   destinationError,
+  exportAsCsvButton,
+  validateExportedCsvContent,
 } from "../../page-objects/dfg-section/dfg-inbound-outbound-stream-creation-screen";
+import { existsSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 describe("DFG Tests", () => {
   // === Given the existing DFGTESTS DFG cfsconfig file "dfgTests-dfg-stream-creation-deletion.cfsconfig" is opened===
@@ -92,7 +97,6 @@ describe("DFG Tests", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let editor: EditorView;
   const source: string = "ASS";
   const destination: string = "ASS";
   const sourceBufferSize: number = 64;
@@ -100,6 +104,7 @@ describe("DFG Tests", () => {
 
   async function openDfgTab(): Promise<void> {
     await browser.openResources(configPath);
+    await browser.waitForWorkbench();
     workbench = new Workbench();
     view = new WebView();
     await view.wait();
@@ -127,11 +132,11 @@ describe("DFG Tests", () => {
 
   before(async () => {
     browser = VSBrowser.instance;
-    editor = new EditorView();
-    await editor.closeAllEditors();
+
+    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
-  after(async function () {
+  afterEach(async function () {
     this.timeout(60000);
     await view.switchBack();
     const wb = new Workbench();
@@ -189,6 +194,7 @@ describe("DFG Tests", () => {
    */
 
   it("Verify the export as CSV button is disabled when stream list is empty", async () => {
+    await openDfgTab();
     await switchToStreamListTab(view);
     const [streamRowCount, isExportButtonEnabled] =
       await isExportAsCsvButtonEnabled(view);
@@ -228,7 +234,8 @@ describe("DFG Tests", () => {
    *     Then the saved configuration persists a ASS→ASS stream for source "ASS" and destination "ASS"
    */
 
-  it("Verify the inbound stream selection auto populates the stream destination and create css-css stream", async () => {
+  it("Verify the inbound stream selection auto populates the stream destination and create ASS-ASS stream", async () => {
+    await openDfgTab();
     // Get the initial stream counts and stream list row count before creating the stream
     const initialInboundStreamCount = await getInboundStreamCount(
       view,
@@ -363,6 +370,79 @@ describe("DFG Tests", () => {
       sourceBufferSize,
       [destinationBufferSize],
     );
+  });
+
+  /* Scenario: Exports the stream list into a CSV file (ASS-ASS)
+   *     Given I am on the "DFG Stream List" tab
+   *     When the stream list is not empty
+   *     And the "Export as CSV" button is enabled
+   *     When I click on the "Export as CSV" button
+   *     Then a CSV file is created
+   *     And the CSV file is not empty
+   *     And the CSV contains the expected stream list headers
+   *     And the CSV contains a row for the exported ASS→ASS stream with buffer sizes 64B and 64B
+   */
+  it("Verify the Export CSV creates a file and is populated with the stream list content (ASS-ASS)", async () => {
+    await openDfgTab();
+
+    await switchToStreamListTab(view);
+    const [streamRowCount, isExportButtonEnabled] =
+      await isExportAsCsvButtonEnabled(view);
+
+    expect(
+      streamRowCount,
+      "Expected at least one stream in the list before verifying CSV export",
+    ).to.be.greaterThan(1);
+    expect(
+      isExportButtonEnabled,
+      "Export as CSV button should be enabled when stream list is not empty",
+    ).to.be.true;
+
+    const exportBtn = await UIUtils.findWebElement(view, exportAsCsvButton);
+    await exportBtn.click();
+
+    const driver = VSBrowser.instance.driver;
+
+    await driver.switchTo().defaultContent();
+    await browser.waitForWorkbench();
+
+    const input = await InputBox.create();
+
+    // Set filename
+    const filename = join(tmpdir(), `export-${Date.now()}.csv`);
+    console.log("DFG stream list exported to file: ", filename);
+    await input.setText(filename);
+
+    // Wait a bit before enter
+    await driver.sleep(500);
+
+    await input.confirm();
+
+    // Poll until the file exists
+    await driver.wait(() => Promise.resolve(existsSync(filename)), 5000);
+
+    const [fileSize, csvLines, hasExpectedStreamRow] =
+      await validateExportedCsvContent(filename, [
+        source,
+        destination,
+        "64B",
+        "64B",
+      ]);
+
+    // Verify the exported CSV file is not empty and contains the expected content
+    expect(fileSize, "Exported CSV file should not be empty").to.be.above(0);
+
+    // Verify the exported CSV contains a header row and at least one data row
+    expect(
+      csvLines.length,
+      "Exported CSV should contain a header row and at least one data row",
+    ).to.be.greaterThanOrEqual(2);
+
+    // Verify the exported CSV contains a row for the created stream with correct source, destination and buffer sizes
+    expect(
+      hasExpectedStreamRow,
+      `Exported CSV should contain a row for ${source} -> ${destination} with buffer sizes 64B/64B`,
+    ).to.be.true;
   });
 
   /* Scenario: Delete the ASS→ASS stream from the stream list
@@ -546,6 +626,81 @@ describe("DFG Tests", () => {
       sourceBufferSize,
       [destinationBufferSize],
     );
+  });
+
+  /* Scenario: Exports the stream list into a CSV file (ASS-BSS)
+   *     Given I am on the "DFG Stream List" tab
+   *     When the stream list is not empty
+   *     And the "Export as CSV" button is enabled
+   *     When I click on the "Export as CSV" button
+   *     Then a CSV file is created
+   *     And the CSV file is not empty
+   *     And the CSV contains the expected stream list headers
+   *     And the CSV contains a row for the exported ASS→BSS stream with buffer sizes 64B and 64B
+   */
+  it("Verify the Export CSV creates a file and is populated with the stream list content (ASS-BSS)", async () => {
+    await openDfgTab();
+    const source: string = "ASS";
+    const destination: string = "BSS";
+    await switchToStreamListTab(view);
+    const [streamRowCount, isExportButtonEnabled] =
+      await isExportAsCsvButtonEnabled(view);
+
+    expect(
+      streamRowCount,
+      "Expected at least one stream in the list before verifying CSV export",
+    ).to.be.greaterThan(1);
+
+    expect(
+      isExportButtonEnabled,
+      "Export as CSV button should be enabled when stream list is not empty",
+    ).to.be.true;
+
+    const exportBtn = await UIUtils.findWebElement(view, exportAsCsvButton);
+    await exportBtn.click();
+
+    const driver = VSBrowser.instance.driver;
+
+    await driver.switchTo().defaultContent();
+    await browser.waitForWorkbench();
+
+    const input = await InputBox.create();
+
+    // Set filename
+    const filename = join(tmpdir(), `export-${Date.now()}.csv`);
+    console.log("DFG stream list exported to file: ", filename);
+    await input.setText(filename);
+
+    // Wait a bit before enter
+    await driver.sleep(500);
+
+    await input.confirm();
+
+    // Poll until the file exists
+    await driver.wait(() => Promise.resolve(existsSync(filename)), 5000);
+
+    const [fileSize, csvLines, hasExpectedStreamRow] =
+      await validateExportedCsvContent(filename, [
+        source,
+        destination,
+        "64B",
+        "64B",
+      ]);
+
+    // Verify the exported CSV file is not empty and contains the expected content
+    expect(fileSize, "Exported CSV file should not be empty").to.be.above(0);
+
+    // Verify the exported CSV contains a header row and at least one data row
+    expect(
+      csvLines.length,
+      "Exported CSV should contain a header row and at least one data row",
+    ).to.be.greaterThanOrEqual(2);
+
+    // Verify the exported CSV contains a row for the created stream with correct source, destination and buffer sizes
+    expect(
+      hasExpectedStreamRow,
+      `Exported CSV should contain a row for ${source} -> ${destination} with buffer sizes 64B/64B`,
+    ).to.be.true;
   });
 
   /* Scenario: Delete the ASS→BSS stream from the DFG visualisation

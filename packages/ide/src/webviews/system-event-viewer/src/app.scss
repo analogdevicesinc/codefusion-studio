@@ -48,8 +48,10 @@ body.timeline-drag-active {
 	cursor: grabbing !important;
 	user-select: none !important;
 }
-body.timeline-drag-outside {
+body.timeline-drag-outside,
+body.timeline-drag-outside * {
 	cursor: not-allowed !important;
+	user-select: none !important;
 }
 
 body.timeline-handle-ew-resize,

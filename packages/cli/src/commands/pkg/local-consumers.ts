@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,12 @@ import {
   validatePackageName
 } from '../../utils/package-manager.js';
 
+export const pkgLocalConsumersDeps: {
+  getPackageManager: typeof getPackageManager;
+} = {
+  getPackageManager
+};
+
 export default class CfsPackageLocalConsumers extends Command {
   static args = {
     name: Args.string({
@@ -34,7 +40,7 @@ export default class CfsPackageLocalConsumers extends Command {
     'Retrieves a list of all installed packages that depend on a given package, including transitive consumers.';
 
   async run(): Promise<void> {
-    const packman = await getPackageManager();
+    const packman = await pkgLocalConsumersDeps.getPackageManager();
     const {args} = await this.parse(CfsPackageLocalConsumers);
 
     validatePackageName(args.name);

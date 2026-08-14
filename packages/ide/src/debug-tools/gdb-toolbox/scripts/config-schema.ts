@@ -21,6 +21,13 @@ export const gdbToolboxConfigSchema: GdbToolboxConfigSchema = {
     {
       key: "core",
       type: "string",
+      deprecated: true,
+      deprecationMessage: "Use `arch` instead.",
+      allowedValues: ["arm", "riscv", "xtensa"],
+    },
+    {
+      key: "arch",
+      type: "string",
       allowedValues: ["arm", "riscv", "xtensa"],
     },
     {

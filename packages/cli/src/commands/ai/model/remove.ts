@@ -13,6 +13,7 @@
  *
  */
 import {Flags} from '@oclif/core';
+import {caseInsensitiveCompare} from 'cfs-lib';
 
 import {type CliRunResponse} from '../../../utils/base-command.js';
 import {BaseModelCommand} from '../../../utils/base-model-command.js';
@@ -43,9 +44,7 @@ export default class Remove extends BaseModelCommand {
       flags.workspace
     );
 
-    const modelExists = this.getModelNamesFromConfig(config).includes(
-      flags.name
-    );
+    const modelExists = this.isExistingModel(flags.name, config);
 
     if (!modelExists) {
       throw new RecoverableError(
@@ -59,13 +58,10 @@ export default class Remove extends BaseModelCommand {
     }
 
     for (const project of config.Projects) {
-      if (
-        project.AIModels?.some((model) => model.Name === flags.name)
-      ) {
+      if (project.AIModels) {
         project.AIModels = project.AIModels.filter(
-          (model) => model.Name !== flags.name
+          (model) => !caseInsensitiveCompare(model.Name, flags.name)
         );
-        break;
       }
     }
 

@@ -35,6 +35,7 @@ import {PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID} from '../pin-config-task';
 import {shouldRenderPinConfigControl} from '../../../../utils/rpn-expression-resolver';
 import PluginInfo from '../../../../components/plugin-info/plugin-info';
 import styles from './PinconfigDisplay.module.scss';
+import {areControlValuesEqual} from '../../../../utils/control-defaults';
 
 type ControlItem = {
 	id: string;
@@ -118,10 +119,12 @@ export default function PinconfigDisplay({
 						?.length
 						? {
 								...control,
-								EnumValues: control.EnumValues.filter(enumValue =>
-									Object.keys(signalPinCfg[controlId]).includes(
-										enumValue.Id
-									)
+								EnumValues: control.EnumValues.filter(
+									enumValue =>
+										enumValue.IsPluginAddedOption ??
+										Object.keys(signalPinCfg[controlId]).includes(
+											enumValue.Id
+										)
 								)
 							}
 						: control;
@@ -187,7 +190,10 @@ export default function PinconfigDisplay({
 
 	const didDefaultValuesChange = Object.entries(
 		userSelections ?? {}
-	).some(([key, value]) => value !== resetValues?.[key]);
+	).some(
+		([key, value]) =>
+			!areControlValuesEqual(value, resetValues?.[key])
+	);
 
 	const isInput = (controlId: string) =>
 		['integer', 'text'].includes(pinConfigControls[controlId]?.Type);
@@ -255,7 +261,10 @@ export default function PinconfigDisplay({
 						key={`${activeSignal}-${activePin?.pinId}-${controlId}`}
 						controlCfg={controlCfg}
 						controlValue={controlValue}
-						isDefaultValue={controlValue === defaultValue}
+						isDefaultValue={areControlValuesEqual(
+							controlValue ?? defaultValue,
+							defaultValue
+						)}
 						pinId={activePin?.pinId}
 						peripheral={activePeripheral}
 						signal={activeSignal}

@@ -6,9 +6,10 @@
   },
   "description": "ADI CodeFusion Studio CLI tool",
   "dependencies": {
-    "@oclif/core": "^3",
-    "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^4",
+    "@inquirer/prompts": "^8.4.2",
+    "@oclif/core": "^4.10.6",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-plugins": "^5",
     "@serialport/parser-readline": "^13.0.0",
     "cfs-lib": "workspace:*",
     "cfs-package-manager": "workspace:*",
@@ -22,11 +23,11 @@
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",
-    "@oclif/test": "^3",
+    "@oclif/test": "^4",
     "@types/chai": "^4",
     "@types/copyfiles": "^2",
     "@types/mocha": "^10",
-    "@types/node": "^20",
+    "@types/node": "^22.20.0",
     "@types/semver": "^7",
     "cfs-ccm-lib": "workspace:*",
     "cfs-types": "workspace:^",
@@ -45,7 +46,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": "^20.x"
+    "node": ">=22"
   },
   "files": [
     "/bin",
@@ -63,6 +64,12 @@
     ],
     "dirname": "cfsutil",
     "commands": "./dist/commands",
+    "hooks": {
+      "init": [
+        "./dist/hooks/init/node-version",
+        "./dist/hooks/init/system-ca"
+      ]
+    },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
@@ -88,10 +95,14 @@
         "description": "CFS Package Manager."
       },
       "myanalog": {
-        "description": "Manage myAnalog session."
+        "description": "Manage myAnalog session and API keys."
+      },
+      "myanalog:apikey": {
+        "description": "Manage myAnalog API keys.\nAPI keys can be used to authenticate this utility, and access restricted resources, without an active myAnalog session.\n\nSet the environment variable CFS_API_KEY to use an API key."
       },
       "auth": {
-        "description": "CFS backend authentication."
+        "description": "CFS backend authentication.",
+        "hidden": true
       },
       "soc": {
         "description": "SoC data model and catalog operations."
@@ -123,7 +134,7 @@
   "scripts": {
     "build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/config/*.json' dist",
     "build-local-deps": "yarn workspaces foreach -Rpt --topological-dev --exclude cfs-plugins-sdk run build",
-    "auth-cfg": "node build-scripts/auth-config.js > src/config/auth.json",
+    "auth-cfg": "yarn run -T auth-config > src/config/auth.json",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
@@ -131,14 +142,14 @@
     "prepare": "yarn build",
     "pretarball": "shx cp bin/cfsutil.cmd bin/cfs.cmd && shx cp -n bin/cfsutil bin/cfs",
     "tarballs": "yarn build-local-deps && node build-scripts/tarballs.js && oclif pack tarballs \"$@\" && shx mv -f package.json.bak package.json",
-    "test": "CFS_INSTALL_DIR=\"test/fixtures\" c8 mocha --forbid-only \"test/commands/**/*.test.ts\" --reporter-option output=coverage/test-results.json",
-    "test:dev": "CFS_INSTALL_DIR=\"test/fixtures\" mocha \"test/commands/**/*.test.ts\" --reporter spec; yarn clean-fixtures",
+    "test": "CFS_INSTALL_DIR=\"test/fixtures\" c8 mocha --forbid-only \"test/commands/**/*.test.ts\" \"test/hooks/**/*.test.ts\" \"test/utils/**/*.test.ts\" --reporter-option output=coverage/test-results.json",
+    "test:dev": "CFS_INSTALL_DIR=\"test/fixtures\" mocha \"test/commands/**/*.test.ts\" \"test/hooks/**/*.test.ts\" \"test/utils/**/*.test.ts\" --reporter spec",
     "test-plugins": "CFS_INSTALL_DIR=\"test/fixtures\" mocha --forbid-only \"test/plugins/**/*.test.ts\"",
     "test-gen": "CFS_INSTALL_DIR=\"test/fixtures\" mocha --forbid-only \"test/commands/generate.test.ts\"",
     "clean-fixtures": "./scripts/clean-test-fixtures.sh",
     "version": "oclif readme && git add README.md"
   },
-  "version": "2.2.1",
+  "version": "2.3.0",
   "bugs": "https://github.com/analogdevicesinc/codefusion-studio/issues",
   "keywords": [
     "oclif"

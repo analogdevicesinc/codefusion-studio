@@ -12,14 +12,6 @@
  * limitations under the License.
  *
  */
-
-export type CodeGenerationResult = (string | CodeGenerationFailure)[];
-
-export interface CodeGenerationFailure {
-	name: string;
-	error: string;
-}
-
 export interface CodeGenerationProject {
 	projectId: string;
 	includeAI?: boolean;

@@ -1,7 +1,7 @@
 ---
 description: The CFS Terminal
 author: Analog Devices
-date: 2026-05-26
+date: 2026-07-16
 ---
 
 # CFS Terminal
@@ -41,7 +41,7 @@ Click on the **Views and More Actions...** menu (...) in the top right corner of
 
 To copy text from the terminal, select the text, and right-clicking on the selected text. Keyboard shortcut: **CONTROL+C** (**COMMAND+C** on Mac).
 
-To paste text to the terminal, right-clicking in the desired location. Keyboard shortcut **CONTROL+V** (**COMMAND+C** on Mac).
+To paste text into the terminal, right-click in the desired location, or press `Ctrl+V` on Windows, `Ctrl+Shift+V` on Linux, or `Command+V` on macOS.
 
 ## Next steps
 

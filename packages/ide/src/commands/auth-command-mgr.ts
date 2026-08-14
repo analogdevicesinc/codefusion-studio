@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,22 +22,10 @@ import {
   window,
 } from "vscode";
 import { registerCommand } from "./commands";
-import {
-  AuthConfig,
-  PackageLicenseReporter,
-  SessionManager,
-  MyAnalogCloudsmithCredentialProvider,
-} from "cfs-lib";
-
+import { type AuthConfig, SessionManager } from "cfs-lib";
 import { CLOUD_CATALOG_AUTH } from "./constants";
 import { AuthConfigParser } from "../utils/auth-config";
-import { CfsApiClient, TokenCodeExchangeInitiator } from "cfs-ccm-lib";
-import { PACKAGE_MANAGER_CREDENTIAL_PROVIDER } from "../constants";
-import {
-  CfsPackageLicenseReporter,
-  CfsPackageManagerProvider,
-  CfsPackageRemoteCredentialProvider,
-} from "cfs-package-manager";
+import { AuthFlowError, TokenCodeExchangeInitiator } from "cfs-ccm-lib";
 
 /**
  * Auth related commands
@@ -45,20 +33,15 @@ import {
 
 export class AuthCommandManager {
   private sessionManager: SessionManager;
-  private credentialProvider: CfsPackageRemoteCredentialProvider | undefined;
-  private licenseReporter: CfsPackageLicenseReporter | undefined;
 
-  static registerAllCommands(
-    context: ExtensionContext,
-    packageManager?: CfsPackageManagerProvider,
-  ) {
+  static registerAllCommands(context: ExtensionContext) {
     try {
       const authConfig = new AuthConfigParser().getConfig();
       authConfig.sessionUrlHandler = createFlowInitiator;
-      const instance = new AuthCommandManager(authConfig, packageManager);
-      const callbackWithProgress = <T>(
-        callback: () => Promise<T>,
-        progressTitle: string,
+      const instance = new AuthCommandManager(authConfig);
+      const callbackWithProgress = <T, A extends unknown[]>(
+        callback: (this: AuthCommandManager, ...args: A) => Promise<T>,
+        progressTitle: string
       ) => {
         const progressOptions: ProgressOptions = {
           location: ProgressLocation.Window,
@@ -66,8 +49,10 @@ export class AuthCommandManager {
           cancellable: false,
         };
 
-        return () =>
-          window.withProgress(progressOptions, callback.bind(instance));
+        return (...args: A) =>
+          window.withProgress(progressOptions, () =>
+            callback.call(instance, ...args)
+          );
       };
 
       registerCommand(
@@ -75,9 +60,9 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.STATUS,
         callbackWithProgress(
           instance.statusCommandCallback,
-          "Checking myAnalog login status...",
+          "Checking myAnalog login status..."
         ),
-        instance,
+        instance
       );
 
       registerCommand(
@@ -85,9 +70,9 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.LOGIN,
         callbackWithProgress(
           instance.loginCommandCallback,
-          "Logging in to myAnalog...",
+          "Logging in to myAnalog..."
         ),
-        instance,
+        instance
       );
 
       registerCommand(
@@ -95,16 +80,16 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.LOGOUT,
         callbackWithProgress(
           instance.logoutCommandCallback,
-          "Logging out of myAnalog...",
+          "Logging out of myAnalog..."
         ),
-        instance,
+        instance
       );
     } catch (error) {
-      console.error(error);
-
       const errorCommandCallback = () => {
         window.showWarningMessage(
-          `Auth related commands are not available. ${(error as Error).message}`,
+          `myAnalog auth related commands are not available. ${
+            (error as Error).message
+          }`
         );
       };
 
@@ -114,29 +99,32 @@ export class AuthCommandManager {
     }
   }
 
-  constructor(
-    private authConfig: AuthConfig,
-    private packageManager?: CfsPackageManagerProvider,
-  ) {
+  constructor(private authConfig: AuthConfig) {
     this.sessionManager = new SessionManager(this.authConfig);
   }
 
-  private async statusCommandCallback(): Promise<boolean> {
+  private async statusCommandCallback(notify = true): Promise<boolean> {
     try {
       const session = await this.sessionManager.getSession();
       if (!session) {
-        window.showInformationMessage("You are not logged in to myAnalog");
+        if (notify) {
+          window.showInformationMessage("You are not logged in to myAnalog");
+        }
         return false;
       }
 
-      window.showInformationMessage(
-        `You are logged in to myAnalog as ${session.userEmail}`,
-      );
+      if (notify) {
+        window.showInformationMessage(
+          `You are logged in to myAnalog as ${session.userEmail}`
+        );
+      }
       return true;
-    } catch (err) {
-      window.showErrorMessage(
-        "An error occurred while checking myAnalog login status",
-      );
+    } catch {
+      if (notify) {
+        window.showErrorMessage(
+          "An error occurred while checking myAnalog login status"
+        );
+      }
       return false;
     }
   }
@@ -147,61 +135,37 @@ export class AuthCommandManager {
       session = await this.sessionManager.getSession();
       if (session) {
         window.showInformationMessage(
-          `You are already logged in to myAnalog as ${session.userEmail}`,
+          `You are already logged in to myAnalog as ${session.userEmail}`
         );
         window.showInformationMessage(
-          "To log in with a different myAnalog account, please log out first",
+          "To log in with a different myAnalog account, please log out first"
         );
         return;
       }
 
       session = await this.sessionManager.createSession();
-
-      // Update package manager credentials
-      const client = new CfsApiClient({
-        baseUrl: this.authConfig.ccmUrl,
-        authorizer: session.authorizer,
-      });
-      if (this.packageManager) {
-        this.credentialProvider = new MyAnalogCloudsmithCredentialProvider(
-          client,
-        );
-        await this.packageManager.registerCredentialProvider(
-          this.credentialProvider,
-        );
-        this.licenseReporter = new PackageLicenseReporter(client);
-        await this.packageManager.registerLicenseReporter(this.licenseReporter);
-      }
-
-      window.showInformationMessage(
-        `You are logged in to myAnalog as ${session.userEmail}`,
-      );
     } catch (err) {
-      try {
-        await session?.endSession();
-      } catch (endErr) {
-        // discard error
-      }
-      if (
-        err instanceof Error &&
-        err.message.includes("Token exchange timed out")
-      ) {
+      if (err instanceof AuthFlowError && err.type === "CALLBACK_TIMEOUT") {
         try {
           // User may have had another successful login before
           // this one timed out, so check before reporting failure
           session = await this.sessionManager.getSession();
-          if (session) {
-            return;
-          }
         } catch {
           // discard error
         }
       }
 
-      window.showErrorMessage(
-        "An error occurred while trying to login to myAnalog",
-      );
+      if (!session) {
+        window.showErrorMessage(
+          "An error occurred while trying to login to myAnalog"
+        );
+        return;
+      }
     }
+
+    window.showInformationMessage(
+      `You are logged in to myAnalog as ${session.userEmail}`
+    );
   }
 
   private async logoutCommandCallback() {
@@ -212,35 +176,26 @@ export class AuthCommandManager {
         return;
       }
 
-      // Remove package manager credentials
-      if (this.packageManager) {
-        await this.packageManager.unregisterLicenseReporter();
-        this.licenseReporter = undefined;
-        await this.packageManager.unregisterCredentialProvider(
-          this.credentialProvider ?? PACKAGE_MANAGER_CREDENTIAL_PROVIDER,
-        );
-        this.credentialProvider = undefined;
-      }
-
       await session.endSession();
+
       window.showInformationMessage(
-        "You have been logged out of myAnalog successfully",
+        "You have been logged out of myAnalog successfully"
       );
-    } catch (err) {
+    } catch {
       window.showErrorMessage(
-        "An error occurred while trying to logout of myAnalog",
+        "An error occurred while trying to logout of myAnalog"
       );
     }
   }
 }
 
 const createFlowInitiator: TokenCodeExchangeInitiator = async (
-  authUrl: URL,
+  authUrl: URL
 ) => {
   const result = window.showInformationMessage(
     `Attempting to automatically open the authorization page in your default browser. \
     If the browser does not open, use the button to copy the link and paste it in your browser.`,
-    "Copy link",
+    "Copy link"
   );
 
   void env.openExternal(Uri.parse(authUrl.href));

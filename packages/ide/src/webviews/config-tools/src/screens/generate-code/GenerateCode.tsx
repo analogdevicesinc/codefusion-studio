@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import styles from './GenerateCode.module.scss';
 import ResolvedProjectControl from './project-list/ResolvedProjectControls';
 import {ConfirmDialog} from '../../../../common/components/confirm-dialog/ConfirmDialog';
 import {useAIModels} from '../../state/slices/ai-tools/aiModel.selector';
-import type {CodeGenerationResult} from 'cfs-lib/dist/types/code-generation';
 import {getAiBackends, loadAIBackends} from '../../utils/ai-tools';
 import {localizeMessage} from '../../../../common/utils/localization';
 
@@ -112,7 +111,7 @@ function GenerateCode() {
 	);
 
 	const [codeGenerationPromise, setCodeGenerationPromise] = useState<
-		Promise<CodeGenerationResult | string>
+		Promise<string[] | string>
 	>(Promise.resolve(['']));
 
 	const controlsPromises = usePeripheralControlsPerProjects(

@@ -25,7 +25,6 @@ import {type MemoryBlock} from '@common/types/soc';
 import {
 	convertMemoryBetweenUnits,
 	getFirstAvailableAddressFromBlock,
-	getAddressOffset,
 	getBaseblockFromAddress,
 	getCleanDivisibleSizeUnit,
 	getCoreMemoryAliases,
@@ -34,7 +33,7 @@ import {
 	getSizeStepValue,
 	isBlockDisabled,
 	isBlockOccupied,
-	offsetAddress
+	getMemoryAliasesForAddress
 } from '../../../utils/memory';
 import BlockItem from '../block/block-item';
 import {type Partition} from '../../../state/slices/partitions/partitions.reducer';
@@ -49,8 +48,8 @@ import {
 	useSidebarState
 } from '../../../state/slices/partitions/partitions.selector';
 import {type TLocaleContext} from '../../../common/types/context';
-import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
-import {isCoreSecure} from '../../../utils/soc-cores';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
+import {shouldDisplayCoreMemoryAliases} from '../../../utils/soc-cores';
 
 type MemoryBlockProps = Readonly<{
 	partition: Partition;
@@ -97,8 +96,9 @@ export const MemoryBlocks = memo(
 		const isBlockOptionDisabled = (block: MemoryBlock) =>
 			// Disabled
 			isBlockDisabled(block, cores, memoryType) ||
-			// Create partition
+			// Create partition — but don't disable the currently-selected block
 			(!existingPartition &&
+				block.Name !== baseBlock.Name &&
 				isBlockOccupied(block, sidebarPartition, partitions)) ||
 			// ...but enable when editing the partition belonging to that block
 			(existingPartition &&
@@ -119,26 +119,22 @@ export const MemoryBlocks = memo(
 
 		const memoryAliases = useMemo(() => {
 			const coreIds = cores
-				.filter(c => isCoreSecure(c))
+				.filter(c => shouldDisplayCoreMemoryAliases(c))
 				.map(c => c.coreId);
 
 			return getCoreMemoryAliases(baseBlock.Name, coreIds) ?? [];
 		}, [baseBlock.Name, cores]);
 
-		const offsetMemoryAliases = useMemo(() => {
-			const baseOffset = getAddressOffset(
-				baseBlock.AddressStart,
-				address
-			);
-
-			return memoryAliases.map(alias => ({
-				...alias,
-				OffsetAddress: offsetAddress(
-					alias.AliasBaseAddress,
-					baseOffset
-				)
-			}));
-		}, [memoryAliases, address, baseBlock.AddressStart]);
+		const offsetMemoryAliases = useMemo(
+			() =>
+				getMemoryAliasesForAddress(
+					memoryAliases,
+					address,
+					baseBlock.AddressStart,
+					partition.size
+				),
+			[memoryAliases, address, baseBlock.AddressStart, partition.size]
+		);
 
 		const displayMemoryBlocks = useMemo(() => {
 			if (!address || !size) {
@@ -225,14 +221,11 @@ export const MemoryBlocks = memo(
 				const address = parseInt(value, 16);
 
 				const blockFromAddress = getBaseblockFromAddress(
-					memoryBlocks,
+					blocksForType,
 					address
 				);
 
-				if (
-					blockFromAddress &&
-					!isBlockDisabled(blockFromAddress, cores, memoryType)
-				) {
+				if (blockFromAddress) {
 					const blocksRangeItems = getPartitionBlockNames(
 						memoryBlocks,
 						address,
@@ -252,7 +245,7 @@ export const MemoryBlocks = memo(
 					});
 				}
 			},
-			[baseBlock, cores, memoryBlocks, memoryType, onChange, size]
+			[baseBlock, blocksForType, memoryBlocks, onChange, size]
 		);
 
 		const onSoftwareAddressChange = useCallback(
@@ -338,7 +331,7 @@ export const MemoryBlocks = memo(
 							<div className={styles.stepperGap}>
 								<HexInputField
 									dataTest={`software-start-address-${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`}
-									value={memoryAlias.OffsetAddress}
+									value={memoryAlias.AliasStartAddress}
 									error={errors?.startAddress}
 									onValueChange={value => {
 										onSoftwareAddressChange(

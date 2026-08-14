@@ -20,7 +20,7 @@ import {
 	type TFormFieldValue,
 	use
 } from 'cfs-react-library';
-import {useCallback, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo} from 'react';
 import {
 	formatControlsForDynamicForm,
 	getFormErrors
@@ -31,6 +31,8 @@ import type {
 } from '../../../../../common/types/soc';
 import {computeDefaultValues} from '../../../utils/compute-register-value';
 import BooleanControl from '../../../components/boolean-control/BooleanControl';
+import {areControlValuesEqual} from '../../../utils/control-defaults';
+import {LocalizedMessage} from '@common/components/l10n/LocalizedMessage';
 import styles from './dfg-controls-view.module.scss';
 
 export function DFGControlsView({
@@ -54,7 +56,10 @@ export function DFGControlsView({
 	gasketName?: string;
 	emptyMessage?: string;
 	onHasErrorsChange?: (hasErrors: boolean) => void;
-	onControlChange: (field: string, value: TFormFieldValue) => void;
+	onControlChange: (
+		field: string,
+		value: TFormFieldValue | undefined
+	) => void;
 }>) {
 	const controls = use(controlsPrms);
 
@@ -69,23 +74,6 @@ export function DFGControlsView({
 	const pluginControlFields: ControlCfg[] = useMemo(
 		() => controls[propertyName]?.filter(c => c.PluginOption) ?? [],
 		[controls, propertyName]
-	);
-
-	const originalData = useRef(data);
-
-	const modifiedFields = useMemo(
-		() =>
-			Object.keys(data).reduce<Record<string, boolean>>(
-				(acc, key) => {
-					if (data[key] !== originalData.current[key]) {
-						acc[key] = true;
-					}
-
-					return acc;
-				},
-				{}
-			),
-		[data]
 	);
 
 	const controlErrors = useMemo(
@@ -121,33 +109,37 @@ export function DFGControlsView({
 	}
 
 	const handleControlChange = useCallback(
-		(field: string, value: TFormFieldValue) => {
+		(field: string, value: TFormFieldValue | undefined) => {
 			const ctrlVal =
 				typeof value === 'boolean'
 					? value
 						? 'TRUE'
 						: 'FALSE'
-					: value.toString();
+					: value?.toString();
 			onControlChange(field, ctrlVal);
 		},
 		[onControlChange]
 	);
 
-	if (controlFields.length === 0 && pluginControlFields.length === 0) {
+	if (
+		controlFields.length === 0 &&
+		pluginControlFields.length === 0
+	) {
 		return <div>{emptyMessage ?? ''}</div>;
 	}
 
 	return (
 		<div className={styles.dynamicFormContainer}>
-			{controlFields.length > 0 && <ControlsForm
-				controlFields={controlFields}
-				data={data}
-				modifiedFields={modifiedFields}
-				controlErrors={controlErrors}
-				socConfig={socConfig}
-				testId={testId}
-				onControlChange={handleControlChange}
-			/>}
+			{controlFields.length > 0 && (
+				<ControlsForm
+					controlFields={controlFields}
+					data={data}
+					controlErrors={controlErrors}
+					socConfig={socConfig}
+					testId={testId}
+					onControlChange={handleControlChange}
+				/>
+			)}
 			{pluginControlFields.length > 0 && (
 				<>
 					<Divider />
@@ -166,7 +158,6 @@ export function DFGControlsView({
 							_ENDPOINT:
 								fieldName === 'Source' ? 'SOURCE' : 'DESTINATION'
 						}}
-						modifiedFields={modifiedFields}
 						controlErrors={pluginControlErrors}
 						socConfig={socConfig}
 						testId={testId}
@@ -181,7 +172,6 @@ export function DFGControlsView({
 function ControlsForm({
 	controlFields,
 	data,
-	modifiedFields,
 	controlErrors,
 	testId,
 	socConfig,
@@ -189,15 +179,46 @@ function ControlsForm({
 }: Readonly<{
 	controlFields: ControlCfg[];
 	data: TFormData;
-	modifiedFields: Record<string, boolean>;
 	controlErrors: Record<string, string>;
 	testId: string;
 	socConfig: ConfigFields;
-	onControlChange: (field: string, value: TFormFieldValue) => void;
+	onControlChange: (
+		field: string,
+		value: TFormFieldValue | undefined
+	) => void;
 }>) {
 	const controlResetValues = useMemo(
 		() => computeDefaultValues(socConfig, controlFields),
 		[socConfig, controlFields]
+	);
+
+	const controlsWithoutModifiedLabels = useMemo(
+		() => formatControlsForDynamicForm(controlFields, data, {}),
+		[controlFields, data]
+	);
+
+	const getControlDefaultValue = useCallback(
+		(control: (typeof controlsWithoutModifiedLabels)[number]) => {
+			const resetValue = controlResetValues[control.id];
+
+			if (resetValue !== undefined) {
+				return resetValue;
+			}
+
+			if (control.default !== undefined) {
+				return control.default;
+			}
+
+			if (control.type === 'enum') {
+				return control.enum?.[0]?.value;
+			}
+
+			if (control.type === 'boolean') return false;
+			if (control.type === 'integer') return 0;
+
+			return '';
+		},
+		[controlResetValues]
 	);
 
 	// For booleans we need to convert the string values to boolean
@@ -229,8 +250,58 @@ function ControlsForm({
 			}
 		});
 
+		// Sync UI defaults into form data so unchanged default values are persisted.
+		controlsWithoutModifiedLabels.forEach(control => {
+			if (frmtdata[control.id] !== undefined) return;
+
+			const defaultValue = getControlDefaultValue(control);
+
+			if (defaultValue === undefined || defaultValue === '') return;
+
+			if (control.type === 'boolean') {
+				frmtdata[control.id] =
+					typeof defaultValue === 'string'
+						? defaultValue.toUpperCase() === 'TRUE'
+						: Boolean(defaultValue);
+			} else {
+				frmtdata[control.id] = defaultValue;
+			}
+		});
+
 		return frmtdata;
-	}, [controlFields, data, controlResetValues]);
+	}, [
+		controlFields,
+		data,
+		controlResetValues,
+		controlsWithoutModifiedLabels,
+		getControlDefaultValue
+	]);
+
+	const modifiedFields = useMemo(
+		() =>
+			controlsWithoutModifiedLabels.reduce<Record<string, boolean>>(
+				(acc, control) => {
+					const defaultValue = getControlDefaultValue(control);
+
+					if (
+						!areControlValuesEqual(
+							formattedData[control.id] ?? defaultValue,
+							defaultValue
+						)
+					) {
+						acc[control.id] = true;
+					}
+
+					return acc;
+				},
+				{}
+			),
+		[
+			controlsWithoutModifiedLabels,
+			formattedData,
+			getControlDefaultValue
+		]
+	);
 
 	const formattedControls = useMemo(
 		() =>
@@ -241,6 +312,43 @@ function ControlsForm({
 			),
 		[controlFields, data, modifiedFields]
 	);
+
+	const hasNonDefaultValues =
+		Object.values(modifiedFields).some(Boolean);
+
+	// Keep persisted config in sync with the controls currently visible in the UI.
+	useEffect(() => {
+		const visibleControlIds = new Set(
+			formattedControls.map(control => control.id)
+		);
+
+		formattedControls.forEach(control => {
+			const value = getControlDefaultValue(control);
+
+			if (
+				value !== undefined &&
+				value !== '' &&
+				data[control.id] === undefined
+			) {
+				onControlChange(control.id, value);
+			}
+		});
+
+		controlFields.forEach(control => {
+			if (
+				!visibleControlIds.has(control.Id) &&
+				data[control.Id] !== undefined
+			) {
+				onControlChange(control.Id, undefined);
+			}
+		});
+	}, [
+		formattedControls,
+		controlFields,
+		data,
+		onControlChange,
+		getControlDefaultValue
+	]);
 
 	const components = useMemo(() => {
 		const map: Record<string, React.ReactNode> = {};
@@ -267,13 +375,26 @@ function ControlsForm({
 	}, [formattedControls, formattedData, onControlChange, testId]);
 
 	return (
-		<DynamicForm
-			controls={formattedControls}
-			data={formattedData}
-			errors={controlErrors}
-			testId={testId}
-			components={components}
-			onControlChange={onControlChange}
-		/>
+		<>
+			{hasNonDefaultValues && (
+				<div
+					className={styles.info}
+					data-test={`${testId}:non-default-value`}
+				>
+					<span>*</span>
+					<label>
+						<LocalizedMessage id='dfg.nonDefaultValue' />
+					</label>
+				</div>
+			)}
+			<DynamicForm
+				controls={formattedControls}
+				data={formattedData}
+				errors={controlErrors}
+				testId={testId}
+				components={components}
+				onControlChange={onControlChange}
+			/>
+		</>
 	);
 }

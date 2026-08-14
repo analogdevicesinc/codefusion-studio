@@ -37,10 +37,10 @@ export default function BrowseFile({
 	onPathChange: (path: string) => void;
 }>) {
 	const openFileExplorer = useCallback(() => {
-		void openVSCodeFileExplorer(mode).then((path: string) => {
-			onPathChange?.(path);
-
-			if (onPathChange) onPathChange(path);
+		void openVSCodeFileExplorer(mode).then((selectedPath: string) => {
+			if (selectedPath) {
+				onPathChange(selectedPath);
+			}
 		});
 	}, [mode, onPathChange]);
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  *
  */
 import * as vscode from "vscode";
-import { ElfFileParser } from "elf-parser/src/index";
-import type { ElfDataModel } from "elf-parser/src/ElfDataModel";
+import { ElfFileParser } from "elf-parser";
+import type { ElfDataModel } from "elf-parser";
 import { elfMessageHandler } from "../utils/elf-message-handler";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import { ELF_EDITOR_ID } from "../constants";
+import { getTelemetryManager } from "../telemetry/telemetry";
+import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
 class ElfDocument implements vscode.CustomDocument {
   private readonly _uri: vscode.Uri;
@@ -106,6 +108,12 @@ export class ElfEditor
     webviewPanel: vscode.WebviewPanel,
   ): Promise<void> {
     try {
+      void getTelemetryManager().then((telemetryManager) => {
+        telemetryManager.logAction(TELEMETRY_ACTIONS.FEATURE_ACCESSED, {
+          feature: "elf_explorer",
+        });
+      });
+
       const elfModel: ElfDataModel = document.getElfDataModel();
       const parser: ElfFileParser = document.getParser();
       const viewProviderPanel = new ViewProviderPanel(this.context, {

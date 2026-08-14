@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,17 @@ import {
 	setSignalAssignment,
 	setActiveSignal
 } from '../state/slices/peripherals/peripherals.reducer';
-import {updateSignalConfig} from '../state/slices/pins/pins.reducer';
+import {
+	setAppliedSignal,
+	updateSignalConfig
+} from '../state/slices/pins/pins.reducer';
 import {usePinsByPeripheral} from '../state/slices/pins/pins.selector';
 import {useAppDispatch} from '../state/store';
 import {computeInitialPinConfig} from '../utils/pin-reset-controls';
+import {
+	getIsPeripheralSignalRequired,
+	getPeripheralSignals
+} from '../utils/soc-peripherals';
 
 export function useSignalAssignmentHandler(
 	peripheral: string,
@@ -70,9 +77,52 @@ export function useSignalAssignmentHandler(
 				);
 			}
 
+			// If not already pinned, pre-compute auto-assign config when there's only one pin choice and the signal is required.
+			// Done before any dispatches so setAppliedSignal can fire last, capturing complete state.
+			let autoAssignPin:
+				| {pinId: string; pinCfg: Record<string, string>}
+				| undefined;
+
+			if (!allocatedPin) {
+				const availablePins =
+					getPeripheralSignals(peripheral)[signalName]?.pins ?? [];
+
+				if (
+					availablePins.length === 1 &&
+					getIsPeripheralSignalRequired(peripheral, signalName)
+				) {
+					const pinId = availablePins[0].Name;
+					const alreadyAssignedToPin = peripheralPins.some(
+						pin =>
+							pin.pinId === pinId &&
+							pin.appliedSignals.some(
+								(s: any) =>
+									s.Peripheral === peripheral && s.Name === signalName
+							)
+					);
+
+					if (!alreadyAssignedToPin) {
+						const pinCfg = await computeInitialPinConfig({
+							Pin: pinId,
+							Peripheral: peripheral,
+							Signal: signalName,
+							ProjectId: projectId
+						});
+						autoAssignPin = {pinId, pinCfg};
+					}
+				}
+			}
+
 			// Handles allocation to project and persistence of the computed default if available.
+			// When auto-assigning a pin, suppress persistence here so setAppliedSignal (below) fires
+			// last and captures both pin and project state in one consistent persistence call.
 			dispatch(
-				setSignalAssignment({peripheral, signalName, projectId})
+				setSignalAssignment({
+					peripheral,
+					signalName,
+					projectId,
+					...(autoAssignPin ? {discardPersistence: true} : {})
+				})
 			);
 
 			// Handles new allocation to highlight them in the center collapsible card
@@ -96,6 +146,19 @@ export function useSignalAssignmentHandler(
 					signal: signalName
 				})
 			);
+
+			// Auto-assign dispatched last: its persistence captures both pins and projects
+			// with the complete final Redux state, avoiding race conditions.
+			if (autoAssignPin) {
+				dispatch(
+					setAppliedSignal({
+						Pin: autoAssignPin.pinId,
+						Peripheral: peripheral,
+						Name: signalName,
+						PinCfg: autoAssignPin.pinCfg
+					})
+				);
+			}
 		},
 		[dispatch, peripheral, signalName, peripheralPins]
 	);

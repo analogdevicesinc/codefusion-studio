@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ export const CFS_WORKSPACE = "Workspace";
 export const CONFIG_TOOLS = "Config Tools";
 export const ELF_FILE_EXPLORER = "ELF File Explorer";
 export const EXAMPLES = "Browse Examples";
+export const HELP_AND_SUPPORT = "Help and Support";
 export const HOME = "CFS Home Page";
 export const PROJECTS = "Projects";
 export const AI_TOOLS = "AI Tools";

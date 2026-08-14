@@ -63,6 +63,8 @@ export type ClockErrorSummary = {
 	totalErrors: number;
 	/** Status details per node */
 	byNode: Record<string, ClockNodeStatus>;
+	/** Primary Project ID */
+	primaryProjectId?: string;
 };
 
 /**
@@ -314,7 +316,10 @@ export function computeClockNodesStatus(
 export function computeClockWireStatuses(
 	clockConfig: ClockNodesDictionary,
 	pinConfig: Record<string, AppliedSignal> = {},
-	peripheralConfig: Record<string, Record<string, PeripheralConfig>> = {},
+	peripheralConfig: Record<
+		string,
+		Record<string, PeripheralConfig>
+	> = {},
 	assignedPins: PinState[] = []
 ): Record<string, ClockWireStatus> {
 	const clockCanvas = getClockCanvas();
@@ -353,10 +358,7 @@ export function computeClockWireStatuses(
 			const enabled =
 				wire.condition === undefined
 					? true
-					: evaluateClockCondition(
-							baseGlobalConfig,
-							wire.condition
-						);
+					: evaluateClockCondition(baseGlobalConfig, wire.condition);
 
 			statuses[wireKey] = {enabled};
 		}
@@ -378,6 +380,8 @@ export function computeClockErrorSummary(
 	computedFrequencies: Record<string, number | string>,
 	globalConfig: GlobalConfig
 ): ClockErrorSummary {
+	const primaryProjectId = getPrimaryProjectId();
+
 	const byNode = computeClockNodesStatus(
 		clockConfig,
 		computedFrequencies,
@@ -388,5 +392,9 @@ export function computeClockErrorSummary(
 		status => status.enabled && status.hasError
 	).length;
 
-	return {totalErrors, byNode};
+	return {
+		totalErrors,
+		byNode,
+		primaryProjectId
+	};
 }

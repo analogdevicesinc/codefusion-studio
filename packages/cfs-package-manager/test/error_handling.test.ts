@@ -1,5 +1,16 @@
 /**
- * Error handling tests for ConanPkgManager API
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -44,8 +55,6 @@ describe("ErrorHandling", () => {
 				force: true
 			}
 		);
-		// Remove managed remotes
-		await fs.rm(path.join(testConfigDir, "managedRemotes.json"));
 
 		// Create a new ConanPkgManager instance for this test run
 		api = new ConanPkgManager({
@@ -197,6 +206,17 @@ describe("ErrorHandling", () => {
 			await expect(
 				api.dependencies({ name: "test_pkg1", version: "1.0" })
 			).to.be.fulfilled;
+		});
+	});
+
+	describe("GetInstallPlan", () => {
+		it("should normalize missing package metadata errors", async () => {
+			await expect(
+				api.getInstallPlan({
+					name: "non_existent_pkg",
+					version: "^1.0"
+				})
+			).to.be.rejectedWith(/Couldn't find the following packages/i);
 		});
 	});
 });

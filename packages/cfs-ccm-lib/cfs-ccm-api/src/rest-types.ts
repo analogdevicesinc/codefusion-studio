@@ -186,7 +186,25 @@ export type SoCFamily = {
 };
 
 export type SWPackageRepo = {
+    accessTag?: AccessTag;
+    authRequired: boolean;
+    disabledByDefault: boolean;
     id: string;
+    metadataId?: string;
+    packageFormat: string;
+    repoDescription?: string;
+    repoName?: string;
+    repoUrl: string;
+};
+
+export type SWPackageRepoMetadata = {
+    accessTag?: AccessTag;
+    authRequired: boolean;
+    disabledByDefault: boolean;
+    id: string;
+    packageFormat: string;
+    repoDescription?: string;
+    repoName?: string;
     repoUrl: string;
 };
 

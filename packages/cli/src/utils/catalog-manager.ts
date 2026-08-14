@@ -19,7 +19,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import {getAuthConfig, getSessionManager} from './session-manager.js';
+import {
+  AuthenticationRequiredError,
+  getApiClient
+} from './api-client.js';
 import {
   getCFSInstallPath,
   getCustomCatalogStorePath,
@@ -27,7 +30,7 @@ import {
 } from './utils.js';
 
 const ACCESS_ERROR =
-  'Unable to create online session. Please ensure you are logged into your myAnalog account.';
+  'Unable to create online session. Please ensure you are logged into your myAnalog account or have a valid API key in CFS_API_KEY.';
 
 /* Return the SoC catalog
  * @param config - The Oclif configuration object
@@ -42,38 +45,18 @@ export async function getSocCatalog(
   let apiClient: CfsApiClient | undefined;
 
   if (forceOnline) {
-    let authConfig;
-    let session;
-
     try {
-      authConfig = getAuthConfig();
-      const sessionManager = getSessionManager();
-      session = await sessionManager.getSession();
+      apiClient = await getApiClient({auth: ['api-key', 'session']});
     } catch (error) {
-      throw new Error(
-        `Error fetching session information for catalog access` +
-          (error instanceof Error ? `: ${error.message}` : '')
-      );
-    }
+      if (error instanceof AuthenticationRequiredError) {
+        // eslint-disable-next-line unicorn/prefer-type-error
+        throw new Error(ACCESS_ERROR, {cause: error});
+      }
 
-    if (!session) {
-      throw new Error(ACCESS_ERROR);
-    }
-
-    try {
-      apiClient = new CfsApiClient({
-        baseUrl: authConfig?.ccmUrl,
-        authorizer: session.authorizer
-      });
-    } catch (error) {
       throw new Error(
         `Error creating API client for catalog access` +
           (error instanceof Error ? `: ${error.message}` : '')
       );
-    }
-
-    if (!apiClient) {
-      throw new Error(ACCESS_ERROR);
     }
   }
 

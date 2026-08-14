@@ -13,7 +13,13 @@
  *
  */
 
-import { detectToolchain, resolveZephyrSdkRoot } from "../../src/utils/detect-toolchain.js";
+import {
+	detectToolchain,
+	resolveZephyrHostToolsId,
+	getZephyrSdkPath,
+	resolveZephyrSdkRoot
+} from "../../src/utils/detect-toolchain.js";
+import type { CfsToolManager } from "../../src/managers/cfs-tool-manager.js";
 import { MsdkTaskStrategy } from "../../src/providers/msdk-task-strategy.js";
 import { ZephyrTaskStrategy } from "../../src/providers/zephyr-task-strategy.js";
 import { PLATFORM_IDS } from "../../src/providers/platform-constants.js";
@@ -197,7 +203,9 @@ describe("resolveZephyrSdkRoot", function () {
 	let tmpDir: string;
 
 	beforeEach(function () {
-		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "zephyr-sdk-test-"));
+		tmpDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), "zephyr-sdk-test-")
+		);
 	});
 
 	afterEach(function () {
@@ -234,5 +242,215 @@ describe("resolveZephyrSdkRoot", function () {
 		const result = resolveZephyrSdkRoot(toolchainPath);
 
 		expect(result).to.equal(toolchainPath);
+	});
+});
+
+describe("resolveZephyrHostToolsId", function () {
+	it("returns the arm.zephyr.eabi.toolchain host-tools id for Xtensa toolchains", function () {
+		expect(resolveZephyrHostToolsId("xtensa-adau2142")).to.equal(
+			"arm.zephyr.eabi.toolchain"
+		);
+	});
+
+	it("matches the Xtensa toolchain id case-insensitively", function () {
+		expect(resolveZephyrHostToolsId("XTENSA-ADAU2142")).to.equal(
+			"arm.zephyr.eabi.toolchain"
+		);
+	});
+
+	it("returns the host-tools id for ARM Zephyr toolchains (id contains 'zephyr')", function () {
+		expect(
+			resolveZephyrHostToolsId("arm.zephyr.eabi.toolchain")
+		).to.equal("arm.zephyr.eabi.toolchain");
+	});
+
+	it("matches a Zephyr toolchain id case-insensitively and trims whitespace", function () {
+		expect(
+			resolveZephyrHostToolsId("  ARM.ZEPHYR.EABI.toolchain  ")
+		).to.equal("arm.zephyr.eabi.toolchain");
+	});
+
+	it("returns an empty string for non-Zephyr toolchains", function () {
+		expect(resolveZephyrHostToolsId("some.other.toolchain")).to.equal(
+			""
+		);
+	});
+
+	it("returns an empty string for an empty toolchain id", function () {
+		expect(resolveZephyrHostToolsId("")).to.equal("");
+	});
+});
+
+describe("getZephyrSdkPath", function () {
+	let tmpDir: string;
+
+	/**
+	 * Builds a minimal CfsToolManager stub whose getToolPath returns the
+	 * provided path (and optionally records the requested tool id).
+	 */
+	function mockToolManager(
+		getToolPath: (toolId: string) => Promise<string>
+	): CfsToolManager {
+		return { getToolPath } as unknown as CfsToolManager;
+	}
+
+	beforeEach(function () {
+		tmpDir = fs.mkdtempSync(
+			path.join(os.tmpdir(), "zephyr-sdk-path-")
+		);
+	});
+
+	afterEach(function () {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
+	});
+
+	it("returns the per-project override when its path contains 'zephyr'", async function () {
+		const result = await getZephyrSdkPath(
+			"/opt/cfs",
+			"/opt/zephyr-sdk-0.16.5",
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve("/should/not/be/used"))
+		);
+
+		expect(result).to.equal("/opt/zephyr-sdk-0.16.5");
+	});
+
+	it("matches 'zephyr' in the override path case-insensitively", async function () {
+		const result = await getZephyrSdkPath(
+			"/opt/cfs",
+			"/opt/ZEPHYR-SDK",
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve("/should/not/be/used"))
+		);
+
+		expect(result).to.equal("/opt/ZEPHYR-SDK");
+	});
+
+	it("ignores the override when its path does not contain 'zephyr' and falls through to the host-tools package", async function () {
+		// The override points at a compiler package whose path does not contain
+		// "zephyr", e.g. the xt-clang root on an Xtensa project.
+		const packageRoot = path.join(tmpDir, "zephyr-sdk-1.0.0");
+		fs.mkdirSync(path.join(packageRoot, "cmake"), {
+			recursive: true
+		});
+
+		const result = await getZephyrSdkPath(
+			path.join(tmpDir, "install"),
+			"/opt/xtensa/xt-clang",
+			"xtensa-adau2142",
+			mockToolManager(() => Promise.resolve(packageRoot))
+		);
+
+		expect(result).to.equal(packageRoot);
+	});
+
+	it("resolves the SDK root from the host-tools package when found", async function () {
+		// Package layout: cmake/ exists at the tool path.
+		const packageRoot = path.join(tmpDir, "zephyr-sdk-1.0.0");
+		fs.mkdirSync(path.join(packageRoot, "cmake"), {
+			recursive: true
+		});
+
+		const result = await getZephyrSdkPath(
+			path.join(tmpDir, "install"),
+			undefined,
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve(packageRoot))
+		);
+
+		expect(result).to.equal(packageRoot);
+	});
+
+	it("maps an Xtensa toolchain id to the host-tools package id", async function () {
+		let requestedToolId: string | undefined;
+		const packageRoot = path.join(tmpDir, "zephyr-sdk-1.0.0");
+		fs.mkdirSync(path.join(packageRoot, "cmake"), {
+			recursive: true
+		});
+
+		await getZephyrSdkPath(
+			undefined,
+			undefined,
+			"xtensa-adau2142",
+			mockToolManager((toolId) => {
+				requestedToolId = toolId;
+				return Promise.resolve(packageRoot);
+			})
+		);
+
+		expect(requestedToolId).to.equal("arm.zephyr.eabi.toolchain");
+	});
+
+	it("skips the host-tools lookup when no toolchain id is provided", async function () {
+		let requestedToolId: string | undefined;
+
+		await getZephyrSdkPath(
+			undefined,
+			undefined,
+			undefined,
+			mockToolManager((toolId) => {
+				requestedToolId = toolId;
+				return Promise.resolve("");
+			})
+		);
+
+		expect(requestedToolId).to.equal(undefined);
+	});
+
+	it("skips the host-tools lookup for a non-Zephyr toolchain id", async function () {
+		let requestedToolId: string | undefined;
+
+		await getZephyrSdkPath(
+			undefined,
+			undefined,
+			"some.other.toolchain",
+			mockToolManager((toolId) => {
+				requestedToolId = toolId;
+				return Promise.resolve("");
+			})
+		);
+
+		expect(requestedToolId).to.equal(undefined);
+	});
+
+	it("falls back to the installer SDK when the package is not found", async function () {
+		const installerSdk = path.join(
+			tmpDir,
+			"install",
+			"Tools",
+			"zephyr-sdk"
+		);
+		fs.mkdirSync(installerSdk, { recursive: true });
+
+		const result = await getZephyrSdkPath(
+			path.join(tmpDir, "install"),
+			undefined,
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve(""))
+		);
+
+		expect(result).to.equal(installerSdk);
+	});
+
+	it("returns undefined when the installer SDK directory does not exist and no package is found", async function () {
+		const result = await getZephyrSdkPath(
+			path.join(tmpDir, "install"),
+			undefined,
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve(""))
+		);
+
+		expect(result).to.equal(undefined);
+	});
+
+	it("returns undefined when no package is found and no SDK path is set", async function () {
+		const result = await getZephyrSdkPath(
+			undefined,
+			undefined,
+			"arm.zephyr.eabi.toolchain",
+			mockToolManager(() => Promise.resolve(""))
+		);
+
+		expect(result).to.equal(undefined);
 	});
 });

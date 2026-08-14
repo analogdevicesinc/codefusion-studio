@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ import {
 } from '../../../utils/memory';
 import MemoryCard from '../memory-card/memory-card';
 import {Badge, Button, InfoIcon} from 'cfs-react-library';
-import DeleteIcon from '../../../../../common/icons/Delete';
+import DeleteIcon from '@common/icons/Delete';
 import styles from './partition-details-view-card.module.scss';
 import {useFilteredCores} from '../../../state/slices/app-context/appContext.selector';
-import ConfigIcon16px from '../../../../../common/icons/Config16px';
-import {isCoreSecure} from '../../../utils/soc-cores';
+import ConfigIcon16px from '@common/icons/Config16px';
+import {shouldDisplayCoreMemoryAliases} from '../../../utils/soc-cores';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {MemoryAliasTooltip} from './memory-alias-tooltip/memory-alias-tooltip';
-import Tooltip from '../../../../../common/components/tooltip/Tooltip';
+import Tooltip from '@common/components/tooltip/Tooltip';
 
 type PartitionDetailsTypeViewCardProp = Readonly<{
 	partition: Partition;
@@ -62,15 +62,15 @@ export default function PartitionDetailsTypeViewCard({
 			),
 		[partition.projects, filteredCores]
 	);
-	const secureCoreIds = assignedProjects
-		.filter(c => isCoreSecure(c))
+	const aliasCoreIds = assignedProjects
+		.filter(c => shouldDisplayCoreMemoryAliases(c))
 		.map(c => c.coreId);
 
 	const showInfoIcon = useMemo(
 		() =>
-			getCoreMemoryAliases(partition.baseBlock.Name, secureCoreIds)
+			getCoreMemoryAliases(partition.baseBlock.Name, aliasCoreIds)
 				.length > 0,
-		[partition.baseBlock.Name, secureCoreIds]
+		[partition.baseBlock.Name, aliasCoreIds]
 	);
 
 	const endAddress = getEndAddress(
@@ -153,7 +153,7 @@ export default function PartitionDetailsTypeViewCard({
 								<MemoryAliasTooltip
 									position={graphMousePosition.current}
 									partition={partition}
-									coreIds={secureCoreIds}
+									coreIds={aliasCoreIds}
 								/>
 							)}
 						</p>

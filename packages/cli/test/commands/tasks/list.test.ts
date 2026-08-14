@@ -13,7 +13,8 @@
  *
  */
 
-import {expect, test} from '@oclif/test';
+import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -46,61 +47,53 @@ const cliDevEntryPoint = path.join(cliRootPath, 'bin', 'dev.js');
 
 describe('tasks:list', () => {
   describe('list all tasks for workspace', () => {
-    test
-      .stdout()
-      .command(['tasks:list', '--workspace', testWorkspacePath], {
-        root: '..'
-      })
-      .it('lists all tasks from multiple projects', (ctx) => {
-        // Should show tasks from both project1 and project2
-        expect(ctx.stdout).to.contain('Tasks for workspace');
-        expect(ctx.stdout).to.contain('=== Project: project1 ===');
-        expect(ctx.stdout).to.contain('=== Project: project2 ===');
-        expect(ctx.stdout).to.contain('Build');
-        expect(ctx.stdout).to.contain('Clean');
-        expect(ctx.stdout).to.contain('Test');
-        expect(ctx.stdout).to.contain('Build_NPM');
-        expect(ctx.stdout).to.contain('Lint');
-      });
+    it('lists all tasks from multiple projects', async () => {
+      const {stdout} = await runCommand(
+        ['tasks:list', '--workspace', testWorkspacePath],
+        {
+          root: '..'
+        }
+      );
+      // Should show tasks from both project1 and project2
+      expect(stdout).to.contain('Tasks for workspace');
+      expect(stdout).to.contain('=== Project: project1 ===');
+      expect(stdout).to.contain('=== Project: project2 ===');
+      expect(stdout).to.contain('Build');
+      expect(stdout).to.contain('Clean');
+      expect(stdout).to.contain('Test');
+      expect(stdout).to.contain('Build_NPM');
+      expect(stdout).to.contain('Lint');
+    });
 
-    test
-      .stdout()
-      .command(
+    it('lists tasks with verbose output showing commands', async () => {
+      const {stdout} = await runCommand(
         ['tasks:list', '--workspace', testWorkspacePath, '--verbose'],
         {
           root: '..'
         }
-      )
-      .it(
-        'lists tasks with verbose output showing commands',
-        (ctx) => {
-          expect(ctx.stdout).to.contain('Tasks for workspace');
-          expect(ctx.stdout).to.contain('Command:');
-          expect(ctx.stdout).to.contain('make build');
-          expect(ctx.stdout).to.contain('npm run build');
-        }
       );
+      expect(stdout).to.contain('Tasks for workspace');
+      expect(stdout).to.contain('Command:');
+      expect(stdout).to.contain('make build');
+      expect(stdout).to.contain('npm run build');
+    });
 
-    test
-      .stdout()
-      .command(['tasks:list', '--workspace', project1Path], {
-        root: '..'
-      })
-      .it(
-        'infers the project when workspace points to a project path',
-        (ctx) => {
-          expect(ctx.stdout).to.contain(
-            `Tasks for workspace "${project1Path}"`
-          );
-          expect(ctx.stdout).to.contain('=== Project: project1 ===');
-          expect(ctx.stdout).to.contain('Build');
-          expect(ctx.stdout).to.contain('Clean');
-          expect(ctx.stdout).to.contain('Test');
-          expect(ctx.stdout).not.to.contain(
-            '=== Project: project2 ==='
-          );
+    it('infers the project when workspace points to a project path', async () => {
+      const {stdout} = await runCommand(
+        ['tasks:list', '--workspace', project1Path],
+        {
+          root: '..'
         }
       );
+      expect(stdout).to.contain(
+        `Tasks for workspace "${project1Path}"`
+      );
+      expect(stdout).to.contain('=== Project: project1 ===');
+      expect(stdout).to.contain('Build');
+      expect(stdout).to.contain('Clean');
+      expect(stdout).to.contain('Test');
+      expect(stdout).not.to.contain('=== Project: project2 ===');
+    });
 
     it('infers the project from cwd when no workspace flag is provided', () => {
       const stdout = execFileSync(
@@ -131,9 +124,8 @@ describe('tasks:list', () => {
   });
 
   describe('filter tasks by project', () => {
-    test
-      .stdout()
-      .command(
+    it('lists only tasks for the specified project', async () => {
+      const {stdout} = await runCommand(
         [
           'tasks:list',
           '--workspace',
@@ -144,23 +136,19 @@ describe('tasks:list', () => {
         {
           root: '..'
         }
-      )
-      .it('lists only tasks for the specified project', (ctx) => {
-        expect(ctx.stdout).to.contain('=== Project: project1 ===');
-        expect(ctx.stdout).to.contain('Build');
-        expect(ctx.stdout).to.contain('Clean');
-        expect(ctx.stdout).to.contain('Test');
-        // Should not contain project2 tasks
-        expect(ctx.stdout).not.to.contain(
-          '=== Project: project2 ==='
-        );
-        expect(ctx.stdout).not.to.contain('Build_NPM');
-        expect(ctx.stdout).not.to.contain('Lint');
-      });
+      );
+      expect(stdout).to.contain('=== Project: project1 ===');
+      expect(stdout).to.contain('Build');
+      expect(stdout).to.contain('Clean');
+      expect(stdout).to.contain('Test');
+      // Should not contain project2 tasks
+      expect(stdout).not.to.contain('=== Project: project2 ===');
+      expect(stdout).not.to.contain('Build_NPM');
+      expect(stdout).not.to.contain('Lint');
+    });
 
-    test
-      .stdout()
-      .command(
+    it('lists only tasks for project2', async () => {
+      const {stdout} = await runCommand(
         [
           'tasks:list',
           '--workspace',
@@ -171,36 +159,29 @@ describe('tasks:list', () => {
         {
           root: '..'
         }
-      )
-      .it('lists only tasks for project2', (ctx) => {
-        expect(ctx.stdout).to.contain('=== Project: project2 ===');
-        expect(ctx.stdout).to.contain('Build_NPM');
-        expect(ctx.stdout).to.contain('Lint');
-        // Should not contain project1 tasks
-        expect(ctx.stdout).not.to.contain(
-          '=== Project: project1 ==='
-        );
-        expect(ctx.stdout).not.to.contain('Clean');
-        expect(ctx.stdout).not.to.contain('Test');
-      });
+      );
+      expect(stdout).to.contain('=== Project: project2 ===');
+      expect(stdout).to.contain('Build_NPM');
+      expect(stdout).to.contain('Lint');
+      // Should not contain project1 tasks
+      expect(stdout).not.to.contain('=== Project: project1 ===');
+      expect(stdout).not.to.contain('Clean');
+      expect(stdout).not.to.contain('Test');
+    });
   });
 
   describe('error handling', () => {
-    test
-      .command(['tasks:list'], {
+    it('shows error when workspace cwd is not a valid CFS workspace', async () => {
+      const {error} = await runCommand(['tasks:list'], {
         root: '..'
-      })
-      .catch((error) => {
-        expect(error.message).to.contain(
-          'Please ensure this is a valid workspace folder'
-        );
-      })
-      .it(
-        'shows error when workspace cwd is not a valid CFS workspace'
+      });
+      expect(error?.message).to.contain(
+        'Please ensure this is a valid workspace folder'
       );
+    });
 
-    test
-      .command(
+    it('shows error when workspace does not exist', async () => {
+      const {error} = await runCommand(
         [
           'tasks:list',
           '--workspace',
@@ -209,16 +190,14 @@ describe('tasks:list', () => {
         {
           root: '..'
         }
-      )
-      .catch((error) => {
-        expect(error.message).to.contain(
-          ' Please ensure this is a valid workspace folder'
-        );
-      })
-      .it('shows error when workspace does not exist');
+      );
+      expect(error?.message).to.contain(
+        ' Please ensure this is a valid workspace folder'
+      );
+    });
 
-    test
-      .command(
+    it('shows error when project filter matches no tasks', async () => {
+      const {error} = await runCommand(
         [
           'tasks:list',
           '--workspace',
@@ -229,35 +208,30 @@ describe('tasks:list', () => {
         {
           root: '..'
         }
-      )
-      .catch((error) => {
-        expect(error.message).to.contain('No project with the name');
-      })
-      .it('shows error when project filter matches no tasks');
+      );
+      expect(error?.message).to.contain('No project with the name');
+    });
   });
 
   describe('task sorting and formatting', () => {
-    test
-      .stdout()
-      .command(['tasks:list', '--workspace', testWorkspacePath], {
-        root: '..'
-      })
-      .it(
-        'tasks are sorted alphabetically within each project',
-        (ctx) => {
-          // Check that tasks appear in alphabetical order
-          const buildIndex = ctx.stdout.indexOf('Build');
-          const cleanIndex = ctx.stdout.indexOf('Clean');
-          const testIndex = ctx.stdout.indexOf('Test');
-
-          expect(buildIndex).to.be.lessThan(cleanIndex);
-          expect(cleanIndex).to.be.lessThan(testIndex);
+    it('tasks are sorted alphabetically within each project', async () => {
+      const {stdout} = await runCommand(
+        ['tasks:list', '--workspace', testWorkspacePath],
+        {
+          root: '..'
         }
       );
+      // Check that tasks appear in alphabetical order
+      const buildIndex = stdout.indexOf('Build');
+      const cleanIndex = stdout.indexOf('Clean');
+      const testIndex = stdout.indexOf('Test');
 
-    test
-      .stdout()
-      .command(
+      expect(buildIndex).to.be.lessThan(cleanIndex);
+      expect(cleanIndex).to.be.lessThan(testIndex);
+    });
+
+    it('shows workspace and project info in output header', async () => {
+      const {stdout} = await runCommand(
         [
           'tasks:list',
           '--workspace',
@@ -268,14 +242,10 @@ describe('tasks:list', () => {
         {
           root: '..'
         }
-      )
-      .it(
-        'shows workspace and project info in output header',
-        (ctx) => {
-          expect(ctx.stdout).to.match(
-            /Tasks for workspace .* and project "project1"/
-          );
-        }
       );
+      expect(stdout).to.match(
+        /Tasks for workspace .* and project "project1"/
+      );
+    });
   });
 });

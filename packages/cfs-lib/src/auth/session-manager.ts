@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,7 @@ export class SessionManager {
 				},
 				{
 					scopes: this.authCfg.scopes,
+					clientId: this.authCfg.clientId,
 					userEmail
 				},
 				createIfNotExists

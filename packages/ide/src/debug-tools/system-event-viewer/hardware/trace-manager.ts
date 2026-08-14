@@ -61,15 +61,16 @@ interface EventSourceGroup {
   isGroup: true;
 }
 
-export interface HwEvent {
+export interface TraceEvent {
   source: string;
   timestamp: number;
+  data?: string;
 }
 
-export interface HwEventInfo {
+export interface TraceEventInfo {
   tsFrequency?: number;
   tsEpoch?: Date;
-  events: HwEvent[];
+  events: TraceEvent[];
 }
 
 // Default size of the ETF Buffer.
@@ -81,6 +82,15 @@ const DEFAULT_SYNC_COUNTER_BYTES = 4096;
 // This is an arbitrary value that should not conflict with other trace IDs in the system,
 //  as it is used to identify STM events in the trace buffer.
 const STM_TRACE_ID = 0x33;
+
+// Labels/path segments for Zephyr SW stimulus events.
+// Used to inject a synthetic "Software Events.Zephyr.Trace Points" entry into the event-source tree
+// and to group decoded SW flag/data items under a single timeline category.
+const SWEVENT = "Software Event";
+const SWEVENTS = `${SWEVENT}s`;
+const ZEPHYR = "Zephyr";
+const TRACE_POINTS = "Trace Points";
+const EVENT_SOURCE_SW = `*.${SWEVENTS}.${ZEPHYR}.${TRACE_POINTS}`;
 
 /**
  * This class provides a high level API that allows to configure and retrieve events using
@@ -173,7 +183,16 @@ export class TraceManager {
 
     this.router = new TraceRouter(components);
 
-    // Generator to flatten event source tree
+    // Preliminary code. For the moment select the first ETF, STM and TS generator found.
+    // We will need to define this better in the future
+    this.etf = this.router.getComponentByType(
+      "css600_tmc_etf",
+    )[0] as Css600TmcEtf;
+    this.stm500 = this.router.getComponentByType("stm-500")[0] as Stm500;
+    this.tsGen = this.router.getComponentByType(
+      "css600_tsgen",
+    )[0] as Css600TsGenerator;
+
     const extractSignals = function* (
       name: string,
       sourceGroup: SocTraceEventSourceGroup | SocTraceEventSource,
@@ -191,19 +210,23 @@ export class TraceManager {
       }
     };
 
+    // We need to add a software event source for Zephyr trace points,
+    // as it is not present in the data model
+    this.dmInfo.EventSources = {
+      ...this.dmInfo.EventSources,
+      [SWEVENTS]: {
+        ...this.dmInfo.EventSources[SWEVENTS],
+        [ZEPHYR]: {
+          [TRACE_POINTS]: {
+            Signal: `${this.stm500.name}.${this.stm500.eventsSourceSignal}`,
+          },
+        },
+      },
+    };
+
     this.eventSources = Object.fromEntries(
       extractSignals("*", this.dmInfo.EventSources),
     );
-
-    // Preliminary code. For the moment select the first ETF, STM and TS generator found.
-    // We will need to define this better in the future
-    this.etf = this.router.getComponentByType(
-      "css600_tmc_etf",
-    )[0] as Css600TmcEtf;
-    this.stm500 = this.router.getComponentByType("stm-500")[0] as Stm500;
-    this.tsGen = this.router.getComponentByType(
-      "css600_tsgen",
-    )[0] as Css600TsGenerator;
   }
 
   private makeComponent(
@@ -213,7 +236,7 @@ export class TraceManager {
   ): SoCTraceComponent | undefined {
     switch (info.Type) {
       case "stm-500":
-        return new Stm500(name, info, debugManager);
+        return new Stm500(name, info, debugManager, EVENT_SOURCE_SW);
       case "css600_cti":
         return new Css600Cti(name, info, debugManager);
       case "css600_ctm":
@@ -271,21 +294,41 @@ export class TraceManager {
     return eventSources[0].slice(2);
   }
 
-  private async stpToEventSources(stpItems: StpItem[]): Promise<HwEvent[]> {
+  /**
+   * Search for the event source name in the cache scoped to this STP buffer conversion;
+   * if not found, resolve and cache it.
+   * @param eventNumber The event number to retrieve the source name for.
+   * @param eventsMap Cache map storing event-number to source-name mappings for the current read.
+   * @returns The source name associated with the event number.
+   */
+  private async checkCachedEventSource(
+    eventNumber: number,
+    eventsMap: Map<number, string>,
+  ): Promise<string> {
+    const signal = this.stm500?.HwEvents[eventNumber];
+    let sourceName: string;
+    const cached = eventsMap.get(eventNumber);
+    if (cached !== undefined) {
+      sourceName = cached;
+    } else {
+      sourceName = signal
+        ? await this.getOriginatorEventSource(signal)
+        : `Source ${eventNumber}`;
+      eventsMap.set(eventNumber, sourceName);
+    }
+    return sourceName;
+  }
+
+  private async stpToEventSources(stpItems: StpItem[]): Promise<TraceEvent[]> {
     const hwEventMasterId = await this.stm500?.getHwEventStpMasterId();
-    const events: HwEvent[] = [];
+    const events: TraceEvent[] = [];
+    const eventsMap = new Map<number, string>();
+    const swEventsEnabled = await this.isEventEnabled(EVENT_SOURCE_SW);
+
     for (const item of stpItems) {
       switch (item.type) {
         case StpItemType.Data:
           const dataItem = item as StpDataItem;
-          if (dataItem.majorSource !== hwEventMasterId) {
-            // This data item is not a HW event, ignore it for the moment.
-            console.warn(
-              `STP Data item from unexpected source ${dataItem.majorSource}:`,
-              item,
-            );
-            continue;
-          }
           if (dataItem.timestamp === undefined) {
             // An approximate timestamp should arrive later as flag, not supported for the moment
             console.warn("STP Data item without timestamp:", item);
@@ -299,17 +342,31 @@ export class TraceManager {
               `Timestamp ${dataItem.timestamp} exceeds MAX_SAFE_INTEGER, precision may be lost.`,
             );
           }
+
           const timestamp = Number(dataItem.timestamp);
+          if (dataItem.majorSource !== hwEventMasterId) {
+            if (!swEventsEnabled) {
+              console.warn(
+                `STP Data item from unexpected source ${dataItem.majorSource}:`,
+                item,
+              );
+              continue;
+            }
+            events.push({
+              source: EVENT_SOURCE_SW.slice(2), // Remove the "*." prefix
+              timestamp: timestamp,
+              data: `${dataItem.data}`,
+            });
+            continue;
+          }
 
           if (dataItem.marked) {
             const eventNumber =
               Math.floor(dataItem.channel / 8) * 256 + Number(dataItem.data);
-            const signal = this.stm500?.HwEvents[eventNumber];
-            // TODO: Cache the signal name resolution
-            const sourceName = signal
-              ? await this.getOriginatorEventSource(signal)
-              : `Source ${eventNumber}`;
-
+            const sourceName = await this.checkCachedEventSource(
+              eventNumber,
+              eventsMap,
+            );
             events.push({
               source: sourceName,
               timestamp: timestamp,
@@ -322,10 +379,10 @@ export class TraceManager {
               // eslint-disable-next-line no-bitwise
               if ((data & 0x1n) === 1n) {
                 const eventNumber = dataItem.channel * 32 + Number(bitIndex);
-                const signal = this.stm500?.HwEvents[eventNumber];
-                const sourceName = signal
-                  ? await this.getOriginatorEventSource(signal)
-                  : `Source ${eventNumber}`;
+                const sourceName = await this.checkCachedEventSource(
+                  eventNumber,
+                  eventsMap,
+                );
                 events.push({
                   source: sourceName,
                   timestamp: timestamp,
@@ -343,8 +400,15 @@ export class TraceManager {
             console.warn("STP Flag item without timestamp:", item);
             continue;
           }
+
+          if (flagItem.timestamp > Number.MAX_SAFE_INTEGER) {
+            console.warn(
+              `Timestamp ${flagItem.timestamp} exceeds MAX_SAFE_INTEGER, precision may be lost.`,
+            );
+          }
+
           events.push({
-            source: `SoftwareFlag.${flagItem.channel}`,
+            source: EVENT_SOURCE_SW.slice(2), // Remove the "*." prefix
             timestamp: Number(flagItem.timestamp),
           });
           break;
@@ -629,11 +693,11 @@ export class TraceManager {
    * Note that this method will read all the trace buffer, discarding any data that is not
    * processed.
    *
-   * @returns A promise that resolves to an HwEventInfo object containing the list of events
+   * @returns A promise that resolves to a TraceEventInfo object containing the list of events
    *          and timestamp information.
    */
-  public async readHwEvents(): Promise<HwEventInfo> {
-    let events: HwEvent[] = [];
+  public async readEvents(): Promise<TraceEventInfo> {
+    let events: TraceEvent[] = [];
     let tsFrequency: number | undefined = undefined;
     let tsEpoch: Date | undefined = undefined;
 

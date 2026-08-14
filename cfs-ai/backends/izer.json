@@ -108,7 +108,8 @@
         "Id": "NetworkConfig",
         "Type": "File",
         "Description": "Network Configuration File",
-        "Tooltip": "Path to the .yaml file describing the network configuration."
+        "Tooltip": "Path to the .yaml file describing the network configuration.",
+        "Pattern": ".*\\S.*"
       }
     ]
   }

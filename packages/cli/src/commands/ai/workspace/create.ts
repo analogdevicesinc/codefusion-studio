@@ -13,14 +13,15 @@
  *
  */
 
-import type {CfsPluginInfo} from 'cfs-types';
+import type {AIModelCfsWorkspace, CfsPluginInfo} from 'cfs-types';
 
 import {Command, Flags} from '@oclif/core';
-import {CfsDataModelManager} from 'cfs-lib';
+import {CfsDataModelManager, generateAIWorkspace} from 'cfs-lib';
 import {readdirSync} from 'node:fs';
 import path from 'node:path';
 
 import {getDataModelManager} from '../../../utils/data-model-manager.js';
+import {handleMissingDependencyError} from '../../../utils/error-handler.js';
 import {getPackageManager} from '../../../utils/package-manager.js';
 import {getPluginManager} from '../../../utils/plugin-manager.js';
 import {
@@ -30,7 +31,6 @@ import {
 import {
   checkErrors,
   createWorkspaceConfig,
-  generateWorkspaceFromConfig,
   getPackageNameFromTemplate,
   getValidTemplate
 } from '../../../utils/workspace-utils.js';
@@ -153,15 +153,19 @@ export default class WorkspaceCreate extends Command {
       }
     }
 
-    const workspaceConfig = createWorkspaceConfig({
-      soc: flags.soc,
-      package: packageName as string,
-      board: flags.board,
-      workspaceName: flags.name,
-      location: flags.output,
-      workspacePluginId: template?.pluginId as string,
-      workspacePluginVersion: template?.pluginVersion as string
-    });
+    const workspaceConfig: AIModelCfsWorkspace = {
+      ...createWorkspaceConfig({
+        soc: flags.soc,
+        package: packageName as string,
+        board: flags.board,
+        workspaceName: flags.name,
+        location: flags.output,
+        workspacePluginId: template?.pluginId as string,
+        workspacePluginVersion: template?.pluginVersion as string
+      }),
+      modelFile: flags.model,
+      sampleData: flags.dataset
+    };
 
     this.log(
       `Creating workspace '${flags.name}' at location: ${flags.output}`
@@ -170,16 +174,23 @@ export default class WorkspaceCreate extends Command {
       `Template: ${template?.pluginId} (version ${workspaceConfig.workspacePluginVersion})`
     );
 
-    await generateWorkspaceFromConfig(
-      workspaceConfig,
-      pluginManager,
-      this
-    );
-
     const workspacePath = path.join(
       flags.output as string,
       flags.name as string
     );
+
+    try {
+      await generateAIWorkspace(
+        pluginManager,
+        workspaceConfig,
+        workspacePath
+      );
+      this.log(`Workspace created successfully.`);
+    } catch (error) {
+      handleMissingDependencyError(error);
+
+      this.error(`Failed to create workspace: ${error}`);
+    }
 
     const cfsDirPath = path.join(workspacePath, '.cfs');
     const files = readdirSync(cfsDirPath);

@@ -41,10 +41,8 @@ describe("Workspace MAX32690 creation", () => {
   after(async () => {
     try {
       if (view) await view.switchBack();
-      await UIUtils.sleep(2000);
       if (workbench)
         await workbench.executeCommand("View: Revert and Close Editor");
-      await UIUtils.sleep(2000);
     } catch (error) {
       console.error("Error in after() hook:", error);
     }
@@ -57,8 +55,6 @@ describe("Workspace MAX32690 creation", () => {
     await workbench.executeCommand("cfs create workspace");
 
     console.log("new workspace command executed");
-
-    await UIUtils.sleep(5000);
 
     await UIUtils.dismissAllNotifications(workbench, browser);
 
@@ -112,7 +108,6 @@ describe("Workspace MAX32690 creation", () => {
 
     // Predefined template option already selected TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE
     console.log("TEMPLATE SELECTION SCREEN - PREDEFINED TEMPLATE");
-    await UIUtils.sleep(2000);
 
     await UIUtils.clickElement(view, locatorspath.continueButton, 5000);
 
@@ -133,7 +128,6 @@ describe("Workspace MAX32690 creation", () => {
     expect(templateName).to.include("mock.workspace.blinky");
 
     await UIUtils.clickElement(view, blinkyTemplate);
-    await UIUtils.sleep(3000);
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
@@ -175,14 +169,13 @@ describe("Workspace MAX32690 creation", () => {
 
     console.log("Found create workspace button");
     await UIUtils.clickElement(view, locatorspath.createworkspacebutton);
-    await UIUtils.sleep(5000);
+    await UIUtils.sleep(500);
 
     // Assert that the workspace is created successfully
     const userHome = os.homedir();
     const location = `${userHome}/cfs/${TextData.cfsideversion}`;
     console.log(`location is ${location}`);
     const workspacePath = `${location}/${workspaceName}`;
-    await UIUtils.sleep(5000);
     console.log(`workspacePath is ${workspacePath}`);
     await VSBrowser.instance.driver.wait(
       () => existsSync(workspacePath),
@@ -197,7 +190,6 @@ describe("Workspace MAX32690 creation", () => {
     console.log("Content of .cfsworkspace:\n", fileContent);
     // Parsing json content to verify the SOC
     const workspaceData = JSON.parse(fileContent);
-    await UIUtils.sleep(3000);
     console.log("Parsed workspace data: below and verifying the schema");
     // Persistance assertions and verification of schema of workspaceData
     if (!workspaceData) throw new Error("workspaceData is undefined or null");

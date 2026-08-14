@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
 import { defineConfig } from "cypress";
 import { defineConfig as defineViteConfig } from "vite";
 import path from "node:path";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
+import { forceLegacyImports } from "./vite-legacy-importer";
 
 const viteConfig = defineViteConfig(() => {
   return {
@@ -46,7 +47,7 @@ const viteConfig = defineViteConfig(() => {
       outDir: path.resolve(process.cwd(), "./out/config-tools"),
       emptyOutDir: true,
       target: "esnext",
-      rollupOptions: {
+      rolldownOptions: {
         input: path.resolve(
           process.cwd(),
           "./src/webviews/config-tools/index.html",
@@ -55,9 +56,9 @@ const viteConfig = defineViteConfig(() => {
     },
     css: {
       preprocessorOptions: {
-        loadPaths: [
-          path.resolve(process.cwd(), "./src/webviews/common/styles"),
-        ],
+        scss: {
+          importer: forceLegacyImports,
+        },
       },
     },
   };

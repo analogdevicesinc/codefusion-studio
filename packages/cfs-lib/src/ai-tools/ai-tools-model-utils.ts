@@ -19,6 +19,8 @@
 
 import type { AiBackend, AIModel } from "cfs-types";
 
+export const MAX_MODEL_NAME_LENGTH = 64;
+
 export function enforceMaxActiveModels(
 	models: AIModel[],
 	changedModel: AIModel,

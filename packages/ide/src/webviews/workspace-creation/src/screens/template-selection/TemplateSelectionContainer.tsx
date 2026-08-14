@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,28 @@
  *
  */
 
-import {useCallback} from 'react';
+import {
+	useCallback,
+	useState,
+	useMemo,
+	useLayoutEffect,
+	useRef
+} from 'react';
+import semver from 'semver';
 import {
 	useConfigurationErrors,
 	useWorkspaceTemplate,
 	useWorkspaceTemplateType
 } from '../../state/slices/workspace-config/workspace-config.selector';
-import {Radio, use} from 'cfs-react-library';
+import {Radio, SearchInput, use} from 'cfs-react-library';
+import {
+	createHighlightForElements,
+	isHighlightsAPISupported
+} from '../../../../common/utils/highlightApi';
 import styles from './TemplateSelectionContainer.module.scss';
 import CfsSelectionCard from '@common/components/cfs-selection-card/CfsSelectionCard';
+import {LocalizedMessage} from '@common/components/l10n/LocalizedMessage';
+import NoSearchResults from '@common/components/no-search-results/NoSearchResults';
 import {useAppDispatch} from '../../state/store';
 import {
 	setWorkspaceTemplate,
@@ -53,12 +66,84 @@ export default function TemplateSelectionContainer({
 	const dispatch = useAppDispatch();
 	const {pluginId: templateId} = useWorkspaceTemplate() ?? {};
 	const os = use(hostPlatformPromise);
-	// Filter templates based on host platform
-	const templateList = use(templateListPromise).filter(
-		template =>
-			!template.supportedHostPlatforms ||
-			template.supportedHostPlatforms.includes(os)
-	);
+
+	const [searchValue, setSearchValue] = useState('');
+	const containerRef = useRef<HTMLElement>(null);
+
+	const highlightGroup = 'template-search-highlight';
+
+	const allTemplates = use(templateListPromise);
+
+	// Filter templates based on host platform and deduplicate to
+	// the highest version per pluginId
+	const templateList = useMemo(() => {
+		const compatible = allTemplates.filter(
+			template =>
+				!template.supportedHostPlatforms ||
+				template.supportedHostPlatforms.includes(os)
+		);
+
+		const bestByPluginId = new Map<CfsPluginInfo['pluginId'], CfsPluginInfo>();
+
+		for (const template of compatible) {
+			const existing = bestByPluginId.get(template.pluginId);
+
+			if (
+				!existing ||
+				semver.gt(
+					template.pluginVersion,
+					existing.pluginVersion
+				)
+			) {
+				bestByPluginId.set(template.pluginId, template);
+			}
+		}
+
+		return [...bestByPluginId.values()];
+	}, [allTemplates, os]);
+
+	// Filter templates based on search input
+	const filteredTemplateList = useMemo(() => {
+		const trimmedSearch = searchValue.trim();
+
+		if (!trimmedSearch) {
+			return templateList;
+		}
+
+		const searchLower = trimmedSearch.toLowerCase();
+
+		return templateList.filter(
+			template =>
+				template.pluginName?.toLowerCase().includes(searchLower) ||
+				template.pluginDescription
+					?.toLowerCase()
+					.includes(searchLower)
+		);
+	}, [searchValue, templateList]);
+
+	useLayoutEffect(() => {
+		if (!isHighlightsAPISupported()) {
+			return;
+		}
+
+		CSS.highlights.delete(highlightGroup);
+
+		if (containerRef.current && searchValue.trim()) {
+			const highlightableElements =
+				containerRef.current.getElementsByClassName(
+					styles.highlightable as string
+				);
+			const highlight = createHighlightForElements(
+				highlightableElements,
+				searchValue.trim().toLowerCase()
+			);
+			CSS.highlights.set(highlightGroup, highlight);
+		}
+
+		return () => {
+			CSS.highlights.delete(highlightGroup);
+		};
+	}, [searchValue, filteredTemplateList, highlightGroup]);
 
 	const errors = useConfigurationErrors('multiCoreTemplate');
 
@@ -70,15 +155,13 @@ export default function TemplateSelectionContainer({
 			pluginVersion,
 			pluginName
 		}: Partial<CfsPluginInfo>) => {
-			if (pluginId !== templateId) {
-				dispatch(
-					setWorkspaceTemplate({
-						pluginId,
-						pluginVersion,
-						pluginName
-					})
-				);
-			}
+			dispatch(
+				setWorkspaceTemplate({
+					pluginId,
+					pluginVersion,
+					pluginName
+				})
+			);
 
 			if (errors.notifications.length) {
 				dispatch(
@@ -89,7 +172,7 @@ export default function TemplateSelectionContainer({
 				);
 			}
 		},
-		[dispatch, templateId, errors.notifications]
+		[dispatch, errors.notifications]
 	);
 
 	if (templateList.length === 0) {
@@ -114,9 +197,42 @@ export default function TemplateSelectionContainer({
 				</span>
 			</header>
 
-			<main className={styles.templatesContainer}>
-				{templateList.length ? (
-					templateList.map(
+			<main ref={containerRef} className={styles.templatesContainer}>
+				<div role='search' className={styles.searchInputContainer}>
+					<SearchInput
+						dataTest='templateSelection:search-input'
+						inputVal={searchValue}
+						placeholder={
+							l10n?.['workspace-options']?.['workspace-template']?.[
+								'search-placeholder'
+							] ?? 'Search templates...'
+						}
+						rightAdornment={
+							<span className={styles.rightAdornment}>
+								<LocalizedMessage
+									id={
+										filteredTemplateList.length === 1
+											? 'search.matchesAvailableSingular'
+											: 'search.matchesAvailable'
+									}
+									params={{
+										matchesCount:
+											filteredTemplateList.length.toLocaleString(
+												'en-US'
+											)
+									}}
+								/>
+							</span>
+						}
+						onInputChange={setSearchValue}
+						onClear={() => {
+							setSearchValue('');
+						}}
+					/>
+				</div>
+
+				{filteredTemplateList.length ? (
+					filteredTemplateList.map(
 						({
 							pluginId,
 							pluginName,
@@ -149,16 +265,18 @@ export default function TemplateSelectionContainer({
 									/>
 								</div>
 								<div slot='title' className={styles.template}>
-									<h3>{pluginName}</h3>
-									<p>{pluginDescription}</p>
+									<h3 className={styles.highlightable}>
+										{pluginName}
+									</h3>
+									<p className={styles.highlightable}>
+										{pluginDescription}
+									</p>
 								</div>
 							</CfsSelectionCard>
 						)
 					)
 				) : (
-					<p>
-						No templates found for your current search parameters.
-					</p>
+					<NoSearchResults search={searchValue} />
 				)}
 			</main>
 		</section>

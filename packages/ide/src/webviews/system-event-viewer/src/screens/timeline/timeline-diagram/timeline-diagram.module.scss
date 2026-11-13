@@ -1,6 +1,6 @@
 /**
  *
-* Copyright (c) 2025-2026 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,11 @@
  * limitations under the License.
  *
  */
+
+@use '#colors' as colors;
+@use '@sev-common/styles/sev-variables' as sev;
+
+$root-drop-strip-height: 6px;
 
 .diagramRoot {
 	display: flex;
@@ -29,12 +34,54 @@
 	overflow-x: hidden;
 	overflow-y: auto;
 	box-sizing: border-box;
+	contain: paint;
 
 	.scrollContent {
+		position: relative;
 		display: flex;
 		align-items: stretch;
 		width: 100%;
 		min-width: 0;
 		height: max-content;
+
+		> [data-root-drop-target] {
+			display: none;
+			position: absolute;
+			inset-inline: 0;
+			bottom: 0;
+			height: $root-drop-strip-height;
+		}
+
+		:global(body.timeline-drag-active)
+			&:has(> [data-root-drop-target]) {
+			// Reserve scrollable space for the root drop target only during dragging.
+			padding-block-end: $root-drop-strip-height;
+
+			> [data-root-drop-target] {
+				display: block;
+			}
+		}
+	}
+
+	.dropIndicator {
+		position: absolute;
+		inset-inline: 0;
+		top: 0;
+		height: 2px;
+		background: colors.$focus-border;
+		pointer-events: none;
+		z-index: sev.zIndex('drop-indicator');
+
+		&::before {
+			content: '';
+			position: absolute;
+			inset-inline-start: 0;
+			top: 50%;
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: colors.$focus-border;
+			transform: translateY(-50%);
+		}
 	}
 }

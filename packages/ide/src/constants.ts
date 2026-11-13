@@ -131,6 +131,10 @@ export const CATALOG_LOCATION = "catalogLocation";
 export const CHECK_FOR_UPDATES = "checkForUpdates";
 export const CATALOG_API_URL = "https://ccm.codefusion.app.analog.com";
 
+// Package Manager
+export const PACKAGE_MANAGER_CHECK_FOR_UPDATES =
+  "packageManager.checkForUpdates";
+
 // Action Panel Actions
 //TODO: export the following in an ACTION_PANEL object
 export const BUILD_ALL_ACTION = "Build All";

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,7 @@
 import {type ReactNode} from 'react';
 
 import './tooltip.scss';
-
-export enum Direction {
-	Right,
-	Left
-}
+import {Direction} from '../../utils';
 
 type TooltipProps = {
 	readonly title: string;

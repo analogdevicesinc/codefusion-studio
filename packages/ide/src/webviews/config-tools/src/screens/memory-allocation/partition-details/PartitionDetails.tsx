@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,18 +48,15 @@ function PartitionDetailsComponent({
 	const dispatch = useAppDispatch();
 	const type = useActivePartitionType();
 
-	const getDropdownOptions = () => [
-		// Dropdown component doesn't have a placeholder prop, the first entry is a default value
-		{label: 'Select value', value: ''},
-		...memoryTypes.map(
+	const getDropdownOptions = () =>
+		memoryTypes.map(
 			type =>
 				({
 					label: type,
 					value: type,
 					dataTest: type
 				}) satisfies {label: string; value: string; dataTest: string}
-		)
-	];
+		);
 
 	const handleTypeChange = (type: string) => {
 		dispatch(
@@ -103,6 +100,10 @@ function PartitionDetailsComponent({
 					isDisabled={false}
 					options={getDropdownOptions()}
 					error={errors?.type}
+					noValueOption={{
+						label: i10n?.selectValuePlaceholder ?? 'Select value',
+						value: ''
+					}}
 					onHandleDropdown={value => {
 						handleTypeChange(value);
 					}}

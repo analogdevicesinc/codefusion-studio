@@ -20,60 +20,60 @@ import path from "path";
 import { evalNestedTemplateLiterals } from "../../utilities/cfs-utilities.js";
 
 export class CfsEtaProjectGenerator {
-  /**
-   * Constructor
-   * @param pluginPath - The path to the plugin.
-   * @param cfsFeature - The feature information required for code generation.
-   */
-  constructor(
-    protected pluginPath: string,
-    protected cfsFeature: CfsFeature
-  ) {}
+	/**
+	 * Constructor
+	 * @param pluginPath - The path to the plugin.
+	 * @param cfsFeature - The feature information required for code generation.
+	 */
+	constructor(
+		protected pluginPath: string,
+		protected cfsFeature: CfsFeature
+	) {}
 
-  /**
-   * Generates the project by copying files and rendering templates.
-   * @param baseDir - Directory location for the files generated.
-   * @returns A promise that resolves when the project generation is complete.
-   */
-  async generateProject(
-    baseDir: string,
-    context: CfsProject
-  ): Promise<void> {
-    const formattedFiles = this.cfsFeature.files.map((file) => {
-      const evaluatedDst = evalNestedTemplateLiterals(
-        file.dst,
-        context
-      );
+	/**
+	 * Generates the project by copying files and rendering templates.
+	 * @param baseDir - Directory location for the files generated.
+	 * @returns A promise that resolves when the project generation is complete.
+	 */
+	async generateProject(
+		baseDir: string,
+		context: CfsProject
+	): Promise<void> {
+		const formattedFiles = this.cfsFeature.files.map((file) => {
+			const evaluatedDst = evalNestedTemplateLiterals(
+				file.dst,
+				context
+			);
 
-      return {
-        ...file,
-        src: path.join(this.pluginPath, file.src),
-        dst: baseDir ? path.join(baseDir, evaluatedDst) : evaluatedDst
-      };
-    });
+			return {
+				...file,
+				src: path.join(this.pluginPath, file.src),
+				dst: baseDir ? path.join(baseDir, evaluatedDst) : evaluatedDst
+			};
+		});
 
-    await copyFiles(formattedFiles, context);
+		await copyFiles(formattedFiles, context);
 
-    const formattedTemplates = this.cfsFeature.templates.map(
-      (template) => {
-        const evaluatedDst = evalNestedTemplateLiterals(
-          template.dst,
-          context
-        );
+		const formattedTemplates = this.cfsFeature.templates.map(
+			(template) => {
+				const evaluatedDst = evalNestedTemplateLiterals(
+					template.dst,
+					context
+				);
 
-        return {
-          ...template,
-          dst: baseDir
-            ? path.join(baseDir, evaluatedDst)
-            : evaluatedDst
-        };
-      }
-    );
+				return {
+					...template,
+					dst: baseDir
+						? path.join(baseDir, evaluatedDst)
+						: evaluatedDst
+				};
+			}
+		);
 
-    await renderTemplates(
-      formattedTemplates,
-      context,
-      this.pluginPath
-    );
-  }
+		await renderTemplates(
+			formattedTemplates,
+			context,
+			this.pluginPath
+		);
+	}
 }

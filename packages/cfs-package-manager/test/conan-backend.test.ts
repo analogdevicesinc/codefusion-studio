@@ -28,6 +28,7 @@ import type {
 	CfsPackageFilter
 } from "../src/index.js";
 import { ConanError } from "../src/conan-backend/conan-runner.js";
+import { isConanGraphFailure } from "../src/index.js";
 
 use(chaiAsPromised);
 
@@ -274,7 +275,9 @@ describe("ConanPkgManager", function () {
 		it("should fail with localOnly when dependency graph is not in local cache", async function () {
 			await expect(
 				api.dependencies(ref, { localOnly: true })
-			).to.be.rejectedWith(/not found|resolved|cache|version/i);
+			).to.be.rejectedWith(
+				/not found|couldn't find|resolved|cache|version/i
+			);
 		});
 
 		it("should resolve dependencies from cache with localOnly after packages are cached", async function () {
@@ -378,6 +381,117 @@ describe("ConanPkgManager", function () {
 				await expect(api.dependenciesBatch(conflicting)).to.be
 					.rejected;
 			});
+
+			it("should reject with a ConanGraphFailure carrying the conflict", async function () {
+				// The rejection above is only useful to the caller if it says
+				// what clashed. Assert the structured cause survives the round
+				// trip through the backend, since a plain rejection would still
+				// satisfy the previous test.
+				const error: unknown = await expect(
+					api.dependenciesBatch(conflicting)
+				).to.be.rejected;
+
+				if (!isConanGraphFailure(error)) {
+					expect.fail(
+						`Expected a ConanGraphFailure, got ${String(error)}`
+					);
+				}
+
+				expect(error.graphError.type).to.equal("conflict");
+				expect(error.conflict?.packageName).to.equal("test_pkg_dep1");
+				expect(
+					error.conflict?.conflictingRequirements
+				).to.have.deep.members([
+					{ name: "test_pkg_dep1", version: "1.0" },
+					{ name: "test_pkg_dep1", version: "2.0" }
+				]);
+
+				// The extension shows this message to the user, so its wording
+				// is part of the contract rather than an implementation detail.
+				expect(error.message).to.equal(
+					"Version conflict on test_pkg_dep1"
+				);
+			});
+
+			it("should still answer for both when resolved sequentially", async function () {
+				// The reason dependenciesSequential exists: this is the call
+				// the UI falls back to so it can still show what each selected
+				// package requires after the batch rejects.
+				const sequential =
+					await api.dependenciesSequential(conflicting);
+
+				conflicting.forEach((ref) => {
+					expect(sequential[refKey(ref)]).to.be.an("array").that.is
+						.not.empty;
+				});
+			});
+		});
+	});
+
+	describe("dependenciesSequential", function () {
+		const refs = [
+			{ name: "test_pkg_consumer1", version: "1.0" },
+			{ name: "test_pkg1", version: "1.0" }
+		];
+
+		const refKey = (ref: { name: string; version: string }) =>
+			`${ref.name}/${ref.version}`;
+
+		it("should return the same closures as one dependencies() call per reference", async function () {
+			const individually: Awaited<
+				ReturnType<typeof api.dependencies>
+			>[] = [];
+			for (const ref of refs) {
+				individually.push(await api.dependencies(ref));
+			}
+
+			const sequential = await api.dependenciesSequential(refs);
+
+			refs.forEach((ref, index) => {
+				expect(sequential[refKey(ref)])
+					.to.be.an("array")
+					.that.has.deep.members(individually[index]);
+			});
+		});
+
+		it("should include a key for every requested reference, including packages with no dependencies", async function () {
+			const sequential = await api.dependenciesSequential(refs);
+
+			refs.forEach((ref) => {
+				expect(sequential).to.have.property(refKey(ref));
+			});
+
+			expect(sequential["test_pkg1/1.0"]).to.be.an("array").that.is
+				.empty;
+		});
+
+		it("should return an empty result for an empty request", async function () {
+			expect(await api.dependenciesSequential([])).to.deep.equal({});
+		});
+
+		it("should pass options through to each resolution", async function () {
+			const ref = {
+				name: "test_pkg_prerelease_consumer",
+				version: "1.0"
+			};
+
+			const sequential = await api.dependenciesSequential([ref], {
+				unresolved: true
+			});
+
+			expect(sequential[refKey(ref)]).to.deep.equal([
+				{ name: "test_pkg_prerelease1", version: "^1.2.0-b.1" }
+			]);
+		});
+
+		it("should reject when a single reference cannot be resolved", async function () {
+			// Documented contract: the references are never combined, so the
+			// only way this fails is a reference unresolvable on its own.
+			await expect(
+				api.dependenciesSequential([
+					{ name: "test_pkg_does_not_exist", version: "1.0" }
+				])
+			).to.be.rejected;
 		});
 	});
 
@@ -493,6 +607,43 @@ describe("ConanPkgManager", function () {
 			).to.be.rejected;
 		});
 
+		it("should format version conflict error with resolution steps", async function () {
+			// This test validates that the version conflict error is formatted with
+			// actionable information, not just a generic error message
+			try {
+				await api.install({
+					name: "test_pkg_consumer1",
+					version: "2.0"
+				});
+				expect.fail(
+					"Expected install to throw version conflict error"
+				);
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : String(err);
+
+				// Verify the error message contains our formatted output from error_handling.py
+				expect(errorMessage).to.match(
+					/Version conflict detected for package/i,
+					"Error message should indicate version conflict"
+				);
+				expect(errorMessage).to.match(
+					/test_pkg_dep1/i,
+					"Error message should mention the conflicting package name"
+				);
+				expect(errorMessage).to.match(
+					/To resolve this conflict:/i,
+					"Error message should provide resolution steps"
+				);
+
+				// Verify the source package is correctly identified
+				expect(errorMessage).to.match(
+					/test_pkg_consumer1\/2\.0 requires version: 2\.0/,
+					"Error message should show which package requires the version"
+				);
+			}
+		});
+
 		it("should still have the original packages installed after failed upgrade", async function () {
 			// Verify the original installation is still intact
 			const installedPackages = await api.list();
@@ -517,12 +668,12 @@ describe("ConanPkgManager", function () {
 			for (const pkg of pkgs) {
 				try {
 					await api.uninstall(pkg);
-				} catch (error) {
+				} catch {
 					// Ignore errors if package is not installed
 				}
 				try {
 					await api.delete(`${pkg}/*`);
-				} catch (error) {
+				} catch {
 					// Ignore errors if package doesn't exist in cache
 				}
 			}
@@ -1125,6 +1276,86 @@ describe("ConanPkgManager", function () {
 					// Ignore cleanup errors
 				}
 			});
+
+			it("should reject manifest with non-object package entry", async function () {
+				// Regression test for KeyError when package entry is not a dict
+				const invalidManifestPath = path.join(
+					testManifestDir,
+					"non-object-entry.json"
+				);
+				await fs.writeFile(
+					invalidManifestPath,
+					JSON.stringify({
+						version: 1,
+						packages: [
+							{ name: "test_pkg1", version: "1.0" },
+							"invalid-string-entry" // ← Should be rejected
+						]
+					})
+				);
+
+				await expect(
+					api.checkManifest(invalidManifestPath)
+				).to.be.rejectedWith(
+					/Invalid package entry at index 1: must be an object/
+				);
+
+				try {
+					await fs.unlink(invalidManifestPath);
+				} catch {
+					// Ignore cleanup errors
+				}
+			});
+
+			it("should reject manifest package missing 'name' field", async function () {
+				// Regression test for KeyError when accessing pkg['name']
+				const invalidManifestPath = path.join(
+					testManifestDir,
+					"missing-name.json"
+				);
+				await fs.writeFile(
+					invalidManifestPath,
+					JSON.stringify({
+						version: 1,
+						packages: [{ version: "1.0" }] // Missing 'name'
+					})
+				);
+
+				await expect(
+					api.checkManifest(invalidManifestPath)
+				).to.be.rejectedWith(/missing required 'name' field/);
+
+				try {
+					await fs.unlink(invalidManifestPath);
+				} catch {
+					// Ignore cleanup errors
+				}
+			});
+
+			it("should reject manifest package missing 'version' field", async function () {
+				// Regression test for missing version validation
+				const invalidManifestPath = path.join(
+					testManifestDir,
+					"missing-version.json"
+				);
+				await fs.writeFile(
+					invalidManifestPath,
+					JSON.stringify({
+						version: 1,
+						packages: [{ name: "test_pkg" }] // Missing 'version'
+					})
+				);
+
+				await expect(
+					api.checkManifest(invalidManifestPath)
+				).to.be.rejectedWith(/missing required 'version' field/);
+
+				try {
+					await fs.unlink(invalidManifestPath);
+				} catch {
+					// Ignore cleanup errors
+				}
+			});
 		});
 
 		describe("getInstallPlan", function () {
@@ -1342,6 +1573,12 @@ describe("ConanPkgManager", function () {
 						expect(secondPlan.requiresLicenseAcceptance)
 							.to.be.an("array")
 							.with.length.greaterThan(0);
+						expect(
+							secondPlan.requiresLicenseAcceptance[0].reference
+						).to.deep.equal({
+							name: "test_pkg_with_license1",
+							version: "1.0.0"
+						});
 
 						// Sanity check: package should still not be installed.
 						const installedPackages = await api.list();
@@ -1588,7 +1825,7 @@ describe("ConanPkgManager", function () {
 						await api.uninstall("test_pkg_consumer1");
 						await api.uninstall("test_pkg_dep1");
 						await api.uninstall("test_pkg_dep1dep");
-					} catch (error) {
+					} catch {
 						// Ignore errors during cleanup
 					}
 				}
@@ -1606,18 +1843,18 @@ describe("ConanPkgManager", function () {
 				// Using test_pkg1 and test_pkg2 as they have no dependencies
 				try {
 					await api.uninstall("test_pkg1");
-				} catch (error) {
+				} catch {
 					// Ignore errors if package is not installed
 				}
 				try {
 					await api.uninstall("test_pkg2");
-				} catch (error) {
+				} catch {
 					// Ignore errors if package is not installed
 				}
 
 				try {
 					await api.delete("test_pkg*");
-				} catch (error) {
+				} catch {
 					// Ignore errors if package doesn't exist in cache
 				}
 			});
@@ -1663,7 +1900,7 @@ describe("ConanPkgManager", function () {
 					try {
 						await api.uninstall("test_pkg1");
 						await api.uninstall("test_pkg2");
-					} catch (error) {
+					} catch {
 						// Ignore errors during cleanup
 					}
 				}
@@ -1942,7 +2179,9 @@ describe("ConanPkgManager", function () {
 					api.installFromManifest(manifestPath, {
 						localOnly: true
 					})
-				).to.be.rejectedWith(/No versions found matching/);
+				).to.be.rejectedWith(
+					/Couldn't find the following packages|No versions found matching/
+				);
 			});
 
 			it("should resolve version with | in version range", async function () {
@@ -3338,7 +3577,7 @@ describe("ConanPkgManager", function () {
 				for (const pkg of installedPackages) {
 					try {
 						await api.uninstall(pkg.name);
-					} catch (error) {
+					} catch {
 						// Ignore errors during cleanup
 					}
 				}
@@ -3349,7 +3588,7 @@ describe("ConanPkgManager", function () {
 						await api.delete(
 							`${pkg.reference.name}/${pkg.reference.version}`
 						);
-					} catch (error) {
+					} catch {
 						// Ignore errors during cleanup
 					}
 				}
@@ -3500,6 +3739,15 @@ describe("ConanPkgManager", function () {
 
 			it("should return empty array when pattern matches no packages", async function () {
 				const cachedPackages = await api.listCache("non_existent_*");
+
+				expect(cachedPackages).to.be.an("array");
+				expect(cachedPackages).to.have.length(0);
+			});
+
+			it("should return empty array for uncached exact reference", async function () {
+				const cachedPackages = await api.listCache(
+					"nonexistent_package/1.0.0"
+				);
 
 				expect(cachedPackages).to.be.an("array");
 				expect(cachedPackages).to.have.length(0);

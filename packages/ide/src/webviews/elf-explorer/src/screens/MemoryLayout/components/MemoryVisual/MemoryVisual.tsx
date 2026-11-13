@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import type {
 	TSection
 } from '../../../../common/types/memory-layout';
 import type {TSymbol} from '../../../../common/types/symbols';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 import styles from './MemoryVisual.module.scss';
 
 type TMemoryVisualProps = {
@@ -52,6 +53,9 @@ export default function MemoryVisual({
 	onHover,
 	onMouseLeave
 }: TMemoryVisualProps) {
+	const memLayoutL10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
 	const [computedSegments, setComputedSegments] = useState<
 		TSegment[][] | TSection[][]
 	>();
@@ -63,9 +67,14 @@ export default function MemoryVisual({
 		clonedSegments = removeItemsWithoutSize(clonedSegments);
 
 		setComputedSegments(
-			clonedSegments.length ? calculateSegments(clonedSegments) : []
+			clonedSegments.length
+				? calculateSegments(
+						clonedSegments,
+						memLayoutL10n?.unusedSegment
+					)
+				: []
 		);
-	}, [segments]);
+	}, [segments, memLayoutL10n?.unusedSegment]);
 
 	const handleOnClick = (segment: TSegment | TSection) => {
 		onClick(segment);

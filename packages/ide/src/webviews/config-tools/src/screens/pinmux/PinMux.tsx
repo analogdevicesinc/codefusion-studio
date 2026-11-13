@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
  * limitations under the License.
  *
  */
-import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsTwoColumnLayout';
 import PinmuxHeader from './header/PinmuxHeader';
 import PinmuxSide from './side/Side';
 import PackageDisplay from './package-display/PackageDisplay';
 import {useEffect, useState} from 'react';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import EightColumnLayout from '../../components/eight-column-layout/EightColumnLayout';
 import PinConfigSidebar from './pin-config-sidebar/pin-config-sidebar';
 import {useAppDispatch} from '../../state/store';
@@ -26,14 +27,35 @@ import {
 } from '../../state/slices/peripherals/peripherals.reducer';
 import {
 	useActivePeripheral,
-	useActiveSignal
+	useActiveSignal,
+	useCurrentSignalTarget
 } from '../../state/slices/peripherals/peripherals.selector';
 import styles from './pin-mux.module.scss';
+import {usePinHasConfiguration} from '../../hooks/use-pin-has-configuration';
 
 function PinMUX() {
 	const dispatch = useAppDispatch();
 	const activeSignal = useActiveSignal();
 	const peripheral = useActivePeripheral();
+
+	const signalName = activeSignal?.split(' ')[1] ?? '';
+	const pinId = useCurrentSignalTarget(peripheral ?? '', signalName);
+
+	// Check if the pin has a configuration for the given peripheral and signal
+	// This prevents the config sidebar from being displayed for pins that don't have a configuration
+	const pinHasConfiguration = usePinHasConfiguration({
+		pinId,
+		peripheral: peripheral ?? '',
+		signal: signalName
+	});
+
+	const l10nContext = useLocaleContext();
+	const commonL10n = l10nContext?.common as
+		| Record<string, string>
+		| undefined;
+	const pinmuxL10n = l10nContext?.pinmux as
+		| Record<string, string>
+		| undefined;
 	const [innerWidth, setInnerWidth] = useState(window.innerWidth);
 	const [innerHeight, setInnerHeight] = useState(window.innerHeight);
 
@@ -61,8 +83,11 @@ function PinMUX() {
 
 	return innerWidth < 900 || innerHeight < 475 ? (
 		<EightColumnLayout
-			header='Pin Config'
-			subtitle='This feature is not currently supported for windows this size. If possible please increase the size of this window.'
+			header={pinmuxL10n?.title ?? 'Pin Config'}
+			subtitle={
+				commonL10n?.windowTooSmall ??
+				'This feature is not currently supported for windows this size. If possible please increase the size of this window.'
+			}
 		/>
 	) : (
 		<CfsTwoColumnLayout>
@@ -81,7 +106,9 @@ function PinMUX() {
 			<PackageDisplay />
 			<div className={styles.sidePanelContainer}>
 				<PinConfigSidebar
-					isMinimised={!activeSignal || !peripheral}
+					isMinimised={
+						!activeSignal || !peripheral || !pinHasConfiguration
+					}
 				/>
 			</div>
 		</CfsTwoColumnLayout>

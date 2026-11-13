@@ -16,7 +16,11 @@ import {EmptyState} from 'cfs-react-library';
 import {type TLocaleContext} from '../../../../common/types/l10n';
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 
-type EmptyReason = 'noSessions' | 'notHalted' | 'noData' | 'readError';
+type EmptyReason =
+	| 'noSessions'
+	| 'notHalted'
+	| 'noData'
+	| 'readError';
 
 const errorReasons = new Set<EmptyReason>(['readError']);
 

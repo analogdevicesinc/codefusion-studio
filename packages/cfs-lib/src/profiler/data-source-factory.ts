@@ -16,21 +16,24 @@
 import type { Device } from "usb";
 import type { IProfilerDataSource } from "./data-source.js";
 import { SerialDataSource } from "./serial-data-source.js";
+import type { SerialLineOptions } from "./serial-port-settings.js";
 import { UsbDataSource } from "./usb-data-source.js";
 
 /**
  * Configuration for a serial port data source.
  */
 export class SerialSourceConfig {
-	private declare readonly __serialSourceConfigBrand: "SerialSourceConfig";
+	declare private readonly __serialSourceConfigBrand: "SerialSourceConfig";
 
 	/**
 	 * @param portPath Serial port path (e.g., '/dev/ttyUSB0' or 'COM3')
 	 * @param baudRate Baud rate for the serial connection
+	 * @param lineOptions Optional data bits, parity and stop bits
 	 */
 	constructor(
 		public readonly portPath: string,
-		public readonly baudRate: number
+		public readonly baudRate: number,
+		public readonly lineOptions: SerialLineOptions = {}
 	) {}
 }
 
@@ -38,7 +41,7 @@ export class SerialSourceConfig {
  * Configuration for a USB data source.
  */
 export class UsbSourceConfig {
-	private declare readonly __usbSourceConfigBrand: "UsbSourceConfig";
+	declare private readonly __usbSourceConfigBrand: "UsbSourceConfig";
 
 	/**
 	 * @param device The USB device to capture from. The device is expected to
@@ -58,7 +61,11 @@ export function createDataSource(
 	config: DataSourceConfig
 ): IProfilerDataSource {
 	if (config instanceof SerialSourceConfig) {
-		return new SerialDataSource(config.portPath, config.baudRate);
+		return new SerialDataSource(
+			config.portPath,
+			config.baudRate,
+			config.lineOptions
+		);
 	} else if (config instanceof UsbSourceConfig) {
 		return new UsbDataSource(config.device);
 	}

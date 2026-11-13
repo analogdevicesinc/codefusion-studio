@@ -12,46 +12,20 @@
  * limitations under the License.
  *
  */
-import {
-	createContext,
-	useCallback,
-	useContext,
-	useMemo,
-	useState
-} from 'react';
+import {createContext, useContext, useMemo, useState} from 'react';
 import type React from 'react';
 import type {SocCatalog} from '../state/slices/workspace-reducer';
-
-// Module-level ref so thunks can call resolveCoreDataModelId without
-// receiving the catalog as a parameter.
-let _catalog: SocCatalog = [];
-
-/**
- * Resolves a CorePart.id to its dataModelCoreID for the given SoC.
- * Available as a standalone function for use in Redux thunks, and also
- * exposed on the context value for use in components.
- */
-export function resolveCoreDataModelId(
-	socName: string,
-	corePartId: string
-): string | undefined {
-	return _catalog
-		.find(s => s.name === socName)
-		?.cores.find(c => c.id === corePartId)?.dataModelCoreID;
-}
 
 type CatalogContextValue = {
 	catalog: SocCatalog;
 	setCatalog: (catalog: SocCatalog) => void;
-	resolveCoreDataModelId: typeof resolveCoreDataModelId;
 };
 
 const CatalogContext = createContext<CatalogContextValue>({
 	catalog: [],
 	setCatalog() {
 		/* Noop by default */
-	},
-	resolveCoreDataModelId
+	}
 });
 
 export const useCatalogContext = () => useContext(CatalogContext);
@@ -63,19 +37,7 @@ export function CatalogProvider({
 }) {
 	const [catalog, setCatalog] = useState<SocCatalog>([]);
 
-	const updateCatalog = useCallback((newCatalog: SocCatalog) => {
-		_catalog = newCatalog;
-		setCatalog(newCatalog);
-	}, []);
-
-	const context = useMemo(
-		() => ({
-			catalog,
-			setCatalog: updateCatalog,
-			resolveCoreDataModelId
-		}),
-		[catalog, updateCatalog]
-	);
+	const context = useMemo(() => ({catalog, setCatalog}), [catalog]);
 
 	return (
 		<CatalogContext.Provider value={context}>

@@ -29,6 +29,8 @@ type UninstallPackageModalProps = {
 	readonly packages: CfsPackageReference[];
 	/** Single mode: other packages that depend on the one being uninstalled */
 	readonly dependents?: CfsPackageReference[];
+	/** Disables confirming, e.g. while custom remotes are indexed. */
+	readonly isLocked?: boolean;
 	readonly onClose: () => void;
 	readonly onConfirm: (hideConfirmation: boolean) => void;
 };
@@ -74,10 +76,14 @@ function RemovalAccordion({
 					setOpen(isOpen => !isOpen);
 				}}
 			>
-				<ul className={styles.parentList}>
+				<ul
+					data-test='uninstall-dependents'
+					className={styles.parentList}
+				>
 					{parents.map(parent => (
 						<li
 							key={`${parent.name}/${parent.version}`}
+							data-test={`uninstall-dependent-${parent.name}`}
 							className={styles.parentItem}
 						>
 							<span className={styles.parentArrow} aria-hidden='true'>
@@ -102,6 +108,7 @@ export default function UninstallPackageModal({
 	isOpen,
 	packages,
 	dependents,
+	isLocked = false,
 	onClose,
 	onConfirm
 }: UninstallPackageModalProps) {
@@ -129,7 +136,10 @@ export default function UninstallPackageModal({
 			<Modal
 				isOpen={isOpen}
 				handleModalClose={onClose}
-				titleId={`uninstall-package-modal-title-${packages[0].name.replace(/[^A-Za-z0-9_-]/g, '-')}`}
+				titleId={`uninstall-package-modal-title-${packages[0].name.replace(
+					/[^A-Za-z0-9_-]/g,
+					'-'
+				)}`}
 				title={
 					isBatchMode ? (
 						<LocalizedMessage id='packageCard.uninstallModal.batchTitle' />
@@ -139,11 +149,17 @@ export default function UninstallPackageModal({
 				}
 				footer={
 					<>
-						<Button appearance='secondary' onClick={onClose}>
+						<Button
+							appearance='secondary'
+							dataTest='uninstall-cancel'
+							onClick={onClose}
+						>
 							<LocalizedMessage id='packageCard.uninstallModal.cancel' />
 						</Button>
 						<Button
 							appearance='primary'
+							dataTest='uninstall-confirm'
+							disabled={isLocked}
 							onClick={() => {
 								onConfirm(hideConfirmation);
 							}}
@@ -217,6 +233,7 @@ export default function UninstallPackageModal({
 
 					{!isBatchMode && !showDependents && (
 						<CheckBox
+							dataTest='uninstall-dont-show-again'
 							checked={hideConfirmation}
 							className={styles.uninstallModalCheckbox}
 							onClick={() => {

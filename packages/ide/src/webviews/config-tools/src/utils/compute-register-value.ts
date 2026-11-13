@@ -28,6 +28,44 @@ import {
 import {getRegisterDictionary} from './register-dictionary';
 import {getSocControlsDictionary} from './soc-controls';
 
+export type RegisterConfigs = Record<
+	string,
+	Record<string, RegisterConfigField[] | undefined>
+>;
+
+// eslint-disable-next-line max-params
+export function addToRegisterConfigs(
+	configs: Record<
+		string,
+		Record<string, RegisterConfigField[] | undefined>
+	>,
+	configNamespace: string,
+	controlNamespace: string,
+	dmConfig: ConfigFields | undefined,
+	key: string,
+	value: string
+) {
+	if (dmConfig?.[key] && value !== undefined && value !== '') {
+		// If we can't find the value, try "VALUE" as it is most likely an entry box.
+		const cfg = dmConfig[key][value] ?? dmConfig[key].VALUE;
+
+		configs[configNamespace] = configs[configNamespace] ?? {};
+		configs[configNamespace][key] =
+			configs[configNamespace][key] ?? [];
+
+		cfg?.forEach(s => {
+			configs[configNamespace][key]?.push({
+				...s,
+				ControlValue: getNamespacedControlIntegerValue(
+					controlNamespace,
+					key,
+					value
+				)
+			});
+		});
+	}
+}
+
 export default function computeRegisterValue(
 	assignedPinsConfigs: Array<{
 		pinConfig: Array<RegisterConfigField | undefined>;
@@ -244,6 +282,11 @@ function getControlIntegerValue(
 ): number {
 	const control = getControl(controlId, controls);
 
+	if (control?.Type === 'boolean') {
+		// Booleans map to 1 for TRUE and 0 for FALSE.
+		return controlValue.toUpperCase() === 'TRUE' ? 1 : 0;
+	}
+
 	if (control?.Type === 'enum') {
 		// For enums, get the value of the enum's Value field
 
@@ -310,7 +353,7 @@ export function computeDefaultValues(
 				>((acc, [fieldKey, fieldValue]) => {
 					const field = enums.find(en => String(fieldKey) === en.Id);
 
-					if (field) {
+					if (field ?? fieldKey === 'VALUE') {
 						acc[fieldKey] = fieldValue;
 					}
 
@@ -334,6 +377,18 @@ export function computeDefaultValues(
 		const control = getControl(controlValueKey, controls);
 		const controlType = control?.Type;
 
+		// Enum options a plugin has disabled are marked Inactive. They must
+		// never be selected as the default value, so a plugin that narrows an
+		// enum to a single active option defaults to that option.
+		const inactiveEnumIds = new Set(
+			(control?.EnumValues ?? [])
+				.filter(enumValue => enumValue.Inactive)
+				.map(enumValue => enumValue.Id)
+		);
+		const firstActiveEnumId = control?.EnumValues?.find(
+			enumValue => !enumValue.Inactive
+		)?.Id;
+
 		let defaultValue: string | undefined;
 
 		if (control?.Default !== undefined) {
@@ -356,8 +411,12 @@ export function computeDefaultValues(
 
 		defaultValue = undefined;
 
+		// First, try to match using per-enum-ID config entries.
 		for (const [key, configs] of Object.entries(controlValues)) {
-			if (configMatchesResetValues(
+			if (key === 'VALUE' || inactiveEnumIds.has(key)) continue;
+
+			if (
+				configMatchesResetValues(
 					configs,
 					controlValueKey,
 					key,
@@ -369,8 +428,56 @@ export function computeDefaultValues(
 			}
 		}
 
-		defaultValueObj[controlValueKey] =
-			defaultValue ?? Object.keys(controlValues)[0];
+		// If no per-enum-ID match was found, fall back to the VALUE
+		// key to find the enum option whose numeric Value matches the
+		// register reset value.
+		if (
+			!defaultValue &&
+			controlValues.VALUE &&
+			controlType === 'enum'
+		) {
+			const resetVal = getIntegerControlResetValue(controlValues);
+
+			if (resetVal !== '') {
+				const resetBigInt = BigInt(resetVal);
+				const matchingEnum = control?.EnumValues?.find(
+					en => BigInt(en.Value) === resetBigInt && !en.Inactive
+				);
+
+				defaultValue =
+					matchingEnum?.Id ??
+					firstActiveEnumId ??
+					control?.EnumValues?.[0]?.Id ??
+					resetVal;
+			}
+		}
+
+		// For booleans configured via the VALUE shorthand, resolve the
+		// default from the register reset value: non-zero is TRUE, 0 is FALSE.
+		if (
+			!defaultValue &&
+			controlValues.VALUE &&
+			controlType === 'boolean'
+		) {
+			const resetVal = getIntegerControlResetValue(controlValues);
+
+			if (resetVal !== '') {
+				defaultValue =
+					BigInt(resetVal) === BigInt(0) ? 'FALSE' : 'TRUE';
+			}
+		}
+
+		const fallbackKey =
+			Object.keys(controlValues).find(
+				k => k !== 'VALUE' && !inactiveEnumIds.has(k)
+			) ??
+			firstActiveEnumId ??
+			control?.EnumValues?.[0]?.Id ??
+			(controlType === 'boolean'
+				? 'FALSE'
+				: Object.keys(controlValues)[0]);
+
+		defaultValueObj[controlValueKey] = defaultValue ?? fallbackKey;
 	}
 
 	return defaultValueObj;
@@ -407,8 +514,7 @@ function configMatchesResetValues(
 		const fieldKey = `${cfg.Register}_${cfg.Field}`;
 		const covered = coveredBits.get(fieldKey) ?? BigInt(0);
 		const isSliced =
-			cfg.SlicePosition !== undefined &&
-			cfg.SliceWidth !== undefined;
+			cfg.SlicePosition !== undefined && cfg.SliceWidth !== undefined;
 
 		// Determine the write mask and uncovered bits
 		const writeMask = isSliced
@@ -475,39 +581,48 @@ function getIntegerControlResetValue(
 	cfg: Record<string, ConfigField[]>
 ) {
 	const valueCfgSteps = cfg.VALUE;
-	let valueCfg: ConfigField | undefined;
 
 	if (cfg.VALUE === undefined) {
 		throw new Error(
-			`Invalid configuration object for control of type integer, received ${JSON.stringify(cfg)}`
+			`Invalid configuration object for control of type integer, received ${JSON.stringify(
+				cfg
+			)}`
 		);
 	}
 
+	let combinedResetValue = BigInt(0);
+	let foundAny = false;
+
+	// Iterate all steps for the VALUE config, combining reset value contributions from each write step.
+	// We OR all such values together, to collect contributions from multiple steps. This occurs when a
+	// value is split into different parts which are written into different registers. Here we are
+	// combining the contributions from each part back into a single value.
 	for (const step of valueCfgSteps) {
 		if (
 			step.Operation.toLowerCase() === 'write' &&
 			step.Value?.match(/\$\{Value\}/)
 		) {
-			valueCfg = step;
-			break;
+			let resetValue = getSlicedResetValue(step);
+
+			if (typeof resetValue !== 'undefined' && step.InverseValue) {
+				resetValue = evaluateBitfieldExpression(
+					resetValue,
+					step.InverseValue
+				);
+			}
+
+			if (typeof resetValue !== 'undefined') {
+				combinedResetValue |= BigInt(resetValue);
+				foundAny = true;
+			}
 		}
 	}
 
-	// No register write of the value found.
-	if (valueCfg === undefined) {
+	if (!foundAny) {
 		return '';
 	}
 
-	let resetValue = getSlicedResetValue(valueCfg);
-
-	if (typeof resetValue !== 'undefined' && valueCfg.InverseValue) {
-		resetValue = evaluateBitfieldExpression(
-			resetValue,
-			valueCfg.InverseValue
-		);
-	}
-
-	return String(resetValue);
+	return String(combinedResetValue);
 }
 
 function getResetValue(valueCfg: ConfigField) {

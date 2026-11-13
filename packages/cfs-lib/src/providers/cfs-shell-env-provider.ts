@@ -36,6 +36,8 @@ export interface ShellEnvOptions {
 	gitExecPath?: string;
 	/** Path to CFSAI tool */
 	cfsaiPath?: string;
+	/** Directory holding the cfspkg git remote helper; prepended to PATH */
+	gitRemoteHelperDir?: string;
 	/** Additional environment variables to include */
 	additionalEnv?: Record<string, string>;
 }
@@ -177,6 +179,13 @@ export class CfsShellEnvProvider {
 
 		if (options.additionalEnv) {
 			this.mergeAdditionalEnv(env, options.additionalEnv);
+		}
+
+		// Prepend the cfspkg git remote helper directory so git/west can resolve
+		// cfspkg:// URLs. The uniquely named `git-remote-cfspkg` binary is found
+		// regardless of position, so ordering relative to other entries is moot.
+		if (options.gitRemoteHelperDir) {
+			env.PATH = `${options.gitRemoteHelperDir}${path.delimiter}${env.PATH}`;
 		}
 
 		return env;

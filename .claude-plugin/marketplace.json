@@ -7,7 +7,7 @@
 	"plugins": [
 		{
 			"name": "cfs-skills",
-			"description": "Skills for CodeFusion Studio",
+			"description": "Answers CodeFusion Studio questions from the bundled documentation, runs cfsutil commands, creates and builds workspaces, and evaluates AI models on ADI hardware and reports on the results. Use when working with CodeFusion Studio or cfsutil.",
 			"source": "./packages/cfs-skills"
 		}
 	]

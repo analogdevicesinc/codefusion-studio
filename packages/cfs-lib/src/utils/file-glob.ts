@@ -74,6 +74,7 @@ export async function globFiles(
 		deep,
 		onlyFiles,
 		dot,
-		absolute
+		absolute,
+		suppressErrors: true
 	});
 }

@@ -37,7 +37,8 @@
 			"args": ["topic", "--someFlag"],
 			"env": {
 				"CFSUTIL_CONFIG_HOME": "${workspaceFolder}/packages/cli/config",
-				"XDG_CONFIG_HOME": "${workspaceFolder}/packages/cli/config"
+				"XDG_CONFIG_HOME": "${workspaceFolder}/packages/cli/config",
+				"DO_NOT_TRACK": "1"
 			},
 			"runtimeExecutable": "${workspaceRoot}/node_modules/.bin/tsx",
 			"console": "integratedTerminal",

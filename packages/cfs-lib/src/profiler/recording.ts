@@ -21,17 +21,15 @@ import {
 	createDataSource,
 	DataSourceConfig
 } from "./data-source-factory.js";
+import {
+	CTF_TRACE_START_TAG,
+	ENABLE_COMMAND
+} from "./tracing-protocol.js";
 
 /**
- * Default start tag that marks the beginning of a CTF trace.
+ * The format used to capture incoming data. See {@link RecordingOptions.format}.
  */
-export const CTF_TRACE_START_TAG = Buffer.from("_zpl_ctf_start__");
-
-/**
- * Command written to the data source to trigger the start of profiling
- * when the device is configured with TRACING_HANDLE_HOST_CMD.
- */
-export const ENABLE_COMMAND = "enable";
+export type RecordingFormat = "ctf" | "txt";
 
 /**
  * Configuration options for a recording session.
@@ -47,9 +45,23 @@ export interface RecordingOptions {
 	 * configured with TRACING_HANDLE_HOST_CMD. That option is always selected
 	 * when USB is used as the tracing backend. In this scenario, no
 	 * {@link CTF_TRACE_START_TAG} is transmitted, and the recording captures
-	 * valid traces from the first byte.
+	 * valid traces from the first byte. This is independent of
+	 * {@link RecordingOptions.format} and applies to both formats.
 	 */
 	sendEnableCommand?: boolean;
+	/**
+	 * The format used to capture incoming data.
+	 * - `"ctf"` (default): data is held in memory until the
+	 *   {@link CTF_TRACE_START_TAG} start tag is seen, then written to a CTF
+	 *   trace file. If {@link RecordingOptions.sendEnableCommand} is set, no
+	 *   start tag is expected and capture begins immediately instead.
+	 * - `"txt"`: data is captured verbatim as plain text from the first
+	 *   byte. Start tags are never looked for, so the data is never treated
+	 *   as a CTF trace. This provides a simple profiling mode for
+	 *   workspaces (e.g. MSDK) that never emit a CTF trace and just want
+	 *   the raw device output captured to a file.
+	 */
+	format?: RecordingFormat;
 }
 
 /**
@@ -93,6 +105,12 @@ export class Recording {
 		this.dataSource.onError((error: Error) => {
 			this.emitError(error);
 		});
+		this.dataSource.onDisconnect(() => {
+			// Interprets disconnects as errors.
+			this.emitError(
+				new Error("Device disconnected during recording.")
+			);
+		});
 	}
 
 	/**
@@ -119,11 +137,18 @@ export class Recording {
 			// Open the data source connection
 			await recording.dataSource.open();
 
-			// Signal the device to start streaming traces.
-			if (options.sendEnableCommand) {
+			// Text capture never waits for a start tag, so the file can be
+			// opened immediately, regardless of how streaming is triggered.
+			if (options.format === "txt") {
+				recording.currentFile = await recording.openTraceFile("txt");
+			} else if (options.sendEnableCommand) {
 				// There are no start tags in this mode, so the file has to be
 				// opened here.
 				recording.currentFile = await recording.openTraceFile();
+			}
+
+			// Signal the device to start streaming traces.
+			if (options.sendEnableCommand) {
 				await recording.dataSource.write(ENABLE_COMMAND);
 			}
 		} catch (error) {
@@ -173,17 +198,15 @@ export class Recording {
 	}
 
 	/**
-	 * Stops the recording session.
-	 *
-	 * This is a no-op if the recording has already been stopped.
+	 * Stops the recording session by closing the data source if it is
+	 * open, waiting for any in-progress data processing to complete,
+	 * and closing the current trace file if one is open.
 	 */
 	async stop(): Promise<void> {
-		if (!this.dataSource.isOpen) {
-			return;
+		if (this.dataSource.isOpen) {
+			// Close data source first to prevent new data from arriving
+			await this.dataSource.close();
 		}
-
-		// Close data source first to prevent new data from arriving
-		await this.dataSource.close();
 
 		// Wait for any in-progress data processing to complete before closing files
 		await this.processingPromise;
@@ -210,6 +233,13 @@ export class Recording {
 	 * Handles incoming data from the data source.
 	 */
 	private async handleData(data: Buffer): Promise<void> {
+		if (this._options.format === "txt") {
+			// Plain text capture never looks for a start tag; data is
+			// written straight through as it arrives.
+			await this.writeData(data);
+			return;
+		}
+
 		// First concatenate the new data to the existing buffer
 		this.buffer = Buffer.concat([this.buffer, data]);
 
@@ -251,8 +281,9 @@ export class Recording {
 				await this.writeData(this.buffer.subarray(0, tailBegin));
 				this.buffer = this.buffer.subarray(tailBegin);
 			} else {
-				// No start tag found and no file open yet.
-				// Wait for more data that might contain a start tag.
+				// No start tag found yet and no file open (CTF format
+				// without sendEnableCommand). Wait for more data that
+				// might contain a start tag.
 				break;
 			}
 		}
@@ -261,8 +292,12 @@ export class Recording {
 	/**
 	 * Creates the file path for a trace.
 	 * This method ensures that we don't overwrite existing files by appending a counter to the file name if needed.
+	 * @param extension - File extension to use, without the leading dot.
+	 * Defaults to `ctf`; pass `txt` for plain text capture.
 	 */
-	private async openTraceFile(): Promise<fsPromises.FileHandle> {
+	private async openTraceFile(
+		extension = "ctf"
+	): Promise<fsPromises.FileHandle> {
 		const originalFileName = this.createTimestampedTracefileName();
 		let attempt = 0;
 
@@ -275,7 +310,7 @@ export class Recording {
 						: `${originalFileName}_${String(attempt)}`;
 				const filePath = path.join(
 					this._options.outputFolder,
-					`${fileName}.ctf`
+					`${fileName}.${extension}`
 				);
 				const fileHandle = await fsPromises.open(filePath, "wx");
 				this._capturedFiles.push(filePath);

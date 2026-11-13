@@ -16,7 +16,9 @@
 import type { NotificationType, RequestType } from "vscode-messenger-common";
 import type {
   CfsCachedPackage,
-  CfsPackage,
+  CfsDependencyConflict,
+  CfsInstallInput,
+  CfsInstallPlan,
   CfsPackageInstallOptions,
   CfsPackageReference,
 } from "cfs-package-manager";
@@ -39,21 +41,165 @@ export const isLoggedInStatusType: NotificationType<{
   method: "logged-in-status-updated",
 };
 
-export const packageManagerRemotesUpdatedType: NotificationType<void> = {
-  method: "package-manager-remotes-updated",
+/** A change made through the Package Manager carries the updated remotes. */
+export type RemotesUpdate = { remotes?: PackageManagerRemote[] } | undefined;
+
+export const packageManagerRemotesUpdatedType: NotificationType<RemotesUpdate> =
+  {
+    method: "package-manager-remotes-updated",
+  };
+
+/**
+ * How a remote authenticates.
+ * - `none`: public remote, no credentials needed.
+ * - `myAnalog`: managed remote authenticated through the myAnalog session.
+ * - `usernamePassword`: custom remote authenticated with basic credentials.
+ */
+export type PackageManagerRemoteAuth = "none" | "myAnalog" | "usernamePassword";
+
+/**
+ * What kind of problem keeps a remote from working.
+ * - `auth`: the remote rejected its credentials, or none could be obtained.
+ * - `fetch`: its packages couldn't be listed or read, e.g. it is unreachable.
+ * - `config`: Conan couldn't be set up to use it.
+ */
+export type PackageManagerRemoteErrorKind = "auth" | "fetch" | "config";
+
+/** A problem with a remote, as the package manager reported it. */
+export type PackageManagerRemoteError = {
+  kind: PackageManagerRemoteErrorKind;
+  /** What the package manager reported, for the details. */
+  message: string;
+};
+
+/**
+ * A package remote as shown in the webview. Flattened from `CfsPackageRemote`
+ * because its `URL` and `Error` members don't survive the messenger boundary.
+ */
+export type PackageManagerRemote = {
+  name: string;
+  url: string;
+  disabled: boolean;
+  /** `true` for user-created remotes, `false` for remotes managed by Analog Devices. */
+  custom: boolean;
+  /**
+   * Absent for disabled custom remotes: the package manager only reports the
+   * credentials of enabled ones.
+   */
+  auth?: PackageManagerRemoteAuth;
+  /** User the remote logs in as, when `auth` is `usernamePassword`. */
+  username?: string;
+  /** What keeps the remote from working; absent while no problem is known. */
+  error?: PackageManagerRemoteError;
+};
+
+/** Credentials to set on a custom remote. */
+export type PackageManagerRemoteCredentials =
+  | { auth: "none" }
+  | { auth: "usernamePassword"; username: string; password: string };
+
+/**
+ * Lists the package remotes, ordered for display: custom remotes first, then
+ * managed ones, each alphabetically.
+ */
+export const getRemotesRequest: RequestType<void, PackageManagerRemote[]> = {
+  method: "get-remotes",
+};
+
+/**
+ * The remote list after a change, or `undefined` when the change was applied
+ * but the list couldn't be read back. The extension reports that failure, so
+ * the webview only has to keep its current list.
+ */
+export type RemotesChangeResult = PackageManagerRemote[] | undefined;
+
+/**
+ * Adds a custom remote and logs in to it when credentials are given. A failed
+ * login removes the remote again, so a failed add leaves nothing behind.
+ * Resolves with the updated remote list.
+ */
+export const addRemoteRequest: RequestType<
+  { name: string; url: string; credentials: PackageManagerRemoteCredentials },
+  RemotesChangeResult
+> = {
+  method: "add-remote",
+};
+
+/** Deletes a custom remote. Resolves with the updated remote list. */
+export const removeRemoteRequest: RequestType<
+  { name: string },
+  RemotesChangeResult
+> = {
+  method: "remove-remote",
+};
+
+/** Enables or disables a remote. Resolves with the updated remote list. */
+export const setRemoteEnabledRequest: RequestType<
+  { name: string; enabled: boolean },
+  RemotesChangeResult
+> = {
+  method: "set-remote-enabled",
+};
+
+/**
+ * Logs in to an enabled custom remote, or logs out of it for `auth: "none"`.
+ * Resolves with the updated remote list.
+ */
+export const setRemoteCredentialsRequest: RequestType<
+  { name: string; credentials: PackageManagerRemoteCredentials },
+  RemotesChangeResult
+> = {
+  method: "set-remote-credentials",
+};
+
+/** The custom remotes being indexed; empty when none are. */
+export type CustomRemoteIndexing = { remotes: string[] };
+
+/** Sent when custom remote indexing starts or ends. */
+export const customRemoteIndexingType: NotificationType<CustomRemoteIndexing> =
+  {
+    method: "custom-remote-indexing",
+  };
+
+/** The custom remotes being indexed right now. */
+export const getCustomRemoteIndexingRequest: RequestType<
+  void,
+  CustomRemoteIndexing
+> = {
+  method: "get-custom-remote-indexing",
 };
 
 export type PackageListEntryState =
   | "installed"
   | "installing"
-  | "not-installed"
-  | "installation-failed";
+  | "not-installed";
 
 /**
- * One row in the package list — a single package (by name) with the
- * lightweight information needed to render a collapsed card and drive
- * pagination. Detailed metadata is fetched separately via
- * {@link getPackageDetailsRequest}.
+ * The catalog metadata of one package version, as rendered by the package
+ * card and the review cards. Comes from the software package catalog, not
+ * from Conan.
+ */
+export type PackageVersionMeta = {
+  version: string;
+  /** License id. The license text is fetched from Conan on demand. */
+  license: string;
+  description?: string;
+  /** `plugin`, `sdk`, `toolchain`, `data-model`, `tool`, ... */
+  type?: string;
+  /** Semver range of CFS versions this version supports, if constrained. */
+  cfsVersionConstraint?: string;
+  /** SoC names this version supports; empty when not SoC specific. */
+  socs: string[];
+  /** Repositories (remote names) this version is published in. */
+  repos: string[];
+  /** Package tags, if any. */
+  tags?: string[];
+};
+
+/**
+ * One row in the package list: a single package (by name) with everything
+ * needed to render its card: the versions, the catalog metadata of each
+ * version, and the Conan-side state (installed, cached, built-in).
  *
  * Note: this is the list of *packages*, unrelated to the SoC/hardware
  * catalog (`CatalogManager`, `SocCatalog`) from `cfs-lib`/`cfs-ccm-lib`.
@@ -61,8 +207,10 @@ export type PackageListEntryState =
 export type PackageListEntry = {
   /** Package name (one list entry per name). */
   name: string;
-  /** All available versions for this package. */
+  /** All available versions for this package, newest first. */
   versions: string[];
+  /** Catalog metadata per version. A cached-only version has no entry. */
+  releases: Record<string, PackageVersionMeta>;
   /** True if the package appears in a workspace .cfsdependencies manifest. */
   isRequired: boolean;
   /** All version constraints declared across workspace manifests, if any. */
@@ -79,14 +227,9 @@ export type PackageListEntry = {
   state: PackageListEntryState;
 };
 
-export type GetPackageListParams = {
-  /** Optional name pattern from the search box. */
-  pattern?: string;
-};
-
 /**
  * A workspace-required package the user has no access to: it is declared in a
- * manifest but absent from the catalog search results.
+ * manifest but no visible catalog version satisfies it.
  */
 export type MissingRequiredPackage = {
   /** Package name. */
@@ -98,42 +241,18 @@ export type MissingRequiredPackage = {
 export type GetPackageListResponse = {
   /** Ordered package list */
   packageList: PackageListEntry[];
-  /** Required packages absent from the catalog search (no access). */
+  /** Required packages absent from the visible catalog (no access). */
   missingRequiredPackages: MissingRequiredPackage[];
 };
 
 /**
- * Fetches the full, ordered package list. Cheap: built from `search` +
- * `listCache` + manifest reads, with no per-package metadata. Detailed
- * metadata (incl. soc/type used for filtering) is fetched separately via
- * {@link getPackageDetailsRequest}.
+ * Fetches the full, ordered package list, built from the catalog, the
+ * Conan cache, the SDK's bundled tools and the workspace manifests.
  */
-export const getPackageListRequest: RequestType<
-  GetPackageListParams,
-  GetPackageListResponse
-> = {
-  method: "get-package-list",
-};
-
-export type GetPackageDetailsParams = {
-  /** Exact references to fetch detailed metadata for (one page worth). */
-  references: CfsPackageReference[];
-};
-
-export type GetPackageDetailsResponse = {
-  packages: CfsPackage[];
-};
-
-/**
- * Fetches detailed metadata for a set of packages — typically the references
- * on the currently visible page. Expensive relative to the package list.
- */
-export const getPackageDetailsRequest: RequestType<
-  GetPackageDetailsParams,
-  GetPackageDetailsResponse
-> = {
-  method: "get-package-details",
-};
+export const getPackageListRequest: RequestType<void, GetPackageListResponse> =
+  {
+    method: "get-package-list",
+  };
 
 /**
  * Re-reads the local conan cache for specific packages.
@@ -156,7 +275,7 @@ export type GetSocListResponse = {
 };
 
 /**
- * Fetches the list of SoCs, used to populate the SoC filter.
+ * Fetches every SoC in the SoC catalog, used to populate the SoC filter.
  */
 export const getSocListRequest: RequestType<void, GetSocListResponse> = {
   method: "get-soc-list",
@@ -232,15 +351,47 @@ export const getPackageDependentsRequest: RequestType<
  * The response is keyed by `name/version` of each requested reference, and every
  * requested reference is present as a key.
  */
+/**
+ * Outcome of resolving the selected packages as one dependency graph.
+ *
+ * A version conflict is reported here rather than as a rejection: it is an
+ * answer about the selection, and its structure would not survive being thrown
+ * across the messenger boundary.
+ */
+export type DependencyResolutionResponse = {
+  /** Closure per requested reference */
+  dependencies: Record<string, CfsPackageReference[]>;
+  /** The disputed dependency, when the failure was a version conflict. */
+  conflict?: CfsDependencyConflict;
+  /** Why resolution failed, absent when it succeeded. */
+  failure?: string;
+};
+
 export const getPackageDependenciesBatchRequest: RequestType<
   { references: CfsPackageReference[] },
-  Record<string, CfsPackageReference[]>
+  DependencyResolutionResponse
 > = {
   method: "get-package-dependencies-batch",
 };
 
+/**
+ * Fetches the installation plan for a set of packages.
+ * Returns the full install plan including which packages require license acceptance.
+ */
+export const getInstallPlanRequest: RequestType<
+  { input: CfsInstallInput },
+  CfsInstallPlan
+> = {
+  method: "get-install-plan",
+};
+
 export const HIDE_UNINSTALL_CONFIRMATION_KEY =
   "packman.hideUninstallConfirmation";
+
+/**
+ * Error message thrown when package manager is not available.
+ */
+export const PKG_MANAGER_NOT_AVAILABLE = "Package Manager not available";
 
 export const getPreferenceRequest: RequestType<{ key: string }, boolean> = {
   method: "get-preference",
@@ -251,4 +402,15 @@ export const setPreferenceRequest: RequestType<
   void
 > = {
   method: "set-preference",
+};
+
+/**
+ * Notification sent when the install progress page is shown.
+ * Used to trigger the VS Code notification immediately.
+ */
+export const installProgressShownNotification: NotificationType<{
+  packageCount: number;
+  packages: CfsPackageReference[];
+}> = {
+  method: "install-progress-shown",
 };

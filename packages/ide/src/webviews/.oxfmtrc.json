@@ -1,0 +1,11 @@
+{
+  "arrowParens": "avoid",
+  "bracketSpacing": false,
+  "jsxSingleQuote": true,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "useTabs": true,
+  "printWidth": 70,
+  "sortPackageJson": false,
+  "ignorePatterns": []
+}

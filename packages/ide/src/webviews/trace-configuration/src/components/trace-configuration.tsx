@@ -19,6 +19,7 @@ import {useLocaleContext} from '@common/contexts/LocaleContext';
 import styles from './trace-configuration.module.scss';
 import SourceOptionsSection from './source-options-section';
 import GeneralSettingsSection from './general-settings-section';
+import LiveTracingSection from './live-tracing-section';
 import {Button, WarningIcon} from 'cfs-react-library';
 import {type TraceConfiguration} from '@ide-types/trace-types';
 import {useMessenger} from '@common/contexts/MessengerContext';
@@ -165,6 +166,12 @@ export default function TraceConfigurationForm() {
 							/>
 
 							<GeneralSettingsSection
+								config={traceConfiguration}
+								isDisabled={recordingActive}
+								onChange={handleConfigurationChange}
+							/>
+
+							<LiveTracingSection
 								config={traceConfiguration}
 								isDisabled={recordingActive}
 								onChange={handleConfigurationChange}

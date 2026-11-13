@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Package Manager
 author: Analog Devices
-date: 2026-07-27
+date: 2026-10-14
 ---
 
 # Package Manager
@@ -17,7 +17,7 @@ Managed remotes cannot be deleted or edited, but you can enable or disable them.
 
 ## Add remote
 
-`cfsutil pkg add-remote <remote-name> <url>`
+`cfsutil pkg add-remote <remote-name> <url> [--format text|json]`
 
 Registers a new custom package server to retrieve packages from.
 
@@ -25,6 +25,10 @@ Registers a new custom package server to retrieve packages from.
 |-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `<remote-name>` | The name used to identify the remote, such as `myserver`. This name is required to use other commands such as `auth-remote`, `disable-remote`, and `delete-remote`. |
 | `<url>`         | The URL of the package server.                                                                                                                        |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -36,7 +40,7 @@ Registers a new custom package server to retrieve packages from.
 
 ## Authenticate remote
 
-`cfsutil pkg auth-remote <remote-name>`
+`cfsutil pkg auth-remote <remote-name> [--format text|json]`
 
 Configures authentication for a remote package server.
 
@@ -53,6 +57,7 @@ This command can only be used with custom remotes. Managed remotes authenticate 
 | `--user <username>`     | Authenticate using a username. Prompts for a password if not provided. |
 | `--password <password>` | Password, API key, or token for authentication.                        |
 | `--none`                | Disable authentication for the remote.                                 |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). When you use `--user` with JSON output, also provide `--password`. |
 
 !!! example
     ```sh
@@ -65,7 +70,7 @@ This command can only be used with custom remotes. Managed remotes authenticate 
 
 ## Delete
 
-`cfsutil pkg delete <pattern>`
+`cfsutil pkg delete <pattern> [--format text|json]`
 
 Deletes packages from the local cache.
 
@@ -75,6 +80,10 @@ Deletes packages from the local cache.
 | Argument      | Description                                                                   |
 |---------------|-------------------------------------------------------------------------------|
 | `<pattern>`   | A package pattern in the form `<pkg_name>/<version>`. Wildcards (*) allowed.  |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example "Delete all unused packages"
     ```sh
@@ -86,13 +95,17 @@ Deletes packages from the local cache.
 
 ## Delete remote
 
-`cfsutil pkg delete-remote <remote-name>`
+`cfsutil pkg delete-remote <remote-name> [--format text|json]`
 
 Unregisters a custom package server so it is no longer considered for package retrieval.
 
 | Argument        | Description                                                                                                          |
 |-----------------|----------------------------------------------------------------------------------------------------------------------|
 | `<remote-name>` | The name of the remote to delete. The `<remote-name>` should match the name provided using the `add-remote` command. |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -104,13 +117,17 @@ Unregisters a custom package server so it is no longer considered for package re
 
 ## Enable remote
 
-`cfsutil pkg enable-remote <remote-name>`
+`cfsutil pkg enable-remote <remote-name> [--format text|json]`
 
 Enables a previously disabled remote package server.
 
 | Argument        | Description                                  |
 |-----------------|----------------------------------------------|
 | `<remote-name>` | The name of the remote to enable.            |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -119,13 +136,17 @@ Enables a previously disabled remote package server.
 
 ## Disable remote
 
-`cfsutil pkg disable-remote <remote-name>`
+`cfsutil pkg disable-remote <remote-name> [--format text|json]`
 
 Disables a remote package server.
 
 | Argument        | Description                                  |
 |-----------------|----------------------------------------------|
 | `<remote-name>` | The name of the remote to disable.           |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -134,13 +155,17 @@ Disables a remote package server.
 
 ## View dependencies
 
-`cfsutil pkg dependencies <package-reference>`
+`cfsutil pkg dependencies <package-reference> [--format text|json]`
 
 Retrieves a list of all the dependencies of a given package, including transitive dependencies. The package does not need to be installed.
 
 | Argument              | Description                                         |
 | --------------------- | --------------------------------------------------- |
 | `<package-reference>` | Package reference in the format `pkg_name/version`.  |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -159,7 +184,7 @@ Retrieves metadata for a given package. The package does not need to be installe
 
 | Flag           | Description               |
 |----------------|---------------------------|
-| `-f, --format` | Output format (JSON only) |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
 
@@ -169,18 +194,20 @@ Retrieves metadata for a given package. The package does not need to be installe
 
 ## Install
 
-`cfsutil pkg install <reference> [-l|--local] [--acceptLicense]`
+`cfsutil pkg install [<reference>] [-l|--local] [-t|--tar <path>] [--acceptLicense] [--format text|json]`
 
 Install a CFS package, including all its dependencies.
 
 | Argument             | Description                                         |
 |----------------------|-----------------------------------------------------|
-| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.3.0\my-sample-workspace\.cfs\.cfsdependencies`). |
+| `<reference>` | Package reference (`pkg_name/version`) or path to a manifest file (for example, `C:\Users\<username>\cfs\2.4.0\my-sample-workspace\.cfs\.cfsdependencies`). Required unless you use `--tar`. |
 
 | Flag                | Description                            |
 |---------------------|----------------------------------------|
 | `-l, --local`       | Install packages from local cache only |
-| `--acceptLicense`   | Accept package license(s). Required for packages that include a license agreement. If not provided, you will be prompted interactively. |
+| `-t, --tar <path>` | Install a package from a local tarball. Can't be combined with `<reference>`. |
+| `--acceptLicense`   | Accept package license(s). Required for packages that include a license agreement. If not provided, you will be prompted interactively. Has no effect with `--tar`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). For packages that require license acceptance, also use `--acceptLicense`. |
 
 !!! example
     ```sh
@@ -217,7 +244,7 @@ Allows updates that do not change the major version (minor and patch updates are
     cfsutil pkg install "cfs_base_plugins/^2.0.0"
     ```
 
-**Result:** Installs `cfs_base_plugins/2.3.0` (highest available version within major version 2).
+**Result:** Installs `cfs_base_plugins/2.4.0` (highest available version within major version 2).
 
 #### Tilde ranges (`~`)
 
@@ -228,7 +255,7 @@ Allows only patch-level updates within the specified minor version.
     cfsutil pkg install "cfs_base_data_models/~2.0.0"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.3.0)
+**Result:** Installs `cfs_base_data_models/2.0.1` (highest 2.0.x version, does not include 2.1.0 or 2.4.0)
 
 #### Comparison operators (`>=`, `<=`, `>`, `<`, `=`)
 
@@ -238,7 +265,7 @@ Allows explicit version constraints using comparison operators.
     ```sh
     cfsutil pkg install "cfs_base_plugins/>=2.0.0"
     ```
-**Result:** Installs `cfs_base_plugins/2.3.0` (highest available version greater than or equal to 2.0.0).
+**Result:** Installs `cfs_base_plugins/2.4.0` (highest available version greater than or equal to 2.0.0).
 
 !!! example "Less than (<)"
     ```sh
@@ -252,7 +279,7 @@ Allows explicit version constraints using comparison operators.
     cfsutil pkg install "cfs_base_data_models/>2.0.1"
     ```
 
-**Result:** Installs `cfs_base_data_models/2.3.0` (highest available version greater than 2.0.1).
+**Result:** Installs `cfs_base_data_models/2.4.0` (highest available version greater than 2.0.1).
 
 !!! note
     Version ranges must be enclosed in quotes to prevent shell interpretation of special characters.
@@ -263,11 +290,11 @@ Allows explicit version constraints using comparison operators.
 !!! info "Pre-release versions"
     Pre-release versions follow the semantic versioning pre-release syntax and are not selected by default when resolving version ranges. They must be specified explicitly, so `packageName/1.0.0-b.1` installs exactly that pre-release version.
 
-#### Manifest files
+### Manifest files
 
 In addition to installing individual packages, you can install multiple packages using a manifest file. Manifest files also support more advanced version expressions, such as compound constraints, which are not supported in the `<packageName>/<version>` format.
 
-In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.3.0\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
+In CodeFusion Studio, you can find an example manifest file (called `.cfsdependencies`) in the workspace `.cfs` directory. For example: `C:\Users\<username>\cfs\2.4.0\my-sample-workspace\.cfs\.cfsdependencies`. The `.cfsdependencies` file is the standard workspace manifest used by CodeFusion Studio. You can also install packages from any manifest file that follows the same JSON format by providing its path to `cfsutil pkg install`.
 
 This file specifies the packages and versions required by the workspace.
 
@@ -279,15 +306,15 @@ Example manifest file:
   "packages": [
     {
       "name": "msdk",
-      "version": "2.3.0"
+      "version": "2.4.0"
     },
     {
       "name": "cfs_base_data_models",
-      "version": "2.3.0"
+      "version": "2.4.0"
     },
     {
       "name": "cfs_base_plugins",
-      "version": "2.3.0"
+      "version": "2.4.0"
     }
   ]
 }
@@ -314,7 +341,95 @@ Example:
     cfsutil pkg install /path/to/workspace/.cfs/.cfsdependencies
     ```
 
-**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.3.0`).
+**Result:** Installs the newest available version that satisfies the version constraint specified in the manifest file (for example, `cfs_base_plugins/2.4.0`).
+
+### Install from a local tarball
+
+Use the `-t` or `--tar` flag to install a package from a tarball on disk. The package contents come from the tarball instead of a package server. Specify either a package reference or `--tar`, not both. On a machine without network access, also use `--local` to skip setting up package remotes.
+
+!!! example "Install a package from a tarball"
+
+    ```sh
+    cfsutil pkg install --tar /path/to/plugins.tgz
+    ```
+
+!!! warning
+    The package in the tarball must match your operating system, unless it's a generic package. If the installation fails, delete the package from the cache with `cfsutil pkg delete "<reference>"` before you retry.
+
+#### Create a tarball
+
+To create a tarball from a package that is already installed, use the `conan cache save` command. Conan is the package manager that CodeFusion Studio uses and it is installed by the CodeFusion Studio installer.
+
+1. Add the folder that contains `conan` to your `PATH`. Replace `<cfs-install>` with your CodeFusion Studio installation folder.
+
+    === "Windows"
+
+        In Command Prompt:
+
+        ```bat
+        set PATH=<cfs-install>\Tools\python\Scripts;%PATH%
+        ```
+
+        In PowerShell:
+
+        ```powershell
+        $env:PATH = "<cfs-install>\Tools\python\Scripts;$env:PATH"
+        ```
+
+    === "Linux"
+
+        ```sh
+        export PATH="<cfs-install>/Tools/python/bin:$PATH"
+        ```
+
+    === "macOS"
+
+        ```sh
+        export PATH="<cfs-install>/Tools/python/bin:$PATH"
+        ```
+
+    To check that it worked, run `conan --version`.
+
+2. Set the `CONAN_HOME` environment variable to the folder where the package manager stores your installed packages.
+
+    === "Windows"
+
+        In Command Prompt:
+
+        ```bat
+        set CONAN_HOME=%LOCALAPPDATA%\com.analog.cfs\Data\packages\conan
+        ```
+
+        In PowerShell:
+
+        ```powershell
+        $env:CONAN_HOME = "$env:LOCALAPPDATA\com.analog.cfs\Data\packages\conan"
+        ```
+
+    === "Linux"
+
+        ```sh
+        export CONAN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/com.analog.cfs/packages/conan"
+        ```
+
+    === "macOS"
+
+        ```sh
+        export CONAN_HOME="$HOME/Library/Preferences/com.analog.cfs/packages/conan"
+        ```
+
+3. Save the package, including its binary packages, to a file. Replace `cfs_base_plugins/2.4.0` with the package you want to save.
+
+    !!! example "Create a tarball"
+
+        ```sh
+        conan cache save --no-source --file plugins.tgz "cfs_base_plugins/2.4.0:*"
+        ```
+
+The variables you set in steps 1 and 2 apply only to the current terminal session. Copy the resulting file to the target machine and install it with `cfsutil pkg install --tar`.
+
+!!! note
+    The tarball contains only the package you save, not its dependencies. If the package has dependencies that aren't installed on the target machine, the installation fails. To install such a package, create a tarball for each dependency as well, and install the dependencies first.
 
 ### Install from local cache
 
@@ -356,7 +471,7 @@ This installs all required workspace packages from the local cache.
 
 ## List
 
-`cfsutil pkg list [<pattern>]`
+`cfsutil pkg list [<pattern>] [--format text|json]`
 
 List installed packages.
 
@@ -366,7 +481,8 @@ List installed packages.
 
 | Flag                     | Description                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `-f, --filter=KEY=VALUE` | Optional filter on package metadata. If used multiple times, all conditions must be satisfied.          |
+| `--filter=KEY=VALUE` | Optional filter on package metadata. If used multiple times, all conditions must be satisfied.          |
+| `--format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -374,10 +490,10 @@ List installed packages.
     cfsutil pkg list
 
     # Search for a package that supports MAX32690
-    cfsutil pkg list -f soc=MAX32690
+    cfsutil pkg list --filter soc=MAX32690
 
     # Search for a package that supports CodeFusion Studio version 2.0.0 and SDK
-    cfsutil pkg list -f cfsVersion=^2.0 -f type=sdk
+    cfsutil pkg list --filter cfsVersion=^2.0 --filter type=sdk
     ```
 
 !!! tip
@@ -395,7 +511,7 @@ Lists all packages stored in the local cache, including those that are not curre
 
 | Flag                     | Description                                                                                             |
 | ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `--format=<format>`      | Output format: `text` (default) or `json`                                                              |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -414,9 +530,13 @@ Lists all packages stored in the local cache, including those that are not curre
 
 ## List remotes
 
-`cfsutil pkg list-remotes`
+`cfsutil pkg list-remotes [--format text|json]`
 
 Lists all remote servers that have been registered for package retrieval.
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -443,7 +563,7 @@ Lists all remote servers that have been registered for package retrieval.
 
 ## Local consumers
 
-`cfsutil pkg local-consumers <name>`
+`cfsutil pkg local-consumers <name> [--format text|json]`
 
 Retrieves a list of all installed packages that depend on a given package, including transitive consumers.
 
@@ -452,6 +572,10 @@ This command is useful when attempting to uninstall a package, as it helps ident
 | Argument | Description                    |
 |----------|--------------------------------|
 | `<name>` | Name of the installed package. |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -463,15 +587,41 @@ This command is useful when attempting to uninstall a package, as it helps ident
     zephyr is not required by any other package
     ```
 
+## Path
+
+`cfsutil pkg path <name> [--format json|text]`
+
+Retrieves the absolute filesystem path of an installed package.
+
+| Argument | Description                          |
+|----------|---------------------------------------|
+| `<name>` | Name of the package, without version. |
+
+| Flag       | Description                                          |
+|------------|-------------------------------------------------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
+
+!!! note
+    The package must be installed. If it is not, the command returns an error: `Package <name> is not installed`.
+
+!!! example
+    ```sh
+    cfsutil pkg path zephyr
+    ```
+
 ## Search
 
-`cfsutil pkg search <pattern>`
+`cfsutil pkg search <pattern> [--format text|json]`
 
 Retrieve packages available for install.
 
 | Argument    | Description                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------- |
 | `<pattern>` | Search pattern in the format `pkg_name/version`. Use * as a wildcard.|
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -482,7 +632,7 @@ Retrieve packages available for install.
 
 ## Uninstall
 
-`cfsutil pkg uninstall <name>`
+`cfsutil pkg uninstall <name> [--format text|json]`
 
 Uninstalls a package. It remains in the local cache for reuse without re-downloading.
 
@@ -493,6 +643,10 @@ Uninstalls a package. It remains in the local cache for reuse without re-downloa
 | Argument | Description                    |
 | -------- | ------------------------------ |
 | `<name>` | Name of the installed package. |
+
+| Flag | Description |
+|------|-------------|
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh

@@ -108,8 +108,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   async function openDfgTab(): Promise<void> {
@@ -143,10 +142,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("View: revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   // * Scenario: User has loaded the DFG page and clicks on create button
@@ -175,7 +171,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
   //    *     And I save the configuration file
   //    *     Then I verify the persistence schema of the config file after changes being saved, validating that the created stream with correct properties exists in the config file
 
-  it("Should create DFG stream on UI and should reflect in the stream list", async () => {
+  it("Should create DFG stream on UI and should reflect in the stream list @regression", async () => {
     // === GIVEN: The existing cfsconfig file with DFG configuration is opened ===
     // === THEN: Switch to frame ===
     // === AND: I click on the "DFG" navigation tab ===
@@ -201,7 +197,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
       disabledCreateButton,
       "class",
     );
-    expect(valueDisabled.includes("disabled")).to.be.true;
+    expect((valueDisabled ?? "").includes("disabled")).to.be.true;
 
     // === AND: I select source as "ASS" ===
     // === THEN: Verify the source is selected as "ASS" ===
@@ -373,7 +369,7 @@ describe("dfg - create stream via create stream button and verify its persistenc
     );
   });
 
-  it("Issue:CFSIO-13394 and CFSIO-13400 - ASS as source and multidestinations is being covered here", async () => {
+  it("Issue:CFSIO-13394 and CFSIO-13400 - ASS as source and multidestinations is being covered here @regression", async () => {
     /*
      * Scenario: User creates stream with multiple destinations
      *     Given the existing cfsconfig file with DFG configuration is opened

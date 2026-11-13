@@ -13,8 +13,7 @@
  *
  */
 import * as vscode from "vscode";
-import { ElfFileParser } from "elf-parser";
-import type { ElfDataModel } from "elf-parser";
+import { ElfFileParser, type ElfDataModel } from "cfs-lib";
 import { elfMessageHandler } from "../utils/elf-message-handler";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import { ELF_EDITOR_ID } from "../constants";
@@ -59,9 +58,7 @@ class ElfDocument implements vscode.CustomDocument {
   }
 }
 
-export class ElfEditor
-  implements vscode.CustomReadonlyEditorProvider<ElfDocument>
-{
+export class ElfEditor implements vscode.CustomReadonlyEditorProvider<ElfDocument> {
   public static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new ElfEditor(context);
 
@@ -130,17 +127,6 @@ export class ElfEditor
           elfMessageHandler(message, webviewPanel, parser, elfModel),
         undefined,
       );
-
-      const themeListener = vscode.window.onDidChangeActiveColorTheme((e) => {
-        webviewPanel.webview.postMessage({
-          type: "theme-changed",
-          kind: e.kind,
-        });
-      });
-
-      webviewPanel.onDidDispose(() => {
-        themeListener.dispose();
-      });
 
       const fileName = document.uri.fsPath.split("/").pop();
       const numberOfSymbols = elfModel.numberOfSymbols;

@@ -8,7 +8,6 @@ cypress/**
 node_modules
 
 **/tsconfig.json
-**/.eslintrc.js
 **/*.map
 **/*.ts
 **/*.js.map
@@ -18,9 +17,28 @@ node_modules
 
 .mocharc.js
 Dockerfile*
-out/ui-test/**
-out/ui-test-utils/**
 test-resources/**
+coverage/**
+
+# compiled UI tests (from the *:compile-tests scripts run in vscode:prepublish);
+# out/commands and out/messages.js are emitted because src/tests/ui-test/tsconfig.json uses rootDir "../.."
+out/tests/**
+out/commands/**
+out/messages.js
+
+# build-only files of the native module closure copied by vite.plugin.copy-native-modules.ts;
+# at runtime only package.json, the JS entry files, prebuilds/ and licenses are needed
+out/node_modules/usb/libusb/**
+out/node_modules/usb/libusb_config/**
+out/node_modules/usb/src/**
+out/node_modules/usb/test/**
+out/node_modules/@serialport/bindings-cpp/src/**
+out/node_modules/**/node-addon-api/**
+out/node_modules/@types/**
+out/node_modules/**/*.gyp
+out/node_modules/**/*.gypi
+out/node_modules/**/*.md
+!out/node_modules/**/license.md
 
 *.run
 .env
@@ -30,7 +48,15 @@ test-resources/**
 .vscode-test.js
 .markdownlint.json
 .stylelintrc.json
+.prettierignore-ide
+vite.config*.mts
+tsconfig.*.json
+DEVELOPMENT.md
+**/.oxlintrc.json
+**/.oxfmtrc.json
 **/tsconfig.webview.json
+**/AGENTS.md
+**/CLAUDE.md
 .github
 mkdocs.yml
 
@@ -39,3 +65,7 @@ mkdocs.yml
 !src/debug-tools/gdb-toolbox/scripts/gdb/*.gdb
 
 build-scripts
+
+# MCP inspector server for agent-driven UI testing — dev tool only, never ships in the VSIX
+dev-mcp/**
+.vscode-agent.json

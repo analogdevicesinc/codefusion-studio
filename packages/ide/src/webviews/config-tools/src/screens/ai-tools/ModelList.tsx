@@ -38,7 +38,8 @@ import {
 	DataGridCell,
 	DataGridRow,
 	InfoIcon,
-	Tooltip
+	Tooltip,
+	TruncatedText
 } from 'cfs-react-library';
 import DeleteIcon from '../../../../common/icons/Delete';
 import Toggle from '../../../../common/components/toggle/Toggle';
@@ -245,14 +246,20 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 
 	return (
 		<DataGrid
-			gridTemplateColumns={`1fr 90px 1fr ${backend?.AdvancedTools ? '125px' : ''} ${backend?.AdvancedTools ? '150px' : '125px'}`}
+			gridTemplateColumns={`1fr 90px 1fr ${
+				backend?.AdvancedTools ? '125px' : ''
+			} ${backend?.AdvancedTools ? '150px' : '125px'}`}
 			className={styles.table}
-			dataTest={`${models[0].Target.Core}.${models[0].Target.Accelerator ?? 'none'}.${models[0].Backend?.Name ?? 'unknown'}-table`}
+			dataTest={`${models[0].Target.Core}.${
+				models[0].Target.Accelerator ?? 'none'
+			}.${models[0].Backend?.Name ?? 'unknown'}-table`}
 		>
 			<DataGridRow rowType='header' className={styles.headerRow}>
 				<DataGridCell gridColumn='1'>
 					<div
-						className={`${styles['sortable-title']} ${styles[sorted ?? ''] ?? ''} `}
+						className={`${styles['sortable-title']} ${
+							styles[sorted ?? ''] ?? ''
+						} `}
 						onClick={() => {
 							setSorted(
 								sorted
@@ -272,7 +279,7 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 					className={styles.headerCellWithInfo}
 				>
 					<span>{columnsLocale?.include}</span>
-					<Tooltip title={columnsLocale?.includeTooltip}>
+					<Tooltip title={columnsLocale?.includeTooltip} type='short'>
 						<InfoIcon />
 					</Tooltip>
 				</DataGridCell>
@@ -294,12 +301,14 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 						gridColumn='1'
 						className={styles.truncatedCell}
 					>
-						<div className={styles.tableText}>{model.Name}</div>
+						<TruncatedText>{model.Name}</TruncatedText>
 					</DataGridCell>
 					<DataGridCell gridColumn='2'>
 						<Toggle
 							dataTest={`include-toggle-${model.Name}`}
-							isToggledOn={model.Enabled}
+							isToggledOn={
+								String(model.Enabled).toLowerCase() !== 'false'
+							}
 							handleToggle={() => {
 								dispatch(toggleModelActive({model}));
 							}}
@@ -308,11 +317,14 @@ function ModelTable({models, backend, onDelete}: ModelTableProps) {
 					<DataGridCell
 						gridColumn='3'
 						className={styles.truncatedCell}
-						title={model.Files?.Model ?? ''}
 					>
-						<div className={styles.tableText}>
+						<TruncatedText
+							side='left'
+							title={model.Files?.Model ?? ''}
+							dataTest={`model-path-${model.Name}`}
+						>
 							{model.Files?.Model ?? ''}
-						</div>
+						</TruncatedText>
 					</DataGridCell>
 					{backend?.AdvancedTools && (
 						<DataGridCell
@@ -428,33 +440,34 @@ function ActionButtons({
 					</Button>
 				</Tooltip>
 			)}
-			{backend?.AdvancedTools && (
-				<Tooltip
-					title={
-						runningAnalysis
-							? 'Running Profiling'
-							: 'Open Profiling Report'
-					}
-					width={110}
-				>
-					<Button
-						dataTest='report-action'
-						appearance='icon'
-						onClick={() => {
-							if (runningAnalysis) {
-								return;
-							}
-
-							setRunningAnalysis(true);
-							void analyzeAIModel(model).then(() => {
-								setRunningAnalysis(false);
-							});
-						}}
+			{backend?.AdvancedTools &&
+				compatibilityState?.state !== CompatabilityStatus.Error && (
+					<Tooltip
+						title={
+							runningAnalysis
+								? 'Running Profiling'
+								: 'Open Profiling Report'
+						}
+						width={110}
 					>
-						{runningAnalysis ? <Spinner /> : <ChartIcon />}
-					</Button>
-				</Tooltip>
-			)}
+						<Button
+							dataTest='report-action'
+							appearance='icon'
+							onClick={async () => {
+								if (runningAnalysis) {
+									return;
+								}
+
+								setRunningAnalysis(true);
+								await analyzeAIModel(model).finally(() => {
+									setRunningAnalysis(false);
+								});
+							}}
+						>
+							{runningAnalysis ? <Spinner /> : <ChartIcon />}
+						</Button>
+					</Tooltip>
+				)}
 			<Tooltip title='Edit' type='short' width={50}>
 				<Button
 					appearance='icon'

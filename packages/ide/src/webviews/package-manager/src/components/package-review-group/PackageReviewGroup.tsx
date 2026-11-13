@@ -28,6 +28,11 @@ type PackageReviewGroupProps = {
 	readonly dependencies: CfsPackageReference[];
 	/** True while this package's dependencies are still being resolved. */
 	readonly isLoading: boolean;
+	/**
+	 * The dependency the selection disagrees about. Any card for this package
+	 * is in conflict; a package that merely requires it is not.
+	 */
+	readonly conflictingPackage?: string;
 	/** Keys of the dependency cards that are currently expanded. */
 	readonly expandedKeys: ReadonlySet<string>;
 	/** Toggles the collapsed state of the dependency card with this key. */
@@ -38,6 +43,7 @@ export default function PackageReviewGroup({
 	reference,
 	dependencies,
 	isLoading,
+	conflictingPackage,
 	expandedKeys,
 	onToggle
 }: PackageReviewGroupProps) {
@@ -82,6 +88,7 @@ export default function PackageReviewGroup({
 				reference={reference}
 				dependencies={dependencies}
 				isDependenciesLoading={isLoading}
+				hasConflict={reference.name === conflictingPackage}
 				onDependencyClick={handleDependencyClick}
 			/>
 			{!isLoading &&
@@ -97,6 +104,7 @@ export default function PackageReviewGroup({
 							key={cardKey}
 							cardKey={cardKey}
 							dependency={dependency}
+							hasConflict={dependency.name === conflictingPackage}
 							isRequired={isRequired}
 							isCollapsed={!expandedKeys.has(cardKey)}
 							focusRequest={focusRequest}

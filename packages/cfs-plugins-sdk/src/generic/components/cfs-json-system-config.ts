@@ -33,7 +33,10 @@ export class CfsJsonSystemConfig {
 	 */
 	constructor(protected cfsPluginInfo: CfsPluginInfo) {}
 
-	private async configureSystemWithFile(config: CfsConfig, filename: string) {
+	private async configureSystemWithFile(
+		config: CfsConfig,
+		filename: string
+	) {
 		const pluginDir = path.dirname(this.cfsPluginInfo.pluginPath);
 		const patchPath = [
 			pluginDir,
@@ -59,7 +62,10 @@ export class CfsJsonSystemConfig {
 	async configureSystem(config: CfsConfig): Promise<CfsConfig> {
 		try {
 			// We check a file specific for a package first, for example, system-wlp.json
-			await this.configureSystemWithFile(config, "system" + "-" + config.Package.toLowerCase() + ".json");
+			await this.configureSystemWithFile(
+				config,
+				"system" + "-" + config.Package.toLowerCase() + ".json"
+			);
 		} catch {
 			try {
 				// We do a second attempt by checking a common file (without package), e.g., system.json

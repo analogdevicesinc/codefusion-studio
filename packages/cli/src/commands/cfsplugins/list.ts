@@ -13,9 +13,11 @@
  *
  */
 
-import type {CfsPluginInfo} from 'cfs-types';
+import type {CfsPluginInfo, CfsPluginProperty} from 'cfs-types';
 
 import {Command, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {CfsFeatureScopeValues} from 'cfs-lib';
 
 import {getDataModelManager} from '../../utils/data-model-manager.js';
@@ -23,8 +25,11 @@ import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 
-export default class PluginList extends Command {
+export default class PluginList extends BaseCommand<
+  typeof PluginList
+> {
   static description = 'Lists available plugins';
+  static useResponseEnvelope = true;
 
   static examples: Command.Example[] = [
     {
@@ -89,8 +94,8 @@ export default class PluginList extends Command {
     })
   };
 
-  async run() {
-    const {flags} = await this.parse(PluginList);
+  async run(): Promise<{plugins: CfsPluginInfo[]}> {
+    const {flags} = this;
     const packageManager = await getPackageManager({
       acceptUndefined: true
     });
@@ -114,10 +119,10 @@ export default class PluginList extends Command {
         const socMatch = pluginInfo.supportedSocs?.some(
           (soc) =>
             (!flags.soc ||
-             soc.name?.toLowerCase() === flags.soc!.toLowerCase()) &&
+              soc.name?.toLowerCase() === flags.soc!.toLowerCase()) &&
             (!flags.board ||
-             !soc.board ||
-             soc.board?.toLowerCase() === flags.board!.toLowerCase())
+              !soc.board ||
+              soc.board?.toLowerCase() === flags.board!.toLowerCase())
         );
         if (!socMatch) return false;
       }
@@ -156,9 +161,7 @@ export default class PluginList extends Command {
         ) {
           this.log('Configuration Options:');
           for (const prop of pluginInfo.properties.project) {
-            this.log(
-              `  ${prop.name}: ${prop.description || 'No description'}`
-            );
+            this.log(getPropertyConfigurationOptions(prop));
           }
         }
 
@@ -166,6 +169,12 @@ export default class PluginList extends Command {
           this.log('');
         }
       }
+
+      return {
+        plugins: flags['config-options']
+          ? pluginListInfo
+          : pluginListInfo.map(omitProjectProperties)
+      };
     } else {
       // Handle case when no results are found
       const filterMessages = [];
@@ -179,7 +188,46 @@ export default class PluginList extends Command {
           ? ` for ${filterMessages.join(', ')}`
           : '';
 
-      this.error(`No plugins found${filterText}.`);
+      this.error(`No plugins found${filterText}.`, {
+        code: 'NO_PLUGINS_FOUND'
+      });
     }
   }
 }
+
+const omitProjectProperties = (
+  pluginInfo: CfsPluginInfo
+): CfsPluginInfo => {
+  if (!pluginInfo.properties) return pluginInfo;
+
+  return {
+    ...pluginInfo,
+    properties: Object.fromEntries(
+      Object.entries(pluginInfo.properties).filter(
+        ([scope]) => scope !== 'project'
+      )
+    ) as CfsPluginInfo['properties']
+  };
+};
+
+const getPropertyConfigurationOptions = (prop: CfsPluginProperty) => {
+  if (prop.type === 'array' && Array.isArray(prop.enum)) {
+    return ` ${prop.name}: ${prop.enum.map((enumValue) => enumValue.label).join(', ')}`;
+  }
+
+  if (prop.type === 'textarea' && prop.default) {
+    const textLines = prop.default
+      .trimEnd()
+      .split('\n')
+      .map((line) => `   ${line}`)
+      .join('\n');
+
+    return ` ${prop.name}:\n${textLines}`;
+  }
+
+  if (prop.type === 'boolean') {
+    return ` ${prop.name}: True/False`;
+  }
+
+  return ` ${prop.name}`;
+};

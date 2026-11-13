@@ -16,9 +16,22 @@
 export { ConanPkgManager } from "./conan-backend/conan-backend.js";
 export { MANIFEST_FILE_NAME } from "./constants/manifest.js";
 export {
+	ConanGraphFailure,
+	conflictFromGraphError,
+	isConanGraphFailure
+} from "./conflicts/graph-failure.js";
+export {
 	getSkippedPackageReasonMessage,
 	SKIPPED_PACKAGE_REASON_MESSAGES
 } from "./utils/package-manager-skipped-reasons.js";
+export {
+	REMOTE_URL_ERROR_MESSAGES,
+	validateRemoteUrl
+} from "./utils/remote-url.js";
+export type {
+	CfsRemoteUrlError,
+	CfsRemoteUrlValidation
+} from "./utils/remote-url.js";
 
 // types
 export type {
@@ -34,6 +47,7 @@ export type {
 	CfsPackageRemoteCredentialProvider,
 	CfsPackageRemoteCredential,
 	CfsPackageRemote,
+	CfsPackageRemoteState,
 	CfsPackageReference,
 	CfsPackage,
 	CfsCachedPackage,
@@ -48,5 +62,11 @@ export type {
 	CfsPackageLicenseInfo,
 	CfsPackageLicenseReporter,
 	CfsPackageFilter,
-	CfsPackageComponent
+	CfsPackageComponent,
+	CfsDependencyConflict
 } from "./api/api.js";
+
+export type { ConanGraphError } from "./conflicts/graph-error.js";
+
+// git remote helper (cfspkg:// transport)
+export { runGitRemoteCfspkg } from "./git-remote/git-remote.js";

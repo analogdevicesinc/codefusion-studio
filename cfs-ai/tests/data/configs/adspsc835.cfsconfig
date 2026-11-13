@@ -1,6 +1,6 @@
 {
   "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
-  "DataModelVersion": "1.1.0",
+  "DataModelVersion": "^1.1.0",
   "SchemaVersion": "2.1.0",
   "Timestamp": "2025-09-13T14:09:23.115Z",
   "Soc": "ADSP-SC835",

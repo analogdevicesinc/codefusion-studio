@@ -101,6 +101,7 @@ describe('TraceConfiguration', () => {
 		cy.dataTest('output-directory-control-input').should('exist');
 		cy.dataTest('elf-file-control-input').should('exist');
 		cy.dataTest('build-dir-control-input').should('exist');
+		cy.dataTest('live-tracing-section').should('exist');
 	});
 
 	it('should update the form when a configuration changed notification is received', () => {

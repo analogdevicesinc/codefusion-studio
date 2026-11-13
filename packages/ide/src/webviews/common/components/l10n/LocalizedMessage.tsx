@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,9 @@ export function LocalizedMessage(
 
 	if (parseHtml && params) {
 		console.warn(
-			`Message ID: ${id as string}: parseHtml is not supported when params are provided. This could otherwise lead to xss vulnerabilities.`
+			`Message ID: ${
+				id as string
+			}: parseHtml is not supported when params are provided. This could otherwise lead to xss vulnerabilities.`
 		);
 	}
 

@@ -46,6 +46,7 @@ import {useEffect} from 'react';
 import {getAppliedSignal} from '../../../utils/peripheral';
 import SignalAssignmentError from './signal-assignment-error';
 import SignalContainer from './signal-container';
+import {getFixedFunctionPins} from '../../../utils/soc-pins';
 
 type SignalAssignmentProps = Readonly<{
 	signal: string;
@@ -75,10 +76,28 @@ function SignalAssignment({
 		useActiveConfiguredSignal();
 
 	const signals = filteredPeripheral?.signals;
-	const pins = signals?.[signal]?.pins ?? [];
+
+	const reservedPins = getFixedFunctionPins().filter(pin =>
+		pin.Signals?.some(
+			pinSignal =>
+				pinSignal.Peripheral === peripheral &&
+				pinSignal.Name === signal
+		)
+	);
+
+	// Combine the pins from the signal and reserved pins, ensuring uniqueness
+	const pins = [
+		...(signals?.[signal]?.pins ?? []),
+		...reservedPins
+	].filter(
+		(pin, index, allPins) =>
+			allPins.findIndex(({Name}) => Name === pin.Name) === index
+	);
 
 	const targetPinId =
-		useCurrentSignalTarget(peripheral, signal) ?? '';
+		useCurrentSignalTarget(peripheral, signal) ??
+		reservedPins[0]?.Name ??
+		'';
 
 	const signalProjectId = useSignalProjectId(peripheral, signal);
 

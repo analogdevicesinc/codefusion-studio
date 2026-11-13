@@ -22,3 +22,11 @@ export function caseInsensitiveCompare(
 	}
 	return a.toUpperCase() === b.toUpperCase();
 }
+
+/**
+ * Escape a single JSON Pointer (RFC 6901) reference token by encoding `~` as
+ * `~0` and `/` as `~1`, in that order.
+ */
+export function escapeJsonPointerToken(token: string): string {
+	return token.replace(/~/g, "~0").replace(/\//g, "~1");
+}

@@ -31,12 +31,17 @@ import {useAppDispatch} from '../../../state/store';
 import type {GasketConfig} from 'cfs-types';
 import {getGasketDictionary} from '../../../utils/dfg';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {useScopes} from '../../../state/slices/scopes/scopes.selector';
+import {type ScopeValidationOptions} from '../../../utils/plugin-options-validation';
+import {localizeMessage} from '../../../../../common/utils/localization';
+import {type TLocaleContext} from '../../../common/types/context';
 
 export function GasketConfigSidePanel() {
 	const activeGasket: GasketConfig | undefined = useEditingGasket();
 	const dispatch = useAppDispatch();
 
-	const l10n = useLocaleContext();
+	const i10n: TLocaleContext | undefined = useLocaleContext()?.dfg;
+	const scopes = useScopes();
 
 	const [gasketModified, setGasketModified] = useState(false);
 
@@ -48,12 +53,14 @@ export function GasketConfigSidePanel() {
 	}, [dispatch]);
 
 	const controlsPrms = useMemo(async () => {
-		const projectIds = getProjectInfoList()
-			?.filter(p => p.IsPrimary)
-			.map(p => p.ProjectId);
+		const projects = getProjectInfoList() ?? [];
+		const primaryProjects = projects.filter(p => p.IsPrimary);
+		const projectIds = (
+			primaryProjects.length ? primaryProjects : projects.slice(0, 1)
+		).map(p => p.ProjectId);
 
 		const ctls = await getControlsForProjectIds(
-			projectIds ?? [],
+			projectIds,
 			CONTROL_SCOPES.DFG
 		);
 
@@ -65,6 +72,38 @@ export function GasketConfigSidePanel() {
 
 		return gasket?.Config ?? {};
 	}, [activeGasket]);
+
+	const formatScopeConflictMessage = useCallback<
+		ScopeValidationOptions['formatConflictMessage']
+	>(
+		({value, conflictingItems}) =>
+			localizeMessage(i10n, 'scope-conflict.error', {
+				value,
+				conflictingItems
+			}),
+		[i10n]
+	);
+
+	const scopeValidation = useMemo<
+		ScopeValidationOptions | undefined
+	>(() => {
+		const projects = getProjectInfoList() ?? [];
+		const project = projects.find(p => p.IsPrimary) ?? projects[0];
+
+		if (!activeGasket || !project) {
+			return undefined;
+		}
+
+		return {
+			scopes,
+			controlScope: CONTROL_SCOPES.DFG,
+			projectId: project.ProjectId,
+			itemId: activeGasket.Name,
+			getConfigPath: controlId =>
+				`DFG.Gaskets.${activeGasket.Name}.Config.${controlId}`,
+			formatConflictMessage: formatScopeConflictMessage
+		};
+	}, [activeGasket, formatScopeConflictMessage, scopes]);
 
 	return (
 		<SlidingPanel
@@ -100,7 +139,8 @@ export function GasketConfigSidePanel() {
 							data={activeGasket.Config ?? {}}
 							socConfig={config}
 							testId='gasket-config-controls'
-							emptyMessage={l10n?.dfg.noGasketPluginSettings}
+							emptyMessage={i10n?.noGasketPluginSettings}
+							scopeValidation={scopeValidation}
 							onControlChange={(field, value) => {
 								const currentConfig = activeGasket.Config ?? {};
 

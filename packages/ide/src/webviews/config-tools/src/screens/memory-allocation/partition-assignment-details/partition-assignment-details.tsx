@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,13 @@ import {
 	setOpenTypeCards
 } from '../../../state/slices/app-context/appContext.reducer';
 import {useCallback} from 'react';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 export default function PartitionAssignmentDetails() {
 	const dispatch = useDispatch();
+	const l10n = useLocaleContext()?.memoryConfig as
+		| Record<string, string>
+		| undefined;
 	const partitions = useFilteredPartitions().sort(
 		(a, b) =>
 			parseInt(a.startAddress, 16) - parseInt(b.startAddress, 16)
@@ -103,37 +107,41 @@ export default function PartitionAssignmentDetails() {
 			<div className={styles.coreSection}>
 				<div className={styles.partitionHeader}>
 					<div className={styles.partitionCount}>
-						<h2>Partitions</h2>
+						<h2>{l10n?.partitions ?? 'Partitions'}</h2>
 						<h2>{`(${partitions.length})`}</h2>
 					</div>
 					<div className={styles.partitionViewBy}>
 						<div className={styles.viewBy}>
-							<h5>View By</h5>
+							<h5>{l10n?.viewBy ?? 'View By'}</h5>
 						</div>
 						<Button
 							appearance='icon'
 							dataTest='partition-project-view-button'
-							className={`${activeView === 'project' ? styles.selected : ''}`}
+							className={`${
+								activeView === 'project' ? styles.selected : ''
+							}`}
 							onClick={() => {
 								dispatch(setMemoryScreenActiveView('project'));
 							}}
 						>
 							<div className={styles.viewByOption}>
 								<MemoryIcon />
-								<h5>Project</h5>
+								<h5>{l10n?.project ?? 'Project'}</h5>
 							</div>
 						</Button>
 						<Button
 							appearance='icon'
 							dataTest='partition-type-view-button'
-							className={`${activeView === 'type' ? styles.selected : ''}`}
+							className={`${
+								activeView === 'type' ? styles.selected : ''
+							}`}
 							onClick={() => {
 								dispatch(setMemoryScreenActiveView('type'));
 							}}
 						>
 							<div className={styles.viewByOption}>
 								<HamburgerIcon />
-								<h5>Type</h5>
+								<h5>{l10n?.type ?? 'Type'}</h5>
 							</div>
 						</Button>
 					</div>

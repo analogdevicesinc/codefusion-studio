@@ -14,10 +14,10 @@
  */
 
 import type {Command} from '@oclif/core';
-import type {CfsPluginManager} from 'cfs-lib';
-import type {CfsConfig, CfsPluginInfo, CfsWorkspace} from 'cfs-types';
+import type {CfsPluginManager, CodeGenerationOptions} from 'cfs-lib';
+import type {CfsPluginInfo, CfsWorkspace} from 'cfs-types';
 
-import {existsSync, readFileSync, readdirSync} from 'node:fs';
+import {readdirSync, statSync} from 'node:fs';
 import path from 'node:path';
 
 import {handleMissingDependencyError} from './error-handler.js';
@@ -26,83 +26,157 @@ import {getLatestPluginVersion} from './utils.js';
 import {isTemplateValid} from './validation.js';
 
 /**
- * Resolves workspace folder paths for task discovery.
+ * Checks whether a path exists while preserving unexpected filesystem errors.
  *
- * For multi-project workspaces (with .cfsconfig), returns individual project paths.
- * For single-project workspaces, returns the workspace root.
- *
- * @param workspacePath - Absolute path to workspace root
- * @returns Array of project folder paths for task discovery
- *
- * @remarks
- * Multi-project detection:
- * 1. Checks for `.cfs/*.cfsconfig` file
- * 2. Reads `Projects[].PlatformConfig.ProjectName` values
- * 3. Constructs paths relative to workspace root
- *
- * Example multi-project structure:
- * ```
- * workspace/
- *   .cfs/
- *     max78000.cfsconfig   (Projects: [{ProjectName: "m4"}, {ProjectName: "riscv"}])
- *   m4/                     (MSDK project)
- *   riscv/                  (MSDK project)
- * ```
- *
- * Returns: `["workspace/m4", "workspace/riscv"]`
+ * @param inputPath - The path to inspect.
+ * @returns `true` when the path exists; otherwise, `false` for absent paths.
  */
-export function resolveWorkspaceFolders(
-  workspacePath: string
-): string[] {
-  // Look for .cfsconfig file in .cfs directory
-  const cfsDir = path.join(workspacePath, '.cfs');
-  if (!existsSync(cfsDir)) {
-    return [workspacePath];
-  }
-
+function pathExists(inputPath: string): boolean {
   try {
-    const files = readdirSync(cfsDir);
-    const cfsconfigFile = files.find((file) =>
-      file.endsWith('.cfsconfig')
-    );
-
-    if (!cfsconfigFile) {
-      return [workspacePath];
-    }
-
-    // Read and parse .cfsconfig
-    const cfsconfigPath = path.join(cfsDir, cfsconfigFile);
-    const content = readFileSync(cfsconfigPath, 'utf8');
-    const config = JSON.parse(content) as CfsConfig;
-
-    // Extract project names from PlatformConfig
-    if (!config.Projects || config.Projects.length === 0) {
-      return [workspacePath];
-    }
-
-    const projectPaths: string[] = [];
-    for (const project of config.Projects) {
-      const projectName =
-        project.PlatformConfig?.ProjectName || project.ProjectId;
-
-      if (projectName) {
-        const projectPath = path.join(workspacePath, projectName);
-        // Only add if project directory exists
-        if (existsSync(projectPath)) {
-          projectPaths.push(projectPath);
-        }
-      }
-    }
-
-    // Return project paths if found, otherwise workspace root
-    return projectPaths.length > 0 ? projectPaths : [workspacePath];
+    statSync(inputPath);
+    return true;
   } catch (error) {
-    // If anything fails (parse error, missing fields, etc.), fall back to workspace root
-    console.error(
-      `Warning: Failed to parse .cfsconfig file: ${error instanceof Error ? error.message : String(error)}`
-    );
-    return [workspacePath];
+    const errorCode =
+      error && typeof error === 'object' && 'code' in error
+        ? error.code
+        : undefined;
+
+    if (errorCode === 'ENOENT' || errorCode === 'ENOTDIR') {
+      return false;
+    }
+
+    throw error;
   }
+}
+
+/**
+ * Checks whether a directory is itself a CFS workspace root.
+ *
+ * A CFS workspace root must contain the `.cfs/.cfsworkspace` marker. A bare
+ * `.cfs` directory is not sufficient: project-level `.cfs` folders only hold
+ * `.cfsdependencies`, so a project directory is not a workspace root.
+ *
+ * @param inputPath - The directory path to check.
+ * @returns `true` when the directory is the root of a CFS workspace.
+ */
+export function isWorkspaceRoot(inputPath: string): boolean {
+  return pathExists(
+    path.join(path.resolve(inputPath), '.cfs', '.cfsworkspace')
+  );
+}
+
+/**
+ * Finds the nearest CFS workspace containing the supplied path.
+ *
+ * Walks up the directory tree until it finds a directory for which
+ * {@link isWorkspaceRoot} is true.
+ *
+ * @param inputPath - A directory or file path within a CFS workspace.
+ * @returns The absolute workspace root, or `undefined` when no workspace exists.
+ */
+export function findWorkspaceRoot(
+  inputPath: string
+): string | undefined {
+  const resolvedPath = path.resolve(inputPath);
+  let searchPath = resolvedPath;
+
+  if (!pathExists(searchPath)) {
+    return undefined;
+  }
+
+  if (statSync(searchPath).isFile()) {
+    searchPath = path.dirname(searchPath);
+  }
+
+  while (true) {
+    if (isWorkspaceRoot(searchPath)) {
+      return searchPath;
+    }
+
+    const parentPath = path.dirname(searchPath);
+    if (parentPath === searchPath) {
+      return undefined;
+    }
+
+    searchPath = parentPath;
+  }
+}
+
+/**
+ * Returns the dependency manifest path of a workspace or project folder.
+ *
+ * @param dir - The workspace root or project folder.
+ * @returns The absolute `.cfs/.cfsdependencies` path inside `dir`.
+ */
+function dependencyManifestPath(dir: string): string {
+  return path.join(dir, '.cfs', '.cfsdependencies');
+}
+
+/**
+ * Lists the dependency manifest locations relevant to a path within a CFS
+ * workspace: the shared manifest at the workspace root and, when the path
+ * is inside a project folder, that project's manifest. Neither the
+ * manifests nor any other project folders are checked.
+ *
+ * @param inputPath - A directory or file path within a CFS workspace.
+ * @returns The absolute candidate manifest paths, workspace root first.
+ */
+export function getDependencyManifestCandidates(
+  inputPath: string
+): string[] {
+  const workspaceRoot = findWorkspaceRoot(inputPath);
+  if (!workspaceRoot) {
+    return [];
+  }
+
+  const [projectName] = path
+    .relative(workspaceRoot, path.resolve(inputPath))
+    .split(path.sep);
+
+  const dirs = projectName
+    ? [workspaceRoot, path.join(workspaceRoot, projectName)]
+    : [workspaceRoot];
+
+  return dirs.map((dir) => dependencyManifestPath(dir));
+}
+
+/**
+ * Finds the dependency manifests of the nearest CFS workspace: the shared
+ * `.cfs/.cfsdependencies` at the workspace root and that of each project
+ * folder directly inside the root.
+ *
+ * @param inputPath - A directory or file path within a CFS workspace.
+ * @returns The existing absolute manifest paths, workspace root first and
+ * projects sorted by folder name.
+ * @throws When the workspace root or a manifest cannot be checked, e.g.
+ * due to `EACCES`.
+ */
+export function findWorkspaceDependencyManifests(
+  inputPath: string
+): string[] {
+  const workspaceRoot = findWorkspaceRoot(inputPath);
+  if (!workspaceRoot) {
+    return [];
+  }
+
+  const projectDirs = readdirSync(workspaceRoot)
+    .sort()
+    .map((name) => path.join(workspaceRoot, name));
+
+  return [workspaceRoot, ...projectDirs]
+    .map((dir) => dependencyManifestPath(dir))
+    .filter((manifestPath) => pathExists(manifestPath));
+}
+
+/**
+ * Sanitizes a task label for CLI usage by stripping
+ * non-word characters and replacing whitespace with underscores.
+ *
+ * @param label - Raw task label (e.g. "flash & run (JLink)")
+ * @returns CLI-friendly name (e.g. "flash_run_JLink")
+ */
+export function sanitizeTaskLabel(label: string): string {
+  return label.replaceAll(/[^\w .-]/g, '').replaceAll(/\s+/g, '_');
 }
 
 /**
@@ -117,7 +191,8 @@ export function checkErrors(errors: string[], command: Command) {
       `Command failed with ${errors.length} error${errors.length > 1 ? 's' : ''}:\n` +
         errors
           .map((err, index) => `  ${index + 1}. ${err}`)
-          .join('\n')
+          .join('\n'),
+      {code: 'VALIDATION_FAILED'}
     );
   }
 }
@@ -177,21 +252,25 @@ export function getPackageNameFromTemplate(
  * @param config - CFS workspace config
  * @param pluginManager - CFS plugin lookup for generation
  * @param command - Command class from oclif
+ * @param options - Optional code generation environment options
  * @return void
  */
 export async function generateWorkspaceFromConfig(
   config: CfsWorkspace,
   pluginManager: CfsPluginManager,
-  command: Command
+  command: Command,
+  options?: CodeGenerationOptions
 ) {
   try {
     // Generate workspace with the provided configuration
-    await pluginManager.generateWorkspace(config);
+    await pluginManager.generateWorkspace(config, options);
     command.log(`Workspace created successfully.`);
   } catch (error) {
     handleMissingDependencyError(error);
 
-    command.error(`Failed to create workspace: ${error}`);
+    command.error(`Failed to create workspace: ${error}`, {
+      code: 'WORKSPACE_CREATE_FAILED'
+    });
   }
 }
 

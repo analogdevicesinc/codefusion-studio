@@ -1,0 +1,61 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.card {
+	display: flex;
+	gap: layout.$spacing-4;
+	align-items: center;
+	width: 100%;
+	padding: layout.$spacing-3 layout.$spacing-4;
+
+	.file {
+		display: flex;
+		flex: 1;
+		gap: layout.$spacing-2;
+		align-items: center;
+		min-width: 0;
+
+		.path {
+			min-width: 0;
+			margin: 0;
+			color: colors.$default-foreground;
+
+			@include fonts.heading-h4;
+		}
+	}
+
+	.project {
+		flex: 1;
+		min-width: 0;
+		padding: layout.$spacing-1 0;
+		overflow: hidden;
+		color: colors.$foreground;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		@include fonts.body-b3;
+	}
+
+	.iconButton {
+		--button-icon-padding: #{layout.$spacing-1};
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+	}
+}

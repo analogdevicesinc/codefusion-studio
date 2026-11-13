@@ -59,7 +59,7 @@ import { Utils } from "../utils/utils";
 import { resolveVariables } from "../utils/resolveVariables";
 
 import { CreateDebugConfiguration } from "./createDebugConfiguration";
-import { CfsToolManager } from "cfs-lib";
+import { CfsShellEnvProvider, CfsToolManager } from "cfs-lib";
 import { existsSync } from "fs";
 import path from "node:path";
 
@@ -304,10 +304,16 @@ export const updatePropertyPath = (event: vscode.ConfigurationChangeEvent) => {
 /**
  * Updates the paths in c_cpp_properties.json to reflect the toolchain path
  * provided by the Tool Manager.
+ *
+ * Any key declared in the file's `env` block whose name matches an
+ * environment variable defined by an installed tool's tool.json is set to
+ * that tool's value, so it can be referenced as `${env:NAME}`.
  */
 export const updateCppProperties = async (toolManager: CfsToolManager) => {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (workspaceFolders) {
+    let toolEnvVars: Record<string, string> | undefined;
+
     for (const workspaceFolder of workspaceFolders) {
       const config = vscode.workspace.getConfiguration(
         EXTENSION_ID,
@@ -338,14 +344,27 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
         .then(async (data) => {
           const jsonContents = JSON.parse(data.toString());
 
-          if (!jsonContents["env"]) {
-            return;
-          }
-
           let updated = false;
 
+          // Resolve env vars defined by installed tools' tool.json files
+          if (jsonContents["env"]) {
+            toolEnvVars ??= new CfsShellEnvProvider().getToolEnvVars(
+              (await toolManager.getInstalledTools()) ?? [],
+            );
+
+            for (const [name, value] of Object.entries(toolEnvVars)) {
+              if (
+                name in jsonContents["env"] &&
+                jsonContents["env"][name] !== value
+              ) {
+                jsonContents["env"][name] = value;
+                updated = true;
+              }
+            }
+          }
+
           // Resolve cfs.project.toolchain.path
-          if ("cfs.project.toolchain.path" in jsonContents["env"]) {
+          if (jsonContents["env"] && "cfs.project.toolchain.path" in jsonContents["env"]) {
             const toolchainPath = await getProjectToolchainPath(
               toolManager,
               workspaceFolder,
@@ -357,7 +376,7 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
           }
 
           // Resolve cfs.zephyr.workspace.path
-          if ("cfs.zephyr.workspace.path" in jsonContents["env"]) {
+          if (jsonContents["env"] && "cfs.zephyr.workspace.path" in jsonContents["env"]) {
             const zephyrWorkspacePath = await getZephyrWorkspacePath(
               toolManager,
               workspaceFolder,
@@ -371,7 +390,7 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
           }
 
           // Resolve cfs.msdk.path
-          if ("cfs.msdk.path" in jsonContents["env"]) {
+          if (jsonContents["env"] && "cfs.msdk.path" in jsonContents["env"]) {
             const msdkPath = await toolManager.getToolPath("msdk");
 
             if (msdkPath) {
@@ -381,7 +400,7 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
           }
 
           // Resolve project SDK path
-          if (CFS_PROJECT_SDK_PATH in jsonContents["env"]) {
+          if (jsonContents["env"] && CFS_PROJECT_SDK_PATH in jsonContents["env"]) {
             const projectSdk = config.get<string>(CFS_PROJECT_SDK_ID);
 
             if (projectSdk) {
@@ -389,6 +408,38 @@ export const updateCppProperties = async (toolManager: CfsToolManager) => {
 
               if (sdkPath) {
                 jsonContents["env"][CFS_PROJECT_SDK_PATH] = sdkPath;
+                updated = true;
+              }
+            }
+          }
+
+          // Point IntelliSense at the build's generated autoconf.h instead of
+          // enumerating every Kconfig symbol into "defines" (per PR review
+          // feedback): the C/C++ extension reads a forcedInclude file's
+          // CURRENT content directly whenever it parses, so this stays
+          // correct across builds with no re-parsing or file watcher needed
+          // -- unlike the old defines array, which had to be incrementally
+          // re-merged on every build and could accumulate stale symbols a
+          // later build had since disabled.
+          if (
+            jsonContents["env"] &&
+            "cfs.zephyr.workspace.path" in jsonContents["env"] &&
+            Array.isArray(jsonContents["configurations"])
+          ) {
+            const autoconfPath =
+              "${workspaceFolder}/build/zephyr/include/generated/zephyr/autoconf.h";
+
+            for (const configuration of jsonContents["configurations"]) {
+              if (!Array.isArray(configuration["forcedInclude"])) {
+                configuration["forcedInclude"] = [];
+              }
+
+              const forcedIncludes = configuration[
+                "forcedInclude"
+              ] as string[];
+
+              if (!forcedIncludes.includes(autoconfPath)) {
+                forcedIncludes.push(autoconfPath);
                 updated = true;
               }
             }

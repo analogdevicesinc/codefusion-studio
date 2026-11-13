@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import {useActiveScreen} from '../../state/slices/elf-context/elfContext.selecto
 import {useAppContext} from '../../common/contexts/AppContext';
 import {navigationItems} from '../../common/constants/navigation';
 import TopbarButton from '../../../../common/components/cfs-top-bar/TopbarButton';
-import {Direction} from '../../../../common/components/tooltip/Tooltip';
+import {Direction} from '@common/utils';
 
 export default function ElfHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
@@ -41,6 +41,12 @@ export default function ElfHeader() {
 	const id = useActiveScreen() as NavigationItem;
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.[`${id}`];
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+	const memLayoutL10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
 	const {memLayout} = useAppContext();
 
 	const handleButtonClick = useCallback(async () => {
@@ -56,8 +62,14 @@ export default function ElfHeader() {
 	}, []);
 
 	const getTitle = () => {
-		if (navigationItems.memoryLayout === id)
-			return `${i10n?.title} - ${memLayout.selectedItemName}`;
+		if (navigationItems.memoryLayout === id) {
+			const displayName =
+				memLayout.layer === 1
+					? (memLayoutL10n?.allSegments ?? memLayout.selectedItemName)
+					: memLayout.selectedItemName;
+
+			return `${i10n?.title} - ${displayName}`;
+		}
 
 		return i10n?.title;
 	};
@@ -67,7 +79,9 @@ export default function ElfHeader() {
 			<CfsTopBar>
 				<div slot='start'>
 					<TopbarButton
-						title='Search for ELF files'
+						title={
+							commonL10n?.searchForElfFiles ?? 'Search for ELF files'
+						}
 						icon={<OpenFile />}
 						tooltipType='long'
 						tooltipDirection={Direction.Right}
@@ -78,7 +92,7 @@ export default function ElfHeader() {
 
 				<div slot='end'>
 					<TopbarButton
-						title='Open modal'
+						title={commonL10n?.openModal ?? 'Open modal'}
 						icon={<Help />}
 						tooltipType='long'
 						tooltipDirection={Direction.Left}

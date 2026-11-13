@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { type ReactNode, useLayoutEffect, useRef } from 'react';
+import {type ReactNode, useLayoutEffect, useRef} from 'react';
 import styles from './streamTooltip.module.scss';
 
 function StreamTooltip({
@@ -23,7 +23,7 @@ function StreamTooltip({
 	left,
 	classNames,
 	children,
-	zoomLevel,
+	zoomLevel
 }: {
 	readonly id: string;
 	readonly header?: ReactNode | string;
@@ -43,13 +43,15 @@ function StreamTooltip({
 
 		if (!tooltipBody || !tooltipContainer) return;
 
-		const { right: tooltipBodyRight } =
+		const {right: tooltipBodyRight} =
 			tooltipBody.getBoundingClientRect();
 		const viewportWidth = window.innerWidth;
 		const offset = 16;
 
 		if (tooltipBodyRight > viewportWidth) {
-			tooltipBody.style.left = `${(viewportWidth - tooltipBodyRight - offset) / (zoomLevel ?? 1)}px`;
+			tooltipBody.style.left = `${
+				(viewportWidth - tooltipBodyRight - offset) / (zoomLevel ?? 1)
+			}px`;
 		}
 	}, [zoomLevel]);
 
@@ -57,7 +59,9 @@ function StreamTooltip({
 		<div
 			ref={tooltipContainerRef}
 			id={`stream-tooltip-${id}`}
-			className={`${styles.tooltipContainer}${classNames ? ` ${classNames}` : ''}`}
+			className={`${styles.tooltipContainer}${
+				classNames ? ` ${classNames}` : ''
+			}`}
 			style={{
 				top: top ?? 'unset',
 				left: left ?? 0,
@@ -66,8 +70,14 @@ function StreamTooltip({
 		>
 			<div className={styles.tooltipLayout}>
 				<div ref={tooltipBodyRef} className={styles.contentWrapper}>
-					{header && <div data-test="tooltip-header" className={styles.header}>{header}</div>}
-					<div className={styles.body} data-test="tooltip-body">{children}</div>
+					{header && (
+						<div data-test='tooltip-header' className={styles.header}>
+							{header}
+						</div>
+					)}
+					<div className={styles.body} data-test='tooltip-body'>
+						{children}
+					</div>
 				</div>
 			</div>
 		</div>

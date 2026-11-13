@@ -26,13 +26,22 @@ import {
 } from "../../page-objects/clock-config-section/clock-config-screen";
 
 describe("Clock Diagram", () => {
-  it("Renders the clock diagram inside vscode", async () => {
-    const browser = VSBrowser.instance;
-    const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
+  let view: WebView;
+  let browser: VSBrowser;
+  const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
+  before(async () => {
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
+  });
+
+  after(async () => {
+    await UIUtils.teardownTestSuite(view, configPath);
+  });
+
+  it("Renders the clock diagram inside vscode @regression", async () => {
     await browser.openResources(configPath);
     await UIUtils.sleep(5000);
-    const view = new WebView();
+    view = new WebView();
     await view.wait(60000);
     await view.switchToFrame();
 

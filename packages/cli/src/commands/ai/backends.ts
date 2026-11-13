@@ -16,10 +16,8 @@ import {Args, Flags} from '@oclif/core';
 import {AiToolsData, getAiToolsPlugin} from 'cfs-lib';
 import {AiBackend, SocControl} from 'cfs-types';
 
-import {
-  BaseCommand,
-  type CliRunResponse
-} from '../../utils/base-command.js';
+import {BaseCommand} from '../../utils/base-command.js';
+import {getPackageManager} from '../../utils/package-manager.js';
 import {RecoverableError} from '../../utils/recoverable-error.js';
 import {
   getCfsaiPath,
@@ -31,6 +29,8 @@ interface AiBackendWithExtensions extends AiBackend {
 }
 
 export default class Backends extends BaseCommand<typeof Backends> {
+  static useResponseEnvelope = true;
+
   static args = {
     action: Args.string({
       options: ['list'],
@@ -55,15 +55,23 @@ export default class Backends extends BaseCommand<typeof Backends> {
 
   static hiddenAliases: string[] = ['ai:backend'];
 
-  async run(): CliRunResponse<
-    AiBackendWithExtensions | AiBackendWithExtensions[]
+  async run(): Promise<
+    AiBackendWithExtensions | {backends: AiBackendWithExtensions[]}
   > {
     const {flags, config} = this;
 
+    const packageManager = await getPackageManager({
+      acceptUndefined: true
+    });
+
     const aiPlugin = getAiToolsPlugin(
       await getCfsaiPath(config),
-      getVersionFromConfig(config)
+      getVersionFromConfig(config),
+      packageManager
     );
+
+    aiPlugin.setVerbose(flags.verbose);
+    aiPlugin.setQuiet(flags.quiet);
 
     if (flags.name) {
       // Look up specified backend
@@ -74,7 +82,8 @@ export default class Backends extends BaseCommand<typeof Backends> {
           `No backend found with name '${flags.name}'`,
           {
             suggestion: `Check '${flags.name}' for typos or list all available backends`,
-            run: 'cfsutil ai backends list'
+            run: 'cfsutil ai backends list',
+            code: 'BACKEND_NOT_FOUND'
           }
         );
       }
@@ -91,7 +100,8 @@ export default class Backends extends BaseCommand<typeof Backends> {
             : `No backend properties found for '${flags.name}'`,
           {
             suggestion: 'Verify the backend is properly configured',
-            run: `cfsutil ai backends list --name ${flags.name}`
+            run: `cfsutil ai backends list --name ${flags.name}`,
+            code: 'BACKEND_PROPERTIES_NOT_FOUND'
           }
         );
       }
@@ -99,8 +109,9 @@ export default class Backends extends BaseCommand<typeof Backends> {
       this.log(`${flags.name}: ${be.Description}`);
       this.log(`    Model Formats: ${be.Formats.join(', ')}`);
       this.log(`    Advanced Tool Support: ${be.AdvancedTools}`);
-      be.Default !== undefined &&
+      if (be.Default !== undefined) {
         this.log(`    Used by default: ${be.Default}`);
+      }
 
       if (be.Targets.length > 0) {
         this.log('Supported hardware:');
@@ -136,7 +147,7 @@ export default class Backends extends BaseCommand<typeof Backends> {
         );
       }
 
-      return {data: {...be, Extensions: props}};
+      return {...be, Extensions: props};
     }
 
     // List all backends
@@ -173,7 +184,8 @@ export default class Backends extends BaseCommand<typeof Backends> {
               : `No backend properties found for '${key}'`,
             {
               suggestion: 'Verify the backend is properly configured',
-              run: `cfsutil ai backends list --name ${key}`
+              run: `cfsutil ai backends list --name ${key}`,
+              code: 'BACKEND_PROPERTIES_NOT_FOUND'
             }
           );
         }
@@ -182,6 +194,6 @@ export default class Backends extends BaseCommand<typeof Backends> {
       }
     }
 
-    return {data: output};
+    return {backends: output};
   }
 }

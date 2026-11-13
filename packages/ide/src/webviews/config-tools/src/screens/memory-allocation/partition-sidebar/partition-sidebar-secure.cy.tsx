@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,7 @@ describe('Partition Sidebar With Secure Projects', () => {
 			cy.dataTest('permission-label-CM33-NS').within(() => {
 				cy.get('vscode-badge')
 					.should('exist')
-					.should('have.text', 'Non-Secure');
+					.should('have.text', 'Non-secure');
 			});
 			cy.dataTest('permission-label-CM33-S').within(() => {
 				cy.get('vscode-badge')

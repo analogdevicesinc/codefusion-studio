@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {Command} from '@oclif/core';
+import {BaseCommand} from '../../utils/base-command.js';
 import Table from 'cli-table3';
 import {stripVTControlCharacters, styleText} from 'node:util';
 
@@ -25,12 +25,22 @@ export const pkgListRemotesDeps: {
   getPackageManager
 };
 
-export default class CfsPackageListRemotes extends Command {
+export default class CfsPackageListRemotes extends BaseCommand<
+  typeof CfsPackageListRemotes
+> {
   static description =
     'Lists all remote servers that have been registered for package retrieval.';
+  static useResponseEnvelope = true;
 
-  async run(): Promise<void> {
-    await this.parse(CfsPackageListRemotes);
+  async run(): Promise<{
+    remotes: {
+      name: string;
+      url: string;
+      auth: string;
+      custom: string;
+      status: string;
+    }[];
+  }> {
     const packman = await pkgListRemotesDeps.getPackageManager(
       {
         useRemotes: true
@@ -41,12 +51,12 @@ export default class CfsPackageListRemotes extends Command {
     const remotes = await packman.listRemotes();
     if (remotes.length === 0) {
       this.log('No registered package remotes');
-      return;
+      return {remotes: []};
     }
 
     // when a remote has an error we'll limit the width of the status column so that it wraps and more likely fits the terminal width
     let remoteHasError = false;
-    const data = remotes
+    const remoteRows = remotes
       .map((r) => {
         remoteHasError = remoteHasError || Boolean(r.configError);
         const authDetails =
@@ -71,6 +81,10 @@ export default class CfsPackageListRemotes extends Command {
       })
       .sort((a, b) => a.name.localeCompare(b.name));
 
+    if (this.jsonEnabled()) {
+      return {remotes: remoteRows};
+    }
+
     const table = new Table({
       head: ['Name', 'URL', 'Auth', 'Custom', 'Status'],
       wordWrap: true,
@@ -79,7 +93,7 @@ export default class CfsPackageListRemotes extends Command {
       ...tableOutputStyles()
     });
 
-    for (const remote of data) {
+    for (const remote of remoteRows) {
       table.push([
         {content: remote.name, wrapOnWordBoundary: false},
         {content: remote.url, wrapOnWordBoundary: false},
@@ -104,7 +118,7 @@ export default class CfsPackageListRemotes extends Command {
       this.log(horzTable);
     } else {
       // switch to vertical tables
-      for (const remote of data) {
+      for (const remote of remoteRows) {
         const verticalTable = new Table({
           wordWrap: true,
           wrapOnWordBoundary: true,
@@ -136,5 +150,7 @@ export default class CfsPackageListRemotes extends Command {
         this.log(verticalTable.toString());
       }
     }
+
+    return {remotes: remoteRows};
   }
 }

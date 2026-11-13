@@ -17,6 +17,7 @@ import {
   CoreDumpConfig,
   CrashPanelData,
   HeapPanelData,
+  PeripheralPanelData,
   TasksPanelData,
 } from "../types";
 import { CoreDumpRetriever } from "../retrievers/core-dump-retriever";
@@ -31,6 +32,7 @@ import {
   CORE_DUMP_FAILED_MSG,
   CRASH_SUMMARY,
   HEAP_SUMMARY,
+  PERIPHERAL_SUMMARY,
   TASKS_SUMMARY,
 } from "./constants";
 import { SessionManager } from "./core-dump-session-manager";
@@ -444,6 +446,11 @@ export class CoreDumpEngine {
     const heapScript = scriptManager
       .getAllScripts()
       .find((s) => s.name === "Analyze Global Heap");
+    // Optional: Peripheral State is not a required script, analysis still
+    // proceeds without it and the UI shows no peripheral data available.
+    const peripheralScript = scriptManager
+      .getAllScripts()
+      .find((s) => s.name === "Analyze Peripheral State");
 
     const missingScripts: string[] = [];
     if (!crashScript) missingScripts.push("Analyze Crash");
@@ -491,6 +498,13 @@ export class CoreDumpEngine {
         heap: { total: 0, used: 0, max: 0, message: "" },
       },
     );
+    const peripheralPanelData = await this.runPanelScript(
+      peripheralScript,
+      executor,
+      debugSession,
+      this.parsePeripheralResults,
+      { summary: PERIPHERAL_SUMMARY, peripherals: [] },
+    );
 
     // Use our specific session ID instead of the active debug session
     const sessionId = debugSession.id;
@@ -500,6 +514,7 @@ export class CoreDumpEngine {
         crashCause: crashPanelData.crashCause,
         tasks: tasksPanelData.tasks,
         heap: heapPanelData.heap,
+        peripherals: peripheralPanelData.peripherals,
       },
     });
 
@@ -676,6 +691,34 @@ export class CoreDumpEngine {
         max: toNum(heapObj?.max),
         message: typeof heapObj?.message === "string" ? heapObj.message : "",
       },
+    };
+  }
+
+  /**
+   * Parses peripheral state script results.
+   */
+  private parsePeripheralResults(results: any): PeripheralPanelData {
+    let peripheralsObj: any = {};
+    if (Array.isArray(results) && typeof results[0] === "string") {
+      try {
+        peripheralsObj = JSON.parse(this.extractJson(results[0]));
+      } catch (err) {
+        console.error(
+          "Failed to parse peripheral state JSON:",
+          err,
+          results[0],
+        );
+      }
+    } else if (Array.isArray(results)) {
+      peripheralsObj = results[0];
+    } else if (results && typeof results === "object") {
+      peripheralsObj = results;
+    }
+    return {
+      summary: PERIPHERAL_SUMMARY,
+      peripherals: Array.isArray(peripheralsObj?.peripherals)
+        ? peripheralsObj.peripherals
+        : [],
     };
   }
 

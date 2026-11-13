@@ -47,13 +47,13 @@ $slider-border-width: 2px;
 		box-sizing: border-box;
 
 		&:hover {
-			border-color: colors.$button-primary-hover-background;
-			background-color: colors.$button-primary-hover-background;
+			border-color: colors.$button-primary-background;
+			background-color: colors.$button-primary-background;
 
 			.handle,
 			.inner .middle {
-				border-color: colors.$button-primary-hover-background;
-				background-color: colors.$button-primary-hover-background;
+				border-color: colors.$button-primary-background;
+				background-color: colors.$button-primary-background;
 			}
 		}
 

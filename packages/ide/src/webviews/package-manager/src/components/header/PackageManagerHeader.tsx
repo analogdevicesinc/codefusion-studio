@@ -18,11 +18,25 @@ import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
 import {Modal} from '@common/components/modal/Modal';
 import Help from '@common/icons/Help';
-import {Direction} from '@common/components/tooltip/Tooltip';
+import {Direction} from '@common/utils';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
+import PackageManagerTabs, {
+	type PackageManagerView
+} from '../package-manager-tabs/PackageManagerTabs';
 
-export default function PackageManagerHeader() {
+type PackageManagerHeaderProps = {
+	readonly activeView: PackageManagerView;
+	readonly onViewChange: (view: PackageManagerView) => void;
+	/** Whether the Packages/Remotes tab switcher should be shown in place of the plain title. */
+	readonly showTabs?: boolean;
+};
+
+export default function PackageManagerHeader({
+	activeView,
+	onViewChange,
+	showTabs = true
+}: PackageManagerHeaderProps) {
 	const [isHelpModalOpen, setIsHelpModalOpen] =
 		useState<boolean>(false);
 	const l10n = useLocaleContext()?.header;
@@ -33,7 +47,16 @@ export default function PackageManagerHeader() {
 
 	return (
 		<CfsTopBar>
-			<div slot='center'>{l10n?.title}</div>
+			<div slot='center'>
+				{showTabs ? (
+					<PackageManagerTabs
+						activeView={activeView}
+						onChange={onViewChange}
+					/>
+				) : (
+					l10n?.title
+				)}
+			</div>
 
 			<div slot='end'>
 				<TopbarButton

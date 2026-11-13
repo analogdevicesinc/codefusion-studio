@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,14 @@ import {
 	setFilteredSources,
 	setSearchQuery
 } from '../../../state/slices/gaskets/gasket.reducer';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export function DfgStreamTableFilter() {
 	const dispatch = useAppDispatch();
 	const streams = useStreams();
+	const l10n = useLocaleContext()?.dfgStreamList as
+		| Record<string, string>
+		| undefined;
 	const filteredSources = useAppSelector(
 		state => state.gasketsReducer.filteredSources ?? []
 	);
@@ -151,6 +155,7 @@ export function DfgStreamTableFilter() {
 				<SearchInput
 					inputVal={searchQuery}
 					dataTest='dfg-search-input'
+					placeholder={l10n?.typeToSearch ?? 'Type to search...'}
 					onClear={() => {
 						dispatch(setSearchQuery(''));
 					}}
@@ -169,7 +174,7 @@ export function DfgStreamTableFilter() {
 								? filteredSources.length.toString()
 								: undefined
 						}
-						dropdownText='Source'
+						dropdownText={l10n?.filterSource ?? 'Source'}
 						dataTest='dfg-source-filter'
 						options={sourceOptions}
 						initialSelectedOptions={filteredSources.map(source => ({
@@ -188,7 +193,7 @@ export function DfgStreamTableFilter() {
 								? filteredDestinations.length.toString()
 								: undefined
 						}
-						dropdownText='Destination'
+						dropdownText={l10n?.filterDestination ?? 'Destination'}
 						dataTest='dfg-destination-filter'
 						options={destinationOptions}
 						initialSelectedOptions={filteredDestinations.map(
@@ -209,7 +214,7 @@ export function DfgStreamTableFilter() {
 								? filteredGroups.length.toString()
 								: undefined
 						}
-						dropdownText='Group'
+						dropdownText={l10n?.filterGroup ?? 'Group'}
 						dataTest='dfg-group-filter'
 						options={groupOptions}
 						initialSelectedOptions={filteredGroups.map(group => ({
@@ -226,7 +231,7 @@ export function DfgStreamTableFilter() {
 					data-test='dfg-clear-all-filters'
 					onClick={onClearAllFilters}
 				>
-					Clear all
+					{l10n?.clearAll ?? 'Clear all'}
 				</div>
 			)}
 		</div>

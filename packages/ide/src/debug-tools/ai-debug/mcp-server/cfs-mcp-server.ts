@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { registerDebugTools } from "./tools/debug/index";
 import { registerDebugPrompts } from "./prompts/debug/index";
 import type { McpServerDependencies } from "./types/mcp-dependencies";
@@ -35,13 +34,12 @@ export class CfsMcpServer extends McpServer {
     super(
       {
         name: "CFS MCP",
-        version: "1.0.0",
+        version: "1.1.0",
       },
       {
         capabilities: {
           tools: {},
           prompts: {},
-          logging: { level: "info" },
         },
       },
     );

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,60 @@
  */
 import {
 	focusPinSet,
+	unfocusPinSet,
 	setPinDetailsTargetPin
 } from '../../../state/slices/pins/pins.reducer';
 import {useAppDispatch} from '../../../state/store';
 import SideDetailsView from '../side-details-view/SideDetailsView';
 import {
-	useFocusedPins,
+	useAssignedPins,
 	usePinDetailsTargetPin
 } from '../../../state/slices/pins/pins.selector';
 import {useSearchString} from '../../../state/slices/app-context/appContext.selector';
-import {memo, useEffect, useMemo} from 'react';
+import {memo, useEffect, useMemo, useRef} from 'react';
 import {getSocPinDetails} from '../../../utils/soc-pins';
 import {getPeripheralList} from '../../../utils/soc-peripherals';
 import {usePinsGroupByPeripheralSignalPair} from '../../../hooks/use-pins-groupBy-peripherial-signal';
+import {setCurrentTarget} from '../../../state/slices/peripherals/peripherals.reducer';
 
 function PinDetails() {
 	const dispatch = useAppDispatch();
 	const targetPinId = usePinDetailsTargetPin();
-	const focusedPins = useFocusedPins();
 	const pinDetailsTargetPin = usePinDetailsTargetPin();
 	const targetPinDetails = getSocPinDetails(
 		pinDetailsTargetPin ?? ''
 	);
+	const assignedPins = useAssignedPins();
 	const searchString = useSearchString('pinconfig');
 	const peripherals = getPeripheralList();
+	const signalTargets = useMemo(
+		() =>
+			(targetPinDetails.Signals ?? []).flatMap(signal => {
+				if (!signal.Peripheral || !pinDetailsTargetPin) return [];
+
+				const assignedPin = assignedPins.find(pin =>
+					pin.appliedSignals.some(
+						appliedSignal =>
+							appliedSignal.Peripheral === signal.Peripheral &&
+							appliedSignal.Name === signal.Name
+					)
+				);
+
+				return [
+					{
+						peripheralGroup: signal.Peripheral,
+						signalName: signal.Name,
+						assignedPin: assignedPin?.Name,
+						dropdownVal: assignedPin?.Name ?? pinDetailsTargetPin
+					}
+				];
+			}),
+		[assignedPins, pinDetailsTargetPin, targetPinDetails.Signals]
+	);
+	const previousSignalTargetsRef = useRef<
+		Record<string, string | undefined>
+	>({});
+	const previousViewedPinRef = useRef<string>();
 
 	const targetPins = useMemo(
 		() =>
@@ -62,17 +92,42 @@ function PinDetails() {
 		}
 
 		return () => {
-			if (targetPinId && focusedPins.includes(targetPinId)) {
-				dispatch(focusPinSet([targetPinId]));
+			if (targetPinId) {
+				dispatch(unfocusPinSet([targetPinId]));
 			}
 		};
-	}, [dispatch, focusedPins, targetPinId]);
+	}, [dispatch, targetPinId]);
 
 	useEffect(() => {
 		if (searchString) {
 			dispatch(setPinDetailsTargetPin(undefined));
 		}
 	}, [searchString, dispatch]);
+
+	useEffect(() => {
+		// Initialize all signals when entering a pin, then only synchronize a
+		// signal whose assigned pin has changed. This preserves manual choices
+		// for other unassigned signals in the details view.
+		const isEnteringPin =
+			previousViewedPinRef.current !== pinDetailsTargetPin;
+		const previousSignalTargets = previousSignalTargetsRef.current;
+		const nextSignalTargets: Record<string, string | undefined> = {};
+
+		for (const signalTarget of signalTargets) {
+			const signalKey = `${signalTarget.peripheralGroup}__${signalTarget.signalName}`;
+			nextSignalTargets[signalKey] = signalTarget.assignedPin;
+
+			if (
+				isEnteringPin ||
+				previousSignalTargets[signalKey] !== signalTarget.assignedPin
+			) {
+				dispatch(setCurrentTarget(signalTarget));
+			}
+		}
+
+		previousSignalTargetsRef.current = nextSignalTargets;
+		previousViewedPinRef.current = pinDetailsTargetPin;
+	}, [dispatch, pinDetailsTargetPin, signalTargets]);
 
 	return (
 		<SideDetailsView

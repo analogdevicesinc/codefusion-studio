@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import {DataGridCell, DataGridRow} from 'cfs-react-library';
 type TableItemType = {
 	readonly id: string;
 	readonly label: string | ReactNode;
+	readonly isModified: boolean;
 	readonly description: string;
 	readonly value: string | number;
 	readonly address: string;
@@ -28,6 +29,7 @@ type TableItemType = {
 export default function RegisterTableRow({
 	id,
 	label,
+	isModified,
 	description,
 	value,
 	address,
@@ -41,14 +43,17 @@ export default function RegisterTableRow({
 				handleRegisterSelection(id);
 			}}
 		>
-			<DataGridCell gridColumn='1' dataTest={`${id}-name-grid-cell`}>
+			<DataGridCell gridColumn='1'>
+				{isModified ? '\u002A' : ''}
+			</DataGridCell>
+			<DataGridCell gridColumn='2' dataTest={`${id}-name-grid-cell`}>
 				{label}
 			</DataGridCell>
-			<DataGridCell gridColumn='2' className={styles.monospace}>
+			<DataGridCell gridColumn='3' className={styles.monospace}>
 				{address}
 			</DataGridCell>
-			<DataGridCell gridColumn='3'>{description}</DataGridCell>
-			<DataGridCell gridColumn='4' className={styles.monospace}>
+			<DataGridCell gridColumn='4'>{description}</DataGridCell>
+			<DataGridCell gridColumn='5' className={styles.monospace}>
 				{value}
 			</DataGridCell>
 		</DataGridRow>

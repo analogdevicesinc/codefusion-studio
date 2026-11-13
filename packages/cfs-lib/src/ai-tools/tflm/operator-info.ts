@@ -115,6 +115,12 @@ const supportedOps = new Map<number, string>([
 	[151, "DynamicUpdateSlice"]
 ]);
 
+export const CUSTOM_OPCODE = 32;
+
+const knownCustomOpMethods = new Map<string, string>([
+	["ethos-u", "EthosU"]
+]);
+
 /**
  * Get operator name from opcode.
  *
@@ -131,4 +137,18 @@ export function getOpName(i: number): string {
 	}
 
 	return name;
+}
+
+/**
+ * Get the resolver method name for a custom operator
+ * that has a dedicated Add*() method on
+ * MicroMutableOpResolver.
+ *
+ * @param name - The custom operator name from the TFLite model.
+ * @returns The method suffix e.g. "EthosU" for AddEthosU()
+ */
+export function getKnownCustomOpMethod(
+	name: string
+): string | undefined {
+	return knownCustomOpMethods.get(name);
 }

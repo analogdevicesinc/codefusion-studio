@@ -35,6 +35,7 @@ import {
 	formatSettingsPersistencePayload,
 	formatApplicationPackagesPersistencePayload
 } from '../../utils/mcuboot-persistence';
+import {reportPersistedActionTelemetry} from './telemetry-reporter';
 
 export const persistedMcubootActions: Array<
 	ActionCreatorWithPayload<any>
@@ -57,8 +58,13 @@ export function getMcubootPersistenceListenerMiddleware(
 
 	listenerMiddleware.startListening({
 		matcher: isAnyOf(...actionsArray),
-		async effect(_, listenerApi) {
+		async effect(action, listenerApi) {
 			listenerApi.cancelActiveListeners();
+
+			reportPersistedActionTelemetry(
+				action as {type: string; payload: unknown},
+				listenerApi.getOriginalState() as RootState
+			);
 
 			await listenerApi.delay(DEBOUNCE_MS);
 

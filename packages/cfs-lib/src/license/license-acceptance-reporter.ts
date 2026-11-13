@@ -33,9 +33,7 @@ import type {
  * await reporter.reportLicenseAcceptance([{ name: 'my-package', version: '1.0.0' }]);
  * ```
  */
-export class PackageLicenseReporter
-	implements CfsPackageLicenseReporter
-{
+export class PackageLicenseReporter implements CfsPackageLicenseReporter {
 	private readonly eulaClient: EulaClient;
 
 	constructor(apiClient: CfsApiClient) {
@@ -47,7 +45,9 @@ export class PackageLicenseReporter
 	): Promise<void> {
 		const pkgArray = Array.isArray(packages) ? packages : [packages];
 		await Promise.all(
-			pkgArray.map((pkg) => this.eulaClient.acceptEula(pkg.name, pkg.version))
+			pkgArray.map((pkg) =>
+				this.eulaClient.acceptEula(pkg.name, pkg.version)
+			)
 		);
 	}
 }

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@ import {useSearchString} from '../../../state/slices/app-context/appContext.sele
 import RegisterTable from '../table/RegisterTable';
 import styles from './RegisterBody.module.scss';
 import computeRegisterValue, {
+	addToRegisterConfigs,
 	computeFieldValue,
-	getNamespacedControlIntegerValue
+	getNamespacedControlIntegerValue,
+	type RegisterConfigs
 } from '../../../utils/compute-register-value';
-import type {
-	ConfigFields,
-	RegisterConfigField,
-	FieldDictionary
-} from '@common/types/soc';
+import type {FieldDictionary} from '@common/types/soc';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {Chip, Badge} from 'cfs-react-library';
 import ContextSearchInput from '../../../components/context-search-input/context-search-input';
@@ -52,10 +50,16 @@ import {
 } from '../../../state/slices/gaskets/gasket.selector';
 import type {GasketConfig} from 'cfs-types';
 import {getGasketDictionary} from '../../../utils/dfg';
+import {getSruRegisterConfigs} from '../../../utils/sru';
+import {
+	useSruModifiedConnectionsRaw,
+	useSruSignalInversions
+} from '../../../state/slices/sru/sru.selector';
 import {getClockFrequencyDictionary} from '../../../utils/rpn-expression-resolver';
 import {filterClockFrequencies} from '../../../utils/persistence';
 import {getSocPinDetails} from '../../../utils/soc-pins';
 import {type DFGStreamUI} from '../../../state/slices/gaskets/gasket.reducer';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 export type ComputedRegisters = Array<{
 	name: string;
@@ -69,47 +73,18 @@ function getRegistersCount(amount: number) {
 	return Boolean(amount) && <Badge>{amount}</Badge>;
 }
 
-// eslint-disable-next-line max-params
-function addToRegisterConfigs(
-	configs: Record<
-		string,
-		Record<string, RegisterConfigField[] | undefined>
-	>,
-	configNamespace: string,
-	controlNamespace: string,
-	dmConfig: ConfigFields | undefined,
-	key: string,
-	value: string
-) {
-	if (dmConfig?.[key] && value !== undefined && value !== '') {
-		// If we can't find the value, try "VALUE" as it is most likely an entry box.
-		const cfg = dmConfig[key][value] ?? dmConfig[key].VALUE;
-
-		configs[configNamespace] = configs[configNamespace] ?? {};
-		configs[configNamespace][key] =
-			configs[configNamespace][key] ?? [];
-
-		cfg?.forEach(s => {
-			configs[configNamespace][key]?.push({
-				...s,
-				ControlValue: getNamespacedControlIntegerValue(
-					controlNamespace,
-					key,
-					value
-				)
-			});
-		});
-	}
-}
-
 export default function RegisterBody() {
 	const assignedPins = useAssignedPins();
 	const modifiedClockNodes = useModifiedClockNodes();
 	const clockNodesStatus = useClockNodesStatus();
 	const allocatedPeripherals = usePeripheralAllocations();
 	const dfgGaskets = useGasketOptions();
+	const l10nCtx = useLocaleContext();
+	const l10n = l10nCtx?.filters as Record<string, string> | undefined;
 	const dfgStreams = useStreams();
 	const dmGaskets = getGasketDictionary();
+	const sruConnections = useSruModifiedConnectionsRaw();
+	const sruInversions = useSruSignalInversions();
 
 	const [activeRegister, setActiveRegister] = useState<
 		string | undefined
@@ -144,7 +119,7 @@ export default function RegisterBody() {
 									const cfg =
 										pinSignal?.PinConfig?.[controlKey]?.[
 											controlValue
-										];
+										] ?? pinSignal?.PinConfig?.[controlKey]?.VALUE;
 
 									// eslint-disable-next-line max-nested-callbacks
 									return cfg?.map(s => ({
@@ -170,10 +145,7 @@ export default function RegisterBody() {
 	);
 
 	const registerConfigs = useMemo(() => {
-		const configs: Record<
-			string,
-			Record<string, RegisterConfigField[] | undefined>
-		> = {};
+		const configs: RegisterConfigs = {};
 
 		configs.ClockConfig = {};
 
@@ -400,6 +372,11 @@ export default function RegisterBody() {
 			}
 		});
 
+		Object.assign(
+			configs,
+			getSruRegisterConfigs(sruConnections, sruInversions)
+		);
+
 		return configs;
 	}, [
 		dfgStreams,
@@ -407,7 +384,9 @@ export default function RegisterBody() {
 		dmGaskets,
 		allocatedPeripherals,
 		modifiedClockNodes,
-		clockNodesStatus
+		clockNodesStatus,
+		sruConnections,
+		sruInversions
 	]);
 
 	const computedRegisters: ComputedRegisters = useMemo(
@@ -575,7 +554,7 @@ export default function RegisterBody() {
 	}, [clearFilters, clearSearch]);
 
 	return (
-		<>
+		<div className={styles.root}>
 			{activeRegisterDetails ? (
 				<RegisterDetailsHeader
 					register={activeRegisterDetails}
@@ -590,7 +569,9 @@ export default function RegisterBody() {
 					onCloseDetails={closeDetailsTable}
 				/>
 			) : (
-				<div className={styles.heading}>Registers</div>
+				<div className={styles.heading}>
+					{l10nCtx?.registers?.title ?? 'Registers'}
+				</div>
 			)}
 			<section className={styles.container}>
 				<div className={styles.search}>
@@ -598,7 +579,7 @@ export default function RegisterBody() {
 				</div>
 				<Chip
 					isActive={filterState.filter === 'modified'}
-					label='Modified'
+					label={l10n?.modified ?? 'Modified'}
 					isDisabled={modifiedRegCnt === 0}
 					dataValue={modifiedRegCnt}
 					dataTest='Modified'
@@ -610,7 +591,7 @@ export default function RegisterBody() {
 				</Chip>
 				<Chip
 					isActive={filterState.filter === 'unmodified'}
-					label='Unmodified'
+					label={l10n?.unmodified ?? 'Unmodified'}
 					isDisabled={unmodifiedRegCnt === 0}
 					dataValue={unmodifiedRegCnt}
 					dataTest='Unmodified'
@@ -623,7 +604,10 @@ export default function RegisterBody() {
 				<div className={styles.divider} />
 				<div className={styles.info}>
 					<div>&lowast;</div>
-					<div>Modified from reset value</div>
+					<div>
+						{l10nCtx?.registersScreen?.modifiedFromResetValue ??
+							'Modified from reset value'}
+					</div>
 				</div>
 			</section>
 
@@ -638,7 +622,10 @@ export default function RegisterBody() {
 						}}
 					/>
 				) : (
-					<div style={{textAlign: 'center'}}>No results found</div>
+					<div style={{textAlign: 'center'}}>
+						{l10nCtx?.registersScreen?.noResults ??
+							'No results found'}
+					</div>
 				))}
 
 			{activeRegisterDetails &&
@@ -657,8 +644,11 @@ export default function RegisterBody() {
 						}
 					/>
 				) : (
-					<div style={{textAlign: 'center'}}>No results found</div>
+					<div style={{textAlign: 'center'}}>
+						{l10nCtx?.registersScreen?.noResults ??
+							'No results found'}
+					</div>
 				))}
-		</>
+		</div>
 	);
 }

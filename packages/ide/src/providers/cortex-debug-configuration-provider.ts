@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,21 @@ export class CortexDebugConfigurationProvider
   implements vscode.DebugConfigurationProvider
 {
   private variableResolver: CfsVariableResolver;
+  private includeBuiltInConfigurations: boolean;
 
-  constructor(toolManager: CfsToolManager) {
+  constructor(
+    toolManager: CfsToolManager,
+    includeBuiltInConfigurations = true,
+  ) {
     this.variableResolver = new CfsVariableResolver(toolManager);
+    this.includeBuiltInConfigurations = includeBuiltInConfigurations;
   }
 
   async provideDebugConfigurations(): Promise<vscode.DebugConfiguration[]> {
+    if (!this.includeBuiltInConfigurations) {
+      return [];
+    }
+
     const configsWithResolvedPaths: vscode.DebugConfiguration[] = [];
 
     for (const config of CORTEX_DEBUG_CONFIGURATIONS) {

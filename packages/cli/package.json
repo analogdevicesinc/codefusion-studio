@@ -15,9 +15,9 @@
     "cfs-package-manager": "workspace:*",
     "cfs-plugins-sdk": "workspace:*",
     "cli-table3": "^0.6.5",
-    "elf-parser": "workspace:*",
     "env-paths": "^3.0.0",
     "jsonc-parser": "^3.3.1",
+    "open": "^10.2.0",
     "semver": "^7.7.3",
     "serialport": "^13.0.0"
   },
@@ -34,16 +34,13 @@
     "chai": "^4",
     "copyfiles": "^2.4.1",
     "dotenv": "^16.5.0",
-    "eslint": "^8",
-    "eslint-config-oclif": "^5",
-    "eslint-config-oclif-typescript": "3.0.38",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.1",
     "mocha": "^10",
     "oclif": "^4.1.3",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
     "shx": "^0.3.4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "tsx": "^4.20.4",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=22"
@@ -53,7 +50,7 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/cli",
+  "homepage": "https://developer.analog.com/docs/codefusion-studio/latest/user-guide/cfsutil/",
   "license": "MIT",
   "main": "",
   "name": "cfsutil",
@@ -68,12 +65,19 @@
       "init": [
         "./dist/hooks/init/node-version",
         "./dist/hooks/init/system-ca"
+      ],
+      "prerun": [
+        "./dist/hooks/prerun/telemetry-consent"
+      ],
+      "finally": [
+        "./dist/hooks/finally/telemetry-send"
       ]
     },
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
+    "repositoryPrefix": "<%- commandPath %>",
     "topicSeparator": " ",
     "topics": {
       "elf": {
@@ -127,15 +131,27 @@
       },
       "catalog": {
         "description": "Update or restore the SoC catalog."
+      },
+      "validate": {
+        "description": "Validate CFS configuration files."
+      },
+      "telemetry": {
+        "description": "Manage telemetry preferences."
       }
     }
   },
-  "repository": "https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/analogdevicesinc/codefusion-studio",
+    "directory": "packages/cli"
+  },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/config/*.json' dist",
+    "build": "shx rm -rf dist && tsc -b && copyfiles -u 1 'src/config/*.json' dist && shx cp ../cfs-package-manager/src/git-remote/git-remote-cfspkg ../cfs-package-manager/src/git-remote/git-remote-cfspkg.cmd dist/git-remote/ && shx chmod +x dist/git-remote/git-remote-cfspkg",
     "build-local-deps": "yarn workspaces foreach -Rpt --topological-dev --exclude cfs-plugins-sdk run build",
     "auth-cfg": "yarn run -T auth-config > src/config/auth.json",
-    "lint": "eslint . --ext .ts",
+    "format-check": "oxfmt --check src/**/*.ts test/**/*.ts && echo 'format-check: PASS' || (echo 'format-check: FAIL' && exit 1)",
+    "format-write": "oxfmt --write src/**/*.ts test/**/*.ts",
+    "lint": "oxlint --max-warnings 5 . && yarn format-check",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
     "prepack": "yarn auth-cfg && yarn build && oclif manifest && oclif readme",
@@ -149,7 +165,7 @@
     "clean-fixtures": "./scripts/clean-test-fixtures.sh",
     "version": "oclif readme && git add README.md"
   },
-  "version": "2.3.0",
+  "version": "2.4.0",
   "bugs": "https://github.com/analogdevicesinc/codefusion-studio/issues",
   "keywords": [
     "oclif"

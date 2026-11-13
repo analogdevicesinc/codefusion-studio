@@ -14,11 +14,16 @@
  */
 import {Flags} from '@oclif/core';
 import {getAiToolsPlugin} from 'cfs-lib';
-import {AiCommandResult, SocAi} from 'cfs-types';
+import {
+  AiCommandResult,
+  CfsAiCompatibilityReport,
+  SocAi
+} from 'cfs-types';
 
 import {
   ensureOrTryInferCoreFlags,
-  getAndEnsureDataModel
+  getAndEnsureDataModel,
+  getModelFormat
 } from '../../utils/ai-command-utils.js';
 import {BaseAiCommand} from '../../utils/base-ai-command.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
@@ -29,7 +34,12 @@ import {
   getVersionFromConfig
 } from '../../utils/utils.js';
 
-export default class Compat extends BaseAiCommand<typeof Compat> {
+export default class Compat extends BaseAiCommand<
+  typeof Compat,
+  CfsAiCompatibilityReport
+> {
+  static useResponseEnvelope = true;
+
   static description = `Analyze model compatibility with target SoC and core.`;
 
   static examples: string[] = [
@@ -85,7 +95,71 @@ export default class Compat extends BaseAiCommand<typeof Compat> {
     })
   };
 
-  async run(): Promise<AiCommandResult> {
+  protected formatData(data: CfsAiCompatibilityReport): void {
+    // Blocking issues decide the pass/fail verdict. Operators that the
+    // compiler pushed to the Host DSP still execute, so they are reported
+    // separately as informational notes and never fail the model.
+    const issues: string[] = [];
+    const pushedToHost: string[] = [];
+
+    for (const issue of data.memory_issues ?? []) {
+      issues.push(
+        `   Memory issue: ${issue.type} - ${issue.memory_type} memory`
+      );
+    }
+
+    for (const issue of data.operator_issues ?? []) {
+      const layers = issue.layers.join(',');
+
+      if (issue.type === 'pushed to host') {
+        const suggestion =
+          issue.suggested_alternative ??
+          'Switch to NPU friendly Operator';
+        pushedToHost.push(
+          `   Pushed to Host: ${issue.operator} Layer(s) ${layers}. Suggested: ${suggestion}.`
+        );
+        continue;
+      }
+
+      const alternativeText =
+        issue.suggested_alternative &&
+        issue.suggested_alternative !== 'None'
+          ? ` may be swapped for ${issue.suggested_alternative}`
+          : ' no hardware-compatible alternative identified';
+      issues.push(
+        `   Unsupported operator: ${issue.operator} Layer(s) ${layers}.${alternativeText}.`
+      );
+    }
+
+    for (const issue of data.unsupported_types ?? []) {
+      const layers = issue.layers.join(',');
+      issues.push(
+        `   Unsupported type: ${issue.operation_type} operation uses ${issue.data_type}. Layer(s) ${layers}.`
+      );
+    }
+
+    if (issues.length === 0) {
+      this.log('Model compatibility checks pass.');
+    } else {
+      this.log(
+        `Model incompatible - (${issues.length}) issues identified:`
+      );
+      for (const issue of issues) {
+        this.log(issue);
+      }
+    }
+
+    if (pushedToHost.length > 0) {
+      this.log(
+        `Operators pushed to Host (${pushedToHost.length}) - these run on the DSP instead of the NPU:`
+      );
+      for (const line of pushedToHost) {
+        this.log(line);
+      }
+    }
+  }
+
+  async run(): Promise<AiCommandResult<CfsAiCompatibilityReport>> {
     const {flags, config} = this;
     const warnings: string[] = [];
 
@@ -107,14 +181,15 @@ export default class Compat extends BaseAiCommand<typeof Compat> {
       });
     }
 
-    const aiPlugin = getAiToolsPlugin(
-      await getCfsaiPath(config),
-      getVersionFromConfig(config)
-    );
-
     const packageManager = await getPackageManager({
       acceptUndefined: true
     });
+
+    const aiPlugin = getAiToolsPlugin(
+      await getCfsaiPath(config),
+      getVersionFromConfig(config),
+      packageManager
+    );
 
     const dmManager = await getDataModelManager(
       config,
@@ -132,7 +207,8 @@ export default class Compat extends BaseAiCommand<typeof Compat> {
           {
             suggestion:
               'Verify the SoC name is correct or required package is available',
-            run: `cfsutil socs list`
+            run: `cfsutil socs list`,
+            code: 'SOC_PACKAGE_NOT_FOUND'
           }
         );
       }
@@ -146,6 +222,12 @@ export default class Compat extends BaseAiCommand<typeof Compat> {
 
     ensureOrTryInferCoreFlags(flags, dataModel, warnings);
 
+    this.telemetryMetadata = {
+      soc: flags.soc,
+      core: flags.core,
+      modelFormat: getModelFormat(flags.model)
+    };
+
     const ai: SocAi | undefined = aiPlugin.getAIDataFromSOCModel(
       dataModel,
       flags.soc,
@@ -158,7 +240,8 @@ export default class Compat extends BaseAiCommand<typeof Compat> {
         `AI data not found for SoC '${flags.soc}', Core '${flags.core}'${flags.acc ? `, Acc '${flags.acc}'` : ''}`,
         {
           suggestion: 'Verify --core is valid for this SoC',
-          run: `cfsutil socs info ${flags.soc} --cores`
+          run: `cfsutil socs info ${flags.soc} --cores`,
+          code: 'AI_TARGET_NOT_FOUND'
         }
       );
     }

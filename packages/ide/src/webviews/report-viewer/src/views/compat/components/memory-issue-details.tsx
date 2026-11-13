@@ -14,12 +14,12 @@
  */
 
 import {ExternalLinkIcon} from 'cfs-react-library';
-import { type CompatibilityMemoryIssue } from "@ide-types/report-view-types";
+import type {CfsAiCompatMemoryIssue} from 'cfs-types';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import styles from './memory-issue-details.module.scss';
 
 type Props = {
-	readonly issue: CompatibilityMemoryIssue;
+	readonly issue: CfsAiCompatMemoryIssue;
 };
 
 export default function MemoryIssueDetails({issue}: Props) {

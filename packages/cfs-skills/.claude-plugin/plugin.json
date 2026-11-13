@@ -1,7 +1,13 @@
 {
   "name": "cfs-skills",
-  "version": "1.0.0",
-  "description": "CodeFusion Studio Skills",
+  "version": "1.2.0",
+  "description": "Answers CodeFusion Studio questions from the bundled documentation, runs cfsutil commands, creates and builds workspaces, and evaluates AI models on ADI hardware and reports on the results. Use when working with CodeFusion Studio or cfsutil.",
   "license": "Apache-2.0",
-  "skills": ["./cfs-docs", "./cfs-cli"]
+  "skills": [
+    "./cfs-docs",
+    "./cfs-cli",
+    "./cfs-ai-evaluation",
+    "./cfs-ai-report",
+    "./cfs-workspace-bootstrap"
+  ]
 }

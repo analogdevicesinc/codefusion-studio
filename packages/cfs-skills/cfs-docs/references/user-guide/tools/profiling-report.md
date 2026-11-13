@@ -1,7 +1,7 @@
 ---
 description: "Understanding the Resource Profiling report"
 author: "Analog Devices"
-date: 2026-07-15
+date: 2026-08-10
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx line 195)
 ---
 
@@ -11,7 +11,7 @@ The Resource Profiling report provides resource and performance estimates for yo
 
 ## Before you start
 
-This section assumes you have already generated a Resource Profiling report from the System Planner UI in [Embedded AI Tools](../tools/manage-ai-models.md). The report is an interactive, graphical report with filtering and recommendations panels.
+This section assumes you have already generated a Resource Profiling report from the System Planner UI in [Manage AI Models](../tools/manage-ai-models.md). The report is an interactive, graphical report with filtering and recommendations panels.
 
   ![Resource Profiling Report UI](./images/profiling-report-ui-dark.png#only-dark)
   ![Resource Profiling Report UI](./images/profiling-report-ui-light.png#only-light)

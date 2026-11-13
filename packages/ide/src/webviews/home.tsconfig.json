@@ -6,7 +6,9 @@
 		"./common/**/*.ts",
 		"./common/**/*.tsx",
 		"./home-page/**/*.json",
-		"./custom.d.ts"
+		"./custom.d.ts",
+		"../constants/**/*.ts",
+		"../types/**/*.ts"
 	],
 	"exclude": ["./**/*.cy.ts*"]
 }

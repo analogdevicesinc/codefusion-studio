@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc. All Rights Reserved.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc. All Rights Reserved.
  * This software is proprietary to Analog Devices, Inc. and its licensors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,29 +16,19 @@
 
 import type {StorybookConfig} from '@storybook/react-vite';
 
-import {join, dirname} from 'path';
-
-/**
- * This function is used to resolve the absolute path of a package.
- * It is needed in projects that use Yarn PnP or are set up within a monorepo.
- */
-function getAbsolutePath(value: string): any {
-	return dirname(require.resolve(join(value, 'package.json')));
-}
 const config: StorybookConfig = {
 	stories: [
 		'../src/**/*.mdx',
 		'../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'
 	],
 	addons: [
-		getAbsolutePath('@storybook/addon-onboarding'),
-		getAbsolutePath('@storybook/addon-links'),
-		getAbsolutePath('@storybook/addon-essentials'),
-		getAbsolutePath('@chromatic-com/storybook'),
-		getAbsolutePath('@storybook/addon-interactions')
+		'@storybook/addon-onboarding',
+		'@storybook/addon-links',
+		'@storybook/addon-docs',
+		'@chromatic-com/storybook'
 	],
 	framework: {
-		name: getAbsolutePath('@storybook/react-vite'),
+		name: '@storybook/react-vite',
 		options: {}
 	}
 };

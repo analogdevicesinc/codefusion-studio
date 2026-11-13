@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Workspace
 author: Analog Devices
-date: 2026-07-28
+date: 2026-10-10
 ---
 
 # Workspace
@@ -28,7 +28,7 @@ Use the following commands to discover these values:
 ## Configure workspace
 
 ```sh
-cfsutil workspace configure --soc <value> --core <value>... --template-id <value>... [-w <value>] [--name <value>] [-o <value>] [--board <value>] [--package <value>] [--template-version <value>...] [-s <value>...] [-v]
+cfsutil workspace configure --soc <value> --core <value>... --template-id <value>... [-w <value>] [--name <value>] [-o <value>] [--board <value>] [--package <value>] [--template-version <value>...] [-s <value>...] [-v | -q]
 ```
 
 Generates a workspace configuration file from command-line options. The file can be reviewed and edited before being passed to `cfsutil workspace create -i` to create the workspace.
@@ -44,9 +44,11 @@ Generates a workspace configuration file from command-line options. The file can
 
 | Flag                            | Description                                                                                                    |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 | `-o, --output=<value>`          | Sets the `Location` field in the generated configuration file, which determines where the workspace will be created. **Recommended**.                                           |
 | `-s, --search-path=<value>...`  | Additional search path for plugins and data models. Can be used multiple times.                                |
-| `-v, --verbose`                 | Verbose output.                                                                                                |
+| `-v, --verbose`                 | Print a template validation message for each core. Mutually exclusive with `--quiet`. |
+| `-q, --quiet`                   | Suppress non-error output, including warnings. Mutually exclusive with `--verbose`. |
 | `-w, --workspace-file=<value>`  | Name of the generated workspace configuration file. Default: `cfsworkspace.json`.                              |
 | `--board=<value>`               | Board name. Required unless `--package` is specified.                                                          |
 | `--core=<value>`                | **Required.** Core name. Repeat for each core, each followed by `--template-id`.                               |
@@ -160,6 +162,7 @@ Generates a workspace from an existing `.cfsworkspace` file.
 
 | Flag                         | Description                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 | `-i, --input=<path>`         | Path to an existing `.cfsworkspace` file                                                 |
 | `--name=<value>`             | Optional. Override the `WorkspaceName` field in the `.cfsworkspace` file, or fill it in if empty |
 | `-o, --output=<path>`        | Optional. Override the `Location` field in the `.cfsworkspace` file, or fill it in if empty |
@@ -174,7 +177,7 @@ Generates a workspace from an existing `.cfsworkspace` file.
         "Package": "WLP",
         "Board": "AD-APARD32690-SL",
         "WorkspaceName": "Apard_ws",
-        "Location": "C:\\Users\\<username>\\cfs\\2.3.0",
+        "Location": "C:\\Users\\<username>\\cfs\\2.4.0",
         "WorkspacePluginId": "",
         "WorkspacePluginVersion": "",
         "Projects": [
@@ -199,8 +202,8 @@ Generates a workspace from an existing `.cfsworkspace` file.
                 }
             }
         ],
-        "DataModelVersion": "1.3.893",
-        "DataModelSchemaVersion": "1.5.0"
+        "DataModelVersion": "1.3.913",
+        "DataModelSchemaVersion": "1.5.1"
     }
     ```
 
@@ -210,6 +213,7 @@ Generates a workspace from command-line parameters. The generated workspace path
 
 | Flag                         | Description                                                                           |
 | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 | `-o, --output=<path>`        | **Required**. Output directory for the new workspace (excluding workspace name).          |
 | `--board=<value>`            | **Required**. Board name.                                                                 |
 | `--name=<value>`             | **Required**. Name of the new workspace.                                                  |
@@ -220,5 +224,5 @@ Generates a workspace from command-line parameters. The generated workspace path
 
 !!! example
     ```sh
-    cfsutil workspace create -o "C:/Users/<username>/cfs/2.3.0" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
+    cfsutil workspace create -o "C:/Users/<username>/cfs/2.4.0" --name myNewWorkspace --soc MAX32690 --board AD-APARD32690-SL --template-id com.analog.multicore.msdk.helloworld
     ```

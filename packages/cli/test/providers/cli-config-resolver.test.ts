@@ -99,4 +99,32 @@ describe('CliConfigResolver', () => {
       expect(raw).to.deep.equal(['a', 'b', 'c']);
     });
   });
+
+  describe('telemetry filtering', () => {
+    it('does not expose telemetry through get()', () => {
+      const resolver = new CliConfigResolver(workspacePath, {
+        telemetry: {
+          version: 1,
+          enabled: true,
+          userId: 'test-id',
+          userType: 'External'
+        }
+      } as CliConfig);
+
+      expect(resolver.get('telemetry')).to.equal(undefined);
+    });
+
+    it('does not expose telemetry through getRaw()', () => {
+      const resolver = new CliConfigResolver(workspacePath, {
+        telemetry: {
+          version: 1,
+          enabled: true,
+          userId: 'test-id',
+          userType: 'External'
+        }
+      } as CliConfig);
+
+      expect(resolver.getRaw('telemetry')).to.equal(undefined);
+    });
+  });
 });

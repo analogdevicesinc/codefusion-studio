@@ -15,28 +15,28 @@
 import {getCFSCachePath} from 'cfs-lib';
 import fs from 'node:fs/promises';
 
-import {
-  BaseCommand,
-  type CliRunResponse
-} from '../../utils/base-command.js';
+import {BaseCommand} from '../../utils/base-command.js';
 import {getVersionFromConfig} from '../../utils/utils.js';
 
 export default class CleanCache extends BaseCommand<
   typeof CleanCache
 > {
+  static useResponseEnvelope = true;
+
   static description = 'Clear the cache which stores remote files.';
 
   static examples: string[] = ['<%= config.bin %> <%= command.id %>'];
 
-  async run(): CliRunResponse {
+  async run(): Promise<{cleared: true}> {
     const cacheDir = getCFSCachePath(
       getVersionFromConfig(this.config)
     );
 
-    cacheDir &&
-      (await fs.rm(cacheDir, {recursive: true, force: true}));
+    if (cacheDir) {
+      await fs.rm(cacheDir, {recursive: true, force: true});
+    }
 
     this.log('CFS AI cache cleared.');
-    return {msg: 'CFS AI cache cleared'};
+    return {cleared: true};
   }
 }

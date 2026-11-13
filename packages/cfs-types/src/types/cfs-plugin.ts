@@ -22,5 +22,5 @@ import type { CfsPluginInfo } from "./cfs-plugin-info.js";
  * @param pluginInfo - The .cfsplugin file information for the plugin.
  */
 export type CfsPlugin<T> = new (
-  pluginInfo: CfsPluginInfo
+	pluginInfo: CfsPluginInfo,
 ) => Partial<T>;

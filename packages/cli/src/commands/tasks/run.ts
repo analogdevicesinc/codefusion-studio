@@ -13,26 +13,50 @@
  *
  */
 
+import type {PackageDependencyVerification} from '../../utils/package-dependency-verification.js';
 import type {Task} from 'cfs-types';
 
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {
   CfsShellEnvProvider,
   checkIfFileExists,
   convertTrace
 } from 'cfs-lib';
-import {spawn} from 'node:child_process';
-import {type WriteStream, createWriteStream} from 'node:fs';
+import {getSkippedPackageReasonMessage} from 'cfs-package-manager';
+import {spawn, type StdioOptions} from 'node:child_process';
+import {
+  type WriteStream,
+  createWriteStream,
+  existsSync
+} from 'node:fs';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 import type {CliConfig} from '../../types/cli-config.js';
 
 import {CliTaskProvider} from '../../providers/cli-task-provider.js';
+import {verifyPackageDependenciesLocally} from '../../utils/package-dependency-verification.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {captureSerialOutput} from '../../utils/serial-capture.js';
 import {readUserConfig} from '../../utils/utils.js';
+import {
+  getDependencyManifestCandidates,
+  isWorkspaceRoot
+} from '../../utils/workspace-utils.js';
 
 const CTF_TRACE_START_TAG = Buffer.from('_zpl_ctf_start__');
+
+export const tasksRunDeps: {
+  getPackageManager: typeof getPackageManager;
+  verifyPackageDependenciesLocally: typeof verifyPackageDependenciesLocally;
+  getDependencyManifestCandidates: typeof getDependencyManifestCandidates;
+} = {
+  getPackageManager,
+  verifyPackageDependenciesLocally,
+  getDependencyManifestCandidates
+};
 
 // Generate a timestamp string for uniquely naming Zephyr output files
 function timeStamp(): string {
@@ -40,7 +64,9 @@ function timeStamp(): string {
   return `${d.getFullYear()}${d.getMonth() + 1}${d.getDate()}-${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
 }
 
-export default class Run extends Command {
+type ExecutedTask = {label: string; workspacePath: string};
+
+export default class Run extends BaseCommand<typeof Run> {
   static aliases = ['task:run', 'tasks:run'];
 
   static args = {
@@ -52,6 +78,8 @@ export default class Run extends Command {
 
   static description =
     'Run a task by label from a workspace/project context. By default, uses the current directory.';
+
+  static useResponseEnvelope = true;
 
   static override examples = [
     '<%= config.bin %> tasks run build',
@@ -66,19 +94,14 @@ export default class Run extends Command {
       summary:
         'The workspace path used for task discovery. Defaults to the current directory',
       required: false,
-      default: process.cwd()
+      default: process.cwd(),
+      defaultHelp: async () => '.'
     }),
     project: Flags.string({
       char: 'p',
       summary:
         'The project id to run the task from (resolved relative to the workspace path)',
       required: false
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Enable verbose output',
-      required: false,
-      default: false
     }),
     capture: Flags.boolean({
       char: 'c',
@@ -98,17 +121,35 @@ export default class Run extends Command {
       summary:
         'Trace Extended File for Zephyr-specific output (used with --capture)',
       required: false,
-      default: `zephyr_trace-${timeStamp()}.tef`
+      default: `zephyr_trace-${timeStamp()}.tef`,
+      defaultHelp: async () => 'zephyr_trace-<timestamp>.tef'
+    }),
+    timeout: Flags.integer({
+      summary:
+        'Terminate serial capture after the given number of seconds. Requires --capture. Use 0 to capture indefinitely.',
+      required: false,
+      min: 0,
+      dependsOn: ['capture']
     })
   };
 
   private buffer = Buffer.alloc(0);
   private ctfWriteStream: WriteStream | undefined;
+  private executedTasks: ExecutedTask[] = [];
   private zephyrData = false;
   private zephyrMessagePrinted = false;
 
-  async run(): Promise<void> {
-    const {args, flags} = await this.parse(Run);
+  async run(): Promise<{
+    executed: ExecutedTask[];
+  }> {
+    const {args, flags} = this;
+
+    if (flags.capture) {
+      this.warn(
+        `The --capture flag is deprecated and will be removed in a future release. Use "${this.config.bin} port capture" instead.`
+      );
+    }
+
     const workspacePath = path.resolve(
       flags.workspace ?? process.cwd()
     );
@@ -116,12 +157,8 @@ export default class Run extends Command {
     // Convert the trace file path to an absolute path
     flags.zephyrTraceFile = path.resolve(flags.zephyrTraceFile);
 
-    const isWorkspaceRoot = checkIfFileExists(
-      path.join(workspacePath, '.cfs')
-    );
-
     const discoveryPath =
-      isWorkspaceRoot && flags.project
+      isWorkspaceRoot(workspacePath) && flags.project
         ? path.join(workspacePath, flags.project)
         : workspacePath;
 
@@ -148,6 +185,16 @@ export default class Run extends Command {
     // Find and execute task(s)
     const matchingTasks = this.findTasks(tasks, args.task);
 
+    this.telemetryMetadata = {
+      taskType: /build/i.test(args.task)
+        ? 'build'
+        : /flash/i.test(args.task)
+          ? 'flash'
+          : 'other',
+      hasCapture: flags.capture ?? false,
+      taskCount: matchingTasks.length
+    };
+
     for (const task of matchingTasks) {
       const taskWorkspacePath =
         this.resolveTaskWorkspacePathForExecution(
@@ -155,6 +202,21 @@ export default class Run extends Command {
           discoveryPath,
           task
         );
+
+      await this.executeDependencies({
+        task,
+        tasks,
+        workspacePath,
+        discoveryPath,
+        taskWorkspacePath,
+        taskProvider,
+        userConfig,
+        verbose: flags.verbose,
+        port: flags.port,
+        project: flags.project,
+        zephyrTraceFile: flags.zephyrTraceFile,
+        chain: new Set([task.label])
+      });
 
       await this.executeTask({
         task,
@@ -165,9 +227,12 @@ export default class Run extends Command {
         capture: flags.capture ?? false,
         port: flags.port,
         project: flags.project,
-        zephyrTraceFile: flags.zephyrTraceFile
+        zephyrTraceFile: flags.zephyrTraceFile,
+        timeout: flags.timeout
       });
     }
+
+    return {executed: this.executedTasks};
   }
 
   /**
@@ -189,6 +254,7 @@ export default class Run extends Command {
     port?: string;
     project?: string;
     zephyrTraceFile: string;
+    timeout?: number;
   }): Promise<void> {
     const {
       task,
@@ -199,7 +265,8 @@ export default class Run extends Command {
       capture,
       port,
       project,
-      zephyrTraceFile
+      zephyrTraceFile,
+      timeout
     } = params;
 
     // Get infrastructure components from provider
@@ -230,10 +297,22 @@ export default class Run extends Command {
       await taskProvider.getCfsEnvironmentVariables();
 
     const shellEnvProvider = new CfsShellEnvProvider();
+
+    // The cfspkg git remote helper ships next to this command's bundle in
+    // dist/git-remote; its directory is prepended to PATH so git/west spawned
+    // by the task can resolve cfspkg:// URLs.
+    const gitRemoteHelperDir = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '..',
+      '..',
+      'git-remote'
+    );
+
     const taskEnv = shellEnvProvider.getBaseShellEnvironment(
       installedTools,
       {
         ...shellEnvOptions,
+        gitRemoteHelperDir,
         // cfs.environment vars are applied first; task-level env wins.
         additionalEnv: {...cfsEnvVars, ...options?.env}
       }
@@ -256,8 +335,76 @@ export default class Run extends Command {
       capture,
       port,
       project,
-      zephyrTraceFile
+      zephyrTraceFile,
+      timeout
     });
+  }
+
+  /**
+   * Recursively execute a task's `dependsOn` chain depth-first, so that
+   * dependencies of dependencies run before the task that requires them.
+   * @param params - Dependency execution parameters.
+   * @param params.task - Task whose dependencies should be executed.
+   * @param params.tasks - All discovered tasks to resolve labels against.
+   * @param params.workspacePath - Resolved workspace path from command flags.
+   * @param params.discoveryPath - Path used for task discovery.
+   * @param params.taskWorkspacePath - Execution folder of the dependent task.
+   * @param params.taskProvider - Task provider with infrastructure components.
+   * @param params.userConfig - Optional CLI user configuration.
+   * @param params.chain - Labels already being resolved, used to detect cycles.
+   * @returns Promise that resolves once all transitive dependencies have run.
+   */
+  private async executeDependencies(params: {
+    task: Task.Definition;
+    tasks: Task.Definition[];
+    workspacePath: string;
+    discoveryPath: string;
+    taskWorkspacePath: string;
+    taskProvider: CliTaskProvider;
+    userConfig: CliConfig | undefined;
+    verbose: boolean;
+    port?: string;
+    project?: string;
+    zephyrTraceFile: string;
+    chain: Set<string>;
+  }): Promise<void> {
+    const {task, tasks, workspacePath, discoveryPath, chain} = params;
+
+    for (const depLabel of [task.dependsOn ?? []].flat()) {
+      if (chain.has(depLabel)) {
+        this.error(
+          `Circular dependsOn detected for task "${task.label}".`,
+          {code: 'TASK_CIRCULAR_DEPENDENCY'}
+        );
+      }
+
+      const dep = this.resolveDependency({
+        depLabel,
+        task,
+        tasks,
+        workspacePath,
+        discoveryPath,
+        taskWorkspacePath: params.taskWorkspacePath
+      });
+
+      await this.executeDependencies({
+        ...params,
+        task: dep,
+        chain: new Set(chain).add(depLabel)
+      });
+
+      await this.executeTask({
+        task: dep,
+        workspacePath: params.taskWorkspacePath,
+        taskProvider: params.taskProvider,
+        userConfig: params.userConfig,
+        verbose: params.verbose,
+        capture: false,
+        port: params.port,
+        project: params.project,
+        zephyrTraceFile: params.zephyrTraceFile
+      });
+    }
   }
 
   /**
@@ -287,11 +434,42 @@ export default class Run extends Command {
         .map((t) => t.userFriendlyName ?? t.label)
         .join(', ');
       this.error(
-        `Task "${label}" not found. Available tasks: ${available || 'none'}`
+        `Task "${label}" not found. Available tasks: ${available || 'none'}`,
+        {code: 'TASK_NOT_FOUND'}
       );
     }
 
     return matchingTasks;
+  }
+
+  /**
+   * Print captured subprocess error output under a label. In JSON mode it
+   * goes to stderr so stdout carries only the final JSON document.
+   * @param label - Heading shown before the output.
+   * @param text - The error output to print.
+   * @returns void
+   */
+  private writeErrorOutput(label: string, text: string): void {
+    if (this.jsonEnabled()) {
+      this.writeToStderr(`${label}\n${text}\n`);
+    } else {
+      this.log(label);
+      this.log(text);
+    }
+  }
+
+  /**
+   * Write captured serial output. In JSON mode it goes to stderr so stdout
+   * carries only the final JSON document.
+   * @param data - Captured bytes to write.
+   * @returns void
+   */
+  private writeCapturedOutput(data: Buffer): void {
+    if (this.jsonEnabled()) {
+      this.writeToStderr(data);
+    } else {
+      this.writeToStdout(data);
+    }
   }
 
   /**
@@ -306,7 +484,7 @@ export default class Run extends Command {
         this.buffer = Buffer.alloc(0);
       }
     } else if (this.buffer.length > 0) {
-      process.stdout.write(this.buffer);
+      this.writeCapturedOutput(this.buffer);
       this.buffer = Buffer.alloc(0);
     }
 
@@ -345,7 +523,7 @@ export default class Run extends Command {
           if (this.zephyrData) {
             this.ctfWriteStream?.write(safe);
           } else {
-            process.stdout.write(safe);
+            this.writeCapturedOutput(safe);
           }
 
           this.buffer = this.buffer.subarray(safeLength);
@@ -366,7 +544,8 @@ export default class Run extends Command {
         this.ctfWriteStream = createWriteStream(zephyrTraceFile);
         this.ctfWriteStream.on('error', (err: Error) => {
           this.error(
-            `Unable to create ${zephyrTraceFile}: ${err.message}`
+            `Unable to create ${zephyrTraceFile}: ${err.message}`,
+            {code: 'TASK_TRACE_FILE_CREATE_FAILED'}
           );
         });
 
@@ -377,14 +556,15 @@ export default class Run extends Command {
         // First occurrence — flush any pre-CTF bytes to stdout, then switch
         // to file mode.
         if (before.length > 0) {
-          process.stdout.write(before);
+          this.writeCapturedOutput(before);
         }
 
         this.zephyrData = true;
         this.ctfWriteStream = createWriteStream(zephyrTraceFile);
         this.ctfWriteStream.on('error', (err: Error) => {
           this.error(
-            `Unable to create ${zephyrTraceFile}: ${err.message}`
+            `Unable to create ${zephyrTraceFile}: ${err.message}`,
+            {code: 'TASK_TRACE_FILE_CREATE_FAILED'}
           );
         });
 
@@ -403,6 +583,100 @@ export default class Run extends Command {
   }
 
   /**
+   * Formats unmet packages from a dependency verification result into a
+   * supplementary note appended to a task failure message.
+   * @param result - The dependency verification result to summarize.
+   * @returns The formatted annotation text.
+   */
+  private formatDependencyAnnotation(
+    result: PackageDependencyVerification
+  ): string {
+    const lines = result.packages
+      .filter((pkg) => pkg.status !== 'installed')
+      .map((pkg) => {
+        const constraint = `${pkg.name}/${pkg.requiredVersion}`;
+
+        if (pkg.status === 'missing') {
+          return `- ${constraint}: missing`;
+        }
+
+        if (pkg.status === 'version-mismatch') {
+          return `- ${constraint}: installed version '${pkg.installedVersion}' does not satisfy the requirement`;
+        }
+
+        const reason = pkg.reasonCode
+          ? ` (${getSkippedPackageReasonMessage(pkg.reasonCode)})`
+          : '';
+        return `- ${constraint}: unsupported on this platform${reason}`;
+      });
+
+    return [
+      `This workspace has unmet package dependencies in '${result.manifestPath}':`,
+      ...lines,
+      `Run cfsutil validate dependencies '${result.manifestPath}' for complete details.`
+    ].join('\n');
+  }
+
+  /**
+   * Best-effort check for unmet workspace dependencies, used to annotate a
+   * task failure. Never throws and never blocks task execution; any
+   * manifest, package-manager, or verification failure is swallowed so it
+   * cannot mask the original task error. Uses
+   * {@link verifyPackageDependenciesLocally}, which only reads the local
+   * package cache (`checkManifest()`/`list()`), never `getInstallPlan()` -
+   * this guarantees no remote-registry round trip regardless of which
+   * remotes are already configured locally, unlike `useRemotes: false` on
+   * its own, which only skips remote *provider registration* and does not
+   * stop `getInstallPlan()` from consulting already-configured remotes.
+   * @param workspacePath - Path to search for workspace dependency
+   * manifests. Only the workspace root manifest and the manifest of the
+   * project containing this path are checked.
+   * @returns A supplementary annotation, or `undefined` when there is
+   * nothing to add.
+   */
+  private async getDependencyAnnotation(
+    workspacePath: string
+  ): Promise<string | undefined> {
+    try {
+      const manifestPaths = tasksRunDeps
+        .getDependencyManifestCandidates(workspacePath)
+        .filter((manifestPath) => existsSync(manifestPath));
+      if (manifestPaths.length === 0) {
+        return undefined;
+      }
+
+      const packageManager = await tasksRunDeps.getPackageManager({
+        acceptUndefined: true
+      });
+      if (!packageManager) {
+        return undefined;
+      }
+
+      const annotations: string[] = [];
+      for (const manifestPath of manifestPaths) {
+        try {
+          const result =
+            await tasksRunDeps.verifyPackageDependenciesLocally(
+              manifestPath,
+              packageManager
+            );
+          if (!result.valid) {
+            annotations.push(this.formatDependencyAnnotation(result));
+          }
+        } catch {
+          // Skip an unreadable manifest so other annotations survive.
+        }
+      }
+
+      return annotations.length > 0
+        ? annotations.join('\n\n')
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
    * Handle task failure: stop serial capture, log stderr, and throw an error.
    * @param params - Failure handling parameters.
    * @param params.label - Task label for the error message.
@@ -410,6 +684,8 @@ export default class Run extends Command {
    * @param params.captureHandle - Active capture handle to stop, if any.
    * @param params.verbose - Whether verbose output is enabled.
    * @param params.stderrOutput - Accumulated stderr output from the task.
+   * @param params.workspacePath - Workspace path used to look up unmet
+   * dependencies for the failure annotation.
    * @returns Never returns; always throws.
    */
   private async handleTaskFailure(params: {
@@ -418,9 +694,16 @@ export default class Run extends Command {
     captureHandle: {stop: () => Promise<void>} | undefined;
     verbose: boolean;
     stderrOutput: string;
+    workspacePath: string;
   }): Promise<never> {
-    const {label, exitCode, captureHandle, verbose, stderrOutput} =
-      params;
+    const {
+      label,
+      exitCode,
+      captureHandle,
+      verbose,
+      stderrOutput,
+      workspacePath
+    } = params;
 
     // Clean up serial port on task failure. Swallow any stop() error so the
     // original task failure message is always shown.
@@ -435,13 +718,22 @@ export default class Run extends Command {
     }
 
     if (!verbose && stderrOutput.trim()) {
-      this.log('Task error output:');
-      this.log(stderrOutput.trim());
+      this.writeErrorOutput(
+        'Task error output:',
+        stderrOutput.trim()
+      );
     }
 
-    this.error(`Task "${label}" failed with exit code ${exitCode}`, {
-      exit: exitCode
-    });
+    const annotation =
+      await this.getDependencyAnnotation(workspacePath);
+
+    this.error(
+      `Task "${label}" failed with exit code ${exitCode}${annotation ? `\n\n${annotation}` : ''}`,
+      {
+        code: 'TASK_FAILED',
+        exit: exitCode
+      }
+    );
   }
 
   private mergeEnvironmentWithPathPrepend(
@@ -520,7 +812,11 @@ export default class Run extends Command {
         ...(buildDirExists && {buildDir}),
         ...(zephyrElfExists && {zephyrElfPath}),
         ...(verbose && {
-          onStdout: (chunk: string) => process.stdout.write(chunk),
+          onStdout: (chunk: string) =>
+            (this.jsonEnabled()
+              ? process.stderr
+              : process.stdout
+            ).write(chunk),
           onStderr: (chunk: string) => process.stderr.write(chunk)
         })
       });
@@ -533,18 +829,72 @@ export default class Run extends Command {
           : '';
 
       if (!verbose && stderrOutput.trim()) {
-        this.log('Post-processing error output:');
-        this.log(stderrOutput.trim());
+        this.writeErrorOutput(
+          'Post-processing error output:',
+          stderrOutput.trim()
+        );
       }
 
-      throw new Error(
-        `Post-processing failed: ${error instanceof Error ? error.message : String(error)}`
+      this.error(
+        `Post-processing failed: ${error instanceof Error ? error.message : String(error)}`,
+        {code: 'TASK_POST_PROCESSING_FAILED', exit: 1}
       );
     }
 
     this.log(
       `Zephyr output post-processing completed successfully and stored in ${zephyrTraceFile}.`
     );
+  }
+
+  /**
+   * Resolve a `dependsOn` label to a concrete task, preferring one in the same
+   * execution folder and falling back to the first match. Errors if none found.
+   * @param params - Dependency resolution parameters.
+   * @param params.depLabel - The dependency label declared in `dependsOn`.
+   * @param params.task - The task that declared the dependency.
+   * @param params.tasks - All discovered tasks to resolve the label against.
+   * @param params.workspacePath - Resolved workspace path from command flags.
+   * @param params.discoveryPath - Path used for task discovery.
+   * @param params.taskWorkspacePath - Execution folder of the dependent task.
+   * @returns The resolved dependency task.
+   */
+  private resolveDependency(params: {
+    depLabel: string;
+    task: Task.Definition;
+    tasks: Task.Definition[];
+    workspacePath: string;
+    discoveryPath: string;
+    taskWorkspacePath: string;
+  }): Task.Definition {
+    const {
+      depLabel,
+      task,
+      tasks,
+      workspacePath,
+      discoveryPath,
+      taskWorkspacePath
+    } = params;
+
+    const matchingDeps = tasks.filter((t) => t.label === depLabel);
+
+    const dep =
+      matchingDeps.find(
+        (t) =>
+          this.resolveTaskWorkspacePathForExecution(
+            workspacePath,
+            discoveryPath,
+            t
+          ) === taskWorkspacePath
+      ) ?? matchingDeps[0];
+
+    if (!dep) {
+      this.error(
+        `Dependency "${depLabel}" not found for task "${task.label}".`,
+        {code: 'TASK_DEPENDENCY_NOT_FOUND'}
+      );
+    }
+
+    return dep;
   }
 
   /**
@@ -572,7 +922,9 @@ export default class Run extends Command {
     };
 
     if (!command) {
-      this.error(`Task "${task.label}" has no command defined.`);
+      this.error(`Task "${task.label}" has no command defined.`, {
+        code: 'TASK_COMMAND_MISSING'
+      });
     }
 
     return {command, options};
@@ -599,7 +951,7 @@ export default class Run extends Command {
     // If running from a workspace root and task has project context,
     // execute from the matching project directory.
     if (
-      checkIfFileExists(path.join(workspacePath, '.cfs')) &&
+      isWorkspaceRoot(workspacePath) &&
       typeof task.projectId === 'string'
     ) {
       return path.join(workspacePath, task.projectId);
@@ -633,6 +985,7 @@ export default class Run extends Command {
     port?: string;
     project?: string;
     zephyrTraceFile: string;
+    timeout?: number;
   }): Promise<void> {
     const {
       label,
@@ -644,7 +997,8 @@ export default class Run extends Command {
       capture,
       port,
       project,
-      zephyrTraceFile
+      zephyrTraceFile,
+      timeout
     } = params;
 
     this.log(`Running task: ${label}`);
@@ -677,10 +1031,16 @@ export default class Run extends Command {
 
     let stderrOutput = '';
 
+    let stdio: StdioOptions = ['ignore', 'pipe', 'pipe'];
+    if (verbose) {
+      // stdout joins stderr in JSON mode so it cannot corrupt the JSON document.
+      stdio = this.jsonEnabled() ? ['inherit', 2, 2] : 'inherit';
+    }
+
     const child = spawn(shell, [...shellArgs, command], {
       cwd,
       env: {...process.env, ...taskEnv},
-      stdio: verbose ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+      stdio,
       windowsVerbatimArguments:
         process.platform === 'win32' &&
         path.basename(shell).toLowerCase() === 'cmd.exe'
@@ -696,20 +1056,12 @@ export default class Run extends Command {
       stderrOutput += chunk.toString();
     });
 
-    child.on('error', async (err) => {
-      if (captureHandle) {
-        try {
-          await captureHandle.stop();
-        } catch {
-          /* ignore */
-        }
-
-        this.flushBuffer();
-      }
-
-      this.error(`Failed to spawn task process: ${err.message}`, {
-        exit: 1
-      });
+    // Recorded rather than acted on immediately: 'close' fires after
+    // 'error' for a failed spawn, so the exit-code wait below is the single
+    // place that decides which failure message to report.
+    let spawnError: Error | undefined;
+    child.on('error', (err) => {
+      spawnError = err;
     });
 
     const ac = new AbortController();
@@ -738,7 +1090,38 @@ export default class Run extends Command {
 
     // Interrupted by signal — cleanup already ran
     if (exitCode === -1) {
+      // Text mode keeps its historical silent return; JSON must not report success.
+      if (this.jsonEnabled()) {
+        this.error(`Task "${label}" was interrupted`, {
+          code: 'TASK_INTERRUPTED',
+          exit: 1
+        });
+      }
+
       return;
+    }
+
+    if (spawnError) {
+      if (captureHandle) {
+        try {
+          await captureHandle.stop();
+        } catch {
+          /* ignore */
+        }
+
+        this.flushBuffer();
+      }
+
+      const annotation =
+        await this.getDependencyAnnotation(workspacePath);
+
+      this.error(
+        `Failed to spawn task process: ${spawnError.message}${annotation ? `\n\n${annotation}` : ''}`,
+        {
+          code: 'TASK_SPAWN_FAILED',
+          exit: 1
+        }
+      );
     }
 
     if (exitCode !== 0) {
@@ -747,23 +1130,29 @@ export default class Run extends Command {
         exitCode,
         captureHandle,
         verbose,
-        stderrOutput
+        stderrOutput,
+        workspacePath
       });
     }
 
     this.log(`Task "${label}" completed successfully.`);
+    this.executedTasks.push({label, workspacePath});
 
     // Although the task has finished, we're still capturing output from the board.
     // Wait for CTRL-C then post-process any Zephyr trace file.
     if (captureHandle) {
-      await this.waitForCaptureStop(captureHandle, {
-        options,
-        taskEnv,
-        verbose,
-        workspacePath,
-        ctfFile,
-        zephyrTraceFile
-      });
+      await this.waitForCaptureStop(
+        captureHandle,
+        {
+          options,
+          taskEnv,
+          verbose,
+          workspacePath,
+          ctfFile,
+          zephyrTraceFile
+        },
+        timeout
+      );
     }
   }
 
@@ -800,7 +1189,9 @@ export default class Run extends Command {
           this.handleData(line, ctfFile);
         },
         onError: (error: Error) => {
-          this.error(`Serial port error: ${error.message}`);
+          this.error(`Serial port error: ${error.message}`, {
+            code: 'TASK_SERIAL_PORT_ERROR'
+          });
         },
         workspacePath,
         project,
@@ -809,7 +1200,9 @@ export default class Run extends Command {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.error(`Failed to start serial capture\n${errorMessage}`);
+      this.error(`Failed to start serial capture\n${errorMessage}`, {
+        code: 'TASK_SERIAL_CAPTURE_FAILED'
+      });
     }
   }
 
@@ -824,6 +1217,7 @@ export default class Run extends Command {
    * @param zephyrParams.workspacePath - Absolute path to the workspace root.
    * @param zephyrParams.ctfFile - Path to the captured CTF binary file.
    * @param zephyrParams.zephyrTraceFile - Output path for the generated TEF file.
+   * @param timeout - Optional seconds after which capture stops automatically. 0 or undefined means we capture indefinitely.
    * @returns Promise that resolves when capture has stopped and post-processing is complete.
    */
   private async waitForCaptureStop(
@@ -835,14 +1229,30 @@ export default class Run extends Command {
       workspacePath: string;
       ctfFile: string;
       zephyrTraceFile: string;
-    }
+    },
+    timeout?: number
   ): Promise<void> {
-    this.log('Press Ctrl+C to stop capture.');
+    // A timeout of 0 (or undefined) means capture indefinitely until Ctrl+C.
+    const hasTimeout = timeout !== undefined && timeout > 0;
+
+    if (hasTimeout) {
+      this.log(
+        `Capturing for ${timeout} ${timeout === 1 ? 'second' : 'seconds'}. Press Ctrl+C to stop early.`
+      );
+    } else {
+      this.log('Press Ctrl+C to stop capture.');
+    }
 
     await new Promise<void>((resolve) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
       const stopCapture = async () => {
         process.removeListener('SIGINT', stopCapture);
         process.removeListener('SIGTERM', stopCapture);
+        if (timer) {
+          clearTimeout(timer);
+        }
+
         this.log('\nClosing serial port...');
         try {
           await captureHandle.stop();
@@ -854,6 +1264,15 @@ export default class Run extends Command {
 
       process.on('SIGINT', stopCapture);
       process.on('SIGTERM', stopCapture);
+
+      if (hasTimeout) {
+        timer = setTimeout(() => {
+          this.log(
+            `\nCapture timeout of ${timeout} ${timeout === 1 ? 'second' : 'seconds'} reached.`
+          );
+          void stopCapture();
+        }, timeout * 1000);
+      }
     });
 
     if (this.zephyrData && checkIfFileExists(zephyrParams.ctfFile)) {

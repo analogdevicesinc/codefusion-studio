@@ -9,14 +9,14 @@
 	"firmwarePlatform": "sharcfx",
 	"supportedSocs": [
 		{
-			"name": "ADSP-SC835",
-			"board": "ADSPSC835-EV-SOM",
-			"package": "bga_ed"
+			"name": "TEST-SC835",
+			"board": "TESTSC835-EV-SOM",
+			"package": "PGA_ED"
 		},
 		{
-			"name": "ADSP-SC835W",
-			"board": "EV-SOMCRR-EZKIT",
-			"package": "BGA_ED"
+			"name": "TEST-SC835W",
+			"board": "TESTEV-SOMCRR-EZKIT",
+			"package": "PGA_ED"
 		}
 	],
 	"features": {

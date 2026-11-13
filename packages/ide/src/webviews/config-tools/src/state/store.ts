@@ -13,12 +13,20 @@
  *
  */
 import {combineReducers, configureStore} from '@reduxjs/toolkit';
-import type {Action, ThunkAction} from '@reduxjs/toolkit';
+import type {
+	Action,
+	ThunkAction,
+	ThunkDispatch
+} from '@reduxjs/toolkit';
 import {
 	appContextReducer,
 	appContextInitialState
 } from './slices/app-context/appContext.reducer';
 import {gasketsReducer} from './slices/gaskets/gasket.reducer';
+import {
+	firewallReducer,
+	firewallInitialState
+} from './slices/firewall/firewall.reducer';
 import {
 	pinsReducer,
 	pinsInitialState
@@ -92,17 +100,21 @@ import {
 } from './utils/ai-tools-persistence-middleware';
 import {profilingReducer} from './slices/profiling/profiling.reducer';
 import type {ProfilingState} from './slices/profiling/profiling.reducer';
-import {
-	applicationPackagesReducer
-} from './slices/application-packages/applicationPackages.reducer';
+import {applicationPackagesReducer} from './slices/application-packages/applicationPackages.reducer';
 import {
 	getProfilingPersistenceListenerMiddleware,
-	persistedProfilingActions
+	getDebouncedProfilingPersistenceListenerMiddleware,
+	persistedProfilingActions,
+	debouncedProfilingActions
 } from './utils/profiling-persistence-middleware';
 import {
 	getMcubootPersistenceListenerMiddleware,
 	persistedMcubootActions
 } from './utils/mcuboot-persistence-middleware';
+import {
+	getFirewallPersistenceListenerMiddleware,
+	persistedFirewallActions
+} from './utils/firewall-persistence-middleware';
 import {
 	type ConfiguredProject,
 	type Zephelin,
@@ -114,6 +126,31 @@ import {
 	applyPersistedSettings,
 	applyPersistedApplicationPackages
 } from '../utils/mcuboot-persistence';
+import {applyPersistedFirewall} from '../utils/firewall-persistence';
+import {
+	type ScopesDictionary,
+	scopesInitialState,
+	scopesReducer
+} from './slices/scopes/scopes.reducer';
+import {
+	buildScopesDictionary,
+	type ControlsByProjectScope
+} from '../utils/scopes';
+import {
+	getScopesListenerMiddleware,
+	scopedValueActions
+} from './utils/scopes-middleware';
+import {sruReducer, sruInitialState} from './slices/sru/sru.reducer';
+import {
+	getSruPersistenceListenerMiddleware,
+	persistedSruActions
+} from './utils/sru-persistence-middleware';
+import {getSruUndoTrackingMiddleware} from './utils/sru-undo-tracking';
+import {getSruInputSignals} from '../utils/sru';
+import {
+	isPbenBidirectionalSource,
+	isPinBufferDataSource
+} from '../utils/sru-signals';
 
 type ResolvedType<T> = T extends Promise<infer R> ? R : T;
 
@@ -121,13 +158,18 @@ export type Store = ResolvedType<
 	ReturnType<typeof getPreloadedStateStore>
 >;
 
-export type AppDispatch = ResolvedType<
-	ReturnType<typeof getPreloadedStateStore>
->['dispatch'];
-
 export type RootState = ReturnType<
 	ResolvedType<ReturnType<typeof getPreloadedStateStore>>['getState']
 >;
+
+// The middleware tuple built from `getDefaultMiddleware().prepend(...spreadArrays)`
+// loses its precise type when non-tuple arrays are spread in, which degrades the
+// store's inferred dispatch type to a plain `Dispatch` that rejects thunks/async
+// thunks. Intersecting with `ThunkDispatch` restores the ability to dispatch them.
+export type AppDispatch = ResolvedType<
+	ReturnType<typeof getPreloadedStateStore>
+>['dispatch'] &
+	ThunkDispatch<RootState, unknown, Action>;
 
 export type AppThunk<ReturnType = void> = ThunkAction<
 	ReturnType,
@@ -144,9 +186,12 @@ export const rootReducer = combineReducers({
 	clockNodesReducer,
 	partitionsReducer,
 	gasketsReducer,
+	firewallReducer,
+	sruReducer,
 	aiModelReducer,
 	profilingReducer,
-	applicationPackagesReducer
+	applicationPackagesReducer,
+	scopesReducer
 });
 
 export const useAppSelector: TypedUseSelectorHook<RootState> =
@@ -167,13 +212,17 @@ function computeDefaultClockNodeValues(
 	return defaults;
 }
 
+// eslint-disable-next-line max-params
 export function configurePreloadedStore(
 	soc: Soc,
 	persistedConfig?: ConfigOptionsReturn['configOptions'],
-	clockControls?: Record<string, ControlCfg[]>
+	clockControls?: Record<string, ControlCfg[]>,
+	scopes?: ScopesDictionary,
+	controlsByProjectScope?: ControlsByProjectScope,
+	resolvedPluginVersions?: Record<string, string>
 ) {
 	// Unified initialization for all SoC-related data structures
-	sysPlannerDataInit(soc, persistedConfig);
+	sysPlannerDataInit(soc, persistedConfig, resolvedPluginVersions);
 
 	const {
 		Pins: persistedPinConfig,
@@ -295,10 +344,37 @@ export function configurePreloadedStore(
 			persistedConfig?.ApplicationPackages
 		);
 
+	const persistedSruConnections =
+		persistedConfig?.Sru?.Connections ?? {};
+	const sruInputSignals = getSruInputSignals();
+	const lastRealSignal: Record<string, string> = {};
+
+	for (const [input, source] of Object.entries(
+		persistedSruConnections
+	)) {
+		const sruInput = sruInputSignals[input];
+
+		if (isPbenBidirectionalSource(sruInput, source)) {
+			lastRealSignal[input] = source;
+		} else if (isPinBufferDataSource(sruInput, source)) {
+			lastRealSignal[input] = source;
+		}
+	}
+
+	const sruReducerInitialState = {
+		...sruInitialState,
+		modifiedConnections: persistedSruConnections,
+		userDescriptions: persistedConfig?.Sru?.UserDescriptions ?? {},
+		signalAliases: persistedConfig?.Sru?.SignalAliases ?? {},
+		signalInversions: persistedConfig?.Sru?.SignalInversions ?? {},
+		lastRealSignal
+	};
+
 	return configureStore({
 		reducer: rootReducer,
 		middleware: getDefaultMiddleware =>
 			getDefaultMiddleware().prepend(
+				...getScopesListenerMiddleware(scopedValueActions),
 				...getPersistenceListenerMiddleware(persistedActions),
 				...getDFGPersistenceListenerMiddleware(persistedDfgActions),
 				...getAiToolsPersistenceListenerMiddleware(
@@ -307,11 +383,20 @@ export function configurePreloadedStore(
 				...getProfilingPersistenceListenerMiddleware(
 					persistedProfilingActions
 				),
+				...getDebouncedProfilingPersistenceListenerMiddleware(
+					debouncedProfilingActions
+				),
 				...getMcubootPersistenceListenerMiddleware(
 					persistedMcubootActions
-				)
+				),
+				...getFirewallPersistenceListenerMiddleware(
+					persistedFirewallActions
+				),
+				...getSruPersistenceListenerMiddleware(persistedSruActions),
+				getSruUndoTrackingMiddleware()
 			),
 		preloadedState: {
+			sruReducer: sruReducerInitialState,
 			pinsReducer: pinReducerInitialState,
 			peripheralsReducer: peripheralsReducerInitialState,
 			appContextReducer: {
@@ -325,11 +410,22 @@ export function configurePreloadedStore(
 			clockNodesReducer: clockNodesReducerInitialState,
 			partitionsReducer: partitionReducerInitialState,
 			gasketsReducer: gasketsReducerInitialState,
+			firewallReducer: {
+				...firewallInitialState,
+				...applyPersistedFirewall(persistedConfig?.FirewallConfig)
+			},
 			aiModelReducer: defaultAiToolsState,
 			profilingReducer: defaultProfilingState,
 			applicationPackagesReducer: {
 				applicationPackages: persistedApplicationPackages,
 				activePackageId: persistedApplicationPackages[0]?.id
+			},
+			scopesReducer: {
+				...scopesInitialState,
+				scopes: scopes ?? scopesInitialState.scopes,
+				controlsByProjectScope:
+					controlsByProjectScope ??
+					scopesInitialState.controlsByProjectScope
 			}
 		}
 	});
@@ -338,25 +434,70 @@ export function configurePreloadedStore(
 export async function getPreloadedStateStore() {
 	const persistedSocData = await getSocAndCfsconfigData();
 
-	const {dataModel, configOptions} = persistedSocData ?? {};
+	const {dataModel, configOptions, resolvedPluginVersions} =
+		persistedSocData ?? {};
 	const formattedDataModel = formatSocCoreMemoryBlocks(dataModel);
-
-	initializeConfigDict(configOptions, formattedDataModel);
-
-	const primaryCoreId = formattedDataModel?.Cores.find(
-		core => core.IsPrimary
-	)?.Id;
-
-	const clockControls = await getControlsForProjectIds(
-		[getPrimaryProjectId(primaryCoreId) ?? ''],
-		CONTROL_SCOPES.CLOCK_CONFIG
-	);
 
 	if (!formattedDataModel || !configOptions) {
 		throw new Error(
 			'There was an error loading your configuration data.'
 		);
 	}
+
+	initializeConfigDict(
+		configOptions,
+		formattedDataModel,
+		resolvedPluginVersions
+	);
+
+	const primaryCoreId = formattedDataModel?.Cores.find(
+		core => core.IsPrimary
+	)?.Id;
+
+	const primaryProjectId = getPrimaryProjectId(primaryCoreId) ?? '';
+
+	const clockControls = await getControlsForProjectIds(
+		[primaryProjectId],
+		CONTROL_SCOPES.CLOCK_CONFIG
+	);
+
+	// Fetch overrides for individual projects, for all scopes.
+	const controlsByProjectScope = await Object.values(
+		CONTROL_SCOPES
+	).reduce<Promise<ControlsByProjectScope>>(
+		async (previousControlsPromise, controlScope) => {
+			const previousControls = await previousControlsPromise;
+
+			const controlsForScope = await Promise.all(
+				configOptions.Projects.map(async project => {
+					const controlsByGroup =
+						controlScope === CONTROL_SCOPES.CLOCK_CONFIG &&
+						project.ProjectId === primaryProjectId
+							? clockControls
+							: await getControlsForProjectIds(
+									[project.ProjectId],
+									controlScope
+								);
+
+					return {
+						controlScope,
+						projectId: project.ProjectId,
+						coreId: project.CoreId,
+						controlsByGroup
+					};
+				})
+			);
+
+			return [...previousControls, ...controlsForScope];
+		},
+		Promise.resolve([])
+	);
+
+	// Populate the scope dictionary with configs that include "Scope" field
+	const scopes = buildScopesDictionary(
+		controlsByProjectScope,
+		configOptions
+	);
 
 	await Promise.allSettled(
 		formattedDataModel?.Cores.map(async core => {
@@ -381,7 +522,10 @@ export async function getPreloadedStateStore() {
 	const store = configurePreloadedStore(
 		formattedDataModel,
 		configOptions,
-		clockControls
+		clockControls,
+		scopes,
+		controlsByProjectScope,
+		resolvedPluginVersions
 	);
 
 	return store;

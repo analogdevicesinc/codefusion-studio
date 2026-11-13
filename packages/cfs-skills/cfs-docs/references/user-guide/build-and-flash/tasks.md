@@ -1,7 +1,7 @@
 ---
 description: Tasks available in a configured CFS workspace.
 author: Analog Devices
-date: 2026-05-26
+date: 2026-09-25
 ---
 
 # Build, clean, flash, and debug tasks
@@ -54,7 +54,7 @@ The **CFS: clean-periph** task runs [CFS: clean](#cfs-clean) and removes the bui
 
 ### CFS: flash
 
-The flash task runs [CFS: build](#cfs-build) first, then flashes the output binary to the microcontroller using your configured debugger. The task name in the task picker will include the debugger type (for example, **CFS: flash (OpenOCD)** or **CFS: flash (JLink)**). After flashing completes, the target state (halted vs running) depends on the debugger/runner; reset or power cycle the microcontroller, or use your debugger to resume execution as needed. A debugger must be connected correctly to use this task. Refer to the microcontroller evaluation board data sheet for instructions.
+The flash task runs [CFS: build](#cfs-build) first, then flashes the output binary to the microcontroller using your configured debugger. The task name in the task picker will include the debugger type (for example, **CFS: flash (OpenOCD)** or **CFS: flash (JLink)**). After flashing completes, the target state (halted or running) depends on the debugger/runner; reset or power cycle the microcontroller, or use your debugger to resume execution as needed. A debugger must be connected correctly to use this task. See [Connect hardware](../debugging/connect-hardware.md) and [Troubleshooting](troubleshooting.md).
 
 !!! Note
     The flash task is available with the shortcut on the left-hand side of the status bar.  
@@ -106,3 +106,15 @@ To modify a custom build or flash task, do one of the following:
 The `.vscode/tasks.json` file opens in your editor. You can update the task directly in the file.
 
 For more information on modifying build tasks, see [:octicons-link-external-24: Custom tasks](https://code.visualstudio.com/docs/editor/tasks#_custom-tasks){:target="_blank"}
+
+## Custom tasks with dependencies
+
+Tasks defined in `.vscode/tasks.json` support the built-in `dependsOn` and `dependsOrder` properties in VS Code. See [:octicons-link-external-24: Compound tasks](https://code.visualstudio.com/docs/editor/tasks#_compound-tasks){:target="_blank"} for the syntax.
+
+CodeFusion Studio also discovers custom tasks defined in a separate `.vscode/cfs.tasks.json` file in the project directory. These tasks appear in the **Actions** view alongside tasks from `tasks.json`, and support their own `dependsOn` property, which runs the dependency task first when the task is started from the **Actions** view. See [Run a task before another task with `dependsOn`](../cfsutil/tasks.md#run-a-task-before-another-task-with-dependson) for the file format and examples.
+
+In the **Actions** view:
+
+- CodeFusion Studio resolves a dependency label only to a CFS task in the same project; it doesn't resolve tasks from `.vscode/tasks.json`.
+- The **Actions** view only lists tasks whose label contains a recognized keyword, such as `build`, `clean`, `erase`, `flash`, or `documentation`. A dependency task with an unrelated label still runs correctly but won't appear in the **Actions** view itself.
+- If a dependency task fails, CodeFusion Studio stops and doesn't run the dependent task. A notification names the failed task, its exit code, and the dependent task that was skipped.

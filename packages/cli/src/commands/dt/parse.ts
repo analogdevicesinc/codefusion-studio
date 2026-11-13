@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,12 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {DtParser} from 'cfs-lib';
 import {promises as fs} from 'node:fs';
 import {dirname} from 'node:path';
-
-import {Logger} from '../../logger.js';
 
 // Example run:
 // $ ./run.js dt parse zephyr/boards/adi/max32690evkit/max32690evkit_max32690_m4.dts \
@@ -28,7 +28,7 @@ import {Logger} from '../../logger.js';
 // -I~/work/elf/hal_nxp/dts \
 // -I~/work/elf/zephyr/
 
-export default class DtCommand extends Command {
+export default class DtCommand extends BaseCommand<typeof DtCommand> {
   static args = {
     filePath: Args.string({
       description: 'Devicetree (text) file path'
@@ -50,15 +50,11 @@ export default class DtCommand extends Command {
     output: Flags.string({
       char: 'o',
       summary: 'Output json file'
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      description: 'Enable verbose mode'
     })
   };
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(DtCommand);
+    const {args, flags} = this;
     if (args.filePath) {
       try {
         const inc: string[] = flags.includeDirs ?? [];
@@ -74,15 +70,13 @@ export default class DtCommand extends Command {
         if (flags.output) {
           await fs.writeFile(flags.output, str);
         } else {
-          console.log(str);
+          this.log(str);
         }
       } catch (error) {
-        Logger.logError(`${error}`);
+        this.error(`${error}`);
       }
     } else {
-      Logger.logError(
-        `No input file. Please provide a valid file path.`
-      );
+      this.error(`No input file. Please provide a valid file path.`);
     }
   }
 }

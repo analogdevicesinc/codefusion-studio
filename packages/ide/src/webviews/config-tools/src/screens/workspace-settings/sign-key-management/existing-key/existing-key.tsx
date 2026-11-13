@@ -24,10 +24,8 @@ import {
 	type TLocaleContext,
 	useLocaleContext
 } from '../../../../../../common/contexts/LocaleContext';
-import {
-	readPemAlgorithm,
-	selectFile
-} from '../../../../../../common/api';
+import {selectFile} from '../../../../../../common/api';
+import {readPemAlgorithm} from '../../../../utils/api';
 import {EXISTING_KEY_CONTROLS} from '../../../../constants/workspace-settings';
 import type {KeyData} from '../../../../types/workspace-settings';
 import {

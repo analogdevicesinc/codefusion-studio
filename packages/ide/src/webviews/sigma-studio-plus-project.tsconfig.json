@@ -6,7 +6,9 @@
 		"./common/**/*.ts",
 		"./common/**/*.tsx",
 		"./sigma-studio-plus-project/**/*.json",
-		"./custom.d.ts"
+		"./custom.d.ts",
+		"../constants/**/*.ts",
+		"../types/**/*.ts"
 	],
 	"exclude": ["./**/*.cy.ts*"]
 }

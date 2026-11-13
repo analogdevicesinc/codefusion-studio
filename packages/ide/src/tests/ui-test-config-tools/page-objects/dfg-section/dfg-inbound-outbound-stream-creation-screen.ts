@@ -17,6 +17,7 @@
 import {
   By,
   ModalDialog,
+  VSBrowser,
   WebElement,
   WebView,
   Workbench,
@@ -25,7 +26,9 @@ import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { parseJSONFile } from "../../config-tools-utility/cfsconfig-utils";
 import {
   assertPersistedStreamForSource,
+  DestinationConfig,
   PersistedDFGStream,
+  SourceConfig,
 } from "./dfg-persistence-assertions";
 import { statSync } from "fs";
 import { existsSync, readFileSync, unlinkSync } from "fs";
@@ -206,7 +209,7 @@ export async function getDropdownCurrentValue(
 ): Promise<number> {
   const dropdownElement = await UIUtils.findWebElement(view, dropdown);
   const currentValue = await dropdownElement.getAttribute("current-value");
-  return parseInt(currentValue);
+  return parseInt(currentValue ?? "", 10);
 }
 
 export const tiedSourceStreamDropdown = By.css(
@@ -304,6 +307,18 @@ export async function sourceInterruptLineDropdownOption(
   );
 }
 
+export function sourceAliasInput(stream: string): By {
+  return By.css(
+    `[data-test="Source-${stream}-additionalControls:control-ALIAS-control-input"]`,
+  );
+}
+
+export function sourceInterruptPriority(stream: string): By {
+  return By.css(
+    `[data-test="Source-${stream}-additionalControls:control-INT_PRIORITY-control-input"]`,
+  );
+}
+
 export async function destinationBufferInterruptToggle(
   stream: string,
 ): Promise<By> {
@@ -346,6 +361,18 @@ export async function destinationInterruptLineDropdownOption(
 ): Promise<By> {
   return By.css(
     `[data-test="Destinations-${stream}-additionalControls:control-INT_LINE_DEST:${line}"]`,
+  );
+}
+
+export function destinationAliasInput(stream: string): By {
+  return By.css(
+    `[data-test="Destinations-${stream}-additionalControls:control-ALIAS-control-input"]`,
+  );
+}
+
+export function destinationInterruptPriority(stream: string): By {
+  return By.css(
+    `[data-test="Destinations-${stream}-additionalControls:control-INT_PRIORITY-control-input"]`,
   );
 }
 
@@ -445,7 +472,7 @@ export async function isExportAsCsvButtonEnabled(
     exportAsCsvButton,
   );
   const exportBtnClass = await exportAsCsvButtonElement.getAttribute("class");
-  const isExportButtonEnabled = !exportBtnClass.includes("disabled");
+  const isExportButtonEnabled = !(exportBtnClass ?? "").includes("disabled");
   return [streamListRowCount, isExportButtonEnabled];
 }
 
@@ -458,6 +485,9 @@ export async function verifyConfigFilePersistence(
   destination: string[],
   sourceBufferSize: number,
   destinationBufferSize: number[],
+  groupName?: string,
+  sourceConfig?: SourceConfig,
+  destinationConfigs?: DestinationConfig[],
 ): Promise<void> {
   await view.switchBack();
   await workbench.executeCommand("view: close all editors");
@@ -482,7 +512,9 @@ export async function verifyConfigFilePersistence(
     streamDescription,
     sourceBufferSize,
     destinationBufferSize,
-    "",
+    groupName,
+    sourceConfig,
+    destinationConfigs,
   );
 
   console.log(
@@ -568,4 +600,315 @@ export async function validateExportedCsvContent(
   } finally {
     if (existsSync(filename)) unlinkSync(filename);
   }
+}
+
+export async function getSourceConfigDetails(
+  view: WebView,
+  source: string,
+): Promise<SourceConfig> {
+  let sourceStreamAliasValue: string | undefined;
+  let sourceStreamWindowInterruptValue: string | undefined;
+  let sourceStreamWindowSizeValue: string | undefined;
+  let sourceInterruptPriorityValue: string | undefined;
+  let sourceInterruptLineValue: string | undefined;
+
+  // Stream Priority
+  const sourceStreamPriorityElement = await UIUtils.findWebElement(
+    view,
+    sourceStreamPriority(source),
+  );
+  const sourceStreamPriorityValue =
+    await sourceStreamPriorityElement.getAttribute("current-value");
+
+  // Source Alias
+  const sourceAliasElements = await view.findWebElements(
+    sourceAliasInput(source),
+  );
+  if (
+    sourceAliasElements.length > 0 &&
+    (await sourceAliasElements[0].isDisplayed())
+  ) {
+    sourceStreamAliasValue =
+      await sourceAliasElements[0].getAttribute("current-value");
+  }
+
+  // Source Window Interrupt
+  const sourceWindowInterruptElements = await view.findWebElements(
+    await sourceWindowInterruptToggle(source),
+  );
+  if (
+    sourceWindowInterruptElements.length > 0 &&
+    (await sourceWindowInterruptElements[0].isDisplayed())
+  ) {
+    sourceStreamWindowInterruptValue =
+      await sourceWindowInterruptElements[0].getAttribute("data-checked");
+  }
+
+  // Source Window Size
+  if (sourceStreamWindowInterruptValue === "true") {
+    const sourceWindowSizeInputElements = await view.findWebElements(
+      await sourceWindowSizeInput(source),
+    );
+    if (
+      sourceWindowSizeInputElements.length > 0 &&
+      (await sourceWindowSizeInputElements[0].isDisplayed())
+    ) {
+      sourceStreamWindowSizeValue =
+        await sourceWindowSizeInputElements[0].getAttribute("current-value");
+    }
+
+    // Source Interrupt Priority
+    const sourceInterruptPriorityElement = await view.findWebElements(
+      sourceInterruptPriority(source),
+    );
+    if (
+      sourceInterruptPriorityElement.length > 0 &&
+      (await sourceInterruptPriorityElement[0].isDisplayed())
+    ) {
+      sourceInterruptPriorityValue =
+        await sourceInterruptPriorityElement[0].getAttribute("current-value");
+    }
+
+    // Source Interrupt Line
+    const sourceInterruptLineDropdownElement = await view.findWebElements(
+      await sourceInterruptLineDropdown(source),
+    );
+    if (
+      sourceInterruptLineDropdownElement.length > 0 &&
+      (await sourceInterruptLineDropdownElement[0].isDisplayed())
+    ) {
+      sourceInterruptLineValue =
+        await sourceInterruptLineDropdownElement[0].getAttribute(
+          "current-value",
+        );
+    }
+  }
+
+  const sourceConfig: SourceConfig = {
+    PRIORITY: sourceStreamPriorityValue,
+    ...(sourceStreamAliasValue !== undefined && {
+      ALIAS: sourceStreamAliasValue,
+    }),
+    ...(sourceStreamWindowInterruptValue !== undefined && {
+      INT_WINDOW_EN:
+        sourceStreamWindowInterruptValue === "true" ? "TRUE" : "FALSE",
+    }),
+    ...(sourceInterruptPriorityValue !== undefined && {
+      INT_PRIORITY: sourceInterruptPriorityValue,
+    }),
+    ...(sourceInterruptLineValue !== undefined && {
+      INT_LINE_SRC: sourceInterruptLineValue,
+    }),
+    ...(sourceStreamWindowSizeValue !== undefined && {
+      INT_WINDOW_SIZE: sourceStreamWindowSizeValue,
+    }),
+  };
+  return sourceConfig;
+}
+
+export async function getDestinationConfigDetails(
+  view: WebView,
+  browser: VSBrowser,
+  destination: string,
+): Promise<DestinationConfig> {
+  let destinationStreamAliasValue: string | undefined;
+  let destinationStreamBufferInterruptValue: string | undefined;
+  let destinationStreamBufferSizeValue: string | undefined;
+  let destinationStreamWindowInterruptValue: string | undefined;
+  let destinationStreamWindowSizeValue: string | undefined;
+  let destinationInterruptPriorityValue: string | undefined;
+  let destinationInterruptLineValue: string | undefined;
+
+  // Destination Stream Priority
+  const destinationStreamPriorityElement = await UIUtils.findWebElement(
+    view,
+    destinationStreamPriority(destination),
+  );
+  await browser.driver.executeScript(
+    "arguments[0].scrollIntoView()",
+    destinationStreamPriorityElement,
+  );
+  const destinationStreamPriorityValue =
+    await destinationStreamPriorityElement.getAttribute("current-value");
+
+  // Destination Alias
+  const destinationAliasElements = await view.findWebElements(
+    destinationAliasInput(destination),
+  );
+  if (
+    destinationAliasElements.length > 0 &&
+    (await destinationAliasElements[0].isDisplayed())
+  ) {
+    destinationStreamAliasValue =
+      await destinationAliasElements[0].getAttribute("current-value");
+  }
+
+  // Destination Buffer Interrupt
+  const destinationBufferInterruptElements = await view.findWebElements(
+    await destinationBufferInterruptToggle(destination),
+  );
+  if (
+    destinationBufferInterruptElements.length > 0 &&
+    (await destinationBufferInterruptElements[0].isDisplayed())
+  ) {
+    destinationStreamBufferInterruptValue =
+      await destinationBufferInterruptElements[0].getAttribute("data-checked");
+  }
+
+  // Destination Buffer Size
+  if (destinationStreamBufferInterruptValue === "true") {
+    const destinationBufferSizeInputElements = await view.findWebElements(
+      await destinationBufferSizeInput(destination),
+    );
+    if (
+      destinationBufferSizeInputElements.length > 0 &&
+      (await destinationBufferSizeInputElements[0].isDisplayed())
+    ) {
+      destinationStreamBufferSizeValue =
+        await destinationBufferSizeInputElements[0].getAttribute(
+          "current-value",
+        );
+    }
+  }
+
+  // Destination Window Interrupt
+  const destinationWindowInterruptElements = await view.findWebElements(
+    await destinationWindowInterruptToggle(destination),
+  );
+  if (
+    destinationWindowInterruptElements.length > 0 &&
+    (await destinationWindowInterruptElements[0].isDisplayed())
+  ) {
+    destinationStreamWindowInterruptValue =
+      await destinationWindowInterruptElements[0].getAttribute("data-checked");
+  }
+
+  // Destination Window Size
+  if (destinationStreamWindowInterruptValue === "true") {
+    const destinationWindowSizeInputElements = await view.findWebElements(
+      await destinationWindowSizeInput(destination),
+    );
+    if (
+      destinationWindowSizeInputElements.length > 0 &&
+      (await destinationWindowSizeInputElements[0].isDisplayed())
+    ) {
+      destinationStreamWindowSizeValue =
+        await destinationWindowSizeInputElements[0].getAttribute(
+          "current-value",
+        );
+    }
+
+    // Destination Interrupt Priority
+    const destinationInterruptPriorityElement = await view.findWebElements(
+      destinationInterruptPriority(destination),
+    );
+    if (
+      destinationInterruptPriorityElement.length > 0 &&
+      (await destinationInterruptPriorityElement[0].isDisplayed())
+    ) {
+      destinationInterruptPriorityValue =
+        await destinationInterruptPriorityElement[0].getAttribute(
+          "current-value",
+        );
+    }
+
+    // Destination Interrupt Line
+    const destinationInterruptLineDropdownElement = await view.findWebElements(
+      await destinationInterruptLineDropdown(destination),
+    );
+    if (
+      destinationInterruptLineDropdownElement.length > 0 &&
+      (await destinationInterruptLineDropdownElement[0].isDisplayed())
+    ) {
+      destinationInterruptLineValue =
+        await destinationInterruptLineDropdownElement[0].getAttribute(
+          "current-value",
+        );
+    }
+  }
+
+  const destinationConfig: DestinationConfig = {
+    PRIORITY: destinationStreamPriorityValue,
+    ...(destinationStreamAliasValue !== undefined && {
+      ALIAS: destinationStreamAliasValue,
+    }),
+    ...(destinationStreamBufferInterruptValue !== undefined && {
+      INT_BUFFER_EN:
+        destinationStreamBufferInterruptValue === "true" ? "TRUE" : "FALSE",
+    }),
+    ...(destinationStreamWindowInterruptValue !== undefined && {
+      INT_WINDOW_EN:
+        destinationStreamWindowInterruptValue === "true" ? "TRUE" : "FALSE",
+    }),
+    ...(destinationInterruptPriorityValue !== undefined && {
+      INT_PRIORITY: destinationInterruptPriorityValue,
+    }),
+    ...(destinationInterruptLineValue !== undefined && {
+      INT_LINE_DEST: destinationInterruptLineValue,
+    }),
+    ...(destinationStreamBufferSizeValue !== undefined && {
+      INT_BUFFER_SIZE: destinationStreamBufferSizeValue,
+    }),
+    ...(destinationStreamWindowSizeValue !== undefined && {
+      INT_WINDOW_SIZE: destinationStreamWindowSizeValue,
+    }),
+  };
+  return destinationConfig;
+}
+
+export async function sourceToggleInputs(
+  view: WebView,
+  source: string,
+  windowSize: string,
+  streamPriority: string,
+): Promise<void> {
+  await UIUtils.clickElement(view, await sourceWindowInterruptToggle(source));
+
+  const sourceWindowSizeInputElement = await UIUtils.findWebElement(
+    view,
+    await sourceWindowSizeInput(source),
+  );
+  await sourceWindowSizeInputElement.sendKeys(windowSize);
+
+  const sourceStreamPriorityInput = await UIUtils.findWebElement(
+    view,
+    sourceStreamPriority(source),
+  );
+  await sourceStreamPriorityInput.sendKeys(streamPriority);
+}
+
+export async function destinationToggleInputs(
+  view: WebView,
+  destination: string,
+  bufferInterruptSize: string,
+  windowSize: string,
+  streamPriority: string,
+): Promise<void> {
+  await UIUtils.clickElement(
+    view,
+    await destinationBufferInterruptToggle(destination),
+  );
+
+  const destinationBufferSizeInputElement = await UIUtils.findWebElement(
+    view,
+    await destinationBufferSizeInput(destination),
+  );
+  await destinationBufferSizeInputElement.sendKeys(bufferInterruptSize);
+
+  await UIUtils.clickElement(
+    view,
+    await destinationWindowInterruptToggle(destination),
+  );
+
+  const destinationWindowSizeInputElement = await UIUtils.findWebElement(
+    view,
+    await destinationWindowSizeInput(destination),
+  );
+  await destinationWindowSizeInputElement.sendKeys(windowSize);
+
+  const destinationStreamPriorityInput = await UIUtils.findWebElement(
+    view,
+    destinationStreamPriority(destination),
+  );
+  await destinationStreamPriorityInput.sendKeys(streamPriority);
 }

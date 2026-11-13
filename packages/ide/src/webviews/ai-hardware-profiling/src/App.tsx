@@ -17,7 +17,7 @@ import {
 	type ApplicationStatus,
 	type HardwareResources,
 	type ProfilingConfiguration
-} from "@ide-types/ai-hardware-profiling-types";
+} from '@ide-types/ai-hardware-profiling-types';
 import {LocalizationProvider} from '../../common/contexts/LocaleContext';
 import styles from './App.module.scss';
 import {HeaderBar} from './sections/HeaderBar';
@@ -26,10 +26,8 @@ import {useEffect, useState} from 'react';
 import {
 	applicationStatusUpdate,
 	getProfilingViewData
-} from "@constants/messages/ai-hardware-profiling-messages";
+} from '@constants/messages/ai-hardware-profiling-messages';
 import {messenger} from '../../common/contexts/MessengerContext';
-
-
 
 function App() {
 	const [profilingConfig, setProfilingConfig] =

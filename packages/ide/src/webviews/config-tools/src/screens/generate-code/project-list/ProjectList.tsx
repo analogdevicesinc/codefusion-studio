@@ -49,6 +49,7 @@ function ProjectList({
 			if (!project) return;
 
 			const errors = errorsMap.get(project.ProjectId) ?? {
+				memoryAllocErr: 0,
 				peripheralAllocErr: 0,
 				pinConfigErr: 0,
 				clockConfigErr: 0
@@ -114,11 +115,14 @@ function ProjectList({
 			{projects.length ? (
 				projects.map((project: ProjectInfo) => {
 					const errors = errorsMap.get(project.ProjectId) ?? {
+						memoryAllocErr: 0,
 						peripheralAllocErr: 0,
 						pinConfigErr: 0,
 						clockConfigErr: 0,
 						dfgErr: 0,
-						mcubootErr: 0
+						mcubootErr: 0,
+						firewallErr: 0,
+						profilingErr: 0
 					};
 
 					const isValid = !(

@@ -38,6 +38,12 @@ import {
 import {useAppDispatch} from '../../../state/store';
 import {useFilteredStreams} from '../hooks/useFilteredStreams';
 import styles from './stream-sidebar.module.scss';
+import {
+	gasketHasDfgScopeConflict,
+	streamHasDfgScopeConflict,
+	useDfgScopeConflictItemIds
+} from '../../../hooks/use-dfg-scope-conflicts';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 type StreamListViewProps = {
 	readonly stream: DFGStreamUI;
@@ -49,6 +55,11 @@ function StreamListView({stream, type}: StreamListViewProps) {
 
 	const streamErrors = useStreamErrors();
 	const errors = streamErrors[stream.Uuid] ?? [];
+	const scopeConflictItemIds = useDfgScopeConflictItemIds();
+	const hasScopeConflict = streamHasDfgScopeConflict(
+		stream,
+		scopeConflictItemIds
+	);
 
 	const handleClick = () => {
 		dispatch(setEditingStream(stream));
@@ -98,7 +109,7 @@ function StreamListView({stream, type}: StreamListViewProps) {
 					<SmallSettingsIcon />
 				</Button>
 			</Tooltip>
-			{errors.length > 0 ? (
+			{errors.length > 0 || hasScopeConflict ? (
 				<div
 					data-test={`stream-${type}-${stream.StreamId}-error`}
 					id={`stream-${type}-${stream.StreamId}-error`}
@@ -136,6 +147,14 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 	const gasketErrors = useGasketErrors();
 	const hasErrors = gasketErrors[gasket.Name]?.length > 0;
 	const streamErrors = useStreamErrors();
+	const scopeConflictItemIds = useDfgScopeConflictItemIds();
+	const hasScopeConflict = gasketHasDfgScopeConflict(
+		gasket.Name,
+		scopeConflictItemIds
+	);
+	const l10n = useLocaleContext()?.dfgVisualisation as
+		| Record<string, string>
+		| undefined;
 
 	/**
 	 * If the gasket has an I/O stream with errors, the error propagates to the gasket
@@ -143,10 +162,14 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 	 */
 	const hasStreamErrors =
 		allInboundStreams.some(
-			stream => streamErrors[stream.Uuid]?.length > 0
+			stream =>
+				streamErrors[stream.Uuid]?.length > 0 ||
+				streamHasDfgScopeConflict(stream, scopeConflictItemIds)
 		) ||
 		allOutboundStreams.some(
-			stream => streamErrors[stream.Uuid]?.length > 0
+			stream =>
+				streamErrors[stream.Uuid]?.length > 0 ||
+				streamHasDfgScopeConflict(stream, scopeConflictItemIds)
 		);
 
 	return (
@@ -155,7 +178,7 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 			title={gasket.Name}
 			titleTooltip={gasket.Description}
 			icon={
-				hasErrors || hasStreamErrors ? (
+				hasErrors || hasStreamErrors || hasScopeConflict ? (
 					<div
 						data-test={`gasket-${gasket.Name}-error`}
 						id={`gasket-${gasket.Name}-error`}
@@ -205,7 +228,7 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 						className={styles.sectionTitle}
 						data-test={`inbound-stream-header-${gasket.Name}`}
 					>
-						<h5>INBOUND</h5>
+						<h5>{l10n?.inbound ?? 'INBOUND'}</h5>
 						<Tooltip title='Add' position='left' type='short'>
 							<Button
 								disabled={!canHaveInboundStreams}
@@ -240,7 +263,7 @@ export function GasketListView({gasket}: SubsystemListViewProps) {
 						className={styles.sectionTitle}
 						data-test={`outbound-stream-header-${gasket.Name}`}
 					>
-						<h5>OUTBOUND</h5>
+						<h5>{l10n?.outbound ?? 'OUTBOUND'}</h5>
 						<Tooltip title='Add' position='left' type='short'>
 							<Button
 								data-test={`add-outbound-stream-${gasket.Name}`}

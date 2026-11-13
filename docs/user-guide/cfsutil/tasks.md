@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Tasks
 author: Analog Devices
-date: 2026-07-07
+date: 2026-10-10
 ---
 
 # Tasks
@@ -15,14 +15,14 @@ The CLI can list and run tasks from a generated CFS workspace. Task discovery co
     - For `cfsutil tasks run`, pass the workspace root with `--workspace` and the project directory with `--project`, or run the command from that project directory.
     - Do not pass the source `.cfsworkspace` file to these commands.
 
-When running tasks that flash and run an application on a board, the `--capture` and `--port` switches can be used to capture output from a serial port. The output will be echoed to the terminal window. The CLI will continue to capture output until halted by CTRL+C. For more information on viewing active serial ports, see [`cfsutil port list`](./port.md).
+When you run tasks that flash and run an application on a board, use `--capture` and `--port` to capture output from a serial port. The output is echoed to the terminal window. By default, the CLI continues to capture output until you press Ctrl+C. Use `--timeout` to stop the capture session automatically after a specified number of seconds, measured from when the task completes successfully. For more information on viewing active serial ports, see [`cfsutil port list`](./port.md).
 
-The CLI will detect when a Zephyr application emits CTF tracing and will direct all subsequent output to a CTF file. When trace capture is halted with CTRL+C, the CLI will automatically generate a TEF ("Trace Event Format") file from this file.
+The CLI will detect when a Zephyr application emits CTF tracing and will direct all subsequent output to a CTF file. When capture stops, either by Ctrl+C or because `--timeout` elapsed, the CLI automatically generates a TEF ("Trace Event Format") file from this file.
 
 ## List tasks
 
 ```sh
-cfsutil tasks list [-w <workspace-path>] [-p <project-name>] [-v]
+cfsutil tasks list [-w <workspace-path>] [-p <project-name>] [-v | -q] [--format text|json]
 ```
 
 Lists the tasks available in a generated workspace.
@@ -31,14 +31,16 @@ Lists the tasks available in a generated workspace.
 | --- | --- |
 | `-w, --workspace=<path>` | Workspace root to inspect. Defaults to the current directory. The directory must either contain `.cfs`, or be a project directory inside a workspace that contains `.cfs`. |
 | `-p, --project=<name>` | Optional project folder name to filter the output. |
-| `-v, --verbose` | Also display the command associated with each task. |
+| `-v, --verbose` | Also display the command associated with each task. Mutually exclusive with `--quiet`. |
+| `-q, --quiet` | Suppress non-error output, including warnings. Mutually exclusive with `--verbose`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
 
     ```sh
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.3.0/MyWorkspace
-    cfsutil tasks list -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4 -v
-    cd /home/<username>/analog/cfs/2.3.0/MyWorkspace/m4
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.4.0/MyWorkspace
+    cfsutil tasks list -w /home/<username>/analog/cfs/2.4.0/MyWorkspace -p m4 -v
+    cd /home/<username>/analog/cfs/2.4.0/MyWorkspace/m4
     cfsutil tasks list
     ```
 
@@ -48,7 +50,7 @@ Lists the tasks available in a generated workspace.
 ## Run a task
 
 ```sh
-cfsutil tasks run <task> [-w <value>] [-p <project-name>] [-v] [--capture --port <value>] [-z <value>]
+cfsutil tasks run <task> [-w <value>] [-p <project-name>] [-v | -q] [--capture --port <value> [--timeout <value>]] [-z <value>]
 ```
 
 Runs a task from a project inside a generated workspace.
@@ -56,9 +58,12 @@ Runs a task from a project inside a generated workspace.
 | Argument / Flag | Description |
 | --- | --- |
 | `<task>` | Task to run. Use the task names listed in `tasks list`. |
-| `-c, --capture` | Capture serial port output after task execution. Capturing will continue until the process is terminated. Used with `--port` and `--project`. |
+| `-c, --capture` | Capture serial port output after task execution. By default, capturing continues until the process is terminated, or until `--timeout` elapses if specified. Used with `--port` and `--project`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). Serial capture, `--verbose` output, and failure output go to stderr, so stdout contains only the JSON document. |
 | `-p, --project=<value>` | Project folder name, relative to the workspace root. Identifies which project's task to run. |
-| `-v, --verbose` | Enable verbose output. |
+| `--timeout=<value>` | Number of seconds after which the CLI stops the capture session automatically, counted from when the task completes successfully (not from when capture starts). Set `0`, or omit the flag, to capture indefinitely until you press Ctrl+C. Requires `--capture`. |
+| `-v, --verbose` | Show the full output of the task as it runs. Without `--verbose`, task output is hidden, and error output is shown only if the task fails. Mutually exclusive with `--quiet`. |
+| `-q, --quiet` | Suppress non-error output, including warnings. If the task fails, only the failure message is shown, not error output from the task. Mutually exclusive with `--verbose`. |
 | `-w, --workspace=<value>` | The workspace path used for task discovery. Defaults to the current directory. |
 | `-z, --zephyrTraceFile=<value>` | TEF (Trace Event Format) output file path for Zephyr tracing. The CLI captures raw CTF data to an intermediate file and generates the TEF file when capture is stopped. Used with `--capture`. |
 | `--port=<value>` | Specify the serial port name (e.g., COM3, /dev/ttyUSB0). Used with `--capture`. |
@@ -66,14 +71,20 @@ Runs a task from a project inside a generated workspace.
 !!! example
 
     ```sh
-    cfsutil tasks run build -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4
-    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.3.0/MyWorkspace -p m4 --capture --port COM4
-    cd /home/<username>/analog/cfs/2.3.0/MyWorkspace/m4
+    cfsutil tasks run build -w /home/<username>/analog/cfs/2.4.0/MyWorkspace -p m4
+    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.4.0/MyWorkspace -p m4 --capture --port COM4
+    cfsutil tasks run flash_run_JLink -w /home/<username>/analog/cfs/2.4.0/MyWorkspace -p m4 --capture --port COM4 --timeout 30
+    cd /home/<username>/analog/cfs/2.4.0/MyWorkspace/m4
     cfsutil tasks run build
     ```
 
 !!! note
     `cfsutil tasks run` only accepts sanitized task names printed by `cfsutil tasks list`.
+
+!!! note
+    When a task fails and the workspace or the task's project declares unmet package dependencies in its `.cfs/.cfsdependencies` manifest, `cfsutil tasks run` adds the unmet packages and a pointer to [`cfsutil validate dependencies`](./validate.md#validate-dependencies) to the failure message.
+
+    Dependency validation never blocks or delays task execution — it only runs after a task fails, and only affects that failure message.
 
 ## Define tasks for CLI use
 
@@ -110,6 +121,39 @@ Minimal example:
     ]
 }
 ```
+
+### Run a task before another task with `dependsOn`
+
+Add a `dependsOn` property to a task defined in `.vscode/cfs.tasks.json` to run one or more other tasks first.
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "make clean"
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "make -j8",
+            "dependsOn": ["clean"]
+        }
+    ]
+}
+```
+
+In this example, running the dependent task, `build` first runs the dependency task,`clean`.
+
+- `dependsOn` accepts a single label or an array of labels. Dependency tasks run in the order listed, before the dependent task that declares them.
+- You can chain dependencies. If a dependency task also declares its own `dependsOn`, those dependencies run first.
+- The CLI resolves a dependency label to a discovered task in the same project, and falls back to the first matching task in the workspace.
+- If a dependency task fails, the CLI stops and doesn't run the dependent task. The CLI reports an error that includes the task exit code.
+- A circular `dependsOn` chain (for example, task A depends on task B, and task B depends on task A) results in an error rather than an infinite loop.
+
+For **Actions** view-specific behavior, see [Custom tasks with dependencies](../build-and-flash/tasks.md#custom-tasks-with-dependencies).
 
 ### Authoring guidance
 
@@ -168,7 +212,7 @@ To customize CLI behavior, edit `config.json` in a text editor. The file uses JS
 
 ```json
 {
-    "cfsInstallPath": "/home/<username>/analog/cfs/2.3.0",
+    "cfsInstallPath": "/home/<username>/analog/cfs/2.4.0",
     "toolSearchPaths": ["/opt/toolchains/arm-gnu-toolchain/bin"],
     "env": {
         "ARM_GCC_DIR": "/opt/toolchains/arm-gnu-toolchain/bin",

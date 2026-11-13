@@ -127,7 +127,13 @@ export function AssignedCoresSelector({
 				)
 			);
 
-			return `${projectInfo?.Secure ? 'S' : projectInfo?.Secure === false ? 'NS' : ''}`;
+			return `${
+				projectInfo?.Secure
+					? 'S'
+					: projectInfo?.Secure === false
+						? 'NS'
+						: ''
+			}`;
 		}
 	}, [assignedCores, projects]);
 

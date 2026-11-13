@@ -21,9 +21,11 @@ import styles from './NotificationError.module.scss';
 export default function NotificationError({
 	error,
 	testId
-	// eslint-disable-next-line @typescript-eslint/ban-types
-}: Readonly<{error: Errors; testId?: string}>): JSX.Element | null {
-	if (!error?.notifications?.length) return null;
+}: Readonly<{
+	error: Errors;
+	testId?: string;
+}>): JSX.Element | undefined {
+	if (!error?.notifications?.length) return undefined;
 
 	return (
 		<section className={styles.notificationErrorContainer}>

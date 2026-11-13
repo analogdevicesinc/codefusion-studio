@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 /**
@@ -25,7 +24,6 @@ import { z } from "zod";
  *
  * Prompts registered:
  * - breakpoint-and-inspect: Set breakpoint, run, inspect locals on hit
- * - source-search-and-debug: Find code by description, breakpoint, inspect
  * - conditional-breakpoint: Conditional breakpoint, catch multiple hits, compare
  * - step-and-disassemble: Step N instructions, show disassembly and registers
  */
@@ -35,10 +33,10 @@ export function registerBreakpointAndSteppingPrompts(server: McpServer): void {
     {
       description:
         "Set a breakpoint at a specific location, continue, and show local variables when hit",
-      argsSchema: {
+      argsSchema: z.object({
         file: z.string().describe("Source file name (e.g. 'main.c')"),
         line: z.coerce.number().describe("Line number for the breakpoint"),
-      },
+      }),
     },
     ({ file, line }) => ({
       messages: [
@@ -54,37 +52,11 @@ export function registerBreakpointAndSteppingPrompts(server: McpServer): void {
   );
 
   server.registerPrompt(
-    "source-search-and-debug",
-    {
-      description:
-        "Find code matching a natural language description, set a breakpoint there, and inspect registers when hit",
-      argsSchema: {
-        description: z
-          .string()
-          .describe(
-            "What to find in the source code (e.g. 'the LED turns on', 'the UART transmit buffer is filled')",
-          ),
-      },
-    },
-    ({ description }) => ({
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: `Find where ${description} in the source code, set a breakpoint there, start debugging, and when it hits print all the registers.`,
-          },
-        },
-      ],
-    }),
-  );
-
-  server.registerPrompt(
     "conditional-breakpoint",
     {
       description:
         "Set a conditional breakpoint, catch it twice, read a variable each time, and compare values",
-      argsSchema: {
+      argsSchema: z.object({
         condition: z
           .string()
           .describe(
@@ -96,7 +68,7 @@ export function registerBreakpointAndSteppingPrompts(server: McpServer): void {
           .describe(
             "Variable to read and compare across hits (e.g. 'loop counter')",
           ),
-      },
+      }),
     },
     ({ condition, variable }) => ({
       messages: [
@@ -116,7 +88,7 @@ export function registerBreakpointAndSteppingPrompts(server: McpServer): void {
     {
       description:
         "Step through N instructions showing disassembly and a register value at each step",
-      argsSchema: {
+      argsSchema: z.object({
         steps: z.coerce
           .number()
           .default(1)
@@ -125,7 +97,7 @@ export function registerBreakpointAndSteppingPrompts(server: McpServer): void {
           .string()
           .optional()
           .describe("Register to display at each step (defaults to 'r0')"),
-      },
+      }),
     },
     ({ steps, register }) => ({
       messages: [

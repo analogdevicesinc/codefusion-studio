@@ -1,7 +1,7 @@
 ---
 description: How to connect and debug SHARC-FX applications in CodeFusion Studio.
 author: Analog Devices
-date: 2026-07-28
+date: 2026-10-01
 ---
 
 # Debug a SHARC-FX application
@@ -10,16 +10,15 @@ Use this guide to connect, configure, and debug SHARC-FX processors in CodeFusio
 
 Most of the setup steps, including toolchain installation and ICE emulator configuration, apply to all SHARC-FX devices. For single-core DSPs, debugging is performed directly on the SHARC-FX core. For multicore SoCs, the debugging process requires starting the SHARC-FX core before attaching to the ARM core.
 
-!!! warning "Windows only"
-    The SHARC-FX toolchain and related workspace plugins are **supported only on Windows**.  
-    Proceed only if you are using a Windows host system.
+!!! note "Platform support"
+    The SHARC-FX toolchain and related workspace plugins are supported on **Windows and Linux**.
 
 ## Before you start
 
 1. Install ADI ICE drivers.
     Ensure the ICE-1000, ICE-1500, or ICE-2000 drivers are installed so CodeFusion Studio can communicate with your SHARC-FX target.  
-    - If you selected **ADI ICE Drivers (Requires Administrator)** during CodeFusion Studio installation, you’re all set.  
-    - If you skipped that option, see [Install ICE drivers manually](debug-drivers/install-ice-drivers.md).
+    - **Windows:** If you selected **ADI ICE Drivers (Requires Administrator)** during CodeFusion Studio installation, you’re all set. If you skipped that option, see [Install ICE drivers](debug-drivers/install-ice-drivers.md).
+    - **Linux:** Run the USB permissions setup script after installation. See [Install ICE drivers](debug-drivers/install-ice-drivers.md#linux) for details.
 2. Log in using your myAnalog account and install the required SHARC-FX toolchain.
 
 ### Log in to access the SHARC-FX toolchain
@@ -28,11 +27,11 @@ Authentication is required to download the SHARC-FX toolchain.
 
 1. Follow the steps in [Access restricted packages (using myAnalog login)](../installation/package-manager/auth.md).
 2. Install the toolchain using one of the following methods:
-      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.5.1` in the list and click to install.
+      - **Command Palette:** Open the Command Palette and run **CFS: Install Required Packages**. Find `xtensa_sharcfx_toolchain/15.5.2` in the list and select it to install.
       - **Command line:** From `cfsutil`, run
 
         ```sh
-        cfsutil pkg install xtensa_sharcfx_toolchain/15.5.1
+        cfsutil pkg install xtensa_sharcfx_toolchain/15.5.2
         ```
 
 3. When prompted to accept the license agreement, review the license text and any referenced URLs, then:
@@ -61,7 +60,10 @@ Follow the recommended setup for your ICE emulator:
     !!! tip
         For detailed connection diagrams and port-specific instructions, see [Connect hardware](connect-hardware.md#sharc-fx-adsp-sc835w-with-ice-debugger).
 
-2. Open **Windows → Device Manager** and confirm that the emulator appears under CrossCore Tools:
+2. Confirm the emulator is detected by your system:
+
+    - **Windows:** Open **Device Manager** and confirm the emulator appears under **CrossCore Tools**.
+    - **Linux:** Run `lsusb | grep 064b` to verify the probe is visible.
 
     ![ICE-1000 Emulator](images/ice-emulator-sharc-fx.png)
 

@@ -1,7 +1,7 @@
 ---
 description: Understand the results presented in the Core Dump Analysis panel in CodeFusion Studio.
 author: Analog Devices
-date: 2025-10-24
+date: 2026-10-01
 ---
 
 # Interpret core dump results
@@ -77,6 +77,18 @@ This section summarizes system-wide heap memory usage at the time of the crash.
 - **Total:** Total heap available.  
 - **Used:** Heap in use at time of crash.  
 - **Peak:** Highest amount of heap used since boot.  
+
+## Peripheral State
+
+This section shows the peripheral register state at the time of the crash. Examples include general-purpose input/output (GPIO) peripherals such as GPIO0 and direct memory access (DMA) engines. Peripherals with sub-units, such as DMA channels, list those sub-units as nested entries.
+
+- **Name:** The peripheral or sub-unit name.
+- **Registers:** Each register displays its name and highlighted value, with an optional description. A warning icon displays for registers flagged as a problem.
+
+CodeFusion Studio automatically expands a peripheral flagged as a problem and also displays an error icon so you can spot it quickly in the tree. A collapsed peripheral can still contain a register with a warning icon, so expand a peripheral to check its registers even if no error is showing.
+
+!!! note
+    The **Peripheral State** section shows register data only when a peripheral state script is available to GDB Toolbox. This is available on select platforms. If no script is available, this section shows **No peripheral state info available**, and the rest of the core dump analysis still proceeds.
 
 !!! note "Advanced users"
     For additional information on the values shown in the Core Dump Analysis view, refer to the [GDB Toolbox](../gdb-toolbox/gdb-toolbox-about.md) scripts and the [:octicons-link-external-24: GDB Python API documentation](https://sourceware.org/gdb/current/onlinedocs/gdb.html/index.html#SEC_Contents).

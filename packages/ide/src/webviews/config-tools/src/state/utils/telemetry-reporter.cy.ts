@@ -12,12 +12,15 @@
  * limitations under the License.
  *
  */
-import {mockVsCodeApi} from '@common/api';
+import {setupMessengerMock} from '@common/test-utils/messenger-mock';
 import type {RootState} from '../store';
 import {
 	CONFIG_TOOLS_TELEMETRY_ACTIONS,
 	reportPersistedActionTelemetry
 } from './telemetry-reporter';
+import {logTelemetryRequest} from '@constants/messages/telemetry-messages';
+import {initializeSruData} from '../../utils/sru';
+import {initializeSruDefaultConnection} from '../../test-utils/sru-test-utils';
 
 // Minimal RootState fixture. Only the reducer slices actually read by
 // telemetry-reporter.ts (for removal/deletion lookups against the
@@ -37,29 +40,57 @@ const originalState = {
 				projects: [{projectId: 'CM4-proj'}]
 			}
 		]
+	},
+	gasketsReducer: {
+		Streams: [
+			{
+				Uuid: '83ae5f72-8c7d-49d2-b818-10977323a73f',
+				Source: {
+					Gasket: 'BSS'
+				},
+				Destinations: [
+					{
+						Gasket: 'DSS'
+					},
+					{
+						Gasket: 'GSS'
+					}
+				]
+			}
+		]
+	},
+	sruReducer: {
+		editableConnections: [
+			{
+				input: {
+					Name: 'SRC0_CLK_IP_I',
+					PeripheralSubGroup: 'SRC 0'
+				},
+				peripheralName: 'ASRC0'
+			}
+		]
 	}
 } as unknown as RootState;
 
-type SentMessage = {
-	id: number;
-	type: string;
-	body: {action: string; metadata: Record<string, unknown>};
+export type SentMessage = {
+	id: string;
+	method: string;
+	params: {action: string; metadata?: Record<string, unknown>};
 };
 
+let sentMessages: SentMessage[];
+
 function getSentMessages(): Cypress.Chainable<SentMessage[]> {
-	return cy
-		.get<Cypress.Agent<sinon.SinonStub>>('@postMessage')
-		.then(stub =>
-			stub.getCalls().map(call => call.args[0] as SentMessage)
-		);
+	return cy.wrap(sentMessages);
 }
 
 describe('reportPersistedActionTelemetry', () => {
 	beforeEach(() => {
-		mockVsCodeApi({
-			postMessage: cy.stub().as('postMessage'),
-			getState: cy.stub(),
-			setState: cy.stub()
+		sentMessages = [];
+		setupMessengerMock({
+			[logTelemetryRequest.method](msg: SentMessage) {
+				sentMessages.push(msg);
+			}
 		});
 	});
 
@@ -75,17 +106,17 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[0].id).to.be.a('number');
-				expect(messages[0].type).to.equal('log-telemetry');
-				expect(messages[0].body.action).to.equal(
+				expect(messages[0].id).to.be.a('string');
+				expect(messages[0].method).to.equal('log-telemetry');
+				expect(messages[0].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_INTERACTION
 				);
-				expect(messages[0].body.metadata.actionType).to.equal(
+				expect(messages[0].params.metadata?.actionType).to.equal(
 					'Peripherals'
 				);
-				expect(messages[1].id).to.be.a('number');
-				expect(messages[1].type).to.equal('log-telemetry');
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].id).to.be.a('string');
+				expect(messages[1].method).to.equal('log-telemetry');
+				expect(messages[1].params).to.deep.equal({
 					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.PERIPHERAL_ALLOCATED,
 					metadata: {
 						peripheralName: 'UART0',
@@ -105,9 +136,9 @@ describe('reportPersistedActionTelemetry', () => {
 				originalState
 			);
 
-			cy.get('@postMessage').should('have.been.calledTwice');
 			getSentMessages().then(messages => {
-				expect(messages[1].body.action).to.equal(
+				expect(messages).to.have.length(2);
+				expect(messages[1].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.PERIPHERAL_ALLOCATED
 				);
 			});
@@ -126,12 +157,12 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[0].body.action).to.equal(
+				expect(messages[0].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_INTERACTION
 				);
-				expect(messages[1].id).to.be.a('number');
-				expect(messages[1].type).to.equal('log-telemetry');
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].id).to.be.a('string');
+				expect(messages[1].method).to.equal('log-telemetry');
+				expect(messages[1].params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.PERIPHERAL_DEALLOCATED,
 					metadata: {
@@ -161,21 +192,23 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				const {body} = messages[1];
+				const {params} = messages[1];
 
-				expect(body.action).to.equal(
+				expect(params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.PERIPHERAL_CONFIGURED
 				);
-				expect(body.metadata).to.deep.equal({
+				expect(params.metadata).to.deep.equal({
 					peripheralName: 'UART0',
 					configKeys: ['BAUD_RATE', 'PARITY']
 				});
 				// The actual configured values must never be sent.
-				expect(body.metadata).to.not.have.property('config');
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(params.metadata).to.not.have.property('config');
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'115200'
 				);
-				expect(JSON.stringify(body.metadata)).to.not.include('NONE');
+				expect(JSON.stringify(params.metadata)).to.not.include(
+					'NONE'
+				);
 			});
 		});
 	});
@@ -197,7 +230,7 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].params).to.deep.equal({
 					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_SIGNAL_ASSIGNED,
 					metadata: {
 						pinId: 'P0.1',
@@ -221,7 +254,7 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].params).to.deep.equal({
 					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_SIGNAL_REMOVED,
 					metadata: {
 						pinId: 'P0.1',
@@ -257,14 +290,17 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(3);
-				expect(messages[0].body.action).to.equal(
+				expect(messages[0].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_INTERACTION
 				);
-				expect(messages[1].id).to.be.a('number');
-				expect(messages[2].id).to.be.a('number');
-				expect(messages[1].type).to.equal('log-telemetry');
-				expect(messages[2].type).to.equal('log-telemetry');
-				expect([messages[1].body, messages[2].body]).to.deep.equal([
+				expect(messages[1].id).to.be.a('string');
+				expect(messages[2].id).to.be.a('string');
+				expect(messages[1].method).to.equal('log-telemetry');
+				expect(messages[2].method).to.equal('log-telemetry');
+				expect([
+					messages[1].params,
+					messages[2].params
+				]).to.deep.equal([
 					{
 						action: CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_SIGNAL_REMOVED,
 						metadata: {
@@ -302,10 +338,13 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(3);
-				expect(messages[0].body.action).to.equal(
+				expect(messages[0].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_INTERACTION
 				);
-				expect([messages[1].body, messages[2].body]).to.deep.equal([
+				expect([
+					messages[1].params,
+					messages[2].params
+				]).to.deep.equal([
 					{
 						action:
 							CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_SIGNAL_ASSIGNED,
@@ -341,10 +380,10 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[0].body.action).to.equal(
+				expect(messages[0].params.action).to.equal(
 					CONFIG_TOOLS_TELEMETRY_ACTIONS.CONFIG_TOOLS_INTERACTION
 				);
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].params).to.deep.equal({
 					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_SIGNAL_REMOVED,
 					metadata: {
 						pinId: 'P0.1',
@@ -375,9 +414,9 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				const {body} = messages[1];
+				const {params} = messages[1];
 
-				expect(body).to.deep.equal({
+				expect(params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.PIN_CONTROL_CONFIGURED,
 					metadata: {
@@ -385,7 +424,7 @@ describe('reportPersistedActionTelemetry', () => {
 						controlKey: 'DRIVE_STRENGTH'
 					}
 				});
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'SECRET_USER_VALUE'
 				);
 			});
@@ -404,9 +443,9 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[1].id).to.be.a('number');
-				expect(messages[1].type).to.equal('log-telemetry');
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].id).to.be.a('string');
+				expect(messages[1].method).to.equal('log-telemetry');
+				expect(messages[1].params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.CLOCK_NODE_CONFIGURED,
 					metadata: {
@@ -441,9 +480,9 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				const {body} = messages[1];
+				const {params} = messages[1];
 
-				expect(body).to.deep.equal({
+				expect(params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.MEMORY_PARTITION_CREATED,
 					metadata: {
@@ -453,10 +492,10 @@ describe('reportPersistedActionTelemetry', () => {
 						assignedProjects: 'CM4-proj,CM0-proj'
 					}
 				});
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'My Secret Partition Name'
 				);
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'secret-value'
 				);
 			});
@@ -476,9 +515,9 @@ describe('reportPersistedActionTelemetry', () => {
 			);
 
 			getSentMessages().then(messages => {
-				expect(messages[1].body.metadata.assignedProjects).to.equal(
-					''
-				);
+				expect(
+					messages[1].params.metadata?.assignedProjects
+				).to.equal('');
 			});
 		});
 	});
@@ -507,9 +546,9 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				const {body} = messages[1];
+				const {params} = messages[1];
 
-				expect(body).to.deep.equal({
+				expect(params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.MEMORY_PARTITION_MODIFIED,
 					metadata: {
@@ -519,10 +558,10 @@ describe('reportPersistedActionTelemetry', () => {
 						assignedProjects: 'CM4-proj,CM0-proj'
 					}
 				});
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'My Secret Partition Name'
 				);
-				expect(JSON.stringify(body.metadata)).to.not.include(
+				expect(JSON.stringify(params.metadata)).to.not.include(
 					'secret-value'
 				);
 			});
@@ -541,11 +580,141 @@ describe('reportPersistedActionTelemetry', () => {
 
 			getSentMessages().then(messages => {
 				expect(messages).to.have.length(2);
-				expect(messages[1].body).to.deep.equal({
+				expect(messages[1].params).to.deep.equal({
 					action:
 						CONFIG_TOOLS_TELEMETRY_ACTIONS.MEMORY_PARTITION_DELETED,
 					metadata: {
 						partitionStartAddress: '0x10000000'
+					}
+				});
+			});
+		});
+	});
+
+	describe('Gaskets/addNewStream', () => {
+		it('fires DFG_STREAM_CREATED', () => {
+			reportPersistedActionTelemetry(
+				{
+					type: 'Gaskets/addNewStream',
+					payload: {
+						Source: {Gasket: 'BSS'},
+						Destinations: [{Gasket: 'DSS'}, {Gasket: 'ESS'}]
+					}
+				},
+				originalState
+			);
+
+			getSentMessages().then(messages => {
+				expect(messages).to.have.length(2);
+				expect(messages[1].params).to.deep.equal({
+					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_CREATED,
+					metadata: {
+						sourceGasket: 'BSS',
+						destinationCount: 2
+					}
+				});
+			});
+		});
+	});
+
+	describe('Gaskets/removeStream', () => {
+		it('fires DFG_STREAM_DELETED', () => {
+			reportPersistedActionTelemetry(
+				{
+					type: 'Gaskets/removeStream',
+					payload: {
+						Uuid: '83ae5f72-8c7d-49d2-b818-10977323a73f',
+						Source: {Gasket: 'BSS'},
+						Destinations: [{Gasket: 'DSS'}, {Gasket: 'GSS'}]
+					}
+				},
+				originalState
+			);
+
+			getSentMessages().then(messages => {
+				expect(messages).to.have.length(2);
+				expect(messages[1].params).to.deep.equal({
+					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_DELETED,
+					metadata: {
+						sourceGasket: 'BSS',
+						destinationCount: 2
+					}
+				});
+			});
+		});
+	});
+
+	describe('sru/setSruConnection', () => {
+		it('sends the created SRU input connection modified event', () => {
+			reportPersistedActionTelemetry(
+				{
+					type: 'sru/setSruConnection',
+					payload: {
+						input: 'SRC0_CLK_IP_I',
+						source: 'DAI0_PB04_O'
+					}
+				},
+				originalState
+			);
+
+			getSentMessages().then(messages => {
+				expect(messages).to.have.length(2);
+				expect(messages[1].params).to.deep.equal({
+					action:
+						CONFIG_TOOLS_TELEMETRY_ACTIONS.SRU_INPUT_CONNECTION_MODIFIED,
+					metadata: {
+						peripheral: 'ASRC0',
+						outputSignal: 'DAI0_PB04_O',
+						inputSignal: 'SRC0_CLK_IP_I'
+					}
+				});
+			});
+		});
+	});
+
+	describe('sru/resetSruConnection', () => {
+		afterEach(() => {
+			initializeSruData([]);
+		});
+
+		it('sends the created SRU reset event', () => {
+			initializeSruDefaultConnection();
+
+			const outputResetState = {
+				...originalState,
+				sruReducer: {
+					...originalState.sruReducer,
+					modifiedConnections: {
+						SRC0_CLK_IP_I: 'SPORT0_CLK_O'
+					},
+					editableConnections: [
+						{
+							output: {
+								Name: 'SPORT0_CLK_O',
+								PeripheralSubGroup: 'SPORT 0'
+							},
+							peripheralName: 'SPORT0'
+						}
+					]
+				}
+			} as unknown as RootState;
+
+			reportPersistedActionTelemetry(
+				{
+					type: 'sru/resetSruConnection',
+					payload: 'SRC0_CLK_IP_I'
+				},
+				outputResetState
+			);
+
+			getSentMessages().then(messages => {
+				expect(messages).to.have.length(2);
+				expect(messages[1].params).to.deep.equal({
+					action: CONFIG_TOOLS_TELEMETRY_ACTIONS.SRU_RESET_SOURCE,
+					metadata: {
+						peripheral: 'SPORT0',
+						outputSignal: 'DAI0_PB04_O',
+						inputSignal: 'SRC0_CLK_IP_I'
 					}
 				});
 			});

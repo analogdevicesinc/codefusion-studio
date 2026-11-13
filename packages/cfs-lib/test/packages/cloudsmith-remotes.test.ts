@@ -20,10 +20,12 @@ import { spy } from "sinon";
 import type { SWPackageRepo } from "cfs-ccm-lib";
 import type {
 	CfsPackageRemoteCredential,
-	CfsPackageRemoteCredentialProvider
+	CfsPackageRemoteCredentialProvider,
+	CfsPackageRemotesProvider
 } from "cfs-package-manager";
 import {
 	DefaultConanCloudsmithRemotesProvider,
+	RemotesProviderWithFallback,
 	MyAnalogConanCloudsmithRemotesProvider,
 	type RepoInfoClient
 } from "../../src/packages/cloudsmith-remotes.js";
@@ -363,5 +365,129 @@ describe("MyAnalogConanCloudsmithRemotesProvider", () => {
 				"network error"
 			);
 		});
+	});
+});
+
+describe("RemotesProviderWithFallback", () => {
+	function makeFailingProvider(): CfsPackageRemotesProvider {
+		return {
+			name: "failing",
+			getRemotes: () => Promise.reject(new Error("network error"))
+		};
+	}
+
+	it("should not contact the primary provider on construction", () => {
+		const primary = new DefaultConanCloudsmithRemotesProvider();
+		const getRemotesSpy = spy(primary, "getRemotes");
+
+		new RemotesProviderWithFallback(
+			primary,
+			new DefaultConanCloudsmithRemotesProvider()
+		);
+
+		expect(getRemotesSpy.called).to.be.false;
+	});
+
+	it("should return the primary's remotes when it succeeds", async () => {
+		const primary = new MyAnalogConanCloudsmithRemotesProvider(
+			makeRepoClient([
+				makeRepo({ repoUrl: "https://conan.cloudsmith.io/adi/test" })
+			])
+		);
+		const onFallback = spy();
+		const provider = new RemotesProviderWithFallback(
+			primary,
+			new DefaultConanCloudsmithRemotesProvider(),
+			onFallback
+		);
+
+		const remotes = await provider.getRemotes();
+
+		expect(remotes).to.have.length(1);
+		expect(remotes[0].provider).to.equal("myAnalog");
+		expect(provider.name).to.equal("myAnalog");
+		expect(onFallback.called).to.be.false;
+	});
+
+	it("should return the fallback's remotes when the primary fails", async () => {
+		const onFallback = spy();
+		const provider = new RemotesProviderWithFallback(
+			makeFailingProvider(),
+			new DefaultConanCloudsmithRemotesProvider(),
+			onFallback
+		);
+
+		const remotes = await provider.getRemotes();
+
+		expect(remotes).to.have.length(1);
+		expect(remotes[0].name).to.equal("cfs-public");
+		expect(provider.name).to.equal("default");
+		expect(onFallback.calledOnce).to.be.true;
+		expect(onFallback.firstCall.args[0]).to.be.instanceOf(Error);
+	});
+
+	it("should stick with the fallback and notify only once", async () => {
+		const primary = makeFailingProvider();
+		const getRemotesSpy = spy(primary, "getRemotes");
+		const onFallback = spy();
+		const provider = new RemotesProviderWithFallback(
+			primary,
+			new DefaultConanCloudsmithRemotesProvider(),
+			onFallback
+		);
+
+		await provider.getRemotes();
+		await provider.getRemotes();
+
+		expect(getRemotesSpy.calledOnce).to.be.true;
+		expect(onFallback.calledOnce).to.be.true;
+	});
+
+	it("should share the first primary request between concurrent callers", async () => {
+		// Fails on the first call and succeeds afterwards, so separate
+		// requests would leave callers with different remote sets
+		let calls = 0;
+		const primary: CfsPackageRemotesProvider = {
+			name: "flaky",
+			getRemotes: () =>
+				calls++ === 0
+					? Promise.reject(new Error("network error"))
+					: new DefaultConanCloudsmithRemotesProvider().getRemotes()
+		};
+		const getRemotesSpy = spy(primary, "getRemotes");
+		const onFallback = spy();
+		const provider = new RemotesProviderWithFallback(
+			primary,
+			new DefaultConanCloudsmithRemotesProvider(),
+			onFallback
+		);
+
+		const [first, second] = await Promise.all([
+			provider.getRemotes(),
+			provider.getRemotes()
+		]);
+
+		expect(getRemotesSpy.calledOnce).to.be.true;
+		expect(onFallback.calledOnce).to.be.true;
+		expect(first[0].provider).to.equal("default");
+		expect(second[0].provider).to.equal("default");
+	});
+
+	it("should keep querying the primary after it has succeeded", async () => {
+		const primary = new MyAnalogConanCloudsmithRemotesProvider(
+			makeRepoClient([
+				makeRepo({ repoUrl: "https://conan.cloudsmith.io/adi/test" })
+			])
+		);
+		const getRemotesSpy = spy(primary, "getRemotes");
+		const provider = new RemotesProviderWithFallback(
+			primary,
+			new DefaultConanCloudsmithRemotesProvider()
+		);
+
+		await Promise.all([provider.getRemotes(), provider.getRemotes()]);
+		await provider.getRemotes();
+
+		expect(getRemotesSpy.callCount).to.equal(2);
 	});
 });

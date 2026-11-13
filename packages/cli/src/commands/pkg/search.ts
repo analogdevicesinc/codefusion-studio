@@ -12,7 +12,10 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+import type {CfsPackageReference} from 'cfs-package-manager';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -22,7 +25,9 @@ export const pkgSearchDeps: {
   getPackageManager
 };
 
-export default class CfsPackageSearch extends Command {
+export default class CfsPackageSearch extends BaseCommand<
+  typeof CfsPackageSearch
+> {
   static args = {
     pattern: Args.string({
       name: 'pattern',
@@ -34,8 +39,9 @@ export default class CfsPackageSearch extends Command {
   };
 
   static description = 'Retrieve packages available for install.';
+  static useResponseEnvelope = true;
 
-  async run(): Promise<void> {
+  async run(): Promise<{packages: CfsPackageReference[]}> {
     const packman = await pkgSearchDeps.getPackageManager(
       {
         useRemotes: true
@@ -43,19 +49,20 @@ export default class CfsPackageSearch extends Command {
       undefined,
       this
     );
-    const {args} = await this.parse(CfsPackageSearch);
+    const {args} = this;
     const packageRefs = await packman.search(args.pattern);
 
     if (packageRefs.length === 0) {
       this.log(
         `No packages matched the search query "${args.pattern}". Please try a different pattern.`
       );
-      return;
+    } else {
+      this.log('Packages available for installation: ');
+      for (const pkg of packageRefs) {
+        this.log(`- ${pkg.name}/${pkg.version}`);
+      }
     }
 
-    this.log('Packages available for installation: ');
-    for (const pkg of packageRefs) {
-      this.log(`- ${pkg.name}/${pkg.version}`);
-    }
+    return {packages: packageRefs};
   }
 }

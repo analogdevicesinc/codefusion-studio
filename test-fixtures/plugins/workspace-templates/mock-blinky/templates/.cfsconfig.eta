@@ -19,7 +19,7 @@
       "PlatformConfig": {
         "ProjectName": "m4",
         "ZephyrVersion": "4.2.0",
-        "ZephyrBoardName": "max32690evkit/max32690/m4",
+        "ZephyrBoardName": "<%= it.board?.toLowerCase() === 'ad-board-sl' ? 'apard-' + it.soc.toLowerCase() + '/' + it.soc.toLowerCase() + '/m4' : it.soc.toLowerCase() + 'evkit/' + it.soc.toLowerCase() + '/m4' %>",
         "EnableCoreDump": true
       },
       "Profiling" : {}

@@ -14,16 +14,22 @@
  */
 
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { ConanError, ConanRunner } from "./conan-runner.js";
 import { promises as fs } from "node:fs";
 import type {
 	CfsPackageRemote,
+	CfsPackageRemoteState,
 	CfsPackageRemoteConfigError,
 	CfsPackageRemoteConfigErrorCode,
 	CfsPackageRemotesProvider,
 	CfsPackageRemoteCredentialClient,
 	CfsPackageRemoteCredential
 } from "../api/api.js";
+import {
+	REMOTE_URL_ERROR_MESSAGES,
+	validateRemoteUrl
+} from "../utils/remote-url.js";
 
 // Types for `conan remote list` and `conan remote list-users` CLI outputs
 interface ConanRemote {
@@ -77,9 +83,23 @@ const defaultUserRemotesConfig = "userRemotesCfg.json"; // User settings for rem
 const defaultConanRemotesConfig = "remotes.json"; // Conan's remotes config file
 
 export class ConanRemoteManager {
+	private _appliedProviderHash: string | undefined;
+	private _remotesCache:
+		| {
+				timestamp: number;
+				cfgFileHash: string;
+				providerHash: string;
+				remotes: CfsPackageRemote[];
+		  }
+		| undefined;
 	private readonly _userRemotesConfigPath: string;
 	private readonly _customRemotesConfigPath: string;
 	private readonly _conanRemotesConfigPath: string;
+	// Names of the managed remotes as of the last resolved config
+	private _managedRemoteNames?: Set<string>;
+	// Remotes this manager logged in with its provider's credentials. A
+	// stored login is only reused if it is one of these.
+	private readonly _ownLogins = new Set<string>();
 
 	private _normalizeConfigPath(configPath: string): string {
 		return path.isAbsolute(configPath)
@@ -87,13 +107,24 @@ export class ConanRemoteManager {
 			: path.resolve(this._conanHomePath, configPath);
 	}
 
+	/**
+	 * Creates a remote manager.
+	 * @param _conanRun - Runner for Conan commands.
+	 * @param _conanHomePath - Path to the Conan home directory.
+	 * @param _remotesProvider - Optional provider of managed remotes and their credentials.
+	 * @param userRemotesConfigPath - User override config path, absolute or relative to the Conan home; defaults to `userRemotesCfg.json`.
+	 * @param customRemotesConfigPath - Custom remotes config path, absolute or relative to the Conan home; defaults to `customRemotes.json`.
+	 * @param conanRemotesConfigPath - Conan remotes config path, absolute or relative to the Conan home; defaults to `remotes.json`.
+	 * @param configCacheTTL - Cache lifetime in milliseconds; defaults to 90 seconds. Zero disables caching.
+	 */
 	constructor(
 		private readonly _conanRun: ConanRunner,
 		private readonly _conanHomePath: string,
 		private readonly _remotesProvider?: CfsPackageRemotesProvider,
 		userRemotesConfigPath: string = defaultUserRemotesConfig,
 		customRemotesConfigPath: string = defaultCustomRemotesConfig,
-		conanRemotesConfigPath: string = defaultConanRemotesConfig
+		conanRemotesConfigPath: string = defaultConanRemotesConfig,
+		private readonly configCacheTTL: number = 90_000
 	) {
 		this._userRemotesConfigPath = this._normalizeConfigPath(
 			userRemotesConfigPath
@@ -304,15 +335,25 @@ export class ConanRemoteManager {
 			}
 		}
 
-		// Authenticate managed remotes with their a credential provider
+		// Authenticate managed remotes with their credential provider. A login
+		// this manager made is left as is; an expired one is refreshed when a
+		// command fails to authenticate. Any other stored login may belong to
+		// another account (e.g. an earlier CLI run), so it is replaced.
 		if (config.managed && !config.disabled) {
+			const loggedIn = remote.enabled && remote.authenticated;
 			try {
 				if ("auth" in config && config.auth.credentialProvider) {
-					await this._authenticateRemoteWithProvider(
-						config,
+					if (
+						!loggedIn ||
+						!this._ownLogins.has(remote.name) ||
 						refreshCredential
-					);
-				} else {
+					) {
+						await this._authenticateRemoteWithProvider(
+							config,
+							refreshCredential
+						);
+					}
+				} else if (loggedIn) {
 					await this._conanLogoutRemote(remote.name); // ensure no credentials are set for a managed remote without a credential provider
 				}
 			} catch (error) {
@@ -347,6 +388,7 @@ export class ConanRemoteManager {
 
 		if (!managedRemotes && !customRemotes) {
 			// No remotes to merge
+			this._managedRemoteNames = new Set();
 			return remotesMap;
 		}
 
@@ -483,6 +525,11 @@ export class ConanRemoteManager {
 
 		await Promise.all(fileUpdates);
 
+		this._managedRemoteNames = new Set(
+			[...remotesMap.values()]
+				.filter((r) => r.managed)
+				.map((r) => r.name)
+		);
 		return remotesMap;
 	}
 
@@ -519,6 +566,7 @@ export class ConanRemoteManager {
 							creds.user,
 							creds.password
 						);
+						this._ownLogins.add(config.name);
 
 						break; // break out of the retry loop if successful
 					} catch (error) {
@@ -540,13 +588,19 @@ export class ConanRemoteManager {
 
 	// Get managed remote config, returning undefined if no provider is registered or if the provider returns no remotes
 	private async _getManagedRemotesConfig() {
+		this._appliedProviderHash = undefined;
 		if (!this._remotesProvider) {
+			this._appliedProviderHash = "";
 			return undefined;
 		}
 
 		const provider = this._remotesProvider; // capturing provider in a local variable for type narrowing (despite the readonly modifier, TypeScript needs this)
 		try {
 			const remotes = await provider.getRemotes();
+			if (this.configCacheTTL > 0) {
+				this._appliedProviderHash =
+					this._hashProviderRemotes(remotes);
+			}
 
 			if (remotes.length === 0) {
 				return undefined;
@@ -779,11 +833,17 @@ export class ConanRemoteManager {
 				"Remote name can only contain letters, numbers, underscores, and hyphens"
 			);
 		}
-		try {
-			url = new URL(url).href;
-		} catch (err) {
-			throw new Error(`Invalid URL: ${url}`);
+		const validation = validateRemoteUrl(url);
+		if (!validation.valid) {
+			throw Object.assign(
+				new Error(
+					`Invalid URL: ${url}. ${REMOTE_URL_ERROR_MESSAGES[validation.error]}`
+				),
+				{ code: "INVALID_REMOTE_URL" }
+			);
 		}
+		url = validation.url;
+
 		const mergedConfig = await this._resolveRemotesConfig();
 		for (const remote of mergedConfig.values()) {
 			if (remote.name === name) {
@@ -842,10 +902,8 @@ export class ConanRemoteManager {
 				!remote || // remote wasn't in the config (throw any error including REMOTE_NOT_FOUND)
 				!(
 					// remote was in the config and some other error occurred
-					(
-						error instanceof ConanError &&
-						error.code === "REMOTE_NOT_FOUND"
-					)
+					error instanceof ConanError &&
+					error.code === "REMOTE_NOT_FOUND"
 				)
 			) {
 				throw error;
@@ -985,6 +1043,7 @@ export class ConanRemoteManager {
 
 	// Helper methods to run conan commands for remote management
 	private async _conanRemoveRemote(name: string): Promise<void> {
+		this._ownLogins.delete(name);
 		await this._conanRun.execute(["remote", "remove", name]);
 	}
 
@@ -1010,6 +1069,7 @@ export class ConanRemoteManager {
 	}
 
 	private async _conanLogoutRemote(name: string): Promise<void> {
+		this._ownLogins.delete(name);
 		await this._conanRun.execute(["remote", "logout", name]);
 	}
 
@@ -1081,10 +1141,140 @@ export class ConanRemoteManager {
 		});
 	}
 
+	// List the remotes as Conan has them, without applying the config
+	public async listRemoteStates(): Promise<CfsPackageRemoteState[]> {
+		const remotes = (await this._readRemotesConfig(
+			this._conanRemotesConfigPath
+		)) as (RemoteConfig & { disabled?: boolean })[] | undefined;
+
+		if (!this._managedRemoteNames) {
+			await this._resolveRemotesConfig(); // records the managed names
+		}
+		const managed = this._managedRemoteNames ?? new Set<string>();
+		// Custom only if the user's current config has it: a remote another
+		// process's provider added is in neither list, so it is not custom
+		const custom = new Set(
+			((await this._readCustomRemotesConfig()) ?? [])
+				.filter((r) => r.provider === undefined) // legacy managed entries
+				.map((r) => r.name)
+		);
+
+		return (remotes ?? []).map((remote) => ({
+			name: remote.name,
+			url: new URL(remote.url),
+			disabled: Boolean(remote.disabled),
+			custom: custom.has(remote.name) && !managed.has(remote.name)
+		}));
+	}
+
+	// Hash of the size and mtime of the files that determine the
+	// remotes state: our remotes config files and conan's db
+	// (which holds the credentials of custom remotes)
+	private async _hashRemotesFiles(): Promise<string> {
+		const files = [
+			this._conanRemotesConfigPath,
+			this._customRemotesConfigPath,
+			this._userRemotesConfigPath,
+			path.join(this._conanHomePath, ".conan.db")
+		];
+		const entries = await Promise.all(
+			files.map(async (file) => {
+				try {
+					const stat = await fs.stat(file);
+					return `${file}|${stat.size}|${stat.mtimeMs}`;
+				} catch {
+					return `${file}|missing`;
+				}
+			})
+		);
+		return createHash("sha256")
+			.update(entries.join("\n"))
+			.digest("hex");
+	}
+
+	private _hashProviderRemotes(
+		remotes: Awaited<
+			ReturnType<CfsPackageRemotesProvider["getRemotes"]>
+		>
+	): string {
+		// JSON.stringify drops credential functions and serializes URLs as hrefs.
+		const items = remotes
+			.map((remote) => JSON.stringify(remote))
+			.sort();
+		return createHash("sha256")
+			.update(JSON.stringify(items))
+			.digest("hex");
+	}
+
+	// Order independent fingerprint of the remotes provider's response (undefined if it fails)
+	private async _providerFingerprint(): Promise<string | undefined> {
+		if (!this._remotesProvider) {
+			return "";
+		}
+		try {
+			const remotes = await this._remotesProvider.getRemotes();
+			return this._hashProviderRemotes(remotes);
+		} catch {
+			return undefined;
+		}
+	}
+
+	/**
+	 * Returns the result of the last `listRemotes` call if it is still considered valid, otherwise `undefined`.
+	 * The result is valid for 90 seconds provided no remote reported an error, none of the remotes config files or the
+	 * conan db has changed, and the remotes provider's response is unchanged. Does not invoke conan.
+	 */
+	public async getCachedRemotes(): Promise<
+		CfsPackageRemote[] | undefined
+	> {
+		const cache = this._remotesCache;
+		if (
+			this.configCacheTTL <= 0 ||
+			!cache ||
+			Date.now() - cache.timestamp > this.configCacheTTL
+		) {
+			return undefined;
+		}
+
+		const [cfgFileHash, providerHash] = await Promise.all([
+			this._hashRemotesFiles(),
+			this._providerFingerprint()
+		]);
+
+		// Re-check expiry and that no newer result replaced the cache while hashing
+		if (
+			this._remotesCache !== cache ||
+			Date.now() - cache.timestamp > this.configCacheTTL ||
+			providerHash === undefined ||
+			cfgFileHash !== cache.cfgFileHash ||
+			providerHash !== cache.providerHash
+		) {
+			return undefined;
+		}
+
+		return this._copyRemotes(cache.remotes);
+	}
+
+	private _copyRemotes(
+		remotes: CfsPackageRemote[]
+	): CfsPackageRemote[] {
+		return remotes.map((remote) => {
+			const url = new URL(remote.url.href);
+			if (!remote.custom) {
+				return { ...remote, url, auth: { ...remote.auth } };
+			}
+			return remote.disabled
+				? { ...remote, url }
+				: { ...remote, url, auth: { ...remote.auth } };
+		});
+	}
+
 	// List all remotes
 	public async listRemotes(): Promise<CfsPackageRemote[]> {
+		this._remotesCache = undefined;
 		const [resolvedConfig, remoteErrors] =
 			await this.applyRemotesConfig();
+		const providerHash = this._appliedProviderHash;
 
 		const remotes = await this._conanRemoteStatus();
 
@@ -1174,7 +1364,28 @@ export class ConanRemoteManager {
 			}
 		}
 
-		return Array.from(remotesMap.values());
+		const result = Array.from(remotesMap.values());
+
+		if (this.configCacheTTL <= 0) {
+			return result;
+		}
+
+		// Include file changes made by applying the config, using the provider response already applied.
+		const timestamp = Date.now();
+		const cfgFileHash = await this._hashRemotesFiles();
+		if (
+			providerHash !== undefined &&
+			result.every((r) => !r.configError)
+		) {
+			this._remotesCache = {
+				timestamp,
+				cfgFileHash,
+				providerHash,
+				remotes: this._copyRemotes(result)
+			};
+		}
+
+		return result;
 	}
 }
 

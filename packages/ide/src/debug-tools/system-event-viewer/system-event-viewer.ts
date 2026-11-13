@@ -26,7 +26,7 @@ import {
   SEV_SCHEMA,
   SEV_SUPPORTED_SOCS_CONTEXT_ID,
 } from "../../constants";
-import { TraceManager } from "./hardware/trace-manager";
+import { TraceManager } from "../trace/trace-manager";
 import { SystemEventViewerWebviewProvider } from "./webview-provider";
 import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
 import { getTelemetryManager } from "../../telemetry/telemetry";
@@ -52,6 +52,7 @@ export class SystemEventViewer {
   constructor(
     context: vscode.ExtensionContext,
     debugManager: CfsDebugManager,
+    traceManager: TraceManager,
     dmManager: CfsDataModelManager,
   ) {
     // Detect multiple instances without falling into singleton trap
@@ -61,8 +62,8 @@ export class SystemEventViewer {
       throw new Error("Only one instance of SystemEventViewer is allowed.");
     }
 
-    // Trace Manager
-    this.traceManager = new TraceManager(dmManager, debugManager);
+    // Store trace manager reference
+    this.traceManager = traceManager;
 
     // Tree View Setup
     const treeDataProvider = new EventTreeDataProvider(
@@ -75,19 +76,30 @@ export class SystemEventViewer {
       treeDataProvider,
       context.extensionUri,
     );
-    this.disposables.push(
-      eventWebviewProvider.onDidChangeCheckboxState(async (e) => {
-        for (const item of e.items) {
-          const [element, checkboxState] = item;
-          if (checkboxState === vscode.TreeItemCheckboxState.Checked) {
-            await this.enableEvent(element.path);
-          } else if (checkboxState === vscode.TreeItemCheckboxState.Unchecked) {
-            await this.disableEvent(element.path);
-          }
 
-          // Trigger a tree provider refresh since enabling/disabling an event may change
-          // whether other events can be enabled or not.
-          treeDataProvider.refresh(element);
+    this.disposables.push(
+      eventWebviewProvider.onDidChangeCheckboxState(async (event) => {
+        for (const [element, checkboxState] of event.items) {
+          try {
+            if (checkboxState === vscode.TreeItemCheckboxState.Checked) {
+              await treeDataProvider.enableEvent(element.path);
+            } else if (
+              checkboxState === vscode.TreeItemCheckboxState.Unchecked
+            ) {
+              await treeDataProvider.disableEvent(element.path);
+            }
+          } catch {
+            const action =
+              checkboxState === vscode.TreeItemCheckboxState.Checked
+                ? "enable"
+                : "disable";
+
+            void vscode.window.showErrorMessage(
+              `Failed to ${action} event state ${element.name}`,
+            );
+          } finally {
+            treeDataProvider.refresh(element);
+          }
         }
       }),
     );
@@ -130,20 +142,23 @@ export class SystemEventViewer {
     // Command Registration
     this.disposables.push(
       vscode.commands.registerCommand(SEV_OPEN_COMMAND_ID, () => {
-        // The '/' character is necessary for custom editor selector to match against
-        // full path rather than only filename:
+        // EventContentProvider.URI uses a path segment ('/events') so the custom
+        // editor selector matches against the full path, not only the filename:
         // https://github.com/microsoft/vscode/blob/b1975ec3582252503e58265bdeced9969a598cb6/src/vs/workbench/services/editor/common/editorResolverService.ts#L221
-        const uri = vscode.Uri.parse(
-          `${SEV_SCHEMA}:/${debugManager.getActiveSession()?.vscodeSession.id}`,
+        vscode.commands.executeCommand(
+          "vscode.open",
+          EventContentProvider.URI,
+          {
+            preview: false,
+          },
         );
-        vscode.commands.executeCommand("vscode.open", uri, { preview: false });
       }),
     );
 
     // Content Provider
     const eventContentProvider = new EventContentProvider(
       debugManager,
-      this.traceManager,
+      traceManager,
     );
     this.disposables.push(
       vscode.workspace.registerTextDocumentContentProvider(
@@ -154,7 +169,10 @@ export class SystemEventViewer {
     );
 
     // Editor Provider
-    const eventEditorProvider = new EventEditorProvider(context);
+    const eventEditorProvider = new EventEditorProvider(
+      context,
+      eventContentProvider,
+    );
     this.disposables.push(
       vscode.window.registerCustomEditorProvider(
         SEV_EDITOR_ID,
@@ -171,30 +189,5 @@ export class SystemEventViewer {
   public dispose() {
     // Add disposal logic if needed
     this.disposables.forEach((d) => d.dispose());
-  }
-
-  private async enableEvent(eventPath: string): Promise<void> {
-    const startTime = Date.now();
-    await this.traceManager.enableEvent(`*.${eventPath}`);
-    // Enable all trace. This is temporary until we have proper trace configuration
-    // management in place.
-    await this.traceManager.enableTrace();
-    void getTelemetryManager().then((telemetryManager) => {
-      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_ENABLED, {
-        eventPath,
-        durationMs: Date.now() - startTime,
-      });
-    });
-  }
-
-  private async disableEvent(eventPath: string): Promise<void> {
-    const startTime = Date.now();
-    await this.traceManager.disableEvent(`*.${eventPath}`);
-    void getTelemetryManager().then((telemetryManager) => {
-      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_DISABLED, {
-        eventPath,
-        durationMs: Date.now() - startTime,
-      });
-    });
   }
 }

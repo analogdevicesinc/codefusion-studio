@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,13 @@
 	> div {
 		> section:first-of-type {
 			padding-right: 8px;
+
+			:global([class*='titleContainer']) {
+				:global([class*='_title_']) {
+					@include fonts.heading-h4;
+				}
+			}
+
 			&:hover {
 				background-color: colors.$list-hover-background;
 			}
@@ -94,9 +101,6 @@
 			padding-right: 0px;
 			margin-top: 0px;
 		}
-	}
-	span {
-		font-size: fonts.$font-size-m;
 	}
 }
 

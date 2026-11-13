@@ -12,38 +12,46 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import type {CliConfig} from '../../types/cli-config.js';
 
 import {CliTaskProvider} from '../../providers/cli-task-provider.js';
 import {readUserConfig} from '../../utils/utils.js';
 
-export default class List extends Command {
+interface TaskItem {
+  name?: string;
+  command?: string;
+}
+
+interface TaskGroup {
+  project: string;
+  tasks: TaskItem[];
+}
+
+export default class List extends BaseCommand<typeof List> {
   static description = 'List tasks for a named workspace';
+  static useResponseEnvelope = true;
 
   static flags = {
     workspace: Flags.string({
       char: 'w',
       summary: 'The workspace for which tasks should be listed',
       required: false,
-      default: process.cwd()
+      default: process.cwd(),
+      defaultHelp: async () => '.'
     }),
     project: Flags.string({
       char: 'p',
       summary: 'The project for which tasks should be listed',
       required: false
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Also display the command associated with each task',
-      required: false,
-      default: false
     })
   };
 
-  public async run(): Promise<void> {
-    const {flags} = await this.parse(List);
+  public async run(): Promise<{tasks: TaskGroup[]}> {
+    const {flags} = this;
 
     // Load user config
     const userConfig = readUserConfig(this.config) as
@@ -73,6 +81,8 @@ export default class List extends Command {
       ...new Set(tasks.map((task) => task.projectId).filter(Boolean))
     ];
 
+    const groupedTasks: TaskGroup[] = [];
+
     // For each project, print the project name and then the tasks associated with that project, sorted by task name
     for (const project of projectNames) {
       if (project) {
@@ -85,13 +95,25 @@ export default class List extends Command {
 
             return aName.localeCompare(bName);
           });
+        const projectTasks: TaskItem[] = [];
         for (const task of tasksForProject) {
-          this.log(`${task.userFriendlyName ?? 'Unnamed Task'}`);
+          const taskName = task.userFriendlyName ?? 'Unnamed Task';
+          this.log(taskName);
           if (flags.verbose) {
             this.log(`  Command: ${task.command ?? 'N/A'}`);
           }
+          projectTasks.push({
+            name: task.userFriendlyName,
+            command: task.command
+          });
         }
+        groupedTasks.push({
+          project: String(project),
+          tasks: projectTasks
+        });
       }
     }
+
+    return {tasks: groupedTasks};
   }
 }

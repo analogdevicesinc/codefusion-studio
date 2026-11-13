@@ -1,7 +1,7 @@
 ---
-description: Resolve missing packages in CodeFusion Studio using System Planner's automated version resolution workflow or the Package Manager.
+description: Resolve missing packages in CodeFusion Studio using System Planner's automated version resolution workflow or the Package Manager UI.
 author: Analog Devices
-date: 2026-07-10
+date: 2026-10-05
 # Note: This page is linked from:
 # - System Planner Critical Error screen (packages/ide/src/webviews/config-tools/src/screens/error/version-updater/update-resolution-card/update-resolution-card.tsx)
 # - Workspace Creation Wizard empty plugins screen (packages/ide/src/webviews/workspace-creation/src/components/workspace-empty-plugins/WorkspaceEmptyPlugins.tsx)
@@ -19,7 +19,7 @@ This page helps you resolve missing or incompatible packages in CodeFusion Studi
 The resolution method depends on where you encountered the error:
 
 - **From System Planner?** Use the [automated version resolution](#system-planner-automated-version-resolution-recommended) workflow (recommended)
-- **From Workspace Creation Wizard?** Use [manual package installation](#manual-package-installation-fallback) to install template plugins
+- **From Workspace Creation Wizard?** Use the [Package Manager UI](manage-packages-ide.md) to install template plugins. For other options, see [manual package installation](#manual-package-installation-fallback).
 
     !!! note "Platform compatibility"
         Some workspace templates are only available on specific operating systems. For example, SHARC-FX templates are only supported on Windows. If the Workspace Creation Wizard shows that no workspace templates are available and you believe compatible plugins are already installed, the templates may not be available for your operating system.
@@ -68,12 +68,13 @@ If the automated resolution fails (no menu options appear, installation errors o
 
 - Verify you are logged in to myAnalog if accessing restricted packages (see [Log in to access restricted Packages](auth.md))
 - Click **Retry Updates** if available
-- Use the manual installation methods below to install packages directly
+- Install the packages directly with the [Package Manager UI](manage-packages-ide.md) or select another [manual package installation method](#manual-package-installation-fallback)
 
 ## Manual package installation (fallback)
 
 If the automated resolution prompt doesn't work, or you need to install packages outside of the System Planner error flow, see:
 
+- [Manage packages from the Package Manager UI](manage-packages-ide.md)  
 - [Manage Packages (Command Palette)](manage-packages-command-palette.md)  
 - [Manage Packages from the command line (`cfsutil`)](manage-packages-cfsutil.md)
 - [Log in to access restricted Packages](auth.md)

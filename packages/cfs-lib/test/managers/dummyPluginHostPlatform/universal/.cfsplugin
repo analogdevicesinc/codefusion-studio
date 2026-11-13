@@ -1,0 +1,19 @@
+{
+	"pluginName": "Host Platform Plugin (Universal)",
+	"pluginId": "com.analog.test.hostplatform.universal",
+	"pluginDescription": "Universal plugin with no host platform restriction",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "1.0.0",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"features": {
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

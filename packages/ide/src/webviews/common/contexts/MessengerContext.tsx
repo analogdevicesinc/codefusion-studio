@@ -18,11 +18,9 @@ import {createContext, useContext} from 'react';
 import {Messenger} from 'vscode-messenger-webview';
 import {webviewApiBridge} from '../test-utils/messenger-mock';
 
-export const messenger = new Messenger(
-	window.acquireVsCodeApi
-		? window.acquireVsCodeApi()
-		: webviewApiBridge
-);
+// Always use the shared lazy bridge so we don't race with other modules
+// (e.g. common/api.ts) for the single-use acquireVsCodeApi call.
+export const messenger = new Messenger(webviewApiBridge);
 messenger.start();
 
 const MessengerContext = createContext<Messenger | undefined>(

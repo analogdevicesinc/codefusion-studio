@@ -1,7 +1,7 @@
 ---
 description: ELF File Explorer for CodeFusion Studio
 author: Analog Devices
-date: 2026-01-13
+date: 2026-09-01
 ---
 
 # ELF File Explorer
@@ -11,7 +11,7 @@ The ELF File Explorer enables you to quickly parse and analyze compiled binaries
 ## Supported formats
 
 The CodeFusion Studio ELF File Explorer can open and display the contents of any file with a valid ELF header.
-The following file extensions are supported: AXF, DOJ, DXE, ELF, EXE, KO, MOD, O, OUT, PRX, PUFF, and SO.
+The following file extensions are supported: AXF, BIN, DOJ, DXE, ELF, EXE, KO, O, OUT, PRX, and SO.
 
 ## Open an ELF file
 

@@ -13,7 +13,12 @@
  *
  */
 
-export { SampleParser } from "./sample-parser/sample-parser.js";
+export * from "./parsers/elf-parser/index.js";
+export * from "./parsers/elf-parser/enums.js";
+export { ElfDataModel } from "./parsers/elf-parser/ElfDataModel.js";
+export { ElfHeuristics } from "./parsers/elf-parser/ElfHeuristics.js";
+export { ElfProgramHeader } from "./parsers/elf-parser/ElfProgramHeader.js";
+export { ElfSectionHeader } from "./parsers/elf-parser/ElfSectionHeader.js";
 export {
 	mapHeaderInfoData,
 	convertHeaderBigIntsToStrings,
@@ -38,8 +43,44 @@ export {
 	getMachineFlags
 } from "./utils/elf-flags-handler.js";
 export * from "./utils/file-utils.js";
+export {
+	compileJsonSchemaValidator,
+	type JsonSchemaValidator
+} from "./utils/json-schema-validator.js";
 export * from "./types/soc.js";
-export { DtParser } from "./dt-parser/DtParser.js";
+export { DtParser } from "./parsers/dt-parser/DtParser.js";
+
+// Configuration file management (.cfsconfig)
+export {
+	CfsConfigValidator,
+	CURRENT_SCHEMA_VERSION
+} from "./config/cfs-config-validator.js";
+export { CfsConfigError } from "./config/cfs-config-error.js";
+export type { CfsConfigErrorCode } from "./config/cfs-config-error.js";
+export type {
+	CheckDiagnostic,
+	CheckResult,
+	CheckSeverity
+} from "./config/check-types.js";
+export { isErrorSeverity, isValid } from "./config/check-types.js";
+
+// Configuration validation checks (.cfsconfig semantics)
+export {
+	pinInConflict,
+	validatePinConfiguration
+} from "./validation/pin-validation.js";
+export { validatePeripheralControls } from "./validation/peripheral-validation.js";
+export {
+	computeErrorPerControl,
+	generateControlErrorMessage,
+	generateValidationErrorType,
+	getFormErrors
+} from "./validation/control-validation.js";
+export type {
+	ControlType,
+	FormFieldValue,
+	NumericBase
+} from "./validation/control-validation.js";
 
 // Runtime values for CfsFeatureScope (types should be imported directly from cfs-types)
 export const CfsFeatureScopeValues = [
@@ -50,14 +91,16 @@ export const CfsFeatureScopeValues = [
 	"peripheral",
 	"pinConfig",
 	"clockConfig",
-	"dfg"
+	"dfg",
+	"aiprof"
 ] as const;
 
 // Managers
 export {
 	CfsPluginManager,
-	type PluginSocContext
-} from "./plugins/cfs-plugin-manager.js";
+	type PluginSocContext,
+	type CodeGenerationOptions
+} from "./managers/cfs-plugin-manager.js";
 export { CfsDataModelManager } from "./managers/cfs-data-model-manager.js";
 export { CfsToolManager } from "./managers/cfs-tool-manager.js";
 
@@ -77,6 +120,12 @@ export {
 	ZEPHYR_ARM_TOOLCHAIN_TOOL_ID as ZEPHYR_HOST_TOOLS_ID,
 	type PlatformId
 } from "./providers/platform-constants.js";
+
+// Board DTS utilities
+export {
+	parseBoardDts,
+	resolveBoardDtsPath
+} from "./utils/board-dts-utils.js";
 
 // Utilities
 export { CfsVariableResolver } from "./utils/cfs-variable-resolver.js";
@@ -111,10 +160,25 @@ export { SessionManager } from "./auth/session-manager.js";
 export { MyAnalogCloudsmithCredentialProvider } from "./auth/cloudsmith-credentials.js";
 export {
 	DefaultConanCloudsmithRemotesProvider,
+	RemotesProviderWithFallback,
 	MyAnalogConanCloudsmithRemotesProvider
 } from "./packages/cloudsmith-remotes.js";
 export { PackageLicenseReporter } from "./license/license-acceptance-reporter.js";
 export { CatalogManager } from "./catalog/cfs-catalog-manager.js";
+export { SWPackageCatalogManager } from "./catalog/swpackage-catalog-manager.js";
+export type { SWPackageCatalogManagerOptions } from "./catalog/swpackage-catalog-manager.js";
+export { createSWPackageSource } from "./packages/swpackage-source.js";
+export { CustomRemoteCatalogManager } from "./catalog/custom-remote-catalog-manager.js";
+export type {
+	CustomRemoteApplyOptions,
+	CustomRemoteApplyResult,
+	CustomRemoteChanges,
+	CustomRemoteFailure
+} from "./catalog/custom-remote-catalog-manager.js";
+export type {
+	SWPackageSource,
+	SWPackageSourceOptions
+} from "./packages/swpackage-source.js";
 
 // Telemetry
 export { TelemetryManager } from "./telemetry/telemetry-manager.js";
@@ -130,24 +194,31 @@ export {
 	getAiToolsPlugin,
 	type AiToolsData,
 	AiCommandError
-} from "./ai-tools/index.js";
-export type { default as AIToolsPlugin } from "./ai-tools/index.js";
+} from "./ai-tools/ai-tools.js";
+export { default as AIToolsPlugin } from "./ai-tools/ai-tools.js";
 export {
 	resolveSource,
 	getCFSCachePath,
-	getValidExtensions
+	getValidExtensions,
+	generateProfilingReport
 } from "./ai-tools/ai-tools-utils.js";
-export { generateAIWorkspace } from "./ai-tools/ai-workspace-generation.js";
+export {
+	generateAIArtifacts,
+	generateAIWorkspace
+} from "./ai-tools/ai-workspace-generation.js";
 export {
 	enforceMaxActiveModels,
 	enforceOneActiveBackendPerTarget,
-	MAX_MODEL_NAME_LENGTH
+	findModelIdentifierCollision,
+	MAX_MODEL_NAME_LENGTH,
+	validateModelNameLength
 } from "./ai-tools/ai-tools-model-utils.js";
 export {
 	TELEMETRY_APP_ID,
 	TELEMETRY_URL
 } from "./telemetry/telemetry-credentials.js";
 export { getHostPlatform } from "./utils/node-utils.js";
+export type { CfsCancellationToken } from "./utils/cancellation.js";
 
 // Task Resources
 export { default as msdkTasks } from "./resources/msdk-tasks.js";
@@ -168,20 +239,46 @@ export {
 } from "./utils/docker-utils.js";
 
 // Profiler / Trace Capture
-export {
-	Recording,
-	CTF_TRACE_START_TAG
+export { Recording } from "./profiler/recording.js";
+export { CTF_TRACE_START_TAG } from "./profiler/tracing-protocol.js";
+export type {
+	RecordingFormat,
+	RecordingOptions
 } from "./profiler/recording.js";
-export type { RecordingOptions } from "./profiler/recording.js";
+export { LiveTrace } from "./profiler/live-trace.js";
+export type { LiveTraceOptions } from "./profiler/live-trace.js";
 export {
 	SerialSourceConfig,
 	UsbSourceConfig,
 	createDataSource
 } from "./profiler/data-source-factory.js";
 export type { DataSourceConfig } from "./profiler/data-source-factory.js";
+export {
+	DEFAULT_SERIAL_PORT_SETTINGS,
+	VALID_DATA_BITS,
+	VALID_PARITY,
+	VALID_STOP_BITS,
+	getWorkspaceSerialSettings,
+	isDataBits,
+	isParity,
+	isStopBits
+} from "./profiler/serial-port-settings.js";
+export type {
+	DataBits,
+	Parity,
+	SerialLineOptions,
+	SerialPortSettings,
+	StopBits
+} from "./profiler/serial-port-settings.js";
 export type { IProfilerDataSource } from "./profiler/data-source.js";
 export { convertTrace } from "./profiler/trace-conversion-service.js";
 export type { TraceConversionOptions } from "./profiler/trace-conversion-service.js";
+export {
+	buildRuntimeReportFromTef,
+	convertTefToReport,
+	InvalidTefError
+} from "./profiler/tef-to-report-converter.js";
+export type { TefToReportOptions } from "./profiler/tef-to-report-converter.js";
 export {
 	listUsbDevices,
 	findUsbDevice,
@@ -191,3 +288,5 @@ export type { UsbDeviceDescriptor } from "./profiler/usb-device-directory.js";
 
 // String Utils
 export { caseInsensitiveCompare } from "./utils/string-utils.js";
+
+export { C_CPP_RESERVED_KEYWORDS } from "./utils/c-utils.js";

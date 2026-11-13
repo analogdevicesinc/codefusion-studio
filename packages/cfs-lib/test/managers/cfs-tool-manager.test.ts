@@ -119,9 +119,9 @@ describe("CfsToolManager", () => {
 		});
 
 		it("should resolve template path for dotted tool ID with subPath", async () => {
-
-			const resolved =
-				await toolMgr.resolveTemplatePaths("tool.x.debuggerPath");
+			const resolved = await toolMgr.resolveTemplatePaths(
+				"tool.x.debuggerPath"
+			);
 			const expected = path
 				.normalize(
 					`${testFixturesPath}/pkg-man-tools/toolx/gnu/bin/tool-x-gdb`
@@ -136,9 +136,7 @@ describe("CfsToolManager", () => {
 			const resolved =
 				await toolMgr.resolveTemplatePaths("tool.x.paths");
 			const expected = path
-				.normalize(
-					`${testFixturesPath}/pkg-man-tools/toolx/bin1`
-				)
+				.normalize(`${testFixturesPath}/pkg-man-tools/toolx/bin1`)
 				.split("\\")
 				.join("/");
 
@@ -156,8 +154,9 @@ describe("CfsToolManager", () => {
 		});
 
 		it("should return original string when tool ID is not found", async () => {
-			const resolved =
-				await toolMgr.resolveTemplatePaths("nonexistent.tool");
+			const resolved = await toolMgr.resolveTemplatePaths(
+				"nonexistent.tool"
+			);
 
 			expect(resolved).to.equal("nonexistent.tool");
 		});

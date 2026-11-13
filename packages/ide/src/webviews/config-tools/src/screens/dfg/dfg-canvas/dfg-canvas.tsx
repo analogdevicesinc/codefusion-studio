@@ -40,6 +40,7 @@ import {
 } from '../../../state/slices/gaskets/gasket.reducer';
 import {useDispatch} from 'react-redux';
 import type {GasketConfig} from 'cfs-types';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {
 	getGasketModel,
 	filterStreamsByDestinationGasket,
@@ -53,6 +54,9 @@ export function DFGCanvas(): React.ReactElement {
 	const selectedStreams = useSelectedStreams();
 	const hoveredStream = useHoveredStream();
 	const dispatch = useDispatch();
+	const l10n = useLocaleContext()?.dfgVisualisation as
+		| Record<string, string>
+		| undefined;
 
 	const midpoint = Math.ceil(gaskets.length / 2);
 	const left = gaskets.slice(0, midpoint);
@@ -119,11 +123,21 @@ export function DFGCanvas(): React.ReactElement {
 						</div>
 						<div
 							className={`${styles.bridgeContainer}
-							${hoveredStream && goesThroughBridge([hoveredStream], []) ? styles.hovered : ''}
-							${selectedStreams.length > 0 && goesThroughBridge(selectedStreams, []) ? styles.selected : ''}`}
+							${
+								hoveredStream &&
+								goesThroughBridge([hoveredStream], [])
+									? styles.hovered
+									: ''
+							}
+							${
+								selectedStreams.length > 0 &&
+								goesThroughBridge(selectedStreams, [])
+									? styles.selected
+									: ''
+							}`}
 						>
 							<div className={styles.bridgeLabel}>
-								DFG Network-On-Chip
+								{l10n?.networkOnChip ?? 'DFG Network-On-Chip'}
 							</div>
 						</div>
 						<div
@@ -267,7 +281,9 @@ function GasketPhysicalConnections({
 
 	return (
 		<div
-			className={`${styles.gasketPhysicalConnections} ${side === 'left' ? styles.left : styles.right}`}
+			className={`${styles.gasketPhysicalConnections} ${
+				side === 'left' ? styles.left : styles.right
+			}`}
 		>
 			{orderedStreams.map((s, i) => {
 				const isHovered =
@@ -333,7 +349,9 @@ function EmptyPhyiscalConnection({
 }): React.ReactElement {
 	return (
 		<div
-			className={`${connectionType === 'input' ? styles.input : styles.output}
+			className={`${
+				connectionType === 'input' ? styles.input : styles.output
+			}
 				${isHovered ? styles.hovered : ''}
 				${isSelected ? styles.selected : ''}
 				${styles.gasketEmptyConnection}`}
@@ -454,8 +472,12 @@ function GasketPhysicalConnection({
 			ref={connectionBoxRef}
 			data-test={`gasket-${connectionType}-physical-connection-${stream.StreamId}`}
 			className={`${side === 'left' ? styles.left : styles.right}
-								${connectionType === 'input' ? styles.input : styles.output} ${isHovered ? styles.hovered : ''} ${isOpenOnHover ? styles.openOnHover : ''}
-								${isSelected ? styles.selected : ''} ${isOpenOnSelect ? styles.openOnSelect : ''} ${styles.gasketPhysicalConnection}`}
+								${connectionType === 'input' ? styles.input : styles.output} ${
+									isHovered ? styles.hovered : ''
+								} ${isOpenOnHover ? styles.openOnHover : ''}
+								${isSelected ? styles.selected : ''} ${
+									isOpenOnSelect ? styles.openOnSelect : ''
+								} ${styles.gasketPhysicalConnection}`}
 			onMouseOver={handleMouseOver}
 			onMouseOut={handleMouseOut}
 			onMouseMove={handleMouseMove}
@@ -658,7 +680,11 @@ function GasketBox({
 		<div
 			ref={gasketBoxRef}
 			data-test={`gasket-box-${gasket.Name}`}
-			className={`${styles.gasketBox} ${isHovered ? styles.hovered : ''} ${selectedGaskets.includes(gasket.Name) ? styles.selected : ''}`}
+			className={`${styles.gasketBox} ${
+				isHovered ? styles.hovered : ''
+			} ${
+				selectedGaskets.includes(gasket.Name) ? styles.selected : ''
+			}`}
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
 			onMouseMove={handleMouseMove}
@@ -782,13 +808,36 @@ function GasketStreamsToBridge({
 							zIndex: inputIsHovered || inputIsSelected ? 1 : 0
 						}}
 						data-test='gasket-streams-to-bridge-vertical-line-input'
-						className={`${styles.gasketStreamsToBridgeVerticalLine} ${styles.left} ${styles.input} ${inStreams.length > 0 ? styles.active : ''} ${inputIsHovered ? styles.hovered : ''} ${inputIsSelected ? styles.selected : ''}`}
+						className={`${styles.gasketStreamsToBridgeVerticalLine} ${
+							styles.left
+						} ${styles.input} ${
+							inStreams.length > 0 ? styles.active : ''
+						} ${inputIsHovered ? styles.hovered : ''} ${
+							inputIsSelected ? styles.selected : ''
+						}`}
 					/>
 				)}
 				<div
-					className={`${styles.gasketStreamsToBridgeHorizontalLine} ${goesThroughBridge(inStreams, outStreams) ? styles.active : ''}
-			              ${(inputIsHovered || outputIsHovered) && goesThroughBridge(hoveredStream ? [hoveredStream] : [], []) ? styles.hovered : ''}
-										${(inputIsSelected || outputIsSelected) && goesThroughBridge(selectedStreams, []) ? styles.selected : ''}`}
+					className={`${styles.gasketStreamsToBridgeHorizontalLine} ${
+						goesThroughBridge(inStreams, outStreams)
+							? styles.active
+							: ''
+					}
+			              ${
+											(inputIsHovered || outputIsHovered) &&
+											goesThroughBridge(
+												hoveredStream ? [hoveredStream] : [],
+												[]
+											)
+												? styles.hovered
+												: ''
+										}
+										${
+											(inputIsSelected || outputIsSelected) &&
+											goesThroughBridge(selectedStreams, [])
+												? styles.selected
+												: ''
+										}`}
 					data-test='gasket-streams-to-bridge-horizontal-line'
 				>
 					{(hoveredStream?.Source.Gasket === gasket.Name ||
@@ -807,7 +856,13 @@ function GasketStreamsToBridge({
 							zIndex: inputIsHovered || inputIsSelected ? 1 : 0
 						}}
 						data-test='gasket-streams-to-bridge-vertical-line-input'
-						className={`${styles.gasketStreamsToBridgeVerticalLine} ${styles.right} ${styles.input} ${inStreams.length > 0 ? styles.active : ''} ${inputIsHovered ? styles.hovered : ''} ${inputIsSelected ? styles.selected : ''}`}
+						className={`${styles.gasketStreamsToBridgeVerticalLine} ${
+							styles.right
+						} ${styles.input} ${
+							inStreams.length > 0 ? styles.active : ''
+						} ${inputIsHovered ? styles.hovered : ''} ${
+							inputIsSelected ? styles.selected : ''
+						}`}
 					/>
 				)}
 			</div>
@@ -820,7 +875,13 @@ function GasketStreamsToBridge({
 				<div
 					style={{zIndex: outputIsHovered ? 1 : 0}}
 					data-test='gasket-streams-to-bridge-vertical-line-output'
-					className={`${styles.gasketStreamsToBridgeVerticalLine} ${side === 'left' ? styles.left : styles.right} ${styles.output} ${outStreams.length > 0 ? styles.active : ''} ${outputIsHovered ? styles.hovered : ''} ${outputIsSelected ? styles.selected : ''}`}
+					className={`${styles.gasketStreamsToBridgeVerticalLine} ${
+						side === 'left' ? styles.left : styles.right
+					} ${styles.output} ${
+						outStreams.length > 0 ? styles.active : ''
+					} ${outputIsHovered ? styles.hovered : ''} ${
+						outputIsSelected ? styles.selected : ''
+					}`}
 				/>
 			</div>
 		</div>
@@ -840,7 +901,11 @@ function ArrowHeadSVG({
 
 	return (
 		<div
-			className={`${styles.arrowHead} ${side === 'left' ? styles.left : styles.right} ${isInput ? styles.input : ''} ${isSelected ? styles.focused : ''}`}
+			className={`${styles.arrowHead} ${
+				side === 'left' ? styles.left : styles.right
+			} ${isInput ? styles.input : ''} ${
+				isSelected ? styles.focused : ''
+			}`}
 			style={{transform: `rotate(${rotation}deg)`}}
 		/>
 	);
@@ -883,11 +948,15 @@ function GasketBufferSize({
 
 	return (
 		<div
-			className={`${styles.gasketBufferSize} ${invalid ? styles.invalid : ''}`}
+			className={`${styles.gasketBufferSize} ${
+				invalid ? styles.invalid : ''
+			}`}
 		>
 			<div
 				data-test={`${type}-gasketBufferSizeBar`}
-				className={`${styles.gasketBufferSizeBar} ${invalid ? styles.invalid : ''}`}
+				className={`${styles.gasketBufferSizeBar} ${
+					invalid ? styles.invalid : ''
+				}`}
 				style={{width: `${percentage}%`}}
 			/>
 			{type === 'input' && <span>&rarr;</span>}

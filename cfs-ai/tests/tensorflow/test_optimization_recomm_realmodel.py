@@ -6,7 +6,7 @@ functionality. It creates actual models with varying sizes and computational com
 to validate that the optimization systems provide appropriate recommendations for
 different deployment scenarios.
 
-Copyright (c) 2025 Analog Devices, Inc. All Rights Reserved.
+Copyright (c) 2025-2026 Analog Devices, Inc. All Rights Reserved.
 Released under the terms of the "LICENSE.md" file in the root directory.
 """
 import unittest
@@ -17,10 +17,10 @@ from pathlib import Path
 from utils import get_tf, has_tf
 
 
-from cfsai_compatibility_analyzer.analyze_compatibility import CompatibilityAnalyzer
-from cfsai_compatibility_analyzer.schemas import CompatibilityReport
-from cfsai_resource_profiler.profile_resources import TFLiteResourceProfiler
-from cfsai_resource_profiler.schemas import ResourceProfileReport
+from cfsai_model_explorer.backends.tflm_static.compat import CompatibilityAnalyzer
+from cfsai_model_explorer.backends.tflm_static.compat_schemas import CompatibilityReport
+from cfsai_model_explorer.backends.tflm_static.profiler import TFLiteResourceProfiler
+from cfsai_model_explorer.backends.tflm_static.profiler_schemas import ResourceProfileReport
 from cfsai_model_parser import TFLiteParser
 
 from cfsai_types.hardware_profile import HardwareProfile

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,18 @@ export const convertDecimalToHex = (decimal: number): string =>
 // Used for Chart representation
 export const transformBtoKB = (
 	size: number,
-	total?: boolean
+	totalSuffix?: string
 ): string =>
 	size > 1024
-		? `${(size / 1024).toFixed(2)} KB${total ? ' total' : ''}`
+		? `${(size / 1024).toFixed(2)} KB${
+				totalSuffix ? ` ${totalSuffix}` : ''
+			}`
 		: `${size} B`;
 
 export const convertBytesToKbOrMb = (value: number) => {
 	if (value > 1024 * 1024) {
 		return `${(value / (1024 * 1024)).toFixed(2)} MB`;
-	} 
+	}
 
 	if (value > 1024) {
 		return `${(value / 1024).toFixed(2)} KB`;

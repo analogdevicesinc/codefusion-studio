@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,7 +107,10 @@ export const getNextSegment = (
 	return undefined;
 };
 
-export const calculateSegments = (segments: TSegment[]) => {
+export const calculateSegments = (
+	segments: TSegment[],
+	unusedSegmentLabel?: string
+) => {
 	let matrix: TSegment[][] = [[]];
 
 	sortSegmentsByStartAddress(segments);
@@ -126,8 +129,10 @@ export const calculateSegments = (segments: TSegment[]) => {
 
 	// This method will change the "segments" array
 	// The unused space between segments will be replaced with a new segment
-	const {cumulativeGap, size} =
-		computeSegmentsWithoutUnusedSpace(segments);
+	const {cumulativeGap, size} = computeSegmentsWithoutUnusedSpace(
+		segments,
+		unusedSegmentLabel
+	);
 
 	// Then if a segment of category unused was added on the first position
 	// then smallestAddress and totalMemory needs to be updated
@@ -243,7 +248,10 @@ const placeSegmentInCorrectStack = (
  * @param segments - list of segments;
  * @returns - The `cumulativeGap` which is total space removed between segments
  */
-const computeSegmentsWithoutUnusedSpace = (segments: TSegment[]) => {
+const computeSegmentsWithoutUnusedSpace = (
+	segments: TSegment[],
+	unusedSegmentLabel?: string
+) => {
 	let usedMemSize = 0;
 	// If a segment of category unused was added on first position
 	let isFirstSegmAdded = false;
@@ -330,7 +338,7 @@ const computeSegmentsWithoutUnusedSpace = (segments: TSegment[]) => {
 		segments.splice(item.index, 0, {
 			id: getBiggestId(segments) + item.index + 100,
 			type: '0',
-			label: 'UNUSED SEGMENT',
+			label: unusedSegmentLabel ?? 'UNUSED SEGMENT',
 			address: item.address,
 			computedStartAddr: item.computedStartAddr,
 			computedEndAddr: item.computedEndAddr,

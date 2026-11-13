@@ -17,6 +17,12 @@
 	opacity: 0;
 }
 
+.planner_container.panning,
+.planner_container.panning svg,
+.planner_container.panning svg * {
+	cursor: grabbing;
+}
+
 .rendered {
 	opacity: 1;
 	/* add fade in effect when rendered */

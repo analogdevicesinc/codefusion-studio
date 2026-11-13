@@ -20,6 +20,7 @@ import {
 	useRef,
 	useState
 } from 'react';
+import {createPortal} from 'react-dom';
 import styles from './tooltip.module.scss';
 
 type TooltipProps = {
@@ -32,6 +33,13 @@ type TooltipProps = {
 	readonly width?: number;
 	readonly type?: 'short' | 'long';
 	readonly disabled?: boolean;
+};
+
+type AnchorRect = {
+	readonly top: number;
+	readonly left: number;
+	readonly width: number;
+	readonly height: number;
 };
 
 function Tooltip({
@@ -52,6 +60,9 @@ function Tooltip({
 
 	const [visible, setVisible] = useState(false);
 	const [actualPosition, setActualPosition] = useState(position);
+	const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(
+		null
+	);
 	const tooltipTimeoutRef = useRef<
 		ReturnType<typeof setTimeout> | undefined
 	>(undefined);
@@ -59,43 +70,65 @@ function Tooltip({
 	useLayoutEffect(() => {
 		if (!visible || !tooltipContainerElement) {
 			setActualPosition(position);
+			setAnchorRect(null);
 			return;
 		}
 
-		const elementRect =
-			tooltipContainerElement.getBoundingClientRect();
+		const updatePosition = () => {
+			const elementRect =
+				tooltipContainerElement.getBoundingClientRect();
 
-		const container = containerId
-			? document.getElementById(containerId)
-			: null;
+			const container = containerId
+				? document.getElementById(containerId)
+				: null;
 
-		const containerRect = (
-			container || document.body
-		).getBoundingClientRect();
+			const containerRect = (
+				container || document.body
+			).getBoundingClientRect();
 
-		let adjustedPosition = position;
-		let classes = '';
+			let adjustedPosition = position;
+			let classes = '';
 
-		if (elementRect.top - 50 < containerRect.top) {
-			if (position === 'top') adjustedPosition = 'bottom';
-		} else if (containerRect.bottom - elementRect.bottom < 50) {
-			if (position === 'bottom') adjustedPosition = 'top';
-		}
-
-		if (elementRect.left - width / 2 < containerRect.left) {
-			if (position === 'left') adjustedPosition = 'right';
-			if (position === 'top' || position === 'bottom') {
-				classes = styles.leftAlign;
+			if (elementRect.top - 50 < containerRect.top) {
+				if (position === 'top') adjustedPosition = 'bottom';
+			} else if (containerRect.bottom - elementRect.bottom < 50) {
+				if (position === 'bottom') adjustedPosition = 'top';
 			}
-		} else if (containerRect.right - elementRect.right < width / 2) {
-			if (position === 'right') adjustedPosition = 'left';
-			if (position === 'top' || position === 'bottom') {
-				classes = styles.rightAlign;
-			}
-		}
 
-		setAdditionalClasses(classes);
-		setActualPosition(adjustedPosition);
+			if (elementRect.left - width / 2 < containerRect.left) {
+				if (position === 'left') adjustedPosition = 'right';
+				if (position === 'top' || position === 'bottom') {
+					classes = styles.leftAlign;
+				}
+			} else if (
+				containerRect.right - elementRect.right <
+				width / 2
+			) {
+				if (position === 'right') adjustedPosition = 'left';
+				if (position === 'top' || position === 'bottom') {
+					classes = styles.rightAlign;
+				}
+			}
+
+			setAdditionalClasses(classes);
+			setActualPosition(adjustedPosition);
+			setAnchorRect({
+				top: elementRect.top,
+				left: elementRect.left,
+				width: elementRect.width,
+				height: elementRect.height
+			});
+		};
+
+		updatePosition();
+
+		window.addEventListener('scroll', updatePosition, true);
+		window.addEventListener('resize', updatePosition);
+
+		return () => {
+			window.removeEventListener('scroll', updatePosition, true);
+			window.removeEventListener('resize', updatePosition);
+		};
 	}, [
 		visible,
 		tooltipContainerElement,
@@ -136,14 +169,28 @@ function Tooltip({
 			data-test={dataTest ? dataTest : undefined}
 		>
 			{children}
-			{visible && !disabled && (
-				<span
-					style={type === 'short' ? {} : {width: `${width}px`}}
-					className={`${styles.tooltip} ${additionalClasses} ${styles[actualPosition]} ${styles[type]}`}
-				>
-					{title}
-				</span>
-			)}
+			{visible &&
+				!disabled &&
+				anchorRect &&
+				createPortal(
+					<div
+						className={styles.tooltipAnchor}
+						style={{
+							top: `${anchorRect.top}px`,
+							left: `${anchorRect.left}px`,
+							width: `${anchorRect.width}px`,
+							height: `${anchorRect.height}px`
+						}}
+					>
+						<span
+							style={type === 'short' ? {} : {width: `${width}px`}}
+							className={`${styles.tooltip} ${additionalClasses} ${styles[actualPosition]} ${styles[type]}`}
+						>
+							{title}
+						</span>
+					</div>,
+					document.body
+				)}
 		</div>
 	);
 }

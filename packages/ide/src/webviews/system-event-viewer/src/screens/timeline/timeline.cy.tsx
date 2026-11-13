@@ -13,19 +13,47 @@
  *
  */
 
-import {store} from '../../state/store';
+import {configureStore} from '@reduxjs/toolkit';
+import {
+	appContextReducer,
+	setActiveScreen
+} from '../../state/slices/app-context/app-context.reducer';
+import {eventSourcesReducer} from '../../state/slices/event-sources/event-sources.reducer';
+import {
+	setDataZoom,
+	setTimeAvailability,
+	timelineReducer
+} from '../../state/slices/timeline/timeline.reducer';
 import {AppContent} from '../../components/app-content/app-content';
+import {ColorsProvider} from '../../common/context/colors-provider';
 import {navigationItems} from '../../common/constants/navigation';
-import {setActiveScreen} from '../../state/slices/app-context/app-context.reducer';
+import {TIMESTAMPS} from '../../common/constants/mocked-event-sources';
 import {
 	DATA_TEST_E,
 	DATA_TEST_S,
 	DIAGRAM_CHART_ROW_ID,
 	INITIAL_DATA_ZOOM,
-	UNITS_LABEL
+	MEASURE_PHASE
 } from '../../common/constants/timeline';
-import {setDataZoom} from '../../state/slices/timeline/timeline.reducer';
 import type {EChartsType} from 'echarts';
+import type {DataZoom} from '../../common/types/timeline';
+import {getVisibleRange} from '../../common/utils/axis-scale';
+import {readHeaderAxis} from '../../common/test-utils/chart-axis';
+import {getTimeAxisCoordinates} from '../../common/utils/time-axis-utils';
+import {configureTimeContext} from '../../common/utils/time-mode-formatters';
+
+const createTestStore = () =>
+	configureStore({
+		reducer: {
+			appContextReducer,
+			eventSourcesReducer,
+			timelineReducer
+		}
+	});
+
+type TestStore = ReturnType<typeof createTestStore>;
+
+let testStore: TestStore;
 
 const ROW1_TEST_ID = `${DIAGRAM_CHART_ROW_ID}:Event Source Alias 1-0`;
 const ROW2_TEST_ID = `${DIAGRAM_CHART_ROW_ID}:Event Source Alias 2-1`;
@@ -42,11 +70,21 @@ const getXAxisOptions = (chartInstance: EChartsType) => {
 
 const triggerZoomInFromFooter = (times: number) => {
 	for (let i = 0; i < times; i++) {
-		cy.wait(200);
 		cy.dataTest('timeline-diagram:footer:zoom-buttons:zoom-in')
-			.should('exist', {timeout: 10000})
-			.should('not.be.disabled', {timeout: 10000})
-			.click();
+			.should('exist')
+			.should('not.be.disabled')
+			.then(() => {
+				const previousStart =
+					testStore.getState().timelineReducer.dataZoom.start;
+				cy.dataTest(
+					'timeline-diagram:footer:zoom-buttons:zoom-in'
+				).click();
+				cy.window().should(() => {
+					expect(
+						testStore.getState().timelineReducer.dataZoom.start
+					).to.be.greaterThan(previousStart);
+				});
+			});
 	}
 };
 
@@ -76,91 +114,171 @@ const waitForTimelineCharts = () => {
 	});
 };
 
-const expectTickValue = (expected: string) => {
-	cy.dataTest('event-source-list:empty-block-item').should(item => {
-		expect(item.text().trim()).to.eq(expected);
+/** Sends a real row-chart event through the timeline's zoom synchronization. */
+const zoomTimelineFromRow = (dataZoom: DataZoom) => {
+	cy.window().then(win => {
+		const charts = (
+			win as unknown as {__timelineEcharts: Map<string, EChartsType>}
+		).__timelineEcharts;
+
+		const rowChart = charts.get(chartKeyFromTestId(ROW1_TEST_ID));
+		expect(rowChart, 'originating row chart').to.exist;
+		rowChart!.dispatchAction({type: 'dataZoom', ...dataZoom});
+	});
+};
+
+/** Retries until chart options, zoom state, and the reference agree. */
+const assertTimelineAxis = (
+	dataZoom: DataZoom,
+	reference: string,
+	interval: number,
+	values: number[],
+	labels: string[]
+) => {
+	cy.dataTest('event-source-list:time-reference').should(
+		'have.text',
+		reference
+	);
+	cy.window().should(win => {
+		const charts = (
+			win as unknown as {__timelineEcharts: Map<string, EChartsType>}
+		).__timelineEcharts;
+		const keys = [ROW1_TEST_ID, ROW2_TEST_ID, ROW3_TEST_ID].map(
+			chartKeyFromTestId
+		);
+
+		for (const key of ['header', ...keys]) {
+			const chartZoom = getDataZoom(charts.get(key));
+			expect(chartZoom, `${key} zoom`).not.to.equal(null);
+			expect(chartZoom!.start, `${key} start`).to.be.closeTo(
+				dataZoom.start,
+				1e-9
+			);
+			expect(chartZoom!.end, `${key} end`).to.be.closeTo(
+				dataZoom.end,
+				1e-9
+			);
+		}
+
+		const timeline = testStore.getState().timelineReducer;
+		expect(timeline.dataZoom.start).to.be.closeTo(
+			dataZoom.start,
+			1e-9
+		);
+		expect(timeline.dataZoom.end).to.be.closeTo(dataZoom.end, 1e-9);
+		expect(timeline.referenceValue).to.equal(reference);
+		const {axis, ticks: tickValues} = readHeaderAxis(
+			charts.get('header')!
+		);
+		const visibleRange = getVisibleRange(
+			{min: axis.min, max: axis.max},
+			dataZoom
+		);
+		const coordinates = getTimeAxisCoordinates(timeline.timeMode);
+		expect(axis.minInterval).to.be.closeTo(interval, interval * 1e-8);
+		expect(tickValues.length).to.be.greaterThan(1);
+		const tolerance = Math.max(interval * 1e-6, 1e-10);
+		tickValues.forEach((value, index) => {
+			expect(value).to.be.at.least(visibleRange.min - tolerance);
+			expect(value).to.be.at.most(visibleRange.max + tolerance);
+			if (index > 0) {
+				expect(value - tickValues[index - 1]).to.be.closeTo(
+					interval,
+					interval * 1e-8
+				);
+			}
+		});
+		expect(axis.axisLabel.showMinLabel).to.equal(
+			Math.abs(tickValues[0] - visibleRange.min) <= tolerance
+		);
+		expect(axis.axisLabel.showMaxLabel).to.equal(
+			Math.abs(
+				tickValues[tickValues.length - 1] - visibleRange.max
+			) <= tolerance
+		);
+		expect(
+			values.map(value =>
+				axis.axisLabel
+					.formatter(coordinates.toAxis(value))
+					.replace(/^\{edge[01]\|([^}]*)\}$/, '$1')
+			)
+		).to.deep.equal(labels);
 	});
 };
 
 function TestComponent() {
-	return <AppContent />;
+	return (
+		<ColorsProvider>
+			<AppContent />
+		</ColorsProvider>
+	);
 }
 
 describe('Timeline', () => {
 	beforeEach(() => {
+		testStore = createTestStore();
 		cy.viewport(1200, 800);
 	});
 
 	afterEach(() => {
-		store.dispatch(setDataZoom(INITIAL_DATA_ZOOM));
+		testStore.dispatch(setDataZoom(INITIAL_DATA_ZOOM));
+		configureTimeContext({tickFrequency: 1});
 	});
 
 	it('Should mount and display all the main sections', () => {
-		const testStore = store;
-
 		testStore.dispatch(setActiveScreen(navigationItems.timeline));
-
-		cy.mount(<TestComponent />, testStore).then(() => {
-			cy.dataTest('timeline:container').should('exist');
-			cy.dataTest('cfs-top-bar:container').should('exist');
-			cy.dataTest('sev-header:cta-container').should('exist');
-			cy.dataTest('app-content:loading').should('not.exist');
-			cy.dataTest('event-sources:container').should('exist');
-			cy.dataTest('timeline-diagram:xticks-chart-row').should(
-				'exist'
-			);
-			cy.dataTest(ROW1_TEST_ID).should('exist');
-			cy.dataTest(ROW2_TEST_ID).should('exist');
-			cy.dataTest(ROW3_TEST_ID).should('exist');
-			cy.dataTest('timeline-diagram:footer').should('exist');
-			cy.dataTest('timeline-diagram:footer:slider').should('exist');
-			cy.dataTest('timeline-diagram:footer:zoom-buttons').should(
-				'exist'
-			);
-		});
-		cy.dataTest('event-sources:container').should('exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist', {
-			timeout: 10000
-		});
-		cy.dataTest(ROW1_TEST_ID).should('exist', {timeout: 10000});
-		cy.dataTest(ROW2_TEST_ID).should('exist', {timeout: 10000});
-		cy.dataTest(ROW3_TEST_ID).should('exist', {timeout: 10000});
-		cy.dataTest('timeline-diagram:footer').should('exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:footer:slider').should('exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:footer:zoom-buttons').should(
-			'exist',
-			{timeout: 10000}
-		);
-	});
-
-	it('Should sync dataZoom between charts', () => {
-		const testStore = {...store};
 
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
+		cy.dataTest('timeline:container').should('exist');
+		cy.dataTest('cfs-top-bar:container').should('exist');
+		cy.dataTest('sev-header:cta-container').should('exist');
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('event-sources:container').should('exist');
+		cy.dataTest('timeline-diagram:time-unit-chart').should('exist');
+		cy.dataTest(ROW1_TEST_ID).should('exist');
+		cy.dataTest(ROW2_TEST_ID).should('exist');
+		cy.dataTest(ROW3_TEST_ID).should('exist');
+		cy.dataTest('timeline-diagram:footer').should('exist');
+		cy.dataTest('timeline-diagram:footer:slider').should('exist');
+		cy.dataTest('timeline-diagram:footer:zoom-buttons').should(
+			'exist'
+		);
+	});
+
+	it('Should disable ABS without an epoch and return to REL when it disappears', () => {
+		cy.mount(<TestComponent />, testStore);
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('top-bar-button:Absolute Time')
+			.should('not.be.disabled')
+			.click();
+		cy.then(() => {
+			expect(testStore.getState().timelineReducer.timeMode).to.equal(
+				'absolute'
+			);
+			configureTimeContext({tickFrequency: 1, tickEpoch: ''});
+			testStore.dispatch(setTimeAvailability({abs: false}));
 		});
-		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist', {
-			timeout: 10000
+		cy.dataTest('top-bar-button:Absolute Time').should('be.disabled');
+		cy.then(() => {
+			expect(testStore.getState().timelineReducer.timeMode).to.equal(
+				'relative'
+			);
 		});
-		cy.dataTest('timeline-diagram').should('exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:footer').should('exist', {
-			timeout: 10000
-		});
+	});
+
+	it('Should sync dataZoom between charts', () => {
+		cy.mount(<TestComponent />, testStore);
+
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('timeline-diagram:time-unit-chart').should('exist');
+		cy.dataTest('timeline-diagram').should('exist');
+		cy.dataTest('timeline-diagram:footer').should('exist');
 
 		triggerZoomInFromFooter(3);
 
 		// Assert exact dataZoom values across timestamp charts and header chart
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const chartInstanceMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -193,19 +311,87 @@ describe('Timeline', () => {
 			assert.isAbove(dz0!.start, 0, 'zoom start > 0');
 			assert.isBelow(dz0!.end, 100, 'zoom end < 100');
 
-			assert.strictEqual(dz0?.start, 24.4);
-			assert.strictEqual(dz0?.end, 75.6);
+			expect(dz0?.start).to.be.closeTo(24.4, 1e-9);
+			expect(dz0?.end).to.be.closeTo(75.6, 1e-9);
 
-			// All charts and header must match exactly
-			assert.deepEqual(dz1, dz0, 'chart1 matches chart0');
-			assert.deepEqual(dz2, dz0, 'chart2 matches chart0');
-			assert.deepEqual(dzHeader, dz0, 'header matches chart0');
+			for (const [name, zoom] of [
+				['chart1', dz1],
+				['chart2', dz2],
+				['header', dzHeader]
+			] as const) {
+				expect(zoom?.start, `${name} start`).to.be.closeTo(
+					dz0!.start,
+					1e-9
+				);
+				expect(zoom?.end, `${name} end`).to.be.closeTo(
+					dz0!.end,
+					1e-9
+				);
+			}
 		});
 	});
 
-	it('Should prevent zooming in when ctrl key is not pressed', () => {
-		const testStore = {...store};
+	it('Should synchronize zoom, rollover labels, and reference value', () => {
+		cy.mount(<TestComponent />, testStore);
+		waitForTimelineCharts();
 
+		// Nonzero range [0.1, 20]
+		const msDataZoom = {start: 9.3, end: 9.9};
+		zoomTimelineFromRow(msDataZoom);
+		assertTimelineAxis(
+			msDataZoom,
+			'1s',
+			0.02,
+			[1.96, 1.98, 2, 2.02, 2.04, 2.06],
+			['960ms', '980ms', '2s', '20ms', '40ms', '60ms']
+		);
+
+		const usDataZoom = {start: 9.542, end: 9.544};
+		zoomTimelineFromRow(usDataZoom);
+		assertTimelineAxis(
+			usDataZoom,
+			'1s 998ms',
+			0.0001,
+			[1.9989, 1.999, 1.9991, 1.9992],
+			['900µs', '999ms', '100µs', '200µs']
+		);
+
+		zoomTimelineFromRow({start: 0, end: 100});
+		assertTimelineAxis(
+			{start: 0, end: 100},
+			'0s',
+			5,
+			[0.1, 2, 20],
+			['0.1s', '2s', '20s']
+		);
+	});
+
+	it('Should synchronize pan across a reference boundary', () => {
+		cy.mount(<TestComponent />, testStore);
+		waitForTimelineCharts();
+
+		const beforeBoundary = {start: 9.3, end: 9.9};
+		zoomTimelineFromRow(beforeBoundary);
+		assertTimelineAxis(
+			beforeBoundary,
+			'1s',
+			0.02,
+			[1.98, 2, 2.02],
+			['980ms', '2s', '20ms']
+		);
+
+		const afterBoundary = {start: 9.8, end: 10.4};
+		zoomTimelineFromRow(afterBoundary);
+		assertTimelineAxis(
+			afterBoundary,
+			'2s',
+			0.02,
+			[2.06, 2.08, 2.1],
+			['60ms', '80ms', '100ms']
+		);
+	});
+
+	it('Should prevent zooming in when ctrl key is not pressed', () => {
 		cy.mount(<TestComponent />, testStore);
 
 		waitForTimelineCharts();
@@ -247,7 +433,7 @@ describe('Timeline', () => {
 			});
 		});
 
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const instMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -264,8 +450,6 @@ describe('Timeline', () => {
 	});
 
 	it('Should allow zooming in when ctrl key is pressed', () => {
-		const testStore = {...store};
-
 		cy.mount(<TestComponent />, testStore);
 
 		waitForTimelineCharts();
@@ -314,10 +498,8 @@ describe('Timeline', () => {
 			zr.handler.dispatch('mousewheel', evt);
 		});
 
-		cy.wait(100);
-
 		// Assert dataZoom changed to zoomed in values
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const instMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -338,22 +520,27 @@ describe('Timeline', () => {
 			expect(dz0?.start).to.be.greaterThan(0);
 			expect(dz0?.end).to.be.lessThan(100);
 
-			assert.deepEqual(dz1, dz0, 'chart1 matches chart0');
-			assert.deepEqual(dz2, dz0, 'chart2 matches chart0');
+			for (const [name, zoom] of [
+				['chart1', dz1],
+				['chart2', dz2]
+			] as const) {
+				expect(zoom?.start, `${name} start`).to.be.closeTo(
+					dz0!.start,
+					1e-9
+				);
+				expect(zoom?.end, `${name} end`).to.be.closeTo(
+					dz0!.end,
+					1e-9
+				);
+			}
 		});
 	});
 
 	it('Should zoom in after click Zoom In button footer', () => {
-		const testStore = {...store};
-
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('timeline-diagram').should('exist');
 
 		triggerZoomInFromFooter(2);
 
@@ -384,16 +571,10 @@ describe('Timeline', () => {
 	});
 
 	it('Should zoom out to full range when Reset Zoom button is clicked', () => {
-		const testStore = {...store};
-
 		cy.mount(<TestComponent />, testStore);
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('timeline-diagram').should('exist');
 		triggerZoomInFromFooter(4);
 
 		// Now click Reset Zoom button
@@ -404,22 +585,19 @@ describe('Timeline', () => {
 			'timeline-diagram:footer:zoom-buttons:zoom-reset'
 		).click();
 
-		cy.wait(500);
-
 		// Verify full range is restored
-		cy.dataTest('timeline-diagram')
-			.invoke('attr', DATA_TEST_S)
-			.then(start => {
-				expect(Number(start)).to.be.eq(0);
-			});
+		cy.dataTest('timeline-diagram').should(
+			'have.attr',
+			DATA_TEST_S,
+			'0'
+		);
+		cy.dataTest('timeline-diagram').should(
+			'have.attr',
+			DATA_TEST_E,
+			'100'
+		);
 
-		cy.dataTest('timeline-diagram')
-			.invoke('attr', DATA_TEST_E)
-			.then(end => {
-				expect(Number(end)).to.be.eq(100);
-			});
-
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const instMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -449,15 +627,9 @@ describe('Timeline', () => {
 	});
 
 	it('Should zoom out to full range on Zoom Out button from footer', () => {
-		const testStore = {...store};
-
 		cy.mount(<TestComponent />, testStore);
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('timeline-diagram').should('exist');
 
 		// Zoom in one time
 		triggerZoomInFromFooter(1);
@@ -470,188 +642,115 @@ describe('Timeline', () => {
 			'timeline-diagram:footer:zoom-buttons:zoom-out'
 		).click();
 
-		cy.wait(100);
-
 		// Verify full range is restored
 		cy.dataTest('timeline-diagram')
 			.invoke('attr', DATA_TEST_S)
-			.then(start => {
+			.should(start => {
 				expect(Number(start)).to.be.eq(0);
 			});
 
 		cy.dataTest('timeline-diagram')
 			.invoke('attr', DATA_TEST_E)
-			.then(end => {
+			.should(end => {
 				expect(Number(end)).to.be.eq(100);
 			});
 	});
 
-	it('Should open options menu then close it via ESC', () => {
-		const testStore = {...store};
-
-		cy.mount(<TestComponent />, testStore);
-
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-
-		// Open the options menu on the first item
-		cy.dataTest('event-sources:item:0').within(() => {
-			cy.dataTest('event-sources:options-menu:button')
-				.should('exist')
-				.click();
-			cy.dataTest('event-sources:options-menu:panel').should('exist');
-
-			// Trigger Escape on the menu container to close
-			cy.dataTest('event-sources:options-menu').trigger('keydown', {
-				key: 'Escape',
-				code: 'Escape',
-				keyCode: 27,
-				which: 27,
-				bubbles: true
-			});
-			cy.dataTest('event-sources:options-menu:panel').should(
-				'not.exist'
-			);
-
-			// Open again, then click outside to close
-			cy.dataTest('event-sources:options-menu:button').click();
-			cy.dataTest('event-sources:options-menu:panel').should('exist');
-
-			// Focus the container so blur is detected, then click outside
-			cy.dataTest('event-sources:options-menu').then($el => {
-				$el[0].focus();
-			});
-			cy.dataTest('event-sources:options-menu:button').click();
-			cy.dataTest('event-sources:options-menu:panel').should(
-				'not.exist'
-			);
-		});
-	});
-
-	it('Should open options menu on first item and select "Move to bottom", then close panel and check', () => {
-		const testStore = {...store};
-
-		cy.mount(<TestComponent />, testStore);
-
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-
-		cy.dataTest('event-sources:item:0').within(() => {
-			cy.dataTest('event-sources:item:name')
-				.should('exist')
-				.should('have.text', 'Event Source Alias 1');
-		});
-
-		// Open the options menu on the first item, then click the last option (Move to bottom)
-		cy.dataTest('event-sources:item:0').within(() => {
-			cy.dataTest('event-sources:options-menu:button')
-				.should('exist')
-				.click();
-			cy.dataTest('event-sources:options-menu:panel').should('exist');
-
-			cy.dataTest('event-sources:options-menu:item:bottom')
-				.should('exist')
-				.click();
-
-			// Panel should be closed after selection
-			cy.dataTest('event-sources:options-menu:panel').should(
-				'not.exist'
-			);
-		});
-
-		// Assert the item with the same label moved to the last position
-		cy.dataTest('event-sources:container')
-			.dataTest('event-sources:item:name')
-			.last()
-			.should('have.text', 'Event Source Alias 1');
-	});
-
-	it('Should update diagram when list is reordered via options menu', () => {
-		const testStore = {...store};
-
-		cy.mount(<TestComponent />, testStore);
-
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-
-		// Assert initial diagram row order
-		const initialOrder = [ROW1_TEST_ID, ROW2_TEST_ID, ROW3_TEST_ID];
-		cy.get(`[data-test^='${DIAGRAM_CHART_ROW_ID}:']`).then(
-			rowsElem => {
-				const order = Array.from(rowsElem, el =>
-					el.getAttribute('data-test')
-				);
-				expect(order).to.deep.equal(initialOrder);
-			}
-		);
-
-		// Open options menu on the second item and choose "Move up"
-		cy.dataTest('event-sources:item:1').within(() => {
-			cy.dataTest('event-sources:options-menu:button').click();
-			cy.dataTest('event-sources:options-menu:panel').should('exist');
-			cy.dataTest('event-sources:options-menu:item:up').click();
-			cy.dataTest('event-sources:options-menu:panel').should(
-				'not.exist'
-			);
-		});
-
-		// Assert list order changed accordingly
-		cy.dataTest('event-sources:container')
-			.dataTest('event-sources:item:name')
-			.then($names => {
-				const labels = Array.from($names, n => n.textContent?.trim());
-				expect(labels).to.deep.equal([
-					'Event Source Alias 2',
-					'Event Source Alias 1',
-					'Event Source Alias 3'
-				]);
-			});
-
-		// Assert diagram rows reflect the same order
-		const afterOrder = [ROW2_TEST_ID, ROW1_TEST_ID, ROW3_TEST_ID];
-		cy.get(`[data-test^='${DIAGRAM_CHART_ROW_ID}:']`).then(
-			rowsElem => {
-				const order = Array.from(rowsElem, el =>
-					el.getAttribute('data-test')
-				);
-				expect(order).to.deep.equal(afterOrder);
-			}
-		);
-	});
-
-	it('Should keep tick value empty when dataZoom spans full range', () => {
-		const testStore = {...store};
-
-		cy.mount(<TestComponent />, testStore);
-
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('event-sources:container').should('exist', {
-			timeout: 10000
-		});
-
-		cy.dataTest('event-source-list:empty-block-item')
-			.invoke('text')
-			.then(textContent => {
-				expect(textContent.trim()).to.eq('');
-			});
-	});
-
-	it('Should format xticks labels within the timestamp range', () => {
-		const testStore = {...store};
-
+	it('should normalize the mocked event source index through the Cypress service', () => {
 		cy.mount(<TestComponent />, testStore);
 
 		cy.dataTest('app-content:loading').should('not.exist');
-		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist');
+		cy.then(() => {
+			expect(
+				testStore.getState().eventSourcesReducer.eventSourceIndex
+			).to.deep.equal([
+				{
+					type: 'leaf',
+					id: 'Event Source Alias 1-0',
+					sourceName: 'Event Source Alias 1'
+				},
+				{
+					type: 'leaf',
+					id: 'Event Source Alias 2-1',
+					sourceName: 'Event Source Alias 2'
+				},
+				{
+					type: 'leaf',
+					id: 'Event Source Alias 3-2',
+					sourceName: 'Event Source Alias 3'
+				}
+			]);
+		});
+	});
 
+	it('should render event sources in the mocked event source index order', () => {
+		cy.mount(<TestComponent />, testStore);
+
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('event-sources:container')
+			.dataTest('event-sources:item:name')
+			.then(sourceNames => {
+				expect(
+					Array.from(sourceNames, sourceName =>
+						sourceName.textContent?.trim()
+					)
+				).to.deep.equal(TIMESTAMPS.eventSourceIndex);
+			});
+	});
+
+	it('should keep an active measurement after reordering event sources', () => {
+		cy.mount(<TestComponent />, testStore);
+
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('top-bar-button:Measure').click();
+		cy.dataTest('timeline-diagram:measurement-overlay').should(
+			'exist'
+		);
+		cy.dataTest(ROW1_TEST_ID).click('center', {force: true});
+		cy.dataTest('timeline-diagram:measurement-label:start').should(
+			'exist'
+		);
+
+		cy.dataTest('event-sources:item:0').within(() => {
+			cy.dataTest('event-sources:options-menu:button').click();
+			cy.dataTest('event-sources:options-menu:item:bottom').click();
+		});
+
+		cy.dataTest('timeline-diagram:measurement-label:start').should(
+			'exist'
+		);
+		cy.dataTest(ROW1_TEST_ID).should(
+			'have.attr',
+			'data-row-index',
+			'2'
+		);
+		cy.then(() => {
+			expect(
+				testStore.getState().timelineReducer.measurePhase
+			).to.equal(MEASURE_PHASE.MEASURING);
+		});
+	});
+
+	it('Should keep tick value empty when dataZoom spans full range', () => {
+		cy.mount(<TestComponent />, testStore);
+
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('event-sources:container').should('exist');
+
+		cy.dataTest('event-source-list:time-reference')
+			.invoke('text')
+			.then(textContent => {
+				expect(textContent.trim()).to.eq('0s');
+			});
+	});
+
+	it('Should format time axis labels within the timestamp range', () => {
+		cy.mount(<TestComponent />, testStore);
+
+		cy.dataTest('app-content:loading').should('not.exist');
 		waitForTimelineCharts();
 
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const chartInstanceMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -672,48 +771,66 @@ describe('Timeline', () => {
 				throw new Error();
 			}
 
-			const minValue = Number(xAxis?.min);
-			const maxValue = Number(xAxis?.max);
-
-			assert.isTrue(
-				Number.isFinite(minValue),
-				'minValue should be finite'
-			);
-			assert.isTrue(
-				Number.isFinite(maxValue),
-				'maxValue should be finite'
-			);
-
-			const insideValue = minValue + (maxValue - minValue) / 4;
-
-			expect(formatter(minValue - 0.5)).to.eq('');
-			const startLabel = formatter(minValue);
-			expect(startLabel.length).to.be.greaterThan(0);
-			expect(startLabel.endsWith('s')).to.equal(true);
-
-			const innerLabel = formatter(insideValue);
-			expect(innerLabel.length).to.be.greaterThan(0);
-			expect(innerLabel.endsWith('s')).to.equal(true);
-
-			expect(formatter(maxValue + 0.5)).to.eq('');
+			expect(formatter(-0.4)).to.eq('');
+			expect(formatter(0.1)).to.eq('0.1s');
+			expect(
+				formatter(5).replace(/^\{edge[01]\|([^}]*)\}$/, '$1')
+			).to.eq('5s');
+			expect(formatter(20.5)).to.eq('');
 		});
 	});
 
-	it('Should compute timestampRange from min/max timestamps of all event sources', () => {
-		const testStore = {...store};
+	it('Should show the event message in the timestamp tooltip', () => {
+		cy.mount(<TestComponent />, testStore);
 
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest(ROW1_TEST_ID).should('exist');
+		waitForTimelineCharts();
+
+		cy.window().then(win => {
+			const chartInstanceMap = (win as any).__timelineEcharts as Map<
+				string,
+				any
+			>;
+			const chart = chartInstanceMap.get(
+				chartKeyFromTestId(ROW1_TEST_ID)
+			);
+
+			assert.exists(chart, 'first timestamp chart instance');
+
+			const [x, y] = chart.convertToPixel(
+				{xAxisIndex: 0, yAxisIndex: 0},
+				[0.6, 0]
+			) as [number, number];
+
+			const chartDom = chart.getDom() as HTMLElement;
+			const canvas = chartDom.querySelector('canvas');
+			const rect = chartDom.getBoundingClientRect();
+
+			assert.exists(canvas, 'timestamp chart canvas');
+
+			canvas!.dispatchEvent(
+				new win.MouseEvent('mousemove', {
+					bubbles: true,
+					clientX: rect.left + x,
+					clientY: rect.top + y
+				})
+			);
+		});
+
+		cy.dataTest('timeline-diagram:timestamp-tooltip')
+			.should('be.visible')
+			.and('contain.text', 'Event 1');
+	});
+
+	it('Should compute timestampRange from min/max timestamps of all event sources', () => {
 		cy.mount(<TestComponent />, testStore);
 
 		waitForTimelineCharts();
 
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('timeline-diagram:xticks-chart-row').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
 
-		cy.window().then(win => {
+		cy.window().should(win => {
 			const chartInstanceMap = (win as any).__timelineEcharts as Map<
 				string,
 				any
@@ -729,30 +846,30 @@ describe('Timeline', () => {
 	});
 
 	it('Should display the correct tick value after repeatedly zoom in using the button', () => {
-		const testStore = {...store};
-
 		cy.mount(<TestComponent />, testStore);
-		cy.dataTest('app-content:loading').should('not.exist', {
-			timeout: 10000
-		});
-		cy.dataTest('event-sources:container').should('exist', {
-			timeout: 10000
-		});
+		cy.dataTest('app-content:loading').should('not.exist');
+		cy.dataTest('event-sources:container').should('exist');
+		waitForTimelineCharts();
 
 		triggerZoomInFromFooter(14);
 
-		expectTickValue(`9${UNITS_LABEL.s}`);
+		cy.dataTest('event-source-list:time-reference').should(
+			'have.text',
+			`9s`
+		);
 
 		triggerZoomInFromFooter(40);
-		cy.wait(200);
 
-		expectTickValue(`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms}`);
+		cy.dataTest('event-source-list:time-reference').should(
+			'have.text',
+			`10s 49ms`
+		);
 
 		triggerZoomInFromFooter(25);
-		cy.wait(200);
 
-		expectTickValue(
-			`10${UNITS_LABEL.s} 49${UNITS_LABEL.ms} 999${UNITS_LABEL.us}`
+		cy.dataTest('event-source-list:time-reference').should(
+			'have.text',
+			`10s 49ms 999µs`
 		);
 	});
 });

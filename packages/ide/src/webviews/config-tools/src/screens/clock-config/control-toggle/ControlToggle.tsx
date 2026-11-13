@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,11 @@ export default function ControlToggle({
 
 	return (
 		<div
-			className={`${styles.toggleContainer} ${isInTitle ? styles.titleToggle : styles.bottomMargin} ${isFirstGroupItem ? styles.topMargin : ''} ${isDisabled ? styles.disabled : ''}`}
+			className={`${styles.toggleContainer} ${
+				isInTitle ? styles.titleToggle : styles.bottomMargin
+			} ${isFirstGroupItem ? styles.topMargin : ''} ${
+				isDisabled ? styles.disabled : ''
+			}`}
 			data-test={`${controlId}-${activeClockNodeDetails?.Name}`}
 		>
 			<label data-test={`side-${label}`}>{label}</label>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,39 @@
 @use '#layout' as layout;
 
 .container {
-	display: flex;
+	display: grid;
+	// The selector scales with the available width so the 262px details panel
+	// can retain the toggle, configure, and conflict columns.
+	grid-template-columns: minmax(0, 1fr) clamp(
+			44px,
+			30%,
+			120px
+		) 30px 22px 16px;
 	align-items: center;
-	gap: 8px;
+	column-gap: 8px;
 	color: colors.$default-foreground;
 	height: 16px;
 	padding: 8px 0;
 	border-top: 1px solid colors.$default-border;
 }
 
+.container > :first-child {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+
+	& > * {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
 .dropDownPin {
+	width: 100%;
+	min-width: 0;
 	--input-min-width: 44px;
 	--design-unit: 4;
 	--font-family: #{fonts.$default-font-family};
@@ -79,8 +102,10 @@
 	}
 }
 
-.divider {
-	flex: 1;
+.pinLabel {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .configButtonContainer {
 	display: flex;
@@ -134,4 +159,9 @@
 		justify-content: space-around;
 		align-items: center;
 	}
+}
+
+.hiddenToggle {
+	visibility: hidden;
+	pointer-events: none;
 }

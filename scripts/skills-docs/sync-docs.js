@@ -144,7 +144,7 @@ if (checkOnly) {
 }
 
 // Write changed files.
-for (const { rel, src, destPath } of toWrite) {
+for (const { src, destPath } of toWrite) {
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
   fs.writeFileSync(destPath, src);
 }

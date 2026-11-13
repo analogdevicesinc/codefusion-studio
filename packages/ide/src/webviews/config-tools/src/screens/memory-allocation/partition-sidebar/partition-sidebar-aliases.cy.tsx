@@ -159,7 +159,7 @@ describe('Partition Sidebar Aliases', () => {
 				'software-start-address-CM33-flash0-0x11000000'
 			).should('exist');
 		});
-		it('should sync software addresses with physical address', () => {
+		it('should update software addresses only after the physical address loses focus', () => {
 			cy.mount(
 				<PartitionSidebar
 					isFormTouched={false}
@@ -190,7 +190,87 @@ describe('Partition Sidebar Aliases', () => {
 
 			cy.get(
 				'[data-test="software-start-address-CM33-flash0-0x11000000"] input'
+			).should('have.value', '11000000');
+
+			cy.get('[data-test="start-address"] input').blur();
+
+			cy.get(
+				'[data-test="software-start-address-CM33-flash0-0x11000000"] input'
 			).should('have.value', '11000004');
+		});
+
+		it('should update the physical address only after an alias address loses focus', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			cy.wrap(
+				reduxStore.dispatch(
+					updateActivePartition(createMockPartition())
+				)
+			);
+
+			cy.dataTest('assigned-cores-multiselect').get('button').click();
+			cy.dataTest('multiselect-option-CM33-S')
+				.should('be.visible')
+				.click();
+
+			const aliasInput =
+				'[data-test="software-start-address-CM33-flash0-0x11000000"] input';
+
+			cy.get('[data-test="start-address"] input')
+				.invoke('val')
+				.then(initialPhysicalAddress => {
+					cy.get(aliasInput).clear().type('11000004');
+					cy.get('[data-test="start-address"] input').should(
+						'have.value',
+						initialPhysicalAddress
+					);
+
+					cy.get(aliasInput).blur();
+					cy.get('[data-test="start-address"] input').should(
+						'have.value',
+						'1000004'
+					);
+				});
+		});
+
+		it('should clear the physical address when an alias address is cleared', () => {
+			cy.mount(
+				<PartitionSidebar
+					isFormTouched={false}
+					onClose={cy.stub}
+					onFormTouched={cy.stub}
+				/>,
+				reduxStore
+			);
+
+			cy.wrap(
+				reduxStore.dispatch(
+					updateActivePartition(createMockPartition())
+				)
+			);
+
+			cy.dataTest('assigned-cores-multiselect').get('button').click();
+			cy.dataTest('multiselect-option-CM33-S')
+				.should('be.visible')
+				.click();
+
+			cy.get(
+				'[data-test="software-start-address-CM33-flash0-0x11000000"] input'
+			)
+				.clear()
+				.blur();
+
+			cy.get('[data-test="start-address"] input').should(
+				'have.value',
+				''
+			);
 		});
 	});
 });

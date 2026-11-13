@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,9 @@ function CfsTooltip({
 		const offset = 16;
 
 		if (tooltipBodyRight > viewportWidth) {
-			tooltipBody.style.left = `${viewportWidth - tooltipBodyRight - offset}px`;
+			tooltipBody.style.left = `${
+				viewportWidth - tooltipBodyRight - offset
+			}px`;
 		}
 	}, []);
 
@@ -77,7 +79,9 @@ function CfsTooltip({
 		<div
 			ref={tooltipContainerRef}
 			id={`tooltip-${id}`}
-			className={`${styles.tooltipContainer}${classNames ? ` ${classNames}` : ''}`}
+			className={`${styles.tooltipContainer}${
+				classNames ? ` ${classNames}` : ''
+			}`}
 			style={{
 				top: top ?? 'unset',
 				left: left ?? 0,

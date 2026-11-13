@@ -13,11 +13,11 @@
  *
  */
 
-import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsTwoColumnLayout';
 import styles from './mcuboot-config.module.scss';
 import MCUBootConfigSidebar from './mcuboot-config-sidebar/mcuboot-config-sidebar';
 import ApplicationPackageSummary from './application-package-summary/application-package-summary';
-import { Button, WarningIcon } from 'cfs-react-library';
+import {Button, WarningIcon} from 'cfs-react-library';
 import {
 	setActiveScreen,
 	setActiveSettingsChild,
@@ -32,7 +32,7 @@ import {
 } from '../../../../common/contexts/LocaleContext';
 
 function MCUBootConfig() {
-		const dispatch = useAppDispatch();
+	const dispatch = useAppDispatch();
 	const mcubootEnableState = useMcubootEnableState();
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.mcubootConfig;
@@ -49,7 +49,9 @@ function MCUBootConfig() {
 
 	return (
 		<div
-			className={`${styles.mcubootConfigContainer} ${showWarningBanner ? styles.withBanner : ''}`}
+			className={`${styles.mcubootConfigContainer} ${
+				showWarningBanner ? styles.withBanner : ''
+			}`}
 			data-test='mcuboot-config:container'
 		>
 			<CfsTwoColumnLayout>

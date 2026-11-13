@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,9 @@ export default function PartitionProjectViewCard({
 }: PartitionProjectViewCardCardProps) {
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.memory?.partition;
+	const badges = useLocaleContext()?.badges as
+		| Record<string, string>
+		| undefined;
 	const shouldShowPrimary = useIsPrimaryMultipleProjects(
 		project?.IsPrimary ?? false
 	);
@@ -77,17 +80,23 @@ export default function PartitionProjectViewCard({
 						<h3>{project.Name}</h3>
 						<div className={styles.badges}>
 							{shouldShowPrimary ? (
-								<Badge appearance='secondary'>{PRIMARY}</Badge>
+								<Badge appearance='secondary'>
+									{badges?.primary ?? PRIMARY}
+								</Badge>
 							) : null}
 							{project.Secure && (
-								<Badge appearance='secondary'>{SECURE}</Badge>
+								<Badge appearance='secondary'>
+									{badges?.secure ?? SECURE}
+								</Badge>
 							)}
 							{project.Secure === false && (
-								<Badge appearance='secondary'>{NON_SECURE}</Badge>
+								<Badge appearance='secondary'>
+									{badges?.nonSecure ?? NON_SECURE}
+								</Badge>
 							)}
 							{project.ExternallyManaged && (
 								<Badge appearance='secondary'>
-									{EXTERNALLY_MANAGED}
+									{badges?.externallyManaged ?? EXTERNALLY_MANAGED}
 								</Badge>
 							)}
 						</div>
@@ -108,7 +117,8 @@ export default function PartitionProjectViewCard({
 					</div>
 					{partitionData.length === 0 && (
 						<span className={styles.noPartition}>
-							No memory partitions allocated yet.
+							{i10n?.num_partitions?.zero ??
+								'No memory partitions allocated yet.'}
 						</span>
 					)}
 				</div>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import type {TSavedTableOptions} from '../../../../common/types/memory-layout';
 import styles from './TopSymbolsTable.module.scss';
 import {getColumns} from '../../../../utils/table-utils';
 import {capitalizeWord} from '@common/utils/string';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {formatSize} from '../../../../utils/stats-utils';
 import ContextMenuPanel from '../../../../components/ContextMenu/Panel/ContextMenuPanel';
 import SectionNameWithCircle from '../../../../components/SectionNameWithCircle/SectionNameWithCircle';
@@ -52,6 +53,9 @@ export default function TopSymbolsTable({
 	onUpdateOptions
 }: TopSymbolsTableProps) {
 	const columns: string[] = getColumns(data);
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 	const [contextMenuVisible, setContextMenuVisible] = useState(false);
 	const [contextMenuPosition, setContextMenuPosition] = useState<{
 		x: number;
@@ -73,33 +77,42 @@ export default function TopSymbolsTable({
 		[data, sortBy]
 	);
 
-	const handleOptionClick = (elem: HTMLElement) => {
+	const handleOptionClick = (optionId: number) => {
 		setContextMenuVisible(false);
-		// Option 2
-		const isOptionFormat =
-			elem?.innerText?.includes('Show column as');
-		const isOptionGoToSourceCode =
-			elem?.innerText?.includes(GO_TO_SOURCE_CODE);
+
 		const currentOption = savedOptions?.stats?.largestSym;
 
-		if (isOptionFormat && currentOption && clickedCol === 'size') {
-			const clonedSavedOptions = JSON.parse(
-				JSON.stringify(savedOptions)
-			);
-			clonedSavedOptions.stats.largestSym =
-				currentOption === 'dec' ? 'hex' : 'dec';
+		switch (optionId) {
+			case 0:
+				// Go to symbol source code
+				if (clickedSymbol?.path) {
+					const pos = extractPositionFromPath(
+						(clickedSymbol.path as string) || ''
+					);
+					void goToSourceCodeCallback(
+						formatPath((clickedSymbol.path as string) || ''),
+						pos as number[]
+					);
+				}
 
-			onUpdateOptions(clonedSavedOptions as TSavedTableOptions);
-		}
+				break;
 
-		if (isOptionGoToSourceCode) {
-			const pos = extractPositionFromPath(
-				(clickedSymbol?.path as string) || ''
-			);
-			void goToSourceCodeCallback(
-				formatPath((clickedSymbol?.path as string) || ''),
-				pos as number[]
-			);
+			case 1:
+				// Toggle column format
+				if (currentOption && clickedCol === 'size') {
+					const clonedSavedOptions = JSON.parse(
+						JSON.stringify(savedOptions)
+					);
+					clonedSavedOptions.stats.largestSym =
+						currentOption === 'dec' ? 'hex' : 'dec';
+
+					onUpdateOptions(clonedSavedOptions as TSavedTableOptions);
+				}
+
+				break;
+
+			default:
+				break;
 		}
 	};
 
@@ -127,8 +140,10 @@ export default function TopSymbolsTable({
 				id: 1,
 				label:
 					savedOptions.stats.largestSym === 'dec'
-						? 'Show column as hexadecimal'
-						: 'Show column as decimal',
+						? (commonL10n?.showColumnAsHexadecimal ??
+							'Show column as hexadecimal')
+						: (commonL10n?.showColumnAsDecimal ??
+							'Show column as decimal'),
 				show: true
 			};
 
@@ -153,13 +168,15 @@ export default function TopSymbolsTable({
 
 			if (isPath) {
 				MENU_OPTIONS[0].show = true;
+				MENU_OPTIONS[0].label =
+					commonL10n?.goToSymbolSourceCode ?? GO_TO_SOURCE_CODE;
 				setContextMenuVisible(true);
 				setClickedSymbol(symbol);
 			} else {
 				MENU_OPTIONS[0].show = false;
 			}
 		},
-		[]
+		[commonL10n?.goToSymbolSourceCode]
 	);
 
 	const goToSourceCodeCallback = useCallback(

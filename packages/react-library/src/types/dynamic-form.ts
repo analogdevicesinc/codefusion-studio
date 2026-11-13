@@ -54,6 +54,8 @@ export type TFormControl = {
 	pluginOption?: boolean;
 	/** adds an info icon to the title with a tooltip showing the given text */
 	info?: string;
+	/** Separator used for persisting string list values */
+	persistenceSeparator?: string;
 };
 
 export type TFormControlType =
@@ -62,6 +64,7 @@ export type TFormControlType =
 	| 'textarea'
 	| 'boolean'
 	| 'array'
+	| 'text_list'
 	| (string & Record<never, never>); // For cases where we receive controls that will be added as custom component and we don't know the type
 
 export type TFormData = Record<string, boolean | string | number>;

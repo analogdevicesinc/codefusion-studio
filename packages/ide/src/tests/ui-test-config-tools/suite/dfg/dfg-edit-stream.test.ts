@@ -74,9 +74,7 @@ describe("dfg - edit the stream and verify its persistence", () => {
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   // === Reusable Test Utilities ===
@@ -94,10 +92,7 @@ describe("dfg - edit the stream and verify its persistence", () => {
   };
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   it("Creating the stream and editing the source, destinations, and buffer size and verifying the persistence", async () => {
@@ -301,9 +296,9 @@ describe("dfg - edit the stream and verify its persistence", () => {
     );
     console.log(
       "ESS destination buffer size disabled state:",
-      isDisabledBufferESS.includes("disabled"),
+      (isDisabledBufferESS ?? "").includes("disabled"),
     );
-    expect(isDisabledBufferESS.includes("disabled")).to.be.true;
+    expect((isDisabledBufferESS ?? "").includes("disabled")).to.be.true;
 
     // === And: Enter the new stream description as well ===
     await UIUtils.sendKeysToElements(

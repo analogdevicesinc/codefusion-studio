@@ -13,14 +13,19 @@
  *
  */
 
-import { EventEmitter } from "node:events";
 import {
 	InEndpoint,
 	OutEndpoint,
+	usb,
 	type Device,
 	type Interface
 } from "usb";
-import type { IProfilerDataSource } from "./data-source.js";
+import { ProfilerDataSourceBase } from "./data-source-base.js";
+import {
+	CTF_TRACE_START_TAG,
+	DISABLE_COMMAND,
+	ENABLE_COMMAND
+} from "./tracing-protocol.js";
 
 // Releasing the interface waits for the in-flight transfer cancellation
 // to complete before its callback fires. If the device was physically
@@ -28,32 +33,47 @@ import type { IProfilerDataSource } from "./data-source.js";
 // so close() would hang forever without this bound.
 const RELEASE_TIMEOUT_MS = 1000;
 
+// How long to keep discarding the stream after the stop command while
+// priming.
+const PRIME_DRAIN_MS = 1000;
+
 /**
  * Data source implementation for native USB connections.
  */
-export class UsbDataSource implements IProfilerDataSource {
-	private readonly emitter = new EventEmitter();
-
+export class UsbDataSource extends ProfilerDataSourceBase {
 	private usbInterface: Interface | undefined;
+
+	/** While true, device data is discarded rather than emitted. */
+	private priming = false;
+
+	/**
+	 * Handler for node-usb hotplug `detach` events. Emits a disconnect when
+	 * the detached device is the one this source is bound to. Devices are
+	 * matched by bus number and address rather than reference, since the
+	 * `Device` delivered with a `detach` event is not guaranteed to be the
+	 * same instance passed to the constructor.
+	 */
+	private readonly onDetach = (device: Device): void => {
+		if (
+			device.busNumber === this.device.busNumber &&
+			device.deviceAddress === this.device.deviceAddress
+		) {
+			this.emitDisconnect();
+		}
+	};
 
 	/**
 	 * @param device The USB device to capture from. The device is expected to
 	 * be closed. Its lifecycle will be managed by {@link open} and {@link close}.
 	 */
-	constructor(private device: Device) {}
+	constructor(private device: Device) {
+		super();
+	}
 
 	get isOpen(): boolean {
 		// node-usb uses the presence of `interfaces` to signal that the
 		// device is open.
 		return this.device.interfaces !== undefined;
-	}
-
-	onData(listener: (data: Buffer) => void): void {
-		this.emitter.on("data", listener);
-	}
-
-	onError(listener: (error: Error) => void): void {
-		this.emitter.on("error", listener);
 	}
 
 	open(): Promise<void> {
@@ -82,12 +102,17 @@ export class UsbDataSource implements IProfilerDataSource {
 			}
 
 			inEndpoint.on("data", (data: Buffer) => {
-				this.emitter.emit("data", data);
+				// Drop data before the start tag.
+				if (!this.priming) {
+					this.emitData(data);
+				}
 			});
 			inEndpoint.on("error", (error: Error) => {
 				this.emitError(error);
 			});
 			inEndpoint.startPoll();
+
+			usb.on("detach", this.onDetach);
 
 			return Promise.resolve();
 		} catch (error) {
@@ -107,6 +132,8 @@ export class UsbDataSource implements IProfilerDataSource {
 		if (!this.isOpen) {
 			return;
 		}
+
+		usb.removeListener("detach", this.onDetach);
 
 		const usbInterface = this.usbInterface;
 
@@ -148,6 +175,26 @@ export class UsbDataSource implements IProfilerDataSource {
 		}
 	}
 
+	/**
+	 * Restarts the device stream on a packet boundary and emits the CTF
+	 * start tag ahead of it.
+	 */
+	override async prime(): Promise<void> {
+		this.priming = true;
+		try {
+			await this.write(DISABLE_COMMAND);
+			await new Promise((resolve) =>
+				setTimeout(resolve, PRIME_DRAIN_MS)
+			);
+
+			this.emitData(CTF_TRACE_START_TAG);
+		} finally {
+			this.priming = false;
+		}
+
+		await this.write(ENABLE_COMMAND);
+	}
+
 	write(data: Buffer | string): Promise<number> {
 		const usbInterface = this.usbInterface;
 		if (!this.isOpen || !usbInterface) {
@@ -176,26 +223,5 @@ export class UsbDataSource implements IProfilerDataSource {
 				}
 			});
 		});
-	}
-
-	async dispose(): Promise<void> {
-		try {
-			await this.close();
-		} catch (error) {
-			console.debug("Error during USB data source disposal:", error);
-		} finally {
-			this.emitter.removeAllListeners();
-		}
-	}
-
-	/**
-	 * Emits an error event, guarding against Node's default behaviour of
-	 * throwing when an `"error"` event has no listeners.
-	 * @param error - The error to emit.
-	 */
-	private emitError(error: Error): void {
-		if (this.emitter.listenerCount("error") > 0) {
-			this.emitter.emit("error", error);
-		}
 	}
 }

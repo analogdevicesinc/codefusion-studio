@@ -13,7 +13,9 @@
  *
  */
 
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -23,7 +25,9 @@ export const pkgDeleteDeps: {
   getPackageManager
 };
 
-export default class CfsPackageDelete extends Command {
+export default class CfsPackageDelete extends BaseCommand<
+  typeof CfsPackageDelete
+> {
   static args = {
     pattern: Args.string({
       name: 'pattern',
@@ -37,9 +41,11 @@ export default class CfsPackageDelete extends Command {
   static description =
     'Delete packages from the local cache. To use a deleted package again, reinstall it using the `cfsutil pkg install` command.';
 
-  async run() {
+  static useResponseEnvelope = true;
+
+  async run(): Promise<{deleted: {name: string; version: string}[]}> {
     const packman = await pkgDeleteDeps.getPackageManager();
-    const {args} = await this.parse(CfsPackageDelete);
+    const {args} = this;
 
     this.log('Deleting packages...');
 
@@ -55,5 +61,7 @@ export default class CfsPackageDelete extends Command {
         this.log(`- ${name}/${version}`);
       }
     }
+
+    return {deleted};
   }
 }

@@ -54,6 +54,7 @@ import { readFileSync } from "node:fs";
 import { CatalogManager } from "cfs-lib";
 import { SoC } from "cfs-ccm-lib";
 import { getCatalogManager } from "../utils/catalog";
+import type { AuthService } from "../services/auth-service";
 
 export interface Message {
   id: string;
@@ -76,9 +77,14 @@ export class HomePagePanel {
    * The HomePagePanel class private constructor.
    * @param panel - A reference to the webview panel
    * @param extensionUri - The URI of the directory containing the extension
+   * @param authService - Provides the myAnalog session for the catalog
    */
 
-  private constructor(panel: WebviewPanel, extensionUri: Uri) {
+  private constructor(
+    panel: WebviewPanel,
+    extensionUri: Uri,
+    private readonly authService: AuthService,
+  ) {
     this._panel = panel;
 
     this.webview = panel.webview;
@@ -108,9 +114,10 @@ export class HomePagePanel {
   /**
    * Renders the current webview panel if it exists otherwise a new webview panel will be created and displayed.
    * @param extensionUri - The URI of the directory containing the extension.
+   * @param authService - Provides the myAnalog session for the catalog.
    */
 
-  public static render(extensionUri: Uri) {
+  public static render(extensionUri: Uri, authService: AuthService) {
     if (HomePagePanel.currentPanel) {
       // If the webview panel already exists reveal it
       HomePagePanel.currentPanel._panel.reveal(ViewColumn.One);
@@ -139,7 +146,11 @@ export class HomePagePanel {
 
       panel.iconPath = HomeTabIcon;
 
-      HomePagePanel.currentPanel = new HomePagePanel(panel, extensionUri);
+      HomePagePanel.currentPanel = new HomePagePanel(
+        panel,
+        extensionUri,
+        authService,
+      );
     }
   }
 
@@ -170,7 +181,7 @@ export class HomePagePanel {
     let socs: SoC[] = [];
 
     try {
-      this._catalogManager ??= await getCatalogManager();
+      this._catalogManager ??= await getCatalogManager(this.authService);
       if (this._catalogManager) {
         await this._catalogManager.loadCatalog();
         socs = await this._catalogManager.socCatalog.getAll();

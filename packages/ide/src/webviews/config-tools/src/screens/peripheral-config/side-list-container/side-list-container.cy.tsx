@@ -14,10 +14,15 @@
  */
 
 import SideListContainer from './side-list-container';
-import type {Soc} from '@common/types/soc';
+import type {
+	FormattedPeripheral,
+	FormattedPeripheralSignal,
+	Soc
+} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import type {CfsConfig} from 'cfs-types';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
+import PeripheralNavigation from '../peripheral-navigation/PeripheralNavigation';
 
 const mock = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -100,27 +105,82 @@ const mockedSingleCoreConfigDict = {
 	]
 } as unknown as CfsConfig;
 
+const makePeripheral = (name: string, group?: string) =>
+	({
+		name,
+		group,
+		assignable: true,
+		signals: []
+	}) as unknown as FormattedPeripheral<FormattedPeripheralSignal>;
+
 describe('Peripheral config side container', () => {
-	it('should render peripheral groups in alphabetical order', () => {
+	it('should order groups and standalone peripherals by name and group members numerically', () => {
+		const peripherals = [
+			makePeripheral('PT10', 'Alpha Group'),
+			makePeripheral('Standalone'),
+			makePeripheral('PT2', 'Alpha Group'),
+			makePeripheral('First Member', 'Zulu Group')
+		];
+
 		const reduxStore = configurePreloadedStore(
 			mock,
 			mockedConfigDict
 		);
+		cy.mount(
+			<PeripheralNavigation peripherals={peripherals} />,
+			reduxStore
+		);
 
-		cy.mount(<SideListContainer />, reduxStore);
-
-		cy.get('[data-test^="accordion:"]').then($items => {
-			const titles = [...$items].map(item => {
-				const titleElement = item.querySelector('.styles-title');
-				const titleText = titleElement?.textContent?.trim() ?? '';
-
-				return titleText;
+		const expectBefore = (first: string, second: string) => {
+			cy.get(first).then($first => {
+				cy.get(second).then($second => {
+					expect(
+						$first[0].compareDocumentPosition($second[0]) &
+							Node.DOCUMENT_POSITION_FOLLOWING
+					).to.equal(Node.DOCUMENT_POSITION_FOLLOWING);
+				});
 			});
+		};
 
-			const sortedTitles = [...titles].sort((a, b) =>
-				a.localeCompare(b)
-			);
-			expect(titles).to.deep.equal(sortedTitles);
+		expectBefore(
+			'[id="peripheral-Alpha Group"]',
+			'[data-test="peripheral-block-Standalone"]'
+		);
+		expectBefore(
+			'[data-test="peripheral-block-Standalone"]',
+			'[id="peripheral-Zulu Group"]'
+		);
+
+		cy.get('[id="peripheral-Alpha Group"]').click();
+
+		expectBefore(
+			'[data-test="peripheral-block-PT2"]',
+			'[data-test="peripheral-block-PT10"]'
+		);
+	});
+
+	it('should sort standalone peripherals numerically', () => {
+		const peripherals = [
+			makePeripheral('TMR10'),
+			makePeripheral('TMR2')
+		];
+
+		const reduxStore = configurePreloadedStore(
+			mock,
+			mockedConfigDict
+		);
+		cy.mount(
+			<PeripheralNavigation peripherals={peripherals} />,
+			reduxStore
+		);
+
+		cy.get('[data-test="peripheral-block-TMR2"]').then($tmr2 => {
+			cy.get('[data-test="peripheral-block-TMR10"]').then($tmr10 => {
+				expect(
+					$tmr2[0].compareDocumentPosition($tmr10[0]) &
+						Node.DOCUMENT_POSITION_FOLLOWING
+				).to.equal(Node.DOCUMENT_POSITION_FOLLOWING);
+			});
 		});
 	});
 

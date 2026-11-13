@@ -15,9 +15,12 @@
 
 import alasql, { Database } from "alasql";
 import type {
+  CfsAiProfilingLayerPerformance,
+  CfsAiRuntimeLayerPerformance,
+} from "cfs-types";
+import type {
   FilterdLayerData,
-  AIModelProfileReport,
-  LayerPerformanceEntry,
+  LayerReport,
 } from "../../types/report-view-types";
 import { getRealColumnName } from "@constants/report-viewer-db-columns";
 
@@ -33,6 +36,29 @@ const notAllowdSqlPhrases = [
   "TRUNCATE",
 ];
 
+const profileCols: Record<string, string> = {
+  layer_idx: "number",
+  layer_name: "string",
+  cycles: "number",
+  latency_ms: "number",
+  energy_uj: "number",
+  macs: "number",
+  memory_kb: "number",
+};
+
+const runtimeProfileCols: Record<string, string> = {
+  layer_idx: "number",
+  avg_latency_ms: "number",
+  min_latency_ms: "number",
+  max_latency_ms: "number",
+  total_latency_ms: "number",
+  latency_percent: "number",
+  invocations: "number",
+  memory_kb: "number",
+  arena_used_bytes: "number",
+  is_accelerated: "boolean",
+};
+
 const layerTableName = "layer_performance";
 
 function replaceAliasesWithRealNames(query: string): string {
@@ -46,26 +72,38 @@ function replaceAliasesWithRealNames(query: string): string {
   return result;
 }
 
-export function createLayerDataBase(
-  report: AIModelProfileReport,
-): AlasqlDatabase {
+const runtimeExcludedCols = new Set<string>([
+  "layer_name",
+  "operator_type",
+  "subgraph_idx",
+  "cycles",
+  "latency_ms",
+  "macs",
+]);
+
+export function createLayerDataBase(report: LayerReport): AlasqlDatabase {
   try {
+    const isRuntime = report.type === "runtime-profile";
+    const cols = isRuntime ? runtimeProfileCols : profileCols;
+
     const db = new alasql.Database();
     db.exec(
-      `CREATE TABLE ${layerTableName} (
-        layer_idx number,
-        layer_name string,
-        operator_type string,
-        cycles number,
-        latency_ms number,
-        energy_uj number,
-        is_accelerated boolean,
-        macs number,
-        memory_kb number)`,
+      `CREATE TABLE ${layerTableName} (${Object.entries(cols)
+        .map(([col, type]) => `${col} ${type}`)
+        .join(",\n")})`,
     );
-    db.exec(`SELECT * INTO ${layerTableName} FROM ?`, [
-      report.layer_performance,
-    ]);
+
+    const rows = isRuntime
+      ? report.layer_performance.map((row) =>
+          Object.fromEntries(
+            Object.entries(row).filter(
+              ([col]) => !runtimeExcludedCols.has(col),
+            ),
+          ),
+        )
+      : (report.layer_performance ?? []);
+
+    db.exec(`SELECT * INTO ${layerTableName} FROM ?`, [rows]);
     return db;
   } catch (error) {
     throw new Error(`Failed to create layer data database: ${error}`);
@@ -75,6 +113,7 @@ export function createLayerDataBase(
 export function handleLayerDataQuery(
   query: string,
   db: AlasqlDatabase,
+  isRuntime: boolean,
 ): FilterdLayerData {
   query = query.trim();
   if (!query) {
@@ -95,10 +134,27 @@ export function handleLayerDataQuery(
     throw new Error("Query contains not allowed SQL phrases.");
   }
 
-  const data = db.exec(insetFrom(replaceAliasesWithRealNames(query)));
+  const result = db.exec(insetFrom(replaceAliasesWithRealNames(query)));
+  const data: Partial<CfsAiProfilingLayerPerformance>[] = Array.isArray(result)
+    ? (result as Partial<CfsAiProfilingLayerPerformance>[])
+    : [];
+
+  if (isRuntime) {
+    return {
+      kind: "runtime-profile",
+      columns: Object.keys(
+        data[0] || {},
+      ) as (keyof CfsAiRuntimeLayerPerformance)[],
+      rows: data as Partial<CfsAiRuntimeLayerPerformance>[],
+    };
+  }
+
   return {
-    columns: Object.keys(data[0] || {}) as (keyof LayerPerformanceEntry)[],
-    rows: data as Partial<LayerPerformanceEntry>[],
+    kind: "profile",
+    columns: Object.keys(
+      data[0] || {},
+    ) as (keyof CfsAiProfilingLayerPerformance)[],
+    rows: data,
   };
 }
 

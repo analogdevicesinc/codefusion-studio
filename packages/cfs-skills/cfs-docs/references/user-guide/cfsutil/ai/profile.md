@@ -1,7 +1,7 @@
 ---
 description: Profile model resource usage on a target SoC and core using cfsutil ai profile.
 author: Analog Devices
-date: 2026-07-10
+date: 2026-10-10
 ---
 
 # Profile
@@ -52,7 +52,7 @@ cfsutil ai profile --soc <soc> --model <path/to/model_file>
 | `--soc` | `-s` | Target SoC. |
 | `--search-path` | `-x` | Additional search path for templates and data models. Can be repeated. |
 | `--ignore-cache` | | Bypass cache and fetch latest remote files. |
-| `--format` | | Output format: `text` (default) or `json`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
 | `--report-file` | | Path to output report file. |
 | `--report-format` | | Report output format: `json` (default) or `text`. |
 

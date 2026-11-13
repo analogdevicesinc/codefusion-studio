@@ -1,7 +1,7 @@
 ---
 description: Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2026-07-15
+date: 2026-08-19
 ---
 
 # System Planner Configuration Tools
@@ -31,6 +31,10 @@ Assign peripherals to cores and configure their functionality. See [Peripheral A
 
 Configures pin multiplexing and function settings. See [Pin Config](./pin-config.md) for details.
 
+### SRU Config
+
+Configures Signal Routing Unit (SRU) connections that route peripheral signals to each other, and to and from external pins. Only available for SHARC-FX processors. See [SRU Config](./sru-config.md) for details.
+
 ### Clock Config
 
 Configures the various clocks and divers. See [Clock Config](./clock-config.md) for details.
@@ -43,9 +47,9 @@ Manage memory allocation and partitioning for different cores. See [Memory Alloc
 
 View and manage register values used by the configuration code. Filter to view modified or default values. See [Registers](registers.md) for details.
 
-### Embedded AI Tools
+### Manage AI Models
 
-Import and configure supported AI models for specific cores. See [Embedded AI Tools](manage-ai-models.md) for details on assigning models and applying engine-specific options before code generation.
+Import and configure supported AI models for specific cores. See [Manage AI Models](manage-ai-models.md) for details on assigning models and applying engine-specific options before code generation.
 
 ### Profiling
 

@@ -45,10 +45,7 @@ export class ScriptManager {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     const workspaceFile = vscode.workspace.workspaceFile;
     let workspaceRoot: string | undefined;
-    if (
-      workspaceFile &&
-      workspaceFile.scheme === "file"
-    ) {
+    if (workspaceFile && workspaceFile.scheme === "file") {
       workspaceRoot = path.dirname(workspaceFile.fsPath).replace(/\\/g, "/");
     } else if (workspaceFolders && workspaceFolders.length > 0) {
       workspaceRoot = workspaceFolders[0].uri.fsPath.replace(/\\/g, "/");

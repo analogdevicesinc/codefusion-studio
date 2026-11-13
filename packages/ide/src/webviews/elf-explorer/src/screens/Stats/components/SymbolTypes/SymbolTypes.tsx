@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,13 @@
  * limitations under the License.
  *
  */
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import type {TSymbol} from '../../../../common/types/symbols';
 import styles from './SymbolTypes.module.scss';
 import SymbolTypesTable from '../SymbolTypesTable/SymbolTypesTable';
 import BadgeFilter from '../BadgeFilters/BadgeFilters';
 import {filterSymbols} from '../../../../utils/stats-utils';
+import type {TBindingLabels} from '../../../../utils/stats-utils';
 import HeaderWithTooltip from '../../../../components/HeaderWithTooltip/HeaderWithTooltip';
 
 import type {TLocaleContext} from '../../../../common/types/context';
@@ -34,13 +35,33 @@ export default function SymbolTypes({symbols}: TSymbolTypesProps) {
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.stats?.symbolTypes;
 
+	const labels: TBindingLabels = useMemo(
+		() => ({
+			globalFunctions: i10n?.globalFunctions,
+			localFunctions: i10n?.localFunctions,
+			weakFunctions: i10n?.weakFunctions,
+			globalVariables: i10n?.globalVariables,
+			localVariables: i10n?.localVariables
+		}),
+		[
+			i10n?.globalFunctions,
+			i10n?.localFunctions,
+			i10n?.weakFunctions,
+			i10n?.globalVariables,
+			i10n?.localVariables
+		]
+	);
+
 	const handleFilterClick = (filter: string) => {
 		setSelectedFilter(filter);
 	};
 
 	useEffect(() => {
-		filterSymbols(symbols, selectedFilter, setFuncs, setVars);
-	}, [selectedFilter, symbols]);
+		filterSymbols(symbols, selectedFilter, setFuncs, {
+			setVars,
+			labels
+		});
+	}, [selectedFilter, symbols, labels]);
 
 	return (
 		<div
@@ -63,13 +84,13 @@ export default function SymbolTypes({symbols}: TSymbolTypesProps) {
 			<article className={styles.tablesWrap}>
 				<section>
 					<h2 className={styles.uppercaseHeader}>
-						Functions by binding
+						{i10n?.functionsByBinding ?? 'Functions by binding'}
 					</h2>
 					<SymbolTypesTable data={funcs} />
 				</section>
 				<section>
 					<h2 className={styles.uppercaseHeader}>
-						Variables by binding
+						{i10n?.variablesByBinding ?? 'Variables by binding'}
 					</h2>
 					<SymbolTypesTable data={vars} />
 				</section>

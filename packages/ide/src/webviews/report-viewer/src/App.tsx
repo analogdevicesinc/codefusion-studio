@@ -23,7 +23,7 @@ import {
 	useLocaleContext
 } from '../../common/contexts/LocaleContext';
 import CfsTopBar from '../../common/components/cfs-top-bar/CfsTopBar';
-import '../../../../../../node_modules/@vscode/codicons/dist/codicon.css';
+import '@vscode/codicons/dist/codicon.css';
 
 function App() {
 	return (
@@ -56,7 +56,7 @@ export function ReportViewer() {
 		);
 	}
 
-	switch (reportContext.report?.info.type) {
+	switch (reportContext.report?.type) {
 		case 'compat':
 			return (
 				<div className={styles.appContainer}>
@@ -67,21 +67,24 @@ export function ReportViewer() {
 						</div>
 					</CfsTopBar>
 					<div className={styles.body}>
-						<CompatibilityReport />
+						<CompatibilityReport key={reportContext.reportVersion} />
 					</div>
 				</div>
 			);
 		case 'profile':
+		case 'runtime-profile':
 			return (
 				<div className={styles.appContainer}>
 					<CfsTopBar>
 						<div slot='center'>
 							{reportContext.report?.model_summary?.model_name}{' '}
-							{l10n?.profiling.title}
+							{reportContext.report?.type === 'runtime-profile'
+								? l10n?.runtimeProfiling.title
+								: l10n?.profiling.title}
 						</div>
 					</CfsTopBar>
 					<div className={styles.body}>
-						<ProfilingReport />
+						<ProfilingReport key={reportContext.reportVersion} />
 					</div>
 				</div>
 			);

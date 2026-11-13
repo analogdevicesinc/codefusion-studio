@@ -35,6 +35,13 @@ import {shouldDisplayCoreMemoryAliases} from '../../../utils/soc-cores';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {MemoryAliasTooltip} from './memory-alias-tooltip/memory-alias-tooltip';
 import Tooltip from '@common/components/tooltip/Tooltip';
+import ConflictIcon from '@common/icons/Conflict';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '@common/contexts/LocaleContext';
+import {useHasScopeConflictForItem} from '../../../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
 
 type PartitionDetailsTypeViewCardProp = Readonly<{
 	partition: Partition;
@@ -47,6 +54,12 @@ export default function PartitionDetailsTypeViewCard({
 }: PartitionDetailsTypeViewCardProp) {
 	const dispatch = useAppDispatch();
 	const [isHovering, setIsHovering] = useState(false);
+	const hasScopeConflict = useHasScopeConflictForItem({
+		controlScope: CONTROL_SCOPES.MEMORY,
+		itemId: partition.displayName,
+		projectIds: partition.projects.map(project => project.projectId)
+	});
+	const i10n: TLocaleContext | undefined = useLocaleContext()?.memory;
 	const graphMousePosition = useRef<{x: number; y: number}>({
 		x: 0,
 		y: 0
@@ -124,6 +137,19 @@ export default function PartitionDetailsTypeViewCard({
 						<div className={styles.memoryCardTitleInfo}>
 							<div className={styles.memoryCardTitle}>
 								<h3>{partition.displayName}</h3>
+								{hasScopeConflict && (
+									<Tooltip
+										title={
+											i10n?.partition?.['scope-conflict']?.tooltip
+										}
+										type='long'
+									>
+										<ConflictIcon
+											className={styles.scopeConflictIcon}
+											dataTest={`${partition.displayName}-scope-conflict-icon`}
+										/>
+									</Tooltip>
+								)}
 								<p>
 									{partition.size
 										? formatBytesToKbOrMb(partition.size)
@@ -136,7 +162,9 @@ export default function PartitionDetailsTypeViewCard({
 							className={styles.memoryCardDetails}
 							data-test='partition-address'
 						>
-							{`${convertDecimalToHex(partitionStartAddress)} - ${convertDecimalToHex(endAddress)}`}
+							{`${convertDecimalToHex(
+								partitionStartAddress
+							)} - ${convertDecimalToHex(endAddress)}`}
 							{showInfoIcon && (
 								<div
 									data-test={`${partition.displayName}-partition-card-details-info-icon`}

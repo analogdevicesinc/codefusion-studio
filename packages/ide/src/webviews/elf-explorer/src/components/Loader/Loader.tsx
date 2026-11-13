@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,20 @@
  *
  */
 import styles from './Loader.module.scss';
+import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 
 type TLoaderProps = {
 	readonly message?: string;
 };
 
 export default function Loader({message}: TLoaderProps) {
+	const l10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<div className={styles.container}>
-			{message ? message : 'Loading...'}
+			{message ? message : (l10n?.loading ?? 'Loading...')}
 		</div>
 	);
 }

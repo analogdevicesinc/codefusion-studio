@@ -29,24 +29,33 @@ import {
   getVersionFromConfig
 } from './utils.js';
 
-const ACCESS_ERROR =
-  'Unable to create online session. Please ensure you are logged into your myAnalog account or have a valid API key in CFS_API_KEY.';
+const ACCESS_ERROR = 'Unable to create online session.';
+
+export const ANONYMOUS_UPDATE_WARNING =
+  'Updating the catalog anonymously as you are not currently logged into your myAnalog account';
 
 /* Return the SoC catalog
  * @param config - The Oclif configuration object
  * @param forceOnline - If true, forces fetching the catalog from the online source, otherwise uses local backup
+ * @param warn - Function to call when sending a warning as CLI output. It's optional.
  * @returns Promise resolving to the SoC catalog
  * @throws Error if there is an issue accessing the catalog, such as authentication errors when forceOnline is true or issues with the local backup file.
  */
 export async function getSocCatalog(
   config: Config,
-  forceOnline = false
+  forceOnline = false,
+  warn?: (message: string) => void
 ): Promise<SocCatalog> {
   let apiClient: CfsApiClient | undefined;
 
   if (forceOnline) {
     try {
-      apiClient = await getApiClient({auth: ['api-key', 'session']});
+      apiClient = await getApiClient({
+        auth: ['api-key', 'session', 'public']
+      });
+      if (apiClient.isAnonymous) {
+        warn?.(ANONYMOUS_UPDATE_WARNING);
+      }
     } catch (error) {
       if (error instanceof AuthenticationRequiredError) {
         // eslint-disable-next-line unicorn/prefer-type-error
@@ -88,7 +97,15 @@ export async function getSocCatalog(
     apiClient
   });
 
-  await catalogManager.loadCatalog();
+  const refreshed = await catalogManager.loadCatalog();
+
+  // The manager tolerates an unreachable service, so a forced update would
+  // otherwise report success while leaving the cached catalog untouched.
+  if (forceOnline && !refreshed) {
+    throw new Error(
+      'Unable to reach the catalog service. The catalog was not updated.'
+    );
+  }
 
   return catalogManager.socCatalog;
 }

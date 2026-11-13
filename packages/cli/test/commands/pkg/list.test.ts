@@ -20,6 +20,7 @@ import {
   runPkgTestsEnvVar,
   setupMockPkgCommandDeps
 } from '../../utils/pkg-test-helpers.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 describe('pkg list', () => {
   const packageRef = 'test_pkg1/1.0';
@@ -103,6 +104,39 @@ describe('pkg list', () => {
     );
     expect(listStdout).to.contain('Installed Packages:');
     expect(listStdout).to.contain(`- ${packageRef}`);
+  });
+
+  it('returns installed packages as the JSON envelope data payload', async () => {
+    const {error: installError, stderr: installStderr} =
+      await runPkgCommandWithAuthRetry([
+        'pkg',
+        'install',
+        packageRef,
+        '--acceptLicense'
+      ]);
+    expect(installError).to.be.undefined;
+    expect(installStderr.trim()).to.equal('');
+
+    const {stdout: listStdout, error: listError} =
+      await runPkgCommandWithAuthRetry([
+        'pkg',
+        'list',
+        packagePattern,
+        '--format',
+        'json'
+      ]);
+    expect(listError).to.be.undefined;
+
+    const parsed = assertValidEnvelope<{
+      packages: {name: string; version: string}[];
+    }>(listStdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data.packages).to.be.an('array');
+      expect(
+        parsed.data.packages.some((pkg) => pkg.name === packageName)
+      ).to.be.true;
+    }
   });
 
   it('does not show an uninstalled package in the list output', async () => {

@@ -27,6 +27,10 @@ type AccordionProps = Readonly<{
 	id?: string;
 	highlight?: boolean;
 	icon?: React.ReactNode;
+	/** Optional node rendered inline, immediately before the title. */
+	titlePrefix?: React.ReactNode;
+	/** Optional node rendered inline, immediately after the title. */
+	titleBadge?: React.ReactNode;
 	disableBorderOnHover?: boolean;
 	variant?: 'default' | 'no-gap';
 	toggleExpand: (title: string) => void;
@@ -44,6 +48,8 @@ export default function Accordion({
 	variant = 'default',
 	disableBorderOnHover,
 	icon,
+	titlePrefix,
+	titleBadge,
 	toggleExpand
 }: AccordionProps) {
 	const peripheralRef = useRef<HTMLDivElement>(null);
@@ -82,13 +88,17 @@ export default function Accordion({
 	return (
 		<div
 			ref={peripheralRef}
-			className={`${styles.container} ${isOpen && !disableBorderOnHover && styles.hasBorder} ${
-				styles[variant]
-			} ${disableBorderOnHover ? styles.disableBorder : ''}`}
+			className={`${styles.container} ${
+				isOpen && !disableBorderOnHover && styles.hasBorder
+			} ${styles[variant]} ${
+				disableBorderOnHover ? styles.disableBorder : ''
+			}`}
 			data-test={`accordion:${title}`}
 		>
 			<section
-				className={`${styles.header} ${highlight ? styles.highlight : ''}`}
+				className={`${styles.header} ${
+					highlight ? styles.highlight : ''
+				}`}
 				tabIndex={0}
 				onClick={() => {
 					toggleExpand(id ?? title);
@@ -96,18 +106,24 @@ export default function Accordion({
 			>
 				<div className={styles.leftSection}>
 					<div
-						className={`${styles.chevron}${isOpen ? ` ${styles.iconOpen}` : ''}`}
+						className={`${styles.chevron}${
+							isOpen ? ` ${styles.iconOpen}` : ''
+						}`}
 					>
 						<ChevronRight />
 					</div>
 					<div className={styles.titleContainer}>
-						{titleTooltip ? (
-							<Tooltip title={titleTooltip} type='short'>
-								{titleElement}
-							</Tooltip>
-						) : (
-							titleElement
-						)}
+						<div className={styles.titleRow}>
+							{titlePrefix}
+							{titleTooltip ? (
+								<Tooltip title={titleTooltip} type='short'>
+									{titleElement}
+								</Tooltip>
+							) : (
+								titleElement
+							)}
+							{titleBadge}
+						</div>
 						{subTitle && (
 							<div className={styles.subTitle}>{subTitle}</div>
 						)}

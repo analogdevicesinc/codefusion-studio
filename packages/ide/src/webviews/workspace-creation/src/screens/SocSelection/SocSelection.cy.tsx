@@ -38,10 +38,58 @@ describe('SocSelection', () => {
 	it('Should yield correct search results', () => {
 		cy.get('#control-input').shadow().find('input').type('32655');
 
-		cy.dataTest('soc-selection:segmented-controls:expand').click();
-
 		cy.dataTest('soc-selection:option:MAX32655').should('exist');
 		cy.dataTest('soc-selection:option:MAX32670').should('not.exist');
+	});
+
+	it('Should enable/disable the expand/collapse all controls based on the groups open state', () => {
+		// All groups start collapsed, so "Expand all" is enabled and "Collapse all" is disabled.
+		cy.dataTest('soc-selection:segmented-controls:expand').should(
+			'not.be.disabled'
+		);
+		cy.dataTest('soc-selection:segmented-controls:collapse').should(
+			'be.disabled'
+		);
+
+		cy.dataTest('soc-selection:segmented-controls:expand').click();
+
+		// All groups are now expanded, so "Expand all" is disabled and "Collapse all" is enabled.
+		cy.dataTest('soc-selection:segmented-controls:expand').should(
+			'be.disabled'
+		);
+		cy.dataTest('soc-selection:segmented-controls:collapse').should(
+			'not.be.disabled'
+		);
+
+		cy.dataTest('soc-selection:segmented-controls:collapse').click();
+
+		// Back to all groups collapsed.
+		cy.dataTest('soc-selection:segmented-controls:expand').should(
+			'not.be.disabled'
+		);
+		cy.dataTest('soc-selection:segmented-controls:collapse').should(
+			'be.disabled'
+		);
+
+		// Typing a search forces every matching group open, so "Expand all" is disabled again.
+		cy.get('#control-input').shadow().find('input').type('32655');
+
+		cy.dataTest('soc-selection:segmented-controls:expand').should(
+			'be.disabled'
+		);
+		cy.dataTest('soc-selection:segmented-controls:collapse').should(
+			'not.be.disabled'
+		);
+
+		// Clearing the search collapses everything again.
+		cy.get('#control-input').shadow().find('input').clear();
+
+		cy.dataTest('soc-selection:segmented-controls:expand').should(
+			'not.be.disabled'
+		);
+		cy.dataTest('soc-selection:segmented-controls:collapse').should(
+			'be.disabled'
+		);
 	});
 
 	it('Should yield <NoSearchResults> component on faulty search input', () => {

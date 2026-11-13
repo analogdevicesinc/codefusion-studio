@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import { DtParser } from "../../src/dt-parser/DtParser.js";
+import { DtParser } from "../../src/parsers/dt-parser/DtParser.js";
+import { expect } from "chai";
 import { dirname } from "node:path";
 import path from "path";
 import { fileURLToPath } from "node:url";
@@ -25,7 +26,7 @@ async function readContent(fname: string) {
 
 	const inputFilePath = path.join(
 		__dirname,
-		"../../src/dt-parser/data",
+		"../../src/parsers/dt-parser/data",
 		fname
 	);
 
@@ -46,5 +47,53 @@ describe("DT Parser", () => {
 			console.error(error);
 			throw error;
 		}
+	});
+
+	it("preserves multiple labels when nodes are merged", async () => {
+		// SoC file defines sram0 / sram2 labels
+		const socDts = `/dts-v1/;
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = < 0x20000000 0x10000 >;
+		};
+		sram2: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = < 0x20010000 0x8000 >;
+		};
+	};
+};
+`;
+		// Board file adds a second label to the same nodes
+		const boardDts = `/dts-v1/;
+/ {
+	soc {
+		m4_sram: memory@20000000 {
+			reg = < 0x20000000 0x10000 >;
+		};
+		rv32_sram: memory@20010000 {
+			reg = < 0x20010000 0x8000 >;
+		};
+	};
+	chosen {
+		zephyr,sram = &m4_sram;
+	};
+};
+`;
+		const parser = new DtParser({});
+		const combinedDts = socDts + "\n" + boardDts;
+		const combinedJson = await parser.jsonFromString(
+			combinedDts,
+			"<board.dts>"
+		);
+
+		const soc = (combinedJson as Record<string, unknown>)
+			.soc as Record<string, Record<string, unknown>>;
+		const mem1 = soc["memory@20000000"];
+		const mem2 = soc["memory@20010000"];
+
+		expect(mem1.nodeLabels).to.deep.equal(["sram0", "m4_sram"]);
+		expect(mem2.nodeLabels).to.deep.equal(["sram2", "rv32_sram"]);
 	});
 });

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import {
 	NON_SECURE_ABBR as NS
 } from '@common/constants/core-properties';
 
+export {isWorkspaceNameInvalid} from '@common/utils/workspace-name';
+
 export let workspaceConfig: WorkspaceConfig;
 
 if (isCypressEnvironment()) {
@@ -51,10 +53,6 @@ if (isCypressEnvironment()) {
 
 export function getCurrentConfigOptions() {
 	return workspaceConfig;
-}
-
-export function isWorkspaceNameInvalid(wrkspName: string) {
-	return /[^a-zA-Z0-9_.-]/.test(wrkspName ?? '');
 }
 
 export function isPathInvalid(path: string) {

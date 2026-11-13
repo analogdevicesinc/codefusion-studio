@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
 
- * Portions Copyright (c) 2023-2024 Analog Devices, Inc. All Rights Reserved.
+ * Portions Copyright (c) 2023-2026 Analog Devices, Inc. All Rights Reserved.
  */
 
 import * as os from "os";
@@ -33,77 +33,72 @@ import * as vscode from "vscode";
  * @param recursive - Set true if you would like to resolve to final path
  */
 export function resolveVariables(string: string, recursive = false): string {
-  if (string && string.includes("${config")) {
-    string = string.replace("config:", "");
-    const start = string.indexOf("{");
-    const end = string.indexOf("}");
-    const confSettingName = string.substring(start + 1, end);
+  if (!string) {
+    return string;
+  }
 
-    if (confSettingName) {
-      const conf = vscode.workspace.getConfiguration();
-      const replaceStr = "${" + confSettingName + "}";
-      if (replaceStr.match(/\${(config:(.*?))}/)) {
-        string = string.replace(
-          replaceStr,
-          "${" + conf.get(confSettingName) + "}",
-        );
-      } else {
-        string = string.replace(
-          replaceStr,
-          "" + conf.get(confSettingName) + "",
-        );
-      }
+  const hasUnresolvedVariables = (value: string): boolean =>
+    /\${(workspaceFolder|workspaceFolderBasename|file|fileWorkspaceFolder|relativeFile|relativeFileDirname|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|userHome|env:(.*?)|config:(.*?))}/.test(
+      value,
+    );
+
+  const maxPasses = recursive ? 25 : 1;
+  const conf = vscode.workspace.getConfiguration();
+  let resolved = string;
+
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const previous = resolved;
+
+    resolved = resolved.replace(
+      /\${config:([^}]+)}/g,
+      (_match, key: string) => {
+        const value = conf.get<unknown>(key.trim());
+        if (value === undefined || value === null) {
+          return "";
+        }
+        return String(value);
+      },
+    );
+
+    if (resolved.includes("${userHome}")) {
+      resolved = resolveUserHomePath(resolved);
     }
-  }
-  if (string.includes("${userHome}")) {
-    string = resolveUserHomePath(string);
-  }
-  if (vscode.workspace.workspaceFolders) {
+
     const workspaces = vscode.workspace.workspaceFolders;
-    const workspace = vscode.workspace.workspaceFolders.length
-      ? vscode.workspace.workspaceFolders[0]
-      : null;
+    const workspace = workspaces?.length ? workspaces[0] : undefined;
     const activeFile = vscode.window.activeTextEditor?.document;
     const absoluteFilePath = activeFile?.uri.fsPath;
 
     if (workspace) {
-      string = string.replace(/\${workspaceFolder}/g, workspace.uri.fsPath);
-      string = string.replace(/\${workspaceFolderBasename}/g, workspace.name);
-      string = absoluteFilePath
-        ? string.replace(/\${file}/g, absoluteFilePath)
-        : string;
+      resolved = resolved.replace(/\${workspaceFolder}/g, workspace.uri.fsPath);
+      resolved = resolved.replace(
+        /\${workspaceFolderBasename}/g,
+        workspace.name,
+      );
+      if (absoluteFilePath) {
+        resolved = resolved.replace(/\${file}/g, absoluteFilePath);
+      }
     }
 
-    let activeWorkspace = workspace;
-    let relativeFilePath = absoluteFilePath;
     if (absoluteFilePath) {
-      for (const tempWorkspace1 in workspaces) {
-        const tempWorkspace = vscode.Uri.file(tempWorkspace1);
-        if (
-          absoluteFilePath.replace(tempWorkspace.fsPath, "") !==
-          absoluteFilePath
-        ) {
-          activeWorkspace = workspace;
-          relativeFilePath = absoluteFilePath
-            .replace(tempWorkspace.fsPath, "")
-            .substring(path.sep.length);
-          break;
-        }
-      }
+      const activeWorkspace =
+        (activeFile
+          ? vscode.workspace.getWorkspaceFolder(activeFile.uri)
+          : undefined) ?? workspace;
+      const relativeFilePath = activeWorkspace
+        ? path.relative(activeWorkspace.uri.fsPath, absoluteFilePath)
+        : absoluteFilePath;
 
       const parsedPath = path.parse(absoluteFilePath);
-      string = string.replace(
+      resolved = resolved.replace(
         /\${fileWorkspaceFolder}/g,
         activeWorkspace ? activeWorkspace.uri.fsPath : "",
       );
-      string = string.replace(
-        /\${relativeFile}/g,
-        relativeFilePath ? relativeFilePath : "",
-      );
+      resolved = resolved.replace(/\${relativeFile}/g, relativeFilePath);
 
-      string = string.replace(
+      resolved = resolved.replace(
         /\${relativeFileDirname}/g,
-        relativeFilePath
+        relativeFilePath.includes(path.sep)
           ? relativeFilePath.substring(
               0,
               relativeFilePath.lastIndexOf(path.sep),
@@ -111,49 +106,51 @@ export function resolveVariables(string: string, recursive = false): string {
           : "",
       );
 
-      string = string.replace(/\${fileBasename}/g, parsedPath.base);
-      string = string.replace(/\${fileBasenameNoExtension}/g, parsedPath.name);
-      string = string.replace(/\${fileExtname}/g, parsedPath.ext);
-      string = string.replace(
+      resolved = resolved.replace(/\${fileBasename}/g, parsedPath.base);
+      resolved = resolved.replace(
+        /\${fileBasenameNoExtension}/g,
+        parsedPath.name,
+      );
+      resolved = resolved.replace(/\${fileExtname}/g, parsedPath.ext);
+      resolved = resolved.replace(
         /\${fileDirname}/g,
         parsedPath.dir.substring(parsedPath.dir.lastIndexOf(path.sep) + 1),
       );
-      string = string.replace(/\${cwd}/g, parsedPath.dir);
-      string = string.replace(/\${pathSeparator}/g, path.sep);
-      if (
-        vscode.window.activeTextEditor &&
-        vscode.window.activeTextEditor.selections
-      ) {
-        const firstSelection = vscode.window.activeTextEditor.selections[0];
-        const lineReplace = String(firstSelection.start.line + 1);
-        string = string.replace(/\${lineNumber}/g, lineReplace);
-        string = string.replace(
+      resolved = resolved.replace(/\${cwd}/g, parsedPath.dir);
+      resolved = resolved.replace(/\${pathSeparator}/g, path.sep);
+
+      const firstSelection = vscode.window.activeTextEditor?.selections?.[0];
+      if (firstSelection) {
+        resolved = resolved.replace(
+          /\${lineNumber}/g,
+          String(firstSelection.start.line + 1),
+        );
+        resolved = resolved.replace(
           /\${selectedText}/g,
-          vscode.window.activeTextEditor.document.getText(
+          activeFile.getText(
             new vscode.Range(firstSelection.start, firstSelection.end),
           ),
         );
       }
-      string = string.replace(/\${env:(.*?)}/g, function (variable: string) {
-        const variableMatch = variable.match(/\${env:(.*?)}/);
+    }
 
-        if (variableMatch && variableMatch.length > 1) {
-          return process.env[variableMatch[1]] || "";
-        } else {
-          return "";
-        }
-      });
+    resolved = resolved.replace(
+      /\${env:([^}]+)}/g,
+      (_match, envName: string) => {
+        return process.env[envName] || "";
+      },
+    );
+
+    if (
+      !recursive ||
+      resolved === previous ||
+      !hasUnresolvedVariables(resolved)
+    ) {
+      break;
     }
   }
-  if (
-    recursive &&
-    string.match(
-      /\${(workspaceFolder|workspaceFolderBasename|fileWorkspaceFolder|relativeFile|fileBasename|fileBasenameNoExtension|fileExtname|fileDirname|cwd|pathSeparator|lineNumber|selectedText|env:(.*?)|config:(.*?))}/,
-    )
-  ) {
-    string = resolveVariables(string, recursive);
-  }
-  return string;
+
+  return resolved;
 }
 
 /**

@@ -1,7 +1,7 @@
 ---
 description: Compile an AI model into C/C++ source code using cfsutil ai build.
 author: Analog Devices
-date: 2026-07-31
+date: 2026-11-09
 ---
 
 # Build
@@ -9,7 +9,7 @@ date: 2026-07-31
 The `cfsutil ai build` command compiles an AI model for an embedded target. It generates C or C++ source and headers, depending on the target, that allow the model to be used from within an embedded application.
 
 ```sh
-cfsutil ai build [--format text|json] [--config <value>] [-s <value>] [-p <value>] [-c <value>] [-a <value>] [-m <value>] [--dataset <value>] [--cwd <value>] [-o <value>] [--network-config <value>] [-b <value>] [-e <value>...] [-x <value>...] [--ignore-cache]
+cfsutil ai build [--format text|json] [-v | -q] [--config <value>] [-s <value>] [-p <value>] [-c <value>] [-a <value>] [-m <value>] [--dataset <value>] [--cwd <value>] [-o <value>] [--network-config <value>] [-b <value>] [-e <value>...] [-x <value>...] [--ignore-cache]
 ```
 
 ## Before you start
@@ -104,6 +104,9 @@ Model names must not exceed 64 characters. When building from `--config`, this a
 | `--dataset` | | Path or URL to the sample dataset for the model. |
 | `--ignore-cache` | | Bypass the cache and fetch the latest remote files. |
 | `--network-config` | | Path or URL to the Izer network configuration YAML. Required when using the `izer` backend. |
+| `--verbose` | `-v` | Enable verbose mode. Mutually exclusive with `--quiet`. |
+| `--quiet` | `-q` | Suppress non-error output. Mutually exclusive with `--verbose`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
 
 ### Common options
 
@@ -194,57 +197,9 @@ cfsutil ai build \
 
 ### JSON output
 
-Output machine-readable logs. Useful for CI pipelines or script parsing.
-The output is a JSON array, with one object per event.
+Output machine-readable results. Useful for CI pipelines or script parsing.
+The output uses the [JSON output envelope](../index.md#json-output-envelope).
 
 ```sh
 cfsutil ai build --config .cfs/max32690-tqfn.cfsconfig --format json
 ```
-
-!!! example "Sample JSON output"
-
-    ```json
-    [
-      {
-        "level": "WARNING",
-        "msg": "No arena size provided. Estimated to be 2888 bytes",
-        "event": null
-      },
-      {
-        "level": "INFO",
-        "msg": "Created file \"m4/src/adi_tflm/hello_world_model_f32.cpp\"",
-        "event": {
-          "status": "OK",
-          "type": "FILE",
-          "value": "m4/src/adi_tflm/hello_world_model_f32.cpp"
-        }
-      },
-      {
-        "level": "INFO",
-        "msg": "Created file \"m4/src/adi_tflm/hello_world_model_f32.hpp\"",
-        "event": {
-          "status": "OK",
-          "type": "FILE",
-          "value": "m4/src/adi_tflm/hello_world_model_f32.hpp"
-        }
-      },
-      {
-        "level": "INFO",
-        "msg": "Created model \"hello_world_model_f32\"",
-        "event": {
-          "status": "OK",
-          "type": "MODEL",
-          "value": "hello_world_model_f32"
-        }
-      },
-      {
-        "level": "INFO",
-        "msg": "Created file \"m4/src/adi_tflm/adi_tflm.hpp\"",
-        "event": {
-          "status": "OK",
-          "type": "FILE",
-          "value": "m4/src/adi_tflm/adi_tflm.hpp"
-        }
-      }
-    ]
-    ```

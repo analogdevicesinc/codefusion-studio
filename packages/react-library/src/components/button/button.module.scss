@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 	--contrast-active-border: transparent;
 
 	&[appearance='primary'] {
-		// Override CSS custom properties directly on the button element to ensure fallback colors are applied.
-
-		--vscode-button-background: #{colors.$button-background};
-		--vscode-button-foreground: #{colors.$button-foreground};
+		// Feed the theme colors, with their fallbacks, into the toolkit's own
+		// tokens.
+		--button-primary-background: #{colors.$button-background};
+		--button-primary-foreground: #{colors.$button-foreground};
 	}
 
 	&[appearance='secondary'] {

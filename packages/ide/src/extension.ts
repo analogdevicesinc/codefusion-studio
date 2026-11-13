@@ -52,6 +52,7 @@ import {
   RUN_JLINK_FLASH_TASK_COMMAND_ID,
   DEVICE_TREE_VIEW_ID,
   CONTEXT_VIEW_ID,
+  PACKAGE_EXPLORER_VIEW_ID,
   SHOW_SYSTEM_PLANNER_AT_STARTUP_COMMAND_ID,
   OPEN_SYSTEM_PLANNER_COMMAND_ID,
   RUN_DEFAULT_BUILD_TASKS_COMMAND_ID,
@@ -69,6 +70,7 @@ import {
   MSDK_PACKAGE_PATH_COMMAND_ID,
   CLOUD_CATALOG_AUTH,
   PACKAGE_MANAGER_COMMANDS,
+  OPEN_PACKAGE_MANAGER_COMMAND_ID,
   OPEN_OPENOCD_TARGET_SETTING_COMMAND_ID,
   OPEN_SDK_SETTINGS_COMMAND_ID,
   SELECT_SDK_PATH_COMMAND_ID,
@@ -78,6 +80,7 @@ import {
 } from "./commands/constants";
 import { GDBToolbox } from "./debug-tools/gdb-toolbox/core/gdb-toolbox";
 import { CfsDebugManager } from "./debug-tools/debug-manager";
+import { CfsCtiConfigView } from "./debug-tools/cti-config/cti-config";
 import { SdkPath } from "./commands/sdkPath";
 import {
   configureWorkspace,
@@ -96,6 +99,7 @@ import {
   DeviceTreeProvider,
   ViewContainerItem,
   ContextPanelProvider,
+  PackageExplorerProvider,
 } from "./view-container";
 import { extractSessionId, getWorkspaceRoot } from "./utils/utils";
 import {
@@ -128,6 +132,7 @@ import {
   TARGET,
   OPEN_AIPROFILING_EXTENSION_STATE,
   AI_HARDWARE_PROFILING_EDITOR_ID,
+  PACKAGE_MANAGER_CHECK_FOR_UPDATES,
 } from "./constants";
 import { INFO, WARNING } from "./messages";
 import { CFS_TERMINAL, CFS_TERMINAL_ID } from "./toolchains/constants";
@@ -156,17 +161,27 @@ import type {
 } from "cfs-package-manager";
 import { ConanPkgManager, MANIFEST_FILE_NAME } from "cfs-package-manager";
 import { registerPackageManagerCommands } from "./commands/package-manager";
+import { registerPackageExplorerCommands } from "./commands/package-explorer";
+import { PackageExplorerFilters } from "./view-container/package-explorer/package-explorer-filters";
+import {
+  PackageCatalogService,
+  getCatalogStoreDir,
+} from "./utils/package-catalog";
+import { CustomRemoteCatalogService } from "./utils/custom-remote-catalog";
 import { GdbToolboxPanel } from "./debug-tools/gdb-toolbox/ui/gdb-toolbox-panel";
 import { handleTelemetryNotification } from "./utils/notifications";
 import { registerCoreDumpCommands } from "./debug-tools/core-dump-analysis/commands/register-core-dump-commands";
 import { openWithSSPlusCommand } from "./commands/sigma-studio-plus";
 import { SigmaStudioPlusProjectEditor } from "./custom-editors/sigma-studio-plus-project-editor";
+import { WestEditor } from "./zephyr/west-editor/west-editor";
 import {
   CfsDataModelManager,
   CfsToolManager,
   setTelemetryLogger,
+  type TokenAuthSession,
 } from "cfs-lib";
 import { resolveVariables } from "./utils/resolveVariables";
+import { installGitRemoteHelper } from "./git-remote/helper-launcher";
 import { registerGDBToolboxValidator } from "./debug-tools/gdb-toolbox/scripts/config-validator";
 import * as fg from "fast-glob";
 import { CfsIDETaskProvider } from "./providers/cfs-ide-task-provider";
@@ -179,6 +194,8 @@ import {
 } from "./utils/package-manager";
 import {
   getTelemetryManager,
+  setTelemetryAuthService,
+  registerTelemetryMessageHandlers,
   initializeWorkspaceId,
 } from "./telemetry/telemetry";
 import { ReportViewer } from "./custom-editors/report-viewer";
@@ -194,13 +211,15 @@ import {
   TraceSidePanelProvider,
 } from "./providers/trace-capture-webview-provider";
 import { registerGlobalCfsMessageHandlers } from "./providers/global-cfs-message-handlers";
-import { registerAuthSessionFileWatcher } from "./providers/auth-session-file-watcher";
+import { registerPackageManagerAuthSync } from "./utils/package-manager-auth-sync";
+import { AuthService, getAuthSignature } from "./services/auth-service";
 import { registerPackageManagerRemotesFileWatcher } from "./providers/package-manager-remotes-file-watcher";
 import { TELEMETRY_ACTIONS } from "./telemetry/action-names";
 import {
   sendTaskEndTelemetry,
   sendTaskStartTelemetry,
 } from "./telemetry/task-telemetry";
+import { TraceManager } from "./debug-tools/trace/trace-manager";
 
 // Feature flags - values are replaced at build time by Vite
 const MEMORY_VIEWER_ENABLED =
@@ -237,6 +256,7 @@ const SCRIPT_TEMPLATE = `{
  * @param toolManager - The tool manager instance
  * @param shellEnvProvider - The shell environment provider instance
  * @param actionsViewProvider - The actions view provider instance
+ * @param packageExplorerProvider - The packages view provider instance
  */
 async function registerPackageIndexFileWatcher(
   context: vscode.ExtensionContext,
@@ -244,6 +264,7 @@ async function registerPackageIndexFileWatcher(
   toolManager: CfsToolManager,
   shellEnvProvider: IDEShellEnvProvider,
   actionsViewProvider: ActionsViewProvider,
+  packageExplorerProvider: PackageExplorerProvider,
 ): Promise<void> {
   const indexFilePath = pkgManager.getIndexFilePath();
   const indexDir = path.dirname(indexFilePath);
@@ -264,6 +285,9 @@ async function registerPackageIndexFileWatcher(
   );
 
   const handleIndexFileChange = debounce(async () => {
+    // Installs and uninstalls change the package list backing the Packages view.
+    packageExplorerProvider.refresh();
+
     try {
       // Rediscover tool packages when package index changes
       await toolManager.discoverToolPackages();
@@ -276,10 +300,45 @@ async function registerPackageIndexFileWatcher(
     }
   }, 200);
 
+  // The index file is created by the first install and removed when the last
+  // package is uninstalled, so create and delete matter as much as change.
+  indexFileWatcher.onDidCreate(handleIndexFileChange);
   indexFileWatcher.onDidChange(handleIndexFileChange);
+  indexFileWatcher.onDidDelete(handleIndexFileChange);
 
   // Add to subscriptions for proper cleanup
   context.subscriptions.push(indexFileWatcher);
+}
+
+/**
+ * Registers the watchers that keep the Packages view in sync with the workspace.
+ * The view's dependency filter is derived from the `.cfsdependencies` manifests,
+ * so it has to be reloaded when a manifest or the folder layout changes.
+ * @param context - The extension context
+ * @param packageExplorerProvider - The packages view provider instance
+ */
+function registerPackageExplorerWatchers(
+  context: vscode.ExtensionContext,
+  packageExplorerProvider: PackageExplorerProvider,
+): void {
+  const manifestWatcher = vscode.workspace.createFileSystemWatcher(
+    `**/${MANIFEST_FILE_NAME}`,
+  );
+
+  const handleManifestChange = debounce(() => {
+    packageExplorerProvider.refresh();
+  }, 200);
+
+  manifestWatcher.onDidCreate(handleManifestChange);
+  manifestWatcher.onDidChange(handleManifestChange);
+  manifestWatcher.onDidDelete(handleManifestChange);
+
+  context.subscriptions.push(
+    manifestWatcher,
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      packageExplorerProvider.refresh();
+    }),
+  );
 }
 
 /**
@@ -301,6 +360,11 @@ export async function activate(
   // standard metadata without exposing the workspace path.
   initializeWorkspaceId(context);
 
+  // Shared myAnalog session for all consumers, starting with telemetry below
+  const authService = new AuthService();
+  context.subscriptions.push(authService);
+  setTelemetryAuthService(authService);
+
   const McpConfig = vscode.workspace.getConfiguration("cfs.mcp");
   void getTelemetryManager().then((telemetryManager) => {
     telemetryManager.logAction(TELEMETRY_ACTIONS.ACTIVATION_SETTINGS, {
@@ -318,11 +382,40 @@ export async function activate(
 
   await SdkPath.verifyPathSettings();
 
+  // The SdkPath.verifyPathSettings call may update the SDK path by replacing
+  // Windows path separators with Unix separators. To avoid triggering another
+  // extension host restart, we use a flag to track if a restart has already
+  // been requested.
+  let restartRequested = false;
+
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(
       async (event: vscode.ConfigurationChangeEvent) => {
-        if (event.affectsConfiguration(`${EXTENSION_ID}.${SDK_PATH}`)) {
-          SdkPath.verifyPathSettings();
+        if (
+          !event.affectsConfiguration(`${EXTENSION_ID}.${SDK_PATH}`) ||
+          restartRequested
+        ) {
+          return;
+        }
+
+        restartRequested = true;
+
+        try {
+          await SdkPath.verifyPathSettings();
+        } catch (error) {
+          restartRequested = false;
+          logger.error(`Failed to verify SDK path: ${String(error)}`);
+          return;
+        }
+
+        try {
+          await vscode.commands.executeCommand(
+            "workbench.action.restartExtensionHost",
+          );
+        } catch (error) {
+          logger.error(`Failed to restart extension host: ${String(error)}`);
+        } finally {
+          restartRequested = false;
         }
       },
     ),
@@ -346,13 +439,38 @@ export async function activate(
 
   let installDir = configuration.get<string>(SDK_PATH);
 
+  // The conan config files are copied to out/conan-config at build time, as
+  // the package manager can't locate them next to its own bundled source.
+  const conanConfigPath = path.join(
+    context.extensionPath,
+    "out",
+    "conan-config",
+  );
   let pkgManagerConfig: ConstructorParameters<typeof ConanPkgManager>[0] =
-    installDir ? { cfsInstallDir: installDir } : {};
+    installDir
+      ? { cfsInstallDir: installDir, conanConfigPath }
+      : { conanConfigPath };
   let packageManagerRemotesProvider: CfsPackageRemotesProvider | undefined;
   let packageManagerLicenseReporter: CfsPackageLicenseReporter | undefined;
+  let packageManagerAuthSignature: string | undefined;
   try {
+    let session: TokenAuthSession | undefined;
+    if (authService.config) {
+      try {
+        session = await authService.getSession();
+      } catch (error) {
+        logger.warn(
+          "Failed to get myAnalog session for package manager:",
+          error instanceof Error ? error.message : error,
+        );
+        vscode.window.showWarningMessage(
+          "Failed to get myAnalog session for package manager.",
+        );
+      }
+    }
     [packageManagerRemotesProvider, packageManagerLicenseReporter] =
-      await getPackageManagerProviders();
+      getPackageManagerProviders(authService, session);
+    packageManagerAuthSignature = getAuthSignature(session);
   } catch (error) {
     console.error("Failed to get package manager providers:", error);
   }
@@ -380,7 +498,38 @@ export async function activate(
     vscode.window.showWarningMessage(WARNING.packageManagerInitError);
     pkgManager = undefined;
   }
-  registerPackageManagerCommands(context, pkgManager, messenger);
+  // The software package catalog lives next to the package manager for the
+  // whole extension; panels consume it and the auth watcher refreshes it.
+  const cfsVersion = Utils.getExtensionVersion();
+  const customRemoteCatalog = pkgManager
+    ? new CustomRemoteCatalogService(
+        getCatalogStoreDir(cfsVersion),
+        pkgManager,
+        messenger,
+      )
+    : undefined;
+  const packageCatalog = new PackageCatalogService(cfsVersion);
+  context.subscriptions.push(packageCatalog);
+  customRemoteCatalog?.update();
+  registerPackageManagerCommands(
+    context,
+    authService,
+    pkgManager,
+    messenger,
+    async (pkgMgr, showNoUpdatesMessage) => {
+      await checkForPackageUpdates(pkgMgr, toolManager, showNoUpdatesMessage);
+    },
+    packageCatalog,
+    customRemoteCatalog,
+  );
+  registerPackageManagerAuthSync(
+    context,
+    authService,
+    messenger,
+    pkgManager,
+    packageManagerAuthSignature,
+    packageCatalog,
+  );
 
   // Data model manager initialization.
   const dataModelManager: CfsDataModelManager = new CfsDataModelManager(
@@ -407,10 +556,17 @@ export async function activate(
         ?.map((dir) => resolveVariables(dir, true)) ?? [],
     targetSoc,
   );
+  // Install the cfspkg git remote helper and expose it to spawned build/flash/
+  // west processes so west.yml can clone already-installed CFS packages.
+  const gitRemoteHelper = installGitRemoteHelper(context);
+
   /**
    * Providers Init and registration step
    **/
-  const shellEnvProvider = new IDEShellEnvProvider(toolManager);
+  const shellEnvProvider = new IDEShellEnvProvider(
+    toolManager,
+    gitRemoteHelper,
+  );
 
   const cfsTaskProvider = new CfsIDETaskProvider(toolManager, shellEnvProvider);
 
@@ -445,10 +601,20 @@ export async function activate(
   );
 
   const debugConfigProvider = new CortexDebugConfigurationProvider(toolManager);
+  const cppdbgConfigProvider = new CortexDebugConfigurationProvider(
+    toolManager,
+    false,
+  );
   context.subscriptions.push(
     vscode.debug.registerDebugConfigurationProvider(
       "cortex-debug",
       debugConfigProvider,
+    ),
+  );
+  context.subscriptions.push(
+    vscode.debug.registerDebugConfigurationProvider(
+      "cppdbg",
+      cppdbgConfigProvider,
     ),
   );
 
@@ -466,6 +632,29 @@ export async function activate(
       new QuickAccessProvider(),
     ),
   );
+
+  const packageExplorerFilters = new PackageExplorerFilters(
+    context.workspaceState,
+  );
+  const packageExplorerProvider = new PackageExplorerProvider(
+    pkgManager,
+    packageExplorerFilters,
+  );
+  const packageExplorerView = vscode.window.createTreeView(
+    PACKAGE_EXPLORER_VIEW_ID,
+    {
+      treeDataProvider: packageExplorerProvider,
+      showCollapseAll: true,
+    },
+  );
+  packageExplorerProvider.attachTreeView(packageExplorerView);
+  context.subscriptions.push(packageExplorerView);
+  registerPackageExplorerCommands(
+    context,
+    packageExplorerProvider,
+    packageExplorerFilters,
+  );
+  registerPackageExplorerWatchers(context, packageExplorerProvider);
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
@@ -485,6 +674,7 @@ export async function activate(
   // Terminal provider registration
   registerTerminalProvider(shellEnvProvider);
 
+  registerTelemetryMessageHandlers(messenger);
   registerVSCodeApiMessageHandlers(messenger);
   registerGlobalCfsMessageHandlers(messenger);
 
@@ -492,25 +682,39 @@ export async function activate(
    * Custom editors registration step
    **/
   context.subscriptions.push(
-    McuEditor.register(context, dataModelManager, toolManager, pkgManager),
+    McuEditor.register(
+      context,
+      messenger,
+      dataModelManager,
+      toolManager,
+      authService,
+      pkgManager,
+    ),
     ElfEditor.register(context),
-    WorkspaceCreationEditor.register(context, dataModelManager, pkgManager),
+    WorkspaceCreationEditor.register(
+      context,
+      dataModelManager,
+      toolManager,
+      authService,
+      pkgManager,
+    ),
     ModelWorkspaceCreationEditor.register(
       context,
       messenger,
       dataModelManager,
       toolManager,
+      authService,
       pkgManager,
     ),
     AiHardwareProfilingEditor.register(
       context,
       messenger,
       shellEnvProvider,
-      toolManager,
       dataModelManager,
     ),
     SigmaStudioPlusProjectEditor.register(context),
     ReportViewer.register(context, messenger),
+    WestEditor.register(context, messenger, shellEnvProvider),
   );
 
   // Register Memory Viewer if feature flag is enabled at build time
@@ -556,7 +760,7 @@ export async function activate(
    **/
   // @TODO: Do a full review of all of the bellow commands registration functions and create
   // a more logical registration structure and remove deprecated/unused commands.
-  registerPreActivationCommands(context);
+  registerPreActivationCommands(context, authService);
   await activateWorkspace(context, toolManager);
 
   await registerCommands(
@@ -566,12 +770,12 @@ export async function activate(
     debugManager,
   );
   registerAllCommands(context);
-  AuthCommandManager.registerAllCommands(context);
+  AuthCommandManager.registerAllCommands(context, authService);
 
-  // Register AI Debug Assistant (MCP Server + Chat Participant)
+  // Register AI Debug Assistant (MCP Server)
   const debugAssistant = new CfsDebugAssistant(
-    context.extensionUri,
     debugManager,
+    context.extension.id,
   );
   context.subscriptions.push(debugAssistant);
   // @TODO: Find alternative to replace msdk and zephyr specific logic in IDE.
@@ -590,18 +794,26 @@ export async function activate(
    * CFS Component initialization step
    **/
 
+  // Initialize Trace Manager
+  const traceManager = new TraceManager(dataModelManager, debugManager);
+  context.subscriptions.push(traceManager);
+
   const systemEventViewer = new SystemEventViewer(
     context,
     debugManager,
+    traceManager,
     dataModelManager,
   );
   context.subscriptions.push(systemEventViewer);
+
+  // Initialize CTI Config view
+  const ctiConfig = new CfsCtiConfigView(context, traceManager, debugManager);
+  context.subscriptions.push(ctiConfig);
 
   /**
    * Custom listeners registration step
    **/
   registerGDBToolboxValidator(context);
-  await registerAuthSessionFileWatcher(context, messenger, pkgManager);
 
   // Register file watchers for package manager related file changes
   if (pkgManager !== undefined) {
@@ -611,12 +823,14 @@ export async function activate(
       toolManager,
       shellEnvProvider,
       actionsViewProvider,
+      packageExplorerProvider,
     );
 
     await registerPackageManagerRemotesFileWatcher(
       context,
       messenger,
       pkgManager,
+      customRemoteCatalog,
     );
   }
 
@@ -674,6 +888,15 @@ export async function activate(
       if (pkgManager !== undefined) {
         // Handle workspace package manifest files processing
         await handleWorkspacePackageManifests(pkgManager, toolManager);
+
+        // Check for package updates in background (non-blocking) if enabled
+        const checkForUpdatesEnabled = configuration.get<boolean>(
+          `${PACKAGE_MANAGER_CHECK_FOR_UPDATES}`,
+          true,
+        );
+        if (checkForUpdatesEnabled) {
+          checkForPackageUpdates(pkgManager, toolManager, false);
+        }
       }
 
       // Deferred opening of system planner after manifests are checked.
@@ -735,8 +958,12 @@ async function registerTerminalProvider(shellEnvProvider: IDEShellEnvProvider) {
 /**
  * Registers commands that need to be available before workspace configuration
  * @param context - The context for this extension
+ * @param authService - The extension's auth service
  */
-function registerPreActivationCommands(context: vscode.ExtensionContext) {
+function registerPreActivationCommands(
+  context: vscode.ExtensionContext,
+  authService: AuthService,
+) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       SHOW_HOME_PAGE_AT_STARTUP_COMMAND_ID,
@@ -759,7 +986,7 @@ function registerPreActivationCommands(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(OPEN_HOME_PAGE_COMMAND_ID, () => {
-      HomePagePanel.render(context.extensionUri);
+      HomePagePanel.render(context.extensionUri, authService);
     }),
   );
 
@@ -1126,11 +1353,16 @@ async function registerCommands(
   const gdbToolbox = await GDBToolbox.initialize(debugManager);
   const scriptManager = gdbToolbox.getScriptManager();
   const executor = gdbToolbox.getExecutor();
+  const sessionArchitecture = gdbToolbox.getSessionArchitectureStore();
 
   await createDebugDirectoryStructure();
 
   // Register the GDB Toolbox panel in the sidebar
-  const gdbToolboxPanel = new GdbToolboxPanel(scriptManager, debugManager);
+  const gdbToolboxPanel = new GdbToolboxPanel(
+    scriptManager,
+    debugManager,
+    sessionArchitecture,
+  );
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
       GDB_TOOLBOX_VIEW_COMMAND_ID,
@@ -1143,7 +1375,12 @@ async function registerCommands(
     vscode.commands.registerCommand(
       EXECUTE_GDB_SCRIPT_COMMAND_ID,
       async (script, session) => {
-        executor.executeScript(script.commands, script.inputs, session);
+        // Echo command output to the Debug Console so adapters that do not
+        // stream it themselves (e.g. cppdbg, used by the SHARC-FX xt-run
+        // simulator) report the same information as adapters that do.
+        executor.executeScript(script.commands, script.inputs, session, {
+          echoOutput: true,
+        });
 
         const telemetryManager = await getTelemetryManager();
         telemetryManager.logAction(TELEMETRY_ACTIONS.GDB_TOOLBOX_USED, {});
@@ -1312,8 +1549,8 @@ async function registerCommands(
   context.subscriptions.push(
     vscode.commands.registerCommand(
       LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
-      async () => {
-        await OzoneDebugConfiguration.launchOzoneCommandHandler();
+      async (coreContext?: string) => {
+        await OzoneDebugConfiguration.launchOzoneCommandHandler(coreContext);
       },
     ),
   );
@@ -1343,7 +1580,7 @@ async function registerCommands(
       const filePaths = await vscode.window.showOpenDialog({
         canSelectMany: false,
         canSelectFolders: false,
-        filters: { "Report Files": ["json", "cfsreport"] },
+        filters: { "Report Files": ["json", "cfsreport", "tef"] },
       });
       vscode.commands.executeCommand(
         "vscode.openWith",
@@ -1362,62 +1599,15 @@ async function handleWorkspacePackageManifests(
   pkgManager: CfsPackageManagerProvider | undefined,
   toolManager: CfsToolManager,
 ): Promise<void> {
-  if (
-    !pkgManager ||
-    !vscode.workspace.workspaceFolders ||
-    vscode.workspace.workspaceFolders.length === 0
-  ) {
+  if (!pkgManager) {
     return;
   }
 
   try {
-    // Get the workspace root path
-    let workspaceRootPath: string;
-    if (vscode.workspace.workspaceFile) {
-      // If we have a workspace file, use its directory as the root
-      workspaceRootPath = path.dirname(vscode.workspace.workspaceFile.fsPath);
-    } else {
-      // Otherwise, we assume a single folder workspace
-      workspaceRootPath = vscode.workspace.workspaceFolders[0]?.uri.fsPath;
-    }
-
-    if (workspaceRootPath === undefined) return;
-
-    const allManifestPaths = await fg.async(`**${MANIFEST_FILE_NAME}`, {
-      cwd: workspaceRootPath,
-      absolute: true,
-      dot: true,
-      onlyFiles: true,
-    });
-
-    if (allManifestPaths.length === 0) {
-      return;
-    }
-
     // Collect all unique packages from all manifests (pure file reads, no Python)
-    const allDeclaredPackages: CfsPackageReference[] = [];
-    for (const manifestPath of allManifestPaths) {
-      try {
-        const packages = getManifestPackages(manifestPath);
-        for (const pkg of packages) {
-          if (
-            !allDeclaredPackages.some(
-              (p) => p.name === pkg.name && p.version === pkg.version,
-            )
-          ) {
-            allDeclaredPackages.push(pkg);
-          }
-        }
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Error reading manifest ${path.basename(manifestPath)}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        );
-      }
-    }
+    const allDeclaredPackages = await collectWorkspacePackages();
 
-    if (allDeclaredPackages.length === 0) {
+    if (!allDeclaredPackages) {
       return;
     }
 
@@ -1490,7 +1680,9 @@ async function handleWorkspacePackageManifests(
 
     const message = `Found ${missingPackages.length} required package${
       missingPackages.length > 1 ? "s" : ""
-    } that need to be installed: ${packageList}`;
+    } that ${
+      missingPackages.length > 1 ? " need" : " needs"
+    } to be installed: ${packageList}`;
     const installAction = `Install ${
       missingPackages.length > 1 ? "All" : "Package"
     }`;
@@ -1509,12 +1701,7 @@ async function handleWorkspacePackageManifests(
 
       // Filter license requirements to only those packages that are actually missing
       const licensesForMissing = installPlan.requiresLicenseAcceptance.filter(
-        (lic) =>
-          missingPackages.some(
-            (p) =>
-              p.name === lic.reference.name &&
-              p.version === lic.reference.version,
-          ),
+        (lic) => missingPackages.some((p) => p.name === lic.reference.name),
       );
 
       if (licensesForMissing.length > 0) {
@@ -1613,6 +1800,274 @@ async function handleWorkspacePackageManifests(
       }`,
     );
   }
+}
+
+/**
+ * Collects all unique packages declared in .cfsdependencies files across the workspace
+ * @returns Array of unique package references, or undefined if no workspace or manifests found
+ */
+async function collectWorkspacePackages(): Promise<
+  CfsPackageReference[] | undefined
+> {
+  // Guard: Check workspace exists
+  if (
+    !vscode.workspace.workspaceFolders ||
+    vscode.workspace.workspaceFolders.length === 0
+  ) {
+    return undefined;
+  }
+
+  // Step 1: Get the workspace root path
+  let workspaceRootPath: string;
+  if (vscode.workspace.workspaceFile) {
+    workspaceRootPath = path.dirname(vscode.workspace.workspaceFile.fsPath);
+  } else {
+    workspaceRootPath = vscode.workspace.workspaceFolders[0]?.uri.fsPath;
+  }
+
+  if (workspaceRootPath === undefined) return undefined;
+
+  // Step 2: Find all .cfsdependencies files across workspace
+  const allManifestPaths = await fg.async(`**${MANIFEST_FILE_NAME}`, {
+    cwd: workspaceRootPath,
+    absolute: true,
+    dot: true,
+    onlyFiles: true,
+  });
+
+  if (allManifestPaths.length === 0) {
+    return undefined; // No manifests found
+  }
+
+  // Step 3: Collect all unique packages from all manifests
+  const allDeclaredPackages: CfsPackageReference[] = [];
+  for (const manifestPath of allManifestPaths) {
+    try {
+      const packages = getManifestPackages(manifestPath);
+      for (const pkg of packages) {
+        // Add unique packages (by name + version constraint)
+        if (
+          !allDeclaredPackages.some(
+            (p) => p.name === pkg.name && p.version === pkg.version,
+          )
+        ) {
+          allDeclaredPackages.push(pkg);
+        }
+      }
+    } catch (error) {
+      // Show error to user and log - don't fail the entire check for one bad manifest
+      vscode.window.showErrorMessage(
+        `Error reading manifest ${path.basename(manifestPath)}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      logger.error(
+        `Error reading manifest ${path.basename(manifestPath)}:`,
+        error,
+      );
+    }
+  }
+
+  return allDeclaredPackages.length > 0 ? allDeclaredPackages : undefined;
+}
+
+/**
+ * Checks for available package updates on workspace startup or when manually invoked
+ * @param pkgManager - The package manager instance
+ * @param toolManager - The tool manager instance
+ * @param showNoUpdatesMessage - Whether to show a message when no updates are found (true for manual checks)
+ * @param isRetry - Internal flag to prevent infinite recursion on persistent errors
+ */
+async function checkForPackageUpdates(
+  pkgManager: CfsPackageManagerProvider | undefined,
+  toolManager: CfsToolManager,
+  showNoUpdatesMessage: boolean = false,
+  isRetry: boolean = false,
+): Promise<void> {
+  // Guard: Early return if package manager not available
+  if (!pkgManager) {
+    return;
+  }
+
+  try {
+    // Step 1: Collect all declared packages from workspace manifests
+    const allDeclaredPackages = await collectWorkspacePackages();
+
+    if (!allDeclaredPackages) {
+      return; // No workspace, manifests, or packages found
+    }
+
+    // Step 2: Batch search for all package versions in parallel
+    const searchPromises = allDeclaredPackages.map(async (pkg) => ({
+      pkg,
+      versions: await pkgManager.search(`${pkg.name}/*`),
+    }));
+
+    const searchResults = await Promise.all(searchPromises);
+
+    // Step 3: Batch check installed versions in parallel
+    const installedChecks = searchResults.map(async ({ pkg, versions }) => {
+      let installedVersion: string | undefined;
+
+      // First check toolManager (for fallback tools/SDKs)
+      const installedTool = await toolManager.getInstalledToolById(pkg.name);
+      if (installedTool) {
+        installedVersion = installedTool.version;
+      } else {
+        // Check package manager's installed list
+        const installedPackages = await pkgManager.list(pkg.name);
+        if (installedPackages.length > 0) {
+          installedVersion = installedPackages[0].version;
+        }
+      }
+
+      return { pkg, versions, installedVersion };
+    });
+
+    const installedResults = await Promise.all(installedChecks);
+
+    // Step 4: Process results and find packages with updates
+    // Use the same logic as the Package Manager UI: compare installed vs. latest available
+    const packagesWithUpdates: Array<{
+      name: string;
+      currentVersion: string;
+      latestVersion: string;
+      versionConstraint: string;
+    }> = [];
+
+    for (const {
+      pkg,
+      versions: availableVersions,
+      installedVersion,
+    } of installedResults) {
+      // Skip if package is not installed
+      if (!installedVersion) {
+        continue;
+      }
+
+      // Skip if no versions available remotely
+      if (availableVersions.length === 0) {
+        continue;
+      }
+
+      // Find the latest available version (same as UI: sorted by semver.compareBuild)
+      const sortedVersions = availableVersions
+        .map((ref) => ref.version)
+        .sort((a, b) => {
+          try {
+            return semver.compareBuild(b, a, true); // Descending order
+          } catch {
+            return b.localeCompare(a);
+          }
+        });
+
+      const latestVersion = sortedVersions[0];
+
+      // Check if update is available (same as UI: compareVersions(installed, latest) < 0)
+      const hasUpdate = (() => {
+        try {
+          return semver.compareBuild(installedVersion, latestVersion, true) < 0;
+        } catch {
+          return installedVersion.localeCompare(latestVersion) < 0;
+        }
+      })();
+
+      if (hasUpdate) {
+        packagesWithUpdates.push({
+          name: pkg.name,
+          currentVersion: installedVersion,
+          latestVersion: latestVersion,
+          versionConstraint: pkg.version,
+        });
+      }
+    }
+
+    // Step 5: Notify user of results
+    if (packagesWithUpdates.length > 0) {
+      // Don't await so progress notification closes immediately
+      notifyUserOfUpdates(packagesWithUpdates);
+    } else if (showNoUpdatesMessage) {
+      // Only show "no updates" message for manual checks
+      vscode.window.showInformationMessage("All packages are up to date.");
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // If remotes.json error (file being written) and not already a retry, retry once after delay
+    if (
+      !isRetry &&
+      (errorMessage.includes("remotes.json") ||
+        (errorMessage.toLowerCase().includes("empty") &&
+          errorMessage.toLowerCase().includes("remote")))
+    ) {
+      logger.info(
+        "Package update check encountered remotes.json access issue, retrying...",
+      );
+
+      // Wait for write to complete, then retry
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second
+
+      try {
+        // Retry the entire check (marking as retry to prevent infinite recursion)
+        return await checkForPackageUpdates(
+          pkgManager,
+          toolManager,
+          showNoUpdatesMessage,
+          true, // isRetry = true
+        );
+      } catch (retryError) {
+        // If retry also fails, show error
+        const retryMessage =
+          retryError instanceof Error ? retryError.message : String(retryError);
+        vscode.window.showErrorMessage(
+          `Failed to check for package updates: ${retryMessage}`,
+        );
+        logger.error(
+          "Error checking for package updates (after retry):",
+          retryError,
+        );
+        return;
+      }
+    }
+
+    // Show all other errors immediately
+    vscode.window.showErrorMessage(
+      `Failed to check for package updates: ${errorMessage}`,
+    );
+    logger.error("Error checking for package updates:", error);
+  }
+}
+
+/**
+ * Shows notification to user about available updates
+ */
+async function notifyUserOfUpdates(
+  updates: Array<{
+    name: string;
+    currentVersion: string;
+    latestVersion: string;
+    versionConstraint: string;
+  }>,
+): Promise<void> {
+  // Get unique package names (same package may appear multiple times with different constraints)
+  const uniquePackageNames = Array.from(new Set(updates.map((u) => u.name)));
+
+  const message =
+    uniquePackageNames.length === 1
+      ? `Package update available: ${uniquePackageNames[0]}`
+      : `Package updates available: ${uniquePackageNames.join(", ")}`;
+
+  // Show notification with action button to open Package Manager
+  const selection = await vscode.window.showInformationMessage(
+    message,
+    "Open Package Manager",
+  );
+
+  if (selection === "Open Package Manager") {
+    // Open Package Manager UI where user can update packages
+    await vscode.commands.executeCommand(OPEN_PACKAGE_MANAGER_COMMAND_ID);
+  }
+  // Dismissed - do nothing
 }
 
 // --- Status Bar & Workspace Activation ---

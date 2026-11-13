@@ -51,3 +51,9 @@ export const useCompatibilityStatus = (socId: string) =>
 		(state: RootState) =>
 			state.workspaceConfigReducer.compatibilityStatus[socId]
 	);
+
+export const useIsCreatingWorkspace = () =>
+	useAppSelector(
+		(state: RootState) =>
+			state.workspaceConfigReducer.isCreatingWorkspace
+	);

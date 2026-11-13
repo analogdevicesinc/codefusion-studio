@@ -1,0 +1,14 @@
+/dts-v1/;
+/ {
+	soc {
+		flash@10000000 {
+			partitions {
+				compatible = "fixed-partitions";
+				slot0_partition: partition@0 {
+					label = "image-0";
+					reg = < 0x0 0x10000 >;
+				};
+			};
+		};
+	};
+};

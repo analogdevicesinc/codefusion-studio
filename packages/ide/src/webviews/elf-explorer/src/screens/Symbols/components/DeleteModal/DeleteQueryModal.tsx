@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ import Info from '@common/icons/Info';
 import type {TSavedQuery} from '../../../../common/types/symbols';
 
 import styles from './DeleteQueryModal.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type DeleteQueryModalProps = {
 	readonly query: TSavedQuery | undefined;
@@ -25,6 +26,10 @@ type DeleteQueryModalProps = {
 export default function DeleteQueryModal({
 	query
 }: DeleteQueryModalProps) {
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<section
 			className={styles.deleteQuery}
@@ -34,10 +39,14 @@ export default function DeleteQueryModal({
 				<Info />
 			</article>
 			<article>
-				<h2>Confirm delete</h2>
+				<h2>{l10n?.confirmDelete ?? 'Confirm delete'}</h2>
 				<p>
-					Please confirm you wish to delete
-					{` "${query?.name ? query?.name : '<no name>'}"`}.
+					{(
+						l10n?.confirmDeleteMessage ??
+						'Please confirm you wish to delete "{name}".'
+					).replace('{name}', () =>
+						query?.name ? query.name : (l10n?.noName ?? '<no name>')
+					)}
 				</p>
 			</article>
 		</section>

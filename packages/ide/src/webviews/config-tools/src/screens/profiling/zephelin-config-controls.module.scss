@@ -118,6 +118,10 @@
 }
 
 .dependantInput {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-3;
+
 	.dropdown,
 	.textInput,
 	.numberInput {

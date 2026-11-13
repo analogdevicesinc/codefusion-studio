@@ -13,10 +13,10 @@
     "name": "Analog Devices Inc"
   },
   "license": "See LICENSE",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "engines": {
     "vscode": "^1.101.0",
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "keywords": [
     "Analog Devices",
@@ -49,30 +49,21 @@
   "main": "./out/extension.js",
   "l10n": "./l10n",
   "contributes": {
-    "chatParticipants": [
-      {
-        "id": "cfs.debugAssistant",
-        "name": "cfs-debug",
-        "description": "AI assistant for debugging Analog Devices embedded applications",
-        "isSticky": true,
-        "commands": [
-          {
-            "name": "help",
-            "description": "Get help with debugging commands"
-          },
-          {
-            "name": "gdb",
-            "description": "Execute a GDB command in the active debug session"
-          }
-        ]
-      }
-    ],
     "chatSkills": [
+      {
+        "path": "./skills/cfs-workspace-bootstrap/SKILL.md"
+      },
       {
         "path": "./skills/cfs-cli/SKILL.md"
       },
       {
         "path": "./skills/cfs-docs/SKILL.md"
+      },
+      {
+        "path": "./skills/cfs-ai-evaluation/SKILL.md"
+      },
+      {
+        "path": "./skills/cfs-ai-report/SKILL.md"
       }
     ],
     "customEditors": [
@@ -115,13 +106,23 @@
       },
       {
         "viewType": "cfs.reportViewer",
-        "displayName": "Codefusion Studio Report Viewer",
+        "displayName": "CodeFusion Studio Report Viewer",
         "selector": [
           {
             "filenamePattern": "*.cfsreport"
           }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "cfs.reportViewer.tef",
+        "displayName": "CodeFusion Studio Report Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.tef"
+          }
+        ],
+        "priority": "option"
       },
       {
         "viewType": "cfs.reportViewer.json",
@@ -144,7 +145,19 @@
             "filenamePattern": "*.bin"
           },
           {
+            "filenamePattern": "*.doj"
+          },
+          {
+            "filenamePattern": "*.dxe"
+          },
+          {
             "filenamePattern": "*.elf"
+          },
+          {
+            "filenamePattern": "*.exe"
+          },
+          {
+            "filenamePattern": "*.ko"
           },
           {
             "filenamePattern": "*.o"
@@ -156,16 +169,17 @@
             "filenamePattern": "*.prx"
           },
           {
-            "filenamePattern": "*.puff"
-          },
-          {
-            "filenamePattern": "*.ko"
-          },
-          {
-            "filenamePattern": "*.mod"
-          },
-          {
             "filenamePattern": "*.so"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "cfs.editor.west",
+        "displayName": "West Editor",
+        "selector": [
+          {
+            "filenamePattern": "**/west.yml"
           }
         ],
         "priority": "default"
@@ -216,6 +230,12 @@
           "type": "tree"
         },
         {
+          "id": "cfs.packageExplorerView",
+          "name": "Packages",
+          "type": "tree",
+          "contextualTitle": "Packages"
+        },
+        {
           "id": "cfs.contextPanelView",
           "name": "Context Filter",
           "type": "tree"
@@ -256,6 +276,13 @@
           "contextualTitle": "CFS",
           "when": "config.cfs.project.target in cfs.sev.supportedSocs",
           "icon": "$(graph-scatter)"
+        },
+        {
+          "id": "cfs.ctiConfig",
+          "name": "CTI Configuration",
+          "icon": "$(circuit-board)",
+          "contextualTitle": "CTI Configuration",
+          "when": "config.cfs.project.target in cfs.sev.supportedSocs"
         }
       ],
       "cfs-debug-memory-viewer": [
@@ -277,6 +304,11 @@
         "contents": "Loading Quick Access Links..."
       },
       {
+        "view": "cfs.packageExplorerView",
+        "contents": "No packages are installed.\nInstall packages to browse their contents here.\n[Manage Packages](command:cfs.openPackageManager)",
+        "when": "!cfs.packageExplorer.hasPackages && !cfs.packageExplorer.loadFailed"
+      },
+      {
         "view": "cfs.actionsView",
         "contents": "Loading Actions..."
       },
@@ -295,6 +327,10 @@
       {
         "view": "cfs.systemEventViewer",
         "contents": "System Event Viewer is only available during debug sessions"
+      },
+      {
+        "view": "cfs.ctiConfig",
+        "contents": "Create or import a configuration to get started.\n[Create CTI Connection](command:cfs.ctiConfig.createConnection)"
       }
     ],
     "terminal": {
@@ -466,6 +502,53 @@
         "title": "(CFS) Open Package Manager"
       },
       {
+        "command": "cfs.packageExplorer.filterByDependencies",
+        "title": "Show Workspace Dependencies Only",
+        "category": "CFS",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "cfs.packageExplorer.showAllPackages",
+        "title": "Show All Installed Packages",
+        "category": "CFS",
+        "icon": "$(filter-filled)"
+      },
+      {
+        "command": "cfs.packageExplorer.selectTypeFilter",
+        "title": "Filter Packages by Type",
+        "category": "CFS",
+        "icon": "$(list-filter)"
+      },
+      {
+        "command": "cfs.packageExplorer.clearFilters",
+        "title": "Clear Package Filters",
+        "category": "CFS",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "cfs.packageExplorer.refresh",
+        "title": "Refresh Packages",
+        "category": "CFS",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "cfs.packageExplorer.searchInPackage",
+        "title": "Search in Package",
+        "icon": "$(search)"
+      },
+      {
+        "command": "cfs.packageExplorer.revealInOS",
+        "title": "Reveal in File Explorer"
+      },
+      {
+        "command": "cfs.packageExplorer.copyPath",
+        "title": "Copy Path"
+      },
+      {
+        "command": "cfs.packageExplorer.copyRelativePath",
+        "title": "Copy Relative Path"
+      },
+      {
         "command": "cfs.installPackage",
         "title": "(CFS) Install Package"
       },
@@ -480,6 +563,10 @@
       {
         "command": "cfs.manageRemotes",
         "title": "(CFS) Manage Package Remotes"
+      },
+      {
+        "command": "cfs.checkPackageUpdates",
+        "title": "(CFS) Check for Package Updates"
       },
       {
         "command": "cfs.addRemote",
@@ -543,6 +630,21 @@
         "icon": "$(link-external)"
       },
       {
+        "command": "cfs.west.openAsText",
+        "title": "Open west.yml as Text",
+        "category": "CodeFusion Studio",
+        "icon": {
+          "light": "resources/assets/view-source-file.svg",
+          "dark": "resources/assets/view-source-file-white.svg"
+        }
+      },
+      {
+        "command": "cfs.west.openInEditor",
+        "title": "Open west.yml in West Editor",
+        "category": "CodeFusion Studio",
+        "icon": "$(preview)"
+      },
+      {
         "command": "cfs.ccm.myanalog.login",
         "title": "(CFS) myAnalog Login"
       },
@@ -565,6 +667,53 @@
         "icon": "$(copy)"
       },
       {
+        "command": "cfs.ctiConfig.createConnection",
+        "title": "Create CTI Connection",
+        "icon": "$(add)"
+      },
+      {
+        "command": "cfs.ctiConfig.removeItem",
+        "title": "Remove",
+        "icon": "$(close)"
+      },
+      {
+        "command": "cfs.ctiConfig.renameConnection",
+        "title": "Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "cfs.ctiConfig.addTriggerInput",
+        "title": "Add Trigger Input",
+        "icon": {
+          "light": "./resources/icons/input-light.svg",
+          "dark": "./resources/icons/input-dark.svg"
+        }
+      },
+      {
+        "command": "cfs.ctiConfig.addTriggerOutput",
+        "title": "Add Trigger Output",
+        "icon": {
+          "light": "./resources/icons/output-light.svg",
+          "dark": "./resources/icons/output-dark.svg"
+        }
+      },
+      {
+        "command": "cfs.ctiConfig.export",
+        "title": "Export CTI Configuration",
+        "icon": {
+          "light": "./resources/icons/cti/light/export.svg",
+          "dark": "./resources/icons/cti/dark/export.svg"
+        }
+      },
+      {
+        "command": "cfs.ctiConfig.import",
+        "title": "Import CTI Configuration",
+        "icon": {
+          "light": "./resources/icons/cti/light/import.svg",
+          "dark": "./resources/icons/cti/dark/import.svg"
+        }
+      },
+      {
         "command": "cfs.openAIReportFile",
         "title": "Open Report File",
         "icon": "$(go-to-file)"
@@ -581,6 +730,60 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "cfs.packageExplorer.searchInPackage",
+          "when": "false"
+        },
+        {
+          "command": "cfs.packageExplorer.revealInOS",
+          "when": "false"
+        },
+        {
+          "command": "cfs.packageExplorer.copyPath",
+          "when": "false"
+        },
+        {
+          "command": "cfs.packageExplorer.copyRelativePath",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.createConnection",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.removeItem",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.renameConnection",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.addTriggerInput",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.addTriggerOutput",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.export",
+          "when": "false"
+        },
+        {
+          "command": "cfs.ctiConfig.import",
+          "when": "false"
+        },
+        {
+          "command": "cfs.west.openAsText",
+          "when": "false"
+        },
+        {
+          "command": "cfs.west.openInEditor",
+          "when": "false"
+        }
+      ],
       "explorer/context": [
         {
           "command": "cfs.explorer.openWithSSPlus",
@@ -628,6 +831,46 @@
           "command": "cfs.sev.open",
           "when": "view == cfs.systemEventViewer",
           "group": "navigation"
+        },
+        {
+          "command": "cfs.packageExplorer.refresh",
+          "when": "view == cfs.packageExplorerView",
+          "group": "navigation@4"
+        },
+        {
+          "command": "cfs.packageExplorer.filterByDependencies",
+          "when": "view == cfs.packageExplorerView && !cfs.packageExplorer.dependenciesOnly",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cfs.packageExplorer.showAllPackages",
+          "when": "view == cfs.packageExplorerView && cfs.packageExplorer.dependenciesOnly",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cfs.packageExplorer.selectTypeFilter",
+          "when": "view == cfs.packageExplorerView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cfs.packageExplorer.clearFilters",
+          "when": "view == cfs.packageExplorerView && cfs.packageExplorer.filtersActive",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cfs.ctiConfig.createConnection",
+          "when": "view == cfs.ctiConfig",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cfs.ctiConfig.import",
+          "when": "view == cfs.ctiConfig",
+          "group": "navigation@2"
+        },
+        {
+          "command": "cfs.ctiConfig.export",
+          "when": "view == cfs.ctiConfig",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
@@ -675,6 +918,56 @@
           "command": "cfs.coreDumpCopyFilePath",
           "when": "view == cfs.coreDumpTreeView && viewItem == crash-location",
           "group": "inline"
+        },
+        {
+          "command": "cfs.packageExplorer.searchInPackage",
+          "when": "view == cfs.packageExplorerView && viewItem =~ /^cfsPackage(Folder)?$/",
+          "group": "inline"
+        },
+        {
+          "command": "cfs.packageExplorer.searchInPackage",
+          "when": "view == cfs.packageExplorerView && viewItem =~ /^cfsPackage(Folder)?$/",
+          "group": "1_search"
+        },
+        {
+          "command": "cfs.packageExplorer.revealInOS",
+          "when": "view == cfs.packageExplorerView && viewItem =~ /^cfsPackage(Folder|File)?$/",
+          "group": "3_reveal"
+        },
+        {
+          "command": "cfs.packageExplorer.copyPath",
+          "when": "view == cfs.packageExplorerView && viewItem =~ /^cfsPackage(Folder|File)?$/",
+          "group": "4_copy@1"
+        },
+        {
+          "command": "cfs.packageExplorer.copyRelativePath",
+          "when": "view == cfs.packageExplorerView && viewItem =~ /^cfsPackage(Folder|File)$/",
+          "group": "4_copy@2"
+        },
+        {
+          "command": "cfs.ctiConfig.renameConnection",
+          "when": "view == cfs.ctiConfig && viewItem == cfs.cti.connection",
+          "group": "inline@1"
+        },
+        {
+          "command": "cfs.ctiConfig.addTriggerInput",
+          "when": "view == cfs.ctiConfig && viewItem == cfs.cti.connection",
+          "group": "inline@2"
+        },
+        {
+          "command": "cfs.ctiConfig.addTriggerOutput",
+          "when": "view == cfs.ctiConfig && viewItem == cfs.cti.connection",
+          "group": "inline@3"
+        },
+        {
+          "command": "cfs.ctiConfig.export",
+          "when": "view == cfs.ctiConfig && viewItem == cfs.cti.connection",
+          "group": "inline@4"
+        },
+        {
+          "command": "cfs.ctiConfig.removeItem",
+          "when": "view == cfs.ctiConfig",
+          "group": "inline@5"
         }
       ],
       "editor/title": [
@@ -686,6 +979,16 @@
         {
           "when": "resourceScheme == 'file' && resourceFilename =~ /.*\\.cfsworkspace/",
           "command": "cfs.viewWorkspaceConfigFileSource",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceScheme == 'file' && resourceFilename == 'west.yml' && activeCustomEditorId == 'cfs.editor.west'",
+          "command": "cfs.west.openAsText",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceScheme == 'file' && resourceFilename == 'west.yml' && activeCustomEditorId != 'cfs.editor.west'",
+          "command": "cfs.west.openInEditor",
           "group": "navigation"
         }
       ]
@@ -881,9 +1184,21 @@
           "cfs.catalogManager.catalogLocation": {
             "type": "string",
             "order": 2,
-            "default": "${userHome}/cfs/2.3.0/.catalog",
+            "default": "${userHome}/cfs/2.4.0/.catalog",
             "description": "Path to the directory where the catalog will be stored.",
             "scope": "machine-overridable"
+          }
+        }
+      },
+      {
+        "id": "cfs-package-manager",
+        "title": "Package Manager",
+        "properties": {
+          "cfs.packageManager.checkForUpdates": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically check for package updates on workspace startup",
+            "scope": "resource"
           }
         }
       },
@@ -1545,102 +1860,132 @@
     "useYarn": false
   },
   "scripts": {
-    "cfgtools:lint": "eslint ./src/webviews/config-tools/**/*.{ts,tsx}",
     "cfgtools:open-cypress": "cypress open --component",
     "cfgtools:run-cypress": "cypress run --component --browser electron --spec './src/webviews/config-tools/**/*.cy.{ts,tsx}'",
     "cfgtools:run-extester": "yarn cfgtools:compile-tests && node out/tests/ui-test-config-tools/runTest.js",
     "cfgtools:build": "vite build --config ./vite.config.config-tools.mts",
     "cfgtools:build-dev": "vite build --mode development --config ./vite.config.config-tools.mts --watch",
     "cfgtools:typecheck": "tsc --noEmit -p ./src/webviews/config-tools.tsconfig.json",
+    "cfgtools:format-check": "oxfmt --check ./src/webviews/config-tools/**/*.{ts,tsx}",
+    "cfgtools:format-write": "oxfmt --write ./src/webviews/config-tools/**/*.{ts,tsx}",
     "cfgtools:compile-tests": "tsc -p src/tests/ui-test-config-tools/tsconfig.json && yarn ws:data-models generate-index",
     "ide:build": "vite build --config ./vite.config.config-tools.mts && copyfiles .env out/",
     "ide:dev": "vite --config ./vite.config.config-tools.mts",
-    "ide:lint": "eslint --ext .ts --ignore-path .gitignore --ignore-pattern \"src/webviews/**\" . && echo \"No linting errors found.\"",
+    "ide:lint": "oxlint --max-warnings 5 src --ignore-pattern \"src/webviews/**\"",
     "ide:typecheck": "tsc --noEmit -p tsconfig.json && echo \"No type errors found.\"",
-    "ide:tests-typecheck": "tsc --noEmit -p src/tests/ui-test/tsconfig.json && tsc --noEmit -p src/tests/ui-test-config-tools/tsconfig.json && tsc --noEmit -p src/tests/ui-test-system-event-viewer/tsconfig.json && tsc --noEmit -p src/tests/ui-test-workspace-creation/tsconfig.json && echo \"No test type errors found.\"",
-    "ide:webviews-typecheck": "yarn webviews:typecheck-common && yarn cfgtools:typecheck && yarn elf:typecheck && yarn report-viewer:typecheck && yarn home-page:typecheck && yarn mem-viewer:typecheck && yarn packman:typecheck && yarn trace-side-panel:typecheck && yarn trace-configuration:typecheck && yarn sev:typecheck && yarn sev-treeview:typecheck && yarn wrksp:typecheck && yarn model-wrksp:typecheck && yarn ai-profiling:typecheck && yarn ssplus:typecheck && echo \"No webview type errors found.\"",
-    "ide:webviews-lint": "yarn cfgtools:lint && yarn elf:lint && yarn report-viewer:lint && yarn home-page:lint && yarn mem-viewer:lint && yarn packman:lint && yarn trace-side-panel:lint && yarn trace-configuration:lint && yarn sev:lint && yarn sev-treeview:lint && yarn wrksp:lint && yarn model-wrksp:lint && yarn ai-profiling:lint && yarn ssplus:lint && yarn webviews:lint-common",
+    "ide:format-check": "oxfmt --ignore-path .prettierignore-ide  --check \"src/**/*.ts\"",
+    "ide:format-write": "oxfmt --ignore-path .prettierignore-ide  --write \"src/**/*.ts\"",
+    "ide:tests-typecheck": "tsc --noEmit -p src/tests/ui-test/tsconfig.json && tsc --noEmit -p src/tests/ui-test-config-tools/tsconfig.json && tsc --noEmit -p src/tests/ui-test-system-event-viewer/tsconfig.json && tsc --noEmit -p src/tests/ui-test-workspace-creation/tsconfig.json && tsc --noEmit -p src/tests/ui-test-zephelin/tsconfig.json && echo \"No test type errors found.\"",
+    "ide:webviews-typecheck": "yarn webviews:typecheck-common && yarn cfgtools:typecheck && yarn elf:typecheck && yarn report-viewer:typecheck && yarn home-page:typecheck && yarn mem-viewer:typecheck && yarn packman:typecheck && yarn trace-side-panel:typecheck && yarn trace-configuration:typecheck && yarn sev:typecheck && yarn sev-treeview:typecheck && yarn wrksp:typecheck && yarn model-wrksp:typecheck && yarn ai-profiling:typecheck && yarn ssplus:typecheck && yarn west-editor:typecheck && echo \"No webview type errors found.\"",
+    "ide:webviews-lint": "oxlint --max-warnings 15 src/webviews",
+    "ide:webviews-format-check": "yarn webviews:format-check-common && yarn cfgtools:format-check && yarn elf:format-check && yarn report-viewer:format-check && yarn home-page:format-check && yarn mem-viewer:format-check && yarn packman:format-check && yarn trace-side-panel:format-check && yarn trace-configuration:format-check && yarn sev:format-check && yarn sev-treeview:format-check && yarn wrksp:format-check && yarn model-wrksp:format-check && yarn ai-profiling:format-check && yarn ssplus:format-check && yarn west-editor:format-check && echo \"No webview formatting issues found.\"",
+    "ide:webviews-format-write": "yarn webviews:format-write-common && yarn cfgtools:format-write && yarn elf:format-write && yarn report-viewer:format-write && yarn home-page:format-write && yarn mem-viewer:format-write && yarn packman:format-write && yarn trace-side-panel:format-write && yarn trace-configuration:format-write && yarn sev:format-write && yarn sev-treeview:format-write && yarn wrksp:format-write && yarn model-wrksp:format-write && yarn ai-profiling:format-write && yarn ssplus:format-write && yarn west-editor:format-write",
     "ide:webviews-code-quality": "yarn ide:webviews-typecheck && yarn ide:webviews-lint",
     "ide:run-extester": "yarn ide:compile-tests && node out/tests/ui-test/runTest.js",
     "ide:compile-tests": "tsc -p src/tests/ui-test/tsconfig.json",
+    "zephelin:run-extester": "yarn zephelin:compile-tests && node out/tests/ui-test-zephelin/runTest.js",
+    "zephelin:compile-tests": "tsc -p src/tests/ui-test-zephelin/tsconfig.json",
     "ide:compile-unit-tests": "tsc -p tsconfig.unit-tests.json",
-    "ide:test-unit": "yarn run build:extension && yarn run ide:compile-unit-tests && vscode-test",
+    "ide:test-unit": "yarn run ide:compile-unit-tests && vscode-test",
     "elf:dev": "vite --config ./vite.config.elf-explorer.mts",
     "elf:build": "vite build --config ./vite.config.elf-explorer.mts",
     "elf:typecheck": "tsc --noEmit -p ./src/webviews/elf.tsconfig.json",
-    "elf:lint": "eslint ./src/webviews/elf-explorer/**/*.{ts,tsx}",
+    "elf:format-check": "oxfmt --check ./src/webviews/elf-explorer/**/*.{ts,tsx}",
+    "elf:format-write": "oxfmt --write ./src/webviews/elf-explorer/**/*.{ts,tsx}",
     "elf:run-cypress": "cypress run --component --browser electron --spec './src/webviews/elf-explorer/**/*.cy.{ts,tsx}'",
     "report-viewer:dev": "vite --config ./vite.config.report-viewer.mts",
     "report-viewer:build": "vite build --config ./vite.config.report-viewer.mts",
     "report-viewer:build-dev": "vite build --mode development --config ./vite.config.report-viewer.mts --watch",
     "report-viewer:typecheck": "tsc --noEmit -p ./src/webviews/report-viewer.tsconfig.json",
-    "report-viewer:lint": "eslint ./src/webviews/report-viewer/**/*.{ts,tsx}",
+    "report-viewer:format-check": "oxfmt --check ./src/webviews/report-viewer/**/*.{ts,tsx}",
+    "report-viewer:format-write": "oxfmt --write ./src/webviews/report-viewer/**/*.{ts,tsx}",
     "report-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/report-viewer/**/*.cy.{ts,tsx}'",
     "home-page:dev": "vite --config ./vite.config.home-page.mts",
     "home-page:build": "vite build --config ./vite.config.home-page.mts",
     "home-page:build-dev": "vite build --mode development --config ./vite.config.home-page.mts --watch",
     "home-page:typecheck": "tsc --noEmit -p ./src/webviews/home.tsconfig.json",
-    "home-page:lint": "eslint ./src/webviews/home-page/**/*.{ts,tsx}",
+    "home-page:format-check": "oxfmt --check ./src/webviews/home-page/**/*.{ts,tsx}",
+    "home-page:format-write": "oxfmt --write ./src/webviews/home-page/**/*.{ts,tsx}",
     "mem-viewer:dev": "vite --config ./vite.config.memory-viewer.mts",
     "mem-viewer:build": "vite build --config ./vite.config.memory-viewer.mts",
     "mem-viewer:build-dev": "vite build --mode development --config ./vite.config.memory-viewer.mts --watch",
     "mem-viewer:typecheck": "tsc --noEmit -p ./src/webviews/memory-viewer.tsconfig.json",
-    "mem-viewer:lint": "eslint ./src/webviews/memory-viewer/**/*.{ts,tsx}",
+    "mem-viewer:format-check": "oxfmt --check ./src/webviews/memory-viewer/**/*.{ts,tsx}",
+    "mem-viewer:format-write": "oxfmt --write ./src/webviews/memory-viewer/**/*.{ts,tsx}",
     "mem-viewer:run-cypress": "cypress run --component --browser electron --spec './src/webviews/memory-viewer/**/*.cy.tsx'",
     "mem-viewer:run-extester": "yarn mem-viewer:compile-tests && node out/tests/ui-test-memory-viewer/runTest.js",
     "mem-viewer:compile-tests": "tsc -p src/tests/ui-test-memory-viewer/tsconfig.json && yarn ws:data-models generate-index",
     "packman:build": "vite build --config ./vite.config.package-manager.mts",
     "packman:build-dev": "vite build --mode development --config ./vite.config.package-manager.mts --watch",
     "packman:dev": "vite --config ./vite.config.package-manager.mts",
-    "packman:lint": "eslint ./src/webviews/package-manager/**/*.{ts,tsx}",
     "packman:typecheck": "tsc --noEmit -p ./src/webviews/package-manager.tsconfig.json",
+    "packman:format-check": "oxfmt --check ./src/webviews/package-manager/**/*.{ts,tsx}",
+    "packman:format-write": "oxfmt --write ./src/webviews/package-manager/**/*.{ts,tsx}",
+    "packman:run-cypress": "cypress run --component --browser electron --spec './src/webviews/package-manager/**/*.cy.{ts,tsx}'",
     "trace-side-panel:dev": "vite --config ./vite.config.trace-side-panel.mts",
     "trace-side-panel:build": "vite build --config ./vite.config.trace-side-panel.mts",
     "trace-side-panel:build-dev": "vite build --mode development --config ./vite.config.trace-side-panel.mts --watch",
     "trace-side-panel:typecheck": "tsc --noEmit -p ./src/webviews/trace-side-panel.tsconfig.json",
-    "trace-side-panel:lint": "eslint ./src/webviews/trace-side-panel/**/*.{ts,tsx}",
+    "trace-side-panel:format-check": "oxfmt --check ./src/webviews/trace-side-panel/**/*.{ts,tsx}",
+    "trace-side-panel:format-write": "oxfmt --write ./src/webviews/trace-side-panel/**/*.{ts,tsx}",
     "trace-configuration:dev": "vite --config ./vite.config.trace-configuration.mts",
     "trace-configuration:build": "vite build --config ./vite.config.trace-configuration.mts",
     "trace-configuration:build-dev": "vite build --mode development --config ./vite.config.trace-configuration.mts --watch",
     "trace-configuration:typecheck": "tsc --noEmit -p ./src/webviews/trace-configuration.tsconfig.json",
-    "trace-configuration:lint": "eslint ./src/webviews/trace-configuration/**/*.{ts,tsx}",
+    "trace-configuration:format-check": "oxfmt --check ./src/webviews/trace-configuration/**/*.{ts,tsx}",
+    "trace-configuration:format-write": "oxfmt --write ./src/webviews/trace-configuration/**/*.{ts,tsx}",
     "sev:build": "vite build --config ./vite.config.system-event-viewer.mts",
     "sev:typecheck": "tsc --noEmit -p ./src/webviews/system-event-viewer.tsconfig.json",
-    "sev:lint": "eslint ./src/webviews/system-event-viewer/**/*.{ts,tsx}",
+    "sev:format-check": "oxfmt --check ./src/webviews/system-event-viewer/**/*.{ts,tsx}",
+    "sev:format-write": "oxfmt --write ./src/webviews/system-event-viewer/**/*.{ts,tsx}",
     "sev:run-extester": "yarn sev:compile-tests && node out/tests/ui-test-system-event-viewer/runTest.js",
     "sev:compile-tests": "tsc -p src/tests/ui-test-system-event-viewer/tsconfig.json && yarn ws:data-models generate-index",
     "sev:dev": "vite build --mode development --config ./vite.config.system-event-viewer.mts --watch",
     "sev:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer/**/*.cy.{ts,tsx}'",
     "sev-treeview:build": "vite build --config ./vite.config.system-event-viewer-treeview.mts",
     "sev-treeview:typecheck": "tsc --noEmit -p ./src/webviews/system-event-viewer-treeview.tsconfig.json",
-    "sev-treeview:lint": "eslint ./src/webviews/system-event-viewer-treeview/**/*.{ts,tsx}",
+    "sev-treeview:format-check": "oxfmt --check ./src/webviews/system-event-viewer-treeview/**/*.{ts,tsx}",
+    "sev-treeview:format-write": "oxfmt --write ./src/webviews/system-event-viewer-treeview/**/*.{ts,tsx}",
     "sev-treeview:dev": "vite build --mode development --config ./vite.config.system-event-viewer-treeview.mts --watch",
     "sev-treeview:run-cypress": "cypress run --component --browser electron --spec './src/webviews/system-event-viewer-treeview/**/*.cy.{ts,tsx}'",
     "wrksp:build": "vite build --config ./vite.config.workspace-creation.mts",
     "wrksp:build-dev": "vite build --mode development --config ./vite.config.workspace-creation.mts --watch",
     "wrksp:typecheck": "tsc --noEmit -p ./src/webviews/workspace.tsconfig.json",
-    "wrksp:lint": "eslint ./src/webviews/workspace-creation/**/*.{ts,tsx}",
+    "wrksp:format-check": "oxfmt --check ./src/webviews/workspace-creation/**/*.{ts,tsx}",
+    "wrksp:format-write": "oxfmt --write ./src/webviews/workspace-creation/**/*.{ts,tsx}",
     "wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/workspace-creation/**/*.cy.tsx'",
     "wrksp:run-extester": "yarn wrksp:compile-tests && node out/tests/ui-test-workspace-creation/runTest.js",
     "wrksp:compile-tests": "tsc -p src/tests/ui-test-workspace-creation/tsconfig.json && yarn ws:data-models generate-index",
     "model-wrksp:build": "vite build --config ./vite.config.model-workspace-creation.mts",
     "model-wrksp:build-dev": "vite build --mode development --config ./vite.config.model-workspace-creation.mts --watch",
     "model-wrksp:typecheck": "tsc --noEmit -p ./src/webviews/model-workspace.tsconfig.json",
-    "model-wrksp:lint": "eslint ./src/webviews/model-workspace-creation/**/*.{ts,tsx}",
+    "model-wrksp:format-check": "oxfmt --check ./src/webviews/model-workspace-creation/**/*.{ts,tsx}",
+    "model-wrksp:format-write": "oxfmt --write ./src/webviews/model-workspace-creation/**/*.{ts,tsx}",
     "model-wrksp:run-cypress": "cypress run --component --browser electron --spec './src/webviews/model-workspace-creation/**/*.cy.tsx'",
     "ai-profiling:build": "vite build --config ./vite.config.ai-hardware-profiling.mts",
     "ai-profiling:build-dev": "vite build --mode development --config ./vite.config.ai-hardware-profiling.mts --watch",
     "ai-profiling:typecheck": "tsc --noEmit -p ./src/webviews/ai-hardware-profiling.tsconfig.json",
-    "ai-profiling:lint": "eslint ./src/webviews/ai-hardware-profiling/**/*.{ts,tsx}",
+    "ai-profiling:format-check": "oxfmt --check ./src/webviews/ai-hardware-profiling/**/*.{ts,tsx}",
+    "ai-profiling:format-write": "oxfmt --write ./src/webviews/ai-hardware-profiling/**/*.{ts,tsx}",
     "ai-profiling:run-cypress": "cypress run --component --browser electron --spec './src/webviews/ai-hardware-profiling/**/*.cy.tsx'",
     "ssplus:build": "vite build --config ./vite.config.sigma-studio-plus-project.mts",
     "ssplus:typecheck": "tsc --noEmit -p ./src/webviews/sigma-studio-plus-project.tsconfig.json",
-    "ssplus:lint": "eslint ./src/webviews/sigma-studio-plus-project/**/*.{ts,tsx}",
+    "ssplus:format-check": "oxfmt --check ./src/webviews/sigma-studio-plus-project/**/*.{ts,tsx}",
+    "ssplus:format-write": "oxfmt --write ./src/webviews/sigma-studio-plus-project/**/*.{ts,tsx}",
+    "west-editor:build": "vite build --config ./vite.config.west-editor.mts",
+    "west-editor:build-dev": "vite build --mode development --config ./vite.config.west-editor.mts --watch",
+    "west-editor:typecheck": "tsc --noEmit -p ./src/webviews/west-editor.tsconfig.json",
+    "west-editor:format-check": "oxfmt --check ./src/webviews/west-editor/**/*.{ts,tsx}",
+    "west-editor:format-write": "oxfmt --write ./src/webviews/west-editor/**/*.{ts,tsx}",
+    "west-editor:run-cypress": "cypress run --component --browser electron --spec './src/webviews/west-editor/**/*.cy.{ts,tsx}'",
     "webviews:typecheck-common": "tsc --noEmit -p src/webviews/common/tsconfig.json",
-    "webviews:lint-common": "eslint src/webviews/common/**/*.{ts,tsx}",
-    "build-local-deps": "yarn ws:react-lib build && yarn ws:elf-parser build && yarn ws:lib build && yarn ws:ccm-lib build",
-    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests && yarn sev:compile-tests && node ../../scripts/skills-docs/sync-docs.js && node ../../scripts/skills-docs/stage-skills.js",
+    "webviews:format-check-common": "oxfmt --check src/webviews/*.{ts,tsx} src/webviews/common/**/*.{ts,tsx}",
+    "webviews:format-write-common": "oxfmt --write src/webviews/*.{ts,tsx} src/webviews/common/**/*.{ts,tsx}",
+    "webviews:run-cypress": "cypress run --component --browser electron --spec './src/webviews/common/**/*.cy.{ts,tsx}'",
+    "build-local-deps": "yarn ws:react-lib build && yarn ws:lib build && yarn ws:ccm-lib build",
+    "vscode:prepublish": "yarn run build-local-deps && yarn run build:extension && yarn cfgtools:compile-tests && yarn wrksp:compile-tests && yarn ide:compile-tests && yarn sev:compile-tests && yarn zephelin:compile-tests && node ../../scripts/skills-docs/sync-docs.js && node ../../scripts/skills-docs/stage-skills.js",
     "vite:extension": "vite build --mode extension",
+    "vite:git-remote": "vite build --mode git-remote",
     "vite:watch": "vite build --watch",
     "dev:config-tools": "vite --config ./vite.config.config-tools.mts",
     "stylelint": "npx stylelint \"**/src/**/*.{scss,css}\" --fix",
@@ -1649,7 +1994,7 @@
     "test:ui": "extest setup-and-run \"out/tests/ui-test/**/*-test.js\" -c 1.85.2 -u --mocha_config .mocharc.js",
     "package": "vsce package --baseImagesUrl https://github.com/analogdevicesinc/codefusion-studio/raw/HEAD/packages/ide",
     "auth-cfg": "yarn run -T auth-config > auth.json",
-    "build:extension": "yarn vite:extension && yarn cfgtools:build && yarn elf:build && yarn mem-viewer:build && yarn packman:build && yarn home-page:build && yarn wrksp:build && yarn && yarn trace-side-panel:build && yarn trace-configuration:build && yarn report-viewer:build && yarn model-wrksp:build && yarn ai-profiling:build && yarn && yarn ssplus:build && yarn sev:build && yarn sev-treeview:build && yarn ide:build && yarn auth-cfg"
+    "build:extension": "yarn vite:extension && yarn vite:git-remote && yarn cfgtools:build && yarn elf:build && yarn mem-viewer:build && yarn packman:build && yarn home-page:build && yarn wrksp:build && yarn && yarn trace-side-panel:build && yarn trace-configuration:build && yarn report-viewer:build && yarn model-wrksp:build && yarn ai-profiling:build && yarn && yarn ssplus:build && yarn west-editor:build && yarn sev:build && yarn sev-treeview:build && yarn ide:build && yarn auth-cfg"
   },
   "devDependencies": {
     "@types/chai": "^4.3.10",
@@ -1664,9 +2009,7 @@
     "@types/styled-components": "^5.1.29",
     "@types/vscode": "^1.101.0",
     "@types/vscode-webview": "^1.57.3",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.1",
-    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-react": "6.1.1",
     "@vscode/codicons": "^0.0.35",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "2.3.8",
@@ -1677,65 +2020,47 @@
     "concurrently": "^8.2.2",
     "copyfiles": "^2.4.1",
     "css-loader": "^6.8.1",
-    "cypress": "^15.17.0",
+    "cypress": "^15.19.0",
     "cypress-real-events": "^1.15.0",
     "dotenv": "16.5.0",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-config-standard-with-typescript": "^43.0.1",
-    "eslint-config-xo": "^0.43.1",
-    "eslint-config-xo-react": "^0.27.0",
-    "eslint-config-xo-typescript": "^1.0.1",
-    "eslint-plugin-cypress": "^3.3.0",
-    "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-import": "^2.25.2",
-    "eslint-plugin-jsonc": "^2.11.2",
-    "eslint-plugin-markdown": "^3.0.0",
-    "eslint-plugin-n": "^16.0.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-promise": "^6.0.0",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-simple-import-sort": "^10.0.0",
-    "eslint-plugin-tsdoc": "^0.2.17",
-    "eslint-plugin-unused-imports": "^3.0.0",
-    "eslint-plugin-yml": "^1.11.0",
     "focus-trap-react": "^10.2.3",
     "jexl": "^2.3.0",
     "markdownlint-cli": "^0.40.0",
     "mocha": "^10.1.0",
-    "prettier": "^2.8.8",
-    "prettier-config-xo": "^2.0.0",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "playwright-core": "^1.63.0",
     "prop-types": "^15.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.69.5",
+    "sharp": "^0.35.4",
     "shx": "^0.4.0",
     "stylelint": "^16.2.1",
     "stylelint-config-recess-order": "^4.4.0",
     "stylelint-config-standard": "^36.0.0",
     "stylelint-config-standard-scss": "^13.0.0",
-    "typescript": "^5.4.0",
-    "vite": "^8.1.0",
+    "tsx": "^4.20.4",
+    "typescript": "catalog:",
+    "vite": "^8.2.2",
     "vite-plugin-node-polyfills": "^0.28.0",
     "vite-tsconfig-paths": "^4.3.2",
     "vscode-extension-tester": "^8.21.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
     "@reduxjs/toolkit": "^2.0.1",
     "@types/express": "^5.0.3",
     "@vscode/webview-ui-toolkit": "^1.4.0",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
-    "cfs-ccm-api": "workspace:*",
     "cfs-ccm-lib": "workspace:*",
     "cfs-lib": "workspace:*",
     "cfs-package-manager": "workspace:^",
     "cfs-react-library": "workspace:^",
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
-    "elf-parser": "workspace:^",
     "fast-glob": "^3.3.3",
     "htmlparser2": "^9.1.0",
     "jsonc-parser": "^3.3.1",
@@ -1752,8 +2077,9 @@
     "serialport": "^13.0.0",
     "swiper": "^12.1.2",
     "usb": "^2.18.0",
-    "vscode-messenger": "^0.6.0",
-    "vscode-messenger-webview": "^0.6.0",
+    "vscode-messenger": "^0.6.1",
+    "vscode-messenger-webview": "^0.6.1",
+    "yaml": "^2.9.0",
     "zod": "^4.4.3"
   },
   "__metadata": {

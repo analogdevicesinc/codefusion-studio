@@ -1,7 +1,7 @@
 ---
 description: Add, list, update, and remove AI models within a workspace using cfsutil ai model commands.
 author: Analog Devices
-date: 2026-07-31
+date: 2026-10-10
 ---
 <!-- markdownlint-disable MD024 -->
 
@@ -33,7 +33,13 @@ Adds a model to a workspace. The command adds a new entry to the `AIModels` arra
 The model name is derived from the file name.
 
 !!! note
-    A model with the same name cannot be added twice. The name is taken from the model file name (without extension) and must not exceed 64 characters. If the derived name is longer, rename the model file to a shorter name.
+    The name is taken from the model file name (without extension) and must not exceed 64 characters. If the derived name is longer, rename the model file to a shorter name.
+
+!!! note "Identifier collisions"
+    `cfsutil ai model add` and `cfsutil ai model update` normalize and compare both `Name` and `Symbol` (when set) for every model. They reject a model when either value collides case-insensitively with either value from another model in the same workspace. Run `cfsutil ai model list --verbose` to review existing values, then select unique `Name` and `Symbol` values.
+
+!!! note "Paths and URLs are stored as provided"
+    `cfsutil ai model add` stores the `--model`, `--dataset`, and `--network-config` values in the `.cfsconfig` file as provided, not resolved to absolute paths. `cfsutil ai model update` does the same for `model`, `dataset`, and `networkconfig` values passed through `--set`. Enter relative paths relative to the workspace root, and run both commands from the workspace root because `cfsutil ai build` resolves relative paths from there.
 
 ```sh
 cfsutil ai model add --core <value> -m <value> [--format text|json] [-w <value>] [--config <value>] [--dataset <value>] [-a <value>] [--network-config <value>] [-e <value>...] [--ignore-cache]
@@ -69,7 +75,7 @@ cfsutil ai model add --core <value> -m <value> [--format text|json] [-w <value>]
 | `--dataset` | | Path or URL to a sample dataset for quantization calibration (for example, a folder of representative input images). |
 | `--ignore-cache` | | Bypass the cache and fetch the latest remote files. |
 | `--network-config` | | Path or URL to the Izer network configuration YAML. Required for `izer` backends. |
-| `--format` | | Output format: `text` (default) or `json`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
 
 !!! note
     For reference on how to train PyTorch models compatible with MAX78002, see the open-source [:octicons-link-external-24: ai8x-synthesis repository](https://github.com/analogdevicesinc/ai8x-synthesis){:target="_blank"}.
@@ -105,7 +111,7 @@ cfsutil ai model add --core <value> -m <value> [--format text|json] [-w <value>]
 Lists the AI models configured in a workspace. Use `--core` to filter by a specific core, or `--verbose` to show full model details.
 
 ```sh
-cfsutil ai model list [--format text|json] [-w <value>] [--config <value>] [-c <value>] [--verbose]
+cfsutil ai model list [--format text|json] [-v | -q] [-w <value>] [--config <value>] [-c <value>]
 ```
 
 ### Required flags
@@ -119,8 +125,9 @@ cfsutil ai model list [--format text|json] [-w <value>] [--config <value>] [-c <
 | Flag | Short | Description |
 | ---- | ----- | ----------- |
 | `--core` | `-c` | Filter models by target core. |
-| `--format` | | Output format: `text` (default) or `json`. |
-| `--verbose` | | Show file name, backend, and extension details for each model. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
+| `--verbose` | `-v` | Show file name, backend, and extension details for each model. Mutually exclusive with `--quiet`. |
+| `--quiet` | `-q` | Suppress non-error output. Mutually exclusive with `--verbose`. |
 
 !!! example
     ```sh
@@ -160,7 +167,7 @@ cfsutil ai model remove --name <value> [--format text|json] [-w <value>] [--conf
 
 | Flag | Short | Description |
 | ---- | ----- | ----------- |
-| `--format` | | Output format: `text` (default) or `json`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
 
 !!! example
     ```sh
@@ -189,7 +196,7 @@ cfsutil ai model update --name <value> --set <value>... [--format text|json] [-w
 | ---- | ----- | ----------- |
 | `--core` | `-c` | Target core. |
 | `--ignore-cache` | | Bypass the cache and fetch the latest remote files. |
-| `--format` | | Output format: `text` (default) or `json`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). |
 
 ### Updatable fields
 
@@ -198,8 +205,8 @@ cfsutil ai model update --name <value> --set <value>... [--format text|json] [-w
 | Key | Description |
 | --- | ----------- |
 | `enabled` | Enable or disable the model (`true` or `false`). |
-| `model` | Replace the model file path or URL. |
-| `name` | Rename the model. Must not conflict with an existing model name and must not exceed 64 characters. |
+| `model` | Replace the model file path or URL. Stored as provided; see [Paths and URLs are stored as provided](#add-command). |
+| `name` | Rename the model. Must not exceed 64 characters. See [Identifier collisions](#add-command) for name and Symbol uniqueness rules. |
 
 !!! example "Update core fields"
     ```sh
@@ -214,7 +221,7 @@ cfsutil ai model update --name <value> --set <value>... [--format text|json] [-w
 | --- | ----------- |
 | `ArenaSection` | Memory section for the arena. |
 | `ArenaSize` | Arena size for the model. |
-| `Dataset` | Dataset file. |
+| `Dataset` | Dataset file path or URL. Stored as provided; see [Paths and URLs are stored as provided](#add-command). |
 | `DatasetSection` | Memory section for the dataset. |
 | `Section` | Memory section for model data. |
 | `Symbol` | Symbol name for model data. |
@@ -234,7 +241,7 @@ cfsutil ai model update --name <value> --set <value>... [--format text|json] [-w
 | `Fifo` | Use FIFO. |
 | `InputShape` | Input shape. |
 | `Prefix` | Test name prefix. |
-| `NetworkConfig` | Izer network configuration path or URL. |
+| `NetworkConfig` | Izer network configuration path or URL. Stored as provided; see [Paths and URLs are stored as provided](#add-command). |
 | `Softmax` | Enable softmax layer generation. |
 | `Timer` | Inference timer. |
 

@@ -81,18 +81,14 @@ export class SystemEventViewerWebviewProvider
   private debugSession: CfsDebugSession | undefined = undefined;
   private readonly sessionDisposables: vscode.Disposable[] = [];
 
-  // Another smell that this should be multiple classes.
-  // This event should be part of a "view" not a "view provider".
-  private _onDidChangeCheckboxState: vscode.EventEmitter<
+  private readonly _onDidChangeCheckboxState = new vscode.EventEmitter<
     vscode.TreeCheckboxChangeEvent<EventNode>
-  > = new vscode.EventEmitter<vscode.TreeCheckboxChangeEvent<EventNode>>();
+  >();
 
   /**
-   * An event to signal that an element or root has either been checked or unchecked.
+   * An event to signal that an element has either been checked or unchecked.
    */
-  readonly onDidChangeCheckboxState: vscode.Event<
-    vscode.TreeCheckboxChangeEvent<EventNode>
-  > = this._onDidChangeCheckboxState.event;
+  readonly onDidChangeCheckboxState = this._onDidChangeCheckboxState.event;
 
   constructor(
     private readonly debugManager: CfsDebugManager, // provides debug session lifecycle/state events.
@@ -148,7 +144,6 @@ export class SystemEventViewerWebviewProvider
     );
 
     const activeSession = this.debugManager.getActiveSession();
-
     this.handleSessionChange(activeSession, webview);
   }
 
@@ -238,7 +233,9 @@ export class SystemEventViewerWebviewProvider
           <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
         </body>
          <script>
-          window.__webview_localization_resources__ = ${JSON.stringify(translations)}
+          window.__webview_localization_resources__ = ${JSON.stringify(
+            translations,
+          )}
         </script>
       </html>
     `;
@@ -293,7 +290,7 @@ export class SystemEventViewerWebviewProvider
 
       switch (message.type) {
         case GET_CHILDREN_REQ_ID:
-          responseBody = this.treeDataProvider.getChildren(
+          responseBody = await this.treeDataProvider.getChildren(
             message.body?.element,
           );
           break;
@@ -307,6 +304,7 @@ export class SystemEventViewerWebviewProvider
           const checkboxState = message.body.value
             ? vscode.TreeItemCheckboxState.Checked
             : vscode.TreeItemCheckboxState.Unchecked;
+
           this._onDidChangeCheckboxState.fire({
             items: [[item, checkboxState]],
           });

@@ -35,5 +35,4 @@ export interface WorkspaceFileSearchProvider {
 export interface McpServerDependencies {
   readonly debugManager: CfsDebugManager;
   readonly commandExecutor: DebugCommandExecutor;
-  readonly workspaceFileSearch: WorkspaceFileSearchProvider;
 }

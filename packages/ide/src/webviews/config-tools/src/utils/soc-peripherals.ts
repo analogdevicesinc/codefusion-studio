@@ -29,6 +29,7 @@ import {getProjectInfoList} from './config';
 import type {TNumericBase} from '../../../common/types/errorTypes';
 import type {CfsSocDataModel} from 'cfs-types';
 import {getTypeBasedDefault} from './control-defaults';
+import {formatPeripheralHexValue} from './peripheral';
 
 let peripheralDict: Record<
 	string,
@@ -77,7 +78,10 @@ export function formatSocPeripheralDictionary(
 					group: peripheral.Group
 				}),
 				...(peripheral.Config && {config: peripheral.Config}),
-				...(peripheral.Required && {required: peripheral.Required})
+				...(peripheral.Required && {required: peripheral.Required}),
+				...(peripheral.SRU && {
+					sru: peripheral.SRU
+				})
 			};
 
 		if (peripheral.Signals) {
@@ -87,6 +91,7 @@ export function formatSocPeripheralDictionary(
 					description: signal.Description,
 					...(signal.Required && {required: signal.Required}),
 					pins: [],
+					reservedPins: [],
 					...(signal.Group && {group: signal.Group})
 				};
 
@@ -98,22 +103,26 @@ export function formatSocPeripheralDictionary(
 	}
 
 	for (const pin of socPackage?.Pins ?? []) {
-		if (pin.Signals && !isPinReserved(pin.Name)) {
-			const newPin = {
-				Name: pin.Name,
-				Label: pin.Label,
-				Description: pin.Description,
-				Position: pin.Position,
-				Signals: pin.Signals
-			};
+		if (!pin.Signals) continue;
 
-			for (const signal of pin.Signals) {
-				const targetSignal =
-					peripheralDict[signal.Peripheral ?? '']?.signals[
-						signal.Name
-					];
+		const newPin = {
+			Name: pin.Name,
+			Label: pin.Label,
+			Description: pin.Description,
+			Position: pin.Position,
+			Signals: pin.Signals
+		};
 
-				targetSignal?.pins.push(newPin);
+		for (const signal of pin.Signals) {
+			const targetSignal =
+				peripheralDict[signal.Peripheral ?? '']?.signals[signal.Name];
+
+			if (!targetSignal) continue;
+
+			if (isPinReserved(pin.Name)) {
+				targetSignal.reservedPins.push(newPin);
+			} else {
+				targetSignal.pins.push(newPin);
 			}
 		}
 	}
@@ -385,12 +394,17 @@ export function computePeripheralResetValues(
 	// If the control has a "Hint" property, use that value instead.
 	if (availableControls?.length) {
 		availableControls.forEach(control => {
-			computedDefaultValues[control.Id] =
+			const defaultValue =
 				control.Default !== undefined && control.Default !== null
 					? String(control.Default)
 					: (control.Hint ??
 						computedDefaultValues[control.Id] ??
 						getTypeBasedDefault(control));
+
+			computedDefaultValues[control.Id] =
+				control.NumericBase === 'Hexadecimal' && defaultValue === '0'
+					? formatPeripheralHexValue(0)
+					: defaultValue;
 		});
 	}
 

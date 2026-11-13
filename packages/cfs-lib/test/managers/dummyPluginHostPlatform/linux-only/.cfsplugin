@@ -1,0 +1,20 @@
+{
+	"pluginName": "Host Platform Plugin (Linux)",
+	"pluginId": "com.analog.test.hostplatform.plugin",
+	"pluginDescription": "Linux-only version of the host platform test plugin",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "2.0.0",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"supportedHostPlatforms": ["linux"],
+	"features": {
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

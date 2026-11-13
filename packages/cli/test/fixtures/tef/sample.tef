@@ -1,0 +1,85 @@
+[
+  {
+    "name": "THREAD",
+    "ph": "M",
+    "ts": 0,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "name": "inference_thread"
+    }
+  },
+  {
+    "name": "INFERENCE::run",
+    "ph": "B",
+    "ts": 0,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "model_id": 7
+    }
+  },
+  {
+    "name": "MODEL0::op",
+    "ph": "B",
+    "ts": 0,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "subgraph_idx": 0,
+      "op_idx": 0,
+      "tag": "CONV_2D",
+      "runtime": "tflm",
+      "arena_used_bytes": 2048
+    }
+  },
+  {
+    "name": "MODEL0::op",
+    "ph": "E",
+    "ts": 400,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "subgraph_idx": 0,
+      "op_idx": 0,
+      "tag": "CONV_2D",
+      "runtime": "tflm",
+      "arena_used_bytes": 2048
+    }
+  },
+  {
+    "name": "MODEL0::op",
+    "ph": "B",
+    "ts": 400,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "subgraph_idx": 0,
+      "op_idx": 1,
+      "tag": "SOFTMAX",
+      "runtime": "tflm",
+      "arena_used_bytes": 2048
+    }
+  },
+  {
+    "name": "MODEL0::op",
+    "ph": "E",
+    "ts": 1400,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "subgraph_idx": 0,
+      "op_idx": 1,
+      "tag": "SOFTMAX",
+      "runtime": "tflm",
+      "arena_used_bytes": 2048
+    }
+  },
+  {
+    "name": "INFERENCE::run",
+    "ph": "E",
+    "ts": 1500,
+    "pid": 1,
+    "tid": 1
+  }
+]

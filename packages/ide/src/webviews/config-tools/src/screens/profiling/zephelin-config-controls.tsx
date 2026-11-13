@@ -13,6 +13,7 @@
  *
  */
 
+import {Fragment} from 'react';
 import {
 	CheckBox,
 	DropDown,
@@ -38,13 +39,17 @@ export type BaseZephelinInputProps = {
 	readonly isDisabled?: boolean | 'locked' | 'global';
 };
 
+export type ZephelinConfigDependantInputProps =
+	| ZephelinConfigDropdownProps
+	| ZephelinConfigNumberInputProps
+	| ZephelinConfigTextInputProps;
+
 export type ZephelinConfigCheckboxProps = BaseZephelinInputProps & {
 	readonly isChecked: boolean;
 	readonly onChange?: () => void;
 	readonly dependantInputProps?:
-		| ZephelinConfigDropdownProps
-		| ZephelinConfigNumberInputProps
-		| ZephelinConfigTextInputProps;
+		| ZephelinConfigDependantInputProps
+		| ZephelinConfigDependantInputProps[];
 };
 
 export type ZephelinConfigDropdownProps = BaseZephelinInputProps & {
@@ -114,17 +119,24 @@ export function ZephelinConfigCheckbox({
 
 			{isChecked && dependantInputProps && (
 				<div className={styles.dependantInput}>
-					{'options' in dependantInputProps && (
-						<ZephelinConfigDropdown {...dependantInputProps} />
-					)}
+					{(Array.isArray(dependantInputProps)
+						? dependantInputProps
+						: [dependantInputProps]
+					).map((props, index) => (
+						<Fragment key={props.dataTest ?? index}>
+							{'options' in props && (
+								<ZephelinConfigDropdown {...props} />
+							)}
 
-					{'numberValue' in dependantInputProps && (
-						<ZephelinConfigNumberInput {...dependantInputProps} />
-					)}
+							{'numberValue' in props && (
+								<ZephelinConfigNumberInput {...props} />
+							)}
 
-					{'textValue' in dependantInputProps && (
-						<ZephelinConfigTextInput {...dependantInputProps} />
-					)}
+							{'textValue' in props && (
+								<ZephelinConfigTextInput {...props} />
+							)}
+						</Fragment>
+					))}
 				</div>
 			)}
 		</div>

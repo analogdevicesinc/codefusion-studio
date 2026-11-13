@@ -44,7 +44,8 @@ body.ev-sources-list-resizing {
 }
 
 // For floating card during drag in event sources list
-body.timeline-drag-active {
+body.timeline-drag-active,
+body.timeline-drag-active * {
 	cursor: grabbing !important;
 	user-select: none !important;
 }

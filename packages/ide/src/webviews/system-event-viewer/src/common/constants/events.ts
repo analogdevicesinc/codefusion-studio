@@ -19,10 +19,20 @@ export const MENU_ACTION: Record<string, MenuAction> = {
 	top: 'top',
 	up: 'up',
 	down: 'down',
-	bottom: 'bottom'
+	bottom: 'bottom',
+	renameGroup: 'renameGroup',
+	ungroup: 'ungroup',
+	extractNode: 'extractNode'
 };
 
 export const PANEL_PLACEMENT: Record<string, PanelPlacement> = {
 	top: 'top',
 	bottom: 'bottom'
 };
+
+export const ROOT_PADDING = 8;
+export const DEPTH_PADDING = 28;
+
+export const NEW_GROUP_NAME = 'NEW GROUP';
+export const CREATED_GROUP_ID_PREFIX = 'event-source-group:created:';
+export const ROW_SELECTOR = '[data-row-id]';

@@ -1,7 +1,7 @@
 ---
 description: Package Manager Troubleshooting
 author: Analog Devices
-date: 2026-07-27
+date: 2026-09-21
 ---
 
 # Package Manager Troubleshooting
@@ -15,6 +15,7 @@ Common issues include:
 - Out-of-date authentication sessions or expired API keys
 - Incorrect or stale remotes
 - Missing SoCs in the Workspace Creation Wizard
+- Dependency conflicts between selected packages
 
 ## Package integrity issues
 
@@ -172,6 +173,18 @@ To manage remotes:
 
     ![Manage Package Remotes](./images/manage-package-remote-dark.png#only-dark)
     ![Manage Package Remotes](./images/manage-package-remote-light.png#only-light)
+
+## Dependency conflicts between selected packages
+
+On the review summary screen, Package Manager resolves the dependencies of every package you selected as a single graph. If the packages you selected pull in incompatible versions of the same package — whether that package is one of your direct selections or a dependency they share — this graph cannot resolve and Package Manager reports a conflict.
+
+When this happens, the review summary screen shows an error message listing the selected packages involved in the conflict and highlights the disputed package in the package list. **Continue** is unavailable until you resolve the conflict.
+
+To resolve the conflict:
+
+1. Select **Back** to return to package selection.
+2. Remove one of the conflicting packages, or select a different version of one of them.
+3. Select **Continue** again to re-review your selection.
 
 ## Missing SoC in the Workspace Creation Wizard
 

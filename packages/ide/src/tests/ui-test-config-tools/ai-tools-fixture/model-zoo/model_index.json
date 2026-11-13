@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-09-22",
+  "models": [
+    {
+      "uniqueId": "e2e-fixture-rnnoise",
+      "name": "RNNoise",
+      "displayName": "RNNoise",
+      "description": "E2E test fixture model standing in for RNNoise.",
+      "task": "Noise Suppression",
+      "taskType": "Audio",
+      "framework": "tensorflow",
+      "license": "Apache-2.0",
+      "owner": "ADI",
+      "supportedPlatforms": [
+        {
+          "soc": "TEST690",
+          "board": "KIT_BOARD",
+          "family": "Cortex-M",
+          "core": "CM4",
+          "modelPaths": {
+            "int8": "models/rnnoise/rnnoise_INT8.tflite"
+          },
+          "sizeInKb": {
+            "int8": 0.02
+          },
+          "sample_binary": {
+            "int8": "models/rnnoise/denoiser_rnnoise_int8.bin"
+          },
+          "compilation": {
+            "hardwareParameters": [],
+            "optimization": {
+              "values": ["-O0"],
+              "default": "-O0"
+            },
+            "quantization": {
+              "values": ["int8"],
+              "default": "int8"
+            }
+          }
+        }
+      ],
+      "createdAt": "2026-09-22T00:00:00Z",
+      "updatedAt": "2026-09-22T00:00:00Z"
+    },
+    {
+      "uniqueId": "e2e-fixture-ds-cnn-small",
+      "name": "DS CNN",
+      "displayName": "DS-CNN Small",
+      "description": "E2E test fixture model standing in for DS-CNN Small.",
+      "task": "Keyword Spotting",
+      "taskType": "Audio",
+      "framework": "tensorflow",
+      "license": "Apache-2.0",
+      "owner": "ADI",
+      "supportedPlatforms": [
+        {
+          "soc": "TEST690",
+          "board": "KIT_BOARD",
+          "family": "Cortex-M",
+          "core": "CM4",
+          "modelPaths": {
+            "int8": "models/ds_cnn/ds_cnn_s_int8.tflite"
+          },
+          "sizeInKb": {
+            "int8": 0.02
+          },
+          "sample_binary": {
+            "int8": "models/ds_cnn/kws_ds-cnn_int8.bin"
+          },
+          "compilation": {
+            "hardwareParameters": [],
+            "optimization": {
+              "values": ["-O0"],
+              "default": "-O0"
+            },
+            "quantization": {
+              "values": ["int8"],
+              "default": "int8"
+            }
+          }
+        }
+      ],
+      "createdAt": "2026-09-22T00:00:00Z",
+      "updatedAt": "2026-09-22T00:00:00Z"
+    }
+  ]
+}

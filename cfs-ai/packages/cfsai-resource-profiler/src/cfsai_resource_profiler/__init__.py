@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -9,61 +9,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-CFSAI Resource Profiler Package.
+"""Thin wrapper — delegates to cfsai_model_explorer."""
 
-A comprehensive AI model resource profiling and performance analysis toolkit for 
-embedded and edge computing deployments. This package provides detailed analysis 
-of neural network models including memory usage, performance characteristics, 
-hardware compatibility, and optimization opportunities.
+from __future__ import annotations
 
-Key Features:
-- TensorFlow Lite model resource analysis
-- Hardware-specific performance profiling
-- Memory usage analysis and constraint validation
-- Layer-wise performance breakdown
-- Optimization opportunity identification
-- Structured reporting with visualization capabilities
+from pathlib import Path
+from typing import Optional, Union
 
-Primary Classes:
-- TFLiteResourceProfiler: Main profiling engine for TensorFlow Lite models
-
-Target Use Cases:
-- Embedded AI deployment planning
-- Edge computing resource optimization
-- Model performance characterization
-- Hardware compatibility assessment
-- Optimization strategy development
-
-Example Usage:
-    from cfsai_resource_profiler import TFLiteResourceProfiler
-    
-    # Initialize profiler with hardware constraints
-    profiler = TFLiteResourceProfiler(hardware_profile={
-        "hw_ram_size_mb": 2,
-        "hw_flash_size_mb": 512
-    })
-    
-    # Profile a TensorFlow Lite model
-    report = profiler.profile_model("model.tflite")
-    
-    # Generate human-readable analysis
-    report.visualize_resource_profile()
-
-Dependencies:
-- TensorFlow Lite (tflite) for model parsing
-- Pydantic for data validation and schema management
-- NumPy for numerical computations
-- Tabulate for report visualization (optional)
-
-"""
-
-# Core profiling functionality imports
-from cfsai_resource_profiler.profile_resources import (
-    TFLiteResourceProfiler,
+from cfsai_model_explorer.adapters import adapt_explore_to_profile
+from cfsai_model_explorer.backends.tflm_static.profiler_schemas import (
+    ResourceProfileReport,
 )
+from cfsai_model_explorer.registry import get_backend
+from cfsai_model_explorer.schemas import ExploreReport
+from pydantic import BaseModel
 
-# Public API definition for external package consumers
-__all__ = [
-    "TFLiteResourceProfiler",
-]
+from cfsai_types.hardware_profile import HardwareProfile
+
+
+class TFLiteResourceProfiler:
+    """Backward-compatible wrapper that delegates to model-explorer."""
+
+    def __init__(self) -> None:
+        """Initialize the profiler."""
+
+    def analyze_model(
+        self,
+        model_path: Union[str, Path],
+        hardware_profile: HardwareProfile,
+        output_file: Optional[str] = None,
+    ) -> BaseModel:
+        """Run profiling analysis on a TFLite model."""
+        backend = get_backend(hardware_profile)
+        report = backend.profile(Path(model_path), hardware_profile)
+
+        if isinstance(report, ExploreReport):
+            data = adapt_explore_to_profile(report)
+            return ResourceProfileReport(**data)
+
+        return report
+
+
+__all__ = ["TFLiteResourceProfiler"]

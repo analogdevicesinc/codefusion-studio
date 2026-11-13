@@ -12,8 +12,10 @@
  * limitations under the License.
  *
  */
-import {Args, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
 import {
+  ElfDataModel,
+  ElfFileParser,
   TExtendedSegment,
   TExtendedSymbol,
   TSegment,
@@ -22,11 +24,8 @@ import {
   mapSegments
 } from 'cfs-lib';
 import Table from 'cli-table3';
-import {ElfFileParser} from 'elf-parser';
-import {ElfDataModel} from 'elf-parser/dist/ElfDataModel.js';
 
-import {Logger} from '../../logger.js';
-import {BaseCommand} from '../../utils/base-command.js';
+import {BaseElfCommand} from '../../utils/base-elf-command.js';
 import {tableOutputStyles} from '../../utils/utils.js';
 
 export interface MemoryFlags {
@@ -39,70 +38,23 @@ export interface MemoryFlags {
   symbol: boolean;
 }
 
-export function generateMemoryJson(
+export function generateMemoryData(
   md: ElfDataModel,
   parser: ElfFileParser,
-  flags: MemoryFlags,
-  json: boolean
-): string {
-  let flagsCount: number =
-    Number(flags.segment || 0) +
-    Number(flags.symbol || 0) +
-    Number(flags.section || 0);
-
-  if (flagsCount === 0) {
-    throw new Error(
-      'No flags provided. Please use at least one mandatory flag.'
-    );
-  }
-
-  let jsonString = '\n{\n';
-
-  if (flags.segment) {
-    ({flagsCount, jsonString} = formatSegment(
-      md,
-      parser,
-      flags,
-      flagsCount,
-      jsonString,
-      json
-    ));
-  }
-
-  if (flags.section) {
-    ({flagsCount, jsonString} = formatSection(
-      md,
-      parser,
-      flags,
-      flagsCount,
-      jsonString,
-      json
-    ));
-  }
-
-  if (flags.symbol) {
-    ({flagsCount, jsonString} = formatSymbol(
-      md,
-      parser,
-      flags,
-      flagsCount,
-      jsonString,
-      json
-    ));
-  }
-
-  jsonString += '\n}\n';
-  return jsonString;
+  flags: MemoryFlags
+): Record<string, unknown> {
+  return {
+    ...(flags.segment && buildSegmentData(md, parser, flags)),
+    ...(flags.section && buildSectionData(md, parser, flags)),
+    ...(flags.symbol && buildSymbolData(md, parser, flags))
+  };
 }
 
-export default class Memory extends BaseCommand<typeof Memory> {
-  static args = {
-    filePath: Args.string({description: 'file path  to read'})
-  };
-
+export default class Memory extends BaseElfCommand<typeof Memory> {
   static description =
     'View relationships between segments, sections and symbols\n' +
     'Note that this command can generate large amounts of output which might not be viewable in a terminal window. Consider piping the output to a file';
+  static useResponseEnvelope = true;
 
   static flags = {
     segment: Flags.boolean({
@@ -134,80 +86,114 @@ export default class Memory extends BaseCommand<typeof Memory> {
     })
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async run(): Promise<any> {
-    const {args, flags} = this;
+  public async run(): Promise<Record<string, unknown>> {
+    const {flags} = this;
 
-    if (!args.filePath) {
-      return Logger.logError(
-        'No input file. Please provide a valid file path.'
+    if (!(flags.segment || flags.section || flags.symbol)) {
+      this.error(
+        'No flags provided. Please use at least one mandatory flag.'
       );
     }
 
-    try {
-      const parser = new ElfFileParser(args.filePath);
-      await parser.initialize();
-      const md = parser.getDataModel();
+    const parser = await this.initializeParser();
+    const md = parser.getDataModel();
 
-      const jsonString = generateMemoryJson(
-        md,
-        parser,
-        flags,
-        this.jsonEnabled()
-      );
+    if (this.jsonEnabled()) {
+      return generateMemoryData(md, parser, flags);
+    }
 
-      return JSON.parse(jsonString);
-    } catch (error) {
-      return Logger.logError(`${error}`);
+    this.printTextOutput(md, parser, flags);
+
+    return {};
+  }
+
+  private printSectionText(
+    md: ElfDataModel,
+    parser: ElfFileParser,
+    flags: MemoryFlags
+  ) {
+    let segments: TExtendedSegment[] = mapSegments(
+      md.elfProgramHeaders,
+      md,
+      parser
+    );
+
+    if (segments.length === 0) return;
+
+    if (flags.id !== undefined) {
+      segments = segments.filter((item) => item.id === flags.id);
+    }
+
+    for (const segment of segments) {
+      let sectionsString = '';
+      if (segment.sections) {
+        for (const item of segment.sections) {
+          sectionsString += flags.detail
+            ? `\n ${item.name} => type: ${item.type}, address: ${item.address}, size: ${item.size}, flags: ${item.flags}`
+            : ' ' + item.name;
+        }
+      }
+
+      this.log(`\nsegment ${segment.id}: ${sectionsString}`);
     }
   }
-}
 
-// eslint-disable-next-line max-params
-function formatSymbol(
-  md: ElfDataModel,
-  parser: ElfFileParser,
-  flags: {
-    segment: boolean;
-    section: boolean;
-    symbol: boolean;
-    id: number | undefined;
-    name: string | undefined;
-    detail: boolean;
-  } & {[flag: string]: unknown},
-  flagsCount: number,
-  jsonString: string,
-  json: boolean
-) {
-  let sections = mapSections(md.elfSectionHeaders, md, parser);
-  if (flags.id !== undefined) {
-    sections = sections.filter((item) => item.id === flags.id);
+  private printSegmentTable(
+    md: ElfDataModel,
+    parser: ElfFileParser,
+    flags: MemoryFlags
+  ) {
+    let segments = mapSegments(md.elfProgramHeaders, md, parser);
+
+    if (segments.length === 0) return;
+
+    if (flags.id !== undefined) {
+      segments = segments.filter((item) => item.id === flags.id);
+    }
+
+    const header: TSegment[] = (segments as TExtendedSegment[]).map(
+      ({sections: _sections, ...rest}) => rest
+    );
+
+    const table = new Table({
+      head: Object.getOwnPropertyNames(header[0]),
+      colWidths: [20, 20],
+      ...tableOutputStyles()
+    });
+
+    for (const item of header) {
+      table.push(Object.values(item));
+    }
+
+    this.log(table.toString());
   }
 
-  if (flags.name) {
-    sections = sections.filter((item) => item.name === flags.name);
-  }
+  private printSymbolTable(
+    md: ElfDataModel,
+    parser: ElfFileParser,
+    flags: MemoryFlags
+  ) {
+    let sections = mapSections(md.elfSectionHeaders, md, parser);
+    if (flags.id !== undefined) {
+      sections = sections.filter((item) => item.id === flags.id);
+    }
 
-  if (json) {
-    --flagsCount;
-    jsonString +=
-      '"Sections":' +
-      JSON.stringify(sections) +
-      (flagsCount > 0 ? ',\n' : '\n');
-  } else {
-    let result: Array<unknown> = new Array<unknown>();
+    if (flags.name) {
+      sections = sections.filter((item) => item.name === flags.name);
+    }
+
+    const result: Array<unknown> = [];
     for (const item of sections) {
-      // eslint-disable-next-line unicorn/prefer-spread
-      result = result.concat(
-        item.symbols?.map((symbol: TSymbol) => ({
-          section: item.name.toString(),
-          sectionIndex: item.id,
-          ...symbol,
-
-          localstack: symbol?.localstack || null,
-          stack: symbol?.stack || null
-        }))
-      );
+      const mapped = item.symbols?.map((symbol: TSymbol) => ({
+        section: item.name.toString(),
+        sectionIndex: item.id,
+        ...symbol,
+        localstack: symbol?.localstack || null,
+        stack: symbol?.stack || null
+      }));
+      if (mapped) {
+        result.push(...mapped);
+      }
     }
 
     if (result.length > 0) {
@@ -222,136 +208,100 @@ function formatSymbol(
         }
       }
 
-      console.log(table.toString());
+      this.log(table.toString());
     }
   }
 
-  return {flagsCount, jsonString};
+  private printTextOutput(
+    md: ElfDataModel,
+    parser: ElfFileParser,
+    flags: MemoryFlags
+  ) {
+    if (flags.segment) {
+      this.printSegmentTable(md, parser, flags);
+    }
+
+    if (flags.section) {
+      this.printSectionText(md, parser, flags);
+    }
+
+    if (flags.symbol) {
+      this.printSymbolTable(md, parser, flags);
+    }
+  }
 }
 
-// eslint-disable-next-line max-params
-function formatSection(
+function buildSegmentData(
   md: ElfDataModel,
   parser: ElfFileParser,
-  flags: {
-    segment: boolean;
-    section: boolean;
-    symbol: boolean;
-    id: number | undefined;
-    name: string | undefined;
-    detail: boolean;
-  } & {[flag: string]: unknown},
-  flagsCount: number,
-  jsonString: string,
-  json: boolean
-) {
+  flags: MemoryFlags
+): Record<string, unknown> {
+  let segments = mapSegments(md.elfProgramHeaders, md, parser);
+  if (segments.length === 0) return {};
+
+  if (flags.id !== undefined) {
+    segments = segments.filter((item) => item.id === flags.id);
+  }
+
+  const header: TSegment[] = JSON.parse(JSON.stringify(segments));
+  for (const h of header as TExtendedSegment[]) {
+    delete h.sections;
+  }
+
+  return {Segments: header};
+}
+
+function buildSectionData(
+  md: ElfDataModel,
+  parser: ElfFileParser,
+  flags: MemoryFlags
+): Record<string, unknown> {
   let segments: TExtendedSegment[] = mapSegments(
     md.elfProgramHeaders,
     md,
     parser
   );
-  if (segments.length > 0) {
-    if (flags.id !== undefined) {
-      segments = segments.filter((item) => item.id === flags.id);
-    }
+  if (segments.length === 0) return {};
 
-    let segmentsCount: number = segments.length;
-    --flagsCount;
-    for (const segment of segments) {
-      let sectionsString: string = '';
-      if (segment.sections) {
-        for (const item of segment.sections) {
-          if (flags.detail) {
-            // eslint-disable-next-line unicorn/prefer-ternary
-            if (json) {
-              sectionsString += `\n { "name" => "${item.name}", "type": "${item.type}", "address": "${item.address}", "size": ${item.size}, "flags": "${item.flags}"},`;
-            } else {
-              sectionsString += `\n ${item.name} => type: ${item.type}, address: ${item.address}, size: ${item.size}, flags: ${item.flags}`;
-            }
-          } else {
-            sectionsString += ' ' + item.name;
-          }
-        }
-      }
+  if (flags.id !== undefined) {
+    segments = segments.filter((item) => item.id === flags.id);
+  }
 
-      if (json) {
-        --segmentsCount;
-        if (flags.detail) {
-          if (sectionsString.length > 0)
-            sectionsString = sectionsString.slice(0, -1); // pop last char
-          jsonString +=
-            '"' +
-            segment.id +
-            '": [' +
-            sectionsString +
-            '\n]' +
-            (flagsCount > 0 || segmentsCount > 0 ? ',' : '') +
-            '\n';
-        } else {
-          jsonString +=
-            '"' +
-            segment.id +
-            '":"' +
-            sectionsString +
-            (flagsCount > 0 || segmentsCount > 0 ? '",\n' : '"\n');
-        }
-      } else {
-        console.log(`\nsegment ${segment.id}: ${sectionsString}`);
-      }
+  const result: Record<string, unknown> = {};
+  for (const segment of segments) {
+    if (flags.detail) {
+      result[String(segment.id)] = segment.sections
+        ? segment.sections.map((item) => ({
+            name: item.name,
+            type: item.type,
+            address: item.address,
+            size: item.size,
+            flags: item.flags
+          }))
+        : [];
+    } else {
+      result[String(segment.id)] = segment.sections
+        ? segment.sections.map((item) => item.name).join(' ')
+        : '';
     }
   }
 
-  return {flagsCount, jsonString};
+  return result;
 }
 
-// eslint-disable-next-line max-params
-function formatSegment(
+function buildSymbolData(
   md: ElfDataModel,
   parser: ElfFileParser,
-  flags: {
-    segment: boolean;
-    section: boolean;
-    symbol: boolean;
-    id: number | undefined;
-    name: string | undefined;
-    detail: boolean;
-  } & {[flag: string]: unknown},
-  flagsCount: number,
-  jsonString: string,
-  json: boolean
-) {
-  let segments = mapSegments(md.elfProgramHeaders, md, parser);
-  if (segments.length > 0) {
-    if (flags.id !== undefined) {
-      segments = segments.filter((item) => item.id === flags.id);
-    }
-
-    const header: TSegment[] = JSON.parse(JSON.stringify(segments));
-
-    // eslint-disable-next-line unicorn/no-array-for-each
-    header.forEach((header: TExtendedSegment) => {
-      delete header.sections;
-    });
-    if (json) {
-      --flagsCount;
-      jsonString +=
-        '"Segments":' +
-        JSON.stringify(header) +
-        (flagsCount > 0 ? ',\n' : '\n');
-    } else {
-      const table = new Table({
-        head: Object.getOwnPropertyNames(header[0]),
-        colWidths: [20, 20],
-        ...tableOutputStyles()
-      });
-
-      for (const item of header) {
-        table.push(Object.values(item));
-      }
-
-      console.log(table.toString());
-    }
+  flags: MemoryFlags
+): Record<string, unknown> {
+  let sections = mapSections(md.elfSectionHeaders, md, parser);
+  if (flags.id !== undefined) {
+    sections = sections.filter((item) => item.id === flags.id);
   }
 
-  return {flagsCount, jsonString};
+  if (flags.name) {
+    sections = sections.filter((item) => item.name === flags.name);
+  }
+
+  return {Sections: sections};
 }

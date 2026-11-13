@@ -22,7 +22,7 @@ import type { ConfiguredProject } from "cfs-types";
 import { mergePeripheralProjectUpdates } from "../../utils/project-persistence";
 
 function createProject(
-  overrides: Partial<ConfiguredProject> = {}
+  overrides: Partial<ConfiguredProject> = {},
 ): ConfiguredProject {
   return {
     CoreId: "CM4",
@@ -50,8 +50,10 @@ describe("mergePeripheralProjectUpdates", () => {
         ProfilingCpuLoadInterval: 250,
         AIEnabled: true,
         InstrumentationSubsystemEnabled: true,
+        InstrumentationTriggerFunction: "onStart",
+        InstrumentationStopperFunction: "onStop",
         Interface: { Type: "UART" as const, Port: "UART2" },
-        Format: "CTF",
+        Format: "CTF" as const,
       },
     };
     const aiModels = [
@@ -99,14 +101,14 @@ describe("mergePeripheralProjectUpdates", () => {
 
     const result = mergePeripheralProjectUpdates(
       persistedProjects,
-      peripheralUpdates
+      peripheralUpdates,
     );
 
     expect(result[0].Profiling).to.deep.equal(profiling);
     expect(result[0].AIModels).to.deep.equal(aiModels);
     expect(result[0].Partitions).to.deep.equal(peripheralUpdates[0].Partitions);
     expect(result[0].Peripherals).to.deep.equal(
-      peripheralUpdates[0].Peripherals
+      peripheralUpdates[0].Peripherals,
     );
   });
 
@@ -137,7 +139,7 @@ describe("mergePeripheralProjectUpdates", () => {
 
     const result = mergePeripheralProjectUpdates(
       persistedProjects,
-      peripheralUpdates
+      peripheralUpdates,
     );
 
     expect(result).to.deep.equal(persistedProjects);

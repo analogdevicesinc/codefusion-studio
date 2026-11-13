@@ -3,8 +3,8 @@
   "DataModelVersion": "^1.0.0",
   "SchemaVersion": "2.1.0",
   "Timestamp": "2025-03-11T13:38:31.790Z",
-  "Soc": "MAX32657",
-  "Package": "WLP",
+  "Soc": "TEST657",
+  "Package": "PLP",
   "Pins": [],
   "ClockNodes": [],
   "Projects": [

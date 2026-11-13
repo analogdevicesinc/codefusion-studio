@@ -25,6 +25,13 @@ import {
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
 
+import {pkgAuthRemoteDeps} from '../../../dist/commands/pkg/auth-remote.js';
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope,
+  type CliErrorEnvelope
+} from '../../utils/assert-json-envelope.js';
+
 function remoteName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
@@ -133,5 +140,103 @@ describe('pkg auth-remote', () => {
     expect(
       listRemotesOutputHasRemoteValue(remotesStdout, name, 'None')
     ).to.equal(true);
+  });
+});
+
+describe('pkg auth-remote JSON envelope', () => {
+  const originalGetPackageManager =
+    pkgAuthRemoteDeps.getPackageManager;
+
+  afterEach(() => {
+    pkgAuthRemoteDeps.getPackageManager = originalGetPackageManager;
+  });
+
+  it('returns authenticated:true when a username/password is set', async () => {
+    pkgAuthRemoteDeps.getPackageManager = (async () => ({
+      login: async () => {},
+      logout: async () => {}
+    })) as unknown as typeof pkgAuthRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      [
+        'pkg',
+        'auth-remote',
+        'mock-remote',
+        '--user',
+        'test-user',
+        '--password',
+        'test-password',
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      authenticated: boolean;
+    }>(stdout, 'pkg auth-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      authenticated: true
+    });
+  });
+
+  it('returns authenticated:false when --none is used', async () => {
+    pkgAuthRemoteDeps.getPackageManager = (async () => ({
+      login: async () => {},
+      logout: async () => {}
+    })) as unknown as typeof pkgAuthRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      [
+        'pkg',
+        'auth-remote',
+        'mock-remote',
+        '--none',
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      authenticated: boolean;
+    }>(stdout, 'pkg auth-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      authenticated: false
+    });
+  });
+
+  it('rejects a missing password with a stable code instead of prompting', async () => {
+    let loginCalled = false;
+    pkgAuthRemoteDeps.getPackageManager = (async () => ({
+      login: async () => {
+        loginCalled = true;
+      },
+      logout: async () => {}
+    })) as unknown as typeof pkgAuthRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      [
+        'pkg',
+        'auth-remote',
+        'mock-remote',
+        '--user',
+        'test-user',
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const parsed = assertValidEnvelope(stdout);
+    expect(parsed.ok).to.be.false;
+    expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+      'PKG_AUTH_REMOTE_PASSWORD_REQUIRED'
+    );
+    expect(loginCalled).to.be.false;
   });
 });

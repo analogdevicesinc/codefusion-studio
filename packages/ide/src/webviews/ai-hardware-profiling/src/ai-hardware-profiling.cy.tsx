@@ -14,11 +14,14 @@
  */
 
 import App from './App';
-import {setupMessengerMock, sendMockMessage} from '../../common/test-utils/messenger-mock';
 import {
- getProfilingViewData,
- updateProfilingConfiguration,
- applicationStatusUpdate
+	setupMessengerMock,
+	sendMockMessage
+} from '../../common/test-utils/messenger-mock';
+import {
+	getProfilingViewData,
+	updateProfilingConfiguration,
+	applicationStatusUpdate
 } from '../../../constants/messages/ai-hardware-profiling-messages';
 import type {
 	ApplicationStatus,
@@ -39,9 +42,9 @@ describe('AiHardwareProfiling', () => {
 		setupMessengerMock({
 			[getProfilingViewData.method]() {
 				return {
-				hardwareResources,
-				profilingConfig,
-				applicationStatus
+					hardwareResources,
+					profilingConfig,
+					applicationStatus
 				};
 			},
 			[updateProfilingConfiguration.method]() {
@@ -119,5 +122,4 @@ describe('AiHardwareProfiling', () => {
 		cy.contains('Built').should('exist');
 		cy.contains('Stopped').should('exist');
 	});
-
 });

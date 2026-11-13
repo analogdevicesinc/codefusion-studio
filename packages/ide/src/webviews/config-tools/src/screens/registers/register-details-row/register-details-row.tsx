@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,9 @@ export function RegisterDetailsRow({
 	return (
 		<DataGridRow
 			id={field.id}
-			className={`${styles.row} ${hoveredField === field.id ? styles.hover : ''}`}
+			className={`${styles.row} ${
+				hoveredField === field.id ? styles.hover : ''
+			}`}
 			onClick={() => {
 				onRowClick(field.id);
 			}}
@@ -55,33 +57,31 @@ export function RegisterDetailsRow({
 			}}
 		>
 			<DataGridCell gridColumn='1'>
-				<div className={styles.column}>
-					{isModified ? (
-						<div className={styles.asterisk}>&lowast;</div>
-					) : (
-						''
-					)}{' '}
-					{field.name}
-				</div>
+				{isModified ? '\u002A' : ''}
 			</DataGridCell>
-			<DataGridCell gridColumn='2' className={styles.monospace}>
+			<DataGridCell gridColumn='2'>{field.name}</DataGridCell>
+			<DataGridCell gridColumn='3' className={styles.monospace}>
 				{field.length === 1
 					? field.position
-					: `${field.position + (field.length - 1)}:${field.position}`}
+					: `${field.position + (field.length - 1)}:${
+							field.position
+						}`}
 			</DataGridCell>
-			<DataGridCell gridColumn='3'>{field.access}</DataGridCell>
-			<DataGridCell gridColumn='4' className={styles.monospace}>
+			<DataGridCell gridColumn='4'>{field.access}</DataGridCell>
+			<DataGridCell gridColumn='5' className={styles.monospace}>
 				{formatHexPrefix(value)}
 			</DataGridCell>
-			<DataGridCell gridColumn='5' className={styles.monospace}>
+			<DataGridCell gridColumn='6' className={styles.monospace}>
 				{field.reset.toString().startsWith('0x') ? '' : '0x'}
 				{field.reset}
 			</DataGridCell>
-			<DataGridCell gridColumn='6' className={styles.monospace}>
+			<DataGridCell gridColumn='7' className={styles.monospace}>
 				<div className={styles.description}>
 					{field.description}
 					<div
-						className={`${styles.icon} ${expandedRowId === field.id ? styles.expandedRow : ''}`}
+						className={`${styles.icon} ${
+							expandedRowId === field.id ? styles.expandedRow : ''
+						}`}
 					>
 						<DownArrow />
 					</div>

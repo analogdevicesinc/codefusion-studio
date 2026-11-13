@@ -22,6 +22,7 @@ import { Socs } from './socs.js';
 import { SocsBoards } from './socs-boards.js';
 import { SocsCores } from './socs-cores.js';
 import { SocsPackages } from './socs-packages.js';
+import { SwPackages } from './sw-packages.js';
 import { SwPackagesRepos } from './sw-packages-repos.js';
 import { SwPackagesReposMetadata } from './sw-packages-repos-metadata.js';
 import { SwPackagesTags } from './sw-packages-tags.js';
@@ -37,6 +38,7 @@ export interface RestApi {
     socsBoards: SocsBoards;
     socsCores: SocsCores;
     socsPackages: SocsPackages;
+    swPackages: SwPackages;
     swPackagesRepos: SwPackagesRepos;
     swPackagesReposMetadata: SwPackagesReposMetadata;
     swPackagesTags: SwPackagesTags;
@@ -52,6 +54,7 @@ export class RestClient implements RestApi {
     #socsBoards?: SocsBoards;
     #socsCores?: SocsCores;
     #socsPackages?: SocsPackages;
+    #swPackages?: SwPackages;
     #swPackagesRepos?: SwPackagesRepos;
     #swPackagesReposMetadata?: SwPackagesReposMetadata;
     #swPackagesTags?: SwPackagesTags;
@@ -93,6 +96,11 @@ export class RestClient implements RestApi {
     get socsPackages() {
         this.#socsPackages ??= new SocsPackages(this.apiClient);
         return this.#socsPackages;
+    }
+
+    get swPackages() {
+        this.#swPackages ??= new SwPackages(this.apiClient);
+        return this.#swPackages;
     }
 
     get swPackagesRepos() {

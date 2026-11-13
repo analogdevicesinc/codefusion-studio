@@ -19,7 +19,7 @@ $foreground: var(--vscode-foreground, #ccc);
 $default-foreground: var(--vscode-editor-foreground, #d4d4d4);
 $default-elf-foreground: var(
 	--vscode-list-activeSelectionForeground,
-	#fff
+	var(--vscode-editor-foreground, #fff)
 );
 
 $disabled-foreground: var(--vscode-disabledForeground, #808080);
@@ -131,6 +131,15 @@ $inactive-nav-item: var(
 	#808080
 );
 
+$active-badge-background: var(
+	--vscode-activityBarBadge-background,
+	#0078d4
+);
+$active-badge-foreground: var(
+	--vscode-activityBarBadge-foreground,
+	#ffffff
+);
+
 $notifications-background: var(
 	--vscode-notifications-background,
 	#252526
@@ -173,12 +182,19 @@ $list-active-selection-background: var(
 
 $list-active-selection-foreground: var(
 	--vscode-list-activeSelectionForeground,
-	#fff
+	var(--vscode-editor-foreground, #fff)
 );
 
 $list-hover-background: var(
 	--vscode-list-hoverBackground,
 	hsl(195, 5%, 17%)
+);
+
+$list-highlight-foreground: var(--vscode-list-highlightForeground, #2aaaff);
+
+$editor-inactive-selection-background: var(
+	--vscode-editor-inactiveSelectionBackground,
+	#3a3d41
 );
 
 $navigation-background: var(--vscode-tab-activeBackground, #1e1e1e);

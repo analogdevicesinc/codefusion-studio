@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023-2025 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,13 +135,13 @@ export class SdkPath {
         await fsPromises.readFile(cfsJsonPath, "utf-8"),
       );
       return cfsJson.version;
-    } catch (error: any) {
+    } catch (_) {
       return undefined;
     }
   }
 
   static async verifyPathSettings() {
-    const sdkPath = await Utils.getSdkPath();
+    const sdkPath = Utils.getSdkPath();
 
     // If sdk path is missing the user will be prompted to select the appropriate sdk path
     if (!sdkPath) {

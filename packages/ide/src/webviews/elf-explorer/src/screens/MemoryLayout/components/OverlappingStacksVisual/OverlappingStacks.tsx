@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import {
 } from '../../../../common/types/memory-layout';
 import type {TSymbol} from '../../../../common/types/symbols';
 import styles from './OverlappingStacks.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TOverlappingStacksProps = {
 	readonly segments: TSegment[] | TSection[];
@@ -60,6 +61,12 @@ export default function OverlappingStacks({
 		HoveredPartInfo | undefined
 	>();
 	const containerRef = useRef<HTMLLIElement>(null);
+	const l10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 
 	const handleClick = (segment: TSegment | TSection) => {
 		emitValue(segment);
@@ -111,23 +118,27 @@ export default function OverlappingStacks({
 			>
 				<div className={styles['tooltip-container']}>
 					<div className={styles['tooltip-row']}>
-						<div className={styles.start}>START ADDRESS</div>
+						<div className={styles.start}>
+							{l10n?.startAddress ?? 'START ADDRESS'}
+						</div>
 						<div className={styles.end}>{hoveredPartInfo.start}</div>
 					</div>
 					<div className={styles['tooltip-row']}>
-						<div className={styles.start}>END ADDRESS</div>
+						<div className={styles.start}>
+							{l10n?.endAddress ?? 'END ADDRESS'}
+						</div>
 						<div className={styles.end}>{hoveredPartInfo.end}</div>
 					</div>
 					<div className={styles['tooltip-row']}>
-						<div className={styles.start}>SIZE</div>
-						<div
-							className={styles.end}
-						>{`${hoveredPartInfo.size} bytes`}</div>
+						<div className={styles.start}>{l10n?.size ?? 'SIZE'}</div>
+						<div className={styles.end}>{`${hoveredPartInfo.size} ${
+							commonL10n?.bytes ?? 'bytes'
+						}`}</div>
 					</div>
 				</div>
 			</CfsTooltip>
 		);
-	}, [hoveredPartInfo]);
+	}, [hoveredPartInfo, l10n, commonL10n]);
 
 	const isSegmToBeHighlighted = (segment: TSegment) =>
 		segment.id === hoveredItem?.id && hoverSource === 'MemoryTable';
@@ -159,7 +170,11 @@ export default function OverlappingStacks({
 				>
 					<div className={styles.container}>
 						<div
-							className={`${styles.address} ${isSegmToBeHighlighted(segment as TSegment) ? styles.active : ''} `}
+							className={`${styles.address} ${
+								isSegmToBeHighlighted(segment as TSegment)
+									? styles.active
+									: ''
+							} `}
 						>
 							{segment.address}
 						</div>

@@ -53,7 +53,7 @@ Debug smarter with an AI assistant that connects directly to your live debug ses
 ## Requirements
 
 - Visual Studio Code 1.101 or later
-- CodeFusion Studio SDK 2.3.0 or later — download the [CFS SDK](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/).
+- CodeFusion Studio SDK 2.4.0 or later — download the [CFS SDK](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/install-cfs/).
 - Supported platforms:
   - Windows 11 (64-bit)
   - macOS 15 and macOS 26 (ARM64)

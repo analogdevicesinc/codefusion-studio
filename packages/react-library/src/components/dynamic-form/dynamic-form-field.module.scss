@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,5 +48,13 @@
 	.input {
 		--cfs-text-field-vertical-width: 100%;
 		--cfs-text-field-vertical-gap: 0;
+	}
+
+	.errorMsg {
+		margin: 4px 0 0 0;
+		@include fonts.body-b1;
+		font-family: fonts.$default-font-family;
+		color: colors.$error;
+		width: 100%;
 	}
 }

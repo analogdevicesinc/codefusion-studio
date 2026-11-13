@@ -1,7 +1,7 @@
 ---
 description: Physical hardware connections for debugging, profiling, and serial communication
 author: Analog Devices
-date: 2026-07-10
+date: 2026-10-21
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx lines 83, 95)
 ---
 
@@ -16,6 +16,8 @@ Install the appropriate drivers for your debug probe:
 - [Install Segger J-Link drivers](debug-drivers/install-jlink-drivers.md) (for J-Link debuggers)
 - [Install ICE drivers](debug-drivers/install-ice-drivers.md) (for SHARC-FX ICE debuggers)
 - [Install Olimex drivers](debug-drivers/install-olimex-drivers.md) (for Olimex JTAG probes)
+
+Use a data-capable USB cable — some cables are charge-only and won't let your computer recognize the debugger or board, which can cause flashing to fail.
 
 ## Board examples
 
@@ -111,9 +113,6 @@ The numbered labels in the diagram below correspond to the physical connections 
 
 ### SHARC-FX (ADSP-SC835W with ICE Debugger)
 
-!!! warning "Windows only"
-    SHARC-FX debugging is supported only on Windows. See [Debug a SHARC-FX application](debug-sharc-fx.md) for complete requirements.
-
 **ICE emulator connection:**
 
 - Required: ICE-1000, ICE-1500, or ICE-2000 emulator
@@ -124,6 +123,17 @@ The numbered labels in the diagram below correspond to the physical connections 
 
 - Connect USB-C cable to **P1** (power and data)
 - Provides board power and communication with the host computer
+
+**Boot mode:**
+
+Set the **Boot Mode Select** rotary switch (**S1**) to **1**. This is the default position, and it's the position shown in the SHARC-FX connection diagram. Use boot mode 1 to debug, flash, and erase from CFS.
+
+!!! note "Boot mode 1 and boot mode 0"
+    Boot mode 1 is serial peripheral interface (SPI) controller boot. After a reset, the processor loads and runs the application stored in the on-board SPI flash. CFS flashes your application as an SPI boot image, so the application runs each time the board resets or powers on.
+
+    Boot mode 0 is No boot. After a reset, the processor doesn't load an application. Code runs only when the debugger loads it.
+
+    The CFS SHARC-FX templates don't use the other S1 positions. For all boot modes, see the [:octicons-link-external-24: ADSPSC835W-EV-SOM schematic](https://www.analog.com/media/en/technical-documentation/eval-board-schematic/adspsc835w-ev-som-schem.pdf){:target="_blank"}.
 
 **Setup:**
 
@@ -163,7 +173,7 @@ After connecting the UART cable, identify which serial port your board is using:
 
 - Verify debug probe drivers are installed correctly
 - Connect the debug probe directly to a USB port on your computer — USB hubs and docking stations can prevent the probe from being recognized
-- Try a different USB cable or USB port on your computer
+- Try a different USB cable or USB port on your computer — some USB cables are charge-only and don't carry data
 - Check that the debug probe has power (look for LED indicators)
 - For J-Link, ensure you're using an official Segger probe or compatible clone
 

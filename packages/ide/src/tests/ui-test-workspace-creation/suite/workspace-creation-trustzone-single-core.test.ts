@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ import * as path from "path";
  *     And select SOC as "MAX32XXX" on soc selection screen by selecting radio button
  *     And click on continue button
  *     And I verify the active step circle for board selection screen
- *     Then I select the EVKit as "EvKit_V1___WLP"
+ *     Then I select the EVKit as "KIT_BOARD___PLP"
  *     And I click on continue button
  *     Then I choose the "MANUALLY CONFIGURED TEMPLATE" option further clicking on continue button
  *     And I check if single core is selected by default for ARM Core
@@ -93,14 +93,12 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
   let browser: VSBrowser;
   let view: WebView;
 
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
+  });
+
   after(async () => {
-    try {
-      if (view) await view.switchBack();
-      if (workbench)
-        await workbench.executeCommand("View: Revert and Close Editor");
-    } catch (error) {
-      console.error("Error in after() hook:", error);
-    }
+    await UIUtils.teardownTestSuite(view);
   });
 
   it("Create new workspace manually configured MAX326XXXX trustzone singlecore @smoke", async () => {
@@ -120,6 +118,9 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
     //--- Then I switch to the webview frame---
     await view.switchToFrame();
 
+    // Wait for package manager and dismiss any initialization notifications
+    await UIUtils.waitForPackageManager(workbench, browser, view);
+
     console.log("Creating new workspace for MAX326XX");
 
     //--- And I verify the active step circle for soc selection screen ---
@@ -135,20 +136,16 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
     );
     console.log("Verified active step circle for soc selection screen");
 
-    // ---  And select SOC as "MAX32XXX" on soc selection screen by selecting radio button ---
-    await UIUtils.sendKeysToElements(
-      view,
-      locatorspath.selectorSoc,
-      "MAX32657",
-    );
+    // ---  And select SOC as "TEST657" on soc selection screen by selecting radio button ---
+    await UIUtils.sendKeysToElements(view, locatorspath.selectorSoc, "TEST657");
 
     const socSelection = await UIUtils.clickElement(
       view,
-      locatorspath.getRadiobuttonSoc("32657"),
+      locatorspath.getRadiobuttonSoc("TEST657"),
     );
     const socName = await socSelection.getAttribute("id");
     console.log(`Selected SOC: ${socName}`);
-    expect(socName).to.include("MAX32657");
+    expect(socName).to.include("TEST657");
 
     // --- And I click on continue button ---
 
@@ -165,16 +162,16 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
     );
     console.log("Verified active step circle for board selection screen");
 
-    // --- Then I select the EVKit as "EvKit_V1___WLP" on evkit selection screen---
+    // --- Then I select the EVKit as "KIT_BOARD___PLP" on evkit selection screen---
     const kitName = await UIUtils.getAttributeFromWebElement(
       await UIUtils.findWebElement(
         view,
-        locatorspath.kitSelect("EvKit_V1___WLP"),
+        locatorspath.kitSelect("KIT_BOARD___PLP"),
       ),
       "id",
     );
     expect(kitName).to.include(TextData.evKitText);
-    await UIUtils.clickElement(view, locatorspath.kitSelect("EvKit_V1___WLP"));
+    await UIUtils.clickElement(view, locatorspath.kitSelect("KIT_BOARD___PLP"));
 
     //---And I click on continue button---
     await UIUtils.clickElement(view, locatorspath.continueButton);
@@ -369,7 +366,7 @@ describe("Workspace MAX32XXX creation for trustzone single core soc", () => {
     expect(
       workspaceData.Board,
       `Board validation failed: Expected '${workspaceData.Board}' to contain '${kitName}'`,
-    ).to.equal("EvKit_V1");
+    ).to.equal(TextData.evKitText);
     console.log("Board verified successfully");
 
     expect(

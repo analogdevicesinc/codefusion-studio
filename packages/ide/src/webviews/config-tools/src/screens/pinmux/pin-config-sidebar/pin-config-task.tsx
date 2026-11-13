@@ -18,69 +18,242 @@ import PinconfigDisplay from './pinconfig-display/PinconfigDisplay';
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
 import {useMemo} from 'react';
 import {getControlsForProjectIds} from '../../../utils/api';
-import {CfsSuspense} from 'cfs-react-library';
+import {CfsSuspense, use} from 'cfs-react-library';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
-import {getIsExternallyManagedProject} from '../../../utils/config';
+import {
+	getIsExternallyManagedProject,
+	getPrimaryProjectId
+} from '../../../utils/config';
+import type {ControlCfg} from '@common/types/soc';
+import {
+	useAppliedSignalCfg,
+	useAssignedPin
+} from '../../../state/slices/pins/pins.selector';
+import {getApplicablePinConfigControls} from './pinconfig-display/pin-config-controls';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {getSocPinDetails} from '../../../utils/soc-pins';
+import {
+	getConfigurablePeripherals,
+	getSocPeripheralDictionary
+} from '../../../utils/soc-peripherals';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
+import {useCanConfigureReservedPin} from '../../../hooks/use-can-configure-reserved-pin';
+import PinDetails from './pin-details/pin-details';
 
 export const PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID =
 	'pin-config-plugin-options-form';
 
-type PinConfigTaskProps = {
-	readonly peripheral: string;
-	readonly signal: string;
-};
+type PinConfigTaskProps = Readonly<{
+	peripheral: string;
+	signal: string;
+	pinId?: string;
+}>;
 
-function PinConfigTask({peripheral, signal}: PinConfigTaskProps) {
-	const signalProjectId = useSignalProjectId(peripheral, signal);
+type ConfiguredPinConfigPanelProps = PinConfigTaskProps &
+	Readonly<{
+		controlsPromise: Promise<Record<string, ControlCfg[]>>;
+		projectId: string;
+	}>;
 
-	const isExternallyManagedProject =
-		getIsExternallyManagedProject(signalProjectId);
+function ConfiguredPinConfigPanel({
+	controlsPromise,
+	peripheral,
+	pinId,
+	projectId,
+	signal
+}: ConfiguredPinConfigPanelProps) {
+	const controls = use(controlsPromise);
+	const activePin = useAssignedPin({peripheral, signal});
+	const resolvedPinId = activePin?.pinId ?? pinId;
+	const {assignable} = getSocPeripheralDictionary()[peripheral];
 
-	const controlsPromise = useMemo(
-		async () =>
-			signalProjectId && !isExternallyManagedProject
-				? getControlsForProjectIds(
-						[signalProjectId],
-						CONTROL_SCOPES.PIN_CONFIG
-					)
-				: Promise.resolve({}),
-		[signalProjectId, isExternallyManagedProject]
+	const userSelections = useAppliedSignalCfg(
+		resolvedPinId,
+		peripheral,
+		signal
+	)?.PinCfg;
+
+	const signalPinConfig =
+		activePin?.Signals?.find(
+			pinSignal =>
+				pinSignal.Name === signal &&
+				pinSignal.Peripheral === peripheral
+		)?.PinConfig ??
+		(resolvedPinId
+			? getSocPinDetails(resolvedPinId)?.Signals?.find(
+					pinSignal =>
+						pinSignal.Name === signal &&
+						pinSignal.Peripheral === peripheral
+				)?.PinConfig
+			: undefined);
+
+	const applicableControls = useMemo(
+		() =>
+			getApplicablePinConfigControls(
+				controls.PinConfig ?? [],
+				signalPinConfig,
+				userSelections,
+				signal
+			),
+		[controls.PinConfig, signalPinConfig, signal, userSelections]
+	);
+
+	const hasConfiguration = applicableControls.some(
+		({control}) => !control.PluginOption
+	);
+
+	const hasPluginConfiguration = applicableControls.some(
+		({control}) => control.PluginOption
+	);
+
+	const pinconfigDisplay = (
+		<PinconfigDisplay
+			controlsPromise={controlsPromise}
+			pinId={resolvedPinId}
+			projectId={projectId}
+		/>
+	);
+
+	const pinDetails = (
+		<PinDetails
+			pinId={pinId ?? ''}
+			peripheral={peripheral}
+			signal={signal}
+		/>
 	);
 
 	return (
-		<div data-test='config-sidebar:signal-config'>
+		<>
+			{!hasConfiguration && <div hidden>{pinconfigDisplay}</div>}
 			<ConfigPanel
-				details={undefined}
-				variant={signalProjectId ? 'default' : 'noChevron'}
+				variant='default'
 				configuration={
-					signalProjectId && !isExternallyManagedProject ? (
-						<CfsSuspense>
-							<PinconfigDisplay
-								controlsPromise={controlsPromise}
-								projectId={signalProjectId}
-							/>
-						</CfsSuspense>
-					) : (
-						<ConfigUnavailable
-							message={
-								isExternallyManagedProject
-									? 'This signal is allocated to a project that is externally managed'
-									: `Configuration unavailable until ${signal} is allocated to a core.`
-							}
-						/>
-					)
+					hasConfiguration ? pinconfigDisplay : undefined
 				}
-				managePinAssignments={undefined}
 				pluginConfiguration={
-					signalProjectId && !isExternallyManagedProject ? (
-						<div
-							data-test='config-sidebar:plugin-options'
-							id={PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID}
-						/>
-					) : null
+					<div
+						data-test='config-sidebar:plugin-options'
+						id={PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID}
+					/>
 				}
-				isExternallyManaged={isExternallyManagedProject}
+				unavailableSections={{
+					pinAssignment: true,
+					configuration: !hasConfiguration,
+					plugin: !hasPluginConfiguration
+				}}
+				showConfigurationWithPlugin={false}
+				// we only show pin details if the peripheral is not assignable (ex. GPIO pins)
+				details={assignable ? undefined : pinDetails}
 			/>
+		</>
+	);
+}
+
+function PinConfigTask({
+	peripheral,
+	pinId,
+	signal
+}: PinConfigTaskProps) {
+	const signalProjectId = useSignalProjectId(peripheral, signal);
+
+	const l10n = useLocaleContext()?.pinConfig as
+		| Record<string, string>
+		| undefined;
+
+	const isPeripheralAllocable = useMemo(
+		() =>
+			getConfigurablePeripherals().some(
+				configurablePeripheral =>
+					configurablePeripheral.name === peripheral
+			),
+		[peripheral]
+	);
+
+	const reservedPin = Boolean(pinId && isPinReserved(pinId));
+
+	const canConfigureReservedPin = useCanConfigureReservedPin({
+		pinId,
+		peripheral,
+		signal
+	});
+
+	const effectiveProjectId =
+		signalProjectId ??
+		(reservedPin && !isPeripheralAllocable
+			? getPrimaryProjectId()
+			: undefined);
+
+	const isExternallyManagedProject = getIsExternallyManagedProject(
+		effectiveProjectId
+	);
+
+	const canRenderConfiguredPanel =
+		Boolean(effectiveProjectId) &&
+		!isExternallyManagedProject &&
+		(!reservedPin || canConfigureReservedPin);
+
+	const controlsPromise = useMemo(
+		async () =>
+			canRenderConfiguredPanel && effectiveProjectId
+				? getControlsForProjectIds(
+						[effectiveProjectId],
+						CONTROL_SCOPES.PIN_CONFIG
+					)
+				: Promise.resolve({}),
+		[canRenderConfiguredPanel, effectiveProjectId]
+	);
+
+	const configUnavailableMessage = useMemo(() => {
+		if (isExternallyManagedProject) {
+			return (
+				l10n?.externallyManaged ??
+				'This signal is allocated to a project that is externally managed'
+			);
+		}
+
+		if (isPeripheralAllocable) {
+			return (
+				l10n?.peripheralConfigUnavailable?.replace(
+					'{peripheral}',
+					peripheral
+				) ??
+				`Configuration unavailable until ${peripheral} is allocated to a project.`
+			);
+		}
+
+		return (
+			l10n?.configUnavailable?.replace('{signal}', signal) ??
+			`Configuration unavailable until ${signal} is allocated to a project.`
+		);
+	}, [
+		isExternallyManagedProject,
+		isPeripheralAllocable,
+		l10n,
+		peripheral,
+		signal
+	]);
+
+	return (
+		<div data-test='config-sidebar:signal-config'>
+			{canRenderConfiguredPanel && effectiveProjectId ? (
+				<CfsSuspense>
+					<ConfiguredPinConfigPanel
+						controlsPromise={controlsPromise}
+						peripheral={peripheral}
+						pinId={pinId}
+						projectId={effectiveProjectId}
+						signal={signal}
+					/>
+				</CfsSuspense>
+			) : (
+				<ConfigPanel
+					variant={effectiveProjectId ? 'default' : 'noChevron'}
+					configuration={
+						<ConfigUnavailable message={configUnavailableMessage} />
+					}
+					isExternallyManaged={isExternallyManagedProject}
+				/>
+			)}
 		</div>
 	);
 }

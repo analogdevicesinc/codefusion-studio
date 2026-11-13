@@ -14,6 +14,7 @@
  */
 
 import type { AIModelBackend } from "./cfs-config.js";
+import type { SocAiOpInfo } from "./cfs-soc-data-model.js";
 
 export interface AiBackend {
 	Targets: {
@@ -33,7 +34,10 @@ export interface AiBackend {
 		DockerImage: string;
 		Soc: string;
 		Subsystem: string;
+		/** Paths relative to the subsystem output directory. Missing entries are skipped. */
 		Copy?: string[];
+		/** Paths relative to the subsystem output directory, pruned from any directory in `Copy`. */
+		Exclude?: string[];
 	};
 	Default?: boolean;
 }
@@ -44,7 +48,13 @@ export interface AiTarget {
 	Core?: string;
 	Family?: string;
 	Accelerator?: string | null;
+	Config?: Record<string, string | number>;
 }
+
+export type VerifiedConfigTarget = Pick<
+	AiTarget,
+	"Soc" | "Core" | "Accelerator"
+>;
 
 export interface VerifiedConfig {
 	name: string;
@@ -54,9 +64,7 @@ export interface VerifiedConfig {
 		out_dir: string;
 	};
 	files: Record<string, string>;
-	target: AiTarget & {
-		firmware_platform: string;
-	};
+	target: VerifiedConfigTarget;
 	backend: AIModelBackend;
 }
 
@@ -69,13 +77,46 @@ type AiEvent =
 	| {
 			type: "INFO" | "WARN" | "ERROR";
 			message: string;
+	  }
+	| {
+			type: "DATA";
+			message: string;
+			value: string; // JSON output from tool
 	  };
 
-export interface AiCommandResult {
+export interface AiCommandResult<T = unknown> {
 	code: number;
 	validCodes: number[];
 	events: AiEvent[];
 	artifacts?: {
 		files: string[];
 	};
+	data?: T;
+}
+
+interface HardwareTarget extends Omit<
+	AiTarget,
+	"Soc" | "Core" | "Package"
+> {
+	Soc: string;
+	Core: string;
+	/** `null` when the package could not be determined. */
+	Package?: string | null;
+}
+
+interface HardwareProfile {
+	AccelOps: string[];
+	CoreClock: number;
+	FlashSize: number;
+	OperatorInfos: SocAiOpInfo[];
+	RamSize: number;
+	SupportedDataTypes: string[];
+	SupportedOps: string[];
+	Target: HardwareTarget | null;
+}
+
+export interface ReportInfo {
+	hardware: HardwareProfile | null;
+	timestamp: string;
+	version: string;
 }

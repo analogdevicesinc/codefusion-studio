@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import {VSCodeTextField} from '@vscode/webview-ui-toolkit/react';
 
 import SearchIcon from '@common/icons/Search';
 import styles from './SymbolsSearch.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TSymbolsSearchProps = {
 	readonly emitValue: (value: string) => void;
@@ -33,6 +34,9 @@ export default function SymbolsSearch({
 	queryChangedBy
 }: TSymbolsSearchProps) {
 	const [value, setValue] = useState<string>('');
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
 
 	const handleOnInput = useCallback(
 		(event: ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +64,9 @@ export default function SymbolsSearch({
 		<VSCodeTextField
 			className={styles.container}
 			type='text'
-			placeholder='Search by name or address'
+			placeholder={
+				l10n?.searchByNameOrAddress ?? 'Search by name or address'
+			}
 			name='search-by-symbol'
 			value={value}
 			onInput={event => {

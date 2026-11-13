@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,6 +127,12 @@ function MemoryTable({
 	});
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.['memory layout']?.helpModal?.[`${layer}`];
+	const memLayoutL10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 
 	const columns: string[] = getColumns(data);
 	const filteredOutColumns = getOrder(layer) as unknown as COLUMNS[];
@@ -200,7 +206,9 @@ function MemoryTable({
 			isLayer3BindVis(column, layer)
 		) {
 			MENU_OPTIONS[2].show = true;
-			MENU_OPTIONS[2].label = `Help - ${capitalizeWord(column)}`;
+			MENU_OPTIONS[2].label = `${
+				commonL10n?.helpPrefix ?? 'Help - '
+			}${capitalizeWord(column)}`;
 
 			setIsMenuVisible(true);
 			setMenuOptions(MENU_OPTIONS);
@@ -223,51 +231,65 @@ function MemoryTable({
 			MENU_OPTIONS[1].show = true;
 			MENU_OPTIONS[1].label =
 				savedOptions?.memory?.[layer]?.[column] === 'dec'
-					? 'Show column as hexadecimal'
-					: 'Show column as decimal';
+					? (commonL10n?.showColumnAsHexadecimal ??
+						'Show column as hexadecimal')
+					: (commonL10n?.showColumnAsDecimal ??
+						'Show column as decimal');
 
 			setIsMenuVisible(true);
 			setMenuOptions(MENU_OPTIONS);
 		}
 	};
 
-	const handleOptionClick = (elem: HTMLElement) => {
+	const handleOptionClick = (optionId: number) => {
 		closeContextMenu();
 
-		const isOptionFormat =
-			elem?.innerText?.includes('Show column as');
-		const isOptionGoToSourceCode =
-			elem?.innerText?.includes(GO_TO_SOURCE_CODE);
-		const isOptionHelpModal = elem?.innerText?.includes('Help - ');
 		const currentOption = savedOptions?.memory?.[layer]?.[clickedCol];
 
-		if (isOptionFormat && currentOption) {
-			const clonedSavedOptions = JSON.parse(
-				JSON.stringify(savedOptions)
-			);
+		switch (optionId) {
+			case 0:
+				// Go to source code
+				if (clickedSymbol?.path) {
+					const pos = extractPositionFromPath(
+						(clickedSymbol.path as string) || ''
+					);
+					void goToSourceCodeCallback(
+						formatPath((clickedSymbol.path as string) || ''),
+						pos as number[]
+					);
+				}
 
-			clonedSavedOptions.memory[layer][clickedCol] =
-				currentOption === 'dec' ? 'hex' : 'dec';
+				break;
 
-			updateSavedOptions(clonedSavedOptions as TSavedTableOptions);
-		}
+			case 1:
+				// Toggle column format
+				if (currentOption) {
+					const clonedSavedOptions = JSON.parse(
+						JSON.stringify(savedOptions)
+					);
 
-		if (isOptionGoToSourceCode) {
-			const pos = extractPositionFromPath(
-				(clickedSymbol?.path as string) || ''
-			);
-			void goToSourceCodeCallback(
-				formatPath((clickedSymbol?.path as string) || ''),
-				pos as number[]
-			);
-		}
+					clonedSavedOptions.memory[layer][clickedCol] =
+						currentOption === 'dec' ? 'hex' : 'dec';
 
-		if (isOptionHelpModal) {
-			setHelpOptionModal(prev => ({
-				...prev,
-				isVisible: true,
-				item: elem?.innerText.split(' - ')[1] || ''
-			}));
+					updateSavedOptions(
+						clonedSavedOptions as TSavedTableOptions
+					);
+				}
+
+				break;
+
+			case 2:
+				// Help modal
+				setHelpOptionModal(prev => ({
+					...prev,
+					isVisible: true,
+					item: capitalizeWord(clickedCol)
+				}));
+
+				break;
+
+			default:
+				break;
 		}
 	};
 
@@ -277,13 +299,15 @@ function MemoryTable({
 
 			if (isPath) {
 				MENU_OPTIONS[0].show = true;
+				MENU_OPTIONS[0].label =
+					commonL10n?.goToSymbolSourceCode ?? GO_TO_SOURCE_CODE;
 				setIsMenuVisible(true);
 				setClickedSymbol(symbol);
 			} else {
 				MENU_OPTIONS[0].show = false;
 			}
 		},
-		[]
+		[commonL10n?.goToSymbolSourceCode]
 	);
 
 	const goToSourceCodeCallback = useCallback(
@@ -417,10 +441,10 @@ function MemoryTable({
 					<div data-test='memory-table:footer'>
 						<strong>{dataToDisplay.length}</strong>
 						{layer === 1
-							? ' Segments'
+							? ` ${memLayoutL10n?.segments ?? 'Segments'}`
 							: layer === 2
-								? ' Sections'
-								: ' Symbols'}
+								? ` ${memLayoutL10n?.sections ?? 'Sections'}`
+								: ` ${memLayoutL10n?.symbols ?? 'Symbols'}`}
 					</div>
 				</DataGridRow>
 			</div>

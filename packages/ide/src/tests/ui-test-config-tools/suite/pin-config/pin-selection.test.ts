@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
@@ -27,24 +27,19 @@ import {
 describe("Pin Selection", () => {
   let browser: VSBrowser;
   let view: WebView;
+  const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
 
   before(async function () {
     this.timeout(60000);
-    browser = VSBrowser.instance;
-    await browser.waitForWorkbench();
+    ({ browser } = await UIUtils.setupTestSuite({ waitForWorkbench: true }));
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("workbench.action.closeAllEditors");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Displays the pin details sidebar when a pin is clicked", async () => {
-    const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+  it("Displays the pin details sidebar when a pin is clicked @regression", async () => {
     await browser.openResources(configPath);
 
     view = new WebView();

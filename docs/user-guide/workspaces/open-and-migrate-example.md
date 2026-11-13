@@ -1,7 +1,7 @@
 ---
 description: Open MSDK examples in CodeFusion Studio.
 author: Analog Devices
-date: 2025-10-20
+date: 2026-09-10
 ---
 
 # Explore and open MSDK examples
@@ -10,6 +10,10 @@ The MSDK provides example projects for each supported microcontroller. These exa
 
 !!!note
     If you plan to migrate a project to System Planner, follow the steps in [migrate a project to System Planner](../workspaces/migrate-project-to-system-planner.md)
+
+## Before you start
+
+Install the MSDK using the [Package Manager](../installation/package-manager/index.md). CodeFusion Studio automatically locates the installed package and its examples.
 
 ## Open an example project
 
@@ -29,9 +33,6 @@ The MSDK provides example projects for each supported microcontroller. These exa
 7. A new VS Code window opens. If you receive the notification **Do you trust the authors of the files in this workspace?**, click **Yes, I trust the authors** to continue.  
 8. If your existing project has not been configured as a CodeFusion Studio workspace, wait for the **Configuring** dialog box to complete before proceeding.
 
-!!! note
-    CodeFusion Studio automatically locates your installed MSDKs and examples. If the MSDK was installed using the Package Manager, examples are loaded from the Package Manager package. If no MSDK package exists, it defaults to the MSDK folder bundled with the installer (`SDK/MAX/Examples`).
-
 ## Open multiple examples together (optional)
 
 You can open multiple example projects in a single workspace—for example, to compare code or build and run multi-core projects.
@@ -42,13 +43,11 @@ You can open multiple example projects in a single workspace—for example, to c
     We strongly recommend copying the example projects before modifying any files to preserve the original examples.
 
 1. Open **File Explorer**.  
-2. Depending on how you installed the MSDK, examples are located in one of the following directories. Click **Browse MSDK Examples** to determine the correct location.
-   - **Installer:** `C:\Analog\CFS\<version>\SDK\MAX\Examples`  
-   - **Package Manager (Conan):**  
-     - **Linux:** `/home/<username>/.local/share/com.analog.cfs/packages/conan/p/msdk<id>/p/Examples`  
-     - **macOS:** `/Users/<username>/Library/Preferences/com.analog.cfs/packages/conan/p/msdk<id>/p/Examples`
-     - **Windows:** `C:\Users\<username>\AppData\Local\com.analog.cfs\Data\packages\conan\p\msdk<id>\p\Examples`  
-3. Copy the **Examples** folders to a writable location.
+2. Examples are located in the Package Manager package directory. Select **Browse MSDK Examples** to determine the correct location.
+    - **Linux:** `/home/<username>/.local/share/com.analog.cfs/packages/conan/p/msdk<id>/p/Examples`  
+    - **macOS:** `/Users/<username>/Library/Preferences/com.analog.cfs/packages/conan/p/msdk<id>/p/Examples`
+    - **Windows:** `C:\Users\<username>\AppData\Local\com.analog.cfs\Data\packages\conan\p\msdk<id>\p\Examples`  
+3. Copy the **Examples** folder to a writable location.
 
 ### Open the examples in VS Code
 

@@ -7,8 +7,7 @@ import {
 	cleanupTempRoot,
 	ensureCleanTempPath,
 	pathExists,
-	resolveFixturePath,
-	resolveTempPath
+	resolveFixturePath
 } from "../../utilities/test-helpers.js";
 
 function createCodegenFeature(): CfsFeature {
@@ -34,6 +33,7 @@ function createCfsConfig(
 ): CfsConfig {
 	return {
 		Copyright: "",
+		SchemaVersion: "2.1.0",
 		DataModelVersion: "0.0.0",
 		Soc: "MAX32690",
 		Package: "WLP",

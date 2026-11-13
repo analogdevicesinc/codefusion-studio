@@ -16,13 +16,21 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 import type {CfsWorkspace} from 'cfs-types';
+import {CfsPluginManager} from 'cfs-lib';
+import Sinon from 'sinon';
 import fs, {promises as fsp} from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
   CFS_DATA_MODELS_PATH,
   CFS_PROJECT_PLUGINS_PATH
 } from '../../constants.js';
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope,
+  type CliErrorEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,5 +141,127 @@ describe('project:create', () => {
     expect(error?.message).to.include(
       'Projects cannot currently be generated from this type of workspace file.'
     );
+  });
+
+  describe('JSON envelope', () => {
+    const searchPaths = [
+      '--search-path',
+      pluginsPath,
+      '--search-path',
+      dataModelsPath
+    ];
+
+    afterEach(() => {
+      Sinon.restore();
+    });
+
+    it('returns the project name and workspace path', async () => {
+      Sinon.stub(
+        CfsPluginManager.prototype,
+        'generateProject'
+      ).resolves();
+
+      const {stdout} = await runCommand(
+        [
+          'project:create',
+          '--workspace-file-path',
+          workspacePath,
+          ...searchPaths,
+          '--project-name',
+          'test-project',
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{
+        projectName: string;
+        workspacePath: string;
+      }>(stdout, 'project create');
+      expect(data).to.deep.equal({
+        projectName: 'test-project',
+        workspacePath: path.resolve(
+          workspace.location,
+          workspace.workspaceName
+        )
+      });
+    });
+
+    it('returns PROJECT_CREATE_FAILED for an unknown project', async () => {
+      const {stdout} = await runCommand(
+        [
+          'project:create',
+          '--workspace-file-path',
+          workspacePath,
+          ...searchPaths,
+          '--project-name',
+          invalidProject,
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const parsed = assertValidEnvelope(stdout);
+      expect(parsed.ok).to.be.false;
+      expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+        'PROJECT_CREATE_FAILED'
+      );
+    });
+
+    it('returns a path-independent WORKSPACE_FILE_READ_FAILED code for an invalid workspace file', async () => {
+      const tmpDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'cfs-proj-create-')
+      );
+      const badFile = path.join(tmpDir, 'bad.cfsworkspace');
+      fs.writeFileSync(badFile, '{not json');
+
+      try {
+        const {stdout} = await runCommand(
+          [
+            'project:create',
+            '--workspace-file-path',
+            badFile,
+            ...searchPaths,
+            '--project-name',
+            'test-project',
+            '--format',
+            'json'
+          ],
+          {root: '..'}
+        );
+
+        const parsed = assertValidEnvelope(stdout);
+        expect(parsed.ok).to.be.false;
+        expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+          'WORKSPACE_FILE_READ_FAILED'
+        );
+      } finally {
+        fs.rmSync(tmpDir, {recursive: true, force: true});
+      }
+    });
+
+    it('returns MISSING_DEPENDENCY when a required plugin is not installed', async () => {
+      const {stdout} = await runCommand(
+        [
+          'project:create',
+          '--workspace-file-path',
+          workspacePath,
+          ...searchPaths,
+          '--project-name',
+          'test-project',
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const parsed = assertValidEnvelope(stdout);
+      expect(parsed.ok).to.be.false;
+      expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+        'MISSING_DEPENDENCY'
+      );
+    });
   });
 });

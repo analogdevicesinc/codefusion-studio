@@ -24,6 +24,8 @@ export type { CfsCodeGenerationContext } from "./types/cfs-code-generation.d.ts"
 // Config Types
 export type {
 	CfsConfig,
+	CfsConfigLatestSchemaVersion,
+	CfsConfigSchemaVersion,
 	ConfiguredPin,
 	ConfiguredClockNode,
 	ConfiguredProject,
@@ -44,6 +46,12 @@ export type {
 	CfsSettings,
 	MCUBootSettings,
 	ConfiguredSigningKey,
+	FirewallConfig,
+	FirewallStatus,
+	ConfiguredFirewallZone,
+	ConfiguredFirewallAccessModes,
+	ConfiguredFirewallResponder,
+	ConfiguredFirewallResponderOverride,
 	ConfiguredApplicationPackage,
 	ConfiguredImage,
 	ConfiguredCustomTLV,
@@ -51,7 +59,10 @@ export type {
 } from "./types/cfs-config.d.ts";
 
 // Feature Types
-export type { CfsFeatureScope, CfsFeature } from "./types/cfs-feature.d.ts";
+export type {
+	CfsFeatureScope,
+	CfsFeature,
+} from "./types/cfs-feature.d.ts";
 
 // File Map Types
 export type { CfsFileMap } from "./types/cfs-file-map.d.ts";
@@ -85,7 +96,9 @@ export type {
 	CfsSocDataModel,
 	SocPart,
 	SocControl,
+	SocControlType,
 	SocControlValue,
+	SocNumericBase,
 	SocPackage,
 	SocPinCanvas,
 	SocPinCanvasLabel,
@@ -113,10 +126,20 @@ export type {
 	Expression,
 	SocAi,
 	SocAiOpInfo,
+	SocMultiFormatInteger,
+	SocFirewall,
+	SocFirewallInitiator,
+	SocFirewallResponderGroup,
+	SocFirewallResponder,
+	SocFirewallResponderType,
 	SocTraceInfo,
 	SocTraceComponentInfo,
 	SocTraceEventSource,
 	SocTraceEventSourceGroup,
+	SocSruType,
+	SruSignal,
+	SruInputSignal,
+	SruOutputSignal,
 } from "./types/cfs-soc-data-model.d.ts";
 
 // SoC Diagram Types
@@ -146,11 +169,36 @@ export type {
 	AiBackend,
 	AiTarget,
 	VerifiedConfig,
+	VerifiedConfigTarget,
 	AiCommandResult,
+	ReportInfo,
 } from "./types/cfs-ai.d.ts";
 
 // AI profiling types
-export type { CfsAiProfilingData } from "./types/cfs-ai-profiling.d.ts";
+export type {
+	CfsAiProfilingData,
+	CfsAiProfilingReport,
+	CfsAiProfilingRamStatus,
+	CfsAiProfilingModelSummary,
+	CfsAiProfilingHardwareMetrics,
+	CfsAiProfilingMemoryAnalysis,
+	CfsAiProfilingLayerPerformance,
+	CfsAiProfilingOptimizationSuggestion,
+	CfsAiProfilingOptimizationOpportunity,
+	CfsAiProfilingOptimizationOpportunities,
+	CfsAiProfilingError,
+} from "./types/cfs-ai-profiling.d.ts";
+
+// AI runtime profiling types
+export type {
+	CfsAiRuntimeProfilingReport,
+	CfsAiRuntimeThreadInfo,
+	CfsAiRuntimeModelSummary,
+	CfsAiRuntimeInferenceSummary,
+	CfsAiRuntimeHardwareMetrics,
+	CfsAiRuntimeMemoryAnalysis,
+	CfsAiRuntimeLayerPerformance,
+} from "./types/cfs-ai-runtime-profiling.d.ts";
 
 export type {
 	CfsMissingComponent,
@@ -158,3 +206,15 @@ export type {
 	CfsUpdateResolution,
 	CfsUpdateResolutionType,
 } from "./types/cfs-component.d.ts";
+
+// Ai compatibility report type
+export type {
+	CfsAiCompatibilityReport,
+	CfsAiCompatSeverity,
+	CfsAiCompatModelSummary,
+	CfsAiCompatMemoryIssue,
+	CfsAiCompatMemoryRecommendation,
+	CfsAiCompatOptimizationOpportunity,
+	CfsAiCompatOperatorIssue,
+	CfsAiCompatUnsupportedTypeIssue,
+} from "./types/cfs-ai-compatibility.d.ts";

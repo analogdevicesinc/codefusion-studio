@@ -49,7 +49,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load the schema
-const schemaPath = path.join(__dirname, '../socs/datamodel-schema.json');
+const schemaPath = path.join(__dirname, '../../cfs-types/schemas/datamodel-schema.json');
 const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
 
 // Initialize AJV validator for JSON Schema 2020-12

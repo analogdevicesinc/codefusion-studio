@@ -12,9 +12,8 @@
  * limitations under the License.
  *
  */
-import {Command} from '@oclif/core';
-
 import {getSocCatalog} from '../../utils/catalog-manager.js';
+import {BaseCommand} from '../../utils/base-command.js';
 
 export const catalogUpdateDeps: {
   getSocCatalog: typeof getSocCatalog;
@@ -22,24 +21,31 @@ export const catalogUpdateDeps: {
   getSocCatalog
 };
 
-export default class Update extends Command {
+export default class Update extends BaseCommand<typeof Update> {
+  static useResponseEnvelope = true;
+
   static description =
-    'Updates the catalog to the latest version available online. Requires either an active session with a myAnalog account or the CFS_API_KEY environment variable set with a valid API key.';
+    'Updates the catalog to the latest version available online.';
 
   static examples = ['<%= config.bin %> <%= command.id %>'];
 
-  static flags = {};
-
-  public async run(): Promise<void> {
+  public async run(): Promise<{updated: true}> {
     try {
-      await catalogUpdateDeps.getSocCatalog(this.config, true);
+      await catalogUpdateDeps.getSocCatalog(
+        this.config,
+        true,
+        (message) => this.pushWarning(message)
+      );
     } catch (error) {
       this.error(
         `Failed to update catalog.` +
-          (error instanceof Error ? ` ${error.message}` : '')
+          (error instanceof Error ? ` ${error.message}` : ''),
+        {code: 'CATALOG_UPDATE_FAILED'}
       );
     }
 
     this.log(`Catalog updated successfully`);
+
+    return {updated: true};
   }
 }

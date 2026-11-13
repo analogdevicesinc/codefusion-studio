@@ -1,0 +1,27 @@
+{
+	"$schema": "../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../.oxlintrc.json"],
+	"plugins": [],
+	"categories": {
+		"correctness": "error"
+	},
+	"rules": {
+		"typescript/no-namespace": "off",
+		"no-case-declarations": "off"
+	},
+	"ignorePatterns": [
+		"dist/**",
+		"src/ai-tools/tflm/schema/**"
+	],
+	"overrides": [
+		{
+			"files": [
+				"src/resources/schemas/**",
+				"scripts/generate-cfsconfig-schema.js"
+			],
+			"rules": {
+				"unicorn/no-thenable": "off"
+			}
+		}
+	]
+}

@@ -38,9 +38,7 @@ export interface RepoInfoClient {
  * Provides managed Conan Cloudsmith remotes discovered through CCM, including
  * myAnalog-backed credentials for repositories that require authentication.
  */
-export class MyAnalogConanCloudsmithRemotesProvider
-	implements CfsPackageRemotesProvider
-{
+export class MyAnalogConanCloudsmithRemotesProvider implements CfsPackageRemotesProvider {
 	private readonly repoClient: RepoInfoClient;
 	private readonly credProvider: CfsPackageRemoteCredentialProvider;
 	public readonly name: string = "myAnalog";
@@ -149,9 +147,7 @@ export class MyAnalogConanCloudsmithRemotesProvider
  * Provides the default public Conan Cloudsmith remote when cloud-managed
  * repository metadata is unavailable.
  */
-export class DefaultConanCloudsmithRemotesProvider
-	implements CfsPackageRemotesProvider
-{
+export class DefaultConanCloudsmithRemotesProvider implements CfsPackageRemotesProvider {
 	public readonly name: string = "default";
 
 	public async getRemotes() {
@@ -167,6 +163,65 @@ export class DefaultConanCloudsmithRemotesProvider
 				auth: { public: true as const }
 			}
 		]);
+	}
+}
+
+/**
+ * Wraps a primary remotes provider and falls back to a secondary provider
+ * if the primary fails to supply remotes.
+ *
+ * The primary is only contacted when remotes are first requested, so
+ * creating this provider performs no network requests. The outcome of that
+ * first request decides which provider is used for the lifetime of this
+ * provider; concurrent first callers share the same request and result.
+ */
+export class RemotesProviderWithFallback implements CfsPackageRemotesProvider {
+	private selected: CfsPackageRemotesProvider | undefined;
+	private firstAttempt:
+		| ReturnType<CfsPackageRemotesProvider["getRemotes"]>
+		| undefined;
+
+	/**
+	 * @param primary - Provider to try first
+	 * @param fallback - Provider used once the primary has failed
+	 * @param onFallback - Called once, with the primary's error, when
+	 * switching to the fallback provider
+	 */
+	constructor(
+		private readonly primary: CfsPackageRemotesProvider,
+		private readonly fallback: CfsPackageRemotesProvider,
+		private readonly onFallback?: (error: unknown) => void
+	) {}
+
+	public get name(): string {
+		return (this.selected ?? this.primary).name;
+	}
+
+	public async getRemotes() {
+		if (this.firstAttempt) {
+			return await this.firstAttempt;
+		}
+		if (this.selected) {
+			return await this.selected.getRemotes();
+		}
+
+		const firstAttempt = this.selectProvider().finally(() => {
+			this.firstAttempt = undefined;
+		});
+		this.firstAttempt = firstAttempt;
+		return await firstAttempt;
+	}
+
+	private async selectProvider() {
+		try {
+			const remotes = await this.primary.getRemotes();
+			this.selected = this.primary;
+			return remotes;
+		} catch (error) {
+			this.selected = this.fallback;
+			this.onFallback?.(error);
+			return await this.fallback.getRemotes();
+		}
 	}
 }
 

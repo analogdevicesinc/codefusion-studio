@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *
  */
 /* eslint-disable react/no-array-index-key */
-import {memo, useMemo} from 'react';
+import {memo, useMemo, type CSSProperties} from 'react';
 import type {Pin} from '@common/types/soc';
 import PinControl from '../pin-control/PinControl';
 import McuPin from '../pin/Pin';
@@ -33,6 +33,10 @@ function PinGrid({
 	readonly pinArray: Array<Array<Pin | undefined>>;
 }) {
 	const pinGap = pinArray.length > gridSizeThreshold ? '1%' : '2%';
+	const pinColumnCount = Math.max(
+		...pinArray.map(row => row.length),
+		1
+	);
 	const searchString = useSearchString('pinconfig');
 	const focusedPins = useFocusedPins();
 	const targetPin = usePinDetailsTargetPin();
@@ -45,9 +49,12 @@ function PinGrid({
 			<div
 				id='pin-rows-container'
 				className={styles.pinRowsContainer}
-				style={{
-					gap: pinGap
-				}}
+				style={
+					{
+						gap: pinGap,
+						'--pin-column-count': pinColumnCount
+					} as CSSProperties
+				}
 			>
 				{pinArray.map((row, rowIdx) => (
 					<div
@@ -71,7 +78,7 @@ function PinGrid({
 				))}
 			</div>
 		),
-		[pinArray, pinGap]
+		[pinArray, pinColumnCount, pinGap]
 	);
 
 	return (

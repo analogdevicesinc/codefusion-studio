@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
 import { toolResult, toolError, noSession } from "../../utils/response-helpers";
@@ -66,7 +65,7 @@ export function registerMemoryTools(
         "Read memory from the target device at a specific address. " +
         "Returns the data as a hex byte string. " +
         "Requires a halted debug session.",
-      inputSchema: {
+      inputSchema: z.object({
         address: z
           .string()
           .describe(
@@ -78,7 +77,7 @@ export function registerMemoryTools(
           .min(1)
           .max(1024)
           .describe("Number of bytes to read"),
-      },
+      }),
     },
     async (params) => {
       try {
@@ -114,7 +113,7 @@ export function registerMemoryTools(
         "Write a value to a specific memory address on the target device. " +
         "Requires a halted debug session. The write is verified by reading " +
         "back the written address. Use with caution.",
-      inputSchema: {
+      inputSchema: z.object({
         address: z
           .string()
           .describe(
@@ -129,7 +128,7 @@ export function registerMemoryTools(
           .describe(
             "Write size: byte(1), halfword(2), word(4) (default 'word')",
           ),
-      },
+      }),
     },
     async (params) => {
       try {
@@ -178,7 +177,7 @@ export function registerMemoryTools(
         "Search for a byte pattern or value in a memory region. " +
         "Useful for finding specific values, strings, or sentinel " +
         "patterns that indicate corruption. Requires a halted debug session.",
-      inputSchema: {
+      inputSchema: z.object({
         startAddress: z
           .string()
           .describe("Start address for the search (e.g. '0x20000000')"),
@@ -194,7 +193,7 @@ export function registerMemoryTools(
             "Pattern to search for (hex value like '0xDEADBEEF' " +
               "or a string in double quotes)",
           ),
-      },
+      }),
     },
     async (params) => {
       try {

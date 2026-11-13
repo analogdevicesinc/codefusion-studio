@@ -36,7 +36,7 @@ export function run(): Promise<void> {
     });
     testFileStream.on("end", () => {
       try {
-        // Run the mocha test
+        // Run the Mocha tests
         mocha.run((failures) => {
           if (failures > 0) {
             e(new Error(`${failures} tests failed.`));

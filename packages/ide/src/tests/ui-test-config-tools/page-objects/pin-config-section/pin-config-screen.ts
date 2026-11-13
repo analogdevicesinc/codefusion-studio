@@ -20,6 +20,9 @@ import { UIUtils } from "../../../ui-test-utils/ui-utils";
 export const searchField: By = By.css(`#control-input`);
 export const assignedPinsList: By = By.css("#peripheral-navigation > section");
 export const pinDetailsContainer: By = By.css("#details-container");
+export const pinDetailsSignalsContainer: By = By.css(
+  "#pin-details-signals-container",
+);
 export const configButton: By = By.css("[class^='_configButtonContainer_']");
 export const pinTooltipTitle: By = By.css(
   "#pin-details-title > div:first-of-type > h3:first-of-type",
@@ -68,7 +71,7 @@ export async function pinConfigContainer(
 
 export async function signalToggleWithIndex(index: number): Promise<By> {
   return By.css(
-    `#pin-details-signals-container > div:nth-child(${index}) > section > label`,
+    `#pin-details-signals-container section:nth-of-type(${index}) label`,
   );
 }
 

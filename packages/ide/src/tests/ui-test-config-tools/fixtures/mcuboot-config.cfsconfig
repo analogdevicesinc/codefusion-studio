@@ -1,0 +1,404 @@
+{
+  "Copyright": "Copyright (c) 2026 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "DataModelVersion": "^1.3.831",
+  "Soc": "MCUTESTS",
+  "Package": "MCU",
+  "BoardName": "MCUBoard",
+  "Timestamp": "2026-07-22T13:04:09.381Z",
+  "Pins": [],
+  "ClockNodes": [],
+  "Projects": [
+    {
+      "CoreId": "Core0",
+      "ProjectId": "Core0",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "Partitions": [
+        {
+          "Name": "core0_dram",
+          "StartAddress": "0x22000000",
+          "Size": 2097152,
+          "DisplayUnit": "MB",
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {
+            "CHOSEN": "sram",
+            "LABEL": ""
+          }
+        },
+        {
+          "Name": "config_data_partition",
+          "StartAddress": "0x88000000",
+          "Size": 4096,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {}
+        },
+        {
+          "Name": "boot_partition",
+          "StartAddress": "0x88001000",
+          "Size": 262144,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "mcuboot-0"
+          }
+        },
+        {
+          "Name": "boot_partition_1",
+          "StartAddress": "0x88041000",
+          "Size": 262144,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "mcuboot-1"
+          }
+        },
+        {
+          "Name": "slot0_partition",
+          "StartAddress": "0x88081000",
+          "Size": 131072,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-bl3-0"
+          }
+        },
+        {
+          "Name": "slot1_partition",
+          "StartAddress": "0x880a1000",
+          "Size": 131072,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-bl3-1"
+          }
+        },
+        {
+          "Name": "core0_primary_partition",
+          "StartAddress": "0x880c1000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core0-0"
+          }
+        },
+        {
+          "Name": "core0_secondary_partition",
+          "StartAddress": "0x881a7000",
+          "Size": 262144,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "NAME_OVERRIDE": "coredump_partition",
+            "CHOSEN": "coredump-partition",
+            "LABEL": "coredump"
+          }
+        }
+      ],
+      "Peripherals": [
+        {
+          "Name": "QSPI_INIT0",
+          "Signals": [],
+          "Config": {
+            "ZEPHYR_NODE": "mx25r6435f"
+          }
+        },
+        {
+          "Name": "UART0",
+          "Description": "UART for console",
+          "Signals": [],
+          "Config": {
+            "CHOSEN": "console,shell-uart",
+            "BAUD": "921600"
+          }
+        }
+      ],
+      "PlatformConfig": {
+        "ProjectName": "Core0",
+        "ZephyrVersion": "4.3.0",
+        "ZephyrBoardName": "mock_board/mock_soc/core0"
+      }
+    },
+    {
+      "CoreId": "Core1",
+      "ProjectId": "Core1",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": false,
+      "PlatformConfig": {
+        "ProjectName": "Core1",
+        "ZephyrVersion": "4.3.0",
+        "ZephyrBoardName": "mock_board/mock_soc/core1"
+      },
+      "Partitions": [
+        {
+          "Name": "core1_dram",
+          "StartAddress": "0x22400000",
+          "Size": 2097152,
+          "DisplayUnit": "MB",
+          "IsOwner": true,
+          "Access": "R/W",
+          "Config": {
+            "CHOSEN": "sram",
+            "LABEL": ""
+          }
+        },
+        {
+          "Name": "core1_primary_partition",
+          "StartAddress": "0x8828d000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core1-0"
+          }
+        },
+        {
+          "Name": "core1_secondary_partition",
+          "StartAddress": "0x88373000",
+          "Size": 262144,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "NAME_OVERRIDE": "coredump_partition",
+            "CHOSEN": "coredump-partition",
+            "LABEL": "coredump"
+          }
+        },
+        {
+          "Name": "storage_partition",
+          "StartAddress": "0x887F1000",
+          "Size": 61440,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "storage"
+          }
+        }
+      ],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "Core2",
+      "ProjectId": "Core2",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": true,
+      "PlatformConfig": {
+        "ProjectName": "Core2",
+        "ZephyrVersion": "4.3.0",
+        "ZephyrBoardName": "mock_board/mock_soc/core2"
+      },
+      "Partitions": [
+        {
+          "Name": "core2_primary_partition",
+          "StartAddress": "0x88459000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core2-0"
+          }
+        },
+        {
+          "Name": "core2_secondary_partition",
+          "StartAddress": "0x8853f000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core2-1"
+          }
+        }
+      ],
+      "Peripherals": []
+    },
+    {
+      "CoreId": "Core3",
+      "ProjectId": "Core3",
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "zephyr",
+      "ExternallyManaged": true,
+      "PlatformConfig": {
+        "ProjectName": "Core3",
+        "ZephyrVersion": "4.3.0",
+        "ZephyrBoardName": "mock_board/mock_soc/core3"
+      },
+      "Partitions": [
+        {
+          "Name": "core3_primary_partition",
+          "StartAddress": "0x88625000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core3-0"
+          }
+        },
+        {
+          "Name": "core3_secondary_partition",
+          "StartAddress": "0x8870b000",
+          "Size": 942080,
+          "DisplayUnit": "KB",
+          "IsOwner": true,
+          "Access": "R/W/X",
+          "Config": {
+            "LABEL": "image-core3-1"
+          }
+        }
+      ],
+      "Peripherals": []
+    }
+  ],
+  "DFG": {
+    "Streams": [
+      {
+        "StreamId": 1,
+        "Source": {
+          "Gasket": "GASKET0",
+          "BufferSize": 128,
+          "BufferAddress": 0,
+          "Index": 0,
+          "Config": {
+            "ALIAS": "core0_to_core1_tx",
+            "ACCESS_MODE": "FIFO"
+          }
+        },
+        "Destinations": [
+          {
+            "Gasket": "GASKET1",
+            "BufferSize": 256,
+            "BufferAddress": 0,
+            "Index": 0,
+            "Config": {
+              "ALIAS": "core0_to_core1_rx",
+              "INT_WINDOW_EN": "TRUE",
+              "INT_WINDOW_SIZE": "128",
+              "INT_LINE_DEST": "10",
+              "ACCESS_MODE": "INDIRECT",
+              "BACK_PRESSURE": "1"
+            }
+          }
+        ],
+        "Group": "",
+        "Description": "Core0 to Core1"
+      },
+      {
+        "StreamId": 33,
+        "Source": {
+          "Gasket": "GASKET1",
+          "BufferSize": 128,
+          "BufferAddress": 0,
+          "Index": 0,
+          "Config": {
+            "ALIAS": "core1_to_core0_tx",
+            "ACCESS_MODE": "FIFO"
+          }
+        },
+        "Destinations": [
+          {
+            "Gasket": "GASKET0",
+            "BufferSize": 256,
+            "BufferAddress": 0,
+            "Index": 0,
+            "Config": {
+              "ALIAS": "core1_to_core0_rx",
+              "INT_WINDOW_EN": "TRUE",
+              "INT_WINDOW_SIZE": "128",
+              "INT_PRIORITY": "0",
+              "ACCESS_MODE": "INDIRECT",
+              "BACK_PRESSURE": "1"
+            }
+          }
+        ],
+        "Group": "",
+        "Description": "Core1 to Core0"
+      }
+    ],
+    "Gaskets": []
+  },
+  "ClockFrequencies": {},
+  "Settings": {
+    "MCUBoot": {
+      "EnableState": "enabled"
+    },
+    "SigningKeys": [
+      {
+        "Name": "demo-key.pem",
+        "Path": "c:/Users/test/Downloads/demo-key.pem",
+        "Algorithm": "rsa-2048"
+      }
+    ]
+  },
+  "ApplicationPackages": [
+    {
+      "Name": "New App Pack 1",
+      "Enabled": true,
+      "CoreId": "Core0",
+      "SignKey": "c:/Users/test/Downloads/demo-key.pem",
+      "Images": [
+        {
+          "Name": "Image 1",
+          "LocationType": "hexAddress",
+          "LocationAddress": "0xAAA",
+          "SlotSize": 4194304,
+          "SlotSizeUnit": "MB",
+          "PadHeader": true,
+          "Path": "c:/Users/test/cfs/2.2.1/test-mcuboot-1/CM55/build/zephyr/zephyr.bin",
+          "HeaderSize": 32,
+          "CustomTLVs": [
+            {
+              "Name": "Custom TLV 1",
+              "Tag": 43690,
+              "Value": "skdfjs"
+            }
+          ],
+          "SwapAlignment": "4",
+          "ImageVersion": "1.1.0",
+          "Bootable": true,
+          "SecurityCounter": "auto"
+        }
+      ]
+    },
+    {
+      "Name": "New App Pack 2",
+      "Enabled": false,
+      "CoreId": ""
+    },
+    {
+      "Name": "New App Pack 3",
+      "Enabled": false,
+      "CoreId": ""
+    },
+    {
+      "Name": "New App Pack 4",
+      "Enabled": false,
+      "CoreId": ""
+    },
+    {
+      "Name": "New App Pack demo",
+      "Enabled": false,
+      "CoreId": ""
+    }
+  ]
+}

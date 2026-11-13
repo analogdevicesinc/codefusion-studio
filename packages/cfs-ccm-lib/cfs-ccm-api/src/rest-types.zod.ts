@@ -92,6 +92,8 @@ export const zCreateInputPackage = z.object({
         z.literal('EWLB'),
         z.literal('LFCSP'),
         z.literal('LGA'),
+        z.literal('FBGA'),
+        z.literal('WLSCP'),
     ]),
 });
 
@@ -131,6 +133,8 @@ export const zPackage = z.object({
         z.literal('EWLB'),
         z.literal('LFCSP'),
         z.literal('LGA'),
+        z.literal('FBGA'),
+        z.literal('WLSCP'),
     ]),
     socID: z.string(),
 });
@@ -168,6 +172,10 @@ export const zCorePart = z.object({
 export const zSoCFamily = z.object({
     id: z.string(),
     name: z.string(),
+});
+
+export const zSWPackageCompatibility = z.object({
+    soc: z.array(z.string()).optional(),
 });
 
 export const zSWPackageRepo = z.object({
@@ -243,4 +251,18 @@ export const zSoC = z.object({
     name: z.string(),
     packages: z.array(zPackage),
     supportsMCUboot: z.boolean().optional(),
+});
+
+export const zSWPackage = z.object({
+    accessTag: zAccessTag.optional(),
+    cfsVersionConstraint: z.string().optional(),
+    compatibleHardware: zSWPackageCompatibility.optional(),
+    description: z.string().optional(),
+    id: z.string(),
+    license: z.string(),
+    name: z.string(),
+    packageTags: z.array(zSWPackageTag).optional(),
+    repo: zSWPackageRepo,
+    type: z.string().optional(),
+    version: z.string(),
 });

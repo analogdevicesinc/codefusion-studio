@@ -13,6 +13,7 @@
  *
  */
 @use './colors';
+@use 'sass:map';
 
 // Generic
 $default-shadow: 0px 0px 8px 2px colors.$default-shadow;
@@ -67,5 +68,5 @@ $z-index-map: (
 // @param {String} $key - The z-index key.
 // @return {Number} - The z-index value.
 @function getZIndex($key) {
-	@return map-get($z-index-map, $key);
+	@return map.get($z-index-map, $key);
 }

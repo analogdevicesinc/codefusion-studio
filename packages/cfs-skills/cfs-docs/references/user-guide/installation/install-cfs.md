@@ -1,85 +1,175 @@
 ---
 description: Download and installation instructions for CodeFusion Studio
 author: Analog Devices
-date: 2026-07-07
+date: 2026-09-09
 ---
 
 # Install CodeFusion Studio
 
-To get started with CodeFusion Studio, first install the SDK using the CodeFusion Studio installer.
+Before you install CodeFusion Studio (CFS), select the option that applies to you.
 
-## Install the CodeFusion Studio SDK
+=== "New installation"
+
+    No additional preparation is required. Continue to [Install the CFS SDK](#install-the-cfs-sdk).
+
+=== "Upgrade existing CFS"
+
+    Before installing the new SDK, [uninstall the previous version and fully reset the CFS package state](../uninstall/uninstall-cfs.md). This reset removes all installed packages, cached data, and custom remotes. Then continue to [Install the CFS SDK](#install-the-cfs-sdk).
+
+## Install the CFS SDK
 
 ### Download
 
-The CodeFusion Studio installer (version 2.3.0) can be downloaded from the following links.
+Download the CodeFusion Studio installer (version 2.4.0) for your operating system:
 
-- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.3.0/CodeFusionStudio_2.3.0.run){:target="_blank"}
-- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.3.0/CodeFusionStudio_2.3.0.dmg){:target="_blank"}
-- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.3.0/CodeFusionStudio_2.3.0.exe){:target="_blank"}
+- [:octicons-link-external-24: Windows](https://download.analog.com/codefusion-studio/2.4.0/CodeFusionStudio_2.4.0.exe){:target="_blank"}
+- [:octicons-link-external-24: Linux](https://download.analog.com/codefusion-studio/2.4.0/CodeFusionStudio_2.4.0.run){:target="_blank"}
+- [:octicons-link-external-24: macOS](https://download.analog.com/codefusion-studio/2.4.0/CodeFusionStudio_2.4.0.dmg){:target="_blank"}
 
-### Install
+### Option 1: Install using the setup wizard
 
-!!! note
-     The Linux installer downloads without execute permissions. Run `chmod a+x <installer>` to grant execute permissions before continuing.
-     The CodeFusion Studio installer doesn't require elevated `sudo` permissions to run.
+=== "Windows"
 
-1. Double click the installer (`.exe`, `.dmg`, `.run`) to launch the setup wizard. ![Installer Setup](images/installer-setup.png)
-2. Follow the on-screen instructions to begin setup.
-3. Specify the installation folder when prompted. We recommend using the default location.
-   ![Recommended Installation Location](images/installer-default-location.png)
-4. Select the default or desired components to install, then proceed to the next step.
+    1. Double-click the downloaded `.exe` file to open the setup wizard, and approve the administrator prompt when it appears.
 
-    !!! note "Install ICE drivers for SHARC-FX (Windows only)"
-        ![Install ICE drivers](images/install-ice-drivers.png)
+        ![CodeFusion Studio Setup wizard welcome screen](images/installer-setup-windows.png)
 
-        To enable debugging for SHARC-FX processors, select the checkbox **ADI ICE Drivers (Requires Administrator)** during installation. When prompted, approve the Windows elevation dialog to complete driver installation. This installs the USB drivers required for ICE-1000, ICE-1500, and ICE-2000 emulators.  
+    2. Specify the installation folder when prompted. We recommend the default location.
 
-        If you skip this option, you can install the drivers later. For details, see [Install ICE drivers manually](../debugging/debug-drivers/install-ice-drivers.md).
+        ![Installation folder screen showing the default location](images/installer-default-location-windows.png)
 
-5. Review and accept the license agreement to continue.
-6. (Windows only). Choose the Start Menu folder for the shortcut.
-7. Review your selections and start the installation.
-8. When the installation is complete, close the wizard.
+        !!! warning
+            The installation path cannot contain spaces.
 
-!!! warning
-    Installation path cannot contain spaces.
+    3. The installer includes three components:
 
-### Command line install
+        - **CodeFusion Studio VS Code Extension** (selected by default) — copies the VSIX file to your system. After the setup wizard finishes, [install the extension in VS Code](install-extensions.md) from the copied VSIX or the VS Code Marketplace.
+        - **OpenOCD for ADI processors** (selected by default)
+        - **ADI ICE Drivers** — select this if you plan to debug SHARC-FX processors, or [install them later](../debugging/debug-drivers/install-ice-drivers.md).
+
+        Select the components you want to install, then select **Next**.
+
+        ![Component selection screen listing the CodeFusion Studio VS Code extension, OpenOCD, and ADI ICE Drivers](images/install-ice-drivers.png)
+
+    4. Review and accept the license agreement.
+
+    5. Select the Start Menu folder for the shortcut.
+
+    6. Review your selections and click **Install** to start the installation. When the installation is complete, click **Finish**.
+
+=== "Linux"
+
+    1. Grant the downloaded installer execute permissions from a terminal:
+
+        ``` bash
+        chmod a+x CodeFusionStudio_2.4.0.run
+        ```
+
+    2. Install the packages that the installer requires to run:
+
+        ``` bash
+        sudo apt install libfontconfig1 libdbus-1-3 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxkbcommon-x11-0 libgl1
+        ```
+
+    3. Run the installer from the terminal to open the setup wizard:
+
+        ``` bash
+        ./CodeFusionStudio_2.4.0.run
+        ```
+
+        ![CodeFusion Studio Setup wizard welcome screen](images/installer-setup-linux.png)
+
+        !!! note
+            The installer doesn't require `sudo` to run. Running it with `sudo` additionally configures USB permissions for ICE emulators automatically — see [Install ICE drivers](../debugging/debug-drivers/install-ice-drivers.md).
+
+    4. Specify the installation folder when prompted. We recommend the default location.
+
+        ![Installation folder screen showing the default location](images/installer-default-location-linux.png)
+
+        !!! warning
+            The installation path cannot contain spaces.
+
+    5. The installer includes two components, both selected by default:
+
+        - **CodeFusion Studio VS Code Extension** — copies the VSIX file to your system. After the setup wizard finishes, [install the extension in VS Code](install-extensions.md) from the copied VSIX or the VS Code Marketplace.
+        - **OpenOCD for ADI processors**
+
+        Select the components you want to install, then select **Next**.
+
+        ![Component selection screen listing the CodeFusion Studio VS Code extension and OpenOCD](images/install-linux-drivers.png)
+
+    6. Review and accept the license agreement.
+
+    7. Review selections and click **Install** to start the installation. When the installation is complete, click **Finish** to close the wizard.
+
+=== "macOS"
+
+    1. Double-click the downloaded `.dmg` file, then run the installer app inside to open the setup wizard.
+
+        ![CodeFusion Studio Setup wizard welcome screen](images/installer-setup-mac.png)
+
+    2. Specify the installation folder when prompted. We recommend the default location.
+
+        ![Installation folder screen showing the default location](images/installer-default-location-mac.png)
+
+        !!! warning
+            The installation path cannot contain spaces.
+
+    3. The installer includes two components, both selected by default:
+
+        - **CodeFusion Studio VS Code Extension** — copies the VSIX file to your system. After the setup wizard finishes, [install the extension in VS Code](install-extensions.md) from the copied VSIX or the VS Code Marketplace.
+        - **OpenOCD for ADI processors**
+
+        Select the components you want to install, then select **Next**.
+
+        ![Component selection screen listing the CodeFusion Studio VS Code extension and OpenOCD](images/install-mac-drivers.png)
+
+    4. Review and accept the license agreement.
+
+    5. Review your selections and click **Install** to start the installation. When the installation is complete, click **Finish** to close the wizard.
+
+### Option 2: Install using the command line
 
 Invoke the installer with the `install` switch to install the full package to the default location, with the following switches:
 
 | Switch   | Effect                         |
-| -------- | ------------------------------ |  
+| -------- | ------------------------------ |
+| `--al`   | Accept license                 |
+| `--am`   | Accept messages                |
+| `-c`     | Confirms prompts               |
 | `--help` | Provide help output            |
 | `-t`     | Specify the path to install to |
-| `-c`     | Confirms prompts               |
-| `--al`   | Accept license                 |
 
 !!! note
-    If using the `--al` switch to accept the license, refer to the `Licenses` directory for the licence text and ensure you agree with them before using CodeFusion Studio.
+    When using the `--al` switch, review the [:octicons-link-external-24: CodeFusion Studio license and third-party notices](https://download.analog.com/codefusion-studio/versions.html){:target="_blank"} for the version before running the command that agrees to the terms. The same license texts are installed in the `Licenses` directory of your installation.
 
 To run the installer from the command line, use the following:
 
-**macOS:**
+=== "Windows"
 
-``` bash
-hdiutil mount CodeFusionStudio_2.3.0.dmg -mountpoint cfs
-cfs/CodeFusionStudio_2.3.0.app/Contents/MacOS/CodeFusionStudio_2.3.0 install --am --al -c
-hdiutil unmount cfs
-```
+    Run the command from an elevated command prompt (right-click **Command Prompt** and select **Run as administrator**).
 
-**Windows:**
+    ``` bash
+    CodeFusionStudio_2.4.0.exe install --am --al -c
+    ```
 
-``` bash
-CodeFusionStudio_2.3.0.exe install --am --al -c
-```
+=== "Linux"
 
-**Linux:**
+    Running the installer with `sudo` also configures USB permissions for ICE emulators automatically — see [Install ICE drivers](../debugging/debug-drivers/install-ice-drivers.md).
 
-``` bash
-./CodeFusionStudio_2.3.0.run install --am --al -c
-```
+    ``` bash
+    sudo apt install libfontconfig1 libdbus-1-3 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxkbcommon-x11-0 libgl1
+    chmod a+x CodeFusionStudio_2.4.0.run
+    ./CodeFusionStudio_2.4.0.run install --am --al -c
+    ```
+
+=== "macOS"
+
+    ``` bash
+    hdiutil mount CodeFusionStudio_2.4.0.dmg -mountpoint cfs
+    cfs/CodeFusionStudio_2.4.0.app/Contents/MacOS/CodeFusionStudio_2.4.0 install --am --al -c
+    hdiutil unmount cfs
+    ```
 
 ## Next steps
 

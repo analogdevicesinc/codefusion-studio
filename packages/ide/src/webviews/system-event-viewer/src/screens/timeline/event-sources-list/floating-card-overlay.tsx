@@ -21,9 +21,12 @@ import styles from './floating-card-overlay.module.scss';
 
 type FloatingCardOverlayProps = Readonly<{
 	cardOverlay: {
+		x: number;
 		y: number;
+		containerTop: number;
 		containerLeft: number;
 		containerWidth: number;
+		containerHeight: number;
 		listWidth: number;
 		rowHeight: number;
 		name: string;
@@ -38,9 +41,12 @@ type FloatingCardOverlayProps = Readonly<{
  */
 function FloatingCardOverlay({
 	cardOverlay: {
+		x,
 		y,
+		containerTop,
 		containerLeft,
 		containerWidth,
+		containerHeight,
 		listWidth,
 		rowHeight,
 		name,
@@ -48,8 +54,15 @@ function FloatingCardOverlay({
 		chartImageWidth
 	}
 }: FloatingCardOverlayProps) {
-	const floatingCardStyle: React.CSSProperties = {
+	const wrapperStyle: React.CSSProperties = {
+		top: `${containerTop}px`,
 		left: `${containerLeft}px`,
+		width: `${containerWidth}px`,
+		height: `${containerHeight}px`
+	};
+
+	const floatingCardStyle: React.CSSProperties = {
+		left: `${x}px`,
 		top: `${y - rowHeight / 2}px`,
 		width: `${containerWidth}px`,
 		height: `${rowHeight}px`
@@ -60,28 +73,31 @@ function FloatingCardOverlay({
 
 	const card = () => (
 		<div
-			style={floatingCardStyle}
-			className={styles.floatingCardContainer}
+			className={styles.floatingCardClip}
+			data-test='event-sources:floating-card-overlay'
+			style={wrapperStyle}
 		>
-			<div className={styles.card}>
-				<div
-					style={{flex: `0 0 ${listWidth}px`}}
-					className={styles.listItem}
-				>
-					<span className={styles.dragIcon}>
-						<DragDropIcon />
-					</span>
-					<h5 className={styles.name}>{name}</h5>
-				</div>
-				<div className={styles.chartSnapshot}>
-					{chartImageSrc ? (
-						<img
-							src={chartImageSrc}
-							alt='chart snapshot'
-							className={styles.chartImage}
-							style={chartImageStyle}
-						/>
-					) : null}
+			<div className={styles.floatingCard} style={floatingCardStyle}>
+				<div className={styles.card}>
+					<div
+						style={{flex: `0 0 ${listWidth}px`}}
+						className={styles.listItem}
+					>
+						<span className={styles.dragIcon}>
+							<DragDropIcon width={20} height={20} />
+						</span>
+						<h5 className={styles.name}>{name}</h5>
+					</div>
+					<div className={styles.chartSnapshot}>
+						{chartImageSrc ? (
+							<img
+								src={chartImageSrc}
+								alt='chart snapshot'
+								className={styles.chartImage}
+								style={chartImageStyle}
+							/>
+						) : null}
+					</div>
 				</div>
 			</div>
 		</div>

@@ -42,8 +42,13 @@ import {
   driveStrengthDropdown,
   functionAttachedDropdown,
   getValueFromSidebarConfig,
+  nonDefaultValue,
+  nonDefaultValueText,
   polarityDropdown,
+  polarityDropdownLabel,
+  polarityDropdownOption,
   powerSupplyDropdown,
+  resetToDefaultButton,
   setAliasInput,
   setDevicetreeIdentifierInput,
   setPHandelIdentifierInput,
@@ -55,13 +60,22 @@ import {
   getSignalConfigMap,
   parseJSONFile,
 } from "../../config-tools-utility/cfsconfig-utils";
-import { pinTab, assignedFilterControl } from "../../page-objects/main-menu";
+import {
+  pinTab,
+  assignedFilterControl,
+  peripheralTab,
+} from "../../page-objects/main-menu";
 import {
   assignedPinsList,
   pinDropdown,
   pinConfigButton,
 } from "../../page-objects/pin-config-section/pin-config-screen";
 import { waitForSidebarToOpen } from "../../page-objects/pin-config-section/signal-config-sidebar";
+import {
+  coreSelectorButton,
+  signalAssignChevron,
+  signalPeripheralBlock,
+} from "../../page-objects/peripheral-allocation-section/peripheral-allocation-screen";
 
 describe("Pin Configuration — Loading file Pins", () => {
   let workbench: Workbench;
@@ -71,17 +85,15 @@ describe("Pin Configuration — Loading file Pins", () => {
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
-  after(async () => {
-    await view.switchBack();
-    await workbench.executeCommand("view: close all editors");
+  afterEach(async function () {
+    this.timeout(10000);
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Pin configuration in Signal Configuration sidebar matches JSON configuration", async () => {
+  it("Pin configuration in Signal Configuration sidebar matches JSON configuration @regression", async () => {
     // Given I open the cfsconfig file in CodeFusion Studio
     const configPath = getConfigPathForFile(
       "max32690-wlp-dual-core-blinky.cfsconfig",
@@ -94,6 +106,7 @@ describe("Pin Configuration — Loading file Pins", () => {
     await UIUtils.sleep(5000);
     console.log("Waiting for the element to be located in the DOM");
     view = new WebView();
+    await view.wait();
     await view.switchToFrame();
 
     // And I open the Pin menu and apply the "Assigned" filter
@@ -171,5 +184,112 @@ describe("Pin Configuration — Loading file Pins", () => {
     // Then the UI configuration should semantically match the JSON configuration
     expectSignalConfigMatchesUI(jsonConfigs, uiValues);
     console.log("Compared values matched");
+  });
+
+  // Ticket: CFSIO-23870-Reset-To-Default
+  /*
+  Feature: Pin Configuration — Reset to Default
+
+    Background:
+      Given a cfsconfig file "max32657-wlp-trustzone.cfsconfig" with no pins assigned
+
+    Scenario: Reset To Default button visibility toggles with polarity value changes
+      Given I open the cfsconfig file in CodeFusion Studio
+      And I allocate signal "P0.5" on peripheral "GPIO0" to the "CM33-secure" project
+      And I navigate to the Pin Config for peripheral "GPIO0" and signal "P0.5"
+      Then the Signal Config sidebar is opened
+      When I set the polarity value to "HIGH"
+      Then the Reset To Default button should be displayed
+      And the non-default value indicator should be displayed
+      And the Polarity label should show "Polarity *"
+      When I set the polarity value to "LOW"
+      Then the Reset To Default button should not be displayed
+      And the non-default value indicator should not be displayed
+      And the Polarity label should show "Polarity"
+  */
+  it("Verify the Reset To Default button is not displayed when the polarity value is set to default @regression", async () => {
+    // Given I open the cfsconfig file in CodeFusion Studio
+    const configPath = getConfigPathForFile("max32657-wlp-trustzone.cfsconfig");
+    await browser.openResources(configPath);
+    workbench = new Workbench();
+    const peripheral = "GPIO0";
+    const signal = "P0.5";
+
+    console.log("Opened the cfsconfig file");
+    await UIUtils.dismissAllNotifications(workbench, browser);
+    await UIUtils.sleep(5000);
+    console.log("Waiting for the element to be located in the DOM");
+    view = new WebView();
+    await view.wait(2000);
+    await view.switchToFrame();
+    await UIUtils.waitForElement(view, peripheralTab, 30000);
+
+    // And I open the Pin menu and apply the "Assigned" filter
+    await UIUtils.clickElement(view, peripheralTab);
+    await UIUtils.clickElement(view, await signalPeripheralBlock(peripheral));
+    await UIUtils.clickElement(view, await signalAssignChevron(signal));
+
+    // TrustZone SoC has two projects on the same core, so allocation requires picking one
+    await UIUtils.clickElement(view, await coreSelectorButton("CM33-secure"));
+
+    // Now click on Pin Config Tab
+    await UIUtils.clickElement(view, pinTab);
+    await UIUtils.clickElement(view, await pinDropdown(peripheral));
+    await UIUtils.clickElement(view, await pinConfigButton(peripheral, signal));
+
+    // Then the Signal Config sidebar is opened
+    await waitForSidebarToOpen(view, 10000);
+    console.log("Side Panel opened");
+    await UIUtils.clickElement(view, polarityDropdown);
+    await UIUtils.clickElement(view, await polarityDropdownOption("HIGH"));
+    let nonDefaultValueElements = await view.findWebElements(nonDefaultValue);
+    expect(
+      nonDefaultValueElements.length,
+      "Non-default value indicator should be present when the polarity is set to HIGH",
+    ).to.equal(1);
+    if (nonDefaultValueElements.length > 0) {
+      const nonDefaultValueTextElement = await UIUtils.findWebElement(
+        view,
+        nonDefaultValueText,
+      );
+      expect((await nonDefaultValueTextElement.getText()).trim()).to.equal(
+        "* non-default value",
+      );
+    }
+
+    let resetToDefaultButtonElement =
+      await view.findWebElements(resetToDefaultButton);
+    expect(
+      resetToDefaultButtonElement.length,
+      "Reset To Default button should be present when the polarity is set to HIGH",
+    ).to.equal(1);
+
+    let polarityLabel = await UIUtils.waitForElementToBeVisible(
+      view,
+      await polarityDropdownLabel(signal),
+    );
+    expect((await polarityLabel.getText()).trim()).to.equal("Polarity *");
+
+    await UIUtils.sleep(1000);
+    await UIUtils.clickElement(view, polarityDropdown);
+    await UIUtils.clickElement(view, await polarityDropdownOption("LOW"));
+    nonDefaultValueElements = await view.findWebElements(nonDefaultValue);
+    expect(
+      nonDefaultValueElements.length,
+      "Non-default value indicator should not be present when the polarity is set to LOW",
+    ).to.equal(0);
+
+    resetToDefaultButtonElement =
+      await view.findWebElements(resetToDefaultButton);
+    expect(
+      resetToDefaultButtonElement.length,
+      "Reset To Default button should not be present when the polarity is set to LOW",
+    ).to.equal(0);
+
+    polarityLabel = await UIUtils.waitForElementToBeVisible(
+      view,
+      await polarityDropdownLabel(signal),
+    );
+    expect((await polarityLabel.getText()).trim()).to.equal("Polarity");
   });
 });

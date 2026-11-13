@@ -39,11 +39,14 @@ export const viteWebviewConfigGenerator = ({
     const isDev = mode === "development";
 
     return {
+      base: "./",
       root: path.resolve(__dirname, `./src/webviews/${name}`),
       plugins: [react(), ...(plugins ?? [])],
       resolve: {
         alias: {
           "@common": path.resolve(__dirname, "./src/webviews/common/"),
+          "@constants": path.resolve(__dirname, "./src/constants"),
+          "@ide-types": path.resolve(__dirname, "./src/types"),
           ...aliases,
         },
       },

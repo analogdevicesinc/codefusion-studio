@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 /**
@@ -34,11 +33,11 @@ export function registerWatchpointAndMemoryPrompts(server: McpServer): void {
     {
       description:
         "Watch a variable for writes, continue execution, and report what wrote to it with the call stack",
-      argsSchema: {
-        variable: z
-          .string()
-          .describe("Variable to watch for writes (e.g. 'rx_buffer')"),
-      },
+      argsSchema: z.object({
+              variable: z
+                .string()
+                .describe("Variable to watch for writes (e.g. 'rx_buffer')"),
+            }),
     },
     ({ variable }) => ({
       messages: [
@@ -58,13 +57,13 @@ export function registerWatchpointAndMemoryPrompts(server: McpServer): void {
     {
       description:
         "Read a memory region and determine if it contains ASCII strings, structured data, or other patterns",
-      argsSchema: {
-        address: z.string().describe("Start address (e.g. '0x20000000')"),
-        length: z.coerce
-          .number()
-          .optional()
-          .describe("Number of bytes to read (defaults to 256)"),
-      },
+      argsSchema: z.object({
+              address: z.string().describe("Start address (e.g. '0x20000000')"),
+              length: z.coerce
+                .number()
+                .optional()
+                .describe("Number of bytes to read (defaults to 256)"),
+            }),
     },
     ({ address, length }) => ({
       messages: [
@@ -84,11 +83,11 @@ export function registerWatchpointAndMemoryPrompts(server: McpServer): void {
     {
       description:
         "Autonomously investigate memory corruption: find the struct, set a watchpoint, trace the root cause, and disassemble suspicious code",
-      argsSchema: {
-        variable: z
-          .string()
-          .describe("Variable or struct being corrupted (e.g. 'sensor_data')"),
-      },
+      argsSchema: z.object({
+              variable: z
+                .string()
+                .describe("Variable or struct being corrupted (e.g. 'sensor_data')"),
+            }),
     },
     ({ variable }) => ({
       messages: [

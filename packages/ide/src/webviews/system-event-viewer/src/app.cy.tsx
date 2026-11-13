@@ -22,6 +22,7 @@ import {
 	setLoading
 } from './state/slices/event-sources/event-sources.reducer';
 import {timelineReducer} from './state/slices/timeline/timeline.reducer';
+import {ColorsProvider} from './common/context/colors-provider';
 
 const createTestStore = () =>
 	configureStore({
@@ -35,7 +36,11 @@ const createTestStore = () =>
 type TestStore = ReturnType<typeof createTestStore>;
 
 function TestComponent() {
-	return <AppContent />;
+	return (
+		<ColorsProvider>
+			<AppContent />
+		</ColorsProvider>
+	);
 }
 
 describe('AppContent', () => {

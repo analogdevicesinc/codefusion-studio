@@ -14,6 +14,7 @@
  */
 
 import {mockVsCodeApi} from '@common/api';
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import {navigationItems} from '../../common/constants/navigation';
 import {FILE_TYPES, type SevSaveType} from '../../common/types/files';
 import {
@@ -106,6 +107,38 @@ describe('SevHeader CTA', () => {
 	it('Should request .csv file creation', () => {
 		cy.dataTest('sev-header:export-action').find('button').click();
 		assertCreateFileRequest(FILE_TYPES.EXPORT);
+	});
+
+	it('Should open the help modal with localized content and close it', () => {
+		(window as any).__webview_localization_resources__ = {
+			sev: {
+				timeline: {
+					description: 'Working with the timeline',
+					help: {
+						title: 'System Event Viewer Help'
+					}
+				}
+			}
+		};
+
+		cy.mount(
+			<LocalizationProvider namespace='sev'>
+				<SevHeader />
+			</LocalizationProvider>,
+			store
+		);
+
+		cy.dataTest('sev-header:help-action').find('button').click();
+
+		cy.dataTest('inner-modal')
+			.should('be.visible')
+			.within(() => {
+				cy.contains('System Event Viewer Help').should('be.visible');
+				cy.contains('Working with the timeline').should('be.visible');
+			});
+
+		cy.dataTest('inner-modal').find('vscode-button').click();
+		cy.dataTest('inner-modal').should('not.be.visible');
 	});
 });
 

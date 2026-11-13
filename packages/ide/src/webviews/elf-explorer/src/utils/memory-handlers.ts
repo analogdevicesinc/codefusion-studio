@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,12 @@ import {
 import type {TSymbol} from '../common/types/symbols';
 import type {TMemLayoutContext} from '../common/types/context';
 
+export type TMemoryHandlerLabels = {
+	allSegments?: string;
+	sectionsForSegment?: string;
+	symbolsForSection?: string;
+};
+
 type LayerClickHandler = (
 	data: TSegment | TSection | TSymbol
 ) => void;
@@ -31,7 +37,8 @@ const isSection = (data: any): data is TSection =>
 	(data as TSection).symbols !== undefined;
 
 export const handleLayerClick = (
-	setMemoryLayout: (newValue: any) => void
+	setMemoryLayout: (newValue: any) => void,
+	labels?: TMemoryHandlerLabels
 ): LayerClickHandler[] => [
 	(data: TSegment | TSection | TSymbol) => {
 		if (isSegment(data)) {
@@ -39,10 +46,16 @@ export const handleLayerClick = (
 				(a, b) => a.size - b.size
 			);
 
+			const sectionsLabel =
+				labels?.sectionsForSegment
+					?.replace('{id}', String(data.id))
+					?.replace('{type}', data.type) ??
+				`Sections for Segment "${data.id} - ${data.type}"`;
+
 			setMemoryLayout((prev: TMemLayoutContext) => ({
 				...prev,
 				layer: 2,
-				selectedItemName: `Sections for Segment "${data.id} - ${data.type}"`,
+				selectedItemName: sectionsLabel,
 				currentData: SortedData,
 				parentLayer: data
 			}));
@@ -57,10 +70,16 @@ export const handleLayerClick = (
 				return valueA - valueB;
 			});
 
+			const symbolsLabel =
+				labels?.symbolsForSection
+					?.replace('{id}', String(data.id))
+					?.replace('{name}', () => data.name ?? '') ??
+				`Symbols for Section "${data.id} - ${data.name ?? ''}"`;
+
 			setMemoryLayout((prev: TMemLayoutContext) => ({
 				...prev,
 				layer: 3,
-				selectedItemName: `Symbols for Section "${data.id} - ${data.name}"`,
+				selectedItemName: symbolsLabel,
 				currentData: SortedData,
 				parentLayer: data
 			}));
@@ -82,13 +101,16 @@ export const handleBackClick = (
 	dataTree: TSegment[],
 	currentData: any[],
 	parentLayer: any,
-	setMemoryLayout: (newValue: any) => void
+	options: {
+		setMemoryLayout: (newValue: any) => void;
+		labels?: TMemoryHandlerLabels;
+	}
 ) => [
 	() => {
-		setMemoryLayout((prev: TMemLayoutContext) => ({
+		options.setMemoryLayout((prev: TMemLayoutContext) => ({
 			...prev,
 			layer: 1,
-			selectedItemName: 'All segments',
+			selectedItemName: options.labels?.allSegments ?? 'All segments',
 			currentData: dataTree,
 			parentLayer: undefined
 		}));
@@ -116,10 +138,16 @@ export const handleBackClick = (
 			);
 
 			if (parentSection) {
-				setMemoryLayout((prev: TMemLayoutContext) => ({
+				const sectionsLabel =
+					options.labels?.sectionsForSegment
+						?.replace('{id}', String(parentSegment.id))
+						?.replace('{type}', parentSegment.type) ??
+					`Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`;
+
+				options.setMemoryLayout((prev: TMemLayoutContext) => ({
 					...prev,
 					layer: 2,
-					selectedItemName: `Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`,
+					selectedItemName: sectionsLabel,
 					currentData: parentSegment.sections,
 					parentLayer: parentSegment
 				}));
@@ -137,10 +165,16 @@ export const handleBackClick = (
 			);
 
 			if (parentSegment) {
-				setMemoryLayout((prev: TMemLayoutContext) => ({
+				const sectionsLabel =
+					options.labels?.sectionsForSegment
+						?.replace('{id}', String(parentSegment.id))
+						?.replace('{type}', parentSegment.type) ??
+					`Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`;
+
+				options.setMemoryLayout((prev: TMemLayoutContext) => ({
 					...prev,
 					layer: 2,
-					selectedItemName: `Sections for Segment "${parentSegment.id} - ${parentSegment.type}"`,
+					selectedItemName: sectionsLabel,
 					currentData: parentSegment.sections,
 					parentLayer: parentSegment
 				}));

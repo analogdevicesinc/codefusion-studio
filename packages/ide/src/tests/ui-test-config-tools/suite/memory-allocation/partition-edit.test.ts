@@ -96,25 +96,19 @@ describe("CFSIO-6338 Partition editing", () => {
   let view: WebView;
   let driver: WebDriver;
 
-  browser = VSBrowser.instance;
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
     driver = browser.driver;
-
-    workbench = new Workbench();
     await workbench.waitForStable(10000);
   });
 
   afterEach(async () => {
     // Teardown - reset cfsconfig file
-    await UIUtils.restoreFixtureFileFromGit(configPath);
-
-    await view.switchBack();
-    await workbench.executeCommand("view: close all editors");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Partition editing", async () => {
+  it("Partition editing @regression", async () => {
     await browser.openResources(configPath);
 
     await UIUtils.dismissAllNotifications(workbench, browser);

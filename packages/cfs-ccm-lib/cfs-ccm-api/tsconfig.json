@@ -6,6 +6,7 @@
         "outDir": "dist",
         "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
         "rootDir": "src",
+        "types": ["node"],
         "strict": true,
         "noUncheckedIndexedAccess": true,
         "allowSyntheticDefaultImports": true,

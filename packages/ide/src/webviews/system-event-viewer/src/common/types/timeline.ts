@@ -13,7 +13,14 @@
  *
  */
 
-import type {MEASURE_PHASE} from '../constants/timeline';
+import type {DROP_ZONE, MEASURE_PHASE} from '../constants/timeline';
+import type {EChartsType} from 'echarts/core';
+
+export type HeaderChartHandle = Readonly<{
+	chart: EChartsType;
+	elapsedToPixel: (elapsedSeconds: number) => number | undefined;
+	pixelToElapsed: (pixelX: number) => number | undefined;
+}>;
 
 export type DataZoom = {start: number; end: number};
 
@@ -48,18 +55,6 @@ export type DataZoomEvent = {
 
 export type Range = {min: number; max: number};
 
-export type Unit = 's' | 'ms' | 'us' | 'ns';
-export type Base = {
-	s: number;
-	ms: number;
-	us: number;
-};
-
-export type EventSourcesListHandle = {
-	commitDraggedReorder: () => void;
-	cancelDraggedReorder: () => void;
-};
-
 export type RowStateUpdate = {
 	rowIndex: number;
 	isHovered?: boolean;
@@ -69,7 +64,38 @@ export type RowStateUpdate = {
 export type RowInteraction = {
 	hoveredRowIndex?: number;
 	activeRowIndex?: number;
+	draggedRowIndexes?: number[];
 };
+
+export type DropZone = (typeof DROP_ZONE)[keyof typeof DROP_ZONE];
+
+// Can be either a valid drop zone with a target node, or an "outside" drop zone
+export type DropOutcome =
+	| Readonly<{
+			zone: Exclude<DropZone, typeof DROP_ZONE.OUTSIDE>;
+			targetNodeId: string;
+	  }>
+	| Readonly<{zone: typeof DROP_ZONE.OUTSIDE}>;
+
+export type ActiveDropZone = Exclude<
+	DropZone,
+	typeof DROP_ZONE.OUTSIDE
+>;
+
+export type DropTarget = Readonly<{
+	zone: ActiveDropZone;
+	targetNodeId: string;
+	indicator?: Readonly<{
+		clientY: number;
+		depth: number;
+	}>;
+}>;
+
+export type DragOverlayRow = Readonly<{
+	id: string;
+	name: string;
+	height: number;
+}>;
 
 export type MeasurePhase =
 	(typeof MEASURE_PHASE)[keyof typeof MEASURE_PHASE];
@@ -79,16 +105,40 @@ export type MeasurePoint = {
 	y: number;
 };
 
-export type MeasureResolvedPoint = MeasurePoint & {
+export type MeasurePointAnchor = Readonly<{
+	rowId: string;
+	rowLocalY: number;
+	kind: 'chart' | 'group';
+}>;
+
+/** Whole seconds and bounded integer nanoseconds (0 <= nanoseconds < 1e9). */
+export type TimeParts = Readonly<{
+	seconds: number;
+	nanoseconds: number;
+}>;
+
+/** A chart coordinate with exact elapsed parts for prepared time measurements. */
+export type PreparedMeasurementValue = Readonly<{
+	value: number;
+	parts?: TimeParts;
+}>;
+
+export type MeasurePointResolution = MeasurePoint & {
 	timestamp?: number;
+	preparedValue?: PreparedMeasurementValue;
+	rawTicks?: number;
 	sourceId?: string;
 	eventIndex?: number;
 	isSnapped: boolean;
-	rowLocalY?: number;
+};
+
+export type MeasureResolvedPoint = MeasurePointResolution & {
+	anchor: MeasurePointAnchor;
 };
 
 export type MeasureSnapCandidate = MeasurePoint & {
 	timestamp: number;
+	rawTicks?: number;
 	sourceId: string;
 	eventIndex: number;
 };
@@ -124,12 +174,13 @@ export type MeasureLabelLayout = Readonly<{
 	startLabelLeft: number | undefined;
 	endLabelLeft: number | undefined;
 	horizontalLabelLeft: number | undefined;
-	horizontalLabelTop: number | undefined;
-	horizontalLineTop: number | undefined;
 	horizontalLineLeft: number | undefined;
 	horizontalLineWidth: number | undefined;
 	deltaStemLeft: number | undefined;
-	deltaStemTop: number | undefined;
-	deltaStemHeight: number | undefined;
-	verticalLabelTop: number;
+}>;
+
+export type RowBounds = Readonly<{
+	canSnap: boolean;
+	top: number;
+	height: number;
 }>;

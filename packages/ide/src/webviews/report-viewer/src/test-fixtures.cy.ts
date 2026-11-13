@@ -1,10 +1,25 @@
-import type {
-	AIModelProfileReport,
-	AIModelCompatReport,
-	Report
-} from "@ide-types/report-view-types";
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-const baseInfo: Omit<Report['info'], 'type'> = {
+import type {
+	CfsAiCompatibilityReport,
+	CfsAiProfilingReport,
+	CfsAiRuntimeProfilingReport
+} from 'cfs-types';
+
+const baseInfo: CfsAiRuntimeProfilingReport['info'] = {
 	timestamp: new Date().toISOString(),
 	version: '2.0.1',
 	hardware: {
@@ -35,8 +50,9 @@ const baseInfo: Omit<Report['info'], 'type'> = {
 	}
 };
 
-export const exampleProfileReport: AIModelProfileReport = {
-	info: {type: 'profile', ...baseInfo},
+export const exampleProfileReport = {
+	type: 'profile',
+	info: baseInfo,
 	model_summary: {
 		model_name: 'mnist_cnn_int8',
 		model_path: '/models/mnist_cnn_int8.tflite',
@@ -106,9 +122,29 @@ export const exampleProfileReport: AIModelProfileReport = {
 		}
 	],
 	optimization_suggestions: [
-		'Fuse batch norm into preceding conv layers',
-		'Prune dense layer by 30% with minimal accuracy loss',
-		'Consider int8 quantization for non-accelerated ops'
+		{
+			category: 'fusion',
+			description: 'Fuse batch norm into preceding conv layers',
+			estimated_improvement: null,
+			complexity: 'low',
+			priority: null
+		},
+		{
+			category: 'pruning',
+			description:
+				'Prune dense layer by 30% with minimal accuracy loss',
+			estimated_improvement: null,
+			complexity: 'medium',
+			priority: null
+		},
+		{
+			category: 'quantization',
+			description:
+				'Consider int8 quantization for non-accelerated ops',
+			estimated_improvement: null,
+			complexity: 'low',
+			priority: null
+		}
 	],
 	optimization_opportunities: {
 		total_parameter_memory_kb: 150,
@@ -143,11 +179,97 @@ export const exampleProfileReport: AIModelProfileReport = {
 		]
 	},
 	errors: []
-};
+} satisfies CfsAiProfilingReport;
 
-export const exampleCompatReport: AIModelCompatReport = {
-	info: {type: 'compat', ...baseInfo},
-	memory_issues: undefined,
+export const exampleRuntimeProfileReport = {
+	type: 'runtime-profile',
+	info: baseInfo,
+	model_summary: {
+		model_name: 'keyword_spotting_int8',
+		model_path: '/models/keyword_spotting_int8.tflite',
+		framework: 'TensorFlow Lite',
+		layer_count: 3
+	},
+	inference_summary: {
+		iterations: 50,
+		total_latency_ms: 300,
+		avg_latency_ms: 6,
+		min_latency_ms: 5,
+		max_latency_ms: 8,
+		std_latency_ms: 0.9,
+		throughput_ips: 166
+	},
+	hardware_metrics: {
+		total_cycles: 804_000,
+		estimated_latency_ms: 6,
+		peak_memory_kb: 20,
+		peak_memory_mb: 0.019531,
+		available_ram_kb: 256,
+		accelerated_layers: 2,
+		cpu_only_layers: 1
+	},
+	memory_analysis: {
+		model_peak_ram_kb: 20,
+		available_ram_kb: 256,
+		ram_utilization_percent: Math.round((20 / 256) * 100),
+		ram_status: 'OK'
+	},
+	layer_performance: [
+		{
+			layer_idx: 0,
+			layer_name: 'CONV_2D_0_0',
+			operator_type: 'CONV_2D',
+			cycles: 60_000,
+			is_accelerated: true,
+			memory_kb: 16,
+			subgraph_idx: 0,
+			invocations: 50,
+			avg_latency_ms: 1,
+			min_latency_ms: 0.9,
+			max_latency_ms: 1.2,
+			total_latency_ms: 50,
+			latency_percent: 40,
+			arena_used_bytes: 16384
+		},
+		{
+			layer_idx: 1,
+			layer_name: 'DEPTHWISE_CONV_2D_0_1',
+			operator_type: 'DEPTHWISE_CONV_2D',
+			cycles: 24_000,
+			is_accelerated: true,
+			memory_kb: 12,
+			subgraph_idx: 0,
+			invocations: 50,
+			avg_latency_ms: 2,
+			min_latency_ms: 1.8,
+			max_latency_ms: 2.3,
+			total_latency_ms: 100,
+			latency_percent: 32,
+			arena_used_bytes: 12288
+		},
+		{
+			layer_idx: 2,
+			layer_name: 'FULLY_CONNECTED_0_2',
+			operator_type: 'FULLY_CONNECTED',
+			cycles: 36_000,
+			is_accelerated: false,
+			memory_kb: 20,
+			subgraph_idx: 0,
+			invocations: 50,
+			avg_latency_ms: 3,
+			min_latency_ms: 2.7,
+			max_latency_ms: 3.4,
+			total_latency_ms: 150,
+			latency_percent: 28,
+			arena_used_bytes: 20480
+		}
+	]
+} satisfies CfsAiRuntimeProfilingReport;
+
+export const exampleCompatReport = {
+	type: 'compat',
+	info: baseInfo,
+	memory_issues: null,
 	operator_issues: [
 		{
 			type: 'unsupported operator',
@@ -170,4 +292,4 @@ export const exampleCompatReport: AIModelCompatReport = {
 		model_path:
 			'C:\\work\\github\\codefusion-studio\\cfs-ai\\examples\\hello_world_f32.tflite'
 	}
-};
+} satisfies CfsAiCompatibilityReport;

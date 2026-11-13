@@ -16,34 +16,65 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { AIModelCfsWorkspace } from "cfs-types";
-import type { CfsConfig } from "cfs-types";
-import { CfsPluginManager } from "../plugins/cfs-plugin-manager.js";
+import type { CfsConfig, CfsWorkspace } from "cfs-types";
+import { CfsPluginManager } from "../managers/cfs-plugin-manager.js";
+import type { CodeGenerationOptions } from "../managers/cfs-plugin-manager.js";
 import { globFiles } from "../utils/file-glob.js";
 
 export async function generateAIWorkspace(
 	pluginManager: CfsPluginManager,
 	workspaceConfig: AIModelCfsWorkspace,
-	workspaceFilePath: string
+	workspacePath: string,
+	options?: CodeGenerationOptions
 ): Promise<void> {
-	await pluginManager.generateWorkspace(workspaceConfig);
-	await replaceGeneratedAiFiles(workspaceConfig, workspaceFilePath);
+	await pluginManager.generateWorkspace(workspaceConfig, options);
+	await replaceGeneratedAiFiles(workspaceConfig, workspacePath);
+}
+
+export async function generateAIArtifacts(
+	workspaceConfig: CfsWorkspace,
+	generate: (
+		config: CfsConfig,
+		configPath: string,
+		workspacePath: string
+	) => Promise<void>
+): Promise<void> {
+	const workspacePath = path.join(
+		workspaceConfig.location,
+		workspaceConfig.workspaceName
+	);
+	const [configPath] = await globFiles([".cfs/*.cfsconfig"], {
+		cwd: workspacePath,
+		absolute: true
+	});
+
+	if (!configPath) return;
+
+	const config = JSON.parse(
+		await fs.readFile(configPath, "utf-8")
+	) as CfsConfig;
+	const hasEnabledAiModel = config.Projects.some((project) =>
+		project.AIModels?.some(
+			(model) => String(model.Enabled).toLowerCase() !== "false"
+		)
+	);
+
+	if (hasEnabledAiModel) {
+		await generate(config, configPath, workspacePath);
+	}
 }
 
 async function replaceGeneratedAiFiles(
 	workspaceConfig: AIModelCfsWorkspace,
-	workspaceFilePath: string
+	workspacePath: string
 ): Promise<void> {
-	const workspaceRoot = path.dirname(workspaceFilePath);
-
-	// Update all .cfsconfig files with AI model data
 	await updateCfsConfigsWithAiModelData(
-		workspaceRoot,
+		workspacePath,
 		workspaceConfig.modelFile,
 		workspaceConfig.sampleData
 	);
 
-	// Delete generated model.tflite and dataset.bin files
-	await deleteGeneratedAiAssetFiles(workspaceRoot);
+	await deleteGeneratedAiAssetFiles(workspacePath);
 }
 
 async function updateCfsConfigsWithAiModelData(

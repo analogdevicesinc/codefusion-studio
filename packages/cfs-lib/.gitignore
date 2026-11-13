@@ -2,5 +2,6 @@
 *-error.log
 /dist
 node_modules
-src/resources/cfs-setting-defaults.json
+src/resources/cfs-setting-defaults.ts
+src/resources/cfsconfig-schema.ts
 src/ai-tools/tflm/schema

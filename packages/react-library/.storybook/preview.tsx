@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc. All Rights Reserved.
+ * Copyright (c) 2024-2026 Analog Devices, Inc. All Rights Reserved.
  * This software is proprietary to Analog Devices, Inc. and its licensors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

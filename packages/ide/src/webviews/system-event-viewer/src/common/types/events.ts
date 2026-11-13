@@ -21,22 +21,35 @@ export const CfsEventsStates = [
 	'ended',
 	'file'
 ] as const;
-export type CfsEventState = (typeof CfsEventsStates)[number];
 
+// Types for the received JSON schema
 export type CfsEventsDocument = {
-	schemaVersion: '0.2';
 	lastUpdate: string;
-	tickFrequency?: number;
-	ticksEpoch?: string;
+	tickFrequency: number;
+	tickEpoch?: string;
 	state?: CfsEventState;
-	events: EventsDictionary;
+	eventSources: EventsDictionary;
+	eventSourceIndex?: CfsEventSourceIndexEntry[];
 };
 
-export type EventsDictionary = Record<
-	string,
-	Record<'timestamps', number[]>
->;
+export type CfsEventState = (typeof CfsEventsStates)[number];
 
+export type EventsDictionary = Record<string, CfsEventSource>;
+export type CfsEventSource = {
+	events: CfsEventEntry[];
+};
+export type CfsEventEntry = {
+	ts: number;
+	msg?: string;
+};
+
+export type CfsEventSourceIndexEntry = string | CfsEventSourceGroup;
+export type CfsEventSourceGroup = {
+	name: string;
+	events: CfsEventSourceIndexEntry[];
+};
+
+// Types used in UI
 export type SevEventSource = {
 	id: string;
 	name: string;
@@ -44,15 +57,66 @@ export type SevEventSource = {
 	timestamps: Timestamp[];
 	checked: boolean;
 };
-
 export type Timestamp = {
 	id: number;
-	value: number;
-	name: string;
+	value: number; // Timeline coordinate in seconds.
+	rawTicks?: number; // Original timestamp count from the document.
+	evSourceName: string;
 	description: string;
 };
 
 export type TimestampList = Array<Timestamp & {alias?: string}>;
 
-export type MenuAction = 'top' | 'up' | 'down' | 'bottom';
+export type EventSourceTreeNode = EventSource | EventSourceGroup;
+export type EventSource = {
+	type: 'leaf';
+	id: string;
+	sourceName: string;
+};
+export type EventSourceGroup = {
+	type: 'group';
+	id: string;
+	name: string;
+	children: EventSourceTreeNode[];
+	descendantSourceNames: string[];
+};
+
+export type TimelineRow = TimelineSourceRow | TimelineGroupRow;
+export type TimelineSourceRow = EventSource & {
+	depth: number;
+	siblingIndex: number;
+	siblingCount: number;
+};
+export type TimelineGroupRow = Omit<EventSourceGroup, 'children'> & {
+	depth: number;
+	siblingIndex: number;
+	siblingCount: number;
+	isExpanded: boolean;
+};
+
+export type TimeContext = {
+	tickFrequency: number;
+	tickEpoch?: string;
+};
+
+export type MenuAction =
+	| 'top'
+	| 'up'
+	| 'down'
+	| 'bottom'
+	| 'renameGroup'
+	| 'ungroup'
+	| 'extractNode';
 export type PanelPlacement = 'bottom' | 'top';
+export type EventSourceDropPosition = 'before' | 'center' | 'after';
+
+export type EventSourceMoveIntent =
+	| Readonly<{
+			type: 'menu';
+			action: MenuAction;
+	  }>
+	| Readonly<{
+			type: 'drag';
+			targetNodeId: string;
+			position: EventSourceDropPosition;
+	  }>;

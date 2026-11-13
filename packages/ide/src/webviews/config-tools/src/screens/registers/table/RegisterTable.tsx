@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,15 +85,20 @@ function RegisterTable({
 			<DataGrid
 				className={styles.table}
 				gridTemplateColumns={
-					innerWidth > 1130 ? '20% 20% 50% 10%' : '20% 20% 40% 20%'
+					innerWidth > 1130
+						? '16px 20fr 20fr 50fr 10fr'
+						: '16px 20fr 20fr 40fr 20fr'
 				}
 				ariaLabel='Registers table'
 				dataTest='register-table-grid'
 			>
 				<DataGridRow rowType='header'>
-					<DataGridCell gridColumn='1' cellType='columnheader'>
+					<DataGridCell gridColumn='1' cellType='columnheader' />
+					<DataGridCell gridColumn='2' cellType='columnheader'>
 						<div
-							className={`${styles['sortable-title']} ${styles[sortedBy?.name ?? ''] ?? ''} `}
+							className={`${styles['sortable-title']} ${
+								styles[sortedBy?.name ?? ''] ?? ''
+							} `}
 							onClick={() => {
 								sortTable('name');
 							}}
@@ -102,9 +107,11 @@ function RegisterTable({
 							{sortedBy?.name ? <DownFilledArrow /> : <DownArrow />}
 						</div>
 					</DataGridCell>
-					<DataGridCell gridColumn='2' cellType='columnheader'>
+					<DataGridCell gridColumn='3' cellType='columnheader'>
 						<div
-							className={`${styles['sortable-title']} ${styles[sortedBy?.address ?? ''] ?? ''} `}
+							className={`${styles['sortable-title']} ${
+								styles[sortedBy?.address ?? ''] ?? ''
+							} `}
 							onClick={() => {
 								sortTable('address');
 							}}
@@ -117,10 +124,10 @@ function RegisterTable({
 							)}
 						</div>
 					</DataGridCell>
-					<DataGridCell gridColumn='3' cellType='columnheader'>
+					<DataGridCell gridColumn='4' cellType='columnheader'>
 						Description
 					</DataGridCell>
-					<DataGridCell gridColumn='4' cellType='columnheader'>
+					<DataGridCell gridColumn='5' cellType='columnheader'>
 						Value
 					</DataGridCell>
 				</DataGridRow>
@@ -128,18 +135,8 @@ function RegisterTable({
 					<RegisterTableRow
 						key={register.name}
 						id={register.name}
-						label={
-							<div className={styles.name}>
-								{register.isResetValue ? (
-									register.name
-								) : (
-									<>
-										<div>&lowast;</div>
-										<div>{register.name}</div>
-									</>
-								)}
-							</div>
-						}
+						isModified={!register.isResetValue}
+						label={<div className={styles.name}>{register.name}</div>}
 						description={register.description}
 						value={register.value}
 						address={register.address}

@@ -72,6 +72,82 @@
           "args": ["task-runner.cjs"]
         }
       }
+    },
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Build with Dependency",
+      "group": "build",
+      "dependsOn": ["Build from Dependency"],
+      "options": {
+        "env": {
+          "TASK_LABEL": "Build with Dependency"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "Build from Dependency",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Build from Dependency"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "print-both",
+      "label": "Print_Both_Streams",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Print_Both_Streams"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "hang",
+      "label": "Hang_Task",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "Hang_Task"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "print-success",
+      "label": "flash_run_JLink",
+      "group": "build",
+      "options": {
+        "env": {
+          "TASK_LABEL": "flash_run_JLink"
+        },
+        "shell": {
+          "executable": "${env:CFS_TEST_NODE_PATH}",
+          "args": ["task-runner.cjs"]
+        }
+      }
     }
   ]
 }

@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.3.893",
-  "Schema": "1.5.0",
-  "Timestamp": "2026-06-19T17:01:00.871435Z",
+  "Version": "1.3.913",
+  "Schema": "1.5.1",
+  "Timestamp": "2026-07-15T21:49:00.276590Z",
   "Name": "ADSP-21835W",
   "Description": "ADSP-21835W Chip Module",
   "Endianness": "Little",
@@ -194,7 +194,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC0_CLK_OP_I",
@@ -219,7 +220,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_CLK_IP_I",
@@ -244,7 +246,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC1_CLK_OP_I",
@@ -269,7 +272,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_CLK_IP_I",
@@ -294,7 +298,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC2_CLK_OP_I",
@@ -319,7 +324,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_CLK_IP_I",
@@ -344,7 +350,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC3_CLK_OP_I",
@@ -369,7 +376,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC0_DAT_IP_I",
@@ -394,7 +402,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_DAT_IP_I",
@@ -419,7 +428,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_DAT_IP_I",
@@ -444,7 +454,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_DAT_IP_I",
@@ -469,7 +480,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC0_DAT_TDM_OP_I",
@@ -494,7 +506,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_DAT_TDM_OP_I",
@@ -519,7 +532,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_DAT_TDM_OP_I",
@@ -544,7 +558,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_DAT_TDM_OP_I",
@@ -569,7 +584,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC0_FS_IP_I",
@@ -594,7 +610,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC0_FS_OP_I",
@@ -619,7 +636,8 @@
                 ]
               }
             },
-            "Group": "SRC 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_FS_IP_I",
@@ -644,7 +662,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC1_FS_OP_I",
@@ -669,7 +688,8 @@
                 ]
               }
             },
-            "Group": "SRC 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_FS_IP_I",
@@ -694,7 +714,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC2_FS_OP_I",
@@ -719,7 +740,8 @@
                 ]
               }
             },
-            "Group": "SRC 2"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_FS_IP_I",
@@ -744,7 +766,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC3_FS_OP_I",
@@ -769,7 +792,8 @@
                 ]
               }
             },
-            "Group": "SRC 3"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC4_CLK_IP_I",
@@ -794,7 +818,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC4_CLK_OP_I",
@@ -819,7 +844,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_CLK_IP_I",
@@ -844,7 +870,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC5_CLK_OP_I",
@@ -869,7 +896,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_CLK_IP_I",
@@ -894,7 +922,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC6_CLK_OP_I",
@@ -919,7 +948,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_CLK_IP_I",
@@ -944,7 +974,8 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC7_CLK_OP_I",
@@ -969,7 +1000,8 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC4_DAT_IP_I",
@@ -994,7 +1026,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_DAT_IP_I",
@@ -1019,7 +1052,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_DAT_IP_I",
@@ -1044,7 +1078,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_DAT_IP_I",
@@ -1069,7 +1104,8 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC4_DAT_TDM_OP_I",
@@ -1094,7 +1130,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_DAT_TDM_OP_I",
@@ -1119,7 +1156,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_DAT_TDM_OP_I",
@@ -1144,7 +1182,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_DAT_TDM_OP_I",
@@ -1169,7 +1208,8 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC4_FS_IP_I",
@@ -1194,7 +1234,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC4_FS_OP_I",
@@ -1219,7 +1260,8 @@
                 ]
               }
             },
-            "Group": "SRC 4"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_FS_IP_I",
@@ -1244,7 +1286,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC5_FS_OP_I",
@@ -1269,7 +1312,8 @@
                 ]
               }
             },
-            "Group": "SRC 5"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_FS_IP_I",
@@ -1294,7 +1338,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC6_FS_OP_I",
@@ -1319,7 +1364,8 @@
                 ]
               }
             },
-            "Group": "SRC 6"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_FS_IP_I",
@@ -1344,7 +1390,8 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC7_FS_OP_I",
@@ -1369,89 +1416,106 @@
                 ]
               }
             },
-            "Group": "SRC 7"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 7"
           }
         ],
         "Outputs": [
           {
             "Name": "SRC0_DAT_OP_O",
             "Description": "Sample Rate Converter 0 Data Output",
-            "Group": "SRC 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_DAT_OP_O",
             "Description": "Sample Rate Converter 1 Data Output",
-            "Group": "SRC 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_DAT_OP_O",
             "Description": "Sample Rate Converter 2 Data Output",
-            "Group": "SRC 2"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_DAT_OP_O",
             "Description": "Sample Rate Converter 3 Data Output",
-            "Group": "SRC 3"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC0_TDM_IP_O",
             "Description": "Sample Rate Converter 0 TDM Data Output Serial Mode In",
-            "Group": "SRC 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 0"
           },
           {
             "Name": "SRC1_TDM_IP_O",
             "Description": "Sample Rate Converter 1 TDM Data Output Serial Mode In",
-            "Group": "SRC 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 1"
           },
           {
             "Name": "SRC2_TDM_IP_O",
             "Description": "Sample Rate Converter 2 TDM Data Output Serial Mode In",
-            "Group": "SRC 2"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 2"
           },
           {
             "Name": "SRC3_TDM_IP_O",
             "Description": "Sample Rate Converter 3 TDM Data Output Serial Mode In",
-            "Group": "SRC 3"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 3"
           },
           {
             "Name": "SRC4_DAT_OP_O",
             "Description": "Sample Rate Converter 4 Data Output",
-            "Group": "SRC 4"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_DAT_OP_O",
             "Description": "Sample Rate Converter 5 Data Output",
-            "Group": "SRC 5"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_DAT_OP_O",
             "Description": "Sample Rate Converter 6 Data Output",
-            "Group": "SRC 6"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_DAT_OP_O",
             "Description": "Sample Rate Converter 7 Data Output",
-            "Group": "SRC 7"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 7"
           },
           {
             "Name": "SRC4_TDM_IP_O",
             "Description": "Sample Rate Converter 4 TDM Data Output Serial Mode In",
-            "Group": "SRC 4"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 4"
           },
           {
             "Name": "SRC5_TDM_IP_O",
             "Description": "Sample Rate Converter 5 TDM Data Output Serial Mode In",
-            "Group": "SRC 5"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 5"
           },
           {
             "Name": "SRC6_TDM_IP_O",
             "Description": "Sample Rate Converter 6 TDM Data Output Serial Mode In",
-            "Group": "SRC 6"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 6"
           },
           {
             "Name": "SRC7_TDM_IP_O",
             "Description": "Sample Rate Converter 7 TDM Data Output Serial Mode In",
-            "Group": "SRC 7"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 7"
           }
         ]
       }
@@ -1487,7 +1551,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC8_CLK_OP_I",
@@ -1512,7 +1577,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_CLK_IP_I",
@@ -1537,7 +1603,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC9_CLK_OP_I",
@@ -1562,7 +1629,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_CLK_IP_I",
@@ -1587,7 +1655,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC10_CLK_OP_I",
@@ -1612,7 +1681,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_CLK_IP_I",
@@ -1637,7 +1707,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC11_CLK_OP_I",
@@ -1662,7 +1733,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC8_DAT_IP_I",
@@ -1687,7 +1759,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_DAT_IP_I",
@@ -1712,7 +1785,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_DAT_IP_I",
@@ -1737,7 +1811,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_DAT_IP_I",
@@ -1762,7 +1837,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC8_DAT_TDM_OP_I",
@@ -1787,7 +1863,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_DAT_TDM_OP_I",
@@ -1812,7 +1889,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_DAT_TDM_OP_I",
@@ -1837,7 +1915,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_DAT_TDM_OP_I",
@@ -1862,7 +1941,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC8_FS_IP_I",
@@ -1887,7 +1967,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC8_FS_OP_I",
@@ -1912,7 +1993,8 @@
                 ]
               }
             },
-            "Group": "SRC 8"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_FS_IP_I",
@@ -1937,7 +2019,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC9_FS_OP_I",
@@ -1962,7 +2045,8 @@
                 ]
               }
             },
-            "Group": "SRC 9"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_FS_IP_I",
@@ -1987,7 +2071,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC10_FS_OP_I",
@@ -2012,7 +2097,8 @@
                 ]
               }
             },
-            "Group": "SRC 10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_FS_IP_I",
@@ -2037,7 +2123,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC11_FS_OP_I",
@@ -2062,7 +2149,8 @@
                 ]
               }
             },
-            "Group": "SRC 11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC12_CLK_IP_I",
@@ -2087,7 +2175,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC12_CLK_OP_I",
@@ -2112,7 +2201,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_CLK_IP_I",
@@ -2137,7 +2227,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC13_CLK_OP_I",
@@ -2162,7 +2253,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_CLK_IP_I",
@@ -2187,7 +2279,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC14_CLK_OP_I",
@@ -2212,7 +2305,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_CLK_IP_I",
@@ -2237,7 +2331,8 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC15_CLK_OP_I",
@@ -2262,7 +2357,8 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC12_DAT_IP_I",
@@ -2287,7 +2383,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_DAT_IP_I",
@@ -2312,7 +2409,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_DAT_IP_I",
@@ -2337,7 +2435,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_DAT_IP_I",
@@ -2362,7 +2461,8 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC12_DAT_TDM_OP_I",
@@ -2387,7 +2487,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_DAT_TDM_OP_I",
@@ -2412,7 +2513,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_DAT_TDM_OP_I",
@@ -2437,7 +2539,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_DAT_TDM_OP_I",
@@ -2462,7 +2565,8 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC12_FS_IP_I",
@@ -2487,7 +2591,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC12_FS_OP_I",
@@ -2512,7 +2617,8 @@
                 ]
               }
             },
-            "Group": "SRC 12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_FS_IP_I",
@@ -2537,7 +2643,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC13_FS_OP_I",
@@ -2562,7 +2669,8 @@
                 ]
               }
             },
-            "Group": "SRC 13"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_FS_IP_I",
@@ -2587,7 +2695,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC14_FS_OP_I",
@@ -2612,7 +2721,8 @@
                 ]
               }
             },
-            "Group": "SRC 14"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_FS_IP_I",
@@ -2637,7 +2747,8 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC15_FS_OP_I",
@@ -2662,89 +2773,106 @@
                 ]
               }
             },
-            "Group": "SRC 15"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SRC 15"
           }
         ],
         "Outputs": [
           {
             "Name": "SRC8_DAT_OP_O",
             "Description": "Sample Rate Converter 8 Data Output",
-            "Group": "SRC 8"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_DAT_OP_O",
             "Description": "Sample Rate Converter 9 Data Output",
-            "Group": "SRC 9"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_DAT_OP_O",
             "Description": "Sample Rate Converter 10 Data Output",
-            "Group": "SRC 10"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_DAT_OP_O",
             "Description": "Sample Rate Converter 11 Data Output",
-            "Group": "SRC 11"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC8_TDM_IP_O",
             "Description": "Sample Rate Converter 8 TDM Data Output Serial Mode In",
-            "Group": "SRC 8"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 8"
           },
           {
             "Name": "SRC9_TDM_IP_O",
             "Description": "Sample Rate Converter 9 TDM Data Output Serial Mode In",
-            "Group": "SRC 9"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 9"
           },
           {
             "Name": "SRC10_TDM_IP_O",
             "Description": "Sample Rate Converter 10 TDM Data Output Serial Mode In",
-            "Group": "SRC 10"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 10"
           },
           {
             "Name": "SRC11_TDM_IP_O",
             "Description": "Sample Rate Converter 11 TDM Data Output Serial Mode In",
-            "Group": "SRC 11"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 11"
           },
           {
             "Name": "SRC12_DAT_OP_O",
             "Description": "Sample Rate Converter 12 Data Output",
-            "Group": "SRC 12"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_DAT_OP_O",
             "Description": "Sample Rate Converter 13 Data Output",
-            "Group": "SRC 13"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_DAT_OP_O",
             "Description": "Sample Rate Converter 14 Data Output",
-            "Group": "SRC 14"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_DAT_OP_O",
             "Description": "Sample Rate Converter 15 Data Output",
-            "Group": "SRC 15"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 15"
           },
           {
             "Name": "SRC12_TDM_IP_O",
             "Description": "Sample Rate Converter 12 TDM Data Output Serial Mode In",
-            "Group": "SRC 12"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 12"
           },
           {
             "Name": "SRC13_TDM_IP_O",
             "Description": "Sample Rate Converter 13 TDM Data Output Serial Mode In",
-            "Group": "SRC 13"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 13"
           },
           {
             "Name": "SRC14_TDM_IP_O",
             "Description": "Sample Rate Converter 14 TDM Data Output Serial Mode In",
-            "Group": "SRC 14"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 14"
           },
           {
             "Name": "SRC15_TDM_IP_O",
             "Description": "Sample Rate Converter 15 TDM Data Output Serial Mode In",
-            "Group": "SRC 15"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SRC 15"
           }
         ]
       }
@@ -2850,7 +2978,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB01"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB01"
           },
           {
             "Name": "DAI0_PB02_I",
@@ -2875,7 +3004,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB02"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB02"
           },
           {
             "Name": "DAI0_PB03_I",
@@ -2900,7 +3030,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB03"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB03"
           },
           {
             "Name": "DAI0_PB04_I",
@@ -2925,7 +3056,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB04"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB04"
           },
           {
             "Name": "DAI0_PB05_I",
@@ -2950,7 +3082,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB05"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB05"
           },
           {
             "Name": "DAI0_PB06_I",
@@ -2975,7 +3108,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB06"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB06"
           },
           {
             "Name": "DAI0_PB07_I",
@@ -3000,7 +3134,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB07"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB07"
           },
           {
             "Name": "DAI0_PB08_I",
@@ -3025,7 +3160,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB08"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB08"
           },
           {
             "Name": "DAI0_PB09_I",
@@ -3050,7 +3186,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB09"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB09"
           },
           {
             "Name": "DAI0_PB10_I",
@@ -3075,7 +3212,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB10"
           },
           {
             "Name": "DAI0_PB11_I",
@@ -3100,7 +3238,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB11"
           },
           {
             "Name": "DAI0_PB12_I",
@@ -3125,7 +3264,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB12"
           },
           {
             "Name": "DAI0_PB19_I",
@@ -3168,7 +3308,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB19"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB19"
           },
           {
             "Name": "DAI0_PB20_I",
@@ -3211,7 +3352,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB20"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB20"
           },
           {
             "Name": "DAI0_MISCA0_I",
@@ -3235,7 +3377,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_6_I",
@@ -3259,7 +3402,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA1_I",
@@ -3283,7 +3427,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_7_I",
@@ -3307,7 +3452,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA2_I",
@@ -3331,7 +3477,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_8_I",
@@ -3355,7 +3502,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA3_I",
@@ -3379,7 +3527,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_9_I",
@@ -3403,7 +3552,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA4_I",
@@ -3445,7 +3595,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA5_I",
@@ -3487,7 +3638,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_0_I",
@@ -3511,7 +3663,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_1_I",
@@ -3535,7 +3688,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_2_I",
@@ -3559,7 +3713,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_3_I",
@@ -3583,7 +3738,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_4_I",
@@ -3607,7 +3763,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_INT_5_I",
@@ -3631,7 +3788,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_PBEN01_I",
@@ -3656,7 +3814,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB01",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB01",
             "IsPinBufferEnable": true
           },
           {
@@ -3682,7 +3841,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB02",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB02",
             "IsPinBufferEnable": true
           },
           {
@@ -3708,7 +3868,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB03",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB03",
             "IsPinBufferEnable": true
           },
           {
@@ -3734,7 +3895,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB04",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB04",
             "IsPinBufferEnable": true
           },
           {
@@ -3760,7 +3922,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB05",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB05",
             "IsPinBufferEnable": true
           },
           {
@@ -3786,7 +3949,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB06",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB06",
             "IsPinBufferEnable": true
           },
           {
@@ -3812,7 +3976,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB07",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB07",
             "IsPinBufferEnable": true
           },
           {
@@ -3838,7 +4003,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB08",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB08",
             "IsPinBufferEnable": true
           },
           {
@@ -3864,7 +4030,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB09",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB09",
             "IsPinBufferEnable": true
           },
           {
@@ -3890,7 +4057,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB10",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB10",
             "IsPinBufferEnable": true
           },
           {
@@ -3916,7 +4084,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB11",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB11",
             "IsPinBufferEnable": true
           },
           {
@@ -3942,7 +4111,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB12",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB12",
             "IsPinBufferEnable": true
           },
           {
@@ -3968,7 +4138,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB19",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB19",
             "IsPinBufferEnable": true
           },
           {
@@ -3994,7 +4165,8 @@
                 ]
               }
             },
-            "Group": "DAI0_PB20",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB20",
             "IsPinBufferEnable": true
           }
         ],
@@ -4002,104 +4174,126 @@
           {
             "Name": "DAI0_PB01_O",
             "Description": "DAI 0 Pin Buffer 1 Output",
-            "Group": "DAI0_PB01"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB01"
           },
           {
             "Name": "DAI0_PB02_O",
             "Description": "DAI 0 Pin Buffer 2 Output",
-            "Group": "DAI0_PB02"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB02"
           },
           {
             "Name": "DAI0_PB03_O",
             "Description": "DAI 0 Pin Buffer 3 Output",
-            "Group": "DAI0_PB03"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB03"
           },
           {
             "Name": "DAI0_PB04_O",
             "Description": "DAI 0 Pin Buffer 4 Output",
-            "Group": "DAI0_PB04"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB04"
           },
           {
             "Name": "DAI0_PB05_O",
             "Description": "DAI 0 Pin Buffer 5 Output",
-            "Group": "DAI0_PB05"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB05"
           },
           {
             "Name": "DAI0_PB06_O",
             "Description": "DAI 0 Pin Buffer 6 Output",
-            "Group": "DAI0_PB06"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB06"
           },
           {
             "Name": "DAI0_PB07_O",
             "Description": "DAI 0 Pin Buffer 7 Output",
-            "Group": "DAI0_PB07"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB07"
           },
           {
             "Name": "DAI0_PB08_O",
             "Description": "DAI 0 Pin Buffer 8 Output",
-            "Group": "DAI0_PB08"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB08"
           },
           {
             "Name": "DAI0_PB09_O",
             "Description": "DAI 0 Pin Buffer 9 Output",
-            "Group": "DAI0_PB09"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB09"
           },
           {
             "Name": "DAI0_PB10_O",
             "Description": "DAI 0 Pin Buffer 10 Output",
-            "Group": "DAI0_PB10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB10"
           },
           {
             "Name": "DAI0_PB11_O",
             "Description": "DAI 0 Pin Buffer 11 Output",
-            "Group": "DAI0_PB11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB11"
           },
           {
             "Name": "DAI0_PB12_O",
             "Description": "DAI 0 Pin Buffer 12 Output",
-            "Group": "DAI0_PB12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB12"
           },
           {
             "Name": "DAI0_PB19_O",
             "Description": "DAI 0 Pin Buffer 19 Output",
-            "Group": "DAI0_PB19"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB19"
           },
           {
             "Name": "DAI0_PB20_O",
             "Description": "DAI 0 Pin Buffer 20 Output",
-            "Group": "DAI0_PB20"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI0_PB20"
           },
           {
             "Name": "LOW",
-            "Description": "Logic Level Low (0)"
+            "Description": "Logic Level Low (0)",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "HIGH",
-            "Description": "Logic Level High (1)"
+            "Description": "Logic Level High (1)",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA0_O",
-            "Description": "DAI 0 Miscellaneous Control A0 Output"
+            "Description": "DAI 0 Miscellaneous Control A0 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA1_O",
-            "Description": "DAI 0 Miscellaneous Control A1 Output"
+            "Description": "DAI 0 Miscellaneous Control A1 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA2_O",
-            "Description": "DAI 0 Miscellaneous Control A2 Output"
+            "Description": "DAI 0 Miscellaneous Control A2 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA3_O",
-            "Description": "DAI 0 Miscellaneous Control A3 Output"
+            "Description": "DAI 0 Miscellaneous Control A3 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA4_O",
-            "Description": "DAI 0 Miscellaneous Control A4 Output"
+            "Description": "DAI 0 Miscellaneous Control A4 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI0_MISCA5_O",
-            "Description": "DAI 0 Miscellaneous Control A5 Output"
+            "Description": "DAI 0 Miscellaneous Control A5 Output",
+            "SignalType": "Miscellaneous Signals"
           }
         ]
       },
@@ -4193,7 +4387,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB01"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB01"
           },
           {
             "Name": "DAI1_PB02_I",
@@ -4218,7 +4413,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB02"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB02"
           },
           {
             "Name": "DAI1_PB03_I",
@@ -4243,7 +4439,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB03"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB03"
           },
           {
             "Name": "DAI1_PB04_I",
@@ -4268,7 +4465,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB04"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB04"
           },
           {
             "Name": "DAI1_PB05_I",
@@ -4293,7 +4491,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB05"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB05"
           },
           {
             "Name": "DAI1_PB06_I",
@@ -4318,7 +4517,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB06"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB06"
           },
           {
             "Name": "DAI1_PB07_I",
@@ -4343,7 +4543,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB07"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB07"
           },
           {
             "Name": "DAI1_PB08_I",
@@ -4368,7 +4569,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB08"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB08"
           },
           {
             "Name": "DAI1_PB09_I",
@@ -4393,7 +4595,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB09"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB09"
           },
           {
             "Name": "DAI1_PB10_I",
@@ -4418,7 +4621,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB10"
           },
           {
             "Name": "DAI1_PB11_I",
@@ -4443,7 +4647,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB11"
           },
           {
             "Name": "DAI1_PB12_I",
@@ -4468,7 +4673,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB12"
           },
           {
             "Name": "DAI1_PB19_I",
@@ -4511,7 +4717,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB19"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB19"
           },
           {
             "Name": "DAI1_PB20_I",
@@ -4554,7 +4761,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB20"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB20"
           },
           {
             "Name": "DAI1_MISCA0_I",
@@ -4578,7 +4786,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_6_I",
@@ -4602,7 +4811,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA1_I",
@@ -4626,7 +4836,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_7_I",
@@ -4650,7 +4861,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA2_I",
@@ -4674,7 +4886,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_8_I",
@@ -4698,7 +4911,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA3_I",
@@ -4722,7 +4936,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_9_I",
@@ -4746,7 +4961,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA4_I",
@@ -4788,7 +5004,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA5_I",
@@ -4830,7 +5047,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_0_I",
@@ -4854,7 +5072,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_1_I",
@@ -4878,7 +5097,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_2_I",
@@ -4902,7 +5122,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_3_I",
@@ -4926,7 +5147,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_4_I",
@@ -4950,7 +5172,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_INT_5_I",
@@ -4974,7 +5197,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_PBEN01_I",
@@ -4999,7 +5223,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB01",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB01",
             "IsPinBufferEnable": true
           },
           {
@@ -5025,7 +5250,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB02",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB02",
             "IsPinBufferEnable": true
           },
           {
@@ -5051,7 +5277,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB03",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB03",
             "IsPinBufferEnable": true
           },
           {
@@ -5077,7 +5304,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB04",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB04",
             "IsPinBufferEnable": true
           },
           {
@@ -5103,7 +5331,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB05",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB05",
             "IsPinBufferEnable": true
           },
           {
@@ -5129,7 +5358,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB06",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB06",
             "IsPinBufferEnable": true
           },
           {
@@ -5155,7 +5385,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB07",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB07",
             "IsPinBufferEnable": true
           },
           {
@@ -5181,7 +5412,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB08",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB08",
             "IsPinBufferEnable": true
           },
           {
@@ -5207,7 +5439,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB09",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB09",
             "IsPinBufferEnable": true
           },
           {
@@ -5233,7 +5466,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB10",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB10",
             "IsPinBufferEnable": true
           },
           {
@@ -5259,7 +5493,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB11",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB11",
             "IsPinBufferEnable": true
           },
           {
@@ -5285,7 +5520,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB12",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB12",
             "IsPinBufferEnable": true
           },
           {
@@ -5311,7 +5547,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB19",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB19",
             "IsPinBufferEnable": true
           },
           {
@@ -5337,7 +5574,8 @@
                 ]
               }
             },
-            "Group": "DAI1_PB20",
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB20",
             "IsPinBufferEnable": true
           }
         ],
@@ -5345,104 +5583,126 @@
           {
             "Name": "DAI1_PB01_O",
             "Description": "DAI 1 Pin Buffer 1 Output",
-            "Group": "DAI1_PB01"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB01"
           },
           {
             "Name": "DAI1_PB02_O",
             "Description": "DAI 1 Pin Buffer 2 Output",
-            "Group": "DAI1_PB02"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB02"
           },
           {
             "Name": "DAI1_PB03_O",
             "Description": "DAI 1 Pin Buffer 3 Output",
-            "Group": "DAI1_PB03"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB03"
           },
           {
             "Name": "DAI1_PB04_O",
             "Description": "DAI 1 Pin Buffer 4 Output",
-            "Group": "DAI1_PB04"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB04"
           },
           {
             "Name": "DAI1_PB05_O",
             "Description": "DAI 1 Pin Buffer 5 Output",
-            "Group": "DAI1_PB05"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB05"
           },
           {
             "Name": "DAI1_PB06_O",
             "Description": "DAI 1 Pin Buffer 6 Output",
-            "Group": "DAI1_PB06"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB06"
           },
           {
             "Name": "DAI1_PB07_O",
             "Description": "DAI 1 Pin Buffer 7 Output",
-            "Group": "DAI1_PB07"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB07"
           },
           {
             "Name": "DAI1_PB08_O",
             "Description": "DAI 1 Pin Buffer 8 Output",
-            "Group": "DAI1_PB08"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB08"
           },
           {
             "Name": "DAI1_PB09_O",
             "Description": "DAI 1 Pin Buffer 9 Output",
-            "Group": "DAI1_PB09"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB09"
           },
           {
             "Name": "DAI1_PB10_O",
             "Description": "DAI 1 Pin Buffer 10 Output",
-            "Group": "DAI1_PB10"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB10"
           },
           {
             "Name": "DAI1_PB11_O",
             "Description": "DAI 1 Pin Buffer 11 Output",
-            "Group": "DAI1_PB11"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB11"
           },
           {
             "Name": "DAI1_PB12_O",
             "Description": "DAI 1 Pin Buffer 12 Output",
-            "Group": "DAI1_PB12"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB12"
           },
           {
             "Name": "DAI1_PB19_O",
             "Description": "DAI 1 Pin Buffer 19 Output",
-            "Group": "DAI1_PB19"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB19"
           },
           {
             "Name": "DAI1_PB20_O",
             "Description": "DAI 1 Pin Buffer 20 Output",
-            "Group": "DAI1_PB20"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "DAI1_PB20"
           },
           {
             "Name": "LOW",
-            "Description": "Logic Level Low (0)"
+            "Description": "Logic Level Low (0)",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "HIGH",
-            "Description": "Logic Level High (1)"
+            "Description": "Logic Level High (1)",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA0_O",
-            "Description": "DAI 1 Miscellaneous Control A0 Output"
+            "Description": "DAI 1 Miscellaneous Control A0 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA1_O",
-            "Description": "DAI 1 Miscellaneous Control A1 Output"
+            "Description": "DAI 1 Miscellaneous Control A1 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA2_O",
-            "Description": "DAI 1 Miscellaneous Control A2 Output"
+            "Description": "DAI 1 Miscellaneous Control A2 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA3_O",
-            "Description": "DAI 1 Miscellaneous Control A3 Output"
+            "Description": "DAI 1 Miscellaneous Control A3 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA4_O",
-            "Description": "DAI 1 Miscellaneous Control A4 Output"
+            "Description": "DAI 1 Miscellaneous Control A4 Output",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "DAI1_MISCA5_O",
-            "Description": "DAI 1 Miscellaneous Control A5 Output"
+            "Description": "DAI 1 Miscellaneous Control A5 Output",
+            "SignalType": "Miscellaneous Signals"
           }
         ]
       },
@@ -6134,7 +6394,8 @@
         "Outputs": [
           {
             "Name": "FRACPLL_CLK_O",
-            "Description": "Fractional-N PLL Clock Output"
+            "Description": "Fractional-N PLL Clock Output",
+            "SignalType": "Clock Signals"
           }
         ]
       },
@@ -6347,7 +6608,8 @@
         "Outputs": [
           {
             "Name": "MLB0_CLKOUT_O",
-            "Description": "MLB 0 PLL Clock Output"
+            "Description": "MLB 0 PLL Clock Output",
+            "SignalType": "Clock Signals"
           }
         ]
       },
@@ -6411,7 +6673,8 @@
                 ]
               }
             },
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_EXTCLKB_I",
@@ -6436,7 +6699,8 @@
                 ]
               }
             },
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_SYNC_CLKA_I",
@@ -6461,7 +6725,8 @@
                 ]
               }
             },
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_SYNC_CLKB_I",
@@ -6486,7 +6751,8 @@
                 ]
               }
             },
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_SYNC_CLKE_I",
@@ -6511,7 +6777,8 @@
                 ]
               }
             },
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_SYNC_CLKF_I",
@@ -6536,7 +6803,8 @@
                 ]
               }
             },
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_EXTCLKE_I",
@@ -6561,7 +6829,8 @@
                 ]
               }
             },
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_EXTCLKF_I",
@@ -6586,7 +6855,8 @@
                 ]
               }
             },
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_HWA_TRIG_I",
@@ -6611,7 +6881,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWB_TRIG_I",
@@ -6636,7 +6907,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWE_TRIG_I",
@@ -6661,7 +6933,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWF_TRIG_I",
@@ -6686,7 +6959,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_EXTCLKC_I",
@@ -6711,7 +6985,8 @@
                 ]
               }
             },
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_EXTCLKD_I",
@@ -6736,7 +7011,8 @@
                 ]
               }
             },
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_SYNC_CLKC_I",
@@ -6761,7 +7037,8 @@
                 ]
               }
             },
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_SYNC_CLKD_I",
@@ -6786,7 +7063,8 @@
                 ]
               }
             },
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_SYNC_CLKG_I",
@@ -6811,7 +7089,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_SYNC_CLKH_I",
@@ -6836,7 +7115,8 @@
                 ]
               }
             },
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           },
           {
             "Name": "PCG0_EXTCLKG_I",
@@ -6861,7 +7141,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_EXTCLKH_I",
@@ -6886,7 +7167,8 @@
                 ]
               }
             },
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           },
           {
             "Name": "PCG0_HWC_TRIG_I",
@@ -6911,7 +7193,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWD_TRIG_I",
@@ -6936,7 +7219,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWG_TRIG_I",
@@ -6961,7 +7245,8 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_HWH_TRIG_I",
@@ -6986,169 +7271,202 @@
                 ]
               }
             },
-            "Group": "PCG G"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "PCG G"
           }
         ],
         "Outputs": [
           {
             "Name": "PCG0_CLKA_O",
             "Description": "Precision Clock A Output",
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_CLKB_O",
             "Description": "Precision Clock B Output",
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_CLKE_O",
             "Description": "Precision Clock E Output",
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_CLKF_O",
             "Description": "Precision Clock F Output",
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_INV_CLKA_O",
             "Description": "Inverted Precision Clock A Output",
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_INV_CLKB_O",
             "Description": "Inverted Precision Clock B Output",
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_INV_CLKE_O",
             "Description": "Inverted Precision Clock E Output",
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_INV_CLKF_O",
             "Description": "Inverted Precision Clock F Output",
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_CLKC_O",
             "Description": "Precision Clock C Output",
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_CLKD_O",
             "Description": "Precision Clock D Output",
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_CLKG_O",
             "Description": "Precision Clock G Output",
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_CLKH_O",
             "Description": "Precision Clock H Output",
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           },
           {
             "Name": "PCG0_INV_CLKC_O",
             "Description": "Inverted Precision Clock C Output",
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_INV_CLKD_O",
             "Description": "Inverted Precision Clock D Output",
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_INV_CLKG_O",
             "Description": "Inverted Precision Clock G Output",
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_INV_CLKH_O",
             "Description": "Inverted Precision Clock H Output",
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           },
           {
             "Name": "PCG0_FSA_O",
             "Description": "Precision Clock Frame Sync A Output",
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_FSB_O",
             "Description": "Precision Clock Frame Sync B Output",
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_FSE_O",
             "Description": "Precision Clock Frame Sync E Output",
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_FSF_O",
             "Description": "Precision Clock Frame Sync F Output",
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_INV_FSA_O",
             "Description": "Inverted Precision Clock Frame Sync A Output",
-            "Group": "PCG A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG A"
           },
           {
             "Name": "PCG0_INV_FSB_O",
             "Description": "Inverted Precision Clock Frame Sync B Output",
-            "Group": "PCG B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG B"
           },
           {
             "Name": "PCG0_INV_FSE_O",
             "Description": "Inverted Precision Clock Frame Sync E Output",
-            "Group": "PCG E"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG E"
           },
           {
             "Name": "PCG0_INV_FSF_O",
             "Description": "Inverted Precision Clock Frame Sync F Output",
-            "Group": "PCG F"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG F"
           },
           {
             "Name": "PCG0_FSC_O",
             "Description": "Precision Clock Frame Sync C Output",
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_FSD_O",
             "Description": "Precision Clock Frame Sync D Output",
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_FSG_O",
             "Description": "Precision Clock Frame Sync G Output",
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_FSH_O",
             "Description": "Precision Clock Frame Sync H Output",
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           },
           {
             "Name": "PCG0_INV_FSC_O",
             "Description": "Inverted Precision Clock Frame Sync C Output",
-            "Group": "PCG C"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG C"
           },
           {
             "Name": "PCG0_INV_FSD_O",
             "Description": "Inverted Precision Clock Frame Sync D Output",
-            "Group": "PCG D"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG D"
           },
           {
             "Name": "PCG0_INV_FSG_O",
             "Description": "Inverted Precision Clock Frame Sync G Output",
-            "Group": "PCG G"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG G"
           },
           {
             "Name": "PCG0_INV_FSH_O",
             "Description": "Inverted Precision Clock Frame Sync H Output",
-            "Group": "PCG H"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "PCG H"
           }
         ]
       }
@@ -7183,7 +7501,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM0_BCLK_I",
@@ -7207,7 +7526,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM0_DAT0_I",
@@ -7231,7 +7551,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM0_DAT1_I",
@@ -7255,7 +7576,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM0_LRCLK_I",
@@ -7279,25 +7601,30 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           }
         ],
         "Outputs": [
           {
             "Name": "PDM0_CLK0_O",
-            "Description": "PDM 0 Clock 0 Output"
+            "Description": "PDM 0 Clock 0 Output",
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM0_SDATA_O",
-            "Description": "PDM 0 Serial Data Output"
+            "Description": "PDM 0 Serial Data Output",
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM0_CLK0_OE_O",
-            "Description": "PDM 0 Clock 0 Output Enable"
+            "Description": "PDM 0 Clock 0 Output Enable",
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM0_SDATA_OE_O",
-            "Description": "PDM 0 Serial Data Output Enable"
+            "Description": "PDM 0 Serial Data Output Enable",
+            "SignalType": "Data Signals"
           }
         ]
       }
@@ -7332,7 +7659,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM1_BCLK_I",
@@ -7356,7 +7684,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM1_DAT0_I",
@@ -7380,7 +7709,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM1_DAT1_I",
@@ -7404,7 +7734,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM1_LRCLK_I",
@@ -7428,25 +7759,30 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Clock Signals"
           }
         ],
         "Outputs": [
           {
             "Name": "PDM1_CLK0_O",
-            "Description": "PDM 1 Clock 0 Output"
+            "Description": "PDM 1 Clock 0 Output",
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM1_SDATA_O",
-            "Description": "PDM 1 Serial Data Output"
+            "Description": "PDM 1 Serial Data Output",
+            "SignalType": "Data Signals"
           },
           {
             "Name": "PDM1_CLK0_OE_O",
-            "Description": "PDM 1 Clock 0 Output Enable"
+            "Description": "PDM 1 Clock 0 Output Enable",
+            "SignalType": "Clock Signals"
           },
           {
             "Name": "PDM1_SDATA_OE_O",
-            "Description": "PDM 1 Serial Data Output Enable"
+            "Description": "PDM 1 Serial Data Output Enable",
+            "SignalType": "Data Signals"
           }
         ]
       }
@@ -8899,7 +9235,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           },
           {
             "Name": "SPDIF0_TX_HFCLK_I",
@@ -8924,7 +9261,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           },
           {
             "Name": "SPDIF0_TX_EXT_SYNC_I",
@@ -8949,7 +9287,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           },
           {
             "Name": "SPDIF0_TX_DAT_I",
@@ -8974,7 +9313,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           },
           {
             "Name": "SPDIF0_RX_I",
@@ -8999,7 +9339,8 @@
                 ]
               }
             },
-            "Group": "SPDIF RX 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF RX 0"
           },
           {
             "Name": "SPDIF0_TX_FS_I",
@@ -9024,39 +9365,46 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           }
         ],
         "Outputs": [
           {
             "Name": "SPDIF0_RX_CLK_O",
             "Description": "SPDIF 0 RX Clock Output",
-            "Group": "SPDIF RX 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF RX 0"
           },
           {
             "Name": "SPDIF0_RX_TDMCLK_O",
             "Description": "SPDIF 0 RX TDM Clock Output",
-            "Group": "SPDIF RX 0"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF RX 0"
           },
           {
             "Name": "SPDIF0_RX_DAT_O",
             "Description": "SPDIF 0 RX Serial Data Output",
-            "Group": "SPDIF RX 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF RX 0"
           },
           {
             "Name": "SPDIF0_TX_O",
             "Description": "SPDIF 0 TX Biphase Encoded Data Output",
-            "Group": "SPDIF TX 0"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           },
           {
             "Name": "SPDIF0_RX_FS_O",
             "Description": "SPDIF 0 RX Frame Sync Output",
-            "Group": "SPDIF RX 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF RX 0"
           },
           {
             "Name": "SPDIF0_TX_BLKSTART_O",
             "Description": "SPDIF 0 TX Block Start Output",
-            "Group": "SPDIF TX 0"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 0"
           }
         ]
       }
@@ -9092,7 +9440,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           },
           {
             "Name": "SPDIF1_TX_HFCLK_I",
@@ -9117,7 +9466,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           },
           {
             "Name": "SPDIF1_TX_EXT_SYNC_I",
@@ -9142,7 +9492,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           },
           {
             "Name": "SPDIF1_TX_DAT_I",
@@ -9167,7 +9518,8 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           },
           {
             "Name": "SPDIF1_RX_I",
@@ -9192,7 +9544,8 @@
                 ]
               }
             },
-            "Group": "SPDIF RX 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF RX 1"
           },
           {
             "Name": "SPDIF1_TX_FS_I",
@@ -9217,39 +9570,46 @@
                 ]
               }
             },
-            "Group": "SPDIF TX 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           }
         ],
         "Outputs": [
           {
             "Name": "SPDIF1_RX_CLK_O",
             "Description": "SPDIF 1 RX Clock Output",
-            "Group": "SPDIF RX 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF RX 1"
           },
           {
             "Name": "SPDIF1_RX_TDMCLK_O",
             "Description": "SPDIF 1 RX TDM Clock Output",
-            "Group": "SPDIF RX 1"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPDIF RX 1"
           },
           {
             "Name": "SPDIF1_RX_DAT_O",
             "Description": "SPDIF 1 RX Serial Data Output",
-            "Group": "SPDIF RX 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF RX 1"
           },
           {
             "Name": "SPDIF1_TX_O",
             "Description": "SPDIF 1 TX Biphase Encoded Data Output",
-            "Group": "SPDIF TX 1"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           },
           {
             "Name": "SPDIF1_RX_FS_O",
             "Description": "SPDIF 1 RX Frame Sync Output",
-            "Group": "SPDIF RX 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF RX 1"
           },
           {
             "Name": "SPDIF1_TX_BLKSTART_O",
             "Description": "SPDIF 1 TX Block Start Output",
-            "Group": "SPDIF TX 1"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPDIF TX 1"
           }
         ]
       }
@@ -9461,7 +9821,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_CLK_I",
@@ -9486,7 +9847,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_D0_I",
@@ -9511,7 +9873,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0A_D1_I",
@@ -9536,7 +9899,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_D0_I",
@@ -9561,7 +9925,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0B_D1_I",
@@ -9586,7 +9951,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_FS_I",
@@ -9611,7 +9977,8 @@
                 ]
               }
             },
-            "Group": "SPORT 0A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_FS_I",
@@ -9636,109 +10003,130 @@
                 ]
               }
             },
-            "Group": "SPORT 0B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT0A_CLK_O",
             "Description": "SPORT 0A Clock Output",
-            "Group": "SPORT 0A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_CLK_O",
             "Description": "SPORT 0B Clock Output",
-            "Group": "SPORT 0B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_D0_O",
             "Description": "SPORT 0A Data Channel 0 Output",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0A_D1_O",
             "Description": "SPORT 0A Data Channel 1 Output",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_D0_O",
             "Description": "SPORT 0B Data Channel 0 Output",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0B_D1_O",
             "Description": "SPORT 0B Data Channel 1 Output",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_FS_O",
             "Description": "SPORT 0A Frame Sync Output",
-            "Group": "SPORT 0A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_FS_O",
             "Description": "SPORT 0B Frame Sync Output",
-            "Group": "SPORT 0B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_TDV_O",
             "Description": "SPORT 0A Transmit Data Valid Output",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_TDV_O",
             "Description": "SPORT 0B Transmit Data Valid Output",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_CLK_PBEN_O",
             "Description": "SPORT 0A Clock Output Enable",
-            "Group": "SPORT 0A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0A_FS_PBEN_O",
             "Description": "SPORT 0A Frame Sync Output Enable",
-            "Group": "SPORT 0A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0A_D0_PBEN_O",
             "Description": "SPORT 0A Data Channel 0 Output Enable",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0A_D1_PBEN_O",
             "Description": "SPORT 0A Data Channel 1 Output Enable",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_CLK_PBEN_O",
             "Description": "SPORT 0B Clock Output Enable",
-            "Group": "SPORT 0B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0B_FS_PBEN_O",
             "Description": "SPORT 0B Frame Sync Output Enable",
-            "Group": "SPORT 0B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0B_D0_PBEN_O",
             "Description": "SPORT 0B Data Channel 0 Output Enable",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0B_D1_PBEN_O",
             "Description": "SPORT 0B Data Channel 1 Output Enable",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           },
           {
             "Name": "SPT0A_TDV_PBEN_O",
             "Description": "SPORT 0A Transmit Data Valid Output Enable",
-            "Group": "SPORT 0A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0A"
           },
           {
             "Name": "SPT0B_TDV_PBEN_O",
             "Description": "SPORT 0B Transmit Data Valid Output Enable",
-            "Group": "SPORT 0B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 0B"
           }
         ]
       },
@@ -9817,7 +10205,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_CLK_I",
@@ -9842,7 +10231,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_D0_I",
@@ -9867,7 +10257,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1A_D1_I",
@@ -9892,7 +10283,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_D0_I",
@@ -9917,7 +10309,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1B_D1_I",
@@ -9942,7 +10335,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_FS_I",
@@ -9967,7 +10361,8 @@
                 ]
               }
             },
-            "Group": "SPORT 1A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_FS_I",
@@ -9992,109 +10387,130 @@
                 ]
               }
             },
-            "Group": "SPORT 1B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT1A_CLK_O",
             "Description": "SPORT 1A Clock Output",
-            "Group": "SPORT 1A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_CLK_O",
             "Description": "SPORT 1B Clock Output",
-            "Group": "SPORT 1B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_D0_O",
             "Description": "SPORT 1A Data Channel 0 Output",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1A_D1_O",
             "Description": "SPORT 1A Data Channel 1 Output",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_D0_O",
             "Description": "SPORT 1B Data Channel 0 Output",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1B_D1_O",
             "Description": "SPORT 1B Data Channel 1 Output",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_FS_O",
             "Description": "SPORT 1A Frame Sync Output",
-            "Group": "SPORT 1A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_FS_O",
             "Description": "SPORT 1B Frame Sync Output",
-            "Group": "SPORT 1B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_TDV_O",
             "Description": "SPORT 1A Transmit Data Valid Output",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_TDV_O",
             "Description": "SPORT 1B Transmit Data Valid Output",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_CLK_PBEN_O",
             "Description": "SPORT 1A Clock Output Enable",
-            "Group": "SPORT 1A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1A_FS_PBEN_O",
             "Description": "SPORT 1A Frame Sync Output Enable",
-            "Group": "SPORT 1A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1A_D0_PBEN_O",
             "Description": "SPORT 1A Data Channel 0 Output Enable",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1A_D1_PBEN_O",
             "Description": "SPORT 1A Data Channel 1 Output Enable",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_CLK_PBEN_O",
             "Description": "SPORT 1B Clock Output Enable",
-            "Group": "SPORT 1B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1B_FS_PBEN_O",
             "Description": "SPORT 1B Frame Sync Output Enable",
-            "Group": "SPORT 1B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1B_D0_PBEN_O",
             "Description": "SPORT 1B Data Channel 0 Output Enable",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1B_D1_PBEN_O",
             "Description": "SPORT 1B Data Channel 1 Output Enable",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           },
           {
             "Name": "SPT1A_TDV_PBEN_O",
             "Description": "SPORT 1A Transmit Data Valid Output Enable",
-            "Group": "SPORT 1A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1A"
           },
           {
             "Name": "SPT1B_TDV_PBEN_O",
             "Description": "SPORT 1B Transmit Data Valid Output Enable",
-            "Group": "SPORT 1B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 1B"
           }
         ]
       },
@@ -10173,7 +10589,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_CLK_I",
@@ -10198,7 +10615,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_D0_I",
@@ -10223,7 +10641,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2A_D1_I",
@@ -10248,7 +10667,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_D0_I",
@@ -10273,7 +10693,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2B_D1_I",
@@ -10298,7 +10719,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_FS_I",
@@ -10323,7 +10745,8 @@
                 ]
               }
             },
-            "Group": "SPORT 2A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_FS_I",
@@ -10348,109 +10771,130 @@
                 ]
               }
             },
-            "Group": "SPORT 2B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT2A_CLK_O",
             "Description": "SPORT 2A Clock Output",
-            "Group": "SPORT 2A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_CLK_O",
             "Description": "SPORT 2B Clock Output",
-            "Group": "SPORT 2B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_D0_O",
             "Description": "SPORT 2A Data Channel 0 Output",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2A_D1_O",
             "Description": "SPORT 2A Data Channel 1 Output",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_D0_O",
             "Description": "SPORT 2B Data Channel 0 Output",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2B_D1_O",
             "Description": "SPORT 2B Data Channel 1 Output",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_FS_O",
             "Description": "SPORT 2A Frame Sync Output",
-            "Group": "SPORT 2A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_FS_O",
             "Description": "SPORT 2B Frame Sync Output",
-            "Group": "SPORT 2B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_TDV_O",
             "Description": "SPORT 2A Transmit Data Valid Output",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_TDV_O",
             "Description": "SPORT 2B Transmit Data Valid Output",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_CLK_PBEN_O",
             "Description": "SPORT 2A Clock Output Enable",
-            "Group": "SPORT 2A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2A_FS_PBEN_O",
             "Description": "SPORT 2A Frame Sync Output Enable",
-            "Group": "SPORT 2A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2A_D0_PBEN_O",
             "Description": "SPORT 2A Data Channel 0 Output Enable",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2A_D1_PBEN_O",
             "Description": "SPORT 2A Data Channel 1 Output Enable",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_CLK_PBEN_O",
             "Description": "SPORT 2B Clock Output Enable",
-            "Group": "SPORT 2B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2B_FS_PBEN_O",
             "Description": "SPORT 2B Frame Sync Output Enable",
-            "Group": "SPORT 2B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2B_D0_PBEN_O",
             "Description": "SPORT 2B Data Channel 0 Output Enable",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2B_D1_PBEN_O",
             "Description": "SPORT 2B Data Channel 1 Output Enable",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           },
           {
             "Name": "SPT2A_TDV_PBEN_O",
             "Description": "SPORT 2A Transmit Data Valid Output Enable",
-            "Group": "SPORT 2A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2A"
           },
           {
             "Name": "SPT2B_TDV_PBEN_O",
             "Description": "SPORT 2B Transmit Data Valid Output Enable",
-            "Group": "SPORT 2B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 2B"
           }
         ]
       },
@@ -10529,7 +10973,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_CLK_I",
@@ -10554,7 +10999,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_D0_I",
@@ -10579,7 +11025,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3A_D1_I",
@@ -10604,7 +11051,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_D0_I",
@@ -10629,7 +11077,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3B_D1_I",
@@ -10654,7 +11103,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_FS_I",
@@ -10679,7 +11129,8 @@
                 ]
               }
             },
-            "Group": "SPORT 3A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_FS_I",
@@ -10704,109 +11155,130 @@
                 ]
               }
             },
-            "Group": "SPORT 3B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT3A_CLK_O",
             "Description": "SPORT 3A Clock Output",
-            "Group": "SPORT 3A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_CLK_O",
             "Description": "SPORT 3B Clock Output",
-            "Group": "SPORT 3B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_D0_O",
             "Description": "SPORT 3A Data Channel 0 Output",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3A_D1_O",
             "Description": "SPORT 3A Data Channel 1 Output",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_D0_O",
             "Description": "SPORT 3B Data Channel 0 Output",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3B_D1_O",
             "Description": "SPORT 3B Data Channel 1 Output",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_FS_O",
             "Description": "SPORT 3A Frame Sync Output",
-            "Group": "SPORT 3A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_FS_O",
             "Description": "SPORT 3B Frame Sync Output",
-            "Group": "SPORT 3B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_TDV_O",
             "Description": "SPORT 3A Transmit Data Valid Output",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_TDV_O",
             "Description": "SPORT 3B Transmit Data Valid Output",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_CLK_PBEN_O",
             "Description": "SPORT 3A Clock Output Enable",
-            "Group": "SPORT 3A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3A_FS_PBEN_O",
             "Description": "SPORT 3A Frame Sync Output Enable",
-            "Group": "SPORT 3A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3A_D0_PBEN_O",
             "Description": "SPORT 3A Data Channel 0 Output Enable",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3A_D1_PBEN_O",
             "Description": "SPORT 3A Data Channel 1 Output Enable",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_CLK_PBEN_O",
             "Description": "SPORT 3B Clock Output Enable",
-            "Group": "SPORT 3B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3B_FS_PBEN_O",
             "Description": "SPORT 3B Frame Sync Output Enable",
-            "Group": "SPORT 3B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3B_D0_PBEN_O",
             "Description": "SPORT 3B Data Channel 0 Output Enable",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3B_D1_PBEN_O",
             "Description": "SPORT 3B Data Channel 1 Output Enable",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           },
           {
             "Name": "SPT3A_TDV_PBEN_O",
             "Description": "SPORT 3A Transmit Data Valid Output Enable",
-            "Group": "SPORT 3A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3A"
           },
           {
             "Name": "SPT3B_TDV_PBEN_O",
             "Description": "SPORT 3B Transmit Data Valid Output Enable",
-            "Group": "SPORT 3B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 3B"
           }
         ]
       },
@@ -10885,7 +11357,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_CLK_I",
@@ -10910,7 +11383,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_D0_I",
@@ -10935,7 +11409,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4A_D1_I",
@@ -10960,7 +11435,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_D0_I",
@@ -10985,7 +11461,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4B_D1_I",
@@ -11010,7 +11487,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_FS_I",
@@ -11035,7 +11513,8 @@
                 ]
               }
             },
-            "Group": "SPORT 4A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_FS_I",
@@ -11060,109 +11539,130 @@
                 ]
               }
             },
-            "Group": "SPORT 4B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT4A_CLK_O",
             "Description": "SPORT 4A Clock Output",
-            "Group": "SPORT 4A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_CLK_O",
             "Description": "SPORT 4B Clock Output",
-            "Group": "SPORT 4B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_D0_O",
             "Description": "SPORT 4A Data Channel 0 Output",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4A_D1_O",
             "Description": "SPORT 4A Data Channel 1 Output",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_D0_O",
             "Description": "SPORT 4B Data Channel 0 Output",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4B_D1_O",
             "Description": "SPORT 4B Data Channel 1 Output",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_FS_O",
             "Description": "SPORT 4A Frame Sync Output",
-            "Group": "SPORT 4A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_FS_O",
             "Description": "SPORT 4B Frame Sync Output",
-            "Group": "SPORT 4B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_TDV_O",
             "Description": "SPORT 4A Transmit Data Valid Output",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_TDV_O",
             "Description": "SPORT 4B Transmit Data Valid Output",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_CLK_PBEN_O",
             "Description": "SPORT 4A Clock Output Enable",
-            "Group": "SPORT 4A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4A_FS_PBEN_O",
             "Description": "SPORT 4A Frame Sync Output Enable",
-            "Group": "SPORT 4A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4A_D0_PBEN_O",
             "Description": "SPORT 4A Data Channel 0 Output Enable",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4A_D1_PBEN_O",
             "Description": "SPORT 4A Data Channel 1 Output Enable",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_CLK_PBEN_O",
             "Description": "SPORT 4B Clock Output Enable",
-            "Group": "SPORT 4B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4B_FS_PBEN_O",
             "Description": "SPORT 4B Frame Sync Output Enable",
-            "Group": "SPORT 4B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4B_D0_PBEN_O",
             "Description": "SPORT 4B Data Channel 0 Output Enable",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4B_D1_PBEN_O",
             "Description": "SPORT 4B Data Channel 1 Output Enable",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           },
           {
             "Name": "SPT4A_TDV_PBEN_O",
             "Description": "SPORT 4A Transmit Data Valid Output Enable",
-            "Group": "SPORT 4A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4A"
           },
           {
             "Name": "SPT4B_TDV_PBEN_O",
             "Description": "SPORT 4B Transmit Data Valid Output Enable",
-            "Group": "SPORT 4B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 4B"
           }
         ]
       },
@@ -11241,7 +11741,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_CLK_I",
@@ -11266,7 +11767,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_D0_I",
@@ -11291,7 +11793,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5A_D1_I",
@@ -11316,7 +11819,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_D0_I",
@@ -11341,7 +11845,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5B_D1_I",
@@ -11366,7 +11871,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_FS_I",
@@ -11391,7 +11897,8 @@
                 ]
               }
             },
-            "Group": "SPORT 5A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_FS_I",
@@ -11416,109 +11923,130 @@
                 ]
               }
             },
-            "Group": "SPORT 5B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT5A_CLK_O",
             "Description": "SPORT 5A Clock Output",
-            "Group": "SPORT 5A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_CLK_O",
             "Description": "SPORT 5B Clock Output",
-            "Group": "SPORT 5B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_D0_O",
             "Description": "SPORT 5A Data Channel 0 Output",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5A_D1_O",
             "Description": "SPORT 5A Data Channel 1 Output",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_D0_O",
             "Description": "SPORT 5B Data Channel 0 Output",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5B_D1_O",
             "Description": "SPORT 5B Data Channel 1 Output",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_FS_O",
             "Description": "SPORT 5A Frame Sync Output",
-            "Group": "SPORT 5A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_FS_O",
             "Description": "SPORT 5B Frame Sync Output",
-            "Group": "SPORT 5B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_TDV_O",
             "Description": "SPORT 5A Transmit Data Valid Output",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_TDV_O",
             "Description": "SPORT 5B Transmit Data Valid Output",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_CLK_PBEN_O",
             "Description": "SPORT 5A Clock Output Enable",
-            "Group": "SPORT 5A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5A_FS_PBEN_O",
             "Description": "SPORT 5A Frame Sync Output Enable",
-            "Group": "SPORT 5A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5A_D0_PBEN_O",
             "Description": "SPORT 5A Data Channel 0 Output Enable",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5A_D1_PBEN_O",
             "Description": "SPORT 5A Data Channel 1 Output Enable",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_CLK_PBEN_O",
             "Description": "SPORT 5B Clock Output Enable",
-            "Group": "SPORT 5B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5B_FS_PBEN_O",
             "Description": "SPORT 5B Frame Sync Output Enable",
-            "Group": "SPORT 5B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5B_D0_PBEN_O",
             "Description": "SPORT 5B Data Channel 0 Output Enable",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5B_D1_PBEN_O",
             "Description": "SPORT 5B Data Channel 1 Output Enable",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           },
           {
             "Name": "SPT5A_TDV_PBEN_O",
             "Description": "SPORT 5A Transmit Data Valid Output Enable",
-            "Group": "SPORT 5A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5A"
           },
           {
             "Name": "SPT5B_TDV_PBEN_O",
             "Description": "SPORT 5B Transmit Data Valid Output Enable",
-            "Group": "SPORT 5B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 5B"
           }
         ]
       },
@@ -11597,7 +12125,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_CLK_I",
@@ -11622,7 +12151,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_D0_I",
@@ -11647,7 +12177,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6A_D1_I",
@@ -11672,7 +12203,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_D0_I",
@@ -11697,7 +12229,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6B_D1_I",
@@ -11722,7 +12255,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_FS_I",
@@ -11747,7 +12281,8 @@
                 ]
               }
             },
-            "Group": "SPORT 6A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_FS_I",
@@ -11772,109 +12307,130 @@
                 ]
               }
             },
-            "Group": "SPORT 6B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT6A_CLK_O",
             "Description": "SPORT 6A Clock Output",
-            "Group": "SPORT 6A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_CLK_O",
             "Description": "SPORT 6B Clock Output",
-            "Group": "SPORT 6B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_D0_O",
             "Description": "SPORT 6A Data Channel 0 Output",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6A_D1_O",
             "Description": "SPORT 6A Data Channel 1 Output",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_D0_O",
             "Description": "SPORT 6B Data Channel 0 Output",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6B_D1_O",
             "Description": "SPORT 6B Data Channel 1 Output",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_FS_O",
             "Description": "SPORT 6A Frame Sync Output",
-            "Group": "SPORT 6A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_FS_O",
             "Description": "SPORT 6B Frame Sync Output",
-            "Group": "SPORT 6B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_TDV_O",
             "Description": "SPORT 6A Transmit Data Valid Output",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_TDV_O",
             "Description": "SPORT 6B Transmit Data Valid Output",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_CLK_PBEN_O",
             "Description": "SPORT 6A Clock Output Enable",
-            "Group": "SPORT 6A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6A_FS_PBEN_O",
             "Description": "SPORT 6A Frame Sync Output Enable",
-            "Group": "SPORT 6A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6A_D0_PBEN_O",
             "Description": "SPORT 6A Data Channel 0 Output Enable",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6A_D1_PBEN_O",
             "Description": "SPORT 6A Data Channel 1 Output Enable",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_CLK_PBEN_O",
             "Description": "SPORT 6B Clock Output Enable",
-            "Group": "SPORT 6B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6B_FS_PBEN_O",
             "Description": "SPORT 6B Frame Sync Output Enable",
-            "Group": "SPORT 6B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6B_D0_PBEN_O",
             "Description": "SPORT 6B Data Channel 0 Output Enable",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6B_D1_PBEN_O",
             "Description": "SPORT 6B Data Channel 1 Output Enable",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           },
           {
             "Name": "SPT6A_TDV_PBEN_O",
             "Description": "SPORT 6A Transmit Data Valid Output Enable",
-            "Group": "SPORT 6A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6A"
           },
           {
             "Name": "SPT6B_TDV_PBEN_O",
             "Description": "SPORT 6B Transmit Data Valid Output Enable",
-            "Group": "SPORT 6B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 6B"
           }
         ]
       },
@@ -11953,7 +12509,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_CLK_I",
@@ -11978,7 +12535,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_D0_I",
@@ -12003,7 +12561,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7A_D1_I",
@@ -12028,7 +12587,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_D0_I",
@@ -12053,7 +12613,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7B_D1_I",
@@ -12078,7 +12639,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_FS_I",
@@ -12103,7 +12665,8 @@
                 ]
               }
             },
-            "Group": "SPORT 7A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_FS_I",
@@ -12128,109 +12691,130 @@
                 ]
               }
             },
-            "Group": "SPORT 7B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           }
         ],
         "Outputs": [
           {
             "Name": "SPT7A_CLK_O",
             "Description": "SPORT 7A Clock Output",
-            "Group": "SPORT 7A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_CLK_O",
             "Description": "SPORT 7B Clock Output",
-            "Group": "SPORT 7B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_D0_O",
             "Description": "SPORT 7A Data Channel 0 Output",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7A_D1_O",
             "Description": "SPORT 7A Data Channel 1 Output",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_D0_O",
             "Description": "SPORT 7B Data Channel 0 Output",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7B_D1_O",
             "Description": "SPORT 7B Data Channel 1 Output",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_FS_O",
             "Description": "SPORT 7A Frame Sync Output",
-            "Group": "SPORT 7A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_FS_O",
             "Description": "SPORT 7B Frame Sync Output",
-            "Group": "SPORT 7B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_TDV_O",
             "Description": "SPORT 7A Transmit Data Valid Output",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_TDV_O",
             "Description": "SPORT 7B Transmit Data Valid Output",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_CLK_PBEN_O",
             "Description": "SPORT 7A Clock Output Enable",
-            "Group": "SPORT 7A"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7A_FS_PBEN_O",
             "Description": "SPORT 7A Frame Sync Output Enable",
-            "Group": "SPORT 7A"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7A_D0_PBEN_O",
             "Description": "SPORT 7A Data Channel 0 Output Enable",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7A_D1_PBEN_O",
             "Description": "SPORT 7A Data Channel 1 Output Enable",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_CLK_PBEN_O",
             "Description": "SPORT 7B Clock Output Enable",
-            "Group": "SPORT 7B"
+            "SignalType": "Clock Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7B_FS_PBEN_O",
             "Description": "SPORT 7B Frame Sync Output Enable",
-            "Group": "SPORT 7B"
+            "SignalType": "Miscellaneous Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7B_D0_PBEN_O",
             "Description": "SPORT 7B Data Channel 0 Output Enable",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7B_D1_PBEN_O",
             "Description": "SPORT 7B Data Channel 1 Output Enable",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           },
           {
             "Name": "SPT7A_TDV_PBEN_O",
             "Description": "SPORT 7A Transmit Data Valid Output Enable",
-            "Group": "SPORT 7A"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7A"
           },
           {
             "Name": "SPT7B_TDV_PBEN_O",
             "Description": "SPORT 7B Transmit Data Valid Output Enable",
-            "Group": "SPORT 7B"
+            "SignalType": "Data Signals",
+            "PeripheralSubGroup": "SPORT 7B"
           }
         ]
       },
@@ -12287,13 +12871,6 @@
     {
       "Name": "STM0",
       "Description": "STM0",
-      "Cores": [
-        "FX"
-      ]
-    },
-    {
-      "Name": "STM1",
-      "Description": "STM1",
       "Cores": [
         "FX"
       ]
@@ -12498,7 +13075,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TM0_ACI15_I",
@@ -12522,7 +13100,8 @@
                   }
                 ]
               }
-            }
+            },
+            "SignalType": "Miscellaneous Signals"
           }
         ]
       },
@@ -12678,35 +13257,43 @@
         "Outputs": [
           {
             "Name": "TRGS_PCGA_O",
-            "Description": "Slave Trigger mapped to PCGA"
+            "Description": "Slave Trigger mapped to PCGA",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGB_O",
-            "Description": "Slave Trigger mapped to PCGB"
+            "Description": "Slave Trigger mapped to PCGB",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGE_O",
-            "Description": "Slave Trigger mapped to PCGE"
+            "Description": "Slave Trigger mapped to PCGE",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGF_O",
-            "Description": "Slave Trigger mapped to PCGF"
+            "Description": "Slave Trigger mapped to PCGF",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGC_O",
-            "Description": "Slave Trigger mapped to PCGC"
+            "Description": "Slave Trigger mapped to PCGC",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGD_O",
-            "Description": "Slave Trigger mapped to PCGD"
+            "Description": "Slave Trigger mapped to PCGD",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGG_O",
-            "Description": "Slave Trigger mapped to PCGG"
+            "Description": "Slave Trigger mapped to PCGG",
+            "SignalType": "Miscellaneous Signals"
           },
           {
             "Name": "TRGS_PCGH_O",
-            "Description": "Slave Trigger mapped to PCGH"
+            "Description": "Slave Trigger mapped to PCGH",
+            "SignalType": "Miscellaneous Signals"
           }
         ]
       }
@@ -18927,7 +19514,6 @@
     "CRC3": [],
     "DMA49": [],
     "DMA50": [],
-    "STM1": [],
     "FIR1": [],
     "IIR1": [],
     "IIR2": [],

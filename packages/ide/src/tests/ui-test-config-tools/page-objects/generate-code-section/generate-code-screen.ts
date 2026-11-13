@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { By, WebView, Workbench } from "vscode-extension-tester";
 import { expect } from "chai";
+
+export const generateCodeContainer: By = By.css(
+  "[data-test='generate-code:container']",
+);
 
 export const rVCheckbox: By = By.css(
   "[data-test='generate-code:core:RV:checkbox']",
@@ -91,7 +95,16 @@ export async function generateCode(
   // Click generate button and dismiss any overwrite modal
   await UIUtils.clickElement(view, generateCodeButton);
   await dismissOverwriteModal(view);
+
   console.log("Files are getting generated");
+
+  // Dismiss Code Generation Directory dialog
+  await view.switchBack();
+  await UIUtils.sleep(2000);
+  await UIUtils.dismissOkDialog(wb);
+  await view.switchToFrame();
+  await UIUtils.sleep(3000);
+
   /**
    * Waits for the generated files list to appear, extracts and normalizes the text content,
    * groups the items (assuming 3 elements per file entry), and verifies that each grouped

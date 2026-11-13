@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import CfsSingleColumnLayout from '@common/components/cfs-main-layout/CfsSingleColumnLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsTwoColumnLayout';
 import {StreamSidebar} from './sidebar/stream-sidebar';
 import {StreamConfigSidePanel} from './stream-config/stream-config-sidepanel';
 import styles from './dfg-styles.module.scss';
@@ -36,17 +37,17 @@ import {
 import {useActiveScreenSubscreen} from '../../state/slices/app-context/appContext.selector';
 import {useCallback, useEffect} from 'react';
 import {DfgStreamTable} from './dfg-stream-table/dfg-stream-table';
-import SingleColumnLayout from '../../../../common/components/single-column-layout/single-column-layout';
 import {DfgStreamTableFilter} from './dfg-stream-table/dfg-stream-table-filter';
 import type {NavigationItem} from '../../../../common/types/navigation';
 import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
-import {exportCSV} from '../../../../common/api';
+import {exportCSV} from '../../utils/api';
 import {
 	useDfgUI,
 	useStreams
 } from '../../state/slices/gaskets/gasket.selector';
 import {DFGCanvas, to8DigitHex} from './dfg-canvas/dfg-canvas';
 import {useFilteredStreamsBySourcesAndDest} from './hooks/useFilteredStreams';
+import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 
 // Function to generate CSV content from stream data
 function generateStreamTableCSV(
@@ -148,43 +149,40 @@ export function Dfg({
 		<>
 			{activeScreenSubscreen &&
 			activeScreenSubscreen === navigationItems.dfgStreamList ? (
-				<SingleColumnLayout
-					header={
-						<div className={styles.headerItems}>
-							<div className={styles.headerleft}>
-								<DfgStreamTableFilter />
-							</div>
-							<div className={styles.headerRight}>
-								<Button
-									id='export-as-csv'
-									dataTest='export-as-csv'
-									appearance='secondary'
-									disabled={shouldDisableExportCSV}
-									onClick={handleExportCSV}
-								>
-									{t({id: 'dfgStreamList.exportAsCsv'})}
-								</Button>
-								<Button
-									id='create-stream-button'
-									appearance='primary'
-									onClick={() => {
-										dispatch(setEditingStream({}));
-									}}
-								>
-									{t({id: 'dfg.createStream'})}
-								</Button>
-							</div>
+				<CfsSingleColumnLayout>
+					<div slot='header' className={styles.headerItems}>
+						<div className={styles.headerleft}>
+							<DfgStreamTableFilter />
 						</div>
-					}
-					body={
-						<div
-							data-test='dfg-stream-list'
-							className={styles.dfgStreamTable}
-						>
-							<DfgStreamTable />
+						<div className={styles.headerRight}>
+							<Button
+								id='export-as-csv'
+								dataTest='export-as-csv'
+								appearance='secondary'
+								disabled={shouldDisableExportCSV}
+								onClick={handleExportCSV}
+							>
+								{t({id: 'dfgStreamList.exportAsCsv'})}
+							</Button>
+							<Button
+								id='create-stream-button'
+								appearance='primary'
+								onClick={() => {
+									dispatch(setEditingStream({}));
+								}}
+							>
+								{t({id: 'dfg.createStream'})}
+							</Button>
 						</div>
-					}
-				/>
+					</div>
+
+					<div
+						data-test='dfg-stream-list'
+						className={styles.dfgStreamTable}
+					>
+						<DfgStreamTable />
+					</div>
+				</CfsSingleColumnLayout>
 			) : (
 				<div
 					data-test='dfg-visualisation'
@@ -228,6 +226,9 @@ export function Dfg({
 export function LeftHeaderItems() {
 	const {streamView} = useDfgUI();
 	const dispatch = useAppDispatch();
+	const l10n = useLocaleContext()?.dfgVisualisation as
+		| Record<string, string>
+		| undefined;
 
 	const searchQuery = useAppSelector(
 		state => state.gasketsReducer.searchQuery ?? ''
@@ -242,6 +243,7 @@ export function LeftHeaderItems() {
 		<>
 			<SearchInput
 				inputVal={searchQuery}
+				placeholder={l10n?.typeToSearch ?? 'Type to search...'}
 				dataTest='dfg-search-input'
 				onClear={() => {
 					dispatch(setSearchQuery(''));

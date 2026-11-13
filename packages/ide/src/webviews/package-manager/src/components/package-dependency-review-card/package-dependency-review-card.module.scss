@@ -35,6 +35,11 @@
 		var(--vscode-commandCenter-border);
 }
 
+/* Marks a dependency the user must resolve before installation can proceed. */
+.conflicting {
+	border-color: colors.$error;
+}
+
 .cardContent {
 	display: flex;
 	padding: layout.$spacing-5;
@@ -51,6 +56,7 @@
 	align-items: flex-start;
 	align-self: stretch;
 	align-items: center;
+	gap: layout.$spacing-3;
 }
 
 .cardBody {
@@ -75,6 +81,11 @@
 .name {
 	color: colors.$default-foreground;
 	@include fonts.heading-h3;
+	flex: 1 1 auto;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .status {
@@ -82,6 +93,8 @@
 	justify-content: center;
 	align-items: center;
 	gap: 16px;
+	flex-shrink: 0;
+	white-space: nowrap;
 }
 
 .version {
@@ -119,6 +132,7 @@
 	display: flex;
 	flex-direction: row;
 	flex: 1 0 0;
+	word-break: break-word;
 }
 
 .link {

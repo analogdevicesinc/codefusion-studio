@@ -270,9 +270,7 @@ describe("CfsTaskProvider", function () {
 				}
 			}
 
-			class MockZephyrDefaultStrategy
-				implements DefaultTaskDiscoveryStrategy
-			{
+			class MockZephyrDefaultStrategy implements DefaultTaskDiscoveryStrategy {
 				readonly id = PLATFORM_IDS.ZEPHYR;
 				public discoverTasksCalls: string[][] = [];
 

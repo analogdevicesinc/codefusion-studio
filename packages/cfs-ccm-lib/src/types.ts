@@ -15,7 +15,7 @@
 
 // RequireOptional<T> is a utility type that makes all optional properties of T required and omits the rest.
 export type RequireOptional<T> = {
-    [Key in keyof T as Omit<T, Key> extends T
-        ? Key
-        : never]-?: T[Key];
+    [
+        Key in keyof T as Omit<T, Key> extends T ? Key : never
+    ]-?: T[Key];
 };

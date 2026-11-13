@@ -84,3 +84,9 @@
 .fileProperties {
 	padding-bottom: layout.$spacing-2;
 }
+
+.error {
+	margin: 0;
+	@include fonts.body-b1;
+	color: colors.$error;
+}

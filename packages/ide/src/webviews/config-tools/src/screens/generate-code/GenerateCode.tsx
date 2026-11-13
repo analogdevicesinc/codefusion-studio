@@ -19,11 +19,19 @@ import ProjectList from './project-list/ProjectList';
 import GeneratedFiles from './generated-files/GeneratedFiles';
 import {getCfsConfigDict} from '../../utils/config';
 import {
-	createCodeGenerationPromise,
+	cancelGenerateCode,
 	getGenerateCodeWarning,
 	showGenerateCodeWarning
 } from '../../utils/api';
-import {useSelectedProjects} from '../../state/slices/app-context/appContext.selector';
+import {
+	useCodeGenState,
+	useSelectedProjects
+} from '../../state/slices/app-context/appContext.selector';
+import {
+	resetCodeGenState,
+	runCodeGeneration
+} from '../../state/slices/app-context/appContext.reducer';
+import {useAppDispatch} from '../../state/store';
 import {usePeripheralControlsPerProjects} from '../../hooks/use-peripheral-controls-per-projects';
 import type {TLocaleContext} from '../../common/types/context';
 import type {ControlCfg} from '../../../../common/types/soc';
@@ -50,7 +58,9 @@ const TEXTS = [
 ];
 
 function GenerateCode() {
-	const [isFirstScreen, setIsFirstScreen] = useState<boolean>(true);
+	const dispatch = useAppDispatch();
+	const codeGenState = useCodeGenState();
+	const isCodeGenerationIdle = codeGenState.status === 'idle';
 	const selectedProjects = useSelectedProjects();
 	const aiModels = useAIModels();
 	const [aiBackends, setAiBackends] = useState(getAiBackends());
@@ -64,6 +74,12 @@ function GenerateCode() {
 		useState<boolean>();
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.generate;
+	const generateL10n = useLocaleContext()?.generateCode as
+		| Record<string, string>
+		| undefined;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 
 	const [projectsControls, setProjectsControls] = useState<
 		Record<string, Record<string, ControlCfg[]>>
@@ -109,10 +125,6 @@ function GenerateCode() {
 			}),
 		[aiModels, selectedProjects, projects, aiBackends]
 	);
-
-	const [codeGenerationPromise, setCodeGenerationPromise] = useState<
-		Promise<string[] | string>
-	>(Promise.resolve(['']));
 
 	const controlsPromises = usePeripheralControlsPerProjects(
 		projects.map(project => project.ProjectId)
@@ -165,9 +177,18 @@ function GenerateCode() {
 			setIsCodeGenerationTimeModalOpen(true);
 		} else {
 			setIsWarningModalOpen(false);
-			setIsFirstScreen(false);
+			void dispatch(runCodeGeneration(selectedProjects));
 		}
-	}, [selectedProjects, slowAIModelCodeGen]);
+	}, [selectedProjects, slowAIModelCodeGen, dispatch]);
+
+	const handleBackOrCancelClick = useCallback(async () => {
+		if (codeGenState.status === 'running') {
+			await cancelGenerateCode();
+		}
+
+		dispatch(resetCodeGenState());
+		setIsWarningModalOpen(false);
+	}, [codeGenState.status, dispatch]);
 
 	const handleModalCheckboxChange = (
 		event: Event | React.FormEvent<HTMLElement>
@@ -187,25 +208,23 @@ function GenerateCode() {
 			});
 	}, []);
 
-	useEffect(() => {
-		if (!isFirstScreen) {
-			const promise = createCodeGenerationPromise(selectedProjects);
-			setCodeGenerationPromise(promise);
-		}
-	}, [isFirstScreen, selectedProjects]);
-
 	return (
 		<EightColumnLayout
-			header={isFirstScreen ? TEXTS[0].header : TEXTS[1].header}
+			header={
+				isCodeGenerationIdle
+					? (generateL10n?.header ?? TEXTS[0].header)
+					: (generateL10n?.generatedFiles ?? TEXTS[1].header)
+			}
 			subtitle={
 				isWindowTooSmall
-					? 'This feature is not currently supported for windows this size. If possible please increase the size of this window.'
-					: isFirstScreen
-						? TEXTS[0].subtitle
+					? (commonL10n?.windowTooSmall ??
+						'This feature is not currently supported for windows this size. If possible please increase the size of this window.')
+					: isCodeGenerationIdle
+						? (generateL10n?.subtitle ?? TEXTS[0].subtitle)
 						: TEXTS[1].subtitle
 			}
 			body={
-				isWindowTooSmall ? undefined : isFirstScreen ? (
+				isWindowTooSmall ? undefined : isCodeGenerationIdle ? (
 					<>
 						{/* Render a ResolvedProjectControl for each promise */}
 						{Object.keys(projectsControls).length !==
@@ -251,7 +270,9 @@ function GenerateCode() {
 												setIsCodeGenerationTimeModalOpen(true);
 												setIsWarningModalOpen(false);
 											} else {
-												setIsFirstScreen(false);
+												void dispatch(
+													runCodeGeneration(selectedProjects)
+												);
 											}
 
 											if (shouldShowWarning)
@@ -307,18 +328,16 @@ function GenerateCode() {
 							}}
 							onConfirm={() => {
 								setIsCodeGenerationTimeModalOpen(false);
-								setIsFirstScreen(false);
+								void dispatch(runCodeGeneration(selectedProjects));
 							}}
 						/>
 					</>
 				) : (
-					<CfsSuspense>
-						<GeneratedFiles promise={codeGenerationPromise} />
-					</CfsSuspense>
+					<GeneratedFiles />
 				)
 			}
 			footer={
-				isFirstScreen ? (
+				isCodeGenerationIdle ? (
 					<>
 						<span className={styles.descriptionText}>
 							{i10n?.warningModal?.description}
@@ -328,18 +347,20 @@ function GenerateCode() {
 							disabled={!selectedProjects.length}
 							onClick={handleGenerateClick}
 						>
-							Generate
+							{generateL10n?.generateButton ?? 'Generate'}
 						</Button>
 					</>
 				) : (
 					<Button
 						appearance='secondary'
+						dataTest='generate-code:back-btn'
 						onClick={() => {
-							setIsFirstScreen(true);
-							setIsWarningModalOpen(false);
+							void handleBackOrCancelClick();
 						}}
 					>
-						Back
+						{codeGenState.status === 'running'
+							? (generateL10n?.cancelButton ?? 'Cancel')
+							: (generateL10n?.backButton ?? 'Back')}
 					</Button>
 				)
 			}

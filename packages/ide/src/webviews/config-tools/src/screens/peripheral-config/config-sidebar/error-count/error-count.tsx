@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,11 @@ function ErrorCount({count}: ErrorCountProps) {
 			data-test='peripheral:error'
 		>
 			<ConflictIcon data-test='signal-assignment:conflict' />
-			<p>{`${count} ${count === 1 ? l10n?.peripherals?.error?.one : l10n?.peripherals?.error?.other}`}</p>
+			<p>{`${count} ${
+				count === 1
+					? l10n?.peripherals?.error?.one
+					: l10n?.peripherals?.error?.other
+			}`}</p>
 		</div>
 	) : null;
 }

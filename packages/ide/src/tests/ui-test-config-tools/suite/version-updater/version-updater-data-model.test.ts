@@ -43,8 +43,8 @@ describe("Version Updater Tests - Outdated Data Model Version", () => {
   let view: WebView;
   const configFile = "mock-version-updater-1.0.0.cfsconfig";
   const configPath = getConfigPathForFile(configFile);
-  const packageName = "TQFN";
-  const soc = "MAX32690";
+  const packageName = "PQFN";
+  const soc = "TEST690";
 
   // Dynamic selectors scoped to DATA MODEL VERSION
   const resolutionDropdown = pluginDropdown(packageName);
@@ -53,19 +53,14 @@ describe("Version Updater Tests - Outdated Data Model Version", () => {
   const componentNameLabel = pluginNameLabel(`${soc}-${packageName}`);
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await browser.waitForWorkbench();
-    workbench = new Workbench();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      waitForWorkbench: true,
+    }));
   });
 
   after(async function () {
     // Teardown - reset cfsconfig file
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   /*
@@ -74,10 +69,10 @@ describe("Version Updater Tests - Outdated Data Model Version", () => {
    * Then:  The "System Planner Critical Error" header is displayed
    * When:  The user selects a resolution from the dropdown and clicks Continue
    * And:   The user clicks "Continue to System Planner"
-   * Then:  The System Planner home page loads showing the MAX32690 chip title
+   * Then:  The System Planner home page loads showing the TEST690 chip title
    * And:   The "System Planner Configuration Tools" header is visible
    */
-  it("Verify System Planner Critical Error for an incorrect data model version - 1.0.0", async function () {
+  it("Verify System Planner Critical Error for an incorrect data model version - 1.0.0 @regression", async function () {
     await browser.openResources(configPath);
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
@@ -184,8 +179,8 @@ describe("Version Updater Tests - Outdated Data Model Version", () => {
 
     const pageTitleText = await pageTitle.getText();
     expect(pageTitleText).to.equal(
-      "MAX32690",
-      "MAX32690 title should be visible in the WebView",
+      "TEST690",
+      "TEST690 title should be visible in the WebView",
     );
 
     const headerElement = await UIUtils.waitForElementToBeVisible(
@@ -217,19 +212,14 @@ describe("Version Updater Tests - Unsupported Data Model Version", () => {
   const configPath = getConfigPathForFile(configFile);
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await browser.waitForWorkbench();
-    workbench = new Workbench();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      waitForWorkbench: true,
+    }));
   });
 
   after(async function () {
     // Teardown - reset cfsconfig file
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
   /*
    * Given: A .cfsconfig file whose DataModelVersion is set to an unsupported future value (2.0.0)
@@ -237,7 +227,7 @@ describe("Version Updater Tests - Unsupported Data Model Version", () => {
    * Then:  The "System Planner Critical Error" header is displayed
    * And:   No resolution options are rendered (resolution container is absent from the DOM)
    */
-  it("Verify no resolution option is available for unsupported data model version - 2.0.0", async function () {
+  it("Verify no resolution option is available for unsupported data model version - 2.0.0 @regression", async function () {
     await browser.openResources(configPath);
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();

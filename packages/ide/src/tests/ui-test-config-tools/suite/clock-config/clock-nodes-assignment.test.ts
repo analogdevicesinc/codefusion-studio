@@ -97,23 +97,20 @@ describe("System Planner clock configuration diagram for frequencies used by dif
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
   before(async function () {
     this.timeout(8000);
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   after(async () => {
     if (configPath) {
       // Teardown - reset cfsconfig file
-      await UIUtils.restoreFixtureFileFromGit(configPath);
+      await UIUtils.teardownTestSuite(view, configPath);
     }
   });
 
-  it("Enabling the clock nodes under clock configuration", async () => {
+  it("Enabling the clock nodes under clock configuration @regression", async () => {
     // ===Given I open the configuration file "manual32690.cfsconfig"===
     await browser.openResources(configPath);
     workbench = new Workbench();

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,9 @@ function PeripheralAllocationCard({
 			{(signalCount > 0 && pinsAssignedToPeripheral.length > 0) ||
 			!assignable ? (
 				<div
-					className={`${styles.accordionWrapper} ${lastHovered ? styles.lasthovered : ''}`}
+					className={`${styles.accordionWrapper} ${
+						lastHovered ? styles.lasthovered : ''
+					}`}
 				>
 					<Accordion
 						disableBorderOnHover
@@ -148,7 +150,9 @@ function PeripheralAllocationCard({
 								{peripheralErrorCount > 0 ||
 								hasPeripheralPinConflictError ? (
 									<div className={styles.conflictIconWrapper}>
-										<ConflictIcon />
+										<ConflictIcon
+											data-test={`core:${projectId}:allocation:${peripheral.name}:conflict`}
+										/>
 									</div>
 								) : (
 									<div className={styles.iconPlaceholder} />
@@ -160,7 +164,11 @@ function PeripheralAllocationCard({
 									position='bottom'
 								>
 									<Button
-										className={`${styles.configIcon} ${isPeripheralActive && !isSignalActive ? styles.isActive : ''}`}
+										className={`${styles.configIcon} ${
+											isPeripheralActive && !isSignalActive
+												? styles.isActive
+												: ''
+										}`}
 										appearance='icon'
 										onClick={e => {
 											e.stopPropagation();

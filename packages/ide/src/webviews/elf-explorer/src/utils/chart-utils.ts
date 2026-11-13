@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,41 +62,57 @@ export const TooltipInfo = [
 	{
 		title: 'Bit Format',
 		description:
-			'Specifies the architecture of the file, indicating whether it is a 32-bit or 64-bit binary. This affects the width of data units and addresses used by the program'
+			'Specifies the architecture of the file, indicating whether it is a 32-bit or 64-bit binary. This affects the width of data units and addresses used by the program',
+		l10nTitleKey: 'tooltipBitFormat',
+		l10nDescKey: 'tooltipBitFormatDesc'
 	},
 	{
 		title: 'Byte Order',
 		description:
-			'Indicates the endianness of the file, which can be Least Significant Byte (LSB, little-endian) or Most Significant Byte (MSB, big-endian). This determines how byte sequences are ordered in memory'
+			'Indicates the endianness of the file, which can be Least Significant Byte (LSB, little-endian) or Most Significant Byte (MSB, big-endian). This determines how byte sequences are ordered in memory',
+		l10nTitleKey: 'tooltipByteOrder',
+		l10nDescKey: 'tooltipByteOrderDesc'
 	},
 	{
 		title: 'File Type',
 		description:
-			'Denotes the type of the file, such as an executable binary, an object file, a shared library, or a core dump.'
+			'Denotes the type of the file, such as an executable binary, an object file, a shared library, or a core dump.',
+		l10nTitleKey: 'tooltipFileType',
+		l10nDescKey: 'tooltipFileTypeDesc'
 	},
 	{
 		title: 'Architecture',
 		description:
-			'Specifies the target architecture for the file, such as ARM, x86, MIPS, etc. This indicates the CPU type and instruction set the file is intended for.'
+			'Specifies the target architecture for the file, such as ARM, x86, MIPS, etc. This indicates the CPU type and instruction set the file is intended for.',
+		l10nTitleKey: 'tooltipArchitecture',
+		l10nDescKey: 'tooltipArchitectureDesc'
 	},
 	{
 		title: 'ABI and ELF Version',
 		description:
-			'Indicates the Application Binary Interface (ABI) version used, which defines standards for binary interfacing between software components, ensuring compatibility and efficient execution and also specifies the version of the ELF format, typically version 1. It may also indicate compliance with specific standards like System V (SYSV)'
+			'Indicates the Application Binary Interface (ABI) version used, which defines standards for binary interfacing between software components, ensuring compatibility and efficient execution and also specifies the version of the ELF format, typically version 1. It may also indicate compliance with specific standards like System V (SYSV)',
+		l10nTitleKey: 'tooltipAbiVersion',
+		l10nDescKey: 'tooltipAbiVersionDesc'
 	},
 	{
 		title: 'Linkage',
 		description:
-			'Indicates whether the file is statically or dynamically linked. Statically linked files include all necessary libraries within the executable, while dynamically linked files rely on external shared libraries at runtime.'
+			'Indicates whether the file is statically or dynamically linked. Statically linked files include all necessary libraries within the executable, while dynamically linked files rely on external shared libraries at runtime.',
+		l10nTitleKey: 'tooltipLinkage',
+		l10nDescKey: 'tooltipLinkageDesc'
 	},
 	{
 		title: 'Debug Information',
 		description:
-			'Indicates whether the file contains debugging information. This information is used by debuggers to provide detailed analysis, including source code references and variable names.'
+			'Indicates whether the file contains debugging information. This information is used by debuggers to provide detailed analysis, including source code references and variable names.',
+		l10nTitleKey: 'tooltipDebugInfo',
+		l10nDescKey: 'tooltipDebugInfoDesc'
 	},
 	{
 		title: 'Stripping',
 		description:
-			'Indicates whether the file has had its symbol table and debugging information removed (stripped) to reduce size. Non-stripped files retain these elements, which are useful for debugging and development.'
+			'Indicates whether the file has had its symbol table and debugging information removed (stripped) to reduce size. Non-stripped files retain these elements, which are useful for debugging and development.',
+		l10nTitleKey: 'tooltipStripping',
+		l10nDescKey: 'tooltipStrippingDesc'
 	}
 ];

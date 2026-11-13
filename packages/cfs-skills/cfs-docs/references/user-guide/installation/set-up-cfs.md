@@ -1,88 +1,54 @@
 ---
-description: Set up Paths for CodeFusion Studio
+description: Set the CodeFusion Studio SDK path
 author: Analog Devices
-date: 2025-12-15
+date: 2026-10-23
 ---
 
-# Set up CodeFusion Studio
+# Set the CodeFusion Studio SDK path
 
-If you are installing CodeFusion Studio for the first time or upgrading from an earlier version, you may receive a notification to check that your CFS SDK path is set correctly.
+Set the SDK path whether you are installing CodeFusion Studio (CFS) for the first time or upgrading from an earlier version. The SDK path is the directory that the [CodeFusion Studio installer](install-cfs.md) installed the CFS SDK into (for example, `C:\analog\cfs\<version>` on Windows). The `cfs.sdk.path` setting tells the CFS VS Code extension which CFS SDK installation to use.
 
-## If a notification appears
+## Option 1: Set the path using the VS Code UI
 
-### Missing or invalid path
+1. Open the **Command Palette** (`Ctrl+Shift+P` on Windows/Linux, `⇧⌘P` on macOS).
+2. Run **(CFS) Select the CodeFusion Studio path from the discovered installations.**
+3. Select the CFS SDK you want to use. Each entry shows the installation path and its version. The SDK version must be compatible with your extension version — see [Compatibility rules](manage-extension-versions.md#compatibility-rules).
 
-You may see errors such as:
+    ![Select your CodeFusion Studio path](images/sdk-select-path-dark.png#only-dark)
+    ![Select your CodeFusion Studio path](images/sdk-select-path-light.png#only-light)
 
-- `Error verifying the CFS SDK version…`
-- `The path to the CFS SDK is missing or not valid…`
-
-These appear when the folder is missing, moved, or incorrect.
-
-### Version incompatibility
-
-If the CFS SDK and CFS VS Code extension are incompatible, you may see:
-
-- `The selected CFS SDK (vX.Y.Z) is not compatible with the extension (vA.B.C).`
-
-This occurs when the SDK and extension versions do not match (for example, when the extension auto-updated but the SDK did not).
-
-### How to fix
-
-To resolve either issue:
-
-- Click **Download SDK** to install the correct SDK version (if it isn't already installed), or
-- Click **Choose SDK path** to select a valid or compatible SDK directory.
-    - Clicking **Choose SDK path** will search for SDKs in the default installation directories.
-        - Linux: `/home/<username>/analog/cfs/<version>`
-        - macOS: `/Users/<username>/analog/cfs/<version>`
-        - Windows: `C:\analog\cfs\<version>`
-    - Select the SDK that matches your CFS extension version.
-    - If your SDK is in a non-default directory, browse to find and select it.
+    !!! note
+        Only installations in the default location are discovered. If you installed the CFS SDK in a custom directory, select **Browse...** and then select that directory.
 
 !!! tip
-    If your SDK and extension versions do not match exactly, ensure the SDK version is compatible with your extension. For details, see [Compatibility rules](set-up-cfs.md#compatibility-rules).
+    CodeFusion Studio prompts you if the path is missing, does not point to a valid CFS SDK, or points to an SDK that is not compatible with the extension:
 
-## If no notification appears
+    ![CFS SDK path warning](images/sdk-path-invalid-dark.png#only-dark)
+    ![CFS SDK path warning](images/sdk-path-invalid-light.png#only-light)
 
-If you did not see a notification, your SDK and extension versions are likely already compatible and correctly configured. No further action is required in this case.
+    Select **Choose SDK path** to open the same list of discovered installations, or select **Download SDK** to open the CodeFusion Studio product page and download the installer. To run the installer, see [Install CodeFusion Studio](install-cfs.md).
 
-If you still want to verify or change the SDK path (for example, if you have multiple SDKs installed or are troubleshooting), you can manually update the SDK path as described below.
+## Option 2: Update the path manually
 
-### Manually set the SDK path
+If the Command Palette action does not list the installation you need, or you prefer to set the path yourself, edit the setting directly:
 
-1. Open VS Code Settings from the **Manage** gear icon, or using the keyboard shortcut (`Ctrl+,`, on Windows/Linux, `⌘,` on macOS).
+1. Open VS Code Settings from the **Manage** gear icon, or using the keyboard shortcut (`Ctrl+,` on Windows/Linux, `⌘,` on macOS).
     ![VS Code settings](images/access-vs-code-settings-dark.png#only-dark)
     ![VS Code settings](images/access-vs-code-settings-light.png#only-light)
 2. Search for `cfs.sdk.path`.
     ![Search for CFS SDK path](images/verify-sdk-settings-dark.png#only-dark)
     ![Search for CFS SDK path](images/verify-sdk-settings-light.png#only-light)
-3. Update the path to point to the installation directory of your CodeFusion Studio SDK. The default CFS SDK installation directories are:
+3. Update the path to point to the installation directory of the CFS SDK you want to use. The default CFS SDK installation directories are:
     - Linux: `/home/<username>/analog/cfs/<version>`
     - macOS: `/Users/<username>/analog/cfs/<version>`
     - Windows: `C:\analog\cfs\<version>`
-4. Restart VS Code for the changes to take effect.
 
 !!! note
-    Replace `<version>` with the SDK version installed on your system.  
-    Ensure the version follows the compatibility rules.
+    Replace `<version>` with the SDK version installed on your system. If you selected a custom directory during installation, ensure that the setting points to that location.
 
-## Compatibility rules
+!!! note "No need to restart VS Code"
+    Changing the SDK path restarts the VS Code extension host automatically, which ends any active debug session. If CodeFusion Studio still uses the previous SDK, run **Developer: Restart Extension Host** from the Command Palette, or restart VS Code.
 
-CFS uses the following compatibility rules to determine whether the SDK and CFS VS Code extension are compatible:
+## Next steps
 
-- Major versions must match. For example, extension 2.x.x requires SDK 2.x.x.
-- The SDK minor version must be the same or higher than the extension's minor version. For example, extension 2.1.x would require SDK 2.1.x or higher, and will not work with SDK 2.0.x or any 1.x.x version.
-- Patch versions do not affect compatibility. For example, extension 2.0.1 and SDK 2.0.0 are considered compatible.
-
-### Compatibility summary
-
-| Extension version | Compatible SDK versions                | Not compatible                 |
-| ----------------- | -------------------------------------- | ------------------------------ |
-| **X.Y.Z**         | **X.Y.\*** and higher (same major X)   | **X.(Y-1).\***, **(X-1).\***, **(X+1).\*** |
-
-!!! info "Check the installed extension version"
-    Open the **Extensions** panel in VS Code and select **CodeFusion Studio**. The installed version is shown at the top of the details panel.
-
-!!! tip
-    If you want to continue using an older SDK (for example, if the extension auto-updated), you can reinstall the matching extension version. First, disable automatic updates for the CFS extension. Then open the **Extensions** panel, click the gear icon next to the CodeFusion Studio extension, and choose **Install Specific Version…**. You can also install a specific version using **Install from VSIX…**. Refer to [Install extensions](install-extensions.md) for additional information.
+Use the [Package Manager](package-manager/index.md) to install additional components.

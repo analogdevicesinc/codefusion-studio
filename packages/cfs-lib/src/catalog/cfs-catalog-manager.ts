@@ -70,16 +70,20 @@ export class CatalogManager {
 	 * If it cannot be refreshed and it had no previous contents, attempts to
 	 * import the catalog from the backup zip file (fails if the backup is not available).
 	 *
-	 * @returns {Promise<void>} A promise that resolves when the catalog is loaded.
+	 * @returns {Promise<boolean>} A promise that resolves once the catalog is loaded. The value is
+	 * false when the server refresh did not happen, either because the manager is offline or
+	 * because the service was unreachable.
 	 * @throws an error if the catalog cannot be loaded.
 	 */
-	async loadCatalog(): Promise<void> {
+	async loadCatalog(): Promise<boolean> {
 		await this.validateCatalog(); // check the current catalog is OK
-		await this.refreshCatalog(); // fetch updates from the server
+		const refreshed = await this.refreshCatalog(); // fetch updates from the server
 		// if the catalog is empty, try to import from the backup file
 		if (await this.#socCatalog.isEmpty()) {
 			await this.importBackupCatalog();
 		}
+
+		return refreshed;
 	}
 
 	/**
@@ -87,11 +91,18 @@ export class CatalogManager {
 	 *
 	 * @throws {Error} If a non-network error occurs during the refresh.
 	 *
-	 * @returns {Promise<void>} A promise that resolves when the catalog is refreshed.
+	 * @returns {Promise<boolean>} A promise that resolves to true when the catalog was refreshed,
+	 * or false when the manager is offline or the service was unreachable.
 	 */
-	private async refreshCatalog(): Promise<void> {
+	private async refreshCatalog(): Promise<boolean> {
+		// SocCatalog.refresh() does nothing without an API client.
+		if (!this.apiClient) {
+			return false;
+		}
+
 		try {
 			await this.#socCatalog.refresh();
+			return true;
 		} catch (err) {
 			if (err instanceof CatalogError) {
 				// ignore network errors, machine may be offline
@@ -103,6 +114,8 @@ export class CatalogManager {
 					throw err;
 				}
 			}
+
+			return false;
 		}
 	}
 

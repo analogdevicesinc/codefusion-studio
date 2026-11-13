@@ -1,16 +1,13 @@
 ---
 description: Full reference for AI Debug Assistant tools and diagnostic workflows.
 author: Analog Devices
-date: "2026-05-15"
+date: "2026-09-24"
 ---
 
 # Tools and workflows reference
 
 !!! info "Preview"
     The AI Debug Assistant is currently in preview and may change in future releases.
-
-!!! tip "Recommended Interface"
-    For production workflows, we recommend using the MCP server with MCP-enabled AI clients for maximum portability and future compatibility.
 
 This page documents the tools, resources, and diagnostic prompts exposed through the CFS MCP debug server.
 
@@ -82,7 +79,6 @@ Direct GDB command execution with built-in safety guards.
 |---|---|---|
 | `debug_get_context` | Get comprehensive debug context: backtrace, registers, and local variables. | — |
 | `debug_analyze_fault` | Read fault status registers and provide a structured fault diagnosis. Supports ARM Cortex-M (CFSR, HFSR, BFAR, MMFAR) and RISC-V (mcause, mtval, mepc). | `architecture` (`arm` or `riscv`) |
-| `debug_search_source` | Search workspace source files for a text pattern or symbol name. | `pattern`, `fileGlob` (optional), `maxResults` (optional, 1–100) |
 
 ## Diagnostic prompts
 
@@ -103,7 +99,6 @@ In Claude Code, run `/mcp` to browse all available prompts.
 | Prompt | What it does | Parameters |
 |---|---|---|
 | `breakpoint-and-inspect` | Sets a breakpoint at a specified location, continues execution, and reports local variables when the breakpoint is hit. | `file`, `line` |
-| `source-search-and-debug` | Finds code matching a natural-language description, sets a breakpoint there, and inspects registers when hit. | `description` |
 | `conditional-breakpoint` | Sets a conditional breakpoint, catches it twice, reads a variable each time, and compares the values. | `condition`, `variable` (optional) |
 | `step-and-disassemble` | Steps through N instructions, showing disassembly and a register value at each step. | `steps` (optional), `register` (optional) |
 
@@ -124,5 +119,5 @@ In Claude Code, run `/mcp` to browse all available prompts.
 
 ## Additional information
 
-- [:octicons-link-external-24: CFS Debug chat participant](https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/ide/src/debug-tools/ai-debug/README.md){:target="_blank"}
+- [:octicons-link-external-24: AI Debug source and architecture](https://github.com/analogdevicesinc/codefusion-studio/tree/main/packages/ide/src/debug-tools/ai-debug/README.md){:target="_blank"}
 - [:octicons-link-external-24: Introducing Agentic AI Workflows as Embedded Debugging Partner in CodeFusion Studio](https://developer.analog.com/newsroom/introducing-agentic-ai-workflows-as-embedded-debugging-partner-in-codefusion-studio){:target="_blank"}

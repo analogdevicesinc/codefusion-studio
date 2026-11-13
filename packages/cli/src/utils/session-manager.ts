@@ -12,6 +12,7 @@
  * limitations under the License.
  *
  */
+import type {TokenCodeExchangeInitiator} from 'cfs-ccm-lib';
 import {
   AuthConfig,
   SessionManager,
@@ -21,6 +22,7 @@ import {
 import envPaths from 'env-paths';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import open from 'open';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const authConfigFile = path.resolve(dirname, '../config/auth.json');
@@ -51,9 +53,46 @@ try {
   // dotenv may not be available outside of dev environment
 }
 
+export const sessionUrlDeps = {
+  openUrl: async (url: string): Promise<void> => {
+    await open(url, {wait: false, background: false});
+  }
+};
+
 export function getSessionManager(): SessionManager {
   sessionManager ??= new SessionManager(getAuthConfig());
   return sessionManager;
+}
+
+/**
+ * Create an uncached session manager that reports the authorization URL
+ * through `sessionUrlHandler` instead of the library's default stdout output.
+ * @param sessionUrlHandler - Called with the authorization URL during login.
+ * @returns A new session manager.
+ */
+export function createSessionManager(
+  sessionUrlHandler: TokenCodeExchangeInitiator
+): SessionManager {
+  return new SessionManager({...getAuthConfig(), sessionUrlHandler});
+}
+
+/**
+ * Build a login initiator that writes the authorization prompt to stderr so
+ * stdout stays reserved for the JSON envelope, then opens the browser.
+ * @param writeToStderr - Sink for the prompt text.
+ * @returns The initiator to pass as `sessionUrlHandler`.
+ */
+export function createStderrSessionUrlHandler(
+  writeToStderr: (message: string) => void
+): TokenCodeExchangeInitiator {
+  return async (authUrl) => {
+    writeToStderr(
+      '\nAttempting to automatically open the authorization page in your default browser. ' +
+        'If the browser does not open, please copy and paste the following URL into your browser:\n' +
+        `\n${authUrl.href}\n\n`
+    );
+    await sessionUrlDeps.openUrl(authUrl.href);
+  };
 }
 
 // function to get auth config variables from json file and/or the environment
@@ -118,7 +157,9 @@ function parseAuthConfig(): AuthConfig {
   } catch (error) {
     throw new Error(
       'Invalid auth config. Please reinstall this utility.',
-      {cause: error}
+      {
+        cause: error
+      }
     );
   }
 }

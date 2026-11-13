@@ -27,9 +27,8 @@ import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext
 const mock = (await import(`@socs/max32690-wlp.json`))
 	.default as unknown as Soc;
 
-const l10n = await import(
-	'../../../../../../../l10n/bundle.l10n.en.json'
-);
+const l10n =
+	await import('../../../../../../../l10n/bundle.l10n.en.json');
 
 (window as any).__webview_localization_resources__ = l10n.default;
 
@@ -316,9 +315,9 @@ describe('Clock details component', () => {
 
 				if (clockNode) {
 					clockNode.Config = {
-						...(clockNode.Config ?? {}),
+						...clockNode.Config,
 						TMR0a_MUX: {
-							...(clockNode.Config?.TMR0a_MUX ?? {}),
+							...clockNode.Config?.TMR0a_MUX,
 							'Peripheral Clock': []
 						}
 					};

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ type CfsSelectionProps = Readonly<{
 	isDisabled?: boolean;
 	children?: ReactNode;
 	alwaysShowContent?: boolean;
+	endSlotSelectsCard?: boolean;
 	onChange?: (selectedId: string) => void;
 }>;
 
@@ -46,6 +47,7 @@ function CfsSelectionCard({
 	isDisabled,
 	children,
 	alwaysShowContent = false,
+	endSlotSelectsCard = false,
 	onChange
 }: CfsSelectionProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -81,9 +83,12 @@ function CfsSelectionCard({
 	};
 
 	const handleCardEndClick = (e: MouseEvent<HTMLElement>) => {
-		const isLink = (e.target as HTMLElement).closest('a');
+		const target = e.target as HTMLElement;
+		const isLink = target.closest('a');
+		const isAccordionToggle = target.closest(`.${styles.icon}`);
 
-		if (!isLink) {
+		// Keep the accordion arrow from selecting the card when it expands the content.
+		if (!isLink && (!endSlotSelectsCard || isAccordionToggle)) {
 			e.stopPropagation();
 		}
 	};
@@ -109,10 +114,17 @@ function CfsSelectionCard({
 					<div className={styles.start}>{startSlot}</div>
 					<div className={styles.title}>{titleSlot}</div>
 					{Boolean(endSlot.length) && (
-						<div className={styles.end} onClick={handleCardEndClick}>
+						<div
+							className={styles.end}
+							data-test={`${testId}:endSlot`}
+							onClick={handleCardEndClick}
+						>
 							{endSlot}
 							<span
-								className={`${styles.icon} ${contentSlot.length && !alwaysShowContent && styles.show} ${styles.interactable} ${isExpanded ? styles.expanded : null}`}
+								className={`${styles.icon}
+								${contentSlot.length && !alwaysShowContent ? styles.show : ''}
+								${styles.interactable}
+								${isExpanded ? styles.expanded : ''}`}
 								data-test={`${testId}:endSlot:icon`}
 								onClick={handleAccordionExpansion}
 							>

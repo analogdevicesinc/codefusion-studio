@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { ElfFileParser, SYMBOLS_TABLE_ID } from "elf-parser";
+import {
+	ElfFileParser,
+	SYMBOLS_TABLE_ID
+} from "../parsers/elf-parser/index.js";
 import { getMachineFlags } from "./elf-flags-handler.js";
-import { ph_flags, ph_type } from "elf-parser/dist/enums.js";
-import { ElfProgramHeader } from "elf-parser/dist/ElfProgramHeader.js";
-import { ElfSectionHeader } from "elf-parser/dist/ElfSectionHeader.js";
-import { ElfDataModel } from "elf-parser/dist/ElfDataModel.js";
+import { ph_flags, ph_type } from "../parsers/elf-parser/enums.js";
+import { ElfProgramHeader } from "../parsers/elf-parser/ElfProgramHeader.js";
+import { ElfSectionHeader } from "../parsers/elf-parser/ElfSectionHeader.js";
+import { ElfDataModel } from "../parsers/elf-parser/ElfDataModel.js";
 
 export interface HeaderResponseData {
 	[key: string]: string | number;
@@ -178,10 +181,9 @@ const serializeSymbols = (symbols: TSymbol[]): TSymbol[] =>
 	}));
 
 const getFormattedDbSymbols = (parser: ElfFileParser) => {
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-	const dbSymbols: TSymbol[] = parser.query(
+	const dbSymbols = parser.query(
 		`SELECT * FROM ${SYMBOLS_TABLE_ID}`
-	);
+	) as TSymbol[];
 
 	return serializeSymbols(dbSymbols);
 };
@@ -214,7 +216,7 @@ export const filterSymbolsToSection = (
 		for (const parserSymbol of symSection.symbolData) {
 			if (parserSymbol.sectionHeaderIndex === section.index) {
 				const dbSymbol: TSymbol | undefined = [...dbSymbols].find(
-					(item: TSymbol) => item.id === parserSymbol.dbId,
+					(item: TSymbol) => item.id === parserSymbol.dbId
 				);
 
 				if (dbSymbol) {
@@ -284,7 +286,6 @@ export const getSegmentFlags = (flags: ph_flags): string => {
 		}
 	}
 };
-
 
 export const getSegmentTypes = (flags: ph_type): string => {
 	switch (flags) {

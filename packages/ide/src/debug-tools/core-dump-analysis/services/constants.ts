@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,5 +17,6 @@
 export const CRASH_SUMMARY = "Crash Cause";
 export const TASKS_SUMMARY = "Tasks Stack";
 export const HEAP_SUMMARY = "Heap Analysis";
+export const PERIPHERAL_SUMMARY = "Peripheral State";
 export const CORE_DUMP_COMPLETE_MSG = "Core dump analysis complete.";
 export const CORE_DUMP_FAILED_MSG = "Core dump analysis failed: ";

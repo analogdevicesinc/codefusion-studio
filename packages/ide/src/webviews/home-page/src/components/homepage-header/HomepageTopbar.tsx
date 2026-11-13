@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import {Modal} from '@common/components/modal/Modal';
 import Help from '@common/icons/Help';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
-import {Direction} from '@common/components/tooltip/Tooltip';
+import {Direction} from '@common/utils';
 import {useState} from 'react';
 import {type TLocaleContext} from '../../../../common/types/l10n';
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';

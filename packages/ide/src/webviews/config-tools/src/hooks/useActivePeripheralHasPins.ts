@@ -15,6 +15,7 @@
 import {useMemo} from 'react';
 import {useActivePeripheral} from '../state/slices/peripherals/peripherals.selector';
 import {getSocPeripheralDictionary} from '../utils/soc-peripherals';
+import {getFixedFunctionPins} from '../utils/soc-pins';
 
 /**
  * Custom hook to check if active peripheral has pins.
@@ -37,9 +38,17 @@ export function useActivePeripheralHasPins(includeCoreInfo = false) {
 		)
 			return false;
 
-		return Object.keys(peripheral.signals).some(
+		const hasAssignablePins = Object.keys(peripheral.signals).some(
 			signal => peripheral.signals[signal].pins?.length > 0
 		);
+
+		const hasReservedPins = getFixedFunctionPins().some(pin =>
+			pin.Signals?.some(
+				signal => signal.Peripheral === activePeripheral
+			)
+		);
+
+		return hasAssignablePins || hasReservedPins;
 	}, [activePeripheral]);
 
 	return hasPins;

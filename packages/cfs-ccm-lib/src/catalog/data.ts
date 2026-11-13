@@ -46,9 +46,9 @@ const zStoreItem = z
  * Stores items from a CFS catalog as {@link StoreItem} objects in a local JSON file.
  * @internal
  */
-export class LowDBDataStore<ItemTag extends string>
-    implements DataStore
-{
+export class LowDBDataStore<
+    ItemTag extends string,
+> implements DataStore {
     public readonly DB_FILE_NAME: string;
     private readonly dbPath: string;
     private readonly dbPromise: Promise<Low<StoreDB<ItemTag>>>;

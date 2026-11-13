@@ -15,6 +15,8 @@
 
 import {MissingDependencyError} from 'cfs-lib';
 
+import {errorWithCode} from './recoverable-error.js';
+
 /**
  * Handles MissingDependencyError by providing user-friendly, actionable error messages.
  * Throws an error with context-specific installation instructions.
@@ -22,10 +24,14 @@ import {MissingDependencyError} from 'cfs-lib';
  * If the error is not a MissingDependencyError, returns without throwing.
  *
  * @param error - The error to handle (checks if it's MissingDependencyError)
+ * @param code - Optional stable machine-readable code attached to the thrown error (defaults to `MISSING_DEPENDENCY`)
  * @returns void
  * @throws Error with formatted message if it's a MissingDependencyError
  */
-export function handleMissingDependencyError(error: unknown): void {
+export function handleMissingDependencyError(
+  error: unknown,
+  code = 'MISSING_DEPENDENCY'
+): void {
   if (!(error instanceof MissingDependencyError)) {
     return; // Not a MissingDependencyError, let caller handle it
   }
@@ -79,5 +85,5 @@ export function handleMissingDependencyError(error: unknown): void {
   message += '  cfsutil pkg search <package-name>\n';
   message += '  cfsutil pkg install <package>/<version>';
 
-  throw new Error(message);
+  throw errorWithCode(message, code);
 }

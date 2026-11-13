@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
@@ -32,20 +32,15 @@ describe("Peripheral Allocation Persistance", () => {
 
   before(async function () {
     this.timeout(60000);
-    browser = VSBrowser.instance;
-    await browser.waitForWorkbench();
+    ({ browser } = await UIUtils.setupTestSuite({ waitForWorkbench: true }));
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("workbench.action.closeAllEditors");
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Renders existing peripheral allocations from the config file", async () => {
+  it("Renders existing peripheral allocations from the config file @regression", async () => {
     await browser.openResources(
       getConfigPathForFile("max32690-wlp-allocated-peripherals.cfsconfig"),
     );

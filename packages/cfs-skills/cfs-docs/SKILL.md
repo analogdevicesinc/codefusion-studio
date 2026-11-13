@@ -2,7 +2,7 @@
 name: cfs-docs
 description: Answer questions about CodeFusion Studio (CFS) by reading the relevant documentation. Use whenever someone asks how to install, set up, use, or troubleshoot CFS — including the VS Code extension, cfsutil CLI, System Planner, debug driver installation and hardware connection (J-Link, Olimex, ICE), build/flash/debug workflows, AI model integration, package manager, plugins, or release notes. Good for customers, new hires, and developers who want doc-backed answers without leaving the terminal.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # CFS Guide
@@ -26,11 +26,13 @@ Match the user's question to a topic in the following table and read only those 
 | Software requirements | `references/user-guide/installation/software-requirements.md` |
 | Install CFS | `references/user-guide/installation/install-cfs.md` |
 | Install VS Code extensions | `references/user-guide/installation/install-extensions.md` |
+| Manage extension updates and versions / extension and SDK compatibility / disable auto-update / install a specific extension version / dependent extensions | `references/user-guide/installation/manage-extension-versions.md` |
 | Set up CFS / SDK path configuration | `references/user-guide/installation/set-up-cfs.md` |
 | Package manager overview | `references/user-guide/installation/package-manager/index.md` |
 | Manage packages using cfsutil | `references/user-guide/installation/package-manager/manage-packages-cfsutil.md` |
 | Manage packages using command palette | `references/user-guide/installation/package-manager/manage-packages-command-palette.md` |
 | Manage packages using the IDE (Package Manager view) | `references/user-guide/installation/package-manager/manage-packages-ide.md` |
+| View installed package contents (Packages view) | `references/user-guide/installation/package-manager/view-installed-packages.md` |
 | Available packages | `references/user-guide/installation/package-manager/available-packages.md` |
 | Install required packages | `references/user-guide/installation/package-manager/install-required.md` |
 | Package manager authentication (myAnalog) | `references/user-guide/installation/package-manager/auth.md` |
@@ -49,6 +51,7 @@ Match the user's question to a topic in the following table and read only those 
 | Clock configuration | `references/user-guide/tools/clock-config.md` |
 | Memory allocation | `references/user-guide/tools/memory-allocation.md` |
 | Registers view | `references/user-guide/tools/registers.md` |
+| SRU Config (Signal Routing Unit, SHARC-FX signal routing, pin buffers, connections and routing tabs) | `references/user-guide/tools/sru-config.md` |
 | Manage AI models (System Planner) | `references/user-guide/tools/manage-ai-models.md` |
 | Profiling / capture traces | `references/user-guide/tools/profiling.md` |
 | Profiling report | `references/user-guide/tools/profiling-report.md` |
@@ -63,6 +66,7 @@ Match the user's question to a topic in the following table and read only those 
 | cfsutil CLI overview | `references/user-guide/cfsutil/index.md` |
 | cfsutil catalog | `references/user-guide/cfsutil/catalog.md` |
 | cfsutil CFS plugins | `references/user-guide/cfsutil/cfs-plugins.md` |
+| cfsutil convert (TEF trace to `.cfsreport`) | `references/user-guide/cfsutil/convert.md` |
 | cfsutil device tree | `references/user-guide/cfsutil/device-tree.md` |
 | cfsutil docker | `references/user-guide/cfsutil/docker.md` |
 | cfsutil ELF utilities | `references/user-guide/cfsutil/elf-utilities.md` |
@@ -75,12 +79,15 @@ Match the user's question to a topic in the following table and read only those 
 | cfsutil project commands | `references/user-guide/cfsutil/project.md` |
 | cfsutil SoCs (list SoCs, boards, cores) | `references/user-guide/cfsutil/socs.md` |
 | cfsutil tasks | `references/user-guide/cfsutil/tasks.md` |
+| cfsutil telemetry | `references/user-guide/cfsutil/telemetry.md` |
+| cfsutil validate config | `references/user-guide/cfsutil/validate.md` |
 | cfsutil workspace commands | `references/user-guide/cfsutil/workspace.md` |
 | cfsutil AI commands overview | `references/user-guide/cfsutil/ai/index.md` |
 | cfsutil ai backends | `references/user-guide/cfsutil/ai/backends.md` |
 | cfsutil ai build | `references/user-guide/cfsutil/ai/build.md` |
 | cfsutil ai clean-cache | `references/user-guide/cfsutil/ai/clean-cache.md` |
 | cfsutil ai compat | `references/user-guide/cfsutil/ai/compat.md` |
+| cfsutil ai e2e | `references/user-guide/cfsutil/ai/e2e.md` |
 | cfsutil ai model | `references/user-guide/cfsutil/ai/model.md` |
 | cfsutil ai profile | `references/user-guide/cfsutil/ai/profile.md` |
 | cfsutil ai workspace | `references/user-guide/cfsutil/ai/workspace.md` |
@@ -112,6 +119,7 @@ Match the user's question to a topic in the following table and read only those 
 | ELF File Explorer | `references/user-guide/developer-tools/elf-file-explorer.md` |
 | Device Tree View | `references/user-guide/developer-tools/device-tree-view.md` |
 | Catalog Manager | `references/user-guide/developer-tools/catalog-manager.md` |
+| West Editor (edit `west.yml`, west manifest, west projects, groups, group-filter, project status) | `references/user-guide/developer-tools/west-editor.md`, `references/user-guide/build-and-flash/zephyr.md` |
 | CFS AI Skills (cfs-docs / cfs-cli skills in Copilot and Claude Code) | `references/user-guide/developer-tools/cfs-ai-skills.md` |
 | Plugins overview | `references/user-guide/plugins/index.md` |
 | Plugin integration | `references/user-guide/plugins/plugin-integration-overview.md` |
@@ -122,8 +130,8 @@ Match the user's question to a topic in the following table and read only those 
 | GDB tutorial | `references/tutorials/gdb-tutorial/index.md` (then sub-files as needed: `references/tutorials/gdb-tutorial/gdb-basics.md`, `references/tutorials/gdb-tutorial/gdb-command-types.md`, `references/tutorials/gdb-tutorial/gdb-commands.md`) |
 | Tutorials overview | `references/tutorials/index.md` |
 | MAX32657 Zephyr tutorial (blinky, low-power mode) | `references/tutorials/max32657-zephyr/index.md` (then sub-files as needed: `references/tutorials/max32657-zephyr/blinky.md`, `references/tutorials/max32657-zephyr/low-power-mode.md`) |
-| Release notes / what's new / changelog | `references/release-notes/index.md`, then the specific version file. Available versions: `references/release-notes/2.3.0.md`, `references/release-notes/2.2.1.md`, `references/release-notes/2.2.0.md`, `references/release-notes/2.1.0.md`, `references/release-notes/2.0.2.md`, `references/release-notes/2.0.1.md`, `references/release-notes/2.0.0.md`, `references/release-notes/1.1.0.md`, `references/release-notes/1.0.2.md`, `references/release-notes/1.0.0.md` |
-| Known bugs / errata / workarounds | Read the relevant version's release notes file (for example, `references/release-notes/2.3.0.md`) |
+| Release notes / what's new / changelog | `references/release-notes/index.md`, then the specific version file. Available versions: `references/release-notes/2.4.0.md`, `references/release-notes/2.3.0.md`, `references/release-notes/2.2.1.md`, `references/release-notes/2.2.0.md`, `references/release-notes/2.1.0.md`, `references/release-notes/2.0.2.md`, `references/release-notes/2.0.1.md`, `references/release-notes/2.0.0.md`, `references/release-notes/1.1.0.md`, `references/release-notes/1.0.2.md`, `references/release-notes/1.0.0.md` |
+| Known bugs / errata / workarounds | Read the relevant version's release notes file (for example, `references/release-notes/2.4.0.md`) |
 | Glossary / term definitions | `references/glossary.md` |
 | Hardware specs / datasheet links / chip documentation | `references/user-guide/about/supported-processors.md` — each SoC links to its analog.com product page, which links to the datasheet. See also rule 7. |
 

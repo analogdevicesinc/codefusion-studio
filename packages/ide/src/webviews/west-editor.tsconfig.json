@@ -1,0 +1,16 @@
+{
+	"extends": "./tsconfig.json",
+	"include": [
+		"./west-editor/**/*.ts",
+		"./west-editor/**/*.tsx",
+		"./common/**/*.ts",
+		"./common/**/*.tsx",
+		"./west-editor/**/*.json",
+		"./custom.d.ts",
+		"../constants/**/*.ts",
+		"../types/**/*.ts",
+		"../zephyr/west-editor/types.ts",
+		"../zephyr/west-editor/messages.ts"
+	],
+	"exclude": ["./**/*.cy.ts*"]
+}

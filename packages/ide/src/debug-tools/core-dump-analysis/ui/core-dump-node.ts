@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,6 @@ export class CoreDumpNode extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.contextValue = contextValue;
-    this.coreInfo = coreInfo;
-    this.children = children;
-    this.clickData = clickData;
 
     this.command = {
       command: CORE_DUMP_NODE_CLICK_COMMAND_ID,

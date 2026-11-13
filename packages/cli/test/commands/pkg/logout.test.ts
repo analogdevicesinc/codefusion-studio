@@ -77,7 +77,9 @@ describe('pkg logout', () => {
 
     const {stdout, error} = await runCommand(
       ['pkg', 'logout', name],
-      {root: '..'}
+      {
+        root: '..'
+      }
     );
 
     expect(error).to.be.undefined;

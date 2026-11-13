@@ -78,8 +78,11 @@ export async function getPreloadedStateStore() {
 				workspaceName: workspaceConfig.workspaceName ?? '',
 				soc: workspaceConfig.soc,
 				board: workspaceConfig.board,
-				runModelOn: [],
-				compatibilityStatus: {}
+				runModelOn: workspaceConfig.coreId
+					? [workspaceConfig.coreId]
+					: [],
+				compatibilityStatus: {},
+				isCreatingWorkspace: false
 			}
 		}
 	});

@@ -35,7 +35,10 @@ describe('AddressInput', () => {
 								body: {
 									sessionId: message.body.sessionId,
 									address: message.body.address,
-									data: new Array(message.body.length).fill(255)
+									data: Array.from(
+										{length: message.body.length},
+										() => 255
+									)
 								}
 							}
 						})
@@ -51,7 +54,10 @@ describe('AddressInput', () => {
 								body: {
 									sessionId: message.body.sessionId,
 									address: 0x5000,
-									data: new Array(message.body.length).fill(255)
+									data: Array.from(
+										{length: message.body.length},
+										() => 255
+									)
 								},
 								error: undefined
 							}

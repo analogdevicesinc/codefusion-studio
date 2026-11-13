@@ -1,0 +1,1770 @@
+{
+  "Copyright": "",
+  "License": "",
+  "Version": "",
+  "Schema": "1.5.1",
+  "Timestamp": "2026-07-15T20:54:26.398804Z",
+  "Name": "TEST672",
+  "Description": "High-Reliability, Tiny, Ultra-Low-Power Arm Cortex-M4F Microcontroller with 12-Bit, 1Msps ADC",
+  "Endianness": "Little",
+  "Parts": [
+    {
+      "Name": "TEST672",
+      "Package": "PQFN40",
+      "MemoryDescription": "1MB Dual-Bank Flash, 200KB SRAM, 16KB Unified Cache"
+    }
+  ],
+  "MemoryTypes": [
+    {
+      "Name": "RAM",
+      "Description": "Random Access Memory",
+      "IsVolatile": true
+    },
+    {
+      "Name": "Flash",
+      "Description": "Flash Memory",
+      "IsVolatile": false
+    }
+  ],
+  "MemoryAliasTypes": [],
+  "SystemMemory": [
+    {
+      "Name": "sysram0",
+      "Description": "System RAM Block 0",
+      "AddressStart": "0x20000000",
+      "AddressEnd": "0x20003fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram1",
+      "Description": "System RAM Block 1",
+      "AddressStart": "0x20004000",
+      "AddressEnd": "0x20007fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram2",
+      "Description": "System RAM Block 2",
+      "AddressStart": "0x20008000",
+      "AddressEnd": "0x20017fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram3",
+      "Description": "System RAM Block 3",
+      "AddressStart": "0x20018000",
+      "AddressEnd": "0x20027fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram4",
+      "Description": "System RAM Block 4",
+      "AddressStart": "0x20028000",
+      "AddressEnd": "0x20028fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram5",
+      "Description": "System RAM Block 5",
+      "AddressStart": "0x20029000",
+      "AddressEnd": "0x20029fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram6",
+      "Description": "System RAM Block 6",
+      "AddressStart": "0x2002a000",
+      "AddressEnd": "0x2002dfff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "sysram7",
+      "Description": "System RAM Block 7",
+      "AddressStart": "0x2002e000",
+      "AddressEnd": "0x20031fff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "RAM",
+      "Location": "Internal",
+      "MinimumAlignment": 4
+    },
+    {
+      "Name": "flash0",
+      "Description": "Flash Memory Region 0",
+      "AddressStart": "0x10000000",
+      "AddressEnd": "0x1007ffff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "Flash",
+      "Location": "Internal",
+      "MinimumAlignment": 8192
+    },
+    {
+      "Name": "flash1",
+      "Description": "Flash Memory Region 1",
+      "AddressStart": "0x10080000",
+      "AddressEnd": "0x100fffff",
+      "Width": 8,
+      "Access": "R/W/X",
+      "Type": "Flash",
+      "Location": "Internal",
+      "MinimumAlignment": 8192
+    }
+  ],
+  "Cores": [
+    {
+      "Id": "CM4",
+      "Name": "ARM Cortex-M4",
+      "Description": "ARM Cortex-M4",
+      "CoreNum": 0,
+      "Family": "Cortex-M",
+      "Memory": [
+        {
+          "Name": "sysram0"
+        },
+        {
+          "Name": "sysram1"
+        },
+        {
+          "Name": "sysram2"
+        },
+        {
+          "Name": "sysram3"
+        },
+        {
+          "Name": "sysram4"
+        },
+        {
+          "Name": "sysram5"
+        },
+        {
+          "Name": "sysram6"
+        },
+        {
+          "Name": "sysram7"
+        },
+        {
+          "Name": "flash0"
+        },
+        {
+          "Name": "flash1"
+        }
+      ],
+      "IsPrimary": true
+    }
+  ],
+  "Peripherals": [
+    {
+      "Name": "TMR0",
+      "Description": "Timer 0",
+      "Cores": [
+        "CM4"
+      ],
+      "Config": {
+        "CONFIGURATION": {
+          "DUAL_16BIT": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CASCADE",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "SINGLE_32BIT": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CASCADE",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "MODE_A": {
+          "DISABLED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "ONE_SHOT": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "0",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CONTINUOUS": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "COUNTER": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "2",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "PWM": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "3",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CAPTURE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "4",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "COMPARE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "5",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "GATED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "6",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CAPCOMP": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "7",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "DUAL_EDGE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "8",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "IGATED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_A",
+              "Value": "12",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_A",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ]
+        },
+        "CLKDIV_A": {
+          "1": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "2": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ],
+          "4": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "2",
+              "Operation": "Write"
+            }
+          ],
+          "8": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "3",
+              "Operation": "Write"
+            }
+          ],
+          "16": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "4",
+              "Operation": "Write"
+            }
+          ],
+          "32": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "5",
+              "Operation": "Write"
+            }
+          ],
+          "64": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "6",
+              "Operation": "Write"
+            }
+          ],
+          "128": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "7",
+              "Operation": "Write"
+            }
+          ],
+          "256": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "8",
+              "Operation": "Write"
+            }
+          ],
+          "512": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "9",
+              "Operation": "Write"
+            }
+          ],
+          "1024": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "10",
+              "Operation": "Write"
+            }
+          ],
+          "2048": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "11",
+              "Operation": "Write"
+            }
+          ],
+          "4096": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_A",
+              "Value": "12",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "POL_A": {
+          "POLARITY_0": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "POL_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "POLARITY_1": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "POL_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "NEGTRIG_A": {
+          "RISING": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "NEGTRIG_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "FALLING": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "NEGTRIG_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "CAPEVENT_SEL_A": {
+          "EVENT_0": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_1": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_2": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_A",
+              "Value": "2",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_3": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_A",
+              "Value": "3",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COUNT": {
+          "VALUE": [
+            {
+              "Register": "TMR0_CNT",
+              "Field": "COUNT",
+              "Value": "${Value}",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COMPARE": {
+          "VALUE": [
+            {
+              "Register": "TMR0_CMP",
+              "Field": "COMPARE",
+              "Value": "${Value}",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "PWM": {
+          "VALUE": [
+            {
+              "Register": "TMR0_PWM",
+              "Field": "PWM",
+              "Value": "${Value}",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COUNT_A": {
+          "VALUE": [
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_B",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_CNT",
+              "Field": "COUNT_A",
+              "Value": "${Value}",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WRDONE_A",
+              "Value": "1",
+              "Operation": "Poll"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COMPARE_A": {
+          "VALUE": [
+            {
+              "Register": "TMR0_CMP",
+              "Field": "COMPARE_A",
+              "Value": "${Value}",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "PWM_A": {
+          "VALUE": [
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_B",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_PWM",
+              "Field": "PWM_A",
+              "Value": "${Value}",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WRDONE_A",
+              "Value": "1",
+              "Operation": "Poll"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "MODE_B": {
+          "DISABLED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "EN_B",
+              "Value": "0",
+              "Operation": "Write"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "0",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "ONE_SHOT": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "0",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CONTINUOUS": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "COUNTER": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "2",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "PWM": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "3",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CAPTURE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "4",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "COMPARE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "5",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "GATED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "6",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "CAPCOMP": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "7",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "DUAL_EDGE": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "8",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ],
+          "IGATED": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "MODE_B",
+              "Value": "12",
+              "Operation": "Write"
+            },
+            {
+              "Field": "EN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            },
+            {
+              "Field": "CLKEN_B",
+              "Value": "1",
+              "Operation": "WithPrevious"
+            }
+          ]
+        },
+        "CLKDIV_B": {
+          "1": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "2": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ],
+          "4": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "2",
+              "Operation": "Write"
+            }
+          ],
+          "8": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "3",
+              "Operation": "Write"
+            }
+          ],
+          "16": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "4",
+              "Operation": "Write"
+            }
+          ],
+          "32": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "5",
+              "Operation": "Write"
+            }
+          ],
+          "64": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "6",
+              "Operation": "Write"
+            }
+          ],
+          "128": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "7",
+              "Operation": "Write"
+            }
+          ],
+          "256": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "8",
+              "Operation": "Write"
+            }
+          ],
+          "512": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "9",
+              "Operation": "Write"
+            }
+          ],
+          "1024": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "10",
+              "Operation": "Write"
+            }
+          ],
+          "2048": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "11",
+              "Operation": "Write"
+            }
+          ],
+          "4096": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "CLKDIV_B",
+              "Value": "12",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "POL_B": {
+          "POLARITY_0": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "POL_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "POLARITY_1": [
+            {
+              "Register": "TMR0_CTRL0",
+              "Field": "POL_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "NEGTRIG_B": {
+          "RISING": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "NEGTRIG_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "FALLING": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "NEGTRIG_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "CAPEVENT_SEL_B": {
+          "EVENT_0": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_1": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_2": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_B",
+              "Value": "2",
+              "Operation": "Write"
+            }
+          ],
+          "EVENT_3": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "CAPEVENT_SEL_B",
+              "Value": "3",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COUNT_B": {
+          "VALUE": [
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_A",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_CNT",
+              "Field": "COUNT_B",
+              "Value": "${Value}",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WRDONE_B",
+              "Value": "1",
+              "Operation": "Poll"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "COMPARE_B": {
+          "VALUE": [
+            {
+              "Register": "TMR0_CMP",
+              "Field": "COMPARE_B",
+              "Value": "${Value}",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "PWM_B": {
+          "VALUE": [
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_A",
+              "Value": "1",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_PWM",
+              "Field": "PWM_B",
+              "Value": "${Value}",
+              "Operation": "Write"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WRDONE_B",
+              "Value": "1",
+              "Operation": "Poll"
+            },
+            {
+              "Register": "TMR0_INTFL",
+              "Field": "WR_DIS_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "TMRA_IE": {
+          "FALSE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "IE_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "TRUE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "IE_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "TMRA_WE": {
+          "FALSE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "WE_A",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "TRUE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "WE_A",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "TMRB_IE": {
+          "FALSE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "IE_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "TRUE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "IE_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        },
+        "TMRB_WE": {
+          "FALSE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "WE_B",
+              "Value": "0",
+              "Operation": "Write"
+            }
+          ],
+          "TRUE": [
+            {
+              "Register": "TMR0_CTRL1",
+              "Field": "WE_B",
+              "Value": "1",
+              "Operation": "Write"
+            }
+          ]
+        }
+      },
+      "ConfigProgrammingOrder": [
+        "CONFIGURATION",
+        "MODE_A",
+        "CLKDIV_A",
+        "POL_A",
+        "NEGTRIG_A",
+        "CAPEVENT_SEL_A",
+        "COUNT",
+        "COMPARE",
+        "PWM",
+        "COUNT_A",
+        "COMPARE_A",
+        "PWM_A",
+        "MODE_B",
+        "CLKDIV_B",
+        "POL_B",
+        "NEGTRIG_B",
+        "CAPEVENT_SEL_B",
+        "COUNT_B",
+        "COMPARE_B",
+        "PWM_B",
+        "TMRA_IE",
+        "TMRA_WE",
+        "TMRB_IE",
+        "TMRB_WE"
+      ],
+      "Signals": [
+        {
+          "Name": "IA",
+          "Description": "Input"
+        },
+        {
+          "Name": "OA",
+          "Description": "Output"
+        }
+      ],
+      "ClockNode": "TMR0/1/2/3"
+    }
+  ],
+  "Controls": {
+    "TMR0": [
+      {
+        "Id": "CONFIGURATION",
+        "Description": "Timer Configuration",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "DUAL_16BIT",
+            "Description": "Dual 16-bit Timers",
+            "Value": 0
+          },
+          {
+            "Id": "SINGLE_32BIT",
+            "Description": "Single 32-bit Timer",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Id": "MODE_A",
+        "Description": "Mode for Single Timer or Timer A",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "DISABLED",
+            "Description": "Disabled",
+            "Value": 20
+          },
+          {
+            "Id": "ONE_SHOT",
+            "Description": "One-Shot Mode",
+            "Value": 0
+          },
+          {
+            "Id": "CONTINUOUS",
+            "Description": "Continuous Mode",
+            "Value": 1
+          },
+          {
+            "Id": "COUNTER",
+            "Description": "Counter Mode",
+            "Value": 2
+          },
+          {
+            "Id": "PWM",
+            "Description": "PWM Mode",
+            "Value": 3
+          },
+          {
+            "Id": "CAPTURE",
+            "Description": "Capture Mode",
+            "Value": 4
+          },
+          {
+            "Id": "COMPARE",
+            "Description": "Compare Mode",
+            "Value": 5
+          },
+          {
+            "Id": "GATED",
+            "Description": "Gated Mode",
+            "Value": 6
+          },
+          {
+            "Id": "CAPCOMP",
+            "Description": "Capture/Compare Mode",
+            "Value": 7
+          },
+          {
+            "Id": "DUAL_EDGE",
+            "Description": "Dual Edge Capture Mode",
+            "Value": 8
+          },
+          {
+            "Id": "IGATED",
+            "Description": "Internally Gated Mode",
+            "Value": 12
+          }
+        ]
+      },
+      {
+        "Id": "CLKDIV_A",
+        "Description": "Single Timer/Timer A Clock Divider",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "1",
+            "Description": "Prescaler Divide-By-1",
+            "Value": 0
+          },
+          {
+            "Id": "2",
+            "Description": "Prescaler Divide-By-2",
+            "Value": 1
+          },
+          {
+            "Id": "4",
+            "Description": "Prescaler Divide-By-4",
+            "Value": 2
+          },
+          {
+            "Id": "8",
+            "Description": "Prescaler Divide-By-8",
+            "Value": 3
+          },
+          {
+            "Id": "16",
+            "Description": "Prescaler Divide-By-16",
+            "Value": 4
+          },
+          {
+            "Id": "32",
+            "Description": "Prescaler Divide-By-32",
+            "Value": 5
+          },
+          {
+            "Id": "64",
+            "Description": "Prescaler Divide-By-64",
+            "Value": 6
+          },
+          {
+            "Id": "128",
+            "Description": "Prescaler Divide-By-128",
+            "Value": 7
+          },
+          {
+            "Id": "256",
+            "Description": "Prescaler Divide-By-256",
+            "Value": 8
+          },
+          {
+            "Id": "512",
+            "Description": "Prescaler Divide-By-512",
+            "Value": 9
+          },
+          {
+            "Id": "1024",
+            "Description": "Prescaler Divide-By-1024",
+            "Value": 10
+          },
+          {
+            "Id": "2048",
+            "Description": "Prescaler Divide-By-2048",
+            "Value": 11
+          },
+          {
+            "Id": "4096",
+            "Description": "Prescaler Divide-By-4096",
+            "Value": 12
+          }
+        ]
+      },
+      {
+        "Id": "POL_A",
+        "Description": "Single Timer/Timer A Timer Polarity",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "POLARITY_0",
+            "Description": "Polarity 0",
+            "Value": 0
+          },
+          {
+            "Id": "POLARITY_1",
+            "Description": "Polarity 1",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Id": "NEGTRIG_A",
+        "Description": "Single Timer/Timer A Edge Trigger Event",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "RISING",
+            "Description": "Rising Edge",
+            "Value": 0
+          },
+          {
+            "Id": "FALLING",
+            "Description": "Falling Edge",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Id": "CAPEVENT_SEL_A",
+        "Description": "Single Timer/Timer A Capture Event",
+        "Type": "enum",
+        "EnumValues": [
+          {
+            "Id": "EVENT_0",
+            "Description": "Capture Event 0",
+            "Value": 0
+          },
+          {
+            "Id": "EVENT_1",
+            "Description": "Capture Event 1",
+            "Value": 1
+          },
+          {
+            "Id": "EVENT_2",
+            "Description": "Capture Event 2",
+            "Value": 2
+          },
+          {
+            "Id": "EVENT_3",
+            "Description": "Capture Event 3",
+            "Value": 3
+          }
+        ]
+      },
+      {
+        "Id": "COUNT",
+        "Description": "Timer Count",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 4294967295,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "COMPARE",
+        "Description": "Timer Compare Value",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 4294967295,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "PWM",
+        "Description": "Timer PWM Match",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:SINGLE_32BIT} = ${Control:MODE_A} ${String:PWM} = &",
+        "MinimumValue": 0,
+        "MaximumValue": 4294967295,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "COUNT_A",
+        "Description": "Timer A Count",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "COMPARE_A",
+        "Description": "Timer A Compare Value",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "PWM_A",
+        "Description": "Timer A PWM Match",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_A} ${String:PWM} = &",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "MODE_B",
+        "Description": "Mode for Timer B",
+        "Type": "enum",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "EnumValues": [
+          {
+            "Id": "DISABLED",
+            "Description": "Disabled",
+            "Value": 20
+          },
+          {
+            "Id": "ONE_SHOT",
+            "Description": "One-Shot Mode",
+            "Value": 0
+          },
+          {
+            "Id": "CONTINUOUS",
+            "Description": "Continuous Mode",
+            "Value": 1
+          },
+          {
+            "Id": "COUNTER",
+            "Description": "Counter Mode",
+            "Value": 2
+          },
+          {
+            "Id": "PWM",
+            "Description": "PWM Mode",
+            "Value": 3
+          },
+          {
+            "Id": "CAPTURE",
+            "Description": "Capture Mode",
+            "Value": 4
+          },
+          {
+            "Id": "COMPARE",
+            "Description": "Compare Mode",
+            "Value": 5
+          },
+          {
+            "Id": "GATED",
+            "Description": "Gated Mode",
+            "Value": 6
+          },
+          {
+            "Id": "CAPCOMP",
+            "Description": "Capture/Compare Mode",
+            "Value": 7
+          },
+          {
+            "Id": "DUAL_EDGE",
+            "Description": "Dual Edge Capture Mode",
+            "Value": 8
+          },
+          {
+            "Id": "IGATED",
+            "Description": "Internally Gated Mode",
+            "Value": 12
+          }
+        ]
+      },
+      {
+        "Id": "CLKDIV_B",
+        "Description": "Timer B Clock Divider",
+        "Type": "enum",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "EnumValues": [
+          {
+            "Id": "1",
+            "Description": "Prescaler Divide-By-1",
+            "Value": 0
+          },
+          {
+            "Id": "2",
+            "Description": "Prescaler Divide-By-2",
+            "Value": 1
+          },
+          {
+            "Id": "4",
+            "Description": "Prescaler Divide-By-4",
+            "Value": 2
+          },
+          {
+            "Id": "8",
+            "Description": "Prescaler Divide-By-8",
+            "Value": 3
+          },
+          {
+            "Id": "16",
+            "Description": "Prescaler Divide-By-16",
+            "Value": 4
+          },
+          {
+            "Id": "32",
+            "Description": "Prescaler Divide-By-32",
+            "Value": 5
+          },
+          {
+            "Id": "64",
+            "Description": "Prescaler Divide-By-64",
+            "Value": 6
+          },
+          {
+            "Id": "128",
+            "Description": "Prescaler Divide-By-128",
+            "Value": 7
+          },
+          {
+            "Id": "256",
+            "Description": "Prescaler Divide-By-256",
+            "Value": 8
+          },
+          {
+            "Id": "512",
+            "Description": "Prescaler Divide-By-512",
+            "Value": 9
+          },
+          {
+            "Id": "1024",
+            "Description": "Prescaler Divide-By-1024",
+            "Value": 10
+          },
+          {
+            "Id": "2048",
+            "Description": "Prescaler Divide-By-2048",
+            "Value": 11
+          },
+          {
+            "Id": "4096",
+            "Description": "Prescaler Divide-By-4096",
+            "Value": 12
+          }
+        ]
+      },
+      {
+        "Id": "POL_B",
+        "Description": "Timer Polarity for Timer B",
+        "Type": "enum",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "EnumValues": [
+          {
+            "Id": "POLARITY_0",
+            "Description": "Polarity 0",
+            "Value": 0
+          },
+          {
+            "Id": "POLARITY_1",
+            "Description": "Polarity 1",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Id": "NEGTRIG_B",
+        "Description": "Timer B Edge Trigger Event",
+        "Type": "enum",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "EnumValues": [
+          {
+            "Id": "RISING",
+            "Description": "Rising Edge",
+            "Value": 0
+          },
+          {
+            "Id": "FALLING",
+            "Description": "Falling Edge",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Id": "CAPEVENT_SEL_B",
+        "Description": "Timer B Capture Event",
+        "Type": "enum",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "EnumValues": [
+          {
+            "Id": "EVENT_0",
+            "Description": "Capture Event 0",
+            "Value": 0
+          },
+          {
+            "Id": "EVENT_1",
+            "Description": "Capture Event 1",
+            "Value": 1
+          },
+          {
+            "Id": "EVENT_2",
+            "Description": "Capture Event 2",
+            "Value": 2
+          },
+          {
+            "Id": "EVENT_3",
+            "Description": "Capture Event 3",
+            "Value": 3
+          }
+        ]
+      },
+      {
+        "Id": "COUNT_B",
+        "Description": "Timer B Count",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "COMPARE_B",
+        "Description": "Timer B Compare Value",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} =",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "PWM_B",
+        "Description": "Timer B PWM Match",
+        "Type": "integer",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} = ${Control:MODE_B} ${String:PWM} = &",
+        "MinimumValue": 0,
+        "MaximumValue": 65535,
+        "Increment": 1,
+        "NumericBase": "Decimal"
+      },
+      {
+        "Id": "TMRA_IE",
+        "Description": "Enable Timer A Interrupt",
+        "Type": "boolean"
+      },
+      {
+        "Id": "TMRA_WE",
+        "Description": "Enable Timer A Wake-Up",
+        "Type": "boolean"
+      },
+      {
+        "Id": "TMRB_IE",
+        "Description": "Enable Timer B Interrupt",
+        "Type": "boolean",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+      },
+      {
+        "Id": "TMRB_WE",
+        "Description": "Enable Timer B Wake-Up",
+        "Type": "boolean",
+        "Condition": "${Control:CONFIGURATION} ${String:DUAL_16BIT} ="
+      }
+    ]
+  },
+  "ClockNodes": [],
+  "Registers": [],
+  "Packages": [
+    {
+      "Name": "PQFN40",
+      "Description": "40-pin TQFN Package",
+      "NumPins": 0,
+      "Pins": [],
+      "PinCanvas": {
+        "Width": 0,
+        "Height": 0,
+        "Labels": []
+      },
+      "ClockCanvas": {}
+    }
+  ]
+}

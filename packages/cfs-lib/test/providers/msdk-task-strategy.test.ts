@@ -243,7 +243,10 @@ describe("MsdkTaskStrategy", function () {
 			const alphaPath = path.join(dualMsdkRoot, "msdk-alpha");
 			const betaPath = path.join(dualMsdkRoot, "msdk-beta");
 
-			const tasks = await strategy.discoverTasks([alphaPath, betaPath]);
+			const tasks = await strategy.discoverTasks([
+				alphaPath,
+				betaPath
+			]);
 
 			// Both folders get tasks because neither has RISCV_LOAD=1
 			expect(tasks).to.have.lengthOf(18);

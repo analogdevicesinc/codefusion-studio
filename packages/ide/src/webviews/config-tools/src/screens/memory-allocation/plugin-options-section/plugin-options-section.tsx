@@ -26,14 +26,20 @@ import {useAppDispatch} from '../../../state/store';
 import {updateActivePartitionConfig} from '../../../state/slices/partitions/partitions.reducer';
 import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
 import ProjectOption from '../../../components/project-option/project-option';
+import type {ScopeValidationOptions} from '../../../utils/plugin-options-validation';
 
 type PluginOptionsSectionProps = Readonly<{
 	pluginOptions: Record<string, Record<string, ControlCfg[]>>;
 	allOptions: Record<string, any>;
+	scopeValidation: Record<string, ScopeValidationOptions>;
 }>;
 
 export const PluginOptionsSection = memo(
-	({pluginOptions, allOptions}: PluginOptionsSectionProps) => {
+	({
+		pluginOptions,
+		allOptions,
+		scopeValidation
+	}: PluginOptionsSectionProps) => {
 		const dispatch = useAppDispatch();
 		const partitionCores = useActivePartitionProjects();
 
@@ -124,6 +130,7 @@ export const PluginOptionsSection = memo(
 											...allOptions[projectId]
 										}}
 										pluginControls={controls.memory ?? []}
+										scopeValidation={scopeValidation[projectId]}
 										onChange={(controlId, value) => {
 											onChangeHandler(projectId, controlId, value);
 										}}

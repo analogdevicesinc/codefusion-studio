@@ -43,9 +43,11 @@ const applyMultiSignals = (
 	dispatch: AppDispatch,
 	{
 		peripheral,
-		pinAssignments
+		pinAssignments,
+		discardPersistence
 	}: {
 		peripheral: string;
+		discardPersistence?: boolean;
 		pinAssignments: Array<{
 			signalName: string;
 			pinId: string;
@@ -60,7 +62,7 @@ const applyMultiSignals = (
 				Peripheral: peripheral,
 				Name: signalName,
 				PinCfg: pinCfg,
-				...(index < pinAssignments.length - 1
+				...(discardPersistence || index < pinAssignments.length - 1
 					? {discardPersistence: true}
 					: {})
 			})
@@ -114,9 +116,26 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 				}
 			}
 
-			const peripheralSignals = Object.keys(
-				getPeripheralSignals(peripheral)
-			);
+			// Assign signals to pins
+			const signalsData = getPeripheralSignals(peripheral);
+			const peripheralSignals = Object.keys(signalsData);
+
+			const hasReservedPinAssignments =
+				!isExternallyManaged &&
+				peripheralSignals.some(signalName =>
+					(signalsData[signalName]?.reservedPins ?? []).some(
+						reservedPin =>
+							!peripheralPins.some(
+								pin =>
+									pin.pinId === reservedPin.Name &&
+									pin.appliedSignals.some(
+										(s: any) =>
+											s.Peripheral === peripheral &&
+											s.Name === signalName
+									)
+							)
+					)
+				);
 
 			// For cases where a signal within the peripheral group was allocated to a pin
 			// before allocating the peripheral to a project, the defaults are computed
@@ -147,18 +166,16 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 								(signal: any) => signal.Peripheral === peripheral
 							)?.Name ?? '';
 
-						const initialPinConfig = await computeInitialPinConfig({
-							Pin: pin.Name,
-							Peripheral: peripheral,
-							Signal: targetSignal,
-							ProjectId: projectId
-						});
-
 						return {
 							Pin: pin.Name,
 							Peripheral: peripheral,
 							Name: targetSignal,
-							PinCfg: initialPinConfig
+							PinCfg: await computeInitialPinConfig({
+								Pin: pin.Name,
+								Peripheral: peripheral,
+								Signal: targetSignal,
+								ProjectId: projectId
+							})
 						};
 					})
 				);
@@ -191,7 +208,10 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 					setSignalGroupAssignment({
 						peripheral,
 						projectId,
-						config: initialConfig
+						config: initialConfig,
+						...(hasReservedPinAssignments
+							? {discardPersistence: true}
+							: {})
 					})
 				);
 				dispatch(
@@ -201,9 +221,6 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 					})
 				);
 			}
-
-			// Assign signals to pins
-			const signalsData = getPeripheralSignals(peripheral);
 
 			const signalsToPinAssign = peripheralSignals.flatMap(
 				signalName => {
@@ -241,7 +258,61 @@ export function useSignalGroupAssignmentHandler(peripheral: string) {
 					return {signalName, pinId, pinCfg};
 				})
 			);
-			applyMultiSignals(dispatch, {peripheral, pinAssignments});
+			applyMultiSignals(dispatch, {
+				peripheral,
+				pinAssignments,
+				discardPersistence: hasReservedPinAssignments
+			});
+
+			// Reserved pins do not participate in normal pin assignment. Apply
+			// their default configurations separately after all assignments.
+			if (!isExternallyManaged) {
+				const reservedPinConfigs = await Promise.all(
+					peripheralSignals.flatMap(signalName =>
+						(signalsData[signalName]?.reservedPins ?? [])
+							.filter(reservedPin => {
+								return !peripheralPins.some(
+									pin =>
+										pin.pinId === reservedPin.Name &&
+										pin.appliedSignals.some(
+											(signal: any) =>
+												signal.Peripheral === peripheral &&
+												signal.Name === signalName
+										)
+								);
+							})
+							.map(async reservedPin => ({
+								Pin: reservedPin.Name,
+								Peripheral: peripheral,
+								Name: signalName,
+								PinCfg: await computeInitialPinConfig({
+									Pin: reservedPin.Name,
+									Peripheral: peripheral,
+									Signal: signalName,
+									ProjectId: projectId
+								})
+							}))
+					)
+				);
+
+				if (reservedPinConfigs.length > 0) {
+					reservedPinConfigs.forEach(
+						({Pin, Peripheral, Name, PinCfg}, index) => {
+							dispatch(
+								setAppliedSignal({
+									Pin,
+									Peripheral,
+									Name,
+									PinCfg,
+									...(index < reservedPinConfigs.length - 1
+										? {discardPersistence: true}
+										: {})
+								})
+							);
+						}
+					);
+				}
+			}
 
 			// Open the config sidebar after assignment
 			dispatch(setActivePeripheral(`${peripheral}:${projectId}`));

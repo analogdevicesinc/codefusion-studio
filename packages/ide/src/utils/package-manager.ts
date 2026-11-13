@@ -16,10 +16,9 @@
 import {
   CfsApiClient,
   DefaultConanCloudsmithRemotesProvider,
+  RemotesProviderWithFallback,
   PackageLicenseReporter,
-  SessionManager,
   MyAnalogConanCloudsmithRemotesProvider,
-  type AuthConfig,
   type TokenAuthSession,
 } from "cfs-lib";
 import type {
@@ -28,16 +27,29 @@ import type {
   CfsPackageManifest,
   CfsPackageManagerProvider,
   CfsPackageReference,
+  CfsPackageRemote,
+  CfsPackageRemoteConfigError,
   CfsPackageRemotesProvider,
   CfsSkippedPackageInfo,
 } from "cfs-package-manager";
-import { getSkippedPackageReasonMessage } from "cfs-package-manager";
+import {
+  getSkippedPackageReasonMessage,
+  MANIFEST_FILE_NAME,
+} from "cfs-package-manager";
+import {} from "cfs-package-manager";
+import * as fg from "fast-glob";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { AuthConfigParser } from "../utils/auth-config";
+import type { CustomRemoteFailure } from "cfs-lib";
+import type {
+  PackageManagerRemote,
+  PackageManagerRemoteError,
+} from "../constants/messages/package-manager-messages";
+import type { CustomRemoteCatalogService } from "./custom-remote-catalog";
+import type { AuthService } from "../services/auth-service";
+import { logger } from "./logger";
 import { Utils } from "./utils";
-import type { Authorizer } from "cfs-ccm-lib";
 
 type LicenseAction =
   | "accept"
@@ -407,56 +419,43 @@ export async function promptForPackageLicenseAcceptance(
   });
 }
 
-export async function getPackageManagerProviders(
-  apiClient?: CfsApiClient,
-): Promise<[CfsPackageRemotesProvider, CfsPackageLicenseReporter | undefined]> {
-  let authConfig: AuthConfig | undefined;
-  let authorizer: Authorizer | undefined;
-
-  if (!apiClient) {
-    try {
-      authConfig = new AuthConfigParser().getConfig();
-    } catch (error) {
-      // IDE may have been built without auth config
-      // a notification will already have been shown to the user
-      console.warn("Failed to get auth config:", error);
-    }
-
-    try {
-      if (authConfig) {
-        const sessionManager = new SessionManager(authConfig);
-        const session = await sessionManager.getSession();
-        authorizer = session?.authorizer;
-      }
-    } catch (error) {
-      console.warn("Failed to get session:", error);
-      vscode.window.showWarningMessage(
-        "Failed to get myAnalog session for package manager.",
-      );
-    }
-
-    apiClient = new CfsApiClient({
-      baseUrl: authConfig?.ccmUrl,
-      authorizer,
-    });
-  }
-
-  let remotesProvider: CfsPackageRemotesProvider;
-
+/**
+ * Creates the package manager remotes provider and license reporter.
+ * @param authService - Provides the CCM URL
+ * @param session - The myAnalog session, or undefined to use anonymous access
+ * @returns Tuple of [remotes provider, license reporter | undefined]. The
+ * license reporter is only present when a session is given.
+ */
+export function getPackageManagerProviders(
+  authService: AuthService,
+  session?: TokenAuthSession,
+): [CfsPackageRemotesProvider, CfsPackageLicenseReporter | undefined] {
+  let apiClient: CfsApiClient;
   try {
-    const myAnalogProvider = new MyAnalogConanCloudsmithRemotesProvider(
-      apiClient,
-    );
-    await myAnalogProvider.init();
-    remotesProvider = myAnalogProvider;
+    apiClient = new CfsApiClient({
+      baseUrl: authService.config?.ccmUrl,
+      authorizer: session?.authorizer,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Failed to create API client:", error);
     vscode.window.showWarningMessage(
-      `Failed to initialize cloud package remotes provider, falling back to default remotes`,
+      "Failed to create API client for package manager. Using default remotes.",
     );
-
-    remotesProvider = new DefaultConanCloudsmithRemotesProvider();
+    return [new DefaultConanCloudsmithRemotesProvider(), undefined];
   }
+
+  // The cloud remotes are only fetched on the first package operation, so
+  // creating the provider does not block on a network request.
+  const remotesProvider = new RemotesProviderWithFallback(
+    new MyAnalogConanCloudsmithRemotesProvider(apiClient),
+    new DefaultConanCloudsmithRemotesProvider(),
+    (error: unknown) => {
+      logger.warn(
+        "Failed to initialize cloud package remotes provider, falling back to default remotes:",
+        error,
+      );
+    },
+  );
 
   return [
     remotesProvider,
@@ -478,6 +477,7 @@ let syncCredentialsQueue: Promise<void> = Promise.resolve();
  * register/unregister cycles from leaving stale credentials.
  *
  * @param pkgManager - The package manager provider instance
+ * @param authService - Provides the CCM URL
  * @param session - The currently registered session, if any; undefined when logged out
  * @returns Tuple of [remotes provider, license reporter | undefined]. The remotes
  * provider is always returned (uses anonymous auth when logged out). License
@@ -485,6 +485,7 @@ let syncCredentialsQueue: Promise<void> = Promise.resolve();
  */
 export async function syncPackageManagerCredentials(
   pkgManager: CfsPackageManagerProvider,
+  authService: AuthService,
   session?: TokenAuthSession,
 ): Promise<[CfsPackageRemotesProvider, CfsPackageLicenseReporter | undefined]> {
   let releaseLock!: () => void;
@@ -498,14 +499,10 @@ export async function syncPackageManagerCredentials(
     await pkgManager.unregisterLicenseReporter();
     await pkgManager.unregisterRemotesProvider();
 
-    const authConfig = new AuthConfigParser().getConfig();
-    const apiClient = new CfsApiClient({
-      baseUrl: authConfig.ccmUrl,
-      authorizer: session?.authorizer,
-    });
-
-    const [remotesProvider, licenseReporter] =
-      await getPackageManagerProviders(apiClient);
+    const [remotesProvider, licenseReporter] = await getPackageManagerProviders(
+      authService,
+      session,
+    );
     await pkgManager.registerRemotesProvider(remotesProvider);
     if (licenseReporter) {
       await pkgManager.registerLicenseReporter(licenseReporter);
@@ -561,6 +558,53 @@ export function getManifestPackages(
 }
 
 /**
+ * Reads every `.cfsdependencies` manifest in the workspace and returns a map
+ * of package name to all required version constraints collected across manifests.
+ * Pure file reads — no conan calls.
+ * @returns A map of package name to the version constraints declared for it.
+ */
+export async function getRequiredPackages(): Promise<Map<string, string[]>> {
+  const required = new Map<string, string[]>();
+
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    return required;
+  }
+
+  const manifestPathLists = await Promise.all(
+    folders.map((folder) =>
+      fg.async(`**/${MANIFEST_FILE_NAME}`, {
+        cwd: folder.uri.fsPath,
+        absolute: true,
+        dot: true,
+        onlyFiles: true,
+        suppressErrors: true,
+        // Package folders added to the workspace carry large trees that can
+        // never hold a manifest, and west checkouts carry one `.git` per module.
+        ignore: ["**/node_modules/**", "**/.git/**"],
+      }),
+    ),
+  );
+
+  for (const manifestPath of manifestPathLists.flat()) {
+    try {
+      for (const pkg of getManifestPackages(manifestPath)) {
+        const existing = required.get(pkg.name);
+        if (existing) {
+          existing.push(pkg.version);
+        } else {
+          required.set(pkg.name, [pkg.version]);
+        }
+      }
+    } catch {
+      // Ignore buggy/malformed manifests
+    }
+  }
+
+  return required;
+}
+
+/**
  * Shows a warning message for packages that were skipped due to platform compatibility.
  * @param compatibilitySkipped - Array of skipped packages
  */
@@ -602,9 +646,107 @@ export function formatErrorForDisplay(error: unknown): string {
         : "";
   const errorMessage = rawMessage
     .replace(/(^|\s)ERROR:\s*/gi, "$1Error: ")
+    .replace(/\r/g, "") // Remove actual carriage return bytes
     .trim();
   if (!errorMessage) {
     return "";
   }
   return /[.!?]$/.test(errorMessage) ? ` ${errorMessage}` : ` ${errorMessage}.`;
+}
+
+/**
+ * The Conan home of the package manager, where Conan keeps its remotes.
+ * @param pkgManager - the package manager
+ * @returns the directory
+ */
+export function getConanHome(pkgManager: CfsPackageManagerProvider): string {
+  return path.join(path.dirname(pkgManager.getIndexFilePath()), "conan");
+}
+
+/** The message of an error of unknown type. */
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Describes what keeps a remote from working, if anything. A remote Conan
+ * couldn't be set up for can't be indexed either, so its config error wins.
+ */
+function toRemoteError(
+  configError: CfsPackageRemoteConfigError | undefined,
+  failure: CustomRemoteFailure | undefined,
+): PackageManagerRemoteError | undefined {
+  if (configError) {
+    // The message only names the step that failed; the cause says why.
+    const cause = "cause" in configError ? configError.cause : undefined;
+
+    return {
+      kind: configError.code === "REMOTE_AUTH_FAILED" ? "auth" : "config",
+      message: errorMessage(cause ?? configError),
+    };
+  }
+
+  if (failure) {
+    return {
+      kind: failure.auth ? "auth" : "fetch",
+      message: errorMessage(failure.error),
+    };
+  }
+
+  return undefined;
+}
+
+/**
+ * Flattens a remote so it can cross the messenger boundary.
+ * @param remote - the remote
+ * @param failure - why the last update could not index it, if it couldn't
+ */
+function toWebviewRemote(
+  remote: CfsPackageRemote,
+  failure: CustomRemoteFailure | undefined,
+): PackageManagerRemote {
+  // A disabled remote isn't indexed, so an earlier failure no longer applies.
+  const error = toRemoteError(
+    remote.configError,
+    remote.disabled ? undefined : failure,
+  );
+  const flattened: PackageManagerRemote = {
+    name: remote.name,
+    url: remote.url.href,
+    disabled: remote.disabled,
+    custom: remote.custom,
+    ...(error && { error }),
+  };
+
+  if (!remote.auth) {
+    return flattened;
+  }
+
+  if (remote.auth.public) {
+    return { ...flattened, auth: "none" };
+  }
+
+  return "username" in remote.auth
+    ? { ...flattened, auth: "usernamePassword", username: remote.auth.username }
+    : { ...flattened, auth: "myAnalog" };
+}
+
+/**
+ * Lists the remotes for the webview: custom ones first, then managed ones,
+ * each alphabetical.
+ */
+export async function listWebviewRemotes(
+  pkgManager: CfsPackageManagerProvider,
+  customRemoteCatalog: CustomRemoteCatalogService | undefined,
+): Promise<PackageManagerRemote[]> {
+  const remotes = await pkgManager.listRemotes();
+
+  return remotes
+    .map((remote) =>
+      toWebviewRemote(remote, customRemoteCatalog?.getFailure(remote.name)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.custom) - Number(a.custom) || a.name.localeCompare(b.name),
+    );
 }

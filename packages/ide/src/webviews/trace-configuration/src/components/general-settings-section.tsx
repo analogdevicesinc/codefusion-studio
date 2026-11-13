@@ -52,7 +52,9 @@ export default function GeneralSettingsSection({
 	return (
 		<section
 			data-test='general-settings-section'
-			className={`${styles.configurationSection} ${isDisabled ? styles.disabled : ''}`}
+			className={`${styles.configurationSection} ${
+				isDisabled ? styles.disabled : ''
+			}`}
 		>
 			<h5 className={styles.title}>{l10n?.generalSettings?.title}</h5>
 

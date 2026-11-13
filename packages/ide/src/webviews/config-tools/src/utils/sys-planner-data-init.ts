@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,29 @@ import {initializeRegisterDictionary} from './register-dictionary';
 import type {Soc} from '../../../common/types/soc';
 import type {CfsConfig} from 'cfs-types';
 import {initializeDfg} from './dfg';
+import {initializeFirewall} from './firewall';
 import {initializeAiToolsData} from './ai-tools';
 import {initializeProfilingPeripherals} from '../state/slices/profiling/profilingPeripherals';
+import {initializeSruData} from './sru';
 
 /**
  * Initializes all SoC-related data structures for the system planner.
  * Should be called once at app startup.
  * @param dataModel The SoC data model
  * @param configOptions The persisted config options
+ * @param resolvedPluginVersions Resolved plugin versions indexed by project ID
  */
 export function sysPlannerDataInit(
 	dataModel: Soc,
-	configOptions?: CfsConfig | undefined
+	configOptions?: CfsConfig | undefined,
+	resolvedPluginVersions?: Record<string, string>
 ) {
 	if (configOptions) {
-		initializeConfigDict(configOptions, dataModel);
+		initializeConfigDict(
+			configOptions,
+			dataModel,
+			resolvedPluginVersions
+		);
 	}
 
 	initializeSocCores(dataModel.Cores);
@@ -52,6 +60,7 @@ export function sysPlannerDataInit(
 	initializeRegisterDictionary(dataModel.Registers);
 	initializeSocMemoryTypes(dataModel.MemoryTypes);
 	initializeDfg(dataModel.Gaskets);
+	initializeFirewall(dataModel.Firewall);
 
 	initializeAiToolsData(
 		dataModel.Cores,
@@ -59,4 +68,5 @@ export function sysPlannerDataInit(
 		configOptions?.Projects
 	);
 	initializeProfilingPeripherals(dataModel.Peripherals);
+	initializeSruData(dataModel.Peripherals);
 }

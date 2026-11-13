@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import {CONTROL_SCOPES} from '../constants/scopes';
 import {getControlsFromCache} from '../utils/api';
 import useIsPinAssignmentMissing from './useIsPinAssignmentMissing';
 import {useProjectsPeripheralAssignmentsErrors} from './use-projects-peripheral-assignments-errors-count';
+import {useHasScopeConflictForItem} from '../state/slices/scopes/scopes.selector';
 
 /**
  * Custom hook to count the peripheral config and missing pin assignment errors for a peripheral in a project
@@ -36,6 +37,11 @@ export default function useProjectPeripheralErrorCount(
 		CONTROL_SCOPES.PERIPHERAL,
 		projectId
 	);
+	const hasScopeConflict = useHasScopeConflictForItem({
+		controlScope: CONTROL_SCOPES.PERIPHERAL,
+		itemId: peripheralName,
+		projectIds: [projectId]
+	});
 	const peripheralToValidate =
 		allocations[projectId]?.[peripheralName] ?? {};
 	const peripheralErrorMap = useProjectsPeripheralAssignmentsErrors(
@@ -57,5 +63,8 @@ export default function useProjectPeripheralErrorCount(
 		return isPinAssignmentMissing ? 1 : 0;
 	}
 
-	return peripheralErrorMap[projectId];
+	return Math.max(
+		peripheralErrorMap[projectId] ?? 0,
+		hasScopeConflict ? 1 : 0
+	);
 }

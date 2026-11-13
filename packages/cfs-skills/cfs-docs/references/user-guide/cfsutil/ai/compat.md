@@ -1,7 +1,7 @@
 ---
 description: Check model compatibility with a target SoC and core using cfsutil ai compat.
 author: Analog Devices
-date: 2026-07-10
+date: 2026-10-10
 ---
 
 # Compat
@@ -53,7 +53,7 @@ cfsutil ai compat --soc <soc> --model <path/to/model_file>
 | `--soc` | `-s` | Target SoC. |
 | `--search-path` | `-x` | Additional search path for templates and data models. Can be repeated. |
 | `--ignore-cache` | | Bypass cache and fetch latest remote files. |
-| `--format` | | Output format: `text` (default) or `json`. |
+| `--format` | `-f` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](../index.md#json-output-envelope). `ok` reports whether the command ran, not whether the model is compatible. Check `data` for the result. |
 | `--report-file` | | Path to output JSON report file. |
 
 !!! example "Check compatibility for a specific SoC package variant"
@@ -84,29 +84,27 @@ Memory constraint issues occur when the model exceeds the flash or RAM limits de
 #### How to read the output
 
 Memory issues are reported in the terminal using the following structure:
-`[SEVERITY] ISSUE_IDENTIFIER – MEMORY_SCOPE`
+`ISSUE_IDENTIFIER – MEMORY_SCOPE`
 
 Where:
 
-- **SEVERITY** indicates the impact on deployment (`CRITICAL` or `WARNING`).
 - **ISSUE_IDENTIFIER** identifies the type of memory constraint.
 - **MEMORY_SCOPE** indicates whether the issue applies to flash, RAM, or both.
 
 #### Memory issue identifiers
 
-| Memory issue | Meaning | Severity |
-| ------------ | ------- | -------- |
-| `model_storage_memory_overflow – flash_and_ram` | Model exceeds both flash and RAM | CRITICAL |
-| `model_storage_flash_overflow – flash` | Exceeds flash, but fits in RAM | WARNING |
-| `model_storage_ram_overflow – ram` | Exceeds RAM, but fits in flash | WARNING |
-| `ram_memory_overflow – ram` | Peak runtime RAM usage exceeds limit | WARNING |
+| Memory issue | Meaning |
+| ------------ | ------- |
+| `model_storage_memory_overflow – flash_and_ram` | Model exceeds both flash and RAM |
+| `model_storage_flash_overflow – flash` | Exceeds flash, but fits in RAM |
+| `model_storage_ram_overflow – ram` | Exceeds RAM, but fits in flash |
+| `ram_memory_overflow – ram` | Peak runtime RAM usage exceeds limit |
 
 !!! example "Sample output"
 
     ```sh
-    Memory Constraint Issues (1):
-    Memory requirements exceed hardware limitations
-    [CRITICAL] model_storage_memory_overflow - flash_and_ram memory
+    Model incompatible - (1) issues identified:
+      Memory issue: model_storage_memory_overflow - flash_and_ram memory
     ```
 
 #### How to fix memory constraint issues
@@ -124,13 +122,13 @@ Operator compatibility issues indicate that a model layer uses an operator not s
 #### How to read the operator issues output
 
 Operator issues are reported in the terminal using the following structure:
-`OPERATOR (ALTERNATIVE_IF_AVAILABLE). Layer(s) <index>`
+`OPERATOR Layer(s) <index>. ALTERNATIVE_IF_AVAILABLE.`
 
 Where:
 
 - **OPERATOR** is the unsupported operator name.
-- **ALTERNATIVE_IF_AVAILABLE** is shown if a hardware-compatible replacement exists.
 - **Layer(s)** indicates where the operator appears in the model graph.
+- **ALTERNATIVE_IF_AVAILABLE** is shown if a hardware-compatible replacement exists.
 
 #### Operator issue fields
 
@@ -143,9 +141,8 @@ Where:
 !!! example "Sample output"
 
     ```sh
-    Operator Compatibility Issues (1):
-    Operations not supported by target hardware platform
-    MEAN (no hardware-compatible alternative identified). Layer(s) 50, 51.
+    Model incompatible - (1) issues identified:
+      Unsupported operator: MEAN Layer(s) 50, 51. no hardware-compatible alternative identified.
     ```
 
 #### How to fix operator compatibility issues
@@ -171,9 +168,8 @@ Data type issues are reported in the terminal using the following structure:
 !!! example "Sample output"
 
     ```sh
-    Data Type Compatibility Issues (54):
-    Model uses data types not supported by target hardware
-    CONV_2D operation uses FLOAT32. Layer(s) 0.
+    Model incompatible - (1) issues identified:
+      Unsupported type: CONV_2D operation uses FLOAT32. Layer(s) 0.
     ```
 
 #### How to fix data type compatibility issues

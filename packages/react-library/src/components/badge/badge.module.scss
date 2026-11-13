@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,19 @@
 	--badge-background: #{colors.$editor-widget-background};
 	--badge-foreground: #{colors.$editor-widget-foreground};
 	--button-border: #{colors.$default-border};
+	--design-unit: 5;
+	&.small {
+		--design-unit: 3;
+		&::part(control) {
+			@include fonts.label-l4;
+		}
+	}
+}
+
+.active {
+	--badge-background: #{colors.$active-badge-background};
+	--badge-foreground: #{colors.$active-badge-foreground};
+	--button-border: #{colors.$editor-widget-border};
 	--design-unit: 5;
 	&.small {
 		--design-unit: 3;

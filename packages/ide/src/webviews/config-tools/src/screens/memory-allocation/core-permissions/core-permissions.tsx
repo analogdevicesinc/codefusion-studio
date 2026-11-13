@@ -46,6 +46,9 @@ export const CorePermissions = memo(
 	}: CorePermissionsProps) => {
 		const i10n: TLocaleContext | undefined =
 			useLocaleContext()?.memory;
+		const badges = useLocaleContext()?.badges as
+			| Record<string, string>
+			| undefined;
 		const projects = getProjectInfoList();
 
 		const dataModelCore = getSocCoreList().find(
@@ -90,9 +93,8 @@ export const CorePermissions = memo(
 						{secure !== undefined && (
 							<Badge appearance='secondary' className={styles.badge}>
 								{secure
-									? (i10n?.partition.badge.secure ?? 'Secure')
-									: (i10n?.partition.badge.non_secure ??
-										'Non-Secure')}
+									? (badges?.secure ?? 'Secure')
+									: (badges?.nonSecure ?? 'Non-secure')}
 							</Badge>
 						)}
 					</div>

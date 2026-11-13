@@ -1,0 +1,138 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+@use '#colors' as colors;
+
+.container {
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	align-self: stretch;
+	box-sizing: border-box;
+	border-radius: layout.$border-radius-2;
+	border: layout.$border-width-2 solid
+		var(--vscode-commandCenter-border);
+	background: colors.$default-background;
+
+	&.selected {
+		border-color: colors.$focus-border;
+	}
+}
+
+.toggleColumn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	padding: layout.$spacing-5;
+
+	// Greys out the toggle while its change is applied.
+	&.busy {
+		opacity: 0.5;
+	}
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-3;
+	flex: 1;
+	min-width: 0;
+	padding: layout.$spacing-5;
+	border-left: layout.$border-width-1 solid colors.$default-border;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: layout.$spacing-3;
+}
+
+.nameAndBadge {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+	min-width: 0;
+}
+
+.name {
+	@include fonts.heading-h3;
+	min-width: 0;
+	color: colors.$default-foreground;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-2;
+	flex-shrink: 0;
+}
+
+.details {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: layout.$spacing-5;
+}
+
+.url,
+.auth {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-3;
+	color: colors.$description-foreground;
+}
+
+.url {
+	min-width: 0;
+}
+
+.auth {
+	flex-shrink: 0;
+}
+
+// Keep the 16px icons from shrinking next to long text. Block display
+// drops the inline baseline gap so icons wrapped in a Tooltip stay centered.
+.icon {
+	display: block;
+	flex-shrink: 0;
+}
+
+.urlText {
+	@include fonts.body-b3;
+	min-width: 0;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.authText {
+	@include fonts.body-b3;
+	white-space: nowrap;
+}
+
+.error {
+	@include fonts.body-b3;
+
+	margin: 0;
+	color: colors.$error;
+}

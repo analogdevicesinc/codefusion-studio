@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import {Button, ChevronLeftIcon} from 'cfs-react-library';
 import CoreSelectorCard from './core-selector-card';
 import {type PeripheralSecurity} from '../../../types/peripherals';
 import {getSocPeripheralDictionary} from '../../../utils/soc-peripherals';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export type CoreSelectorProps = Readonly<{
 	title?: string;
@@ -37,7 +38,12 @@ function CoreSelector({
 	onSelect,
 	onCancel
 }: CoreSelectorProps) {
-	const allocatableName = `${title}${signalName ? ` ${signalName}` : ''}`;
+	const allocatableName = `${title}${
+		signalName ? ` ${signalName}` : ''
+	}`;
+	const l10n = useLocaleContext()?.peripheralConfig as
+		| Record<string, string>
+		| undefined;
 
 	const shouldDisableSelection = (project: ProjectInfo) => {
 		const socPeripheral =
@@ -90,13 +96,16 @@ function CoreSelector({
 			>
 				<div className={styles.cancelIcon}>
 					<ChevronLeftIcon />
-					<span>Back</span>
+					<span>{l10n?.back ?? 'Back'}</span>
 				</div>
 			</Button>
 			<div
 				className={styles.allocateText}
 				data-test={`allocate-${title}-title`}
-			>{`Allocate ${allocatableName} to: `}</div>
+			>
+				{l10n?.allocateTo?.replace('{name}', allocatableName) ??
+					`Allocate ${allocatableName} to: `}
+			</div>
 			<div id='core-selector' className={styles.coreSection}>
 				{projects?.map(project => {
 					const isDisabled = shouldDisableSelection(project);

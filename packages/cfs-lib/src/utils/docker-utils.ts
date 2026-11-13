@@ -86,6 +86,7 @@ export async function pullImage(params: {
 	if (creds) {
 		try {
 			await new Promise<void>((resolve, reject) => {
+				const stderrBuffer: string[] = [];
 				const child = spawn(
 					utility,
 					[
@@ -101,7 +102,7 @@ export async function pullImage(params: {
 						stdio: [
 							"pipe",
 							quiet ? "ignore" : "inherit",
-							quiet ? "ignore" : "inherit"
+							"pipe" // Buffer stderr even in quiet mode for error diagnostics
 						],
 						windowsVerbatimArguments: process.platform === "win32",
 						windowsHide: true
@@ -111,12 +112,25 @@ export async function pullImage(params: {
 				child.stdin!.write(creds!.password);
 				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-type-assertion
 				child.stdin!.end();
+				if (child.stderr) {
+					child.stderr.on("data", (data) => {
+						stderrBuffer.push(data.toString());
+						if (!quiet) {
+							process.stderr.write(data);
+						}
+					});
+				}
 				child.on("error", reject);
 				child.on("close", (code) => {
 					if (code === 0) {
 						resolve();
 					} else {
-						reject(new Error(`Error code: ${String(code)}.`));
+						const stderrMsg = stderrBuffer.join("").trim();
+						const errorMsg =
+							stderrMsg && quiet
+								? `Error code: ${String(code)}. ${stderrMsg}`
+								: `Error code: ${String(code)}.`;
+						reject(new Error(errorMsg));
 					}
 				});
 			});
@@ -131,22 +145,38 @@ export async function pullImage(params: {
 
 	try {
 		await new Promise<void>((resolve, reject) => {
+			const stderrBuffer: string[] = [];
 			const child = spawn(utility, ["pull", image], {
 				env,
 				stdio: [
 					"pipe",
 					quiet ? "ignore" : "inherit",
-					quiet ? "ignore" : "inherit"
+					"pipe" // Capture stderr for error reporting
 				],
 				windowsVerbatimArguments: process.platform === "win32",
 				windowsHide: true
 			});
+			// Forward each chunk to process.stderr when not quiet, and buffer for error diagnostics
+			if (child.stderr) {
+				child.stderr.on("data", (data) => {
+					const str = data.toString();
+					stderrBuffer.push(str);
+					if (!quiet) {
+						process.stderr.write(data);
+					}
+				});
+			}
 			child.on("error", reject);
 			child.on("close", (code) => {
 				if (code === 0) {
 					resolve();
 				} else {
-					reject(new Error(`Error code: ${String(code)}.`));
+					const stderrMsg = stderrBuffer.join("").trim();
+					const errorMsg =
+						stderrMsg && quiet
+							? `Error code: ${String(code)}. ${stderrMsg}`
+							: `Error code: ${String(code)}.`;
+					reject(new Error(errorMsg));
 				}
 			});
 		});
@@ -232,7 +262,7 @@ export async function getCredentials(
 		: undefined;
 
 	if (!credentialProvider) {
-		!quiet &&
+		if (!quiet)
 			console.warn(
 				"Unable to check for credentials. Not logged in to myAnalog."
 			);

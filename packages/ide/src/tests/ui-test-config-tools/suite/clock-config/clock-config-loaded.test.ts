@@ -84,20 +84,17 @@ describe("System Planner clock configuration for already loaded pins", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   after(async () => {
     // Teardown - reset cfsconfig file
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Should display the clock screen correctly for a pre-configured file", async () => {
+  it("Should display the clock screen correctly for a pre-configured file @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
     view = new WebView();
@@ -158,7 +155,7 @@ describe("System Planner clock configuration for already loaded pins", () => {
     await UIUtils.clickElement(view, backButton);
   });
 
-  it("2.Should update and save clock configurations correctly", async () => {
+  it("2.Should update and save clock configurations correctly @regression", async () => {
     // ===Then I click on MUX accordion to select node values for LPM MUX from "SYS_CLK_DIV_2" to "SYS_CLK_DIV_2_ISO",verify the new value===
     await UIUtils.clickElement(view, accordion("MUX"));
     await UIUtils.clickElement(view, muxType("LPM"));

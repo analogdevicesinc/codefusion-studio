@@ -28,7 +28,7 @@ describe("CfsJsonProjectConfig", () => {
 		);
 
 		expect(patched.ExternallyManaged).to.equal(true);
-		expect(patched.PlatformConfig.ProjectName).to.equal(
+		expect(patched.PlatformConfig?.ProjectName).to.equal(
 			"patched-project"
 		);
 	});

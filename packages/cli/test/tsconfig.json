@@ -1,9 +1,14 @@
 {
-	"extends": "../tsconfig",
-	"compilerOptions": {
-		"composite": false,
-		"noEmit": true,
-		"tsBuildInfoFile": null
-	},
-	"references": [{"path": ".."}]
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": "..",
+    "types": ["node", "mocha"],
+    "tsBuildInfoFile": null,
+    "module": "nodenext",
+    "resolveJsonModule": true
+  },
+  "include": ["../src/**/*.ts", "**/*.ts"],
+  "references": [{"path": ".."}]
 }

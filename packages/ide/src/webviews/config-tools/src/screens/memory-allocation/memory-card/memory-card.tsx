@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,9 @@ function MemoryCard({
 					<div className={styles.title}>{titleSlot}</div>
 					{Boolean(endSlot.length) && (
 						<div
-							className={`${styles.end} ${isExpandable ? styles.expandable : ''}`}
+							className={`${styles.end} ${
+								isExpandable ? styles.expandable : ''
+							}`}
 							data-test='partition-details-chevron'
 							onClick={() => {
 								if (isExpandable) {
@@ -97,7 +99,9 @@ function MemoryCard({
 								<>
 									{endSlot}
 									<span
-										className={`${styles.downArrow}${isOpen ? ` ${styles.iconOpen}` : ''}`}
+										className={`${styles.downArrow}${
+											isOpen ? ` ${styles.iconOpen}` : ''
+										}`}
 									>
 										<DownArrow width='10' height='8' />
 									</span>

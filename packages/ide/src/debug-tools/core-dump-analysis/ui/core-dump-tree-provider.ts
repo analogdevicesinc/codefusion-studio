@@ -24,9 +24,7 @@ import { CfsDebugManager } from "../../debug-manager";
  * CoreDumpTreeProvider implements the tree view for core dump analysis results.
  * Handles UI updates, node creation, and context management for parsed core dump data.
  */
-export class CoreDumpTreeProvider
-  implements vscode.TreeDataProvider<CoreDumpNode>
-{
+export class CoreDumpTreeProvider implements vscode.TreeDataProvider<CoreDumpNode> {
   // Event emitter for tree data changes
   private _onDidChangeTreeData = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -186,6 +184,8 @@ export class CoreDumpTreeProvider
           return this.getTaskStackNodes();
         case "heapUsage":
           return this.getHeapUsageNodes();
+        case "peripheralState":
+          return this.getPeripheralStateNodes();
         default:
           if (element.contextValue.startsWith("thread:")) {
             const threadName = element.contextValue.substring(7);
@@ -194,6 +194,18 @@ export class CoreDumpTreeProvider
               const task = tasks.find((t: any) => t.name === threadName);
               if (task) {
                 return this.getThreadDetailNodes(task);
+              }
+            }
+          }
+          if (element.contextValue.startsWith("peripheral:")) {
+            const peripheralName = element.contextValue.substring(11);
+            const peripherals = this.info.details.peripherals;
+            if (Array.isArray(peripherals)) {
+              const peripheral = peripherals.find(
+                (p: any) => p.name === peripheralName,
+              );
+              if (peripheral) {
+                return this.getPeripheralDetailNodes(peripheral);
               }
             }
           }
@@ -223,6 +235,11 @@ export class CoreDumpTreeProvider
         "Global Heap",
         vscode.TreeItemCollapsibleState.Collapsed,
         "heapUsage",
+      ),
+      new CoreDumpNode(
+        "Peripheral State",
+        vscode.TreeItemCollapsibleState.Collapsed,
+        "peripheralState",
       ),
     ];
 
@@ -358,6 +375,103 @@ export class CoreDumpTreeProvider
       msgNode.iconPath = new vscode.ThemeIcon("error");
       nodes.push(msgNode);
     }
+
+    return nodes;
+  }
+
+  /**
+   * Creates summary nodes for each peripheral in the core dump.
+   * Detail nodes (registers/channels) are built lazily on expand.
+   */
+  private getPeripheralStateNodes(): CoreDumpNode[] {
+    const peripherals = this.info?.details.peripherals;
+    if (!Array.isArray(peripherals) || peripherals.length === 0)
+      return [new CoreDumpNode("No peripheral state info available")];
+
+    return peripherals.map((peripheral: any) => {
+      const hasError = Boolean(peripheral.hasError);
+      const node = new CoreDumpNode(
+        `${peripheral.name ?? "Unknown"}`,
+        hasError
+          ? vscode.TreeItemCollapsibleState.Expanded
+          : vscode.TreeItemCollapsibleState.Collapsed,
+        `peripheral:${peripheral.name ?? "unknown"}`,
+        peripheral,
+      );
+      node.iconPath = new vscode.ThemeIcon(
+        hasError ? "error" : "circuit-board",
+        hasError ? new vscode.ThemeColor("testing.iconFailed") : undefined,
+      );
+      return node;
+    });
+  }
+
+  /**
+   * Recursively builds nodes for a peripheral's registers and, if present,
+   * nested sub-units (e.g. DMA -> DMA_CH2).
+   */
+  private getPeripheralDetailNodes(peripheral: any): CoreDumpNode[] {
+    const nodes: CoreDumpNode[] = [];
+
+    if (Array.isArray(peripheral.children) && peripheral.children.length > 0) {
+      peripheral.children.forEach((child: any) => {
+        const hasError = Boolean(child.hasError);
+        const childNode = new CoreDumpNode(
+          `${child.name ?? "Unknown"}`,
+          hasError
+            ? vscode.TreeItemCollapsibleState.Expanded
+            : vscode.TreeItemCollapsibleState.Collapsed,
+          undefined,
+          child,
+          this.getPeripheralDetailNodes(child),
+        );
+        childNode.iconPath = new vscode.ThemeIcon(
+          hasError ? "error" : "circuit-board",
+          hasError ? new vscode.ThemeColor("testing.iconFailed") : undefined,
+        );
+        nodes.push(childNode);
+      });
+    }
+
+    if (
+      Array.isArray(peripheral.registers) &&
+      peripheral.registers.length > 0
+    ) {
+      peripheral.registers.forEach((reg: any) => {
+        const valueText = String(reg.value ?? "Unavailable");
+        const label = `${reg.name ?? "Unknown"}: ${valueText}${
+          reg.description ? ` - ${reg.description}` : ""
+        }`;
+        const regNode = new CoreDumpNode(
+          label,
+          vscode.TreeItemCollapsibleState.None,
+          "peripheral-register",
+          reg,
+        );
+        // Highlight just the value portion of the label (same styling VS Code
+        // uses for search-match highlights), so it stands out from the name.
+        const valueStart = label.indexOf(
+          valueText,
+          (reg.name ?? "Unknown").length,
+        );
+        if (valueStart !== -1) {
+          regNode.label = {
+            label,
+            highlights: [[valueStart, valueStart + valueText.length]],
+          };
+        }
+        if (reg.isError) {
+          regNode.iconPath = new vscode.ThemeIcon(
+            "warning",
+            new vscode.ThemeColor("testing.iconFailed"),
+          );
+        }
+        nodes.push(regNode);
+      });
+    }
+
+    if (nodes.length === 0)
+      nodes.push(new CoreDumpNode("No register data available"));
 
     return nodes;
   }

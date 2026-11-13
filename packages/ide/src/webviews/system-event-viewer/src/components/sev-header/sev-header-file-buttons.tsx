@@ -15,7 +15,7 @@
 
 import {ExportIcon, SaveAsIcon} from 'cfs-react-library';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
-import {Direction} from '@common/components/tooltip/Tooltip';
+import {Direction} from '@common/utils';
 import Help from '@common/icons/Help';
 
 import styles from './sev-header.module.scss';
@@ -58,13 +58,15 @@ export default function SevHeaderFileButtons({
 					/>
 				</span>
 			</span>
-			<TopbarButton
-				title='System Event Viewer Help'
-				icon={<Help />}
-				tooltipType='long'
-				tooltipDirection={Direction.Left}
-				clickHandler={onHelpClick}
-			/>
+			<span data-test='sev-header:help-action'>
+				<TopbarButton
+					title='System Event Viewer Help'
+					icon={<Help />}
+					tooltipType='long'
+					tooltipDirection={Direction.Left}
+					clickHandler={onHelpClick}
+				/>
+			</span>
 		</div>
 	);
 }

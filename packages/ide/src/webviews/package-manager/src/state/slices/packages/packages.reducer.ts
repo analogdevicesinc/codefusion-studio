@@ -17,18 +17,18 @@ import {
 	createAsyncThunk,
 	createSlice,
 	current,
+	miniSerializeError,
 	type PayloadAction
 } from '@reduxjs/toolkit';
 import type {
 	CfsCachedPackage,
-	CfsPackage,
+	CfsDependencyConflict,
 	CfsPackageInstallOptions,
 	CfsPackageReference
 } from 'cfs-package-manager';
 import type {
-	GetPackageListParams,
+	DependencyResolutionResponse,
 	GetPackageListResponse,
-	GetPackageDetailsResponse,
 	GetSocListResponse,
 	MissingRequiredPackage,
 	PackageListEntry,
@@ -37,7 +37,7 @@ import type {
 import {
 	getLoggedInStatusRequest,
 	getPackageListRequest,
-	getPackageDetailsRequest,
+	getPackageDependenciesBatchRequest,
 	getPackageCacheStateRequest,
 	getSocListRequest,
 	uninstallPackagesRequest,
@@ -48,7 +48,7 @@ import {getDefaultVersion} from '../../../utils';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-/** Key used for the per-reference details cache. */
+/** The `name/version` key used for selections, licences and dependencies. */
 export const buildPackageReference = (
 	name: string,
 	version: string
@@ -95,16 +95,15 @@ function restoreEntries(
 }
 
 /**
- * Marks an entry as failed to install, restoring the version recorded before
- * the install started (if any) instead of always clearing it. Without this,
- * failing to update an already-installed package would wipe out the record
- * of the still-installed prior version.
+ * Rolls an entry back to what it looked like before the install started. The
+ * failure itself is reported by the install progress page, so the list entry
+ * carries no trace of it — it simply keeps whatever was installed before.
  */
-function markInstallFailed(
+function revertInstall(
 	entry: PackageListEntry,
 	snapshot: PackageListEntry | undefined
 ): void {
-	entry.state = 'installation-failed';
+	entry.state = snapshot?.state ?? 'not-installed';
 	entry.installedVersion = snapshot?.installedVersion;
 }
 
@@ -120,13 +119,10 @@ function applyCacheState(
 		cached.find(pkg => pkg.isInstalled)?.reference.version ??
 		entry.builtInVersion;
 
-	// A failed install keeps its state so the failure stays on screen.
-	if (entry.state !== 'installation-failed') {
-		entry.state =
-			entry.installedVersion === undefined
-				? 'not-installed'
-				: 'installed';
-	}
+	entry.state =
+		entry.installedVersion === undefined
+			? 'not-installed'
+			: 'installed';
 }
 
 /**
@@ -154,12 +150,10 @@ function markInstalled(
 export type InstallStatus = 'idle' | 'installing' | 'done' | 'error';
 
 type PackagesState = {
-	/** Full ordered package list (required-first, alphabetical). */
+	/** Full ordered package list, with each version's catalog metadata in `releases`. */
 	packageList: PackageListEntry[];
-	/** Required packages absent from the catalog search (no access). */
+	/** Required packages absent from the visible catalog (no access). */
 	missingRequiredPackages: MissingRequiredPackage[];
-	/** Detailed metadata cache, keyed by `name/version` -> CfsPackage. */
-	details: Record<string, CfsPackage>;
 	/** Current page (1-based). */
 	page: number;
 	/** Items per page. */
@@ -174,34 +168,28 @@ type PackagesState = {
 	/** When true, only packages required by a workspace manifest are shown. */
 	requiredOnly: boolean;
 
-	/** SoC filter dropdown options, from the auth-gated catalog. */
+	/** SoC filter dropdown options: every SoC in the SoC catalog. */
 	socOptions: SocFilterOption[];
+	socListLoading: boolean;
+	/** Latest SoC-list fetch; an older response is dropped. */
+	socListRequestId?: string;
 
 	noSelectionError: boolean;
 	isLoggedIn: boolean;
 	packageListLoading: boolean;
-	detailsLoading: boolean;
-	/** Package list-level error. A details fetch failure must NOT set this. */
+	/** Package list-level error. */
 	error?: string;
-	/** Error from the most recent page-details fetch */
-	detailsError?: string;
 	/**
-	 * Tracks the most recently dispatched package-list / SoC-list fetch by
-	 * requestId. A response whose requestId no longer matches the latest is
-	 * dropped, so a slow earlier request can't overwrite a newer one (e.g. a
-	 * login-triggered refetch racing the initial mount fetch).
+	 * Tracks the most recently dispatched package-list fetch by requestId. A
+	 * response whose requestId no longer matches the latest is dropped, so a
+	 * slow earlier request can't overwrite a newer one (e.g. a login-triggered
+	 * refetch racing the initial mount fetch).
 	 */
 	packageListRequestId?: string;
-	socListRequestId?: string;
 	/**
 	 * Latest cache-refresh requestId per package name
 	 */
 	cacheRefreshRequestIds: Record<string, string>;
-	/**
-	 * Identity generation, bumped on reset so that detail fetches from a prior
-	 * identity are dropped.
-	 */
-	detailsEpoch: number;
 	/**
 	 * Snapshots of package-list entries optimistically modified by an in-flight
 	 * uninstall, keyed by thunk requestId, so a failed uninstall can be rolled
@@ -230,12 +218,65 @@ type PackagesState = {
 	 * list what is being installed without recomputing the set.
 	 */
 	installTargets: CfsPackageReference[];
+	/**
+	 * Dependency closure of the current selection, resolved once and shared by
+	 * the review and licence pages.
+	 */
+	dependencyResolution: DependencyResolutionState;
 };
+
+/**
+ * Result of resolving the selected packages as one dependency graph.
+ */
+export type DependencyResolutionState = {
+	/**
+	 * Selection this result belongs to, or undefined before the first run.
+	 * A resolution is reused while the selection is unchanged.
+	 */
+	key?: string;
+	/**
+	 * The dispatch this result came from, so a slow earlier request cannot
+	 * overwrite a newer one.
+	 */
+	requestId?: string;
+	/** Closure per requested reference, keyed by `name/version`. */
+	byRef: Record<string, CfsPackageReference[]>;
+	loading: boolean;
+	/**
+	 * The disputed dependency, when resolution failed because the selected
+	 * packages cannot agree on a version.
+	 */
+	conflict?: CfsDependencyConflict;
+	/**
+	 * Message from the failed resolution, undefined when it succeeded. A graph
+	 * failure may still fill `byRef`, so empty never means "no dependencies".
+	 */
+	failure?: string;
+};
+
+/**
+ * Identity of a selection, order-independent, used to decide whether an
+ * existing dependency resolution still applies.
+ */
+export const buildSelectionKey = (
+	references: CfsPackageReference[]
+): string =>
+	references
+		.map(reference =>
+			buildPackageReference(reference.name, reference.version)
+		)
+		.sort()
+		.join(',');
+
+/** True when the action belongs to the resolution currently in flight. */
+const isCurrentResolution = (
+	state: PackagesState,
+	requestId: string
+): boolean => state.dependencyResolution.requestId === requestId;
 
 const packagesInitialState: PackagesState = {
 	packageList: [],
 	missingRequiredPackages: [],
-	details: {},
 	page: 1,
 	pageSize: DEFAULT_PAGE_SIZE,
 
@@ -248,70 +289,101 @@ const packagesInitialState: PackagesState = {
 	requiredOnly: false,
 
 	socOptions: [],
+	// Loading until the first response, so the dropdown never flashes
+	// "no results" between mount (or an auth reset) and the fetch.
+	socListLoading: true,
+	socListRequestId: undefined,
 
 	noSelectionError: false,
 	isLoggedIn: true,
 	packageListLoading: true,
-	detailsLoading: false,
 	error: undefined,
-	detailsError: undefined,
 	packageListRequestId: undefined,
-	socListRequestId: undefined,
 	cacheRefreshRequestIds: {},
-	detailsEpoch: 0,
 	uninstallRollbacks: {},
 	installRollbacks: {},
 	alreadyInstalled: [],
 	installStatus: 'idle',
-	installTargets: []
+	installTargets: [],
+	dependencyResolution: {
+		key: undefined,
+		byRef: {},
+		loading: false,
+		conflict: undefined,
+		failure: undefined
+	}
 };
 
 /**
- * Fetches the lightweight, ordered package list. Cheap — the list has no
- * per-package metadata; detailed metadata is fetched per page via
- * {@link fetchPageDetails}.
+ * Fetches the full, ordered package list with every version's catalog
+ * metadata embedded.
  */
-export const fetchPackageList = createAsyncThunk<
-	GetPackageListResponse,
-	GetPackageListParams
->('packages/fetchPackageList', async params =>
-	messenger.sendRequest(
-		getPackageListRequest,
-		{type: 'extension'},
-		params
-	)
-);
+export const fetchPackageList =
+	createAsyncThunk<GetPackageListResponse>(
+		'packages/fetchPackageList',
+		async () =>
+			messenger.sendRequest(getPackageListRequest, {
+				type: 'extension'
+			})
+	);
 
-/** Fetches detailed metadata for a set of references (one page). */
-export const fetchPageDetails = createAsyncThunk<
-	{response: GetPackageDetailsResponse; epoch: number},
+/**
+ * Resolves the dependency closure of the whole selection in one backend call.
+ *
+ * Review and licence acceptance need the same answer and the selection cannot
+ * change between them, so re-dispatching for an unchanged selection is a no-op.
+ */
+export const fetchDependencyResolution = createAsyncThunk<
+	{key: string} & DependencyResolutionResponse,
 	CfsPackageReference[],
-	{rejectValue: {epoch: number; message?: string}}
+	{rejectValue: {key: string; message: string}}
 >(
-	'packages/fetchPageDetails',
-	async (references, {getState, rejectWithValue}) => {
-		/**
-		 * Inject the current epoch into the fulfilled action so the reducer can drop
-		 * stale responses, as well as rejected actions.
-		 */
-		const {detailsEpoch} = (
-			getState() as {packagesReducer: PackagesState}
-		).packagesReducer;
+	'packages/fetchDependencyResolution',
+	async (references, {rejectWithValue}) => {
+		const key = buildSelectionKey(references);
+
+		if (references.length === 0) {
+			return {key, dependencies: {}};
+		}
 
 		try {
 			const response = await messenger.sendRequest(
-				getPackageDetailsRequest,
+				getPackageDependenciesBatchRequest,
 				{type: 'extension'},
 				{references}
 			);
 
-			return {response, epoch: detailsEpoch};
+			// A conflict arrives as a resolved response, not a rejection, so
+			// the structured cause survives the messenger boundary.
+			return {key, ...response};
 		} catch (error) {
+			// The messenger rejects with a plain `{message, data}` object, not an
+			// Error, because an Error does not survive postMessage.
 			return rejectWithValue({
-				epoch: detailsEpoch,
-				message:
-					error instanceof Error ? error.message : String(error)
+				key,
+				message: miniSerializeError(error).message ?? String(error)
 			});
+		}
+	},
+	{
+		condition(references, {getState}) {
+			const {dependencyResolution} = (
+				getState() as {packagesReducer: PackagesState}
+			).packagesReducer;
+
+			if (
+				dependencyResolution.key !== buildSelectionKey(references)
+			) {
+				return true;
+			}
+
+			// Same selection: only worth retrying if it failed for a reason
+			// that might not recur. A conflict is a settled answer.
+			return (
+				!dependencyResolution.loading &&
+				dependencyResolution.failure !== undefined &&
+				dependencyResolution.conflict === undefined
+			);
 		}
 	}
 );
@@ -325,7 +397,7 @@ export const fetchLoggedInStatus = createAsyncThunk<{
 );
 
 /**
- * Fetches the SoC filter options from the catalog.
+ * Fetches the SoC filter options from the SoC catalog.
  */
 export const fetchSocList = createAsyncThunk<GetSocListResponse>(
 	'packages/fetchSocList',
@@ -551,6 +623,21 @@ const packagesSlice = createSlice({
 				state.packageList = action.payload.packageList;
 				state.missingRequiredPackages =
 					action.payload.missingRequiredPackages;
+				// Drop selections and remembered versions the refreshed list no
+				// longer offers, e.g. from a remote that was just disabled.
+				const isListed = (name: string, version: string) =>
+					state.packageList.some(
+						entry =>
+							entry.name === name && entry.versions.includes(version)
+					);
+				state.selectedPackages = state.selectedPackages.filter(pkg =>
+					isListed(pkg.name, pkg.version)
+				);
+				state.selectedVersions = Object.fromEntries(
+					Object.entries(state.selectedVersions).filter(
+						([name, version]) => isListed(name, version)
+					)
+				);
 			})
 			.addCase(fetchPackageList.rejected, (state, action) => {
 				if (action.meta.requestId !== state.packageListRequestId) {
@@ -560,47 +647,59 @@ const packagesSlice = createSlice({
 				state.packageListLoading = false;
 				state.error = action.error.message;
 			})
-			// Page details fetching handling
-			.addCase(fetchPageDetails.pending, state => {
-				state.detailsLoading = true;
-				state.detailsError = undefined;
+			// Dependency resolution shared by the review and licence pages
+			.addCase(fetchDependencyResolution.pending, (state, action) => {
+				// Claim the key up front so a second page asking for the same
+				// selection is skipped rather than resolving it again.
+				state.dependencyResolution = {
+					key: buildSelectionKey(action.meta.arg),
+					requestId: action.meta.requestId,
+					byRef: {},
+					loading: true,
+					conflict: undefined,
+					failure: undefined
+				};
 			})
-			.addCase(fetchPageDetails.fulfilled, (state, action) => {
-				state.detailsLoading = false;
-
-				/**
-				 * Drop a response if the epoch doesn't match the current one.
-				 * (i.e Auth changed)
-				 */
-				if (action.payload.epoch !== state.detailsEpoch) {
-					return;
-				}
-
-				const requested = action.meta.arg;
-				action.payload.response.packages.forEach((pkg, index) => {
-					const ref = requested[index];
-
-					if (ref) {
-						state.details[
-							buildPackageReference(ref.name, ref.version)
-						] = pkg;
+			.addCase(
+				fetchDependencyResolution.fulfilled,
+				(state, action) => {
+					if (!isCurrentResolution(state, action.meta.requestId)) {
+						return;
 					}
-				});
-			})
-			.addCase(fetchPageDetails.rejected, (state, action) => {
-				state.detailsLoading = false;
 
-				// Drop a rejection when the epoch doesn't match the current one.
-				if (
-					action.payload &&
-					action.payload.epoch !== state.detailsEpoch
-				) {
-					return;
+					state.dependencyResolution = {
+						key: action.payload.key,
+						requestId: action.meta.requestId,
+						byRef: action.payload.dependencies,
+						loading: false,
+						conflict: action.payload.conflict,
+						failure: action.payload.failure
+					};
 				}
+			)
+			.addCase(
+				fetchDependencyResolution.rejected,
+				(state, action) => {
+					if (!isCurrentResolution(state, action.meta.requestId)) {
+						return;
+					}
 
-				state.detailsError =
-					action.payload?.message ?? action.error.message;
-			})
+					// Keep the key so the failure sticks to this selection, and
+					// leave byRef empty rather than reporting "no dependencies".
+					state.dependencyResolution = {
+						key:
+							action.payload?.key ??
+							buildSelectionKey(action.meta.arg),
+						requestId: action.meta.requestId,
+						byRef: {},
+						loading: false,
+						failure:
+							action.payload?.message ??
+							action.error.message ??
+							'Dependency resolution failed'
+					};
+				}
+			)
 			// Logged-in status fetching handling
 			.addCase(fetchLoggedInStatus.fulfilled, (state, action) => {
 				state.isLoggedIn = action.payload.loggedIn;
@@ -608,8 +707,10 @@ const packagesSlice = createSlice({
 			.addCase(fetchLoggedInStatus.rejected, state => {
 				state.isLoggedIn = false;
 			})
+			// SoC filter options
 			.addCase(fetchSocList.pending, (state, action) => {
 				state.socListRequestId = action.meta.requestId;
+				state.socListLoading = true;
 			})
 			.addCase(fetchSocList.fulfilled, (state, action) => {
 				if (action.meta.requestId !== state.socListRequestId) {
@@ -617,6 +718,14 @@ const packagesSlice = createSlice({
 				}
 
 				state.socOptions = action.payload.socs;
+				state.socListLoading = false;
+			})
+			.addCase(fetchSocList.rejected, (state, action) => {
+				if (action.meta.requestId !== state.socListRequestId) {
+					return;
+				}
+
+				state.socListLoading = false;
 			})
 			// Install handling
 			.addCase(installPackages.pending, (state, action) => {
@@ -685,7 +794,7 @@ const packagesSlice = createSlice({
 						// installed at the requested version already.
 						markInstalled(entry, pkg.version);
 					} else {
-						markInstallFailed(entry, snapshot);
+						revertInstall(entry, snapshot);
 					}
 
 					Reflect.deleteProperty(state.installRollbacks, entry.name);
@@ -707,19 +816,8 @@ const packagesSlice = createSlice({
 					});
 				}
 
-				// Drop selections that are now installed
-				state.selectedPackages = state.selectedPackages.filter(
-					selected => {
-						const entry = state.packageList.find(
-							e => e.name === selected.name
-						);
-
-						return !(
-							entry?.state === 'installed' &&
-							entry.installedVersion === selected.version
-						);
-					}
-				);
+				// The install flow is over; start the list from a clean slate.
+				state.selectedPackages = [];
 			})
 			.addCase(installPackages.rejected, (state, action) => {
 				state.installStatus = 'error';
@@ -734,12 +832,12 @@ const packagesSlice = createSlice({
 
 					if (!entry || entry.state !== 'installing') return;
 
-					markInstallFailed(
-						entry,
-						state.installRollbacks[entry.name]
-					);
+					revertInstall(entry, state.installRollbacks[entry.name]);
 					Reflect.deleteProperty(state.installRollbacks, entry.name);
 				});
+
+				// The install flow is over; start the list from a clean slate.
+				state.selectedPackages = [];
 			})
 			// Uninstall handling
 			.addCase(uninstallPackages.pending, (state, action) => {

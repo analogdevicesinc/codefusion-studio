@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,10 @@
 }
 
 .basePin {
-	container-type: inline-size;
 	border-radius: 50%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	word-break: break-word;
 	text-align: center;
 	padding: 0 2px;
 	aspect-ratio: 1;
@@ -36,8 +34,12 @@
 	position: relative;
 
 	span {
-		font-size: 22.5cqw;
+		display: block;
+		font-size: calc(12cqw / var(--pin-column-count, 1));
 		line-height: normal;
+		max-width: 100%;
+		min-width: 0;
+		white-space: nowrap;
 	}
 }
 

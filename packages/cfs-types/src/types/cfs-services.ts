@@ -13,7 +13,10 @@
  *
  */
 
-import type { CfsConfig, ConfiguredProject } from "../types/cfs-config.js";
+import type {
+	CfsConfig,
+	ConfiguredProject,
+} from "../types/cfs-config.js";
 import type { CfsFeatureScope } from "../types/cfs-feature.js";
 import type { CfsPluginProperty } from "../types/cfs-plugin-property.js";
 import type { CfsProject } from "../types/cfs-project.js";
@@ -63,7 +66,10 @@ export interface CfsProjectGenerationService {
 	 * @param baseDir - Optional base directory where the project should be generated
 	 * @returns Promise that resolves when project generation is complete
 	 */
-	generateProject(baseDir: string, context: CfsProject): Promise<void>;
+	generateProject(
+		baseDir: string,
+		context: CfsProject,
+	): Promise<void>;
 }
 
 /**

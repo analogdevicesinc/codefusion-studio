@@ -13,12 +13,13 @@
  *
  */
 
+import {
+    OpenApiMiddlewareCallbackParams,
+    OpenApiMiddlewareOnRequest,
+    OpenApiMiddlewareOnResponse,
+} from '../../sdk/openapi-client.js';
 import { AuthorizerBase } from '../authorizer.js';
 import type { AuthConfigBase } from '../authorizer.js';
-import type {
-    MiddlewareCallbackParams,
-    MiddlewareOnResponse,
-} from 'openapi-fetch';
 
 // An access token authenticates the user to the API
 // access tokens are short-lived and need to be refreshed
@@ -71,13 +72,22 @@ export class TokenAuthorizer extends AuthorizerBase {
      * @param args0.request
      * @returns
      */
-    public async onRequest({ request }: MiddlewareCallbackParams) {
+    public async onRequest({
+        request,
+    }: OpenApiMiddlewareCallbackParams): Promise<
+        Awaited<ReturnType<OpenApiMiddlewareOnRequest>>
+    > {
         const token =
             typeof this.accessToken === 'string'
                 ? this.accessToken
                 : await this.accessToken();
         if (typeof token === 'string' && token.length > 0) {
-            return this.setAuthHeader({ request, auth: token });
+            return this.setAuthHeader({
+                request,
+                auth: token,
+            }) as unknown as Awaited<
+                ReturnType<OpenApiMiddlewareOnRequest>
+            >;
         } else {
             throw new Error('invalid access token');
         }
@@ -95,7 +105,9 @@ export class TokenAuthorizer extends AuthorizerBase {
         response,
         request,
         options,
-    }: Parameters<MiddlewareOnResponse>[0]) {
+    }: Parameters<OpenApiMiddlewareOnResponse>[0]): Promise<
+        Awaited<ReturnType<OpenApiMiddlewareOnResponse>>
+    > {
         if (response.status === 401 && this.refresh) {
             // If we weren't authorised and we have a refresh handler, try to refresh the token
             try {
@@ -134,9 +146,11 @@ export class TokenAuthorizer extends AuthorizerBase {
                         resp.body,
                         resp,
                         // ... but cast it back to the custom response type to keep TS happy
-                    ) as unknown as typeof response;
+                    ) as unknown as Awaited<
+                        ReturnType<OpenApiMiddlewareOnResponse>
+                    >;
                 }
-            } catch (err) {
+            } catch {
                 // If the refresh fails, the original 401 response will be returned
             }
         }

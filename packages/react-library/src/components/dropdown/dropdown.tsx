@@ -75,9 +75,7 @@ export default function DropDown({
 			: options;
 
 	const handleDropdown = () => {
-		dropdownRef.current?.blur();
 		onHandleDropdown(dropdownRef.current?.value ?? '');
-		setIsExpanded(false);
 	};
 
 	const getGroupedOptions = (
@@ -118,21 +116,43 @@ export default function DropDown({
 		];
 	};
 
+	// Mirror the underlying `vscode-dropdown` element's `open` attribute.
+	// That way the vscode-dropdown handles the open/close state,
+	// and we can just use it in here to apply our own styles and logic.
 	useEffect(() => {
-		document.addEventListener('click', handleBodyClick);
+		const dropdownElement = dropdownRef.current as
+			| (HTMLElement & {open?: boolean})
+			| null;
+		if (!dropdownElement) return;
 
-		return () => {
-			document.removeEventListener('click', handleBodyClick);
+		let wasOpen = dropdownElement.open ?? false;
+		setIsExpanded(wasOpen);
+
+		const syncExpandedState = () => {
+			const isOpen = dropdownElement.open ?? false;
+			if (isOpen && !wasOpen && !isDisabled) {
+				onOpenDropdown?.();
+			}
+
+			if (wasOpen && !isOpen) {
+				// Remove focus on dropdown close so that pressing Ctrl+S cannot change the selected option.
+				// Without this, closing the dropdown still left it in focus,
+				// which led to pressing Ctrl+S changing the selected option to first value that started with 'S'.
+				dropdownRef.current?.blur();
+			}
+
+			wasOpen = isOpen;
+			setIsExpanded(isOpen);
 		};
-	}, []);
 
-	const handleBodyClick = (event: Event): void => {
-		const clickEventTarget = event.target as HTMLElement;
-		if (!containerRef.current) return;
-		if (!containerRef.current.contains(clickEventTarget)) {
-			setIsExpanded(false);
-		}
-	};
+		const observer = new MutationObserver(syncExpandedState);
+		observer.observe(dropdownElement, {
+			attributes: true,
+			attributeFilter: ['open']
+		});
+
+		return () => observer.disconnect();
+	}, [isDisabled, onOpenDropdown]);
 
 	// @TODO: Add another prop to this component to (size: xs/lg) to allow it to also render smaller dropdowns - i.e. the one in pinmux
 	return (
@@ -155,13 +175,6 @@ export default function DropDown({
 						? noValueOption.value
 						: currentControlValue
 				}
-				onClick={() => {
-					if (!isExpanded && !isDisabled) {
-						onOpenDropdown?.();
-					}
-
-					setIsExpanded(!isExpanded);
-				}}
 				onChange={() => {
 					handleDropdown();
 				}}
@@ -196,8 +209,15 @@ export default function DropDown({
 							data-test={option.dataTest}
 							value={option.value}
 							data-value={option.value}
+							title={option.label}
 							className={`${styles.option} ${
 								option.isGrouped ? styles.groupedOption : ''
+							} ${
+								noValueOption &&
+								!hasValue &&
+								option.value === noValueOption.value
+									? styles.noValueOption
+									: ''
 							}`}
 							disabled={option.disabled}
 						>

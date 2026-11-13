@@ -17,11 +17,11 @@ import type {AIToolsPlugin} from 'cfs-lib';
 
 import {
   CfsDataModelManager,
-  MAX_MODEL_NAME_LENGTH,
-  caseInsensitiveCompare
+  caseInsensitiveCompare,
+  validateModelNameLength
 } from 'cfs-lib';
 import {CfsSocDataModel} from 'cfs-types';
-import path, {extname} from 'node:path';
+import path from 'node:path';
 
 import {RecoverableError} from './recoverable-error.js';
 
@@ -37,7 +37,8 @@ export async function getAndEnsureDataModel(
       `Could not load data model for SoC '${soc}', Package '${packageId}'`,
       {
         suggestion: 'Verify the SoC and Package are compatible',
-        run: `cfsutil socs info ${soc} --packages`
+        run: `cfsutil socs info ${soc} --packages`,
+        code: 'DATA_MODEL_NOT_FOUND'
       }
     );
   }
@@ -71,7 +72,8 @@ export function ensureOrTryInferCoreFlags(
           `Multiple cores with AI support found for SoC '${dataModel.Name}' but no core specified. Available cores: ${aiCores.map((core) => core.Id).join(', ')}`,
           {
             suggestion: 'Specify a core using --core',
-            run: `cfsutil ai <command> --core CM4 --soc MAX32690 --model <model>`
+            run: `cfsutil ai <command> --core CM4 --soc MAX32690 --model <model>`,
+            code: 'AI_CORE_REQUIRED'
           }
         );
       } else {
@@ -79,7 +81,8 @@ export function ensureOrTryInferCoreFlags(
           `No cores with AI support found for SoC '${dataModel.Name}'`,
           {
             suggestion: 'Verify the SoC has AI capable cores',
-            run: `cfsutil socs info ${dataModel.Name} --cores`
+            run: `cfsutil socs info ${dataModel.Name} --cores`,
+            code: 'AI_CORE_NOT_FOUND'
           }
         );
       }
@@ -123,17 +126,27 @@ export function getBaseName(filename: string): string {
     name = path.basename(url.pathname, path.extname(url.pathname));
   } catch {
     // Not a URL → treat as local path
-    name = path.basename(filename, extname(filename));
+    name = path.basename(filename, path.extname(filename));
   }
 
-  if (name.length > MAX_MODEL_NAME_LENGTH) {
-    throw new RecoverableError(
-      `Derived model name exceeds ${MAX_MODEL_NAME_LENGTH} characters`,
-      {
-        suggestion: 'Rename the model file to a shorter name'
-      }
-    );
-  }
+  validateModelNameLength(name);
 
   return name;
+}
+
+/**
+ * Extract the file extension from a model path or URL,
+ * stripping query strings from signed URLs.
+ */
+export function getModelFormat(
+  modelPath: string | undefined
+): string | undefined {
+  if (!modelPath) return undefined;
+
+  try {
+    const url = new URL(modelPath);
+    return path.extname(url.pathname).toLowerCase() || undefined;
+  } catch {
+    return path.extname(modelPath).toLowerCase() || undefined;
+  }
 }

@@ -13,85 +13,131 @@
  *
  */
 
-import {memo, useCallback, useRef} from 'react';
+import {memo, useCallback, useMemo, useRef} from 'react';
 import FloatingCardOverlay from './floating-card-overlay';
 import EventSourcesList from './event-sources-list';
 
 import {useFloatingCardOverlay} from '../../../common/hooks/use-floating-card-overlay';
+import {DROP_ZONE} from '../../../common/constants/timeline';
+import {useAppDispatch} from '../../../state/store';
+import {setEventSourcesListWidth} from '../../../state/slices/timeline/timeline.reducer';
+import {useEventSourcesListWidth} from '../../../state/slices/timeline/timeline.selector';
 
 import type {
-	RowStateUpdate,
-	EventSourcesListHandle
+	DragOverlayRow,
+	DropOutcome,
+	RowStateUpdate
 } from '../../../common/types/timeline';
-import type {SevEventSource} from '../../../common/types/events';
+import type {
+	EventSourceMoveIntent,
+	TimelineRow
+} from '../../../common/types/events';
 
 type ListContainerProps = Readonly<{
-	orderedEvSources: SevEventSource[];
+	rows: TimelineRow[];
 	diagramContainerRef: React.RefObject<HTMLDivElement>;
-	handleReorder: (orderedList: SevEventSource[]) => void;
+	dropIndicatorRef: React.RefObject<HTMLDivElement>;
+	onMoveNode: (nodeId: string, intent: EventSourceMoveIntent) => void;
+	onRenameGroup: (groupId: string, groupName: string) => void;
 	onRowStateChange: (update: RowStateUpdate) => void;
-	onDragStart: () => void;
+	onDragStart: (rowIndex: number) => void;
+	onToggleGroup: (groupId: string) => void;
 }>;
 
 /**
- * EventSourcesList exposes imperative methods via forwardRef.
- * ListContainer component is the owner that decides commit or cancel.
+ * Bridge between the event sources list and the floating-card overlay hook.
+ * it includes the strip for root-append drop targets.
  */
 function ListContainer({
-	orderedEvSources,
+	rows,
 	diagramContainerRef,
-	handleReorder,
+	dropIndicatorRef,
+	onMoveNode,
+	onRenameGroup,
 	onRowStateChange,
-	onDragStart
+	onDragStart,
+	onToggleGroup
 }: ListContainerProps) {
-	const listRef = useRef<EventSourcesListHandle>(null);
-	const isDragFinalizedRef = useRef(false);
+	const dispatch = useAppDispatch();
+	const listWidth = useEventSourcesListWidth();
+	const draggedNodeIdRef = useRef<string | undefined>();
 
-	const resetFinalizeGuard = useCallback(() => {
-		isDragFinalizedRef.current = false;
-	}, []);
-
-	const finalizeDrag = useCallback((isInsideDiagram: boolean) => {
-		if (isDragFinalizedRef.current) return;
-		isDragFinalizedRef.current = true;
-
-		if (isInsideDiagram) {
-			listRef.current?.commitDraggedReorder();
-
-			return;
-		}
-
-		listRef.current?.cancelDraggedReorder();
-	}, []);
-
-	const handleOverlayFinalize = useCallback(
-		({isInsideDiagram}: Readonly<{isInsideDiagram: boolean}>) => {
-			finalizeDrag(isInsideDiagram);
+	const handleWidthChange = useCallback(
+		(width: number) => {
+			dispatch(setEventSourcesListWidth(width));
 		},
-		[finalizeDrag]
+		[dispatch]
 	);
 
-	const {beginDragOverlay, cardOverlay} = useFloatingCardOverlay(
-		diagramContainerRef,
-		handleOverlayFinalize
+	const lastRootNodeId = useMemo(() => {
+		for (let index = rows.length - 1; index >= 0; index--) {
+			if (rows[index].depth === 0) return rows[index].id;
+		}
+
+		return undefined;
+	}, [rows]);
+
+	const handleDragFinalize = useCallback(
+		(outcome: DropOutcome) => {
+			const draggedNodeId = draggedNodeIdRef.current;
+			draggedNodeIdRef.current = undefined;
+
+			if (
+				draggedNodeId === undefined ||
+				outcome.zone === DROP_ZONE.OUTSIDE
+			) {
+				return;
+			}
+
+			onMoveNode(draggedNodeId, {
+				type: 'drag',
+				targetNodeId: outcome.targetNodeId,
+				position: outcome.zone
+			});
+		},
+		[onMoveNode]
+	);
+
+	const {startDrag, cardOverlay, isDraggingRef} =
+		useFloatingCardOverlay(
+			diagramContainerRef,
+			dropIndicatorRef,
+			rows,
+			listWidth,
+			handleDragFinalize
+		);
+
+	const handleStartDrag = useCallback(
+		(row: DragOverlayRow, event: PointerEvent, rowIndex: number) => {
+			draggedNodeIdRef.current = row.id;
+
+			onDragStart(rowIndex);
+			startDrag(row, event);
+		},
+		[startDrag, onDragStart]
+	);
+
+	const strip = (
+		<div data-root-drop-target={lastRootNodeId} aria-hidden='true' />
 	);
 
 	return (
 		<>
 			<EventSourcesList
-				ref={listRef}
 				diagramContainerRef={diagramContainerRef}
-				events={orderedEvSources}
-				onReorder={handleReorder}
-				onRowStateChange={update => {
-					onRowStateChange(update);
-				}}
-				onBeginDragOverlay={(evSource, e) => {
-					resetFinalizeGuard();
-					onDragStart();
-					beginDragOverlay(evSource, e);
-				}}
+				rows={rows}
+				listWidth={listWidth}
+				isDraggingRef={isDraggingRef}
+				onWidthChange={handleWidthChange}
+				onMoveNode={onMoveNode}
+				onRenameGroup={onRenameGroup}
+				onRowStateChange={onRowStateChange}
+				onToggleGroup={onToggleGroup}
+				onStartDrag={handleStartDrag}
 			/>
+
+			{/* Root-append drop target strip */}
+			{lastRootNodeId !== undefined && strip}
 
 			{/* Floating drag overlay (portal) */}
 			{cardOverlay.visible && (

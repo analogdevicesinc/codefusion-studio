@@ -1,0 +1,82 @@
+{
+
+	"TEST672": {
+    "PQFN40": {
+      "version": "1.0.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T20:54:26.398804Z",
+      "description": "High-Reliability, Tiny, Ultra-Low-Power Arm Cortex-M4F Microcontroller with 12-Bit, 1Msps ADC",
+      "path": "max32672-tqfn40.json"
+    }
+  },
+	"TEST690": {
+    "PLP": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:39:50.976385Z",
+      "description": "Arm Cortex-M4 with FPU Microcontroller and Bluetooth LE 5 for Industrial and Wearables",
+      "path": "max32690-wlp.json"
+    },
+    "PQFN": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T20:53:35.119944Z",
+      "description": "Arm Cortex-M4 with FPU Microcontroller and Bluetooth LE 5 for Industrial and Wearables",
+      "path": "max32690-tqfn.json"
+    }
+  },
+  "TEST655": {
+    "PLP": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T20:03:45.738890Z",
+      "description": "Low-Power, Arm Cortex-M4 Processor with FPU-Based Microcontroller and Bluetooth 5.2",
+      "path": "max32655-wlp.json"
+    }
+  },
+  "TEST657": {
+    "PLP": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:33:02.225418Z",
+      "description": "Nano-Power Arm Cortex-M33 MCU with BLE for CGM and Wearable Applications",
+      "path": "max32657-wlp.json"
+    }
+  },
+  "TEST670": {
+    "PQFN": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:33:22.449476Z",
+      "description": "High-Reliability, Ultra-Low-Power Microcontroller Powered by Arm Cortex-M4 Processor with FPU for Industrial and IoT",
+      "path": "max32670-tqfn.json"
+    }
+  },
+  "TEST675": {
+    "PGA": {
+      "version": "1.0.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:20:44.790347Z",
+      "description": "Ultra-Low-Power Arm Cortex-M4F with Precision Analog Front-End for Industrial and Medical Sensors",
+      "path": "max32675c-lga.json"
+    }
+  },
+  "TEST8002": {
+    "PSBGA": {
+      "version": "1.3.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:33:47.475754Z",
+      "description": "Artificial Intelligence Microcontroller with Low-Power Convolutional Neural Network Accelerator",
+      "path": "max78002-csbga.json"
+    }
+  },
+  "TEST-SC835": {
+    "PGA_ED": {
+      "version": "1.4.913",
+      "schema": "1.5.1",
+      "timestamp": "2026-07-15T21:50:48.115054Z",
+      "description": "ADSP-SC835 Chip Module",
+      "path": "adsp-sc835-bga_ed.json"
+    }
+  }
+}

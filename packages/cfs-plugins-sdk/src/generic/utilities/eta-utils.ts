@@ -123,7 +123,13 @@ export async function renderTemplates(
 					await fsp.mkdir(path.dirname(dstPath), { recursive: true });
 				}
 
-				await fsp.writeFile(dstPath, rendered);
+				// Binary templates emit raw byte-chars and must be written byte-for-byte.
+				const output =
+					path.extname(dstPath).toLowerCase() === ".bin"
+						? Buffer.from(rendered, "latin1")
+						: rendered;
+
+				await fsp.writeFile(dstPath, output);
 				filesCreated.push(dstPath);
 			}
 		} catch (error) {

@@ -136,3 +136,24 @@ export const getDefaultVersion = (
 
 	return sorted[0] ?? '';
 };
+
+/**
+ * Formats a package's supported SoCs for display. Registry metadata is
+ * inconsistent: some packages list one SoC per array entry, others pack
+ * several into a single comma-separated string (and older entries use a
+ * plain string). All shapes are flattened into one comma-separated list.
+ * Hyphens are replaced with non-breaking hyphens so part numbers do not
+ * wrap mid-name. Returns '—' when there are none.
+ */
+export const formatSupportedSocs = (
+	soc?: string | string[]
+): string => {
+	const socs = (Array.isArray(soc) ? soc : [soc ?? ''])
+		.flatMap(entry => entry.split(','))
+		.map(entry => entry.trim())
+		.filter(Boolean);
+
+	return socs.length > 0
+		? socs.join(', ').replace(/-/g, '\u2011')
+		: '—';
+};

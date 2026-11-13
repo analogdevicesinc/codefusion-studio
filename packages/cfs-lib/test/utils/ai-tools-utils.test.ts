@@ -38,12 +38,12 @@ describe("ai-tools-utils", function () {
 				EnumValues: [
 					{
 						Id: "A",
-						Value: "A",
+						Value: 0,
 						Description: "A"
 					},
 					{
 						Id: "B",
-						Value: "B",
+						Value: 1,
 						Description: "B"
 					}
 				]
@@ -81,6 +81,23 @@ describe("ai-tools-utils", function () {
 				expect(result).to.deep.equal({
 					SomeString: "xyz",
 					SomeBoolean: false,
+					SomeEnum: "A",
+					SomeArray: "[]"
+				});
+			} finally {
+				/* empty */
+			}
+		});
+
+		it("GIVEN string extension value containing '=' WHEN getValidExtensions THEN preserve full value", function () {
+			try {
+				const result = getValidExtensions(
+					["SomeString=https://host/model?sig=a=b"],
+					exampleBackendProperties
+				);
+				expect(result).to.deep.equal({
+					SomeString: "https://host/model?sig=a=b",
+					SomeBoolean: true,
 					SomeEnum: "A",
 					SomeArray: "[]"
 				});
@@ -152,6 +169,22 @@ describe("ai-tools-utils", function () {
 				expect((error as Error).message).to.equal(
 					"Invalid value for 'someboolean', expected one of: true, false"
 				);
+			}
+		});
+
+		it("GIVEN valid enum extension value WHEN getValidExtensions THEN return enum Id", function () {
+			try {
+				const result = getValidExtensions(
+					["SomeEnum=B"],
+					exampleBackendProperties
+				);
+				expect(result).to.deep.equal({
+					SomeBoolean: true,
+					SomeEnum: "B",
+					SomeArray: "[]"
+				});
+			} finally {
+				/* empty */
 			}
 		});
 

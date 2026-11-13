@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import {GasketListView} from './gasket-listview';
 import {initializeDfg} from '../../../utils/dfg';
 import {createStreamAddEvent} from '../stream-property-calculation.cy';
 import {StreamSidebar} from './stream-sidebar';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {createScopeConflictDictionary} from '../../../test-utils/scope-conflict-test-utils';
+import {setScopes} from '../../../state/slices/scopes/scopes.reducer';
 
 describe('StreamGroupListView Tests', () => {
 	beforeEach(() => {
@@ -180,6 +183,76 @@ describe('StreamGroupListView Tests', () => {
 		cy.get('[data-test="stream-outbound-1-error"]').should('exist');
 	});
 
+	it('should display DFG scope conflict errors in the gasket listview', function () {
+		const reduxStore = configurePreloadedStore(
+			this.soc,
+			{} as CfsConfig
+		);
+
+		reduxStore.dispatch(setStreamView('Gasket'));
+		reduxStore.dispatch(
+			addNewStream({
+				StreamId: 1,
+				Description: 'Scoped stream',
+				Source: {
+					Gasket: 'ASS',
+					Index: 0,
+					BufferSize: 2048,
+					BufferAddress: 0,
+					Config: {
+						ALIAS: 'shared_endpoint'
+					}
+				},
+				Destinations: [
+					{
+						Gasket: 'BSS',
+						Index: 0,
+						BufferSize: 1024,
+						BufferAddress: 0,
+						Config: {
+							ALIAS: 'shared_endpoint'
+						}
+					}
+				],
+				Group: '',
+				Uuid: `${Math.random()}-${Math.random()}`
+			})
+		);
+		const addedStream =
+			reduxStore.getState().gasketsReducer.Streams[0];
+		const sourceItemId = `${addedStream.Source.Gasket}[${addedStream.Source.Index}]`;
+		const destination = addedStream.Destinations[0];
+		const destinationItemId = `${destination.Gasket}[${destination.Index}]`;
+
+		reduxStore.dispatch(
+			setScopes(
+				createScopeConflictDictionary({
+					scopeKey: 'DFG-proj zephyr phandles',
+					value: 'shared_endpoint',
+					controlScope: CONTROL_SCOPES.DFG,
+					controlId: 'ALIAS',
+					projectId: 'DFG-proj',
+					coreId: 'CMxx',
+					groupId: 'ASS',
+					itemIds: [sourceItemId, destinationItemId]
+				})
+			)
+		);
+
+		cy.mount(
+			<GasketListView
+				gasket={this.soc.Gaskets.find(
+					(g: {Name: string}) => g.Name === 'ASS'
+				)}
+			/>,
+			reduxStore
+		);
+
+		cy.get('[data-test="accordion:ASS"]').within(() => {
+			cy.get('[data-test="gasket-ASS-error"]').should('exist');
+		});
+	});
+
 	it('should display filtered streams in the gasket listview', function () {
 		/**
 		 * Scenario:
@@ -216,18 +289,26 @@ describe('StreamGroupListView Tests', () => {
 			.then(() =>
 				cy.wrap(
 					reduxStore.dispatch(
-						createStreamAddEvent('stream #1', 'ASS', ['DSS'], 64, [
-							32
-						])
+						createStreamAddEvent(
+							'stream #1',
+							'ASS',
+							['DSS'],
+							64,
+							[32]
+						)
 					)
 				)
 			)
 			.then(() =>
 				cy.wrap(
 					reduxStore.dispatch(
-						createStreamAddEvent('stream #2', 'FSS', ['GSS'], 64, [
-							32
-						])
+						createStreamAddEvent(
+							'stream #2',
+							'FSS',
+							['GSS'],
+							64,
+							[32]
+						)
 					)
 				)
 			)

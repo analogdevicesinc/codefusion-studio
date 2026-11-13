@@ -20,16 +20,20 @@ import {
 	type SlotSizeUnit
 } from '../types/application-packages';
 import {ByteUnitMap} from '../types/memory';
+import {areRangesOverlapping, getEndAddress} from './memory';
 import {computeTotalCustomTlvSize} from './mcuboot';
 import {getProjectInfoList} from './config';
 
 const HEX_PREFIX = '0x';
 const MAX_VALUE_LENGTH = 65535;
+const REQUIRED_VALUE_BYTES_INTERVAL = 4;
 const MIN_TAG_VALUE = 0x00a0;
 const MAX_TAG_RANGE_VALUE = 0xfffe;
 const MAX_HEX_ADDRESS_LENGTH = 8;
 const VALID_BIN_PATH_REGEX = /\.(bin)$/i;
 const VALID_PEM_PATH_REGEX = /\.(pem)$/i;
+const VALID_PATH_CHARS_REGEX = /^(?:[A-Za-z]:)?[A-Za-z0-9_.\-/]+$/;
+const STRICT_HEX_ADDRESS_REGEX = /^(?:0x)?([0-9a-f]{1,8})$/i;
 
 const SECURITY_COUNTER_MIN = 0;
 const SECURITY_COUNTER_MAX = 0xffffffff;
@@ -205,6 +209,7 @@ export type CustomTlvValidationMessages = {
 	oddHexLength?: string;
 	hexValueExceedsMax?: string;
 	valueTooLong?: string;
+	valueByteIncrement?: string;
 	tagRequired?: string;
 	tagOutOfRange?: string;
 	valueRequired?: string;
@@ -331,9 +336,15 @@ export function validateCustomTlvValue(
 			return messages.invalidHex ?? 'Invalid hex value';
 		}
 
-		if (hexDigits.length % 2 !== 0) {
+		if (
+			(hexDigits.length / 2) % REQUIRED_VALUE_BYTES_INTERVAL !==
+			0
+		) {
 			return (
-				messages.oddHexLength ?? 'Hex value must have even length'
+				messages.valueByteIncrement ??
+				`Value must be a multiple of ${String(
+					REQUIRED_VALUE_BYTES_INTERVAL
+				)} bytes.`
 			);
 		}
 
@@ -345,6 +356,15 @@ export function validateCustomTlvValue(
 		}
 
 		return undefined;
+	}
+
+	if (value.length % REQUIRED_VALUE_BYTES_INTERVAL !== 0) {
+		return (
+			messages.valueByteIncrement ??
+			`Value must be a multiple of ${String(
+				REQUIRED_VALUE_BYTES_INTERVAL
+			)} bytes.`
+		);
 	}
 
 	if (value.length > MAX_VALUE_LENGTH) {
@@ -379,15 +399,27 @@ export function validateOptionalBinPath(
 }
 
 /**
+ * Checks whether a path contains characters outside the allowed set
+ * (letters, digits, `_`, `-`, `.`, `/`, and a leading Windows drive letter such as `C:`).
+ * @param path - The file path to check (backslashes are expected to be normalized to `/`).
+ * @returns true if the path contains an illegal character.
+ */
+export function hasIllegalPathChars(path: string): boolean {
+	return !VALID_PATH_CHARS_REGEX.test(path);
+}
+
+/**
  * Validates an optional binary key path (e.g., AES keys), ensuring it points to a valid .bin file
- * and does not contain whitespace.
+ * and does not contain whitespace or illegal path characters.
  * @param path - The file path to validate.
  * @param message - Optional custom error message to use instead of the default.
+ * @param illegalCharsMessage - Optional custom error message for paths containing illegal characters.
  * @returns An error message if validation fails, or undefined if the path is valid or empty.
  */
 export function validateOptionalKeyBinPath(
 	path: string | undefined,
-	message?: string
+	message?: string,
+	illegalCharsMessage?: string
 ): string | undefined {
 	if (!path?.trim()) {
 		return undefined;
@@ -397,6 +429,11 @@ export function validateOptionalKeyBinPath(
 
 	if (/\s/.test(trimmedPath)) {
 		return 'Path cannot contain spaces.';
+	}
+
+	// Persisted configs may contain Windows backslash separators.
+	if (hasIllegalPathChars(trimmedPath.replace(/\\/g, '/'))) {
+		return illegalCharsMessage ?? 'Invalid path';
 	}
 
 	return validateOptionalBinPath(trimmedPath, message);
@@ -426,7 +463,9 @@ export function validateSecurityCounter(
 	if (value > SECURITY_COUNTER_MAX) {
 		return (
 			message ??
-			`Security counter must be at most ${String(SECURITY_COUNTER_MAX)}.`
+			`Security counter must be at most ${String(
+				SECURITY_COUNTER_MAX
+			)}.`
 		);
 	}
 
@@ -437,6 +476,7 @@ export function validateSecurityCounter(
 
 export type ImageValidationMessages = {
 	locationAddressRequired?: string;
+	locationAddressOverlap?: string;
 	hexAddressInvalid?: string;
 	slotSizeRequired?: string;
 	headerSizeRequired?: string;
@@ -448,6 +488,7 @@ export type ImageValidationMessages = {
 	securityCounterInvalid?: string;
 	aesKwKeyPathInvalid?: string;
 	aesGcmKeyPathInvalid?: string;
+	keyPathIllegalChars?: string;
 };
 
 export type ImageValidationErrors = {
@@ -642,7 +683,8 @@ function validateOptionalImageFields(
 	if (image.aesKwKeyPath) {
 		const aesKwError = validateOptionalKeyBinPath(
 			image.aesKwKeyPath,
-			messages.aesKwKeyPathInvalid
+			messages.aesKwKeyPathInvalid,
+			messages.keyPathIllegalChars
 		);
 
 		if (aesKwError) {
@@ -653,7 +695,8 @@ function validateOptionalImageFields(
 	if (image.aesGcmKeyPath) {
 		const aesGcmError = validateOptionalKeyBinPath(
 			image.aesGcmKeyPath,
-			messages.aesGcmKeyPathInvalid
+			messages.aesGcmKeyPathInvalid,
+			messages.keyPathIllegalChars
 		);
 
 		if (aesGcmError) {
@@ -664,7 +707,8 @@ function validateOptionalImageFields(
 
 export function validateImage(
 	image: Image,
-	messages: ImageValidationMessages
+	messages: ImageValidationMessages,
+	siblingImages: Image[] = []
 ): ImageValidationErrors {
 	const errors: ImageValidationErrors = {};
 
@@ -704,23 +748,32 @@ export function validateImage(
 		}
 	}
 
-	if (image.locationType === 'hexAddress' && image.locationAddress) {
-		const hexDigits = image.locationAddress.replace(
-			/[^0-9A-Fa-f]/g,
-			''
-		);
-		const address = parseInt(hexDigits, 16);
+	if (
+		image.locationType === 'hexAddress' &&
+		image.locationAddress &&
+		parseHexAddress(image.locationAddress) === undefined
+	) {
+		const hexBody = image.locationAddress.trim().replace(/^0x/i, '');
+		const isOverlong =
+			/^[0-9a-f]+$/i.test(hexBody) &&
+			hexBody.length > MAX_HEX_ADDRESS_LENGTH;
 
-		if (!hexDigits.length || Number.isNaN(address)) {
-			errors.locationAddress =
-				messages.hexAddressInvalid ?? 'Invalid hex address.';
-		} else if (hexDigits.length > MAX_HEX_ADDRESS_LENGTH) {
-			errors.locationAddress =
-				messages.hexAddressInvalid ??
-				`Hex address must be at most ${String(
-					MAX_HEX_ADDRESS_LENGTH
-				)} digits (0xFFFFFFFF).`;
-		}
+		errors.locationAddress =
+			messages.hexAddressInvalid ??
+			(isOverlong
+				? `Hex address must be at most ${String(
+						MAX_HEX_ADDRESS_LENGTH
+					)} digits (0xFFFFFFFF).`
+				: 'Invalid hex address.');
+	}
+
+	if (
+		!errors.locationAddress &&
+		hasOverlappingImageSlot(image, siblingImages)
+	) {
+		errors.locationAddress =
+			messages.locationAddressOverlap ??
+			'Address range overlaps with another image.';
 	}
 
 	validateImageContent(image, errors, messages);
@@ -728,9 +781,67 @@ export function validateImage(
 	return errors;
 }
 
+function parseHexAddress(
+	address: string | undefined
+): number | undefined {
+	const match = STRICT_HEX_ADDRESS_REGEX.exec((address ?? '').trim());
+
+	return match ? parseInt(match[1], 16) : undefined;
+}
+
+/**
+ * Returns the inclusive [start, end] address range of an image slot, or undefined if the start address is invalid.
+ * An image without a slot size is treated as occupying only its start address.
+ */
+function getImageSlotRange(
+	image: Image
+): {start: number; end: number} | undefined {
+	const start = parseHexAddress(image.locationAddress);
+
+	if (start === undefined) return undefined;
+
+	return {
+		start,
+		end: getEndAddress(start, Math.max(image.slotSize, 1))
+	};
+}
+
+/**
+ * Checks whether the image slot overlaps the slot of another image in the same application package.
+ * @param image - The image to check.
+ * @param siblingImages - All images in the application package (may include `image` itself).
+ * @returns true if the image's address range overlaps another image's address range.
+ */
+function hasOverlappingImageSlot(
+	image: Image,
+	siblingImages: Image[]
+): boolean {
+	const range = getImageSlotRange(image);
+
+	if (!range) return false;
+
+	return siblingImages.some(other => {
+		if (other.id === image.id) return false;
+
+		const otherRange = getImageSlotRange(other);
+
+		return (
+			otherRange !== undefined &&
+			areRangesOverlapping(
+				range.start,
+				range.end,
+				otherRange.start,
+				otherRange.end
+			)
+		);
+	});
+}
+
 export function countImageValidationErrors(
 	image: Image,
-	messages: ImageValidationMessages
+	messages: ImageValidationMessages,
+	siblingImages: Image[] = []
 ): number {
-	return Object.keys(validateImage(image, messages)).length;
+	return Object.keys(validateImage(image, messages, siblingImages))
+		.length;
 }

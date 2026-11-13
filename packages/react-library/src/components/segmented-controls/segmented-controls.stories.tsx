@@ -16,7 +16,7 @@
 import type {Meta} from '@storybook/react';
 
 import React from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import SegmentedControls, {SegmentOption} from './segmented-controls';
 import {CloseIcon} from '../../main';
 import CheckedIcon from '../icons/checked-icon';

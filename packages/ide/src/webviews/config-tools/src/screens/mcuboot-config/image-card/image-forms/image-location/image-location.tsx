@@ -120,7 +120,11 @@ function ImageLocation({
 					dataTest={`image:${currentImage.name}-location-address`}
 					error={errors.locationAddress}
 					onValueChange={value => {
-						onUpdateImage({locationAddress: value.slice(0, 8)});
+						onUpdateImage({
+							locationAddress: value
+								.replace(/[^0-9A-Fa-f]/g, '')
+								.slice(0, 8)
+						});
 					}}
 				/>
 			</div>

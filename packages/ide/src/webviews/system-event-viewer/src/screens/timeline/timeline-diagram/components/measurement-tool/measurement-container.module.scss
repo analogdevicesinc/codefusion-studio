@@ -23,3 +23,11 @@
 		cursor: crosshair;
 	}
 }
+
+.measurementViewport {
+	position: absolute;
+	top: 0;
+	inset-inline: 0;
+	pointer-events: none;
+	overflow: clip;
+}

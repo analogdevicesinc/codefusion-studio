@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import {GridCombobox} from './grid-combobox.js';
 import styles from './grid-combobox.module.scss';
 import SearchIcon from '../icons/search-icon.js';
 import React from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 
 const meta: Meta<typeof GridCombobox> = {
 	component: GridCombobox,

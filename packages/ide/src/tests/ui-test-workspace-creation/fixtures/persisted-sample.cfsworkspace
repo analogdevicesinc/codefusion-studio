@@ -3,11 +3,11 @@
   "SchemaVersion": "2.1.0",
   "DataModelVersion": "^0.0.1",
   "Timestamp": "2025-03-17T13:17:04.502Z",
-  "Soc": "MAX32690",
+  "Soc": "TEST690",
   "WorkspacePluginId": "",
   "WorkspacePluginVersion": "",
-  "Board": "AD-APARD32690-SL",
-  "Package": "WLP",
+  "Board": "AD-BOARD-SL",
+  "Package": "PLP",
   "Projects": [
     {
       "Id": "corepart_01jrdgezrce69rsqvja125h3v2",

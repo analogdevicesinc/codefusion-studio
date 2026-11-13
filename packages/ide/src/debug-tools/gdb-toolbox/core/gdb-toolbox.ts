@@ -16,6 +16,7 @@
 import { ScriptManager } from "../scripts/script-manager";
 import { GDBExecutor } from "../execution/gdb-executor";
 import { CfsDebugManager } from "../../debug-manager";
+import { SessionArchitectureStore } from "./session-architecture-store";
 
 /**
  * GDBToolbox is a singleton class that manages the core components of the GDB Toolbox extension.
@@ -26,9 +27,11 @@ export class GDBToolbox {
   private static instance: GDBToolbox;
   private scriptManager: ScriptManager;
   private executor: GDBExecutor;
+  private sessionArchitecture: SessionArchitectureStore;
   private constructor(debugManager: CfsDebugManager) {
     this.scriptManager = new ScriptManager();
-    this.executor = new GDBExecutor(debugManager);
+    this.sessionArchitecture = new SessionArchitectureStore();
+    this.executor = new GDBExecutor(debugManager, this.sessionArchitecture);
   }
 
   /**
@@ -69,5 +72,13 @@ export class GDBToolbox {
    */
   public getExecutor(): GDBExecutor {
     return this.executor;
+  }
+
+  /**
+   * Returns the per-session architecture store shared across GDB Toolbox
+   * components.
+   */
+  public getSessionArchitectureStore(): SessionArchitectureStore {
+    return this.sessionArchitecture;
   }
 }

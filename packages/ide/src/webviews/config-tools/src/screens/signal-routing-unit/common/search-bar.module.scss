@@ -1,0 +1,33 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.container {
+	display: flex;
+	padding-left: layout.$spacing-5;
+}
+
+.inputs {
+	display: flex;
+	gap: layout.$spacing-5;
+}
+
+.filter {
+	display: flex;
+	gap: layout.$spacing-2;
+	align-items: center;
+}

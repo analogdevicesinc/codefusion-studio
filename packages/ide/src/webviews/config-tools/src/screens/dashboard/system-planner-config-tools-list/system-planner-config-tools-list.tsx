@@ -25,7 +25,9 @@ import {
 	CfsSuspense,
 	DataFlowGasketIcon,
 	EmbeddedAiToolsIcon,
-	MCUBootIcon
+	FirewallConfigIconSmall,
+	MCUBootIconSmall,
+	SignalRoutingUnitIcon
 } from 'cfs-react-library';
 import ChevronRight from '../../../../../common/icons/ChevronRight';
 import {useAppDispatch} from '../../../state/store';
@@ -42,6 +44,7 @@ import {getAssignedPinErrors} from '../../../utils/pin-error';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {
 	getProjectInfoList,
+	getSupportsFirewall,
 	getSupportsMCUboot
 } from '../../../utils/config';
 import PeripheralErrorIcon from './peripheral-error-icon';
@@ -53,10 +56,71 @@ import {getGasketDictionary} from '../../../utils/dfg';
 import {getClockNodeDictionary} from '../../../utils/clock-nodes';
 import {getCoreMemoryDictionary} from '../../../utils/memory';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
+import {getSocPeripheralDictionary} from '../../../utils/soc-peripherals';
 import {getAICores} from '../../../utils/ai-tools';
 import {ProfilingIconSmall} from '../../../../../common/icons/Profiling';
 import {useTotalApplicationPackagesErrorCount} from '../../../hooks/use-total-application-packages-error-count';
+import {useFirewallCodeGenErrorCount} from '../../../state/slices/firewall/firewall.selector';
+import {useHasScopeConflictsByControlScope} from '../../../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {useDfgScopeConflictItemIds} from '../../../hooks/use-dfg-scope-conflicts';
 
+/**
+ * Renders the Firewall config card when the current SoC supports Firewall.
+ *
+ * @param props - Component props.
+ * @param props.label - Localized label for the card.
+ * @param props.conflictLabel - Localized accessible label for the conflict icon.
+ * @param props.onNavigate - Callback invoked to navigate to a screen.
+ * @returns The Firewall config card, or `null` when Firewall is not supported.
+ */
+function FirewallConfigCard({
+	label,
+	conflictLabel,
+	errorCount,
+	onNavigate
+}: {
+	readonly label: string | undefined;
+	readonly conflictLabel: string;
+	readonly errorCount: number;
+	readonly onNavigate: (id: NavigationItem) => void;
+}) {
+	if (!getSupportsFirewall()) {
+		return null;
+	}
+
+	return (
+		<Card id={navigationItems.firewallConfig} testId='firewall-card'>
+			<div
+				className={styles.configCard}
+				onClick={() => {
+					onNavigate(navigationItems.firewallConfig);
+				}}
+			>
+				<div className={styles.cardContainer}>
+					<div className={styles.cardDetails}>
+						<FirewallConfigIconSmall />
+						<div>{label}</div>
+					</div>
+					<div className={styles.cardEnd}>
+						{errorCount > 0 && (
+							<ConflictIcon
+								data-test='firewall-error'
+								role='img'
+								aria-label={conflictLabel}
+							/>
+						)}
+						<div className={styles.chevronIcon}>
+							<ChevronRight />
+						</div>
+					</div>
+				</div>
+			</div>
+		</Card>
+	);
+}
+
+// eslint-disable-next-line complexity
 function SystemPlannerConfigToolsList() {
 	const dispatch = useAppDispatch();
 	const i10n: TLocaleContext | undefined =
@@ -68,6 +132,16 @@ function SystemPlannerConfigToolsList() {
 		Object.keys(getClockNodeDictionary()).length > 0;
 	const memoryAvailable =
 		Object.keys(getCoreMemoryDictionary()).length > 0;
+	const sruAvailable = Object.values(
+		getSocPeripheralDictionary()
+	).some(peripheral => peripheral.sru);
+	const hasMemoryScopeConflicts = useHasScopeConflictsByControlScope(
+		CONTROL_SCOPES.MEMORY
+	);
+	const hasPinScopeConflicts = useHasScopeConflictsByControlScope(
+		CONTROL_SCOPES.PIN_CONFIG
+	);
+	const dfgScopeConflictItemIds = useDfgScopeConflictItemIds();
 	// Only show pinmux if there is more than one pin in the SoC package.
 	// Sometimes to keep Yoda/Soc Schema happy, we populate one dummy pin but the package is still unsupported.
 	const pinmuxAvailable =
@@ -79,6 +153,7 @@ function SystemPlannerConfigToolsList() {
 	const aiCores = getAICores();
 	const isSupportedSoc = getSupportsMCUboot();
 	const mcubootErrorCount = useTotalApplicationPackagesErrorCount();
+	const firewallErrorCount = useFirewallCodeGenErrorCount();
 
 	const gasketErrors = useGasketErrors();
 	const streamErrors = useStreamErrors();
@@ -140,7 +215,8 @@ function SystemPlannerConfigToolsList() {
 								</div>
 								<div className={styles.cardEnd}>
 									{(conflictsCount > 0 ||
-										hasFunctionConfigErrors) && (
+										hasFunctionConfigErrors ||
+										hasPinScopeConflicts) && (
 										<ConflictIcon data-test='pinmux-error' />
 									)}
 									<div className={styles.chevronIcon}>
@@ -191,7 +267,8 @@ function SystemPlannerConfigToolsList() {
 								</div>
 								<div className={styles.cardEnd}>
 									{(Object.keys(gasketErrors).length > 0 ||
-										Object.keys(streamErrors).length > 0) && (
+										Object.keys(streamErrors).length > 0 ||
+										dfgScopeConflictItemIds.size > 0) && (
 										<ConflictIcon data-test='dfg-error' />
 									)}
 									<div className={styles.chevronIcon}>
@@ -214,6 +291,34 @@ function SystemPlannerConfigToolsList() {
 								<div className={styles.cardDetails}>
 									<MemoryLayoutIcon />
 									<div>{i10n?.['partition-memory']}</div>
+								</div>
+								<div className={styles.cardEnd}>
+									{hasMemoryScopeConflicts && (
+										<ConflictIcon data-test='memory-allocation-error' />
+									)}
+									<div className={styles.chevronIcon}>
+										<ChevronRight />
+									</div>
+								</div>
+							</div>
+						</div>
+					</Card>
+				)}
+				{sruAvailable && (
+					<Card
+						id={navigationItems.signalRoutingUnit}
+						testId='signal-routing-unit-card'
+					>
+						<div
+							className={styles.configCard}
+							onClick={() => {
+								handleLinkClick(navigationItems.signalRoutingUnit);
+							}}
+						>
+							<div className={styles.cardContainer}>
+								<div className={styles.cardDetails}>
+									<SignalRoutingUnitIcon />
+									<div>{i10n?.['signal-routing-unit']}</div>
 								</div>
 								<div className={styles.chevronIcon}>
 									<ChevronRight />
@@ -260,6 +365,12 @@ function SystemPlannerConfigToolsList() {
 						</div>
 					</Card>
 				)}
+				<FirewallConfigCard
+					label={i10n?.['firewall-config']}
+					conflictLabel={i10n?.['conflict-label'] ?? 'Has conflicts'}
+					errorCount={firewallErrorCount}
+					onNavigate={handleLinkClick}
+				/>
 				{showMcubootConfig && (
 					<Card
 						id={navigationItems.mcubootConfig}
@@ -273,16 +384,16 @@ function SystemPlannerConfigToolsList() {
 						>
 							<div className={styles.cardContainer}>
 								<div className={styles.cardDetails}>
-									<MCUBootIcon />
+									<MCUBootIconSmall />
 									<div>{i10n?.['mcuboot-config']}</div>
 								</div>
-							<div className={styles.cardEnd}>
-								{mcubootErrorCount > 0 && (
-									<ConflictIcon data-test='mcuboot-error' />
-								)}
-								<div className={styles.chevronIcon}>
-									<ChevronRight />
-								</div>
+								<div className={styles.cardEnd}>
+									{mcubootErrorCount > 0 && (
+										<ConflictIcon data-test='mcuboot-error' />
+									)}
+									<div className={styles.chevronIcon}>
+										<ChevronRight />
+									</div>
 								</div>
 							</div>
 						</div>

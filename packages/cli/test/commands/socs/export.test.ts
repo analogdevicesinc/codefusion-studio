@@ -18,6 +18,11 @@ import {existsSync, unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
+
 describe('soc export (legacy arguments)', () => {
   it('runs socs export --name test_soc_b-tqfn', async () => {
     const {stdout} = await runCommand(
@@ -35,7 +40,7 @@ describe('soc export (legacy arguments)', () => {
     expect(stdout).to.contain('"Name": "TEST_SOC_B"');
   });
 
-  it('exports output to file without gzip', async () => {
+  it('exports output to file', async () => {
     const {stdout} = await runCommand(
       [
         'socs:export',
@@ -51,32 +56,6 @@ describe('soc export (legacy arguments)', () => {
       }
     );
     const outputFile = join(tmpdir(), 'test-output.json');
-    expect(stdout).to.contain('Output written to:');
-    expect(existsSync(outputFile)).to.be.true;
-
-    // Clean up
-    if (existsSync(outputFile)) {
-      unlinkSync(outputFile);
-    }
-  });
-
-  it('exports gzipped output to file', async () => {
-    const {stdout} = await runCommand(
-      [
-        'socs:export',
-        '--name',
-        'test_soc_b-tqfn',
-        '--search-path',
-        './test/fixtures/socs',
-        '--gzip',
-        '-o',
-        join(tmpdir(), 'test-output.gz')
-      ],
-      {
-        root: '..'
-      }
-    );
-    const outputFile = join(tmpdir(), 'test-output.gz');
     expect(stdout).to.contain('Output written to:');
     expect(existsSync(outputFile)).to.be.true;
 
@@ -158,7 +137,7 @@ describe('soc export', () => {
     expect(stdout).to.contain('"Name": "TEST_SOC_A"');
   });
 
-  it('exports output to file without gzip', async () => {
+  it('exports output to file', async () => {
     const {stdout} = await runCommand(
       [
         'socs:export',
@@ -183,8 +162,10 @@ describe('soc export', () => {
       unlinkSync(outputFile);
     }
   });
+});
 
-  it('exports gzipped output to file', async () => {
+describe('soc export JSON envelope', () => {
+  it('returns a soc envelope in JSON mode for stdio output', async () => {
     const {stdout} = await runCommand(
       [
         'socs:export',
@@ -193,21 +174,108 @@ describe('soc export', () => {
         'tqfn',
         '--search-path',
         './test/fixtures/socs',
-        '--gzip',
-        '-o',
-        join(tmpdir(), 'test-output.gz')
+        '--format',
+        'json'
       ],
-      {
-        root: '..'
-      }
+      {root: '..'}
     );
-    const outputFile = join(tmpdir(), 'test-output.gz');
-    expect(existsSync(outputFile)).to.be.true;
-    expect(stdout).to.contain('Output written to:');
 
-    // Clean up
-    if (existsSync(outputFile)) {
-      unlinkSync(outputFile);
+    const data = assertSuccessEnvelopeData<{soc: {Name: string}}>(
+      stdout,
+      'socs export'
+    );
+
+    expect(data.soc.Name).to.equal('TEST_SOC_B');
+  });
+
+  it('returns an outputPath envelope in JSON mode for file output', async () => {
+    const outputFile = join(tmpdir(), 'test-output-envelope.json');
+
+    try {
+      const {stdout} = await runCommand(
+        [
+          'socs:export',
+          'test_soc_b',
+          '--package',
+          'tqfn',
+          '--search-path',
+          './test/fixtures/socs',
+          '-o',
+          outputFile,
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{outputPath: string}>(
+        stdout,
+        'socs export'
+      );
+
+      expect(data).to.deep.equal({outputPath: outputFile});
+      expect(existsSync(outputFile)).to.be.true;
+    } finally {
+      if (existsSync(outputFile)) {
+        unlinkSync(outputFile);
+      }
     }
   });
+
+  it('returns a SOC_DATA_MODEL_NOT_FOUND error envelope in JSON mode', async () => {
+    const {stdout} = await runCommand(
+      [
+        'socs:export',
+        'nonexistent_soc',
+        '--search-path',
+        './test/fixtures/socs',
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const parsed = assertValidEnvelope(stdout);
+
+    expect(parsed.ok).to.be.false;
+    if (parsed.ok) throw new Error('expected an error envelope');
+    expect(parsed.command).to.equal('socs export');
+    expect(parsed.errors[0]?.code).to.equal(
+      'SOC_DATA_MODEL_NOT_FOUND'
+    );
+  });
+
+  for (const [label, extraArgs] of [
+    [
+      'an explicit package that does not exist',
+      ['--package', 'nosuchpkg']
+    ],
+    [
+      'an unavailable --version',
+      ['--package', 'tqfn', '--version', '999.0.0']
+    ]
+  ] as const) {
+    it(`returns the same SOC_DATA_MODEL_NOT_FOUND code for ${label}`, async () => {
+      const {stdout} = await runCommand(
+        [
+          'socs:export',
+          'test_soc_b',
+          ...extraArgs,
+          '--search-path',
+          './test/fixtures/socs',
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const parsed = assertValidEnvelope(stdout);
+
+      expect(parsed.ok).to.be.false;
+      if (parsed.ok) throw new Error('expected an error envelope');
+      expect(parsed.errors[0]?.code).to.equal(
+        'SOC_DATA_MODEL_NOT_FOUND'
+      );
+    });
+  }
 });

@@ -15,11 +15,19 @@
 
 @use '@sev-common/styles/sev-variables' as sev;
 
+.markerOverlay,
 .measureOverlay {
 	position: absolute;
 	inset: 0;
-	z-index: sev.zIndex('timeline-row') + 1;
 	pointer-events: none;
 	background: transparent;
-	overflow: hidden;
+	overflow: clip;
+}
+
+.markerOverlay {
+	z-index: sev.zIndex('timeline-row') - 1;
+}
+
+.measureOverlay {
+	z-index: sev.zIndex('timeline-row') + 1;
 }

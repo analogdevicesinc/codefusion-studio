@@ -1,5 +1,6 @@
 {
 	"extends": "@tsconfig/node22/tsconfig.json",
+	"files": [],
 	"references": [
 		{
 			"path": "packages/ide"
@@ -9,12 +10,6 @@
 		},
 		{
 			"path": "packages/cli"
-		},
-		{
-			"path": "packages/elf-parser"
-		},
-		{
-			"path": "packages/react-library"
 		},
 		{
 			"path": "packages/cfs-package-manager"

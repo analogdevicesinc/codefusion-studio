@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ import {usePeripheralAllocations} from '../state/slices/peripherals/peripherals.
 import {useAssignedPins} from '../state/slices/pins/pins.selector';
 import {getPeripheralErrorCount} from '../utils/peripheral-errors';
 import type {ControlCfg} from '../../../common/types/soc';
+import {useScopes} from '../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../constants/scopes';
 
 /**
  * Custom hook to check if there are errors in Peripheral Allocations view
@@ -29,13 +31,22 @@ export default function useHasPeripheralError(
 ): boolean {
 	const allocations = usePeripheralAllocations();
 	const assignedPins = useAssignedPins();
+	const scopes = useScopes();
 
 	const hasError = projectIds?.some(
 		projId =>
 			getPeripheralErrorCount(
 				assignedPins,
 				allocations[projId],
-				projectControls[projId]
+				projectControls[projId],
+				{
+					projectId: projId,
+					scopeValidation: {
+						scopes,
+						controlScope: CONTROL_SCOPES.PERIPHERAL,
+						projectId: projId
+					}
+				}
 			) > 0
 	);
 

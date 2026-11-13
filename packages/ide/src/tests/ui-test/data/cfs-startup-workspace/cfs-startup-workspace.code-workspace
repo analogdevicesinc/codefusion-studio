@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "cfs.configureWorkspace": "Yes",
+    "cfs.project.board": "AD-BOARD-SL",
+    "terminal.integrated.defaultProfile.windows": "CFS Terminal",
+    "terminal.integrated.defaultProfile.osx": "CFS Terminal",
+    "terminal.integrated.defaultProfile.linux": "CFS Terminal"
+  },
+  "folders": [
+    {
+      "path": ".cfs"
+    },
+    {
+      "path": "primary-project"
+    }
+  ]
+}

@@ -44,6 +44,9 @@ import {
 	SECURE_ABBR
 } from '@common/constants/core-properties';
 import {getMemoryAccessOverrideForProject} from '../../../utils/memory-access';
+import ConflictIcon from '@common/icons/Conflict';
+import {useHasScopeConflictForItem} from '../../../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
 
 type PartitionDetailsProjectViewCardProp = Readonly<{
 	partition: Partition;
@@ -56,14 +59,20 @@ export default function PartitionDetailsProjectViewCard({
 	project,
 	dataTest
 }: PartitionDetailsProjectViewCardProp) {
-	const i10n: TLocaleContext | undefined =
-		useLocaleContext()?.memory?.access;
+	const memoryL10n: TLocaleContext | undefined =
+		useLocaleContext()?.memory;
+	const i10n: TLocaleContext | undefined = memoryL10n?.access;
 	const dispatch = useAppDispatch();
 	const graphMousePosition = useRef<{x: number; y: number}>({
 		x: 0,
 		y: 0
 	});
 	const [isHovering, setIsHovering] = useState(false);
+	const hasScopeConflict = useHasScopeConflictForItem({
+		controlScope: CONTROL_SCOPES.MEMORY,
+		itemId: partition.displayName,
+		projectIds: [project.ProjectId]
+	});
 	const currentProject = partition.projects.find(
 		(partitionCore: PartitionCore) =>
 			project.ProjectId === partitionCore.projectId
@@ -137,8 +146,8 @@ export default function PartitionDetailsProjectViewCard({
 
 	const showInfoIcon = Boolean(
 		coresWithAliases.length > 0 &&
-			getCoreMemoryAliases(partition.baseBlock.Name, coresWithAliases)
-				.length > 0
+		getCoreMemoryAliases(partition.baseBlock.Name, coresWithAliases)
+			.length > 0
 	);
 
 	const partitionStartAddress = parseInt(partition.startAddress, 16);
@@ -171,6 +180,20 @@ export default function PartitionDetailsProjectViewCard({
 								data-test={`${currentProject.projectId}-partition-card-title`}
 							>
 								<h3>{partition.displayName}</h3>
+								{hasScopeConflict && (
+									<Tooltip
+										title={
+											memoryL10n?.partition?.['scope-conflict']
+												?.tooltip
+										}
+										type='long'
+									>
+										<ConflictIcon
+											className={styles.scopeConflictIcon}
+											dataTest={`${currentProject.projectId}-${partition.displayName}-scope-conflict-icon`}
+										/>
+									</Tooltip>
+								)}
 								<p>
 									{partition.size
 										? formatBytesToKbOrMb(partition.size)
@@ -184,7 +207,9 @@ export default function PartitionDetailsProjectViewCard({
 							className={styles.memoryCardDetails}
 							data-test='partition-address'
 						>
-							{`${convertDecimalToHex(partitionStartAddress)} - ${convertDecimalToHex(endAddress)}`}
+							{`${convertDecimalToHex(
+								partitionStartAddress
+							)} - ${convertDecimalToHex(endAddress)}`}
 							{showInfoIcon && (
 								<div
 									data-test={`${currentProject.projectId}-partition-card-details-info-icon`}

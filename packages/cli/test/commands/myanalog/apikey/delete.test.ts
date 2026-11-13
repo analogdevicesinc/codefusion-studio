@@ -16,7 +16,7 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 
-import {apiKeyDeleteDeps} from '../../../../src/commands/myanalog/apikey/delete.js';
+import {apiKeyDeleteDeps} from '../../../../dist/commands/myanalog/apikey/delete.js';
 
 describe('myanalogapikey delete', () => {
   const originalGetApiClient = apiKeyDeleteDeps.getApiClient;

@@ -1,7 +1,7 @@
 ---
 description: Install debug probe drivers for CodeFusion Studio
 author: Analog Devices
-date: 2026-04-26
+date: 2026-08-07
 ---
 
 # Install debug drivers
@@ -12,6 +12,6 @@ Select the driver installation guide for your debug probe:
 
 - [Install Olimex JTAG drivers](install-olimex-drivers.md) - For RISC-V debugging
 - [Install Segger J-Link drivers](install-jlink-drivers.md) - For J-Link debugging
-- [Install ICE drivers](install-ice-drivers.md) - For SHARC-FX debugging (Windows only)
+- [Install ICE drivers](install-ice-drivers.md) - For SHARC-FX debugging
 
 After installing drivers, proceed to [Connect hardware](../connect-hardware.md) for detailed board connection instructions.

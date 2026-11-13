@@ -14,41 +14,14 @@
  */
 import {Args, Flags} from '@oclif/core';
 import {decimalToHex} from 'cfs-lib';
-
-// import {SYMBOLS_TABLE_ID} from 'elf-parser'
-
 import Table from 'cli-table3';
-import {ElfFileParser} from 'elf-parser';
 
-import {Logger} from '../../logger.js';
-import {BaseCommand} from '../../utils/base-command.js';
+import {BaseElfCommand} from '../../utils/base-elf-command.js';
 import {tableOutputStyles} from '../../utils/utils.js';
 
 // TODO move code to cfs-lib
 
 type TSymbol = Record<string, number | string | undefined>;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const formatQuery = (query: string) => {
-  const paramValues: number[] = [];
-
-  // Regex to find size or address with any operator and value (decimal or hexadecimal)
-  const regex =
-    /\b(size|address)\s*(=|<>|!=|>|<|>=|<=|==|LIKE)\s*(["']?(?:0x[\dA-Fa-f]+|\d+)["']?)\b/g;
-
-  const modifiedQuery = query.replaceAll(
-    regex,
-    (_match, field, operator, value) => {
-      const strippedValue = value.replaceAll(/["']/g, '');
-      const numberIntValue = Number(strippedValue as number | string);
-      paramValues.push(numberIntValue);
-
-      return `${field} ${operator} ?`;
-    }
-  );
-
-  return {modifiedQuery, paramValues};
-};
 
 const serializeSymbols = (symbols: TSymbol[]): TSymbol[] =>
   symbols?.map((symbol: TSymbol) => {
@@ -65,112 +38,91 @@ const serializeSymbols = (symbols: TSymbol[]): TSymbol[] =>
     return newSymbol;
   });
 
-export default class Symbols extends BaseCommand<typeof Symbols> {
+export default class Symbols extends BaseElfCommand<typeof Symbols> {
   static args = {
-    filePath: Args.string({description: 'file path  to read'}),
-    sqlQuery: Args.string({description: 'Sql query to execute'})
+    ...BaseElfCommand.args,
+    sqlQuery: Args.string({
+      description: 'Sql query to execute',
+      required: true
+    })
   };
 
   static description = 'Query symbols contained within the ELF file';
+  static useResponseEnvelope = true;
 
   static flags = {
-    full: Flags.boolean({char: 'f', description: 'Print full path'})
+    full: Flags.boolean({
+      charAliases: ['f'],
+      deprecateAliases: true,
+      description: 'Print full path'
+    })
   };
 
   public async run(): Promise<{
-    data: TSymbol[];
-    RowsTotalNumber: number;
+    rows: TSymbol[];
+    rowsTotalNumber: number;
   }> {
     const {args, flags} = this;
 
-    if (args.sqlQuery && args.filePath) {
-      this.log(`SQL: ${args.sqlQuery}`);
+    this.log(`SQL: ${args.sqlQuery}`);
 
-      try {
-        // const {modifiedQuery, paramValues} = formatQuery(args.sqlQuery)
-        const parser = new ElfFileParser(args.filePath);
-        await parser.initialize();
-        const result: TSymbol[] = parser.query(
-          args.sqlQuery || ''
-        ) as TSymbol[];
+    const parser = await this.initializeParser();
+    const result: TSymbol[] = parser.query(
+      args.sqlQuery || ''
+    ) as TSymbol[];
 
-        const dataResult = serializeSymbols(result || []);
-        // eslint-disable-next-line unicorn/no-array-for-each
-        dataResult.forEach((symbol: TSymbol) => {
-          delete symbol.id;
+    const dataResult = serializeSymbols(result || []);
+    for (const symbol of dataResult) {
+      delete symbol.id;
 
-          if (Number.isNaN(symbol.stack)) delete symbol.stack;
+      if (Number.isNaN(symbol.stack)) delete symbol.stack;
 
-          if (symbol.recursive !== undefined) {
-            const val = symbol.recursive as number;
-            let str = val.toString();
-            switch (val) {
-              case 0: {
-                str = '';
-                break;
-              }
-
-              case 1: {
-                str = 'R';
-                break;
-              } // ReachesRecursion
-
-              case 2: {
-                str = 'GL';
-                break;
-              } // GraphLoop
-
-              case 3: {
-                str = 'SR';
-                break;
-              } // SelfRecursive
-            }
-
-            symbol.recursive = str;
-          }
-
-          // Print just the name and the line
-          if (
-            !flags.full &&
-            symbol.path !== undefined &&
-            symbol.path !== null
-          ) {
-            const str = symbol.path as string;
-            const fileNameAndLine = str.split(/\//).pop();
-            if (fileNameAndLine) {
-              const splits = fileNameAndLine.split(/:/);
-              symbol.path =
-                splits[0] + (splits[1] ? ':' + splits[1] : '');
-            }
-          }
-        });
-
-        if (
-          dataResult !== undefined &&
-          dataResult.length > 0 &&
-          !this.jsonEnabled()
-        ) {
-          const table = new Table({
-            head: Object.getOwnPropertyNames(dataResult[0]),
-            ...tableOutputStyles()
-          });
-
-          for (const item of dataResult) {
-            table.push(Object.values(item));
-          }
-
-          this.log(table.toString());
-          this.log(`\nNumber of rows: ${dataResult.length}`);
-        }
-
-        return {data: dataResult, RowsTotalNumber: dataResult.length};
-      } catch (error) {
-        return Logger.logError(`${error}`);
+      if (symbol.recursive !== undefined) {
+        const recursiveLabels: Record<number, string> = {
+          0: '',
+          1: 'R',
+          2: 'GL',
+          3: 'SR'
+        };
+        symbol.recursive =
+          recursiveLabels[symbol.recursive as number] ??
+          String(symbol.recursive);
       }
-    } else {
-      return Logger.logError(
-        `No input file or query to execute. Please provide a valid file path and a valid query.`
-      );
+
+      // Print just the name and the line
+      if (
+        !flags.full &&
+        symbol.path !== undefined &&
+        symbol.path !== null
+      ) {
+        const str = symbol.path as string;
+        const fileNameAndLine = str.split(/\//).pop();
+        if (fileNameAndLine) {
+          const splits = fileNameAndLine.split(/:/);
+          symbol.path =
+            splits[0] + (splits[1] ? ':' + splits[1] : '');
+        }
+      }
     }
+
+    if (
+      dataResult !== undefined &&
+      dataResult.length > 0 &&
+      !this.jsonEnabled()
+    ) {
+      const table = new Table({
+        head: Object.getOwnPropertyNames(dataResult[0]),
+        ...tableOutputStyles()
+      });
+
+      for (const item of dataResult) {
+        table.push(Object.values(item));
+      }
+
+      this.log(table.toString());
+      this.log(`\nNumber of rows: ${dataResult.length}`);
+    }
+
+    return {rows: dataResult, rowsTotalNumber: dataResult.length};
   }
 }

@@ -22,15 +22,21 @@ import {
 	getMemoryAtSymbol,
 	getMemoryData,
 	getSessionList,
-	type MemoryDataResponse
+	getSymbolsAtSymbol,
+	getSymbolsInRange,
+	type MemoryDataWithSymbols
 } from '../../../utils/api';
-import {type DebugSessionInfo} from '../../../types/debug';
+import {
+	type DebugSessionInfo,
+	type SymbolsDataResponse
+} from '../../../types/debug';
 
 type MemoryState = {
 	sessions: DebugSessionInfo[];
 	memoryBytes: {
 		address?: number;
 		data: number[];
+		symbols?: SymbolsDataResponse[];
 	};
 	activeSessionId?: string;
 	loading: boolean;
@@ -41,7 +47,8 @@ type MemoryState = {
 const memoryInitialState: MemoryState = {
 	memoryBytes: {
 		address: 0,
-		data: []
+		data: [],
+		symbols: []
 	},
 	sessions: [],
 	activeSessionId: undefined,
@@ -70,9 +77,16 @@ export const fetchMemoryData = createAsyncThunk(
 		address: number;
 		length: number;
 	}) => {
-		const response = await getMemoryData(sessionId, length, address);
+		const [memoryResponse, symbolsResponse] = await Promise.all([
+			getMemoryData(sessionId, length, address),
+			getSymbolsInRange(sessionId, length, address).catch(err => {
+				console.error(err);
 
-		return response;
+				return [];
+			})
+		]);
+
+		return {...memoryResponse, symbols: symbolsResponse};
 	}
 );
 
@@ -87,13 +101,16 @@ export const fetchMemoryAtSymbol = createAsyncThunk(
 		length: number;
 		expression: string;
 	}) => {
-		const response = await getMemoryAtSymbol(
-			sessionId,
-			length,
-			expression
-		);
+		const [memoryResponse, symbolsResponse] = await Promise.all([
+			getMemoryAtSymbol(sessionId, length, expression),
+			getSymbolsAtSymbol(sessionId, length, expression).catch(err => {
+				console.error(err);
 
-		return response;
+				return [];
+			})
+		]);
+
+		return {...memoryResponse, symbols: symbolsResponse};
 	}
 );
 
@@ -108,9 +125,16 @@ export const appendMemoryData = createAsyncThunk(
 		address: number;
 		length: number;
 	}) => {
-		const response = await getMemoryData(sessionId, length, address);
+		const [memoryResponse, symbolsResponse] = await Promise.all([
+			getMemoryData(sessionId, length, address),
+			getSymbolsInRange(sessionId, length, address).catch(err => {
+				console.error(err);
 
-		return response;
+				return [];
+			})
+		]);
+
+		return {...memoryResponse, symbols: symbolsResponse};
 	}
 );
 
@@ -123,6 +147,7 @@ const MemorySlice = createSlice({
 			action: PayloadAction<{
 				address?: number;
 				data: number[];
+				symbols: SymbolsDataResponse[];
 			}>
 		) {
 			state.memoryBytes = action.payload;
@@ -177,12 +202,13 @@ const MemorySlice = createSlice({
 			})
 			.addCase(
 				fetchMemoryData.fulfilled,
-				(state, action: PayloadAction<MemoryDataResponse>) => {
+				(state, action: PayloadAction<MemoryDataWithSymbols>) => {
 					state.loading = false;
-					const {address, data} = action.payload;
+					const {address, data, symbols} = action.payload;
 					state.memoryBytes = {
 						address,
-						data
+						data,
+						symbols
 					};
 				}
 			)
@@ -191,39 +217,57 @@ const MemorySlice = createSlice({
 				state.error = action.error.message;
 			})
 			.addCase(appendMemoryData.fulfilled, (state, action) => {
-					state.loading = false;
-					const {address, data} = action.payload;
-					const requestedLength = action.meta.arg.length;
+				state.loading = false;
+				const {address, data, symbols} = action.payload;
+				const requestedLength = action.meta.arg.length;
 
-					if (data.length === 0) {
-						state.reachedEndOfMemory = true;
+				if (data.length === 0) {
+					state.reachedEndOfMemory = true;
 
-						return;
-					}
+					return;
+				}
 
-					if (data.length < requestedLength) {
-						state.reachedEndOfMemory = true;
-					}
+				if (data.length < requestedLength) {
+					state.reachedEndOfMemory = true;
+				}
 
-					// Shouldn't be able to call append without existing memory data, but just in case
-					if (
-						state.memoryBytes.address === undefined ||
-						state.memoryBytes.data.length === 0
-					) {
-						state.memoryBytes = {
-							address,
-							data
-						};
-					} else {
-						const expectedNextAddress =
-							state.memoryBytes.address +
-							state.memoryBytes.data.length;
+				// Shouldn't be able to call append without existing memory data, but just in case
+				if (
+					state.memoryBytes.address === undefined ||
+					state.memoryBytes.data.length === 0
+				) {
+					state.memoryBytes = {
+						address,
+						data,
+						symbols
+					};
+				} else {
+					const expectedNextAddress =
+						state.memoryBytes.address + state.memoryBytes.data.length;
 
-						if (address === expectedNextAddress) {
-							state.memoryBytes.data.push(...data);
+					if (address === expectedNextAddress) {
+						state.memoryBytes.data.push(...data);
+
+						if (!state.memoryBytes.symbols) {
+							state.memoryBytes.symbols = [];
 						}
+
+						const existingSymbols = new Set(
+							state.memoryBytes.symbols
+								.map(symbol => symbol.address)
+								.filter(addr => addr !== undefined)
+						);
+
+						state.memoryBytes.symbols.push(
+							...symbols.filter(
+								symbol =>
+									symbol.address !== undefined &&
+									!existingSymbols.has(symbol.address)
+							)
+						);
 					}
-				})
+				}
+			})
 			.addCase(appendMemoryData.pending, state => {
 				state.loading = true;
 				state.error = undefined;
@@ -240,12 +284,13 @@ const MemorySlice = createSlice({
 			})
 			.addCase(
 				fetchMemoryAtSymbol.fulfilled,
-				(state, action: PayloadAction<MemoryDataResponse>) => {
+				(state, action: PayloadAction<MemoryDataWithSymbols>) => {
 					state.loading = false;
-					const {address, data} = action.payload;
+					const {address, data, symbols} = action.payload;
 					state.memoryBytes = {
 						address,
-						data
+						data,
+						symbols
 					};
 				}
 			)

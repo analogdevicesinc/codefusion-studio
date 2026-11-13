@@ -17,6 +17,8 @@
 import type {ControlCfg, Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import ConfigSidebar from './ConfigSidebar';
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
+import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import {
 	setActivePeripheral,
 	setActiveSignal,
@@ -26,6 +28,9 @@ import {
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {capitalizeWord} from '../../../../../common/utils/string';
 import type {CfsConfig} from 'cfs-types';
+import l10n from '../../../../../../../l10n/bundle.l10n.en.json';
+
+(window as any).__webview_localization_resources__ = l10n;
 
 const max32690wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -231,47 +236,48 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral(`I2C0:${CM4}-proj`));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
-			() => {
-				cy.dataTest(
-					'plugin-options:plugin-form:control-FREQ-control-input'
-				)
-					.shadow()
-					.find('input')
-					.should('have.value', '10000');
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		).then(() => {
+			cy.dataTest(
+				'plugin-options:plugin-form:control-FREQ-control-input'
+			)
+				.shadow()
+				.find('input')
+				.should('have.value', '10000');
 
-				cy.then(() => {
-					reduxStore.dispatch(setActivePeripheral(`I2C2:${RV}-proj`));
-				});
+			cy.then(() => {
+				reduxStore.dispatch(setActivePeripheral(`I2C2:${RV}-proj`));
+			});
 
-				cy.dataTest(
-					'plugin-options:plugin-form:control-FREQ-control-input'
-				)
-					.shadow()
-					.find('input')
-					.should('have.value', '20000')
-					.then($input => {
-						const input = $input[0];
-						input.value = '7000';
-						input.dispatchEvent(new Event('input', {bubbles: true}));
-						input.dispatchEvent(new Event('change', {bubbles: true}));
-					})
-					.should('have.value', '7000');
+			cy.dataTest(
+				'plugin-options:plugin-form:control-FREQ-control-input'
+			)
+				.shadow()
+				.find('input')
+				.should('have.value', '20000')
+				.then($input => {
+					const input = $input[0];
+					input.value = '7000';
+					input.dispatchEvent(new Event('input', {bubbles: true}));
+					input.dispatchEvent(new Event('change', {bubbles: true}));
+				})
+				.should('have.value', '7000');
 
-				cy.then(() => {
-					reduxStore.dispatch(
-						setActivePeripheral(`I2C0:${CM4}-proj`)
-					);
-				});
+			cy.then(() => {
+				reduxStore.dispatch(setActivePeripheral(`I2C0:${CM4}-proj`));
+			});
 
-				cy.dataTest(
-					'plugin-options:plugin-form:control-FREQ-control-input'
-				)
-					.shadow()
-					.find('input')
-					.should('have.value', '10000');
-			}
-		);
+			cy.dataTest(
+				'plugin-options:plugin-form:control-FREQ-control-input'
+			)
+				.shadow()
+				.find('input')
+				.should('have.value', '10000');
+		});
 	});
 
 	it('Should render toggles in configuration form for boolean types', () => {
@@ -288,11 +294,14 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
-			() => {
-				cy.dataTest('boolean-control:ENABLE-span').should('exist');
-			}
-		);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		).then(() => {
+			cy.dataTest('boolean-control:ENABLE-span').should('exist');
+		});
 	});
 
 	it('Renders correctly the allocated core information - Single core allocation', () => {
@@ -326,7 +335,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		// Pre-allocated peripherals should display the peripheral config sidebar variant.
 		cy.dataTest('config-sidebar:peripheral-config').should('exist');
@@ -379,7 +393,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral(GPIO0));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest(
 			'details-section:core-assignment:multiple-assignments'
@@ -416,26 +435,29 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 			setActiveSignal({peripheral: GPIO0, signal: signalName})
 		);
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
-			() => {
-				cy.spy(reduxStore, 'dispatch').as('dispatch');
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		).then(() => {
+			cy.spy(reduxStore, 'dispatch').as('dispatch');
 
-				cy.dataTest('config-sidebar:signal-config').should('exist');
+			cy.dataTest('config-sidebar:signal-config').should('exist');
 
-				cy.get('h2')
-					.first()
-					.should('have.text', `${GPIO0} ${signalName}`);
+			cy.get('h2')
+				.first()
+				.should('have.text', `${GPIO0} ${signalName}`);
 
-				cy.dataTest(`allocated-core-card:${RV}-proj`)
-					.should('exist')
-					.find('p')
-					.should('have.text', 'RISC-V (RV32)');
+			cy.dataTest(`allocated-core-card:${RV}-proj`)
+				.should('exist')
+				.find('p')
+				.should('have.text', 'RISC-V (RV32)');
 
-				cy.dataTest('details-section:alias-control-input').should(
-					'exist'
-				);
-			}
-		);
+			cy.dataTest('details-section:alias-control-input').should(
+				'exist'
+			);
+		});
 	});
 
 	it('Should display the peripheral config task sidebar when a the user chooses to configure a peripheral', () => {
@@ -454,7 +476,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral(`${GPIO0}:${RV}-proj`));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest('config-sidebar:peripheral-config').should('exist');
 
@@ -472,6 +499,64 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		// Should show error sidebar header
 		cy.dataTest('peripheral:error').should('exist');
 		cy.dataTest('signal-assignment:conflict').should('be.visible');
+	});
+
+	it('Should disable peripheral pins when removing the core allocation', () => {
+		const reduxStore = configurePreloadedStore(
+			max32690wlp,
+			mockedConfigDict
+		);
+
+		reduxStore.dispatch(
+			setPeripheralAssignment({
+				peripheral: 'I2C0',
+				projectId: `${CM4}-proj`,
+				config: {}
+			})
+		);
+		reduxStore.dispatch(
+			setSignalGroupAssignment({
+				peripheral: 'I2C0',
+				projectId: `${CM4}-proj`,
+				config: {}
+			})
+		);
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: 'F6',
+				Peripheral: 'I2C0',
+				Name: 'SCL'
+			})
+		);
+		reduxStore.dispatch(
+			setSignalAssignment({
+				peripheral: GPIO0,
+				signalName: 'P0.5',
+				projectId: `${CM4}-proj`
+			})
+		);
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: 'H2',
+				Peripheral: GPIO0,
+				Name: 'P0.5'
+			})
+		);
+		reduxStore.dispatch(setActivePeripheral(`I2C0:${CM4}-proj`));
+
+		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+
+		cy.dataTest(`allocated-core-card:${CM4}-proj:delete-icon`)
+			.should('exist')
+			.click()
+			.then(() => {
+				expect(
+					reduxStore.getState().pinsReducer.pins.F6.appliedSignals
+				).to.have.length(0);
+				expect(
+					reduxStore.getState().pinsReducer.pins.H2.appliedSignals
+				).to.have.length(1);
+			});
 	});
 
 	it('Should dynamically update the sidebar when the user switches between peripheral and signal configuration task', () => {
@@ -500,7 +585,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral(DMA));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest('config-sidebar:peripheral-config').should('exist');
 
@@ -557,43 +647,44 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
-			() => {
-				cy.wait(1000);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		).then(() => {
+			cy.wait(1000);
 
-				cy.dataTest('config-sidebar:peripheral-config').should(
-					'exist'
-				);
-				cy.dataTest('config-panel:plugin-options').should('exist');
+			cy.dataTest('config-sidebar:peripheral-config').should('exist');
+			cy.dataTest('config-panel:plugin-options').should('exist');
 
-				cy.dataTest('plugin-options:plugin-form:container')
-					.scrollIntoView()
-					.wait(1000)
-					.should('be.visible');
+			cy.dataTest('plugin-options:plugin-form:container')
+				.scrollIntoView()
+				.wait(1000)
+				.should('be.visible');
 
-				cy.dataTest('plugin-info:firmware').should(
-					'have.text',
-					`${SoC} ${capitalizeWord(zephyr)}`
-				);
+			cy.dataTest('plugin-info:firmware').should(
+				'have.text',
+				`${SoC} ${capitalizeWord(zephyr)}`
+			);
 
-				cy.dataTest('plugin-info:version').should(
-					'have.text',
-					`Version ${pluginVersion}`
-				);
+			cy.dataTest('plugin-info:version').should(
+				'have.text',
+				`Version ${pluginVersion}`
+			);
 
-				cy.dataTest('config-panel:plugin-options').click();
+			cy.dataTest('config-panel:plugin-options').click();
 
-				cy.dataTest('plugin-options:plugin-form:container').should(
-					'not.be.visible'
-				);
+			cy.dataTest('plugin-options:plugin-form:container').should(
+				'not.be.visible'
+			);
 
-				cy.dataTest('config-panel:plugin-options').click();
+			cy.dataTest('config-panel:plugin-options').click();
 
-				cy.dataTest('plugin-options:plugin-form:container').should(
-					'be.visible'
-				);
-			}
-		);
+			cy.dataTest('plugin-options:plugin-form:container').should(
+				'be.visible'
+			);
+		});
 	});
 
 	it('Should not show the configuration sections if there are no options', () => {
@@ -614,24 +705,21 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore).then(
-			() => {
-				cy.wait(1000);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		).then(() => {
+			cy.wait(1000);
 
-				cy.dataTest('config-sidebar:peripheral-config').should(
-					'exist'
-				);
-				cy.dataTest('config-section:manage-pin-assignments').should(
-					'not.exist'
-				);
-				cy.dataTest('config-section:configuration').should(
-					'not.exist'
-				);
-				cy.dataTest('config-panel:plugin-options').should(
-					'not.exist'
-				);
-			}
-		);
+			cy.dataTest('config-sidebar:peripheral-config').should('exist');
+			cy.dataTest('config-section:manage-pin-assignments').should(
+				'not.exist'
+			);
+			cy.dataTest('config-section:configuration').should('not.exist');
+			cy.dataTest('config-panel:plugin-options').should('not.exist');
+		});
 	});
 
 	it('Should correctly set target pin when clicking "Manage" in "PIN ASSIGNMENTS"', () => {
@@ -668,7 +756,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 			setActiveSignal({peripheral: 'GPIO0', signal: 'P0.1'})
 		);
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest(`config-section:manage-pin-assignments`).click();
 
@@ -708,7 +801,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('GPIO0:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest(`config-section:manage-pin-assignments`).should(
 			'exist'
@@ -746,7 +844,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest(`config-section:manage-pin-assignments`).should(
 			'not.exist'
@@ -784,7 +887,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 		);
 		reduxStore.dispatch(setActivePeripheral(`${GPIO0}:CM4-proj`));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		cy.dataTest('peripheral:error')
 			.should('exist')
@@ -844,7 +952,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		// Not mandatory, it passes validation.
 		cy.dataTest('peripheral:error').should('not.exist');
@@ -919,7 +1032,12 @@ describe('Peripheral Allocation - Config Sidebar', () => {
 
 		reduxStore.dispatch(setActivePeripheral('CM4 SysTick:CM4-proj'));
 
-		cy.mount(<ConfigSidebar isMinimised={false} />, reduxStore);
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<ConfigSidebar isMinimised={false} />
+			</LocalizationProvider>,
+			reduxStore
+		);
 
 		// Mandatory, do not pass validation when set it empty
 		cy.dataTest(

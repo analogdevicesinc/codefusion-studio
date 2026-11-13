@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {CorePart} from 'cfs-ccm-lib';
 import {DataModelMetaData} from 'cfs-lib';
 
@@ -24,7 +26,9 @@ import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 
-export default class List extends Command {
+export default class List extends BaseCommand<typeof List> {
+  static useResponseEnvelope = true;
+
   static aliases = ['soc:list'];
 
   static description = `Lists all SoCs that have been installed through the package manager, as well as the ones present in custom search paths.`;
@@ -35,16 +39,6 @@ export default class List extends Command {
   ];
 
   static flags = {
-    format: Flags.string({
-      char: 'f',
-      default: 'text',
-      summary: 'Set the data encoding format',
-      options: ['text', 'json']
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Include additional SoC details.'
-    }),
     'search-path': Flags.string({
       char: 's',
       summary:
@@ -79,7 +73,7 @@ export default class List extends Command {
     });
 
   async run() {
-    const {flags} = await this.parse(List);
+    const {flags} = this;
 
     const customSearchPaths = flags['search-path'] ?? [];
 
@@ -99,7 +93,9 @@ export default class List extends Command {
       socList = await dmManager.listDataModels();
     } catch (error) {
       handleMissingDependencyError(error);
-      this.error((error as Error).message);
+      this.error((error as Error).message, {
+        code: 'SOC_LIST_FAILED'
+      });
     }
 
     if (flags.legacy) {
@@ -133,9 +129,7 @@ export default class List extends Command {
         const socMetaData =
           await formatDetailedSocMetaDataLegacy(socList);
 
-        if (flags.format === 'json') {
-          this.log(JSON.stringify(socMetaData, null, 2));
-        } else {
+        if (flags.format !== 'json') {
           for (const [socName, socDetail] of Object.entries(
             socMetaData
           )) {
@@ -148,6 +142,8 @@ export default class List extends Command {
             this.log('');
           }
         }
+
+        return socMetaData;
       } else {
         const socNames = [
           ...new Set(
@@ -158,14 +154,10 @@ export default class List extends Command {
           )
         ];
 
-        this.log(
-          flags.format === 'json'
-            ? JSON.stringify(socNames, null, 2)
-            : socNames.join('\n')
-        );
-      }
+        this.log(socNames.join('\n'));
 
-      return;
+        return {socs: socNames};
+      }
     }
 
     if (flags.verbose) {
@@ -176,9 +168,7 @@ export default class List extends Command {
         socDict
       );
 
-      if (flags.format === 'json') {
-        this.log(JSON.stringify(socMetaData, null, 2));
-      } else {
+      if (flags.format !== 'json') {
         for (const soc of socMetaData) {
           this.log(`Name: ${soc.Name}`);
           this.log(`Package: ${soc.Package}`);
@@ -192,11 +182,18 @@ export default class List extends Command {
       }
 
       if (Object.keys(socDict).length === 0) {
-        this.log('');
-        this.log(
-          'Error reading catalog data. Some information might be incorrect. '
-        );
+        const catalogWarning =
+          'Error reading catalog data. Some information might be incorrect. ';
+
+        if (this.jsonEnabled()) {
+          this.pushWarning(catalogWarning);
+        } else {
+          this.log('');
+          this.log(catalogWarning);
+        }
       }
+
+      return {socs: socMetaData};
     } else {
       const socNames: Record<string, Set<string>> = {};
 
@@ -218,12 +215,12 @@ export default class List extends Command {
       );
 
       this.log(
-        flags.format === 'json'
-          ? JSON.stringify(socNamesArray, null, 2)
-          : Object.entries(socNamesArray)
-              .map(([soc, pkgs]) => `${soc} (${pkgs.join(', ')})`)
-              .join('\n')
+        Object.entries(socNamesArray)
+          .map(([soc, pkgs]) => `${soc} (${pkgs.join(', ')})`)
+          .join('\n')
       );
+
+      return socNamesArray;
     }
   }
 

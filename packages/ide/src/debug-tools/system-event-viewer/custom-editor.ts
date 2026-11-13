@@ -17,19 +17,31 @@ import * as vscode from "vscode";
 import type { ValidateFunction } from "ajv";
 import { ajv } from "../../utils/ajv-wrapper";
 import { ViewProviderPanel } from "../../view-provider/view-provider-panel";
-import { cfsEventsSchema, type CfsEventsFile } from "./cfsevents-schema";
+import {
+  v0_2,
+  v0_3,
+  v1_0,
+  CfsEventsData,
+  LatestCfsEventsFile,
+} from "./cfsevents-schema";
 import { SaveDialogOptions } from "vscode";
 import path from "path";
 import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
 import { getTelemetryManager } from "../../telemetry/telemetry";
+import { EventContentProvider } from "./content-provider";
 
 const CREATE_FILE_REQ_ID = "sev-create-file";
 const SEV_READY = "sev-ready";
+const SEV_UPDATE_INDEX = "sev-update-event-source-index";
 
 type SaveType = "export" | "save";
 
-const cfsEventsValidator: ValidateFunction<CfsEventsFile> =
-  ajv.compile<CfsEventsFile>(cfsEventsSchema);
+// Let's use some lazy initialization for these since it is possible that
+// only one of the validators is used during the lifetime of the extension,
+// and we don't want to compile both schemas if not needed.
+let v0_2Validator: ValidateFunction<v0_2.CfsEventsFile> | undefined;
+let v0_3Validator: ValidateFunction<v0_3.CfsEventsFile> | undefined;
+let v1_0Validator: ValidateFunction<v1_0.CfsEventsFile> | undefined;
 
 interface SevWebviewMessage {
   id: number;
@@ -41,8 +53,15 @@ interface SaveFileRequest {
   saveType?: SaveType;
 }
 
+interface UpdateIndexRequest {
+  eventSourceIndex: CfsEventsData["eventSourceIndex"];
+}
+
 class EventEditor {
-  private content: CfsEventsFile | undefined = undefined;
+  private content: CfsEventsData | undefined = undefined;
+  // Backing field for the document getter/setter. Access through this.document
+  private _internalDocument: vscode.TextDocument;
+  private isApplyingEdit = false;
 
   readonly webviewResolved: Promise<void>;
   private webviewReady: Promise<void>;
@@ -53,11 +72,18 @@ class EventEditor {
     private context: vscode.ExtensionContext,
     document: vscode.TextDocument,
     private webviewPanel: vscode.WebviewPanel,
+    private contentProvider: EventContentProvider | undefined,
   ) {
+    this._internalDocument = document;
+
     // Send updates whenever the .cfsevents document changes
     this.disposables.push(
       vscode.workspace.onDidChangeTextDocument((e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
+          this._internalDocument = e.document;
+          if (this.isApplyingEdit) {
+            return;
+          }
           this.document = e.document;
         }
       }),
@@ -105,13 +131,14 @@ class EventEditor {
     });
   }
 
-  // For the moment there is no need to retrieve the document content after the initial load,
-  // but if in the future we need to do so, we can store the document in a private variable
-  // and use a getter to retrieve its content when needed.
-  // eslint-disable-next-line accessor-pairs
+  get document(): vscode.TextDocument {
+    return this._internalDocument;
+  }
+
   set document(document: vscode.TextDocument) {
     try {
-      this.content = parseCfsEventFile(document);
+      const parsed = parseCfsEventFile(document);
+      this.content = parsed;
 
       void this.postMessage({
         type: "sev-data",
@@ -120,11 +147,12 @@ class EventEditor {
       void getTelemetryManager().then((telemetryManager) => {
         telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_FILE_STATISTICS, {
           state: this.content?.state,
-          eventCounts: Object.values(this.content?.events ?? {}).reduce(
-            (acc: number[], entry) => [...acc, entry.timestamps.length],
+          eventCounts: Object.values(this.content?.eventSources ?? {}).reduce(
+            (acc: number[], entry) => [...acc, entry.events.length],
             [],
           ),
-          eventSourceCount: Object.keys(this.content?.events ?? {}).length,
+          eventSourceCount: Object.keys(this.content?.eventSources ?? {})
+            .length,
         });
       });
     } catch (error) {
@@ -155,6 +183,9 @@ class EventEditor {
           return;
         case CREATE_FILE_REQ_ID:
           await this.saveFileRequest(message.body);
+          break;
+        case SEV_UPDATE_INDEX:
+          await this.handleUpdateIndex(message.body);
           break;
         default:
           console.warn("Unknown message type", message);
@@ -224,6 +255,60 @@ class EventEditor {
         }
       });
   }
+
+  /**
+   * Handles an eventSourceIndex update from the webview.
+   *
+   * For a real `.cfsevents` file the new index is written back into the JSON
+   * via a workspace edit and the resulting document-change event is suppressed
+   * (the webview already reflects the new state).
+   *
+   * For a live virtual document the index is forwarded to the content provider,
+   * which persists it in the session context so it survives editor reopens.
+   */
+  private async handleUpdateIndex(request?: UpdateIndexRequest): Promise<void> {
+    if (!request) return;
+    const { eventSourceIndex } = request;
+
+    // Update in-memory content immediately so saves reflect the latest layout
+    if (this.content) {
+      this.content = { ...this.content, eventSourceIndex };
+    }
+
+    if (this.document.uri.scheme === "cfs-sev") {
+      this.contentProvider?.updateEventSourceIndex(eventSourceIndex);
+    } else {
+      await this.saveContent();
+    }
+  }
+
+  /**
+   * Persists the current in-memory content to the document on disk.
+   */
+  private async saveContent(): Promise<void> {
+    if (!this.content) return;
+
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(
+      this.document.uri,
+      new vscode.Range(0, 0, this.document.lineCount, 0),
+      JSON.stringify(
+        { ...this.content, schemaVersion: "1.0" } as v1_0.CfsEventsFile,
+        undefined,
+        2,
+      ),
+    );
+
+    this.isApplyingEdit = true;
+    try {
+      const ok = await vscode.workspace.applyEdit(edit);
+      if (!ok) {
+        throw new Error("Failed to persist content");
+      }
+    } finally {
+      this.isApplyingEdit = false;
+    }
+  }
 }
 
 /*
@@ -237,7 +322,10 @@ class EventEditor {
  * to show the final webview as part of CFSIO-14896.
  */
 export class EventEditorProvider implements vscode.CustomTextEditorProvider {
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly contentProvider?: EventContentProvider,
+  ) {}
 
   public resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -253,7 +341,12 @@ export class EventEditorProvider implements vscode.CustomTextEditorProvider {
       });
     });
 
-    const editor = new EventEditor(this.context, document, webviewPanel);
+    const editor = new EventEditor(
+      this.context,
+      document,
+      webviewPanel,
+      this.contentProvider,
+    );
     // The idea here was to return editor.isReady() in a similar way on  how it is done on the
     // configuration treeview, however there it works because the webview view is loaded even before
     // the promise is resolved, while here it looks like vscode does not render the webview editor until
@@ -267,11 +360,14 @@ export class EventEditorProvider implements vscode.CustomTextEditorProvider {
 
 /**
  * Parses the content of a CFS events file and validates it against the SEV schema.
+ * Currently schemas 0.2, 0.3 and 1.0 are supported, but the method will always return a
+ * CfsEventsData type as that is the type used on the rest of the file.
+ *
  * @param content The content of the CFS events file as a string.
  * @returns The parsed and validated CFS events file.
  * @throws {SevJsonValidationError} If the content is not valid JSON or does not match the SEV schema.
  */
-function parseCfsEventFile(document: vscode.TextDocument): CfsEventsFile {
+function parseCfsEventFile(document: vscode.TextDocument): CfsEventsData {
   let parsedFile;
 
   try {
@@ -283,16 +379,82 @@ function parseCfsEventFile(document: vscode.TextDocument): CfsEventsFile {
     throw new SevJsonValidationError([`Invalid JSON: ${message}`]);
   }
 
-  if (!cfsEventsValidator(parsedFile)) {
-    const errors = (cfsEventsValidator.errors ?? []).map((err) =>
-      `${err.instancePath} ${err.message ?? ""}`.trim(),
-    );
-
-    // Throw an error if the JSON doesn't match the SEV schema
-    throw new SevJsonValidationError(errors);
+  if (
+    typeof parsedFile !== "object" ||
+    parsedFile === null ||
+    Array.isArray(parsedFile)
+  ) {
+    throw new SevJsonValidationError([
+      "Invalid JSON: root value must be an object.",
+    ]);
   }
 
-  return parsedFile;
+  switch (parsedFile.schemaVersion) {
+    case "0.2": {
+      if (!v0_2Validator) {
+        v0_2Validator = ajv.compile<v0_2.CfsEventsFile>(v0_2.cfsEventsSchema);
+      }
+      if (!v0_2Validator(parsedFile)) {
+        const errors = (v0_2Validator.errors ?? []).map((err) =>
+          `${err.instancePath} ${err.message ?? ""}`.trim(),
+        );
+        throw new SevJsonValidationError(errors);
+      }
+      return {
+        lastUpdate: parsedFile.lastUpdate,
+        tickFrequency: parsedFile.tickFrequency,
+        tickEpoch: parsedFile.ticksEpoch,
+        state: parsedFile.state,
+        eventSources: Object.fromEntries(
+          Object.entries(parsedFile.events).map(([eventSource, entry]) => [
+            eventSource,
+            {
+              events: entry.timestamps.map((ts) => ({ ts })),
+            },
+          ]),
+        ),
+      };
+    }
+    case "0.3": {
+      if (!v0_3Validator) {
+        v0_3Validator = ajv.compile<v0_3.CfsEventsFile>(v0_3.cfsEventsSchema);
+      }
+      if (!v0_3Validator(parsedFile)) {
+        const errors = (v0_3Validator.errors ?? []).map((err) =>
+          `${err.instancePath} ${err.message ?? ""}`.trim(),
+        );
+        throw new SevJsonValidationError(errors);
+      }
+
+      const { ticksEpoch, schemaVersion, ...data } = {
+        ...parsedFile,
+        tickEpoch: parsedFile.ticksEpoch,
+      };
+      void ticksEpoch;
+      void schemaVersion;
+
+      return data;
+    }
+    case "1.0": {
+      if (!v1_0Validator) {
+        v1_0Validator = ajv.compile<v1_0.CfsEventsFile>(v1_0.cfsEventsSchema);
+      }
+      if (!v1_0Validator(parsedFile)) {
+        const errors = (v1_0Validator.errors ?? []).map((err) =>
+          `${err.instancePath} ${err.message ?? ""}`.trim(),
+        );
+        throw new SevJsonValidationError(errors);
+      }
+      const { schemaVersion, ...data } = parsedFile;
+      void schemaVersion;
+
+      return data;
+    }
+    default:
+      throw new SevJsonValidationError([
+        `Unsupported schema version: ${parsedFile.schemaVersion}`,
+      ]);
+  }
 }
 
 class SevJsonValidationError extends Error {
@@ -303,7 +465,7 @@ class SevJsonValidationError extends Error {
 
 interface SevSaveInfo {
   filters: SaveDialogOptions["filters"];
-  parsers: Record<string, (content: CfsEventsFile) => string>;
+  parsers: Record<string, (content: CfsEventsData) => string>;
 }
 
 const saveTypeInfo: Record<SaveType, SevSaveInfo> = {
@@ -323,10 +485,14 @@ const saveTypeInfo: Record<SaveType, SevSaveInfo> = {
       "*.cfsevents": ["cfsevents"],
     },
     parsers: {
-      ".cfsevents": (content: CfsEventsFile) => {
+      ".cfsevents": (content: CfsEventsData) => {
         // Override state in case the data is coming from a live session.
         return JSON.stringify(
-          { ...content, state: "file" } as CfsEventsFile,
+          {
+            ...content,
+            schemaVersion: "1.0",
+            state: "file",
+          } as LatestCfsEventsFile,
           undefined,
           2,
         );
@@ -335,50 +501,52 @@ const saveTypeInfo: Record<SaveType, SevSaveInfo> = {
   },
 };
 
-function cfsEventsToCsv(parsedFile: CfsEventsFile): string {
-  if (!parsedFile.events) {
+function cfsEventsToCsv(parsedFile: CfsEventsData): string {
+  if (!parsedFile.eventSources) {
     return "";
   }
-  const events = Object.entries(parsedFile.events).flatMap(
+  const events = Object.entries(parsedFile.eventSources).flatMap(
     ([eventSource, entry]) => {
-      return entry.timestamps.map((timestamp) => ({
+      return entry.events.map(({ ts, msg }) => ({
         eventSource,
-        timestamp,
+        ts,
+        msg,
       }));
     },
   );
 
-  events.sort((a, b) => a.timestamp - b.timestamp);
+  events.sort((a, b) => a.ts - b.ts);
 
   const csvRows = events.map(
-    ({ eventSource, timestamp }) =>
-      `${escapeCsvValue(eventSource)},${timestamp}`,
+    ({ eventSource, ts, msg }) =>
+      `${escapeCsvValue(eventSource)},${ts},${escapeCsvValue(msg ?? "")}`,
   );
 
-  const csvHeader = "event_source,timestamp";
+  const csvHeader = "event_source,timestamp,message";
   return [csvHeader, ...csvRows].join("\n");
 }
 
-function cfsEventsToJson(parsedFile: CfsEventsFile): string {
-  if (!parsedFile.events) {
+function cfsEventsToJson(parsedFile: CfsEventsData): string {
+  if (!parsedFile.eventSources) {
     return "";
   }
-  const events = Object.entries(parsedFile.events).flatMap(
+  const events = Object.entries(parsedFile.eventSources).flatMap(
     ([eventSource, entry]) => {
-      return entry.timestamps.map((timestamp) => ({
+      return entry.events.map(({ ts, msg }) => ({
         eventSource,
-        timestamp,
+        ts,
+        msg,
       }));
     },
   );
 
-  events.sort((a, b) => a.timestamp - b.timestamp);
+  events.sort((a, b) => a.ts - b.ts);
   return JSON.stringify(events, undefined, 2);
 }
 
 function escapeCsvValue(value: string): string {
-  // If the value does not contain commas, quotes, or newlines, return it as is
-  if (!/[",\n]/.test(value)) {
+  // If the value does not contain commas, quotes, newlines, or carriage returns, return it as is
+  if (!/[",\n\r]/.test(value)) {
     return value;
   }
 

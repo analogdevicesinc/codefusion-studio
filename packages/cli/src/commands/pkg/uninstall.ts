@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {
   getPackageManager,
@@ -25,7 +27,9 @@ export const pkgUninstallDeps: {
   getPackageManager
 };
 
-export default class CfsPackageUninstall extends Command {
+export default class CfsPackageUninstall extends BaseCommand<
+  typeof CfsPackageUninstall
+> {
   static args = {
     name: Args.string({
       name: 'packageName',
@@ -39,14 +43,20 @@ export default class CfsPackageUninstall extends Command {
   static description =
     'Uninstall a package. Package will remain stored on local cache so it can be used again without triggering another download.';
 
-  async run(): Promise<void> {
+  static useResponseEnvelope = true;
+
+  async run(): Promise<{uninstalled: boolean; name: string}> {
     const packman = await pkgUninstallDeps.getPackageManager();
-    const {args} = await this.parse(CfsPackageUninstall);
+    const {args} = this;
 
     validatePackageName(args.name);
+
+    this.telemetryMetadata = {packageName: args.name};
 
     await packman.uninstall(args.name);
 
     this.log(`Package: "${args.name}" was uninstalled.`);
+
+    return {uninstalled: true, name: args.name};
   }
 }

@@ -1,18 +1,18 @@
 ---
-description: Setup guide for the AI Debug Assistant - choose between the CFS MCP debug server (recommended) or the CFS Debug chat participant.
+description: Setup guide for the AI Debug Assistant using the CFS MCP debug server.
 author: Analog Devices
-date: 2026-05-15
+date: 2026-09-24
 ---
 
 # Getting started with the AI Debug Assistant
 
-The AI Debug Assistant provides two integration paths: the **CFS MCP debug server** (recommended for production) and the **CFS Debug chat participant** (for quick interactions). Choose the path that fits your workflow.
+The AI Debug Assistant is available through the **CFS MCP debug server**. Start the server, then connect an MCP-compatible AI client.
 
 ## Before using the assistant
 
 Most AI Debug Assistant tools require an active debug session to inspect hardware state. Press **F5** or click the **Run and Debug** icon ![Run and Debug icon](../../images/run-and-debug-icon-dark.png#only-dark) ![Run and Debug icon](../../images/run-and-debug-icon-light.png#only-light) before asking the assistant to investigate, inspect, or control your target. Alternatively, you can ask the assistant to start a debug session using the appropriate configuration name. For example: *"Start debugging CFS: Debug with GDB and OpenOCD (ARM Embedded)"*. For detailed debug steps, refer to [Start a debug session](../../debug-an-application.md).
 
-## CFS MCP debug server (recommended)
+## CFS MCP debug server
 
 Before you begin, make sure you have:
 
@@ -54,10 +54,10 @@ The MCP server works with any MCP-compatible AI client. The sections below show 
 3. Select **Agent**
 4. Describe what you want investigated
 
-When VS Code MCP support is enabled and available, Agent Mode automatically discovers the MCP server while it is running and uses it to access all debug tools and diagnostic prompts.
+When VS Code MCP support is enabled and available, Agent Mode automatically discovers and connects to the MCP server as soon as it's running, giving it access to all debug tools and diagnostic prompts.
 
 !!! note
-    If Agent Mode does not show the CFS MCP server or its tools, make sure your VS Code installation supports MCP and that MCP support is enabled/available. If MCP support is unavailable in your environment, use the **CFS Debug** chat participant or connect with an external MCP client such as Claude Code instead.
+    If Agent Mode does not show the CFS MCP server or its tools, make sure your VS Code installation supports MCP and that MCP support is enabled/available. If MCP support is unavailable in your environment, connect with an external MCP client such as Claude Code instead.
 
 #### Example: Claude Code
 
@@ -149,27 +149,7 @@ Once connected, you can browse all available tools, resources, and prompts, and 
 
 ![Using MCP Inspector](./images/mcp-server-light.png#only-light) ![Using MCP Inspector](./images/mcp-server-dark.png#only-dark)
 
-## CFS Debug chat participant
-
-Before you begin, make sure you have:
-
-- **CodeFusion Studio** installed with an active project
-- **VS Code 1.96.0 or later**
-- [:octicons-link-external-24: **GitHub Copilot extension**](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot){:target="_blank"} installed and authenticated
-
-### Use the chat participant
-
-1. Open GitHub Copilot Chat (`Ctrl+Alt+I` / `Cmd+Shift+I`).
-2. Type `@cfs-debug` followed by your question.
-
-The chat participant is available immediately - no MCP server setup required.
-
-!!! tip
-    For best results, use a Claude model (such as Claude Sonnet 4.5 or Claude Opus 4.6) with the `@cfs-debug` chat participant. Other models may work for basic commands but could produce inconsistent results or errors for AI analysis features.
-
-![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-light.png#only-light) ![GitHub Copilot Chat with @cfs-debug participant active](./images/copilot-chat-cfs-debug-dark.png#only-dark)
-
 ## Next steps
 
-- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — practical examples for both interfaces with real-world debugging scenarios
+- [Using the AI Debug Assistant](using-ai-debug-assistant.md) — practical examples with real-world debugging scenarios
 - [Tools and workflows reference](reference.md) — full reference for all debug tools and diagnostic prompts

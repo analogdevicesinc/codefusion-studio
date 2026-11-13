@@ -20,9 +20,12 @@ import type {
   CfsWorkspace
 } from 'cfs-types';
 
-import {Command, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {CfsDataModelManager} from 'cfs-lib';
 import {writeFileSync} from 'node:fs';
+import path from 'node:path';
 
 import {getSocCatalog} from '../../utils/catalog-manager.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
@@ -50,7 +53,9 @@ interface TemplateValidationInfo {
   socPackage?: string;
 }
 
-export default class WorkspaceConfigure extends Command {
+export default class WorkspaceConfigure extends BaseCommand<
+  typeof WorkspaceConfigure
+> {
   static description =
     'Generate a CFS configuration file from the command line options. The file can be edited then used as an input to the workspace create command.';
 
@@ -58,6 +63,8 @@ export default class WorkspaceConfigure extends Command {
     '<%= config.bin %> <%= command.id %> --soc ADSP-SC835 --core FX --template-id com.analog.project.sharcfx.plugin --core CM33 --template-id com.analog.project.sharcfx.plugin -o c:/tmp --name myNewWorkspace --board ADSPSC835-EV-SOM -w myWorkspaceConfig.json',
     '<%= config.bin %> <%= command.id %>  -w myWorkspaceConfig.json // Creates workspace at c:/tmp/myNewWorkspace'
   ];
+
+  static useResponseEnvelope = true;
 
   static flags = {
     'workspace-file': Flags.file({
@@ -112,10 +119,6 @@ export default class WorkspaceConfigure extends Command {
       summary:
         'Additional search path for templates and data models. Can be used multiple times',
       multiple: true
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Verbose output.'
     })
   };
 
@@ -303,7 +306,12 @@ export default class WorkspaceConfigure extends Command {
             templateIds[i],
             templateVersion,
             'project',
-            {soc: socName, boardId: board, package: packageName},
+            {
+              soc: socName,
+              boardId: board,
+              package: packageName,
+              coreId
+            },
             socContext
           );
 
@@ -322,6 +330,7 @@ export default class WorkspaceConfigure extends Command {
         const dmCore = dataModel.Cores.find(
           (core) => core.Id === coreNames[i]
         );
+
         if (!dmCore) {
           errors.push(
             `Core '${coreNames[i]}' not found for SoC '${socName}' and Package '${packageName}'.`
@@ -370,8 +379,8 @@ export default class WorkspaceConfigure extends Command {
     return cores;
   }
 
-  async run() {
-    const {flags} = await this.parse(WorkspaceConfigure);
+  async run(): Promise<{configFilePath: string}> {
+    const {flags} = this;
     const errors: string[] = [];
 
     const pkgManager = await getPackageManager({
@@ -423,7 +432,8 @@ export default class WorkspaceConfigure extends Command {
     // Issue an error if the data model cannot be found for the specified soc/package combination, as we need the data model to extract the core information for the .cfsconfig
     if (!dataModel) {
       this.error(
-        `Data model not found for SoC '${flags.soc}' and Package '${flags.package}'. A data model is required to generate the .cfsconfig file.`
+        `Data model not found for SoC '${flags.soc}' and Package '${flags.package}'. A data model is required to generate the .cfsconfig file.`,
+        {code: 'DATA_MODEL_NOT_FOUND'}
       );
     }
 
@@ -456,6 +466,28 @@ export default class WorkspaceConfigure extends Command {
     // If there are any errors, display them all and exit
     checkErrors(errors, this);
 
+    const catalog = await getSocCatalog(this.config, false);
+    const catalogSocs = await catalog.getAll();
+    const catalogSoc = findSocByName(catalogSocs, flags.soc);
+    const isKnownBoard =
+      catalogSoc?.boards.some((b) => b.name === flags.board) ?? false;
+
+    this.telemetryMetadata = {
+      soc: flags.soc,
+      board:
+        flags.board && isKnownBoard
+          ? flags.board
+          : flags.board
+            ? 'Custom'
+            : undefined,
+      coreCount: cores.length,
+      firmwarePlatforms: [
+        ...new Set(
+          cores.map((c) => c.firmwarePlatform).filter(Boolean)
+        )
+      ]
+    };
+
     // If validation passed, generate the .cfsconfig file
     await this.createCfsConfigFile(
       {
@@ -470,6 +502,8 @@ export default class WorkspaceConfigure extends Command {
     );
 
     this.log(`${flags['workspace-file']} generated successfully.`);
+
+    return {configFilePath: path.resolve(flags['workspace-file'])};
   }
 
   /*
@@ -497,7 +531,7 @@ export default class WorkspaceConfigure extends Command {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
 
-      if (arg.startsWith('--core') || arg.match('-c')) {
+      if (arg === '--core' || arg.startsWith('--core=')) {
         if (expectingTemplateId) {
           errors.push(
             'Invalid flag order: --template-id must immediately follow --core.\n'
@@ -590,7 +624,7 @@ export default class WorkspaceConfigure extends Command {
           errors
         );
         if (verbose) {
-          console.log(
+          this.log(
             `Template validation passed for Core '${core}', plugin ID '${pluginId}' and version '${pluginVersion ?? 'latest'}'.`
           );
         }

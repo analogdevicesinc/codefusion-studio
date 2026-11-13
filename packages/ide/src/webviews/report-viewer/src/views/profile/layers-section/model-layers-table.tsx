@@ -15,11 +15,8 @@
 import styles from './model-layers-table.module.scss';
 import DownFilledArrow from '../../../../../common/icons/DownFilledArrow';
 import DownArrow from '../../../../../common/icons/DownArrow';
-import type {
-	LayerPerformanceEntry,
-	OptimizationOpportunities,
-	FilterdLayerData
-} from '@ide-types/report-view-types';
+import type {CfsAiProfilingOptimizationOpportunities} from 'cfs-types';
+import type {FilterdLayerData} from '@ide-types/report-view-types';
 import {getColumnAlias} from '@constants/report-viewer-db-columns';
 import {
 	Button,
@@ -37,7 +34,7 @@ import {
 import type {ContextMenuProps} from '../../../../../../../../react-library/dist/src/components/context-menu/context-menu';
 
 export type SortState = {
-	sortedColumn: keyof LayerPerformanceEntry;
+	sortedColumn: keyof FilterdLayerData['rows'][number];
 	direction: 'asc' | 'desc';
 };
 
@@ -49,20 +46,12 @@ type DataTableHeaderProps = {
 
 type DataTableBodyProps = {
 	readonly data: FilterdLayerData;
-	readonly optimizations: OptimizationOpportunities;
+	readonly optimizations:
+		| CfsAiProfilingOptimizationOpportunities
+		| undefined;
 	readonly setActiveSqlQuery: (query: string) => void;
 	readonly sortState: SortState | undefined;
 };
-
-const displayedColumns: Array<keyof LayerPerformanceEntry> = [
-	'layer_idx',
-	'layer_name',
-	'cycles',
-	'latency_ms',
-	'energy_uj',
-	'macs',
-	'memory_kb'
-];
 
 export function DataTableHeader({
 	columns,
@@ -82,42 +71,43 @@ export function DataTableHeader({
 			gridTemplateColumns={gridTemplateColumns}
 		>
 			<DataGridRow rowType='header' className={styles.headerRow}>
-				{columns
-					.filter(col => displayedColumns.includes(col))
-					.map((col, i: number) => {
-						const sorted =
-							sortState && sortState.sortedColumn === col
-								? sortState.direction
-								: undefined;
+				{columns.map((col, i: number) => {
+					const sorted =
+						sortState && sortState.sortedColumn === col
+							? sortState.direction
+							: undefined;
 
-						return (
-							<DataGridCell
-								key={col}
-								gridColumn={(i + 1).toString()}
-								cellType='columnheader'
-								className={styles.headerCell}
+					return (
+						<DataGridCell
+							key={col}
+							gridColumn={(i + 1).toString()}
+							cellType='columnheader'
+							className={styles.headerCell}
+						>
+							<div
+								className={`${styles['sortable-title']} ${
+									styles[sorted ?? ''] ?? ''
+								} `}
+								onClick={() => {
+									setSortState({
+										sortedColumn:
+											col as keyof FilterdLayerData['rows'][number],
+										direction:
+											sortState?.sortedColumn === col &&
+											sortState?.direction === 'asc'
+												? 'desc'
+												: 'asc'
+									});
+								}}
 							>
-								<div
-									className={`${styles['sortable-title']} ${styles[sorted ?? ''] ?? ''} `}
-									onClick={() => {
-										setSortState({
-											sortedColumn: col,
-											direction:
-												sortState?.sortedColumn === col &&
-												sortState?.direction === 'asc'
-													? 'desc'
-													: 'asc'
-										});
-									}}
-								>
-									<span title={getColumnAlias(col)}>
-										{getColumnAlias(col)}
-									</span>
-									{sorted ? <DownFilledArrow /> : <DownArrow />}
-								</div>
-							</DataGridCell>
-						);
-					})}
+								<span title={getColumnAlias(col)}>
+									{getColumnAlias(col)}
+								</span>
+								{sorted ? <DownFilledArrow /> : <DownArrow />}
+							</div>
+						</DataGridCell>
+					);
+				})}
 				{showActions && (
 					<DataGridCell
 						gridColumn={(columns.length + 1).toString()}
@@ -185,48 +175,47 @@ export function DataTableBody({
 						rowType='default'
 						dataTest={`layer-row-${rowIndex}`}
 					>
-						{data.columns
-							.filter(col => displayedColumns.includes(col))
-							.map((col, i: number) => {
-								const value = row[col];
-								const isNumeric =
-									col !== 'layer_idx' && typeof value === 'number';
+						{data.columns.map((col, i: number) => {
+							const value =
+								row[col as keyof FilterdLayerData['rows'][number]];
+							const isNumeric =
+								col !== 'layer_idx' && typeof value === 'number';
 
-								return (
-									<DataGridCell
-										key={col}
-										gridColumn={(i + 1).toString()}
-										className={`${styles.cell} ${
-											isNumeric ? styles.numericCell : ''
-										}`}
-										onContextMenu={(
-											e: React.MouseEvent<HTMLElement>
-										) => {
-											e.preventDefault();
-											setContextMenuProps({
-												open: true,
-												anchor: {x: e.pageX, y: e.pageY},
-												options: [
-													{
-														id: '1',
-														label: `Filter by "${value}" in ${col}`,
-														onClick() {
-															handleContextMenuOptionClick(
-																col,
-																value
-															);
-														}
+							return (
+								<DataGridCell
+									key={col}
+									gridColumn={(i + 1).toString()}
+									className={`${styles.cell} ${
+										isNumeric ? styles.numericCell : ''
+									}`}
+									onContextMenu={(
+										e: React.MouseEvent<HTMLElement>
+									) => {
+										e.preventDefault();
+										setContextMenuProps({
+											open: true,
+											anchor: {x: e.pageX, y: e.pageY},
+											options: [
+												{
+													id: '1',
+													label: `Filter by "${value}" in ${col}`,
+													onClick() {
+														handleContextMenuOptionClick(
+															col as keyof FilterdLayerData['rows'][number],
+															value
+														);
 													}
-												]
-											});
-										}}
-									>
-										{isNumeric
-											? formatToFixedOrFirstSignificant(value)
-											: (value?.toString() ?? '')}
-									</DataGridCell>
-								);
-							})}
+												}
+											]
+										});
+									}}
+								>
+									{isNumeric
+										? formatToFixedOrFirstSignificant(value)
+										: (value?.toString() ?? '')}
+								</DataGridCell>
+							);
+						})}
 						{showActions && (
 							<DataGridCell gridColumn={totalColumns.toString()}>
 								<div className={styles.actionsCell}>
@@ -234,7 +223,11 @@ export function DataTableBody({
 										<Button
 											appearance='icon'
 											dataTest={`row-expand-button-${row.layer_idx}`}
-											className={`${styles.expandButton} ${expandedRows[row.layer_idx!] ? styles.expanded : ''}`}
+											className={`${styles.expandButton} ${
+												expandedRows[row.layer_idx!]
+													? styles.expanded
+													: ''
+											}`}
 											onClick={() => {
 												const newExpandedRows = [...expandedRows];
 												newExpandedRows[row.layer_idx!] =
@@ -280,14 +273,18 @@ const sortFunctions: Record<string, (a: any, b: any) => number> = {
 };
 
 function sortRows(
-	rows: Array<Partial<LayerPerformanceEntry>>,
+	rows: Array<FilterdLayerData['rows'][number]>,
 	sortState: SortState
 ) {
 	if (rows.length === 0) {
 		return rows;
 	}
 
-	const dataType = typeof rows[0][sortState.sortedColumn];
+	const column = sortState.sortedColumn;
+	// Profiling reports can contain null values (e.g. for layers that failed analysis)
+	const dataType = typeof rows.find(row => row[column] !== null)?.[
+		column
+	];
 	const sortFunction = sortFunctions[dataType];
 
 	if (!sortFunction) {
@@ -298,23 +295,31 @@ function sortRows(
 		return rows;
 	}
 
-	return [...rows].sort((a, b) =>
-		sortState.direction === 'asc'
-			? sortFunction(
-					a[sortState.sortedColumn] ?? '',
-					b[sortState.sortedColumn] ?? ''
-				)
-			: sortFunction(
-					b[sortState.sortedColumn] ?? '',
-					a[sortState.sortedColumn] ?? ''
-				)
-	);
+	return [...rows].sort((a, b) => {
+		const aValue = a[column];
+		const bValue = b[column];
+
+		// Keep missing values at the end regardless of the sort direction
+		if (aValue === null || aValue === undefined) {
+			return bValue === null || bValue === undefined ? 0 : 1;
+		}
+
+		if (bValue === null || bValue === undefined) {
+			return -1;
+		}
+
+		return sortState.direction === 'asc'
+			? sortFunction(aValue, bValue)
+			: sortFunction(bValue, aValue);
+	});
 }
 
 function getLayerRowDetailDataRecord(
-	optimizations: OptimizationOpportunities
+	optimizations: CfsAiProfilingOptimizationOpportunities | undefined
 ) {
 	const record: Record<number, LayerRowDetailData> = {};
+
+	if (!optimizations) return record;
 
 	optimizations.layerwise_opportunities.forEach(opportunity => {
 		record[opportunity.layer_index] = {

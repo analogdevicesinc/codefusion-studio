@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "Node16",
     "target": "es2020",
     "lib": ["es2020"],
+    "types": ["node"],
     "outDir": "../../../out/", // compiled JS goes here
-    "moduleResolution": "node",
+    "rootDir": "../..",
+    "moduleResolution": "Node16",
     "strict": true,
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,

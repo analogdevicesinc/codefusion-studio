@@ -82,7 +82,7 @@ describe("Delete Method Tests", function () {
 		async function teardownTest() {
 			try {
 				await api.logout("local-test-server");
-			} catch (error) {
+			} catch {
 				// Ignore logout errors during cleanup
 			}
 		}
@@ -159,7 +159,7 @@ describe("Delete Method Tests", function () {
 					for (const pkg of installedPackages) {
 						try {
 							await api.uninstall(pkg.name);
-						} catch (error) {
+						} catch {
 							// Ignore errors during cleanup
 						}
 					}
@@ -231,7 +231,7 @@ describe("Delete Method Tests", function () {
 					for (const pkg of installedPackages) {
 						try {
 							await api.uninstall(pkg.name);
-						} catch (error) {
+						} catch {
 							// Ignore cleanup errors
 						}
 					}

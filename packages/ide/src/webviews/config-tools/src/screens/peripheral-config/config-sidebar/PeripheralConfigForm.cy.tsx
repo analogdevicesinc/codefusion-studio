@@ -23,32 +23,19 @@ import {
 import {PERIPHERAL_PLUGIN_OPTIONS_FORM_ID} from './PeripheralConfigTask';
 import ConfigurationForm from './ConfigurationForm';
 import {type TFormControl} from 'cfs-react-library';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {createScopeDictionaryFromUsages} from '../../../test-utils/scope-conflict-test-utils';
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
+
+const l10n =
+	await import('../../../../../../../l10n/bundle.l10n.en.json').then(
+		module => module.default
+	);
 
 const max32690 = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
-const l10n = await import(
-	'../../../../../../../l10n/bundle.l10n.en.json'
-);
-
-(window as any).__webview_localization_resources__ = l10n.default;
-
-const configDict = {
-	BoardName: '',
-	Package: 'WLP',
-	Soc: 'MAX32690',
-	projects: [
-		{
-			Description: 'ARM Cortex-M4',
-			ExternallyManaged: false,
-			FirmwarePlatform: 'msdk',
-			CoreId: 'CM4',
-			Name: 'ARM Cortex-M4',
-			PluginId: '',
-			ProjectId: 'CM4-proj'
-		}
-	]
-};
+(window as any).__webview_localization_resources__ = l10n;
 
 const controlsMock: Record<string, ControlCfg[]> = {
 	UART0: [
@@ -983,6 +970,118 @@ describe('Peripheral Config Form', () => {
 		).should('exist');
 	});
 
+	it('should show scope conflict errors for duplicated peripheral plugin options', () => {
+		(window as any).__webview_localization_resources__ = l10n;
+
+		const scopeValue = 'shared_i2s_buffer';
+		const scopeKey = `${projectRvId} C identifiers`;
+		const scopeTemplate = `\${ProjectId} \${String: C identifiers} +`;
+		const scopedControls: ControlCfg[] = [
+			{
+				Id: 'RAW_DATA_BUFFER_NAME',
+				Description: 'Raw Data Buffer Name',
+				Type: 'text',
+				Pattern: '[_a-zA-Z][_a-zA-Z0-9]*',
+				Scope: scopeTemplate,
+				PluginOption: true
+			},
+			{
+				Id: 'TX_BUFFER_NAME',
+				Description: 'Transmit Buffer Name',
+				Type: 'text',
+				Pattern: '[_a-zA-Z][_a-zA-Z0-9]*',
+				Scope: scopeTemplate,
+				PluginOption: true
+			}
+		];
+		const reduxStore = configurePreloadedStore(
+			max32690 as unknown as Soc,
+			undefined,
+			undefined,
+			createScopeDictionaryFromUsages(
+				scopedControls.map(control => ({
+					groupId: 'I2S0',
+					controlId: control.Id,
+					value: scopeValue,
+					controlScope: CONTROL_SCOPES.PERIPHERAL,
+					projectId: projectRvId,
+					coreId: 'RV',
+					scope: scopeTemplate,
+					scopeKey,
+					itemId: 'I2S0'
+				}))
+			)
+		);
+
+		reduxStore.dispatch(
+			setPeripheralAssignment({
+				peripheral: 'I2S0',
+				projectId: projectRvId,
+				config: {
+					RAW_DATA_BUFFER_NAME: scopeValue,
+					TX_BUFFER_NAME: scopeValue
+				}
+			})
+		);
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<div
+					data-test='peripheral-config:plugin-section'
+					id={PERIPHERAL_PLUGIN_OPTIONS_FORM_ID}
+				>
+					<PeripheralConfigForm
+						projectId={projectRvId}
+						activePeripheral='I2S0'
+						formattedControls={[]}
+						formattedData={{
+							RAW_DATA_BUFFER_NAME: scopeValue,
+							TX_BUFFER_NAME: scopeValue
+						}}
+						peripheralControls={scopedControls}
+						resetValues={{
+							RAW_DATA_BUFFER_NAME: '',
+							TX_BUFFER_NAME: ''
+						}}
+						peripheralOptions={[]}
+						pluginOptions={[
+							{
+								id: 'RAW_DATA_BUFFER_NAME',
+								name: 'Raw Data Buffer Name',
+								type: 'text',
+								description: 'Raw Data Buffer Name',
+								pluginOption: true,
+								required: true
+							},
+							{
+								id: 'TX_BUFFER_NAME',
+								name: 'Transmit Buffer Name',
+								type: 'text',
+								description: 'Transmit Buffer Name',
+								pluginOption: true,
+								required: true
+							}
+						]}
+					/>
+				</div>
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		cy.dataTest(
+			'plugin-options:plugin-form:control-RAW_DATA_BUFFER_NAME-error'
+		)
+			.should('exist')
+			.and('contain.text', `"${scopeValue}"`)
+			.and('contain.text', 'I2S0');
+		cy.dataTest(
+			'plugin-options:plugin-form:control-TX_BUFFER_NAME-error'
+		)
+			.should('exist')
+			.and('contain.text', `"${scopeValue}"`)
+			.and('contain.text', 'I2S0');
+	});
+
 	it('Should render inactive peripheral enum values as disabled options', () => {
 		const reduxStore = configurePreloadedStore(max32690);
 
@@ -1013,8 +1112,7 @@ describe('Peripheral Config Form', () => {
 								value: 'EVEN',
 								disabled: true,
 								optionGroup:
-									l10n.default.cfgtools.common
-										.optionGroupNotSupportedByPlugin
+									l10n.cfgtools.common.optionGroupNotSupportedByPlugin
 							},
 							{
 								label: 'Plugin Even Parity',
@@ -1044,8 +1142,7 @@ describe('Peripheral Config Form', () => {
 								value: 'EVEN',
 								disabled: true,
 								optionGroup:
-									l10n.default.cfgtools.common
-										.optionGroupNotSupportedByPlugin
+									l10n.cfgtools.common.optionGroupNotSupportedByPlugin
 							},
 							{
 								label: 'Plugin Even Parity',
@@ -1065,7 +1162,7 @@ describe('Peripheral Config Form', () => {
 		cy.dataTest('peripheral-config:form:control-PARITY')
 			.contains(
 				'vscode-option',
-				l10n.default.cfgtools.common.optionGroupNotSupportedByPlugin
+				l10n.cfgtools.common.optionGroupNotSupportedByPlugin
 			)
 			.should('have.attr', 'disabled');
 

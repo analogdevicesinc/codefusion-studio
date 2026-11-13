@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ export default function CoreSummaryFilters({
 			<Chip
 				dataTest='core-summary-filters:core:All'
 				label='All'
-				isDisabled={false}
 				isActive={activeCore?.Id === SHOW_ALL}
 				onClick={() => {
 					onFilterCores(undefined);
@@ -52,7 +51,6 @@ export default function CoreSummaryFilters({
 					dataTest={`core-summary-filters:core:${core.Id}`}
 					id={core.Id}
 					label={core.Name}
-					isDisabled={false}
 					isActive={activeCore?.Id === core.Id}
 					onClick={() => {
 						onFilterCores(

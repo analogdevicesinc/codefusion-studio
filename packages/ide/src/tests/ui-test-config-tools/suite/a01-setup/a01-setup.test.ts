@@ -18,16 +18,24 @@ import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 
 describe("Setup test environment", () => {
+  let browser: VSBrowser;
+  let view: WebView;
+  const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
+
   before(async function () {
     this.timeout(60000);
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
-  it("should dismiss toast notifications @smoke", async function () {
+  after(async function () {
     this.timeout(60000);
-    const browser = VSBrowser.instance;
-    const view = new WebView();
-    const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
+    await UIUtils.teardownTestSuite(view, configPath);
+  });
+
+  it("should dismiss toast notifications @smoke @regression", async function () {
+    this.timeout(60000);
+    browser = VSBrowser.instance;
+    view = new WebView();
 
     await browser.openResources(configPath);
     await view.wait();

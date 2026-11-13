@@ -12,6 +12,6 @@
 	],
 	"exclude": [
 		"./report-viewer/**/lib/**/*",
-		"./report-viewer/**/*.cy.ts*"
+		"./**/*.cy.ts*"
 	]
 }

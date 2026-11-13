@@ -24,9 +24,14 @@ import {
   AiCommandError,
   MAX_MODEL_NAME_LENGTH
 } from 'cfs-lib';
-import AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import {AIToolsPlugin} from 'cfs-lib';
 import Sinon from 'sinon';
 import {AiCommandResult} from 'cfs-types';
+
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +44,7 @@ describe('ai:build', () => {
   let sandbox: Sinon.SinonSandbox;
   let authEnvBackup: Record<string, string | undefined>;
   let capturedApiClient: CfsApiClient | AuthConfig | undefined;
+  let capturedCwd: string | undefined;
   let generateFromConfigStub: Sinon.SinonStub;
 
   const VALID_OUTPUT: AiCommandResult = {
@@ -145,6 +151,7 @@ describe('ai:build', () => {
       .stub(AIToolsPlugin.prototype, 'generateFromConfig')
       .callsFake(async (_config, _dataModel, _cwd, apiClient) => {
         capturedApiClient = apiClient;
+        capturedCwd = _cwd;
 
         return VALID_OUTPUT;
       });
@@ -402,16 +409,32 @@ describe('ai:build', () => {
       });
 
       it('should error when --config file does not exist', async () => {
+        const path = 'nonexistent/path/to/config.cfsconfig';
+        const {error} = await runCommand(
+          ['ai:build', '--config', path],
+          {root: '..'}
+        );
+        expect(error).to.exist;
+        expect(error?.message).to.include(
+          `The file '${path}' could not be read.`
+        );
+      });
+
+      it('should error when --config file does not match the defined schema', async () => {
         const {error} = await runCommand(
           [
             'ai:build',
             '--config',
-            'nonexistent/path/to/config.cfsconfig'
+            path.join(CONFIGS_DIR, 'invalid-config.cfsconfig')
           ],
-          {root: '..'}
+          {
+            root: '..'
+          }
         );
         expect(error).to.exist;
-        expect(error?.message).to.include('FILE NOT FOUND');
+        expect(error?.message).to.include(
+          'Run validate config to see all issues'
+        );
       });
 
       it('should warn when --soc/--core/--model provided with --config', async () => {
@@ -432,6 +455,20 @@ describe('ai:build', () => {
         // Should warn about these flags being ignored
         expect(error).to.not.exist;
         expect(stderr).to.include('ignored');
+      });
+
+      it('should use --cwd as working directory when --config is provided', async () => {
+        const configPath = path.join(
+          CONFIGS_DIR,
+          'sample-config.cfsconfig'
+        );
+        const {stderr, error} = await runCommand(
+          ['ai:build', '--config', configPath, '--cwd', 'customCwd'],
+          {root: '..'}
+        );
+        expect(error).to.not.exist;
+        expect(stderr).to.not.include('--cwd is ignored');
+        expect(capturedCwd).to.equal(path.resolve('customCwd'));
       });
     });
 
@@ -509,7 +546,7 @@ describe('ai:build', () => {
     });
 
     describe('--format json', () => {
-      it('GIVEN valid run WHEN generateFromConfig THEN return AiCommandResult', async () => {
+      it('GIVEN valid run WHEN generateFromConfig THEN return envelope with artifacts as data', async () => {
         const {stdout, error} = await runCommand(
           [
             'ai:build',
@@ -528,10 +565,11 @@ describe('ai:build', () => {
         );
 
         expect(error).to.not.exist;
-        assert.deepEqual(JSON.parse(stdout), VALID_OUTPUT);
+        const data = assertSuccessEnvelopeData(stdout, 'ai build');
+        assert.deepEqual(data, VALID_OUTPUT.artifacts);
       });
 
-      it('GIVEN invalid run WHEN generateFromConfig THEN return AiCommandError', async () => {
+      it('GIVEN invalid run WHEN generateFromConfig THEN return error envelope', async () => {
         generateFromConfigStub.rejects(
           new AiCommandError(ERROR_OUTPUT)
         );
@@ -553,7 +591,19 @@ describe('ai:build', () => {
           {root: '..'}
         );
 
-        assert.deepEqual(JSON.parse(stdout), ERROR_OUTPUT);
+        const parsed = assertValidEnvelope(stdout) as {
+          ok: boolean;
+          command: string;
+          errors: {code: string; message: string}[];
+        };
+        expect(parsed.ok).to.be.false;
+        expect(parsed.command).to.equal('ai build');
+        assert.deepEqual(parsed.errors, [
+          {
+            code: 'AI_COMMAND_FAILED',
+            message: ERROR_OUTPUT.events[0]?.message
+          }
+        ]);
       });
     });
   });
@@ -575,7 +625,7 @@ describe('ai:build', () => {
       );
       expect(error).to.exist;
       expect(error?.message).to.include(
-        `Derived model name exceeds ${MAX_MODEL_NAME_LENGTH} characters`
+        `Model name must not exceed ${MAX_MODEL_NAME_LENGTH} characters`
       );
     });
   });

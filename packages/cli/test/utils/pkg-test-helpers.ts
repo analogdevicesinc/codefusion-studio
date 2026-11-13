@@ -23,23 +23,24 @@ import {runCommand} from '@oclif/test';
 import {ConanPkgManager} from 'cfs-package-manager';
 import {stripVTControlCharacters} from 'node:util';
 
-import {pkgAddRemoteDeps} from '../../src/commands/pkg/add-remote.js';
-import {pkgAuthRemoteDeps} from '../../src/commands/pkg/auth-remote.js';
-import {pkgDeleteDeps} from '../../src/commands/pkg/delete.js';
-import {pkgDeleteRemoteDeps} from '../../src/commands/pkg/delete-remote.js';
-import {pkgDependenciesDeps} from '../../src/commands/pkg/dependencies.js';
-import {pkgDisableRemoteDeps} from '../../src/commands/pkg/disable-remote.js';
-import {pkgEnableRemoteDeps} from '../../src/commands/pkg/enable-remote.js';
-import {pkgInfoDeps} from '../../src/commands/pkg/info.js';
-import {pkgInstallDeps} from '../../src/commands/pkg/install.js';
-import {pkgListCacheDeps} from '../../src/commands/pkg/list-cache.js';
-import {pkgListDeps} from '../../src/commands/pkg/list.js';
-import {pkgListRemotesDeps} from '../../src/commands/pkg/list-remotes.js';
-import {pkgLocalConsumersDeps} from '../../src/commands/pkg/local-consumers.js';
-import {pkgLoginDeps} from '../../src/commands/pkg/login.js';
-import {pkgLogoutDeps} from '../../src/commands/pkg/logout.js';
-import {pkgSearchDeps} from '../../src/commands/pkg/search.js';
-import {pkgUninstallDeps} from '../../src/commands/pkg/uninstall.js';
+import {pkgAddRemoteDeps} from '../../dist/commands/pkg/add-remote.js';
+import {pkgAuthRemoteDeps} from '../../dist/commands/pkg/auth-remote.js';
+import {pkgDeleteDeps} from '../../dist/commands/pkg/delete.js';
+import {pkgDeleteRemoteDeps} from '../../dist/commands/pkg/delete-remote.js';
+import {pkgDependenciesDeps} from '../../dist/commands/pkg/dependencies.js';
+import {pkgDisableRemoteDeps} from '../../dist/commands/pkg/disable-remote.js';
+import {pkgEnableRemoteDeps} from '../../dist/commands/pkg/enable-remote.js';
+import {pkgInfoDeps} from '../../dist/commands/pkg/info.js';
+import {pkgInstallDeps} from '../../dist/commands/pkg/install.js';
+import {pkgListCacheDeps} from '../../dist/commands/pkg/list-cache.js';
+import {pkgListDeps} from '../../dist/commands/pkg/list.js';
+import {pkgListRemotesDeps} from '../../dist/commands/pkg/list-remotes.js';
+import {pkgLocalConsumersDeps} from '../../dist/commands/pkg/local-consumers.js';
+import {pkgLoginDeps} from '../../dist/commands/pkg/login.js';
+import {pkgLogoutDeps} from '../../dist/commands/pkg/logout.js';
+import {pkgSearchDeps} from '../../dist/commands/pkg/search.js';
+import {pkgPathDeps} from '../../dist/commands/pkg/path.js';
+import {pkgUninstallDeps} from '../../dist/commands/pkg/uninstall.js';
 import {getPackageManager} from '../../src/utils/package-manager.js';
 
 export const localTestRemoteName = 'local-test-server';
@@ -118,9 +119,7 @@ type ManagedProviderRemote =
   | (CfsManagedPackageRemote & {auth: {public: true}})
   | (CfsManagedPackageRemote & CfsPackageRemoteCredentialClient);
 
-class MockCredentialClient
-  implements CfsPackageRemoteCredentialClient
-{
+class MockCredentialClient implements CfsPackageRemoteCredentialClient {
   public readonly auth = {
     public: false as const,
     credentialProvider: 'mock-local-provider'
@@ -233,6 +232,7 @@ export async function setupMockPkgCommandDeps(options?: {
     pkgLoginDeps.getPackageManager;
   const originalLogoutGetPackageManager =
     pkgLogoutDeps.getPackageManager;
+  const originalPathGetPackageManager = pkgPathDeps.getPackageManager;
   const originalUninstallGetPackageManager =
     pkgUninstallDeps.getPackageManager;
 
@@ -258,6 +258,7 @@ export async function setupMockPkgCommandDeps(options?: {
   pkgLocalConsumersDeps.getPackageManager = getMockPackman;
   pkgLoginDeps.getPackageManager = getMockPackman;
   pkgLogoutDeps.getPackageManager = getMockPackman;
+  pkgPathDeps.getPackageManager = getMockPackman;
   pkgUninstallDeps.getPackageManager = getMockPackman;
 
   return () => {
@@ -287,6 +288,7 @@ export async function setupMockPkgCommandDeps(options?: {
       originalLocalConsumersGetPackageManager;
     pkgLoginDeps.getPackageManager = originalLoginGetPackageManager;
     pkgLogoutDeps.getPackageManager = originalLogoutGetPackageManager;
+    pkgPathDeps.getPackageManager = originalPathGetPackageManager;
     pkgUninstallDeps.getPackageManager =
       originalUninstallGetPackageManager;
   };

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import debounce from 'lodash/debounce';
 import {setPeripheralDescription} from '../../../state/slices/peripherals/peripherals.reducer';
 import {useMemo} from 'react';
 import AllocatedCore from '../allocated-core/AllocatedCore';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import styles from './DetailsSection.module.scss';
 
 function DetailsSection() {
@@ -35,6 +36,9 @@ function DetailsSection() {
 	const description = usePeripheralDescription(
 		activePeripheral ?? ''
 	);
+	const l10n = useLocaleContext()?.peripheralConfig as
+		| Record<string, string>
+		| undefined;
 
 	// Check to what cores the current peripheral is allocated to
 	const getActivePeripheralAllocations = () => {
@@ -90,7 +94,7 @@ function DetailsSection() {
 						<>
 							<div className={styles.detailsSectionGroup}>
 								<label data-test='details-section:core-assignment:label'>
-									Allocated to
+									{l10n?.allocatedTo ?? 'Allocated to'}
 								</label>
 								<AllocatedCore
 									key={projectId}
@@ -102,8 +106,8 @@ function DetailsSection() {
 								<TextField
 									optional
 									dataTest='details-section:alias'
-									label='Description'
-									placeholder='Start typing...'
+									label={l10n?.description ?? 'Description'}
+									placeholder={l10n?.startTyping ?? 'Start typing...'}
 									inputVal={description}
 									onInputChange={handleDescriptionChange}
 								/>
@@ -116,7 +120,8 @@ function DetailsSection() {
 				if (activePeripheralAllocations.length > 1) {
 					return (
 						<label data-test='details-section:core-assignment:multiple-assignments'>
-							Allocated to multiple cores.
+							{l10n?.allocatedToMultipleCores ??
+								'Allocated to multiple cores.'}
 						</label>
 					);
 				}

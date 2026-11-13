@@ -14,7 +14,7 @@
  */
 
 import {Dfg} from './DFG';
-import type {CfsConfig} from 'cfs-lib';
+import type {CfsConfig} from 'cfs-types';
 import {configurePreloadedStore} from '../../state/store';
 import {
 	addNewStream,
@@ -22,9 +22,10 @@ import {
 } from '../../state/slices/gaskets/gasket.reducer';
 import {LocalizationProvider} from '../../../../common/contexts/LocaleContext';
 
-const l10n = await import(
-	'../../../../../../l10n/bundle.l10n.en.json'
-).then(module => module.default);
+const l10n =
+	await import('../../../../../../l10n/bundle.l10n.en.json').then(
+		module => module.default
+	);
 
 const ESSStartID = 129;
 const ASSStartID = 1;
@@ -51,7 +52,7 @@ describe('DFG Stream Tying Feature', () => {
 			localStorage.setItem(
 				'DFGConfig',
 				JSON.stringify({
-					Soc: 'DFGTEST',
+					Soc: 'DFGTESTS',
 					BoardName: '',
 					Package: 'WLP',
 					projects: [

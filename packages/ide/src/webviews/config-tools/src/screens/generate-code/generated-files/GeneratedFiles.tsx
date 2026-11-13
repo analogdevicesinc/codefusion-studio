@@ -13,25 +13,37 @@
  *
  */
 
-import {use} from 'cfs-react-library';
+import {ProgressRing} from 'cfs-react-library';
 import FileItem from '../file-item/FileItem';
 import {memo} from 'react';
+import {useCodeGenState} from '../../../state/slices/app-context/appContext.selector';
 import styles from './GeneratedFile.module.scss';
 
-function GeneratedFiles({
-	promise
-}: Readonly<{
-	promise: Promise<string[] | string>;
-}>) {
-	const generatedCodeFiles = use(promise);
+function GeneratedFiles() {
+	const codeGenState = useCodeGenState();
 
-	if (typeof generatedCodeFiles === 'string') {
+	if (codeGenState.status === 'running') {
 		return (
-			<p>
+			<div
+				data-test='generated-files:loading'
+				className={styles.loader}
+			>
+				<ProgressRing />
+			</div>
+		);
+	}
+
+	if (codeGenState.status === 'error') {
+		return (
+			<p data-test='generated-files:error'>
 				An error occurred while generating the code files, please try
 				again.
 			</p>
 		);
+	}
+
+	if (codeGenState.status === 'idle') {
+		return null;
 	}
 
 	return (
@@ -39,10 +51,7 @@ function GeneratedFiles({
 			data-test='generated-files:list-container'
 			className={styles.list}
 		>
-			{(Array.isArray(generatedCodeFiles)
-				? generatedCodeFiles
-				: []
-			).map(item => (
+			{codeGenState.files.map(item => (
 				<FileItem key={item} item={item} />
 			))}
 		</ul>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import type {ControlErrorTypes} from '@common/types/errorTypes';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {getSocPinDictionary} from '../../../utils/soc-pins';
 import {computeNextPinConfig} from '../../../utils/pin-reset-controls';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
+import {removePeripheralAssignment} from '../peripherals/peripherals.reducer';
 
 type PinsState = {
 	pins: PinDictionary;
@@ -328,17 +330,26 @@ const pinsSlice = createSlice({
 						Peripheral
 					);
 
-				const targetAssignedPin = state.pins[
-					pinId
-				].appliedSignals.find(
+				let targetAssignedPin = state.pins[pinId].appliedSignals.find(
 					appliedSignal =>
 						appliedSignal.Peripheral === Peripheral &&
 						appliedSignal.Name === Name
 				);
 
+				if (!targetAssignedPin && isPinReserved(pinId)) {
+					targetAssignedPin = {
+						Pin: pinId,
+						Peripheral,
+						Name,
+						PinCfg: {}
+					};
+
+					state.pins[pinId].appliedSignals.push(targetAssignedPin);
+				}
+
 				if (targetAssignedPin) {
 					let nextErrors = {
-						...(targetAssignedPin.Errors ?? {})
+						...targetAssignedPin.Errors
 					};
 
 					if (errType) {
@@ -362,7 +373,7 @@ const pinsSlice = createSlice({
 
 				if (sourcePinCfg && targetAssignedPin) {
 					const newConfig = {
-						...(targetAssignedPin.PinCfg ?? {}),
+						...targetAssignedPin.PinCfg,
 						[controlKey]: controlValue
 					};
 
@@ -420,13 +431,22 @@ const pinsSlice = createSlice({
 			);
 
 			if (pinId && Peripheral && Name) {
-				const targetAssignedPin = state.pins[
-					pinId
-				].appliedSignals.find(
+				let targetAssignedPin = state.pins[pinId].appliedSignals.find(
 					appliedSignal =>
 						appliedSignal.Peripheral === Peripheral &&
 						appliedSignal.Name === Name
 				);
+
+				if (!targetAssignedPin && isPinReserved(pinId)) {
+					targetAssignedPin = {
+						Pin: pinId,
+						Peripheral,
+						Name,
+						PinCfg: {}
+					};
+
+					state.pins[pinId].appliedSignals.push(targetAssignedPin);
+				}
 
 				if (targetAssignedPin) {
 					targetAssignedPin.PinCfg = computeNextPinConfig({
@@ -470,6 +490,26 @@ const pinsSlice = createSlice({
 				targetPin.appliedSignals.push(payload.addSignal);
 			}
 		}
+	},
+	extraReducers(builder) {
+		builder.addCase(
+			removePeripheralAssignment,
+			(state, {payload}) => {
+				// Peripheral assignments are unique by name, so removal
+				// discards every pin signal for that peripheral.
+				Object.values(state.pins).forEach(pin => {
+					if (
+						pin.appliedSignals.some(
+							signal => signal.Peripheral === payload.peripheral
+						)
+					) {
+						pin.appliedSignals = pin.appliedSignals.filter(
+							signal => signal.Peripheral !== payload.peripheral
+						);
+					}
+				});
+			}
+		);
 	}
 });
 

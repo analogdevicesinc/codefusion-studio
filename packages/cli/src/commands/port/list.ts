@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
+import {BaseCommand} from '../../utils/base-command.js';
 import {SerialPort} from 'serialport';
 
 export const portListDeps: {
@@ -21,25 +21,19 @@ export const portListDeps: {
   listPorts: SerialPort.list
 };
 
-export default class List extends Command {
+export default class List extends BaseCommand<typeof List> {
   static description = 'List available serial ports.';
+  static useResponseEnvelope = true;
 
-  static flags = {
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Display detailed information about each serial port.',
-      required: false,
-      default: false
-    })
-  };
-
-  public async run(): Promise<void> {
-    const {flags} = await this.parse(List);
+  public async run(): Promise<{
+    ports: Awaited<ReturnType<typeof portListDeps.listPorts>>;
+  }> {
+    const {flags} = this;
     const ports = await portListDeps.listPorts();
 
     if (ports.length === 0) {
       this.log('No serial ports found.');
-      return;
+      return {ports: []};
     }
 
     this.log('Available serial ports:');
@@ -54,5 +48,7 @@ export default class List extends Command {
         this.log(`  Product ID: ${port.productId}`);
       }
     }
+
+    return {ports};
   }
 }

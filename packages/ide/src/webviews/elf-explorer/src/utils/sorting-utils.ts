@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ const compareString = (
 	order: TSortByStateVal
 ) =>
 	order === 'asc'
-		? a?.localeCompare(b, 'en-US', { sensitivity: 'base' })
-		: b?.localeCompare(a, 'en-US', { sensitivity: 'base' });
+		? a?.localeCompare(b, 'en-US', {sensitivity: 'base'})
+		: b?.localeCompare(a, 'en-US', {sensitivity: 'base'});
 
 const setValue = (value: any) =>
 	value ? value : typeof value === 'string' ? '0' : 0;
@@ -54,15 +54,15 @@ const sortData = (data: TSymbol[], sortBy: any) => {
 		const sortMethod =
 			key === SYMBOL_COLUMNS.ADDRESS
 				? () =>
-					compareNumeric(
-						parseInt(valA as string, 16),
-						parseInt(valB as string, 16),
-						order
-					)
+						compareNumeric(
+							parseInt(valA as string, 16),
+							parseInt(valB as string, 16),
+							order
+						)
 				: typeof valA === 'number' && typeof valB === 'number'
 					? () => compareNumeric(valA, valB, order)
 					: () =>
-						compareString(valA as string, valB as string, order);
+							compareString(valA as string, valB as string, order);
 
 		// Execute the selected sorting method
 		return sortMethod();

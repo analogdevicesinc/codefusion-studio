@@ -8,12 +8,12 @@
 		"types": ["cypress", "cypress-real-events"],
 		"module": "ESNext",
 		"skipLibCheck": true,
-		"baseUrl": ".",
 		"paths": {
 			"@common/*": ["./common/*"],
 			"@ide-types/*": ["../types/*"],
 			"@constants/*": ["../constants/*"],
-			"@socs/*": ["../../../cfs-data-models/socs/*"]
+			"@west-editor/*": ["../zephyr/west-editor/*"],
+			"@socs/*": ["../../../../test-fixtures/cfs-data-model/socs/*"]
 		},
 		/* Bundler mode */
 		"moduleResolution": "bundler",
@@ -33,6 +33,8 @@
 		"./**/*.tsx",
 		"./cypress.d.ts",
 		"../types/**/*.ts",
-		"../constants/**/*.ts"
+		"../constants/**/*.ts",
+		"../zephyr/west-editor/types.ts",
+		"../zephyr/west-editor/messages.ts"
 	]
 }

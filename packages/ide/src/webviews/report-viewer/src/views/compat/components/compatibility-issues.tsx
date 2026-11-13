@@ -28,7 +28,7 @@ import MemoryIssueDetails from './memory-issue-details';
 import LayerBasedIssueDetails from './layer-based-issue-details';
 
 type CompatibilityIssuesProps = {
-	readonly issues: CompatibilityIssue[] | undefined;
+	readonly issues: CompatibilityIssue[] | null | undefined;
 	readonly title: string;
 	readonly noIssuesMessage: string;
 	readonly dataTest?: string;
@@ -46,7 +46,9 @@ export default function CompatibilityIssues({
 
 	return (
 		<section
-			className={`${styles.section} ${issues.length === 0 ? styles.empty : ''}`}
+			className={`${styles.section} ${
+				issues.length === 0 ? styles.empty : ''
+			}`}
 			data-test={dataTest}
 		>
 			<h2 className={styles.heading}>
@@ -93,6 +95,7 @@ function CompatibilityIssueListItem({
 	return (
 		<li>
 			<Accordion
+				dataTest='collapse-toggle'
 				open={isExpanded}
 				title={<CompatibilityIssueListItemTitle issue={issue} />}
 				onToggle={handleCollapseToggle}

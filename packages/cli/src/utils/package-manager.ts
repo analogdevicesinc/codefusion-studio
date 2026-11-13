@@ -29,6 +29,12 @@ import {
 import {ConanPkgManager} from 'cfs-package-manager';
 
 import {getApiClient} from './api-client.js';
+import {errorWithCode} from './recoverable-error.js';
+
+// Stable codes keep JSON error envelopes from deriving a code out of
+// input- or environment-dependent messages.
+const INVALID_PACKAGE_REFERENCE = 'INVALID_PACKAGE_REFERENCE';
+const INVALID_PACKAGE_NAME = 'INVALID_PACKAGE_NAME';
 
 export async function getCredentialProvider(
   apiClient?: CfsApiClient,
@@ -106,6 +112,7 @@ export async function getPackageManager<
 > {
   let conanPackman: ConanPkgManager | undefined;
   let errorMessage: string | undefined;
+  let errorCode: string | undefined;
 
   try {
     conanPackman = new ConanPkgManager();
@@ -135,11 +142,17 @@ export async function getPackageManager<
     conanPackman = undefined;
     errorMessage =
       error instanceof Error ? error.message : String(error);
+    const originalCode = (error as {code?: unknown} | undefined)
+      ?.code;
+    if (typeof originalCode === 'string' && originalCode) {
+      errorCode = originalCode;
+    }
   }
 
   if (conanPackman === undefined && !acceptUndefined) {
-    throw new Error(
-      `Package manager failed to initialize with Error: ${errorMessage ?? 'unknown error'}`
+    throw errorWithCode(
+      `Package manager failed to initialize with Error: ${errorMessage ?? 'unknown error'}`,
+      errorCode ?? 'PACKAGE_MANAGER_INIT_FAILED'
     );
   }
 
@@ -168,15 +181,54 @@ export function parsePackageReference(
   // we can expect users to provide a package name when a reference is needed, let's
   // detect that case and provide a better message than the generic "wrong format"
   if (pkgNamePattern.test(input)) {
-    throw new Error(
-      `Expecting a package reference, but only package name was provided.\nYou need to specify a version with format "${input}/<version>"`
+    throw errorWithCode(
+      `Expecting a package reference, but only package name was provided.\nYou need to specify a version with format "${input}/<version>"`,
+      INVALID_PACKAGE_REFERENCE
     );
   }
 
   const match = pkgRefPattern.exec(input);
   if (!match || !match.groups) {
-    throw new Error(
-      'Invalid package reference format. Expected format: <packageName>/<version>'
+    // Check if input looks like a file path rather than a malformed package reference.
+    // Only classify as a file path if it has clear path indicators:
+    // - Windows absolute path (C:\, D:\, etc.)
+    // - Unix absolute path starting with /
+    // - Relative path prefix (./ or ../)
+    // - Contains backslash (Windows path separator)
+    // - .cfsdependencies file (always treated as manifest)
+    // - .json file WITH path separators
+    const isWindowsAbsolutePath = /^[A-Za-z]:\\/.test(input);
+    const isUnixAbsolutePath = /^\/(?!.*\/)/.test(input); // Unix absolute but not just a single slash
+    const isRelativePath =
+      input.startsWith('./') || input.startsWith('../');
+    const hasBackslash = input.includes('\\');
+    const hasForwardSlash = input.includes('/');
+
+    // .cfsdependencies is always a manifest file
+    // .json is only treated as a file path if it has path separators
+    const isManifestFile =
+      input.endsWith('.cfsdependencies') ||
+      (input.endsWith('.json') && (hasBackslash || hasForwardSlash));
+
+    // Only treat as file path if it has clear file path indicators,
+    // not just because it contains a forward slash (which is also the package separator)
+    const looksLikeFilePath =
+      isWindowsAbsolutePath ||
+      isUnixAbsolutePath ||
+      isRelativePath ||
+      hasBackslash ||
+      isManifestFile;
+
+    if (looksLikeFilePath) {
+      throw errorWithCode(
+        `File not found: '${input}'\nExpected either:\n  - A valid file path to a manifest file, or\n  - A package reference in format <packageName>/<version>`,
+        INVALID_PACKAGE_REFERENCE
+      );
+    }
+
+    throw errorWithCode(
+      'Invalid package reference format. Expected format: <packageName>/<version>',
+      INVALID_PACKAGE_REFERENCE
     );
   }
 
@@ -190,14 +242,16 @@ export function validatePackageName(input: string): void {
   const refMatch = pkgRefPattern.exec(input);
   if (refMatch) {
     const {name} = refMatch.groups as unknown as CfsPackageReference;
-    throw new Error(
-      `Expecting a package name, but a package reference was provided.\nConsider using "${name}" instead of "${input}"`
+    throw errorWithCode(
+      `Expecting a package name, but a package reference was provided.\nConsider using "${name}" instead of "${input}"`,
+      INVALID_PACKAGE_NAME
     );
   }
 
   if (!pkgNamePattern.test(input)) {
-    throw new Error(
-      'Invalid package name. Package names can only contain alphanumeric characters, underscores (_) and hyphens (-)'
+    throw errorWithCode(
+      'Invalid package name. Package names can only contain alphanumeric characters, underscores (_) and hyphens (-)',
+      INVALID_PACKAGE_NAME
     );
   }
 }

@@ -1,7 +1,7 @@
 ---
 description: Clear the cfsutil ai remote file cache using cfsutil ai clean-cache.
 author: Analog Devices
-date: 2026-04-20
+date: 2026-10-10
 ---
 
 # Clean cache
@@ -13,6 +13,8 @@ The `cfsutil ai clean-cache` command clears cached files that `cfsutil ai` has d
 ```sh
 cfsutil ai clean-cache [--format text|json]
 ```
+
+With `--format json`, output uses the [JSON output envelope](../index.md#json-output-envelope).
 
 Use `cfsutil ai clean-cache` to:
 

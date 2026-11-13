@@ -1,0 +1,18 @@
+[project]
+name = "cfsai-model-explorer"
+version = "2.4.0"
+description = "Model profiling and compatibility analysis for ADI targets"
+readme = "README.md"
+requires-python = ">=3.11.9"
+dependencies = [
+    "cfsai-model-parser",
+    "cfsai-types",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+cfsai-model-parser = { workspace = true }
+cfsai-types = { workspace = true }

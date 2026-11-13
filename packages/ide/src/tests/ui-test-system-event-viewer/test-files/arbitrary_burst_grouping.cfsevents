@@ -1,0 +1,136 @@
+{
+	"schemaVersion": "1.0",
+	"lastUpdate": "2026-08-11T10:00:00.000Z",
+	"tickFrequency": 1000000,
+  "tickEpoch": "2026-01-14T10:05:36.384417+01:00",
+	"state": "file",
+	"eventSources": {
+		"EVENT_0": {
+			"events": [
+				{
+					"ts": 5000000
+				},
+				{
+					"ts": 10000000
+				},
+				{
+					"ts": 15000000
+				},
+				{
+					"ts": 20000000
+				}
+			]
+		},
+		"System.Idle": {
+			"events": [
+				{
+					"ts": 100
+				},
+				{
+					"ts": 25375811
+				},
+				{
+					"ts": 34133328
+				},
+				{
+					"ts": 34694854
+				},
+				{
+					"ts": 34801258
+				}
+			]
+		},
+		"Core0.Timer": {
+			"events": [
+				{
+					"ts": 150
+				},
+				{
+					"ts": 7442177
+				},
+				{
+					"ts": 28710407
+				},
+				{
+					"ts": 41002904
+				}
+			]
+		},
+		"System.Error": {
+			"events": [
+				{
+					"ts": 250,
+					"msg": "Unexpected state"
+				},
+				{
+					"ts": 313755
+				},
+				{
+					"ts": 12876586
+				},
+				{
+					"ts": 24788654
+				}
+			]
+		},
+		"Core1.DMA.Start": {
+			"events": [
+				{
+					"ts": 300
+				},
+				{
+					"ts": 833622
+				},
+				{
+					"ts": 7372632
+				},
+				{
+					"ts": 7427144
+				}
+			]
+		},
+		"Core1.Interrupt": {
+			"events": [
+				{
+					"ts": 350
+				},
+				{
+					"ts": 40994544
+				},
+				{
+					"ts": 41260167
+				},
+				{
+					"ts": 46610604
+				}
+			]
+		}
+	},
+	"eventSourceIndex": [
+		"System.Idle",
+		{
+			"name": "Group 1",
+			"events": [
+				"Core0.Timer",
+				"EVENT_0"
+			]
+		},
+		"System.Error",
+		{
+			"name": "Core 1 Group",
+			"events": [
+				{
+					"name": "DMA Group",
+					"events": [
+						"Core1.DMA.Start"
+					]
+				},
+				{
+					"name": "Empty Group",
+					"events": []
+				},
+				"Core1.Interrupt"
+			]
+		}
+	]
+}

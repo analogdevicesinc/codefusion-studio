@@ -1,7 +1,7 @@
 ---
 description: Use your myAnalog account to access restricted packages from the Command Palette or command line.
 author: Analog Devices
-date: 2026-07-27
+date: 2026-10-12
 ---
 
 # Access restricted packages (using myAnalog login)
@@ -146,6 +146,10 @@ You only need this section if your organization provides an additional custom pa
 
     - **Windows:** `<CFS-Install>/Utils/cfsutil/bin/cfsutil.cmd`.
     - **Linux/macOS:** `<CFS-Install>/Utils/cfsutil/bin/cfsutil`.
+
+### Option 3: Add a custom remote from the Package Manager
+
+Use the **Remotes** tab in the Package Manager UI. For steps, see [Add a custom remote](manage-packages-ide.md#add-a-custom-remote).
 
 !!! important
     Your myAnalog login session may expire after a period of inactivity. If this happens, you will need to reauthenticate to access restricted packages. For more details, see [Restricted packages not appearing](troubleshooting-package-manager.md#restricted-packages-not-appearing).

@@ -5,10 +5,12 @@
 		"./config-tools/**/*.tsx",
 		"./custom.d.ts",
 		"./common/**/*.ts",
-		"./common/**/*.tsx"
+		"./common/**/*.tsx",
+		"../constants/**/*.ts",
+		"../types/**/*.ts"
 	],
 	"exclude": [
 		"./config-tools/**/lib/**/*",
-		"./config-tools/**/*.cy.ts*"
+		"./**/*.cy.ts*"
 	]
 }

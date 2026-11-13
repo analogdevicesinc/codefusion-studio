@@ -25,10 +25,6 @@ import ControlToggle from '../control-toggle/ControlToggle';
 import styles from './ClockDetails.module.scss';
 import ClockControlInput from '../clock-control-input/ClockControlInput';
 import {
-	SET_INSTRUCTION,
-	SELECT_INSTRUCTION
-} from '../../../utils/soc-controls';
-import {
 	generateOutputValueErrorString,
 	getCurrentNodeError
 } from '../../../utils/node-error';
@@ -41,6 +37,8 @@ import {memo, useMemo} from 'react';
 import {getClockNodeConfig} from '../../../utils/clock-nodes';
 import {use} from 'cfs-react-library';
 import type {ControlCfg} from '@common/types/soc';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
+import {localizeMessage} from '@common/utils/localization';
 
 const toggleControlInTitle = 'ENABLE';
 
@@ -51,6 +49,9 @@ function ClockDetails({
 }>) {
 	const clockControls = use(controlsPromise);
 	const dispatch = useAppDispatch();
+	const l10n = useLocaleContext()?.clockConfig as
+		| Record<string, string>
+		| undefined;
 	const clockNodeDetailsTargetNode = useClockNodeDetailsTargetNode();
 
 	const activeClockNodeDetails = useMemo(
@@ -231,7 +232,11 @@ function ClockDetails({
 												controlCfg={control}
 												isDisabled={!isControlEnabled}
 												label={
-													SELECT_INSTRUCTION + ' ' + control.label
+													l10n?.selectLabel
+														? localizeMessage(l10n, 'selectLabel', {
+																label: control.label
+															})
+														: `Select ${control.label}`
 												}
 											/>
 										);
@@ -261,7 +266,13 @@ function ClockDetails({
 											<ClockControlInput
 												controlCfg={control}
 												isDisabled={!isControlEnabled}
-												label={SET_INSTRUCTION + ' ' + control.label}
+												label={
+													l10n?.setLabel
+														? localizeMessage(l10n, 'setLabel', {
+																label: control.label
+															})
+														: `Set ${control.label}`
+												}
 											/>
 										</div>
 									);

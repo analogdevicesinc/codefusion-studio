@@ -15,10 +15,10 @@
 import {useAppSelector} from '../../store';
 
 export const useActiveScreen = () =>
-  useAppSelector(state => state.appContextReducer.activeScreen);
+	useAppSelector(state => state.appContextReducer.activeScreen);
 
 export const useToolState = () =>
-  useAppSelector(state => state.appContextReducer.toolState);
+	useAppSelector(state => state.appContextReducer.toolState);
 
 export const useLastUpdate = () =>
-  useAppSelector(state => state.appContextReducer.lastUpdate);
+	useAppSelector(state => state.appContextReducer.lastUpdate);

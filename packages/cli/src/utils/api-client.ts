@@ -18,7 +18,8 @@ import {
   ApiKeyAuthorizer,
   type AuthConfig,
   CfsApiClient,
-  CfsApiError
+  CfsApiError,
+  type TokenAuthSession
 } from 'cfs-lib';
 
 import {getAuthConfig, getSessionManager} from './session-manager.js';
@@ -83,7 +84,9 @@ type GetApiClientOptions = {
   /**
    * When `true`, returns `undefined` instead of throwing when the auth
    * configuration is missing or invalid (e.g. not yet set up in this
-   * environment). {@link AuthenticationRequiredError} is still thrown even
+   * environment). A stored session that cannot be refreshed (e.g. offline)
+   * is skipped with a warning instead of failing the command.
+   * {@link AuthenticationRequiredError} is still thrown even
    * when `optional` is `true` — catch it explicitly if the caller can
    * gracefully continue without credentials.
    * Defaults to `false`.
@@ -148,9 +151,22 @@ export async function getApiClient(
       }
 
       case 'session': {
-        const session = await apiClientDeps
-          .getSessionManager()
-          .getSession();
+        let session: TokenAuthSession | undefined;
+        try {
+          session = await apiClientDeps
+            .getSessionManager()
+            .getSession();
+        } catch (error) {
+          if (!optional) {
+            throw error;
+          }
+
+          command?.warn(
+            'Could not refresh your myAnalog session, continuing without it.'
+          );
+          break;
+        }
+
         if (session) {
           return apiClientDeps.createApiClient({
             baseUrl: authcfg.ccmUrl,

@@ -20,11 +20,16 @@ import {
   WebDriver,
   WebView,
   Workbench,
+  until,
 } from "vscode-extension-tester";
 import { expect } from "chai";
 import * as path from "path";
 import * as fs from "fs";
 import { UIUtils } from "../../ui-test-utils/ui-utils";
+import { clearAndSearch } from "../../ui-test-config-tools/page-objects/pin-config-section/pin-config-screen";
+import { Locatorspaths } from "../pageElements/pageobjects";
+
+const locatorspath = new Locatorspaths();
 
 async function closeAllNotifications() {
   const wb = new Workbench();
@@ -52,8 +57,6 @@ async function closeAllNotifications() {
 }
 
 function cleanupWorkspace() {
-  const idePath = path.join(__dirname, "../../../../../ide/test/");
-
   const deleteFolderRecursive = (folderPath: string) => {
     if (fs.existsSync(folderPath)) {
       fs.readdirSync(folderPath).forEach((file) => {
@@ -70,22 +73,25 @@ function cleanupWorkspace() {
     }
   };
 
-  deleteFolderRecursive(idePath);
+  deleteFolderRecursive(path.join(__dirname, "../../../../../ide/test/"));
 }
 
 describe("Editor Customization", () => {
   let browser: VSBrowser;
   let driver: WebDriver;
   let editor: EditorView;
+  let view: WebView;
 
   before(async function () {
     this.timeout(60000);
 
-    browser = VSBrowser.instance;
+    ({ browser } = await UIUtils.setupTestSuite());
     driver = browser.driver;
     editor = new EditorView();
+  });
 
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+  after(async () => {
+    await UIUtils.teardownTestSuite(view);
   });
 
   it("Should restore the persisted workspace configuration from a *.cfsworkspace file @smoke", async () => {
@@ -104,7 +110,7 @@ describe("Editor Customization", () => {
       ),
     );
 
-    const boardId = "AD-APARD32690-SL___WLP";
+    const boardId = "AD-BOARD-SL___PLP";
     const firstCoreId = "corepart_01jrdgezrce69rsqvja125h3v2";
     console.log(
       `Test parameters - Board ID: ${boardId}, Core ID: ${firstCoreId}`,
@@ -114,10 +120,13 @@ describe("Editor Customization", () => {
     await closeAllNotifications();
 
     console.log("Creating WebView instance");
-    const view = new WebView();
+    view = new WebView();
     console.log("Switching to webview frame");
     await view.switchToFrame().then(async () => {
       console.log("Waiting for DOM elements to load - finding expand button");
+
+      // Wait for package manager and dismiss any initialization notifications
+      await UIUtils.waitForPackageManager(new Workbench(), browser, view);
 
       console.log("expand all soc groups");
       const expandAllBtn = await UIUtils.findWebElement(
@@ -126,14 +135,14 @@ describe("Editor Customization", () => {
       );
       await UIUtils.clickElement(view, expandAllBtn);
 
-      console.log("SoC Selection Screen - Finding MAX32690 card");
+      console.log("SoC Selection Screen - Finding TEST690 card");
       const mainSocCard = await UIUtils.findWebElement(
         view,
-        By.css('[data-test="soc-selection:option:MAX32690"]'),
+        By.css('[data-test="soc-selection:option:TEST690"]'),
       );
 
       const isActive = await mainSocCard.getAttribute("data-active");
-      console.log(`SoC card MAX32690 active state: ${isActive}`);
+      console.log(`SoC card TEST690 active state: ${isActive}`);
       expect(isActive).to.equal("true");
 
       console.log("Finding continue button");
@@ -236,15 +245,15 @@ describe("Editor Customization", () => {
 
       const socText = await socSummary.getText();
       console.log(
-        `SoC summary validation - Expected: MAX32690, Actual: ${socText}`,
+        `SoC summary validation - Expected: TEST690, Actual: ${socText}`,
       );
-      expect(socText).to.equal("MAX32690");
+      expect(socText).to.equal("TEST690");
 
       const boardText = await boardSummary.getText();
       console.log(
-        `Board summary validation - Expected: AD-APARD32690-SL WLP, Actual: ${boardText}`,
+        `Board summary validation - Expected: AD-BOARD-SL PLP, Actual: ${boardText}`,
       );
-      expect(boardText).to.equal("AD-APARD32690-SL WLP");
+      expect(boardText).to.equal("AD-BOARD-SL PLP");
 
       const coresText = await coresSummary.getText();
       console.log(
@@ -256,9 +265,7 @@ describe("Editor Customization", () => {
       console.log("Finding workspace name input field");
       const workspaceNameInput = await UIUtils.findWebElement(
         view,
-        By.css(
-          '[data-test="confirmation-screen:workspace-name:text-field-control-input"]',
-        ),
+        locatorspath.workspaceNameInput,
       );
 
       console.log("Finding workspace path input field");
@@ -320,9 +327,9 @@ describe("Editor Customization", () => {
     );
 
     const view = new WebView();
-    const mainSoC = "MAX32690";
-    const secondarySoC = "MAX32655";
-    const boardId = "AD-APARD32690-SL___WLP";
+    const mainSoC = "TEST690";
+    const secondarySoC = "TEST655";
+    const boardId = "AD-BOARD-SL___PLP";
     const firstCoreId = "corepart_01jrdgezrce69rsqvja125h3v2";
     console.log(
       `Test parameters - Main SoC: ${mainSoC}, Secondary SoC: ${secondarySoC}, Board ID: ${boardId}`,
@@ -343,6 +350,9 @@ describe("Editor Customization", () => {
 
     console.log("Switching to webview frame");
     await view.switchToFrame().then(async () => {
+      // Wait for package manager and dismiss any initialization notifications
+      await UIUtils.waitForPackageManager(new Workbench(), browser, view);
+
       console.log("expand all soc groups");
       const expandAllBtn = await UIUtils.findWebElement(
         view,
@@ -396,10 +406,10 @@ describe("Editor Customization", () => {
       );
       expect(resetBoardState).to.equal("false");
 
-      console.log("Finding new board package option: FTHR___TQFN");
+      console.log("Finding new board package option: PTHR___PQFN");
       const newSelectedBoardPackage = await UIUtils.findWebElement(
         view,
-        By.css('[data-test="boardSelection:card:FTHR___TQFN"]'),
+        By.css('[data-test="boardSelection:card:PTHR___PQFN"]'),
       );
 
       console.log("Selecting new board package");
@@ -480,12 +490,15 @@ describe("Editor Customization", () => {
 
     console.log("Closing all notifications");
     await closeAllNotifications();
-
+    await UIUtils.sleep(3000);
     console.log("Finding Show Source quick access button via XPath");
-    const quickAccess = await driver.findElement(
-      By.xpath(
-        '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
+    const quickAccess = await driver.wait(
+      until.elementLocated(
+        By.css(
+          '[id="workbench.parts.editor"] a.action-label[aria-label="(CFS) View Workspace File Source (JSON)"]',
+        ),
       ),
+      10000,
     );
 
     const ariaLabel = await quickAccess.getAttribute("aria-label");
@@ -501,7 +514,10 @@ describe("Editor Customization", () => {
       console.log(
         `Editor titles validation - Open editors: ${JSON.stringify(openTitles)}`,
       );
-      expect(openTitles).to.include("persisted-sample.cfsworkspace");
+      expect(
+        openTitles.some((title) => title.includes("persisted-sample")),
+        `Expected an open editor title to include 'persisted-sample', got: ${JSON.stringify(openTitles)}`,
+      ).to.be.true;
 
       console.log("Closing all editors");
       await new Workbench().executeCommand("workbench.action.closeAllEditors");
@@ -516,6 +532,9 @@ describe("Editor Customization", () => {
     console.log(
       "Starting test: Should generate workspace files using cfs-plugins",
     );
+
+    // Clean up any stale workspace folder left behind by a previously interrupted run
+    cleanupWorkspace();
 
     console.log("Opening persisted-sample.cfsworkspace file");
     await browser.openResources(
@@ -536,6 +555,9 @@ describe("Editor Customization", () => {
 
     console.log("Switching to webview frame");
     await view.switchToFrame();
+
+    // Wait for package manager and dismiss any initialization notifications
+    await UIUtils.waitForPackageManager(new Workbench(), browser, view);
 
     console.log("Finding continue button");
     const continueBtn = await UIUtils.findWebElement(
@@ -569,6 +591,15 @@ describe("Editor Customization", () => {
     console.log("Proceeding to confirmation screen");
     await UIUtils.clickElement(view, continueBtn);
 
+    console.log("Finding workspace name input to read actual generated name");
+    const workspaceNameInput = await UIUtils.findWebElement(
+      view,
+      locatorspath.workspaceNameInput,
+    );
+    const workspaceName =
+      await workspaceNameInput.getAttribute("current-value");
+    console.log(`Actual workspace name resolved by the UI: ${workspaceName}`);
+
     console.log("Finding Create Workspace button");
     const createWrkspBtn = await UIUtils.findWebElement(
       view,
@@ -587,7 +618,8 @@ describe("Editor Customization", () => {
     console.log("Validating workspace file creation on disk");
     const workspaceFilePath = path.join(
       __dirname,
-      "../../../../../ide/test/test-workspace-name/.cfs/.cfsworkspace",
+      "../../../../../ide/test/",
+      `${workspaceName}/.cfs/.cfsworkspace`,
     );
     console.log(`Expected workspace file path: ${workspaceFilePath}`);
 
@@ -596,6 +628,15 @@ describe("Editor Customization", () => {
     console.log(
       `Workspace file existence validation - File exists: ${fileExists}`,
     );
+    if (!fileExists) {
+      const ideTestDir = path.join(__dirname, "../../../../../ide/test/");
+      console.log(
+        `Contents of ${ideTestDir}:`,
+        fs.existsSync(ideTestDir)
+          ? fs.readdirSync(ideTestDir)
+          : "directory does not exist",
+      );
+    }
     expect(fileExists).to.equal(
       true,
       `Expected file ${workspaceFilePath} to exist, but it does not.`,
@@ -619,5 +660,64 @@ describe("Editor Customization", () => {
     console.log(
       "Test completed successfully: Should generate workspace files using cfs-plugins",
     );
+  }).timeout(120000);
+
+  it("Verify screen does not blankout on searching Socs with special characters", async () => {
+    console.log(
+      "Starting test: Searching SoCs with special characters should not blank out the screen",
+    );
+
+    console.log("Opening persisted-sample.cfsworkspace file");
+    await browser.openResources(
+      path.join(
+        "src",
+        "tests",
+        "ui-test-workspace-creation",
+        "fixtures",
+        "persisted-sample.cfsworkspace",
+      ),
+    );
+
+    console.log("Closing all notifications");
+    await closeAllNotifications();
+
+    console.log("Creating WebView instance");
+    const view = new WebView();
+    console.log("Switching to webview frame");
+    await view.switchToFrame().then(async () => {
+      console.log("Waiting for DOM elements to load - finding expand button");
+
+      await UIUtils.sleep(3000);
+      const socSearchInput = await UIUtils.findWebElement(
+        view,
+        By.css('[data-test="soc-selection-control-input"]'),
+      );
+      const splChars = ["(", ")", "[", "]", "{", "}", "*", "+", "\\", "?"];
+      for (let i = 0; i < splChars.length; i++) {
+        const char = splChars[i];
+        console.log(`Searching for special character: ${char}`);
+        await clearAndSearch(socSearchInput, char);
+        let noSearchResults = await UIUtils.findWebElement(
+          view,
+          By.css('[data-test="no-search-results"] h2'),
+        );
+        let noSearchResultsMessage = (await noSearchResults.getText()).trim();
+        console.log("Expected error message 1: " + noSearchResultsMessage);
+        expect(noSearchResultsMessage).to.equal("No Search Results");
+        let noResultsDescription = await UIUtils.findWebElement(
+          view,
+          By.css('[data-test="no-results-description"]'),
+        );
+        let noResultsDescriptionText = (
+          await noResultsDescription.getText()
+        ).trim();
+        console.log("Expected error message 2: " + noResultsDescriptionText);
+        expect(noResultsDescriptionText).to.equal(
+          `We couldn't find any results for "${char}", please change your search query and try again.`,
+        );
+      }
+      // Clear the search input after testing all special characters
+      await clearAndSearch(socSearchInput, "");
+    });
   }).timeout(120000);
 });

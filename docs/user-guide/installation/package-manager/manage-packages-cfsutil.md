@@ -1,7 +1,7 @@
 ---
 description: Use the CFS command-line utility (cfsutil) to install, view, or remove packages in CodeFusion Studio.
 author: Analog Devices
-date: 2026-07-07
+date: 2026-10-14
 ---
 
 # Manage packages from the command line (`cfsutil`)
@@ -117,7 +117,7 @@ Use the caret (^) to allow minor and patch updates within the same major version
     cfsutil pkg install "cfs_base_plugins/^2.0.0"
     ```
 
-This installs the newest available 2.x.x version, such as 2.3.0.
+This installs the newest available 2.x.x version, such as 2.4.0.
 
 #### Tilde ranges (~)
 
@@ -128,7 +128,7 @@ Use the tilde (`~`) to allow patch updates within the same minor version.
     ```sh
     cfsutil pkg install "cfs_base_plugins/~2.0.0"
     ```
-This installs the newest available 2.0.x version, such as 2.0.1, but not 2.1.0 or 2.3.0.
+This installs the newest available 2.0.x version, such as 2.0.1, but not 2.1.0 or 2.4.0.
 
 #### Comparison operators
 
@@ -159,8 +159,21 @@ Use the `-l` or `--local` flag to use only packages already cached locally.
 !!! example "Install a specific package from local cache only (offline mode)"
 
     ```sh
-    cfsutil pkg install cfs_base_data_models/2.3.0 --local
+    cfsutil pkg install cfs_base_data_models/2.4.0 --local
     ```
+
+### Install from a local tarball
+
+Use the `-t` or `--tar` flag to install a package from a tarball on disk, for example in an offline environment. On a machine without network access, also use the `--local` flag.
+
+!!! example "Install a package from a tarball on an offline machine"
+
+    ```sh
+    cfsutil pkg install --tar /path/to/plugins.tgz --local
+    ```
+
+!!! note
+    Specify either a package reference or `--tar`, not both. For details, including how to create a tarball, see [Install from a local tarball](../../cfsutil/package-manager.md#install-from-a-local-tarball).
 
 ## Verify installation
 
@@ -176,6 +189,18 @@ To narrow the results, use a pattern with a wildcard:
 
     ```sh
     cfsutil pkg list "zephyr*"
+    ```
+
+To find where an installed package lives on disk, run:
+
+```sh
+cfsutil pkg path <name>
+```
+
+!!! example "Example: Find the installed path of the Zephyr package"
+
+    ```sh
+    cfsutil pkg path zephyr
     ```
 
 ## Uninstall a package

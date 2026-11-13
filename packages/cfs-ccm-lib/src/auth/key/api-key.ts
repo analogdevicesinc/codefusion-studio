@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,12 @@
  *
  */
 
-import type { MiddlewareCallbackParams } from 'openapi-fetch';
 import { AuthorizerBase } from '../authorizer.js';
 import type { AuthConfigBase } from '../authorizer.js';
+import type {
+    OpenApiMiddlewareCallbackParams,
+    OpenApiMiddlewareOnRequest,
+} from '../../sdk/openapi-client.js';
 
 export interface ApiKeyAuthConfig extends Partial<AuthConfigBase> {
     apiKey: string | (() => string);
@@ -57,13 +60,22 @@ export class ApiKeyAuthorizer extends AuthorizerBase {
      * @param args0.request
      * @returns
      */
-    public async onRequest({ request }: MiddlewareCallbackParams) {
+    public async onRequest({
+        request,
+    }: OpenApiMiddlewareCallbackParams): Promise<
+        Awaited<ReturnType<OpenApiMiddlewareOnRequest>>
+    > {
         const apiKey =
             typeof this.apiKey === 'string'
                 ? this.apiKey
                 : this.apiKey();
         if (typeof apiKey === 'string' && apiKey.length > 0) {
-            return this.setAuthHeader({ request, auth: apiKey });
+            return this.setAuthHeader({
+                request,
+                auth: apiKey,
+            }) as unknown as Awaited<
+                ReturnType<OpenApiMiddlewareOnRequest>
+            >;
         } else {
             throw new Error('invalid empty API key');
         }

@@ -13,6 +13,7 @@
  *
  */
 
+import {useState} from 'react';
 import {setActiveScreen} from '../state/slices/app-context/appContext.reducer';
 import {useActiveScreen} from '../state/slices/app-context/appContext.selector';
 import {useAppDispatch} from '../state/store';
@@ -67,6 +68,8 @@ export default function useScreenNavigation() {
 
 	const workspaceConfig = useWorkspaceConfig();
 	const currentStep = useCurrentCoreConfigStep();
+	const [isCreatingWorkspace, setIsCreatingWorkspace] =
+		useState(false);
 
 	const goToNextCoreConfigStep = () => {
 		if (currentStep + 1 < enabledCores.length) {
@@ -95,6 +98,7 @@ export default function useScreenNavigation() {
 		{
 			forwardLabel: string;
 			forwardAction: () => void;
+			isBusy?: boolean;
 			backAction?: () => void;
 			backLabel?: string;
 		}
@@ -270,8 +274,13 @@ export default function useScreenNavigation() {
 			}
 		},
 		[navigationItems.pathSelection]: {
-			forwardLabel: 'Create Workspace',
+			forwardLabel: isCreatingWorkspace
+				? 'Creating Workspace...'
+				: 'Create Workspace',
+			isBusy: isCreatingWorkspace,
 			forwardAction() {
+				if (isCreatingWorkspace) return;
+
 				const {name: workspaceName, path} = workspaceConfig;
 				const invalidName = isWorkspaceNameInvalid(workspaceName);
 				const invalidPath = isPathInvalid(path);
@@ -281,6 +290,8 @@ export default function useScreenNavigation() {
 				} = selectedTemplate ?? {};
 
 				if (workspaceName && path && !invalidName && !invalidPath) {
+					setIsCreatingWorkspace(true);
+
 					createWorkspace({
 						soc: selectedSoc,
 						package: packageId,
@@ -291,6 +302,8 @@ export default function useScreenNavigation() {
 						board: boardId,
 						projects: Object.values(coresDict)
 					}).catch(error => {
+						// Stay disabled on success; the extension opens the new workspace.
+						setIsCreatingWorkspace(false);
 						dispatch(
 							setConfigErrors({
 								id: configErrors.workspaceDetails,

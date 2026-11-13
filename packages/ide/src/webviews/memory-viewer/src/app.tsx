@@ -55,7 +55,9 @@ function App() {
 					void dispatch(fetchSessions());
 				} else if (event.data.event === 'stop') {
 					void dispatch(fetchSessions());
-					dispatch(setMemoryData({address: undefined, data: []}));
+					dispatch(
+						setMemoryData({address: undefined, data: [], symbols: []})
+					);
 				} else if (event.data.event === 'context-switch') {
 					dispatch(
 						setActiveSessionId(event.data.sessionId as string)

@@ -12,7 +12,10 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+import type {CfsPackageReference} from 'cfs-package-manager';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {
   getPackageManager,
@@ -25,7 +28,9 @@ export const pkgLocalConsumersDeps: {
   getPackageManager
 };
 
-export default class CfsPackageLocalConsumers extends Command {
+export default class CfsPackageLocalConsumers extends BaseCommand<
+  typeof CfsPackageLocalConsumers
+> {
   static args = {
     name: Args.string({
       name: 'packageName',
@@ -38,10 +43,11 @@ export default class CfsPackageLocalConsumers extends Command {
 
   static description =
     'Retrieves a list of all installed packages that depend on a given package, including transitive consumers.';
+  static useResponseEnvelope = true;
 
-  async run(): Promise<void> {
+  async run(): Promise<{consumers: CfsPackageReference[]}> {
     const packman = await pkgLocalConsumersDeps.getPackageManager();
-    const {args} = await this.parse(CfsPackageLocalConsumers);
+    const {args} = this;
 
     validatePackageName(args.name);
 
@@ -49,12 +55,13 @@ export default class CfsPackageLocalConsumers extends Command {
 
     if (packageRefs.length === 0) {
       this.log(`${args.name} is not required by any other package`);
-      return;
+    } else {
+      this.log(`${args.name} is required by the following packages:`);
+      for (const pkg of packageRefs) {
+        this.log(`- ${pkg.name}/${pkg.version}`);
+      }
     }
 
-    this.log(`${args.name} is required by the following packages:`);
-    for (const pkg of packageRefs) {
-      this.log(`- ${pkg.name}/${pkg.version}`);
-    }
+    return {consumers: packageRefs};
   }
 }

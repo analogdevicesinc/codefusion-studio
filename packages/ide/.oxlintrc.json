@@ -1,0 +1,46 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": [],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "after-used",
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "no-unsafe-finally": "off",
+    "no-async-promise-executor": "off"
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    "out/**",
+    "cypress/**",
+    "cypress.config.ts",
+    "build-scripts",
+    "vite.config.*.mts",
+    "vite.config.mts",
+    "vite-*.ts",
+    "vite.plugin.*.ts",
+    "native-module-closure.ts",
+    "src/tests/**/.vscode/**"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "no-unused-expressions": "off"
+      }
+    }
+  ]
+}

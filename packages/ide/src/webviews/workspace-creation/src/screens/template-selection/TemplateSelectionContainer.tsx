@@ -83,17 +83,17 @@ export default function TemplateSelectionContainer({
 				template.supportedHostPlatforms.includes(os)
 		);
 
-		const bestByPluginId = new Map<CfsPluginInfo['pluginId'], CfsPluginInfo>();
+		const bestByPluginId = new Map<
+			CfsPluginInfo['pluginId'],
+			CfsPluginInfo
+		>();
 
 		for (const template of compatible) {
 			const existing = bestByPluginId.get(template.pluginId);
 
 			if (
 				!existing ||
-				semver.gt(
-					template.pluginVersion,
-					existing.pluginVersion
-				)
+				semver.gt(template.pluginVersion, existing.pluginVersion)
 			) {
 				bestByPluginId.set(template.pluginId, template);
 			}

@@ -13,12 +13,16 @@
  *
  */
 
+@use 'sass:map';
+
 $timeline-footer-height: 64px;
 $timeline-list-width: 262px;
 $timeline-list-item-height: 40px;
 $timeline-empty-block-width: 10px;
+$timeline-time-reference-block-height: 28px;
 
 $z-layers: (
+	'drop-indicator': 1,
 	'timeline-row': 2,
 	'list-resizer': 3,
 	'timestamp-label': 3,
@@ -28,5 +32,5 @@ $z-layers: (
 );
 
 @function zIndex($name) {
-	@return map-get($z-layers, $name);
+	@return map.get($z-layers, $name);
 }

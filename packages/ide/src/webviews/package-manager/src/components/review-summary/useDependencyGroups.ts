@@ -13,22 +13,19 @@
  *
  */
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo} from 'react';
 import type {CfsPackageReference} from 'cfs-package-manager';
-import type {RequestType} from 'vscode-messenger-common';
-import {useMessenger} from '../../../../common/contexts/MessengerContext';
-import {getPackageDependenciesBatchRequest} from '@constants/messages/package-manager-messages';
-import {buildPackageReference} from '../../state/slices/packages/packages.reducer';
-
-const getDependenciesBatchReq =
-	getPackageDependenciesBatchRequest as RequestType<
-		{references: CfsPackageReference[]},
-		Record<string, CfsPackageReference[]>
-	>;
+import {useAppDispatch} from '../../state/store';
+import {
+	buildPackageReference,
+	buildSelectionKey,
+	fetchDependencyResolution
+} from '../../state/slices/packages/packages.reducer';
+import {useDependencyResolution} from '../../state/slices/packages/packages.selector';
 
 /**
  * A selected package together with its resolved dependency closure (direct
- * and transitive), as returned by the package manager's `dependencies()`.
+ * and transitive).
  */
 export type DependencyGroup = {
 	readonly reference: CfsPackageReference;
@@ -37,9 +34,25 @@ export type DependencyGroup = {
 	readonly loading: boolean;
 };
 
-type GroupState = {
-	dependencies: CfsPackageReference[];
-	loading: boolean;
+export type DependencyGroups = {
+	readonly groups: DependencyGroup[];
+	/**
+	 * The selected packages that pull in the disputed dependency, which are
+	 * the ones the user can change. Empty unless the failure was a version
+	 * conflict.
+	 */
+	readonly culprits: CfsPackageReference[];
+	/**
+	 * The dependency the selection disagrees about. Every card for it is in
+	 * conflict wherever it appears; packages merely requiring it are not.
+	 */
+	readonly conflictingPackage: string | undefined;
+	/**
+	 * Message from the failed resolution, or undefined when it succeeded. Set
+	 * means the groups are empty because nothing resolved, not because the
+	 * packages have no dependencies.
+	 */
+	readonly failure?: string;
 };
 
 /**
@@ -64,117 +77,89 @@ export function buildDependencyCardKey(
 }
 
 /**
- * Builds the group map for `references`, taking each package's closure from
- * `resolve`. Shared by the loading, resolved, and failed paths so the three
- * always agree on the key format and on covering every requested package.
- */
-function buildGroups(
-	references: CfsPackageReference[],
-	loading: boolean,
-	resolve: (reference: CfsPackageReference) => CfsPackageReference[]
-): Record<string, GroupState> {
-	const groups: Record<string, GroupState> = {};
-
-	references.forEach(reference => {
-		groups[buildPackageReference(reference.name, reference.version)] =
-			{
-				dependencies: resolve(reference),
-				loading
-			};
-	});
-
-	return groups;
-}
-
-/**
- * Resolves the dependency closure (direct and transitive) of every selected
- * package in a single batched request, so the whole set costs one backend
- * invocation rather than one per package. Every group therefore clears at the
- * same moment rather than progressively — the tradeoff for the batch being far
- * faster overall. Lifting this to the review header (instead of fetching inside
- * each group) lets the header own the full set of dependency cards and
- * therefore drive the bulk expand/collapse actions.
+ * Groups the shared dependency resolution by selected package, for the review
+ * page's per-package cards. The resolution lives in the store because the
+ * licence page needs the same answer; dispatching twice is free.
  *
- * Pass a referentially stable array, else the fetch refires every render.
+ * Pass a referentially stable array, else the dispatch refires every render.
  */
 export function useDependencyGroups(
 	references: CfsPackageReference[]
-): DependencyGroup[] {
-	const messenger = useMessenger();
-	const [groupsByRef, setGroupsByRef] = useState<
-		Record<string, GroupState>
-	>({});
+): DependencyGroups {
+	const dispatch = useAppDispatch();
+	const resolution = useDependencyResolution();
+	const key = useMemo(
+		() => buildSelectionKey(references),
+		[references]
+	);
 
 	useEffect(() => {
-		let cancelled = false;
+		void dispatch(fetchDependencyResolution(references));
+	}, [dispatch, references]);
 
-		// Mark every requested package as loading up front so groups added by a
-		// selection change immediately show their spinner.
-		setGroupsByRef(buildGroups(references, true, () => []));
+	// A resolution belonging to a different selection is not ours yet. Treating
+	// that as loading avoids flashing an empty list on the render before the
+	// fetch is dispatched, and again whenever the selection changes.
+	const isCurrent = resolution.key === key;
+	const loading = !isCurrent || resolution.loading;
 
-		// One request for every package: the backend resolves them as roots of a
-		// single dependency graph, so this costs one backend invocation instead
-		// of one per package. Every group therefore clears together rather than
-		// one at a time.
-		if (references.length > 0) {
-			messenger
-				.sendRequest(
-					getDependenciesBatchReq,
-					{type: 'extension'},
-					{references}
-				)
-				.then(result => {
-					if (cancelled) {
-						return;
-					}
-
-					setGroupsByRef(
-						buildGroups(references, false, reference =>
-							// Filter out the package itself if present.
-							(
-								result[
-									buildPackageReference(
-										reference.name,
-										reference.version
-									)
-								] ?? []
-							).filter(
-								dep =>
-									!(
-										dep.name === reference.name &&
-										dep.version === reference.version
-									)
-							)
+	const groups = useMemo(
+		() =>
+			references.map(reference => ({
+				reference,
+				// Drop the package itself, which the backend may echo back as
+				// part of its own closure.
+				dependencies: (
+					resolution.byRef[
+						buildPackageReference(reference.name, reference.version)
+					] ?? []
+				).filter(
+					dependency =>
+						!(
+							dependency.name === reference.name &&
+							dependency.version === reference.version
 						)
-					);
-				})
-				.catch(() => {
-					if (cancelled) {
-						return;
-					}
+				),
+				loading
+			})),
+		[references, resolution, loading]
+	);
 
-					// The batch resolves as a unit, so a failure leaves no group
-					// resolved. Clear every spinner rather than leaving the review
-					// step stuck.
-					setGroupsByRef(buildGroups(references, false, () => []));
-				});
+	const conflictingPackage = isCurrent
+		? resolution.conflict?.packageName
+		: undefined;
+
+	// Conan reports which requirements clashed, but not which of the user's
+	// selections led to them: a transitive requirement is attributed to the
+	// graph root, not to the package that declared it. The per-package closures
+	// the sequential fallback already fetched answer it directly, so the
+	// selection is matched here rather than inferred from the conflict.
+	const culprits = useMemo(() => {
+		if (conflictingPackage === undefined) {
+			return [];
 		}
 
-		return () => {
-			cancelled = true;
-		};
-	}, [messenger, references]);
+		const selected = groups
+			.filter(
+				group =>
+					group.reference.name === conflictingPackage ||
+					group.dependencies.some(
+						dependency => dependency.name === conflictingPackage
+					)
+			)
+			.map(group => group.reference);
 
-	return references.map(reference => {
-		const state =
-			groupsByRef[
-				buildPackageReference(reference.name, reference.version)
-			];
+		// The closures are missing when the sequential fallback failed too.
+		// Conan's own view of the conflict is all that is left to show.
+		return selected.length > 0
+			? selected
+			: (resolution.conflict?.conflictingRequirements ?? []);
+	}, [groups, conflictingPackage, resolution]);
 
-		return {
-			reference,
-			dependencies: state?.dependencies ?? [],
-			loading: state?.loading ?? true
-		};
-	});
+	return {
+		groups,
+		culprits: isCurrent ? culprits : [],
+		conflictingPackage,
+		failure: isCurrent ? resolution.failure : undefined
+	};
 }

@@ -185,7 +185,9 @@ describe('DFG Canvas', () => {
 					);
 					cy.get(selector).should(
 						'have.css',
-						`border-${selector.includes('input') ? 'top' : 'bottom'}-width`,
+						`border-${
+							selector.includes('input') ? 'top' : 'bottom'
+						}-width`,
 						'2px'
 					);
 

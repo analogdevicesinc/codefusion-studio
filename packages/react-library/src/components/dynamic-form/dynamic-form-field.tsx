@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import type {
 import styles from './dynamic-form-field.module.scss';
 import Tooltip from '../tooltip/tooltip.tsx';
 import InfoIcon from '../icons/info-icon.tsx';
+import StringList from '../string-list/string-list.tsx';
 
 export default function DynamicFormField({
 	control: {
@@ -41,7 +42,8 @@ export default function DynamicFormField({
 		required,
 		description,
 		name,
-		info
+		info,
+		persistenceSeparator
 	},
 	value,
 	testId,
@@ -128,6 +130,28 @@ export default function DynamicFormField({
 						rows={6}
 						error={error}
 						dataTest={id}
+						onInputChange={(val: string) => {
+							onFieldChangeHandler(
+								id,
+								val as unknown as TFormFieldValue
+							);
+						}}
+					/>
+				</div>
+			);
+
+		// Input type text_list
+		if (type === 'text_list')
+			return (
+				<div data-test={testId} id={`string-list-container:${id}`}>
+					<StringList
+						value={value?.toString()}
+						persistenceSeparator={persistenceSeparator}
+						placeholder={placeholder || ''}
+						rows={6}
+						error={error}
+						dataTest={id}
+						preventSeparatorInput
 						onInputChange={(val: string) => {
 							onFieldChangeHandler(
 								id,

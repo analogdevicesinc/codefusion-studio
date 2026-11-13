@@ -19,10 +19,38 @@ import { expect } from "chai";
  * Persisted DFG stream read from a saved cfsconfig file.
  */
 export type PersistedDFGStream = {
-  Source?: { Gasket?: string; BufferSize?: number };
-  Destinations?: Array<{ Gasket?: string; BufferSize?: number }>;
+  Source?: {
+    Gasket?: string;
+    BufferSize?: number;
+    Config?: SourceConfig;
+  };
+  Destinations?: Array<{
+    Gasket?: string;
+    BufferSize?: number;
+    Config?: DestinationConfig;
+  }>;
   Description?: string;
   Group?: string;
+};
+
+export type SourceConfig = {
+  ALIAS?: string;
+  PRIORITY: string;
+  INT_WINDOW_EN?: "FALSE" | "TRUE";
+  INT_PRIORITY?: string;
+  INT_LINE_SRC?: string;
+  INT_WINDOW_SIZE?: string;
+};
+
+export type DestinationConfig = {
+  ALIAS?: string;
+  PRIORITY: string;
+  INT_WINDOW_EN?: "FALSE" | "TRUE";
+  INT_BUFFER_EN?: "FALSE" | "TRUE";
+  INT_PRIORITY?: string;
+  INT_LINE_DEST?: string;
+  INT_BUFFER_SIZE?: string;
+  INT_WINDOW_SIZE?: string;
 };
 
 const getMismatchReason = (
@@ -33,6 +61,8 @@ const getMismatchReason = (
   expectedSourceBufferSize: number,
   expectedDestinationBufferSize: number[],
   expectedGroup: string | undefined,
+  expectedSourceConfig?: SourceConfig,
+  expectedDestinationConfigs?: DestinationConfig[],
 ): string | null => {
   const persistedSource = stream.Source;
   const persistedDestinations = stream.Destinations;
@@ -49,6 +79,17 @@ const getMismatchReason = (
     return `Source buffer mismatch: expected ${expectedSourceBufferSize}, got ${persistedSource.BufferSize ?? "missing"}`;
   }
 
+  if (expectedSourceConfig !== undefined) {
+    const actualSourceConfig = persistedSource.Config;
+    for (const key of Object.keys(
+      expectedSourceConfig,
+    ) as (keyof SourceConfig)[]) {
+      if (actualSourceConfig?.[key] !== expectedSourceConfig[key]) {
+        return `Source config mismatch for ${key}: expected ${expectedSourceConfig[key]}, got ${actualSourceConfig?.[key] ?? "missing"}`;
+      }
+    }
+  }
+
   const hasAllExpectedDestinations = expectedDestinations.every(
     (destinationName, index) =>
       persistedDestinations.some(
@@ -60,6 +101,24 @@ const getMismatchReason = (
 
   if (!hasAllExpectedDestinations) {
     return `Destination mismatch: expected ${expectedDestinations.join(", ")} with buffer ${expectedDestinationBufferSize}`;
+  }
+
+  if (expectedDestinationConfigs !== undefined) {
+    for (const [index, destinationName] of expectedDestinations.entries()) {
+      const actualDestination = persistedDestinations.find(
+        (d) => d.Gasket === destinationName,
+      );
+      const expectedConfig = expectedDestinationConfigs[index];
+      if (expectedConfig !== undefined && actualDestination !== undefined) {
+        for (const key of Object.keys(
+          expectedConfig,
+        ) as (keyof DestinationConfig)[]) {
+          if (actualDestination.Config?.[key] !== expectedConfig[key]) {
+            return `Destination config mismatch for ${destinationName}.${key}: expected ${expectedConfig[key]}, got ${actualDestination.Config?.[key] ?? "missing"}`;
+          }
+        }
+      }
+    }
   }
 
   if (stream.Description !== expectedDescription) {
@@ -84,6 +143,8 @@ const getMismatchReason = (
  * @param expectedSourceBufferSize Expected source buffer size.
  * @param expectedDestinationBufferSize Expected buffer size for each expected destination.
  * @param expectedGroup Optional expected persisted group name.
+ * @param expectedSourceConfig Optional expected source config to match.
+ * @param expectedDestinationConfigs Optional expected destination configs to match, one per destination.
  */
 export const assertPersistedStreamForSource = (
   dfgStreams: PersistedDFGStream[] | undefined,
@@ -94,6 +155,8 @@ export const assertPersistedStreamForSource = (
   expectedSourceBufferSize: number,
   expectedDestinationBufferSize: number[],
   expectedGroup?: string,
+  expectedSourceConfig?: SourceConfig,
+  expectedDestinationConfigs?: DestinationConfig[],
 ) => {
   expect(dfgStreams, "DFG streams should exist in config file").to.not.be
     .undefined;
@@ -109,6 +172,8 @@ export const assertPersistedStreamForSource = (
       expectedSourceBufferSize,
       expectedDestinationBufferSize,
       expectedGroup,
+      expectedSourceConfig,
+      expectedDestinationConfigs,
     );
 
     if (reason) {

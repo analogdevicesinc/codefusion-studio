@@ -1,6 +1,6 @@
 [project]
 name = "cfsai"
-version = "2.3.0"
+version = "2.4.0"
 description = "A tool to help you put your AI model on hardware"
 readme = "README.md"
 authors = [
@@ -9,12 +9,14 @@ authors = [
 requires-python = "==3.11.9"
 dependencies = [
     "cfsai-backend-izer",
-    "cfsai-compatibility-analyzer",
+    "cfsai-model-explorer",
     "cfsai-resource-profiler",
+    "cfsai-compatibility-analyzer",
     "cfsai-model-parser",
     "cfsai-tflite",
     "cfsai-types",
     "pydantic==2.11.3",
+    "ethos-u-vela>=5.1.0",
 ]
 
 [tool.uv.sources]
@@ -22,8 +24,9 @@ cfsai-tflite = { workspace = true }
 cfsai-backend-izer = { workspace = true }
 cfsai-types = { workspace = true }
 cfsai-model-parser = { workspace = true }
-cfsai-compatibility-analyzer = { workspace = true }
+cfsai-model-explorer = { workspace = true }
 cfsai-resource-profiler = { workspace = true }
+cfsai-compatibility-analyzer = { workspace = true }
 
 [project.scripts]
 cfsai = "cfsai.cli:cli"
@@ -39,7 +42,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["flit-core >=3.2,<4"]
+requires = ["flit-core>=4.0.2,<5"]
 build-backend = "flit_core.buildapi"
 
 [tool.mypy]
@@ -54,6 +57,7 @@ exclude = [
     "scripts/",
     "packages/cfsai-tflite/build_hook.py",
     "packages/cfsai-model-parser",
+    "packages/cfsai-model-explorer",
     "packages/cfsai-resource-profiler",
     "packages/cfsai-compatibility-analyzer",
     "packages/cfsai-backend-izer/src/cfsai_backend_izer/izer/",
@@ -107,13 +111,18 @@ src = [
     "packages/cfsai-backend-izer/src/"
 ]
 exclude = [
-    "scripts", 
+    "scripts",
     "dist", 
     "**/demos", 
     "tests",
     "packages/cfsai-tflite/build_hook.py",
     "packages/cfsai-tflite/src/cfsai_tflite/schema",
     "packages/cfsai-backend-izer/src/cfsai_backend_izer/izer/"
+]
+
+[tool.uv]
+override-dependencies = [
+    "urllib3==2.8.0",
 ]
 
 [tool.uv.workspace]
@@ -123,6 +132,7 @@ members = [
     "packages/cfsai-backend-izer",
 
     # Advanced AI Tools
+    "packages/cfsai-model-explorer",
     "packages/cfsai-resource-profiler",
     "packages/cfsai-compatibility-analyzer",
     "packages/cfsai-model-parser"

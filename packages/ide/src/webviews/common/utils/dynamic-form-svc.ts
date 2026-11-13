@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ import {generateControlErrorMessage} from './control-errors';
 import {generateValidationErrorType} from './validate-inputs';
 
 const getFormattedContent = (value: TFormFieldValue | undefined) => {
-	if (value) return value.toString();
+	if (typeof value !== 'undefined') {
+		return value.toString();
+	}
 
 	return '';
 };
@@ -36,8 +38,18 @@ export const computeErrorPerControl = (control: {
 	maxVal?: number | string | undefined;
 	base?: TNumericBase | undefined;
 	pattern?: string | undefined;
+	persistenceSeparator?: string | undefined;
 }): Record<string, string> | undefined => {
-	const {id, type, value, minVal, maxVal, base, pattern} = control;
+	const {
+		id,
+		type,
+		value,
+		minVal,
+		maxVal,
+		base,
+		pattern,
+		persistenceSeparator
+	} = control;
 	let controlError;
 
 	const inputData = {
@@ -46,7 +58,8 @@ export const computeErrorPerControl = (control: {
 		minVal,
 		maxVal,
 		base,
-		pattern
+		pattern,
+		persistenceSeparator
 	};
 
 	const errType = generateValidationErrorType(inputData);

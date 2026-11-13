@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,24 @@
  */
 
 export default {
-  version: "2.0.0",
-  type: "shell",
-  tasks: [
-    {
-      label: "clean",
-      type: "shell",
-      command:
-        "make -j 8 clean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAKE=make PROJECT=${config:cfs.project.name}",
-      group: "build",
-      problemMatcher: [],
-    },
-    {
-      label: "clean-periph",
-      type: "shell",
-      command:
-        "make -j 8 distclean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAKE=make PROJECT=${config:cfs.project.name}",
-      group: "build",
-      problemMatcher: [],
-    }
-  ],
+	version: "2.0.0",
+	type: "shell",
+	tasks: [
+		{
+			label: "clean",
+			type: "shell",
+			command:
+				"make -j 8 clean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAKE=make PROJECT=${config:cfs.project.name}",
+			group: "build",
+			problemMatcher: []
+		},
+		{
+			label: "clean-periph",
+			type: "shell",
+			command:
+				"make -j 8 distclean --output-sync=target --no-print-directory TARGET=${config:cfs.project.target} BOARD=${config:cfs.project.board} MAKE=make PROJECT=${config:cfs.project.name}",
+			group: "build",
+			problemMatcher: []
+		}
+	]
 };

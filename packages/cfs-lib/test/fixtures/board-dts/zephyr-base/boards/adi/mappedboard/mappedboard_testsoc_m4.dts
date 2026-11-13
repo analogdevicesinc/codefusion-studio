@@ -1,0 +1,15 @@
+/dts-v1/;
+/ {
+	soc {
+		flash@10000000 {
+			partitions {
+				compatible = "fixed-partitions";
+				ranges;
+				slot0_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = < 0x0 0x10000 >;
+				};
+			};
+		};
+	};
+};

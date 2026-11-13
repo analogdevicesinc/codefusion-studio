@@ -23,7 +23,13 @@
 	align-items: flex-start;
 	align-self: stretch;
 	border-radius: layout.$border-radius-2;
-	border: layout.$border-width-1 solid var(--vscode-commandCenter-border);
+	border: layout.$border-width-1 solid
+		var(--vscode-commandCenter-border);
+}
+
+/* Marks a package the user must change before installation can proceed. */
+.conflicting {
+	border-color: colors.$error;
 }
 
 .content {
@@ -41,6 +47,7 @@
 	justify-content: space-between;
 	align-items: flex-start;
 	align-self: stretch;
+	gap: layout.$spacing-3;
 }
 
 .nameAndBadge {
@@ -48,6 +55,8 @@
 	flex-direction: row;
 	align-items: center;
 	gap: layout.$spacing-2;
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
 .title {
@@ -57,17 +66,25 @@
 	align-items: flex-start;
 	gap: layout.$spacing-3;
 	align-self: stretch;
+	flex: 1 1 auto;
+	min-width: 0;
 
 	@include fonts.heading-h3;
 }
 
 .text {
-	display: flex;
-	align-items: center;
-	gap: layout.$spacing-2;
+	display: block;
+	align-self: stretch;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	color: colors.$default-foreground;
 	@include fonts.heading-h3;
-	align-items: center;
+
+	> svg {
+		vertical-align: middle;
+	}
 }
 
 .description {
@@ -80,6 +97,8 @@
 	justify-content: center;
 	align-items: center;
 	gap: layout.$spacing-3;
+	flex-shrink: 0;
+	white-space: nowrap;
 
 	@include fonts.label-l3;
 	color: colors.$default-foreground;
@@ -132,6 +151,7 @@
 	display: flex;
 	flex-direction: row;
 	flex: 1 0 0;
+	word-break: break-word;
 }
 
 .rowStatus {

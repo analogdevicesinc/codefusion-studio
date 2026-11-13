@@ -23,6 +23,7 @@ $height-button: 20px;
 
 .optionsMenuContainer {
 	position: relative;
+	flex: 0 0 $width-button;
 	cursor: pointer;
 	margin-left: auto;
 	user-select: none;
@@ -66,6 +67,12 @@ $height-button: 20px;
 				padding: 4px 12px;
 			}
 		}
+
+		.horizontalLine {
+			height: 1px;
+			background-color: colors.$default-border;
+			margin: 4px 0;
+		}
 	}
 
 	.moreIcon {
@@ -74,8 +81,6 @@ $height-button: 20px;
 		justify-content: center;
 		width: $width-button;
 		height: $height-button;
-
-		background-color: colors.$default-background;
 		border-radius: layout.$border-radius-2;
 
 		&:hover {

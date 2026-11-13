@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,33 @@ import ContextSearchInput from '../../../components/context-search-input/context
 import style from './PinmuxHeader.module.scss';
 import SearchScopePicker from '../search-scope-picker/search-scope-picker';
 import {useSearchString} from '../../../state/slices/app-context/appContext.selector';
+import {SearchPanelKeyboardProvider} from '../../../components/search-results-panel/search-panel-keyboard-context';
+import {useSearchPanelKeyboard} from '../../../components/search-results-panel/search-panel-keyboard';
 
 export default function PinmuxHeader() {
-	const pickerOpened = useSearchString('pinconfig').length > 0;
+	const searchString = useSearchString('pinconfig');
 
 	return (
 		<div className={style.headerContainer}>
-			<div className={style.inputWrapper}>
-				<ContextSearchInput searchContext='pinconfig' />
-				{pickerOpened && <SearchScopePicker />}
-			</div>
+			<SearchPanelKeyboardProvider searchText={searchString}>
+				<PinmuxSearchField />
+			</SearchPanelKeyboardProvider>
 			<PinAssignmentStatusFilter />
+		</div>
+	);
+}
+
+function PinmuxSearchField() {
+	const {isOpen, handleKeyDown, handleBlur} =
+		useSearchPanelKeyboard();
+
+	return (
+		<div className={style.inputWrapper} onBlur={handleBlur}>
+			<ContextSearchInput
+				searchContext='pinconfig'
+				onKeyDown={handleKeyDown}
+			/>
+			{isOpen && <SearchScopePicker />}
 		</div>
 	);
 }

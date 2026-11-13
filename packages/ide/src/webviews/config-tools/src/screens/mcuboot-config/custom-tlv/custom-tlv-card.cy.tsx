@@ -41,7 +41,7 @@ const mockTLVEditableField: CustomTLV = {
 	name: '',
 	description: '',
 	tag: 0x00a0,
-	value: '0x0A0B'
+	value: '0x0A0B0C0D'
 };
 
 const mockTLV: CustomTLV = {
@@ -49,7 +49,7 @@ const mockTLV: CustomTLV = {
 	name: 'Test TLV',
 	description: 'A test TLV description',
 	tag: 0x00a0,
-	value: '0x0A0B'
+	value: '0x0A0B0C0D'
 };
 
 const mockTLVWithError: CustomTLV = {
@@ -302,7 +302,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-dup',
 				name: 'Duplicate TLV',
 				tag: mockTLV.tag,
-				value: '0xCC'
+				value: '0xCCDDEEFF'
 			};
 
 			mountCustomTLVCardWithSiblings(mockTLV, mockPackage, [
@@ -318,7 +318,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-dup',
 				name: 'Duplicate TLV',
 				tag: mockTLV.tag,
-				value: '0xCC'
+				value: '0xCCDDEEFF'
 			};
 
 			mountCustomTLVCardWithSiblings(mockTLV, mockPackage, [
@@ -338,7 +338,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-different',
 				name: 'Different TLV',
 				tag: 999,
-				value: '0xEE'
+				value: '0xEEFF0011'
 			};
 
 			mountCustomTLVCardWithSiblings(mockTLV, mockPackage, [
@@ -354,7 +354,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-below-min',
 				name: 'Below Min TLV',
 				tag: 0x009f,
-				value: '0xAA'
+				value: '0xAABBCCDD'
 			};
 
 			mountCustomTLVCardWithSiblings(belowMinTLV, mockPackage, [
@@ -369,7 +369,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-above-max',
 				name: 'Above Max TLV',
 				tag: 0xffff,
-				value: '0xBB'
+				value: '0xBBCCDDEE'
 			};
 
 			mountCustomTLVCardWithSiblings(aboveMaxTLV, mockPackage, [
@@ -384,7 +384,7 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-min-boundary',
 				name: 'Min Boundary TLV',
 				tag: 0x00a0,
-				value: '0xCC'
+				value: '0xCCDDEEFF'
 			};
 
 			mountCustomTLVCardWithSiblings(minBoundaryTLV, mockPackage, [
@@ -399,11 +399,60 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-max-boundary',
 				name: 'Max Boundary TLV',
 				tag: 0xfffe,
-				value: '0xDD'
+				value: '0xDDEEFF00'
 			};
 
 			mountCustomTLVCardWithSiblings(maxBoundaryTLV, mockPackage, [
 				maxBoundaryTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should show conflict icon when hex value is not a multiple of 4 bytes', () => {
+			const invalidLengthTLV: CustomTLV = {
+				id: 'tlv-invalid-length',
+				name: 'Invalid Length TLV',
+				tag: 0x00a0,
+				value: '0xAA'
+			};
+
+			mountCustomTLVCardWithSiblings(invalidLengthTLV, mockPackage, [
+				invalidLengthTLV
+			]);
+
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should show value error when hex value length is not a multiple of 4', () => {
+			const invalidLengthTLV: CustomTLV = {
+				id: 'tlv-invalid-length',
+				name: 'Invalid Length TLV',
+				tag: 0x00a0,
+				value: '0xAABBCC'
+			};
+
+			mountCustomTLVCardWithSiblings(invalidLengthTLV, mockPackage, [
+				invalidLengthTLV
+			]);
+
+			cy.dataTest(`custom-tlv-card:${invalidLengthTLV.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest('custom-tlv-value-error').should('exist');
+		});
+
+		it('should not show conflict icon when hex value length is a multiple of 4', () => {
+			const validLengthTLV: CustomTLV = {
+				id: 'tlv-valid-length',
+				name: 'Valid Length TLV',
+				tag: 0x00a0,
+				value: '0xAABBCCDD'
+			};
+
+			mountCustomTLVCardWithSiblings(validLengthTLV, mockPackage, [
+				validLengthTLV
 			]);
 
 			cy.dataTest('conflict-icon').should('not.exist');
@@ -414,16 +463,14 @@ describe('CustomTLVCard', () => {
 				id: 'tlv-out-of-range',
 				name: 'Out of Range TLV',
 				tag: 0x0050,
-				value: '0xEE'
+				value: '0xEEFF0011'
 			};
 
 			mountCustomTLVCardWithSiblings(outOfRangeTLV, mockPackage, [
 				outOfRangeTLV
 			]);
 
-			cy.dataTest(
-				`custom-tlv-card:${outOfRangeTLV.id}-header`
-			)
+			cy.dataTest(`custom-tlv-card:${outOfRangeTLV.id}-header`)
 				.should('exist')
 				.click();
 

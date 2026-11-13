@@ -48,7 +48,7 @@ export const executeTask = async (
   workspaceFolder?: vscode.WorkspaceFolder,
 ) => {
   if (taskToExecute instanceof vscode.Task) {
-    vscode.tasks.executeTask(taskToExecute);
+    await Utils.runTask(taskToExecute);
     return;
   }
 
@@ -97,7 +97,7 @@ export const executeTask = async (
   }
 
   if (filteredTasks.length === 1) {
-    vscode.tasks.executeTask(filteredTasks[0]);
+    await Utils.runTask(filteredTasks[0]);
     return;
   }
 
@@ -124,7 +124,7 @@ export const executeTask = async (
     return;
   }
 
-  vscode.tasks.executeTask(selectedTask);
+  await Utils.runTask(selectedTask);
 };
 
 //TODO: rename after registerCommands is removed from extension.ts

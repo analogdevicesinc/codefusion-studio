@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import Tooltip from '../../../../components/Tooltip/Tooltip';
 import {TooltipInfo} from '../../../../utils/chart-utils';
 import {convertArray} from '../../../../utils/stats-utils';
 import styles from './MetadataOverview.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TMetadataOverviewProps = {
 	readonly data: THeaderInfo[];
@@ -29,6 +30,10 @@ export default function MetadataOverview({
 	data,
 	sections
 }: TMetadataOverviewProps) {
+	const l10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+
 	const dataToDisplay =
 		data.length && sections.length
 			? [
@@ -48,26 +53,28 @@ export default function MetadataOverview({
 						?.match(/\((.*?)\)/)?.[1]
 						.replace('file', ''),
 					data.find(item => item.label === 'Machine')?.value,
-					`${data.find(item => item.label === 'OS ABI')?.value} version ${
+					`${
+						data.find(item => item.label === 'OS ABI')?.value
+					} version ${
 						data.find(item => item.label === 'ABI Version')?.value
 					}`,
 					`${
 						Number(
 							data.find(item => item.label === 'ABI Version')?.value
 						) === 0
-							? 'statically linked'
+							? (l10n?.staticallyLinked ?? 'statically linked')
 							: ''
 					}`,
 					`${
 						sections.find(item => item.name === '.debug_info')
-							? 'with debug_info'
-							: 'with no debug_info'
+							? (l10n?.withDebugInfo ?? 'with debug_info')
+							: (l10n?.withNoDebugInfo ?? 'with no debug_info')
 					}`,
 					`${
 						(sections.find(item => item.name === '.debug_info') ??
 						sections.find(item => Number(item.type) === 2))
-							? 'not stripped'
-							: 'stripped'
+							? (l10n?.notStripped ?? 'not stripped')
+							: (l10n?.stripped ?? 'stripped')
 					}`
 				]
 			: [];
@@ -80,13 +87,13 @@ export default function MetadataOverview({
 		// prettier-ignore
 		<div className={styles.container} data-test="stats:overview-container">
 			<div className={styles.overviewWrapper}>
-				<h1 className={styles.title}>File overview</h1>
+				<h1 className={styles.title}>{l10n?.fileOverview ?? 'File overview'}</h1>
 				{filteredDataToDisplay.map((item, index) => (
 					<React.Fragment key={item}>
 						<Tooltip
 							content={{
-								title: TooltipInfo[index].title,
-								description: TooltipInfo[index].description
+								title: l10n?.[TooltipInfo[index].l10nTitleKey] ?? TooltipInfo[index].title,
+								description: l10n?.[TooltipInfo[index].l10nDescKey] ?? TooltipInfo[index].description
 							}}
 							containerPosition='relative'
 						>

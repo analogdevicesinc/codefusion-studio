@@ -1,0 +1,32 @@
+{
+  "pluginName": "AI Profiling Workspace (Test Fixture)",
+  "pluginDescription": "Minimal aiprof workspace template fixture for ai workspace create tests.",
+  "pluginId": "mock.workspace.aiprof",
+  "pluginVersion": "1.0.0-fixture",
+  "schemaVersion": "1.2.0",
+  "pluginApiVersion": 1,
+  "author": "Analog Devices, Inc.",
+  "firmwarePlatform": "zephyr",
+  "supportedSocs": [
+    {
+      "name": "TEST8002",
+      "board": "KIT_BOARD",
+      "package": "PSBGA",
+      "cores": ["CM4"]
+    }
+  ],
+  "templateType": "workspace",
+  "templatePath": "templates",
+  "features": {
+    "aiprof": {},
+    "workspace": {
+      "files": [],
+      "templates": [
+        {
+          "src": "templates/.cfsconfig.eta",
+          "dst": ".cfs/${context.workspaceName}.cfsconfig"
+        }
+      ]
+    }
+  }
+}

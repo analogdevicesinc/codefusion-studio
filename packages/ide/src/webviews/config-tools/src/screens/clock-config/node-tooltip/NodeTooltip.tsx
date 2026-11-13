@@ -21,9 +21,7 @@ import {
 import {gap, notchHeight} from '../constants/tooltip';
 import type {ClockOutput, DiagramNode} from '@common/types/soc';
 import {extractClockPrefix} from '../utils/clock-nodes';
-import {
-	useClockNodeState
-} from '../../../state/slices/clock-nodes/clockNodes.selector';
+import {useClockNodeState} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import {ShortDescErrors} from '@common/types/errorTypes';
 import CfsNotification from '@common/components/cfs-notification/CfsNotification';
 
@@ -52,7 +50,9 @@ function FrequencyDisplayItem({
 }) {
 	return (
 		<div
-			className={`${styles.clockEntry}${isFirstGroupItem ? ` ${styles.firstGroupItem}` : ''}`}
+			className={`${styles.clockEntry}${
+				isFirstGroupItem ? ` ${styles.firstGroupItem}` : ''
+			}`}
 		>
 			{clockName && (
 				<p data-test={clockName} className={styles.name}>

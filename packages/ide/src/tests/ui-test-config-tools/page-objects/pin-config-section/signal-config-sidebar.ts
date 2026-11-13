@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ export async function getValueFromSidebarConfig(
   );
   console.log("Current value of element is: ", currentValue);
 
-  return currentValue;
+  return currentValue ?? "";
 }
 
 export async function waitForSidebarToOpen(
@@ -87,7 +87,7 @@ export async function waitForSidebarToOpen(
       try {
         const visible = await panel.isDisplayed();
         const cls = await panel.getAttribute("class");
-        return visible && !/minimis(e)?d/i.test(cls);
+        return visible && !/minimis(e)?d/i.test(cls ?? "");
       } catch {
         // Handle re-render/stale element by re-finding
         panel = await driver.findElement(panelContainer);
@@ -102,4 +102,21 @@ export async function waitForSidebarToOpen(
   );
 
   return panel;
+}
+
+export async function polarityDropdownOption(
+  optionText: "HIGH" | "LOW",
+): Promise<By> {
+  return By.id(`POLARITY_${optionText}`);
+}
+
+export const nonDefaultValue: By = By.css('[data-test="package-display-info"]');
+export const nonDefaultValueText: By = By.css(
+  '[data-test="package-display-info"] p',
+);
+export const resetToDefaultButton: By = By.css(
+  '[data-test="reset-to-default"]',
+);
+export async function polarityDropdownLabel(signal: string): Promise<By> {
+  return By.css(`label[for="POLARITY-${signal}-control-dropdown"]`);
 }

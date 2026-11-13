@@ -31,7 +31,9 @@ export function SidePanel({
 }: SidepanelProps) {
 	return (
 		<div
-			className={`${styles.sidepanelContainer} ${isOpen ? styles.open : styles.closed} ${className ?? ''}`}
+			className={`${styles.sidepanelContainer} ${
+				isOpen ? styles.open : styles.closed
+			} ${className ?? ''}`}
 		>
 			<div className={styles.header}>
 				<h2>{title}</h2>

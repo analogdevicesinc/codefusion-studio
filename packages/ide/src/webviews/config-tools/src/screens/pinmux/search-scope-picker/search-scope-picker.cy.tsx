@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import SearchScopePicker from './search-scope-picker';
@@ -89,9 +104,7 @@ describe('PinMUX search scope picker component', () => {
 		cy.dataTest('filter-control:peripherals').click();
 
 		EXPECTED_PERIPHERAL_RESULTS.forEach(result => {
-			cy.dataTest(`search-result-${result.title}-undefined`).should(
-				'exist'
-			);
+			cy.dataTest(`search-result-${result.title}`).should('exist');
 		});
 	});
 
@@ -125,9 +138,7 @@ describe('PinMUX search scope picker component', () => {
 		cy.dataTest('filter-control:signals').click();
 
 		EXPECTED_SIGNAL_RESULTS.forEach(result => {
-			cy.dataTest(`search-result-${result.title}-undefined`).should(
-				'exist'
-			);
+			cy.dataTest(`search-result-${result.title}`).should('exist');
 		});
 	});
 
@@ -145,10 +156,7 @@ describe('PinMUX search scope picker component', () => {
 
 		cy.dataTest('filter-control:signals').click();
 
-		cy.dataTest('search-result-I2C0 SDA-undefined').should(
-			'have.length',
-			1
-		);
+		cy.dataTest('search-result-I2C0 SDA').should('have.length', 1);
 	});
 
 	it('Should display no results found', () => {
@@ -191,7 +199,7 @@ describe('PinMUX search scope picker component', () => {
 				);
 			})
 			.then(() => {
-				cy.dataTest('search-result-I2C0 SDA-undefined').click();
+				cy.dataTest('search-result-I2C0 SDA').click();
 			})
 			.then(() => {
 				const activeFilterType =
@@ -201,8 +209,9 @@ describe('PinMUX search scope picker component', () => {
 			});
 	});
 
-	it('Should show pins reserved message when selecting a peripheral with all pins reserved', () => {
+	it('Should show a reserved signal through the standard peripheral view', () => {
 		const reduxStore = configurePreloadedStore(mock);
+
 		cy.viewport(1200, 1200);
 		cy.mount(<PinMUX />, reduxStore);
 
@@ -215,6 +224,18 @@ describe('PinMUX search scope picker component', () => {
 			})
 		);
 
-		cy.dataTest('peripheral-pins-reserved:MISC').should('exist');
+		// The signal should render through Peripheral -> Function.
+		cy.dataTest('MISC-RSTN')
+			.should('exist')
+			.and('be.visible')
+			.within(() => {
+				// Reserved pins keep their toggle hidden.
+				cy.get('[class*="_hiddenToggle_"]')
+					.should('exist')
+					.and('not.be.visible');
+
+				// The standard config-button slot remains rendered.
+				cy.get('[class*="_configButtonContainer_"]').should('exist');
+			});
 	});
 });

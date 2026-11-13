@@ -14,38 +14,131 @@
  */
 import { expect } from "chai";
 import { describe, it } from "mocha";
-import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import {
+  VSBrowser,
+  WebDriver,
+  WebView,
+  Workbench,
+} from "vscode-extension-tester";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { generateCodeTab } from "../../page-objects/main-menu";
 import {
   dismissOverwriteModal,
   generateCodeButton,
+  generateCodeContainer,
   generatedFilesList,
+  getReadySignal,
+  errorContainerSelector,
   rVCheckbox,
 } from "../../page-objects/generate-code-section/generate-code-screen";
 
+/*
+ * Feature: Generate Code tab
+ *     As a CodeFusion Studio user
+ *     I want to see project readiness and generate code on the Generate Code tab
+ *     So that I know my configuration is valid before generating code
+ *
+ * Background:
+ *     Given VS Code is open with the CodeFusion Studio extension loaded
+ *     And all editors are closed
+ */
 describe("Config tools code generation", () => {
   let view: WebView;
+  let browser: VSBrowser;
+  let workbench: Workbench;
+  let driver: WebDriver;
+  const configPath = getConfigPathForFile(
+    "max32690-wlp-dual-core-blinky.cfsconfig",
+  );
 
   before(async function () {
     this.timeout(60000);
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(500);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 500 }));
+    driver = browser.driver;
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Should call generateConfigCode only with selected projects", async () => {
-    const browser = VSBrowser.instance;
-    const configPath = getConfigPathForFile(
-      "max32690-wlp-dual-core-blinky.cfsconfig",
+  /*
+   * Scenario: Projects display ready status on the Generate Code tab
+   *     Given a valid dual-core .cfsconfig is opened
+   *     When I navigate to the Generate Code tab
+   *     Then the generate code container is rendered
+   *     And each project displays a ready-state indicator
+   *     And no error containers are visible
+   */
+  it("Should display projects with ready status on the Generate Code tab @regression", async function () {
+    this.timeout(60000);
+    // Given a valid dual-core .cfsconfig is opened
+    await browser.openResources(configPath);
+    await UIUtils.dismissAllNotifications(workbench, browser);
+    view = new WebView();
+    await view.wait();
+    await view.switchToFrame();
+
+    // When I navigate to the Generate Code tab
+    await UIUtils.waitForElement(view, generateCodeTab, 15000);
+    await UIUtils.clickElement(view, generateCodeTab);
+
+    // Then the generate code container is rendered
+    await driver.wait(
+      async () => {
+        const elements = await view.findWebElements(generateCodeContainer);
+        return elements.length > 0;
+      },
+      15000,
+      "Generate code container did not render",
     );
+
+    const container = await view.findWebElement(generateCodeContainer);
+    expect(
+      await container.isDisplayed(),
+      "Generate code container should be visible",
+    ).to.be.true;
+
+    // And each project displays a ready-state indicator
+    const primaryProjectId = "CM4";
+    const auxProjectId = "RV";
+
+    const primaryReadyElements = await view.findWebElements(
+      getReadySignal(primaryProjectId),
+    );
+    expect(
+      primaryReadyElements.length,
+      "Primary project should display a ready-state indicator",
+    ).to.be.greaterThan(0);
+
+    const auxReadyElements = await view.findWebElements(
+      getReadySignal(auxProjectId),
+    );
+    expect(
+      auxReadyElements.length,
+      "Auxiliary project should display a ready-state indicator",
+    ).to.be.greaterThan(0);
+
+    // And no error containers are visible
+    const primaryErrors = await view.findWebElements(
+      errorContainerSelector(primaryProjectId),
+    );
+    expect(
+      primaryErrors.length,
+      "Primary project should not have an errors container",
+    ).to.equal(0);
+
+    const auxErrors = await view.findWebElements(
+      errorContainerSelector(auxProjectId),
+    );
+    expect(
+      auxErrors.length,
+      "Auxiliary project should not have an errors container",
+    ).to.equal(0);
+  });
+
+  it("Should call generateConfigCode only with selected projects @regression", async () => {
+    const browser = VSBrowser.instance;
     await browser.openResources(configPath);
     await UIUtils.sleep(5000);
 
@@ -53,19 +146,23 @@ describe("Config tools code generation", () => {
     await view.wait();
     await view.switchToFrame();
 
-    UIUtils.clickElement(view, generateCodeTab);
+    await UIUtils.clickElement(view, generateCodeTab);
     await UIUtils.sleep(1000);
 
     await UIUtils.clickElement(view, rVCheckbox);
     await UIUtils.sleep(1500);
     console.log("Clicked on RV checkbox");
 
-    UIUtils.clickElement(view, generateCodeButton);
+    await UIUtils.clickElement(view, generateCodeButton);
     console.log("Clicked generate button");
 
     await dismissOverwriteModal(view);
-    await UIUtils.sleep(3000);
-    await dismissOverwriteModal(view);
+    // Dismiss Code Generation Directory dialog
+    await view.switchBack();
+    await UIUtils.sleep(2000);
+    const wb = new Workbench();
+    await UIUtils.dismissOkDialog(wb);
+    await view.switchToFrame();
     await UIUtils.sleep(3000);
     await browser.takeScreenshot("disabled-project-skip-test-generate-click");
 
@@ -80,26 +177,41 @@ describe("Config tools code generation", () => {
     expect(hasM4, listItems.join(", ")).to.be.true;
   }).timeout(120000);
 
-  it("Should not include externally managed projects in code generation", async function () {
+  it("Should not include externally managed projects in code generation @regression", async function () {
     this.timeout(60000);
 
     const browser = VSBrowser.instance;
     const configPath = getConfigPathForFile(
       "max32690-evkit-riscv-external-project.cfsconfig",
     );
+    console.log("Opening config file:", configPath);
     await browser.openResources(configPath);
 
-    await UIUtils.sleep(5000);
+    const workbench = new Workbench();
+    await UIUtils.dismissAllNotifications(workbench, browser);
+
+    console.log("Initializing WebView...");
+    view = new WebView();
     await view.wait();
     await view.switchToFrame();
+    console.log("WebView initialized and switched to frame");
 
-    UIUtils.clickElement(view, generateCodeTab);
-    await UIUtils.sleep(3000);
+    await UIUtils.waitForElement(view, generateCodeTab, 15000);
+    await UIUtils.clickElement(view, generateCodeTab);
+    await UIUtils.waitForElement(view, generateCodeContainer, 15000);
 
     // Generate code with only RV project (externally managed CM4 should be excluded)
-    UIUtils.clickElement(view, generateCodeButton);
+    await browser.takeScreenshot("external-project-test-generate-click");
+    await UIUtils.clickElement(view, generateCodeButton);
     await UIUtils.sleep(1500);
     await dismissOverwriteModal(view);
+
+    // Dismiss Code Generation Directory dialog
+    await view.switchBack();
+    await UIUtils.sleep(2000);
+    await UIUtils.dismissOkDialog(workbench);
+    await view.switchToFrame();
+    await UIUtils.sleep(3000);
 
     // Take a snapshot of the screen to debug any issues
     await browser.takeScreenshot("external-project-test-generate-click");

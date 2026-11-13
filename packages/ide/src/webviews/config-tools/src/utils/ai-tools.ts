@@ -116,7 +116,9 @@ function intializeModelTargets() {
 				return coreBackends.length > 1
 					? coreBackends.map(backend => ({
 							...core,
-							Name: `${core.Name} - ${supportedBackends[backend].DisplayName ?? backend}`,
+							Name: `${core.Name} - ${
+								supportedBackends[backend].DisplayName ?? backend
+							}`,
 							Backend: backend
 						}))
 					: [

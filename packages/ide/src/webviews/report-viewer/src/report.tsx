@@ -9,18 +9,30 @@ import {
 } from 'react';
 import {useMessenger} from '../../common/contexts/MessengerContext';
 import type {Report} from '@ide-types/report-view-types';
-import {reportRequestMessage} from '@constants/messages/report-view-messages';
+import {
+	reportRequestMessage,
+	reportUpdatedNotification
+} from '@constants/messages/report-view-messages';
 
 type ReportContextValue = {
 	report?: Report;
 	loading: boolean;
 	error?: string;
+	/**
+	 * Increments every time a report is (re-)fetched. Consumers can use
+	 * this as a React `key` to force a subtree to remount when the
+	 * extension pushes a regenerated report into an already-open tab,
+	 * resetting any locally cached view state (filters, sorting, etc.)
+	 * back to its defaults for the new data.
+	 */
+	reportVersion: number;
 };
 
 export const ReportContext = createContext<
 	ReportContextValue | undefined
 >({
-	loading: true
+	loading: true,
+	reportVersion: 0
 });
 
 export function useReport<T extends Report>() {
@@ -40,6 +52,7 @@ export function ReportProvider({children}: React.PropsWithChildren) {
 	const [report, setReport] = useState<Report>();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string>();
+	const [reportVersion, setReportVersion] = useState(0);
 
 	const fetchReport = useCallback(() => {
 		setLoading(true);
@@ -50,6 +63,7 @@ export function ReportProvider({children}: React.PropsWithChildren) {
 			.then(res => {
 				console.log('Fetched report:', res);
 				setReport(res);
+				setReportVersion(version => version + 1);
 			})
 			.catch(e => {
 				console.error('Error fetching report:', e);
@@ -66,13 +80,27 @@ export function ReportProvider({children}: React.PropsWithChildren) {
 		fetchReport();
 	}, [fetchReport]);
 
+	useEffect(() => {
+		const disposable = messenger.onNotification(
+			reportUpdatedNotification,
+			() => {
+				fetchReport();
+			}
+		);
+
+		return () => {
+			disposable.dispose();
+		};
+	}, [messenger, fetchReport]);
+
 	const value = useMemo<ReportContextValue>(
 		() => ({
 			report,
 			loading,
-			error
+			error,
+			reportVersion
 		}),
-		[report, loading, error]
+		[report, loading, error, reportVersion]
 	);
 
 	return (

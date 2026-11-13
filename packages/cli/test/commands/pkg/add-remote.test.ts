@@ -22,6 +22,9 @@ import {
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
 
+import {pkgAddRemoteDeps} from '../../../dist/commands/pkg/add-remote.js';
+import {assertSuccessEnvelopeData} from '../../utils/assert-json-envelope.js';
+
 function remoteName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
@@ -58,7 +61,9 @@ describe('pkg add-remote', () => {
       error: addError
     } = await runCommand(
       ['pkg', 'add-remote', name, localTestRemoteUrl],
-      {root: '..'}
+      {
+        root: '..'
+      }
     );
 
     expect(addError).to.be.undefined;
@@ -77,5 +82,41 @@ describe('pkg add-remote', () => {
     expect(remotesStderr.trim()).to.equal('');
     expect(remotesStdout).to.contain(name);
     expect(remotesStdout).to.contain(localTestRemoteUrl);
+  });
+});
+
+describe('pkg add-remote JSON envelope', () => {
+  const originalGetPackageManager =
+    pkgAddRemoteDeps.getPackageManager;
+
+  afterEach(() => {
+    pkgAddRemoteDeps.getPackageManager = originalGetPackageManager;
+  });
+
+  it('returns a remote/url envelope in JSON mode', async () => {
+    pkgAddRemoteDeps.getPackageManager = (async () => ({
+      addRemote: async () => {}
+    })) as unknown as typeof pkgAddRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      [
+        'pkg',
+        'add-remote',
+        'mock-remote',
+        'http://localhost:9999',
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      url: string;
+    }>(stdout, 'pkg add-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      url: 'http://localhost:9999'
+    });
   });
 });

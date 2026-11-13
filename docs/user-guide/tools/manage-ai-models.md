@@ -1,12 +1,12 @@
 ---
-description: How to use the Embedded AI Tools panel in System Planner
+description: How to use the Manage AI Models tab in System Planner
 author: Analog Devices
-date: 2026-07-31
+date: 2026-09-30
 ---
 
-# Embedded AI Tools
+# Manage AI Models
 
-The Embedded AI Tools feature allows you to create model configurations for your project. You can add model files, assign them to cores, define engine-specific settings, and generate deployable C/C++ code. You can also run compatibility and profiling reports to check memory usage, operator support, and performance characteristics.
+The **Manage AI Models** tab allows you to create model configurations for your project. You can add model files, assign them to cores, define engine-specific settings, and generate deployable C/C++ code. You can also run compatibility and profiling reports to check memory usage, operator support, and performance characteristics.
 
 Use this feature to manage model deployment in multi-core environments, run compatibility and profiling checks, and generate engine-specific code for supported SoCs.
 
@@ -17,7 +17,7 @@ For full compatibility when using this feature, [create a new workspace](../work
 For details on supported processors, see [supported processors and model formats](../about/supported-ai-model-formats.md).
 
 !!! note "Windows dependency"
-    On Windows, the Embedded AI Tools require the [:octicons-link-external-24: Visual C++ Redistributable for Visual Studio 2015](https://aka.ms/vs/16/release/vc_redist.x64.exe){:target="_blank"} to be installed. Install this redistributable manually before running model compatibility or profiling reports.
+    On Windows, the **Manage AI Models** tab requires the [:octicons-link-external-24: Visual C++ Redistributable for Visual Studio 2015](https://aka.ms/vs/16/release/vc_redist.x64.exe){:target="_blank"} to be installed. Install this redistributable manually before running model compatibility or profiling reports.
 
 ## Manage model configurations
 
@@ -26,7 +26,7 @@ AI-based templates (such as *Zephyr Single Core TensorFlow AI Model*) include a 
 To add a new model:
 
 1. Click **Add Model**.
-  ![Embedded AI Tools tab](./images/embedded-ai-tools-overview-dark.png#only-dark) ![Embedded AI Tools tab](./images/embedded-ai-tools-overview-light.png#only-light)
+  ![Manage AI Models tab](./images/embedded-ai-tools-overview-dark.png#only-dark) ![Manage AI Models tab](./images/embedded-ai-tools-overview-light.png#only-light)
 2. Select a **Target** core. For example, ARM Cortex-M4.
 3. Enter a **Model Name**. This name is used to identify the model configuration.
 4. Click **Browse** to open the **Model Zoo**, then select a model from the library or a local file. See [Select a model from the Model Zoo](#select-a-model-from-the-model-zoo). You can also enter a relative file path or URL directly in the **Model File** field.
@@ -34,6 +34,9 @@ To add a new model:
     - For TensorFlow Lite Micro models, see [Configure TFLM settings](#configure-tensorflow-lite-micro-tflm-model-settings)
     - For izer backend models, see [Configure izer backend settings](#configure-izer-backend-settings)
 6. Click **Add** to add the model to the list.
+
+!!! note "Identifier collisions"
+    CodeFusion Studio normalizes and compares both **Model Name** and **Symbol for data** (when set) for every model. It rejects a model when either value collides case-insensitively with either value from another model in the same workspace. If CodeFusion Studio reports `This identifier is already in use by another model`, select unique **Model Name** and **Symbol for data** values.
 
 ### Select a model from the Model Zoo
 
@@ -144,7 +147,7 @@ To generate reports for your model:
 
 #### Accessing and managing reports
 
-By default, reports are stored in the temp directory. Use the **Save As** option in Visual Studio Code to store the report in a different location.
+CFS stores the report in the `reports` folder of the project assigned to the same core as the model. Use the **Save As** option in Visual Studio Code to store the report in a different location.
 
 To reopen the report at a later time, select **AI Tools** > **Open Report** from the **Home** section of the CFS sidebar.
 

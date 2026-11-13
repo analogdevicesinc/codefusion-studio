@@ -87,7 +87,9 @@ function PeripheralGroup({group, peripherals}: PeripheralGroupProps) {
 		<>
 			<div
 				id={`peripheral-${group}`}
-				className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
+				className={`${styles.accordionContainer} ${
+					isOpen ? styles.selected : ''
+				}`}
 				onMouseEnter={() => {
 					if (!isOpen) displayTooltip();
 				}}

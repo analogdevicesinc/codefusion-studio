@@ -15,7 +15,13 @@
 
 import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import MissingComponentsError from './missing-components-error';
-import {mockVsCodeApi} from '@common/api';
+import {setupMessengerMock} from '@common/test-utils/messenger-mock';
+import {
+	packagerInstallRequest,
+	packagerSearchRequest,
+	packagerUpdatePersistedDataModelVersionRequest,
+	packagerUpdatePersistedPluginVersionRequest
+} from '@constants/messages/cfgtools-messages';
 import type {CfsMissingComponent} from 'cfs-types';
 
 const i10n = {
@@ -39,7 +45,8 @@ const i10n = {
 		missingDataModelDescription:
 			'System Planner requires {componentName} data model version {componentVersion} which is not available.',
 		resolutionOptionsLabel: 'Resolution Options',
-		allowFutureVersions: 'Allow all future compatible versions'
+		allowFutureVersions: 'Allow all future compatible versions',
+		resolutionPlaceholder: 'Select a resolution'
 	}
 };
 
@@ -59,28 +66,19 @@ function mountComponent(components: CfsMissingComponent[]) {
 	);
 }
 
+function selectLocallyAvailableResolution(componentId: string): void {
+	cy.get(
+		`#component-resolution-${componentId}-controlDropdown`
+	).click();
+	cy.get(
+		`#component-resolution-${componentId}-controlDropdown > vscode-option[value="UPDATE_CFS_FILE"]`
+	).click();
+}
+
 describe('MissingComponentsError', () => {
 	beforeEach(() => {
-		mockVsCodeApi({
-			postMessage(message: any) {
-				if (message.type === 'packager--search') {
-					window.dispatchEvent(
-						new MessageEvent('message', {
-							data: {
-								type: 'api-response',
-								id: message.id,
-								body: []
-							}
-						})
-					);
-				}
-			},
-			getState() {
-				return undefined;
-			},
-			setState<T>(newState: T) {
-				return newState;
-			}
+		setupMessengerMock({
+			[packagerSearchRequest.method]: []
 		});
 	});
 
@@ -228,6 +226,17 @@ describe('MissingComponentsError', () => {
 			).should('be.visible');
 		});
 
+		it('should leave the locally available version unselected by default', () => {
+			mountComponent(componentWithLocalVersions);
+
+			cy.get('#component-resolution-max32690-plugin-controlDropdown')
+				.find('vscode-option[aria-selected="true"]')
+				.should('have.attr', 'value', '');
+			cy.dataTest('version-update:continue-btn').should(
+				'be.disabled'
+			);
+		});
+
 		it('should allow selecting the locally available version', () => {
 			mountComponent(componentWithLocalVersions);
 
@@ -244,6 +253,9 @@ describe('MissingComponentsError', () => {
 			cy.get(
 				'#component-resolution-max32690-plugin-controlDropdown > vscode-option[aria-selected="true"]'
 			).should('contain.text', '1.0.2');
+			cy.dataTest('version-update:continue-btn').should(
+				'not.be.disabled'
+			);
 		});
 
 		it('should show a higher minor version as locally available', () => {
@@ -331,26 +343,8 @@ describe('MissingComponentsError', () => {
 		];
 
 		beforeEach(() => {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									error: 'The remote repository is not reachable.'
-								}
-							})
-						);
-					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
-				}
+			setupMessengerMock({
+				[packagerSearchRequest.method]: []
 			});
 		});
 
@@ -376,47 +370,29 @@ describe('MissingComponentsError', () => {
 		];
 
 		beforeEach(() => {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-plugin',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-plugin-pkg',
-														version: '1.0.3'
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690-plugin',
-															version: '1.0.3'
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-plugin',
+						packages: [
+							{
+								reference: {
+									name: 'max32690-plugin-pkg',
+									version: '1.0.3'
+								},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [
+									{
+										name: 'max32690-plugin',
+										version: '1.0.3'
+									}
+								]
+							}
+						]
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
-				}
+				]
 			});
 		});
 
@@ -463,47 +439,21 @@ describe('MissingComponentsError', () => {
 		];
 
 		function mockRemoteVersion(version: string) {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-plugin',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-plugin-pkg',
-														version
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690-plugin',
-															version
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-plugin',
+						packages: [
+							{
+								reference: {name: 'max32690-plugin-pkg', version},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [{name: 'max32690-plugin', version}]
+							}
+						]
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
-				}
+				]
 			});
 		}
 
@@ -609,47 +559,21 @@ describe('MissingComponentsError', () => {
 
 	describe('semver range variants', () => {
 		function mockRemoteVersionSemver(version: string) {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-plugin',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-plugin-pkg',
-														version
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690-plugin',
-															version
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-plugin',
+						packages: [
+							{
+								reference: {name: 'max32690-plugin-pkg', version},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [{name: 'max32690-plugin', version}]
+							}
+						]
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
-				}
+				]
 			});
 		}
 
@@ -734,7 +658,9 @@ describe('MissingComponentsError', () => {
 				availableVersion,
 				showLocallyAvailable
 			}) => {
-				it(`should ${showLocallyAvailable ? '' : 'not '}show local version ${availableVersion} as locally available for ${cfsconfigVersion}`, () => {
+				it(`should ${
+					showLocallyAvailable ? '' : 'not '
+				}show local version ${availableVersion} as locally available for ${cfsconfigVersion}`, () => {
 					mountComponent([
 						{
 							id: 'max32690-plugin',
@@ -762,7 +688,9 @@ describe('MissingComponentsError', () => {
 
 		remoteVersionCases.forEach(
 			({cfsconfigVersion, mockVersion, showUpgradable}) => {
-				it(`should ${showUpgradable ? '' : 'not '}show remote version ${mockVersion} as downloadable for ${cfsconfigVersion}`, () => {
+				it(`should ${
+					showUpgradable ? '' : 'not '
+				}show remote version ${mockVersion} as downloadable for ${cfsconfigVersion}`, () => {
 					mockRemoteVersionSemver(mockVersion);
 					mountComponent([
 						{
@@ -807,67 +735,42 @@ describe('MissingComponentsError', () => {
 
 	describe('package installation flow', () => {
 		function mockInstallApi(success: boolean, errorMsg?: string) {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-plugin',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-plugin-pkg',
-														version: '1.0.0'
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690-plugin',
-															version: '1.0.0'
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-plugin',
+						packages: [
+							{
+								reference: {
+									name: 'max32690-plugin-pkg',
+									version: '1.0.0'
+								},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [
+									{
+										name: 'max32690-plugin',
+										version: '1.0.0'
+									}
+								]
+							}
+						]
 					}
-
-					if (message.type === 'packager--install') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											reference: {
-												name: 'max32690-plugin-pkg',
-												version: '1.0.0'
-											},
-											success,
-											...(errorMsg && {error: errorMsg})
-										}
-									]
-								}
-							})
-						);
+				],
+				[packagerInstallRequest.method]: [
+					{
+						reference: {
+							name: 'max32690-plugin-pkg',
+							version: '1.0.0'
+						},
+						success,
+						...(errorMsg && {error: errorMsg})
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
+				],
+				[packagerUpdatePersistedPluginVersionRequest.method]: {
+					componentId: 'max32690-plugin',
+					success: true
 				}
 			});
 		}
@@ -942,68 +845,41 @@ describe('MissingComponentsError', () => {
 			remoteVersion: string,
 			capturedMessages: any[]
 		) {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-plugin',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-plugin-pkg',
-														version: remoteVersion
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690-plugin',
-															version: remoteVersion
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
-					}
-
-					if (
-						message.type ===
-						'packager--update--persisted--cfsconfig--plugin--version'
-					) {
-						capturedMessages.push(message);
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: {
-										reference: {
-											name: 'max32690-plugin-pkg',
-											version: remoteVersion
-										},
-										success: true
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-plugin',
+						packages: [
+							{
+								reference: {
+									name: 'max32690-plugin-pkg',
+									version: remoteVersion
+								},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [
+									{
+										name: 'max32690-plugin',
+										version: remoteVersion
 									}
-								}
-							})
-						);
+								]
+							}
+						]
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
+				],
+				[packagerUpdatePersistedPluginVersionRequest.method](
+					msg: any
+				) {
+					capturedMessages.push(msg);
+
+					return {
+						reference: {
+							name: 'max32690-plugin-pkg',
+							version: remoteVersion
+						},
+						success: true
+					};
 				}
 			});
 		}
@@ -1012,68 +888,41 @@ describe('MissingComponentsError', () => {
 			remoteVersion: string,
 			capturedMessages: any[]
 		) {
-			mockVsCodeApi({
-				postMessage(message: any) {
-					if (message.type === 'packager--search') {
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: [
-										{
-											id: 'max32690-data-model',
-											packages: [
-												{
-													reference: {
-														name: 'max32690-data-model-pkg',
-														version: remoteVersion
-													},
-													description: '',
-													license: '',
-													cfsVersion: '',
-													components: [
-														{
-															name: 'max32690:max32690-data-model',
-															version: remoteVersion
-														}
-													]
-												}
-											]
-										}
-									]
-								}
-							})
-						);
-					}
-
-					if (
-						message.type ===
-						'packager--update--persisted--cfsconfig--data-model--version'
-					) {
-						capturedMessages.push(message);
-						window.dispatchEvent(
-							new MessageEvent('message', {
-								data: {
-									type: 'api-response',
-									id: message.id,
-									body: {
-										reference: {
-											name: 'max32690-data-model-pkg',
-											version: remoteVersion
-										},
-										success: true
+			setupMessengerMock({
+				[packagerSearchRequest.method]: [
+					{
+						id: 'max32690-data-model',
+						packages: [
+							{
+								reference: {
+									name: 'max32690-data-model-pkg',
+									version: remoteVersion
+								},
+								description: '',
+								license: '',
+								cfsVersion: '',
+								components: [
+									{
+										name: 'max32690:max32690-data-model',
+										version: remoteVersion
 									}
-								}
-							})
-						);
+								]
+							}
+						]
 					}
-				},
-				getState() {
-					return undefined;
-				},
-				setState<T>(newState: T) {
-					return newState;
+				],
+				[packagerUpdatePersistedDataModelVersionRequest.method](
+					msg: any
+				) {
+					capturedMessages.push(msg);
+
+					return {
+						reference: {
+							name: 'max32690-data-model-pkg',
+							version: remoteVersion
+						},
+						success: true
+					};
 				}
 			});
 		}
@@ -1131,13 +980,14 @@ describe('MissingComponentsError', () => {
 					]);
 
 					cy.get('vscode-checkbox').click();
+					selectLocallyAvailableResolution('max32690-plugin');
 					cy.dataTest('version-update:continue-btn')
 						.should('be.visible')
 						.click();
 
 					cy.wrap(captured).should(msgs => {
 						expect(msgs).to.have.length.greaterThan(0);
-						expect(msgs[0].body.version).to.equal(expectedVersion);
+						expect(msgs[0].params.version).to.equal(expectedVersion);
 					});
 				});
 			}
@@ -1156,11 +1006,12 @@ describe('MissingComponentsError', () => {
 				}
 			]);
 
+			selectLocallyAvailableResolution('max32690-plugin');
 			cy.dataTest('version-update:continue-btn').click();
 
 			cy.wrap(captured).should(msgs => {
 				expect(msgs).to.have.length.greaterThan(0);
-				expect(msgs[0].body.version).to.equal('^1.0.2');
+				expect(msgs[0].params.version).to.equal('^1.0.2');
 			});
 		});
 
@@ -1177,11 +1028,12 @@ describe('MissingComponentsError', () => {
 				}
 			]);
 
+			selectLocallyAvailableResolution('max32690-plugin');
 			cy.dataTest('version-update:continue-btn').click();
 
 			cy.wrap(captured).should(msgs => {
 				expect(msgs).to.have.length.greaterThan(0);
-				expect(msgs[0].body.version).to.equal('^1.0.2');
+				expect(msgs[0].params.version).to.equal('^1.0.2');
 			});
 		});
 
@@ -1198,11 +1050,12 @@ describe('MissingComponentsError', () => {
 				}
 			]);
 
+			selectLocallyAvailableResolution('max32690-plugin');
 			cy.dataTest('version-update:continue-btn').click();
 
 			cy.wrap(captured).should(msgs => {
 				expect(msgs).to.have.length.greaterThan(0);
-				expect(msgs[0].body.version).to.equal('^1.0.1');
+				expect(msgs[0].params.version).to.equal('^1.0.1');
 			});
 		});
 
@@ -1219,11 +1072,12 @@ describe('MissingComponentsError', () => {
 				}
 			]);
 
+			selectLocallyAvailableResolution('max32690-plugin');
 			cy.dataTest('version-update:continue-btn').click();
 
 			cy.wrap(captured).should(msgs => {
 				expect(msgs).to.have.length.greaterThan(0);
-				expect(msgs[0].body.version).to.equal('^1.2.0');
+				expect(msgs[0].params.version).to.equal('^1.2.0');
 			});
 		});
 
@@ -1242,13 +1096,14 @@ describe('MissingComponentsError', () => {
 			]);
 
 			cy.get('vscode-checkbox').click();
+			selectLocallyAvailableResolution('max32690-data-model');
 			cy.dataTest('version-update:continue-btn')
 				.should('be.visible')
 				.click();
 
 			cy.wrap(captured).should(msgs => {
 				expect(msgs).to.have.length.greaterThan(0);
-				expect(msgs[0].body.version).to.equal('2.0.1');
+				expect(msgs[0].params.version).to.equal('2.0.1');
 			});
 		});
 	});

@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -22,7 +24,9 @@ export const pkgLogoutDeps: {
   getPackageManager
 };
 
-export default class CfsPackageLogout extends Command {
+export default class CfsPackageLogout extends BaseCommand<
+  typeof CfsPackageLogout
+> {
   static args = {
     remoteName: Args.string({
       name: 'remoteName',
@@ -49,7 +53,7 @@ export default class CfsPackageLogout extends Command {
       undefined,
       this
     );
-    const {args} = await this.parse(CfsPackageLogout);
+    const {args} = this;
     await packman.logout(args.remoteName);
 
     this.log(`Log out successful`);

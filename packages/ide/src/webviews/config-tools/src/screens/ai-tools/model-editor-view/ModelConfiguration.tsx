@@ -38,10 +38,11 @@ import {
 } from '../../../utils/ai-tools';
 import MultiFileSelect from '@common/components/multi-file-select/multi-file-select';
 import FileInputField from '@common/components/file-input-field/FileInputField';
-import {selectFile} from '@common/api';
 import type {Partition} from '../../../state/slices/partitions/partitions.reducer';
 import type {SocControl} from 'cfs-types';
+import {selectFile} from '@common/api';
 import {type ModelZooSelectionData} from '@common/components/cfs-model-zoo/CfsModelZoo';
+import {ValidationSetField} from './model-config-fields/ValidationSetField';
 
 async function browse() {
 	return selectFile({
@@ -58,6 +59,7 @@ type ModelConfigurationProps = {
 	readonly setCurrentModel: (model: AIModelWithId) => void;
 	readonly errors: Record<string, string>;
 	readonly onDynamicControlsChange?: (controls: SocControl[]) => void;
+	readonly onControlsLoadingChange?: (loading: boolean) => void;
 	readonly setModelZooOpen: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -70,6 +72,7 @@ export function ModelConfiguration({
 	errors,
 	setCurrentModel,
 	onDynamicControlsChange,
+	onControlsLoadingChange,
 	setModelZooOpen
 }: ModelConfigurationProps) {
 	const backends = getAiBackends();
@@ -88,6 +91,8 @@ export function ModelConfiguration({
 
 	useEffect(() => {
 		if (currentModel.Backend?.Name) {
+			onControlsLoadingChange?.(true);
+
 			getControlsForAiBackend(currentModel.Backend.Name)
 				.then(controls => {
 					if (controls) {
@@ -143,15 +148,20 @@ export function ModelConfiguration({
 					console.error(
 						`Failed to get controls for backend ${currentModel.Backend?.Name}`
 					);
+				})
+				.finally(() => {
+					onControlsLoadingChange?.(false);
 				});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		currentModel.Backend?.Name,
+		currentModel.Target,
 		backends,
 		partitions,
 		setCurrentModel,
-		onDynamicControlsChange
+		onDynamicControlsChange,
+		onControlsLoadingChange
 	]);
 
 	const fileComponents = useMemo(() => {
@@ -310,6 +320,7 @@ export function ModelConfiguration({
 							files={(
 								currentModel.Backend?.CalibrationData ?? []
 							).map(file => ({path: file}))}
+							error={errors.CalibrationSet}
 							dataTest='calibration-set'
 							selectFileOptions={{
 								relativeToWorkspaceRoot: true
@@ -326,39 +337,16 @@ export function ModelConfiguration({
 						/>
 					),
 					ValidationSet: (
-						<MultiFileSelect<{expectedReturn: string}>
-							title={i10n?.validationFiles}
-							files={(currentModel.Backend?.ValidationData ?? []).map(
-								([path, expectedReturn]) => ({
-									path,
-									properties: {expectedReturn}
-								})
-							)}
-							selectFileOptions={{
-								relativeToWorkspaceRoot: true
-							}}
-							renderFileProperties={({file, onPropertiesChange}) => (
-								<TextField
-									inputVal={file.properties?.expectedReturn}
-									label={i10n?.expectedReturn}
-									onInputChange={val => {
-										onPropertiesChange({
-											...(file.properties ?? {}),
-											expectedReturn: val
-										});
-									}}
-								/>
-							)}
-							dataTest='validation-set'
-							onFilesChange={files => {
+						<ValidationSetField
+							validationData={currentModel.Backend?.ValidationData}
+							extensions={currentModel.Backend?.Extensions}
+							error={errors.ValidationSet}
+							onChange={validationData => {
 								setCurrentModel({
 									...currentModel,
 									Backend: {
 										...currentModel.Backend!,
-										ValidationData: files.map(file => [
-											file.path,
-											file.properties?.expectedReturn ?? ''
-										])
+										ValidationData: validationData
 									}
 								});
 							}}
@@ -368,6 +356,7 @@ export function ModelConfiguration({
 						<TextField
 							placeholder='1,2,3,...'
 							inputVal={currentModel.Backend?.Labels?.join(',') ?? ''}
+							error={errors.Labels}
 							dataTest='labels'
 							onInputChange={value => {
 								setCurrentModel({
@@ -389,6 +378,7 @@ export function ModelConfiguration({
 									: '')
 							}
 							error={errors.Dataset}
+							dataTest='model-dataset-file'
 							onBrowse={browse}
 							onInputChange={value => {
 								if (!value) {

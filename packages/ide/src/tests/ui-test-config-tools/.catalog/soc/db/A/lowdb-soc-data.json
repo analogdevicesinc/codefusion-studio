@@ -1,0 +1,90 @@
+{
+  "soc": [
+    {
+      "id": "soc_mcuboot_test_mcutests",
+      "family": {
+        "id": "socfamily_mcuboot_test_generic",
+        "name": "Generic Test"
+      },
+      "description": "MCUTESTS SoC for MCUBoot extension tests",
+      "name": "MCUTESTS",
+      "supportsMCUboot": true,
+      "cores": [
+        {
+          "id": "corepart_mcuboot_test_core0",
+          "socID": "soc_mcuboot_test_mcutests",
+          "name": "Primary Core",
+          "primary": true,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_mcuboot_test_generic",
+            "architecture": "Generic",
+            "isa": "Generic"
+          },
+          "dataModelCoreID": "Core0"
+        },
+        {
+          "id": "corepart_mcuboot_test_core1",
+          "socID": "soc_mcuboot_test_mcutests",
+          "name": "Secondary Core 1",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_mcuboot_test_generic_sec1",
+            "architecture": "Generic",
+            "isa": "Generic"
+          },
+          "dataModelCoreID": "Core1"
+        },
+        {
+          "id": "corepart_mcuboot_test_core2",
+          "socID": "soc_mcuboot_test_mcutests",
+          "name": "Secondary Core 2",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_mcuboot_test_generic_sec2",
+            "architecture": "Generic",
+            "isa": "Generic"
+          },
+          "dataModelCoreID": "Core2"
+        },
+        {
+          "id": "corepart_mcuboot_test_core3",
+          "socID": "soc_mcuboot_test_mcutests",
+          "name": "Secondary Core 3",
+          "primary": false,
+          "extensions": [],
+          "coreType": {
+            "id": "coretype_mcuboot_test_generic_sec3",
+            "architecture": "Generic",
+            "isa": "Generic"
+          },
+          "dataModelCoreID": "Core3"
+        }
+      ],
+      "packages": [
+        {
+          "id": "package_mcuboot_test_mcu",
+          "name": "MCU",
+          "description": "MCU Package",
+          "socID": "soc_mcuboot_test_mcutests",
+          "packageType": "MCU",
+          "dataModelPackageID": "MCU"
+        }
+      ],
+      "boards": [
+        {
+          "id": "board_mcuboot_test_mcuboard",
+          "name": "MCUBoard",
+          "description": "MCU Test Board",
+          "socID": "soc_mcuboot_test_mcutests",
+          "packageID": "package_mcuboot_test_mcu",
+          "dataModelBoardID": "MCUBoard"
+        }
+      ],
+      "documentation": [],
+      "media": []
+    }
+  ]
+}

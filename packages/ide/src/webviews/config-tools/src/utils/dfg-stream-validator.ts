@@ -41,7 +41,7 @@ export function hasTiedStreamDependency(
 						candidate.Uuid !== stream.Uuid &&
 						candidate.Source.Gasket === destination.Gasket &&
 						candidate.Source.Index === destination.Index
-			  )
+				)
 			: false
 	);
 }

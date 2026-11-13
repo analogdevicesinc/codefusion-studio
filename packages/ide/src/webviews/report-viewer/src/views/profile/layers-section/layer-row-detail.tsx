@@ -13,13 +13,13 @@
  *
  */
 import styles from './layer-row-detail.module.scss';
-import type { OptimizationOpportunityEntry } from "@ide-types/report-view-types";
+import type {CfsAiProfilingOptimizationOpportunity} from 'cfs-types';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {useMemo} from 'react';
 
 export type LayerRowDetailData = {
-	layerOpportunities: OptimizationOpportunityEntry[];
-	macsOpportunities: OptimizationOpportunityEntry[];
+	layerOpportunities: CfsAiProfilingOptimizationOpportunity[];
+	macsOpportunities: CfsAiProfilingOptimizationOpportunity[];
 };
 
 export type LayerRowDetailProps = {
@@ -27,10 +27,7 @@ export type LayerRowDetailProps = {
 	readonly data?: LayerRowDetailData;
 };
 
-export function LayerRowDetail({
-	columns,
-	data
-}: LayerRowDetailProps) {
+export function LayerRowDetail({columns, data}: LayerRowDetailProps) {
 	const l10n = useLocaleContext();
 
 	const {inputShape, bias} = useMemo(() => {

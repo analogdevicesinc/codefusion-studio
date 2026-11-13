@@ -2400,6 +2400,86 @@ export interface paths {
         };
         trace?: never;
     };
+    '/sw/packages': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists SWPackages
+         * @description Returns a list of software packages
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by compatible CFS version (semver or *) */
+                    cfsVersion?: string;
+                    /** @description Continuation token from previous response */
+                    continue?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['main.ListSWPackagesOutput'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     '/sw/packages/eulas/accept': {
         parameters: {
             query?: never;
@@ -2861,6 +2941,173 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    '/sw/packages/sync': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a package sync
+         * @description Requests a package sync to be performed asynchronously.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Parameters for the package sync request */
+            requestBody: {
+                content: {
+                    'application/json': components['schemas']['main.PackageSyncRequest'];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['main.PackageSyncRequestResponse'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    '/sw/packages/sync/status/{jobID}': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the status of a package sync request
+         * @description Returns the status of a package sync request
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The ID of the package sync request */
+                    jobID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['main.PackageSyncStatusResponse'];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+                /** @description Internal Server Error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        'application/json': components['schemas']['anvilhttp.GenericResponse'];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     '/sw/packages/tags': {
@@ -4140,7 +4387,9 @@ export interface components {
                 | 'BGAED'
                 | 'EWLB'
                 | 'LFCSP'
-                | 'LGA';
+                | 'LGA'
+                | 'FBGA'
+                | 'WLSCP';
         };
         'main.CreateAPIKeyRequest': {
             description?: string;
@@ -4276,6 +4525,11 @@ export interface components {
             count: number;
             items: components['schemas']['types.SWPackageRepo'][];
         };
+        'main.ListSWPackagesOutput': {
+            continuationToken?: string;
+            count: number;
+            items: components['schemas']['types.SWPackage'][];
+        };
         'main.ListSWPackageTagsOutput': {
             continuationToken?: string;
             count: number;
@@ -4284,6 +4538,24 @@ export interface components {
         'main.ListUsersOutput': {
             count: number;
             items: components['schemas']['mainmodule_internal_pkg_types.User'][];
+        };
+        'main.PackageSyncRequest': {
+            packageName?: string;
+            packageVersion?: string;
+            repoUrl?: string;
+        };
+        'main.PackageSyncRequestResponse': {
+            jobID: string;
+        };
+        'main.PackageSyncStatusResponse': {
+            finishedAt?: string;
+            itemsFailed?: number;
+            itemsProcessed?: number;
+            jobID: string;
+            message?: string;
+            parameters?: components['schemas']['swpackage.RequestSyncInput'];
+            startedAt?: string;
+            status: components['schemas']['swpackage.JobStatus'];
         };
         'main.PatchBoardRequest': {
             accessTag?: components['schemas']['types.AccessTag'];
@@ -4326,7 +4598,9 @@ export interface components {
                 | 'BGAED'
                 | 'EWLB'
                 | 'LFCSP'
-                | 'LGA';
+                | 'LGA'
+                | 'FBGA'
+                | 'WLSCP';
         };
         'main.PatchSoCFamilyRequest': {
             name?: string;
@@ -4457,7 +4731,9 @@ export interface components {
                 | 'BGAED'
                 | 'EWLB'
                 | 'LFCSP'
-                | 'LGA';
+                | 'LGA'
+                | 'FBGA'
+                | 'WLSCP';
         };
         'soc.CreateOutput': {
             item: components['schemas']['types.SoC'];
@@ -4491,6 +4767,21 @@ export interface components {
         };
         'socfamily.UpdateSoCFamilyOutput': {
             item?: components['schemas']['types.SoCFamily'];
+        };
+        /** @enum {string} */
+        'swpackage.JobStatus':
+            | 'QUEUED'
+            | 'PENDING_RETRY'
+            | 'RUNNING'
+            | 'COMPLETED'
+            | 'FAILED'
+            | 'ABORTED'
+            | 'TIMEOUT'
+            | 'UNKNOWN';
+        'swpackage.RequestSyncInput': {
+            packageName?: string;
+            packageVersion?: string;
+            repoUrl?: string;
         };
         'swpackagerepo.CreateSWPackageRepoOutput': {
             item: components['schemas']['types.SWPackageRepoMetadata'];
@@ -4606,7 +4897,9 @@ export interface components {
                 | 'BGAED'
                 | 'EWLB'
                 | 'LFCSP'
-                | 'LGA';
+                | 'LGA'
+                | 'FBGA'
+                | 'WLSCP';
             socID: string;
         };
         'types.Resource': {
@@ -4637,6 +4930,22 @@ export interface components {
         'types.SoCFamily': {
             id: string;
             name: string;
+        };
+        'types.SWPackage': {
+            accessTag?: components['schemas']['types.AccessTag'];
+            cfsVersionConstraint?: string;
+            compatibleHardware?: components['schemas']['types.SWPackageCompatibility'];
+            description?: string;
+            id: string;
+            license: string;
+            name: string;
+            packageTags?: components['schemas']['types.SWPackageTag'][];
+            repo: components['schemas']['types.SWPackageRepo'];
+            type?: string;
+            version: string;
+        };
+        'types.SWPackageCompatibility': {
+            soc?: string[];
         };
         'types.SWPackageRepo': {
             accessTag?: components['schemas']['types.AccessTag'];

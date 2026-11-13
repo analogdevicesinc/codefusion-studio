@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { useCallback } from "react";
+import {useCallback} from 'react';
 import styles from './Toggle.module.scss';
 
 type ToggleProps = {
@@ -20,15 +20,17 @@ type ToggleProps = {
 	readonly handleToggle: () => void;
 	readonly isDisabled?: boolean;
 	readonly dataTest?: string;
+	/** Accessible name of the switch, needed because it renders no visible text. */
+	readonly ariaLabel?: string;
 };
 
 export default function Toggle({
 	isToggledOn,
 	handleToggle,
 	isDisabled,
-	dataTest
+	dataTest,
+	ariaLabel
 }: ToggleProps) {
-
 	const onToggle = useCallback(() => {
 		if (!isDisabled) handleToggle();
 	}, [isDisabled, handleToggle]);
@@ -37,19 +39,22 @@ export default function Toggle({
 		<label
 			className={styles.switch}
 			tabIndex={0}
-			onKeyUp={(e) => {
-				if (e.key === "Enter" || e.key === " ") onToggle();
+			onKeyUp={e => {
+				if (e.key === 'Enter' || e.key === ' ') onToggle();
 			}}
 		>
 			<input
 				checked={isToggledOn}
-				type="checkbox"
+				type='checkbox'
+				aria-label={ariaLabel}
 				onChange={onToggle}
 			/>
 			<span
 				data-test={`${dataTest}-span`}
 				data-checked={isToggledOn}
-				className={`${styles.slider} ${styles.round} ${isToggledOn ? styles.active : ""} ${isDisabled ? styles.disabled : ""}`}
+				className={`${styles.slider} ${styles.round} ${
+					isToggledOn ? styles.active : ''
+				} ${isDisabled ? styles.disabled : ''}`}
 			/>
 		</label>
 	);

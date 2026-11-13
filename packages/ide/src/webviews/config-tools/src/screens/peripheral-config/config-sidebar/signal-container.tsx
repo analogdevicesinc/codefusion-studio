@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import ConflictIcon from '../../../../../common/icons/Conflict';
 import Toggle from '../../../../../common/components/toggle/Toggle';
 import styles from './signal-container.module.scss';
 import {type Pin} from '../../../../../common/types/soc';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
 
 type SignalContainerProps = Readonly<{
 	signal: string;
@@ -42,6 +43,8 @@ function SignalContainer({
 	isPinConflict,
 	isPinAssignmentMissing
 }: SignalContainerProps) {
+	const reservedPin = isPinReserved(targetPinId);
+
 	return (
 		<div
 			data-test={`signal-assignment:${signal}`}
@@ -60,7 +63,7 @@ function SignalContainer({
 					className={styles.assignmentLabel}
 				>{`${pins[0].Label} (${pins[0].Name})`}</p>
 			) : (
-				<div>
+				<div className={styles.pinDropdown}>
 					<DropDown
 						controlId='pin-permission'
 						currentControlValue={targetPinId}
@@ -73,11 +76,13 @@ function SignalContainer({
 					/>
 				</div>
 			)}
-			<Toggle
-				isToggledOn={isToggledOn}
-				handleToggle={handleToggle}
-				dataTest={`${peripheral}-${signal}`}
-			/>
+			<div className={reservedPin ? styles.hiddenToggle : undefined}>
+				<Toggle
+					isToggledOn={isToggledOn}
+					handleToggle={handleToggle}
+					dataTest={`${peripheral}-${signal}`}
+				/>
+			</div>
 			{Boolean(isPinAssignmentMissing) || isPinConflict ? (
 				<ConflictIcon data-test='signal-assignment:conflict' />
 			) : (

@@ -61,8 +61,9 @@ export default function Footer() {
 	const byteGroupingLabel =
 		byteGrouping === 1 ? '1 Byte' : `${byteGrouping} Bytes`;
 
-	const endianIconClass =
-		`${endianness === 'little' ? styles.rotated : ''}`.trim();
+	const endianIconClass = `${
+		endianness === 'little' ? styles.rotated : ''
+	}`.trim();
 
 	return (
 		<div className={styles.container}>

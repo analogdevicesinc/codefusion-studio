@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 	padding: 16px;
 	border: 0.5px solid colors.$default-border;
 	border-radius: 4px;
-	max-height: 65vh;
+	max-height: min(65vh, calc(100vh - 242px));
 	width: 549px;
 	overflow-y: scroll;
 }

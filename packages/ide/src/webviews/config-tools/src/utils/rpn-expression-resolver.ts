@@ -218,17 +218,31 @@ function processTemplateString(
 	}
 
 	// eslint-disable-next-line no-template-curly-in-string
-	if (token === '${CoreId}') {
+	if (token === '${ProjectId}' || token === '${CoreId}') {
 		if (
 			currentConfig &&
 			typeof currentConfig === 'object' &&
 			!Array.isArray(currentConfig)
 		) {
-			const {projectId} = currentConfig as Record<string, string>;
+			const {projectId, coreId} = currentConfig as Record<
+				string,
+				string
+			>;
 
-			return projectId
-				? (getProjectProperty(projectId, 'CoreId') as string)
-				: UNCONFIGURED_TEXT;
+			// eslint-disable-next-line no-template-curly-in-string
+			if (token === '${ProjectId}') {
+				return projectId ? projectId : UNCONFIGURED_TEXT;
+			}
+
+			const resolvedCoreId =
+				coreId ??
+				(projectId
+					? (getProjectProperty(projectId, 'CoreId') as
+							| string
+							| undefined)
+					: undefined);
+
+			return resolvedCoreId ? resolvedCoreId : UNCONFIGURED_TEXT;
 		}
 
 		return UNCONFIGURED_TEXT;
@@ -360,6 +374,13 @@ function processTemplateString(
 	return UNDEFINED_MARKER;
 }
 
+export function resolveTemplateString(
+	template: string,
+	currentConfig: Record<string, string> | GlobalConfig | number
+) {
+	return baseEvaluateExpression(currentConfig, template);
+}
+
 function baseEvaluateExpression(
 	currentCfg: number,
 	expression: Expression
@@ -370,6 +391,12 @@ function baseEvaluateExpression(
 ): string | number | boolean;
 function baseEvaluateExpression(
 	currentCfg: GlobalConfig,
+	expression: Expression
+): string | number | boolean;
+function baseEvaluateExpression(
+	// Needed for callers passing the supported config types as a union.
+	// eslint-disable-next-line @typescript-eslint/unified-signatures
+	currentCfg: Record<string, string> | GlobalConfig | number,
 	expression: Expression
 ): string | number | boolean;
 function baseEvaluateExpression(

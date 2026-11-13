@@ -19,7 +19,18 @@
 
 import type { AiBackend, AIModel } from "cfs-types";
 
+import { sanitizeToCIdentifier } from "../utils/c-utils.js";
+import { caseInsensitiveCompare } from "../utils/string-utils.js";
+
 export const MAX_MODEL_NAME_LENGTH = 64;
+
+export function validateModelNameLength(name: string): void {
+	if (name.length > MAX_MODEL_NAME_LENGTH) {
+		throw new Error(
+			`Model name must not exceed ${MAX_MODEL_NAME_LENGTH} characters.`
+		);
+	}
+}
 
 export function enforceMaxActiveModels(
 	models: AIModel[],
@@ -51,13 +62,50 @@ export function enforceMaxActiveModels(
 	}
 
 	if (!jsonOutput) {
-		disabledModels.length > 0 &&
+		if (disabledModels.length > 0)
 			console.warn(
 				`Maximum number of models exceeded. The following model ${disabledModels.length > 1 ? "s have" : "has"} been disabled: ${disabledModels.map((name) => name).join(", ")}`
 			);
 	}
 
 	return models;
+}
+
+export function requiresCalibrationValidationLabels(
+	extensions?: Record<string, string | number | boolean>
+): boolean {
+	return Boolean(extensions?.Class);
+}
+
+/** Which field a validation set entry uses: a class label or an expected output file. */
+export type ValidationMode = "label" | "expected";
+
+/** Quantization metrics that compare against an expected output instead of a label. */
+const EXPECTED_OUTPUT_METRICS = new Set([
+	"mse",
+	"psnr",
+	"l1",
+	"l2",
+	"ssim"
+]);
+
+/**
+ * Derives which validation field the selected quantization metric
+ * (`MetricName` extension) uses.
+ * Returns undefined when the backend has no metric set.
+ */
+export function getValidationMode(
+	extensions?: Record<string, string | number | boolean>
+): ValidationMode | undefined {
+	const metric = extensions?.MetricName;
+
+	if (metric === undefined || metric === "") {
+		return undefined;
+	}
+
+	return EXPECTED_OUTPUT_METRICS.has(String(metric))
+		? "expected"
+		: "label";
 }
 
 export function enforceOneActiveBackendPerTarget(
@@ -113,4 +161,50 @@ export function enforceOneActiveBackendPerTarget(
 		}
 		return model;
 	});
+}
+
+function getModelIdentifiers(model: AIModel): string[] {
+	const symbol = model.Backend?.Extensions?.Symbol
+		? String(model.Backend.Extensions.Symbol)
+		: undefined;
+
+	return symbol
+		? [
+				sanitizeToCIdentifier(symbol),
+				sanitizeToCIdentifier(model.Name)
+			]
+		: [sanitizeToCIdentifier(model.Name)];
+}
+
+export function findModelIdentifierCollision(
+	current: AIModel,
+	others: AIModel[]
+): AIModel | undefined {
+	const currentIdentifiers = getModelIdentifiers(current);
+
+	for (const model of others) {
+		if (model === current) {
+			continue;
+		}
+
+		let modelIdentifiers: string[] = [];
+
+		try {
+			modelIdentifiers = getModelIdentifiers(model);
+		} catch {
+			continue;
+		}
+
+		if (
+			currentIdentifiers.some((id) =>
+				modelIdentifiers.some((otherId) =>
+					caseInsensitiveCompare(id, otherId)
+				)
+			)
+		) {
+			return model;
+		}
+	}
+
+	return undefined;
 }

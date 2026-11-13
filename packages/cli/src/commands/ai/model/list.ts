@@ -12,14 +12,14 @@
  * limitations under the License.
  *
  */
-import {Flags} from '@oclif/core';
 import {caseInsensitiveCompare} from 'cfs-lib';
 import {AIModel} from 'cfs-types';
 
-import {type CliRunResponse} from '../../../utils/base-command.js';
 import {BaseModelCommand} from '../../../utils/base-model-command.js';
 
 export default class List extends BaseModelCommand {
+  static useResponseEnvelope = true;
+
   static description = 'List workspace models.';
 
   static examples: string[] = [
@@ -27,16 +27,7 @@ export default class List extends BaseModelCommand {
     '<%= config.bin %> <%= command.id %> --config PATH_TO_CONFIG --core CM4 --verbose'
   ];
 
-  static flags = {
-    ...BaseModelCommand.baseFlags,
-    verbose: Flags.boolean({
-      summary: 'List filename, backend, extensions for given models',
-      required: false,
-      default: false
-    })
-  };
-
-  async run(): CliRunResponse<AIModel[]> {
+  async run(): Promise<{models: AIModel[]}> {
     const {flags} = this;
     const {config} = this.getConfig(flags.config, flags.workspace);
 
@@ -59,13 +50,15 @@ export default class List extends BaseModelCommand {
       }
     }
 
-    return {data: output};
+    return {models: output};
   }
 
   private logModel(model: AIModel, verbose: boolean) {
     this.log(`  ${model.Name}`);
     if (verbose) {
-      model.Backend && this.log(`    Backend: ${model.Backend.Name}`);
+      if (model.Backend) {
+        this.log(`    Backend: ${model.Backend.Name}`);
+      }
       this.log(`    Files:`);
       this.logObject(model.Files);
       if (Object.keys(model.Backend?.Extensions ?? {}).length > 0) {

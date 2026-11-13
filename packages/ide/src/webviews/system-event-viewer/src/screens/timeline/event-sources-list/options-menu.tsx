@@ -20,12 +20,12 @@ import {
 	useRef,
 	useState
 } from 'react';
-import {Button} from 'cfs-react-library';
-import MoreIcon from '@common/icons/More';
+import {Button, MoreIcon} from 'cfs-react-library';
 
 import type {
 	MenuAction,
-	PanelPlacement
+	PanelPlacement,
+	TimelineRow
 } from '../../../common/types/events';
 import {
 	MENU_ACTION as ACTION,
@@ -34,11 +34,13 @@ import {
 
 import styles from './options-menu.module.scss';
 
-const MENU_OPTIONS: Array<{
+type MenuOption = Readonly<{
 	id: number;
 	label: string;
 	action: MenuAction;
-}> = [
+}>;
+
+const ORDER_OPTIONS: Array<MenuOption> = [
 	{
 		id: 0,
 		label: 'Move to top',
@@ -61,18 +63,34 @@ const MENU_OPTIONS: Array<{
 	}
 ];
 
+const GROUP_OPTIONS: Array<MenuOption> = [
+	{
+		id: 4,
+		label: 'Rename group',
+		action: ACTION.renameGroup
+	},
+	{
+		id: 5,
+		label: 'Ungroup',
+		action: ACTION.ungroup
+	},
+	{
+		id: 6,
+		label: 'Extract from group',
+		action: ACTION.extractNode
+	}
+];
+
 type OptionsMenuProps = Readonly<{
 	isPanelOpen: boolean;
-	itemIndex: number;
-	totalLength: number;
+	row: TimelineRow;
 	onToggleMenu: (value?: boolean) => void;
 	onOptionSelect: (action: MenuAction) => void;
 }>;
 
 function OptionsMenu({
 	isPanelOpen,
-	itemIndex,
-	totalLength,
+	row,
 	onToggleMenu,
 	onOptionSelect
 }: OptionsMenuProps) {
@@ -82,20 +100,46 @@ function OptionsMenu({
 		PLACEMENT.bottom
 	);
 
-	const shouldShowOption = useCallback(
+	const {siblingIndex, siblingCount, type: rowType} = row;
+
+	const isNodeAtRoot = row.depth === 0;
+	const isNodeGroup = rowType === 'group';
+
+	const shouldShowOrderOption = useCallback(
 		(action: MenuAction) => {
-			if (itemIndex === 0) {
+			if (siblingCount === 1) return false;
+
+			if (siblingIndex === 0) {
 				return action === ACTION.down || action === ACTION.bottom;
 			}
 
-			if (itemIndex === totalLength - 1) {
+			if (siblingIndex === siblingCount - 1) {
 				return action === ACTION.top || action === ACTION.up;
 			}
 
 			return true;
 		},
-		[totalLength, itemIndex]
+		[siblingCount, siblingIndex]
 	);
+
+	const shouldShowGroupOption = useCallback(
+		(option: MenuOption) => {
+			if (!isNodeAtRoot && option.action === ACTION.extractNode) {
+				return true;
+			}
+
+			if (isNodeGroup && option.action !== ACTION.extractNode) {
+				return true;
+			}
+
+			return false;
+		},
+		[isNodeAtRoot, isNodeGroup]
+	);
+
+	const shouldHidePanelButton = useCallback(() => {
+		return isNodeAtRoot && !isNodeGroup && siblingCount <= 1;
+	}, [siblingCount, isNodeAtRoot, isNodeGroup]);
 
 	const getScrollableAncestor = (el: HTMLElement): HTMLElement => {
 		let node = el?.parentElement;
@@ -132,6 +176,38 @@ function OptionsMenu({
 			setPlacement(PLACEMENT.top);
 		}
 	}, [isPanelOpen]);
+
+	if (shouldHidePanelButton()) return null;
+
+	const getOptionElem = (option: MenuOption) => (
+		<button
+			key={`${option.label}-${option.id}`}
+			type='button'
+			role='menu-item'
+			className={styles.menuItem}
+			data-test={`event-sources:options-menu:item:${option.action}`}
+			onClick={() => {
+				onOptionSelect(option.action);
+				onToggleMenu(false);
+			}}
+		>
+			<div className={styles.label}>{option.label}</div>
+		</button>
+	);
+
+	const orderOptions = ORDER_OPTIONS.map(
+		(option: MenuOption) =>
+			shouldShowOrderOption(option.action) && getOptionElem(option)
+	);
+
+	const groupOptions = GROUP_OPTIONS.map(
+		(option: MenuOption) =>
+			shouldShowGroupOption(option) && getOptionElem(option)
+	);
+
+	const showHorizontalLine =
+		Boolean(groupOptions.find(option => option !== false)) &&
+		Boolean(orderOptions.find(option => option !== false));
 
 	return (
 		<section
@@ -173,28 +249,21 @@ function OptionsMenu({
 			{isPanelOpen && (
 				<div
 					ref={panelRef}
-					className={`${styles.panel} ${placement === PLACEMENT.top ? styles.top : styles.bottom}`}
+					className={`${styles.panel} ${
+						placement === PLACEMENT.top ? styles.top : styles.bottom
+					}`}
 					role='menu'
 					data-test='event-sources:options-menu:panel'
 				>
-					{MENU_OPTIONS.map(
-						option =>
-							shouldShowOption(option.action) && (
-								<button
-									key={`${option.label}-${option.id}`}
-									type='button'
-									role='menu-item'
-									className={styles.menuItem}
-									data-test={`event-sources:options-menu:item:${option.action}`}
-									onClick={() => {
-										onOptionSelect(option.action);
-										onToggleMenu(false);
-									}}
-								>
-									<div className={styles.label}>{option.label}</div>
-								</button>
-							)
+					{orderOptions}
+					{showHorizontalLine && (
+						<div
+							role='separator'
+							data-test='event-sources:options-menu:separator'
+							className={styles.horizontalLine}
+						/>
 					)}
+					{groupOptions}
 				</div>
 			)}
 		</section>

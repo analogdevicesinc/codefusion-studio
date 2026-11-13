@@ -52,7 +52,8 @@ export function useCustomTlvValidation(
 				invalidHex: l10n?.validation?.invalidHex,
 				oddHexLength: l10n?.validation?.oddHexLength,
 				hexValueExceedsMax: l10n?.validation?.hexValueExceedsMax,
-				valueTooLong: l10n?.validation?.valueTooLong
+				valueTooLong: l10n?.validation?.valueTooLong,
+				valueByteIncrement: l10n?.validation?.valueByteIncrement
 			}),
 		[tlv.value, l10n?.validation]
 	);

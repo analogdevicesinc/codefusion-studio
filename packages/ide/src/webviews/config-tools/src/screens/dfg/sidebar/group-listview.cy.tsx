@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -519,18 +519,26 @@ describe('StreamGroupListView Tests', () => {
 			.then(() =>
 				cy.wrap(
 					reduxStore.dispatch(
-						createStreamAddEvent('stream #1', 'ASS', ['DSS'], 64, [
-							32
-						])
+						createStreamAddEvent(
+							'stream #1',
+							'ASS',
+							['DSS'],
+							64,
+							[32]
+						)
 					)
 				)
 			)
 			.then(() =>
 				cy.wrap(
 					reduxStore.dispatch(
-						createStreamAddEvent('stream #2', 'FSS', ['GSS'], 64, [
-							32
-						])
+						createStreamAddEvent(
+							'stream #2',
+							'FSS',
+							['GSS'],
+							64,
+							[32]
+						)
 					)
 				)
 			)

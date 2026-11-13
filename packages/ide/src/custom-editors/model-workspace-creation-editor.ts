@@ -29,22 +29,28 @@ import {
   runCompatibilityCheck,
 } from "../constants/messages/model-to-workspace";
 import { CfsPackageManagerProvider } from "cfs-package-manager/dist/api/api";
-import { CfsDataModelManager } from "cfs-lib/dist/managers/cfs-data-model-manager";
+import { CfsDataModelManager } from "cfs-lib";
 import { createPluginManager } from "../utils/plugin-manager";
-import { AIModelCfsWorkspace } from "cfs-types";
+import { resolveZephyrBase } from "../utils/zephyr-base";
+import type { AIModelCfsWorkspace, CfsPluginInfo } from "cfs-types";
 import { Utils } from "../utils/utils";
 import path from "path";
+import * as fs from "node:fs";
 import { VSCODE_OPEN_FOLDER_COMMAND_ID } from "../commands/constants";
 import { getCatalogManager } from "../utils/catalog";
+import type { AuthService } from "../services/auth-service";
 import {
   CfsPluginManager,
   CfsToolManager,
   generateAIWorkspace,
   getAiToolsPlugin,
 } from "cfs-lib";
-import type { SoC } from "cfs-ccm-api/rest-types";
+import type { SoC } from "cfs-ccm-lib";
+import * as semver from "semver";
 import { getTelemetryManager } from "../telemetry/telemetry";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
+import { generateAiCodeForWorkspace } from "../services/ai-tools-service";
+import { logger } from "../utils/logger";
 
 export class ModelWorkspaceCreationEditor
   implements vscode.CustomTextEditorProvider
@@ -58,6 +64,7 @@ export class ModelWorkspaceCreationEditor
     private messenger: Messenger,
     private dataModelManager: CfsDataModelManager,
     private toolManager: CfsToolManager,
+    private readonly authService: AuthService,
     private pkgManager?: CfsPackageManagerProvider,
   ) {
     this.pluginManager = createPluginManager(
@@ -71,6 +78,7 @@ export class ModelWorkspaceCreationEditor
     messenger: Messenger,
     dataModelManager: CfsDataModelManager,
     toolManager: CfsToolManager,
+    authService: AuthService,
     pkgManager?: CfsPackageManagerProvider,
   ): vscode.Disposable {
     return vscode.window.registerCustomEditorProvider(
@@ -80,6 +88,7 @@ export class ModelWorkspaceCreationEditor
         messenger,
         dataModelManager,
         toolManager,
+        authService,
         pkgManager,
       ),
       {
@@ -149,7 +158,7 @@ export class ModelWorkspaceCreationEditor
       { sender: participant },
     );
 
-    this.messenger.onNotification(
+    this.messenger.onRequest(
       generateWorkspace,
       async (update) => {
         if (update) {
@@ -199,11 +208,17 @@ export class ModelWorkspaceCreationEditor
       const workspaceConfig: AIModelCfsWorkspace =
         this.getWorkspaceConfigFromDocument(document) as AIModelCfsWorkspace;
 
-      // set the package based on the soc and board
-      workspaceConfig.package = await this.getPackageForSoc(
-        workspaceConfig.soc,
-        workspaceConfig.board,
-      );
+      // select the plugin and package based on the soc, board and core
+      const { plugin: pluginToUse, package: socPackage } =
+        await this.getAiPluginForTarget(
+          workspaceConfig.soc,
+          workspaceConfig.board,
+          workspaceConfig.coreId,
+        );
+
+      workspaceConfig.package = socPackage;
+      workspaceConfig.workspacePluginId = pluginToUse.pluginId;
+      workspaceConfig.workspacePluginVersion = pluginToUse.pluginVersion;
 
       workspaceConfig.location =
         workspaceConfig.location || Utils.getDefaultWorkspacepath();
@@ -214,30 +229,73 @@ export class ModelWorkspaceCreationEditor
           workspaceConfig.soc
         }-${workspaceConfig.package.toUpperCase()}_ai_prof_${Date.now()}`;
 
-      const plugins = await this.pluginManager?.getPluginsInfoList();
-      const pluginToUse = plugins?.find(
-        (plugin) =>
-          plugin.features.aiprof &&
-          plugin.supportedSocs.find((soc) => soc.name === workspaceConfig.soc),
+      const workspacePath = path.join(
+        workspaceConfig.location,
+        workspaceConfig.workspaceName,
       );
-
-      workspaceConfig.workspacePluginId = pluginToUse?.pluginId;
-
       const codeWorkspace = vscode.Uri.file(
         path.join(
-          workspaceConfig.location,
-          workspaceConfig.workspaceName,
+          workspacePath,
           `${workspaceConfig.workspaceName}.code-workspace`,
         ),
       );
-      if (!this.pluginManager) {
+
+      if (fs.existsSync(workspacePath)) {
+        throw new Error(`Workspace path already exists: ${workspacePath}`);
+      }
+
+      const pluginManager = this.pluginManager;
+      if (!pluginManager) {
         throw new Error("Plugin Manager not initialized");
       }
 
-      await generateAIWorkspace(
-        this.pluginManager,
-        workspaceConfig,
-        codeWorkspace.fsPath,
+      // Resolve Zephyr base for board DTS detection, scoped to the target SoC.
+      const zephyrBase = await resolveZephyrBase(
+        workspaceConfig.soc,
+        this.pkgManager,
+      );
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Creating workspace "${workspaceConfig.workspaceName}"`,
+          cancellable: true,
+        },
+        async (progress, token) => {
+          progress.report({ message: "Generating workspace files..." });
+          await generateAIWorkspace(
+            pluginManager,
+            workspaceConfig,
+            workspacePath,
+            { zephyrBase },
+          );
+
+          if (token.isCancellationRequested) {
+            throw new Error("Workspace creation cancelled.");
+          }
+
+          await generateAiCodeForWorkspace(
+            workspaceConfig,
+            {
+              dataModelManager: this.dataModelManager,
+              toolManager: this.toolManager,
+              authService: this.authService,
+              pkgManager: this.pkgManager,
+            },
+            progress,
+            token,
+          );
+
+          if (token.isCancellationRequested) {
+            throw new Error("Workspace creation cancelled.");
+          }
+        },
+      );
+
+      const telemetryManager = await getTelemetryManager();
+      await telemetryManager.logAction(
+        TELEMETRY_ACTIONS.WORKSPACE_CREATED_FROM_MODEL,
+        {},
       );
 
       if (!process.env.SKIP_OPEN_WORKSPACE) {
@@ -255,11 +313,13 @@ export class ModelWorkspaceCreationEditor
       vscode.window.showErrorMessage(
         `An error occurred while generating the workspace: ${error}`,
       );
+      // Rethrow so the webview can leave its busy state.
+      throw error;
     }
   }
 
   private async getSocCatalog(): Promise<SoC[]> {
-    const catalogManager = await getCatalogManager();
+    const catalogManager = await getCatalogManager(this.authService);
 
     if (!catalogManager) {
       throw new Error("Error creating Catalog Manager");
@@ -308,7 +368,34 @@ export class ModelWorkspaceCreationEditor
     });
   }
 
+  /**
+   * Runs the compatibility check for all AI-supported cores of the given SoC.
+   * Failures are logged to the CodeFusion Studio output channel, which is
+   * revealed so the user can see why the check failed.
+   */
   private async runCompatibilityCheck(
+    soc: string,
+    board: string,
+    modelFile: string,
+    sampleData?: string,
+  ): Promise<Record<string, boolean | "error">> {
+    try {
+      return await this.runCompatibilityCheckForCores(
+        soc,
+        board,
+        modelFile,
+        sampleData,
+      );
+    } catch (error) {
+      logger.error(
+        `Compatibility check for model "${modelFile}" on ${soc} (${board}) failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      logger.show(true);
+      throw error;
+    }
+  }
+
+  private async runCompatibilityCheckForCores(
     soc: string,
     board: string,
     modelFile: string,
@@ -340,8 +427,10 @@ export class ModelWorkspaceCreationEditor
 
     const dataModel = await this.dataModelManager.getDataModel(soc, packageId);
 
-    const compatResults = await Promise.all(
-      cores.map((core) =>
+    // Settle each core independently so a failure on one core doesn't hide
+    // the results of the others.
+    const compatResults = await Promise.allSettled(
+      cores.map(async (core) =>
         aiToolsPlugin.runCompat(
           aiToolsPlugin.getAIDataFromSOCModel(dataModel, soc, packageId, core),
           modelFile,
@@ -350,18 +439,35 @@ export class ModelWorkspaceCreationEditor
       ),
     );
 
+    let hasErrors = false;
+
     const result = cores.reduce(
       (acc, core, index) => {
-        acc[core] =
-          compatResults[index].code === 0
-            ? true
-            : compatResults[index].code === 10
-              ? false
-              : "error";
+        const compatResult = compatResults[index];
+
+        if (compatResult.status === "rejected") {
+          hasErrors = true;
+          logger.error(
+            `Compatibility check for model "${modelFile}" on ${soc} (${board}), core ${core} failed: ${compatResult.reason instanceof Error ? compatResult.reason.message : String(compatResult.reason)}`,
+          );
+          acc[core] = "error";
+        } else {
+          acc[core] =
+            compatResult.value.code === 0
+              ? true
+              : compatResult.value.code === 10
+                ? false
+                : "error";
+        }
+
         return acc;
       },
       {} as Record<string, boolean | "error">,
     );
+
+    if (hasErrors) {
+      logger.show(true);
+    }
     void getTelemetryManager().then((telemetryManager) => {
       const action = Object.values(result).some((value) => value === true)
         ? TELEMETRY_ACTIONS.AI_MODEL_CHECK_SUCCESS
@@ -386,19 +492,49 @@ export class ModelWorkspaceCreationEditor
     socName: string,
     boardName: string,
   ): Promise<string> {
+    return (await this.getAiPluginForTarget(socName, boardName)).package;
+  }
+
+  /**
+   * Selects the AI plugin supporting the given SoC, board and (optionally) core.
+   * If multiple versions of a plugin match, the latest version is used.
+   * @param socName - The SoC name
+   * @param boardName - The board name
+   * @param coreId - The data model ID of the core the model runs on
+   * @returns The selected plugin and the SoC package it declares
+   */
+  private async getAiPluginForTarget(
+    socName: string,
+    boardName: string,
+    coreId?: string,
+  ): Promise<{ plugin: CfsPluginInfo; package: string }> {
     const aiPlugins = await this.getAiSupportingPlugins();
-    const supportedSocs = aiPlugins.flatMap((plugin) => plugin.supportedSocs);
 
-    const socPackage = supportedSocs.find(
-      (soc) => soc.name === socName && soc.board === boardName,
-    )?.package;
+    const candidates = aiPlugins.flatMap((plugin) => {
+      const supportedSoc = plugin.supportedSocs.find(
+        (soc) =>
+          soc.name === socName &&
+          soc.board === boardName &&
+          (!coreId || !soc.cores || soc.cores.includes(coreId)),
+      );
 
-    if (!socPackage) {
+      return supportedSoc ? [{ plugin, package: supportedSoc.package }] : [];
+    });
+
+    const selected = candidates.find(({ plugin }) =>
+      candidates.every(
+        ({ plugin: other }) =>
+          other.pluginId !== plugin.pluginId ||
+          !semver.lt(plugin.pluginVersion, other.pluginVersion),
+      ),
+    );
+
+    if (!selected) {
       throw new Error(
-        `No supported package found for SoC ${socName} and board ${boardName}`,
+        `No AI plugin found for SoC ${socName}, board ${boardName}${coreId ? ` and core ${coreId}` : ""}`,
       );
     }
 
-    return socPackage;
+    return selected;
   }
 }

@@ -14,9 +14,9 @@
  */
 import styles from './recommendation-section.module.scss';
 import type {
-	AIModelProfileReport,
-	OptimizationOpportunityEntry
-} from "@ide-types/report-view-types";
+	CfsAiProfilingOptimizationOpportunity,
+	CfsAiProfilingReport
+} from 'cfs-types';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {SidePanel} from '../../../common/side-panel';
 
@@ -24,7 +24,7 @@ export type RecommendationSectionProps = {
 	readonly isOpen: boolean;
 	readonly onClose?: () => void;
 	readonly setActiveSqlQuery: (query: string) => void;
-	readonly report: AIModelProfileReport;
+	readonly report: CfsAiProfilingReport;
 };
 
 export function RecommendationSection({
@@ -36,7 +36,11 @@ export function RecommendationSection({
 	const l10n = useLocaleContext();
 
 	const recommendations =
-		report.memory_analysis.memory_recommendations;
+		report.memory_analysis?.memory_recommendations ?? [];
+	const layerwiseOpportunities =
+		report.optimization_opportunities?.layerwise_opportunities ?? [];
+	const macsOpportunities =
+		report.optimization_opportunities?.macs_opportunities ?? [];
 
 	return (
 		<SidePanel
@@ -57,35 +61,29 @@ export function RecommendationSection({
 				</section>
 				<section className={styles.section}>
 					<h5>{l10n?.profiling.sidepanel.layerOpportunities}</h5>
-					{report.optimization_opportunities.layerwise_opportunities
-						.length === 0 && (
+					{layerwiseOpportunities.length === 0 && (
 						<p>{l10n?.profiling.sidepanel.noRecommendations}</p>
 					)}
-					{report.optimization_opportunities.layerwise_opportunities.map(
-						opportunity => (
-							<LayerOpportunityItem
-								key={`${opportunity.layer_index}-${opportunity.suggestion}`}
-								opportunity={opportunity}
-								setActiveSqlQuery={setActiveSqlQuery}
-							/>
-						)
-					)}
+					{layerwiseOpportunities.map(opportunity => (
+						<LayerOpportunityItem
+							key={`${opportunity.layer_index}-${opportunity.suggestion}`}
+							opportunity={opportunity}
+							setActiveSqlQuery={setActiveSqlQuery}
+						/>
+					))}
 				</section>
 				<section className={styles.section}>
 					<h5>{l10n?.profiling.sidepanel.macsOpportunities}</h5>
-					{report.optimization_opportunities.macs_opportunities
-						.length === 0 && (
+					{macsOpportunities.length === 0 && (
 						<p>{l10n?.profiling.sidepanel.noRecommendations}</p>
 					)}
-					{report.optimization_opportunities.macs_opportunities.map(
-						opportunity => (
-							<LayerOpportunityItem
-								key={`${opportunity.layer_index}-${opportunity.suggestion}`}
-								opportunity={opportunity}
-								setActiveSqlQuery={setActiveSqlQuery}
-							/>
-						)
-					)}
+					{macsOpportunities.map(opportunity => (
+						<LayerOpportunityItem
+							key={`${opportunity.layer_index}-${opportunity.suggestion}`}
+							opportunity={opportunity}
+							setActiveSqlQuery={setActiveSqlQuery}
+						/>
+					))}
 				</section>
 			</div>
 		</SidePanel>
@@ -96,7 +94,7 @@ function LayerOpportunityItem({
 	opportunity,
 	setActiveSqlQuery
 }: {
-	readonly opportunity: OptimizationOpportunityEntry;
+	readonly opportunity: CfsAiProfilingOptimizationOpportunity;
 	readonly setActiveSqlQuery: (query: string) => void;
 }) {
 	const l10n = useLocaleContext();

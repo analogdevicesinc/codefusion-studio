@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {createPortal} from 'react-dom';
 import ControlDropdown from '../control-dropdown/ControlDropdown';
 import {
@@ -22,6 +22,7 @@ import {
 import {useDispatch} from 'react-redux';
 import {setResetControlValues} from '../../../../state/slices/pins/pins.reducer';
 import PinconfigControlInput from '../pinconfig-control-input/PinconfigControlInput';
+import PinconfigControlToggle from '../pinconfig-control-toggle/PinconfigControlToggle';
 import {getSocPinDetails} from '../../../../utils/soc-pins';
 import {getSocPinResetControlValues} from '../../../../utils/pin-reset-controls';
 import {
@@ -36,23 +37,37 @@ import {shouldRenderPinConfigControl} from '../../../../utils/rpn-expression-res
 import PluginInfo from '../../../../components/plugin-info/plugin-info';
 import styles from './PinconfigDisplay.module.scss';
 import {areControlValuesEqual} from '../../../../utils/control-defaults';
-
-type ControlItem = {
-	id: string;
-	control: ControlCfg;
-};
+import {useScopes} from '../../../../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../../../../constants/scopes';
+import {
+	type ScopeValidationOptions,
+	validatePluginOptions
+} from '../../../../utils/plugin-options-validation';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../../../common/contexts/LocaleContext';
+import {localizeMessage} from '../../../../../../common/utils/localization';
+import {getApplicablePinConfigControls} from './pin-config-controls';
 
 export default function PinconfigDisplay({
 	controlsPromise,
+	pinId,
 	projectId
 }: Readonly<{
 	controlsPromise: Promise<Record<string, ControlCfg[]>>;
+	pinId?: string;
 	projectId?: string;
 }>) {
 	const dispatch = useDispatch();
 	const activePeripheral = useActivePeripheral();
 	const activeSignal = useActiveSignal()?.split(' ')[1];
 	const controls = use(controlsPromise);
+	const scopes = useScopes();
+	const i10n: TLocaleContext | undefined = useLocaleContext()?.pinmux;
+	const pinConfigL10n = useLocaleContext()?.pinConfig as
+		| Record<string, string>
+		| undefined;
 
 	const pinConfigControls = useMemo(
 		() =>
@@ -73,23 +88,24 @@ export default function PinconfigDisplay({
 		peripheral: activePeripheral ?? '',
 		signal: activeSignal ?? ''
 	});
+	const resolvedPinId = activePin?.pinId ?? pinId;
 
 	const {PinCfg: userSelections} =
 		useAppliedSignalCfg(
-			activePin?.pinId,
+			resolvedPinId,
 			activePeripheral,
 			activeSignal
 		) ?? {};
 
 	const resetValues = getSocPinResetControlValues(
-		activePin?.pinId,
+		resolvedPinId,
 		activeSignal,
 		activePeripheral,
 		controls.PinConfig
 	);
 
 	const signalPinCfg = getSocPinDetails(
-		activePin?.pinId ?? ''
+		resolvedPinId ?? ''
 	)?.Signals?.find(
 		signal =>
 			signal.Name === activeSignal &&
@@ -97,80 +113,51 @@ export default function PinconfigDisplay({
 	)?.PinConfig;
 
 	// Filter out controls that should not render for the current configuration
-	const filteredControls = useMemo(() => {
-		const filteredList: ControlItem[] = [];
+	const filteredControls = useMemo(
+		() =>
+			getApplicablePinConfigControls(
+				controls.PinConfig ?? [],
+				signalPinCfg,
+				userSelections,
+				activeSignal
+			),
+		[controls.PinConfig, signalPinCfg, userSelections, activeSignal]
+	);
 
-		if (!Object.keys(pinConfigControls).length) {
-			return filteredList;
+	const formatScopeConflictMessage = useCallback<
+		ScopeValidationOptions['formatConflictMessage']
+	>(
+		({value, conflictingItems}) =>
+			localizeMessage(i10n, 'scope-conflict.error', {
+				value,
+				conflictingItems
+			}),
+		[i10n]
+	);
+	const scopeValidation = useMemo<
+		ScopeValidationOptions | undefined
+	>(() => {
+		if (!projectId || !activeSignal) {
+			return undefined;
 		}
 
-		// Add controls based on SoC signalPinCfg info
-		if (signalPinCfg) {
-			for (const controlId in signalPinCfg) {
-				if (
-					Object.prototype.hasOwnProperty.call(
-						signalPinCfg,
-						controlId
-					)
-				) {
-					const control = pinConfigControls[controlId];
-					// Render only enum options that contain programming steps
-					const formattedControl: ControlCfg = control?.EnumValues
-						?.length
-						? {
-								...control,
-								EnumValues: control.EnumValues.filter(
-									enumValue =>
-										enumValue.IsPluginAddedOption ??
-										Object.keys(signalPinCfg[controlId]).includes(
-											enumValue.Id
-										)
-								)
-							}
-						: control;
-
-					// Only add control if it should be rendered based on its condition
-					if (
-						shouldRenderPinConfigControl(
-							formattedControl,
-							userSelections,
-							activeSignal ?? ''
-						)
-					) {
-						filteredList.push({
-							id: controlId,
-							control: formattedControl
-						});
-					}
-				}
-			}
-		}
-
-		const pluginOptions = Object.values(pinConfigControls).filter(
-			control => control?.PluginOption
-		);
-
-		// Check and add plugin controls
-		for (const control of pluginOptions) {
-			if (control?.PluginOption) {
-				// Only add plugin control if it should be rendered based on its condition
-				if (
-					shouldRenderPinConfigControl(
-						control,
-						userSelections,
-						activeSignal ?? ''
-					)
-				) {
-					filteredList.push({
-						id: control.Id,
-						control
-					});
-				}
-			}
-		}
-
-		return filteredList;
-	}, [pinConfigControls, signalPinCfg, userSelections, activeSignal]);
+		return {
+			scopes,
+			controlScope: CONTROL_SCOPES.PIN_CONFIG,
+			projectId,
+			itemId: activeSignal,
+			formatConflictMessage: formatScopeConflictMessage
+		};
+	}, [activeSignal, formatScopeConflictMessage, projectId, scopes]);
+	const formErrors = useMemo(
+		() =>
+			validatePluginOptions(
+				userSelections ?? {},
+				filteredControls.map(({control}) => control),
+				scopeValidation
+			),
+		[filteredControls, scopeValidation, userSelections]
+	);
 
 	// Categorize controls into standard and plugin types
 	const [standardControls, pluginControls] = useMemo(() => {
@@ -187,6 +174,15 @@ export default function PinconfigDisplay({
 
 		return [standard, plugin];
 	}, [filteredControls]);
+	const [pluginOptionsPortalTarget, setPluginOptionsPortalTarget] =
+		useState<HTMLElement>();
+
+	useEffect(() => {
+		setPluginOptionsPortalTarget(
+			document.getElementById(PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID) ??
+				undefined
+		);
+	}, [pluginControls.length]);
 
 	const didDefaultValuesChange = Object.entries(
 		userSelections ?? {}
@@ -205,7 +201,7 @@ export default function PinconfigDisplay({
 			setResetControlValues({
 				Peripheral: activePeripheral,
 				Name: activeSignal,
-				pinId: activePin?.pinId,
+				pinId: resolvedPinId,
 				controls: controls?.PinConfig,
 				// Preserve current plugin options values if available
 				resetValues: {...userSelections, ...resetValues}
@@ -241,14 +237,14 @@ export default function PinconfigDisplay({
 					return null;
 				}
 
-				if (isInput(controlId)) {
+				if (controlCfg.Type === 'boolean') {
 					return (
-						<PinconfigControlInput
-							key={`${activeSignal}-${activePin?.pinId}-${controlId}`}
+						<PinconfigControlToggle
+							key={`${activeSignal}-${resolvedPinId}-${controlId}`}
 							controlCfg={controlCfg}
 							controlValue={controlValue}
 							defaultControlValue={defaultValue}
-							pinId={activePin?.pinId}
+							pinId={resolvedPinId}
 							peripheral={activePeripheral}
 							signal={activeSignal}
 							projectId={projectId}
@@ -256,16 +252,32 @@ export default function PinconfigDisplay({
 					);
 				}
 
+				if (isInput(controlId)) {
+					return (
+						<PinconfigControlInput
+							key={`${activeSignal}-${resolvedPinId}-${controlId}`}
+							controlCfg={controlCfg}
+							controlValue={controlValue}
+							defaultControlValue={defaultValue}
+							pinId={resolvedPinId}
+							peripheral={activePeripheral}
+							signal={activeSignal}
+							projectId={projectId}
+							scopeError={formErrors[controlId]}
+						/>
+					);
+				}
+
 				return (
 					<ControlDropdown
-						key={`${activeSignal}-${activePin?.pinId}-${controlId}`}
+						key={`${activeSignal}-${resolvedPinId}-${controlId}`}
 						controlCfg={controlCfg}
 						controlValue={controlValue}
 						isDefaultValue={areControlValuesEqual(
 							controlValue ?? defaultValue,
 							defaultValue
 						)}
-						pinId={activePin?.pinId}
+						pinId={resolvedPinId}
 						peripheral={activePeripheral}
 						signal={activeSignal}
 						projectId={projectId}
@@ -282,11 +294,7 @@ export default function PinconfigDisplay({
 
 	// Render plugin controls as portal
 	const renderPluginControls = () => {
-		const portalTarget = document.getElementById(
-			PIN_CONFIG_PLUGIN_OPTIONS_FORM_ID
-		);
-
-		if (!portalTarget) {
+		if (!pluginOptionsPortalTarget) {
 			return null;
 		}
 
@@ -295,7 +303,10 @@ export default function PinconfigDisplay({
 				{Object.keys(pinConfigControls).length === 0 ||
 				pluginControls.length === 0 ? (
 					<div className={styles.info}>
-						<p>No plugin options available.</p>
+						<p>
+							{pinConfigL10n?.noPluginOptions ??
+								'No plugin options available.'}
+						</p>
 					</div>
 				) : (
 					renderControls(pluginControls)
@@ -303,15 +314,13 @@ export default function PinconfigDisplay({
 
 				<PluginInfo projectId={signalProjectId} />
 			</section>,
-			portalTarget
+			pluginOptionsPortalTarget
 		);
 	};
 
 	// This function checks the current user selections against the valid options for this pin/signal
 	// and returns an updated config object with any invalid values reset to default.
 	const getValidConfigValues = () => {
-		if (!signalPinCfg) return {...userSelections};
-
 		const nextValues = {...userSelections};
 
 		for (const controlId of Object.keys(userSelections ?? {})) {
@@ -322,13 +331,13 @@ export default function PinconfigDisplay({
 			const defaultValue = resetValues?.[controlId];
 
 			// Control not available for this pin
-			if (!control?.PluginOption && !signalPinCfg[controlId]) {
+			if (!control?.PluginOption && !signalPinCfg?.[controlId]) {
 				nextValues[controlId] = defaultValue;
 				continue;
 			}
 
 			// Enum invalid
-			if (control?.EnumValues && signalPinCfg[controlId]) {
+			if (control?.EnumValues && signalPinCfg?.[controlId]) {
 				const allowed = Object.keys(signalPinCfg[controlId] ?? {});
 
 				if (!allowed.includes(String(value))) {
@@ -356,12 +365,12 @@ export default function PinconfigDisplay({
 	// We need to reset invalid control values if user changes the pin,
 	// that way we can avoid showing invalid (blank) values in the dropdowns/inputs.
 	useEffect(() => {
-		if (!activePin?.pinId || !controls?.PinConfig.length) return;
+		if (!resolvedPinId || !controls?.PinConfig.length) return;
 
 		const validConfigValues = getValidConfigValues();
 
 		const didConfigChange = Object.keys({
-			...(userSelections ?? {}),
+			...userSelections,
 			...validConfigValues
 		}).some(key => userSelections?.[key] !== validConfigValues[key]);
 
@@ -371,13 +380,13 @@ export default function PinconfigDisplay({
 			setResetControlValues({
 				Peripheral: activePeripheral,
 				Name: activeSignal,
-				pinId: activePin?.pinId,
+				pinId: resolvedPinId,
 				controls: controls.PinConfig,
 				resetValues: validConfigValues
 			})
 		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activePin?.pinId]);
+	}, [resolvedPinId]);
 
 	return (
 		<>

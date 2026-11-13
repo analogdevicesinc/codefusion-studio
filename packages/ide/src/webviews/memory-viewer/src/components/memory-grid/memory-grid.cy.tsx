@@ -19,7 +19,7 @@ import MemoryGrid from './memory-grid';
 
 describe('MemoryGrid', () => {
 	it('displays addresses based on memory data', () => {
-		const mockData = new Array(64).fill(0).map((_, i) => i);
+		const mockData = Array.from({length: 64}, (_, i) => i);
 		const store = configureTestStore({
 			memoryReducer: {
 				memoryBytes: {
@@ -55,7 +55,7 @@ describe('MemoryGrid', () => {
 
 	it('displays hex and ascii data based on memory data', () => {
 		// Create mock data, ASCII alphabet starts at 0x41 (65 in decimal)
-		const mockData = new Array(64).fill(0).map((_, i) => i + 64);
+		const mockData = Array.from({length: 64}, (_, i) => i + 64);
 		const store = configureTestStore({
 			memoryReducer: {
 				memoryBytes: {

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,14 @@ export type FilterControlsProps = Readonly<{
 	options: Record<string, FilterOption>;
 	onSelect: (type: string) => void;
 	id?: string;
+	labels?: Record<string, string>;
 }>;
 
 function FilterControls({
 	options,
 	onSelect,
-	id = 'filterControlsContainer'
+	id = 'filterControlsContainer',
+	labels
 }: FilterControlsProps) {
 	return (
 		<div
@@ -46,9 +48,9 @@ function FilterControls({
 				>
 					<Chip
 						id={`filterControl-${key}`}
-						label={key}
+						label={labels?.[key] ?? key}
 						dataTest={`filter-control:${key}`}
-						isDisabled={option?.isDisabled ?? false}
+						isDisabled={option?.isDisabled}
 						isActive={option?.isSelected ?? false}
 						onClick={() => {
 							onSelect(key);

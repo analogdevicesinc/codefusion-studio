@@ -20,12 +20,15 @@ type EditableFieldOptions = {
 	readonly allowEmpty?: boolean;
 	readonly maxLength?: number;
 	readonly sanitize?: (value: string) => string;
+	/** Returns an error message to block the edit, or `undefined` when valid. */
+	readonly validate?: (value: string) => string | undefined;
 };
 
 export type EditableField = {
 	isEditing: boolean;
 	editValue: string;
 	isDirty: boolean;
+	error: string | undefined;
 	inputRef: React.RefObject<HTMLInputElement>;
 	maxLength?: number;
 	startEditing: () => void;
@@ -39,7 +42,8 @@ export function useEditableField({
 	onConfirm,
 	allowEmpty = false,
 	maxLength,
-	sanitize
+	sanitize,
+	validate
 }: EditableFieldOptions): EditableField {
 	const [isEditing, setIsEditing] = useState(false);
 	const [editValue, setEditValue] = useState('');
@@ -47,6 +51,12 @@ export function useEditableField({
 	const confirmEditRef = useRef<() => void>();
 
 	const isDirty = editValue !== initialValue;
+
+	const trimmedValue = editValue.trim();
+	const sanitizedValue = sanitize
+		? sanitize(trimmedValue)
+		: trimmedValue;
+	const error = isEditing ? validate?.(sanitizedValue) : undefined;
 
 	useEffect(() => {
 		if (isEditing) {
@@ -68,9 +78,12 @@ export function useEditableField({
 
 		if (!allowEmpty && !sanitized) return;
 
+		// An invalid value keeps the field in edit mode so it is never stored.
+		if (validate?.(sanitized)) return;
+
 		onConfirm(sanitized);
 		setIsEditing(false);
-	}, [editValue, onConfirm, allowEmpty, sanitize]);
+	}, [editValue, onConfirm, allowEmpty, sanitize, validate]);
 
 	useEffect(() => {
 		confirmEditRef.current = confirmEdit;
@@ -119,6 +132,7 @@ export function useEditableField({
 		isEditing,
 		editValue,
 		isDirty,
+		error,
 		inputRef,
 		maxLength,
 		startEditing,

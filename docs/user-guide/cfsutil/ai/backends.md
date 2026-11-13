@@ -1,7 +1,7 @@
 ---
 description: List available AI backends using cfsutil ai backends.
 author: Analog Devices
-date: 2026-04-20
+date: 2026-10-10
 ---
 
 # Backends
@@ -15,6 +15,8 @@ The `cfsutil ai backends list` command lists the AI backends available in your e
 ```sh
 cfsutil ai backends list [--format text|json] [-n <value>]
 ```
+
+With `--format json`, output uses the [JSON output envelope](../index.md#json-output-envelope).
 
 !!! example "Sample output"
     ```sh

@@ -1,7 +1,7 @@
 ---
 description: Available action types for the GDB Toolbox
 author: Analog Devices
-date: 2026-08-05
+date: 2026-09-30
 ---
 
 # GDB Toolbox reference
@@ -152,5 +152,7 @@ The table below lists supported variables and how they can be used:
 | `${markdownReport}` | Inserts a preformatted Markdown version of GDB output. See [Example](gdb-toolbox-examples.md#format-the-output) | `content`                                     |
 | `${<name>}`[^2]     | Variable set by `setVariable`. See [Example](gdb-toolbox-examples.md#capture-and-reuse-values)                  | `filePath`, `content`, `message`, `condition` |
 | `${timestamp}`      | Inserts current ISO 8601 timestamp.                                                                             | `filePath`, `content`                         |
+| `{defaultScriptsDirectory}` | Inserts the path to the default GDB scripts directory. Uses single-brace syntax.                        | `command`                                     |
+| `{arch}`            | Inserts the detected architecture (`arm`, `riscv`, or `xtensa`) of the active debug session. Useful for sourcing an architecture-specific `.gdb` helper, such as `source {defaultScriptsDirectory}/fault-analyzer-{arch}.gdb`. Uses single-brace syntax. | `command`, `filePath`, `content`, `message` |
 
 [^2]: Use `${<name>}` after defining it with a `setVariable action`. For example, if you use `"name": "pc_value"`, reference it later as `${pc_value}`. Only the first capturing group from the regex is stored.

@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - myAnalog Authentication
 author: Analog Devices
-date: 2026-03-23
+date: 2026-10-12
 ---
 
 # myAnalog authentication
@@ -12,14 +12,16 @@ These commands are the command-line equivalents of the authentication options av
 
 ## Login
 
-`cfsutil myanalog login [--verbose]`
+`cfsutil myanalog login [-f json|text] [-v | -q]`
 
 Login with a myAnalog account. A dialog will prompt you to open an external website where you can log in with your myAnalog credentials.
 Once authenticated, VS Code will confirm that you can now proceed to install packages.
 
 | Flag              | Description                  |
 | ----------------- | ---------------------------- |
-| `-v, --verbose`   | Enable verbose output.       |
+| `-v, --verbose`   | After a new login, also show the user ID and scopes of the session. If you're already logged in, use `cfsutil myanalog status --verbose` instead. Mutually exclusive with `--quiet`. |
+| `-q, --quiet`     | Suppress non-error output, including warnings. Mutually exclusive with `--verbose`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! note
     Aliases: `cfsutil auth login`
@@ -32,9 +34,9 @@ Once authenticated, VS Code will confirm that you can now proceed to install pac
 
 ## Logout
 
-`cfsutil myanalog logout`
+`cfsutil myanalog logout [-f json|text]`
 
-Logout of the current myAnalog session.
+Log out of the current myAnalog session. With `--format json`, output uses the [JSON output envelope](index.md#json-output-envelope).
 
 !!! note
     Aliases: `cfsutil auth logout`
@@ -46,13 +48,15 @@ Logout of the current myAnalog session.
 
 ## Status
 
-`cfsutil myanalog status [--verbose]`
+`cfsutil myanalog status [-v | -q] [--format text|json]`
 
 Show myAnalog authentication status.
 
 | Flag              | Description                  |
 | ----------------- | ---------------------------- |
-| `-v, --verbose`   | Enable verbose output.       |
+| `-v, --verbose`   | Also show the user ID and scopes of the session. Mutually exclusive with `--quiet`. |
+| `-q, --quiet`     | Suppress non-error output, including warnings. Mutually exclusive with `--verbose`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! note
     Aliases: `cfsutil auth status`

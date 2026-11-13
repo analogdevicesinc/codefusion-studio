@@ -25,6 +25,8 @@ const getMsdkBoardName = (board, soc) => {
   switch (board.toLowerCase()) {
     case "evkit_v1":
       return "EvKit_V1";
+    case "kit_board":
+      return `${soc.toLowerCase()}evkit`;
     case "fthr":
       if (soc === "MAX32690") {
         return "FTHR";
@@ -36,8 +38,15 @@ const getMsdkBoardName = (board, soc) => {
         return "FTHR_APPS_A";
       }
       return "FTHR_Apps_P1";
+    case "pthr":
+      if (soc === "TEST690") {
+        return "PTHR";
+      }
+      return "PTHR_Apps_P1";
     case "ad-apard32690-sl":
     case "apard":
+      return "APARD";
+    case "ad-board-sl":
       return "APARD";
     case "ad-swiot1l-sl":
       return "AD-SWIOT1L-SL";

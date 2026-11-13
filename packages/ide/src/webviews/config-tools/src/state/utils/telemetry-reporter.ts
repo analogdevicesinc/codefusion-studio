@@ -16,6 +16,25 @@ import type {RootState} from '../store';
 import {logTelemetryEvent} from '../../utils/api';
 import {getSocPeripheralDictionary} from '../../utils/soc-peripherals';
 import {type Partition} from '../slices/partitions/partitions.reducer';
+import {type DFGStreamUI} from '../slices/gaskets/gasket.reducer';
+import {
+	reportSruConnectionReset,
+	reportSruConnectionSet,
+	type SruConnectionPayload
+} from './sru-telemetry-reporter';
+import {
+	McuBootApplicationPackageUpdatePayload,
+	reportApplicationPackageAdded,
+	reportApplicationPackageRemoved,
+	reportApplicationPackageUpdated
+} from './mcuboot-telemetry-reporter';
+import {
+	FirewallEntryRemovedPayload,
+	type FirewallZoneUpdatePayload,
+	reportFirewallEntryRemoved,
+	reportFirewallZoneAdded,
+	reportFirewallZoneUpdated
+} from './firewall-telemetry-reporter';
 
 let configToolChangeCount = 0;
 
@@ -43,10 +62,33 @@ export const CONFIG_TOOLS_TELEMETRY_ACTIONS = {
 	MEMORY_PARTITION_CREATED: 'memory_partition_created',
 	MEMORY_PARTITION_MODIFIED: 'memory_partition_modified',
 	MEMORY_PARTITION_DELETED: 'memory_partition_deleted',
-	DFG_STREAM_CREATED: 'dfg_stream_created'
+	DFG_STREAM_CREATED: 'dfg_stream_created',
+	DFG_STREAM_DELETED: 'dfg_stream_deleted',
+	SRU_INPUT_CONNECTION_MODIFIED: 'sru_input_connection_modified',
+	SRU_OUTPUT_CONNECTION_MODIFIED: 'sru_output_connection_modified',
+	SRU_PIN_BUFFER_INPUT_SIGNAL_MODIFIED:
+		'sru_pin_buffer_input_signal_modified',
+	SRU_PIN_BUFFER_OUTPUT_SIGNAL_MODIFIED:
+		'sru_pin_buffer_output_signal_modified',
+	SRU_PIN_BUFFER_DIRECTION_MODIFIED:
+		'sru_pin_buffer_direction_modified',
+	SRU_RESET_SOURCE: 'sru_reset_source',
+	APP_PACK_CREATED: 'app_pack_created',
+	APP_PACK_DELETED: 'app_pack_deleted',
+	IMAGE_ADDED: 'image_added',
+	CUSTOM_TLV_ADDED: 'custom_tlv_added',
+	COMPONENT_DELETED: 'component_deleted',
+	SIGN_KEY_SELECTED: 'sign_key_selected',
+	FIREWALL_ZONE_CREATED: 'firewall_zone_created',
+	ACCESS_MODES_CONFIGURED: 'access_modes_configured',
+	INITIATOR_ADDED: 'initiator_added',
+	INITIATOR_REMOVED: 'initiator_removed',
+	RESPONDER_ADDED: 'responder_added',
+	RESPONDER_REMOVED: 'responder_removed',
+	MODEL_ADDED: 'model_added'
 } as const;
 
-type ActionPayload = Record<string, any>;
+export type ActionPayload = Record<string, any>;
 type CoprogrammedSignal = {
 	Pin: string;
 	Peripheral: string;
@@ -136,6 +178,60 @@ export function reportPersistedActionTelemetry(
 
 		case 'Partitions/removePartition':
 			reportPartitionRemoved(payload, originalState);
+			break;
+
+		case 'Gaskets/addNewStream':
+			reportNewGasketStreamAdded(payload);
+			break;
+
+		case 'Gaskets/removeStream':
+			reportGasketStreamRemoved(payload, originalState);
+			break;
+
+		case 'sru/setSruConnection':
+			reportSruConnectionSet(
+				action.payload as SruConnectionPayload,
+				originalState
+			);
+			break;
+
+		case 'sru/resetSruConnection':
+			reportSruConnectionReset(
+				action.payload as string,
+				originalState
+			);
+			break;
+
+		case 'ApplicationPackages/addApplicationPackage':
+			reportApplicationPackageAdded();
+			break;
+
+		case 'ApplicationPackages/removeApplicationPackage':
+			reportApplicationPackageRemoved();
+			break;
+
+		case 'ApplicationPackages/updateApplicationPackage':
+			reportApplicationPackageUpdated(
+				payload as McuBootApplicationPackageUpdatePayload,
+				originalState
+			);
+			break;
+
+		case 'firewall/addFirewallZone':
+			reportFirewallZoneAdded();
+			break;
+
+		case 'firewall/removeFirewallEntry':
+			reportFirewallEntryRemoved(
+				payload as FirewallEntryRemovedPayload
+			);
+			break;
+
+		case 'firewall/updateFirewallZone':
+			reportFirewallZoneUpdated(
+				payload as FirewallZoneUpdatePayload,
+				originalState
+			);
 			break;
 
 		default:
@@ -298,6 +394,36 @@ function reportPartitionRemoved(
 		CONFIG_TOOLS_TELEMETRY_ACTIONS.MEMORY_PARTITION_DELETED,
 		{
 			partitionStartAddress: partition?.startAddress
+		}
+	);
+}
+
+function reportNewGasketStreamAdded(payload: ActionPayload): void {
+	const stream = payload as DFGStreamUI;
+
+	void logTelemetryEvent(
+		CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_CREATED,
+		{
+			sourceGasket: stream.Source?.Gasket,
+			destinationCount: stream.Destinations?.length ?? 0
+		}
+	);
+}
+
+function reportGasketStreamRemoved(
+	payload: ActionPayload,
+	originalState: RootState
+): void {
+	const payloadId = payload.Uuid;
+	const stream = originalState.gasketsReducer.Streams.find(
+		s => s.Uuid === payloadId
+	);
+
+	void logTelemetryEvent(
+		CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_DELETED,
+		{
+			sourceGasket: stream?.Source?.Gasket,
+			destinationCount: stream?.Destinations?.length ?? 0
 		}
 	);
 }

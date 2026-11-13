@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,4 +51,31 @@ export interface TasksPanelData {
 export interface HeapPanelData {
   summary: string;
   heap: { total: number; used: number; max: number; message: string };
+}
+
+/**
+ * A single register read from a peripheral, e.g. STATUS or SRC_ADDR.
+ * - isError: flags the register as abnormal so the UI can highlight it.
+ */
+export interface PeripheralRegisterInfo {
+  name: string;
+  value: string;
+  description?: string;
+  isError?: boolean;
+}
+
+/**
+ * A peripheral (e.g. GPIO0, DMA) or a sub-unit of one (e.g. a DMA channel).
+ * Peripherals may nest via `children` (DMA -> DMA_CH2) or list `registers` directly.
+ */
+export interface PeripheralInfo {
+  name: string;
+  hasError?: boolean;
+  registers?: PeripheralRegisterInfo[];
+  children?: PeripheralInfo[];
+}
+
+export interface PeripheralPanelData {
+  summary: string;
+  peripherals: PeripheralInfo[];
 }

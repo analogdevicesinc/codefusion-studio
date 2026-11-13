@@ -19,11 +19,11 @@
 .container {
 	display: flex;
 	width: 100%;
-	max-width: 566px;
+	max-width: 600px;
 	padding-top: layout.$spacing-9;
 	flex-direction: column;
 	align-items: flex-start;
-	gap: layout.$spacing-7;
+	gap: layout.$spacing-3;
 	flex: 1 0 auto;
 	align-self: center;
 }

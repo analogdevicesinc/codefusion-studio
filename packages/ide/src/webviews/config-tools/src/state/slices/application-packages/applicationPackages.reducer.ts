@@ -64,9 +64,7 @@ const applicationPackagesSlice = createSlice({
 				payload
 			}: PayloadAction<{
 				id: string;
-				updates: Partial<
-					Omit<ApplicationPackage, 'id'>
-				>;
+				updates: Partial<Omit<ApplicationPackage, 'id'>>;
 			}>
 		) {
 			const pkg = state.applicationPackages.find(
@@ -77,10 +75,7 @@ const applicationPackagesSlice = createSlice({
 				Object.assign(pkg, payload.updates);
 			}
 		},
-		clearSignKeyReferences(
-			state,
-			{payload}: PayloadAction<string>
-		) {
+		clearSignKeyReferences(state, {payload}: PayloadAction<string>) {
 			for (const pkg of state.applicationPackages) {
 				if (pkg.signKey === payload) {
 					pkg.signKey = undefined;

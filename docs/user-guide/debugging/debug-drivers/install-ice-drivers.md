@@ -1,16 +1,92 @@
 ---
-description: Manually install ICE drivers for Analog Devices emulators
+description: Install ICE drivers for Analog Devices emulators on Windows and Linux
 author: Analog Devices
-date: 2025-10-30
+date: 2026-08-12
 ---
 
-# Install ICE drivers manually (Windows)
-
-If you skipped the **ADI ICE Drivers** option during CodeFusion Studio installation, follow these steps to complete the driver installation.  
+# Install ICE drivers
 
 The ADI ICE drivers are required to debug SHARC-FX processors using the ICE-1000, ICE-1500, or ICE-2000 emulator.
 
-## Before you start
+## Linux
+
+On Linux, USB access to ICE probes is managed through udev rules and a dedicated `cfsusb` group.
+
+The CodeFusion Studio installer automatically configures USB permissions when run with root privileges (`sudo`).
+
+If the installer was not run as root, run the USB permissions setup script manually:
+
+```bash
+sudo bash <cfs-install-dir>/Tools/openocd/share/openocd/scripts/setup_usb_permissions.sh
+```
+
+This script:
+
+- Creates `/etc/udev/rules.d/cfs.rules` with the USB rules for ICE probes
+- Creates the `cfsusb` group (if it does not already exist)
+- Adds your user to the `cfsusb` group
+- Reloads udev rules
+
+You must log out and back in for the group membership to take effect.
+
+### Verify USB permissions
+
+If the ICE probe is not detected after running the setup script, verify that the udev rules are in place:
+
+1. Check that the rules file exists:
+
+      ```bash
+      cat /etc/udev/rules.d/cfs.rules
+      ```
+
+2. Confirm it contains an entry for the Analog Devices vendor ID (`064b`):
+
+      ```text
+      ATTRS{idVendor}=="064b", GROUP="cfsusb"
+      ```
+
+3. Verify that your user is a member of the `cfsusb` group:
+
+      ```bash
+      groups
+      ```
+
+      If `cfsusb` is not listed, add your user account to the group:
+
+      ```bash
+      sudo usermod -aG cfsusb $USER
+      ```
+
+    Sign out and sign in again to apply the group membership.
+
+4. If the rules file is missing, re-run the USB permissions setup script:
+
+      ```bash
+      sudo bash <cfs-install-dir>/Tools/openocd/share/openocd/scripts/setup_usb_permissions.sh
+      ```
+
+5. Reload udev rules without rebooting:
+
+      ```bash
+      sudo udevadm control --reload-rules
+      sudo udevadm trigger
+      ```
+
+### Verify the probe is detected
+
+After connecting the ICE probe, confirm it is visible:
+
+```bash
+lsusb | grep 064b
+```
+
+You should see an entry for the Analog Devices ICE emulator.
+
+## Windows
+
+If you skipped the **ADI ICE Drivers** option during CodeFusion Studio installation, follow these steps to complete the driver installation.
+
+### Before you start
 
 1. Connect your ICE probe (**ICE-1000**, **ICE-1500**, or **ICE-2000**).
 2. Open Windows **Device Manager** using one of the following methods:
@@ -27,7 +103,7 @@ The ADI ICE drivers are required to debug SHARC-FX processors using the ICE-1000
 ![ICE-1500 debugger in Device Manager](../images/device-manager-unknown.png)  
 *ICE-1500 (and occasionally other ICE models) may appear as **Unknown USB Device** before the driver is installed.*
 
-## Option 1: Install using Device Manager (recommended)
+### Option 1: Install using Device Manager (recommended)
 
 1. **Right-click** the device entry and choose **Update driver**.  
    ![Right-click Update driver](../images/update-driver.png)
@@ -51,7 +127,7 @@ The ADI ICE drivers are required to debug SHARC-FX processors using the ICE-1000
 
       ![ICE-1000 emulator shown in Device Manager](../images/ice-emulator-sharc-fx.png)
 
-## Option 2: Install using the Windows CLI (`pnputil`)
+### Option 2: Install using the Windows CLI (`pnputil`)
 
 `pnputil` is a built-in Windows command-line tool that manages device drivers. You can use it to install the ICE driver directly.
 

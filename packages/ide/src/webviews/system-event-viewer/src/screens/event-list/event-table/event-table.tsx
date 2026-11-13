@@ -14,6 +14,8 @@
  */
 
 import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
+import {formatTimestampLabel} from '../../../common/utils/time-mode-formatters';
+import {useTimeMode} from '../../../state/slices/timeline/timeline.selector';
 import type {TimestampList} from '../../../common/types/events';
 
 import styles from './event-table.module.scss';
@@ -23,12 +25,14 @@ type EventTableProps = Readonly<{
 }>;
 
 export default function EventTable({list}: EventTableProps) {
+	const timeMode = useTimeMode();
+
 	return (
 		<div className={styles.evTableContainer}>
 			<DataGrid
 				className={styles.tableContent}
 				ariaLabel='Event Table (List)'
-				gridTemplateColumns='80px 100px 200px 300px 1fr'
+				gridTemplateColumns='80px 160px 200px 300px 1fr'
 			>
 				<DataGridRow
 					rowType='sticky-header'
@@ -90,14 +94,18 @@ export default function EventTable({list}: EventTableProps) {
 							gridColumn='2'
 							className={styles.rowCell}
 						>
-							{`${item.value}s`}
+							{formatTimestampLabel(
+								item.value,
+								timeMode,
+								item.rawTicks
+							)}
 						</DataGridCell>
 						<DataGridCell
 							key='2'
 							gridColumn='3'
 							className={styles.rowCell}
 						>
-							{item.name}
+							{item.evSourceName}
 						</DataGridCell>
 						<DataGridCell
 							key='3'

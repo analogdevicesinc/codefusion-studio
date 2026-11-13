@@ -255,9 +255,7 @@ function ApplicationPackages({
 					);
 				})
 			) : (
-				<NewAppPackage
-					onAddImage={handleAddImage}
-				/>
+				<NewAppPackage onAddImage={handleAddImage} />
 			)}
 		</div>
 	);

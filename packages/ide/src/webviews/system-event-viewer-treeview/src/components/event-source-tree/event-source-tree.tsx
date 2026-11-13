@@ -15,7 +15,10 @@
 
 import {useEffect, useLayoutEffect, useState} from 'react';
 import {useAppDispatch} from '../../state/store';
-import {useRootNodeIds} from '../../state/slices/event-tree/event-tree.selector';
+import {
+	useRootNodeIds,
+	useTreeRefreshing
+} from '../../state/slices/event-tree/event-tree.selector';
 import {loadChildrenByNodeThunk} from '../../state/slices/event-tree/event-tree.thunks';
 import NodeSiblings from './node-siblings';
 import {
@@ -39,6 +42,7 @@ function getTooltipWidth(container: HTMLElement): number {
 export default function EventSourceTree() {
 	const dispatch = useAppDispatch();
 	const rootIds = useRootNodeIds();
+	const isTreeRefreshing = useTreeRefreshing();
 	const [tooltipWidth, setTooltipWidth] = useState(TOOLTIP_MAX_WIDTH);
 
 	useEffect(() => {
@@ -77,6 +81,7 @@ export default function EventSourceTree() {
 				nodeIds={rootIds}
 				depth={0}
 				tooltipWidth={tooltipWidth}
+				isTreeRefreshing={isTreeRefreshing}
 			/>
 		</div>
 	);

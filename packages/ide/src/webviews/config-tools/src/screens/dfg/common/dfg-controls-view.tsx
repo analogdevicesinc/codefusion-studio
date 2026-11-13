@@ -25,6 +25,10 @@ import {
 	formatControlsForDynamicForm,
 	getFormErrors
 } from '../../../utils/soc-controls';
+import {
+	type ScopeValidationOptions,
+	validatePluginOptions
+} from '../../../utils/plugin-options-validation';
 import type {
 	ConfigFields,
 	ControlCfg
@@ -44,6 +48,7 @@ export function DFGControlsView({
 	testId,
 	gasketName,
 	emptyMessage,
+	scopeValidation,
 	onHasErrorsChange,
 	onControlChange
 }: Readonly<{
@@ -55,6 +60,7 @@ export function DFGControlsView({
 	testId: string;
 	gasketName?: string;
 	emptyMessage?: string;
+	scopeValidation?: ScopeValidationOptions;
 	onHasErrorsChange?: (hasErrors: boolean) => void;
 	onControlChange: (
 		field: string,
@@ -76,37 +82,47 @@ export function DFGControlsView({
 		[controls, propertyName]
 	);
 
-	const controlErrors = useMemo(
-		() =>
-			controlFields
-				.filter(control => data[control.Id] !== undefined)
-				.reduce(
-					(acc, control) =>
-						getFormErrors(acc, control, data[control.Id]),
-					{}
-				),
-		[controlFields, data]
-	);
+	const controlErrors = useMemo(() => {
+		const errors = controlFields
+			.filter(control => data[control.Id] !== undefined)
+			.reduce(
+				(acc, control) =>
+					getFormErrors(acc, control, data[control.Id]),
+				{}
+			);
 
-	const pluginControlErrors = useMemo(
-		() =>
-			pluginControlFields
-				.filter(control => data[control.Id] !== undefined)
-				.reduce(
-					(acc, control) =>
-						getFormErrors(acc, control, data[control.Id]),
-					{}
-				),
-		[pluginControlFields, data]
-	);
+		return {
+			...errors,
+			...validatePluginOptions(data, controlFields, scopeValidation)
+		};
+	}, [controlFields, data, scopeValidation]);
+
+	const pluginControlErrors = useMemo(() => {
+		const errors = pluginControlFields
+			.filter(control => data[control.Id] !== undefined)
+			.reduce(
+				(acc, control) =>
+					getFormErrors(acc, control, data[control.Id]),
+				{}
+			);
+
+		return {
+			...errors,
+			...validatePluginOptions(
+				data,
+				pluginControlFields,
+				scopeValidation
+			)
+		};
+	}, [pluginControlFields, data, scopeValidation]);
 
 	const hasErrors =
 		Object.keys(controlErrors).length > 0 ||
 		Object.keys(pluginControlErrors).length > 0;
 
-	if (hasErrors) {
-		onHasErrorsChange?.(true);
-	}
+	useEffect(() => {
+		onHasErrorsChange?.(hasErrors);
+	}, [hasErrors, onHasErrorsChange]);
 
 	const handleControlChange = useCallback(
 		(field: string, value: TFormFieldValue | undefined) => {

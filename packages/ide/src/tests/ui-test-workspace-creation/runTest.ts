@@ -15,6 +15,7 @@
 import * as path from "path";
 import { ExTester } from "vscode-extension-tester";
 import * as fs from "fs";
+import { findVsix } from "../ui-test-utils/vsix-utils";
 
 const EXTENSIONS_DIR = path.resolve(
   process.cwd(),
@@ -43,7 +44,14 @@ async function main() {
     ".catalog",
   );
 
-  let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
+  let socsPath = path.resolve(
+    process.cwd(),
+    "..",
+    "..",
+    "test-fixtures",
+    "cfs-data-model",
+    "socs",
+  );
 
   let projectPluginsPath = path.resolve(
     process.cwd(),
@@ -121,27 +129,7 @@ async function main() {
 
     // Install the VSIX so VS Code properly registers extension contributions.
     console.log("📥 Installing extension...");
-    const findVsix = async (dir: string): Promise<string | undefined> => {
-      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith(".vsix")) {
-          return path.join(dir, entry.name);
-        }
-        if (entry.isDirectory()) {
-          const found = await findVsix(path.join(dir, entry.name));
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-
-    const vsixPath = await findVsix(process.cwd());
-    if (!vsixPath) {
-      throw new Error(
-        `No VSIX file found under ${process.cwd()}. ` +
-          `Run 'yarn build:extension && yarn package' to generate the VSIX.`,
-      );
-    }
+    const vsixPath = await findVsix();
     console.log(`Found extension: ${vsixPath}`);
     await tester.installVsix({ vsixFile: vsixPath });
     console.log("✅ Extension installed!\n");

@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
 import { registerGdbCommandTools } from "./gdb-commands";
 import { registerSessionLifecycleTools } from "./session-lifecycle";

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,12 @@ function SymbolsTable({
 	const itemsPerPage = 100;
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.symbols?.helpModal;
+	const symbolExplorerL10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 	const [clonedData, setClonedData] = useState<TSymbol[]>(
 		JSON.parse(JSON.stringify(data)) as TSymbol[]
 	);
@@ -103,6 +109,7 @@ function SymbolsTable({
 	const [path, setPath] = useState('');
 	const [menuOptions, setMenuOptions] = useState(MENU_OPTIONS);
 	const [clickedCol, setClickedCol] = useState<string>('');
+	const [filterLabel, setFilterLabel] = useState<string>('');
 	const observer = useRef<IntersectionObserver>(
 		{} as IntersectionObserver
 	);
@@ -184,54 +191,58 @@ function SymbolsTable({
 		});
 	}, []);
 
-	const handleOptionClick = (elem: HTMLElement) => {
-		// Option 1
-		const filterBy = elem?.innerText?.includes('Filter by ');
-		// Option 3
-		const showModal = elem?.innerText?.includes('Help - ');
-		// Option 2
-		const goToSource = elem?.innerText?.includes('source code');
-		// Option 4
-		const formatValue = elem?.innerText?.includes('Show column as');
-
+	const handleOptionClick = (optionId: number) => {
 		setContextMenuVisible(false);
 
-		if (filterBy) {
-			let [column, value] = splitStringByFirstSpace(
-				elem?.innerText?.substring(10)
-			);
+		switch (optionId) {
+			case 0: {
+				// Filter by column value
+				let [column, value] = splitStringByFirstSpace(filterLabel);
 
-			value =
-				column === (SYMBOL_COLUMNS.PATH as typeof column) && path
-					? path
-					: value?.trim()?.slice(1, -1);
+				value =
+					column === (SYMBOL_COLUMNS.PATH as typeof column) && path
+						? path
+						: value?.trim()?.slice(1, -1);
 
-			emitValToFilter(column, value);
-		}
+				emitValToFilter(column, value);
+				break;
+			}
 
-		if (showModal) {
-			setHelpOptionModal(prev => ({
-				...prev,
-				isVisible: true,
-				item: elem?.innerText.split(' - ')[1] || ''
-			}));
-		}
+			case 1: {
+				// Go to symbol source code
+				const pos = extractPositionFromPath(path);
+				void goToSourceCodeCallback(
+					formatPath(path),
+					pos as number[]
+				);
+				break;
+			}
 
-		if (goToSource) {
-			const pos = extractPositionFromPath(path);
-			void goToSourceCodeCallback(formatPath(path), pos as number[]);
-		}
+			case 2:
+				// Help modal
+				setHelpOptionModal(prev => ({
+					...prev,
+					isVisible: true,
+					item: capitalizeWord(clickedCol)
+				}));
+				break;
 
-		if (formatValue) {
-			const clonedSavedOptions = JSON.parse(
-				JSON.stringify(savedOptions)
-			);
-			clonedSavedOptions.symbols[clickedCol] =
-				clonedSavedOptions?.symbols?.[clickedCol] === 'dec'
-					? 'hex'
-					: 'dec';
+			case 3: {
+				// Toggle column format
+				const clonedSavedOptions = JSON.parse(
+					JSON.stringify(savedOptions)
+				);
+				clonedSavedOptions.symbols[clickedCol] =
+					clonedSavedOptions?.symbols?.[clickedCol] === 'dec'
+						? 'hex'
+						: 'dec';
 
-			onUpdateOptions(clonedSavedOptions as TSavedTableOptions);
+				onUpdateOptions(clonedSavedOptions as TSavedTableOptions);
+				break;
+			}
+
+			default:
+				break;
 		}
 	};
 
@@ -250,6 +261,9 @@ function SymbolsTable({
 
 		if (row.path) {
 			MENU_OPTIONS[1].show = true;
+			MENU_OPTIONS[1].label =
+				commonL10n?.goToSymbolSourceCode ??
+				'Go to symbol source code';
 			setPath(row.path as string);
 			void checkPathCallback(formatPath(row.path as string));
 		} else {
@@ -257,12 +271,19 @@ function SymbolsTable({
 			MENU_OPTIONS[1].show = false;
 		}
 
+		const computedFilterLabel = displayColumnAndValue(
+			filteredLabel,
+			savedOptions
+		);
+		setFilterLabel(computedFilterLabel);
+
 		setMenuOptions(prevOptions => {
 			const newOptions = [...prevOptions];
-			newOptions[0].label = `Filter by ${displayColumnAndValue(
-				filteredLabel,
-				savedOptions
-			)} `;
+			newOptions[0].label =
+				commonL10n?.filterByColumnAndValue?.replace(
+					'{columnAndValue}',
+					() => computedFilterLabel
+				) ?? `Filter by ${computedFilterLabel}`;
 
 			if (
 				column === (SYMBOL_COLUMNS.PATH as typeof column) &&
@@ -281,7 +302,9 @@ function SymbolsTable({
 			HELP_OPTION_COLUMNS.forEach(columnName => {
 				if (columnName === (column as SYMBOL_COLUMNS)) {
 					newOptions[2].show = true;
-					newOptions[2].label = `Help - ${capitalizeWord(column)}`;
+					newOptions[2].label = `${
+						commonL10n?.helpPrefix ?? 'Help - '
+					}${capitalizeWord(column)}`;
 				}
 			});
 
@@ -294,8 +317,10 @@ function SymbolsTable({
 				newOptions[3].show = true;
 				newOptions[3].label =
 					savedOptions.symbols[column] === 'hex'
-						? 'Show column as decimal'
-						: 'Show column as hexadecimal';
+						? (commonL10n?.showColumnAsDecimal ??
+							'Show column as decimal')
+						: (commonL10n?.showColumnAsHexadecimal ??
+							'Show column as hexadecimal');
 			}
 
 			return newOptions;
@@ -411,7 +436,9 @@ function SymbolsTable({
 					))}
 				</DataGrid>
 				<DataGridRow className={styles['sticky-grid-footer']}>
-					<strong>{`${data.length} Symbols`}</strong>
+					<strong>{`${data.length} ${
+						symbolExplorerL10n?.symbols ?? 'Symbols'
+					}`}</strong>
 				</DataGridRow>
 			</div>
 			<ContextMenuPanel

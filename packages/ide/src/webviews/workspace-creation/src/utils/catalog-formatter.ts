@@ -25,12 +25,7 @@ import type {
 	TStandardBoard,
 	TCustomBoard
 } from '../common/types/catalog';
-import type {
-	Board,
-	CorePart,
-	Package,
-	SoC
-} from 'cfs-ccm-api/rest-types';
+import type {Board, CorePart, Package, SoC} from 'cfs-ccm-lib';
 
 export default function formatCatalog(
 	catalogRawData: SoC[]

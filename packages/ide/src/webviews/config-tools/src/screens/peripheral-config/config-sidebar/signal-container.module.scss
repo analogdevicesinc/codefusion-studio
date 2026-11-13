@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,34 @@
 @use '#colors' as colors;
 
 .container {
-	display: flex;
-	justify-content: space-between;
-	gap: 8px;
+	display: grid;
+	// Keep the pin selector in one column while allowing it to shrink in the
+	// 262px details panel (198px after the panel padding).
+	grid-template-columns: minmax(0, 1fr) clamp(
+			44px,
+			25%,
+			120px
+		) 30px 16px;
+	align-items: center;
+	column-gap: 8px;
 
 	.signalName {
-		flex: 1;
-		overflow: hidden;
+		min-width: 0;
 		white-space: nowrap;
-		text-overflow: ellipsis;
+	}
+
+	.pinDropdown {
+		--input-min-width: 44px;
+		min-width: 0;
+		width: 100%;
+		justify-self: stretch;
+
+		:global(vscode-dropdown)::part(selected-value),
+		:global(vscode-option)::part(content) {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 	}
 
 	.placeholder {
@@ -39,11 +58,20 @@
 		@include fonts.label-l3;
 		color: colors.$description-foreground;
 		margin: 0;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		display: flex;
 		align-items: center;
 
 		& span {
 			margin: 0 2px;
 		}
+	}
+
+	.hiddenToggle {
+		visibility: hidden;
+		pointer-events: none;
 	}
 }

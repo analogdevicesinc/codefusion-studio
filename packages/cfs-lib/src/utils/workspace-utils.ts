@@ -19,14 +19,16 @@ import path from "node:path";
 export function findWorkspaceConfigFile(
 	workspacePath: string
 ): string | undefined {
-	// If no .cfs folder exists, we're not in a workspace folder. We could be in a sub-folder, so search
-	// up the directory tree until we find a .cfs folder or reach the root.
+	// Search up for the workspace-level .cfs folder (identified by .cfsworkspace);
+	// project-level .cfs folders only hold .cfsdependencies and must be skipped.
 	let currentPath = workspacePath;
 
-	while (!existsSync(path.join(currentPath, ".cfs"))) {
+	while (
+		!existsSync(path.join(currentPath, ".cfs", ".cfsworkspace"))
+	) {
 		const parentPath = path.dirname(currentPath);
 		if (parentPath === currentPath) {
-			// Reached the root without finding a .cfs folder
+			// Reached the root without finding a workspace-level .cfs folder
 			throw new Error(
 				`Error loading serial port settings from ${workspacePath}. Please ensure this is a valid workspace folder.`
 			);

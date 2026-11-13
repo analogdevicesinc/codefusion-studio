@@ -1,7 +1,7 @@
 ---
 description: cfsutil AI tools and model management
 author: Analog Devices
-date: 2026-05-18
+date: 2026-09-24
 ---
 
 # AI
@@ -12,6 +12,7 @@ The `cfsutil ai` commands allow you to compile and analyze AI models for Analog 
 - [`cfsutil ai build`](./build.md) — Compile a model into deployable C/C++ source code using a `.cfsconfig` file or command-line flags.
 - [`cfsutil ai clean-cache`](./clean-cache.md) — Clear the cache of remotely downloaded files.
 - [`cfsutil ai compat`](./compat.md) — Check model compatibility with a target SoC and core.
+- [`cfsutil ai e2e`](./e2e.md) — Run the full workflow from compatibility check to flash and serial capture on hardware.
 - [`cfsutil ai model`](./model.md) — Add, list, update, and remove AI models within a workspace.
 - [`cfsutil ai profile`](./profile.md) — Profile model resource usage before deployment.
 - [`cfsutil ai workspace`](./workspace.md) — Generate a workspace from an AI model file.
@@ -29,6 +30,7 @@ cfsutil ai backends --help
 cfsutil ai build --help
 cfsutil ai clean-cache --help
 cfsutil ai compat --help
+cfsutil ai e2e --help
 cfsutil ai model --help
 cfsutil ai profile --help
 cfsutil ai workspace --help

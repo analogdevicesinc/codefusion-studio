@@ -29,6 +29,18 @@ if (mode === 'print-success') {
   process.exit(0);
 }
 
+if (mode === 'print-both') {
+  console.log(`runner-stdout:${payload.label}`);
+  console.error(`runner-stderr:${payload.label}`);
+  process.exit(0);
+}
+
+if (mode === 'hang') {
+  console.error(`runner-hang:${payload.label}`);
+  setInterval(() => {}, 1000);
+  return;
+}
+
 if (mode === 'fail') {
   console.error(`runner-error:${payload.label}`);
   process.exit(3);

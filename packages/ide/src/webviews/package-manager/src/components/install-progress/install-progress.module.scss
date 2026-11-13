@@ -39,7 +39,7 @@
 .container {
 	display: flex;
 	width: 100%;
-	max-width: 566px;
+	max-width: 600px;
 	flex-direction: column;
 	align-items: flex-start;
 	flex: 1 0 0;
@@ -66,6 +66,7 @@
 
 .description {
 	color: colors.$description-foreground;
+	@include fonts.body-b1;
 }
 
 .installList {

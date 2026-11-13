@@ -57,6 +57,27 @@ export const QUICK_ACCESS_ITEM_INVOKED_COMMAND_ID =
   "cfs.quickAccessItemInvoked";
 export const CONTEXT_VIEW_ID = "cfs.contextPanelView";
 export const OPEN_PACKAGE_MANAGER_COMMAND_ID = "cfs.openPackageManager";
+export const PACKAGE_EXPLORER_VIEW_ID = "cfs.packageExplorerView";
+export const PACKAGE_EXPLORER_ENABLE_DEPENDENCY_FILTER_COMMAND_ID =
+  "cfs.packageExplorer.filterByDependencies";
+export const PACKAGE_EXPLORER_DISABLE_DEPENDENCY_FILTER_COMMAND_ID =
+  "cfs.packageExplorer.showAllPackages";
+export const PACKAGE_EXPLORER_SELECT_TYPE_FILTER_COMMAND_ID =
+  "cfs.packageExplorer.selectTypeFilter";
+export const PACKAGE_EXPLORER_CLEAR_FILTERS_COMMAND_ID =
+  "cfs.packageExplorer.clearFilters";
+export const PACKAGE_EXPLORER_REFRESH_COMMAND_ID =
+  "cfs.packageExplorer.refresh";
+export const PACKAGE_EXPLORER_OPEN_FILE_COMMAND_ID =
+  "cfs.packageExplorer.openFile";
+export const PACKAGE_EXPLORER_SEARCH_IN_PACKAGE_COMMAND_ID =
+  "cfs.packageExplorer.searchInPackage";
+export const PACKAGE_EXPLORER_COPY_PATH_COMMAND_ID =
+  "cfs.packageExplorer.copyPath";
+export const PACKAGE_EXPLORER_COPY_RELATIVE_PATH_COMMAND_ID =
+  "cfs.packageExplorer.copyRelativePath";
+export const PACKAGE_EXPLORER_REVEAL_IN_OS_COMMAND_ID =
+  "cfs.packageExplorer.revealInOS";
 export const DEVICE_TREE_VIEW_ID = "cfs.deviceTreeView";
 export const RUN_BUILD_TASK_COMMAND_ID = "cfs.runBuildTask";
 export const RUN_CLEAN_TASK_COMMAND_ID = "cfs.runCleanTask";
@@ -143,6 +164,7 @@ export const PACKAGE_MANAGER_COMMANDS = {
   ADD_REMOTE: "cfs.addRemote",
   REMOVE_REMOTE: "cfs.removeRemote",
   AUTH_REMOTE: "cfs.authRemote",
+  CHECK_PACKAGE_UPDATES: "cfs.checkPackageUpdates",
 };
 
 // Cloud Catalog Auth

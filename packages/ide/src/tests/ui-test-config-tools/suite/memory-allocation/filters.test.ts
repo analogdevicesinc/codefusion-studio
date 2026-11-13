@@ -46,32 +46,21 @@ describe("Memory Allocation Filters", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
-  let configPath: string | undefined;
+  let configPath = getConfigPathForFile(
+    "max32690-wlp-dual-core-blinky.cfsconfig",
+  );
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-
-    if (configPath) {
-      await UIUtils.restoreFixtureFileFromGit(configPath);
-      configPath = undefined;
-    }
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Resets filter on re-entry", async () => {
-    configPath = getConfigPathForFile(
-      "max32690-wlp-dual-core-blinky.cfsconfig",
-    );
+  it("Resets filter on re-entry @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
 
@@ -87,8 +76,8 @@ describe("Memory Allocation Filters", () => {
     ).to.be.greaterThan(0);
     await UIUtils.clickElement(view, memoryAllocationTab);
 
-    await UIUtils.clickElement(view, await memoryTypeFilterButton);
-    await UIUtils.clickElement(view, await memoryTypeFilterOptionRAM);
+    await UIUtils.clickElement(view, memoryTypeFilterButton);
+    await UIUtils.clickElement(view, memoryTypeFilterOptionRAM);
 
     // Check if filter works correctly
     let flashAccordions = await view.findWebElements(

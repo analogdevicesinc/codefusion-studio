@@ -43,7 +43,7 @@ import {
 	type ModelZooSelectionData
 } from '../../../common/components/cfs-model-zoo/CfsModelZoo';
 import {messenger} from '../../../common/contexts/MessengerContext';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import {getZooModelDisplayName} from '../../../common/components/cfs-model-zoo/model-zoo-utils';
 import type {Draft} from '@reduxjs/toolkit';
 
@@ -65,19 +65,6 @@ export function FilesSection() {
 	const workspaceName = useWorkspaceName();
 	const errors = useErrors();
 
-	const coreDataModelIds = useMemo(
-		() =>
-			runModelOn
-				.map(
-					coreId =>
-						catalog
-							.find(s => s.name === soc)
-							?.cores.find(c => c.id === coreId)?.dataModelCoreID
-				)
-				.filter((id): id is string => id !== undefined),
-		[catalog, runModelOn, soc]
-	);
-
 	const dispatch = useAppDispatch();
 
 	const [modelZooOpen, setModelZooOpen] = useState(false);
@@ -86,7 +73,7 @@ export function FilesSection() {
 		<section className={styles.filesSection}>
 			<CfsModelZoo
 				isOpen={modelZooOpen}
-				defaultCoreFilter={coreDataModelIds}
+				defaultCoreFilter={runModelOn}
 				defaultSocFilter={soc ? [soc] : []}
 				initialModelSelection={
 					typeof modelFile === 'object' ? modelFile : undefined

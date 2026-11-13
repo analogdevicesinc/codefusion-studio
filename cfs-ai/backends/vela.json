@@ -1,0 +1,38 @@
+{
+	"SupportedBackends": {
+		"vela": {
+			"Targets": [],
+			"AdvancedTools": false,
+			"Description": "Arm Vela compiler for Ethos NPU",
+			"Formats": [".tflite"],
+			"Package": "cfs-lib",
+			"Module": "vela",
+			"MaxModels": 1,
+			"Slow": false,
+			"Name": "vela"
+		}
+	},
+	"properties": {
+		"vela": [
+			{
+				"Id": "Optimise",
+				"Type": "enum",
+				"Description": "Optimization strategy",
+				"Tooltip": "Optimize for inference speed (Performance) or memory footprint (Size).",
+				"Default": "Performance",
+				"EnumValues": [
+					{
+						"Id": "Performance",
+						"Value": "0",
+						"Description": "Maximize inference speed"
+					},
+					{
+						"Id": "Size",
+						"Value": "1",
+						"Description": "Minimize memory footprint"
+					}
+				]
+			}
+		]
+	}
+}

@@ -14,7 +14,9 @@
  */
 
 import {input, password} from '@inquirer/prompts';
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -24,7 +26,9 @@ export const pkgLoginDeps: {
   getPackageManager
 };
 
-export default class CfsPackageLogin extends Command {
+export default class CfsPackageLogin extends BaseCommand<
+  typeof CfsPackageLogin
+> {
   static args = {
     remoteName: Args.string({
       name: 'remoteName',
@@ -61,7 +65,7 @@ export default class CfsPackageLogin extends Command {
   static state = 'deprecated';
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(CfsPackageLogin);
+    const {args, flags} = this;
     const {remoteName} = args;
 
     const packman = await pkgLoginDeps.getPackageManager(

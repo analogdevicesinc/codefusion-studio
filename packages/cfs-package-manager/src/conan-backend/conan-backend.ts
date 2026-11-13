@@ -19,7 +19,8 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 import semver from "semver";
-import { withLock } from "@ster5/global-mutex";
+import { withLock, type RetryOptions } from "@ster5/global-mutex";
+import { setTimeout as delay } from "node:timers/promises";
 
 import type {
 	CfsPackage,
@@ -29,6 +30,7 @@ import type {
 	CfsPackageLicenseReporter,
 	CfsPackageReference,
 	CfsPackageRemote,
+	CfsPackageRemoteState,
 	CfsPackageInstallOptions,
 	CfsPackageDependenciesOptions,
 	CfsPackageRemotesProvider,
@@ -40,6 +42,67 @@ import type {
 import PackmanUtils from "../utils/utils.js";
 import { ConanRunner, ConanError } from "./conan-runner.js";
 import { ConanRemoteManager } from "./conan-remote.js";
+import { ConanGraphFailure } from "../conflicts/graph-failure.js";
+import type { ConanGraphError } from "../conflicts/graph-error.js";
+
+// Waiters poll the lock, which says nothing on release: short delays keep it
+// from sitting free (the library default backs off to 2 s)
+const lockRetries: RetryOptions = {
+	forever: true,
+	minTimeout: 25,
+	maxTimeout: 250,
+	randomize: true
+};
+
+// Calls waiting for the same lock file in this process, chained in call order
+const lockQueues = new Map<string, Promise<unknown>>();
+
+/**
+ * Runs a task once every task queued before it for the same lock file has
+ * settled, so calls from one process take the lock in the order they were
+ * made. The file lock keeps no order: its waiters poll it, and the first to
+ * poll after a release wins.
+ * @param lockFilePath - the lock file the task takes
+ * @param task - the task
+ * @returns the task's result
+ */
+function inCallOrder<T>(
+	lockFilePath: string,
+	task: () => Promise<T>
+): Promise<T> {
+	const previous = lockQueues.get(lockFilePath) ?? Promise.resolve();
+	const run = previous.then(task);
+	// A failed task must not stop the ones queued after it
+	const tail = run.catch(() => undefined);
+	lockQueues.set(lockFilePath, tail);
+	void tail.then(() => {
+		if (lockQueues.get(lockFilePath) === tail) {
+			lockQueues.delete(lockFilePath);
+		}
+	});
+	return run;
+}
+
+/**
+ * Runs a task in call order under the shared file lock with short polling delays.
+ * @param lockFilePath - the lock file the task takes
+ * @param task - the task to run while holding the lock
+ * @returns the task's result
+ */
+function withOrderedLock<T>(
+	lockFilePath: string,
+	task: () => Promise<T>
+): Promise<T> {
+	return inCallOrder(lockFilePath, async () => {
+		await fs.promises.mkdir(path.dirname(lockFilePath), {
+			recursive: true
+		});
+		return await withLock(
+			{ fileToLock: lockFilePath, retries: lockRetries },
+			task
+		);
+	});
+}
 
 interface PackageIndexEntry {
 	full_ref: string;
@@ -75,6 +138,11 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 	// Location of the conan local cache and configuration
 	private readonly _conanHomePath: string;
+	private readonly _lockFilePath: string;
+
+	// Retries of a failed index read (e.g. torn by a concurrent non-atomic write)
+	private static readonly _INDEX_READ_RETRIES = 3;
+	private static readonly _INDEX_READ_RETRY_DELAY_MS = 25;
 
 	// Initialization state flag for remotes
 	private _remotesReady = false;
@@ -107,17 +175,24 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		);
 
 		// Lockfile to prevent concurrent executions
-		const lockFilePath = path.join(
+		this._lockFilePath = path.join(
 			this._conanHomePath,
 			".packman.lock"
 		);
+		const lockFilePath = this._lockFilePath;
 
 		// Functions to exclude from locking
 		// These references are used instead of method names to avoid
 		// issues with minification or bundling renaming them
 		/* eslint-disable @typescript-eslint/unbound-method */
 		const lockExemptMethods = new WeakSet([
-			ConanPkgManager.prototype.getIndexFilePath as object
+			ConanPkgManager.prototype.getIndexFilePath as object,
+			ConanPkgManager.prototype.listRemotes as object,
+			// Pure reads of the index file and a field setter; these must not queue behind long conan operations
+			ConanPkgManager.prototype.list as object,
+			ConanPkgManager.prototype.getInstalledPackageInfo as object,
+			ConanPkgManager.prototype.registerLicenseReporter as object,
+			ConanPkgManager.prototype.unregisterLicenseReporter as object
 		]);
 		/* eslint-enable @typescript-eslint/unbound-method */
 
@@ -155,20 +230,12 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 					};
 				}
 
-				return async (...args: unknown[]) => {
-					// The lockfile directory must exist
-					await fs.promises.mkdir(path.dirname(lockFilePath), {
-						recursive: true
+				return async (...args: unknown[]) =>
+					withOrderedLock(lockFilePath, async () => {
+						// Calls the method once the lock is obtained,
+						// with the correct 'this' context and the provided arguments
+						return await method.call(target, ...args);
 					});
-					return await withLock(
-						{ fileToLock: lockFilePath },
-						async () => {
-							// Calls the method once the lock is obtained,
-							// with the correct 'this' context and the provided arguments
-							return await method.call(target, ...args);
-						}
-					);
-				};
 			}
 		});
 	}
@@ -303,16 +370,40 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		throw new Error("Unexpected error");
 	}
 
+	/**
+	 * Reads the package index without taking the lock, so it is also safe
+	 * for lock-exempt methods. Conan writes the file non-atomically
+	 * (truncate, then write), so a concurrent read can briefly see it empty
+	 * or partial. A failed read (empty, unparseable or otherwise unreadable
+	 * file) is retried a few times, a few milliseconds apart. A missing file
+	 * yields an empty index, since nothing is installed yet.
+	 *
+	 * @throws If the file is still unreadable after the retries. Returning an
+	 * empty index here would make callers believe no packages are installed.
+	 */
 	private async _readPkgIndex(): Promise<PackageIndex> {
-		try {
-			const indexPath = path.join(this._indexDir, ".cfsPackages");
-			const indexString = await fs.promises.readFile(
-				indexPath,
-				"utf-8"
-			);
-			return JSON.parse(indexString) as PackageIndex;
-		} catch {
-			return {};
+		const indexPath = path.join(this._indexDir, ".cfsPackages");
+		for (let retry = 0; ; retry++) {
+			try {
+				const indexString = await fs.promises.readFile(
+					indexPath,
+					"utf-8"
+				);
+				return JSON.parse(indexString) as PackageIndex;
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+					return {};
+				}
+				if (retry >= ConanPkgManager._INDEX_READ_RETRIES) {
+					throw new Error(
+						`Failed to read the package index '${indexPath}': ${
+							error instanceof Error ? error.message : String(error)
+						}`,
+						{ cause: error }
+					);
+				}
+			}
+			await delay(ConanPkgManager._INDEX_READ_RETRY_DELAY_MS);
 		}
 	}
 
@@ -334,7 +425,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		try {
 			await fs.promises.access(defaultProfilePath, fs.constants.R_OK);
 			// A default profile exist, no need to do anything else
-		} catch (error) {
+		} catch {
 			// No default profile. Create a minimal one manually rather than invoking
 			// 'conan profile detect', because that fails if it encounters a C/C++
 			// toolchain version that Conan is not aware of yet. We don't actually
@@ -403,6 +494,9 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		this._remotesReady = true;
 	}
 
+	/**
+	 * Lists installed packages. Lock-free: reads the index directly.
+	 */
 	async list(
 		pattern?: string,
 		filter: CfsPackageFilter = {}
@@ -504,6 +598,9 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		return path.join(this._indexDir, ".cfsPackages");
 	}
 
+	/**
+	 * Returns details of installed packages. Lock-free: reads the index directly.
+	 */
 	async getInstalledPackageInfo(
 		filter: CfsPackageFilter = {}
 	): Promise<CfsInstalledPackage[]> {
@@ -567,6 +664,37 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		return isBatch ? parsed : parsed[0];
 	}
 
+	async listRemoteRefs(
+		remotes: string[]
+	): Promise<
+		Record<string, string[] | { error: string; auth?: boolean }>
+	> {
+		await this._ensureRemotesReady();
+		return JSON.parse(
+			await this._conanCommand(["cfs", "remote-refs", ...remotes])
+		);
+	}
+
+	async getRemotePackageInfo(
+		remote: string,
+		references: string[]
+	): Promise<Record<string, CfsPackage>> {
+		await this._ensureRemotesReady();
+		// Batched to stay under the Windows command-line length limit.
+		const batchSize = 200;
+		const infos: Record<string, CfsPackage> = {};
+		for (let i = 0; i < references.length; i += batchSize) {
+			const out = await this._conanCommand([
+				"cfs",
+				"remote-pkg-info",
+				remote,
+				...references.slice(i, i + batchSize)
+			]);
+			Object.assign(infos, JSON.parse(out));
+		}
+		return infos;
+	}
+
 	async install(
 		references:
 			| CfsPackageReference
@@ -610,9 +738,11 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		// The plan doesn't change which references are installed (we don't have transitive
 		// dependency filtering, and pre-installed refs are no-ops), so it's only needed to
 		// identify which packages require license acceptance for reporting purposes.
+		// Snapshot the reporter: (un)registration is lock-exempt and may change it while awaiting.
+		const licenseReporter = this.licenseReporter;
 		if (
 			options?.acceptLicense === true &&
-			this.licenseReporter !== undefined
+			licenseReporter !== undefined
 		) {
 			const refsRequiringLicenseAcceptance =
 				refsRequiringLicenseAcceptanceFromPlan ??
@@ -620,6 +750,7 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 					await this.getInstallPlan(refsArray)
 				).requiresLicenseAcceptance.map((pkg) => pkg.reference);
 			await this._reportAcceptedLicensesIfNeeded(
+				licenseReporter,
 				refsRequiringLicenseAcceptance,
 				refsArray
 			);
@@ -644,6 +775,29 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 	async delete(pattern: string): Promise<CfsPackageReference[]> {
 		const out = await this._conanCommand(["cfs", "delete", pattern]);
+
+		return this._parsePackageReferences(out);
+	}
+
+	/**
+	 * Installs a package from a local tarball.
+	 *
+	 * @param pkgLocation - Path to the tarball. Relative paths are resolved
+	 * against the current working directory of this process.
+	 * @returns A promise that resolves with the references of the packages
+	 * installed from the tarball.
+	 */
+	async localInstall(
+		pkgLocation: string
+	): Promise<CfsPackageReference[]> {
+		// The conan subprocess runs with cwd set to _indexDir, so a relative
+		// path handed straight through would resolve against the package
+		// cache instead of the caller's working directory.
+		const out = await this._conanCommand([
+			"cfs",
+			"local-install",
+			path.resolve(pkgLocation)
+		]);
 
 		return this._parsePackageReferences(out);
 	}
@@ -701,7 +855,18 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 			...commandOptions
 		]);
 
-		const parsed = JSON.parse(out) as Record<string, string[]>;
+		const envelope = JSON.parse(out) as {
+			dependencies?: Record<string, string[]>;
+			error?: ConanGraphError | null;
+		};
+
+		// The command reports a failed graph as data so the structured cause
+		// survives; turn it back into a rejection, but one that carries it.
+		if (envelope.error) {
+			throw new ConanGraphFailure(envelope.error);
+		}
+
+		const parsed = envelope.dependencies ?? {};
 
 		// Build the result from the requested references rather than the parsed
 		// keys, so every caller-supplied reference is present regardless of what
@@ -714,6 +879,24 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 			result[key] = this._parsePackageReferences(
 				dependencies.join("\n")
+			);
+		}
+
+		return result;
+	}
+
+	async dependenciesSequential(
+		references: CfsPackageReference[],
+		options?: CfsPackageDependenciesOptions
+	): Promise<Record<string, CfsPackageReference[]>> {
+		const result: Record<string, CfsPackageReference[]> = {};
+
+		// Resolved one at a time on purpose: combining them is what fails when
+		// the selection conflicts, and each reference alone still resolves.
+		for (const reference of references) {
+			result[this._refToString(reference)] = await this.dependencies(
+				reference,
+				options
 			);
 		}
 
@@ -737,7 +920,10 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		const pkg = pkgIndex[pkgName];
 
 		if (pkg === undefined) {
-			throw Error(`Package ${pkgName} is not installed`);
+			throw Object.assign(
+				new Error(`Package ${pkgName} is not installed`),
+				{ code: "PACKAGE_NOT_INSTALLED" }
+			);
 		}
 
 		return pkg.path;
@@ -753,14 +939,35 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		await this.remoteMgr.deleteCustomRemote(name);
 	}
 
+	// Exempt from the automatic locking proxy: cached data is served without the lock,
+	// otherwise the lock is obtained explicitly before running conan
 	async listRemotes(): Promise<CfsPackageRemote[]> {
-		await this._ensureRemotesReady({ applyConfig: false }); // listing the remotes also applies the config
-		try {
-			return await this.remoteMgr.listRemotes();
-		} catch (error) {
-			this._remotesReady = false;
-			throw error;
+		const currentMgr = this.remoteMgr; // guard against the remote manager being replaced while awaiting the cache
+		const cached = await currentMgr.getCachedRemotes();
+		if (cached && this.remoteMgr === currentMgr) {
+			return cached;
 		}
+
+		return await withOrderedLock(this._lockFilePath, async () => {
+			// Another process or call may have refreshed the cache while waiting for the lock
+			const cachedAfterLock = await this.remoteMgr.getCachedRemotes();
+			if (cachedAfterLock) {
+				return cachedAfterLock;
+			}
+
+			await this._ensureRemotesReady({ applyConfig: false }); // listing the remotes also applies the config
+			try {
+				return await this.remoteMgr.listRemotes();
+			} catch (error) {
+				this._remotesReady = false;
+				throw error;
+			}
+		});
+	}
+
+	async listRemoteStates(): Promise<CfsPackageRemoteState[]> {
+		await this._ensureRemotesReady();
+		return this.remoteMgr.listRemoteStates();
 	}
 
 	async login(
@@ -804,9 +1011,12 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 
 		if (options?.acceptLicense === true) {
 			commandOptions.push("--accept-license");
-			if (this.licenseReporter !== undefined) {
+			// Snapshot the reporter: (un)registration is lock-exempt and may change it while awaiting.
+			const licenseReporter = this.licenseReporter;
+			if (licenseReporter !== undefined) {
 				const plan = await this.getInstallPlan(manifestPath);
 				await this._reportAcceptedLicensesIfNeeded(
+					licenseReporter,
 					plan.requiresLicenseAcceptance.map((pkg) => pkg.reference),
 					plan.toInstall
 				);
@@ -957,13 +1167,11 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 	}
 
 	private async _reportAcceptedLicensesIfNeeded(
+		licenseReporter: CfsPackageLicenseReporter,
 		refsRequiringLicenseAcceptance: CfsPackageReference[],
 		references: CfsPackageReference[]
 	): Promise<void> {
-		if (
-			refsRequiringLicenseAcceptance.length === 0 ||
-			!this.licenseReporter
-		) {
+		if (refsRequiringLicenseAcceptance.length === 0) {
 			return;
 		}
 
@@ -971,20 +1179,20 @@ export class ConanPkgManager implements CfsPackageManagerProvider {
 		// This is necessary because callers may modify the plan's toInstall list (e.g., the IDE
 		// may exclude certain packages like MSDK), and the pre-computed license info from the plan
 		// may include packages that are no longer in the final install set.
-		const referencesToInstall = new Set(
-			references.map((reference) => this._refToString(reference))
+		//
+		// Match by package name only since refsRequiringLicenseAcceptance contains concrete
+		// versions (e.g., "1.0.0") while references may contain version ranges (e.g., "^1.0.0").
+		const packageNamesToInstall = new Set(
+			references.map((reference) => reference.name)
 		);
 		const acceptedReferences = refsRequiringLicenseAcceptance.filter(
-			(reference) =>
-				referencesToInstall.has(this._refToString(reference))
+			(reference) => packageNamesToInstall.has(reference.name)
 		);
 
 		if (acceptedReferences.length === 0) {
 			return;
 		}
 
-		await this.licenseReporter.reportLicenseAcceptance(
-			acceptedReferences
-		);
+		await licenseReporter.reportLicenseAcceptance(acceptedReferences);
 	}
 }

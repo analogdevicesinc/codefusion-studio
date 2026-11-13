@@ -220,6 +220,13 @@ export function getPersistenceListenerMiddleware(
 		listenerMiddleware.startListening({
 			actionCreator: action,
 			effect(action, listenerApi) {
+				// Report a telemetry event for this config edit from a single point.
+				// A util function formats each individual Redux action into a telemetry event with the correct metadata.
+				reportPersistedActionTelemetry(
+					action as {type: string; payload: unknown},
+					listenerApi.getOriginalState() as RootState
+				);
+
 				if (
 					(action.payload as Record<string, unknown>)
 						?.discardPersistence
@@ -228,23 +235,19 @@ export function getPersistenceListenerMiddleware(
 
 				const state = listenerApi.getState() as RootState;
 
-				// Report a telemetry event for this config edit from a single point.
-				// A util function formats each individual Redux action into a telemetry event with the correct metadata.
-				reportPersistedActionTelemetry(
-					action as {type: string; payload: unknown},
-					listenerApi.getOriginalState() as RootState
-				);
-
 				let modifiedClockNodes;
 				let updatedClockNode;
 				let initialControlValues;
 				let updatedPins;
 				let updatedProjects;
 				let clockFrequencies;
+				const removesPeripheralAssignment =
+					removePeripheralAssignment.match(action);
 
 				if (
 					action.type.includes('Pins') ||
-					action.type.includes('ClockConfig')
+					action.type.includes('ClockConfig') ||
+					removesPeripheralAssignment
 				) {
 					const assignedPins = selectAssignedPins(state);
 					const pinConfig = selectAppliedSignalsMap(state);
@@ -257,7 +260,10 @@ export function getPersistenceListenerMiddleware(
 						peripheralConfig
 					});
 
-					if (action.type.includes('Pins')) {
+					if (
+						action.type.includes('Pins') ||
+						removesPeripheralAssignment
+					) {
 						updatedPins = formatPinPersistencePayload(
 							state.pinsReducer.pins
 						);

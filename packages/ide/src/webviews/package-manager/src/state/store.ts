@@ -27,6 +27,7 @@ import {
 import type {Messenger} from 'vscode-messenger-webview';
 import {messenger} from '@common/contexts/MessengerContext';
 import {
+	customRemoteIndexingType,
 	isLoggedInStatusType,
 	packageManagerRemotesUpdatedType
 } from '@constants/messages/package-manager-messages';
@@ -36,9 +37,16 @@ import {
 	setIsLoggedIn,
 	packagesReducer
 } from './slices/packages/packages.reducer';
+import {
+	fetchRemotes,
+	remotesReceived,
+	remoteIndexingChanged,
+	remotesReducer
+} from './slices/remotes/remotes.reducer';
 
 const combinedReducer = combineReducers({
-	packagesReducer
+	packagesReducer,
+	remotesReducer
 });
 
 export type RootState = ReturnType<typeof combinedReducer>;
@@ -53,10 +61,9 @@ export const resetStore = createAction('store/reset');
 /**
  * Wraps the combined reducer so that {@link resetStore} clears all slice state:
  * passing `undefined` state makes each slice reducer return its own initial
- * state. The `detailsEpoch` generation is carried forward incremented rather
- * than reset, so detail fetches in flight for the previous identity are dropped
- * instead of repopulating the cleared cache. Every other action is delegated
- * unchanged.
+ * state. Remote changes still in flight survive, so their remotes stay
+ * locked, and so does the extension's indexing state. Every other action is
+ * delegated unchanged.
  */
 const rootReducer = (
 	state: RootState | undefined,
@@ -64,14 +71,24 @@ const rootReducer = (
 ): RootState => {
 	if (resetStore.match(action)) {
 		const cleared = combinedReducer(undefined, action);
-		const previousEpoch: number =
-			state?.packagesReducer.detailsEpoch ?? 0;
+		if (!state) {
+			return cleared;
+		}
+		const {
+			busyRemotes,
+			pendingToggles,
+			isAddingRemote,
+			indexingRemotes
+		} = state.remotesReducer;
 
 		return {
 			...cleared,
-			packagesReducer: {
-				...cleared.packagesReducer,
-				detailsEpoch: previousEpoch + 1
+			remotesReducer: {
+				...cleared.remotesReducer,
+				busyRemotes,
+				pendingToggles,
+				isAddingRemote,
+				indexingRemotes
 			}
 		};
 	}
@@ -101,7 +118,12 @@ export const useAppSelector: TypedUseSelectorHook<RootState> =
 	useSelector;
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 
-// Reset to a fresh-load baseline whenever the auth identity actually changes (login, logout, or account switch).
+/**
+ * Reset to a fresh-load baseline whenever the auth identity actually changes
+ * (login, logout, or account switch). The host has already rebuilt the package
+ * catalog for the new session before sending this, so the refetch sees the
+ * right packages.
+ */
 function subscribeToAuthChanges() {
 	// Last reconciled identity, seeded from initial state so the first notification counts as a change.
 	let lastAuthKey = store.getState().packagesReducer.isLoggedIn
@@ -120,24 +142,34 @@ function subscribeToAuthChanges() {
 
 			lastAuthKey = authKey;
 			store.dispatch(setIsLoggedIn(loggedIn));
-			void store.dispatch(fetchPackageList({}));
+			void store.dispatch(fetchPackageList());
 			void store.dispatch(fetchSocList());
 		}
 	);
 }
 
-// Remotes changes invalidate cached package details and visibility, so reset
-// store state to drop stale cache, restore login status, then reload the list.
+/**
+ * Enabling or disabling a remote changes which packages are listed, so the
+ * list is reloaded. Filters and page are kept; selections that are no longer
+ * listed are dropped when the list arrives.
+ */
 function subscribeToRemotesChanges() {
 	messenger.onNotification(
 		packageManagerRemotesUpdatedType,
-		(_params: void) => {
-			const {isLoggedIn} = store.getState().packagesReducer;
-			store.dispatch(resetStore());
-			store.dispatch(setIsLoggedIn(isLoggedIn));
-			void store.dispatch(fetchPackageList({}));
+		update => {
+			void store.dispatch(fetchPackageList());
+
+			// A change made from this webview sends the updated remotes along
+			if (update?.remotes) {
+				store.dispatch(remotesReceived(update.remotes));
+			} else if (store.getState().remotesReducer.status !== 'idle') {
+				void store.dispatch(fetchRemotes());
+			}
 		}
 	);
+	messenger.onNotification(customRemoteIndexingType, indexing => {
+		store.dispatch(remoteIndexingChanged(indexing));
+	});
 }
 
 subscribeToAuthChanges();

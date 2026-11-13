@@ -38,6 +38,13 @@ export type TraceConfiguration = {
   buildDir: string;
   // Ai model file paths
   aiModels: string[];
+
+  // Live tracing configs
+  isLiveTracingEnabled?: boolean;
+  tcpServerHost?: string;
+  tcpServerPort?: number;
+  backendHost?: string;
+  backendPort?: number;
 };
 
 export type UsbDevice = UsbDeviceSelection & {

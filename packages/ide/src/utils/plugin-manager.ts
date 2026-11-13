@@ -14,7 +14,7 @@
  */
 import * as vscode from "vscode";
 import { resolveVariables } from "./resolveVariables";
-import { CfsPluginManager } from "cfs-lib/dist/plugins/cfs-plugin-manager";
+import { CfsPluginManager } from "cfs-lib";
 import { CfsPackageManagerProvider } from "cfs-package-manager";
 import debounce from "lodash.debounce";
 import { CfsDataModelManager } from "cfs-lib";

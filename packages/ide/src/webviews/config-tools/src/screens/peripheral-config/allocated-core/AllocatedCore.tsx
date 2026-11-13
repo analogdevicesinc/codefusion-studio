@@ -24,9 +24,7 @@ import {
 } from '../../../state/slices/peripherals/peripherals.selector';
 import {
 	removePeripheralAssignment,
-	removeSignalAssignment,
-	setActivePeripheral,
-	setActiveSignal
+	setActivePeripheral
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {useAppDispatch} from '../../../state/store';
 import {getProjectInfoList} from '../../../utils/config';
@@ -36,7 +34,7 @@ import {
 	SECURE_ABBR as S,
 	NON_SECURE_ABBR as NS
 } from '@common/constants/core-properties';
-import {removeAppliedSignal} from '../../../state/slices/pins/pins.reducer';
+import useDeleteSignalAssignment from '../../../hooks/use-delete-signal-assignment';
 
 function AllocatedCore({
 	projectId,
@@ -59,36 +57,15 @@ function AllocatedCore({
 		signalName
 	);
 
-	const clearAppliedSignal = () => {
-		const targetPinId = currentSignalTarget ?? '';
-
-		const payload = {
-			Pin: targetPinId,
-			Peripheral: peripheral,
-			Name: signalName
-		};
-
-		dispatch(removeAppliedSignal(payload));
-	};
+	const deleteSignalAssignment = useDeleteSignalAssignment(
+		peripheral ?? '',
+		signalName ?? '',
+		currentSignalTarget ?? ''
+	);
 
 	const handleDelete = async () => {
 		if (activeSignal) {
-			// Delete individual signal allocation
-
-			dispatch(
-				// Two Redux actions are dispatched synchronously — removeSignalAssignment and removeAppliedSignal.
-				// Each triggers its own async persistence call to the extension, which does a full document replacement.
-				// These two writes race: each reads the document, modifies only its subset, then writes the entire document back.
-				// So we discard the persistence of this action so that the stale data does not get written back.
-				removeSignalAssignment({
-					peripheral,
-					signalName,
-					discardPersistence: true
-				})
-			);
-			// To remove applied signal
-			clearAppliedSignal();
-			dispatch(setActiveSignal(undefined));
+			deleteSignalAssignment();
 		} else if (activePeripheral) {
 			// Delete entire peripheral allocation
 			dispatch(

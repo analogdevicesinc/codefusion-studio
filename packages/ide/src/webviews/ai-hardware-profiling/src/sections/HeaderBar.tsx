@@ -17,7 +17,7 @@ import type {
 	ApplicationStatus,
 	BuildStatus,
 	DeployStatus
-} from "@ide-types/ai-hardware-profiling-types";
+} from '@ide-types/ai-hardware-profiling-types';
 import {Spinner} from '../../../common/components/spinner/Spinner';
 import CircledCheckmarkIcon from '../../../common/icons/CircledCheckmark';
 import ConflictIcon from '../../../common/icons/Conflict';

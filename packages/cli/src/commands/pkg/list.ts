@@ -12,7 +12,10 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+import type {CfsPackageReference} from 'cfs-package-manager';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -22,7 +25,9 @@ export const pkgListDeps: {
   getPackageManager
 };
 
-export default class CfsPackageList extends Command {
+export default class CfsPackageList extends BaseCommand<
+  typeof CfsPackageList
+> {
   static args = {
     pattern: Args.string({
       name: 'pattern',
@@ -34,10 +39,12 @@ export default class CfsPackageList extends Command {
   };
 
   static description = 'List installed packages.';
+  static useResponseEnvelope = true;
 
   static flags = {
     filter: Flags.string({
-      char: 'f',
+      charAliases: ['f'],
+      deprecateAliases: true,
       description:
         'Optional argument in the form KEY=VALUE used to filter returned packages only to the ones with matching metadata. If this argument is used multiple times, all conditions must be satisfied',
       multiple: true,
@@ -45,9 +52,9 @@ export default class CfsPackageList extends Command {
     })
   };
 
-  async run(): Promise<void> {
+  async run(): Promise<{packages: CfsPackageReference[]}> {
     const packman = await pkgListDeps.getPackageManager();
-    const {args, flags} = await this.parse(CfsPackageList);
+    const {args, flags} = this;
 
     const filterPairs = flags.filter?.map((x) => x.split('='));
     const filter = Object.fromEntries(filterPairs ?? []);
@@ -56,12 +63,13 @@ export default class CfsPackageList extends Command {
 
     if (packageRefs.length === 0) {
       this.log('No packages installed');
-      return;
+    } else {
+      this.log('Installed Packages: ');
+      for (const pkg of packageRefs) {
+        this.log(`- ${pkg.name}/${pkg.version}`);
+      }
     }
 
-    this.log('Installed Packages: ');
-    for (const pkg of packageRefs) {
-      this.log(`- ${pkg.name}/${pkg.version}`);
-    }
+    return {packages: packageRefs};
   }
 }

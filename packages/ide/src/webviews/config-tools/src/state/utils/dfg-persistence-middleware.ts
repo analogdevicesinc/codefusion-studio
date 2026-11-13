@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import {
 } from '../slices/gaskets/gasket.reducer';
 import type {RootState} from '../store';
 import {type DFGStream} from 'cfs-types';
+import {reportPersistedActionTelemetry} from './telemetry-reporter';
 
 export const persistedDfgActions: Array<
 	ActionCreatorWithPayload<any>
@@ -40,8 +41,14 @@ export function getDFGPersistenceListenerMiddleware(
 
 		listenerMiddleware.startListening({
 			actionCreator: action,
-			async effect(_, listenerApi) {
+			async effect(action, listenerApi) {
 				const state = listenerApi.getState() as RootState;
+
+				reportPersistedActionTelemetry(
+					action as {type: string; payload: unknown},
+					listenerApi.getOriginalState() as RootState
+				);
+
 				const streams = formatDfgStreamsForPersistence(
 					state.gasketsReducer.Streams
 				);
@@ -59,11 +66,11 @@ export function getDFGPersistenceListenerMiddleware(
  * @param streams
  * @returns A clean copy of Streams list
  */
-function formatDfgStreamsForPersistence(
+export function formatDfgStreamsForPersistence(
 	streams: DFGStreamUI[]
 ): DFGStream[] {
 	return structuredClone(streams).map((s: DFGStreamUI) => {
-		const {Uuid, ...rest} = s;
+		const {Uuid: _Uuid, ...rest} = s;
 
 		return rest;
 	});

@@ -71,6 +71,7 @@ export default function useApplicationPackageErrorCount(
 			oddHexLength: 'error',
 			hexValueExceedsMax: 'error',
 			valueTooLong: 'error',
+			valueByteIncrement: 'error',
 			tagRequired: 'error',
 			tagOutOfRange: 'error',
 			valueRequired: 'error',
@@ -95,12 +96,12 @@ export default function useApplicationPackageErrorCount(
 				);
 				const hasTagError = Boolean(
 					validateCustomTlvTag(tlv.tag, errorMessages) ??
-						validateDuplicateTag(
-							tlv.tag,
-							tlv.id,
-							scopedTlvs,
-							errorMessages
-						)
+					validateDuplicateTag(
+						tlv.tag,
+						tlv.id,
+						scopedTlvs,
+						errorMessages
+					)
 				);
 
 				return (
@@ -124,7 +125,11 @@ export default function useApplicationPackageErrorCount(
 			applicationPackage?.images?.reduce(
 				(total, image) =>
 					total +
-					countImageValidationErrors(image, imageErrorMessages),
+					countImageValidationErrors(
+						image,
+						imageErrorMessages,
+						applicationPackage.images
+					),
 				0
 			) ?? 0;
 

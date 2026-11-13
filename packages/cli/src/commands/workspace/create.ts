@@ -13,18 +13,29 @@
  *
  */
 
-import type {CfsPluginInfo, CfsWorkspace} from 'cfs-types';
+import type {CfsConfig, CfsPluginInfo, CfsWorkspace} from 'cfs-types';
 
-import {Command, Flags} from '@oclif/core';
-import {CfsDataModelManager} from 'cfs-lib';
+import {Flags} from '@oclif/core';
 
+import {BaseCommand} from '../../utils/base-command.js';
+import {
+  CfsDataModelManager,
+  CfsToolManager,
+  generateAIArtifacts,
+  readJsonFile
+} from 'cfs-lib';
+import path from 'node:path';
+
+import {getSocCatalog} from '../../utils/catalog-manager.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
+import {preserveTelemetrySession} from '../../utils/telemetry-session.js';
 import {
   checkIfFileExists,
-  lowercaseFirstLetterProps,
-  readJsonFile
+  findSocByName,
+  getCFSInstallPath,
+  lowercaseFirstLetterProps
 } from '../../utils/utils.js';
 import {validatePaths, validateSoC} from '../../utils/validation.js';
 import {
@@ -35,7 +46,9 @@ import {
   getValidTemplate
 } from '../../utils/workspace-utils.js';
 
-export default class WorkspaceCreate extends Command {
+export default class WorkspaceCreate extends BaseCommand<
+  typeof WorkspaceCreate
+> {
   static description =
     'Generates a workspace based on a configuration file or command line arguments.';
 
@@ -43,6 +56,8 @@ export default class WorkspaceCreate extends Command {
     '<%= config.bin %> <%= command.id %> --workspace-file-path ./my_workspace.cfsworkspace',
     '<%= config.bin %> <%= command.id %> -o c:/tmp --name myNewWorkspace --soc ADSP-SC835 --board ADSPSC835-EV-SOM --template-id com.analog.sharcfx.example --template-version 1.0.1'
   ];
+
+  static useResponseEnvelope = true;
 
   static flags = {
     'search-path': Flags.string({
@@ -106,8 +121,19 @@ export default class WorkspaceCreate extends Command {
       );
     }
 
+    let workspaceFileContent: Record<string, unknown>;
+    try {
+      workspaceFileContent = readJsonFile(cfsWorkspaceFile);
+    } catch (error) {
+      // readJsonFile messages embed the path; pin a stable code instead.
+      this.error(
+        error instanceof Error ? error.message : String(error),
+        {code: 'WORKSPACE_FILE_READ_FAILED'}
+      );
+    }
+
     const cfsWorkspace = lowercaseFirstLetterProps(
-      readJsonFile(cfsWorkspaceFile)
+      workspaceFileContent
     ) as CfsWorkspace;
 
     if (workspaceName) {
@@ -144,8 +170,8 @@ export default class WorkspaceCreate extends Command {
     return cfsWorkspace;
   }
 
-  async run() {
-    const {flags} = await this.parse(WorkspaceCreate);
+  async run(): Promise<{workspacePath: string}> {
+    const {flags} = this;
     const isNew = flags.input === undefined;
     let validSoc = false;
 
@@ -242,13 +268,91 @@ export default class WorkspaceCreate extends Command {
     // If there are any errors, display them all and exit
     checkErrors(errors, this);
 
+    if (isNew) {
+      const catalog = await getSocCatalog(this.config, false);
+      const catalogSocs = await catalog.getAll();
+      const catalogSoc = findSocByName(
+        catalogSocs,
+        flags.soc as string
+      );
+      const isKnownBoard =
+        catalogSoc?.boards.some((b) => b.name === flags.board) ??
+        false;
+      const isAdiPlugin =
+        template?.pluginId?.startsWith('com.analog') ?? false;
+
+      this.telemetryMetadata = {
+        soc: flags.soc,
+        board: isKnownBoard ? flags.board : 'Custom',
+        templateId: isAdiPlugin ? template?.pluginId : 'Custom',
+        templateVersion: isAdiPlugin
+          ? template?.pluginVersion
+          : undefined,
+        creationMethod: 'new'
+      };
+    } else {
+      this.telemetryMetadata = {creationMethod: 'file'};
+    }
+
     if (workspaceConfig) {
+      // Set Zephyr base for board DTS detection during workspace generation
+      const installPath = getCFSInstallPath(this.config);
+      const toolManager = new CfsToolManager(
+        pkgManager,
+        installPath ? [installPath] : undefined,
+        workspaceConfig.soc
+      );
+      const zephyrTool =
+        await toolManager.getInstalledToolById('zephyr');
+      if (zephyrTool) {
+        pluginManager.zephyrBase = path.join(
+          zephyrTool.rootPath,
+          'zephyr'
+        );
+      }
+
       await generateWorkspaceFromConfig(
         workspaceConfig,
         pluginManager,
-        this
+        this,
+        {zephyrBase: pluginManager.zephyrBase}
       );
+
+      await generateAIArtifacts(
+        workspaceConfig,
+        async (
+          _config: CfsConfig,
+          configPath: string,
+          workspacePath: string
+        ) =>
+          preserveTelemetrySession(() =>
+            this.config.runCommand('ai:build', [
+              '--config',
+              configPath,
+              '--cwd',
+              workspacePath,
+              // Keeps ai:build's own text output off the JSON document.
+              ...(this.jsonEnabled() ? ['--quiet'] : []),
+              ...(flags['search-path'] ?? []).flatMap((p) => [
+                '--search-path',
+                p
+              ])
+            ])
+          )
+      );
+
+      return {
+        workspacePath: path.resolve(
+          workspaceConfig.location,
+          workspaceConfig.workspaceName
+        )
+      };
     }
+
+    // Unreachable: checkErrors() throws first; this only satisfies control-flow analysis.
+    return this.error(
+      'Workspace configuration could not be determined.'
+    );
   }
 
   validateFlags(

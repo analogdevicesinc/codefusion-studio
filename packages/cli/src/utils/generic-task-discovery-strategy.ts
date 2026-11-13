@@ -29,9 +29,7 @@ import {globFiles, readJsonFile} from 'cfs-lib';
  * Note: This is CLI-specific because the IDE delegates tasks.json
  * parsing to VS Code's native task system.
  */
-export class GenericTaskDiscoveryStrategy
-  implements TaskDiscoveryStrategy
-{
+export class GenericTaskDiscoveryStrategy implements TaskDiscoveryStrategy {
   readonly id = 'generic';
 
   async discoverTasks(

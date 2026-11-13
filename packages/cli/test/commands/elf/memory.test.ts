@@ -16,11 +16,7 @@ import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {ElfFileParser} from 'elf-parser';
-import {
-  generateMemoryJson,
-  MemoryFlags
-} from '../../../src/commands/elf/memory.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,17 +34,20 @@ describe('elf memory', () => {
         '-s',
         path.resolve(
           __dirname,
-          '../../../../elf-parser/test/data/input.elf'
+          '../../../../cfs-lib/test/parsers/elf-parser/data/input.elf'
         ),
         '--format=json'
       ],
       {root: '..'}
     );
-    const json = JSON.parse(stdout);
-    expect(json).to.be.an('object');
-    expect(json).to.have.property('Segments');
-    expect(json.Segments).to.be.an('array');
-    expect(Object.keys(json).length).to.be.equal(1);
+    const parsed = assertValidEnvelope<{Segments: unknown[]}>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data).to.be.an('object');
+      expect(parsed.data).to.have.property('Segments');
+      expect(parsed.data.Segments).to.be.an('array');
+      expect(Object.keys(parsed.data).length).to.be.equal(1);
+    }
   });
 
   it('sections filtered by segment id', async () => {
@@ -60,18 +59,22 @@ describe('elf memory', () => {
         '0', // Filter by segment id 0
         path.resolve(
           __dirname,
-          '../../../../elf-parser/test/data/input.elf'
+          '../../../../cfs-lib/test/parsers/elf-parser/data/input.elf'
         ),
         '--format=json'
       ],
       {root: '..'}
     );
-    const json = JSON.parse(stdout);
-    expect(json).to.be.an('object');
-    // Should only contain sections for segment 0
-    expect(json).to.have.property('0');
-    // Should not contain other segments
-    expect(json).to.not.have.property('1');
+    const parsed =
+      assertValidEnvelope<Record<string, unknown>>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data).to.be.an('object');
+      // Should only contain sections for segment 0
+      expect(parsed.data).to.have.property('0');
+      // Should not contain other segments
+      expect(parsed.data).to.not.have.property('1');
+    }
   });
 
   it('symbols filtered by section id', async () => {
@@ -83,19 +86,25 @@ describe('elf memory', () => {
         '0', // Filter by section id 0
         path.resolve(
           __dirname,
-          '../../../../elf-parser/test/data/input.elf'
+          '../../../../cfs-lib/test/parsers/elf-parser/data/input.elf'
         ),
         '--format=json'
       ],
       {root: '..'}
     );
-    const json = JSON.parse(stdout);
-    expect(json).to.be.an('object');
-    expect(json).to.have.property('Sections');
-    expect(json.Sections).to.be.an('array');
-    // Should only contain section with id 0
-    expect(json.Sections.length).to.be.at.least(1);
-    expect(json.Sections.every((section: any) => section.id === 0)).to.be
-      .true;
+    const parsed = assertValidEnvelope<{
+      Sections: {id: number}[];
+    }>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data).to.be.an('object');
+      expect(parsed.data).to.have.property('Sections');
+      expect(parsed.data.Sections).to.be.an('array');
+      // Should only contain section with id 0
+      expect(parsed.data.Sections.length).to.be.at.least(1);
+      expect(
+        parsed.data.Sections.every((section) => section.id === 0)
+      ).to.be.true;
+    }
   });
 });

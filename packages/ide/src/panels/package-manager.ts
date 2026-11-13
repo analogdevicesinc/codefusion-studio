@@ -18,163 +18,66 @@ import * as vscode from "vscode";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as fg from "fast-glob";
-import * as semver from "semver";
 import { Messenger } from "vscode-messenger";
 import type {
-  CfsCachedPackage,
   CfsPackageManagerProvider,
   CfsPackageReference,
 } from "cfs-package-manager";
-import { MANIFEST_FILE_NAME } from "cfs-package-manager";
+import { isConanGraphFailure } from "cfs-package-manager";
+import { BROADCAST } from "vscode-messenger-common";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
-import type { SoC } from "cfs-ccm-lib";
 import {
+  addRemoteRequest,
+  customRemoteIndexingType,
   fetchLicenseDataRequest,
+  getCustomRemoteIndexingRequest,
+  getInstallPlanRequest,
   getLoggedInStatusRequest,
   getPackageDependentsRequest,
   getPackageDependenciesBatchRequest,
   getPackageListRequest,
-  getPackageDetailsRequest,
   getPackageCacheStateRequest,
   getPreferenceRequest,
+  getRemotesRequest,
   getSocListRequest,
   isLoggedInStatusType,
   packageManagerRemotesUpdatedType,
   openLicensePreviewRequest,
+  removeRemoteRequest,
   setPreferenceRequest,
+  setRemoteCredentialsRequest,
+  setRemoteEnabledRequest,
   signInRequest,
   uninstallPackagesRequest,
-  type MissingRequiredPackage,
-  type PackageListEntry,
+  type PackageManagerRemoteCredentials,
+  type RemotesChangeResult,
   type FetchLicenseDataResponse,
   HIDE_UNINSTALL_CONFIRMATION_KEY,
   installPackagesRequest,
+  installProgressShownNotification,
+  PKG_MANAGER_NOT_AVAILABLE,
 } from "../constants/messages/package-manager-messages";
 import {
-  getManifestPackages,
+  getRequiredPackages,
   formatErrorForDisplay,
+  listWebviewRemotes,
 } from "../utils/package-manager";
+import type { PackageCatalogService } from "../utils/package-catalog";
+import type { CustomRemoteCatalogService } from "../utils/custom-remote-catalog";
 import { getCatalogManager } from "../utils/catalog";
+import {
+  buildPackageList,
+  getMissingRequiredPackages,
+  filterByEnabledRemotes,
+} from "../utils/package-list";
 import { CLOUD_CATALOG_AUTH } from "../commands/constants";
 import { EXTENSION_ID, SDK_PATH } from "../constants";
-import { SessionManager } from "cfs-lib";
-import { AuthConfigParser } from "../utils/auth-config";
+import type { AuthService } from "../services/auth-service";
 import { logger } from "../utils/logger";
-
-/**
- * Reads every `.cfsdependencies` manifest in the workspace and returns a map
- * of package name → all required version constraints collected across manifests.
- * Pure file reads — no conan calls.
- */
-async function getRequiredPackages(): Promise<Map<string, string[]>> {
-  const required = new Map<string, string[]>();
-
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) {
-    return required;
-  }
-
-  const manifestPathLists = await Promise.all(
-    folders.map((folder) =>
-      fg.async(`**/${MANIFEST_FILE_NAME}`, {
-        cwd: folder.uri.fsPath,
-        absolute: true,
-        dot: true,
-        onlyFiles: true,
-      }),
-    ),
-  );
-
-  for (const manifestPath of manifestPathLists.flat()) {
-    try {
-      for (const pkg of getManifestPackages(manifestPath)) {
-        const existing = required.get(pkg.name);
-        if (existing) {
-          existing.push(pkg.version);
-        } else {
-          required.set(pkg.name, [pkg.version]);
-        }
-      }
-    } catch {
-      // Ignore buggy/malformed manifests
-    }
-  }
-
-  return required;
-}
-
-/** Orders package list entries: required packages first, then the rest, both alphabetical. */
-function orderPackageList(entries: PackageListEntry[]): PackageListEntry[] {
-  const byName = (a: PackageListEntry, b: PackageListEntry) =>
-    a.name.localeCompare(b.name);
-  const required = entries.filter((e) => e.isRequired).sort(byName);
-  const rest = entries.filter((e) => !e.isRequired).sort(byName);
-  return [...required, ...rest];
-}
-
-/**
- * Builds the ordered package list from a set of references, folding in local
- * cache/installed state and workspace-required names. Cached/installed
- * versions are added even if no remote listed them, so an installed package
- * always appears.
- */
-async function buildPackageList(
-  refs: CfsPackageReference[],
-  cachedPackages: CfsCachedPackage[],
-  requiredPackages: Map<string, string[]>,
-  sdkPath: string | undefined,
-): Promise<PackageListEntry[]> {
-  const versionsByName = new Map<string, Set<string>>();
-  const addVersion = (name: string, version: string) => {
-    let versions = versionsByName.get(name);
-    if (!versions) {
-      versions = new Set<string>();
-      versionsByName.set(name, versions);
-    }
-    versions.add(version);
-  };
-  for (const ref of refs) {
-    addVersion(ref.name, ref.version);
-  }
-
-  const cachedVersionsByName = new Map<string, Set<string>>();
-  const installedVersionByName = new Map<string, string>();
-  for (const cached of cachedPackages) {
-    const { name, version } = cached.reference;
-    addVersion(name, version);
-    let cachedVersions = cachedVersionsByName.get(name);
-    if (!cachedVersions) {
-      cachedVersions = new Set<string>();
-      cachedVersionsByName.set(name, cachedVersions);
-    }
-    cachedVersions.add(version);
-    if (cached.isInstalled) {
-      installedVersionByName.set(name, version);
-    }
-  }
-
-  const builtinVersions = await getBuiltinVersions(sdkPath);
-
-  const entries: PackageListEntry[] = [];
-  for (const [name, versions] of versionsByName) {
-    const requiredVersions = requiredPackages.get(name);
-    const builtInVersion = builtinVersions.get(name);
-    const installedVersion = installedVersionByName.get(name) ?? builtInVersion;
-    entries.push({
-      name,
-      versions: [...versions],
-      isRequired: !!requiredVersions,
-      requiredVersions,
-      installedVersion: installedVersion,
-      cachedVersions: [...(cachedVersionsByName.get(name) ?? [])],
-      builtIn: !!builtInVersion,
-      builtInVersion,
-      state: installedVersion !== undefined ? "installed" : "not-installed",
-    });
-  }
-
-  return orderPackageList(entries);
-}
+import {
+  PackageManagerRemotesWatcher,
+  type RemotesFiles,
+} from "../providers/package-manager-remotes-file-watcher";
 
 /**
  * Resolves the full uninstall order for the given package names, expanding each
@@ -209,63 +112,6 @@ async function resolveUninstallOrder(
   return order;
 }
 
-/**
- * Whether an available version satisfies a required constraint. Coerce's
- * the version with includePrerelease (so a prerelease isn't flattened to
- * its release) + semver.satisfies, with an exact-string fallback for
- * non-semver inputs.
- */
-function versionSatisfies(version: string, constraint: string): boolean {
-  const coerced = semver.coerce(version, { includePrerelease: true });
-
-  if (coerced) {
-    try {
-      return semver.satisfies(coerced, constraint);
-    } catch {
-      return version === constraint;
-    }
-  }
-
-  return version === constraint;
-}
-
-/**
- * Required packages (from workspace manifests) the user has no access to: a
- * required version is "missing" when no version returned by the catalog search
- * satisfies it. Covers both an entirely absent package and an exclusive version
- * (e.g. a prerelease) of an otherwise-visible package. Only the unsatisfiable
- * required versions are reported.
- */
-function getMissingRequiredPackages(
-  refs: CfsPackageReference[],
-  requiredPackages: Map<string, string[]>,
-): MissingRequiredPackage[] {
-  const availableVersionsByName = new Map<string, string[]>();
-  for (const ref of refs) {
-    const versions = availableVersionsByName.get(ref.name);
-    if (versions) {
-      versions.push(ref.version);
-    } else {
-      availableVersionsByName.set(ref.name, [ref.version]);
-    }
-  }
-
-  const missing: MissingRequiredPackage[] = [];
-  for (const [name, requiredVersions] of requiredPackages) {
-    const available = availableVersionsByName.get(name) ?? [];
-    const missingVersions = [...new Set(requiredVersions)].filter(
-      (required) =>
-        !available.some((version) => versionSatisfies(version, required)),
-    );
-
-    if (missingVersions.length > 0) {
-      missing.push({ name, versions: missingVersions });
-    }
-  }
-
-  return missing.sort((a, b) => a.name.localeCompare(b.name));
-}
-
 type LicensePreviewParams = {
   packageName: string;
   version: string;
@@ -274,6 +120,7 @@ type LicensePreviewParams = {
 
 const PACKAGE_MANAGER_VIEW_TYPE = "cfs.packman.view";
 const LICENSE_PREVIEW_VIEW_TYPE = "cfs.packman.licensePreview";
+const PACKAGE_CATALOG_NOT_AVAILABLE = "Package catalog not available";
 
 /** Subdirectory under the SDK install path where bundled tools reside. */
 const SDK_TOOLS_SUBDIR = "SDK";
@@ -339,7 +186,7 @@ async function fetchLicenseData(
   version: string,
 ): Promise<FetchLicenseDataResponse> {
   if (!pkgManager) {
-    throw new Error("Package Manager not available");
+    throw new Error(PKG_MANAGER_NOT_AVAILABLE);
   }
 
   const pkg = await pkgManager.getPackageInfo({ name, version });
@@ -360,6 +207,76 @@ function validatePreferenceKey(
   }
 }
 
+/**
+ * Applies a remotes change requested by the webview, reports its success to
+ * the user and resolves with the updated remote list. A failure is reported
+ * to the user here and then passed on, so the webview only has to roll back
+ * its own state.
+ *
+ * If the change goes through but the list can't be read back, that is
+ * reported too, and the result is `undefined` rather than a rejection: the
+ * webview must not roll back a change that was applied.
+ */
+async function changeRemotes(
+  pkgManager: CfsPackageManagerProvider | undefined,
+  customRemoteCatalog: CustomRemoteCatalogService | undefined,
+  failureMessage: string,
+  successMessage: string,
+  change: (pkgManager: CfsPackageManagerProvider) => Promise<void>,
+): Promise<RemotesChangeResult> {
+  if (!pkgManager) {
+    throw new Error(PKG_MANAGER_NOT_AVAILABLE);
+  }
+
+  // A change rewrites the remotes files more than once; notify once, after the
+  // updated list has been read back for the response
+  let files: RemotesFiles | undefined;
+  return PackageManagerRemotesWatcher.pause(
+    async () => {
+      try {
+        await change(pkgManager);
+      } catch (error) {
+        logger.error(`${failureMessage}:`, error);
+        void vscode.window.showErrorMessage(
+          `CFS: ${failureMessage}.${formatErrorForDisplay(error)}`,
+        );
+        throw error;
+      }
+
+      void vscode.window.showInformationMessage(`CFS: ${successMessage}.`);
+
+      try {
+        // Read before the list, so the list is at least as new as the files
+        files = await PackageManagerRemotesWatcher.readFiles?.();
+        return await listWebviewRemotes(pkgManager, customRemoteCatalog);
+      } catch (error) {
+        logger.error("Failed to refresh the remote list:", error);
+        void vscode.window.showErrorMessage(
+          `CFS: Failed to refresh the remote list.${formatErrorForDisplay(error)}`,
+        );
+        return undefined;
+      }
+    },
+    // The webviews take these remotes instead of reloading them
+    (remotes) => (remotes && files ? { remotes, files } : undefined),
+  );
+}
+
+/**
+ * Throws unless the credentials are complete. Conan asks for a missing
+ * password interactively, which a background call can never answer.
+ */
+function assertLoginCredentials(
+  credentials: Extract<
+    PackageManagerRemoteCredentials,
+    { auth: "usernamePassword" }
+  >,
+): void {
+  if (!credentials.username || !credentials.password) {
+    throw new Error("A username and password are required to log in.");
+  }
+}
+
 export class PackageManagerPagePanel {
   public static currentPanel: PackageManagerPagePanel | undefined;
   private static readonly licensePreviewPanels = new Map<
@@ -369,7 +286,6 @@ export class PackageManagerPagePanel {
 
   private readonly _panel: WebviewPanel;
   private readonly _viewProviderPanel: ViewProviderPanel;
-  private _sessionManager: SessionManager | undefined;
   private _disposables: vscode.Disposable[] = [];
 
   private constructor(
@@ -377,6 +293,9 @@ export class PackageManagerPagePanel {
     context: vscode.ExtensionContext,
     messenger: Messenger,
     pkgManager: CfsPackageManagerProvider | undefined,
+    packageCatalog: PackageCatalogService | undefined,
+    customRemoteCatalog: CustomRemoteCatalogService | undefined,
+    private readonly authService: AuthService,
   ) {
     this._panel = panel;
     this._viewProviderPanel = new ViewProviderPanel(context, {
@@ -386,20 +305,20 @@ export class PackageManagerPagePanel {
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    this._registerMessengerHandlers(context, messenger, pkgManager);
+    this._registerMessengerHandlers(
+      context,
+      messenger,
+      pkgManager,
+      packageCatalog,
+      customRemoteCatalog,
+    );
 
     void this._viewProviderPanel.resolveWebviewView(this._panel);
   }
 
   private getLoggedInStatus = async (): Promise<boolean> => {
     try {
-      // initialize session manager if it has failed before
-      if (!this._sessionManager) {
-        const authConfig = new AuthConfigParser().getConfig();
-        this._sessionManager = new SessionManager(authConfig);
-      }
-
-      const session = await this._sessionManager.getSession();
+      const session = await this.authService.getSession();
       return Boolean(session);
     } catch (error) {
       console.debug(
@@ -414,62 +333,80 @@ export class PackageManagerPagePanel {
     context: vscode.ExtensionContext,
     messenger: Messenger,
     pkgManager: CfsPackageManagerProvider | undefined,
+    packageCatalog: PackageCatalogService | undefined,
+    customRemoteCatalog: CustomRemoteCatalogService | undefined,
   ) {
     const participant = messenger.registerWebviewPanel(this._panel, {
       broadcastMethods: [
         isLoggedInStatusType.method,
         packageManagerRemotesUpdatedType.method,
+        customRemoteIndexingType.method,
       ],
     });
+
+    // Credentials live in conan's own database, which the remotes file watcher
+    // doesn't see, so logins and logouts are announced here. They change which
+    // packages the remotes offer, and whether the custom ones can be indexed,
+    // so those are indexed again too.
+    const announceCredentialsChange = () => {
+      messenger.sendNotification(
+        packageManagerRemotesUpdatedType,
+        BROADCAST,
+        undefined,
+      );
+      customRemoteCatalog?.update();
+    };
 
     // Register handlers for messages from the webview
     const handlers: vscode.Disposable[] = [
       messenger.onRequest(
         getPackageListRequest,
-        async ({ pattern }) => {
+        async () => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
+          }
+          if (!packageCatalog) {
+            throw new Error(PACKAGE_CATALOG_NOT_AVAILABLE);
           }
 
-          const searchPattern = pattern ? `${pattern}*` : "*/*";
-
-          // Cheap calls only: refs from remotes, local cache state, and the
-          // required-package versions from workspace manifests. No per-package
-          // metadata — that is fetched via the details (batch) request.
-          const [refs, cachedPackages, requiredPackages] = await Promise.all([
-            pkgManager.search(searchPattern),
-            pkgManager.listCache(searchPattern),
-            getRequiredPackages(),
-          ]);
-
+          // Names, versions and per-version metadata come from the catalog and
+          // the custom remotes; Conan contributes cache / installed state and
+          // which remotes are enabled. Manifests and bundled tools are local.
           const sdkPath = vscode.workspace
             .getConfiguration(EXTENSION_ID)
             .get<string>(SDK_PATH);
-          const packageList = await buildPackageList(
-            refs,
+          const [
+            catalogPackages,
+            customPackages,
+            remotes,
             cachedPackages,
             requiredPackages,
-            sdkPath,
+            builtinVersions,
+          ] = await Promise.all([
+            packageCatalog.getPackages(),
+            customRemoteCatalog?.getPackages() ?? [],
+            pkgManager.listRemoteStates(),
+            pkgManager.listCache("*/*"),
+            getRequiredPackages(),
+            getBuiltinVersions(sdkPath),
+          ]);
+          const packages = filterByEnabledRemotes(
+            [...catalogPackages, ...customPackages],
+            remotes,
           );
 
-          const missingRequiredPackages = getMissingRequiredPackages(
-            refs,
-            requiredPackages,
-          );
-
-          return { packageList, missingRequiredPackages };
-        },
-        { sender: participant },
-      ),
-      messenger.onRequest(
-        getPackageDetailsRequest,
-        async ({ references }) => {
-          if (!pkgManager) {
-            throw new Error("Package Manager not available");
-          }
-
-          const packages = await pkgManager.getPackageInfo(references);
-          return { packages };
+          return {
+            packageList: buildPackageList(
+              packages,
+              cachedPackages,
+              requiredPackages,
+              builtinVersions,
+            ),
+            missingRequiredPackages: getMissingRequiredPackages(
+              packages,
+              requiredPackages,
+            ),
+          };
         },
         { sender: participant },
       ),
@@ -477,7 +414,7 @@ export class PackageManagerPagePanel {
         getPackageCacheStateRequest,
         async ({ names }) => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
           }
           if (names.length === 0) {
             return { cached: [] };
@@ -497,19 +434,25 @@ export class PackageManagerPagePanel {
       messenger.onRequest(
         getSocListRequest,
         async () => {
-          const catalogManager = await getCatalogManager();
+          // A fresh manager per request picks up the current session, so
+          // restricted SoCs appear after login; it is disposed afterwards.
+          const catalogManager = await getCatalogManager(this.authService);
           if (!catalogManager) {
             throw new Error("Catalog Manager not available");
           }
 
-          await catalogManager.loadCatalog();
-          const socs = await catalogManager.socCatalog.getAll();
+          try {
+            await catalogManager.loadCatalog();
+            const socs = await catalogManager.socCatalog.getAll();
 
-          return {
-            socs: socs
-              .map((soc: SoC) => ({ id: soc.id, name: soc.name }))
-              .sort((a, b) => a.name.localeCompare(b.name)),
-          };
+            return {
+              socs: socs
+                .map((soc) => ({ id: soc.id, name: soc.name }))
+                .sort((a, b) => a.name.localeCompare(b.name)),
+            };
+          } finally {
+            await catalogManager.dispose();
+          }
         },
         { sender: participant },
       ),
@@ -529,20 +472,11 @@ export class PackageManagerPagePanel {
         installPackagesRequest,
         async ({ packages, options }) => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
           }
           if (packages.length === 0) {
             throw new Error("No packages provided for install");
           }
-
-          const progressOptions: vscode.ProgressOptions = {
-            location: vscode.ProgressLocation.Notification,
-            title:
-              packages.length > 1
-                ? `CFS: Installing ${packages.length} selected packages...`
-                : `CFS: Installing package ${packages[0].name}/${packages[0].version}...`,
-            cancellable: false,
-          };
 
           // Which packages are already present, asked *before* installing —
           // afterwards everything is installed and the distinction is lost.
@@ -557,10 +491,10 @@ export class PackageManagerPagePanel {
           }
 
           try {
-            const installed = await vscode.window.withProgress(
-              progressOptions,
-              () => pkgManager.install(packages, options),
-            );
+            // Install without showing progress notification here.
+            // The notification is shown earlier by installProgressShownNotification handler
+            // when the install progress page mounts, so users see it immediately.
+            const installed = await pkgManager.install(packages, options);
 
             if (installed.length > 0) {
               vscode.window.showInformationMessage(
@@ -588,6 +522,19 @@ export class PackageManagerPagePanel {
         },
         { sender: participant },
       ),
+      // Show VS Code notification immediately when install progress page is shown
+      messenger.onNotification(
+        installProgressShownNotification,
+        ({ packageCount, packages }) => {
+          const title =
+            packageCount > 1
+              ? `CFS: Installing ${packageCount} selected packages...`
+              : `CFS: Installing package ${packages[0].name}/${packages[0].version}...`;
+
+          vscode.window.showInformationMessage(title);
+        },
+        { sender: participant },
+      ),
       // Accepts a batch of package names to uninstall. The backend handles
       // batches (including dependent resolution), but the frontend currently
       // only sends one name at a time since the batch-uninstall UI is not yet
@@ -596,7 +543,7 @@ export class PackageManagerPagePanel {
         uninstallPackagesRequest,
         async ({ names }) => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
           }
           if (names.length === 0) {
             throw new Error("No package names provided for uninstall");
@@ -670,7 +617,7 @@ export class PackageManagerPagePanel {
         getPackageDependentsRequest,
         async ({ reference }) => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
           }
 
           return pkgManager.localConsumers(reference.name);
@@ -681,10 +628,48 @@ export class PackageManagerPagePanel {
         getPackageDependenciesBatchRequest,
         async ({ references }) => {
           if (!pkgManager) {
-            throw new Error("Package Manager not available");
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
           }
 
-          return pkgManager.dependenciesBatch(references);
+          try {
+            return {
+              dependencies: await pkgManager.dependenciesBatch(references),
+            };
+          } catch (error) {
+            // A conflict describes the selection rather than a broken call, so
+            // it travels in the response where its structure survives.
+            if (isConanGraphFailure(error)) {
+              // In case of a conflict, resolve each package individually to avoid Conan failure
+              // Conan fails on first conflict encounter, leaving dependencies empty
+              let dependencies: Record<string, CfsPackageReference[]> = {};
+
+              try {
+                dependencies =
+                  await pkgManager.dependenciesSequential(references);
+              } catch {
+                // TODO: Display generic error
+              }
+
+              return {
+                dependencies,
+                conflict: error.conflict,
+                failure: error.message,
+              };
+            }
+
+            throw error;
+          }
+        },
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        getInstallPlanRequest,
+        async ({ input }) => {
+          if (!pkgManager) {
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
+          }
+
+          return pkgManager.getInstallPlan(input);
         },
         { sender: participant },
       ),
@@ -726,6 +711,162 @@ export class PackageManagerPagePanel {
           fetchLicenseData(pkgManager, name, version),
         { sender: participant },
       ),
+      messenger.onRequest(
+        getRemotesRequest,
+        async () => {
+          if (!pkgManager) {
+            throw new Error(PKG_MANAGER_NOT_AVAILABLE);
+          }
+
+          return listWebviewRemotes(pkgManager, customRemoteCatalog);
+        },
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        getCustomRemoteIndexingRequest,
+        () => customRemoteCatalog?.indexing ?? { remotes: [] },
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        addRemoteRequest,
+        async ({ name, url, credentials }) => {
+          const performAddRemote = () =>
+            changeRemotes(
+              pkgManager,
+              customRemoteCatalog,
+              `Failed to add remote "${name}"`,
+              `Successfully added remote "${name}" with URL "${url}"`,
+              async (pm) => {
+                if (credentials.auth === "none") {
+                  await pm.addRemote(name, url);
+                  return;
+                }
+
+                assertLoginCredentials(credentials);
+                await pm.addRemote(name, url);
+
+                try {
+                  await pm.login(
+                    name,
+                    credentials.username,
+                    credentials.password,
+                  );
+                } catch (error) {
+                  // Remove the remote again so the form can be resubmitted as is.
+                  try {
+                    await pm.deleteRemote(name);
+                  } catch (deleteError) {
+                    // It stays, without credentials. Report it as added so the
+                    // webview lists it and its login can be retried from there.
+                    logger.error(
+                      `Failed to log in to remote "${name}":`,
+                      error,
+                      "Removing it again failed too:",
+                      deleteError,
+                    );
+                    void vscode.window.showErrorMessage(
+                      `CFS: Remote "${name}" was added, but logging in to it failed.${formatErrorForDisplay(error)}`,
+                    );
+                    return;
+                  }
+
+                  throw error;
+                }
+              },
+            );
+
+          // Start the operation
+          const operationPromise = performAddRemote();
+
+          // Show notification with Dismiss button
+          const dismissPromise = vscode.window.showInformationMessage(
+            `CFS: Adding remote "${name}"...`,
+            "Dismiss",
+          );
+
+          // Race between operation completion and dismiss button
+          const result = await Promise.race([
+            operationPromise.then((remotes) => ({ remotes, completed: true })),
+            dismissPromise.then(() => ({
+              remotes: undefined,
+              completed: false,
+            })),
+          ]);
+
+          if (result.completed) {
+            // Operation completed before dismiss - return result
+            if (credentials.auth === "usernamePassword") {
+              announceCredentialsChange();
+            }
+            return result.remotes;
+          }
+
+          // Dismissed - move to status bar and wait for operation
+          const remotes = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Window,
+              title: `CFS: Adding remote "${name}"...`,
+            },
+            async () => await operationPromise,
+          );
+
+          if (credentials.auth === "usernamePassword") {
+            announceCredentialsChange();
+          }
+
+          return remotes;
+        },
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        removeRemoteRequest,
+        async ({ name }) =>
+          changeRemotes(
+            pkgManager,
+            customRemoteCatalog,
+            `Failed to remove remote "${name}"`,
+            `Successfully removed remote "${name}"`,
+            (pm) => pm.deleteRemote(name),
+          ),
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        setRemoteEnabledRequest,
+        async ({ name, enabled }) =>
+          changeRemotes(
+            pkgManager,
+            customRemoteCatalog,
+            `Failed to ${enabled ? "enable" : "disable"} remote "${name}"`,
+            `Successfully ${enabled ? "enabled" : "disabled"} remote "${name}"`,
+            (pm) => (enabled ? pm.enableRemote(name) : pm.disableRemote(name)),
+          ),
+        { sender: participant },
+      ),
+      messenger.onRequest(
+        setRemoteCredentialsRequest,
+        async ({ name, credentials }) => {
+          const remotes = await changeRemotes(
+            pkgManager,
+            customRemoteCatalog,
+            `Failed to set authentication for remote "${name}"`,
+            `Successfully set authentication for remote "${name}"`,
+            async (pm) => {
+              if (credentials.auth === "none") {
+                await pm.logout(name);
+                return;
+              }
+
+              assertLoginCredentials(credentials);
+              await pm.login(name, credentials.username, credentials.password);
+            },
+          );
+
+          announceCredentialsChange();
+
+          return remotes;
+        },
+        { sender: participant },
+      ),
     ];
 
     this._disposables.push(...handlers);
@@ -735,7 +876,11 @@ export class PackageManagerPagePanel {
     context: vscode.ExtensionContext,
     messenger: Messenger,
     pkgManager: CfsPackageManagerProvider | undefined,
+    packageCatalog: PackageCatalogService | undefined,
+    customRemoteCatalog: CustomRemoteCatalogService | undefined,
+    authService: AuthService,
   ) {
+    customRemoteCatalog?.update();
     if (PackageManagerPagePanel.currentPanel) {
       // If the webview panel already exists reveal it
       PackageManagerPagePanel.currentPanel._panel.reveal(ViewColumn.One);
@@ -760,6 +905,9 @@ export class PackageManagerPagePanel {
         context,
         messenger,
         pkgManager,
+        packageCatalog,
+        customRemoteCatalog,
+        authService,
       );
     }
   }

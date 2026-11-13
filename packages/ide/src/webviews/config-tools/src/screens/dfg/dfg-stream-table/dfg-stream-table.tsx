@@ -27,10 +27,14 @@ import SmallSettingsIcon from '@common/components/icons/SmallSettingsIcon';
 import {useAppDispatch, useAppSelector} from '../../../state/store';
 import {setEditingStream} from '../../../state/slices/gaskets/gasket.reducer';
 import {useFilteredStreamsBySourcesAndDest} from '../hooks/useFilteredStreams';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export function DfgStreamTable() {
 	const streams = useStreams();
 	const dispatch = useAppDispatch();
+	const l10n = useLocaleContext()?.dfgStreamList as
+		| Record<string, string>
+		| undefined;
 
 	const filteredStreams = useFilteredStreamsBySourcesAndDest(streams);
 
@@ -44,35 +48,35 @@ export function DfgStreamTable() {
 
 	const columns = [
 		{
-			header: 'ID',
+			header: l10n?.columnId ?? 'ID',
 			gridColumn: '1'
 		},
 		{
-			header: 'Source',
+			header: l10n?.columnSource ?? 'Source',
 			gridColumn: '2'
 		},
 		{
-			header: 'Destination',
+			header: l10n?.columnDestination ?? 'Destination',
 			gridColumn: '3'
 		},
 		{
-			header: 'Index',
+			header: l10n?.columnIndex ?? 'Index',
 			gridColumn: '4'
 		},
 		{
-			header: 'Description',
+			header: l10n?.columnDescription ?? 'Description',
 			gridColumn: '5'
 		},
 		{
-			header: 'Group',
+			header: l10n?.columnGroup ?? 'Group',
 			gridColumn: '6'
 		},
 		{
-			header: 'Buffer Address',
+			header: l10n?.columnBufferAddress ?? 'Buffer Address',
 			gridColumn: '7'
 		},
 		{
-			header: 'Buffer Size',
+			header: l10n?.columnBufferSize ?? 'Buffer Size',
 			gridColumn: '8'
 		},
 		{

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,9 @@ export default function MemoryLayout() {
 	>(undefined);
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.['memory layout'];
+	const memLayoutL10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
 	const [savedOptions, setSavedOptions] = useState<
 		TSavedTableOptions | undefined
 	>(undefined);
@@ -110,12 +113,21 @@ export default function MemoryLayout() {
 			});
 	};
 
-	const layerClickHandlers = handleLayerClick(setMemoryLayout);
+	const memHandlerLabels = {
+		allSegments: memLayoutL10n?.allSegments,
+		sectionsForSegment: memLayoutL10n?.sectionsForSegment,
+		symbolsForSection: memLayoutL10n?.symbolsForSection
+	};
+
+	const layerClickHandlers = handleLayerClick(
+		setMemoryLayout,
+		memHandlerLabels
+	);
 	const backClickHandlers = handleBackClick(
 		memLayout.dataTree,
 		memLayout.currentData ?? [],
 		memLayout.parentLayer,
-		setMemoryLayout
+		{setMemoryLayout, labels: memHandlerLabels}
 	);
 
 	return (

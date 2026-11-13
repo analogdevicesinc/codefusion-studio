@@ -50,7 +50,12 @@ export default function Toolbar() {
 			Boolean(activeSession?.isRunning) ||
 			startAddress === undefined ||
 			memoryLength === 0,
-		[haltedSessions.length, activeSession?.isRunning, startAddress, memoryLength]
+		[
+			haltedSessions.length,
+			activeSession?.isRunning,
+			startAddress,
+			memoryLength
+		]
 	);
 
 	const copyContent = async () => {
@@ -127,7 +132,9 @@ export default function Toolbar() {
 							</div>
 						</div>
 						<div
-							className={`${styles.tag} ${activeSession.isLive ? '' : styles.postMortem}`}
+							className={`${styles.tag} ${
+								activeSession.isLive ? '' : styles.postMortem
+							}`}
 						>
 							{activeSession.isLive
 								? l10n?.status?.live

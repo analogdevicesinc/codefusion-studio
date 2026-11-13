@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ import type {CfsWorkspace} from 'cfs-types';
 import type {StatePlatformConfig} from './state';
 
 export type WorkspaceConfig = {
-	[K in keyof CfsWorkspace as Capitalize<
-		string & K
-	>]: CfsWorkspace[K];
+	[
+		K in keyof CfsWorkspace as Capitalize<string & K>
+	]: CfsWorkspace[K];
 };
 
 export type WorkspaceCore = {

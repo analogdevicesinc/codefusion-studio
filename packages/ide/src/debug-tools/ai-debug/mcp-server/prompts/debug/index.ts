@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { registerStateAndCrashPrompts } from "./state-and-crash";
 import { registerBreakpointAndSteppingPrompts } from "./breakpoint-and-stepping";
 import { registerWatchpointAndMemoryPrompts } from "./watchpoint-and-memory";

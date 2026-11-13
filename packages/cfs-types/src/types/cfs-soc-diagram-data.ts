@@ -14,70 +14,70 @@
  */
 
 export interface SocDiagramData {
-  meta: Record<string, string>;
-  parts: Record<string, SocDiagramNode>;
-  wires: Record<string, SocDiagramClocks>;
-  junctions: unknown;
-  annotations: unknown;
-  symbols: unknown;
+	meta: Record<string, string>;
+	parts: Record<string, SocDiagramNode>;
+	wires: Record<string, SocDiagramClocks>;
+	junctions: unknown;
+	annotations: unknown;
+	symbols: unknown;
 }
 
 export interface SocDiagramClocks {
-  id: string;
-  netID: string;
-  type: string;
-  clock: string;
-  condition?: string;
-  enabled?: boolean;
-  mount?: string;
-  startPoint: SocCanvasClockCoordinates;
-  endPoint: SocCanvasClockCoordinates;
+	id: string;
+	netID: string;
+	type: string;
+	clock: string;
+	condition?: string;
+	enabled?: boolean;
+	mount?: string;
+	startPoint: SocCanvasClockCoordinates;
+	endPoint: SocCanvasClockCoordinates;
 }
 
 export interface SocCanvasClockCoordinates {
-  id: string;
-  x: number;
-  y: number;
+	id: string;
+	x: number;
+	y: number;
 }
 
 export interface SocDiagramNode {
-  name: string;
-  id: string;
-  styles: SocDiagramStyles;
-  icon: string;
-  background: string;
-  group: string;
-  clockReference?: string;
-  metadata: {
-    name?: string;
-    group: string;
-    description?: string;
-    type?: string;
-    inputTerminals?: SocNodeTerminal[];
-    outputTerminals?: SocNodeTerminal[];
-  };
-  condition?: string;
-  mount?: string;
-  enabled?: boolean;
-  error?: boolean;
-  outputTerminals?: Record<string, SocNodeTerminal>;
+	name: string;
+	id: string;
+	styles: SocDiagramStyles;
+	icon: string;
+	background: string;
+	group: string;
+	clockReference?: string;
+	metadata: {
+		name?: string;
+		group: string;
+		description?: string;
+		type?: string;
+		inputTerminals?: SocNodeTerminal[];
+		outputTerminals?: SocNodeTerminal[];
+	};
+	condition?: string;
+	mount?: string;
+	enabled?: boolean;
+	error?: boolean;
+	outputTerminals?: Record<string, SocNodeTerminal>;
 }
 
 export interface SocNodeTerminal {
-  shape: string;
-  x: number;
-  y: number;
-  radius: number;
-  position: string;
-  id: string;
-  type: string;
-  netID: string;
+	shape: string;
+	x: number;
+	y: number;
+	radius: number;
+	position: string;
+	id: string;
+	type: string;
+	netID: string;
 }
 
 export interface SocDiagramStyles {
-  backgroundColor: string;
-  fontColor: string;
-  circleColor: string;
-  borderColor: string;
-  icon?: string;
+	backgroundColor: string;
+	fontColor: string;
+	circleColor: string;
+	borderColor: string;
+	icon?: string;
 }

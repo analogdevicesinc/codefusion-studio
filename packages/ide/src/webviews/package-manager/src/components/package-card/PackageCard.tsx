@@ -17,7 +17,6 @@ import {
 	Button,
 	CheckBox,
 	CompletedIcon,
-	ConflictIcon,
 	DeleteIcon,
 	DropDown,
 	ProgressRing,
@@ -27,40 +26,39 @@ import {
 import ChevronRight from '../../../../common/icons/ChevronRight';
 import HmcBadge from '../ui-fragments/HmcBadge';
 import styles from './package-card.module.scss';
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import RightArrow from '../../../../common/icons/RightArrow';
 import {
 	useLocaleContext,
 	type TLocaleContext
 } from '@common/contexts/LocaleContext';
-import type {
-	CfsPackage,
-	CfsPackageReference
-} from 'cfs-package-manager';
+import type {CfsPackageReference} from 'cfs-package-manager';
 import type {RequestType} from 'vscode-messenger-common';
-import type {PackageListEntry} from '@constants/messages/package-manager-messages';
+import type {
+	PackageListEntry,
+	PackageVersionMeta
+} from '@constants/messages/package-manager-messages';
 import {useAppDispatch} from '../../state/store';
 import {
 	setPackageSelected,
 	changeSelectedVersion,
-	fetchPageDetails,
-	buildPackageReference,
 	uninstallPackages
 } from '../../state/slices/packages/packages.reducer';
 import {
-	useDetailsError,
 	useSelectedPackages,
 	useSelectedVersion
 } from '../../state/slices/packages/packages.selector';
 import {
 	compareVersions,
 	formatCachedVersions,
+	formatSupportedSocs,
 	getDefaultVersion,
 	isUpdateAvailable,
 	satisfiesAll
 } from '../../utils';
 import {useMessenger} from '../../../../common/contexts/MessengerContext';
 import UninstallPackageModal from '../uninstall-package-modal/UninstallPackageModal';
+import {useIndexingLock} from '../../hooks/useIndexingLock';
 import {
 	openLicensePreviewRequest,
 	getPackageDependentsRequest,
@@ -89,7 +87,7 @@ const getDependentsReq = getPackageDependentsRequest as RequestType<
  * A required package whose selected version falls outside its workspace
  * constraints. Non-required packages are never out of range.
  */
-export const isVersionOutOfRange = (
+const isVersionOutOfRange = (
 	entry: PackageListEntry,
 	version: string
 ): boolean => {
@@ -120,7 +118,6 @@ const isInstalledVersionChosen = (
 
 type PackageCardProps = {
 	readonly entry: PackageListEntry;
-	readonly details: Record<string, CfsPackage>;
 };
 
 type UninstallModalState = {
@@ -130,13 +127,14 @@ type UninstallModalState = {
 
 type PackageDetailsProps = {
 	readonly entry: PackageListEntry;
-	readonly detail: CfsPackage | undefined;
-	readonly hasDetailsError: boolean;
+	/**
+	 * Catalog metadata of the selected version; undefined for a version the
+	 * catalog does not list (e.g. only present in the local cache).
+	 */
+	readonly detail: PackageVersionMeta | undefined;
 	readonly l10n: TLocaleContext['packageCard'];
 	readonly onViewLicense: () => void;
 };
-
-const MAX_NAME_LENGTH = 20;
 
 function computeRequiredRange(
 	versions: string[],
@@ -184,18 +182,23 @@ function PackageActionButton({
 	l10n,
 	onDelete
 }: PackageActionButtonProps) {
+	const indexingLock = useIndexingLock();
+	const locked = !isBuiltIn && indexingLock !== undefined;
+
 	return (
 		<Tooltip
 			title={
 				isBuiltIn
 					? l10n?.builtinPackageTooltip
-					: l10n?.uninstallPackageTooltip
+					: (indexingLock ?? l10n?.uninstallPackageTooltip)
 			}
 			position='top'
-			type='short'
+			type={locked ? 'long' : 'short'}
 		>
 			<Button
 				appearance='icon'
+				dataTest='package-action-button'
+				disabled={locked}
 				onClick={isBuiltIn ? undefined : onDelete}
 			>
 				{isBuiltIn ? <ToolIcon /> : <DeleteIcon />}
@@ -207,29 +210,11 @@ function PackageActionButton({
 function PackageDetails({
 	entry,
 	detail,
-	hasDetailsError,
 	l10n,
 	onViewLicense
 }: PackageDetailsProps) {
-	if (!detail) {
-		if (hasDetailsError) {
-			return (
-				<div className={styles.packageDetailsRow}>
-					<div className={styles.rowValue}>
-						{l10n?.detailsError ?? 'Failed to load package details.'}
-					</div>
-				</div>
-			);
-		}
-
-		return (
-			<div className={styles.detailsLoading}>
-				<ProgressRing position='center' />
-			</div>
-		);
-	}
-
 	const cachedVersions = formatCachedVersions(entry);
+	const socs = detail?.socs ?? [];
 
 	return (
 		<>
@@ -237,26 +222,39 @@ function PackageDetails({
 				<div className={styles.rowHeader}>
 					{l10n?.detail?.description}
 				</div>
-				<div className={styles.rowValue}>{detail.description}</div>
+				<div
+					data-test='detail-description'
+					className={styles.rowValue}
+				>
+					{detail?.description ?? '—'}
+				</div>
 			</div>
 			<div className={styles.packageDetailsRow}>
 				<div className={styles.rowHeader}>{l10n?.detail?.type}</div>
-				<div className={styles.rowValue}>{detail.type ?? '—'}</div>
+				<div data-test='detail-type' className={styles.rowValue}>
+					{detail?.type ?? '—'}
+				</div>
 			</div>
 			<div className={styles.packageDetailsRow}>
 				<div className={styles.rowHeader}>
 					{l10n?.detail?.cfsCompatibility}
 				</div>
-				<div className={styles.rowValue}>{detail.cfsVersion}</div>
+				<div
+					data-test='detail-cfs-version'
+					className={styles.rowValue}
+				>
+					{detail?.cfsVersionConstraint ?? '—'}
+				</div>
 			</div>
 			<div className={styles.packageDetailsRow}>
 				<div className={styles.rowHeader}>
 					{l10n?.detail?.license}
 				</div>
-				<div className={styles.rowValue}>
-					{detail.license ?? '—'} &nbsp;
+				<div data-test='detail-license' className={styles.rowValue}>
+					{detail?.license ?? '—'} &nbsp;
 					<button
 						type='button'
+						data-test='view-license'
 						className={styles.link}
 						onClick={onViewLicense}
 					>
@@ -268,14 +266,19 @@ function PackageDetails({
 				<div className={styles.rowHeader}>
 					{l10n?.detail?.cachedVersions}
 				</div>
-				<div className={styles.rowValue}>{cachedVersions}</div>
+				<div
+					data-test='detail-cached-versions'
+					className={styles.rowValue}
+				>
+					{cachedVersions}
+				</div>
 			</div>
 			<div className={styles.packageDetailsRow}>
 				<div className={styles.rowHeader}>
 					{l10n?.detail?.supportedSocs}
 				</div>
-				<div className={styles.rowValue}>
-					{detail.soc?.join(', ') ?? '—'}
+				<div data-test='detail-socs' className={styles.rowValue}>
+					{formatSupportedSocs(socs)}
 				</div>
 			</div>
 		</>
@@ -308,8 +311,6 @@ function PackageStatus({
 				return 'packageCard.status.installing';
 			case 'not-installed':
 				return 'packageCard.status.notInstalled';
-			case 'installation-failed':
-				return 'packageCard.status.installationFailed';
 			default:
 				return undefined;
 		}
@@ -329,8 +330,6 @@ function PackageStatus({
 				);
 			case 'not-installed':
 				return null;
-			case 'installation-failed':
-				return <ConflictIcon className={styles.errorIcon} />;
 			default:
 				return null;
 		}
@@ -360,7 +359,11 @@ function PackageStatus({
 							onDelete={onDelete}
 						/>
 					)}
-				<Button appearance='icon' onClick={onExpand}>
+				<Button
+					appearance='icon'
+					dataTest={`expand-${entry.name}`}
+					onClick={onExpand}
+				>
 					<ChevronRight
 						className={
 							isExpanded ? styles.chevronUp : styles.chevronDown
@@ -373,15 +376,11 @@ function PackageStatus({
 }
 
 // eslint-disable-next-line complexity
-export default function PackageCard({
-	entry,
-	details
-}: PackageCardProps) {
+export default function PackageCard({entry}: PackageCardProps) {
 	const l10n = useLocaleContext()?.packageCard;
 	const messenger = useMessenger();
 	const dispatch = useAppDispatch();
 	const selected = useSelectedPackages();
-	const detailsError = useDetailsError();
 
 	// Versions, latest first.
 	const versions = [...entry.versions].sort((a, b) =>
@@ -406,20 +405,23 @@ export default function PackageCard({
 	);
 
 	const [expanded, setExpanded] = useState(false);
+	const indexingLock = useIndexingLock();
 	const [uninstallModalState, setUninstallModalState] =
 		useState<UninstallModalState>({
 			isOpen: false,
 			dependents: undefined
 		});
 
-	// Refs already requested by this card's lazy-fetch effect.
-	const requestedRefs = useRef(new Set<string>());
-
 	const packageName = entry.name;
-	const isTruncated = packageName.length > MAX_NAME_LENGTH;
-	const displayName = isTruncated
-		? `${packageName.slice(0, MAX_NAME_LENGTH)}…`
-		: packageName;
+	const nameRef = useRef<HTMLSpanElement>(null);
+	const [isNameTruncated, setIsNameTruncated] = useState(false);
+	const measureName = () => {
+		const element = nameRef.current;
+
+		if (element) {
+			setIsNameTruncated(element.scrollWidth > element.clientWidth);
+		}
+	};
 
 	const installedReference: CfsPackageReference | undefined =
 		installedVersion === undefined
@@ -445,34 +447,8 @@ export default function PackageCard({
 		isSelected
 	);
 
-	// Detailed metadata for the selected version (undefined while loading).
-	const detail: CfsPackage | undefined =
-		details[buildPackageReference(entry.name, currentVersion)];
-
-	/*
-	 * The page batch only prefetches the default version. If the user selects
-	 * a different version whose details are not cached yet, fetch it lazily.
-	 */
-	useEffect(() => {
-		if (currentVersion === '' || currentVersion === defaultVersion) {
-			return;
-		}
-
-		const key = buildPackageReference(entry.name, currentVersion);
-
-		if (details[key] || requestedRefs.current.has(key)) {
-			return;
-		}
-
-		requestedRefs.current.add(key);
-
-		// Clear on settle so a failed fetch retries on the next render.
-		void dispatch(
-			fetchPageDetails([{name: entry.name, version: currentVersion}])
-		).finally(() => {
-			requestedRefs.current.delete(key);
-		});
-	}, [dispatch, entry.name, currentVersion, defaultVersion, details]);
+	// Catalog metadata of the selected version.
+	const detail = entry.releases[currentVersion];
 
 	const toggleExpand = () => {
 		setExpanded(!expanded);
@@ -553,6 +529,7 @@ export default function PackageCard({
 		versions.map(v => ({
 			id: v,
 			value: v,
+			dataTest: `version-option-${v}`,
 			label: getVersionLabel(v, installedVersion, latestVersion, l10n)
 		}));
 
@@ -581,6 +558,7 @@ export default function PackageCard({
 
 	return (
 		<div
+			data-test={`package-card-${entry.name}`}
 			className={`${styles.container} ${
 				isSelected ? styles.active : ''
 			}`}
@@ -588,6 +566,7 @@ export default function PackageCard({
 			<div className={styles.cardCheckboxContainer}>
 				<CheckBox
 					key={`${currentVersion}-${isSelected}`}
+					dataTest={`package-checkbox-${entry.name}`}
 					checked={isSelected}
 					className={
 						isInstalledVersionSelected
@@ -600,23 +579,21 @@ export default function PackageCard({
 			<div className={styles.cardContent}>
 				<div className={styles.cardHeader}>
 					<div className={styles.nameAndBadge}>
-						<div className={styles.nameContainer}>
+						<div
+							className={styles.nameContainer}
+							onMouseEnter={measureName}
+						>
 							{(entry.isRequired || hasUpdate) && <WarningIcon />}
-							{isTruncated ? (
-								<Tooltip
-									title={packageName}
-									position='top'
-									type='short'
-								>
-									<span className={styles.packageName}>
-										{displayName}
-									</span>
-								</Tooltip>
-							) : (
-								<span className={styles.packageName}>
-									{displayName}
+							<Tooltip
+								title={packageName}
+								position='top'
+								type='short'
+								disabled={!isNameTruncated}
+							>
+								<span ref={nameRef} className={styles.packageName}>
+									{packageName}
 								</span>
-							)}
+							</Tooltip>
 						</div>
 						{hasUpdate && (
 							<HmcBadge>{l10n?.updateAvailable}</HmcBadge>
@@ -632,6 +609,7 @@ export default function PackageCard({
 				<div className={styles.versionSelection}>
 					<DropDown
 						key={`${currentVersion}::${activeVersionLabel}`}
+						dataTest={`version-dropdown-${entry.name}`}
 						className={styles.versionDropdown}
 						currentControlValue={currentVersion}
 						controlId='1'
@@ -640,7 +618,10 @@ export default function PackageCard({
 						onHandleDropdown={handleVersionChange}
 					/>
 					{requiredRange && (
-						<span className={styles.requiredVersion}>
+						<span
+							data-test='required-version-range'
+							className={styles.requiredVersion}
+						>
 							{requiredRange.min === requiredRange.max ? (
 								<LocalizedMessage
 									id='packageCard.versionSingleRequired'
@@ -661,24 +642,32 @@ export default function PackageCard({
 					)}
 				</div>
 				{versionOutOfRange && (
-					<div className={styles.errorMessage}>
+					<div
+						data-test={`version-out-of-range-${entry.name}`}
+						className={styles.errorMessage}
+					>
 						{l10n?.versionOutOfRange ??
 							'Selected version is outside of the recommended range.'}
 					</div>
 				)}
 				{isInstalledVersionSelected && (
-					<div className={styles.errorMessage}>
+					<div
+						data-test={`version-already-installed-${entry.name}`}
+						className={styles.errorMessage}
+					>
 						{l10n?.versionAlreadyInstalled ??
 							'This version is already installed. Select a different version to continue.'}
 					</div>
 				)}
 
 				{expanded && (
-					<div className={styles.packageDetailsCard}>
+					<div
+						data-test={`package-details-${entry.name}`}
+						className={styles.packageDetailsCard}
+					>
 						<PackageDetails
 							entry={entry}
 							detail={detail}
-							hasDetailsError={Boolean(detailsError)}
 							l10n={l10n}
 							onViewLicense={handleViewLicense}
 						/>
@@ -689,6 +678,7 @@ export default function PackageCard({
 				isOpen={uninstallModalState.isOpen}
 				packages={installedReference ? [installedReference] : []}
 				dependents={uninstallModalState.dependents}
+				isLocked={indexingLock !== undefined}
 				onClose={() => {
 					setUninstallModalState({
 						isOpen: false,

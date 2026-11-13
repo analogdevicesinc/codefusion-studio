@@ -26,3 +26,9 @@ export { CfsSocControlsOverride } from "./generic/components/cfs-soc-controls-ov
 
 /* Utilities */
 export { evalNestedTemplateLiterals } from "./generic/utilities/cfs-utilities.js";
+
+/* Zephyr codegen types */
+export type {
+	ZephyrPeripheralMapping,
+	ZephyrDtsUnsupportedEntry
+} from "./generic/utilities/eta/codegen-types.js";

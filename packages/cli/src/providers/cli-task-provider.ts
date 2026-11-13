@@ -30,12 +30,15 @@ import {
 } from 'cfs-lib';
 import fs from 'node:fs';
 import {readdir} from 'node:fs/promises';
-import {join} from 'node:path';
 import path from 'node:path';
+
+import {sanitizeTaskLabel} from '../utils/workspace-utils.js';
 
 import type {CliConfig} from '../types/cli-config.js';
 
 import {GenericTaskDiscoveryStrategy} from '../utils/generic-task-discovery-strategy.js';
+import {errorWithCode} from '../utils/recoverable-error.js';
+import {findWorkspaceRoot} from '../utils/workspace-utils.js';
 import {
   checkProjectExists,
   lowercaseFirstLetterProps
@@ -168,62 +171,40 @@ export class CliTaskProvider {
 
     // return an error if the workspace does not exist
     if (!checkIfFileExists(workspace)) {
-      throw new Error(
-        `Workspace path "${workspace}" does not exist.`
+      throw errorWithCode(
+        `Workspace path "${workspace}" does not exist.`,
+        'WORKSPACE_NOT_FOUND'
       );
     }
 
-    // Support both workspace root and project cwd.
-    // If .cfs is not in current folder, try finding it in ancestors.
-    let cfsFolder = join(workspace, '.cfs');
-    if (!checkIfFileExists(cfsFolder)) {
-      let searchDir = workspace;
-      let foundWorkspaceRoot: string | undefined;
-
-      while (searchDir !== path.dirname(searchDir)) {
-        const parent = path.dirname(searchDir);
-        const parentCfsFolder = join(parent, '.cfs');
-        if (checkIfFileExists(parentCfsFolder)) {
-          foundWorkspaceRoot = parent;
-          break;
-        }
-
-        searchDir = parent;
-      }
-
-      if (!foundWorkspaceRoot) {
-        throw new Error(
-          `Workspace path "${workspace}" is not a valid CFS workspace or project path inside a CFS workspace.`
-        );
-      }
-
-      // If command is run from inside a project folder, infer project filter.
-      const relPath = path.relative(foundWorkspaceRoot, workspace);
-      const relSegments = relPath.split(path.sep).filter(Boolean);
-      if (relSegments.length > 0) {
-        inferredProject = relSegments[0];
-      }
-
-      workspace = foundWorkspaceRoot;
-      cfsFolder = join(workspace, '.cfs');
+    const workspaceRoot = findWorkspaceRoot(workspace);
+    if (!workspaceRoot) {
+      throw errorWithCode(
+        `Workspace path "${workspace}" is not a valid CFS workspace or project path inside a CFS workspace.`,
+        'INVALID_WORKSPACE'
+      );
     }
+
+    // If command is run from inside a project folder, infer project filter.
+    const relPath = path.relative(workspaceRoot, workspace);
+    const relSegments = relPath.split(path.sep).filter(Boolean);
+    if (relSegments.length > 0) {
+      inferredProject = relSegments[0];
+    }
+
+    workspace = workspaceRoot;
 
     // Identify all folders in the workspace folder, excluding .cfs.
     const entries = await readdir(workspace, {withFileTypes: true});
     const folders = entries
       .filter((entry) => entry.isDirectory() && entry.name !== '.cfs')
-      .map((entry) => join(workspace, entry.name));
+      .map((entry) => path.join(workspace, entry.name));
 
     const discoveredTasks =
       await this.taskProvider.discoverTasks(folders);
 
-    // For each task, generate a user-friendly name by removing characters that will
-    // be problematic on the command line, and replacing spaces with underscores
-    // For example, "Build (Project1)" becomes "Build_Project1"
     for (const task of discoveredTasks) {
-      task.userFriendlyName = task.label
-        .replaceAll(/[^\w .-]/g, '')
-        .replaceAll(/\s+/g, '_');
+      task.userFriendlyName = sanitizeTaskLabel(task.label);
     }
 
     const selectedProject = project ?? inferredProject;
@@ -479,40 +460,24 @@ export class CliTaskProvider {
   }
 
   /**
-   * Find the .cfsworkspace file in the current or parent directories and read its contents.
-   * TODO: This function is a copy of a similar function in utils.ts. The function in utils.ts
-   * does not search recursively in parent directories, and I didn't want to change its behavior
-   * so late in the release cycle. We should refactor this function to be shared between utils.ts and this file.
-   * @param workspacePath - Path to the workspace folder (or a subfolder inside it).
-   * @returns The workspace configuration object read from the .cfsworkspace file in the .cfs folder.
+   * Finds the containing CFS workspace and reads its configuration.
    *
+   * @param workspacePath - Path to the workspace folder or a subfolder within it.
+   * @returns The workspace configuration object.
    */
   private getCfsWorkspaceFromPath(
     workspacePath: string
   ): CfsWorkspace {
-    // Check if the .cfs folder exists in this folder. If not,
-    // check the parent folder(s).	 If not, throw an error.
-    let currentPath = path.resolve(workspacePath);
-
-    while (!checkIfFileExists(path.join(currentPath, '.cfs'))) {
-      const parentPath = path.resolve(currentPath, '..');
-      if (parentPath === currentPath) {
-        throw new Error(
-          `No CFS workspace found at "${workspacePath}" or any parent directory (expected a .cfs folder).`
-        );
-      }
-
-      currentPath = parentPath;
-    }
-
-    const cfsFolder = path.join(currentPath, '.cfs');
-    const workspaceFile = path.join(cfsFolder, '.cfsworkspace');
-
-    if (!checkIfFileExists(workspaceFile)) {
-      throw new Error(
-        `No CFS workspace file found at "${workspaceFile}" (expected a .cfs/.cfsworkspace file).`
+    const workspaceRoot = findWorkspaceRoot(workspacePath);
+    if (!workspaceRoot) {
+      throw errorWithCode(
+        `No CFS workspace found at "${workspacePath}" or any parent directory (expected a .cfs/.cfsworkspace file).`,
+        'INVALID_WORKSPACE'
       );
     }
+
+    const cfsFolder = path.join(workspaceRoot, '.cfs');
+    const workspaceFile = path.join(cfsFolder, '.cfsworkspace');
 
     return lowercaseFirstLetterProps(
       readJsonFile(workspaceFile)

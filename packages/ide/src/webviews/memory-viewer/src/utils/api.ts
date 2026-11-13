@@ -14,12 +14,19 @@
  */
 
 import {request} from '../../../common/api';
-import {type DebugSessionInfo} from '../types/debug';
+import {
+	type DebugSessionInfo,
+	type SymbolsDataResponse
+} from '../types/debug';
 
 export type MemoryDataResponse = {
 	sessionId: string;
 	address: number;
 	data: number[];
+};
+
+export type MemoryDataWithSymbols = MemoryDataResponse & {
+	symbols: SymbolsDataResponse[];
 };
 
 export async function getMemoryData(
@@ -56,4 +63,28 @@ export async function getSessionStatus(
 	return request('get-session-status', {
 		sessionId
 	}) as Promise<DebugSessionInfo>;
+}
+
+export async function getSymbolsInRange(
+	sessionId: string,
+	length: number,
+	address: number
+): Promise<SymbolsDataResponse[]> {
+	return request('get-symbol-data', {
+		sessionId,
+		length,
+		address
+	}) as Promise<SymbolsDataResponse[]>;
+}
+
+export async function getSymbolsAtSymbol(
+	sessionId: string,
+	length: number,
+	expression: string
+): Promise<SymbolsDataResponse[]> {
+	return request('get-symbols-at-symbol', {
+		sessionId,
+		length,
+		expression
+	}) as Promise<SymbolsDataResponse[]>;
 }

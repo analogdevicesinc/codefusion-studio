@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import { Uri, Webview } from "vscode";
 export function getUri(
   webview: Webview,
   extensionUri: Uri,
-  pathList: string[]
+  pathList: string[],
 ) {
   return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
 }

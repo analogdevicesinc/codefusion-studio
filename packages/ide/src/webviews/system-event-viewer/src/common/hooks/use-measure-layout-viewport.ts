@@ -16,31 +16,42 @@
 import {useLayoutEffect, useState, type RefObject} from 'react';
 import type {EChartsType} from 'echarts/core';
 
-import {DIAGRAM_CONTAINER_ID} from '../../common/constants/timeline';
-import type {SevEventSource} from '../types/events';
+import {
+	DIAGRAM_CONTAINER_ID,
+	MEASUREMENT_HEADER_CHART_ID
+} from '../../common/constants/timeline';
+import {ROW_SELECTOR} from '../../common/constants/events';
+
+import type {RowBounds} from '../types/timeline';
 
 export type LayoutViewport = Readonly<{
 	overlayWidth: number;
 	overlayLeft: number;
-	overlayTop: number;
-	viewportTop: number;
-	viewportBottom: number;
 	headerChartWidth: number;
 	headerChartLeft: number;
-	rowTopBySourceId: ReadonlyMap<string, number>;
+	overlayHeight: number;
+	rowBoundsByRowId: ReadonlyMap<string, RowBounds>;
 }>;
 
-const INITIAL_ROW_TOPS: ReadonlyMap<string, number> = new Map();
+const INITIAL_ROW_BOUNDS: ReadonlyMap<string, RowBounds> = new Map();
 
-const areRowTopsEqual = (
-	previous: ReadonlyMap<string, number>,
-	next: ReadonlyMap<string, number>
+const areRowBoundsEqual = (
+	previous: ReadonlyMap<string, RowBounds>,
+	next: ReadonlyMap<string, RowBounds>
 ): boolean => {
 	if (previous === next) return true;
 	if (previous.size !== next.size) return false;
 
-	for (const [sourceId, top] of previous) {
-		if (next.get(sourceId) !== top) return false;
+	for (const [rowId, bounds] of previous) {
+		const nextBounds = next.get(rowId);
+
+		if (
+			nextBounds?.top !== bounds.top ||
+			nextBounds.height !== bounds.height ||
+			nextBounds.canSnap !== bounds.canSnap
+		) {
+			return false;
+		}
 	}
 
 	return true;
@@ -52,84 +63,87 @@ const areViewportDimensionsEqual = (
 ): boolean =>
 	previous.overlayWidth === next.overlayWidth &&
 	previous.overlayLeft === next.overlayLeft &&
-	previous.overlayTop === next.overlayTop &&
-	previous.viewportTop === next.viewportTop &&
-	previous.viewportBottom === next.viewportBottom &&
 	previous.headerChartWidth === next.headerChartWidth &&
-	previous.headerChartLeft === next.headerChartLeft;
+	previous.headerChartLeft === next.headerChartLeft &&
+	previous.overlayHeight === next.overlayHeight;
+
+const getRowElements = (container: Element): HTMLElement[] =>
+	Array.from(container.querySelectorAll<HTMLElement>(ROW_SELECTOR));
 
 const getViewport = (
-	overlay: HTMLDivElement,
+	overlay: HTMLElement,
+	chartColumn: HTMLElement,
 	headerChart: EChartsType | undefined,
-	eventSources: readonly SevEventSource[],
-	getChartInstance: (sourceId: string) => EChartsType | undefined
+	diagramContainer: Element
 ): LayoutViewport => {
-	const diagramContainer = overlay.closest(
-		`#${DIAGRAM_CONTAINER_ID}`
-	);
 	const overlayRect = overlay.getBoundingClientRect();
 	const headerChartDom = headerChart?.getDom();
 	const headerChartRect = headerChartDom?.getBoundingClientRect();
+	const rowBoundsByRowId = new Map<string, RowBounds>();
 
-	const rowTopBySourceId = new Map<string, number>();
-
-	// Record each row chart's current viewport top so committed points can be
-	// re-projected after row reorder, resize, or scroll.
-	for (const source of eventSources) {
-		const sourceId = String(source.id);
-		const sourceChartDom = getChartInstance(sourceId)?.getDom();
-
-		if (sourceChartDom) {
-			rowTopBySourceId.set(
-				sourceId,
-				sourceChartDom.getBoundingClientRect().top
-			);
-		}
+	// The sticky chart takes priority over rows scrolling underneath it.
+	if (headerChartRect) {
+		rowBoundsByRowId.set(MEASUREMENT_HEADER_CHART_ID, {
+			top: headerChartRect.top - overlayRect.top,
+			height: headerChartRect.height,
+			canSnap: false
+		});
 	}
+	for (const rowElement of getRowElements(diagramContainer)) {
+		const {rowId} = rowElement.dataset;
+		if (!rowId) continue;
 
-	const viewportTop = diagramContainer?.scrollTop ?? 0;
-	const viewportBottom = diagramContainer
-		? viewportTop + diagramContainer.clientHeight
-		: overlay.clientHeight;
+		const rowRect = rowElement.getBoundingClientRect();
+
+		rowBoundsByRowId.set(rowId, {
+			top: rowRect.top - overlayRect.top,
+			height: rowRect.height,
+			canSnap: true
+		});
+	}
 
 	return {
 		overlayWidth: overlay.clientWidth,
 		overlayLeft: overlayRect.left,
-		overlayTop: overlayRect.top,
-		viewportTop,
-		viewportBottom,
 		headerChartWidth: headerChartDom?.clientWidth ?? 0,
 		headerChartLeft: headerChartRect?.left ?? 0,
-		rowTopBySourceId
+		overlayHeight: Math.max(
+			0,
+			Math.min(
+				diagramContainer.getBoundingClientRect().bottom,
+				chartColumn.getBoundingClientRect().bottom
+			) - overlayRect.top
+		),
+		rowBoundsByRowId
 	};
 };
 
 /**
- * The purpose is to measure the dimensions of the diagram container and the position of the viewport within it,
- * so that we can determine whether certain elements are within the visible area and adjust their layout accordingly.
- * It also tracks the top of each event-source row so the measurement overlay can re-project committed points
- * after the row order or size changes.
+ * Measures the overlay, header chart, and all visible timeline row containers.
+ * Row geometry remains available for expanded group rows that have no chart.
  */
 export default function useMeasureLayoutViewport(
-	overlayRef: RefObject<HTMLDivElement>,
+	measurementViewportRef: RefObject<HTMLDivElement>,
+	measurementContainerRef: RefObject<HTMLElement>,
 	headerChart: EChartsType | undefined,
-	eventSources: readonly SevEventSource[],
-	getChartInstance: (sourceId: string) => EChartsType | undefined
+	visibleRowIds: readonly string[],
+	enabled: boolean
 ): LayoutViewport {
 	const [viewport, setViewport] = useState<LayoutViewport>({
 		overlayWidth: 0,
 		overlayLeft: 0,
-		overlayTop: 0,
-		viewportTop: 0,
-		viewportBottom: 0,
 		headerChartWidth: 0,
 		headerChartLeft: 0,
-		rowTopBySourceId: INITIAL_ROW_TOPS
+		overlayHeight: 0,
+		rowBoundsByRowId: INITIAL_ROW_BOUNDS
 	});
 
 	useLayoutEffect(() => {
-		const overlay = overlayRef.current;
-		if (!overlay) return;
+		if (!enabled) return;
+
+		const overlay = measurementViewportRef.current;
+		const chartColumn = measurementContainerRef.current;
+		if (!overlay || !chartColumn) return;
 
 		const diagramContainer = overlay.closest(
 			`#${DIAGRAM_CONTAINER_ID}`
@@ -139,17 +153,17 @@ export default function useMeasureLayoutViewport(
 		const updateViewport = () => {
 			const next = getViewport(
 				overlay,
+				chartColumn,
 				headerChart,
-				eventSources,
-				getChartInstance
+				diagramContainer
 			);
 
 			setViewport(prev => {
 				if (
 					areViewportDimensionsEqual(prev, next) &&
-					areRowTopsEqual(
-						prev.rowTopBySourceId,
-						next.rowTopBySourceId
+					areRowBoundsEqual(
+						prev.rowBoundsByRowId,
+						next.rowBoundsByRowId
 					)
 				) {
 					return prev;
@@ -161,30 +175,36 @@ export default function useMeasureLayoutViewport(
 
 		updateViewport();
 
-		diagramContainer.addEventListener('scroll', updateViewport, {
-			passive: true
-		});
-
 		const resizeObserver = new ResizeObserver(updateViewport);
 		// Observe the overlay, diagram container, header chart, and each
-		// source-row chart so the viewport is recomputed on size changes.
-		// Position-only changes are handled by scroll events or effect reruns.
+		// source-row chart so the layout is recomputed on size changes.
+		// Position-only changes are handled by effect reruns.
 		resizeObserver.observe(overlay);
+		resizeObserver.observe(chartColumn);
 		resizeObserver.observe(diagramContainer);
 
 		const headerChartDom = headerChart?.getDom();
 		if (headerChartDom) resizeObserver.observe(headerChartDom);
 
-		for (const source of eventSources) {
-			const chart = getChartInstance(String(source.id))?.getDom();
-			if (chart) resizeObserver.observe(chart);
+		for (const rowElement of getRowElements(diagramContainer)) {
+			resizeObserver.observe(rowElement);
 		}
 
+		diagramContainer.addEventListener('scroll', updateViewport, {
+			passive: true
+		});
+
 		return () => {
-			diagramContainer.removeEventListener('scroll', updateViewport);
 			resizeObserver.disconnect();
+			diagramContainer.removeEventListener('scroll', updateViewport);
 		};
-	}, [overlayRef, headerChart, eventSources, getChartInstance]);
+	}, [
+		measurementViewportRef,
+		measurementContainerRef,
+		headerChart,
+		visibleRowIds,
+		enabled
+	]);
 
 	return viewport;
 }

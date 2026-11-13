@@ -13,38 +13,44 @@
  *
  */
 
-import {
-	getProjectInfoList,
-	getSupportsMCUboot
-} from '../utils/config';
 import {SIDEBAR_SECTIONS} from '../constants/workspace-settings';
 import {SETTINGS_PAGES} from '../screens/workspace-settings/settings-pages';
+import {getSettingsChildVisibility} from '../screens/workspace-settings/settings-visibility';
 
 /**
- * Filters settings sidebar sections and page components.
+ * Filters settings sidebar sections, their children, and page components.
  *
- * Currently, the only conditional section is "Security", which is shown if:
- *  a Zephyr project exists and the SoC is MCUboot-supported.
+ * Visibility is decided per child rather than per section, since the
+ * "Security" section groups controls with different conditions:
+ *  - Firewall settings show when the SoC supports Firewall.
+ *  - MCUboot settings and Sign Key Management show when a Zephyr project
+ *    exists and the SoC is MCUboot-supported.
  *
- * @returns Object containing filtered sidebar sections and settings pages.
+ * A section is shown only when it has at least one visible child.
+ *
+ * @returns Filtered sidebar sections (with filtered children), settings
+ *   pages, and an `isChildVisible` predicate for individual child keys.
  */
 export default function useFilteredSettingsSections() {
-	const projects = getProjectInfoList();
-	const hasZephyrProject =
-		projects?.some(p => p.FirmwarePlatform === 'zephyr') ?? false;
-	const isSupportedSoc = getSupportsMCUboot();
+	const childVisibility = getSettingsChildVisibility();
 
-	const visibility: Record<string, boolean> = {
-		security: hasZephyrProject && isSupportedSoc
-	};
+	const isChildVisible = (key: string) =>
+		childVisibility[key] ?? true;
 
-	const filteredSections = SIDEBAR_SECTIONS.filter(
-		section => visibility[section.key] ?? true
+	const filteredSections = SIDEBAR_SECTIONS.map(section => ({
+		...section,
+		children: section.children.filter(child =>
+			isChildVisible(child.key)
+		)
+	})).filter(section => section.children.length > 0);
+
+	const visibleSectionKeys = new Set(
+		filteredSections.map(section => section.key)
 	);
 
-	const filteredPages = SETTINGS_PAGES.filter(
-		page => visibility[page.key] ?? true
+	const filteredPages = SETTINGS_PAGES.filter(page =>
+		visibleSectionKeys.has(page.key)
 	);
 
-	return {filteredSections, filteredPages};
+	return {filteredSections, filteredPages, isChildVisible};
 }

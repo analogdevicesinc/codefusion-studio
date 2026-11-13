@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,3 +38,12 @@ declare module 'openapi-fetch' {
 import type { paths } from 'cfs-ccm-api/api-types';
 // type for openapi-fetch client so TypeScript will allow us to safely invoke its methods
 export type OpenApiClient = Client<paths>;
+
+// Re-export the middleware types after applying the node-fetch Request and
+// Response augmentation above. All authorizers must use these same types.
+export type OpenApiMiddlewareCallbackParams =
+    import('openapi-fetch').MiddlewareCallbackParams;
+export type OpenApiMiddlewareOnRequest =
+    Required<Middleware>['onRequest'];
+export type OpenApiMiddlewareOnResponse =
+    Required<Middleware>['onResponse'];

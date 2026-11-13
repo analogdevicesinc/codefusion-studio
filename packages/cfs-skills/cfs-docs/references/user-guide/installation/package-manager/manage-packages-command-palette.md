@@ -1,7 +1,7 @@
 ---
 description: Use the Command Palette to install, view, remove, or delete packages from the cache in CodeFusion Studio.
 author: Analog Devices
-date: 2026-05-28
+date: 2026-10-14
 ---
 
 # Manage packages from VS Code Command Palette
@@ -30,6 +30,12 @@ To access Package Manager from the Command Palette:
 
 !!! note
     Some packages may require license acceptance before installation. If prompted, review the license agreement and any referenced URLs, then select **Accept** (or **Accept All**) to proceed.
+
+## Check for package updates
+
+To check whether newer versions of your installed packages are available, open the **Command Palette** and run `(CFS) Check for Package Updates`. If there are no updates, a message confirms that all packages are up to date. The check requires a `.cfsdependencies` file in your workspace. CodeFusion Studio also checks automatically when you open a workspace. See [Check for package updates](manage-packages-ide.md#check-for-package-updates).
+
+To turn off the automatic check, open **Settings** in VS Code, search for **Check For Updates**, and clear the **Cfs › Package Manager: Check For Updates** (`cfs.packageManager.checkForUpdates`) checkbox. Alternatively, set `"cfs.packageManager.checkForUpdates": false` in your user `settings.json` file. To turn it off for one workspace only, select the **Workspace** tab in **Settings** before you clear the checkbox.
 
 ## Uninstall a package
 

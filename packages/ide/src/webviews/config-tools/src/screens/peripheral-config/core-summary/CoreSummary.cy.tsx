@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -634,6 +634,58 @@ describe(
 				cy.mount(<CoreSummary />, reduxStore);
 
 				cy.dataTest('core-summary:expand-collapse-actions').should(
+					'not.exist'
+				);
+			});
+
+			it('hides the peripheral conflict icon after deleting the conflicting signal', () => {
+				const reduxStore = configurePreloadedStore(
+					max32690wlp,
+					mockedConfigDict
+				);
+
+				reduxStore.dispatch(
+					setSignalAssignment({
+						peripheral: 'GPIO0',
+						signalName: 'P0.1',
+						projectId: 'RV-proj'
+					})
+				);
+				reduxStore.dispatch(
+					setAppliedSignal({
+						Pin: 'J2',
+						Peripheral: 'GPIO0',
+						Name: 'P0.1'
+					})
+				);
+
+				reduxStore.dispatch(
+					setSignalAssignment({
+						peripheral: 'GPIO0',
+						signalName: 'P0.3',
+						projectId: 'CM4-proj'
+					})
+				);
+				reduxStore.dispatch(
+					setAppliedSignal({
+						Pin: 'J2',
+						Peripheral: 'GPIO0',
+						Name: 'P0.3'
+					})
+				);
+
+				cy.mount(<CoreSummary />, reduxStore);
+
+				cy.dataTest('core:CM4-proj:label').click();
+				cy.dataTest('core:CM4-proj:allocation:GPIO0').click();
+
+				cy.dataTest('core:CM4-proj:allocation:GPIO0:conflict').should(
+					'exist'
+				);
+
+				cy.dataTest('core:GPIO0-P0.3:allocation:delete-icon').click();
+
+				cy.dataTest('core:CM4-proj:allocation:GPIO0:conflict').should(
 					'not.exist'
 				);
 			});

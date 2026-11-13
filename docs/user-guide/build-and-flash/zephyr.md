@@ -1,7 +1,7 @@
 ---
 description: Additional considerations for using the Zephyr RTOS in CodeFusion Studio.
 author: Analog Devices
-date: 2024-09-20
+date: 2026-10-13
 ---
 
 # Zephyr RTOS projects
@@ -44,6 +44,29 @@ west build -p auto -b apard32690/max32690/m4 -- -DCONFIG_FAULT_DUMP=1
 
 !!! note
     The double dash `--` in the `west` command line will pass any following arguments directly to **CMake**.
+
+## Edit west.yml in the West Editor
+
+To view and edit the projects, groups, and group filter of a `west.yml` manifest as cards instead of YAML, use the [West Editor](../developer-tools/west-editor.md).
+
+## Add an installed package to a west workspace
+
+CodeFusion Studio provides a `cfspkg://` Git protocol, so `west` can clone a package installed with the Package Manager into your own application. In the `west.yml` manifest, set the project `url` to `cfspkg://<name>/<version>`:
+
+```yaml
+manifest:
+  projects:
+    - name: my-project
+      url: cfspkg://my-package/1.0.0
+      revision: main # Example only. Replace with a ref that exists in the Git repository included in the package.
+```
+
+When you run `west update` from the [CFS Terminal](cfs-terminal.md), or from a [custom task](../cfsutil/tasks.md#define-tasks-for-cli-use) that you run with `cfsutil tasks run`, Git resolves the URL to the installed package and clones it into your workspace. The `revision` is a branch, tag, or commit in the package's Git repository. It is separate from the package version in the URL, and `west update` fails if the repository doesn't have it.
+
+Before you use this protocol:
+
+- Install the exact package version with the [Package Manager](../installation/package-manager/index.md) or `cfsutil pkg install <name>/<version>`. If the version isn't installed, the clone fails and the error message shows the install command. To find the name and version of an installed package, use the [Packages view](../installation/package-manager/view-installed-packages.md) in the CodeFusion Studio sidebar, or run `cfsutil pkg list`.
+- The package must be a Git repository. Packages that aren't Git repositories aren't supported.
 
 ## Add compiler arguments
 

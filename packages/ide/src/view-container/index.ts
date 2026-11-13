@@ -18,3 +18,4 @@ export { QuickAccessProvider } from "./quick-access";
 export { DeviceTreeProvider } from "./device-tree";
 export { ViewContainerItem } from "./view-container-item";
 export { ContextPanelProvider } from "./context-panel";
+export { PackageExplorerProvider } from "./package-explorer/package-explorer-provider";

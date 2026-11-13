@@ -19,7 +19,6 @@ import {ROOT_NODE_ID} from '../../../common/utils/constants';
 import type {EventNode, EventTree} from '../../../common/utils/types';
 import type {RootState} from '../../store';
 import {
-	clearTree,
 	setNodeChildren,
 	setRootChildren,
 	updateNodeTreeItem
@@ -51,9 +50,7 @@ export const loadChildrenByNodeThunk = createAsyncThunk<
 			dispatch
 		)
 			.catch(() => {
-				if (parentId === ROOT_NODE_ID) {
-					dispatch(clearTree());
-				}
+				throw new Error('Failed to load event sources.');
 			})
 			.finally(() => {
 				pendingChildrenRequests.delete(parentId);
@@ -150,7 +147,7 @@ async function hydrateTreeItems(
 					...node,
 					treeItem
 				};
-			} catch (error) {
+			} catch (_error) {
 				return node; // Keep node visible even if tree-item fails.
 			}
 		})

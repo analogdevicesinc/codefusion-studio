@@ -14,34 +14,36 @@
  */
 
 import {
-  env,
   ExtensionContext,
   ProgressOptions,
   ProgressLocation,
-  Uri,
   window,
 } from "vscode";
 import { registerCommand } from "./commands";
-import { type AuthConfig, SessionManager } from "cfs-lib";
 import { CLOUD_CATALOG_AUTH } from "./constants";
-import { AuthConfigParser } from "../utils/auth-config";
-import { AuthFlowError, TokenCodeExchangeInitiator } from "cfs-ccm-lib";
+import { AuthFlowError } from "cfs-ccm-lib";
+import type { AuthService } from "../services/auth-service";
 
 /**
  * Auth related commands
  */
 
 export class AuthCommandManager {
-  private sessionManager: SessionManager;
-
-  static registerAllCommands(context: ExtensionContext) {
+  /**
+   * Registers the myAnalog status, login and logout commands.
+   * @param context - The extension context
+   * @param authService - The shared auth service
+   */
+  static registerAllCommands(
+    context: ExtensionContext,
+    authService: AuthService,
+  ) {
     try {
-      const authConfig = new AuthConfigParser().getConfig();
-      authConfig.sessionUrlHandler = createFlowInitiator;
-      const instance = new AuthCommandManager(authConfig);
+      authService.requireConfig();
+      const instance = new AuthCommandManager(authService);
       const callbackWithProgress = <T, A extends unknown[]>(
         callback: (this: AuthCommandManager, ...args: A) => Promise<T>,
-        progressTitle: string
+        progressTitle: string,
       ) => {
         const progressOptions: ProgressOptions = {
           location: ProgressLocation.Window,
@@ -51,7 +53,7 @@ export class AuthCommandManager {
 
         return (...args: A) =>
           window.withProgress(progressOptions, () =>
-            callback.call(instance, ...args)
+            callback.call(instance, ...args),
           );
       };
 
@@ -60,9 +62,9 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.STATUS,
         callbackWithProgress(
           instance.statusCommandCallback,
-          "Checking myAnalog login status..."
+          "Checking myAnalog login status...",
         ),
-        instance
+        instance,
       );
 
       registerCommand(
@@ -70,9 +72,9 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.LOGIN,
         callbackWithProgress(
           instance.loginCommandCallback,
-          "Logging in to myAnalog..."
+          "Logging in to myAnalog...",
         ),
-        instance
+        instance,
       );
 
       registerCommand(
@@ -80,16 +82,16 @@ export class AuthCommandManager {
         CLOUD_CATALOG_AUTH.LOGOUT,
         callbackWithProgress(
           instance.logoutCommandCallback,
-          "Logging out of myAnalog..."
+          "Logging out of myAnalog...",
         ),
-        instance
+        instance,
       );
     } catch (error) {
       const errorCommandCallback = () => {
         window.showWarningMessage(
           `myAnalog auth related commands are not available. ${
             (error as Error).message
-          }`
+          }`,
         );
       };
 
@@ -99,13 +101,11 @@ export class AuthCommandManager {
     }
   }
 
-  constructor(private authConfig: AuthConfig) {
-    this.sessionManager = new SessionManager(this.authConfig);
-  }
+  constructor(private authService: AuthService) {}
 
   private async statusCommandCallback(notify = true): Promise<boolean> {
     try {
-      const session = await this.sessionManager.getSession();
+      const session = await this.authService.getSession({ forceRefresh: true });
       if (!session) {
         if (notify) {
           window.showInformationMessage("You are not logged in to myAnalog");
@@ -115,14 +115,14 @@ export class AuthCommandManager {
 
       if (notify) {
         window.showInformationMessage(
-          `You are logged in to myAnalog as ${session.userEmail}`
+          `You are logged in to myAnalog as ${session.userEmail}`,
         );
       }
       return true;
     } catch {
       if (notify) {
         window.showErrorMessage(
-          "An error occurred while checking myAnalog login status"
+          "An error occurred while checking myAnalog login status",
         );
       }
       return false;
@@ -132,24 +132,26 @@ export class AuthCommandManager {
   private async loginCommandCallback() {
     let session;
     try {
-      session = await this.sessionManager.getSession();
+      session = await this.authService.getSession({ forceRefresh: true });
       if (session) {
         window.showInformationMessage(
-          `You are already logged in to myAnalog as ${session.userEmail}`
+          `You are already logged in to myAnalog as ${session.userEmail}`,
         );
         window.showInformationMessage(
-          "To log in with a different myAnalog account, please log out first"
+          "To log in with a different myAnalog account, please log out first",
         );
         return;
       }
 
-      session = await this.sessionManager.createSession();
+      session = await this.authService.login();
     } catch (err) {
       if (err instanceof AuthFlowError && err.type === "CALLBACK_TIMEOUT") {
         try {
           // User may have had another successful login before
           // this one timed out, so check before reporting failure
-          session = await this.sessionManager.getSession();
+          session = await this.authService.getSession({
+            forceRefresh: true,
+          });
         } catch {
           // discard error
         }
@@ -157,50 +159,34 @@ export class AuthCommandManager {
 
       if (!session) {
         window.showErrorMessage(
-          "An error occurred while trying to login to myAnalog"
+          "An error occurred while trying to login to myAnalog",
         );
         return;
       }
     }
 
     window.showInformationMessage(
-      `You are logged in to myAnalog as ${session.userEmail}`
+      `You are logged in to myAnalog as ${session.userEmail}`,
     );
   }
 
   private async logoutCommandCallback() {
     try {
-      const session = await this.sessionManager.getSession();
+      const session = await this.authService.getSession({ forceRefresh: true });
       if (!session) {
         window.showInformationMessage("You are not logged in to myAnalog");
         return;
       }
 
-      await session.endSession();
+      await this.authService.logout(session);
 
       window.showInformationMessage(
-        "You have been logged out of myAnalog successfully"
+        "You have been logged out of myAnalog successfully",
       );
     } catch {
       window.showErrorMessage(
-        "An error occurred while trying to logout of myAnalog"
+        "An error occurred while trying to logout of myAnalog",
       );
     }
   }
 }
-
-const createFlowInitiator: TokenCodeExchangeInitiator = async (
-  authUrl: URL
-) => {
-  const result = window.showInformationMessage(
-    `Attempting to automatically open the authorization page in your default browser. \
-    If the browser does not open, use the button to copy the link and paste it in your browser.`,
-    "Copy link"
-  );
-
-  void env.openExternal(Uri.parse(authUrl.href));
-
-  if ((await result) === "Copy link") {
-    env.clipboard.writeText(authUrl.href);
-  }
-};

@@ -20,6 +20,7 @@ import {
   runPkgTestsEnvVar,
   setupMockPkgCommandDeps
 } from '../../utils/pkg-test-helpers.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 describe('pkg search', () => {
   const packagePattern = 'test_pkg1*';
@@ -63,5 +64,30 @@ describe('pkg search', () => {
       'Packages available for installation:'
     );
     expect(searchStdout).to.contain('- test_pkg1/1.0');
+  });
+
+  it('returns matching packages as the JSON envelope data payload', async () => {
+    const {stdout, error} = await runPkgCommandWithAuthRetry([
+      'pkg',
+      'search',
+      packagePattern,
+      '--format',
+      'json'
+    ]);
+
+    expect(error).to.be.undefined;
+
+    const parsed = assertValidEnvelope<{
+      packages: {name: string; version: string}[];
+    }>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data.packages).to.be.an('array');
+      expect(
+        parsed.data.packages.some(
+          (pkg) => `${pkg.name}/${pkg.version}` === 'test_pkg1/1.0'
+        )
+      ).to.be.true;
+    }
   });
 });

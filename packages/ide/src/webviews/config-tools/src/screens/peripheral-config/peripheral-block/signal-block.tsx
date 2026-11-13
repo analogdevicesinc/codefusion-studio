@@ -16,14 +16,12 @@ import {memo, useCallback} from 'react';
 import AssignableItem from '../assignable-item/assignable-item';
 import {useAppDispatch} from '../../../state/store';
 import styles from './signal-block.module.scss';
-import {
-	setActiveSignal,
-	removeSignalAssignment,
-	setActivePeripheral
-} from '../../../state/slices/peripherals/peripherals.reducer';
+import {setActiveSignal} from '../../../state/slices/peripherals/peripherals.reducer';
 import {useSignalAssignmentHandler} from '../../../hooks/use-signal-assignment-handler';
 import {useAllocationHandler} from '../../../hooks/use-allocation-handler';
 import type {FormattedPeripheralSignal} from '../../../../../common/types/soc';
+import useDeleteSignalAssignment from '../../../hooks/use-delete-signal-assignment';
+import {useCurrentSignalTarget} from '../../../state/slices/peripherals/peripherals.selector';
 
 type Props = Readonly<{
 	signal: FormattedPeripheralSignal;
@@ -42,6 +40,8 @@ function SignalBlock({
 }: Props) {
 	const dispatch = useAppDispatch();
 	const isAssignmentEnabled = !isSelected;
+	const targetPinId =
+		useCurrentSignalTarget(peripheralName, signal.name) ?? '';
 
 	const handleSignalAssignment = useSignalAssignmentHandler(
 		peripheralName,
@@ -65,15 +65,11 @@ function SignalBlock({
 		);
 	}, [dispatch, signal.name, peripheralName]);
 
-	const handleSignalDelete = useCallback(async () => {
-		dispatch(
-			removeSignalAssignment({
-				peripheral: peripheralName,
-				signalName: signal.name
-			})
-		);
-		dispatch(setActivePeripheral(undefined));
-	}, [dispatch, peripheralName, signal.name]);
+	const handleSignalDelete = useDeleteSignalAssignment(
+		peripheralName,
+		signal.name,
+		targetPinId
+	);
 
 	return (
 		// NOTE AssignableItem expects "peripheral" in id, as it's used for tooltip positioning.

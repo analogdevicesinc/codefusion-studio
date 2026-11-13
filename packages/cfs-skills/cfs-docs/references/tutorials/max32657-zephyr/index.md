@@ -1,7 +1,7 @@
 ---
 description: Getting started with MAX32657 and MAX32658 on Zephyr 4.4.0 using CodeFusion Studio
 author: Analog Devices
-date: 2026-06-18
+date: 2026-10-01
 ---
 
 # MAX32657/MAX32658 Zephyr 4.4.0
@@ -12,7 +12,7 @@ This tutorial gets you up and running with MAX32657 or MAX32658 development on Z
 
 Before you begin:
 
-1. Install the `zephyr/4.4.0-b.1` package (`zephyr_arm_toolchain/1.0.1` is installed automatically as a dependency):
+1. Install the `zephyr/4.4.0-b.1` package (`zephyr_arm_toolchain/1.0.3` is installed automatically as a dependency):
     - **Command Palette:** Open the Command Palette and run **(CFS) Install Package**. Find `zephyr/4.4.0-b.1` in the list and install it. See [Install packages using the Command Palette](../../user-guide/installation/package-manager/manage-packages-command-palette.md).
     - **Command line:** Run the following from the CFS Terminal. See [Install packages using cfsutil](../../user-guide/installation/package-manager/manage-packages-cfsutil.md).
 

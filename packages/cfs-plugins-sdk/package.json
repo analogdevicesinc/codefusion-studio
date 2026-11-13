@@ -1,19 +1,21 @@
 {
 	"name": "cfs-plugins-sdk",
-	"publisher": "adi",
-	"description": "Plugin API for CodeFusion Studio",
-	"author": "Analog Devices",
 	"version": "1.0.0",
+	"description": "Plugin API for CodeFusion Studio",
+	"license": "Apache-2.0",
+	"author": "Analog Devices",
+	"publisher": "adi",
+	"type": "module",
+	"main": "./dist/src/index.js",
+	"types": "./dist/src/index.d.ts",
 	"scripts": {
 		"build": "tsc -b ./tsconfig.json",
 		"clean": "shx rm -rf dist",
-		"lint": "eslint src --ext .ts",
-		"test": "mocha --require ts-node/register --recursive test/**/*.test.ts"
+		"lint": "oxlint --max-warnings 5 .",
+		"format-check": "oxfmt --check {src,test}/**/*.ts",
+		"format-write": "oxfmt --write {src,test}/**/*.ts",
+		"test": "mocha --recursive test/**/*.test.ts"
 	},
-	"main": "./dist/src/index.js",
-	"types": "./dist/src/index.d.ts",
-	"type": "module",
-	"license": "Apache-2.0",
 	"dependencies": {
 		"cfs-types": "workspace:^",
 		"eta": "^3.5.0",
@@ -26,8 +28,10 @@
 		"@types/sinon": "^21.0.1",
 		"chai": "^5",
 		"mocha": "^10",
+		"oxfmt": "catalog:",
+		"oxlint": "catalog:",
 		"sinon": "^21.1.2",
-		"ts-node": "^10.9.2",
-		"typescript": "^5"
+		"tsx": "^4.20.4",
+		"typescript": "catalog:"
 	}
 }

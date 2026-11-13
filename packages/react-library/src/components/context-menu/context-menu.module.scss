@@ -31,6 +31,9 @@
 	border-radius: layout.$border-radius-2;
 
 	.menuItem {
+		display: flex;
+		align-items: center;
+		gap: layout.$spacing-2;
 		padding: layout.$spacing-1 layout.$spacing-3;
 		list-style: none;
 		white-space: nowrap;
@@ -42,6 +45,21 @@
 		outline: none;
 		background-color: colors.$list-active-selection-background;
 		cursor: pointer;
+	}
+
+	.menuItem.disabled {
+		color: colors.$disabled-foreground;
+		cursor: default;
+	}
+
+	.menuItem.disabled:hover,
+	.menuItem.disabled:focus {
+		background-color: transparent;
+		cursor: default;
+	}
+
+	.icon {
+		display: flex;
 	}
 
 	.divider {

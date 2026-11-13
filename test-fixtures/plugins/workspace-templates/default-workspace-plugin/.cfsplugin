@@ -16,7 +16,7 @@
         {
           "src": "templates/.cfsconfig.eta",
           "dst": ".cfs/${context.workspaceName}.cfsconfig",
-          "condition": "${['max32650', 'max32655', 'max32657', 'max32658', 'max32660', 'max32662', 'max32670', 'max32672', 'max32675c', 'max32690', 'max78000', 'max78002'].includes(context.soc.toLowerCase()) || context.soc.toLowerCase().startsWith('adsp')}"
+          "condition": "${['max32650', 'max32655', 'max32657', 'max32658', 'max32660', 'max32662', 'max32670', 'max32672', 'max32675c', 'max32690', 'max78000', 'max78002', 'test650', 'test655', 'test657', 'test658', 'test670', 'test672', 'test675', 'test690', 'test8002'].includes(context.soc.toLowerCase()) || context.soc.toLowerCase().startsWith('adsp') || context.soc.toLowerCase().startsWith('test-sc')}"
         }
       ],
       "files": []

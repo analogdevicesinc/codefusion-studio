@@ -206,7 +206,9 @@ function TimelineSlider({
 				/>
 				<div className={styles.inner}>
 					<div
-						className={`${styles.middle} ${start === 0 && end === 100 ? '' : styles.cursorGrab}`}
+						className={`${styles.middle} ${
+							start === 0 && end === 100 ? '' : styles.cursorGrab
+						}`}
 						onMouseDown={e => {
 							handleMouseDown(e, 'range');
 						}}

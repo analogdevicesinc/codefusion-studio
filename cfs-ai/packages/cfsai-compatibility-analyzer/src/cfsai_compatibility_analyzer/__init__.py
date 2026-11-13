@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -9,43 +9,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-AI Model Compatibility Analyzer.
+"""Thin wrapper — delegates to cfsai_model_explorer."""
 
-Comprehensive hardware compatibility assessment framework for AI model deployment
-on resource-constrained embedded systems. This package provides automated analysis
-of model characteristics against hardware constraints to ensure successful deployment
-and optimal performance on target platforms.
+from __future__ import annotations
 
-Key Features:
-- Hardware constraint validation and compatibility scoring
-- Operator support verification across different hardware platforms
-- Memory and computational resource requirement analysis
-- Quantization compatibility assessment for embedded deployment
-- Automated optimization recommendations and deployment guidance
-- Detailed compatibility reporting with actionable insights
+from pathlib import Path
+from typing import Optional, Union
 
-Primary Classes:
-- CompatibilityAnalyzer: Main analyzer for comprehensive compatibility assessment
-
-Usage:
-    >>> from cfsai_compatibility_analyzer import CompatibilityAnalyzer
-    >>> analyzer = CompatibilityAnalyzer(hardware_profile)
-    >>> report = analyzer.analyze_model("model.tflite")
-
-Supported Analysis Types:
-- Memory constraint validation (flash storage and runtime RAM)
-- Operator compatibility verification against hardware capabilities
-- Data type and quantization scheme validation
-- Performance bottleneck identification and optimization guidance
-- Cross-platform deployment feasibility assessment
-"""
-
-from cfsai_compatibility_analyzer.analyze_compatibility import (
-    CompatibilityAnalyzer,
+from cfsai_model_explorer.adapters import adapt_explore_to_compat
+from cfsai_model_explorer.backends.tflm_static.compat_schemas import (
+    CompatibilityReport,
 )
+from cfsai_model_explorer.registry import get_backend
+from cfsai_model_explorer.schemas import ExploreReport
+from pydantic import BaseModel
 
-# Public API surface
-__all__ = [
-    "CompatibilityAnalyzer",  # Primary compatibility analysis engine
-]
+from cfsai_types.hardware_profile import HardwareProfile
+
+
+class CompatibilityAnalyzer:
+    """Backward-compatible wrapper that delegates to model-explorer."""
+
+    def __init__(self) -> None:
+        """Initialize the analyzer."""
+
+    def analyze_model(
+        self,
+        model_path: Union[str, Path],
+        hw_metadata: HardwareProfile,
+        dataset_path: Optional[Union[str, Path]] = None,
+    ) -> BaseModel:
+        """Run compatibility analysis on a TFLite model."""
+        backend = get_backend(hw_metadata)
+        ds = Path(dataset_path) if dataset_path else None
+        report = backend.check_compat(Path(model_path), hw_metadata, ds)
+
+        if isinstance(report, ExploreReport):
+            data = adapt_explore_to_compat(report)
+            return CompatibilityReport(**data)
+
+        return report
+
+
+__all__ = ["CompatibilityAnalyzer"]

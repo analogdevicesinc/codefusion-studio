@@ -121,33 +121,20 @@ describe("Partition creation and validation", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let configPath: string | undefined;
-  browser = VSBrowser.instance;
+  let configPath: string = getConfigPathForFile(
+    "max32690-wlp-allocated-peripherals.cfsconfig",
+  );
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-
-    if (configPath) {
-      await UIUtils.restoreFixtureFileFromGit(configPath);
-      configPath = undefined;
-    }
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Partition creation and validation", async () => {
-    configPath = getConfigPathForFile(
-      "max32690-wlp-allocated-peripherals.cfsconfig",
-    );
-
+  it("Partition creation and validation @regression", async () => {
     await browser.openResources(configPath);
-    workbench = new Workbench();
 
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
@@ -273,7 +260,7 @@ describe("Partition creation and validation", () => {
     console.log("RV Partition config OK");
   }).timeout(150000);
 
-  it("Trustzone partition creation and editing", async () => {
+  it("Trustzone partition creation and editing @regression", async () => {
     // When I open the cfsconfig file
     configPath = getConfigPathForFile("max32657-wlp-trustzone.cfsconfig");
     await browser.openResources(configPath);
@@ -501,14 +488,10 @@ describe("Sharcfx - Partition creation and validation", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let configPath: string;
-  browser = VSBrowser.instance;
-  configPath = getConfigPathForFile("sharcfx_core.cfsconfig");
+  let configPath = getConfigPathForFile("sharcfx_core.cfsconfig");
 
   async function openMemoryAllocationTab() {
     await browser.openResources(configPath);
-    workbench = new Workbench();
-
     console.log("Opened the cfsconfig file");
     await UIUtils.dismissAllNotifications(workbench, browser);
     await UIUtils.sleep(300);
@@ -524,17 +507,11 @@ describe("Sharcfx - Partition creation and validation", () => {
   }
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    // Teardown - reset cfsconfig files
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   // Scenario: Flash partition creation for FX core
@@ -559,7 +536,7 @@ describe("Sharcfx - Partition creation and validation", () => {
   //     | LABEL        |                    |
   //
 
-  it("Partition creation and validation - Sharcfx Flash", async () => {
+  it("Partition creation and validation - Sharcfx Flash @regression", async () => {
     await openMemoryAllocationTab();
 
     await createSharcfxMemoryPartition(
@@ -1103,14 +1080,10 @@ describe("Sharcfx - Memory Partition edit and deletion", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  let configPath: string;
-  browser = VSBrowser.instance;
-  configPath = getConfigPathForFile("sharcfx_core.cfsconfig");
+  let configPath = getConfigPathForFile("sharcfx_core.cfsconfig");
 
   async function openMemoryAllocationTab() {
     await browser.openResources(configPath);
-    workbench = new Workbench();
-
     console.log("Opened the cfsconfig file");
     await UIUtils.dismissAllNotifications(workbench, browser);
     await UIUtils.sleep(300);
@@ -1125,17 +1098,11 @@ describe("Sharcfx - Memory Partition edit and deletion", () => {
   }
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    // Teardown - reset cfsconfig files
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   // Scenario: Flash partition creation for FX core
@@ -1291,7 +1258,7 @@ describe("Sharcfx - Memory Partition edit and deletion", () => {
     console.log("FX Partition config OK");
   }).timeout(150000);
 
-  it("Create Sharcfx RAM partition and delete the created partition", async () => {
+  it("Create Sharcfx RAM partition and delete the created partition @regression", async () => {
     await openMemoryAllocationTab();
 
     await createSharcfxMemoryPartition(

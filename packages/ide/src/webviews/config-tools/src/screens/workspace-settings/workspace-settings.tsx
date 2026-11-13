@@ -13,7 +13,7 @@
  *
  */
 
-import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsTwoColumnLayout';
 import WorkspaceSettingsSidebar from './sidebar/workspace-settings-sidebar';
 import useFilteredSettingsSections from '../../hooks/use-filtered-settings-sections';
 import {useActiveSettingsPage} from '../../state/slices/app-context/appContext.selector';

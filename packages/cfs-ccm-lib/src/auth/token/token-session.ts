@@ -248,9 +248,7 @@ export class TokenAuthSession implements AuthSession {
     }
 }
 
-export class TokenSessionFileStorage
-    implements SessionStorage<TokenSessionInfo>
-{
+export class TokenSessionFileStorage implements SessionStorage<TokenSessionInfo> {
     private constructor(
         private readonly filename: string,
         private readonly encryptionKey?: crypto.KeyObject,
@@ -451,6 +449,7 @@ export class TokenSessionFileStorage
 
     /**
      * @param obj an object to check
+     * @returns true when the object is a TokenSessionInfo
      */
     private isTokenSessionInfo(obj: any): obj is TokenSessionInfo {
         return (

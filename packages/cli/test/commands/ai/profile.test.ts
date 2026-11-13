@@ -17,10 +17,14 @@ import {assert, expect} from 'chai';
 import {runCommand} from '@oclif/test';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {AiCommandError, CfsToolManager} from 'cfs-lib';
-import AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import {AiCommandError, CfsToolManager, AIToolsPlugin} from 'cfs-lib';
 import Sinon from 'sinon';
-import type {AiCommandResult} from 'cfs-types';
+import type {AiCommandResult, CfsAiProfilingReport} from 'cfs-types';
+
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +36,7 @@ describe('ai:profile', () => {
   let sandbox: Sinon.SinonSandbox;
   let runProfileStub: Sinon.SinonStub;
 
-  const VALID_OUTPUT: AiCommandResult = {
+  const VALID_OUTPUT: AiCommandResult<CfsAiProfilingReport> = {
     code: 0,
     validCodes: [0],
     events: [
@@ -46,7 +50,164 @@ describe('ai:profile', () => {
         message:
           'Optimization recommendations available through smart memory analysis and layerwise opportunities'
       }
-    ]
+    ],
+    data: {
+      type: 'profile',
+      model_summary: {
+        model_name: 'test-model.tflite',
+        model_path: '/models/test-model.tflite',
+        framework: 'TensorFlow Lite',
+        model_size_kb: 1.25390625,
+        target_dtype: 'float32',
+        layer_count: 3,
+        total_parameters: null
+      },
+      hardware_metrics: {
+        total_cycles: 576,
+        estimated_latency_ms: 0.0048000000000000004,
+        estimated_power_mw: 0,
+        peak_memory_kb: 0.125,
+        peak_memory_mb: 0.0001220703125,
+        available_ram_kb: 1024,
+        accelerated_layers: 0,
+        cpu_only_layers: 3
+      },
+      memory_analysis: {
+        model_peak_ram_kb: 0.125,
+        available_ram_kb: 1024,
+        ram_utilization_percent: 0.01220703125,
+        ram_status: 'OK',
+        memory_issues: [],
+        memory_recommendations: [
+          'High memory variance detected (73.8% of average) - consider tensor lifecycle optimization and memory pooling'
+        ]
+      },
+      layer_performance: [
+        {
+          layer_idx: 0,
+          layer_name: 'FULLY_CONNECTED',
+          operator_type: null,
+          cycles: 32,
+          latency_ms: 0.0002666666666666667,
+          energy_uj: 0.00272,
+          power_mw: 0,
+          is_accelerated: false,
+          macs: 16,
+          memory_kb: 0.125
+        },
+        {
+          layer_idx: 1,
+          layer_name: 'FULLY_CONNECTED',
+          operator_type: null,
+          cycles: 512,
+          latency_ms: 0.004266666666666667,
+          energy_uj: 0.04352,
+          power_mw: 0,
+          is_accelerated: false,
+          macs: 256,
+          memory_kb: 1.0625
+        },
+        {
+          layer_idx: 2,
+          layer_name: 'FULLY_CONNECTED',
+          operator_type: null,
+          cycles: 32,
+          latency_ms: 0.0002666666666666667,
+          energy_uj: 0.00272,
+          power_mw: 0,
+          is_accelerated: false,
+          macs: 16,
+          memory_kb: 0.06640625
+        }
+      ],
+      optimization_suggestions: [],
+      optimization_opportunities: {
+        total_parameter_memory_kb: 1.25390625,
+        total_macs: 288,
+        layerwise_opportunities: [
+          {
+            layer_index: 1,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 1.0625,
+            macs: 256,
+            kernel_info: '[[16, 16], [16]]',
+            suggestion: 'Quantize weights and consider sparsity'
+          },
+          {
+            layer_index: 0,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 0.125,
+            macs: 16,
+            kernel_info: '[[16, 1], [16]]',
+            suggestion: 'Quantize weights and consider sparsity'
+          },
+          {
+            layer_index: 2,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 0.06640625,
+            macs: 16,
+            kernel_info: '[[1, 16], [1]]',
+            suggestion: 'Quantize weights and consider sparsity'
+          }
+        ],
+        macs_opportunities: [
+          {
+            layer_index: 1,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 1.0625,
+            macs: 256,
+            kernel_info: '[[16, 16], [16]]',
+            suggestion:
+              'Use sparse matrices or reduce hidden dimensions'
+          },
+          {
+            layer_index: 0,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 0.125,
+            macs: 16,
+            kernel_info: '[[16, 1], [16]]',
+            suggestion:
+              'Use sparse matrices or reduce hidden dimensions'
+          },
+          {
+            layer_index: 2,
+            op_type: 'FULLY_CONNECTED',
+            parameter_memory_kb: 0.06640625,
+            macs: 16,
+            kernel_info: '[[1, 16], [1]]',
+            suggestion:
+              'Use sparse matrices or reduce hidden dimensions'
+          }
+        ]
+      },
+      errors: [],
+      info: {
+        timestamp: '2026-08-12T08:13:23',
+        version: '2.2.0',
+        hardware: {
+          FlashSize: 3072,
+          RamSize: 1024,
+          CoreClock: 120,
+          SupportedOps: [],
+          AccelOps: [],
+          SupportedDataTypes: [],
+          OperatorInfos: [
+            {
+              Name: 'MAC',
+              Cycles: 2,
+              Energy: 0.17
+            }
+          ],
+          Target: {
+            Soc: 'MAX32690',
+            Core: 'CM4',
+            Package: 'CTBGA',
+            Accelerator: null,
+            Family: 'Cortex-M'
+          }
+        }
+      }
+    }
   };
 
   const ERROR_OUTPUT: AiCommandResult = {
@@ -313,6 +474,15 @@ describe('ai:profile', () => {
           VALID_OUTPUT.events.map(({message}) =>
             expect(stdout).to.include(message)
           );
+          expect(stdout).to.contain('RESOURCE PROFILING REPORT');
+          expect(stdout).to.contain('MODEL SUMMARY');
+          expect(stdout).to.contain('MEMORY ANALYSIS');
+          expect(stdout).to.contain('HARDWARE PERFORMANCE');
+          expect(stdout).to.contain('PER-LAYER PERFORMANCE');
+          expect(stdout).to.contain('OPTIMIZATION OPPORTUNITIES');
+          expect(stdout).to.contain('Memory Recommendations');
+          expect(stdout).to.contain('High memory variance detected');
+          expect(stdout).to.contain('Total MACs');
         });
 
         it('GIVEN invalid run WHEN runProfile THEN return parsed AiCommandError', async () => {
@@ -340,7 +510,7 @@ describe('ai:profile', () => {
       });
 
       describe('--format json', () => {
-        it('GIVEN valid run WHEN runProfile THEN return AiCommandResult', async () => {
+        it('GIVEN valid run WHEN runProfile THEN return envelope with report as data', async () => {
           const {stdout, error} = await runCommand(
             [
               'ai:profile',
@@ -355,10 +525,15 @@ describe('ai:profile', () => {
           );
 
           expect(error).to.not.exist;
-          assert.deepEqual(JSON.parse(stdout), VALID_OUTPUT);
+          const data =
+            assertSuccessEnvelopeData<CfsAiProfilingReport>(
+              stdout,
+              'ai profile'
+            );
+          assert.deepEqual(data, VALID_OUTPUT.data);
         });
 
-        it('GIVEN valid run WHEN runProfile THEN return AiCommandResult', async () => {
+        it('GIVEN invalid run WHEN runProfile THEN return error envelope', async () => {
           runProfileStub.rejects(new AiCommandError(ERROR_OUTPUT));
 
           const {stdout} = await runCommand(
@@ -374,7 +549,22 @@ describe('ai:profile', () => {
             {root: '..'}
           );
 
-          assert.deepEqual(JSON.parse(stdout), ERROR_OUTPUT);
+          const parsed = assertValidEnvelope(stdout) as {
+            ok: boolean;
+            command: string;
+            errors: {code: string; message: string}[];
+          };
+          expect(parsed.ok).to.be.false;
+          expect(parsed.command).to.equal('ai profile');
+          assert.deepEqual(
+            parsed.errors,
+            ERROR_OUTPUT.events
+              .filter((event) => event.type === 'ERROR')
+              .map((event) => ({
+                code: 'AI_COMMAND_FAILED',
+                message: event.message
+              }))
+          );
         });
       });
     });

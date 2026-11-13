@@ -13,8 +13,7 @@
  *
  */
 
-import {useMemo} from 'react';
-import type {PackageListEntryState} from '@constants/messages/package-manager-messages';
+import {useEffect, useMemo} from 'react';
 import styles from './install-progress.module.scss';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 import ActionBar from '../action-bar/ActionBar';
@@ -25,9 +24,10 @@ import {
 import {
 	useAlreadyInstalledRefs,
 	useInstallStatus,
-	useInstallTargets,
-	usePackageStateByName
+	useInstallTargets
 } from '../../state/slices/packages/packages.selector';
+import {installProgressShownNotification} from '@constants/messages/package-manager-messages';
+import {useMessenger} from '@common/contexts/MessengerContext';
 
 type InstallProgressPageProps = {
 	/** Called when the user confirms the finished installation. */
@@ -41,13 +41,11 @@ type RowState =
 	| 'failed';
 
 /**
- * Resolves a single row's state. Prefers the per-package state on the package
- * list entry — so an individual `installation-failed` shows through — and falls
- * back to the overall install status for packages with no list entry (e.g. a
- * dependency that is not present in the catalog).
+ * Resolves a single row's state from the status of the bulk install the rows
+ * belong to. The install runs as one backend call, so every row shares its
+ * outcome.
  */
 function resolveRowState(
-	entryState: PackageListEntryState | undefined,
 	overall: InstallStatus,
 	alreadyInstalled: boolean
 ): RowState {
@@ -55,19 +53,10 @@ function resolveRowState(
 	// the backend reports by omitting it from the install result entirely.
 	if (alreadyInstalled) return 'already-installed';
 
-	switch (entryState) {
-		case 'installed':
-			return 'installed';
-		case 'installation-failed':
-			return 'failed';
-		case 'installing':
-			return 'installing';
-		default:
-			if (overall === 'done') return 'installed';
-			if (overall === 'error') return 'failed';
+	if (overall === 'done') return 'installed';
+	if (overall === 'error') return 'failed';
 
-			return 'installing';
-	}
+	return 'installing';
 }
 
 /**
@@ -81,14 +70,22 @@ export default function InstallProgressPage({
 	const l10n = useLocaleContext()?.installProgress;
 	const actionBarL10n = useLocaleContext()?.actionBar;
 	const status = useInstallStatus();
+	const messenger = useMessenger();
 
 	// The exact set the install was started with (selected packages + their
 	// dependencies), recorded in the store when the install began.
 	const packages = useInstallTargets();
 
-	// Per-package state, so a single failed package can be flagged on its own
-	// row rather than marking the whole batch as failed.
-	const stateByName = usePackageStateByName();
+	// Send notification to extension when this page mounts to show VS Code notification immediately
+	useEffect(() => {
+		if (messenger && packages.length > 0) {
+			void messenger.sendNotification(
+				installProgressShownNotification,
+				{type: 'extension'},
+				{packageCount: packages.length, packages}
+			);
+		}
+	}, [messenger, packages]);
 
 	// Packages this install left untouched because they were already installed
 	// at the requested version; they are absent from the install result and must
@@ -133,14 +130,17 @@ export default function InstallProgressPage({
 								pkg.version
 							);
 							const rowState = resolveRowState(
-								stateByName[pkg.name],
 								status,
 								alreadyInstalled.has(reference)
 							);
 							const isError = rowState === 'failed';
 
 							return (
-								<div key={reference} className={styles.packageLine}>
+								<div
+									key={reference}
+									data-test={`install-row-${pkg.name}`}
+									className={styles.packageLine}
+								>
 									<span className={styles.state}>
 										{l10n?.installingLabel}
 									</span>
@@ -155,6 +155,7 @@ export default function InstallProgressPage({
 										aria-hidden='true'
 									/>
 									<span
+										data-test={`install-status-${pkg.name}`}
 										className={
 											isError
 												? `${styles.state} ${styles.stateError}`
@@ -170,6 +171,7 @@ export default function InstallProgressPage({
 				</div>
 			</div>
 			<ActionBar
+				dataTest='install-action-bar'
 				primaryAction={{
 					label: actionBarL10n?.finish ?? '',
 					disabled: !isComplete,

@@ -348,7 +348,7 @@ export class ActionsViewProvider
             });
           });
         }
-      } catch (error) {
+      } catch (_) {
         // tasks.json doesn't exist or couldn't be read for this workspace folder
         continue;
       }
@@ -397,7 +397,7 @@ export class ActionsViewProvider
         });
       });
 
-    // Add Ozone debug action if applicable
+    // Add an Ozone debug action per Ozone-capable core (one .jdebug per project).
     const foldersToCheck =
       this.activeContext === WORKSPACE_CONTEXT
         ? (vscode.workspace.workspaceFolders ?? [])
@@ -412,13 +412,12 @@ export class ActionsViewProvider
         actions.push(
           new ViewContainerItem({
             icon: new vscode.ThemeIcon(DEBUG_ALT),
-            label: OZONE_DEBUG_ACTION,
+            label: `${OZONE_DEBUG_ACTION} (${folder.name})`,
             commandId: LAUNCH_DEBUG_WITH_OZONE_COMMAND_ID,
-            commandArgs: [],
+            commandArgs: [folder.uri.toString()],
             collapsible: vscode.TreeItemCollapsibleState.None,
           }),
         );
-        break;
       }
     }
 

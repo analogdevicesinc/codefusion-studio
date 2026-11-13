@@ -1,16 +1,16 @@
 import { describe, before } from "mocha";
 import * as path from "path";
 import { By, EditorView, VSBrowser, Workbench } from "vscode-extension-tester";
+import { UIUtils } from "../../ui-test-utils/ui-utils";
 
 let workbench: Workbench;
 
 describe("Setup test environment", () => {
+  let browser: VSBrowser;
   before(async function () {
     this.timeout(60000);
-
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
     const editorView = new EditorView();
-    workbench = new Workbench();
-
     console.log(
       `Closing ${(await editorView.getOpenEditorTitles()).toString()}`,
     );
@@ -21,7 +21,7 @@ describe("Setup test environment", () => {
   it("should dismiss toast notifications @smoke", async function () {
     this.timeout(60000);
 
-    const browser = VSBrowser.instance;
+    browser = VSBrowser.instance;
 
     await browser.openResources(
       path.join(

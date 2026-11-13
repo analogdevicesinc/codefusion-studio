@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
 /**
@@ -72,13 +71,13 @@ export function registerStateAndCrashPrompts(server: McpServer): void {
     {
       description:
         "Set a breakpoint on a function and report what happens (tests timeout and error handling)",
-      argsSchema: {
-        functionName: z
-          .string()
-          .describe(
-            "Function name to set a breakpoint on (e.g. 'unusedFunction', 'SPI_Transfer')",
-          ),
-      },
+      argsSchema: z.object({
+              functionName: z
+                .string()
+                .describe(
+                  "Function name to set a breakpoint on (e.g. 'unusedFunction', 'SPI_Transfer')",
+                ),
+            }),
     },
     ({ functionName }) => ({
       messages: [

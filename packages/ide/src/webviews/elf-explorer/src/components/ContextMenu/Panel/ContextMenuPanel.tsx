@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ type ContextMenuProps = {
 	readonly y: number;
 	readonly options: TContextMenuOption[];
 	readonly closeMenu: () => void;
-	readonly handleOptionClick: (clickedElement: HTMLElement) => void;
+	readonly handleOptionClick: (optionId: number) => void;
 };
 
 export default function ContextMenuPanel({
@@ -109,8 +109,8 @@ export default function ContextMenuPanel({
 						<VSCodeOption
 							key={option.id}
 							className={styles.option}
-							onClick={e => {
-								handleOptionClick(e.target as HTMLElement);
+							onClick={() => {
+								handleOptionClick(option.id);
 							}}
 						>
 							{option.label}

@@ -16,17 +16,34 @@
 import {clampYWithinList} from './floating-card';
 import {formatAbsoluteDate, formatElapsedTime} from './status-time';
 import {
-	DEFAULT_VISIBLE_WIDTH_PX,
-	UNITS_ID as UNITS
+	AUTO_SCROLL_EDGE_PX,
+	AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME,
+	AUTO_SCROLL_MIN_SPEED_PX_PER_FRAME,
+	HEADER_HEIGHT
 } from '../constants/timeline';
-import {computeUnit} from './x-axis-ticks';
-
+import {computeAutoScrollVelocity} from './timeline-diagram';
 const createListRef = (top: number, height: number) =>
 	({
 		current: {
 			getBoundingClientRect: () => new DOMRect(0, top, 0, height)
 		}
 	}) as unknown as React.RefObject<HTMLUListElement>;
+
+function makeContainerRect(top: number, bottom: number): DOMRect {
+	const rect: DOMRect = {
+		top,
+		bottom,
+		left: 0,
+		right: 400,
+		x: 0,
+		y: top,
+		width: 400,
+		height: bottom - top,
+		toJSON: () => ({})
+	};
+
+	return rect;
+}
 
 describe('floating-card', () => {
 	it('Should clamp clientY to the minimum allowed value', () => {
@@ -109,38 +126,44 @@ describe('Status', () => {
 	});
 });
 
-describe('x-axis-ticks', () => {
-	describe('computeUnit', () => {
-		it('Should switch to seconds at 1ms per pixel boundary', () => {
-			expect(computeUnit(1, 1000)).to.equal(UNITS.S);
-		});
+describe('timeline auto-scroll', () => {
+	it('Should compute auto-scroll velocity from the pointer edge zone', () => {
+		const rect = makeContainerRect(100, 300);
+		const contentTop = rect.top + HEADER_HEIGHT;
+		const middleY = contentTop + (rect.bottom - contentTop) / 2;
+		const topNearEdgeY = contentTop + AUTO_SCROLL_EDGE_PX - 1;
+		const bottomNearEdgeY = rect.bottom - AUTO_SCROLL_EDGE_PX + 1;
 
-		it('Should switch to milliseconds at 1us per pixel boundary', () => {
-			expect(computeUnit(1e-3, 1000)).to.equal(UNITS.MS);
-		});
-
-		it('Should switch to microseconds at 1ns per pixel boundary', () => {
-			expect(computeUnit(1.001e-6, 1000)).to.equal(UNITS.US);
-		});
-
-		it('Should switch to nanoseconds below 1ns per pixel', () => {
-			expect(computeUnit(1e-7, 1000)).to.equal(UNITS.NS);
-		});
-
-		it('Should estimate seconds-per-pixel with default width when width is unavailable', () => {
-			expect(computeUnit(1)).to.equal(UNITS.S);
-			expect(computeUnit(1e-3)).to.equal(UNITS.MS);
-			expect(computeUnit(1.001e-6)).to.equal(UNITS.US);
-			expect(computeUnit(1e-7)).to.equal(UNITS.NS);
-		});
-
-		it('Should return seconds for non-positive visible spans', () => {
-			expect(computeUnit(0, DEFAULT_VISIBLE_WIDTH_PX)).to.equal(
-				UNITS.S
-			);
-			expect(computeUnit(-1, DEFAULT_VISIBLE_WIDTH_PX)).to.equal(
-				UNITS.S
-			);
-		});
+		expect(computeAutoScrollVelocity(rect.top, rect)).to.equal(
+			-AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME
+		);
+		expect(computeAutoScrollVelocity(rect.bottom, rect)).to.equal(
+			AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME
+		);
+		expect(
+			computeAutoScrollVelocity(topNearEdgeY, rect)
+		).to.be.lessThan(-AUTO_SCROLL_MIN_SPEED_PX_PER_FRAME);
+		expect(
+			computeAutoScrollVelocity(bottomNearEdgeY, rect)
+		).to.be.greaterThan(AUTO_SCROLL_MIN_SPEED_PX_PER_FRAME);
+		expect(computeAutoScrollVelocity(middleY, rect)).to.equal(0);
+		expect(
+			computeAutoScrollVelocity(
+				contentTop + AUTO_SCROLL_EDGE_PX,
+				rect
+			)
+		).to.equal(0);
+		expect(
+			computeAutoScrollVelocity(
+				rect.bottom - AUTO_SCROLL_EDGE_PX,
+				rect
+			)
+		).to.equal(0);
+		expect(computeAutoScrollVelocity(rect.top - 1, rect)).to.equal(
+			-AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME
+		);
+		expect(computeAutoScrollVelocity(rect.bottom + 1, rect)).to.equal(
+			AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME
+		);
 	});
 });

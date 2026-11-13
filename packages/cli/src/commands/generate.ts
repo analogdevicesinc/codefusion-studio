@@ -15,15 +15,20 @@
 import type {CfsConfig} from 'cfs-types';
 
 import {Flags} from '@oclif/core';
-import {getAiToolsPlugin} from 'cfs-lib';
+import {CfsToolManager, getAiToolsPlugin} from 'cfs-lib';
 import {promises as fsp} from 'node:fs';
+import path from 'node:path';
 
 import {getApiClient} from '../utils/api-client.js';
 import {BaseCommand} from '../utils/base-command.js';
 import {getDataModelManager} from '../utils/data-model-manager.js';
 import {getPackageManager} from '../utils/package-manager.js';
 import {getPluginManager} from '../utils/plugin-manager.js';
-import {getCfsaiPath, getVersionFromConfig} from '../utils/utils.js';
+import {
+  getCFSInstallPath,
+  getCfsaiPath,
+  getVersionFromConfig
+} from '../utils/utils.js';
 
 export default class PinconfigGenerate extends BaseCommand<
   typeof PinconfigGenerate
@@ -41,10 +46,6 @@ export default class PinconfigGenerate extends BaseCommand<
       char: 'o',
       default: '.',
       summary: 'Set the output directory for generated code.'
-    }),
-    verbose: Flags.boolean({
-      char: 'v',
-      summary: 'Display full paths for generated code.'
     }),
     preview: Flags.boolean({
       char: 'p',
@@ -82,7 +83,7 @@ export default class PinconfigGenerate extends BaseCommand<
   };
 
   async run() {
-    const {flags} = await this.parse(PinconfigGenerate);
+    const {flags} = this;
     let configdata: CfsConfig;
 
     try {
@@ -150,7 +151,30 @@ export default class PinconfigGenerate extends BaseCommand<
       );
     }
 
+    this.telemetryMetadata = {
+      soc: configdata.Soc,
+      package: configdata.Package,
+      filesGenerated: 0,
+      hasAiModels: configdata.Projects.some(
+        (p) => p.AIModels && p.AIModels.length > 0
+      )
+    };
+
     let generatedFiles: string[];
+
+    // Resolve Zephyr base for board DTS detection
+    let zephyrBase: string | undefined;
+    const installPath = getCFSInstallPath(this.config);
+    const toolManager = new CfsToolManager(
+      packageManager,
+      installPath ? [installPath] : undefined,
+      configdata.Soc
+    );
+    const zephyrTool =
+      await toolManager.getInstalledToolById('zephyr');
+    if (zephyrTool) {
+      zephyrBase = path.join(zephyrTool.rootPath, 'zephyr');
+    }
 
     try {
       generatedFiles = await pluginManager.generateConfigCode(
@@ -158,7 +182,8 @@ export default class PinconfigGenerate extends BaseCommand<
           cfsconfig: configdata,
           datamodel: soc
         },
-        flags.output
+        flags.output,
+        {zephyrBase}
       );
     } catch (error) {
       throw new Error(`Failed to generate the files.\n${error}`);
@@ -173,8 +198,13 @@ export default class PinconfigGenerate extends BaseCommand<
 
       const aiPlugin = getAiToolsPlugin(
         cfsaiPath,
-        getVersionFromConfig(this.config)
+        getVersionFromConfig(this.config),
+        packageManager
       );
+
+      aiPlugin.setJsonMode(this.jsonEnabled());
+      aiPlugin.setVerbose(flags.verbose);
+      aiPlugin.setQuiet(flags.quiet);
 
       const result = await aiPlugin.generateFromConfig(
         configdata,
@@ -186,7 +216,22 @@ export default class PinconfigGenerate extends BaseCommand<
       for (const file of result?.artifacts?.files ?? []) {
         generatedFiles.push(file);
       }
+
+      for (const event of result.events) {
+        if (event.type === 'WARN') {
+          this.warn(event.message);
+        }
+      }
     }
+
+    this.telemetryMetadata = {
+      soc: configdata.Soc,
+      package: configdata.Package,
+      filesGenerated: generatedFiles?.length ?? 0,
+      hasAiModels: configdata.Projects.some(
+        (p) => p.AIModels && p.AIModels.length > 0
+      )
+    };
 
     if (!generatedFiles) {
       this.error(`No files were generated.`);

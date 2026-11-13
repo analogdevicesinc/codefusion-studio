@@ -13,17 +13,17 @@
  *
  */
 
-import {
-	type CompatibilityUnsupportedTypeIssue,
-	type CompatibilityOperatorIssue
-} from "@ide-types/report-view-types";
+import type {
+	CfsAiCompatOperatorIssue,
+	CfsAiCompatUnsupportedTypeIssue
+} from 'cfs-types';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import styles from './layer-based-issue-details.module.scss';
 
 type Props = {
 	readonly issue:
-		| CompatibilityOperatorIssue
-		| CompatibilityUnsupportedTypeIssue;
+		| CfsAiCompatOperatorIssue
+		| CfsAiCompatUnsupportedTypeIssue;
 };
 
 export default function LayerBasedIssueDetails({issue}: Props) {

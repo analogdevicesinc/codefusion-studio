@@ -30,7 +30,12 @@ import {
 	useAppDispatch,
 	type Store
 } from './state/store';
-import {validateAndGenerateWorkspace} from './state/thunks/workspace-thunks';
+import {useIsCreatingWorkspace} from './state/slices/workspace.selector';
+import {
+	validateAndGenerateWorkspace,
+	type CompatibilityWarning
+} from './state/thunks/workspace-thunks';
+import {ConfirmDialog} from '../../common/components/confirm-dialog/ConfirmDialog';
 import {
 	getLocalization,
 	localizeMessage
@@ -89,6 +94,30 @@ function ModelWorkspaceCreation() {
 	const i10n = useLocaleContext();
 	const dispatch = useAppDispatch();
 	const {catalog} = useCatalogContext();
+	const isCreatingWorkspace = useIsCreatingWorkspace();
+
+	const [compatibilityWarning, setCompatibilityWarning] =
+		useState<CompatibilityWarning>();
+
+	const createWorkspace = async (
+		ignoreCompatibilityWarning = false
+	) => {
+		if (isCreatingWorkspace) return;
+
+		const result = await dispatch(
+			validateAndGenerateWorkspace({
+				catalog,
+				ignoreCompatibilityWarning
+			})
+		);
+
+		if (
+			validateAndGenerateWorkspace.fulfilled.match(result) &&
+			!result.payload.success
+		) {
+			setCompatibilityWarning(result.payload.compatibilityWarning);
+		}
+	};
 
 	return (
 		<div className={styles.content}>
@@ -99,14 +128,32 @@ function ModelWorkspaceCreation() {
 				<div className={styles.footerContent}>
 					<Button
 						dataTest='create-workspace-button'
-						onClick={async () => {
-							await dispatch(validateAndGenerateWorkspace(catalog));
-						}}
+						onClick={async () => createWorkspace()}
 					>
-						{i10n?.footer.create}
+						{isCreatingWorkspace
+							? i10n?.footer.creating
+							: i10n?.footer.create}
 					</Button>
 				</div>
 			</CfsFooter>
+			<ConfirmDialog
+				isOpen={compatibilityWarning !== undefined}
+				title={i10n?.compatibilityWarning.title}
+				message={
+					compatibilityWarning
+						? i10n?.compatibilityWarning[compatibilityWarning]
+						: ''
+				}
+				confirmButtonText={i10n?.compatibilityWarning.confirm}
+				cancelButtonText={i10n?.compatibilityWarning.cancel}
+				onConfirm={() => {
+					setCompatibilityWarning(undefined);
+					void createWorkspace(true);
+				}}
+				onCancel={() => {
+					setCompatibilityWarning(undefined);
+				}}
+			/>
 		</div>
 	);
 }

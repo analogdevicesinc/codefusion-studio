@@ -972,7 +972,9 @@ describe('RPN Expression Resolver', () => {
 		cy.mount(
 			<ComputeFrequencyComponent
 				condition={condition}
-				currentCfg={withGlobalConfigDefaults({clockconfig: currentConfig})}
+				currentCfg={withGlobalConfigDefaults({
+					clockconfig: currentConfig
+				})}
 			/>
 		);
 
@@ -1026,7 +1028,10 @@ describe('RPN Expression Resolver', () => {
 				<ComputeFrequencyComponent
 					currentCfg={withGlobalConfigDefaults({
 						pinconfig: {
-							'GPIO0_P0.1': makePinEntry('P0.1', 'GPIO0', {MODE: 'IN', PWR: 'VDDIO'})
+							'GPIO0_P0.1': makePinEntry('P0.1', 'GPIO0', {
+								MODE: 'IN',
+								PWR: 'VDDIO'
+							})
 						}
 					})}
 					condition={condition}
@@ -1044,7 +1049,9 @@ describe('RPN Expression Resolver', () => {
 				<ComputeFrequencyComponent
 					currentCfg={withGlobalConfigDefaults({
 						pinconfig: {
-							'GPIO0_P0.2': makePinEntry('A6', 'P0.2', {DRIVE_STRENGTH: '4'})
+							'GPIO0_P0.2': makePinEntry('A6', 'P0.2', {
+								DRIVE_STRENGTH: '4'
+							})
 						}
 					})}
 					condition={condition}
@@ -1204,8 +1211,7 @@ describe('RPN Expression Resolver', () => {
 		});
 
 		it('Should return unconfigured for a missing PeripheralConfig peripheral', () => {
-			const condition =
-				'${Control:PeripheralConfig:I2C0:SPEED}';
+			const condition = '${Control:PeripheralConfig:I2C0:SPEED}';
 
 			cy.mount(
 				<ComputeFrequencyComponent
@@ -1334,7 +1340,6 @@ describe('RPN Expression Resolver', () => {
 
 			cy.wrap(notExistentRes).should('equal', false);
 		});
-
 	});
 
 	it('Should evaluate a boolean node correct', () => {

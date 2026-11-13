@@ -1,1 +1,7 @@
 /dist
+
+# Generated schema files: byte-for-byte checked-in output of
+# scripts/generate-cfsconfig-schema.js, verified by yarn check-schema-drift.
+# Reformatting them here would fight with the generator's own output and
+# cause check-schema-drift to report false drift.
+/src/resources/schemas

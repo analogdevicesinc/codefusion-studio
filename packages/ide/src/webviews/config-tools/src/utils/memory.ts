@@ -263,7 +263,9 @@ export const formatTotalAndAvailableMemory = (
 			return `${Math.round(availableKb)}/${Math.round(totalKb)} KB`;
 		}
 
-		return `${displayFloatOrInt(availableKb)}/${displayFloatOrInt(totalKb)} KB`;
+		return `${displayFloatOrInt(availableKb)}/${displayFloatOrInt(
+			totalKb
+		)} KB`;
 	}
 
 	const totalMb = totalKb / 1024;
@@ -274,7 +276,9 @@ export const formatTotalAndAvailableMemory = (
 			return `${Math.round(availableMb)}/${Math.round(totalMb)} MB`;
 		}
 
-		return `${displayFloatOrInt(availableMb)}/${displayFloatOrInt(totalMb)} MB`;
+		return `${displayFloatOrInt(availableMb)}/${displayFloatOrInt(
+			totalMb
+		)} MB`;
 	}
 
 	const totalGb = totalMb / 1024;
@@ -285,10 +289,14 @@ export const formatTotalAndAvailableMemory = (
 			return `${Math.round(availableGb)}/${Math.round(totalGb)} GB`;
 		}
 
-		return `${displayFloatOrInt(availableGb)}/${displayFloatOrInt(totalGb)} GB`;
+		return `${displayFloatOrInt(availableGb)}/${displayFloatOrInt(
+			totalGb
+		)} GB`;
 	}
 
-	return `${displayFloatOrInt(available)}/${displayFloatOrInt(total)} B`;
+	return `${displayFloatOrInt(available)}/${displayFloatOrInt(
+		total
+	)} B`;
 };
 
 export const getPartitionMemoryInBlock = (

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
 import {SlidingPanel} from 'cfs-react-library';
 import {
 	useActivePeripheral,
-	useActiveSignal
+	useActiveSignal,
+	useCurrentSignalTarget
 } from '../../../state/slices/peripherals/peripherals.selector';
 import {
 	setActivePeripheral,
@@ -35,6 +36,10 @@ function ConfigSidebar({isMinimised}: ConfigSidebarProps) {
 	const activePeripheral = useActivePeripheral();
 	const activeSignal = useActiveSignal();
 	const signalName = activeSignal?.split(' ')[1] ?? '';
+	const pinId = useCurrentSignalTarget(
+		activePeripheral ?? '',
+		signalName
+	);
 	const socSignal = getPeripheralSignals(activePeripheral ?? '')[
 		signalName
 	];
@@ -57,7 +62,8 @@ function ConfigSidebar({isMinimised}: ConfigSidebarProps) {
 			{activePeripheral && activeSignal && (
 				<PinConfigTask
 					signal={signalName}
-					peripheral={activePeripheral ?? ''}
+					peripheral={activePeripheral}
+					pinId={pinId}
 				/>
 			)}
 		</SlidingPanel>

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsMainLayout';
+import CfsTwoColumnLayout from '@common/components/cfs-main-layout/CfsTwoColumnLayout';
 import ClockConfigSideContainer from './side/Side';
 import ClockDiagramContainer from './diagram-container/DiagramContainer';
 

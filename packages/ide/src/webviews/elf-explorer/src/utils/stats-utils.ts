@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,24 @@
 import type {TSection} from '../common/types/memory-layout';
 import type {TSymbol} from '../common/types/symbols';
 
+export type TBindingLabels = {
+	globalFunctions?: string;
+	localFunctions?: string;
+	weakFunctions?: string;
+	globalVariables?: string;
+	localVariables?: string;
+};
+
 enum EntityType {
 	FUNC = 'FUNC',
 	OBJECT = 'OBJECT'
 }
 
-function groupAndCountByBind(symbols: TSymbol[], type: EntityType) {
+function groupAndCountByBind(
+	symbols: TSymbol[],
+	type: EntityType,
+	labels?: TBindingLabels
+) {
 	const counts = symbols.reduce((acc, symbol) => {
 		if (symbol?.type === type) {
 			const bindType = symbol?.bind?.toLowerCase();
@@ -37,22 +49,24 @@ function groupAndCountByBind(symbols: TSymbol[], type: EntityType) {
 
 	const result = [
 		{
-			text: `Global ${
-				type === EntityType.FUNC ? ' Functions' : 'Variables'
-			} `,
+			text:
+				type === EntityType.FUNC
+					? (labels?.globalFunctions ?? 'Global Functions')
+					: (labels?.globalVariables ?? 'Global Variables'),
 			value: counts.global || 0
 		},
 		{
-			text: `Local ${
-				type === EntityType.FUNC ? 'Functions' : 'Variables'
-			} `,
+			text:
+				type === EntityType.FUNC
+					? (labels?.localFunctions ?? 'Local Functions')
+					: (labels?.localVariables ?? 'Local Variables'),
 			value: counts.local || 0
 		}
 	];
 
 	if (type === EntityType.FUNC) {
 		result.push({
-			text: 'Weak Functions',
+			text: labels?.weakFunctions ?? 'Weak Functions',
 			value: counts.weak || 0
 		});
 	}
@@ -63,7 +77,8 @@ function groupAndCountByBind(symbols: TSymbol[], type: EntityType) {
 function groupAndCountByBindAndSection(
 	symbols: TSymbol[],
 	type: EntityType,
-	bucket: string
+	bucket: string,
+	labels?: TBindingLabels
 ) {
 	const counts = symbols.reduce((acc, symbol) => {
 		if (symbol?.type === type && symbol?.bucket === bucket) {
@@ -81,22 +96,24 @@ function groupAndCountByBindAndSection(
 
 	const result = [
 		{
-			text: `Global ${
-				type === EntityType.FUNC ? ' Functions' : 'Variables'
-			} `,
+			text:
+				type === EntityType.FUNC
+					? (labels?.globalFunctions ?? 'Global Functions')
+					: (labels?.globalVariables ?? 'Global Variables'),
 			value: counts.global || 0
 		},
 		{
-			text: `Local ${
-				type === EntityType.FUNC ? 'Functions' : 'Variables'
-			} `,
+			text:
+				type === EntityType.FUNC
+					? (labels?.localFunctions ?? 'Local Functions')
+					: (labels?.localVariables ?? 'Local Variables'),
 			value: counts.local || 0
 		}
 	];
 
 	if (type === EntityType.FUNC) {
 		result.push({
-			text: 'Weak Functions',
+			text: labels?.weakFunctions ?? 'Weak Functions',
 			value: counts.weak || 0
 		});
 	}
@@ -108,26 +125,35 @@ export function filterSymbols(
 	symbols: TSymbol[],
 	selectedFilter: string,
 	setFuncs: React.Dispatch<React.SetStateAction<TSymbol[]>>,
-	setVars: React.Dispatch<React.SetStateAction<TSymbol[]>>
+	options?: {
+		setVars: React.Dispatch<React.SetStateAction<TSymbol[]>>;
+		labels?: TBindingLabels;
+	}
 ) {
+	const {setVars, labels} = options ?? {};
+
 	switch (selectedFilter) {
 		case 'All':
-			setFuncs(groupAndCountByBind(symbols, EntityType.FUNC));
-			setVars(groupAndCountByBind(symbols, EntityType.OBJECT));
+			setFuncs(groupAndCountByBind(symbols, EntityType.FUNC, labels));
+			setVars?.(
+				groupAndCountByBind(symbols, EntityType.OBJECT, labels)
+			);
 			break;
 		case 'Text':
 			setFuncs(
 				groupAndCountByBindAndSection(
 					symbols,
 					EntityType.FUNC,
-					'Text'
+					'Text',
+					labels
 				)
 			);
-			setVars(
+			setVars?.(
 				groupAndCountByBindAndSection(
 					symbols,
 					EntityType.OBJECT,
-					'Text'
+					'Text',
+					labels
 				)
 			);
 			break;
@@ -136,26 +162,34 @@ export function filterSymbols(
 				groupAndCountByBindAndSection(
 					symbols,
 					EntityType.FUNC,
-					'Data'
+					'Data',
+					labels
 				)
 			);
-			setVars(
+			setVars?.(
 				groupAndCountByBindAndSection(
 					symbols,
 					EntityType.OBJECT,
-					'Data'
+					'Data',
+					labels
 				)
 			);
 			break;
 		case 'Bss':
 			setFuncs(
-				groupAndCountByBindAndSection(symbols, EntityType.FUNC, 'Bss')
+				groupAndCountByBindAndSection(
+					symbols,
+					EntityType.FUNC,
+					'Bss',
+					labels
+				)
 			);
-			setVars(
+			setVars?.(
 				groupAndCountByBindAndSection(
 					symbols,
 					EntityType.OBJECT,
-					'Bss'
+					'Bss',
+					labels
 				)
 			);
 			break;

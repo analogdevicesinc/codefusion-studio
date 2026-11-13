@@ -18,16 +18,25 @@ import {DynamicForm, type TFormFieldValue} from 'cfs-react-library';
 import {type ControlCfg} from '@common/types/soc';
 import {formatControlsForDynamicForm} from '../../../utils/soc-controls';
 import styles from './PluginOptions.module.scss';
-import {validatePluginOptions} from '../../../utils/plugin-options-validation';
+import {
+	validatePluginOptions,
+	type ScopeValidationOptions
+} from '../../../utils/plugin-options-validation';
 
 type PluginOptionsProps = Readonly<{
 	config?: Record<string, any>;
 	pluginControls: ControlCfg[];
+	scopeValidation?: ScopeValidationOptions;
 	onChange: (controlId: string, value: TFormFieldValue) => void;
 }>;
 
 export const PluginOptions = memo(
-	({config = {}, pluginControls, onChange}: PluginOptionsProps) => {
+	({
+		config = {},
+		pluginControls,
+		scopeValidation,
+		onChange
+	}: PluginOptionsProps) => {
 		const formattedPluginControls = formatControlsForDynamicForm(
 			pluginControls,
 			config,
@@ -35,8 +44,13 @@ export const PluginOptions = memo(
 		);
 
 		const validationErrors = useMemo(
-			() => validatePluginOptions(config, pluginControls),
-			[config, pluginControls]
+			() =>
+				validatePluginOptions(
+					config,
+					pluginControls,
+					scopeValidation
+				),
+			[config, pluginControls, scopeValidation]
 		);
 
 		return (

@@ -25,6 +25,7 @@ import type {
 	TControlTypes
 } from '@common/types/errorTypes';
 import type {ControlCfg} from '@common/types/soc';
+import {cleanupIntegerDecimalValue} from '@common/utils/string';
 
 type PinconfigControlInputProps = Readonly<{
 	controlCfg: ControlCfg;
@@ -34,6 +35,7 @@ type PinconfigControlInputProps = Readonly<{
 	peripheral?: string;
 	signal?: string;
 	projectId?: string;
+	scopeError?: string;
 }>;
 
 export default function PinconfigControlInput({
@@ -43,7 +45,8 @@ export default function PinconfigControlInput({
 	pinId,
 	peripheral,
 	signal,
-	projectId
+	projectId,
+	scopeError
 }: PinconfigControlInputProps) {
 	const dispatch = useAppDispatch();
 
@@ -100,15 +103,6 @@ export default function PinconfigControlInput({
 	);
 
 	const handleInputChange = (e: string) => {
-		setInput(e);
-
-		const currentControlData = {
-			Peripheral: peripheral,
-			Name: signal,
-			pinId,
-			control: Id
-		};
-
 		const inputData = {
 			content: e,
 			controlType: Type as TControlTypes,
@@ -117,11 +111,25 @@ export default function PinconfigControlInput({
 			pattern: Pattern
 		};
 
-		const generatedErrType = generateValidationErrorType(inputData);
+		/* Sanitize the input */
+		const nextInput =
+			Type === 'integer' && controlCfg.NumericBase === 'Decimal'
+				? cleanupIntegerDecimalValue(e)
+				: e;
+
+		const generatedErrType = generateValidationErrorType({
+			...inputData,
+			content: nextInput
+		});
+
+		setInput(nextInput);
 
 		debounceInputChange({
-			...currentControlData,
-			controlValue: e,
+			Peripheral: peripheral,
+			Name: signal,
+			pinId,
+			control: Id,
+			controlValue: nextInput,
 			errType: generatedErrType
 		});
 	};
@@ -136,6 +144,7 @@ export default function PinconfigControlInput({
 	useEffect(
 		() => () => {
 			debounceInputChange.cancel();
+			debounceInputChange.flush();
 		},
 		[debounceInputChange]
 	);
@@ -146,7 +155,13 @@ export default function PinconfigControlInput({
 			dataTest={`${Id}-${signal}`}
 			inputVal={input}
 			error={
-				errType ? generateControlErrorMessage(errType) : undefined
+				errType
+					? generateControlErrorMessage(
+							errType,
+							MinimumValue,
+							MaximumValue
+						)
+					: scopeError
 			}
 			label={label}
 			endSlot={unit}

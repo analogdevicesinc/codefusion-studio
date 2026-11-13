@@ -94,6 +94,16 @@ function CfsSearchableGroupSelect({
 		[filteredGroupedOptions]
 	);
 
+	const isExpandAllDisabled = useMemo(
+		() => groupedOptions.every(group => openGroups[group.id]),
+		[groupedOptions, openGroups]
+	);
+
+	const isCollapseAllDisabled = useMemo(
+		() => groupedOptions.every(group => !openGroups[group.id]),
+		[groupedOptions, openGroups]
+	);
+
 	return (
 		<div
 			data-test={`${dataTest}:container`}
@@ -102,6 +112,7 @@ function CfsSearchableGroupSelect({
 			<div className={styles.searchBox}>
 				<SearchInput
 					inputVal={search}
+					dataTest={dataTest}
 					placeholder={searchPlaceholder}
 					rightAdornment={
 						<span className={styles.rightAdornment}>
@@ -132,12 +143,14 @@ function CfsSearchableGroupSelect({
 							key: 'expand',
 							tooltip: 'Expand all',
 							content: <ExpandAllIcon />,
+							disabled: isExpandAllDisabled,
 							onClick: expandAll
 						},
 						{
 							key: 'collapse',
 							tooltip: 'Collapse all',
 							content: <CollapseAllIcon />,
+							disabled: isCollapseAllDisabled,
 							onClick: collapseAll
 						}
 					]}

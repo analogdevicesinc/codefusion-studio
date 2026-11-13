@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,38 @@
  */
 import {Chip} from 'cfs-react-library';
 import styles from './BadgeFilters.module.scss';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 type FiltersProps = {
 	readonly selectedFilter: string;
 	readonly onFilterClick: (filter: string) => void;
 };
 
-const FILTERS = ['All', 'Text', 'Data', 'Bss'];
+const FILTER_IDS = ['All', 'Text', 'Data', 'Bss'] as const;
+
+const FILTER_L10N_KEYS: Record<string, string> = {
+	All: 'filterAll',
+	Text: 'filterText',
+	Data: 'filterData',
+	Bss: 'filterBss'
+};
 
 function BadgeFilter({selectedFilter, onFilterClick}: FiltersProps) {
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<div className={styles.filtersContainer}>
-			{FILTERS.map(label => (
+			{FILTER_IDS.map(id => (
 				<Chip
-					key={label}
-					label={label}
+					key={id}
+					label={commonL10n?.[FILTER_L10N_KEYS[id]] ?? id}
 					isDisabled={false}
-					isActive={selectedFilter === label}
-					dataTest={`stats:badge-filters-${label.toLowerCase()}`}
+					isActive={selectedFilter === id}
+					dataTest={`stats:badge-filters-${id.toLowerCase()}`}
 					onClick={() => {
-						onFilterClick(label);
+						onFilterClick(id);
 					}}
 				/>
 			))}

@@ -14,6 +14,29 @@
  */
 
 /**
+ * Listener signatures for the events emitted by a profiler data source,
+ * grouped under a single export.
+ */
+export namespace ProfilerListeners {
+	/**
+	 * Listener invoked when data is received from the source.
+	 * @param data - The data received from the source.
+	 */
+	export type OnData = (data: Buffer) => void;
+
+	/**
+	 * Listener invoked when an error occurs.
+	 * @param error - The error that occurred.
+	 */
+	export type OnError = (error: Error) => void;
+
+	/**
+	 * Listener invoked when the underlying device disconnects.
+	 */
+	export type OnDisconnect = () => void;
+}
+
+/**
  * Interface for data sources that can be used by the profiler.
  * Implementations provide a unified way to receive data from
  * different hardware interfaces (serial, USB, etc.).
@@ -31,6 +54,12 @@ export interface IProfilerDataSource {
 	close(): Promise<void>;
 
 	/**
+	 * Prepares an opened source to deliver a stream a consumer can decode
+	 * from its first byte.
+	 */
+	prime(): Promise<void>;
+
+	/**
 	 * Writes data to the source (if supported).
 	 * @param data - Data to write
 	 * @returns Promise resolving to the number of bytes written
@@ -46,13 +75,19 @@ export interface IProfilerDataSource {
 	 * Registers a listener invoked when data is received from the source.
 	 * @param listener - Callback receiving the received data.
 	 */
-	onData(listener: (data: Buffer) => void): void;
+	onData(listener: ProfilerListeners.OnData): void;
 
 	/**
 	 * Registers a listener invoked when an error occurs.
 	 * @param listener - Callback receiving the error.
 	 */
-	onError(listener: (error: Error) => void): void;
+	onError(listener: ProfilerListeners.OnError): void;
+
+	/**
+	 * Registers a listener invoked when the underlying device disconnects.
+	 * @param listener - Callback invoked on disconnection.
+	 */
+	onDisconnect(listener: ProfilerListeners.OnDisconnect): void;
 
 	/**
 	 * Releases the resources held by the data source.

@@ -144,7 +144,8 @@ export function formatControlsForDynamicForm(
 					}
 				: {}),
 			info: control.Tooltip,
-			required: true
+			required: true,
+			persistenceSeparator: control.PersistenceSeparator
 		});
 	}
 
@@ -196,7 +197,8 @@ export const getFormErrors = (
 			minVal: control?.MinimumValue ?? undefined,
 			maxVal: control?.MaximumValue ?? undefined,
 			base: control?.NumericBase as TNumericBase,
-			pattern: control?.Pattern ?? undefined
+			pattern: control?.Pattern ?? undefined,
+			persistenceSeparator: control?.PersistenceSeparator ?? undefined
 		});
 
 	if (controlError) {

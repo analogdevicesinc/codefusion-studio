@@ -1,3 +1,17 @@
+/**
+ *
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 /* eslint-disable max-nested-callbacks */
 /* eslint-disable no-template-curly-in-string */
 import type {Soc} from '@common/types/soc';
@@ -179,5 +193,89 @@ describe('Pinconfig Input Field', () => {
 		cy.realType('011-gpio').then(() => {
 			cy.dataTest('DT_NAME-P0.11-error').should('not.exist');
 		});
+	});
+
+	it('should normalize decimal integer values on change', () => {
+		const store = configurePreloadedStore(wlp, configDict);
+
+		store.dispatch(setActivePeripheral('GPIO0'));
+		store.dispatch(
+			setActiveSignal({
+				peripheral: 'GPIO0',
+				signal: 'P0.11',
+				keepActivePeripheral: true
+			})
+		);
+
+		store.dispatch(
+			setAppliedSignal({
+				Pin: 'F2',
+				Peripheral: 'GPIO0',
+				Name: 'P0.11'
+			})
+		);
+
+		store.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'GPIO0',
+				signalName: 'P0.11',
+				pinId: 'F2'
+			})
+		);
+
+		cy.mount(
+			<PinconfigControlInput
+				pinId='F2'
+				peripheral='GPIO0'
+				signal='P0.11'
+				controlCfg={{
+					Id: 'DECIMAL_VALUE',
+					Description: 'Decimal value',
+					Type: 'integer',
+					NumericBase: 'Decimal',
+					MinimumValue: -1,
+					MaximumValue: 100
+				}}
+			/>,
+			store
+		);
+
+		const inputSelector = 'DECIMAL_VALUE-P0.11-control-input';
+		const errorSelector = 'DECIMAL_VALUE-P0.11-error';
+
+		const getInput = () =>
+			cy.dataTest(inputSelector).shadow().find('input');
+
+		// Plain `0` remains `0`
+		getInput().clear();
+		cy.dataTest(inputSelector).realTouch();
+		cy.realType('0');
+
+		getInput().should('have.value', '0');
+		cy.dataTest(errorSelector).should('not.exist');
+
+		// `01` becomes `1`
+		getInput().clear();
+		cy.dataTest(inputSelector).realTouch();
+		cy.realType('1');
+
+		getInput().should('have.value', '1');
+		cy.dataTest(errorSelector).should('not.exist');
+
+		// `+1` becomes `1`
+		getInput().clear();
+		cy.dataTest(inputSelector).realTouch();
+		cy.realType('+1');
+
+		getInput().should('have.value', '1');
+		cy.dataTest(errorSelector).should('not.exist');
+
+		// `-1` remains `-1`
+		getInput().clear();
+		cy.dataTest(inputSelector).realTouch();
+		cy.realType('-1');
+
+		getInput().should('have.value', '-1');
+		cy.dataTest(errorSelector).should('not.exist');
 	});
 });

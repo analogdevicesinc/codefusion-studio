@@ -16,7 +16,10 @@
 import type { CfsConfig } from "./cfs-config.js";
 import type { CfsSocDataModel } from "./cfs-soc-data-model.js";
 
-export interface CfsCodeGenerationContext extends Record<string, unknown> {
+export interface CfsCodeGenerationContext extends Record<
+	string,
+	unknown
+> {
 	cfsconfig: CfsConfig;
 	datamodel: CfsSocDataModel;
 	projectId: string;

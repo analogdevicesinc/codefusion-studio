@@ -17,6 +17,7 @@ import type {CfsConfig} from 'cfs-types';
 import {type ConfiguredProject} from '../../../common/api';
 import {type Core} from '../../../common/types/soc';
 import {getPrimaryCoreId} from './soc-cores';
+import {hasFirewallSupport} from './firewall';
 
 export type ProjectInfo = Omit<
 	ConfiguredProject,
@@ -31,16 +32,20 @@ let configDict:
 	| undefined;
 
 let supportsMCUboot = false;
+let resolvedPluginVersions: Record<string, string> = {};
 
 /**
- * Initializes configDict with the provided persisted config and dataModel.
+ * Initializes configDict with the provided persisted config, data model, and
+ * resolved plugin versions.
  * Should be called once at app startup.
  */
 export function initializeConfigDict(
 	configOptions: CfsConfig | undefined,
-	dataModel: {Cores: Core[]; supportsMCUboot?: boolean} | undefined
+	dataModel: {Cores: Core[]; supportsMCUboot?: boolean} | undefined,
+	resolvedVersions: Record<string, string> = {}
 ) {
 	resetConfigDict();
+	resolvedPluginVersions = resolvedVersions;
 
 	if (configOptions && dataModel) {
 		supportsMCUboot = dataModel.supportsMCUboot ?? false;
@@ -50,14 +55,21 @@ export function initializeConfigDict(
 			Package: configOptions.Package,
 			projects:
 				configOptions.Projects?.map(project => {
-					const {Partitions, Peripherals, ...cfsConfigCoreInfo} =
-						project;
+					const {
+						Partitions: _Partitions,
+						Peripherals: _Peripherals,
+						...cfsConfigCoreInfo
+					} = project;
 
 					const dataModelCore = dataModel.Cores.find(
 						c => c.Id === cfsConfigCoreInfo.CoreId
 					);
 
-					const {Memory, Id, ...socCoreInfo} = dataModelCore ?? {
+					const {
+						Memory: _Memory,
+						Id: _Id,
+						...socCoreInfo
+					} = dataModelCore ?? {
 						Description: '',
 						CoreNum: 0,
 						IsPrimary: false,
@@ -92,11 +104,20 @@ export function getSupportsMCUboot(): boolean {
 	return supportsMCUboot;
 }
 
+/**
+ * Determines whether the current SoC supports Firewall configuration.
+ * @returns `true` when the SoC data model defines firewalls.
+ */
+export function getSupportsFirewall(): boolean {
+	return hasFirewallSupport();
+}
+
 export function getAssignedPlugin(projectId: string):
 	| {
 			pluginId: string;
 			pluginVersion: string;
-			firmwarePlatform: string;
+			resolvedPluginVersion?: string;
+			firmwarePlatform?: string;
 	  }
 	| undefined {
 	const projects = getProjectInfoList();
@@ -109,6 +130,12 @@ export function getAssignedPlugin(projectId: string):
 		return {
 			pluginId: project.PluginId,
 			pluginVersion: project.PluginVersion,
+			resolvedPluginVersion: Object.prototype.hasOwnProperty.call(
+				resolvedPluginVersions,
+				project.ProjectId
+			)
+				? resolvedPluginVersions[project.ProjectId]
+				: undefined,
 			firmwarePlatform: project.FirmwarePlatform
 		};
 	}
@@ -192,6 +219,7 @@ export function getPrimaryProjectFirmwarePlatform(): string {
 export function resetConfigDict() {
 	configDict = undefined;
 	supportsMCUboot = false;
+	resolvedPluginVersions = {};
 }
 
 /**

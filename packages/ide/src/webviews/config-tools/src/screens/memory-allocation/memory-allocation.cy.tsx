@@ -14,7 +14,7 @@
  */
 
 import type {CfsConfig, SocCoreMemory} from 'cfs-types';
-import type {Soc} from '../../../../common/types/soc';
+import type {ControlCfg, Soc} from '../../../../common/types/soc';
 import {
 	createPartition,
 	type Partition
@@ -22,6 +22,16 @@ import {
 import {configurePreloadedStore} from '../../state/store';
 import MemoryAllocation from './MemoryAllocation';
 import {formatSocCoreMemoryBlocks} from '../../utils/json-formatter';
+import {LocalizationProvider} from '../../../../common/contexts/LocaleContext';
+import {
+	buildScopesDictionary,
+	type ControlsByProjectScope
+} from '../../utils/scopes';
+
+const l10n =
+	await import('../../../../../../l10n/bundle.l10n.en.json').then(
+		module => module.default
+	);
 
 const mock = formatSocCoreMemoryBlocks(
 	(await import('@socs/max32690-wlp.json')).default as unknown as Soc
@@ -74,7 +84,10 @@ const createMockPartition = (
 	blockNames: partition.blockNames ?? [],
 	startAddress: partition.startAddress ?? '',
 	size: partition.size ?? 0,
-	projects: partition.projects ?? []
+	projects: partition.projects ?? [],
+	...(partition.config === undefined
+		? {}
+		: {config: partition.config})
 });
 
 const memoryBlocks = mock.Cores.flatMap(core => core.Memory).filter(
@@ -86,6 +99,70 @@ const core = mock.Cores[0];
 const blocksByType = memoryBlocks.filter(
 	block => block.Type === memoryType
 );
+const memoryScopeValue = 'shared_memory_region';
+const memoryScopeTemplate = `\${ProjectId} \${String:memory regions} +`;
+const nameOverrideControl: ControlCfg = {
+	Id: 'NAME_OVERRIDE',
+	Description: 'Memory Region Name Override',
+	Type: 'text',
+	Pattern: '[_a-zA-Z][_a-zA-Z0-9]*',
+	Scope: memoryScopeTemplate,
+	Default: 'memory_region'
+};
+const memoryControlsByProjectScope: ControlsByProjectScope = [
+	{
+		controlScope: 'memory',
+		projectId: 'CM4-proj',
+		coreId: 'CM4',
+		controlsByGroup: {
+			memory: [nameOverrideControl]
+		}
+	}
+];
+const mockedConfigWithMemoryScopeConflicts: CfsConfig = {
+	...mockedConfigDict,
+	Projects: mockedConfigDict.Projects.map(project =>
+		project.ProjectId === 'CM4-proj'
+			? {
+					...project,
+					Partitions: [
+						{
+							Name: 'm4_flash',
+							StartAddress: '0x10000000',
+							Size: 65536,
+							IsOwner: true,
+							Config: {
+								[nameOverrideControl.Id]: memoryScopeValue
+							},
+							Access: 'R'
+						},
+						{
+							Name: 'coredump_partition',
+							StartAddress: '0x10300000',
+							Size: 65536,
+							IsOwner: true,
+							Config: {
+								[nameOverrideControl.Id]: memoryScopeValue
+							},
+							Access: 'R'
+						}
+					]
+				}
+			: project
+	)
+};
+const memoryScopeConflicts = buildScopesDictionary(
+	memoryControlsByProjectScope,
+	mockedConfigWithMemoryScopeConflicts
+);
+
+function TestMemoryAllocation() {
+	return (
+		<LocalizationProvider namespace='cfgtools'>
+			<MemoryAllocation />
+		</LocalizationProvider>
+	);
+}
 
 describe('Memory Allocation', () => {
 	beforeEach(() => {
@@ -218,6 +295,62 @@ describe('Memory Allocation', () => {
 		beforeEach(() => {
 			cy.viewport(1920, 1080);
 		});
+
+		it('should show preloaded scope conflicts in plugin options and partition lists', () => {
+			(window as any).__webview_localization_resources__ = l10n;
+			window.localStorage.setItem(
+				'pluginControls:CM4-proj',
+				JSON.stringify({memory: [nameOverrideControl]})
+			);
+
+			const reduxStore = configurePreloadedStore(
+				mock,
+				mockedConfigWithMemoryScopeConflicts,
+				undefined,
+				memoryScopeConflicts,
+				memoryControlsByProjectScope
+			);
+
+			cy.mount(<TestMemoryAllocation />, reduxStore);
+
+			cy.dataTest('project-view-memory-card-container')
+				.first()
+				.within(() => {
+					cy.dataTest('partition-details-chevron').click();
+				});
+
+			cy.dataTest('CM4-proj-m4_flash-scope-conflict-icon').should(
+				'exist'
+			);
+			cy.dataTest(
+				'CM4-proj-coredump_partition-scope-conflict-icon'
+			).should('exist');
+
+			cy.dataTest('partition-type-view-button').click();
+			cy.dataTest('type-view-memory-card-container')
+				.first()
+				.within(() => {
+					cy.dataTest('partition-details-chevron').click();
+				});
+
+			cy.dataTest('m4_flash-scope-conflict-icon').should('exist');
+			cy.dataTest('coredump_partition-scope-conflict-icon').should(
+				'exist'
+			);
+
+			cy.dataTest('edit-partition-btn').first().click();
+
+			cy.dataTest('plugin-options-form:control-NAME_OVERRIDE-error')
+				.should('exist')
+				.and(
+					'contain.text',
+					`"${memoryScopeValue}" is already used by coredump_partition.`
+				);
+
+			cy.dataTest('create-partition-button').click();
+			cy.dataTest('partition-sidebar').should('be.visible');
+		});
+
 		it('should create the partition', () => {
 			const reduxStore = configurePreloadedStore(
 				mock,

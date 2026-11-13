@@ -5,14 +5,12 @@
     "module": "Node16",
     "outDir": "dist",
     "rootDir": "src",
+    "types": ["node", "mocha"],
     "strict": true,
     "target": "es2022",
     "moduleResolution": "nodenext",
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "skipLibCheck": true
   },
-  "include": ["./src/**/*"],
-  "ts-node": {
-    "esm": true
-  }
+  "include": ["./src/**/*"]
 }

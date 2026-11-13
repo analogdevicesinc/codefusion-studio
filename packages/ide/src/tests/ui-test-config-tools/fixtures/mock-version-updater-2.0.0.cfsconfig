@@ -2,9 +2,9 @@
   "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "2.0.0",
   "SchemaVersion": "2.1.0",
-  "Soc": "MAX32690",
-  "Package": "TQFN",
-  "BoardName": "EvKit_V1",
+  "Soc": "TEST690",
+  "Package": "PQFN",
+  "BoardName": "KIT_BOARD",
   "Timestamp": "2026-05-22T09:47:43.173Z",
   "Projects": [
     {

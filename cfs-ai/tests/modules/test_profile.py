@@ -30,11 +30,9 @@ _good_models = {
 def create_hardware_profile(flash, ram, clock, ops, types, infos=[]):
     soc = "TestSoc"
     core = "TestCore"
-    family = "TestFamily"
     t = UserTarget(
         soc=soc,
-        core=core,
-        family=family
+        core=core
     )
     p = HardwareProfile(
         flash_size=flash,
@@ -93,6 +91,16 @@ def invoke_module_with_file(file: str, model: str):
     result = subprocess.run(args, capture_output=True, text=True)
     return result
 
+def parse_profile_output(result):
+    """Parse the JSON log output and return the profiling report data and parsed log entries."""
+    logs = json.loads(result.stdout)
+    report = None
+    for entry in logs:
+        if entry.get("type") == "DATA" and entry.get("value"):
+            report = json.loads(entry["value"])
+            break
+    return report, logs
+
 def invoke_model_with_class(config, model):
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as tmp:
         json.dump(config.model_dump(), tmp)
@@ -127,15 +135,16 @@ def test_valid_model():
     p = create_hardware_profile(flash, ram, clock, ops, types, opinfos)
     
     result = invoke_model_with_class(
-        p, 
-        "tests/data/models/resnet.tflite" 
+        p,
+        "tests/data/models/resnet.tflite"
     )
     assert result.returncode == expected_exit_code
     # Look for some key words that indicate a full report has been generated
-    # without any specifics that may change. 
-    assert "Memory Recommendations" in result.stdout
-    assert "High memory variance detected " in result.stdout 
-    assert "Total MACs" in result.stdout
+    # without any specifics that may change.
+    report, _ = parse_profile_output(result)
+    assert report is not None
+    assert len(report["memory_analysis"]["memory_recommendations"]) > 0
+    assert report["optimization_opportunities"]["total_macs"] > 0
 
 def test_invalid_models():
     expected_exit_code = 1

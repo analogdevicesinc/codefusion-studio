@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import {useState} from 'react';
 import {Modal} from '../../../../common/components/modal/Modal';
 import TopbarButton from '../../../../common/components/cfs-top-bar/TopbarButton';
 import Help from '../../../../common/icons/Help';
-import {Direction} from '../../../../common/components/tooltip/Tooltip';
 import {useActiveScreen} from '../../state/slices/app-context/appContext.selector';
 import {LocalizedMessage as t} from '../../../../common/components/l10n/LocalizedMessage';
+import {Direction} from '@common/utils';
 
 export default function WrkspHeader() {
 	const [isHelpModalOpen, setIsHelpModalOpen] =

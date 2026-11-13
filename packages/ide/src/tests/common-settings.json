@@ -3,6 +3,7 @@
   "cfs.plugins.dataModelSearchDirectories": [],
   "cfs.sdk.path": "some/fake/path",
   "cfs.telemetry.enable": false,
+  "cfs.catalogManager.checkForUpdates": false,
   "workbench.startupEditor": "none",
   "workbench.welcomePage.walkthroughs.openOnInstall": false,
   "chat.commandCenter.enabled": false,

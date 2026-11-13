@@ -73,7 +73,9 @@ const ZoomableAreaControl = forwardRef<
 		if (zoomableAreaRef.current) {
 			const [x, y] = getComputedTranslateValues(zoomableAreaRef);
 
-			zoomableAreaRef.current.style.transform = `scale(${zoomLevel.current + zoomStep}) translate(${x}px, ${y}px)`;
+			zoomableAreaRef.current.style.transform = `scale(${
+				zoomLevel.current + zoomStep
+			}) translate(${x}px, ${y}px)`;
 
 			zoomLevel.current += zoomStep;
 

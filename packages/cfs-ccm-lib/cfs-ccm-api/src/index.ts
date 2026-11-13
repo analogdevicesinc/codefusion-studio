@@ -25,6 +25,8 @@ export type {
     Media,
     Package,
     Resource,
+    SWPackage,
+    SWPackageCompatibility,
     SWPackageRepo,
     SWPackageRepoMetadata,
     SWPackageTag,

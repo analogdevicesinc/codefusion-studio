@@ -14,6 +14,8 @@
  */
 @use '#colors' as colors;
 @use '#fonts' as fonts;
+@use '#layout' as layout;
+
 $body-padding: var(--accordion-body-padding, 0 12px 0 30px);
 $body-margin: var(--accordion-body-margin, 6px 0);
 $body-gap: var(--accordion-body-gap, 13px);
@@ -80,6 +82,11 @@ $body-gap: var(--accordion-body-gap, 13px);
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+		.titleRow {
+			display: flex;
+			align-items: center;
+			gap: layout.$spacing-3;
+		}
 		.title {
 			@include fonts.heading-h5;
 			text-transform: uppercase;

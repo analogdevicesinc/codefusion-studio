@@ -14,6 +14,17 @@
  */
 
 /**
+ * Telemetry preference stored under the `telemetry` key in the user
+ * configuration file.
+ */
+export type CliTelemetryConfig = {
+  version: 1;
+  enabled: boolean;
+  userId: string;
+  userType: string;
+};
+
+/**
  * Shape of the CLI user configuration file (~/.config/cfsutil/config.json).
  * Extends the existing config format with settings and env fields
  * for task execution.
@@ -31,4 +42,6 @@ export type CliConfig = {
   settings?: Record<string, boolean | number | string | unknown>;
   /** Additional environment variables for task execution */
   env?: Record<string, string>;
+  /** Telemetry preference. undefined = never asked. */
+  telemetry?: CliTelemetryConfig;
 };

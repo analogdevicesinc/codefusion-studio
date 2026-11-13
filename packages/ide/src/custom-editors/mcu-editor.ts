@@ -16,94 +16,90 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
-import debounce from "lodash.debounce";
-import { CONFIG_FILE_EXTENSION, MCU_EDITOR_ID } from "../constants";
+import { MCU_EDITOR_ID } from "../constants";
 import {
   CfsPluginManager,
   CfsToolManager,
+  CURRENT_SCHEMA_VERSION,
   MissingDependencyError,
 } from "cfs-lib";
-import type {
-  CfsPackageManagerProvider,
-  CfsPackageReference,
-} from "cfs-package-manager";
+import type { CfsPackageManagerProvider } from "cfs-package-manager";
 import type {
   CfsConfig,
-  CfsFeatureScope,
-  CfsSettings,
+  CfsSocDataModel,
   ConfiguredClockNode,
   ConfiguredProject,
   ConfiguredPin,
-  ConfiguredApplicationPackage,
-  CfsSocDataModel,
-  DFGStream,
-  GasketConfig,
   AIModel,
   Profiling,
+  CfsSettings,
+  ConfiguredApplicationPackage,
+  DFGStream,
+  FirewallConfig,
+  GasketConfig,
   Zephelin,
 } from "cfs-types";
 import { resolveVariables } from "../utils/resolveVariables";
-import { tmpdir } from "os";
+import { resolveZephyrBase } from "../utils/zephyr-base";
 import { type CfsDataModelManager } from "cfs-lib";
-import Path from "node:path";
-import { CodeGenerationProject } from "cfs-lib/dist/types/code-generation";
 import { getAiToolsPlugin } from "cfs-lib";
 import { createPrivateKey } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
-import { AIToolsService, getCfsaiPath } from "../services/ai-tools-service";
+import { AIToolsService } from "../services/ai-tools-service";
 import { Utils } from "../utils/utils";
 import { CfsMissingComponent } from "cfs-types";
 import { getCatalogManager } from "../utils/catalog";
+import type { AuthService } from "../services/auth-service";
+import { Messenger } from "vscode-messenger";
 import { getTelemetryManager } from "../telemetry/telemetry";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
-import { mergePeripheralProjectUpdates } from "../utils/project-persistence";
-
-const messageTypes = {
-  getSocAndConfig: "get-soc-and-config",
-  getIsDocumentUnsaved: "get-is-document-unsaved",
-  updatePersistedConfig: "update-persisted-config",
-  updatePersistedDfgConfig: "update-persisted-dfg-config",
-  updateProfilingConfig: "update-profiling-config",
-  showSaveDialog: "show-save-dialog",
-  generateCode: "generate-code",
-  showInformationMessage: "show-information-message",
-  getIsPeripheralBanner: "get-is-peripheral-banner",
-  updateIsPeripheralBanner: "update-is-peripheral-banner",
-  getProperties: "get-properties",
-  getMemoryAccessOverrides: "get-memory-access-overrides",
-  showGenerateCodeWarning: "show-generate-code-warning",
-  getGenerateCodeWarning: "get-generate-code-warning",
-  getGaskets: "get-gaskets",
-  exportCSV: "export-csv",
-  openFile: "open-file",
-  selectFile: "select-file",
-  getPreference: "get-preference",
-  setPreference: "set-preference",
-  getSupportedAiBackends: "get-ai-backends",
-  getAIBackendProperties: "get-ai-backend-properties",
-  validateAIModel: "validate-ai-model",
-  analyzeAIModel: "analyze-ai-model",
-  getApplicationPackagesBanner: "get-application-package-banner",
-  updateApplicationPackagesBanner: "update-application-package-banner",
-  getDeleteAppPackWarning: "get-delete-app-pack-warning",
-  showDeleteAppPackWarning: "show-delete-app-pack-warning",
-  readPemAlgorithm: "read-pem-algorithm",
-  checkDirectoryExists: "check-directory-exists",
-  generatePemKey: "generate-pem-key",
-  showDeleteCustomTLVWarning: "show-delete-custom-tlv-warning",
-  getDeleteCustomTLVWarning: "get-delete-custom-tlv-warning",
-  getFileSize: "get-file-size",
-  updateMcubootConfig: "update-mcuboot-config",
-  packager_install: "packager--install",
-  packager_search: "packager--search",
-  packager_update_persisted_cfsconfig_dataModel_version:
-    "packager--update--persisted--cfsconfig--data-model--version",
-  packager_update_persisted_cfsconfig_plugin_version:
-    "packager--update--persisted--cfsconfig--plugin--version",
-  document_reload: "document--reload",
-  logTelemetry: "log-telemetry",
-};
+import {
+  findProjectByCoreId,
+  mergePeripheralProjectUpdates,
+} from "../utils/project-persistence";
+import { applyResolvedVersionRequirements } from "../utils/resolved-version-requirements";
+import {
+  cancelGenerateCodeRequest,
+  exportCsvRequest,
+  generateCodeRequest,
+  generatePemKeyRequest,
+  getApplicationPackagesBannerRequest,
+  getDeleteAppPackWarningRequest,
+  getDeleteCustomTLVWarningRequest,
+  getDeleteFirewallZoneWarningRequest,
+  getDeleteInitiatorResponderWarningRequest,
+  getGenerateCodeWarningRequest,
+  getIsPeripheralBannerRequest,
+  getMemoryAccessOverridesRequest,
+  getPluginPropertiesRequest,
+  getSocAndConfigRequest,
+  packagerInstallRequest,
+  packagerSearchRequest,
+  packagerUpdatePersistedDataModelVersionRequest,
+  packagerUpdatePersistedPluginVersionRequest,
+  readPemAlgorithmRequest,
+  setApplicationPackagesBannerRequest,
+  setDeleteAppPackWarningRequest,
+  setDeleteCustomTLVWarningRequest,
+  setDeleteFirewallZoneWarningRequest,
+  setDeleteInitiatorResponderWarningRequest,
+  setGenerateCodeWarningNotification,
+  showSRUResetUndoNotificationRequest,
+  updateFirewallConfigNotification,
+  updateIsPeripheralBannerNotification,
+  updateMcubootConfigNotification,
+  updatePersistedConfigNotification,
+  updatePersistedDfgConfigNotification,
+  updateProfilingConfigNotification,
+  updateSRUConfigNotification,
+} from "../constants/messages/cfgtools-messages";
+import {
+  analyzeAIModelRequest,
+  getAIBackendPropertiesRequest,
+  getSupportedAiBackendsRequest,
+  validateAIModelRequest,
+} from "../constants/messages/ai-tools-messages";
 
 type ClockNodesPayload = Partial<{
   updatedClockNode: ConfiguredClockNode;
@@ -117,14 +113,18 @@ type ClockNodesPayload = Partial<{
 export class McuEditor implements vscode.CustomTextEditorProvider {
   public static register(
     context: vscode.ExtensionContext,
+    messenger: Messenger,
     dataModelManager: CfsDataModelManager,
     toolManager: CfsToolManager,
+    authService: AuthService,
     pkgManager?: CfsPackageManagerProvider,
   ): vscode.Disposable {
     const provider = new McuEditor(
       context,
+      messenger,
       dataModelManager,
       toolManager,
+      authService,
       pkgManager,
     );
 
@@ -145,10 +145,26 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     return MCU_EDITOR_ID;
   }
 
+  /**
+   * Tracks the in-flight code generation for each open webview panel, so that
+   * only one generation can run per document and a panel can cancel its own
+   * generation on request or on dispose.
+   */
+  private readonly activeCodeGenerations = new Map<
+    vscode.WebviewPanel,
+    {
+      documentUri: string;
+      cts: vscode.CancellationTokenSource;
+      promise: Promise<string[] | undefined>;
+    }
+  >();
+
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly messenger: Messenger,
     private dataModelManager: CfsDataModelManager,
     private toolManager: CfsToolManager,
+    private readonly authService: AuthService,
     private pkgManager?: CfsPackageManagerProvider,
   ) {}
 
@@ -156,6 +172,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
   ) {
+    const participant = this.messenger.registerWebviewPanel(webviewPanel);
+
     const viewProviderPanel = new ViewProviderPanel(this.context, {
       distDir: "out/config-tools",
       indexPath: "out/config-tools/index.html",
@@ -182,10 +200,9 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
         enableScripts: true,
       };
 
-      const showWarningMessageDebounced = debounce(
-        (message: string) => vscode.window.showWarningMessage(message),
-        2000,
-      );
+      webviewPanel.onDidDispose(async () => {
+        await this.cancelActiveGeneration(webviewPanel);
+      });
 
       const pluginSearchDirs = vscode.workspace
         .getConfiguration("cfs")
@@ -216,44 +233,6 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
           }`,
         );
       }
-
-      const changeDocumentSubscription =
-        vscode.workspace.onDidChangeTextDocument((e) => {
-          const { document: modifiedDoc } = e;
-
-          if (modifiedDoc.uri.path.endsWith(CONFIG_FILE_EXTENSION)) {
-            const text = modifiedDoc.getText();
-            let parsedDoc;
-
-            try {
-              parsedDoc = JSON.parse(text);
-            } catch {
-              void showWarningMessageDebounced(
-                "The updates to the document are not valid JSON",
-              );
-
-              return;
-            }
-
-            const timeDiff = Math.abs(
-              new Date(parsedDoc?.Timestamp as string).getTime() -
-                new Date().getTime(),
-            );
-
-            // Low time difference between updates mean the update was generated through the ui
-            // and we should ignore it
-            if (timeDiff < 100) return;
-
-            if (e.document.uri.toString() === document.uri.toString()) {
-              void webviewPanel.webview.postMessage({
-                type: "document-changed",
-                reason: e.reason,
-                pins: parsedDoc?.Pins,
-                clockNodes: parsedDoc?.ClockNodes,
-              });
-            }
-          }
-        });
 
       const missingDependencyList: CfsMissingComponent[] = [];
 
@@ -316,7 +295,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
       // Initialize catalog manager to enrich data model with catalog metadata
       let catalogSupportsMCUboot: boolean | undefined;
-      const catalogManager = await getCatalogManager();
+      const catalogManager = await getCatalogManager(this.authService);
       if (catalogManager) {
         try {
           await catalogManager.loadCatalog();
@@ -333,27 +312,87 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
         }
       }
 
-      // Listen for messages from the webview
-      webviewPanel.webview.onDidReceiveMessage(async (message) => {
-        let request;
+      // Register messenger handlers for messages from the webview
+      const senderFilter = { sender: participant };
 
-        if (message.type === messageTypes.getSocAndConfig) {
+      this.messenger.onRequest(
+        getSocAndConfigRequest,
+        async () => {
           const dm = await this.dataModelManager.getDataModel(
             socName,
             packageId,
             dmVersion,
           );
 
+          // We don't pass board in here, because that is irrelevant for project plugins.
+          const socContext = CfsPluginManager.buildSocContext(
+            socName,
+            packageId,
+            undefined,
+          );
+          const resolvedPluginVersionEntries = await Promise.all(
+            cfsconfig.Projects.map(async (project) => {
+              if (!project.PluginId || project.ExternallyManaged) {
+                return undefined;
+              }
+
+              const plugin = await pluginManager.resolvePlugin(
+                project.PluginId,
+                project.PluginVersion,
+                socContext,
+              );
+
+              return plugin
+                ? ([project.ProjectId, plugin.pluginVersion] as const)
+                : undefined;
+            }),
+          );
+          const resolvedPluginVersions = Object.fromEntries(
+            resolvedPluginVersionEntries.filter(
+              (entry): entry is readonly [string, string] =>
+                entry !== undefined,
+            ),
+          );
+
+          let configOptions = cfsconfig;
+          if (
+            applyResolvedVersionRequirements(
+              cfsconfig,
+              dm.Version,
+              resolvedPluginVersions,
+            )
+          ) {
+            configOptions = await this.updatePersistedWithFn(
+              document,
+              (currentConfig) => {
+                applyResolvedVersionRequirements(
+                  currentConfig,
+                  dm.Version,
+                  resolvedPluginVersions,
+                );
+
+                return currentConfig;
+              },
+            );
+          }
+
           const enrichedDm =
             catalogSupportsMCUboot !== undefined
               ? { ...dm, supportsMCUboot: catalogSupportsMCUboot }
               : dm;
 
-          request = Promise.resolve({
+          return {
             dataModel: enrichedDm,
-            configOptions: cfsconfig,
-          });
-        } else if (message.type === messageTypes.updatePersistedConfig) {
+            configOptions,
+            resolvedPluginVersions,
+          };
+        },
+        senderFilter,
+      );
+
+      this.messenger.onNotification(
+        updatePersistedConfigNotification,
+        async (updatedConfig) => {
           const {
             updatedPins,
             updatedClockNode,
@@ -362,256 +401,376 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             updatedProjects,
             clockFrequencies,
             aiModels,
-          } = message.body.updatedConfig;
+          } = updatedConfig;
 
           const clockNodesPayload: ClockNodesPayload = {
             updatedClockNode,
-            initialControlValues: initialControlValues as
-              | Record<string, string>
-              | undefined,
-            modifiedClockNodes: modifiedClockNodes as Array<{
-              Name: string;
-              EnabledControls: Record<string, boolean>;
-            }>,
+            initialControlValues,
+            modifiedClockNodes,
           };
 
           await this.updatePersistedConfig(
             document,
             updatedPins as ConfiguredPin[],
             clockNodesPayload,
-            updatedProjects as ConfiguredProject[],
-            clockFrequencies as Record<string, string | number>,
-            aiModels as AIModel[],
+            updatedProjects,
+            clockFrequencies,
+            aiModels,
           );
-        } else if (message.type === messageTypes.updatePersistedDfgConfig) {
-          this.updateDFGConfig(document, message.body);
-        } else if (message.type === messageTypes.updateProfilingConfig) {
-          const { type, config, projectId } = message.body;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onNotification(
+        updatePersistedDfgConfigNotification,
+        (body) => {
+          this.updateDFGConfig(document, body);
+        },
+        senderFilter,
+      );
+
+      this.messenger.onNotification(
+        updateProfilingConfigNotification,
+        ({ type, config, projectId }) => {
           this.updateProfilingConfig(document, config, type, projectId);
-        } else if (message.type === messageTypes.updateMcubootConfig) {
-          const { settings, applicationPackages } = message.body;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onNotification(
+        updateMcubootConfigNotification,
+        async ({ settings, applicationPackages }) => {
           await this.updateMcubootConfig(
             document,
-            settings as CfsSettings,
-            applicationPackages as ConfiguredApplicationPackage[],
+            settings,
+            applicationPackages,
           );
-        } else if (message.type === messageTypes.getIsDocumentUnsaved) {
-          request = Promise.resolve(document.isDirty);
-        } else if (message.type === messageTypes.showSaveDialog) {
-          const res = await vscode.window.showInformationMessage(
-            "Save Config File?",
-            {
-              modal: true,
-              detail: "To generate code you must first save your config file",
-            },
-            "Save",
+        },
+        senderFilter,
+      );
+
+      this.messenger.onNotification(
+        updateSRUConfigNotification,
+        async ({
+          connections,
+          descriptions,
+          signalAliases,
+          signalInversions,
+        }) => {
+          await this.updateSruConfig(
+            document,
+            connections,
+            descriptions,
+            signalAliases,
+            signalInversions,
           );
+        },
+        senderFilter,
+      );
 
-          if (res === "Save") {
-            try {
-              await document.save();
-
-              request = Promise.resolve(document.uri.fsPath);
-            } catch (error) {
-              request = Promise.reject(error);
-            }
-          } else {
-            request = Promise.resolve(null);
-          }
-        } else if (message.type === messageTypes.generateCode) {
-          const codeGenStart = Date.now();
-          try {
-            const dm = await this.dataModelManager.getDataModel(
-              socName,
-              packageId,
-              dmVersion,
-            );
-
-            if (document.isDirty) {
-              const res = await vscode.window.showInformationMessage(
-                "Save Config File?",
-                {
-                  modal: true,
-                  detail:
-                    "To generate code you must first save your config file",
-                },
-                "Save",
-              );
-
-              if (!res) {
-                return; // User closed dialog
+      this.messenger.onRequest(
+        showSRUResetUndoNotificationRequest,
+        async ({ message, undoButtonLabel }) => {
+          return new Promise<{ undo: boolean }>((resolve) => {
+            let settled = false;
+            const disposeListener = webviewPanel.onDidDispose(() => {
+              if (!settled) {
+                settled = true;
+                disposeListener.dispose();
+                resolve({ undo: false });
               }
-
-              if (res === "Save") {
-                await document.save();
-              }
-            }
-
-            const selectedProjects = message.body?.selectedProjects as
-              | CodeGenerationProject[]
-              | undefined;
-
-            if (!(selectedProjects ?? []).length) {
-              vscode.window.showErrorMessage(
-                "No valid projects were selected for code generation. Resolve any errors present and select at least one project.",
-              );
-
-              return;
-            }
-
-            const cfsconfig = this.getDocumentAsJson(document);
-
-            // Patching disabled project as externally managed so that code generation for a given project is skipped,
-            // but project information is preserved in the object provided to the code generator templates.
-            // Also patches projects so that AI model code is only generated for selected projects
-            cfsconfig.Projects = cfsconfig.Projects.map((project) => {
-              const selectedProject = selectedProjects?.find(
-                (p) => p.projectId === project.ProjectId,
-              );
-
-              const shouldSkipCodegen =
-                project.ExternallyManaged || !selectedProject;
-
-              return {
-                ...project,
-                ExternallyManaged: shouldSkipCodegen,
-                // disable all models in the project so no code is generated for them,
-                // but keep the model information to be used by plugins
-                AIModels: project.AIModels?.map((model) => ({
-                  ...model,
-                  Enabled: model.Enabled && !!selectedProject?.includeAI,
-                })),
-              };
             });
 
-            const workspaceFile = vscode.workspace.workspaceFile;
+            void vscode.window
+              .showInformationMessage(message, undoButtonLabel)
+              .then((selection) => {
+                if (!settled) {
+                  settled = true;
+                  disposeListener.dispose();
+                  resolve({ undo: selection === undoButtonLabel });
+                }
+              });
+          });
+        },
+        senderFilter,
+      );
 
-            const workspacePath = workspaceFile
-              ? path.dirname(workspaceFile.fsPath)
-              : path.join(tmpdir(), "cfs").replace(/\\/g, "/");
+      this.messenger.onNotification(
+        updateFirewallConfigNotification,
+        async ({ firewall }) => {
+          await this.updateFirewallConfig(document, firewall);
+        },
+        senderFilter,
+      );
 
-            const generatedFilesPath: string[] =
-              (await pluginManager?.generateConfigCode(
-                {
-                  cfsconfig,
-                  datamodel: dm,
-                },
-                workspacePath,
-              )) ?? [];
+      this.messenger.onRequest(
+        generateCodeRequest,
+        async ({ selectedProjects }) => {
+          const existingGeneration = [
+            ...this.activeCodeGenerations.values(),
+          ].find(
+            (generation) => generation.documentUri === document.uri.toString(),
+          );
 
-            if (
-              cfsconfig.Projects.some(
-                (p) => p.AIModels && p.AIModels.length > 0,
-              )
-            ) {
-              let cfsaiPath;
-              try {
-                cfsaiPath = await this.getCfsaiPath(this.toolManager);
-              } catch (error) {
-                vscode.window.showWarningMessage(
-                  "Error resolving the path to the CodeFusion Studio AI tool. Skipping AI code generation",
-                );
-              }
-
-              if (cfsaiPath) {
-                const aiToolsService = new AIToolsService(cfsaiPath);
-                const aiFiles = await aiToolsService.generateAiModelCode(
-                  cfsconfig,
-                  dm,
-                  workspacePath,
-                );
-
-                generatedFilesPath.push(...aiFiles);
-              } else {
-                vscode.window.showWarningMessage(
-                  "CodeFusion Studio AI package not found. Skipping AI code generation",
-                );
-              }
-            }
-
-            if (!generatedFilesPath.length) {
-              throw new Error(
-                "No files returned by the code generation plugin. This may be an issue with the plugin itself.",
-              );
-            }
-
-            request = Promise.resolve(generatedFilesPath);
-
-            const telemetryManager = await getTelemetryManager();
-            telemetryManager.logAction(TELEMETRY_ACTIONS.CODE_GENERATED, {
-              selectedProjectCount: (selectedProjects ?? []).length,
-              includesAiModel: (selectedProjects ?? []).some(
-                (project) => project.includeAI,
-              ),
-              generatedFileCount: generatedFilesPath.length,
-              durationMs: Date.now() - codeGenStart,
-            });
-            vscode.window.showInformationMessage(
-              `Code generation completed successfully. ${generatedFilesPath.length} files created.`,
-            );
-          } catch (e) {
-            console.error("Code generation error", e);
-
-            const telemetryManager = await getTelemetryManager();
-            telemetryManager.logAction(
-              TELEMETRY_ACTIONS.CODE_GENERATION_FAILED,
-              {
-                errorType: "CodeGenerationFailure",
-                failureCount: 1,
-                durationMs: Date.now() - codeGenStart,
-              },
-            );
-
+          if (existingGeneration) {
             vscode.window.showErrorMessage(
-              `Code generation failed with error: ${(e as Error).message}`,
+              "Code generation is already running for this file.",
             );
-
-            request = Promise.reject(e);
+            throw new Error(
+              "Code generation is already running for this file.",
+            );
           }
-        } else if (message.type === messageTypes.showInformationMessage) {
-          const { message: text } = message.body;
 
-          void vscode.window.showInformationMessage(text as string);
+          const cts = new vscode.CancellationTokenSource();
+          const codeGenStart = Date.now();
 
-          request = Promise.resolve();
-        } else if (message.type === messageTypes.getIsPeripheralBanner) {
+          const generation = (async (): Promise<string[] | undefined> => {
+            try {
+              const dm = await this.dataModelManager.getDataModel(
+                socName,
+                packageId,
+                dmVersion,
+              );
+
+              if (document.isDirty) {
+                const res = await vscode.window.showInformationMessage(
+                  "Save Config File?",
+                  {
+                    modal: true,
+                    detail:
+                      "To generate code you must first save your config file",
+                  },
+                  "Save",
+                );
+
+                if (!res) {
+                  return; // User closed dialog
+                }
+
+                if (res === "Save") {
+                  await document.save();
+                }
+              }
+
+              if (!(selectedProjects ?? []).length) {
+                vscode.window.showErrorMessage(
+                  "No valid projects were selected for code generation. Resolve any errors present and select at least one project.",
+                );
+
+                return;
+              }
+
+              const cfsconfig = this.getDocumentAsJson(document);
+
+              // Patching disabled project as externally managed so that code generation for a given project is skipped,
+              // but project information is preserved in the object provided to the code generator templates.
+              // Also patches projects so that AI model code is only generated for selected projects
+              cfsconfig.Projects = cfsconfig.Projects.map((project) => {
+                const selectedProject = selectedProjects?.find(
+                  (p) => p.projectId === project.ProjectId,
+                );
+
+                const shouldSkipCodegen =
+                  project.ExternallyManaged || !selectedProject;
+
+                return {
+                  ...project,
+                  ExternallyManaged: shouldSkipCodegen,
+                  // disable all models in the project so no code is generated for them,
+                  // but keep the model information to be used by plugins
+                  AIModels: project.AIModels?.map((model) => ({
+                    ...model,
+                    Enabled: model.Enabled && !!selectedProject?.includeAI,
+                  })),
+                };
+              });
+
+              const workspaceFile = vscode.workspace.workspaceFile;
+
+              let workspacePath: string;
+              if (workspaceFile) {
+                workspacePath = path.dirname(workspaceFile.fsPath);
+              } else {
+                const configDir = path.dirname(document.uri.fsPath);
+                workspacePath =
+                  path.basename(configDir) === ".cfs"
+                    ? path.dirname(configDir)
+                    : configDir;
+
+                const l10n = (vscode.l10n.bundle as Record<string, any>)
+                  ?.cfgtools?.generateCode?.directoryModal;
+
+                const res = await vscode.window.showInformationMessage(
+                  l10n?.title ?? "Code Generation Directory",
+                  {
+                    modal: true,
+                    detail: (
+                      l10n?.detail ??
+                      "Code will be generated in the {workspacePath} directory."
+                    ).replace("{workspacePath}", workspacePath),
+                  },
+                  l10n?.confirm ?? "OK",
+                );
+
+                if (!res) {
+                  return; // User closed dialog
+                }
+              }
+
+              // Resolve Zephyr base for board DTS detection, scoped to this
+              // config's SoC rather than the extension's startup-time target.
+              const zephyrBase = await resolveZephyrBase(
+                socName,
+                this.pkgManager,
+              );
+
+              const generatedFilesPath: string[] =
+                (await pluginManager?.generateConfigCode(
+                  {
+                    cfsconfig,
+                    datamodel: dm,
+                  },
+                  workspacePath,
+                  { zephyrBase },
+                )) ?? [];
+
+              if (
+                cfsconfig.Projects.some(
+                  (p) => p.AIModels && p.AIModels.length > 0,
+                )
+              ) {
+                let cfsaiPath;
+                try {
+                  cfsaiPath = await this.getCfsaiPath(this.toolManager);
+                } catch {
+                  vscode.window.showWarningMessage(
+                    "Error resolving the path to the CodeFusion Studio AI tool. Skipping AI code generation",
+                  );
+                }
+
+                if (cfsaiPath) {
+                  const aiToolsService = new AIToolsService(
+                    cfsaiPath,
+                    this.pkgManager,
+                  );
+                  const aiFiles = await aiToolsService.generateAiModelCode(
+                    cfsconfig,
+                    dm,
+                    workspacePath,
+                    this.authService.requireConfig(),
+                    cts.token,
+                  );
+
+                  generatedFilesPath.push(...aiFiles);
+                } else {
+                  vscode.window.showWarningMessage(
+                    "CodeFusion Studio AI package not found. Skipping AI code generation",
+                  );
+                }
+              }
+
+              if (!generatedFilesPath.length) {
+                throw new Error(
+                  "No files returned by the code generation plugin. This may be an issue with the plugin itself.",
+                );
+              }
+
+              const telemetryManager = await getTelemetryManager();
+              telemetryManager.logAction(TELEMETRY_ACTIONS.CODE_GENERATED, {
+                selectedProjectCount: (selectedProjects ?? []).length,
+                includesAiModel: (selectedProjects ?? []).some(
+                  (project) => project.includeAI,
+                ),
+                generatedFileCount: generatedFilesPath.length,
+                durationMs: Date.now() - codeGenStart,
+              });
+              vscode.window.showInformationMessage(
+                `Code generation completed successfully. ${generatedFilesPath.length} files created.`,
+              );
+
+              return generatedFilesPath;
+            } catch (e) {
+              console.error("Code generation error", e);
+
+              if (!cts.token.isCancellationRequested) {
+                const telemetryManager = await getTelemetryManager();
+                telemetryManager.logAction(
+                  TELEMETRY_ACTIONS.CODE_GENERATION_FAILED,
+                  {
+                    errorType: "CodeGenerationFailure",
+                    failureCount: 1,
+                    durationMs: Date.now() - codeGenStart,
+                  },
+                );
+
+                vscode.window.showErrorMessage(
+                  `Code generation failed with error: ${(e as Error).message}`,
+                );
+              }
+
+              throw e;
+            }
+          })();
+
+          this.activeCodeGenerations.set(webviewPanel, {
+            documentUri: document.uri.toString(),
+            cts,
+            promise: generation,
+          });
+
           try {
-            const isBanner =
-              this.context.globalState.get("isPeripheralBanner") === undefined
-                ? true
-                : false;
-
-            request = Promise.resolve(isBanner);
-          } catch (error) {
-            request = Promise.reject(error);
+            return await generation;
+          } finally {
+            this.activeCodeGenerations.delete(webviewPanel);
+            cts.dispose();
           }
-        } else if (message.type === messageTypes.updateIsPeripheralBanner) {
-          this.context.globalState.update(
-            "isPeripheralBanner",
-            message.body.flag,
-          );
-        } else if (message.type === messageTypes.getProperties) {
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        cancelGenerateCodeRequest,
+        async () => {
+          await this.cancelActiveGeneration(webviewPanel);
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        getIsPeripheralBannerRequest,
+        () => this.context.globalState.get("isPeripheralBanner") === undefined,
+        senderFilter,
+      );
+
+      this.messenger.onNotification(
+        updateIsPeripheralBannerNotification,
+        ({ flag }) => {
+          this.context.globalState.update("isPeripheralBanner", flag);
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        getPluginPropertiesRequest,
+        async ({ pluginId, pluginVersion, scope }) => {
           try {
             const dm = await this.dataModelManager.getDataModel(
               socName,
               packageId,
               dmVersion,
             );
-            const { pluginId, pluginVersion, scope } = message.body;
 
             const socData = JSON.parse(JSON.stringify(dm)) as CfsSocDataModel;
 
-            const controls = await pluginManager?.overrideSocControls(
-              pluginId,
-              pluginVersion,
-              scope as CfsFeatureScope,
-              socData,
-              packageId,
+            return (
+              (await pluginManager?.overrideSocControls(
+                pluginId,
+                pluginVersion,
+                scope,
+                socData,
+                packageId,
+              )) ?? {}
             );
-
-            request = Promise.resolve(controls);
           } catch (error) {
             vscode.window.showErrorMessage(
               `An error occurred while fetching plugin properties: ${
@@ -619,9 +778,15 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               }`,
             );
 
-            request = Promise.reject(error);
+            throw error;
           }
-        } else if (message.type === messageTypes.getMemoryAccessOverrides) {
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        getMemoryAccessOverridesRequest,
+        async ({ coreId }) => {
           try {
             const dm = await this.dataModelManager.getDataModel(
               socName,
@@ -629,13 +794,12 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               dmVersion,
             );
 
-            const overrides =
+            return (
               (await pluginManager?.getMemoryAccessOverrides(
                 dm.Name,
-                message.body.coreId,
-              )) ?? undefined;
-
-            request = Promise.resolve(overrides);
+                coreId,
+              )) ?? undefined
+            );
           } catch (error) {
             vscode.window.showErrorMessage(
               `An error occurred while fetching plugin overrides: ${
@@ -643,45 +807,18 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               }`,
             );
 
-            request = Promise.reject(error);
+            throw error;
           }
-        } else if (message.type === messageTypes.document_reload) {
-          try {
-            const uri = document.uri;
-            await vscode.commands.executeCommand(
-              "workbench.action.closeActiveEditor",
-            );
-            await vscode.commands.executeCommand("vscode.open", uri);
-            request = Promise.resolve();
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.logTelemetry) {
-          // Generic telemetry channel: the webview emits a known action name
-          // and a metadata object, which is forwarded to the telemetry manager.
-          try {
-            const { action, metadata } = message.body as {
-              action?: string;
-              metadata?: Record<string, unknown>;
-            };
+        },
+        senderFilter,
+      );
 
-            // Only forward recognized action names to avoid typos or arbitrary action names.
-            if (action && Object.values(TELEMETRY_ACTIONS).includes(action)) {
-              const telemetryManager = await getTelemetryManager();
-              telemetryManager.logAction(action, metadata ?? {});
-            }
-
-            request = Promise.resolve();
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.packager_install) {
-          const references = message.body
-            .referencesToInstall as CfsPackageReference[];
-
+      this.messenger.onRequest(
+        packagerInstallRequest,
+        async ({ referencesToInstall }) => {
           const installResults: PromiseSettledResult<any>[] = [];
 
-          for (const reference of references) {
+          for (const reference of referencesToInstall) {
             try {
               const value = await this.pkgManager?.install(reference);
               installResults.push({ status: "fulfilled", value });
@@ -691,7 +828,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
           }
 
           const mappedResults = installResults.map((installResult, index) => {
-            const reference = references[index];
+            const reference = referencesToInstall[index];
 
             if (installResult.status === "fulfilled") {
               return {
@@ -714,12 +851,16 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
           }
 
-          request = Promise.resolve(mappedResults);
-        } else if (message.type === messageTypes.packager_search) {
-          const components = message.body.components as CfsMissingComponent[];
+          return mappedResults;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onRequest(
+        packagerSearchRequest,
+        async ({ components }) => {
           try {
-            const results = await Promise.all(
+            return await Promise.all(
               components.map(async (component) => {
                 const filter = {
                   name:
@@ -740,22 +881,22 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
                 };
               }),
             );
-
-            request = Promise.resolve(results);
           } catch (error) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
             vscode.window.showErrorMessage(
               `An error occurred while searching for packages: ${errorMessage}`,
             );
-            request = Promise.reject(error);
-          }
-        } else if (
-          message.type ===
-          messageTypes.packager_update_persisted_cfsconfig_dataModel_version
-        ) {
-          const { componentId, version } = message.body;
 
+            throw error;
+          }
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        packagerUpdatePersistedDataModelVersionRequest,
+        async ({ componentId, version }) => {
           const fn = (cfsConfig: CfsConfig): CfsConfig => {
             cfsConfig.DataModelVersion = version;
             return cfsConfig;
@@ -763,23 +904,21 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
           try {
             await this.updatePersistedWithFn(document, fn);
-            request = Promise.resolve({
-              componentId,
-              success: true,
-            });
+            return { componentId, success: true };
           } catch (error) {
-            request = Promise.reject({
+            return {
               componentId,
               success: false,
-              error,
-            });
+              error: (error as Error).message,
+            };
           }
-        } else if (
-          message.type ===
-          messageTypes.packager_update_persisted_cfsconfig_plugin_version
-        ) {
-          const { componentId, version } = message.body;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onRequest(
+        packagerUpdatePersistedPluginVersionRequest,
+        async ({ componentId, version }) => {
           const fn = (cfsConfig: CfsConfig): CfsConfig => {
             for (const project of cfsConfig.Projects) {
               if (project.PluginId === componentId) {
@@ -792,52 +931,98 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
 
           try {
             await this.updatePersistedWithFn(document, fn);
-            request = Promise.resolve({
-              componentId,
-              success: true,
-            });
+            return { componentId, success: true };
           } catch (error) {
-            request = Promise.reject({
+            return {
               componentId,
               success: false,
-              error,
-            });
+              error: (error as Error).message,
+            };
           }
-        } else if (message.type === messageTypes.showGenerateCodeWarning) {
-          this.context.globalState.update(
-            "show-generate-code-warning",
-            message.body.flag,
+        },
+        senderFilter,
+      );
+
+      this.messenger.onNotification(
+        setGenerateCodeWarningNotification,
+        ({ flag }) => {
+          this.context.globalState.update("show-generate-code-warning", flag);
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        getGenerateCodeWarningRequest,
+        () =>
+          this.context.globalState.get("show-generate-code-warning") ===
+          undefined,
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        setDeleteAppPackWarningRequest,
+        async ({ flag }) => {
+          await this.context.globalState.update(
+            "show-delete-app-pack-warning",
+            flag,
           );
-        } else if (message.type === messageTypes.getGenerateCodeWarning) {
-          try {
-            const showWarning =
-              this.context.globalState.get("show-generate-code-warning") ===
-              undefined
-                ? true
-                : false;
+        },
+        senderFilter,
+      );
 
-            request = Promise.resolve(showWarning);
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.showDeleteAppPackWarning) {
-          request = this.context.globalState
-            .update("show-delete-app-pack-warning", message.body.flag)
-            .then(() => Promise.resolve());
-        } else if (message.type === messageTypes.getDeleteAppPackWarning) {
-          try {
-            const storedValue = this.context.globalState.get<boolean>(
-              "show-delete-app-pack-warning",
-            );
+      this.messenger.onRequest(
+        getDeleteAppPackWarningRequest,
+        () =>
+          this.context.globalState.get<boolean>(
+            "show-delete-app-pack-warning",
+          ) ?? true,
+        senderFilter,
+      );
 
-            request = Promise.resolve(storedValue ?? true);
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.exportCSV) {
-          try {
-            const { csvContent, defaultFileName } = message.body;
+      this.messenger.onRequest(
+        setDeleteFirewallZoneWarningRequest,
+        async ({ flag }) => {
+          await this.context.globalState.update(
+            "show-delete-firewall-zone-warning",
+            flag,
+          );
+        },
+        senderFilter,
+      );
 
+      this.messenger.onRequest(
+        getDeleteFirewallZoneWarningRequest,
+        () =>
+          this.context.globalState.get<boolean>(
+            "show-delete-firewall-zone-warning",
+          ) ?? true,
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        setDeleteInitiatorResponderWarningRequest,
+        async ({ flag }) => {
+          await this.context.globalState.update(
+            "show-delete-initiator-responder-warning",
+            flag,
+          );
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        getDeleteInitiatorResponderWarningRequest,
+        () =>
+          this.context.globalState.get<boolean>(
+            "show-delete-initiator-responder-warning",
+          ) ?? true,
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        exportCsvRequest,
+        async ({ csvContent, defaultFileName }) => {
+          try {
             const options: vscode.SaveDialogOptions = {
               defaultUri: vscode.Uri.file(`${defaultFileName ?? "export"}.csv`),
               filters: {
@@ -858,98 +1043,30 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
                 `Stream table exported successfully to ${fileUri.fsPath}`,
               );
 
-              request = Promise.resolve(fileUri.fsPath);
-            } else {
-              request = Promise.resolve(undefined);
+              return fileUri.fsPath;
             }
+
+            return undefined;
           } catch (error) {
-            request = Promise.reject(error);
             vscode.window.showErrorMessage(
               `Failed to export CSV: ${(error as Error).message}`,
             );
+            throw error;
           }
-        } else if (message.type === messageTypes.openFile) {
-          const { filePath, editor } = message.body;
-          if (editor) {
-            vscode.commands.executeCommand(
-              "vscode.openWith",
-              vscode.Uri.file(filePath),
-              editor,
-            );
-          } else {
-            vscode.commands.executeCommand(
-              "vscode.open",
-              vscode.Uri.file(filePath),
-            );
-          }
-        } else if (message.type === messageTypes.selectFile) {
-          const { title, filters, canSelectFolders } = message.body;
+        },
+        senderFilter,
+      );
 
-          const workspaceRoot = vscode.workspace.workspaceFile
-            ? Path.dirname(vscode.workspace.workspaceFile?.fsPath)
-            : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-
-          const options: vscode.OpenDialogOptions = {
-            defaultUri: workspaceRoot
-              ? vscode.Uri.file(workspaceRoot)
-              : undefined,
-            canSelectMany: false,
-            openLabel: "Select",
-            filters: filters,
-            title: title ?? "Select a file",
-            canSelectFolders: Boolean(canSelectFolders),
-            canSelectFiles: !canSelectFolders,
-          };
-
-          try {
-            const selectedFiles = await vscode.window.showOpenDialog(options);
-            if (selectedFiles && selectedFiles.length > 0) {
-              let path = selectedFiles[0].fsPath;
-              if (
-                message.body.relativeToWorkspaceRoot &&
-                workspaceRoot &&
-                path.startsWith(workspaceRoot)
-              ) {
-                path = Path.relative(workspaceRoot, path);
-              }
-              request = Promise.resolve(path);
-            } else {
-              request = Promise.resolve(null);
-            }
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.getPreference) {
-          const { id } = message.body;
-
-          try {
-            const value = await vscode.workspace
-              .getConfiguration("cfs")
-              .get(id);
-
-            request = Promise.resolve(value);
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.setPreference) {
-          const { id, value, scope } = message.body;
-
-          try {
-            await vscode.workspace
-              .getConfiguration("cfs")
-              .update(id, value, scope ?? vscode.ConfigurationTarget.Workspace);
-
-            request = Promise.resolve();
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.getSupportedAiBackends) {
+      this.messenger.onRequest(
+        getSupportedAiBackendsRequest,
+        async () => {
           try {
             const cfsaiPath = await this.getCfsaiPath(this.toolManager);
 
-            request = getAiToolsPlugin(
+            return await getAiToolsPlugin(
               cfsaiPath,
               Utils.getExtensionVersion(),
+              this.pkgManager,
             ).getSupportedBackends();
           } catch (error) {
             vscode.window.showErrorMessage(
@@ -958,21 +1075,30 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               }`,
             );
 
-            request = Promise.reject(error);
+            throw error;
           }
-        } else if (message.type === messageTypes.getAIBackendProperties) {
-          const { scope } = message.body;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onRequest(
+        getAIBackendPropertiesRequest,
+        async ({ scope }) => {
           const cfsaiPath = await this.getCfsaiPath(this.toolManager);
 
-          request = getAiToolsPlugin(
+          return getAiToolsPlugin(
             cfsaiPath,
             Utils.getExtensionVersion(),
+            this.pkgManager,
           ).getProperties(scope);
-        } else if (message.type === messageTypes.validateAIModel) {
-          try {
-            const aiModel = message.body.aiModel as AIModel;
+        },
+        senderFilter,
+      );
 
+      this.messenger.onRequest(
+        validateAIModelRequest,
+        async ({ aiModel }) => {
+          try {
             const telemetryManager = await getTelemetryManager();
             telemetryManager.logAction(
               TELEMETRY_ACTIONS.AI_COMPAT_CHECK_STARTED,
@@ -982,6 +1108,12 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               },
             );
 
+            const currentConfig = this.getDocumentAsJson(document);
+            const project = findProjectByCoreId(
+              currentConfig.Projects ?? [],
+              aiModel.Target.Core,
+            );
+
             const dm = await this.dataModelManager.getDataModel(
               socName,
               packageId,
@@ -989,14 +1121,15 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
 
             const aiToolsService = new AIToolsService(
-              await getCfsaiPath(this.toolManager),
+              await this.getCfsaiPath(this.toolManager),
+              this.pkgManager,
             );
-
             const valid = await aiToolsService.validateAiModel(
               aiModel,
               dm,
               socName,
               packageId,
+              project,
             );
             telemetryManager.logAction(
               valid.isValid
@@ -1007,7 +1140,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
                 packageId,
                 dataModelVersion: dmVersion,
                 model_format: path
-                  .extname(message.body.aiModel?.Files?.Model ?? "")
+                  .extname(aiModel?.Files?.Model ?? "")
                   .replace(".", ""),
               },
             );
@@ -1019,21 +1152,31 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               );
             }
 
-            request = Promise.resolve(valid);
+            return valid;
           } catch (error) {
             vscode.window.showErrorMessage(
-              `AI Model analysis failed: ${(error as Error).message}`,
+              `AI Model compatibility failed: ${(error as Error).message}`,
             );
-            request = Promise.reject(error);
+            throw error;
           }
-        } else if (message.type === messageTypes.analyzeAIModel) {
-          let aiModel: AIModel | undefined;
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        analyzeAIModelRequest,
+        async ({ aiModel }) => {
           let telemetryManager:
             | Awaited<ReturnType<typeof getTelemetryManager>>
             | undefined;
           try {
-            aiModel = message.body.aiModel as AIModel;
             telemetryManager = await getTelemetryManager();
+
+            const currentConfig = this.getDocumentAsJson(document);
+            const project = findProjectByCoreId(
+              currentConfig.Projects ?? [],
+              aiModel.Target.Core,
+            );
 
             const dm = await this.dataModelManager.getDataModel(
               socName,
@@ -1042,7 +1185,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
 
             const aiToolsService = new AIToolsService(
-              await getCfsaiPath(this.toolManager),
+              await this.getCfsaiPath(this.toolManager),
+              this.pkgManager,
             );
 
             const reportPath = await aiToolsService.profileAiModel(
@@ -1050,6 +1194,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               dm,
               socName,
               packageId,
+              project,
             );
 
             await vscode.commands.executeCommand(
@@ -1064,29 +1209,36 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
             );
           } catch (error) {
             vscode.window.showErrorMessage(
-              `AI Model analysis failed: ${(error as Error).message}`,
+              `AI Model profiling failed: ${(error as Error).message}`,
             );
-          } finally {
-            request = Promise.resolve();
           }
-        } else if (message.type === messageTypes.getApplicationPackagesBanner) {
-          try {
-            const storedValue = this.context.globalState.get<boolean>(
-              "isApplicationPackagesBannerVisible",
-            );
+        },
+        senderFilter,
+      );
 
-            request = Promise.resolve(storedValue ?? true);
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (
-          message.type === messageTypes.updateApplicationPackagesBanner
-        ) {
-          request = this.context.globalState
-            .update("isApplicationPackagesBannerVisible", message.body.flag)
-            .then(() => Promise.resolve());
-        } else if (message.type === messageTypes.readPemAlgorithm) {
-          const { filePath } = message.body;
+      this.messenger.onRequest(
+        getApplicationPackagesBannerRequest,
+        () =>
+          this.context.globalState.get<boolean>(
+            "isApplicationPackagesBannerVisible",
+          ) ?? true,
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        setApplicationPackagesBannerRequest,
+        async ({ flag }) => {
+          await this.context.globalState.update(
+            "isApplicationPackagesBannerVisible",
+            flag,
+          );
+        },
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        readPemAlgorithmRequest,
+        async ({ filePath }) => {
           try {
             const pemContent = await readFile(filePath, "utf-8");
             const key = createPrivateKey(pemContent);
@@ -1108,127 +1260,93 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
               algorithm = asymmetricKeyType ?? "unknown";
             }
 
-            request = Promise.resolve(algorithm);
+            return algorithm;
           } catch (error) {
-            request = Promise.reject(
-              new Error(
-                `Failed to read key algorithm: ${(error as Error).message}`,
-              ),
+            throw new Error(
+              `Failed to read key algorithm: ${(error as Error).message}`,
             );
           }
-        } else if (message.type === messageTypes.checkDirectoryExists) {
-          const { dirPath } = message.body as { dirPath: string };
+        },
+        senderFilter,
+      );
 
-          try {
-            const dirStat = await stat(dirPath);
-            request = Promise.resolve(dirStat.isDirectory());
-          } catch {
-            request = Promise.resolve(false);
-          }
-        } else if (message.type === messageTypes.showDeleteCustomTLVWarning) {
-          request = this.context.globalState
-            .update("show-delete-custom-tlv-warning", message.body.flag)
-            .then(() => Promise.resolve());
-        } else if (message.type === messageTypes.getDeleteCustomTLVWarning) {
-          try {
-            const storedValue = this.context.globalState.get<boolean>(
-              "show-delete-custom-tlv-warning",
-            );
+      this.messenger.onRequest(
+        setDeleteCustomTLVWarningRequest,
+        async ({ flag }) => {
+          await this.context.globalState.update(
+            "show-delete-custom-tlv-warning",
+            flag,
+          );
+        },
+        senderFilter,
+      );
 
-            request = Promise.resolve(storedValue ?? true);
-          } catch (error) {
-            request = Promise.reject(error);
-          }
-        } else if (message.type === messageTypes.getFileSize) {
-          const { filePath } = message.body;
-          try {
-            const fileStats = await stat(filePath);
-            request = Promise.resolve(fileStats.size);
-          } catch (error) {
-            request = Promise.reject(
-              new Error(`Failed to get file size: ${(error as Error).message}`),
-            );
-          }
-        } else if (message.type === messageTypes.generatePemKey) {
-          const { filePath, algorithm } = message.body as {
-            filePath: string;
-            algorithm: string;
-          };
+      this.messenger.onRequest(
+        getDeleteCustomTLVWarningRequest,
+        () =>
+          this.context.globalState.get<boolean>(
+            "show-delete-custom-tlv-warning",
+          ) ?? true,
+        senderFilter,
+      );
+
+      this.messenger.onRequest(
+        generatePemKeyRequest,
+        async ({ filePath, algorithm }) => {
           // This Zephyr-specific logic should be reworked in the future to keep the MCU editor firmware-agnostic.
           const zephyrPath = await this.toolManager.getToolPath("zephyr");
 
           if (!zephyrPath) {
-            request = Promise.reject(
-              new Error(
-                "Zephyr package path not found. Please ensure the Zephyr package is installed and configured correctly.",
-              ),
+            throw new Error(
+              "Zephyr package path not found. Please ensure the Zephyr package is installed and configured correctly.",
             );
-          } else {
-            const imgtoolPath = path.join(
-              zephyrPath,
-              "bootloader",
-              "mcuboot",
-              "scripts",
-              "imgtool.py",
-            );
-            try {
-              await stat(imgtoolPath);
-            } catch {
-              request = Promise.reject(
-                new Error(
-                  `imgtool.py not found at ${imgtoolPath}. Please ensure the Zephyr package is installed correctly.`,
-                ),
-              );
-            }
-            const sdkPath = await Utils.getSdkPath();
-            const pythonExe = sdkPath
-              ? path.join(
-                  sdkPath,
-                  "Tools",
-                  "python",
-                  process.platform === "win32" ? "python.exe" : "bin/python3",
-                )
-              : process.platform === "win32"
-                ? "python"
-                : "python3";
-            request = new Promise<void>((resolve, reject) => {
-              execFile(
-                pythonExe,
-                [imgtoolPath, "keygen", "-k", filePath, "-t", algorithm],
-                (error, _stdout, stderr) => {
-                  if (error) {
-                    const errorMessage = stderr?.trim() || error.message;
-                    reject(
-                      new Error(`Failed to generate PEM key: ${errorMessage}`),
-                    );
-                    return;
-                  }
-                  resolve();
-                },
-              );
-            });
           }
-        }
 
-        if (request) {
-          const { body, error } = await request.then(
-            (body) => ({ body, error: undefined }),
-            (error) => ({ body: undefined, error: error?.message }),
+          const imgtoolPath = path.join(
+            zephyrPath,
+            "bootloader",
+            "mcuboot",
+            "scripts",
+            "imgtool.py",
           );
+          try {
+            await stat(imgtoolPath);
+          } catch {
+            throw new Error(
+              `imgtool.py not found at ${imgtoolPath}. Please ensure the Zephyr package is installed correctly.`,
+            );
+          }
+          const sdkPath = Utils.getSdkPath();
+          const pythonExe = sdkPath
+            ? path.join(
+                sdkPath,
+                "Tools",
+                "python",
+                process.platform === "win32" ? "python.exe" : "bin/python3",
+              )
+            : process.platform === "win32"
+              ? "python"
+              : "python3";
 
-          // Send result to the webview
-          await webviewPanel.webview.postMessage({
-            type: "api-response",
-            id: message.id,
-            body,
-            error,
+          await new Promise<void>((resolve, reject) => {
+            execFile(
+              pythonExe,
+              [imgtoolPath, "keygen", "-k", filePath, "-t", algorithm],
+              (error, _stdout, stderr) => {
+                if (error) {
+                  const errorMessage = stderr?.trim() || error.message;
+                  reject(
+                    new Error(`Failed to generate PEM key: ${errorMessage}`),
+                  );
+                  return;
+                }
+                resolve();
+              },
+            );
           });
-        }
-      });
-
-      webviewPanel.onDidDispose(() => {
-        changeDocumentSubscription.dispose();
-      });
+        },
+        senderFilter,
+      );
 
       if (missingDependencyList.length > 0) {
         throw new MissingDependencyError("missing-components", {
@@ -1262,14 +1380,13 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
   private async updatePersistedWithFn(
     document: vscode.TextDocument,
     fn: (document: CfsConfig) => CfsConfig,
-  ) {
+  ): Promise<CfsConfig> {
     const edit = new vscode.WorkspaceEdit();
     const parsedDoc = this.getDocumentAsJson(document)!;
-
-    fn(parsedDoc);
+    const updatedDoc = fn(parsedDoc);
 
     // Ensure updated timestamp reference
-    parsedDoc.Timestamp = new Date().toISOString();
+    updatedDoc.Timestamp = new Date().toISOString();
 
     edit.replace(
       document.uri,
@@ -1277,7 +1394,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
         new vscode.Position(0, 0),
         new vscode.Position(document.lineCount, 0),
       ),
-      JSON.stringify(parsedDoc, null, 2) + "\n",
+      JSON.stringify(updatedDoc, null, 2) + "\n",
     );
 
     const success = await vscode.workspace.applyEdit(edit);
@@ -1287,6 +1404,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     } else {
       throw new Error("Could not edit the document.");
     }
+
+    return updatedDoc;
   }
 
   private async updatePersistedConfig(
@@ -1343,11 +1462,23 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
         );
         project.AIModels.forEach((model) => {
           const extensions = model.Backend?.Extensions;
+          // trim all string values in the extensions and files objects
+          // to avoid issues with leading/trailing whitespace or only whitespace values
           if (extensions) {
             Object.keys(extensions).forEach((key) => {
               const value = extensions[key];
               if (typeof value === "string") {
                 extensions[key] = value.trim();
+              }
+            });
+          }
+          const files = model.Files;
+          if (files) {
+            Object.keys(files).forEach((key) => {
+              const value = files[key];
+              files[key] = value?.trim();
+              if (files[key] === "") {
+                delete files[key];
               }
             });
           }
@@ -1435,7 +1566,7 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
   > = {
     Zephelin: {
       Enabled: false,
-      Format: "Text",
+      Format: "TEXT",
       Interface: { Type: "UART", Port: "" },
       AIEnabled: false,
       RtosEventsEnabled: false,
@@ -1444,6 +1575,8 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
       ProfilingCpuLoadEnabled: false,
       ProfilingCpuLoadInterval: 0,
       InstrumentationSubsystemEnabled: false,
+      InstrumentationTriggerFunction: "",
+      InstrumentationStopperFunction: "",
     },
   };
 
@@ -1549,6 +1682,60 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     await vscode.workspace.applyEdit(edit);
   }
 
+  private async updateFirewallConfig(
+    document: vscode.TextDocument,
+    firewall: FirewallConfig,
+  ) {
+    const edit = new vscode.WorkspaceEdit();
+    const parsedDoc = this.getDocumentAsJson(document)!;
+
+    parsedDoc.Timestamp = new Date().toISOString();
+
+    parsedDoc.SchemaVersion = CURRENT_SCHEMA_VERSION;
+    parsedDoc.FirewallConfig = firewall;
+
+    edit.replace(
+      document.uri,
+      new vscode.Range(
+        new vscode.Position(0, 0),
+        new vscode.Position(document.lineCount, 0),
+      ),
+      JSON.stringify(parsedDoc, null, 2) + "\n",
+    );
+
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  private async updateSruConfig(
+    document: vscode.TextDocument,
+    connections: Record<string, string>,
+    descriptions: Record<string, string>,
+    signalAliases: Record<string, string>,
+    signalInversions: Record<string, boolean>,
+  ) {
+    const edit = new vscode.WorkspaceEdit();
+    const parsedDoc = this.getDocumentAsJson(document)!;
+
+    parsedDoc.Timestamp = new Date().toISOString();
+    parsedDoc.Sru = {
+      Connections: connections,
+      UserDescriptions: descriptions,
+      SignalAliases: signalAliases,
+      SignalInversions: signalInversions,
+    };
+
+    edit.replace(
+      document.uri,
+      new vscode.Range(
+        new vscode.Position(0, 0),
+        new vscode.Position(document.lineCount, 0),
+      ),
+      JSON.stringify(parsedDoc, null, 2) + "\n",
+    );
+
+    await vscode.workspace.applyEdit(edit);
+  }
+
   private async getCfsaiPath(toolManager: CfsToolManager): Promise<string> {
     const toolInstance = await toolManager.getInstalledToolById("cfsai.tool");
 
@@ -1559,5 +1746,37 @@ export class McuEditor implements vscode.CustomTextEditorProvider {
     const cfsaiPath = toolInstance.rootPath;
 
     return cfsaiPath;
+  }
+
+  /**
+   * Cancels the in-flight code generation owned by the given panel, if any.
+   * Shows progress while waiting for the generation to actually unwind, and
+   * a confirmation once it has stopped.
+   */
+  private async cancelActiveGeneration(
+    panel: vscode.WebviewPanel,
+  ): Promise<void> {
+    const generation = this.activeCodeGenerations.get(panel);
+
+    if (!generation) {
+      return;
+    }
+
+    generation.cts.cancel();
+
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "Cancelling code generation...",
+      },
+      async () => {
+        // The generation promise is expected to reject once cancelled;
+        // that failure is already handled by the generation's own catch
+        // block, so it is safe to ignore here.
+        await generation.promise.catch(() => undefined);
+      },
+    );
+
+    vscode.window.showInformationMessage("Code generation cancelled.");
   }
 }

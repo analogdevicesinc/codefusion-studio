@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import {type ConfiguredProject} from '@common/api';
 import type {Soc, PinDictionary} from '@common/types/soc';
 import {type Partition} from '../state/slices/partitions/partitions.reducer';
@@ -9,6 +24,8 @@ import {
 import {sysPlannerDataInit} from './sys-planner-data-init';
 import type {CfsConfig} from 'cfs-types';
 import {formatPeripheralSignalsTargets} from './json-formatter';
+import {formatValueByNumericBase} from './peripheral';
+import {computePeripheralResetValues} from './soc-peripherals';
 
 const MAX32690wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -234,11 +251,13 @@ describe('Persistance', () => {
 				config: {
 					MODE: 'TARGET',
 					TARGET0_ADDR: '000000FF',
+					TARGET1_ADDR: '0',
 					CLK_LO: '100'
 				},
 				configFormat: {
 					numericBase: {
 						TARGET0_ADDR: 'Hexadecimal',
+						TARGET1_ADDR: 'Hexadecimal',
 						CLK_LO: 'Decimal'
 					}
 				}
@@ -261,8 +280,24 @@ describe('Persistance', () => {
 		expect(resultPeripheral?.Config).to.deep.equal({
 			MODE: 'TARGET',
 			TARGET0_ADDR: '0x000000FF',
+			TARGET1_ADDR: '0x0',
 			CLK_LO: '100'
 		});
+	});
+
+	it('formatValueByNumericBase should prefix numeric hexadecimal zero', () => {
+		expect(formatValueByNumericBase(0, 'Hexadecimal')).to.equal(
+			'0x0'
+		);
+	});
+
+	it('computePeripheralResetValues should prefix hexadecimal zero defaults', () => {
+		const defaults = computePeripheralResetValues(
+			'I2C0',
+			MAX32690wlp.Controls.I2C0
+		);
+
+		expect(defaults.TARGET0_ADDR).to.equal('0x0');
 	});
 
 	it('applyPersistedPinConfig should restore distinct PinCfg for peripherals sharing the same signal name', () => {

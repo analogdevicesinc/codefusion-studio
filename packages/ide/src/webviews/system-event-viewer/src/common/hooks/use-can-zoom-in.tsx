@@ -14,24 +14,28 @@
  */
 
 import {useMemo} from 'react';
-import {MIN_VALUE_SPAN} from '../constants/timeline';
+import {getRoundingTolerance} from '../utils/axis-scale';
+import {getTimelineMinZoomSpan} from '../utils/time-axis-utils';
 import type {DataZoom, Range} from '../types/timeline';
 
 export default function useCanZoomIn(
 	dataZoom: DataZoom,
 	range: Range
 ): boolean {
+	const minSpan = getTimelineMinZoomSpan(range);
+
 	return useMemo(() => {
 		const axisSpan = range.max - range.min;
 		if (!Number.isFinite(axisSpan) || axisSpan <= 0) return false;
 
 		const currentZoomWindowPct = dataZoom.end - dataZoom.start;
 		if (currentZoomWindowPct <= 0) return false;
+		const minZoomWindowPct = (minSpan / axisSpan) * 100;
 
-		const minZoomWindowPct = (MIN_VALUE_SPAN / axisSpan) * 100;
-		// Small tolerance to avoid floating point precision issues
-		const tolerance = Math.max(minZoomWindowPct * 1e-3, 1e-12);
+		const tolerance = getRoundingTolerance(
+			Math.max(Math.abs(dataZoom.start), Math.abs(dataZoom.end))
+		);
 
 		return currentZoomWindowPct > minZoomWindowPct + tolerance;
-	}, [dataZoom.start, dataZoom.end, range.min, range.max]);
+	}, [dataZoom.start, dataZoom.end, range, minSpan]);
 }

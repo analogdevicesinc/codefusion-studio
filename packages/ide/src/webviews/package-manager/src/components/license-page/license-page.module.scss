@@ -82,7 +82,7 @@
 	gap: layout.$spacing-7;
 	flex: 1 0 0;
 	align-self: center;
-	width: 566px;
+	width: 600px;
 	justify-content: space-between;
 }
 
@@ -115,4 +115,24 @@
 
 .notViewedIcon {
 	color: var(--vscode-descriptionForeground);
+}
+
+.loadingContainer {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	flex: 1 0 0;
+	align-self: stretch;
+	gap: layout.$spacing-5;
+}
+
+.loadingMessage {
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+}
+
+.errorMessage {
+	@include fonts.body-b2;
+	color: colors.$error;
 }

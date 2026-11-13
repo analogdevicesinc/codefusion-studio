@@ -13,12 +13,7 @@
  *
  */
 
-import {
-  getHostPlatform,
-  SessionManager,
-  TelemetryManager,
-  UserType,
-} from "cfs-lib";
+import { getHostPlatform, TelemetryManager, UserType } from "cfs-lib";
 import {
   CFS_TELEMETRY_ENABLE,
   CFS_TELEMETRY_USER_ID,
@@ -30,11 +25,15 @@ import { Utils } from "../utils/utils";
 import { v4 as uuid } from "uuid";
 import { promisify } from "node:util";
 import { exec } from "node:child_process";
-import { AuthConfigParser } from "../utils/auth-config";
+import type { AuthService } from "../services/auth-service";
 import { logger } from "../utils/logger";
+import { Messenger } from "vscode-messenger";
+import { TELEMETRY_ACTIONS } from "./action-names";
+import { logTelemetryRequest } from "../constants/messages/telemetry-messages";
 
 let workspaceId: string | undefined;
 let isWorkspaceIdInitialized = false;
+let telemetryAuthService: AuthService | undefined;
 
 // Key under which the random per-workspace telemetry id is persisted in
 // workspaceState so it stays stable across sessions for a given workspace.
@@ -81,6 +80,16 @@ export const getTelemetryManager = async () => {
       },
     } as TelemetryManager;
   }
+};
+
+/**
+ * Sets the auth service used to determine the user type from the myAnalog
+ * session. Intended to be called once during activation; until then the user
+ * type is determined from system checks only.
+ * @param authService - The extension's auth service
+ */
+export const setTelemetryAuthService = (authService: AuthService): void => {
+  telemetryAuthService = authService;
 };
 
 /**
@@ -182,9 +191,7 @@ export const determineUserType = async (
   }
 
   try {
-    const authConfig = new AuthConfigParser().getConfig();
-    const sessionManager = new SessionManager(authConfig);
-    const session = await sessionManager.getSession();
+    const session = await telemetryAuthService?.getSession();
 
     // If there's an active session, determine user type from the email domain and cache it for future use
     if (session) {
@@ -250,7 +257,7 @@ const runInternalCheck = async (
       timeout: 5000,
     });
     return stdout;
-  } catch (error) {
+  } catch (_) {
     return undefined;
   }
 };
@@ -274,3 +281,14 @@ export const handleSensitiveTelemetryData = (
   }
   return "Custom";
 };
+
+export function registerTelemetryMessageHandlers(messenger: Messenger) {
+  messenger.onRequest(logTelemetryRequest, async ({ action, metadata }) => {
+    if (!action || !Object.values(TELEMETRY_ACTIONS).includes(action)) {
+      return;
+    }
+
+    const telemetryManager = await getTelemetryManager();
+    await telemetryManager.logAction(action, metadata ?? {});
+  });
+}

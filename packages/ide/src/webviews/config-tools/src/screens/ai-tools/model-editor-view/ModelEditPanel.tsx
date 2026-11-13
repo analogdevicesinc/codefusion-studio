@@ -45,6 +45,11 @@ import {
 	resolveZooModelUrl
 } from '../../../../../common/components/cfs-model-zoo/model-zoo-utils';
 import {getPreference, selectFile} from '../../../../../common/api';
+import {logTelemetryEvent} from '../../../utils/api';
+import {CONFIG_TOOLS_TELEMETRY_ACTIONS} from '../../../state/utils/telemetry-reporter';
+
+const ADI_MODEL_ZOO_URL =
+	'https://raw.githubusercontent.com/analogdevicesinc/adi-model-zoo/refs/heads/main';
 
 export function ModelEditPanel() {
 	const originalModel = useEditingAIModel();
@@ -67,6 +72,8 @@ export function ModelEditPanel() {
 	const [dynamicControls, setDynamicControls] = useState<
 		SocControl[]
 	>([]);
+
+	const [controlsLoading, setControlsLoading] = useState(false);
 
 	const [isModelZooOpen, setIsModelZooOpen] = useState(false);
 
@@ -103,13 +110,18 @@ export function ModelEditPanel() {
 		);
 
 		if (modelZooSelection) {
-			const {Soc, BoardName} = getCfsConfigDict() ?? {};
+			const configDict = getCfsConfigDict();
+			const {Soc, BoardName} = configDict ?? {};
+			const coreFamily = configDict?.projects?.find(
+				p => p.CoreId === currentModel.Target.Core
+			)?.Family;
 			const zooModelPlatform = getZooModelPlatform({
 				selectedZooModel: modelZooSelection.model,
 				soc: Soc ?? '',
 				board: BoardName ?? '',
 				core: currentModel.Target.Core,
-				accelerator: currentModel.Target.Accelerator
+				accelerator: currentModel.Target.Accelerator,
+				family: coreFamily
 			});
 
 			if (!zooModelPlatform) {
@@ -130,6 +142,85 @@ export function ModelEditPanel() {
 		l10n
 	]);
 
+	// Stable identity so ModelConfiguration's backend-controls effect
+	// (which depends on this prop) doesn't re-run - and re-fetch/re-flag
+	// controlsLoading - on every unrelated re-render.
+	const handleModelChange = useCallback(
+		(newModel: AIModelWithId) => {
+			if (newModel.Files.Model !== currentModel.Files.Model) {
+				setModelZooSelection(undefined);
+			}
+
+			setCurrentModel(newModel);
+		},
+		[currentModel.Files.Model]
+	);
+
+	const handleAddModel = () => {
+		if (!validateModelConfig()) {
+			return;
+		}
+
+		if (modelZooSelection) {
+			const configDict = getCfsConfigDict();
+			const {Soc, BoardName} = configDict ?? {};
+			const coreFamily = configDict?.projects?.find(
+				p => p.CoreId === currentModel.Target.Core
+			)?.Family;
+
+			const urls =
+				resolveZooModelUrl(
+					modelZooSelection,
+					Soc ?? '',
+					BoardName ?? '',
+					currentModel.Target.Core,
+					currentModel.Target.Accelerator,
+					coreFamily
+				) ?? '';
+
+			currentModel.Files.Model = urls.modelUrl ?? '';
+			currentModel.Files.Dataset = urls.datasetUrl ?? '';
+
+			if (!originalModel) {
+				const isAdiZooModel =
+					modelZooSelection.model.baseURL === ADI_MODEL_ZOO_URL;
+
+				void logTelemetryEvent(
+					CONFIG_TOOLS_TELEMETRY_ACTIONS.MODEL_ADDED,
+					{
+						modelName: isAdiZooModel
+							? modelZooSelection.model.name
+							: 'Custom',
+						modelTags: isAdiZooModel
+							? [
+									modelZooSelection.model.task,
+									modelZooSelection.model.taskType,
+									modelZooSelection.model.framework
+								]
+							: ['Custom'],
+						modelSource: 'modelZooModel'
+					}
+				);
+			}
+		} else if (!originalModel) {
+			void logTelemetryEvent(
+				CONFIG_TOOLS_TELEMETRY_ACTIONS.MODEL_ADDED,
+				{
+					modelName: 'Custom',
+					modelTags: ['Custom'],
+					modelSource: 'localModel'
+				}
+			);
+		}
+
+		dispatch(
+			saveEditingModel({
+				model: currentModel,
+				originalName: originalModel?.Name
+			})
+		);
+	};
+
 	return (
 		<>
 			<SlidingPanel
@@ -141,34 +232,8 @@ export function ModelEditPanel() {
 					<Button
 						className={styles.saveButton}
 						dataTest='model-save-button'
-						onClick={() => {
-							if (!validateModelConfig()) {
-								return;
-							}
-
-							if (modelZooSelection) {
-								const {Soc, BoardName} = getCfsConfigDict() ?? {};
-
-								const urls =
-									resolveZooModelUrl(
-										modelZooSelection,
-										Soc ?? '',
-										BoardName ?? '',
-										currentModel.Target.Core,
-										currentModel.Target.Accelerator
-									) ?? '';
-
-								currentModel.Files.Model = urls.modelUrl ?? '';
-								currentModel.Files.Dataset = urls.datasetUrl ?? '';
-							}
-
-							dispatch(
-								saveEditingModel({
-									model: currentModel,
-									originalName: originalModel?.Name
-								})
-							);
-						}}
+						disabled={controlsLoading}
+						onClick={handleAddModel}
 					>
 						{originalModel ? l10n?.update : l10n?.add}
 					</Button>
@@ -178,16 +243,11 @@ export function ModelEditPanel() {
 					currentModel={currentModel}
 					modelZooSelection={modelZooSelection}
 					isEditing={Boolean(originalModel)}
-					setCurrentModel={(newModel: AIModelWithId) => {
-						if (newModel.Files.Model !== currentModel.Files.Model) {
-							setModelZooSelection(undefined);
-						}
-
-						setCurrentModel(newModel);
-					}}
+					setCurrentModel={handleModelChange}
 					errors={errors}
 					setModelZooOpen={setIsModelZooOpen}
 					onDynamicControlsChange={setDynamicControls}
+					onControlsLoadingChange={setControlsLoading}
 				/>
 			</SlidingPanel>
 			<CfsModelZoo

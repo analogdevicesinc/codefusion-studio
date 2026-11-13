@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +12,30 @@
  * limitations under the License.
  *
  */
-import {Command, Flags} from '@oclif/core';
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getSessionManager} from '../../utils/session-manager.js';
 
-export default class CfsMyAnalogStatus extends Command {
+export default class CfsMyAnalogStatus extends BaseCommand<
+  typeof CfsMyAnalogStatus
+> {
   static aliases = ['auth:status'];
   static deprecateAliases = true;
   static description = 'Show myAnalog session status.';
-  static flags = {
-    verbose: Flags.boolean({
-      char: 'v',
-      description: 'Show additional details about the login session.'
-    })
-  };
+  static useResponseEnvelope = true;
 
   static hiddenAliases = ['myAnalog:status'];
 
-  async run(): Promise<void> {
-    const {flags} = await this.parse(CfsMyAnalogStatus);
+  async run(): Promise<
+    | {loggedIn: false}
+    | {
+        loggedIn: true;
+        userEmail: string;
+        userId: string;
+        scopes: string[];
+      }
+  > {
+    const {flags} = this;
     let session;
     let sessionManager;
     try {
@@ -49,6 +54,9 @@ export default class CfsMyAnalogStatus extends Command {
 
     if (!session) {
       this.log('You are not logged in to myAnalog.');
+      if (this.jsonEnabled()) {
+        return {loggedIn: false};
+      }
       this.exit();
     }
 
@@ -60,5 +68,12 @@ export default class CfsMyAnalogStatus extends Command {
 	User ID: ${session.userId}
 	Scopes: ${session.scopes.join(', ')}`);
     }
+
+    return {
+      loggedIn: true,
+      userEmail: session.userEmail,
+      userId: session.userId,
+      scopes: session.scopes
+    };
   }
 }

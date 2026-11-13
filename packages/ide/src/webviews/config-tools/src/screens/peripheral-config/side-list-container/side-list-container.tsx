@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import {useAppDispatch} from '../../../state/store';
 import {setProjectSelectionConfig} from '../../../state/slices/app-context/appContext.reducer';
 import CoreSelector from '../core-selector/CoreSelector';
 import {getProjectInfoList} from '../../../utils/config';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {useSignalGroupAssignmentHandler} from '../../../hooks/use-signal-group-assignment-handler';
 import {useSignalAssignmentHandler} from '../../../hooks/use-signal-assignment-handler';
 import {PERIPHERAL_LIST_CONTAINER_ID} from '../constants';
@@ -47,6 +48,9 @@ const defaultFilterOptions: Record<string, FilterOption> =
 export default function SideListContainer() {
 	const dispatch = useAppDispatch();
 	const projects = getProjectInfoList();
+	const l10n = useLocaleContext()?.peripheralConfig as
+		| Record<string, string>
+		| undefined;
 
 	const isProjectSelectionViewActive = Boolean(
 		useProjectSelectionConfig()
@@ -168,6 +172,11 @@ export default function SideListContainer() {
 					<>
 						<PeripheralGroupsFilterControls
 							options={filterOptions}
+							labels={{
+								all: l10n?.filterAll ?? 'all',
+								allocated: l10n?.filterAllocated ?? 'allocated',
+								available: l10n?.filterAvailable ?? 'available'
+							}}
 							onSelect={onFilterSelectionChange}
 						/>
 						<div className={styles.horizontalDivider} />

@@ -12,7 +12,6 @@
  * limitations under the License.
  *
  */
-import {Command} from '@oclif/core';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -22,14 +21,16 @@ import {
   getCustomCatalogStorePath,
   getVersionFromConfig
 } from '../../utils/utils.js';
+import {BaseCommand} from '../../utils/base-command.js';
 
-export default class Restore extends Command {
+export default class Restore extends BaseCommand<typeof Restore> {
   static description =
     'Restore the catalog to its original version using the backup stored in `<install_dir>/Data/SoC/catalog.zip`. This will delete the existing catalog.';
 
   static examples = ['<%= config.bin %> <%= command.id %>'];
+  static useResponseEnvelope = true;
 
-  public async run(): Promise<void> {
+  public async run(): Promise<{restored: true}> {
     const customCatalogPath = getCustomCatalogStorePath(this.config);
 
     const catalogStoreDir =
@@ -41,8 +42,13 @@ export default class Restore extends Command {
         '.catalog'
       );
 
+    // Same parent as the store: renaming across volumes fails on Windows.
+    fs.mkdirSync(path.dirname(catalogStoreDir), {recursive: true});
     const tempBackupDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'cfs-catalog-restore-')
+      path.join(
+        path.dirname(catalogStoreDir),
+        '.cfs-catalog-restore-'
+      )
     );
     const catalogStoreBackupDir = path.join(
       tempBackupDir,
@@ -69,6 +75,7 @@ export default class Restore extends Command {
       }
 
       this.log(`Catalog restored successfully`);
+      return {restored: true};
     } catch (error) {
       if (backupCreated && fs.existsSync(catalogStoreBackupDir)) {
         // Remove catalogStoreDir, if we started to create it, before restoring the backup.
@@ -79,11 +86,12 @@ export default class Restore extends Command {
         fs.renameSync(catalogStoreBackupDir, catalogStoreDir);
       }
 
-      this.error(
+      return this.error(
         `Failed to restore catalog. ` +
           (error instanceof Error
             ? ` ${error.message}`
-            : 'Please check that the backup file exists and is accessible.')
+            : 'Please check that the backup file exists and is accessible.'),
+        {code: 'CATALOG_RESTORE_FAILED'}
       );
     } finally {
       if (fs.existsSync(tempBackupDir)) {

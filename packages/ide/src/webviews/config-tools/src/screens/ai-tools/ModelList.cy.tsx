@@ -18,7 +18,12 @@ import {ModelList} from './ModelList';
 import type {Soc} from '@common/types/soc';
 import {type AIModel, type CfsConfig} from 'cfs-types';
 import type {AiSupportingBackend} from '../../../../common/types/ai-fusion-data-model';
-import {mockVsCodeApi} from '../../../../common/api';
+import {setupMessengerMock} from '../../../../common/test-utils/messenger-mock';
+import {
+	getSupportedAiBackendsRequest,
+	validateAIModelRequest
+} from '@constants/messages/ai-tools-messages';
+import {getPreferenceRequest} from '@constants/messages/vscode-api-messages';
 
 const soc = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
@@ -223,22 +228,10 @@ const supportedBackends: Record<string, AiSupportingBackend> = {
 
 describe('ModelList', () => {
 	before(() => {
-		mockVsCodeApi({
-			postMessage(message: any) {
-				if (message.type === 'get-ai-backends') {
-					window.dispatchEvent(
-						new MessageEvent('message', {
-							data: {
-								type: 'api-response',
-								id: message.id,
-								body: supportedBackends
-							}
-						})
-					);
-				}
-			},
-			getState: cy.stub(),
-			setState: cy.stub()
+		setupMessengerMock({
+			[getSupportedAiBackendsRequest.method]: supportedBackends,
+			[getPreferenceRequest.method]: [],
+			[validateAIModelRequest.method]: {isValid: true}
 		});
 	});
 
@@ -311,6 +304,86 @@ describe('ModelList', () => {
 			.within(() => {
 				cy.dataTest('compatibility-column').should('exist');
 				cy.dataTest('report-action').should('exist');
+			});
+	});
+
+	it('start-truncates a long model file path without mutating the text', () => {
+		const longModelPath =
+			'/workspace/very/deeply/nested/directory/structure/intentionally/long/enough/to/overflow/the/table/column/models/resnet50-quantized-int8.tflite';
+
+		const configWithLongPath: CfsConfig = {
+			...config,
+			Projects: [
+				{
+					...customConfig.Projects[0],
+					AIModels: [
+						{
+							Name: 'LongPathModel',
+							Files: {
+								Model: longModelPath
+							},
+							Target: {
+								Core: 'core1',
+								Accelerator: 'CNN'
+							},
+							Backend: {
+								Name: 'SingleModel'
+							},
+							Enabled: true,
+							OutDir: ''
+						}
+					] satisfies AIModel[]
+				}
+			]
+		};
+
+		const reduxStore = configurePreloadedStore(
+			customCoreSoc,
+			configWithLongPath,
+			undefined
+		);
+
+		cy.mount(<ModelList />, reduxStore);
+
+		cy.dataTest('model-path-LongPathModel')
+			.invoke('text')
+			.should('equal', longModelPath);
+
+		cy.dataTest('model-path-LongPathModel').should($el => {
+			expect($el.css('direction')).to.equal('rtl');
+
+			expect($el[0].scrollWidth).to.be.greaterThan(
+				$el[0].clientWidth
+			);
+		});
+
+		cy.dataTest('model-path-LongPathModel')
+			.find('span')
+			.should('have.attr', 'dir', 'ltr');
+	});
+
+	it('should hide report action when compatibility check errors', () => {
+		setupMessengerMock({
+			[getSupportedAiBackendsRequest.method]: supportedBackends,
+			[getPreferenceRequest.method]: [],
+			[validateAIModelRequest.method]() {
+				throw new Error('Validation failed');
+			}
+		});
+
+		const reduxStore = configurePreloadedStore(
+			customCoreSoc,
+			configWithModels,
+			undefined
+		);
+
+		cy.mount(<ModelList />, reduxStore);
+
+		cy.dataTest('core2.none.InfiniteModels-table')
+			.should('exist')
+			.within(() => {
+				cy.dataTest('compatibility-column').should('exist');
+				cy.dataTest('report-action').should('not.exist');
 			});
 	});
 });

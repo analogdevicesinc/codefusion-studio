@@ -1,0 +1,26 @@
+#!/bin/sh
+# Copyright (c) 2026 Analog Devices, Inc.
+# Licensed under the Apache License, Version 2.0.
+#
+# git remote helper for the cfspkg:// transport. git invokes this as
+# `git-remote-cfspkg <remote> <url>`. The bundled helper script and the Node
+# runtime are supplied by the host; both the CLI and the IDE ship this file.
+
+set -e
+
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+# Bundled helper entry; defaults to entry.js next to this launcher, overridable
+# by the host via CFS_GIT_REMOTE_ENTRY.
+ENTRY="${CFS_GIT_REMOTE_ENTRY:-$DIR/entry.js}"
+
+# Node runtime; the host may pin it (e.g. VS Code's Electron binary) via
+# CFS_NODE, otherwise `node` from PATH is used.
+NODE_BIN="${CFS_NODE:-node}"
+
+# Harmless for a real Node binary; makes VS Code's Electron binary behave as
+# Node. Scoped to this process so it never leaks to unrelated tools.
+ELECTRON_RUN_AS_NODE=1
+export ELECTRON_RUN_AS_NODE
+
+exec "$NODE_BIN" "$ENTRY" "$@"

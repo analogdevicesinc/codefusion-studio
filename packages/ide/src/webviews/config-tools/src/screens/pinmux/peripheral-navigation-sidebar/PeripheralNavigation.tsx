@@ -22,7 +22,6 @@ import Peripheral from '../../../components/peripheral/Peripheral';
 import {useActivePinconfigAssignmentFilter} from '../../../state/slices/app-context/appContext.selector';
 import {
 	useActivePeripheral,
-	useActiveSignal,
 	useCurrentSignalsTargets
 } from '../../../state/slices/peripherals/peripherals.selector';
 import {
@@ -31,15 +30,10 @@ import {
 } from '../../../state/slices/pins/pins.reducer';
 import {useAssignedPins} from '../../../state/slices/pins/pins.selector';
 import {useAppDispatch} from '../../../state/store';
-import {getFixedFuntionPins} from '../../../utils/soc-pins';
+import {getFixedFunctionPins} from '../../../utils/soc-pins';
 import {filterSignals} from '../utils/filters';
 import {getPeripheralList} from '../../../utils/soc-peripherals';
 import {pinInConflict} from '../../../utils/pin-error';
-import {
-	setActivePeripheral,
-	setActiveSignal
-} from '../../../state/slices/peripherals/peripherals.reducer';
-import PeripheralPinsReserved from './peripheral-pins-reserved/peripheral-pins-reserved';
 
 const emptySignals = [] as Array<
 	FormattedPeripheralSignal & {
@@ -66,16 +60,14 @@ function PeripheralNavigation() {
 	const dispatch = useAppDispatch();
 	const assignedPins = useAssignedPins();
 	const activePeripheral = useActivePeripheral();
-	const activeSignal = stripPeripheralFromSignalName(
-		useActiveSignal(),
-		activePeripheral
-	);
 	const activeFilterType = useActivePinconfigAssignmentFilter();
 	const peripheralSignalsTargets = useCurrentSignalsTargets();
 
 	const socPeripheralList: Array<
 		FormattedPeripheral<FormattedPeripheralSignal>
 	> = getPeripheralList();
+
+	const fixedFunctionPins = getFixedFunctionPins();
 
 	// @TODO: We should avoid creating additional data structures that merge several objects into one by working directly with "peripheralSignal"
 	const unifiedPeripherals =
@@ -92,11 +84,20 @@ function PeripheralNavigation() {
 						};
 					}
 
+					const reservedPins = fixedFunctionPins.filter(pin =>
+						pin.Signals?.some(
+							pinSignal =>
+								pinSignal.Peripheral === peripheral.name &&
+								pinSignal.Name === signal.name
+						)
+					);
+
 					acc[peripheral.name].signals[signal.name] = {
 						...signal,
+						pins: [...signal.pins, ...reservedPins],
 						currentTarget:
 							peripheralSignalsTargets[peripheral.name]
-								.signalsTargets[signal.name]
+								.signalsTargets[signal.name] ?? reservedPins[0]?.Name
 					};
 				});
 
@@ -111,7 +112,23 @@ function PeripheralNavigation() {
 		if (!activeFilterType) return peripheralArray;
 
 		if (activeFilterType === 'reserved') {
-			return [];
+			return peripheralArray
+				.map(peripheral => ({
+					...peripheral,
+					signals: Object.fromEntries(
+						Object.entries(peripheral.signals).filter(([, signal]) =>
+							signal.pins.some(pin =>
+								fixedFunctionPins.some(
+									// eslint-disable-next-line max-nested-callbacks
+									fixedPin => fixedPin.Name === pin.Name
+								)
+							)
+						)
+					)
+				}))
+				.filter(
+					peripheral => Object.keys(peripheral.signals).length > 0
+				);
 		}
 
 		const filteredList = [];
@@ -132,17 +149,24 @@ function PeripheralNavigation() {
 		}
 
 		return filteredList;
-	}, [activeFilterType, assignedPins, unifiedPeripherals]);
+	}, [
+		activeFilterType,
+		assignedPins,
+		fixedFunctionPins,
+		unifiedPeripherals
+	]);
 
 	const sortedPeripherals = useMemo(
 		() =>
 			[...filteredPeripherals]
-				.map(p => {
-					const signals = Object.values(p.signals);
+				.map(peripheral => {
+					const signals = Object.values(peripheral.signals);
 
 					return {
-						...p,
-						hasSignalsWithPins: signals.some(s => s.pins.length > 0)
+						...peripheral,
+						hasSignalsWithPins: signals.some(
+							signal => signal.pins.length > 0
+						)
 					};
 				})
 				.sort((a, b) =>
@@ -153,23 +177,6 @@ function PeripheralNavigation() {
 				),
 		[filteredPeripherals]
 	);
-	const peripheralsByName = useMemo(
-		() => Object.fromEntries(sortedPeripherals.map(p => [p.name, p])),
-		[sortedPeripherals]
-	);
-
-	// Handles case when a peripheral is active but has no pins to render,
-	// which can happen when all pins are reserved like in case of BLE.
-	const activePeripheralAllPinsReserved =
-		activePeripheral && peripheralsByName[activePeripheral]
-			? !peripheralsByName[activePeripheral].hasSignalsWithPins
-			: false;
-
-	// Handles case where a peripheral has configurable pins but the active signal has all its pins reserved.
-	// Which can happen in casses like RSTN.
-	const activeSignalPinIsReserved =
-		peripheralsByName[activePeripheral!]?.signals?.[activeSignal!]
-			?.pins?.length === 0;
 
 	// Handles focus/unfocus of pins based on the filtered set of peripherals/signals
 	// when all peripherals are collapsed
@@ -183,8 +190,6 @@ function PeripheralNavigation() {
 		}
 
 		if (activeFilterType === 'reserved') {
-			const fixedFunctionPins = getFixedFuntionPins();
-
 			if (fixedFunctionPins.length > 0) {
 				dispatch(focusPinSet(fixedFunctionPins.map(pin => pin.Name)));
 
@@ -198,16 +203,13 @@ function PeripheralNavigation() {
 			const signals = Object.values(peripheral.signals);
 
 			for (const signal of signals) {
-				if (
+				const targetPinId =
 					peripheralSignalsTargets[peripheral.name].signalsTargets[
 						signal.name
-					]
-				) {
-					filteredPinsIds.push(
-						peripheralSignalsTargets[peripheral.name].signalsTargets[
-							signal.name
-						] ?? ''
-					);
+					] ?? signal.currentTarget;
+
+				if (targetPinId) {
+					filteredPinsIds.push(targetPinId);
 				}
 			}
 		}
@@ -220,21 +222,9 @@ function PeripheralNavigation() {
 		activePeripheral,
 		dispatch,
 		sortedPeripherals,
-		peripheralSignalsTargets
+		peripheralSignalsTargets,
+		fixedFunctionPins
 	]);
-
-	if (activePeripheralAllPinsReserved || activeSignalPinIsReserved) {
-		return (
-			<PeripheralPinsReserved
-				peripheralName={activePeripheral ?? ''}
-				signalName={activeSignal}
-				onBackClick={() => {
-					dispatch(setActivePeripheral(undefined));
-					dispatch(setActiveSignal(undefined));
-				}}
-			/>
-		);
-	}
 
 	return (
 		<section style={{height: '100%', overflowY: 'auto'}}>
@@ -243,9 +233,8 @@ function PeripheralNavigation() {
 
 				const iterableSignals = Object.values(peripheral.signals);
 
-				const shouldRenderPeripheral = iterableSignals.some(
-					signal => signal.pins.length > 0
-				);
+				// Only hide peripherals that have no signals of any sort.
+				const shouldRenderPeripheral = iterableSignals.length > 0;
 
 				if (!shouldRenderPeripheral) return null;
 

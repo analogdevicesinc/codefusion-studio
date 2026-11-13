@@ -30,6 +30,12 @@
 	> div > div {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
+
+		// The error message is a sibling of the input, so give it its own row.
+		> p {
+			flex: 0 0 100%;
+		}
 	}
 
 	// Add 2px focus border to the text field

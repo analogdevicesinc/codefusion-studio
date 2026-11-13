@@ -23,6 +23,20 @@ import type {
 	ConfiguredProject as Project,
 	CfsConfig
 } from 'cfs-types';
+import {messenger} from './contexts/MessengerContext';
+import {webviewApiBridge} from './test-utils/messenger-mock';
+import {
+	checkDirectoryExistsRequest,
+	getFileSizeRequest,
+	getPreferenceRequest,
+	openFileNotification,
+	reloadDocumentNotification,
+	selectFileRequest,
+	setPreferenceRequest,
+	showInformationMessageNotification,
+	type SelectFileRequestOptions
+} from '../../constants/messages/vscode-api-messages';
+import type {ConfigurationTargetValue} from '../../types/vscode-api-types';
 
 export type ConfiguredPin = Pin;
 
@@ -39,21 +53,17 @@ export type ConfiguredProject = Project;
 export type ConfigOptionsReturn = {
 	dataModel: Soc;
 	configOptions: CfsConfig | undefined;
+	resolvedPluginVersions?: Record<string, string>;
 };
 
 /**
  * API functions for the react app
  */
 
-let vscode: WebviewApi<any> | undefined;
-
-if ((window as any).acquireVsCodeApi instanceof Function) {
-	try {
-		vscode = (window as any).acquireVsCodeApi?.();
-	} catch (error) {
-		console.error('Error acquiring VS Code API:', error);
-	}
-}
+// Use the shared lazy bridge so this module and MessengerContext can both
+// reach the vscode webview API without competing over the single-use
+// acquireVsCodeApi() call.
+let vscode: WebviewApi<any> = webviewApiBridge as WebviewApi<any>;
 
 export function mockVsCodeApi(mockImplementation: WebviewApi<any>) {
 	vscode = mockImplementation;
@@ -156,39 +166,29 @@ export async function selectDirectoryPath() {
 }
 
 export async function showInformationMessage(message: string) {
-	return request('show-information-message', {
-		message
-	}) as Promise<string>;
-}
-
-export async function getIsDocumentUnsaved() {
-	return request('get-is-document-unsaved') as Promise<boolean>;
-}
-
-export async function showSaveDialog() {
-	return request('show-save-dialog') as Promise<string | undefined>;
+	messenger.sendNotification(
+		showInformationMessageNotification,
+		{type: 'extension'},
+		{message}
+	);
 }
 
 export async function closeWebviewPanel() {
 	return request('close-webview-panel') as Promise<void>;
 }
 
-export async function exportCSV(
-	csvContent: string,
-	defaultFileName?: string
-) {
-	return request('export-csv', {
-		csvContent,
-		defaultFileName
-	}) as Promise<string | undefined>;
-}
-
 export async function openFile(filePath: string, editor?: string) {
-	return request('open-file', {filePath, editor}) as Promise<void>;
+	messenger.sendNotification(
+		openFileNotification,
+		{type: 'extension'},
+		{filePath, editor}
+	);
 }
 
 export async function documentReload() {
-	return request('document--reload') as Promise<void>;
+	messenger.sendNotification(reloadDocumentNotification, {
+		type: 'extension'
+	});
 }
 
 export async function selectFile(
@@ -199,37 +199,34 @@ export async function selectFile(
 		relativeToWorkspaceRoot?: boolean;
 	} = {}
 ) {
-	return request('select-file', options) as Promise<
-		string | undefined
-	>;
-}
+	const payload: SelectFileRequestOptions = {
+		title: options.title,
+		filters: options.filters,
+		relativeToWorkspaceRoot: options.relativeToWorkspaceRoot,
+		selectionTarget: options.canSelectFolders ? 'folder' : 'file'
+	};
 
-export async function readPemAlgorithm(filePath: string) {
-	return request('read-pem-algorithm', {
-		filePath
-	}) as Promise<string>;
+	return messenger.sendRequest(
+		selectFileRequest,
+		{type: 'extension'},
+		payload
+	);
 }
 
 export async function checkDirectoryExists(dirPath: string) {
-	return request('check-directory-exists', {
+	return messenger.sendRequest(
+		checkDirectoryExistsRequest,
+		{type: 'extension'},
 		dirPath
-	}) as Promise<boolean>;
-}
-
-export async function generatePemKey(
-	filePath: string,
-	algorithm: string
-) {
-	return request('generate-pem-key', {
-		filePath,
-		algorithm
-	}) as Promise<void>;
+	);
 }
 
 export async function getFileSize(filePath: string) {
-	return request('get-file-size', {
-		filePath
-	}) as Promise<number>;
+	return messenger.sendRequest(
+		getFileSizeRequest,
+		{type: 'extension'},
+		{filePath}
+	);
 }
 
 /**
@@ -238,7 +235,11 @@ export async function getFileSize(filePath: string) {
  * @returns the preference value
  */
 export async function getPreference(id: string) {
-	return request('get-preference', {id});
+	return messenger.sendRequest(
+		getPreferenceRequest,
+		{type: 'extension'},
+		{id}
+	);
 }
 
 /**
@@ -251,7 +252,11 @@ export async function getPreference(id: string) {
 export async function setPreference(
 	id: string,
 	value: any,
-	scope?: number
+	scope?: ConfigurationTargetValue
 ) {
-	return request('set-preference', {id, value, scope});
+	return messenger.sendRequest(
+		setPreferenceRequest,
+		{type: 'extension'},
+		{id, value, scope}
+	);
 }

@@ -1,9 +1,9 @@
 {
   "Copyright": "Copyright (c) 2024-2026 Analog Devices, Inc.",
   "License": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.",
-  "Version": "1.0.893",
-  "Schema": "1.5.0",
-  "Timestamp": "2026-06-19T17:09:41.278459Z",
+  "Version": "1.0.913",
+  "Schema": "1.5.1",
+  "Timestamp": "2026-07-15T21:41:53.503844Z",
   "Name": "MAX32660",
   "Description": "Tiny, Ultra-Low-Power Arm Cortex-M4 Processor with FPU-Based Microcontroller",
   "Endianness": "Little",

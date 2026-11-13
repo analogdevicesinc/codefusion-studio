@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,16 +41,21 @@ export function findProjectIdBySignalName(
 	return undefined;
 }
 
+// Collator for natural, case-insensitive sorting of peripheral names and groups
+const peripheralCollator = new Intl.Collator(undefined, {
+	numeric: true,
+	sensitivity: 'base'
+});
+
 /**
- * Groups a list of peripherals by their `group` property while preserving the
- * original input order of groups and ungrouped peripherals.
+ * Groups assignable peripherals and sorts groups, standalone peripherals,
+ * and group members by name using natural, case-insensitive order.
  *
  * - Peripherals that are `assignable` and have a `group` are grouped together
  *   under that group's name.
- * - The function ensures that each group appears only once in the output, in
- *   the order of their first occurrence.
+ * - Peripherals within each group are ordered alphabetically by name.
  * - Peripherals without a `group` (or not assignable) are kept as standalone
- *   entries in the result, also in input order.
+ *   entries.
  *
  * @param peripherals - Array of formatted peripherals with signals.
  * @returns An ordered array of objects, each containing:
@@ -97,7 +102,19 @@ export function groupPeripherals(
 		}
 	}
 
-	return orderedPeripherals;
+	return orderedPeripherals
+		.map(peripheralGroup => ({
+			...peripheralGroup,
+			peripherals: [...peripheralGroup.peripherals].sort((a, b) =>
+				peripheralCollator.compare(a.name, b.name)
+			)
+		}))
+		.sort((a, b) =>
+			peripheralCollator.compare(
+				a.group ?? a.peripherals[0].name,
+				b.group ?? b.peripherals[0].name
+			)
+		);
 }
 
 export function getAppliedSignal(
@@ -133,30 +150,42 @@ export const updateProjectCardOpenState = (
 };
 
 /**
+ * Formats a peripheral numeric value as hexadecimal.
+ *
+ * @param value - The numeric value to format
+ * @returns The formatted hexadecimal value
+ */
+export function formatPeripheralHexValue(value: number): string {
+	return value === 0 ? '0x0' : convertDecimalToHex(value);
+}
+
+/**
  * Converts a value based on numeric base format
  * @param value - The value to be formatted
  * @param numericBase - The numeric base to format the value
  * @returns - Formatted value as a string
  */
 export function formatValueByNumericBase(
-  value: TFormFieldValue,
-  numericBase?: TFormNumericBase
+	value: TFormFieldValue,
+	numericBase?: TFormNumericBase
 ): string {
 	if (!numericBase) {
 		return String(value);
 	}
 
-  if (numericBase === 'Hexadecimal') {
+	if (numericBase === 'Hexadecimal') {
 		if (typeof value === 'number') {
-			return convertDecimalToHex(value);
+			return formatPeripheralHexValue(value);
 		}
 
 		if (typeof value === 'string') {
-				return convertDecimalToHex(parseInt(value, 16));
-		}
-  }
+			const numericValue = parseInt(value, 16);
 
-  return String(value);
+			return formatPeripheralHexValue(numericValue);
+		}
+	}
+
+	return String(value);
 }
 
 /**
@@ -166,18 +195,21 @@ export function formatValueByNumericBase(
  * @returns - Record of formatted configuration values as strings
  */
 export function formatPeripheralConfigValues(
-  config: Record<string, TFormFieldValue> | undefined,
-  configFormat?: PeripheralConfig['configFormat']
+	config: Record<string, TFormFieldValue> | undefined,
+	configFormat?: PeripheralConfig['configFormat']
 ): Record<string, string> {
-  if (!config) {
-    return {};
-  }
+	if (!config) {
+		return {};
+	}
 
-  const formatEntry = ([key, value]: [string, TFormFieldValue]): [string, string] => {
-    const numericBase = configFormat?.numericBase?.[key];
+	const formatEntry = ([key, value]: [string, TFormFieldValue]): [
+		string,
+		string
+	] => {
+		const numericBase = configFormat?.numericBase?.[key];
 
-    return [key, formatValueByNumericBase(value, numericBase)];
-  };
+		return [key, formatValueByNumericBase(value, numericBase)];
+	};
 
-  return Object.fromEntries(Object.entries(config).map(formatEntry));
+	return Object.fromEntries(Object.entries(config).map(formatEntry));
 }

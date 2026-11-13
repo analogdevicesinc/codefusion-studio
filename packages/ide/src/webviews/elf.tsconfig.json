@@ -5,7 +5,9 @@
 		"./elf-explorer/**/*.tsx",
 		"./common/**/*.ts",
 		"./common/**/*.tsx",
-		"./custom.d.ts"
+		"./custom.d.ts",
+		"../constants/**/*.ts",
+		"../types/**/*.ts"
 	],
 	"exclude": ["./**/*.cy.ts*"]
 }

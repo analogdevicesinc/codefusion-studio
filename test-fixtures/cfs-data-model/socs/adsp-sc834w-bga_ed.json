@@ -1,0 +1,151 @@
+{
+	"Copyright": "",
+	"License": "",
+	"Version": "",
+	"Schema": "1.5.1",
+	"Timestamp": "2026-07-15T21:17:58.727290Z",
+	"Name": "ADSP-SC834W",
+	"Description": "ADSP-SC834W Chip Module",
+	"Endianness": "Little",
+	"Parts": [
+		{
+			"Name": "ADSP-SC834W",
+			"Package": "bga_ed",
+			"MemoryDescription": "L1 and L2 memory, and an L3 memory interface"
+		}
+	],
+	"MemoryTypes": [],
+	"MemoryAliasTypes": [],
+	"SystemMemory": [],
+	"Cores": [
+		{
+			"Id": "FX",
+			"Name": "SHARC-FX",
+			"Description": "SHARC-FX",
+			"CoreNum": 1,
+			"Family": "SHARC-FX",
+			"Memory": [
+				{
+					"Name": "L2_SRAM"
+				},
+				{
+					"Name": "ARM_L1_IRAM"
+				},
+				{
+					"Name": "ARM_L1_DRAM"
+				},
+				{
+					"Name": "SHARC_FX_L1_DRAM",
+					"AliasType": "Local",
+					"AliasBaseAddress": "0x2f780000"
+				},
+				{
+					"Name": "SHARC_FX_L1_IRAM",
+					"AliasType": "Local",
+					"AliasBaseAddress": "0x2f800000"
+				},
+				{
+					"Name": "SHARC_FX_L1_DRAM"
+				},
+				{
+					"Name": "SHARC_FX_L1_IRAM"
+				},
+				{
+					"Name": "SPI"
+				},
+				{
+					"Name": "L3_SDRAM"
+				}
+			],
+			"IsPrimary": true,
+			"Ai": {
+				"FlashSize": 0.0,
+				"RamSize": 1536.0,
+				"CoreClock": 800.0,
+				"SupportedOps": [],
+				"AccelOps": [],
+				"OperatorInfos": [
+					{
+						"Name": "MAC",
+						"Cycles": 1.0,
+						"Energy": 1.5
+					}
+				],
+				"SupportedDataTypes": []
+			}
+		},
+		{
+			"Id": "CM33",
+			"Name": "ARM Cortex-M33",
+			"Description": "ARM Cortex-M33",
+			"CoreNum": 2,
+			"Family": "Cortex-M",
+			"Memory": [
+				{
+					"Name": "L2_SRAM"
+				},
+				{
+					"Name": "ARM_L1_IRAM",
+					"AliasType": "Local",
+					"AliasBaseAddress": "0x40000"
+				},
+				{
+					"Name": "ARM_L1_IRAM"
+				},
+				{
+					"Name": "ARM_L1_DRAM"
+				},
+				{
+					"Name": "SHARC_FX_L1_DRAM"
+				},
+				{
+					"Name": "SHARC_FX_L1_IRAM"
+				},
+				{
+					"Name": "SPI"
+				},
+				{
+					"Name": "L3_SDRAM"
+				}
+			],
+			"Ai": {
+				"FlashSize": 0.0,
+				"RamSize": 1536.0,
+				"CoreClock": 400.0,
+				"SupportedOps": [],
+				"AccelOps": [],
+				"OperatorInfos": [
+					{
+						"Name": "MAC",
+						"Cycles": 2.0,
+						"Energy": 0.1448
+					}
+				],
+				"SupportedDataTypes": []
+			}
+		}
+	],
+	"Peripherals": [
+		{
+			"Name": "ASRC0",
+			"Description": "Asynchronous Sample Rate Converters",
+			"Cores": ["FX", "CM33"],
+			"SRU": {
+				"Inputs": [],
+				"Outputs": []
+			}
+		}
+	],
+	"Controls": [],
+	"ClockNodes": [],
+	"Registers": [],
+	"Packages": [
+		{
+			"Name": "bga_ed",
+			"Description": "Solder bump pad based FCBGA.",
+			"Pins": [],
+			"NumPins": 400,
+			"PinCanvas": {}
+		}
+	]
+}

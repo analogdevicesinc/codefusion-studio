@@ -162,5 +162,4 @@ describe('AppPanel', () => {
 		);
 		cy.dataTest('empty-state:read-error').should('be.visible');
 	});
-
 });

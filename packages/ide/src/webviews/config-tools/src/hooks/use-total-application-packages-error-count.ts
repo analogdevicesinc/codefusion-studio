@@ -36,6 +36,7 @@ const errorMessages = {
 	oddHexLength: 'error',
 	hexValueExceedsMax: 'error',
 	valueTooLong: 'error',
+	valueByteIncrement: 'error',
 	tagRequired: 'error',
 	tagOutOfRange: 'error',
 	valueRequired: 'error',
@@ -65,7 +66,7 @@ function countTlvErrors(tlvs: CustomTLV[], allTlvs: CustomTLV[]) {
 		);
 		const hasTagError = Boolean(
 			validateCustomTlvTag(tlv.tag, errorMessages) ??
-				validateDuplicateTag(tlv.tag, tlv.id, allTlvs, errorMessages)
+			validateDuplicateTag(tlv.tag, tlv.id, allTlvs, errorMessages)
 		);
 
 		return count + (hasValueError ? 1 : 0) + (hasTagError ? 1 : 0);
@@ -120,7 +121,12 @@ function countPackageErrors(
 	const imageFieldErrors =
 		applicationPackage.images?.reduce(
 			(total, image) =>
-				total + countImageValidationErrors(image, imageErrorMessages),
+				total +
+				countImageValidationErrors(
+					image,
+					imageErrorMessages,
+					applicationPackage.images
+				),
 			0
 		) ?? 0;
 

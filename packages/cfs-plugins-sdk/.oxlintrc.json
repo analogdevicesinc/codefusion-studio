@@ -1,0 +1,31 @@
+{
+	"$schema": "../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../.oxlintrc.json"],
+	"plugins": [],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"node": true,
+		"es2022": true
+	},
+	"rules": {
+		"typescript/no-namespace": "off",
+		"no-case-declarations": "off"
+	},
+	"ignorePatterns": [
+		"dist/**",
+		"cjs/**",
+		"esm/**",
+		"test/fixtures/**",
+		"test/.tmp/**"
+	],
+	"overrides": [
+		{
+			"files": ["**/test/**/*.test.ts"],
+			"env": {
+				"mocha": true
+			}
+		}
+	]
+}

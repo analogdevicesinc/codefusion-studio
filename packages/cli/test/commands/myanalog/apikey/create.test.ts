@@ -16,7 +16,7 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 
-import {apiKeyCreateDeps} from '../../../../src/commands/myanalog/apikey/create.js';
+import {apiKeyCreateDeps} from '../../../../dist/commands/myanalog/apikey/create.js';
 
 type CreateApiKeyPayload = {
   description?: string;

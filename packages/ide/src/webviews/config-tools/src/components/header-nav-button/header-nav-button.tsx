@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ export default function HeaderNavButton({id}: HeaderNavButtonProps) {
 
 	return (
 		<div
-			className={`${styles.container} ${id === currentScreen ? styles.selected : ''}`}
+			className={`${styles.container} ${
+				id === currentScreen ? styles.selected : ''
+			}`}
 		>
 			<PanelTab
 				id={id}

@@ -11,17 +11,14 @@
   "cfs.configureWorkspace": "Never",
   "C_Cpp.errorSquiggles": "disabled",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
+    "source.fixAll.oxc": "explicit",
     "source.fixAll.stylelint": "explicit"
   },
   "css.validate": false,
   "scss.validate": false,
   "less.validate": false,
   "stylelint.enable": true,
-  "stylelint.validate": [
-    "css",
-    "scss"
-  ],
+  "stylelint.validate": ["css", "scss"],
   "editor.tabSize": 2,
   "adi-sdk.configureWorkspace": "No"
 }

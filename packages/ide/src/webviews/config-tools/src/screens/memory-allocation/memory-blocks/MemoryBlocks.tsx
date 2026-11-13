@@ -33,7 +33,8 @@ import {
 	getSizeStepValue,
 	isBlockDisabled,
 	isBlockOccupied,
-	getMemoryAliasesForAddress
+	getMemoryAliasesForAddress,
+	type MemoryAliasWithOffset
 } from '../../../utils/memory';
 import BlockItem from '../block/block-item';
 import {type Partition} from '../../../state/slices/partitions/partitions.reducer';
@@ -65,6 +66,25 @@ const sizeOptions: DropDownOptions = [
 	{value: 'bytes', label: 'bytes'}
 ];
 
+const emptyBaseBlock: MemoryBlock = {
+	Name: '',
+	Description: '',
+	AddressStart: '',
+	AddressEnd: '',
+	Width: 0,
+	Access: '',
+	Location: '',
+	Type: ''
+};
+
+const getAliasDraftKey = (
+	memoryAlias: Pick<
+		MemoryAliasWithOffset,
+		'CoreId' | 'Name' | 'AliasBaseAddress'
+	>
+) =>
+	`${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`;
+
 export const MemoryBlocks = memo(
 	({
 		blocksForType,
@@ -91,6 +111,12 @@ export const MemoryBlocks = memo(
 		const [displaySize, setDisplaySize] = useState(
 			convertMemoryBetweenUnits(size, 'bytes', localUnit)
 		);
+		const [physicalAddressDraft, setPhysicalAddressDraft] = useState<
+			string | undefined
+		>();
+		const [aliasAddressDrafts, setAliasAddressDrafts] = useState<
+			Record<string, string>
+		>({});
 		const existingPartition = Boolean(sidebarPartition.displayName);
 
 		const isBlockOptionDisabled = (block: MemoryBlock) =>
@@ -105,17 +131,14 @@ export const MemoryBlocks = memo(
 				block.Name !== sidebarPartition.baseBlock.Name &&
 				isBlockOccupied(block, sidebarPartition, partitions));
 
-		const blockOptions: DropDownOptions = [
-			{label: 'Select value', value: ''},
-			...memoryBlocks
-				.filter(block => block.Type === memoryType)
-				.map(block => ({
-					label: block.Name,
-					value: block.Name,
-					dataTest: block.Name,
-					disabled: isBlockOptionDisabled(block)
-				}))
-		];
+		const blockOptions: DropDownOptions = memoryBlocks
+			.filter(block => block.Type === memoryType)
+			.map(block => ({
+				label: block.Name,
+				value: block.Name,
+				dataTest: block.Name,
+				disabled: isBlockOptionDisabled(block)
+			}));
 
 		const memoryAliases = useMemo(() => {
 			const coreIds = cores
@@ -218,6 +241,16 @@ export const MemoryBlocks = memo(
 
 		const onAddressChange = useCallback(
 			(value: string): void => {
+				if (!value) {
+					onChange({
+						startAddress: value,
+						baseBlock: emptyBaseBlock,
+						blockNames: []
+					});
+
+					return;
+				}
+
 				const address = parseInt(value, 16);
 
 				const blockFromAddress = getBaseblockFromAddress(
@@ -261,11 +294,52 @@ export const MemoryBlocks = memo(
 			[baseBlock.AddressStart, onAddressChange]
 		);
 
+		const commitPhysicalAddressChange = useCallback((): void => {
+			if (physicalAddressDraft !== undefined) {
+				onAddressChange(
+					physicalAddressDraft.replace(/[^0-9A-F]/gi, '')
+				);
+				setPhysicalAddressDraft(undefined);
+			}
+		}, [onAddressChange, physicalAddressDraft]);
+
+		const commitSoftwareAddressChange = useCallback(
+			(memoryAlias: MemoryAliasWithOffset): void => {
+				const key = getAliasDraftKey(memoryAlias);
+				const draft = aliasAddressDrafts[key];
+
+				if (draft !== undefined) {
+					const normalizedDraft = draft.replace(/[^0-9A-F]/gi, '');
+
+					if (normalizedDraft) {
+						onSoftwareAddressChange(
+							memoryAlias.AliasBaseAddress,
+							normalizedDraft
+						);
+					} else {
+						onAddressChange('');
+					}
+
+					setAliasAddressDrafts(currentDrafts => {
+						const {[key]: _committedDraft, ...remainingDrafts} =
+							currentDrafts;
+
+						return remainingDrafts;
+					});
+				}
+			},
+			[aliasAddressDrafts, onAddressChange, onSoftwareAddressChange]
+		);
+
 		useEffect(() => {
 			setDisplaySize(
 				convertMemoryBetweenUnits(size, 'bytes', localUnit)
 			);
 		}, [localUnit, size]);
+
+		useEffect(() => {
+			setAliasAddressDrafts({});
+		}, [address, baseBlock.Name]);
 
 		// To reset the local unit in edit mode when user changes localunit without editing the partition
 		useEffect(() => {
@@ -296,6 +370,10 @@ export const MemoryBlocks = memo(
 							currentControlValue={baseBlock?.Name}
 							options={blockOptions}
 							error={errors?.blocks}
+							noValueOption={{
+								label: i10n?.selectValuePlaceholder ?? 'Select value',
+								value: ''
+							}}
 							onHandleDropdown={value => {
 								handleDropdown(value);
 							}}
@@ -313,9 +391,10 @@ export const MemoryBlocks = memo(
 					<div className={styles.stepperGap}>
 						<HexInputField
 							dataTest='start-address'
-							value={address}
+							value={physicalAddressDraft ?? address}
 							error={errors?.startAddress}
-							onValueChange={onAddressChange}
+							onValueChange={setPhysicalAddressDraft}
+							onBlur={commitPhysicalAddressChange}
 						/>
 					</div>
 					{offsetMemoryAliases?.map(memoryAlias => (
@@ -331,13 +410,20 @@ export const MemoryBlocks = memo(
 							<div className={styles.stepperGap}>
 								<HexInputField
 									dataTest={`software-start-address-${memoryAlias.CoreId}-${memoryAlias.Name}-${memoryAlias.AliasBaseAddress}`}
-									value={memoryAlias.AliasStartAddress}
+									value={
+										aliasAddressDrafts[
+											getAliasDraftKey(memoryAlias)
+										] ?? memoryAlias.AliasStartAddress
+									}
 									error={errors?.startAddress}
 									onValueChange={value => {
-										onSoftwareAddressChange(
-											memoryAlias.AliasBaseAddress,
-											value
-										);
+										setAliasAddressDrafts(currentDrafts => ({
+											...currentDrafts,
+											[getAliasDraftKey(memoryAlias)]: value
+										}));
+									}}
+									onBlur={() => {
+										commitSoftwareAddressChange(memoryAlias);
 									}}
 								/>
 							</div>

@@ -24,6 +24,11 @@ import {
   CFS_PROJECT_PLUGINS_PATH,
   CFS_WORKSPACE_TEMPLATES_PATH
 } from '../../constants.js';
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope,
+  type CliErrorEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 /**
  * Test suite for workspace:configure command. Check:
@@ -36,8 +41,16 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const pluginsPath = path.resolve(__dirname, '..', CFS_PROJECT_PLUGINS_PATH);
-const workspaceTemplatesPath = path.resolve(__dirname, '..', CFS_WORKSPACE_TEMPLATES_PATH);
+const pluginsPath = path.resolve(
+  __dirname,
+  '..',
+  CFS_PROJECT_PLUGINS_PATH
+);
+const workspaceTemplatesPath = path.resolve(
+  __dirname,
+  '..',
+  CFS_WORKSPACE_TEMPLATES_PATH
+);
 const dataModelsPath = path.resolve(__dirname, CFS_DATA_MODELS_PATH);
 
 const outputPath = __dirname;
@@ -60,8 +73,8 @@ describe('workspace:configure', () => {
       const {stdout, stderr} = await runCommand(
         [
           'workspace:configure',
-          '--soc=ADSP-SC835',
-          '--board=ADSPSC835-EV-SOM',
+          '--soc=TEST-SC835',
+          '--board=TESTSC835-EV-SOM',
           '--core=CM33',
           '--template-id=com.analog.project.sharcfx.mock.plugin',
           '--core=FX',
@@ -81,17 +94,19 @@ describe('workspace:configure', () => {
 
       expect(stderr, 'stderr should be empty').to.be.empty;
       expect(stdout).to.contain('generated successfully');
-      expect(fs.existsSync(configFilePath), 'config file should exist').to
-        .be.true;
+      expect(
+        fs.existsSync(configFilePath),
+        'config file should exist'
+      ).to.be.true;
 
       const workspace: CfsWorkspace = JSON.parse(
         fs.readFileSync(configFilePath, 'utf8')
       );
 
-      expect(workspace.Soc).to.equal('ADSP-SC835');
-      expect(workspace.Board).to.equal('ADSPSC835-EV-SOM');
+      expect(workspace.Soc).to.equal('TEST-SC835');
+      expect(workspace.Board).to.equal('TESTSC835-EV-SOM');
       expect(workspace.WorkspaceName).to.equal('test-workspace');
-      expect(workspace.Package).to.equal('BGA_ED');
+      expect(workspace.Package).to.equal('PGA_ED');
 
       expect(workspace.Projects).to.have.lengthOf(2);
 
@@ -113,8 +128,8 @@ describe('workspace:configure', () => {
       const {stderr} = await runCommand(
         [
           'workspace:configure',
-          '--soc=ADSP-SC835',
-          '--board=ADSPSC835-EV-SOM',
+          '--soc=TEST-SC835',
+          '--board=TESTSC835-EV-SOM',
           '--core=CM33',
           '--template-id=com.analog.project.sharcfx.mock.plugin',
           '--template-version=1.0.0',
@@ -132,8 +147,10 @@ describe('workspace:configure', () => {
       );
 
       expect(stderr, 'stderr should be empty').to.be.empty;
-      expect(fs.existsSync(configFilePath), 'config file should exist').to
-        .be.true;
+      expect(
+        fs.existsSync(configFilePath),
+        'config file should exist'
+      ).to.be.true;
 
       const workspace = JSON.parse(
         fs.readFileSync(configFilePath, 'utf8')
@@ -150,9 +167,9 @@ describe('workspace:configure', () => {
       const {stderr} = await runCommand(
         [
           'workspace:configure',
-          '--soc=ADSP-SC835',
-          '--board=ADSPSC835-EV-SOM',
-          '--package=BGA_ED',
+          '--soc=TEST-SC835',
+          '--board=TESTSC835-EV-SOM',
+          '--package=PGA_ED',
           '--core=CM33',
           '--template-id=com.analog.project.sharcfx.mock.plugin',
           '--name=package-workspace',
@@ -169,22 +186,24 @@ describe('workspace:configure', () => {
       );
 
       expect(stderr, 'stderr should be empty').to.be.empty;
-      expect(fs.existsSync(configFilePath), 'config file should exist').to
-        .be.true;
+      expect(
+        fs.existsSync(configFilePath),
+        'config file should exist'
+      ).to.be.true;
 
       const workspace: CfsWorkspace = JSON.parse(
         fs.readFileSync(configFilePath, 'utf8')
       );
 
-      expect(workspace.Package).to.equal('BGA_ED');
+      expect(workspace.Package).to.equal('PGA_ED');
     });
 
     it('should create a cfsworkspace.json with --package and no --board', async () => {
       const {stdout, stderr} = await runCommand(
         [
           'workspace:configure',
-          '--soc=ADSP-SC835',
-          '--package=BGA_ED',
+          '--soc=TEST-SC835',
+          '--package=PGA_ED',
           '--core=CM33',
           '--template-id=com.analog.project.sharcfx.mock.plugin',
           '--name=no-board-workspace',
@@ -202,15 +221,17 @@ describe('workspace:configure', () => {
 
       expect(stderr, 'stderr should be empty').to.be.empty;
       expect(stdout).to.contain('generated successfully');
-      expect(fs.existsSync(configFilePath), 'config file should exist').to
-        .be.true;
+      expect(
+        fs.existsSync(configFilePath),
+        'config file should exist'
+      ).to.be.true;
 
       const workspace: CfsWorkspace = JSON.parse(
         fs.readFileSync(configFilePath, 'utf8')
       );
 
-      expect(workspace.Package).to.equal('BGA_ED');
-      expect(workspace.Soc).to.equal('ADSP-SC835');
+      expect(workspace.Package).to.equal('PGA_ED');
+      expect(workspace.Soc).to.equal('TEST-SC835');
       // When --board is omitted, Board is serialized as an empty string
       // (not omitted), matching the IDE's workspace representation.
       expect(workspace).to.have.property('Board');
@@ -219,13 +240,13 @@ describe('workspace:configure', () => {
   });
 });
 
-describe('successful configuration generation for MAX78002 Zephyr and MSDK', () => {
+describe('successful configuration generation for TEST8002 Zephyr and MSDK', () => {
   it('should create a cfsworkspace.json with projects for CM4 and RV cores', async () => {
     const {stdout, stderr} = await runCommand(
       [
         'workspace:configure',
-        '--soc=MAX78002',
-        '--board=EvKit_V1',
+        '--soc=TEST8002',
+        '--board=KIT_BOARD',
         '--core=CM4',
         '--template-id=com.analog.project.zephyr.mock.plugin',
         '--core=RV',
@@ -245,13 +266,13 @@ describe('successful configuration generation for MAX78002 Zephyr and MSDK', () 
 
     expect(stderr, 'stderr should be empty').to.be.empty;
     expect(stdout).to.contain('generated successfully');
-    expect(fs.existsSync(configFilePath), 'config file should exist').to
-      .be.true;
+    expect(fs.existsSync(configFilePath), 'config file should exist')
+      .to.be.true;
     const workspace: CfsWorkspace = JSON.parse(
       fs.readFileSync(configFilePath, 'utf8')
     );
-    expect(workspace.Soc).to.equal('MAX78002');
-    expect(workspace.Board).to.equal('EvKit_V1');
+    expect(workspace.Soc).to.equal('TEST8002');
+    expect(workspace.Board).to.equal('KIT_BOARD');
     expect(workspace.WorkspaceName).to.equal('test-workspace');
     expect(workspace.Projects).to.have.lengthOf(2);
 
@@ -269,6 +290,121 @@ describe('successful configuration generation for MAX78002 Zephyr and MSDK', () 
       'com.analog.project.msdk.mock.plugin'
     );
   });
+
+  it('resolves core-dependent Zephyr board names from context.coreId', async () => {
+    // Regression: the Zephyr board name depends on context.coreId, so the
+    // RISC-V core must resolve to a /rv32 board variant while the Cortex-M4
+    // core resolves to /m4. This fails if coreId is dropped from the context
+    // passed to the plugin's property provider.
+    const {stderr, error} = await runCommand(
+      [
+        'workspace:configure',
+        '--soc=TEST8002',
+        '--board=KIT_BOARD',
+        '--core=CM4',
+        '--template-id=com.analog.project.zephyr.mock.plugin',
+        '--core=RV',
+        '--template-id=com.analog.project.zephyr.mock.plugin',
+        '--name=zephyr-core-board-workspace',
+        '--output=' + outputPath,
+        '-w=' + configFilePath,
+        '--search-path',
+        pluginsPath,
+        '--search-path',
+        dataModelsPath
+      ],
+      {
+        root: '..'
+      }
+    );
+
+    // Guard: a command failure must fail this test rather than silently
+    // reading a stale config file left by a previous test.
+    expect(error, error?.message).to.be.undefined;
+    expect(stderr, 'stderr should be empty').to.be.empty;
+    expect(fs.existsSync(configFilePath), 'config file should exist')
+      .to.be.true;
+    const workspace: CfsWorkspace = JSON.parse(
+      fs.readFileSync(configFilePath, 'utf8')
+    );
+
+    const projects = workspace.Projects as Partial<CfsProject>[];
+    expect(projects).to.have.lengthOf(2);
+
+    const cm4Project = projects.find((p) => p.Core === 'CM4');
+    const rvProject = projects.find((p) => p.Core === 'RV');
+
+    const cm4BoardName = (
+      cm4Project?.PlatformConfig as Record<string, string> | undefined
+    )?.ZephyrBoardName;
+    const rvBoardName = (
+      rvProject?.PlatformConfig as Record<string, string> | undefined
+    )?.ZephyrBoardName;
+
+    expect(cm4BoardName).to.equal('test8002evkit/test8002/m4');
+    expect(rvBoardName).to.equal('test8002evkit/test8002/rv32');
+  });
+});
+
+describe('workspace:configure JSON envelope', () => {
+  afterEach(() => {
+    fs.rmSync(configFilePath, {force: true});
+  });
+
+  it('returns the generated config file path', async () => {
+    const {stdout} = await runCommand(
+      [
+        'workspace:configure',
+        '--soc=TEST8002',
+        '--board=KIT_BOARD',
+        '--core=CM4',
+        '--template-id=com.analog.project.zephyr.mock.plugin',
+        '--name=test-workspace',
+        '--output=' + outputPath,
+        '-w=' + configFilePath,
+        '--search-path',
+        pluginsPath,
+        '--search-path',
+        dataModelsPath,
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{configFilePath: string}>(
+      stdout,
+      'workspace configure'
+    );
+    expect(data).to.deep.equal({configFilePath});
+    expect(fs.existsSync(configFilePath)).to.be.true;
+  });
+
+  it('returns a stable VALIDATION_FAILED code for invalid input', async () => {
+    const {stdout} = await runCommand(
+      [
+        'workspace:configure',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
+        '--core=M33',
+        '--template-id=com.analog.project.sharcfx.mock.plugin',
+        '--core=FX',
+        '--name=mismatch-workspace',
+        '--output=' + outputPath,
+        '--search-path',
+        pluginsPath,
+        '--format',
+        'json'
+      ],
+      {root: '..'}
+    );
+
+    const parsed = assertValidEnvelope(stdout);
+    expect(parsed.ok).to.be.false;
+    expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+      'VALIDATION_FAILED'
+    );
+  });
 });
 
 describe('error handling - flag validation', () => {
@@ -276,8 +412,8 @@ describe('error handling - flag validation', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         // Missing --template-id
         '--name=invalid-workspace',
@@ -291,15 +427,17 @@ describe('error handling - flag validation', () => {
         root: '..'
       }
     );
-    expect(error?.message).to.contain('Missing required flag template-id');
+    expect(error?.message).to.contain(
+      'Missing required flag template-id'
+    );
   });
 
   it('shows error when core and template-id counts do not match', async () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--core=FX',
@@ -321,8 +459,8 @@ describe('error handling - flag validation', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         // Missing both --core and --template-id
         '--name=no-core-workspace',
         '--output=' + outputPath,
@@ -346,8 +484,8 @@ describe('error handling - flag validation', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--core=M33',
         // Invalid order: template-id before core
@@ -369,8 +507,8 @@ describe('error handling - flag validation', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--core=FX',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
@@ -395,8 +533,8 @@ describe('error handling - flag validation', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-version=1.0.0',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
@@ -424,7 +562,7 @@ describe('error handling - missing required flags', () => {
       [
         'workspace:configure',
         // Missing --soc
-        '--board=ADSPSC835-EV-SOM',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--name=no-soc-workspace',
@@ -445,7 +583,7 @@ describe('error handling - missing required flags', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
+        '--soc=TEST-SC835',
         // Missing --board and --package
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
@@ -470,7 +608,7 @@ describe('error handling - invalid values', () => {
       [
         'workspace:configure',
         '--soc=INVALID-SOC',
-        '--board=ADSPSC835-EV-SOM',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--name=invalid-soc-workspace',
@@ -496,7 +634,7 @@ describe('error handling - invalid values', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
+        '--soc=TEST-SC835',
         '--board=INVALID-BOARD',
         '--core=CM33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
@@ -512,7 +650,9 @@ describe('error handling - invalid values', () => {
       }
     );
     expect(error?.message).to.satisfy((msg: string) =>
-      msg.includes('Please ensure that the board and SoC names are correct')
+      msg.includes(
+        'Please ensure that the board and SoC names are correct'
+      )
     );
   });
 
@@ -520,8 +660,8 @@ describe('error handling - invalid values', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=INVALID-CORE',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--name=invalid-core-workspace',
@@ -547,8 +687,8 @@ describe('error handling - invalid values', () => {
     const {error} = await runCommand(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.invalid.template.plugin',
         '--name=invalid-template-workspace',
@@ -578,8 +718,8 @@ describe('edge cases', () => {
     .command(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         // No --name specified
@@ -612,8 +752,8 @@ describe('edge cases', () => {
     .command(
       [
         'workspace:configure',
-        '--soc=ADSP-SC835',
-        '--board=ADSPSC835-EV-SOM',
+        '--soc=TEST-SC835',
+        '--board=TESTSC835-EV-SOM',
         '--core=M33',
         '--template-id=com.analog.project.sharcfx.mock.plugin',
         '--name=default-output-workspace',

@@ -1,9 +1,13 @@
-import { LayerPerformanceEntry } from "@ide-types/report-view-types";
+import type {
+  CfsAiProfilingLayerPerformance,
+  CfsAiRuntimeLayerPerformance,
+} from "cfs-types";
 
-export const LAYER_PERFORMANCE_COLUMN_ALIASES: Record<
-  keyof LayerPerformanceEntry,
-  string
-> = {
+type ColumnIndexes =
+  | keyof CfsAiProfilingLayerPerformance
+  | keyof CfsAiRuntimeLayerPerformance;
+
+export const LAYER_PERFORMANCE_COLUMN_ALIASES: Record<ColumnIndexes, string> = {
   layer_idx: "ID",
   layer_name: "name",
   operator_type: "operator",
@@ -14,27 +18,29 @@ export const LAYER_PERFORMANCE_COLUMN_ALIASES: Record<
   is_accelerated: "is_accelerated",
   macs: "MACs",
   memory_kb: "memory",
+  subgraph_idx: "subgraph",
+  invocations: "invocations",
+  avg_latency_ms: "avg_latency",
+  min_latency_ms: "min_latency",
+  max_latency_ms: "max_latency",
+  total_latency_ms: "total_latency",
+  latency_percent: "latency_percent",
+  arena_used_bytes: "used_bytes",
 };
 
-export const LAYER_PERFORMANCE_ALIASES_TO_REAL: Record<
-  string,
-  keyof LayerPerformanceEntry
-> = Object.entries(LAYER_PERFORMANCE_COLUMN_ALIASES).reduce(
-  (acc, [realName, alias]) => {
-    acc[alias.toLowerCase()] = realName as keyof LayerPerformanceEntry;
-    return acc;
-  },
-  {} as Record<string, keyof LayerPerformanceEntry>,
-);
+export const LAYER_PERFORMANCE_ALIASES_TO_REAL: Record<string, ColumnIndexes> =
+  Object.entries(LAYER_PERFORMANCE_COLUMN_ALIASES).reduce(
+    (acc, [realName, alias]) => {
+      acc[alias.toLowerCase()] = realName as ColumnIndexes;
+      return acc;
+    },
+    {} as Record<string, ColumnIndexes>,
+  );
 
-export function getColumnAlias(
-  columnName: keyof LayerPerformanceEntry,
-): string {
+export function getColumnAlias(columnName: ColumnIndexes): string {
   return LAYER_PERFORMANCE_COLUMN_ALIASES[columnName] ?? columnName;
 }
 
-export function getRealColumnName(
-  alias: string,
-): keyof LayerPerformanceEntry | null {
+export function getRealColumnName(alias: string): ColumnIndexes | null {
   return LAYER_PERFORMANCE_ALIASES_TO_REAL[alias.toLowerCase()] ?? null;
 }

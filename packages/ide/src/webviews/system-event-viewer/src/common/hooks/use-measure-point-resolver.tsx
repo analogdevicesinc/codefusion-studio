@@ -17,42 +17,47 @@ import {useCallback} from 'react';
 
 import {
 	findNearestSnapCandidate,
-	isPointInsideHeaderStrip,
 	isPointWithinBounds,
 	resolvePointFromBackground,
 	resolvePointFromCandidate
 } from '../utils/measurement-tool';
-import {HEADER_HEIGHT} from '../constants/timeline';
 
-import type {MouseEvent} from 'react';
 import type {EChartsType} from 'echarts/core';
 import type {
+	HeaderChartHandle,
 	MeasurePoint,
 	MeasureSnapCandidate,
-	MeasureResolvedPoint
+	MeasureResolvedPoint,
+	PreparedMeasurementValue,
+	RowBounds
 } from '../types/timeline';
 import type {SevEventSource} from '../types/events';
-
 type MeasurePointResolver = Readonly<{
 	eventSources: SevEventSource[];
 	getChartInstance: (sourceId: string) => EChartsType | undefined;
-	getHeaderChartInstance: () => EChartsType | undefined;
+	getHeaderChartInstance: () => HeaderChartHandle | undefined;
+	/** Prepares background timestamps for both previews and committed points. */
+	prepareBackgroundValue: (
+		value: number | undefined
+	) => PreparedMeasurementValue | undefined;
+	rowBoundsByRowId: ReadonlyMap<string, RowBounds>;
+	visibleAnchorRowIds: ReadonlyMap<string, string>;
+	visibleGroupRowIds: ReadonlySet<string>;
 }>;
 
 type MeasurePreviewResult = Readonly<{
-	guidePoint: MeasurePoint;
+	guidePoint: MeasurePoint | undefined;
 	timestamp: number | undefined;
+	preparedValue?: PreparedMeasurementValue;
 	isSnapped: boolean;
 	snappedCandidate: MeasureSnapCandidate | undefined;
 }>;
 
 type ResolvedPoint = Readonly<{
 	resolvePoint: (
-		event: MouseEvent<HTMLElement>
+		point: MeasurePoint,
+		containerRect: DOMRect
 	) => MeasureResolvedPoint | undefined;
-	resolvePreviewFromMouseEvent: (
-		event: MouseEvent<HTMLElement>
-	) => MeasurePreviewResult;
 	resolvePreviewFromLocalPointer: (
 		point: MeasurePoint,
 		containerRect: DOMRect
@@ -62,33 +67,25 @@ type ResolvedPoint = Readonly<{
 /**
  * Custom hook to resolve preview and commit points on the timeline diagram,
  * including lockable pre-click snap behavior.
+ * Background values are prepared before returning; snapped event timestamps keep their original value.
  */
 export function useMeasurePointResolver({
 	eventSources,
 	getChartInstance,
-	getHeaderChartInstance
+	getHeaderChartInstance,
+	prepareBackgroundValue,
+	rowBoundsByRowId,
+	visibleAnchorRowIds,
+	visibleGroupRowIds
 }: MeasurePointResolver): ResolvedPoint {
-	const getRawLocalPoint = useCallback(
-		(event: MouseEvent<HTMLElement>): MeasurePoint => {
-			const rect = event.currentTarget.getBoundingClientRect();
-
-			return {
-				x: event.clientX - rect.left,
-				y: event.clientY - rect.top
-			};
-		},
-		[]
-	);
-
-	const getClampedLocalPoint = useCallback(
-		(
-			point: MeasurePoint,
-			containerRect: Pick<DOMRect, 'width' | 'height'>
-		): MeasurePoint => ({
-			x: Math.max(0, Math.min(point.x, containerRect.width)),
-			y: Math.max(0, Math.min(point.y, containerRect.height))
-		}),
-		[]
+	const findRowAtPoint = useCallback(
+		(point: MeasurePoint) =>
+			Array.from(rowBoundsByRowId).find(
+				([, bounds]) =>
+					point.y >= bounds.top &&
+					point.y < bounds.top + bounds.height
+			),
+		[rowBoundsByRowId]
 	);
 
 	const buildSnapCandidates = useCallback(
@@ -118,6 +115,7 @@ export function useMeasurePointResolver({
 						x: chartRect.left - containerRect.left + x,
 						y: chartRect.top - containerRect.top + y,
 						timestamp: timestamp.value,
+						rawTicks: timestamp.rawTicks,
 						sourceId,
 						eventIndex
 					});
@@ -129,75 +127,70 @@ export function useMeasurePointResolver({
 		[eventSources, getChartInstance]
 	);
 
+	const getSnapCandidate = useCallback(
+		(point: MeasurePoint, containerRect: DOMRect) => {
+			if (findRowAtPoint(point)?.[1].canSnap === false)
+				return undefined;
+
+			return findNearestSnapCandidate(
+				point,
+				buildSnapCandidates(containerRect)
+			);
+		},
+		[findRowAtPoint, buildSnapCandidates]
+	);
+
 	const getBackgroundTimestamp = useCallback(
 		(
 			point: MeasurePoint,
 			containerRect: DOMRect
-		): number | undefined => {
-			let chartInstance: EChartsType | undefined;
+		): PreparedMeasurementValue | undefined => {
+			const header = getHeaderChartInstance();
+			if (!header) return undefined;
 
-			for (const source of eventSources) {
-				chartInstance = getChartInstance(String(source.id));
+			const chartRect = header.chart.getDom().getBoundingClientRect();
+			const localX = point.x + containerRect.left - chartRect.left;
 
-				if (chartInstance) break;
-			}
-
-			if (!chartInstance) {
-				chartInstance = getHeaderChartInstance();
-			}
-
-			if (!chartInstance) return undefined;
-
-			const chartRect = chartInstance
-				.getDom()
-				.getBoundingClientRect();
-			const localX = point.x - (chartRect.left - containerRect.left);
-			const localY = point.y - (chartRect.top - containerRect.top);
-
-			const coordinates = chartInstance.convertFromPixel(
-				{xAxisIndex: 0, yAxisIndex: 0},
-				[localX, localY]
-			);
-
-			const timestamp = Array.isArray(coordinates)
-				? coordinates[0]
-				: coordinates;
-
-			return timestamp;
+			return prepareBackgroundValue(header.pixelToElapsed(localX));
 		},
-		[eventSources, getChartInstance, getHeaderChartInstance]
+		[getHeaderChartInstance, prepareBackgroundValue]
 	);
 
-	const resolvePreviewCore = useCallback(
+	const resolvePreviewFromLocalPointer = useCallback(
 		(
 			rawPoint: MeasurePoint,
-			guidePoint: MeasurePoint,
 			containerRect: DOMRect
 		): MeasurePreviewResult => {
-			const backgroundTimestamp = getBackgroundTimestamp(
-				rawPoint,
-				containerRect
-			);
-
-			if (isPointInsideHeaderStrip(rawPoint, HEADER_HEIGHT)) {
+			if (
+				!isPointWithinBounds(
+					rawPoint,
+					containerRect.width,
+					containerRect.height
+				)
+			) {
 				return {
-					guidePoint,
-					timestamp: backgroundTimestamp,
+					guidePoint: undefined,
+					timestamp: undefined,
 					isSnapped: false,
 					snappedCandidate: undefined
 				};
 			}
 
-			const candidates = buildSnapCandidates(containerRect);
-			const snappedCandidate = findNearestSnapCandidate(
+			const backgroundTimestamp = getBackgroundTimestamp(
 				rawPoint,
-				candidates
+				containerRect
+			);
+
+			const snappedCandidate = getSnapCandidate(
+				rawPoint,
+				containerRect
 			);
 
 			if (!snappedCandidate) {
 				return {
-					guidePoint,
-					timestamp: backgroundTimestamp,
+					guidePoint: rawPoint,
+					timestamp: backgroundTimestamp?.value,
+					preparedValue: backgroundTimestamp,
 					isSnapped: false,
 					snappedCandidate: undefined
 				};
@@ -213,111 +206,75 @@ export function useMeasurePointResolver({
 				snappedCandidate
 			};
 		},
-		[buildSnapCandidates, getBackgroundTimestamp]
-	);
-
-	// The main point resolver function that will be used on mouse move and click events.
-	// It will determine the appropriate point to use based on the mouse position, snap candidates, and chart boundaries.
-	const resolvePreviewFromMouseEvent = useCallback(
-		(event: MouseEvent<HTMLElement>): MeasurePreviewResult => {
-			const containerRect =
-				event.currentTarget.getBoundingClientRect();
-			const rawPoint = getRawLocalPoint(event);
-			const guidePoint = getClampedLocalPoint(
-				rawPoint,
-				containerRect
-			);
-
-			return resolvePreviewCore(rawPoint, guidePoint, containerRect);
-		},
-		[getRawLocalPoint, getClampedLocalPoint, resolvePreviewCore]
-	);
-
-	// The purpose is to resolve a local pointer position (while live updataing on zoom/pan) to a preview point
-	// using the same core logic as the mouse event resolver
-	const resolvePreviewFromLocalPointer = useCallback(
-		(
-			point: MeasurePoint,
-			containerRect: DOMRect
-		): MeasurePreviewResult => {
-			const guidePoint = getClampedLocalPoint(point, containerRect);
-
-			return resolvePreviewCore(point, guidePoint, containerRect);
-		},
-		[getClampedLocalPoint, resolvePreviewCore]
+		[getSnapCandidate, getBackgroundTimestamp]
 	);
 
 	// Returns the resolved snapped point enriched with the row-local Y of the snap,
 	// so the overlay can keep the marker aligned to the source row after reorder.
 	const resolveSnappedPointWithRowLocalY = useCallback(
 		(
-			snappedCandidate: MeasureSnapCandidate,
-			containerRect: DOMRect
-		): MeasureResolvedPoint => {
+			snappedCandidate: MeasureSnapCandidate
+		): MeasureResolvedPoint | undefined => {
 			const resolvedSnappedPoint =
 				resolvePointFromCandidate(snappedCandidate);
-			const chart = getChartInstance(snappedCandidate.sourceId);
+			const visibleRowId =
+				visibleAnchorRowIds.get(snappedCandidate.sourceId) ??
+				snappedCandidate.sourceId;
+			const rowBounds = rowBoundsByRowId.get(visibleRowId);
 
-			if (!chart) return resolvedSnappedPoint;
+			if (!rowBounds) return undefined;
 
-			const chartRect = chart.getDom().getBoundingClientRect();
-			const rowLocalY =
-				snappedCandidate.y - (chartRect.top - containerRect.top);
-
-			return {...resolvedSnappedPoint, rowLocalY};
+			return {
+				...resolvedSnappedPoint,
+				anchor: {
+					rowId: snappedCandidate.sourceId,
+					rowLocalY: snappedCandidate.y - rowBounds.top,
+					kind: 'chart'
+				}
+			};
 		},
-		[getChartInstance]
+		[rowBoundsByRowId, visibleAnchorRowIds]
 	);
 
-	// Returns the resolved background point enriched with the source row it falls in
-	// (sourceId + row-local Y), so the overlay can keep unsnapped commits anchored
-	// to their original row after reorder.
-	const resolveBackgroundPointWithSourceRow = useCallback(
+	// Background points follow the header chart, source, or group they were placed on.
+	const resolveBackgroundPointWithAnchor = useCallback(
 		(
 			rawPoint: MeasurePoint,
-			containerRect: DOMRect,
-			timestamp: number | undefined
-		): MeasureResolvedPoint => {
+			preparedValue: PreparedMeasurementValue | undefined
+		): MeasureResolvedPoint | undefined => {
+			if (!preparedValue) return undefined;
+
 			const resolvedBackgroundPoint = resolvePointFromBackground(
 				rawPoint,
-				timestamp
+				preparedValue.value
 			);
 
-			for (const source of eventSources) {
-				const sourceId = String(source.id);
-				const chart = getChartInstance(sourceId);
-				if (!chart) continue;
+			const row = findRowAtPoint(rawPoint);
 
-				const chartRect = chart.getDom().getBoundingClientRect();
-				const rowTop = chartRect.top - containerRect.top;
-				const rowBottom = rowTop + chartRect.height;
+			if (!row) return undefined;
 
-				if (rawPoint.y >= rowTop && rawPoint.y < rowBottom) {
-					return {
-						...resolvedBackgroundPoint,
-						sourceId,
-						rowLocalY: rawPoint.y - rowTop
-					};
+			const [rowId, rowBounds] = row;
+			const isGroupRow = visibleGroupRowIds.has(rowId);
+
+			return {
+				...resolvedBackgroundPoint,
+				preparedValue,
+				anchor: {
+					rowId,
+					rowLocalY: rawPoint.y - rowBounds.top,
+					kind: isGroupRow ? 'group' : 'chart'
 				}
-			}
-
-			return resolvedBackgroundPoint;
+			};
 		},
-		[eventSources, getChartInstance]
+		[findRowAtPoint, visibleGroupRowIds]
 	);
 
-	// This is the main function to resolve the mouse event to a point on the chart
-	// It check if the point is within bound or in the chart header component,
-	// then it checks if it should snap to a locked candidate,
-	// and finally if no snapping applies it resolves to a background point with a timestamp.
+	// Resolve a viewport-local point, preferring a snap when the row allows it.
 	const resolvePoint = useCallback(
 		(
-			event: MouseEvent<HTMLElement>
+			rawPoint: MeasurePoint,
+			containerRect: DOMRect
 		): MeasureResolvedPoint | undefined => {
-			const containerRect =
-				event.currentTarget.getBoundingClientRect();
-			const rawPoint = getRawLocalPoint(event);
-
 			if (
 				!isPointWithinBounds(
 					rawPoint,
@@ -328,21 +285,13 @@ export function useMeasurePointResolver({
 				return undefined;
 			}
 
-			if (isPointInsideHeaderStrip(rawPoint, HEADER_HEIGHT)) {
-				return undefined;
-			}
-
-			const candidates = buildSnapCandidates(containerRect);
-			const snappedCandidate = findNearestSnapCandidate(
+			const snappedCandidate = getSnapCandidate(
 				rawPoint,
-				candidates
+				containerRect
 			);
 
 			if (snappedCandidate) {
-				return resolveSnappedPointWithRowLocalY(
-					snappedCandidate,
-					containerRect
-				);
+				return resolveSnappedPointWithRowLocalY(snappedCandidate);
 			}
 
 			const timestamp = getBackgroundTimestamp(
@@ -350,24 +299,18 @@ export function useMeasurePointResolver({
 				containerRect
 			);
 
-			return resolveBackgroundPointWithSourceRow(
-				rawPoint,
-				containerRect,
-				timestamp
-			);
+			return resolveBackgroundPointWithAnchor(rawPoint, timestamp);
 		},
 		[
-			buildSnapCandidates,
+			getSnapCandidate,
 			getBackgroundTimestamp,
-			getRawLocalPoint,
-			resolveBackgroundPointWithSourceRow,
+			resolveBackgroundPointWithAnchor,
 			resolveSnappedPointWithRowLocalY
 		]
 	);
 
 	return {
 		resolvePoint,
-		resolvePreviewFromMouseEvent,
 		resolvePreviewFromLocalPointer
 	};
 }

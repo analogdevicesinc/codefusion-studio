@@ -1,3 +1,20 @@
+/**
+ *
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 import type {Soc} from '@common/types/soc';
 import PinDetails from './PinDetails';
 import {configurePreloadedStore} from '../../../state/store';
@@ -10,8 +27,69 @@ const mock = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
 describe('PinDetails component', () => {
+	it('Defaults unassigned signals to the pin being viewed', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(setPinDetailsTargetPin('D4'));
+
+		cy.mount(<PinDetails />, reduxStore);
+
+		cy.dataTest('I2C2-SDA')
+			.find('> vscode-dropdown')
+			.should('have.attr', 'current-value', 'D4');
+	});
+
+	it('Shows the pin already assigned to a signal', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: 'D2',
+				Peripheral: 'I2C2',
+				Name: 'SDA'
+			})
+		);
+		reduxStore.dispatch(setPinDetailsTargetPin('D4'));
+
+		cy.mount(<PinDetails />, reduxStore);
+
+		cy.dataTest('I2C2-SDA')
+			.find('> vscode-dropdown')
+			.should('have.attr', 'current-value', 'D2');
+	});
+
+	it('Preserves an unassigned signal selection when another signal is assigned', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(setPinDetailsTargetPin('D4'));
+
+		cy.mount(<PinDetails />, reduxStore);
+
+		cy.dataTest('I2C2-SDA').find('> vscode-dropdown').click();
+		cy.dataTest('I2C2-SDA')
+			.find('> vscode-dropdown')
+			.find('> vscode-option')
+			.contains('D2')
+			.click();
+
+		cy.then(() => {
+			reduxStore.dispatch(
+				setAppliedSignal({
+					Pin: 'D4',
+					Peripheral: 'PT1',
+					Name: 'PT1'
+				})
+			);
+		});
+
+		cy.dataTest('I2C2-SDA')
+			.find('> vscode-dropdown')
+			.should('have.attr', 'current-value', 'D2');
+	});
+
 	it('Should solve the pin conflict from PinDetails by changing the pin for a signal', () => {
 		const reduxStore = configurePreloadedStore(mock);
+
 		reduxStore.dispatch(
 			setAppliedSignal({
 				Pin: 'G9',
@@ -43,7 +121,7 @@ describe('PinDetails component', () => {
 		cy.dataTest('pin:tooltip:conflictMarker').should('not.exist');
 	});
 
-	it('Should correctly switch active peripheral', () => {
+	it('Should not show configure buttons when pin configuration is unavailable', () => {
 		const reduxStore = configurePreloadedStore(mock);
 
 		const signals = [
@@ -67,19 +145,12 @@ describe('PinDetails component', () => {
 
 		cy.mount(<PinDetails />, reduxStore);
 
-		// Each signal should have a configure button that, when clicked,
-		// sets the active peripheral and signal in the state
 		signals.forEach(({Peripheral, Name}) => {
-			cy.dataTest(`configure-${Peripheral}-${Name}-button`)
-				.click()
-				.then(() => {
-					const state = reduxStore.getState().peripheralsReducer;
+			cy.dataTest(`${Peripheral}-${Name}`).should('exist');
 
-					expect(state.activePeripheral).to.equal(Peripheral);
-					expect(state.activeSignal).to.equal(
-						`${Peripheral} ${Name}`
-					);
-				});
+			cy.dataTest(`configure-${Peripheral}-${Name}-button`).should(
+				'not.exist'
+			);
 		});
 	});
 });

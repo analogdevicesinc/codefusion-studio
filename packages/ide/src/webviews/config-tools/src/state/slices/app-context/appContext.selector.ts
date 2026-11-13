@@ -210,3 +210,6 @@ export const useMcubootEnableState = () =>
 
 export const useSigningKeys = () =>
 	useAppSelector(state => state.appContextReducer.signingKeys);
+
+export const useCodeGenState = () =>
+	useAppSelector(state => state.appContextReducer.codeGenState);

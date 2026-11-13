@@ -65,8 +65,7 @@ interface CfsPackageRemoteBase {
 	configError?: CfsPackageRemoteConfigError; // present when remote configuration fails
 }
 
-export interface CfsManagedPackageRemote
-	extends CfsPackageRemoteBase {
+export interface CfsManagedPackageRemote extends CfsPackageRemoteBase {
 	auth: CfsManagedPackageRemoteAuth; // managed remotes always have auth info
 	custom: false;
 	provider: string; // indicates which provider this remote belongs to
@@ -87,6 +86,14 @@ export type CfsPackageRemote =
 				  }
 				| { disabled: true; auth?: never }
 			));
+
+/** A plain remote object, with no auth state, for quick access & UI filtering */
+export interface CfsPackageRemoteState {
+	name: string;
+	url: URL;
+	disabled: boolean;
+	custom: boolean;
+}
 
 export interface CfsPackageManifest {
 	version: number;
@@ -297,14 +304,38 @@ export interface CfsInstallPlan {
 	skipped?: CfsSkippedPackageInfo[];
 
 	/**
-	 * Subset of `toInstall` that require explicit license acceptance.
+	 * Packages from `toInstall` that require explicit license acceptance.
 	 * A package requires license acceptance if:
 	 * - It has a license file, AND
 	 * - It is not already in the Conan cache (meaning license was not previously accepted)
 	 *
+	 * IMPORTANT: References in this array are RESOLVED CONCRETE VERSIONS (e.g., "1.0.0"),
+	 * while `toInstall` may contain version ranges (e.g., "^1.0.0"). To filter packages
+	 * by license acceptance status, correlate by PACKAGE NAME ONLY, not by full reference.
+	 *
 	 * Empty if all packages are either cached or don't require license acceptance.
 	 */
 	requiresLicenseAcceptance: CfsPackageLicenseInfo[];
+}
+
+/**
+ * A dependency the selected packages cannot agree on.
+ */
+export interface CfsDependencyConflict {
+	/** The dependency the selected packages disagree about. */
+	packageName: string;
+	/**
+	 * The incompatible requirements placed on {@link packageName}, as
+	 * `name/version` pairs (e.g. `dep/1.0` alongside `dep/2.0`).
+	 *
+	 * Read from each conflict branch's requirement rather than from whichever
+	 * package placed it. Conan attributes a transitive requirement to the graph
+	 * root rather than to the package that actually declared it, so the
+	 * requiring package it reports is frequently one the user never selected
+	 * and cannot act on. Callers that need to point at the user's own selection
+	 * should match {@link packageName} against the references they requested.
+	 */
+	conflictingRequirements: CfsPackageReference[];
 }
 
 /**
@@ -406,6 +437,33 @@ export interface CfsPackageManagerProvider {
 	getPackageInfo(
 		references: CfsPackageReference[]
 	): Promise<CfsPackage[]>;
+
+	/**
+	 * Lists every package version in each remote, as `name/version`, without
+	 * downloading recipes. Recipes are immutable, so a version never changes
+	 * and its revision is not listed.
+	 *
+	 * @param remotes - Remote names
+	 * @returns The references per remote, or for a remote that could not be listed its error and whether authentication failed
+	 */
+	listRemoteRefs(
+		remotes: string[]
+	): Promise<
+		Record<string, string[] | { error: string; auth?: boolean }>
+	>;
+
+	/**
+	 * Retrieve the metadata of the latest recipe revision of each reference
+	 * from one remote.
+	 *
+	 * @param remote - Remote name
+	 * @param references - References in `name/version` format
+	 * @returns Package metadata keyed by reference, as given
+	 */
+	getRemotePackageInfo(
+		remote: string,
+		references: string[]
+	): Promise<Record<string, CfsPackage>>;
 
 	/**
 	 * Install one or more packages, including all their dependencies.
@@ -540,6 +598,27 @@ export interface CfsPackageManagerProvider {
 	): Promise<Record<string, CfsPackageReference[]>>;
 
 	/**
+	 * Resolves each reference's dependency closure on its own.
+	 *
+	 * Unlike {@link dependenciesBatch} the references are never combined, so a
+	 * version conflict between two of them cannot fail the call: each answer is
+	 * individually valid. They are not collectively achievable, though, so the
+	 * results describe the packages rather than a possible installation.
+	 *
+	 * Intended for explaining a failed combined resolution, where the user still
+	 * needs to see what each selected package requires.
+	 *
+	 * @param references - References of packages in the form name/version
+	 * @param options - Optional dependency resolution options
+	 * @returns A record keyed by `name/version` of each requested reference
+	 * @throws If any single reference cannot be resolved
+	 */
+	dependenciesSequential(
+		references: CfsPackageReference[],
+		options?: CfsPackageDependenciesOptions
+	): Promise<Record<string, CfsPackageReference[]>>;
+
+	/**
 	 * Retrieves a list of all installed packages that depend on a given package, including transitive consumers.
 	 * Note unlike dependencies, this method returns "local data" as in installed consumers of an installed package.
 	 * That is also the reason why this method requires only pkgName instead of a full reference (since there is only
@@ -598,6 +677,15 @@ export interface CfsPackageManagerProvider {
 	 * 					authentication status, and whether the remote is custom.
 	 */
 	listRemotes(): Promise<CfsPackageRemote[]>;
+
+	/**
+	 * Returns the package servers that are currently registered and whether
+	 * they are enabled, without refreshing or authenticating them, which makes
+	 * it much faster than {@link listRemotes}.
+	 *
+	 * @returns An array of CfsPackageRemoteState elements
+	 */
+	listRemoteStates(): Promise<CfsPackageRemoteState[]>;
 
 	/**
 	 * Provides authentication for a given package server
@@ -680,9 +768,9 @@ export interface CfsPackageManagerProvider {
 	 * if (plan.requiresLicenseAcceptance.length > 0) {
 	 *   const userAccepted = await showLicensePrompt(plan.requiresLicenseAcceptance);
 	 *   if (!userAccepted) {
-	 *     // Filter out packages requiring license
-	 *     const licensedRefs = new Set(plan.requiresLicenseAcceptance.map(p => `${p.reference.name}/${p.reference.version}`));
-	 *     packagesToInstall = plan.toInstall.filter(p => !licensedRefs.has(`${p.name}/${p.version}`));
+	 *     // Filter out packages requiring license (match by name, since toInstall may contain version ranges)
+	 *     const licensedNames = new Set(plan.requiresLicenseAcceptance.map(p => p.reference.name));
+	 *     packagesToInstall = plan.toInstall.filter(p => !licensedNames.has(p.name));
 	 *   }
 	 * }
 	 *

@@ -1,0 +1,35 @@
+{
+  // Additional directories to search for SoC data model packages.
+  // Each entry must be an absolute path to a directory containing data model files.
+  "dataModelSearchPaths": ["/absolute/path/to/data/models"],
+
+  // Additional directories to search for CFS tools (e.g., cfsai).
+  // Each entry must be an absolute path.
+  "toolSearchPaths": ["/absolute/path/to/cfs/tools"],
+
+  // Absolute path to the CodeFusion Studio SDK installation directory.
+  // Must contain a cfs.json file. Overridden by the CFS_INSTALL_DIR env var.
+  "cfsInstallPath": "/absolute/path/to/cfs/install",
+
+  // Absolute path to the SoC catalog store directory.
+  // Used by `cfsutil catalog update` and `cfsutil catalog restore`.
+  "catalogStorePath": "/absolute/path/to/catalog/store",
+
+  // Telemetry preference. Managed by `cfsutil telemetry enable/disable`.
+  // Do not edit manually unless restoring from a backup.
+  "telemetry": {
+    // Schema version. Always 1 for now.
+    "version": 1,
+    // Whether telemetry is enabled. Set by the consent prompt
+    // or by `cfsutil telemetry enable` / `cfsutil telemetry disable`.
+    "enabled": false,
+    // Randomly generated usage identifier for linking sessions.
+    // Stored locally.
+    "userId": "",
+    // When telemetry is enabled, checks locally whether you are signed in to
+    // myAnalog with an ADI account or using an ADI-managed computer. Only the
+    // result is shared. Before telemetry is enabled, "External" is an
+    // unshared placeholder.
+    "userType": "External"
+  }
+}

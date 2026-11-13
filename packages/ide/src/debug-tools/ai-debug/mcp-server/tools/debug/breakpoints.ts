@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
 import { toolResult, toolError, noSession } from "../../utils/response-helpers";
@@ -39,22 +38,22 @@ export function registerBreakpointTools(
     {
       title: "Set Breakpoint",
       description: "Set a breakpoint at the specified file and line",
-      inputSchema: {
-        file: z
-          .string()
-          .describe(
-            "Absolute file path. Relative file paths are not supported.",
-          ),
-        line: z.coerce
-          .number()
-          .int()
-          .min(1)
-          .describe("Line number, with first line being 1"),
-        condition: z
-          .string()
-          .optional()
-          .describe("Conditional expression (optional)"),
-      },
+      inputSchema: z.object({
+              file: z
+                .string()
+                .describe(
+                  "Absolute file path. Relative file paths are not supported.",
+                ),
+              line: z.coerce
+                .number()
+                .int()
+                .min(1)
+                .describe("Line number, with first line being 1"),
+              condition: z
+                .string()
+                .optional()
+                .describe("Conditional expression (optional)"),
+            }),
     },
     async (params) => {
       try {
@@ -76,24 +75,24 @@ export function registerBreakpointTools(
     {
       title: "Remove Breakpoints",
       description: "Remove breakpoints from a file or remove all breakpoints",
-      inputSchema: {
-        file: z
-          .string()
-          .optional()
-          .describe(
-            "Absolute file path. Relative file paths are not supported. If omitted, all breakpoints will be removed.",
-          ),
-        line: z.coerce
-          .number()
-          .int()
-          .min(1)
-          .optional()
-          .describe(
-            "Line number, with first line being 1. Can only be provided if file argument is also provided.\n" +
-              "If omitted, and file is provided, all breakpoints of the file will be removed.\n" +
-              "If omitted, and file is not provided, all breakpoints will be removed.",
-          ),
-      },
+      inputSchema: z.object({
+              file: z
+                .string()
+                .optional()
+                .describe(
+                  "Absolute file path. Relative file paths are not supported. If omitted, all breakpoints will be removed.",
+                ),
+              line: z.coerce
+                .number()
+                .int()
+                .min(1)
+                .optional()
+                .describe(
+                  "Line number, with first line being 1. Can only be provided if file argument is also provided.\n" +
+                    "If omitted, and file is provided, all breakpoints of the file will be removed.\n" +
+                    "If omitted, and file is not provided, all breakpoints will be removed.",
+                ),
+            }),
     },
     async (params) => {
       try {
@@ -134,21 +133,21 @@ export function registerBreakpointTools(
         "Set a hardware watchpoint to halt execution when a memory " +
         "location is written, read, or accessed. Useful for detecting " +
         "when global variables or memory regions are modified unexpectedly.",
-      inputSchema: {
-        expression: z
-          .string()
-          .describe(
-            "Expression to watch (variable name like 'my_var' or " +
-              "a dereference like '*(int*)0x20000100')",
-          ),
-        type: z
-          .enum(["write", "read", "access"])
-          .default("write")
-          .describe(
-            "Watchpoint type: 'write' (break on store), " +
-              "'read' (break on load), 'access' (break on either)",
-          ),
-      },
+      inputSchema: z.object({
+              expression: z
+                .string()
+                .describe(
+                  "Expression to watch (variable name like 'my_var' or " +
+                    "a dereference like '*(int*)0x20000100')",
+                ),
+              type: z
+                .enum(["write", "read", "access"])
+                .default("write")
+                .describe(
+                  "Watchpoint type: 'write' (break on store), " +
+                    "'read' (break on load), 'access' (break on either)",
+                ),
+            }),
     },
     async (params) => {
       try {
@@ -185,13 +184,13 @@ export function registerBreakpointTools(
       description:
         "Remove a watchpoint by its number. Use " +
         "'debug_execute_gdb_command' with 'info watchpoints' to list active watchpoints.",
-      inputSchema: {
-        number: z
-          .number()
-          .int()
-          .min(1)
-          .describe("Watchpoint number to remove (from 'info watchpoints')"),
-      },
+      inputSchema: z.object({
+              number: z
+                .number()
+                .int()
+                .min(1)
+                .describe("Watchpoint number to remove (from 'info watchpoints')"),
+            }),
     },
     async (params) => {
       try {

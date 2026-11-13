@@ -23,7 +23,7 @@
 	max-width: layout.$main-width;
 	justify-content: end;
 	align-items: center;
-	gap: layout.$spacing-3;
+	gap: layout.$spacing-5;
 	flex-shrink: 0;
 	border-top: 1px solid var(--vscode-panel-border);
 	padding-top: layout.$spacing-3;
@@ -49,6 +49,14 @@
 	flex-direction: row;
 	align-items: center;
 	gap: layout.$spacing-3;
+}
+
+.currentItemsText {
+	color: colors.$default-foreground;
+	text-align: left;
+
+	@include fonts.body-b3;
+	min-width: 90px;
 }
 
 .itemsPerPageText {

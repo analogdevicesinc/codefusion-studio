@@ -13,59 +13,71 @@
  *
  */
 
-import {
-	memo,
-	useCallback,
-	useRef,
-	startTransition,
-	useState,
-	useEffect
-} from 'react';
+import {memo, useCallback, useRef, startTransition} from 'react';
 import type {EChartsType} from 'echarts/core';
+import {useStore} from 'react-redux';
 
-import {store, useAppDispatch} from '../../../state/store';
+import {type RootState, useAppDispatch} from '../../../state/store';
 import {
 	setDataZoom as setTimelineDataZoom,
-	setMeasurePhase
+	toggleGroupExpanded
 } from '../../../state/slices/timeline/timeline.reducer';
+import {setEventSourceTree} from '../../../state/slices/event-sources/event-sources.reducer';
+import {
+	selectEventSourceTree,
+	useVisibleAnchorRowIds,
+	useVisibleTimelineRows
+} from '../../../state/slices/event-sources/event-sources.selector';
 
 import TimelineFooter from './timeline-footer';
-import XTicksChartRow from './xticks-chart-row';
-import TimestampsChartRow from './timestamps-chart-row';
+import TimelineRow from './components/diagram/timeline-row';
 import ListContainer from '../event-sources-list/list-container';
+import TimelineDiagramHeader from './components/diagram/timeline-diagram-header';
 import MeasurementContainer from './components/measurement-tool/measurement-container';
-import {useTimelineChartsResize} from './hooks/use-timeline-charts-resize';
+import {useTimelineChartsResize} from '../../../common/hooks/use-timeline-charts-resize';
+import {
+	getVisibleDescendantRowIndexes,
+	moveEventSourceTreeNode
+} from '../../../common/utils/events-group';
+import {renameEventSourceGroup} from '../../../common/utils/tree';
 
 import {
 	setChartToWindow,
 	deleteChartFromWindow,
 	dispatchDataZoomAction,
 	onRowStateChange,
-	resetRowInteraction
+	resetRowInteraction,
+	applyRowsDragged
 } from '../../../common/utils/timeline-diagram';
-import {syncHeaderChartBase} from '../../../common/utils/x-axis-ticks';
 import {
 	DATA_TEST_E,
 	DATA_TEST_S,
-	DIAGRAM_CONTAINER_ID,
-	MEASURE_PHASE
+	DIAGRAM_CONTAINER_ID
 } from '../../../common/constants/timeline';
 
 import type {
 	DataZoom,
+	HeaderChartHandle,
 	Range,
 	RowStateUpdate,
 	RowInteraction
 } from '../../../common/types/timeline';
-import type {SevEventSource} from '../../../common/types/events';
+import type {
+	EventSourceMoveIntent,
+	SevEventSource
+} from '../../../common/types/events';
+import {updateEventSourceTree} from '../../../common/utils/service';
+import {clampTimelineDataZoom} from '../../../common/utils/time-axis-utils';
 
 import styles from './timeline-diagram.module.scss';
 
 /**
- * This component is responsible for rendering the entire timeline diagram,
- * including the header, footer, event sources list, and the chart rows for each event source.
- * @param param0
- * @returns
+ * This component is responsible for rendering the entire timeline diagram, including the header, footer, event sources list, and the chart rows for each event source.
+ * It's the orchestrator that manages the state and interactions between the different parts of the timeline diagram.
+ *
+ * Do not rely on React re-renders to update the chart; use ECharts methods for this;
+ * Do not keep internal react state in this component; Keep the props minimal;
+ * Do not subscribe to the store to avoid re-renders; use "activeStore.getState()" to get the latest state
  */
 function TimelineDiagram({
 	eventSources,
@@ -75,11 +87,11 @@ function TimelineDiagram({
 	timestampRange: Range;
 }>) {
 	const dispatch = useAppDispatch();
-	const [orderedEvSources, setOrderedEvSources] = useState<
-		SevEventSource[]
-	>([]);
+	const activeStore = useStore<RootState>();
+	const visibleRows = useVisibleTimelineRows();
+	const visibleAnchorRowIds = useVisibleAnchorRowIds();
 	const chartsRef = useRef(new Map<string, EChartsType>()); // List of chart instances representing each event source row
-	const headerChartRef = useRef<EChartsType>(); // Header chart instance
+	const headerChartRef = useRef<HeaderChartHandle>(); // Header chart instance
 	const syncingRef = useRef(false); // To prevent circular updates when syncing dataZoom across charts
 	const footerRef = useRef({
 		setDataZoom: (_: DataZoom) => null
@@ -87,6 +99,7 @@ function TimelineDiagram({
 	const diagramContainerRef = useRef<HTMLDivElement>(null); // The purpose is to set test attributes on the container for testing
 	const chartAreaRef = useRef<HTMLElement>(null);
 	const rowInteractionRef = useRef<RowInteraction>({});
+	const dropIndicatorRef = useRef<HTMLDivElement>(null);
 
 	useTimelineChartsResize({
 		chartAreaRef,
@@ -104,33 +117,74 @@ function TimelineDiagram({
 		[]
 	);
 
-	const handleOnDragStart = useCallback(() => {
-		resetRowInteraction(rowInteractionRef, diagramContainerRef);
-	}, []);
-
-	const handleReorder = useCallback(
-		(orderedList: SevEventSource[]) => {
-			setOrderedEvSources(orderedList);
+	const handleOnDragStart = useCallback(
+		(rowIndex: number) => {
 			resetRowInteraction(rowInteractionRef, diagramContainerRef);
+			applyRowsDragged(
+				[
+					rowIndex,
+					...getVisibleDescendantRowIndexes(visibleRows, rowIndex)
+				],
+				rowInteractionRef,
+				diagramContainerRef
+			);
 		},
-		[]
+		[visibleRows]
 	);
 
-	const updateHeaderChart = useCallback(
-		(newDataZoom: DataZoom) => {
-			if (headerChartRef.current) {
-				dispatchDataZoomAction(headerChartRef.current, newDataZoom);
+	const handleMoveNode = useCallback(
+		(nodeId: string, intent: EventSourceMoveIntent) => {
+			const tree = selectEventSourceTree(activeStore.getState());
+			const updatedTree = moveEventSourceTreeNode(
+				tree,
+				nodeId,
+				intent
+			);
 
-				// Keep axis labels/ticks in sync with the new zoom window without React re-render
-				syncHeaderChartBase(
-					headerChartRef.current,
-					timestampRange,
-					newDataZoom
-				);
-			}
+			if (updatedTree === tree) return;
+
+			dispatch(setEventSourceTree(updatedTree));
+			resetRowInteraction(rowInteractionRef, diagramContainerRef);
+			updateEventSourceTree(updatedTree);
 		},
-		[timestampRange]
+		[activeStore, dispatch]
 	);
+
+	const handleRenameGroup = useCallback(
+		(groupId: string, groupName: string) => {
+			const tree = selectEventSourceTree(activeStore.getState());
+			const updatedTree = renameEventSourceGroup(
+				tree,
+				groupId,
+				groupName
+			);
+
+			if (updatedTree === tree) return;
+
+			dispatch(setEventSourceTree(updatedTree));
+			updateEventSourceTree(updatedTree);
+		},
+		[activeStore, dispatch]
+	);
+
+	const handleToggleGroup = useCallback(
+		(groupId: string) => {
+			dispatch(toggleGroupExpanded(groupId));
+		},
+		[dispatch]
+	);
+
+	/**
+	 * Since the `useTimeAxis` subscribes to `dataZoom` changes, the timeline header components will be kept in sync;
+	 */
+	const updateHeaderChart = useCallback((newDataZoom: DataZoom) => {
+		if (headerChartRef.current) {
+			dispatchDataZoomAction(
+				headerChartRef.current.chart,
+				newDataZoom
+			);
+		}
+	}, []);
 
 	const updateTimestampsCharts = useCallback(
 		(newDataZoom: DataZoom, currentChartId: string) => {
@@ -160,12 +214,12 @@ function TimelineDiagram({
 			chartsRef.current.set(id, instance);
 			setChartToWindow(id, instance);
 
-			const persistedDataZoom =
-				store.getState().timelineReducer?.dataZoom;
-
-			dispatchDataZoomAction(instance, persistedDataZoom);
+			dispatchDataZoomAction(
+				instance,
+				activeStore.getState().timelineReducer.dataZoom
+			);
 		},
-		[]
+		[activeStore]
 	);
 
 	const unregisterChart = useCallback((id: string) => {
@@ -174,16 +228,12 @@ function TimelineDiagram({
 	}, []);
 
 	const registerHeaderChart = useCallback(
-		(instance: EChartsType) => {
-			headerChartRef.current = instance;
-			setChartToWindow('header', instance);
-
-			const persistedDataZoom =
-				store.getState().timelineReducer?.dataZoom;
-
-			updateHeaderChart(persistedDataZoom);
+		(handle: HeaderChartHandle) => {
+			// The header applies the current zoom before registering its handle.
+			headerChartRef.current = handle;
+			setChartToWindow('header', handle.chart);
 		},
-		[updateHeaderChart]
+		[]
 	);
 
 	const unregisterHeaderChart = useCallback(() => {
@@ -192,8 +242,13 @@ function TimelineDiagram({
 	}, []);
 
 	const getChartInstance = useCallback(
-		(sourceId: string) => chartsRef.current.get(sourceId),
-		[]
+		(sourceId: string) => {
+			const visibleRowId =
+				visibleAnchorRowIds.get(sourceId) ?? sourceId;
+
+			return chartsRef.current.get(visibleRowId);
+		},
+		[visibleAnchorRowIds]
 	);
 
 	const getHeaderChartInstance = useCallback(
@@ -205,34 +260,43 @@ function TimelineDiagram({
 		(newDz: DataZoom, chartId?: string) => {
 			if (syncingRef.current) return;
 
+			const dataZoom = clampTimelineDataZoom(newDz, timestampRange);
+			const wasClamped =
+				dataZoom.start !== newDz.start || dataZoom.end !== newDz.end;
 			const persistedDataZoom =
-				store.getState().timelineReducer?.dataZoom;
+				activeStore.getState().timelineReducer.dataZoom;
 
 			if (
-				newDz.start !== persistedDataZoom.start ||
-				newDz.end !== persistedDataZoom.end
+				dataZoom.start !== persistedDataZoom.start ||
+				dataZoom.end !== persistedDataZoom.end ||
+				wasClamped
 			) {
-				dispatch(setTimelineDataZoom(newDz));
-				footerRef.current.setDataZoom(newDz);
-				setContainerTestDataZoomAttrs(newDz);
+				dispatch(setTimelineDataZoom(dataZoom));
+				footerRef.current.setDataZoom(dataZoom);
+				setContainerTestDataZoomAttrs(dataZoom);
 
 				// StartTransition and requestAnimationFrame are used to batch the updates to avoid blocking the main thread
 				startTransition(() => {
 					requestAnimationFrame(() => {
 						syncingRef.current = true;
 
-						updateHeaderChart(newDz);
-						updateTimestampsCharts(newDz, chartId ?? '');
+						updateHeaderChart(dataZoom);
+						updateTimestampsCharts(
+							dataZoom,
+							wasClamped ? '' : (chartId ?? '')
+						);
 						syncingRef.current = false;
 					});
 				});
 			}
 		},
 		[
+			timestampRange,
 			updateHeaderChart,
 			updateTimestampsCharts,
 			setContainerTestDataZoomAttrs,
-			dispatch
+			dispatch,
+			activeStore
 		]
 	);
 
@@ -250,30 +314,6 @@ function TimelineDiagram({
 		[applyDataZoom]
 	);
 
-	// The purpose of this effect is to update the ordered event sources
-	// whenever the extension pushes new event sources data
-	useEffect(() => {
-		dispatch(setMeasurePhase(MEASURE_PHASE.IDLE));
-
-		setOrderedEvSources(prev => {
-			if (!prev?.length) return eventSources;
-
-			const sourcesMap = new Map(
-				eventSources.map(item => [String(item.id), item])
-			);
-			const currentIds = new Set(prev.map(item => String(item.id)));
-
-			const currentItems = prev
-				.map(item => sourcesMap.get(String(item.id)))
-				.filter(Boolean) as SevEventSource[];
-			const newItems = eventSources.filter(
-				item => !currentIds.has(String(item.id))
-			);
-
-			return [...currentItems, ...newItems];
-		});
-	}, [dispatch, eventSources]);
-
 	return (
 		<div className={styles.diagramRoot}>
 			<div
@@ -282,44 +322,59 @@ function TimelineDiagram({
 				className={styles.timelineDiagramContainer}
 				data-test='timeline-diagram'
 			>
-				<div className={styles.scrollContent}>
+				<div
+					className={styles.scrollContent}
+					data-test='timeline:scroll-content'
+				>
+					<div
+						ref={dropIndicatorRef}
+						hidden
+						className={styles.dropIndicator}
+						data-test='timeline:drop-indicator'
+					/>
+
 					<ListContainer
-						orderedEvSources={orderedEvSources}
+						rows={visibleRows}
 						diagramContainerRef={diagramContainerRef}
-						handleReorder={handleReorder}
+						dropIndicatorRef={dropIndicatorRef}
+						onMoveNode={handleMoveNode}
+						onRenameGroup={handleRenameGroup}
 						onRowStateChange={handleRowStateChange}
 						onDragStart={handleOnDragStart}
+						onToggleGroup={handleToggleGroup}
 					/>
 
 					<MeasurementContainer
-						eventSources={orderedEvSources}
+						eventSources={eventSources}
 						timestampRange={timestampRange}
 						measurementContainerRef={chartAreaRef}
 						getChartInstance={getChartInstance}
 						getHeaderChartInstance={getHeaderChartInstance}
 					>
-						<XTicksChartRow
-							timestampRange={timestampRange}
-							registerHeaderChart={registerHeaderChart}
-							unregisterHeaderChart={unregisterHeaderChart}
-						/>
+						{measurementViewport => (
+							<>
+								<TimelineDiagramHeader
+									measurementViewport={measurementViewport}
+									timestampRange={timestampRange}
+									registerHeaderChart={registerHeaderChart}
+									unregisterHeaderChart={unregisterHeaderChart}
+								/>
 
-						{orderedEvSources.map((evSource, index) => (
-							<TimestampsChartRow
-								key={evSource.id}
-								id={String(evSource.id)}
-								rowIndex={index}
-								eventSource={evSource}
-								timestampRange={timestampRange}
-								containerRef={diagramContainerRef}
-								registerChart={registerChart}
-								unregisterChart={unregisterChart}
-								onRowStateChange={handleRowStateChange}
-								onDataZoomChange={(dz: DataZoom) => {
-									handleChartDataZoom(dz, String(evSource.id));
-								}}
-							/>
-						))}
+								{visibleRows.map((row, index) => (
+									<TimelineRow
+										key={row.id}
+										row={row}
+										rowIndex={index}
+										timestampRange={timestampRange}
+										containerRef={diagramContainerRef}
+										registerChart={registerChart}
+										unregisterChart={unregisterChart}
+										onRowStateChange={handleRowStateChange}
+										onDataZoomChange={handleChartDataZoom}
+									/>
+								))}
+							</>
+						)}
 					</MeasurementContainer>
 				</div>
 			</div>
@@ -327,8 +382,8 @@ function TimelineDiagram({
 			<TimelineFooter
 				ref={footerRef}
 				timestampRange={timestampRange}
-				onDataZoomChange={(dz: DataZoom) => {
-					handleFooterDataZoom(dz);
+				onDataZoomChange={(dataZoom: DataZoom) => {
+					handleFooterDataZoom(dataZoom);
 				}}
 			/>
 		</div>

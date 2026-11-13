@@ -20,14 +20,18 @@ import { EXECUTE_SCRIPT } from "./constants";
 import { extractSessionId } from "../../../utils/utils";
 import { GDBToolbox } from "../core/gdb-toolbox";
 import { CfsDebugManager } from "../../debug-manager";
+import {
+  SessionArchitectureStore,
+  UNKNOWN_ARCHITECTURE,
+  detectArchitecture,
+  isScriptSupportedForArchitecture,
+} from "../core/session-architecture-store";
 
 /**
  * GdbToolboxPanel provides the tree view for the GDB Toolbox in the VS Code UI.
  * It displays default scripts, user scripts, and handles refreshes on debug events.
  */
-export class GdbToolboxPanel
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
+export class GdbToolboxPanel implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData =
     new vscode.EventEmitter<vscode.TreeItem | null>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -60,6 +64,7 @@ export class GdbToolboxPanel
   constructor(
     private scriptManager: ScriptManager,
     private debugManager: CfsDebugManager,
+    private sessionArchitecture: SessionArchitectureStore,
   ) {
     // Refresh the panel when scripts change or debug session events occur
     this.scriptManager.onScriptsChanged(() => this.refresh());
@@ -75,7 +80,9 @@ export class GdbToolboxPanel
         this.activeSession = undefined;
       }
 
-      (globalThis as any).sessionArchMap?.delete(session.id);
+      if (session?.id) {
+        this.sessionArchitecture.delete(session.id);
+      }
 
       this.refresh();
     });
@@ -99,28 +106,18 @@ export class GdbToolboxPanel
         this.breakpointState.set(sessionId, true);
         // --- Detect and store architecture on halt event ---
         try {
-          if (!(globalThis as any).sessionArchMap) {
-            (globalThis as any).sessionArchMap = new Map();
-          }
           const executor = GDBToolbox.getInstance().getExecutor();
           const result = await executor.executeCommand(
             { command: "show architecture" },
             [],
             cfsSession.vscodeSession,
           );
-          let arch = "";
-          if (typeof result === "string") {
-            const lower = result.toLowerCase();
-            if (lower.includes("arm")) arch = "arm";
-            else if (lower.includes("riscv")) arch = "riscv";
-            else if (lower.includes("xtensa")) arch = "xtensa";
-            else arch = lower.split(" ")[0];
-          }
-          (globalThis as any).sessionArchMap.set(sessionId, arch);
-        } catch (err) {
-          if ((globalThis as any).sessionArchMap) {
-            (globalThis as any).sessionArchMap.delete(sessionId);
-          }
+          // Record a distinct "unknown" value rather than clearing the entry so
+          // unrecognised targets keep architecture filtering active and only
+          // expose architecture-agnostic scripts instead of bypassing it.
+          this.sessionArchitecture.set(sessionId, detectArchitecture(result));
+        } catch (_) {
+          this.sessionArchitecture.set(sessionId, UNKNOWN_ARCHITECTURE);
         }
         this.refresh();
       });
@@ -209,18 +206,13 @@ export class GdbToolboxPanel
         }
       });
 
-      // --- Filter scripts by architecture if session has an arch value ---
-      const sessionArch = (globalThis as any).sessionArchMap?.get(session.id);
+      // Filter scripts by the session's architecture. The unknown sentinel
+      // matches no declared arch, so unrecognised targets fall through to only
+      // architecture-agnostic scripts rather than bypassing the filter.
+      const sessionArch = this.sessionArchitecture.get(session.id);
       if (sessionArch) {
-        /**
-         * `core` has been deprecated in favour of `arch`. Keeping this in for
-         * the moment for backwards compatibility
-         */
-        scripts = scripts.filter(
-          (s: any) =>
-            (!s.arch && !s.core) ||
-            s.arch?.includes(sessionArch) ||
-            s.core?.includes(sessionArch),
+        scripts = scripts.filter((s) =>
+          isScriptSupportedForArchitecture(s, sessionArch),
         );
       }
       const filter = this.getFilter(session.id);

@@ -19,6 +19,22 @@
 import type { ConfiguredProject } from "cfs-types";
 
 /**
+ * Finds the configured project targeting a given core.
+ *
+ * @param projects Projects currently stored in the configuration.
+ * @param coreId Core id to match against each project's `CoreId` (case-insensitive).
+ * @returns The matching project, or `undefined` if no project targets this core.
+ */
+export function findProjectByCoreId(
+  projects: ConfiguredProject[],
+  coreId: string,
+): ConfiguredProject | undefined {
+  return projects.find(
+    (project) => project.CoreId.toUpperCase() === coreId.toUpperCase(),
+  );
+}
+
+/**
  * Applies the peripheral and partition updates produced by System Planner to
  * the projects currently stored in a configuration document.
  *
@@ -34,10 +50,10 @@ import type { ConfiguredProject } from "cfs-types";
  */
 export function mergePeripheralProjectUpdates(
   persistedProjects: ConfiguredProject[],
-  peripheralUpdates: ConfiguredProject[]
+  peripheralUpdates: ConfiguredProject[],
 ): ConfiguredProject[] {
   const updatesByProjectId = new Map(
-    peripheralUpdates.map((project) => [project.ProjectId, project])
+    peripheralUpdates.map((project) => [project.ProjectId, project]),
   );
 
   const mergedProjects = persistedProjects.map((persistedProject) => {

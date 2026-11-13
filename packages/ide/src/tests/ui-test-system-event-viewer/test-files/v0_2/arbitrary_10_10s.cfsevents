@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "0.2",
+  "lastUpdate": "2026-03-25T00:00:00.000Z",
+  "tickFrequency": 10000000.0,
+  "ticksEpoch": "2025-12-22T10:18:31.307452+01:00",
+  "events": {
+    "event-2": {
+      "timestamps": [
+        17456441,
+        26545030,
+        81154813
+      ]
+    },
+    "event-3": {
+      "timestamps": [
+        47997338
+      ]
+    },
+    "event-5": {
+      "timestamps": [
+        75949713
+      ]
+    },
+    "event-0": {
+      "timestamps": [
+        79624560
+      ]
+    },
+    "event-1": {
+      "timestamps": [
+        84984890,
+        85706543
+      ]
+    }
+  }
+}

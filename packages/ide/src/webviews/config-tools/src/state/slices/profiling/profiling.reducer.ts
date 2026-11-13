@@ -185,6 +185,32 @@ const profilingContextSlice = createSlice({
 			config.Interface = {Type: 'UART', Port: action.payload.port};
 			delete config.Port;
 		},
+		setInstrumentationTriggerFunction(
+			state,
+			action: PayloadAction<{
+				value: string;
+				projectId: string;
+			}>
+		) {
+			if (state.zephelin[action.payload.projectId]) {
+				state.zephelin[
+					action.payload.projectId
+				].InstrumentationTriggerFunction = action.payload.value;
+			}
+		},
+		setInstrumentationStopperFunction(
+			state,
+			action: PayloadAction<{
+				value: string;
+				projectId: string;
+			}>
+		) {
+			if (state.zephelin[action.payload.projectId]) {
+				state.zephelin[
+					action.payload.projectId
+				].InstrumentationStopperFunction = action.payload.value;
+			}
+		},
 		setValidationErrors(
 			state,
 			action: PayloadAction<{
@@ -208,6 +234,8 @@ export const {
 	toggleInstrumentationSubsystemEnabled,
 	setInterface,
 	setUARTPort,
+	setInstrumentationTriggerFunction,
+	setInstrumentationStopperFunction,
 	setValidationErrors
 } = profilingContextSlice.actions;
 

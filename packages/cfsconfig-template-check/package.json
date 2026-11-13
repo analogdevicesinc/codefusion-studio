@@ -1,0 +1,10 @@
+{
+	"name": "cfsconfig-template-check",
+	"version": "2.4.0",
+	"private": true,
+	"description": "Python scripts to validate cfsconfig files created by plugins according to the data models",
+	"type": "module",
+	"files": [
+		"scripts/"
+	]
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import type {TSavedQuery} from '../../../../common/types/symbols';
 import styles from './SaveEditQueryModal.module.scss';
 import InputError from '../InputErrorMessage/InputError';
 import {CheckBox} from 'cfs-react-library';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type SaveEditQueryModalProps = {
 	readonly query: TSavedQuery | undefined;
@@ -38,6 +39,9 @@ export default function SaveEditQueryModal({
 	onChange,
 	onCheckboxChange
 }: SaveEditQueryModalProps) {
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
 	const [queryForm, setQueryForm] = useState<TSavedQuery>({
 		id: 0,
 		name: '',
@@ -91,13 +95,13 @@ export default function SaveEditQueryModal({
 				{title}
 			</h1>
 			<p>
-				If you would like to save your query for future use, fill in
-				the field below to be able to easily identify it.
+				{l10n?.saveQueryDescription ??
+					'If you would like to save your query for future use, fill in the field below to be able to easily identify it.'}
 			</p>
 
 			<div className={styles.field}>
 				<label htmlFor='query' className={styles.label}>
-					Query
+					{l10n?.queryLabel ?? 'Query'}
 				</label>
 				<VSCodeTextField
 					className={styles.input}
@@ -124,16 +128,17 @@ export default function SaveEditQueryModal({
 					onCheckboxChange(event?.target?.checked as boolean);
 				}}
 			>
-				Save query even if there are errors
+				{l10n?.saveQueryWithErrors ??
+					'Save query even if there are errors'}
 			</CheckBox>
 			<div className={styles.field}>
 				<label htmlFor='query-name' className={styles.label}>
-					Query name
+					{l10n?.queryNameLabel ?? 'Query name'}
 				</label>
 				<VSCodeTextField
 					className={styles.input}
 					type='text'
-					placeholder='Enter query name'
+					placeholder={l10n?.enterQueryName ?? 'Enter query name'}
 					name='query-name'
 					value={queryForm.name ?? ''}
 					onInput={event => {

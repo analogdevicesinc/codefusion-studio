@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ import {useCallback, useState, useRef, useEffect} from 'react';
 import {Chip} from 'cfs-react-library';
 import DownArrow from '../../../../../common/icons/DownArrow';
 import styles from './view-dropdown.module.scss';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 export type ViewType = 'Group' | 'Gasket';
 
@@ -32,6 +33,14 @@ export default function ViewDropdown({
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const [isDropdownOpen, setIsDropdownOpen] =
 		useState<boolean>(false);
+	const l10n = useLocaleContext()?.dfgVisualisation as
+		| Record<string, string>
+		| undefined;
+
+	const viewLabels: Record<ViewType, string> = {
+		Group: l10n?.viewGroup ?? 'Group',
+		Gasket: l10n?.viewGasket ?? 'Gasket'
+	};
 
 	const viewOptions: ViewType[] = ['Group', 'Gasket'];
 
@@ -75,18 +84,19 @@ export default function ViewDropdown({
 			}}
 		>
 			<Chip
-				isDisabled={false}
 				isActive={isDropdownOpen}
 				id='view-by-dropdown'
-				label='View By :'
+				label={l10n?.viewBy ?? 'View By:'}
 				onClick={() => {
 					onChipClick();
 				}}
 			>
 				<div className={styles.chipContent}>
-					<span>{selectedView}</span>
+					<span>{viewLabels[selectedView]}</span>
 					<span
-						className={`${styles.arrow} ${isDropdownOpen ? styles.arrowOpen : ''}`}
+						className={`${styles.arrow} ${
+							isDropdownOpen ? styles.arrowOpen : ''
+						}`}
 					>
 						<DownArrow width='10' height='10' />
 					</span>
@@ -94,7 +104,9 @@ export default function ViewDropdown({
 			</Chip>
 
 			<div
-				className={`${isDropdownOpen ? styles.show : styles.hide} ${styles.panel}`}
+				className={`${isDropdownOpen ? styles.show : styles.hide} ${
+					styles.panel
+				}`}
 			>
 				<div className={styles.optionsContainer}>
 					{viewOptions.map(option => (
@@ -107,7 +119,7 @@ export default function ViewDropdown({
 								onOptionClick(option);
 							}}
 						>
-							{option}
+							{viewLabels[option]}
 						</button>
 					))}
 				</div>

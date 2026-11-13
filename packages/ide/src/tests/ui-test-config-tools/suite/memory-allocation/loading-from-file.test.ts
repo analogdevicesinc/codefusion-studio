@@ -94,34 +94,22 @@ describe("CFSIO-6874 Loading from file", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
-  let configPath: string | undefined;
+  let configPath = getConfigPathForFile(
+    "max32690-wlp-dual-core-blinky.cfsconfig",
+  );
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-
-    await UIUtils.restoreFixtureFileFromGit(
-      getConfigPathForFile("max32690-wlp-dual-core-blinky.cfsconfig"),
-    );
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Loading from file", async () => {
-    configPath = getConfigPathForFile(
-      "max32690-wlp-dual-core-blinky.cfsconfig",
-    );
-
+  it("Loading from file @regression", async () => {
     await browser.openResources(configPath);
-    workbench = new Workbench();
 
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
@@ -263,12 +251,12 @@ describe("CFSIO-6874 Loading from file", () => {
     const sizeText = await (
       await UIUtils.findWebElement(view, sizeStepper)
     ).getAttribute("value");
-    const startUi = parseAddr(startAddrText);
-    const sizeUiBytes = parseSizeBytes(sizeText);
+    const startUi = parseAddr(startAddrText ?? "");
+    const sizeUiBytes = parseSizeBytes(sizeText ?? "");
 
     const actual = {
-      memoryType: norm(memoryType),
-      partitionName: norm(partitionNameText),
+      memoryType: norm(memoryType ?? ""),
+      partitionName: norm(partitionNameText ?? ""),
       permCM4: (permCM4Text ?? "").trim(),
       isOwnerFlag: Boolean(isChecked),
       isOwnerText: isCheckedText,

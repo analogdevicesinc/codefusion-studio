@@ -35,8 +35,9 @@ try {
     path: [
       // First match wins
       path.resolve(process.cwd(), ".env"), // cwd
-      path.resolve(dirname, "../..", ".env"), // this package
-      path.resolve(dirname, "../../../..", ".env"), // root package
+      // `dirname` is `out`, as this file is bundled into out/extension.js
+      path.resolve(dirname, "..", ".env"), // this package
+      path.resolve(dirname, "../../..", ".env"), // root package
     ],
   });
 } catch {
@@ -47,7 +48,8 @@ export class AuthConfigParser {
   private authConfig: Partial<AuthConfig> = {};
 
   constructor() {
-    const authConfigFile = path.resolve(dirname, "../../auth.json");
+    // `dirname` is `out`, as this file is bundled into out/extension.js
+    const authConfigFile = path.resolve(dirname, "../auth.json");
     if (checkIfFileExists(authConfigFile)) {
       this.authConfig = readJsonFile(authConfigFile) as Partial<
         Omit<AuthConfig, "sessionFile">

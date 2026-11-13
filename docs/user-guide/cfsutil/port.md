@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Port
 author: Analog Devices
-date: 2026-04-24
+date: 2026-10-09
 ---
 
 # Port
@@ -11,14 +11,16 @@ The CLI can list active serial ports and, optionally, list detailed information 
 ## List ports
 
 ```sh
-cfsutil port list [-v]
+cfsutil port list [-v | -q] [--format text|json]
 ```
 
 Lists the active serial ports on the host PC.
 
 | Flag | Description |
 | --- | --- |
-| `-v, --verbose` | Display detailed information about each serial port. |
+| `-v, --verbose` | Display detailed information about each serial port. Mutually exclusive with `--quiet`. |
+| `-q, --quiet` | Suppress non-error output, including warnings. Mutually exclusive with `--verbose`. |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
 

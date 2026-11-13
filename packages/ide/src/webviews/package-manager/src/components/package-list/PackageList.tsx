@@ -24,7 +24,6 @@ import {useAppDispatch} from '../../state/store';
 import {toggleSelectAllPackages} from '../../state/slices/packages/packages.reducer';
 import {
 	useCurrentPageEntries,
-	useDetails,
 	usePackageListTotal,
 	usePackageListLoading,
 	usePackagesError,
@@ -63,6 +62,7 @@ export function SelectAllCheckbox() {
 		<div className={styles.selectAllContainer}>
 			<label className={styles.checkboxContainer}>
 				<CheckBox
+					dataTest='select-all'
 					checked={isSelectAllChecked}
 					indeterminate={isIndeterminate}
 					onClick={handleSelectAll}
@@ -70,7 +70,10 @@ export function SelectAllCheckbox() {
 				{l10n?.selectAll ?? 'Select All'}
 			</label>
 			{selectedCount > 0 && (
-				<span className={styles.selectedCount}>
+				<span
+					data-test='selected-count'
+					className={styles.selectedCount}
+				>
 					{(selectedCount === 1
 						? (l10n?.selectedCountSingular ?? '{count} item selected')
 						: (l10n?.selectedCount ?? '{count} items selected')
@@ -83,9 +86,9 @@ export function SelectAllCheckbox() {
 
 export default function PackageList() {
 	const pageEntries = useCurrentPageEntries();
-	const details = useDetails();
 	const total = usePackageListTotal();
 
+	// Placeholders only while the list first loads.
 	const loading = usePackageListLoading();
 	const error = usePackagesError();
 	const pageSize = usePageSize();
@@ -124,11 +127,7 @@ export default function PackageList() {
 		<div className={styles.container}>
 			<div className={styles.cardsList}>
 				{pageEntries.map(entry => (
-					<PackageCard
-						key={entry.name}
-						entry={entry}
-						details={details}
-					/>
+					<PackageCard key={entry.name} entry={entry} />
 				))}
 			</div>
 		</div>

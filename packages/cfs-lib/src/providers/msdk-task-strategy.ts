@@ -50,7 +50,7 @@ export class MsdkTaskStrategy implements TaskDiscoveryStrategy {
 				) {
 					return true;
 				}
-			} catch (error) {
+			} catch {
 				// Continue checking other markers
 			}
 		}
@@ -71,7 +71,7 @@ export class MsdkTaskStrategy implements TaskDiscoveryStrategy {
 				const content = fs.readFileSync(projectMkPath, "utf8");
 				// Match an uncommented RISCV_LOAD=1 line (not preceded by #)
 				return /^\s*RISCV_LOAD\s*=\s*1/m.test(content);
-			} catch (error) {
+			} catch {
 				// ignore read errors
 			}
 		}
@@ -104,7 +104,9 @@ export class MsdkTaskStrategy implements TaskDiscoveryStrategy {
 		// RISCV_LOAD=1 line in project.mk. If any MSDK folder has this marker,
 		// exclude all MSDK folders that don't — those are the RISC-V companion
 		// projects, which should not receive default tasks.
-		const dualCoreFolders = msdkFolders.filter((f) => this.hasRiscvLoad(f));
+		const dualCoreFolders = msdkFolders.filter((f) =>
+			this.hasRiscvLoad(f)
+		);
 		const msdkProjects =
 			dualCoreFolders.length > 0 ? dualCoreFolders : msdkFolders;
 

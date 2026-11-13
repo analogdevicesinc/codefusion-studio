@@ -84,6 +84,33 @@ describe("renderTemplates utility", () => {
 		);
 	});
 
+	it("renders .bin destinations with exact byte preservation", async () => {
+		await ensureCleanTempPath("render-templates", "binary");
+
+		const outputDirectory = resolveTempPath(
+			"render-templates",
+			"binary"
+		);
+		const templates: CfsFileMap[] = [
+			{
+				src: "templates/binary/payload.bin.eta",
+				dst: `${outputDirectory}/`
+			}
+		];
+
+		await renderTemplates(templates, {}, resolveFixturePath());
+
+		const outputFile = path.join(outputDirectory, "payload.bin");
+		expect(await pathExists(outputFile)).to.equal(true);
+
+		const result = await fs.readFile(outputFile);
+		const expected = Buffer.from([0x00, 0x42, 0x80, 0xd0, 0xff]);
+		expect(result.equals(expected)).to.equal(
+			true,
+			`Expected bytes [${[...expected]}] but got [${[...result]}]`
+		);
+	});
+
 	it("skips templates whose condition resolves to false", async () => {
 		await ensureCleanTempPath("render-templates", "conditional");
 

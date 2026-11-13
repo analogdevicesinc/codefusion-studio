@@ -14,9 +14,7 @@
       "target": {
         "soc": "MAX78002",
         "core": "CM4",
-        "accelerator": "CNN",
-        "family": "CORTEX-M",
-        "firmware_platform": null
+        "accelerator": "CNN"
       },
       "backend": { "Name": "izer", "Extensions": null }
     }

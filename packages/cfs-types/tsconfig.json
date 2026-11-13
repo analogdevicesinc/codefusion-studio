@@ -5,6 +5,7 @@
 		"module": "NodeNext",
 		"outDir": "dist",
 		"rootDir": "src",
+		"types": ["node"],
 		"strict": true,
 		"target": "es2022",
 		"moduleResolution": "NodeNext",

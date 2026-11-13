@@ -21,13 +21,20 @@ import {
   CATALOG_LOCATION,
   CHECK_FOR_UPDATES,
 } from "../constants";
-import { AuthConfigParser } from "./auth-config";
-import { CatalogManager, CfsApiClient, SessionManager } from "cfs-lib";
+import type { AuthService } from "../services/auth-service";
+import { CatalogManager, CfsApiClient } from "cfs-lib";
 import * as vscode from "vscode";
 import path from "node:path";
 
-export async function getCatalogManager(): Promise<CatalogManager | undefined> {
-  const sdkPath = await Utils.getSdkPath();
+/**
+ * Creates a catalog manager configured from the extension settings.
+ * @param authService - Provides the myAnalog session for the online catalog
+ * @returns The catalog manager, or undefined when it could not be created
+ */
+export async function getCatalogManager(
+  authService: AuthService,
+): Promise<CatalogManager | undefined> {
+  const sdkPath = Utils.getSdkPath();
   const catalogLocation = vscode.workspace
     .getConfiguration(EXTENSION_ID)
     .get(`${CATALOG_MANAGER}.${CATALOG_LOCATION}`);
@@ -54,16 +61,13 @@ export async function getCatalogManager(): Promise<CatalogManager | undefined> {
     ? path.join(sdkPath, "Data", "SoC", "catalog.zip")
     : undefined;
   const catalogStoreDir = resolveVariables(String(catalogLocation));
-  let offlineMode = !Boolean(checkForCatalogUpdates);
+  let offlineMode = !checkForCatalogUpdates;
   let apiClient: CfsApiClient | undefined;
 
   if (!offlineMode) {
-    let authConfig;
     let session;
     try {
-      authConfig = new AuthConfigParser().getConfig();
-      const sessionManager = new SessionManager(authConfig);
-      session = await sessionManager.getSession();
+      session = await authService.getSession();
     } catch (error) {
       // Wanted online mode, but errored getting the session (rather than there just being no session)
       console.warn("Failed to load auth session", error);
@@ -74,7 +78,7 @@ export async function getCatalogManager(): Promise<CatalogManager | undefined> {
 
     try {
       apiClient = new CfsApiClient({
-        baseUrl: authConfig?.ccmUrl,
+        baseUrl: authService.config?.ccmUrl,
         authorizer: session?.authorizer,
       });
     } catch (error) {

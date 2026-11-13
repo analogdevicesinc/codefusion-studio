@@ -19,6 +19,7 @@
 import {expect} from 'chai';
 import {generateValidationErrorType} from './validate-inputs';
 import {computeErrorPerControl} from './dynamic-form-svc';
+import {controlErrorTypes} from './control-errors';
 
 describe('generateValidationErrorType', () => {
 	it('accepts numeric zero for decimal integer controls', () => {
@@ -56,5 +57,17 @@ describe('generateValidationErrorType', () => {
 				base: 'Hexadecimal'
 			})
 		).to.equal(undefined);
+	});
+
+	it('rejects negative values when minimum is zero', () => {
+		expect(
+			generateValidationErrorType({
+				content: '-1',
+				controlType: 'integer',
+				minVal: 0,
+				maxVal: 8,
+				base: 'Decimal'
+			})
+		).to.equal(controlErrorTypes.minVal);
 	});
 });

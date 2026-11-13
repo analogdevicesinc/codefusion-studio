@@ -25,11 +25,15 @@ import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {useMessenger} from '../../../../common/contexts/MessengerContext';
 import {openLicensePreviewRequest} from '@constants/messages/package-manager-messages';
 import {
-	useDetails,
-	usePackageList
+	usePackageList,
+	useVersionMeta
 } from '../../state/slices/packages/packages.selector';
 import {buildPackageReference} from '../../state/slices/packages/packages.reducer';
-import {formatCachedVersions, isUpdateAvailable} from '../../utils';
+import {
+	formatCachedVersions,
+	formatSupportedSocs,
+	isUpdateAvailable
+} from '../../utils';
 
 type PackageReviewCardProps = {
 	readonly reference: CfsPackageReference;
@@ -37,6 +41,8 @@ type PackageReviewCardProps = {
 	readonly dependencies: CfsPackageReference[];
 	/** True while the dependency closure is still being resolved. */
 	readonly isDependenciesLoading: boolean;
+	/** True when this package is one side of a version conflict. */
+	readonly hasConflict?: boolean;
 	/** Called when a dependency's title is clicked, to focus its dependency card. */
 	readonly onDependencyClick: (
 		dependency: CfsPackageReference,
@@ -48,18 +54,19 @@ export default function PackageReviewCard({
 	reference,
 	dependencies,
 	isDependenciesLoading,
+	hasConflict,
 	onDependencyClick
 }: PackageReviewCardProps) {
 	const locale = useLocaleContext();
 	const l10n = locale?.packageCard;
 	const reviewL10n = locale?.reviewSummary;
 	const messenger = useMessenger();
-	const details = useDetails();
 	const packageList = usePackageList();
 
-	const detail =
-		details[buildPackageReference(reference.name, reference.version)];
+	// Catalog metadata of this exact version, when the catalog lists it.
+	const detail = useVersionMeta(reference.name, reference.version);
 	const entry = packageList.find(e => e.name === reference.name);
+	const socs = detail?.socs ?? [];
 
 	const hasUpdate =
 		entry?.installedVersion !== undefined &&
@@ -80,7 +87,12 @@ export default function PackageReviewCard({
 	const cachedVersions = entry ? formatCachedVersions(entry) : '—';
 
 	return (
-		<div className={styles.container}>
+		<div
+			className={`${styles.container}${
+				hasConflict ? ` ${styles.conflicting}` : ''
+			}`}
+			data-test={hasConflict ? 'package-card-conflicting' : undefined}
+		>
 			<div className={styles.content}>
 				<div className={styles.header}>
 					<div className={styles.nameAndBadge}>
@@ -93,14 +105,14 @@ export default function PackageReviewCard({
 					<span className={styles.status}>v{reference.version}</span>
 				</div>
 
-				{detail ? (
+				{
 					<div className={styles.packageInfoGrid}>
 						<div className={styles.packageDetailsRow}>
 							<div className={styles.rowHeader}>
 								{l10n?.detail?.description}
 							</div>
 							<div className={styles.rowValue}>
-								{detail.description}
+								{detail?.description ?? '—'}
 							</div>
 						</div>
 						<div className={styles.packageDetailsRow}>
@@ -108,7 +120,7 @@ export default function PackageReviewCard({
 								{l10n?.detail?.type}
 							</div>
 							<div className={styles.rowValue}>
-								{detail.type ?? '—'}
+								{detail?.type ?? '—'}
 							</div>
 						</div>
 						<div className={styles.packageDetailsRow}>
@@ -116,7 +128,7 @@ export default function PackageReviewCard({
 								{l10n?.detail?.cfsCompatibility}
 							</div>
 							<div className={styles.rowValue}>
-								{detail.cfsVersion}
+								{detail?.cfsVersionConstraint ?? '—'}
 							</div>
 						</div>
 						<div className={styles.packageDetailsRow}>
@@ -124,7 +136,7 @@ export default function PackageReviewCard({
 								{l10n?.detail?.license}
 							</div>
 							<div className={styles.rowValue}>
-								{detail.license ?? '—'} &nbsp;
+								{detail?.license ?? '—'} &nbsp;
 								<button
 									type='button'
 									className={styles.link}
@@ -145,15 +157,11 @@ export default function PackageReviewCard({
 								{l10n?.detail?.supportedSocs}
 							</div>
 							<div className={styles.rowValue}>
-								{detail.soc?.join(', ') ?? '—'}
+								{formatSupportedSocs(socs)}
 							</div>
 						</div>
 					</div>
-				) : (
-					<div className={styles.detailsLoading}>
-						<ProgressRing position='center' />
-					</div>
-				)}
+				}
 
 				<div className={styles.header}>
 					<div className={styles.nameAndBadge}>
@@ -188,6 +196,11 @@ export default function PackageReviewCard({
 								dep.name,
 								dep.version
 							)}-${i}`;
+							const updateLabel =
+								l10n?.versionUpdateRequired?.replace(
+									'{version}',
+									`v${dep.version}`
+								) ?? `v${dep.version} (Update Required)`;
 
 							return (
 								<div
@@ -204,12 +217,7 @@ export default function PackageReviewCard({
 										{dep.name}
 									</button>
 									<div className={styles.rowValue}>
-										{hasUpdate
-											? (l10n?.versionUpdateRequired?.replace(
-													'{version}',
-													`v${dep.version}`
-												) ?? `v${dep.version} (Update Required)`)
-											: `v${dep.version}`}
+										{hasUpdate ? updateLabel : `v${dep.version}`}
 									</div>
 									{installedVersion !== undefined && (
 										<div className={styles.rowStatus}>

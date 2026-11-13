@@ -1,0 +1,13 @@
+{
+	"$schema": "../../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../../.oxlintrc.json"],
+	"plugins": [],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"node": true,
+		"es2022": true
+	},
+	"ignorePatterns": ["dist/**", "test/**"]
+}

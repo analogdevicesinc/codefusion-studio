@@ -17,7 +17,12 @@ import * as vscode from "vscode";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
 import CfsCustomEditor from "./cfs-custom-editor";
 import type { CfsPluginInfo, CfsWorkspace } from "cfs-types";
-import { getHostPlatform, CfsPluginManager } from "cfs-lib";
+import {
+  CfsPluginManager,
+  CfsToolManager,
+  getHostPlatform,
+  type CodeGenerationOptions,
+} from "cfs-lib";
 import type { CfsPackageManagerProvider } from "cfs-package-manager";
 import { CfsDataModelManager } from "cfs-lib";
 
@@ -33,7 +38,10 @@ import {
 } from "../telemetry/telemetry";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 import { getCatalogManager } from "../utils/catalog";
+import type { AuthService } from "../services/auth-service";
 import { createPluginManager } from "../utils/plugin-manager";
+import { resolveZephyrBase } from "../utils/zephyr-base";
+import { generateAiCodeForWorkspace } from "../services/ai-tools-service";
 
 const messageTypes = {
   getCatalog: "get-catalog",
@@ -56,6 +64,8 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
   constructor(
     context: vscode.ExtensionContext,
     private dataModelManager: CfsDataModelManager,
+    private toolManager: CfsToolManager,
+    private readonly authService: AuthService,
     pkgManager?: CfsPackageManagerProvider,
   ) {
     super(context);
@@ -65,11 +75,15 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
   static register(
     context: vscode.ExtensionContext,
     dataModelManager: CfsDataModelManager,
+    toolManager: CfsToolManager,
+    authService: AuthService,
     pkgManager?: CfsPackageManagerProvider,
   ): vscode.Disposable {
     const provider = new WorkspaceCreationEditor(
       context,
       dataModelManager,
+      toolManager,
+      authService,
       pkgManager,
     );
 
@@ -128,7 +142,7 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
     });
 
     let catalogData: SoC[] | undefined;
-    let catalogManager = await getCatalogManager();
+    let catalogManager = await getCatalogManager(this.authService);
 
     if (catalogManager) {
       try {
@@ -314,28 +328,75 @@ class WorkspaceCreationEditor extends CfsCustomEditor {
             try {
               await vscode.workspace.save(Utils.getTempCfsWorkspacePath());
 
-              await pluginManager
-                ?.generateWorkspace(workspaceConfig)
-                .then(async () => {
-                  const codeWorkspace = vscode.Uri.file(
-                    path.join(
-                      workspaceConfig.location,
-                      workspaceConfig.workspaceName,
-                      `${workspaceConfig.workspaceName}.code-workspace`,
-                    ),
-                  );
-                  if (!process.env.SKIP_OPEN_WORKSPACE) {
-                    vscode.commands.executeCommand(
-                      VSCODE_OPEN_FOLDER_COMMAND_ID,
-                      codeWorkspace,
-                    );
+              // Set Zephyr base for board DTS detection during workspace
+              // generation, scoped to the SoC selected in the creation form.
+              let codeGenerationOptions: CodeGenerationOptions | undefined;
+              if (pluginManager) {
+                const zephyrBase = await resolveZephyrBase(
+                  workspaceConfig.soc,
+                  this.pkgManager,
+                );
+                codeGenerationOptions = { zephyrBase };
+              }
+
+              await vscode.window.withProgress(
+                {
+                  location: vscode.ProgressLocation.Notification,
+                  title: `Creating workspace "${workspaceConfig.workspaceName}"`,
+                  cancellable: true,
+                },
+                async (progress, token) => {
+                  if (!pluginManager) {
+                    throw new Error("Plugin Manager is not initialized.");
                   }
 
-                  await logWorkspaceCreationTelemetry(workspaceConfig, soc);
+                  progress.report({ message: "Generating workspace files..." });
+                  await pluginManager.generateWorkspace(
+                    workspaceConfig,
+                    codeGenerationOptions,
+                  );
 
-                  catalogManager?.dispose();
-                  request = Promise.resolve("success");
-                });
+                  if (token.isCancellationRequested) {
+                    throw new Error("Workspace creation cancelled.");
+                  }
+
+                  await generateAiCodeForWorkspace(
+                    workspaceConfig,
+                    {
+                      dataModelManager: this.dataModelManager,
+                      toolManager: this.toolManager,
+                      authService: this.authService,
+                      pkgManager: this.pkgManager,
+                    },
+                    progress,
+                    token,
+                  );
+
+                  if (token.isCancellationRequested) {
+                    throw new Error("Workspace creation cancelled.");
+                  }
+                },
+              );
+
+              const codeWorkspace = vscode.Uri.file(
+                path.join(
+                  workspaceConfig.location,
+                  workspaceConfig.workspaceName,
+                  `${workspaceConfig.workspaceName}.code-workspace`,
+                ),
+              );
+
+              await logWorkspaceCreationTelemetry(workspaceConfig, soc);
+
+              if (!process.env.SKIP_OPEN_WORKSPACE) {
+                vscode.commands.executeCommand(
+                  VSCODE_OPEN_FOLDER_COMMAND_ID,
+                  codeWorkspace,
+                );
+              }
+
+              catalogManager?.dispose();
+              request = Promise.resolve("success");
             } catch (error) {
               if (fs.existsSync(workspacePath.fsPath)) {
                 await fs.promises.rm(workspacePath.fsPath, {

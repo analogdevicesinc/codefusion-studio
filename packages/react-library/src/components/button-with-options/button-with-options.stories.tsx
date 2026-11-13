@@ -15,7 +15,7 @@
 
 import type {Meta} from '@storybook/react';
 import React from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import ButtonWithOptions from './button-with-options';
 
 const meta: Meta<typeof ButtonWithOptions> = {

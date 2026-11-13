@@ -26,7 +26,6 @@ import {setPeripheralConfig} from '../../../state/slices/peripherals/peripherals
 import {PERIPHERAL_PLUGIN_OPTIONS_FORM_ID} from './PeripheralConfigTask';
 import ConfigurationForm from './ConfigurationForm';
 import PluginInfo from '../../../components/plugin-info/plugin-info';
-import {getControlsFromCache} from '../../../utils/api';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
 import type {ControlCfg} from '@common/types/soc';
@@ -35,6 +34,13 @@ import {
 	computePeripheralResetValues,
 	getConfigFormatFromSocControls
 } from '../../../utils/soc-peripherals';
+import {useScopes} from '../../../state/slices/scopes/scopes.selector';
+import {type ScopeValidationOptions} from '../../../utils/plugin-options-validation';
+import {
+	type TLocaleContext,
+	useLocaleContext
+} from '../../../../../common/contexts/LocaleContext';
+import {localizeMessage} from '../../../../../common/utils/localization';
 
 function PeripheralConfigForm({
 	formattedData: fd,
@@ -56,6 +62,9 @@ function PeripheralConfigForm({
 	pluginOptions: TFormControl[];
 }>) {
 	const dispatch = useAppDispatch();
+	const l10n: TLocaleContext | undefined =
+		useLocaleContext()?.peripherals;
+	const scopes = useScopes();
 	const [portalTarget, setPortalTarget] = useState<
 		HTMLElement | undefined
 	>(
@@ -85,9 +94,30 @@ function PeripheralConfigForm({
 		return data;
 	}, [formattedControls, fd]);
 
+	const formatScopeConflictMessage = useCallback<
+		ScopeValidationOptions['formatConflictMessage']
+	>(
+		({value, conflictingItems}) =>
+			localizeMessage(l10n, 'scope-conflict.error', {
+				value,
+				conflictingItems
+			}),
+		[l10n]
+	);
+	const scopeValidation = useMemo<ScopeValidationOptions>(
+		() => ({
+			scopes,
+			controlScope: CONTROL_SCOPES.PERIPHERAL,
+			projectId,
+			itemId: activePeripheral,
+			formatConflictMessage: formatScopeConflictMessage
+		}),
+		[activePeripheral, formatScopeConflictMessage, projectId, scopes]
+	);
 	const formErrors: Record<string, string> = getPeripheralFormErrors(
 		peripheralControls ?? [],
-		formattedData
+		formattedData,
+		scopeValidation
 	);
 
 	const handleOnChange = (
@@ -116,10 +146,7 @@ function PeripheralConfigForm({
 
 		// Compute the next control set based on the new config values
 		// Used to persist only configuration values that are going to be available on the next render.
-		const fullControlSet =
-			getControlsFromCache(CONTROL_SCOPES.PERIPHERAL, projectId)?.[
-				activePeripheral
-			] ?? [];
+		const fullControlSet = peripheralControls ?? [];
 
 		const nextControlSet: ControlCfg[] = [];
 
@@ -257,7 +284,10 @@ function PeripheralConfigForm({
 								errors={formErrors}
 								resetValues={resetValues}
 								testId='plugin-options:plugin-form'
-								emptyMessage='No plugin options available.'
+								emptyMessage={
+									l10n?.noPluginOptions ??
+									'No plugin options available.'
+								}
 								onControlChange={handleOnChange}
 								onReset={handleReset}
 							/>

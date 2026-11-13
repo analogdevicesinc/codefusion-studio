@@ -27,6 +27,7 @@ const viteConfig = defineViteConfig(() => {
         "@common": path.resolve(process.cwd(), "./src/webviews/common/"),
         "@constants": path.resolve(process.cwd(), "./src/constants/"),
         "@ide-types": path.resolve(process.cwd(), "./src/types/"),
+        "@west-editor": path.resolve(process.cwd(), "./src/zephyr/west-editor/"),
         "@wrksp-common": path.resolve(
           __dirname,
           "./src/webviews/workspace-creation/src/common/",
@@ -40,7 +41,10 @@ const viteConfig = defineViteConfig(() => {
           "./src/webviews/config-tools",
           "./src/lib/drawing-engine/HarmonicPolyfill.js",
         ),
-        "@socs": path.resolve(process.cwd(), `../cfs-data-models/socs/`),
+        "@socs": path.resolve(
+          process.cwd(),
+          "../../test-fixtures/cfs-data-model/socs/",
+        ),
       },
     },
     build: {

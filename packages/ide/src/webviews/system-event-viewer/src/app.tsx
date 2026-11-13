@@ -15,6 +15,7 @@
 
 import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import {Provider} from 'react-redux';
+import {ColorsProvider} from './common/context/colors-provider';
 import {store} from './state/store';
 
 import {AppContent} from './components/app-content/app-content';
@@ -25,7 +26,9 @@ function App() {
 	return (
 		<Provider store={store}>
 			<LocalizationProvider namespace='sev'>
-				<AppContent />
+				<ColorsProvider>
+					<AppContent />
+				</ColorsProvider>
 			</LocalizationProvider>
 		</Provider>
 	);

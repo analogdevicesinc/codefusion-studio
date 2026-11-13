@@ -18,13 +18,19 @@ import fs from "node:fs/promises";
 
 import type { VerifiedConfig, AiCommandResult } from "cfs-types";
 import TfliteInfo from "./info.js";
-import { sanitizeToCIdentifier } from "../ai-tools-utils.js";
+import { hashFile } from "../../utils/file-utils.js";
+import { sanitizeToCIdentifier } from "../../utils/c-utils.js";
+import {
+	addFileCreatedEvent,
+	escapeBlockComment
+} from "../ai-tools-utils.js";
 
 interface FileInfo {
 	symbol: string;
 	section: string;
 	size: number;
 	sourceFile: string;
+	hash: string;
 }
 
 interface GenInfo {
@@ -32,6 +38,17 @@ interface GenInfo {
 	arenaSize: string;
 	arenaSection: string;
 	arenaEstimated: boolean;
+}
+
+export interface TflmModelInput {
+	modelPath?: string;
+	additionalSummary?: string;
+	arenaSize?: number;
+}
+
+export interface TflmDeferredHeaders {
+	symbolsByDir: Map<string, Set<string>>;
+	reportDirByBuildDir: Map<string, string>;
 }
 
 async function writeByteArray(
@@ -74,7 +91,7 @@ async function generateCFile(
 		await fh.write(
 			`/*\n * Generated C representation of ${model} on ${new Date().toString()}. Do not modify.\n */\n
 #include "${model}.hpp"\n
-alignas(16) unsigned char ${model}_arena[${gen.arenaSize}];\n`
+alignas(16) unsigned char ${model}_arena[${model.toUpperCase()}_ARENA_SIZE];\n`
 		);
 
 		for (const file of gen.files) {
@@ -100,17 +117,21 @@ async function generateHFile(params: {
 	gen: GenInfo;
 	info: TfliteInfo;
 	result: AiCommandResult;
+	additionalSummary?: string;
 }) {
-	const { outFilename, model, gen, info, result } = params;
+	const { outFilename, model, gen, info, result, additionalSummary } =
+		params;
 
 	const upper = model.toUpperCase();
 
 	let filesText = "";
 	let macrosText = "";
+	let sourceFilesText = "";
 
 	for (const file of gen.files) {
 		macrosText += `#define ${file.symbol.toUpperCase()}_LEN (${String(file.size)})\n`;
 		filesText += `extern const unsigned char ${file.symbol}[] __attribute__((${file.section}aligned(16)));\n\n`;
+		sourceFilesText += ` * ${escapeBlockComment(file.sourceFile)} (sha256: ${file.hash})\n`;
 	}
 
 	const arenaStatus = gen.arenaEstimated ? "estimated" : "provided";
@@ -165,9 +186,14 @@ async function generateHFile(params: {
 
 	macrosText += `#define ${upper}_NUM_OPERATORS (${String(info.numOps)})`;
 
+	const additionalSummaryText = additionalSummary
+		? `\n${escapeBlockComment(additionalSummary.trim())}\n`
+		: "";
+
 	const text = `/*\n * Generated C representation of ${model} on ${new Date().toString()}. Do not modify.\n
+ * Generated from:\n${sourceFilesText}
 Model summary:\n--------------\n${info.summary}\n
-Model graph:\n------------\n${info.graph}*/\n\n${macrosText}\n\n
+Model graph:\n------------\n${info.graph}${additionalSummaryText ?? ""}*/\n\n${macrosText}\n\n
 #if defined(__cplusplus)
 #pragma GCC diagnostic push
 // TFLM library mixes float/double literals which produces warnings
@@ -213,22 +239,21 @@ ${includeText}
 	await fs.writeFile(path.join(buildDir, "adi_tflm.hpp"), text);
 }
 
-function addFileCreatedEvent(
-	output: AiCommandResult,
-	outputDir: string,
-	file: string
-) {
-	const outputPath = path.join(outputDir, file).replace(/\\/g, "/");
-	output.events.push({
-		type: "FILE",
-		message: `Created file: ${outputPath}`,
-		value: outputPath
-	});
-	output.artifacts?.files.push(outputPath);
+export async function generateTflmSharedHeader(
+	deferred: TflmDeferredHeaders,
+	result: AiCommandResult
+): Promise<void> {
+	for (const [dir, symbols] of deferred.symbolsByDir) {
+		await generateTopLevelHeader(symbols, dir);
+		const rDir = deferred.reportDirByBuildDir.get(dir) ?? dir;
+		addFileCreatedEvent(result, dir, rDir, "adi_tflm.hpp");
+	}
 }
 
 export async function generateTflm(
-	vcfgs: VerifiedConfig[]
+	vcfgs: VerifiedConfig[],
+	modelInputs?: ReadonlyArray<TflmModelInput | undefined>,
+	deferred?: TflmDeferredHeaders
 ): Promise<AiCommandResult> {
 	const result: AiCommandResult = {
 		code: 0,
@@ -242,22 +267,35 @@ export async function generateTflm(
 	}
 
 	const symbolsByDir = new Map<string, Set<string>>();
+	const reportDirByBuildDir = new Map<string, string>();
 
-	for (const cfg of vcfgs) {
+	for (const [index, cfg] of vcfgs.entries()) {
+		const modelInput = modelInputs?.[index];
+		const modelFile = modelInput?.modelPath ?? cfg.files.Model;
+		const additionalSummary = modelInput?.additionalSummary;
+		const arenaSize = modelInput?.arenaSize;
 		const { workspace, name, out_dir: outDir } = cfg.prj_info;
 
 		let buildDir = path.isAbsolute(outDir)
 			? outDir
 			: path.join(workspace, name, outDir);
 
-		const modelFile = cfg.files.Model;
+		let reportDir: string | undefined;
 
 		// If no out_dir has been specified, use adi_tflm
 		if (outDir === ".") {
+			reportDir = path.join(name, "src", "adi_tflm");
 			buildDir = path.join(buildDir, "src", "adi_tflm");
+		} else {
+			reportDir = outDir;
 		}
 
 		await fs.mkdir(buildDir, { recursive: true });
+		reportDirByBuildDir.set(buildDir, reportDir);
+
+		if (deferred) {
+			deferred.reportDirByBuildDir.set(buildDir, reportDir);
+		}
 
 		if (!symbolsByDir.has(buildDir)) {
 			symbolsByDir.set(buildDir, new Set<string>());
@@ -281,7 +319,7 @@ export async function generateTflm(
 
 		const modelName = sanitizeToCIdentifier(
 			cfg.backend.Extensions?.Symbol
-				? (cfg.backend.Extensions.Symbol as string)
+				? String(cfg.backend.Extensions.Symbol)
 				: cfg.name
 		);
 
@@ -296,6 +334,13 @@ export async function generateTflm(
 
 		dirSymbols.add(modelName);
 
+		if (deferred) {
+			if (!deferred.symbolsByDir.has(buildDir)) {
+				deferred.symbolsByDir.set(buildDir, new Set<string>());
+			}
+			deferred.symbolsByDir.get(buildDir)!.add(modelName);
+		}
+
 		const genInfo: GenInfo = {
 			files: [],
 			arenaSize: "0",
@@ -304,6 +349,7 @@ export async function generateTflm(
 		};
 
 		const modelSize = (await fs.stat(path.resolve(modelFile))).size;
+		const modelHash = await hashFile(path.resolve(modelFile));
 
 		genInfo.files.push({
 			symbol: modelName,
@@ -311,7 +357,8 @@ export async function generateTflm(
 				? `section("${String(cfg.backend.Extensions.Section)}"), `
 				: "",
 			size: modelSize,
-			sourceFile: modelFile
+			sourceFile: modelFile,
+			hash: modelHash
 		});
 
 		if (cfg.files.Dataset) {
@@ -320,6 +367,9 @@ export async function generateTflm(
 			const dataSize = (
 				await fs.stat(path.resolve(cfg.files.Dataset))
 			).size;
+			const dataHash = await hashFile(
+				path.resolve(cfg.files.Dataset)
+			);
 
 			genInfo.files.push({
 				symbol: datasetSymbol,
@@ -327,22 +377,31 @@ export async function generateTflm(
 					? `section("${String(cfg.backend.Extensions.DatasetSection)}"), `
 					: "",
 				size: dataSize,
-				sourceFile: cfg.files.Dataset
+				sourceFile: cfg.files.Dataset,
+				hash: dataHash
 			});
 		}
 
 		// Arena details
 		if (cfg.backend.Extensions?.ArenaSize !== undefined) {
 			genInfo.arenaSize = String(cfg.backend.Extensions.ArenaSize);
-		} else {
-			const arenaSize = info.arenaSize();
+		} else if (arenaSize !== undefined) {
+			genInfo.arenaSize = String(arenaSize);
+			genInfo.arenaEstimated = true;
 
 			result.events.push({
 				type: "INFO",
-				message: `No arena size provided. Estimated to be ${String(arenaSize)} bytes`
+				message: `Arena size estimated from Vela SRAM usage: ${String(arenaSize)} bytes`
+			});
+		} else {
+			const arenaEstimate = info.arenaSize();
+
+			result.events.push({
+				type: "INFO",
+				message: `No arena size provided. Estimated to be ${String(arenaEstimate)} bytes`
 			});
 
-			genInfo.arenaSize = String(arenaSize);
+			genInfo.arenaSize = String(arenaEstimate);
 			genInfo.arenaEstimated = true;
 		}
 
@@ -357,7 +416,12 @@ export async function generateTflm(
 			info
 		);
 
-		addFileCreatedEvent(result, buildDir, `${modelName}.cpp`);
+		addFileCreatedEvent(
+			result,
+			buildDir,
+			reportDir,
+			`${modelName}.cpp`
+		);
 
 		try {
 			await generateHFile({
@@ -365,7 +429,8 @@ export async function generateTflm(
 				model: modelName,
 				gen: genInfo,
 				info,
-				result
+				result,
+				additionalSummary
 			});
 		} catch (error) {
 			result.code = 1;
@@ -377,12 +442,20 @@ export async function generateTflm(
 			return result;
 		}
 
-		addFileCreatedEvent(result, buildDir, `${modelName}.hpp`);
+		addFileCreatedEvent(
+			result,
+			buildDir,
+			reportDir,
+			`${modelName}.hpp`
+		);
 	}
 
-	for (const [dir, symbols] of symbolsByDir) {
-		await generateTopLevelHeader(symbols, dir);
-		addFileCreatedEvent(result, dir, "adi_tflm.hpp");
+	if (!deferred) {
+		for (const [dir, symbols] of symbolsByDir) {
+			await generateTopLevelHeader(symbols, dir);
+			const rDir = reportDirByBuildDir.get(dir) ?? dir;
+			addFileCreatedEvent(result, dir, rDir, "adi_tflm.hpp");
+		}
 	}
 
 	return result;

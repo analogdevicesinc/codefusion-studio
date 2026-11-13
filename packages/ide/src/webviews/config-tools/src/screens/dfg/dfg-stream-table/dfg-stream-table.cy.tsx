@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,16 @@ import {navigationItems} from '../../../../../common/constants/navigation';
 import {
 	addNewStream,
 	type DFGStreamUI,
-	setFilteredDestinations
+	setFilteredDestinations,
+	setFilteredGroups,
+	updateStream
 } from '../../../state/slices/gaskets/gasket.reducer';
 import CfgtoolsTopBar from '../../../components/cfgtools-header/CfgtoolsTopbar';
 import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext';
 import styles from '../../../components/cfgtools-header/CfgtoolsTopbar.module.scss';
-import type {WebviewApi} from 'vscode-webview';
-import {mockVsCodeApi} from '../../../../../common/api';
+import {setupMessengerMock} from '@common/test-utils/messenger-mock';
+import {exportCsvRequest} from '@constants/messages/cfgtools-messages';
+import {logTelemetryRequest} from '@constants/messages/telemetry-messages';
 
 let reduxStore: ReturnType<typeof configurePreloadedStore>;
 
@@ -499,26 +502,52 @@ describe('DFG Stream Table', () => {
 				).should('exist');
 			});
 		});
+
+		it('should remove a selected group when it is no longer present', () => {
+			createTestStream({
+				source: 'ASS',
+				destination: 'BSS',
+				alias: 'grouped-stream',
+				group: 'G1'
+			});
+
+			const stream = reduxStore
+				.getState()
+				.gasketsReducer.Streams.find(stream => stream.Group === 'G1');
+
+			expect(stream).to.not.be.undefined;
+
+			reduxStore.dispatch(setFilteredGroups(['G1']));
+
+			reduxStore.dispatch(
+				updateStream({
+					updatedStream: {
+						...stream!,
+						Group: ''
+					}
+				})
+			);
+
+			expect(
+				reduxStore.getState().gasketsReducer.filteredGroups
+			).to.deep.equal([]);
+		});
 	});
 	describe('Export CSV', () => {
 		it('should export the stream table as CSV', () => {
 			let csvData: Promise<{csvContent: string}> | undefined;
-			const mockApi: WebviewApi<any> = {
-				postMessage(msgObj: {id: number; type: string; body: any}) {
-					if (msgObj.type === 'export-csv') {
-						csvData = Promise.resolve(msgObj.body);
-					}
+			setupMessengerMock({
+				[exportCsvRequest.method](msgObj: {
+					id: number;
+					method: string;
+					params: {csvContent: string};
+				}) {
+					csvData = Promise.resolve(msgObj.params);
 
 					return undefined;
 				},
-				getState() {
-					return undefined;
-				},
-				setState(newState: any) {
-					return newState;
-				}
-			};
-			mockVsCodeApi(mockApi);
+				[logTelemetryRequest.method]: []
+			});
 			createTestStream({
 				source: 'ASS',
 				destination: 'BSS',

@@ -13,12 +13,17 @@
  *
  */
 import {Flags} from '@oclif/core';
-import {getAiToolsPlugin} from 'cfs-lib';
-import {AiCommandResult, SocAi} from 'cfs-types';
+import {generateProfilingReport, getAiToolsPlugin} from 'cfs-lib';
+import {
+  AiCommandResult,
+  CfsAiProfilingReport,
+  SocAi
+} from 'cfs-types';
 
 import {
   ensureOrTryInferCoreFlags,
-  getAndEnsureDataModel
+  getAndEnsureDataModel,
+  getModelFormat
 } from '../../utils/ai-command-utils.js';
 import {BaseAiCommand} from '../../utils/base-ai-command.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
@@ -29,7 +34,12 @@ import {
   getVersionFromConfig
 } from '../../utils/utils.js';
 
-export default class Profile extends BaseAiCommand<typeof Profile> {
+export default class Profile extends BaseAiCommand<
+  typeof Profile,
+  CfsAiProfilingReport
+> {
+  static useResponseEnvelope = true;
+
   static description = `Profile model resources with target SoC and core.`;
 
   static examples: string[] = [
@@ -86,7 +96,15 @@ export default class Profile extends BaseAiCommand<typeof Profile> {
     })
   };
 
-  async run(): Promise<AiCommandResult> {
+  protected formatData(data: CfsAiProfilingReport): void {
+    if (this.flags['report-file']) {
+      return;
+    }
+
+    this.log(generateProfilingReport(data));
+  }
+
+  async run(): Promise<AiCommandResult<CfsAiProfilingReport>> {
     const {flags, config} = this;
     const warnings: string[] = [];
 
@@ -107,14 +125,15 @@ export default class Profile extends BaseAiCommand<typeof Profile> {
       });
     }
 
-    const aiPlugin = getAiToolsPlugin(
-      await getCfsaiPath(config),
-      getVersionFromConfig(config)
-    );
-
     const packageManager = await getPackageManager({
       acceptUndefined: true
     });
+
+    const aiPlugin = getAiToolsPlugin(
+      await getCfsaiPath(config),
+      getVersionFromConfig(config),
+      packageManager
+    );
 
     const dmManager = await getDataModelManager(
       config,
@@ -132,7 +151,8 @@ export default class Profile extends BaseAiCommand<typeof Profile> {
           {
             suggestion:
               'Verify the SoC name is correct or required package is available',
-            run: `cfsutil socs list`
+            run: `cfsutil socs list`,
+            code: 'SOC_PACKAGE_NOT_FOUND'
           }
         );
       }
@@ -146,6 +166,12 @@ export default class Profile extends BaseAiCommand<typeof Profile> {
 
     ensureOrTryInferCoreFlags(flags, dataModel, warnings);
 
+    this.telemetryMetadata = {
+      soc: flags.soc,
+      core: flags.core,
+      modelFormat: getModelFormat(flags.model)
+    };
+
     const ai: SocAi | undefined = aiPlugin.getAIDataFromSOCModel(
       dataModel,
       flags.soc,
@@ -158,7 +184,8 @@ export default class Profile extends BaseAiCommand<typeof Profile> {
         `AI data not found for SoC '${flags.soc}', Core '${flags.core}'${flags.acc ? `, Acc '${flags.acc}'` : ''}`,
         {
           suggestion: 'Verify --core is valid for this SoC',
-          run: `cfsutil socs info ${flags.soc} --cores`
+          run: `cfsutil socs info ${flags.soc} --cores`,
+          code: 'AI_TARGET_NOT_FOUND'
         }
       );
     }

@@ -9,20 +9,20 @@
   "firmwarePlatform": "zephyr",
   "supportedSocs": [
     {
-      "name": "MAX32690",
-      "board": "EvKit_V1",
-      "package": "tqfn",
+      "name": "TEST690",
+      "board": "KIT_BOARD",
+      "package": "PQFN",
       "dataModelVersion": "^1.3.628"
     },
     {
-      "name": "MAX32690",
-      "board": "AD-APARD32690-SL",
-      "package": "wlp"
+      "name": "TEST690",
+      "board": "AD-BOARD-SL",
+      "package": "PLP"
     },
     {
-      "name": "MAX78002",
-      "board": "EvKit_V1",
-      "package": "csbga",
+      "name": "TEST8002",
+      "board": "KIT_BOARD",
+      "package": "PSBGA",
       "dataModelVersion": "^1.3.628"
     }
   ],

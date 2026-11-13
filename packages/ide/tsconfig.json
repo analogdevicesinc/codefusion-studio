@@ -9,7 +9,6 @@
     "types": ["node", "vite/client"],
     "sourceMap": true,
     "rootDir": ".",
-    "baseUrl": ".",
     "strict": true /* enable all strict type-checking options */,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -20,6 +19,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "paths": {
       "@common/*": ["./src/webviews/common/*"],
       "@ide-types/*": ["./src/types/*"],

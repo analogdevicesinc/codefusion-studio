@@ -39,11 +39,11 @@ abstract class CfsCustomEditor implements vscode.CustomTextEditorProvider {
 
   abstract resolveCustomTextEditor(
     _document: vscode.TextDocument,
-    _webviewPanel: vscode.WebviewPanel,
+    _webviewPanel: vscode.WebviewPanel
   ): Promise<void>;
 
   getDocumentAsJson(
-    document: vscode.TextDocument,
+    document: vscode.TextDocument
   ): Document | Record<never, never> {
     const text = document.getText();
 
@@ -55,14 +55,14 @@ abstract class CfsCustomEditor implements vscode.CustomTextEditorProvider {
       return JSON.parse(text);
     } catch {
       throw new Error(
-        "Could not get document as json. Content is not valid json",
+        "Could not get document as json. Content is not valid json"
       );
     }
   }
 
   async updateDocument(
     payload: Record<string, unknown>,
-    document: vscode.TextDocument,
+    document: vscode.TextDocument
   ) {
     const edit = new vscode.WorkspaceEdit();
     const timestamp = new Date().toISOString();
@@ -77,7 +77,7 @@ abstract class CfsCustomEditor implements vscode.CustomTextEditorProvider {
     edit.replace(
       document.uri,
       new vscode.Range(0, 0, document.lineCount, 0),
-      JSON.stringify(newDoc, null, 2) + "\n",
+      JSON.stringify(newDoc, null, 2) + "\n"
     );
 
     await vscode.workspace.applyEdit(edit);
@@ -118,7 +118,7 @@ function getDefaultWorkspace() {
  * and open it with the workspace creation editor.
  */
 export async function openTempDocumentInWorkspaceEditor(
-  editor: string = WORKSPACE_CREATION_EDITOR_ID,
+  editor: string = WORKSPACE_CREATION_EDITOR_ID
 ) {
   const uri = Utils.getTempCfsWorkspacePath();
 
@@ -127,7 +127,7 @@ export async function openTempDocumentInWorkspaceEditor(
     await vscode.workspace.fs.writeFile(uri, Buffer.from(content));
   } catch (error) {
     vscode.window.showErrorMessage(
-      `Failed to open Workspace Creation Wizard: ${error}`,
+      `Failed to open Workspace Creation Wizard: ${error}`
     );
 
     throw error;

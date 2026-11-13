@@ -27,6 +27,7 @@ export type InlineEditFieldProps = Readonly<{
 	dataTest?: string;
 	placeholder?: string;
 	maxLength?: number;
+	error?: string;
 	onConfirm: () => void;
 	onCancel: () => void;
 	onInputChange: (value: string) => void;
@@ -44,6 +45,7 @@ const InlineEditField = forwardRef<
 		dataTest,
 		placeholder = '',
 		maxLength,
+		error,
 		onConfirm,
 		onCancel,
 		onInputChange,
@@ -75,6 +77,7 @@ const InlineEditField = forwardRef<
 				isDisabled={disabled}
 				dataTest={dataTest}
 				maxLength={maxLength}
+				error={error}
 				onInputChange={onInputChange}
 				onKeyDown={handleKeyDown}
 				onFocus={() => {

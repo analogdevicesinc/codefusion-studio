@@ -18,34 +18,80 @@
 @use '#fonts' as fonts;
 @use '@sev-common/styles/sev-variables' as sev;
 
-@mixin list-item {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	width: auto;
-	height: sev.$timeline-list-item-height;
-	padding: 0 8px;
-	cursor: default;
-}
-
 .listContainer {
-	--tooltip-width: auto;
-
 	display: flex;
 	flex: 0 0 auto;
 	height: 100%;
 	min-height: 0;
 
-	.item {
-		@include list-item;
-		box-sizing: border-box;
+	&:has([data-row-dragged='true']) {
+		.item[data-row-type='group'] * {
+			pointer-events: none !important;
+		}
+	}
+
+	.listContent {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.emptyBlock {
+		width: auto;
+		position: sticky;
+		top: 0;
+		height: calc(2 * sev.$timeline-time-reference-block-height);
+		z-index: sev.zIndex('timeline-row');
+		background: colors.$default-background;
 		border-bottom: 1px solid colors.$default-border;
+	}
+
+	.item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		height: sev.$timeline-list-item-height;
+		padding-block: 0;
+		padding-inline: 0 8px;
+		cursor: default;
+		box-sizing: border-box;
+		min-width: 0;
+		border-bottom: 1px solid colors.$default-border;
+
+		.itemContentViewport {
+			display: flex;
+			align-items: center;
+			flex: 1 1 0;
+			min-width: 0;
+			height: 100%;
+			overflow: clip;
+		}
+
+		.itemContent {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
+		}
 
 		&[data-row-emphasized='true'] {
 			background: colors.$list-inactive-selection-background;
 		}
 
+		&[data-row-drop-target='true'] {
+			background: colors.$list-active-selection-background;
+			color: colors.$button-foreground;
+		}
+
+		&[data-row-dragged='true'] {
+			opacity: 0.4;
+			pointer-events: none;
+		}
+
 		.name {
+			flex: 1 1 auto;
+			min-width: 0;
 			color: colors.$default-foreground;
 			white-space: nowrap;
 			overflow: hidden;
@@ -54,77 +100,171 @@
 			@include fonts.heading-h5;
 		}
 
+		.nameContainer,
+		.groupNameEditorContainer {
+			display: flex;
+			align-items: center;
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		.nameContainer {
+			overflow: hidden;
+		}
+
+		.groupNameContainer {
+			flex: 0 1 auto;
+			gap: 4px;
+			border-radius: layout.$border-radius-2;
+			padding: 0 4px;
+
+			&:hover,
+			&:focus-within {
+				background-color: colors.$default-background;
+				color: colors.$default-foreground;
+
+				.name {
+					color: inherit;
+				}
+
+				.editButton {
+					opacity: 1;
+					pointer-events: auto;
+				}
+			}
+		}
+
+		.editButtonContainer {
+			display: flex;
+			flex: 0 0 20px;
+			width: 20px;
+			height: 20px;
+		}
+
+		.editButton {
+			opacity: 0;
+			pointer-events: none;
+			flex: 0 0 20px;
+			width: 20px;
+			min-width: 20px;
+			height: 20px;
+			padding: 0;
+			background-color: transparent;
+			color: colors.$default-foreground;
+		}
+
+		.groupNameEditor {
+			flex: 1 1 auto;
+			min-width: 0;
+
+			vscode-text-field {
+				--input-height: 24 !important;
+			}
+		}
+
+		.groupNameEditorActions {
+			display: flex;
+			align-items: center;
+			gap: 2px;
+		}
+
+		.groupNameEditorButton {
+			flex: 0 0 16px;
+			width: 16px;
+			min-width: 16px;
+			height: 16px;
+			padding: 0;
+			line-height: 0;
+			color: colors.$button-foreground;
+
+			&::part(control) {
+				width: 16px;
+				height: 16px;
+				padding: 0;
+				color: colors.$button-foreground;
+			}
+
+			svg {
+				width: 16px;
+				height: 16px;
+			}
+		}
+
 		.tooltip {
-			--tooltip-width: auto;
+			--tooltip-width: max-content;
 			--cfs-tooltip-body-padding: 5px 8px;
 			--cfs-tooltip-layout-min-width: 89px;
 			max-width: 160px;
+		}
 
-			* {
-				color: var(--vscode-editor-foreground);
-			}
+		.eventTooltipText {
+			@include fonts.heading-h5;
+		}
+
+		.editTooltipText {
+			@include fonts.body-b3;
+		}
+
+		.eventTooltipText,
+		.editTooltipText {
+			color: colors.$default-foreground;
+			overflow-wrap: anywhere;
 		}
 	}
 
 	.dragIcon {
+		flex: 0 0 20px;
 		cursor: grab;
-		margin-right: 8px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 		user-select: none;
 	}
 
-	.placeholder {
-		width: auto;
-		height: sev.$timeline-list-item-height;
-		background-color: colors.$default-background;
-		box-shadow: colors.$default-shadow;
-		border-bottom: 1px solid colors.$default-border;
-		pointer-events: none;
+	.expandButtonContainer,
+	.expandButton {
+		display: flex;
+		flex: 0 0 20px;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		min-width: 20px;
+		height: 20px;
+		border-radius: layout.$border-radius-2;
+		padding: 0;
 
-		> * {
-			position: absolute;
-			width: 0;
-			height: 0;
-			overflow: hidden;
-			visibility: hidden;
+		&:hover {
+			background-color: colors.$default-background;
+			color: colors.$default-foreground;
 		}
 	}
 
-	.emptyBlockItem {
-		width: auto;
-		height: 28px;
+	.chevron {
 		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		border-bottom: 1px solid colors.$default-border;
-		padding: 0 8px;
-		box-sizing: border-box;
-		position: sticky;
-		top: 0;
-		z-index: sev.zIndex('timeline-row');
-		background: colors.$default-background;
-		color: colors.$default-foreground;
+		transition: transform 100ms ease;
+	}
 
-		@include fonts.body-b3;
+	.chevronExpanded {
+		transform: rotate(90deg);
+	}
+
+	.groupCount {
+		flex: 0 0 auto;
 	}
 
 	.list {
 		min-width: 0;
-		flex: 1 1 auto;
 		position: relative;
 	}
 
 	.resizer {
 		flex: 0 0 2px;
-		height: auto;
 		background-color: colors.$default-border;
 		cursor: col-resize;
 		position: relative;
 		z-index: sev.zIndex('list-resizer');
 
-		&:hover {
-			background-color: colors.$button-primary-background;
-		}
-
+		&:hover,
 		&.active {
 			background-color: colors.$button-primary-background;
 		}

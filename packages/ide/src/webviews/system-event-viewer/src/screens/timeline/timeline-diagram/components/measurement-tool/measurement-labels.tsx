@@ -17,7 +17,13 @@ import type {
 	MeasurementState,
 	MeasureLabelLayout
 } from '../../../../../common/types/timeline';
+import {
+	HEADER_LABEL_TOP,
+	TIMESTAMP_LABEL_HEIGHT
+} from '../../../../../common/constants/timeline';
 import TimestampLabel from './timestamp-label';
+
+import styles from './measurement-labels.module.scss';
 
 export default function MeasurementLabels({
 	state,
@@ -27,7 +33,13 @@ export default function MeasurementLabels({
 	layout: MeasureLabelLayout;
 }>) {
 	return (
-		<>
+		<div
+			className={styles.verticalLabelsContainer}
+			style={{
+				top: HEADER_LABEL_TOP,
+				height: TIMESTAMP_LABEL_HEIGHT
+			}}
+		>
 			{/* Start line label */}
 			{layout.startLabelLeft !== undefined &&
 				state.startLabelText && (
@@ -35,7 +47,7 @@ export default function MeasurementLabels({
 						ref={layout.startLabelRef}
 						text={state.startLabelText}
 						left={layout.startLabelLeft}
-						top={layout.verticalLabelTop}
+						top={0}
 						dataTest='timeline-diagram:measurement-label:start'
 					/>
 				)}
@@ -46,7 +58,7 @@ export default function MeasurementLabels({
 					ref={layout.endLabelRef}
 					text={state.endLabelText}
 					left={layout.endLabelLeft}
-					top={layout.verticalLabelTop}
+					top={0}
 					dataTest='timeline-diagram:measurement-label:end'
 				/>
 			)}
@@ -58,24 +70,10 @@ export default function MeasurementLabels({
 						ref={layout.cursorLabelRef}
 						text={state.cursorLabelText}
 						left={layout.cursorLabelLeft}
-						top={layout.verticalLabelTop}
+						top={0}
 						dataTest='timeline-diagram:measurement-label:cursor'
 					/>
 				)}
-
-			{/* Horizontal delta label */}
-			{layout.horizontalLabelLeft !== undefined &&
-				layout.horizontalLabelTop !== undefined &&
-				state.horizontalDeltaText &&
-				state.horizontalLine && (
-					<TimestampLabel
-						ref={layout.horizontalLabelRef}
-						text={state.horizontalDeltaText}
-						left={layout.horizontalLabelLeft}
-						top={layout.horizontalLabelTop}
-						dataTest='timeline-diagram:measurement-label:delta'
-					/>
-				)}
-		</>
+		</div>
 	);
 }

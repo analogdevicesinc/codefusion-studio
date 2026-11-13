@@ -30,7 +30,7 @@ function ConfigSection({
 	dataTest,
 	handleHeaderClick
 }: Readonly<{
-	title: string;
+	title?: string;
 	children: React.ReactNode;
 	isExpanded?: boolean;
 	isUnavailable?: boolean;
@@ -56,23 +56,31 @@ function ConfigSection({
 
 	return (
 		<div
-			className={`${styles.section} ${isUnavailable ? styles.disabled : ''}`}
+			className={`${styles.section} ${
+				isUnavailable ? styles.disabled : ''
+			}`}
 		>
-			<div
-				data-test={dataTest ?? ''}
-				className={`${styles.sectionHeader} ${isExpanded ? styles.expanded : ''} ${styles[variant]} ${isUnavailable ? styles.disabled : ''}`}
-				onClick={handleClickEvent}
-			>
-				<h5>{title}</h5>
-				<div className={styles.manage}>
-					{variant === 'navigate' && (
-						<span>
-							{l10n?.peripherals?.['pin-assignment']?.manage}
-						</span>
-					)}
-					<ChevronRight />
+			{title && (
+				<div
+					data-test={dataTest ?? ''}
+					className={`${styles.sectionHeader} ${
+						isExpanded ? styles.expanded : ''
+					} ${styles[variant]} ${
+						isUnavailable ? styles.disabled : ''
+					}`}
+					onClick={handleClickEvent}
+				>
+					<h5>{title}</h5>
+					<div className={styles.manage}>
+						{variant === 'navigate' && (
+							<span>
+								{l10n?.peripherals?.['pin-assignment']?.manage}
+							</span>
+						)}
+						<ChevronRight />
+					</div>
 				</div>
-			</div>
+			)}
 			<div className={`${isExpanded ? '' : styles.collapsed}`}>
 				{children}
 			</div>

@@ -111,22 +111,16 @@ describe("System Planner conflict error on Generate Code screen ", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
   after(async () => {
     await UIUtils.sleep(2000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Should display the conflict on generate code screen without visiting clock tab", async () => {
+  it("Should display the conflict on generate code screen without visiting clock tab @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
     view = new WebView();
@@ -192,7 +186,7 @@ describe("System Planner conflict error on Generate Code screen ", () => {
     console.log("The text is", errorText);
 
     expect(
-      errorText.includes("1 Issues"),
+      errorText.includes("1 Issue"),
       `Expected conflict error for peripheral 'ADC' to be displayed, but it was not.`,
     ).to.be.true;
 

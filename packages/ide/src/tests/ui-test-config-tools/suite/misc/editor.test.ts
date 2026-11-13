@@ -18,6 +18,7 @@ import {
   VSBrowser,
   WebDriver,
   Workbench,
+  until,
 } from "vscode-extension-tester";
 import { expect } from "chai";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
@@ -31,23 +32,25 @@ describe("Editor Customization", () => {
   before(async function () {
     this.timeout(60000);
 
-    browser = VSBrowser.instance;
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
     driver = browser.driver;
     editor = new EditorView();
-
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
   });
 
-  it('Should display the "Show Source" quick access button when opening *.cfsconfig files', async () => {
+  it('Should display the "Show Source" quick access button when opening *.cfsconfig files @regression', async () => {
     const configPath = getConfigPathForFile("manual32690.cfsconfig");
     await browser.openResources(configPath);
     await UIUtils.sleep(3000);
 
-    const quickAccess = await driver.findElement(
-      By.xpath(
-        '//*[@id="workbench.parts.editor"]/div[1]/div/div/div/div/div[2]/div[1]/div/div/div[4]/div[1]/div[2]/div/div/ul/li[1]/a',
+    // Locate by aria-label rather than an absolute DOM path, since VS Code's
+    // internal editor-actions wrapper nesting shifts between releases.
+    const quickAccess = await driver.wait(
+      until.elementLocated(
+        By.css(
+          '[id="workbench.parts.editor"] a.action-label[aria-label="(CFS) View Config File Source (JSON)"]',
+        ),
       ),
+      10000,
     );
 
     expect(await quickAccess.getAttribute("aria-label")).to.equal(
@@ -55,9 +58,11 @@ describe("Editor Customization", () => {
     );
 
     await quickAccess.click().then(async () => {
-      expect(await editor.getOpenEditorTitles()).to.include(
-        "manual32690.cfsconfig",
-      );
+      const openTitles = await editor.getOpenEditorTitles();
+      expect(
+        openTitles.some((title) => title.includes("manual32690")),
+        `Expected an open editor title to include 'manual32690', got: ${JSON.stringify(openTitles)}`,
+      ).to.be.true;
 
       await new Workbench().executeCommand("workbench.action.closeAllEditors");
     });

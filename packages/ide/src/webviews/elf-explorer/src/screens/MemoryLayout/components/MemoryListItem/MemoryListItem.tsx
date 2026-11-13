@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import styles from './MemoryListItem.module.scss';
 type TMemoryListItemProps = {
 	readonly section: TSection;
 	readonly title: string;
+	readonly helpKey: string;
 	readonly index: number;
 	readonly i10n: TLocaleContext | undefined;
 	readonly children: React.ReactNode;
@@ -33,6 +34,7 @@ type TMemoryListItemProps = {
 export default function MemoryListItem({
 	section,
 	title,
+	helpKey,
 	index,
 	i10n,
 	children
@@ -53,10 +55,10 @@ export default function MemoryListItem({
 				<div className={styles['tooltip-container']}>
 					<span>{title}</span>
 
-					{isHovered && i10n?.[`${title}`] && (
+					{isHovered && i10n?.[helpKey] && (
 						<Tooltip
 							content={{
-								title: i10n?.[`${title}`] || ''
+								title: i10n?.[helpKey] || ''
 							}}
 							containerPosition='relative'
 						>

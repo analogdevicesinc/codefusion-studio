@@ -13,14 +13,12 @@
  *
  */
 
-import type {SoC} from 'cfs-ccm-lib';
-
 import {Config} from '@oclif/core';
 import {type CfsPluginInfo} from 'cfs-types';
 import fs from 'node:fs';
 
 import {getSocCatalog} from '../utils/catalog-manager.js';
-import {checkIfFileExists} from './utils.js';
+import {checkIfFileExists, findSocByName} from './utils.js';
 
 export async function validateSoC(
   flags: {
@@ -129,14 +127,6 @@ export function isTemplateValid(
             flags.package.toLowerCase() === 'lga')
         : true)
   );
-}
-
-export function findSocByName(
-  socs: SoC[],
-  name: string
-): SoC | undefined {
-  const lowerName = name.toLowerCase();
-  return socs.find((soc) => soc.name.toLowerCase() === lowerName);
 }
 
 export async function validatePaths(

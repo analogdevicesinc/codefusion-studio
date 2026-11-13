@@ -13,20 +13,13 @@
  *
  */
 
-import type {
-	MeasureLabelLayout,
-	MeasurementState
-} from '../../../../../common/types/timeline';
+import type {MeasurementState} from '../../../../../common/types/timeline';
 
 import styles from './measurement-guide.module.scss';
 
 export default function MeasurementGuides({
-	state,
-	layout
-}: Readonly<{
-	state: MeasurementState;
-	layout: MeasureLabelLayout;
-}>) {
+	state
+}: Readonly<{state: MeasurementState}>) {
 	return (
 		<>
 			{state.cursorGuide && (
@@ -53,33 +46,6 @@ export default function MeasurementGuides({
 					style={{left: state.endLine.x}}
 				/>
 			)}
-
-			{layout.horizontalLineTop !== undefined &&
-				layout.horizontalLineLeft !== undefined &&
-				layout.horizontalLineWidth !== undefined && (
-					<div
-						className={styles.horizontalLine}
-						style={{
-							left: layout.horizontalLineLeft,
-							width: layout.horizontalLineWidth,
-							top: layout.horizontalLineTop
-						}}
-					/>
-				)}
-
-			{layout.deltaStemLeft !== undefined &&
-				layout.deltaStemTop !== undefined &&
-				layout.deltaStemHeight !== undefined && (
-					<div
-						className={styles.deltaStem}
-						data-test='timeline-diagram:measurement-stem'
-						style={{
-							left: layout.deltaStemLeft,
-							top: layout.deltaStemTop,
-							height: layout.deltaStemHeight
-						}}
-					/>
-				)}
 		</>
 	);
 }

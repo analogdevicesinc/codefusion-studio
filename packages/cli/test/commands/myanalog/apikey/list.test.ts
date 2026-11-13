@@ -16,7 +16,7 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 
-import {apiKeyListDeps} from '../../../../src/commands/myanalog/apikey/list.js';
+import {apiKeyListDeps} from '../../../../dist/commands/myanalog/apikey/list.js';
 
 describe('myanalog apikey list', () => {
   const originalGetApiClient = apiKeyListDeps.getApiClient;

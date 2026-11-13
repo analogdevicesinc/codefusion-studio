@@ -26,7 +26,7 @@ import Table from 'cli-table3';
 import {BaseCommand} from '../../utils/base-command.js';
 import {getSocCatalog} from '../../utils/catalog-manager.js';
 import {RecoverableError} from '../../utils/recoverable-error.js';
-import {tableOutputStyles} from '../../utils/utils.js';
+import {findSocByName, tableOutputStyles} from '../../utils/utils.js';
 
 /**
  * Public-facing board information without internal ids.
@@ -98,6 +98,8 @@ const returnYesNo = (input?: boolean): 'No' | 'Yes' =>
   input ? 'Yes' : 'No';
 
 export default class Info extends BaseCommand<typeof Info> {
+  static useResponseEnvelope = true;
+
   static aliases = ['soc:info'];
 
   static args = {
@@ -146,13 +148,14 @@ export default class Info extends BaseCommand<typeof Info> {
 
     const catalog = await getSocCatalog(config, false);
     const socs = await catalog.getAll();
-    const soc = this.findSocByName(socs, args.soc);
+    const soc = findSocByName(socs, args.soc);
     if (!soc) {
       throw new RecoverableError(
         `SoC '${args.soc}' not found in catalog`,
         {
           suggestion: 'Verify the SoC name is correct',
-          run: 'cfsutil socs list'
+          run: 'cfsutil socs list',
+          code: 'SOC_NOT_FOUND'
         }
       );
     }
@@ -296,17 +299,6 @@ export default class Info extends BaseCommand<typeof Info> {
       identifier: pkg.dataModelPackageID,
       packageType: pkg.packageType
     };
-  }
-
-  /**
-   * Find a SoC by name (case-insensitive).
-   * @param socs - Array of SoC objects to search through.
-   * @param name - The name of the SoC to find.
-   * @returns The matching SoC object, or undefined if not found.
-   */
-  private findSocByName(socs: SoC[], name: string): SoC | undefined {
-    const lowerName = name.toLowerCase();
-    return socs.find((soc) => soc.name.toLowerCase() === lowerName);
   }
 
   /**

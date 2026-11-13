@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
 import { toolResult, toolError, noSession } from "../../utils/response-helpers";
@@ -61,11 +60,11 @@ export function registerSessionLifecycleTools(
       description:
         "Start a debug session with the specified configuration name. " +
         "Use 'debug_help' to discover available configurations.",
-      inputSchema: {
-        configName: z
-          .string()
-          .describe("Debug configuration name from launch.json"),
-      },
+      inputSchema: z.object({
+              configName: z
+                .string()
+                .describe("Debug configuration name from launch.json"),
+            }),
     },
     async (params) => {
       try {

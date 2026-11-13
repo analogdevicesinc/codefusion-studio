@@ -39,7 +39,7 @@ type UpdateResolutionCardProps = Readonly<{
 	status?: UpdateResolutionStatusType;
 	component: CfsMissingComponent;
 	description: string;
-	selected: CfsUpdateResolutionType;
+	selected?: CfsUpdateResolutionType;
 	allowFutureCompatibleVersion: boolean;
 	updateToVersion: string;
 	resolutions: Array<{
@@ -50,6 +50,55 @@ type UpdateResolutionCardProps = Readonly<{
 	onResolutionChange: (value: string) => void;
 	onAllowFutureCompatibleVersion: () => void;
 }>;
+
+type ResolutionControlsProps = Readonly<{
+	componentId: string;
+	selected?: CfsUpdateResolutionType;
+	resolutions: Array<{
+		value: CfsUpdateResolutionType;
+		label: string;
+	}>;
+	resolutionPlaceholder: string;
+	allowFutureCompatibleVersion: boolean;
+	allowFutureVersionsLabel?: string;
+	onResolutionChange: (value: string) => void;
+	onAllowFutureCompatibleVersion: () => void;
+}>;
+
+function ResolutionControls({
+	componentId,
+	selected,
+	resolutions,
+	resolutionPlaceholder,
+	allowFutureCompatibleVersion,
+	allowFutureVersionsLabel,
+	onResolutionChange,
+	onAllowFutureCompatibleVersion
+}: ResolutionControlsProps) {
+	return (
+		<>
+			<DropDown
+				controlId={`component-resolution-${componentId}`}
+				currentControlValue={selected}
+				options={resolutions}
+				noValueOption={{
+					value: '',
+					label: resolutionPlaceholder
+				}}
+				onHandleDropdown={onResolutionChange}
+			/>
+
+			<CheckBox
+				checked={allowFutureCompatibleVersion}
+				onChange={onAllowFutureCompatibleVersion}
+			>
+				<span className={styles.futureVersionsLabel}>
+					{allowFutureVersionsLabel}
+				</span>
+			</CheckBox>
+		</>
+	);
+}
 
 function UpdateResolutionCard({
 	status = undefined,
@@ -86,6 +135,9 @@ function UpdateResolutionCard({
 		component.type === 'plugin'
 			? i10n?.errorItem.missingPluginTitle
 			: i10n?.errorItem.missingDataModelTitle;
+
+	const resolutionPlaceholder =
+		i10n?.errorItem.resolutionPlaceholder ?? 'Select a resolution';
 
 	const headerStatusFragment = {
 		UPDATE_IN_PROGRESS: (
@@ -183,27 +235,26 @@ function UpdateResolutionCard({
 								/>
 								<div>
 									{i10n?.errorItem?.loadingResolutionsMessage ??
- 										'This operation can take several minutes, please wait...'}
+										'This operation can take several minutes, please wait...'}
 								</div>
 							</div>
 						) : (
-							<>
-								<DropDown
-									controlId={`component-resolution-${String(component.id)}`}
-									currentControlValue={selected}
-									options={resolutions}
-									onHandleDropdown={onResolutionChange}
-								/>
-
-								<CheckBox
-									checked={allowFutureCompatibleVersion}
-									onChange={onAllowFutureCompatibleVersion}
-								>
-									<span className={styles.futureVersionsLabel}>
-										{i10n?.errorItem.allowFutureVersions}
-									</span>
-								</CheckBox>
-							</>
+							<ResolutionControls
+								componentId={component.id}
+								selected={selected}
+								resolutions={resolutions}
+								resolutionPlaceholder={resolutionPlaceholder}
+								allowFutureCompatibleVersion={
+									allowFutureCompatibleVersion
+								}
+								allowFutureVersionsLabel={
+									i10n?.errorItem.allowFutureVersions
+								}
+								onResolutionChange={onResolutionChange}
+								onAllowFutureCompatibleVersion={
+									onAllowFutureCompatibleVersion
+								}
+							/>
 						)}
 					</div>
 				)}

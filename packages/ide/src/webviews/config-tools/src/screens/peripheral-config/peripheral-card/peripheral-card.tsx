@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,7 +127,13 @@ function PeripheralCard({
 					<div className={styles.title}>{title}</div>
 					{end && (
 						<div
-							className={`${styles.end} ${hasAllocatedPeripherals && Array.isArray(projects) && projects.length > 1 ? styles.expandable : ''}`}
+							className={`${styles.end} ${
+								hasAllocatedPeripherals &&
+								Array.isArray(projects) &&
+								projects.length > 1
+									? styles.expandable
+									: ''
+							}`}
 							data-test='allocation-details-chevron'
 						>
 							{content &&
@@ -141,7 +147,9 @@ function PeripheralCard({
 										position='bottom'
 									>
 										<Button
-											className={`${styles.downArrow}${isExpanded ? ` ${styles.iconOpen}` : ''}`}
+											className={`${styles.downArrow}${
+												isExpanded ? ` ${styles.iconOpen}` : ''
+											}`}
 											appearance='icon'
 										>
 											<DownArrow />

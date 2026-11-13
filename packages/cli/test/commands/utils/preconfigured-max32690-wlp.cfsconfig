@@ -1,10 +1,11 @@
 {
+  "SchemaVersion": "2.1.0",
   "Copyright": "Copyright (c) 2025 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "^1.1.0",
   "DataModelSchemaVersion": "2.1.0",
   "Timestamp": "2025-02-28T12:29:03.185Z",
-  "Soc": "MAX32690",
-  "Package": "WLP",
+  "Soc": "TEST690",
+  "Package": "PLP",
   "Pins": [
     {
       "Pin": "J2",
@@ -32,7 +33,7 @@
     }
   ],
   "ClockNodes": [],
-  "BoardName": "AD-APARD32690-SL",
+  "BoardName": "AD-BOARD-SL",
   "Projects": [
     {
       "CoreId": "CM4",

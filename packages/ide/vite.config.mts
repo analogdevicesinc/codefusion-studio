@@ -14,11 +14,14 @@
  */
 
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 import react from "@vitejs/plugin-react";
-import { copyConanFiles } from "./vite.plugin.cfs-package-manager";
+import {
+  copyConanFiles,
+  copyGitRemoteHelper,
+} from "./vite.plugin.cfs-package-manager";
 import { copyNativeModules } from "./vite.plugin.copy-native-modules";
 import {
   createExternalPredicate,
@@ -34,30 +37,31 @@ const nativeModuleClosure = resolveNativeModuleClosure(NATIVE_MODULE_ROOTS);
 const nativeModuleExternals = nativeModuleClosure.map((pkg) => pkg.name);
 const isNativeModuleExternal = createExternalPredicate(nativeModuleClosure);
 
-// Bundle the extension and all it's depencencies to CJS
-const extensionConfig = {
-  plugins: [
-    tsconfigPaths({ projects: ["./tsconfig.json"] }),
-    copyConanFiles(),
-    copyNativeModules(nativeModuleClosure),
-  ],
+/**
+ * Creates a config that bundles a single Node entry point and all its
+ * dependencies (except native modules) into one CJS file.
+ * @param name - The output file name (without extension), relative to `out`.
+ * @param entry - The entry point source file.
+ * @param plugins - Extra plugins to run as part of this build.
+ * @param emptyOutDir - Whether to clear `out` before building.
+ * @returns The Vite config.
+ */
+const createNodeBundleConfig = (
+  name: string,
+  entry: string,
+  plugins: Plugin[],
+  emptyOutDir: boolean,
+) => ({
+  plugins: [tsconfigPaths({ projects: ["./tsconfig.json"] }), ...plugins],
   build: {
     ssr: true, // the server side rendering preset uses rollup settings that support node modules properly
-    commonjsOptions: {
-      // These are used in conditional require statements in the `alasql` dependency
-      // Ignoring leaves the require statements intact (e.g. not hoisted to the top of the module)
-      ignore: ["react-native-fs", "react-native-fetch-blob"],
-    },
     cssMinify: "esbuild",
-    rollupOptions: {
-      input: {
-        extension: "src/extension.ts",
-      },
+    rolldownOptions: {
+      input: { [name]: entry },
       output: {
         dir: "out",
         format: "cjs",
-        preserveModules: true,
-        preserveModulesRoot: "src",
+        codeSplitting: false, // emit everything into a single file
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
         assetFileNames: "[name].[ext]",
@@ -86,15 +90,15 @@ const extensionConfig = {
         ],
         include: ["src/**/*"],
         clearScreen: false,
-        chokidar: {
+        watcher: {
           usePolling: true,
-          interval: 1000,
+          pollInterval: 1000,
         },
         skipWrite: false,
       },
     },
     sourcemap: true,
-    emptyOutDir: true,
+    emptyOutDir,
     minify: false,
   },
   resolve: {
@@ -112,14 +116,33 @@ const extensionConfig = {
     target: "node",
   },
   appType: "custom",
-};
+});
+
+// Bundle the extension and all its dependencies into out/extension.js
+const extensionConfig = createNodeBundleConfig(
+  "extension",
+  "src/extension.ts",
+  [copyConanFiles(), copyNativeModules(nativeModuleClosure)],
+  true,
+);
+
+// Standalone git remote helper for the cfspkg:// transport. Emitted as
+// out/git-remote/entry.js and run by git/west as a separate Node process. It
+// must not import the `vscode` module. Built after the extension so that it
+// does not clear the extension output.
+const gitRemoteConfig = createNodeBundleConfig(
+  "git-remote/entry",
+  "src/git-remote/entry.ts",
+  [copyGitRemoteHelper()],
+  false,
+);
 
 const webviewConfig = {
   plugins: [react(), tsconfigPaths({ projects: ["./tsconfig.webview.json"] })],
   build: {
     outDir: "out/webview",
     emptyOutDir: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: "./src/webview/index.tsx",
       output: {
         entryFileNames: `[name].js`,
@@ -130,9 +153,6 @@ const webviewConfig = {
     },
     cssMinify: "esbuild",
     cssCodeSplit: false,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
   },
   resolve: {
     alias: {
@@ -145,6 +165,10 @@ const webviewConfig = {
 export default defineConfig(({ mode }) => {
   if (mode === "extension") {
     return extensionConfig;
+  }
+
+  if (mode === "git-remote") {
+    return gitRemoteConfig;
   }
 
   if (mode === "webview") {

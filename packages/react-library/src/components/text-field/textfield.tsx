@@ -55,7 +55,18 @@ type TextFieldProps = Readonly<{
 	onFocus?: React.FormEventHandler;
 	/** Maximum number of characters allowed in the input */
 	maxLength?: number;
+	/** Input type. Use 'password' to mask the entered value. Defaults to 'text' */
+	type?: 'text' | 'password';
+	/**
+	 * Whether the input is read-only. Unlike `isDisabled`, the value stays
+	 * focusable and selectable and the field keeps its regular appearance
+	 */
+	readOnly?: boolean;
 }>;
+
+type TextFieldBeforeInputHandler = NonNullable<
+	React.ComponentProps<typeof VSCodeTextField>['onBeforeInput']
+>;
 
 const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 	function TextField(
@@ -78,10 +89,20 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 			onKeyDown,
 			onInputChange,
 			onFocus,
-			maxLength
+			maxLength,
+			type = 'text',
+			readOnly = false
 		},
 		ref
 	) {
+		const handleBeforeInput: TextFieldBeforeInputHandler | undefined =
+			onBeforeInput
+				? (event: Parameters<TextFieldBeforeInputHandler>[0]) =>
+						onBeforeInput(
+							event as unknown as React.FormEvent<HTMLInputElement>
+						)
+				: undefined;
+
 		return (
 			<div
 				className={`${styles.container} ${direction === 'vertical' ? styles.vertical : styles.horizontal} ${fullWidth ? styles['full-width'] : undefined} ${inputVal ? '' : styles.empty} ${styles[size]}`}
@@ -98,17 +119,18 @@ const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
 					<VSCodeTextField
 						//@ts-expect-error: VSCodeTextField ref expects a LegacyRef type, but this is not correct
 						ref={ref}
-						type='text'
+						type={type}
 						placeholder={placeholder}
 						id='control-input'
 						data-test={
 							dataTest ? `${dataTest}-control-input` : undefined
 						}
 						disabled={isDisabled}
+						readOnly={readOnly}
 						className={`${styles.textField} ${status === 'error' || error ? styles.errorBorder : undefined}`}
 						value={inputVal ?? ''}
 						maxlength={maxLength}
-						onBeforeInput={onBeforeInput}
+						onBeforeInput={handleBeforeInput}
 						onInput={e => {
 							onInputChange?.(
 								(e as ChangeEvent<HTMLInputElement>).target.value

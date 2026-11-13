@@ -61,7 +61,7 @@ Details can be found in the [User documentation](https://developer.analog.com/do
 
 Recommended VS Code extensions:
 
-- Prettier - Code formatter (extension id: esbenp.prettier-vscode)
+- Oxc - Linter and formatter (extension ID: `oxc.oxc-vscode`)
 
 ### Set up plugins for development
 
@@ -110,7 +110,6 @@ The project uses yarn as a package manager, and yarn workspace as monorepo manag
     |   |── cfs-ccm-lib       # Reusable utilities for CFS cloud components
     |   |── cli               # CodeFusion Studio CLI source files
     |   |── cli-plugins       # CodeFusion Studio CLI additional plugins
-    |   |── elf-parser        # A parser for ELF Files
     |   |── ide               # Build and Debug applications for Analog Devices targets
     |   |── react-library     # Custom React components for CFS
     └── package.json          # Declares global dependencies and global scripts.
@@ -227,6 +226,18 @@ code --install-extension packages/ide/*.vsix
 ```
 
 Additionally, a packaged extension is generated with every pull request and uploaded to github artifacts. A link is provided as a comment in each pull request where you can download a zip file containing the extension.
+
+## Linting
+
+This monorepo uses [oxlint](https://oxc.rs/docs/guide/usage/linter.html) for linting every TypeScript/React package. Each package has its own `.oxlintrc.json` extending the root config.
+
+Run the lint script for a package with `yarn workspace <package-name> lint`. Use the `name` field in the `package.json` file for that package — it doesn't always match the root `ws:*` shortcut suffix. For example, `packages/cfs-types` is workspace `cfs-types`.
+
+To lint a single file directly, run `yarn workspace <package-name> exec oxlint <relative/path/to/file>`.
+
+`packages/ide` (workspace `cfs-ide`) is an exception: the lint script for that package is named `ide:lint`, so run `yarn workspace cfs-ide ide:lint` instead.
+
+If you're using VS Code, we recommend installing the [Oxc](https://marketplace.visualstudio.com/items?itemName=oxc.oxc-vscode) extension for inline diagnostics and fix-on-save support.
 
 ## Building and authoring documentation
 

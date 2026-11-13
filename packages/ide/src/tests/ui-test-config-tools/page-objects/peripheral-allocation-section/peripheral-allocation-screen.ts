@@ -98,6 +98,10 @@ export async function signalConfigBtn(SignalName: string): Promise<By> {
   return By.css(`[data-test="accordion:allocated:${SignalName}"]`);
 }
 
+export async function coreSelectorButton(projectId: string): Promise<By> {
+  return By.css(`[data-test="core-selector-button-${projectId}"]`);
+}
+
 export async function coreCardSignalConfigBtn(SignalName: string): Promise<By> {
   return By.css(
     `[data-test="accordion:${SignalName}"] [data-test='peripheral-assignment:config']`,

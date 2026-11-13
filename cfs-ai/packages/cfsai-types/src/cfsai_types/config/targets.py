@@ -10,7 +10,7 @@
 # limitations under the License.
 
 
-from typing import Optional, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -35,25 +35,8 @@ class UserTarget(BaseModel):
         alias="Core",
         description="Processor core."
     )
-    package: Optional[str] = Field(
-        alias="Package", default=None,
-        description="Soc package."
-    )
-    accelerator: Optional[str] = Field(
-        alias="Accelerator", default=None,
-        description="Optional Accelerator."
-    )
-    family: Optional[str] = Field(
-        alias="Family", default=None,
-        description="Optional Family."
-    )
-    firmware_platform: Optional[str] = Field(
-        alias="FirmarePlatform", default=None,
-        description="Optional Firmware Platform."
-    )
-
     model_config = ConfigDict(
-        validate_by_name=True, serialize_by_alias=True, extra='forbid'
+        validate_by_name=True, serialize_by_alias=True, extra='allow'
     )
 
     @model_validator(mode='after')
@@ -66,8 +49,4 @@ class UserTarget(BaseModel):
         """
         self.soc = self.soc.upper()
         self.core = self.core.upper()
-        if self.accelerator:
-            self.accelerator = self.accelerator.upper()
-        if self.package:
-            self.package = self.package.upper()
         return self

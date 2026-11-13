@@ -1,3 +1,3 @@
-# CFSAI Resource Profiler
+# cfsai-resource-profiler
 
-Static analysis tool to estimate resource usage when executing an AI model on a supported piece of hardware.
+Thin wrapper — delegates to `cfsai-model-explorer`.

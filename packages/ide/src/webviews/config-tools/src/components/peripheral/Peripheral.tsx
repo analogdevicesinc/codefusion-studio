@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ function Peripheral({
 		[dispatch]
 	);
 
-	const sortedSignals = signals.sort((a, b) =>
+	const sortedSignals = [...signals].sort((a, b) =>
 		a.name.localeCompare(b.name, 'en', {
 			numeric: true,
 			sensitivity: 'base'
@@ -104,20 +104,16 @@ function Peripheral({
 								style={{position: 'relative'}}
 								id={`function-container-${title}`}
 							>
-								{sortedSignals.map(signal => {
-									if (signal.pins.length === 0) return null;
-
-									return (
-										<Function
-											key={signal.name}
-											peripheralGroup={title}
-											name={signal.name}
-											pins={signal.pins}
-											isLastIndex={isLastPeripheralGroup}
-											signalDesc={signal.description}
-										/>
-									);
-								})}
+								{sortedSignals.map(signal => (
+									<Function
+										key={signal.name}
+										peripheralGroup={title}
+										name={signal.name}
+										pins={signal.pins}
+										isLastIndex={isLastPeripheralGroup}
+										signalDesc={signal.description}
+									/>
+								))}
 							</section>
 						) : null
 					}

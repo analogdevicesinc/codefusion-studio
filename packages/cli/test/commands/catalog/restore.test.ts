@@ -19,6 +19,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope,
+  type CliErrorEnvelope
+} from '../../utils/assert-json-envelope.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -112,6 +118,34 @@ describe('catalog:restore', () => {
         fs.existsSync(catalogStoreDir),
         'catalog store should be preserved when restore fails'
       ).to.be.true;
+    });
+
+    it('reports a stable code in the JSON envelope when the backup ZIP is missing', async () => {
+      const {stdout} = await runCommand(
+        ['catalog:restore', '--format', 'json'],
+        {root: '..'}
+      );
+
+      const parsed = assertValidEnvelope(stdout);
+      expect(parsed.ok).to.be.false;
+      expect((parsed as CliErrorEnvelope).errors[0]?.code).to.equal(
+        'CATALOG_RESTORE_FAILED'
+      );
+    });
+  });
+
+  describe('JSON envelope', () => {
+    it('returns a restored:true envelope in JSON mode', async () => {
+      const {stdout} = await runCommand(
+        ['catalog:restore', '--format', 'json'],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{restored: boolean}>(
+        stdout,
+        'catalog restore'
+      );
+      expect(data).to.deep.equal({restored: true});
     });
   });
 });

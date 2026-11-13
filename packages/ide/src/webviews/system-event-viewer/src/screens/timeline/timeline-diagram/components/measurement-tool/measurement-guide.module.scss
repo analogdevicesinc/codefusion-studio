@@ -36,18 +36,3 @@
 .solidLine {
 	background: colors.$focus-border;
 }
-
-.horizontalLine {
-	position: absolute;
-	height: 2px;
-	border-radius: layout.$border-radius-1;
-	background: colors.$focus-border;
-}
-
-.deltaStem {
-	position: absolute;
-	width: 2px;
-	border-radius: layout.$border-radius-1;
-	background: colors.$focus-border;
-	transform: translateX(-1px);
-}

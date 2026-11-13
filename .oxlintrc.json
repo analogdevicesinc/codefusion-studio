@@ -1,0 +1,47 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["unicorn", "typescript", "oxc", "import", "promise", "node"],
+	"categories": {
+		"correctness": "error"
+	},
+	"env": {
+		"node": true,
+		"es2022": true
+	},
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/dist/**",
+		"**/out/**",
+		"**/tmp/**",
+		"**/coverage/**",
+		"**/cypress/**",
+		".yarn/**",
+		"cfs-ai/**",
+		"packages/cfs-data-models/**",
+		"packages/cfs-ccm-lib/cfs-ccm-api/**",
+		"packages/ide/src/webviews/*/src/lib/**",
+		"scripts/copyright/test/**"
+	],
+	"overrides": [
+		{
+			"files": [
+				"**/test/**",
+				"**/tests/**",
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/*.cy.ts",
+				"**/*.cy.tsx"
+			],
+			"rules": {
+				"no-unused-expressions": "off"
+			}
+		},
+		{
+			"files": ["packages/react-library/**", "packages/ide/src/webviews/**"],
+			"env": {
+				"node": false,
+				"browser": true
+			}
+		}
+	]
+}

@@ -1,0 +1,8 @@
+{
+  "DataModelVersion": "<%= it.dataModelVersion || '1.0.0' %>",
+  "SchemaVersion": "2.1.0",
+  "Soc": "<%= it.soc %>",
+  "Package": "<%= it.package %>",
+  "BoardName": "<%= it.board || '' %>",
+  "Projects": []
+}

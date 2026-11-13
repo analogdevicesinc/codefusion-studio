@@ -13,7 +13,7 @@
  *
  */
 import type {ConfiguredPin} from '@common/api';
-import type {Soc} from '@common/types/soc';
+import type {ControlCfg, Soc} from '@common/types/soc';
 import {setActiveConfiguredSignal} from '../../../../state/slices/app-context/appContext.reducer';
 import {setAppliedSignal} from '../../../../state/slices/pins/pins.reducer';
 import {configurePreloadedStore} from '../../../../state/store';
@@ -26,16 +26,19 @@ import {
 } from '../../../../state/slices/peripherals/peripherals.reducer';
 import type {CfsConfig} from 'cfs-types';
 import {computeInitialPinConfig} from '../../../../utils/pin-reset-controls';
-import {LocalizationProvider} from '../../../../../../common/contexts/LocaleContext';
+import {CONTROL_SCOPES} from '../../../../constants/scopes';
+import {createScopeConflictDictionary} from '../../../../test-utils/scope-conflict-test-utils';
+import {LocalizationProvider} from '@common/contexts/LocaleContext';
+
+const l10n =
+	await import('../../../../../../../../l10n/bundle.l10n.en.json').then(
+		module => module.default
+	);
 
 const mock = (await import(`@socs/max32690-tqfn.json`))
 	.default as unknown as Soc;
 
-const l10n = await import(
-	'../../../../../../../../l10n/bundle.l10n.en.json'
-);
-
-(window as any).__webview_localization_resources__ = l10n.default;
+(window as any).__webview_localization_resources__ = l10n;
 const mockControlsPromise = Promise.resolve({
 	PinConfig: mock.Controls?.PinConfig || []
 });
@@ -313,7 +316,7 @@ describe('PinconfigDisplay component', () => {
 				pinId: '7'
 			})
 		);
-		const controls = [
+		const controls: ControlCfg[] = [
 			{
 				Id: 'ALIAS',
 				Description: 'Alias',
@@ -639,5 +642,97 @@ describe('PinconfigDisplay component', () => {
 		cy.dataTest('P0.7-7-IN')
 			.should('contain.text', 'Input')
 			.and('have.attr', 'disabled');
+	});
+
+	it('should show scope conflict errors for duplicated scoped plugin options', () => {
+		cy.document().then(doc => {
+			doc.getElementById('pin-config-plugin-options-form')?.remove();
+			const elem = doc.createElement('div');
+			elem.id = 'pin-config-plugin-options-form';
+			doc.body.appendChild(elem);
+		});
+		(window as any).__webview_localization_resources__ = l10n;
+
+		const pinScopeValue = 'shared_gpio';
+		const pinScopeTemplate = `\${ProjectId} \${String: zephyr dtnames } + \${Control:MODE} +`;
+		const controls = [
+			{
+				Id: 'DT_NAME',
+				Description: 'Devicetree Identifier',
+				Type: 'text',
+				Pattern: '[_a-zA-Z][_a-zA-Z0-9]*',
+				Condition: '',
+				Scope: pinScopeTemplate,
+				PluginOption: true
+			},
+			...(mock.Controls?.PinConfig ?? [])
+		];
+		const reduxStore = configurePreloadedStore(
+			mock,
+			configDict,
+			undefined,
+			createScopeConflictDictionary({
+				scopeKey: 'CM4-proj zephyr dtnames IN',
+				value: pinScopeValue,
+				controlScope: CONTROL_SCOPES.PIN_CONFIG,
+				controlId: 'DT_NAME',
+				projectId: 'CM4-proj',
+				coreId: 'CM4',
+				groupId: 'PinConfig',
+				itemIds: ['P0.7', 'P0.8'],
+				scope: pinScopeTemplate
+			})
+		);
+
+		reduxStore.dispatch(
+			setSignalAssignment({
+				peripheral: 'GPIO0',
+				signalName: 'P0.7',
+				projectId: 'CM4-proj'
+			})
+		);
+		reduxStore.dispatch(setActivePeripheral('GPIO0'));
+		reduxStore.dispatch(
+			setActiveSignal({
+				peripheral: 'GPIO0',
+				signal: 'P0.7',
+				keepActivePeripheral: true
+			})
+		);
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '7',
+				Peripheral: 'GPIO0',
+				Name: 'P0.7',
+				PinCfg: {
+					MODE: 'IN',
+					DT_NAME: pinScopeValue
+				}
+			})
+		);
+		reduxStore.dispatch(
+			setActiveConfiguredSignal({
+				peripheralName: 'GPIO0',
+				signalName: 'P0.7',
+				pinId: '7'
+			})
+		);
+
+		cy.mount(
+			<LocalizationProvider namespace='cfgtools'>
+				<PinconfigDisplay
+					controlsPromise={Promise.resolve({PinConfig: controls})}
+					projectId='CM4-proj'
+				/>
+			</LocalizationProvider>,
+			reduxStore
+		);
+
+		cy.dataTest('DT_NAME-P0.7-error')
+			.should('exist')
+			.and(
+				'contain.text',
+				`"${pinScopeValue}" is already used by P0.8.`
+			);
 	});
 });

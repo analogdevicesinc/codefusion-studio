@@ -89,6 +89,40 @@ export class SessionManager {
 		return this.getAuthSessions(false, userEmail);
 	}
 
+	/**
+	 * Reads email addresses from locally stored sessions for this client.
+	 * Does not refresh tokens, contact the server, or create a session.
+	 * @returns Email addresses of matching locally stored sessions.
+	 */
+	public async getLocalSessionEmails(): Promise<string[]> {
+		try {
+			await fs.access(this.authCfg.sessionFile);
+		} catch (error) {
+			if (
+				error instanceof Error &&
+				"code" in error &&
+				error.code === "ENOENT"
+			) {
+				return [];
+			}
+			throw error;
+		}
+
+		const storage = await TokenSessionFileStorage.createTokenStore(
+			this.authCfg.sessionFile
+		);
+		const sessions = await storage.get();
+		return sessions
+			.filter(
+				(session) =>
+					session.clientId === this.authCfg.clientId &&
+					(this.authCfg.scopes ?? [])
+						.filter((scope) => scope.length > 0)
+						.every((scope) => session.scopes.includes(scope))
+			)
+			.map((session) => session.userEmail);
+	}
+
 	// function to setup the token store
 	private async getTokenStorage(): Promise<TokenSessionFileStorage> {
 		let storage: TokenSessionFileStorage;

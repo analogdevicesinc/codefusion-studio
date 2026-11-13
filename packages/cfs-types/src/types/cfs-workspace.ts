@@ -60,4 +60,5 @@ export interface CfsWorkspace extends Record<string, unknown> {
 export type AIModelCfsWorkspace = CfsWorkspace & {
 	modelFile: string;
 	sampleData?: string;
+	coreId?: string;
 };

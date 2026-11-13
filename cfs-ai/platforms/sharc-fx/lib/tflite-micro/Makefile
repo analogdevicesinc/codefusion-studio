@@ -39,6 +39,8 @@ PROJ_DIRS += src/tensorflow/lite/micro/tflite_bridge
 PROJ_DIRS += src/tensorflow/lite/schema
 PROJ_DIRS += src/third_party/kissfft
 PROJ_DIRS += src/third_party/kissfft/tools
+PROJ_DIRS += src/adi_sharcfx_nn
+PROJ_DIRS += src/cces/examples/shared
 
 #=============================================================================
 # BUILD CONFIGURATION
@@ -119,6 +121,8 @@ TFLM_INCLUDES += -I src/third_party/gemmlowp
 TFLM_INCLUDES += -I src/third_party/gemmlowp/internal
 TFLM_INCLUDES += -I src/third_party/ruy/ruy/profiler
 TFLM_INCLUDES += -I src/third_party/ruy -I src/third_party/gemmlowp/fixedpoint
+TFLM_INCLUDES += -I src/adi_sharcfx_nn/Include 
+TFLM_INCLUDES += -I src/cces/examples/shared
 
 # All includes
 INCLUDES += $(BASE_INCLUDES) $(TFLM_INCLUDES)

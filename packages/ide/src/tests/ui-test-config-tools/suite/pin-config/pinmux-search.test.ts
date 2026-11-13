@@ -64,16 +64,11 @@ describe("Pinmux Search", () => {
   browser = VSBrowser.instance;
 
   before(async function () {
-    browser = VSBrowser.instance;
-    view = new WebView();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser } = await UIUtils.setupTestSuite());
   });
 
   after(async function () {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
   /**
@@ -85,7 +80,7 @@ describe("Pinmux Search", () => {
    *   And the Peripherals filter control should be displayed
    *   And the Signals filter control should be displayed
    */
-  it("Validate Pinmux Search Filter Controls - Pins, Peripherals, Signals", async () => {
+  it("Validate Pinmux Search Filter Controls - Pins, Peripherals, Signals @regression", async () => {
     const configPath = getConfigPathForFile("manual32690.cfsconfig");
 
     await browser.openResources(configPath);
@@ -142,7 +137,7 @@ describe("Pinmux Search", () => {
    *   And the Peripherals filter control label should display "Peripherals"
    *   And the Signals filter control label should display "Signals"
    */
-  it("Validate Pinmux Search Filter Control Labels - Pins, Peripherals, Signals", async () => {
+  it("Validate Pinmux Search Filter Control Labels - Pins, Peripherals, Signals @regression", async () => {
     const pinmuxFilterControlsTextPins = await UIUtils.findWebElement(
       view,
       await pinmuxFilterControlsText(pins),
@@ -177,7 +172,7 @@ describe("Pinmux Search", () => {
    *   And the Pins filter control should have "primary" appearance
    *   And the clear search button should be clickable
    */
-  it("Validate that the default control selected is Pins", async () => {
+  it("Validate that the default control selected is Pins @regression", async () => {
     const pinmuxFilterControlsPins = await UIUtils.findWebElement(
       view,
       await pinmuxFilterControls(pins),
@@ -207,7 +202,7 @@ describe("Pinmux Search", () => {
    *   And the result "P0.10" should be displayed
    *   And the result "P1.10" should be displayed
    */
-  it("Validate the matched count for Pin filter type", async () => {
+  it("Validate the matched count for Pin filter type @regression", async () => {
     const pinSearchTextFirst = "P0.10";
     const pinSearchTextSecond = "P1.10";
     const pinmuxSearch = await UIUtils.findWebElement(view, pinmuxSearchBox);
@@ -255,7 +250,7 @@ describe("Pinmux Search", () => {
    *   And exactly 1 search result should be returned
    *   And the result "PT10" should be displayed
    */
-  it("Validate the matched count for Peripheral filter type", async () => {
+  it("Validate the matched count for Peripheral filter type @regression", async () => {
     const peripheralSearchText = "PT10";
     const pinmuxFilterControlsPeripherals = await UIUtils.findWebElement(
       view,
@@ -293,7 +288,7 @@ describe("Pinmux Search", () => {
    *   And the result "GPIO1 P1.10" should be displayed
    *   And the result "PT10 PT10" should be displayed
    */
-  it("Validate the matched count for Signal filter type", async () => {
+  it("Validate the matched count for Signal filter type @regression", async () => {
     const signalSearchTextFirst = "GPIO0 P0.10";
     const signalSearchTextSecond = "GPIO1 P1.10";
     const signalSearchTextThird = "PT10 PT10";
@@ -396,18 +391,14 @@ describe("Pin Filtering the search criteria", () => {
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser } = await UIUtils.setupTestSuite());
   });
 
   after(async () => {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Should filter search results by Pins, Peripherals, and Signals", async () => {
+  it("Should filter search results by Pins, Peripherals, and Signals @regression", async () => {
     // Given: The cfsconfig file is opened
     await browser.openResources(configPath);
     workbench = new Workbench();
@@ -551,234 +542,224 @@ describe("Pin Filtering the search criteria", () => {
       await noResultsElement.isDisplayed(),
       "The no results found message should be displayed",
     ).to.be.true;
+  });
+});
 
-    /**
-     * These tests cover the search filters while searching in Pin config screen and its navigation results
-     */
+/**
+ * These tests cover the search filters while searching in Pin config screen and its navigation results
+ */
 
-    /*
-     * Feature: PinMux Search navigation results in System Planner
-     *     As a CodeFusion Studio user
-     *     I want to navigate pin search results to destination in Pin details section
-     *     So that I can quickly find the specific configuration I need
-     *
-     * Background:
-     *     Given VS Code is open with the CodeFusion Studio extension loaded
-     *     And all editors are closed
-     *     And all notifications are dismissed
-     *
-     *  Scenario: User searches for a Pin and navigates to the details section for results
-     *     Given the user is on the Pin config screen
-     *     And I search for "P0.14" in the search box
-     *     Then search results display the pin under Pins filter
-     *     And I click on "P0.14(C1)" in search results
-     *     Then the search results shows lists of Pins C1 with different signals corresponding to it
-     *
-     *  Scenario: User searches for a Peripheral and navigates to the details section for results
-     *     Given the user is on the Pin config screen
-     *     And I search for Peripheral "CM4" in the search box
-     *     Then I click on "CM4" in search results
-     *     Then the search results shows list of signals corresponding to CM4 peripheral
-     *
-     *  Scenario: User searches for a Signal and navigates to the details section for results
-     *     Given the user is on the Pin config screen
-     *     And search for Signal "ANT_CTRL0" in the search box
-     *     Then I click on "ANT_CTRL0" in search results
-     *     Then the search results shows list of pins corresponding to ANT_CTRL0 signal
-     *
-     *  Scenario: User searches for a Pin (C4) and navigates to the details section for results
-     *     Given the user is on the Pin config screen
-     *     And search for Pin "C4" in the search box
-     *     Then I click on "P1.1(C4)" in search results and verify the details section
-     *     Then the search results shows list of pins corresponding to C4 Pin
-     *
-     */
+/*
+ * Feature: PinMux Search navigation results in System Planner
+ *     As a CodeFusion Studio user
+ *     I want to navigate pin search results to destination in Pin details section
+ *     So that I can quickly find the specific configuration I need
+ *
+ * Background:
+ *     Given VS Code is open with the CodeFusion Studio extension loaded
+ *     And all editors are closed
+ *     And all notifications are dismissed
+ *
+ *  Scenario: User searches for a Pin and navigates to the details section for results
+ *     Given the user is on the Pin config screen
+ *     And I search for "P0.14" in the search box
+ *     Then search results display the pin under Pins filter
+ *     And I click on "P0.14(C1)" in search results
+ *     Then the search results shows lists of Pins C1 with different signals corresponding to it
+ *
+ *  Scenario: User searches for a Peripheral and navigates to the details section for results
+ *     Given the user is on the Pin config screen
+ *     And I search for Peripheral "CM4" in the search box
+ *     Then I click on "CM4" in search results
+ *     Then the search results shows list of signals corresponding to CM4 peripheral
+ *
+ *  Scenario: User searches for a Signal and navigates to the details section for results
+ *     Given the user is on the Pin config screen
+ *     And search for Signal "ANT_CTRL0" in the search box
+ *     Then I click on "ANT_CTRL0" in search results
+ *     Then the search results shows list of pins corresponding to ANT_CTRL0 signal
+ *
+ *  Scenario: User searches for a Pin (C4) and navigates to the details section for results
+ *     Given the user is on the Pin config screen
+ *     And search for Pin "C4" in the search box
+ *     Then I click on "P1.1(C4)" in search results and verify the details section
+ *     Then the search results shows list of pins corresponding to C4 Pin
+ *
+ */
 
-    describe("PinMux Filter search results navigation", () => {
-      const configFile = "max32690-wlp.cfsconfig";
-      const configPath = getConfigPathForFile(configFile);
+describe("PinMux Filter search results navigation", () => {
+  const configFile = "max32690-wlp.cfsconfig";
+  const configPath = getConfigPathForFile(configFile);
 
-      let workbench: Workbench;
-      let browser: VSBrowser;
-      let view: WebView;
-      let searchField: WebElement;
+  let workbench: Workbench;
+  let browser: VSBrowser;
+  let view: WebView;
+  let searchField: WebElement;
 
-      async function openPinConfigScreen(): Promise<void> {
-        await browser.openResources(configPath);
-        workbench = new Workbench();
-        view = new WebView();
-        await view.wait(4000);
+  async function openPinConfigScreen(): Promise<void> {
+    await browser.openResources(configPath);
+    workbench = new Workbench();
+    view = new WebView();
+    await view.wait(4000);
 
-        await UIUtils.dismissAllNotifications(workbench, browser);
+    await UIUtils.dismissAllNotifications(workbench, browser);
 
-        await view.switchToFrame(5000);
-        expect(
-          await (
-            await UIUtils.waitForElement(view, peripheralTab)
-          ).isDisplayed(),
-          "Peripheral tab should be visible after loading the WebView",
-        ).to.be.true;
+    await view.switchToFrame(5000);
+    expect(
+      await (await UIUtils.waitForElement(view, peripheralTab)).isDisplayed(),
+      "Peripheral tab should be visible after loading the WebView",
+    ).to.be.true;
 
-        await UIUtils.clickElement(view, pinTab);
-        await UIUtils.waitForElement(
-          view,
-          By.css('[data-test="search-control-input"]'),
-        );
+    await UIUtils.clickElement(view, pinTab);
+    await UIUtils.waitForElement(
+      view,
+      By.css('[data-test="search-control-input"]'),
+    );
 
-        searchField = await UIUtils.findWebElement(
-          view,
-          By.css('[data-test="search-control-input"]'),
-        );
-      }
+    searchField = await UIUtils.findWebElement(
+      view,
+      By.css('[data-test="search-control-input"]'),
+    );
+  }
 
-      before(async () => {
-        browser = VSBrowser.instance;
-        await new Workbench().executeCommand(
-          "workbench.action.closeAllEditors",
-        );
-      });
+  before(async () => {
+    ({ browser } = await UIUtils.setupTestSuite());
+  });
 
-      afterEach(async () => {
-        if (view) {
-          await view.switchBack();
-        }
-        await new Workbench().executeCommand(
-          "workbench.action.closeAllEditors",
-        );
-      });
+  afterEach(async () => {
+    await UIUtils.teardownTestSuite(view);
+  });
 
-      it("User should navigate to Pin details section after entering P0.14 signal and then clicking on it under Pins section", async () => {
-        // Given: The user is on the Pin config screen
-        await openPinConfigScreen();
+  it("User should navigate to Pin details section after entering P0.14 signal and then clicking on it under Pins section @regression", async () => {
+    // Given: The user is on the Pin config screen
+    await openPinConfigScreen();
 
-        // And: I search for "P0.14" in the search box
-        await clearAndSearch(searchField, "P0.14");
-        await UIUtils.waitForElement(
-          view,
-          By.css('[data-test="search-result-P0.14-(C1)"]'),
-        );
+    // And: I search for "P0.14" in the search box
+    await clearAndSearch(searchField, "P0.14");
+    await UIUtils.waitForElement(
+      view,
+      By.css('[data-test="search-result-P0.14-(C1)"]'),
+    );
 
-        // Then the search results display the pin under Pins filter as "P0.14(C1)"
-        const searchResultsPin = await UIUtils.findWebElement(
-          view,
-          By.css('[data-test="search-result-P0.14-(C1)"]'),
-        );
-        expect(
-          await searchResultsPin.isDisplayed(),
-          "Search result for P0.14-(C1) should be displayed",
-        ).to.be.true;
+    // Then the search results display the pin under Pins filter as "P0.14(C1)"
+    const searchResultsPin = await UIUtils.findWebElement(
+      view,
+      By.css('[data-test="search-result-P0.14-(C1)"]'),
+    );
+    expect(
+      await searchResultsPin.isDisplayed(),
+      "Search result for P0.14-(C1) should be displayed",
+    ).to.be.true;
 
-        await UIUtils.clickElement(
-          view,
-          By.css('[data-test="search-result-title"]'),
-        );
-        const resultsTitle = await UIUtils.findWebElement(
-          view,
-          By.css('[id="pin-details-title"]'),
-        );
-        const titleText = (await resultsTitle.getText())
-          .replace(/\s+/g, " ")
-          .trim();
-        expect(titleText, "Pin details title should include P0.14")
-          .to.include("P0.14")
-          .and.to.include("C1");
+    await UIUtils.clickElement(
+      view,
+      By.css('[data-test="search-result-title"]'),
+    );
+    const resultsTitle = await UIUtils.findWebElement(
+      view,
+      By.css('[id="pin-details-title"]'),
+    );
+    const titleText = (await resultsTitle.getText())
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(titleText, "Pin details title should include P0.14")
+      .to.include("P0.14")
+      .and.to.include("C1");
 
-        await assertPeripheralSignalMappedToPin(view, "GPIO0", "P0.14", "C1");
-        await UIUtils.selectOptionFromDropdown(
-          view,
-          By.css("vscode-dropdown"),
-          By.css('vscode-option[value="C1"]'),
-        );
-        const valuePin = await UIUtils.findWebElement(
-          view,
-          By.css("vscode-dropdown"),
-        );
-        const pinText = await valuePin.getAttribute("current-value");
-        expect(
-          pinText,
-          "After selecting C1 from the pin dropdown, the pin dropdown should show C1 as selected",
-        ).to.equal("C1");
-        await assertPeripheralSignalMappedToPin(view, "SPI3", "CS2", "C1");
-        await assertPeripheralSignalMappedToPin(view, "TMR0", "IOB", "C1");
-      });
+    await assertPeripheralSignalMappedToPin(view, "GPIO0", "P0.14", "C1");
+    await UIUtils.selectOptionFromDropdown(
+      view,
+      By.css("vscode-dropdown"),
+      By.css('vscode-option[value="C1"]'),
+    );
+    const valuePin = await UIUtils.findWebElement(
+      view,
+      By.css("vscode-dropdown"),
+    );
+    const pinText = await valuePin.getAttribute("current-value");
+    expect(
+      pinText,
+      "After selecting C1 from the pin dropdown, the pin dropdown should show C1 as selected",
+    ).to.equal("C1");
+    await assertPeripheralSignalMappedToPin(view, "SPI3", "CS2", "C1");
+    await assertPeripheralSignalMappedToPin(view, "TMR0", "IOB", "C1");
+  });
 
-      it("User should navigate to Peripheral details section for Peripheral search on entering 'CM4' and clicking on it under peripherals", async () => {
-        // Given the user is on the Pin config screen
-        await openPinConfigScreen();
+  it("User should navigate to Peripheral details section for Peripheral search on entering 'CM4' and clicking on it under peripherals @regression", async () => {
+    // Given the user is on the Pin config screen
+    await openPinConfigScreen();
 
-        // And search for Peripheral "CM4" in the search box
-        await clearAndSearch(searchField, "CM4");
+    // And search for Peripheral "CM4" in the search box
+    await clearAndSearch(searchField, "CM4");
 
-        // Then I click on "CM4" in search results and verify the details section
-        await UIUtils.clickElement(
-          view,
-          By.css('[data-test="search-result-title"]'),
-        );
+    // Then I click on "CM4" in search results and verify the details section
+    await UIUtils.clickElement(
+      view,
+      By.css('[data-test="search-result-title"]'),
+    );
 
-        await assertPeripheralSignalMappedToPin(view, "CM4", "RXEVO", "G4");
-        await assertPeripheralSignalMappedToPin(view, "CM4", "TXEVO", "H4");
-      });
+    await assertPeripheralSignalMappedToPin(view, "CM4", "RXEVO", "G4");
+    await assertPeripheralSignalMappedToPin(view, "CM4", "TXEVO", "H4");
+  });
 
-      it("User should navigate to Signal details section for Signal search on entering 'ANT_CTRL0' and clicking on it under signals", async () => {
-        // Given the user is on the Pin config screen
-        await openPinConfigScreen();
+  it("User should navigate to Signal details section for Signal search on entering 'ANT_CTRL0' and clicking on it under signals @regression", async () => {
+    // Given the user is on the Pin config screen
+    await openPinConfigScreen();
 
-        // And search for Signal "ANT_CTRL0" in the search box
-        await clearAndSearch(searchField, "ANT_CTRL0");
+    // And search for Signal "ANT_CTRL0" in the search box
+    await clearAndSearch(searchField, "ANT_CTRL0");
 
-        // Then I click on "ANT_CTRL0" in search results
+    // Then I click on "ANT_CTRL0" in search results
 
-        await UIUtils.clickElement(
-          view,
-          By.css('[data-test="search-result-title"]'),
-        );
+    await UIUtils.clickElement(
+      view,
+      By.css('[data-test="search-result-title"]'),
+    );
 
-        //Then the search results shows list of pins corresponding to ANT_CTRL0 signal
+    //Then the search results shows list of pins corresponding to ANT_CTRL0 signal
 
-        await assertPeripheralSignalMappedToPin(view, "BLE", "ANT_CTRL0", "E3");
-      });
+    await assertPeripheralSignalMappedToPin(view, "BLE", "ANT_CTRL0", "E3");
+  });
 
-      it("User should navigate to Pins details section when user  on enters pin 'C4' and clicks on it under pins", async () => {
-        // Given the user is on the Pin config screen
-        await openPinConfigScreen();
+  it("User should navigate to Pins details section when user  on enters pin 'C4' and clicks on it under pins @regression", async () => {
+    // Given the user is on the Pin config screen
+    await openPinConfigScreen();
 
-        // And search for Pin "C4" in the search box
-        await clearAndSearch(searchField, "C4");
+    // And search for Pin "C4" in the search box
+    await clearAndSearch(searchField, "C4");
 
-        // Then the search results display the pin under Pins filter as "P1.1(C4)"
-        const searchResultsPin = await UIUtils.findWebElement(
-          view,
-          By.css('[data-test="search-result-P1.1-(C4)"]'),
-        );
-        expect(
-          await searchResultsPin.isDisplayed(),
-          "Search result for P1.1-(C4) should be displayed",
-        ).to.be.true;
+    // Then the search results display the pin under Pins filter as "P1.1(C4)"
+    const searchResultsPin = await UIUtils.findWebElement(
+      view,
+      By.css('[data-test="search-result-P1.1-(C4)"]'),
+    );
+    expect(
+      await searchResultsPin.isDisplayed(),
+      "Search result for P1.1-(C4) should be displayed",
+    ).to.be.true;
 
-        // Then I click on "P1.1(C4)" in search results and verify the details section
+    // Then I click on "P1.1(C4)" in search results and verify the details section
 
-        await UIUtils.clickElement(
-          view,
-          By.css('[data-test="search-result-title"]'),
-        );
-        const resultsTitle = await UIUtils.findWebElement(
-          view,
-          By.css('[id="pin-details-title"]'),
-        );
+    await UIUtils.clickElement(
+      view,
+      By.css('[data-test="search-result-title"]'),
+    );
+    const resultsTitle = await UIUtils.findWebElement(
+      view,
+      By.css('[id="pin-details-title"]'),
+    );
 
-        const titleText = (await resultsTitle.getText())
-          .replace(/\s+/g, " ")
-          .trim();
-        expect(titleText, "Pin details title should include P1.1")
-          .to.include("P1.1")
-          .and.to.include("C4");
+    const titleText = (await resultsTitle.getText())
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(titleText, "Pin details title should include P1.1")
+      .to.include("P1.1")
+      .and.to.include("C4");
 
-        // Then the search results shows list of pins corresponding to C4 Pin
+    // Then the search results shows list of pins corresponding to C4 Pin
 
-        await assertPeripheralSignalMappedToPin(view, "GPIO1", "P1.1", "C4");
-        await assertPeripheralSignalMappedToPin(view, "SPI4", "MOSI", "C4");
-      });
-    });
+    await assertPeripheralSignalMappedToPin(view, "GPIO1", "P1.1", "C4");
+    await assertPeripheralSignalMappedToPin(view, "SPI4", "MOSI", "C4");
   });
 });
 
@@ -792,16 +773,12 @@ describe("PinMux Bug Automation - CFSIO-14738 - Clearing of the filters after as
   browser = VSBrowser.instance;
 
   before(async function () {
-    browser = VSBrowser.instance;
+    ({ browser } = await UIUtils.setupTestSuite());
     view = new WebView();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
   });
 
   after(async function () {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
   /**
@@ -814,7 +791,7 @@ describe("PinMux Bug Automation - CFSIO-14738 - Clearing of the filters after as
    *   And the user searches for "P1.8" again and opens the result
    *   Then the Assigned filter should be reset to disabled state
    */
-  it("Verify the filtering by assigning GPIO1-P1.8 pins", async () => {
+  it("Verify the filtering by assigning GPIO1-P1.8 pins @regression", async () => {
     const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
     await browser.openResources(configPath);
@@ -874,7 +851,7 @@ describe("PinMux Bug Automation - CFSIO-14738 - Clearing of the filters after as
    *   And the user searches for "AIN0" again and opens "ADC AIN0"
    *   Then the Assigned filter should remain reset (secondary appearance)
    */
-  it("Verify the filtering by assigning ADC-AIN0 signals", async () => {
+  it("Verify the filtering by assigning ADC-AIN0 signals @regression", async () => {
     await UIUtils.clickElement(view, pinmuxBackButton);
     await UIUtils.clickElement(view, pinmuxAssignedFilter);
     const pinmuxSearch = await UIUtils.waitForElementToBeVisible(
@@ -922,7 +899,7 @@ describe("PinMux Bug Automation - CFSIO-14738 - Clearing of the filters after as
    *   And the user searches for "PT0" again and opens "PT0"
    *   Then the Assigned filter should remain reset (secondary appearance)
    */
-  it("Verify the filtering by assigning PT0 peripherals", async () => {
+  it("Verify the filtering by assigning PT0 peripherals @regression", async () => {
     await UIUtils.clickElement(view, pinmuxAssignedFilter);
     const pinmuxSearch = await UIUtils.waitForElementToBeVisible(
       view,

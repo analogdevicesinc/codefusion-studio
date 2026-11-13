@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,9 @@ function CoreSelectorCard({
 					id={`core-selector-button-${project.ProjectId}`}
 					dataTest={`core-selector-button-${project.ProjectId}`}
 					appearance='icon'
-					className={`${styles.coreCard} ${isDisabled ? styles.disabled : {}}`}
+					className={`${styles.coreCard}
+						${isDisabled ? styles.disabled : ''}
+					`}
 					disabled={isDisabled}
 					onClick={() => {
 						if (!isDisabled) {
@@ -58,7 +60,9 @@ function CoreSelectorCard({
 				>
 					<div
 						key={`core-${project.ProjectId}`}
-						data-test={`core-${project.ProjectId}-container${isDisabled ? '-disabled' : ''}`}
+						data-test={`core-${project.ProjectId}-container${
+							isDisabled ? '-disabled' : ''
+						}`}
 						className={styles.core}
 						onMouseEnter={() => {
 							if (isDisabled) displayTooltip();

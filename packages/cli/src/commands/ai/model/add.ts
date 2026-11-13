@@ -13,33 +13,37 @@
  *
  */
 import type {AIToolsPlugin} from 'cfs-lib';
-
-import {Flags} from '@oclif/core';
-import {
-  caseInsensitiveCompare,
-  enforceMaxActiveModels,
-  getAiToolsPlugin,
-  getValidExtensions,
-  resolveSource
-} from 'cfs-lib';
-import {
+import type {
   AIModel,
   AIModelBackend,
   CfsSocDataModel,
   SocAi
 } from 'cfs-types';
 
-import {type CliRunResponse} from '../../../utils/base-command.js';
+import {Flags} from '@oclif/core';
+import {
+  assertValidFileExtension,
+  caseInsensitiveCompare,
+  findModelIdentifierCollision,
+  getAiToolsPlugin,
+  getValidExtensions
+} from 'cfs-lib';
+
 import {BaseModelCommand} from '../../../utils/base-model-command.js';
 import {getDataModelManager} from '../../../utils/data-model-manager.js';
 import {getPackageManager} from '../../../utils/package-manager.js';
-import {RecoverableError} from '../../../utils/recoverable-error.js';
+import {
+  errorWithCode,
+  RecoverableError
+} from '../../../utils/recoverable-error.js';
 import {
   getCfsaiPath,
   getVersionFromConfig
 } from '../../../utils/utils.js';
 
 export default class Add extends BaseModelCommand {
+  static useResponseEnvelope = true;
+
   static description = 'Add model to a workspace.';
 
   static examples: string[] = [
@@ -86,11 +90,10 @@ export default class Add extends BaseModelCommand {
     name: string,
     plugin: AIToolsPlugin
   ): Promise<NonNullable<AIModelBackend['Extensions']>> {
-    try {
-      const validProperties =
-        await plugin.getPropertiesFromName(name);
+    let validProperties;
 
-      return getValidExtensions(extension, validProperties);
+    try {
+      validProperties = await plugin.getPropertiesFromName(name);
     } catch (error) {
       // swallow thrown error for recoverable one
       throw new RecoverableError(
@@ -99,13 +102,27 @@ export default class Add extends BaseModelCommand {
           : `No backend properties found for '${name}'`,
         {
           suggestion: 'Verify the backend is properly configured',
-          run: `cfsutil ai backends list --name ${name}`
+          run: `cfsutil ai backends list --name ${name}`,
+          code: 'BACKEND_PROPERTIES_NOT_FOUND'
+        }
+      );
+    }
+
+    try {
+      return getValidExtensions(extension, validProperties);
+    } catch (error) {
+      throw new RecoverableError(
+        error instanceof Error ? error.message : String(error),
+        {
+          suggestion: 'Verify the backend is properly configured',
+          run: `cfsutil ai backends list --name ${name}`,
+          code: 'INVALID_BACKEND_EXTENSIONS'
         }
       );
     }
   }
 
-  async run(): CliRunResponse {
+  async run(): Promise<{model: AIModel}> {
     const {flags} = this;
     const {config, pathToConfig} = this.getConfig(
       flags.config,
@@ -113,28 +130,17 @@ export default class Add extends BaseModelCommand {
     );
 
     const modelName = this.getModelNameFromFilename(flags.model);
-    const modelExists = this.isExistingModel(modelName, config);
-
-    if (modelExists) {
-      throw new RecoverableError(
-        'A model with this name already exists',
-        {
-          suggestion: `Use a different model or remove the existing model first`,
-          run: `cfsutil ai model remove --name ${modelName} ${flags.config ? `--config ${flags.config}` : `--workspace ${flags.workspace}`}`
-        }
-      );
-    }
 
     const cfsVersion = getVersionFromConfig(this.config);
 
-    flags.model = await resolveSource(
+    await this.resolveSourceFile(
       cfsVersion,
       flags.model,
       flags['ignore-cache']
     );
 
     if (flags.dataset) {
-      flags.dataset = await resolveSource(
+      await this.resolveSourceFile(
         cfsVersion,
         flags.dataset,
         flags['ignore-cache']
@@ -142,21 +148,22 @@ export default class Add extends BaseModelCommand {
     }
 
     if (flags['network-config']) {
-      flags['network-config'] = await resolveSource(
+      await this.resolveSourceFile(
         cfsVersion,
         flags['network-config'],
         flags['ignore-cache']
       );
     }
 
-    const aiPlugin = getAiToolsPlugin(
-      await getCfsaiPath(this.config),
-      cfsVersion
-    );
-
     const packageManager = await getPackageManager({
       acceptUndefined: true
     });
+
+    const aiPlugin = getAiToolsPlugin(
+      await getCfsaiPath(this.config),
+      cfsVersion,
+      packageManager
+    );
 
     const dmManager = await getDataModelManager(
       this.config,
@@ -172,7 +179,8 @@ export default class Add extends BaseModelCommand {
         {
           suggestion:
             'Verify the Soc and Package in your workspace configuration are valid',
-          run: `cfsutil socs info ${config.Soc} --packages`
+          run: `cfsutil socs info ${config.Soc} --packages`,
+          code: 'DATA_MODEL_NOT_FOUND'
         }
       );
     }
@@ -190,7 +198,8 @@ export default class Add extends BaseModelCommand {
         `AI data not found for SoC '${config.Soc}', Core '${flags.core}'${flags.acc ? `, Acc '${flags.acc}'` : ''}`,
         {
           suggestion: 'Verify --core is valid for this SoC',
-          run: `cfsutil socs info ${config.Soc} --cores`
+          run: `cfsutil socs info ${config.Soc} --cores`,
+          code: 'AI_TARGET_NOT_FOUND'
         }
       );
     }
@@ -202,6 +211,15 @@ export default class Add extends BaseModelCommand {
         suggestion: 'Check that your backend package is installed',
         run: 'cfsutil ai backends list'
       });
+    }
+
+    try {
+      assertValidFileExtension(flags.model, be.Formats);
+    } catch (error) {
+      throw errorWithCode(
+        error instanceof Error ? error.message : String(error),
+        'INVALID_MODEL_FILE_EXTENSION'
+      );
     }
 
     if (be.Name === 'izer' && flags['network-config'] === undefined) {
@@ -241,16 +259,17 @@ export default class Add extends BaseModelCommand {
         `No project is associated with core '${flags.core}'`,
         {
           suggestion:
-            'Check that your project/s is configured as expected'
+            'Check that your project/s is configured as expected',
+          code: 'PROJECT_NOT_FOUND_FOR_CORE'
         }
       );
     }
 
-    const newModel = {
+    const newModel: AIModel = {
       Name: modelName,
       Target: {
         Core: ai.Target?.Core ?? '',
-        Accelerator: ai.Target?.Accelerator
+        Accelerator: ai.Target?.Accelerator ?? undefined
       },
       Enabled: true,
       Files: {
@@ -264,20 +283,36 @@ export default class Add extends BaseModelCommand {
       },
       Backend: backend,
       OutDir: '.'
-    } as AIModel;
+    };
+
+    const allModels = matchingProjects
+      .flatMap((project) => project.AIModels)
+      .filter((models) => models !== undefined);
+
+    const collision = findModelIdentifierCollision(
+      newModel,
+      allModels
+    );
+
+    if (collision) {
+      this.throwIdentifierCollisionError(
+        flags.config
+          ? `--config ${flags.config}`
+          : `--workspace ${flags.workspace}`
+      );
+    }
 
     for (const project of matchingProjects) {
       const modelForProject: AIModel = structuredClone(newModel);
-      project.AIModels = enforceMaxActiveModels(
+      project.AIModels = this.enforceMaxModels(
         [...(project.AIModels ?? []), modelForProject],
         modelForProject,
-        be.MaxModels,
-        flags.json
+        be.MaxModels
       );
     }
 
     await this.writeCfsConfig(pathToConfig, config);
     this.log(`Model '${modelName}' added successfully.`);
-    return {msg: `Model '${modelName}' added successfully`};
+    return {model: newModel};
   }
 }

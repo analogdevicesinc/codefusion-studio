@@ -21,7 +21,7 @@ export default `<%
 // Helper function to get core name based on SoC
 function getCoreFileName(soc) {
   const socLower = soc.toLowerCase();
-  if (["max32657", "max32658"].includes(socLower)) {
+  if (["max32657", "max32658"].includes(socLower) || socLower.startsWith("adems1")) {
     return "m33";
   } else if (socLower === "max32666") {
     return "m4-0";

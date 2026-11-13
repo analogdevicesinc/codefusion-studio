@@ -1,0 +1,105 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#colors' as colors;
+@use '#layout' as layout;
+@use '#fonts' as fonts;
+
+.navigationBar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: layout.$spacing-3 layout.$spacing-3 9px;
+	background: colors.$navigation-background;
+	border-bottom: layout.$border-width-2 solid colors.$default-border;
+}
+
+.side {
+	flex: 1 1 0;
+	min-width: 0;
+
+	&.right {
+		display: flex;
+		justify-content: flex-end;
+		min-width: layout.$spacing-7;
+	}
+}
+
+.center {
+	display: flex;
+	flex: 0 1 auto;
+	justify-content: center;
+	min-width: 0;
+}
+
+.tabs {
+	display: inline-flex;
+	gap: layout.$border-width-2;
+	max-width: 100%;
+	overflow-x: auto;
+	background: var(--vscode-editor-inactiveSelectionBackground);
+	border: layout.$border-width-2 solid
+		var(--vscode-editor-inactiveSelectionBackground);
+	border-radius: layout.$border-radius-1;
+}
+
+.tab {
+	@include fonts.body-b2;
+
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	padding: 5px layout.$spacing-4;
+	font-weight: 600;
+	color: colors.$foreground;
+	white-space: nowrap;
+	cursor: pointer;
+	background: colors.$default-background;
+	border: none;
+
+	&.active {
+		color: colors.$default-foreground;
+		background: var(--vscode-editor-inactiveSelectionBackground);
+	}
+
+	&:focus-visible {
+		outline: layout.$border-width-2 solid colors.$focus-border;
+		outline-offset: -2px;
+	}
+}
+
+.helpButton {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: layout.$spacing-7;
+	height: layout.$spacing-7;
+	padding: 0;
+	cursor: pointer;
+	background: colors.$default-background;
+	border: layout.$border-width-2 solid colors.$default-border;
+	border-radius: layout.$border-radius-1;
+
+	&:hover {
+		border-color: colors.$hover-border;
+	}
+
+	&:focus-visible {
+		outline: layout.$border-width-2 solid colors.$focus-border;
+		outline-offset: -2px;
+	}
+}

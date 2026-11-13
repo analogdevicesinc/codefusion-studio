@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,19 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
 import {createWriteStream} from 'node:fs';
-import {createGzip} from 'node:zlib';
+
+import type {CfsSocDataModel} from 'cfs-types';
 
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {handleMissingDependencyError} from '../../utils/error-handler.js';
 import {getPackageManager} from '../../utils/package-manager.js';
+import {BaseCommand} from '../../utils/base-command.js';
 
-export default class Export extends Command {
+export default class Export extends BaseCommand<typeof Export> {
   static aliases = ['soc:export'];
+  static useResponseEnvelope = true;
 
   static args = {
     socName: Args.string({
@@ -42,14 +45,9 @@ export default class Export extends Command {
       char: 'p',
       summary: 'Package name of the SoC to be exported'
     }),
-    format: Flags.string({
-      char: 'f',
-      default: 'json',
-      summary: 'Output format',
-      options: ['json']
-    }),
     gzip: Flags.boolean({
-      summary: 'Gzip the output'
+      summary: 'Gzip the output',
+      hidden: true
     }),
     indent: Flags.string({
       char: 'i',
@@ -71,7 +69,8 @@ export default class Export extends Command {
       }
     }),
     version: Flags.string({
-      char: 'v',
+      charAliases: ['v'],
+      deprecateAliases: true,
       summary:
         'Optional Data model version (defaults to latest if not specified)'
     }),
@@ -88,8 +87,14 @@ export default class Export extends Command {
     })
   };
 
-  async run() {
-    const {args, flags} = await this.parse(Export);
+  async run(): Promise<
+    {soc: CfsSocDataModel} | {outputPath: string}
+  > {
+    const {args, flags} = this;
+
+    if (flags.gzip) {
+      this.error(`Support for '--gzip' has been removed.`);
+    }
 
     const customSearchPaths = flags['search-path'] ?? [];
     const packageManager = await getPackageManager({
@@ -117,7 +122,8 @@ export default class Export extends Command {
 
       if (!socName || !socPackage) {
         this.error(
-          `Invalid SoC name format. Expected '{name}-{package}', got '${flags.name}'.`
+          `Invalid SoC name format. Expected '{name}-{package}', got '${flags.name}'.`,
+          {code: 'INVALID_SOC_NAME_FORMAT'}
         );
       }
     } else if (args.socName === undefined) {
@@ -140,11 +146,13 @@ export default class Export extends Command {
         .map((dm) => dm.package);
       if (pkgVariants.length > 1) {
         this.error(
-          `Multiple packages found for SoC '${socName}', please specify one with --package=${[...new Set(pkgVariants)].join('|')}.`
+          `Multiple packages found for SoC '${socName}', please specify one with --package=${[...new Set(pkgVariants)].join('|')}.`,
+          {code: 'MULTIPLE_PACKAGES_FOUND'}
         );
       } else if (pkgVariants.length === 0) {
         this.error(
-          `SoC data model not found for '${socName}', please check SoC name.`
+          `SoC data model not found for '${socName}', please check SoC name.`,
+          {code: 'SOC_DATA_MODEL_NOT_FOUND'}
         );
       } else {
         // Only one package found, use it
@@ -161,28 +169,34 @@ export default class Export extends Command {
         flags.version
       );
     } catch (error) {
-      handleMissingDependencyError(error);
+      handleMissingDependencyError(error, 'SOC_DATA_MODEL_NOT_FOUND');
       throw error;
     }
 
     if (!soc) {
       this.error(
-        `SoC data model not found for '${socName}' with package '${socPackage}'.`
+        `SoC data model not found for '${socName}' with package '${socPackage}'.`,
+        {code: 'SOC_DATA_MODEL_NOT_FOUND'}
       );
     }
 
+    // Drives --output=stdio text mode and --output=<file> in both modes.
+    // Note: when --format json routes through the shared envelope below,
+    // this pre-formatted string is discarded in favor of the envelope's own
+    // JSON serialization, so --minify/--indent have no effect on `--format
+    // json --output stdio` output (they still apply to file output).
     const output = JSON.stringify(
       soc,
       null,
       flags.minify ? 0 : Number(flags.indent) || flags.indent
     );
 
-    const writeOutput = (data: Buffer | string) => {
+    const writeOutput = async (data: string) => {
       if (flags.output === 'stdio') {
-        if (Buffer.isBuffer(data)) {
-          process.stdout.write(data.toString());
-        } else {
-          process.stdout.write(data);
+        // The envelope already carries `soc` as its own JSON document;
+        // writing the raw payload too would put two JSON documents on stdout.
+        if (!this.jsonEnabled()) {
+          this.writeToStdout(data);
         }
 
         return Promise.resolve();
@@ -201,35 +215,10 @@ export default class Export extends Command {
       });
     };
 
-    if (flags.gzip) {
-      const gzip = createGzip();
+    await writeOutput(output);
 
-      if (flags.output === 'stdio') {
-        gzip.pipe(process.stdout);
-
-        await new Promise<void>((resolve, reject) => {
-          gzip.on('end', resolve);
-          gzip.on('error', reject);
-          gzip.write(output);
-          gzip.end();
-        });
-      } else {
-        const outputFile = createWriteStream(flags.output);
-        gzip.pipe(outputFile);
-
-        await new Promise<void>((resolve, reject) => {
-          outputFile.on('finish', () => {
-            this.log(`Output written to: ${flags.output}`);
-            resolve();
-          });
-          outputFile.on('error', reject);
-          gzip.on('error', reject);
-          gzip.write(output);
-          gzip.end();
-        });
-      }
-    } else {
-      await writeOutput(output);
-    }
+    return flags.output === 'stdio'
+      ? {soc}
+      : {outputPath: flags.output};
   }
 }

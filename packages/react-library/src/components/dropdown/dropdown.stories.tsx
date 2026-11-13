@@ -16,7 +16,7 @@
 import type {Meta} from '@storybook/react';
 
 import React from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import DropDown, {DropDownOptions} from './dropdown';
 
 const meta: Meta<typeof DropDown> = {

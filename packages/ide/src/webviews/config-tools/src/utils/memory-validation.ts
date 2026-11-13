@@ -68,7 +68,9 @@ export const validateAddress = (
 			firstBlock?.MinimumAlignment &&
 			address % firstBlock.MinimumAlignment !== 0
 		) {
-			return `Address must be aligned to the block minimum alignment of ${getBlockMinAlignment(firstBlock)}`;
+			return `Address must be aligned to the block minimum alignment of ${getBlockMinAlignment(
+				firstBlock
+			)}`;
 		}
 	}
 
@@ -217,7 +219,9 @@ export const validateSize = (
 			lastBlock?.MinimumAlignment &&
 			size % lastBlock.MinimumAlignment !== 0
 		) {
-			return `Size must be aligned to the block minimum alignment of ${getBlockMinAlignment(lastBlock)}`;
+			return `Size must be aligned to the block minimum alignment of ${getBlockMinAlignment(
+				lastBlock
+			)}`;
 		}
 	}
 

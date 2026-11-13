@@ -226,7 +226,7 @@ class CfsSocControlsOverride {
       const directives = this.cfsPluginInfo.properties?.[scope];
       const targetControls = updateControlsFromPlugin(
         soc,
-        [...controls[formattedScope]],
+        [...(controls[formattedScope] ?? [])],
         directives ?? {},
       );
 

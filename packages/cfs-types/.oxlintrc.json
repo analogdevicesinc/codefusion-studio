@@ -1,0 +1,15 @@
+{
+	"$schema": "../../node_modules/oxlint/configuration_schema.json",
+	"extends": ["../../.oxlintrc.json"],
+	"plugins": [],
+	"categories": {
+		"correctness": "error"
+	},
+	"jsPlugins": ["../../scripts/oxlint-plugins/cfs/index.js"],
+	"rules": {
+		"cfs/type-only": "error",
+		"typescript/no-namespace": "off",
+		"no-case-declarations": "off"
+	},
+	"ignorePatterns": ["dist/**"]
+}

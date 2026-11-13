@@ -67,7 +67,10 @@ function ImageCard({
 	const currentImage =
 		activePackage?.images?.find(img => img.id === image.id) ?? image;
 
-	const {errors, hasError} = useImageValidation(currentImage);
+	const {errors, hasError} = useImageValidation(
+		currentImage,
+		activePackage?.images
+	);
 
 	const endAddress = computeEndAddress(
 		currentImage.locationAddress,
@@ -249,7 +252,9 @@ function ImageCard({
 						data-test={`image-card:${image.id}-address-range`}
 					>
 						<span>
-							{`0x${stripHexPrefix(currentImage.locationAddress).toUpperCase()} - 0x${endAddress!}`}
+							{`0x${stripHexPrefix(
+								currentImage.locationAddress
+							).toUpperCase()} - 0x${endAddress!}`}
 						</span>
 					</div>
 				)}

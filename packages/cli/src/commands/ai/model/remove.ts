@@ -15,11 +15,12 @@
 import {Flags} from '@oclif/core';
 import {caseInsensitiveCompare} from 'cfs-lib';
 
-import {type CliRunResponse} from '../../../utils/base-command.js';
 import {BaseModelCommand} from '../../../utils/base-model-command.js';
 import {RecoverableError} from '../../../utils/recoverable-error.js';
 
 export default class Remove extends BaseModelCommand {
+  static useResponseEnvelope = true;
+
   static description = 'Remove model from a workspace.';
 
   static examples: string[] = [
@@ -37,7 +38,7 @@ export default class Remove extends BaseModelCommand {
     })
   };
 
-  async run(): CliRunResponse {
+  async run(): Promise<{removed: true; name: string}> {
     const {flags} = this;
     const {config, pathToConfig} = this.getConfig(
       flags.config,
@@ -52,7 +53,8 @@ export default class Remove extends BaseModelCommand {
         {
           suggestion:
             'Check the model name for typos or list existing models',
-          run: `cfsutil ai model list ${flags.config ? `--config ${flags.config}` : `--workspace ${flags.workspace}`}`
+          run: `cfsutil ai model list ${flags.config ? `--config ${flags.config}` : `--workspace ${flags.workspace}`}`,
+          code: 'MODEL_NOT_FOUND'
         }
       );
     }
@@ -68,8 +70,6 @@ export default class Remove extends BaseModelCommand {
     await this.writeCfsConfig(pathToConfig, config);
 
     this.log(`Model '${flags.name}' removed successfully.`);
-    return {
-      msg: `Model '${flags.name}' removed successfully`
-    };
+    return {removed: true, name: flags.name};
   }
 }

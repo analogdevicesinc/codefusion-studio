@@ -15,6 +15,11 @@
 import * as path from "path";
 import { ExTester } from "vscode-extension-tester";
 import * as fs from "fs";
+import { findVsix } from "../ui-test-utils/vsix-utils";
+import {
+  startStaticServer,
+  type LocalStaticServer,
+} from "../ui-test-utils/local-static-server";
 
 const EXTENSIONS_DIR = path.resolve(
   process.cwd(),
@@ -34,7 +39,6 @@ async function main() {
   const settingsPath =
     process.env.SETTINGS_PATH ?? path.join(EXTENSIONS_DIR, "settings.json");
 
-  const isWin = process.platform === "win32";
   const projectPluginFixturesPath = path.resolve(
     process.cwd(),
     "..",
@@ -44,9 +48,18 @@ async function main() {
     "project",
   );
 
+  let modelZooServer: LocalStaticServer | undefined;
+
   try {
-    let socsPath = path.resolve(process.cwd(), "..", "cfs-data-models", "socs");
-    let dfgsocsPath = path.resolve(
+    const socsPath = path.resolve(
+      process.cwd(),
+      "..",
+      "..",
+      "test-fixtures",
+      "cfs-data-model",
+      "socs",
+    );
+    const dfgsocsPath = path.resolve(
       process.cwd(),
       "src",
       "tests",
@@ -54,13 +67,46 @@ async function main() {
       "dfg-data-model",
       "socs",
     );
+    const mcubootsocsPath = path.resolve(
+      process.cwd(),
+      "src",
+      "tests",
+      "ui-test-config-tools",
+      "mcuboot-data-model",
+      "socs",
+    );
+    const catalogPath = path.resolve(
+      process.cwd(),
+      "src",
+      "tests",
+      "ui-test-config-tools",
+      ".catalog",
+    );
+    const aiToolsSdkPath = path.resolve(
+      process.cwd(),
+      "src",
+      "tests",
+      "ui-test-config-tools",
+      "ai-tools-fixture",
+    );
+    const modelZooFixturePath = path.resolve(aiToolsSdkPath, "model-zoo");
 
-    let pluginsPath = projectPluginFixturesPath;
+    const requiredPaths = [
+      { name: "socsPath", dir: socsPath },
+      { name: "dfgsocsPath", dir: dfgsocsPath },
+      { name: "mcubootsocsPath", dir: mcubootsocsPath },
+      { name: "catalogPath", dir: catalogPath },
+      { name: "projectPluginFixturesPath", dir: projectPluginFixturesPath },
+      { name: "aiToolsSdkPath", dir: aiToolsSdkPath },
+      { name: "modelZooFixturePath", dir: modelZooFixturePath },
+    ];
 
-    if (isWin) {
-      pluginsPath = pluginsPath.replace(/\\/g, "\\\\");
-      socsPath = socsPath.replace(/\\/g, "\\\\");
-      dfgsocsPath = dfgsocsPath.replace(/\\/g, "\\\\");
+    for (const { name, dir } of requiredPaths) {
+      if (!fs.existsSync(dir)) {
+        throw new Error(
+          `Required fixture directory "${name}" does not exist: ${dir}`,
+        );
+      }
     }
 
     const commonSettingsRaw = await fs.promises.readFile(
@@ -72,11 +118,20 @@ async function main() {
       unknown
     >;
 
-    settingsObj["cfs.plugins.searchDirectories"] = [pluginsPath];
+    settingsObj["cfs.plugins.searchDirectories"] = [projectPluginFixturesPath];
     settingsObj["cfs.plugins.dataModelSearchDirectories"] = [
       socsPath,
       dfgsocsPath,
+      mcubootsocsPath,
     ];
+    settingsObj["cfs.catalogManager.catalogLocation"] = catalogPath;
+    // Point at a fixture SDK so the embedded-ai-tools suite can resolve the
+    // cfsai tool/backends instead of hitting the "Error loading cfsai package" state.
+    settingsObj["cfs.sdk.path"] = aiToolsSdkPath;
+    // Serve the Model Zoo from a local fixture instead of the real GitHub-hosted
+    // catalog, so selecting a model doesn't depend on a mutable remote source.
+    modelZooServer = await startStaticServer(modelZooFixturePath);
+    settingsObj["cfs.modelZoo.urls"] = [modelZooServer.url];
 
     await fs.promises.writeFile(
       settingsPath,
@@ -84,7 +139,7 @@ async function main() {
       "utf-8",
     );
 
-    console.log("Generated path to plugins:", pluginsPath);
+    console.log("Generated path to plugins:", projectPluginFixturesPath);
 
     // Support TEST_PATTERN environment variable for grouping tests by folder.
     // Multiple patterns can be comma-separated, e.g.
@@ -112,27 +167,7 @@ async function main() {
     // installVsix calls `code --install-extension` which is required for .cfsconfig
     // files to open in the System Planner webview instead of plain text.
     console.log("📥 Installing extension...");
-    const findVsix = async (dir: string): Promise<string | undefined> => {
-      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith(".vsix")) {
-          return path.join(dir, entry.name);
-        }
-        if (entry.isDirectory()) {
-          const found = await findVsix(path.join(dir, entry.name));
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-
-    const vsixPath = await findVsix(process.cwd());
-    if (!vsixPath) {
-      throw new Error(
-        `No VSIX file found under ${process.cwd()}. ` +
-          `Run 'yarn build:extension && yarn package' to generate the VSIX.`,
-      );
-    }
+    const vsixPath = await findVsix();
     console.log(`Found extension: ${vsixPath}`);
     await tester.installVsix({ vsixFile: vsixPath });
     console.log("✅ Extension installed!\n");
@@ -178,6 +213,7 @@ async function main() {
     console.error("Failed to run tests", err);
     process.exit(1);
   } finally {
+    await modelZooServer?.close();
     await fs.promises.unlink(settingsPath);
   }
 }

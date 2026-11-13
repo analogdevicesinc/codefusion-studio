@@ -1,0 +1,96 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+@use '#colors' as colors;
+@use '#fonts' as fonts;
+@use '#layout' as layout;
+
+.card {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: layout.$spacing-4;
+	padding: layout.$spacing-5;
+
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: layout.$spacing-3;
+
+		.title {
+			display: flex;
+			align-items: center;
+			gap: layout.$spacing-2;
+			min-width: 0;
+		}
+
+		.name {
+			margin: 0;
+			@include fonts.heading-h2;
+		}
+	}
+
+	.divider {
+		margin: 0;
+	}
+
+	.row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: layout.$spacing-5;
+	}
+
+	.label {
+		color: colors.$foreground;
+		@include fonts.heading-h5;
+	}
+
+	.revision {
+		--cfs-text-field-vertical-gap: #{layout.$spacing-1};
+	}
+
+	.groups {
+		display: flex;
+		flex-direction: column;
+		gap: layout.$spacing-1;
+		min-width: 0;
+	}
+
+	.links {
+		display: flex;
+		flex-direction: column;
+		gap: layout.$spacing-2;
+		min-width: 0;
+
+		.link {
+			display: flex;
+			align-items: center;
+			gap: layout.$spacing-3;
+			min-width: 0;
+			color: colors.$description-foreground;
+			@include fonts.body-b3;
+
+			.icon {
+				flex-shrink: 0;
+				color: colors.$icon-foreground;
+			}
+
+			.linkText {
+				flex: 1;
+				min-width: 0;
+			}
+		}
+	}
+}

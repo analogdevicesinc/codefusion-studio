@@ -15,13 +15,9 @@
 
 import {useLayoutEffect, useRef, useState} from 'react';
 import {
-	HEADER_HEIGHT,
-	HEADER_LABEL_TOP,
-	HORIZONTAL_LABEL_MARGIN,
-	HORIZONTAL_LINE_HEIGHT,
-	TIMESTAMP_LABEL_HEIGHT
-} from '../../common/constants/timeline';
-import {clampLabelLeft} from '../../common/utils/measurement-tool';
+	clampLabelLeft,
+	resolveVisibleHorizontalLine
+} from '../../common/utils/measurement-tool';
 import type {
 	MeasureLabelLayout,
 	MeasurementState
@@ -44,23 +40,10 @@ type LineVisibility = Readonly<{
 	isCursorVisible: boolean;
 }>;
 
-type HorizontalLine = Readonly<{left: number; width: number}>;
-
 type HorizontalLineGeometry = Readonly<{
 	horizontalLineLeft: number | undefined;
 	horizontalLineWidth: number | undefined;
 }>;
-
-function clampBetween(
-	value: number,
-	minValue: number,
-	maxValue: number
-) {
-	const lowerBound = Math.min(minValue, maxValue);
-	const upperBound = Math.max(minValue, maxValue);
-
-	return Math.max(lowerBound, Math.min(value, upperBound));
-}
 
 const isLineVisible = (lineX: number, overlayWidth: number) =>
 	lineX >= 0 && lineX <= overlayWidth;
@@ -140,29 +123,6 @@ const isDeltaLabelVisible = (
 	return state.isFixedPhase || isHorizontalLineInViewport;
 };
 
-const computeVisibleHorizontalLine = (
-	lineLeft: number,
-	lineRight: number,
-	stemX: number,
-	overlayWidth: number
-): HorizontalLine => {
-	// Both guide lines are hidden to the left
-	if (lineRight < 0) {
-		return {left: 0, width: stemX};
-	}
-
-	// Both guide lines are hidden to the right
-	if (lineLeft > overlayWidth) {
-		return {left: stemX, width: overlayWidth - stemX};
-	}
-
-	// At least one guide is on-screen — extend the segment so it always reaches the stem
-	const segmentLeft = Math.min(lineLeft, stemX);
-	const segmentRight = Math.max(lineRight, stemX);
-
-	return {left: segmentLeft, width: segmentRight - segmentLeft};
-};
-
 /**
  * Computes the left position and width of the horizontal measurement line.
  */
@@ -182,72 +142,17 @@ const resolveHorizontalLineGeometry = (
 	const rawLineLeft = state.horizontalLine.left;
 	const rawLineRight =
 		state.horizontalLine.left + state.horizontalLine.width;
-
-	if (deltaStemLeft !== undefined) {
-		const segment = computeVisibleHorizontalLine(
-			rawLineLeft,
-			rawLineRight,
-			deltaStemLeft,
-			overlayWidth
-		);
-
-		return {
-			horizontalLineLeft: segment.left,
-			horizontalLineWidth: segment.width
-		};
-	}
+	const segment = resolveVisibleHorizontalLine(
+		rawLineLeft,
+		rawLineRight,
+		deltaStemLeft,
+		overlayWidth
+	);
 
 	return {
-		horizontalLineLeft: rawLineLeft,
-		horizontalLineWidth: state.horizontalLine.width
+		horizontalLineLeft: segment.left,
+		horizontalLineWidth: segment.width
 	};
-};
-
-const getHorizontalLayout = (
-	state: MeasurementState,
-	viewport: LayoutViewport,
-	shouldRenderDeltaLabel: boolean
-): {
-	horizontalLabelTop: number | undefined;
-	horizontalLineTop: number | undefined;
-} => {
-	let horizontalLabelTop: number | undefined;
-	let horizontalLineTop: number | undefined;
-
-	if (
-		state.horizontalLine &&
-		state.horizontalDeltaText &&
-		shouldRenderDeltaLabel
-	) {
-		const rawLabelTop =
-			state.horizontalLine.top -
-			TIMESTAMP_LABEL_HEIGHT -
-			HORIZONTAL_LABEL_MARGIN;
-		const minLabelTop = viewport.viewportTop + HEADER_HEIGHT;
-
-		if (viewport.viewportBottom > viewport.viewportTop) {
-			const maxLabelTop =
-				viewport.viewportBottom -
-				TIMESTAMP_LABEL_HEIGHT -
-				HORIZONTAL_LABEL_MARGIN -
-				HORIZONTAL_LINE_HEIGHT;
-
-			horizontalLabelTop = clampBetween(
-				rawLabelTop,
-				minLabelTop,
-				maxLabelTop
-			);
-		} else {
-			horizontalLabelTop = rawLabelTop;
-		}
-
-		horizontalLineTop =
-			horizontalLabelTop +
-			TIMESTAMP_LABEL_HEIGHT +
-			HORIZONTAL_LABEL_MARGIN;
-	}
-
-	return {horizontalLabelTop, horizontalLineTop};
 };
 
 export default function useLabelLayout(
@@ -340,24 +245,10 @@ export default function useLabelLayout(
 			)
 		: undefined;
 
-	const {horizontalLabelTop, horizontalLineTop} = getHorizontalLayout(
-		state,
-		viewport,
-		isDeltaLabel
-	);
-
 	const deltaStemLeft =
 		horizontalLabelLeft !== undefined && widths.horizontal > 0
 			? horizontalLabelLeft + widths.horizontal / 2
 			: undefined;
-	const deltaStemTop =
-		horizontalLabelTop === undefined
-			? undefined
-			: horizontalLabelTop + TIMESTAMP_LABEL_HEIGHT;
-	const deltaStemHeight =
-		horizontalLabelTop === undefined
-			? undefined
-			: HORIZONTAL_LABEL_MARGIN + HORIZONTAL_LINE_HEIGHT;
 
 	const {horizontalLineLeft, horizontalLineWidth} =
 		resolveHorizontalLineGeometry(
@@ -376,13 +267,8 @@ export default function useLabelLayout(
 		startLabelLeft,
 		endLabelLeft,
 		horizontalLabelLeft,
-		horizontalLabelTop,
-		horizontalLineTop,
 		horizontalLineLeft,
 		horizontalLineWidth,
-		deltaStemLeft,
-		deltaStemTop,
-		deltaStemHeight,
-		verticalLabelTop: viewport.viewportTop + HEADER_LABEL_TOP
+		deltaStemLeft
 	};
 }

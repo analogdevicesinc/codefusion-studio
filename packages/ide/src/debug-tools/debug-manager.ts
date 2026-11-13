@@ -13,14 +13,12 @@
  *
  */
 
-// Note below rule is disable due to allow overload due to this issue:
-// https://github.com/typescript-eslint/typescript-eslint/issues/291
-/* eslint-disable no-dupe-class-members */
-
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+
+import { Mutex } from "../utils/mutex";
 
 /**
  * Represents data on memory
@@ -114,8 +112,68 @@ export interface RegisterDescription {
   fields: Record<string, RegisterField>;
 }
 
+/**
+ * Options for running a GDB command in a debug session.
+ */
+export interface GdbCommandOptions {
+  /**
+   * Echo the command output to the Debug Console when the debug adapter does
+   * not stream it itself (e.g. cppdbg). Enable this for user-initiated
+   * commands whose output is meant to be read in the Debug Console, so that
+   * such adapters match adapters that stream their output (e.g. cortex-debug).
+   * Defaults to false, keeping internal queries out of the Debug Console.
+   */
+  echoOutput?: boolean;
+}
+
+/**
+ * Result of a REPL evaluation, including whether the debug adapter already
+ * streamed the output to the Debug Console via DAP "output" events.
+ */
+export interface ReplEvaluation {
+  /** The evaluation output, from "output" events or the evaluate response. */
+  output: string;
+  /**
+   * True when the output was collected from DAP "output" events, which VS Code
+   * also renders in the Debug Console. False when it was only available in the
+   * evaluate response body, so nothing was shown to the user.
+   */
+  streamedToConsole: boolean;
+}
+
+/**
+ * Determines the text that must be echoed to the Debug Console so that REPL
+ * output is visible regardless of the debug adapter in use.
+ * @param evaluation - The result of a REPL evaluation.
+ * @returns The text to append to the Debug Console, or undefined when nothing
+ * should be echoed because the adapter already streamed it (e.g. cortex-debug)
+ * or the output is blank.
+ */
+export function getDebugConsoleEcho(
+  evaluation: ReplEvaluation,
+): string | undefined {
+  if (evaluation.streamedToConsole || evaluation.output.trim() === "") {
+    return undefined;
+  }
+  return evaluation.output.trimEnd();
+}
+
 const CONF_READ_TRANSACTION_FUNCTION = "configureSendAPReadTransaction";
 const CONF_WRITE_TRANSACTION_FUNCTION = "configureSendAPWriteTransaction";
+
+// CSW value for AP accesses (read and write). Bit layout:
+//   Size[2:0]    = 0x2  → 32-bit transfers
+//   AddrInc[5:4] = 0x1  → single-increment (address advances by transfer size per beat)
+//   PROT[27:24]  = 0x3  → privileged data access (HPROT[1:0]=0b11 on AHB-AP)
+// The PROT encoding is accepted by both AHB-AP (APH) and APB-AP (APB) implementations,
+// making this value usable across mixed AP topologies.
+// CSW for sequential-address AP writes (AddrInc = single-increment).
+const CONF_SEQUENTIAL = 0x03000012;
+
+// CSW for same-address AP reads: FIFO registers such as TMC RRD where
+// the address must not advance between beats (AddrInc = disabled).
+const CONF_NO_INCREMENT = 0x03000002;
+
 /**
  * Provides a higher level interface than vscode.debug namespace
  * This is achieved mainly by providing CfsDebugSession instances
@@ -147,11 +205,11 @@ export class CfsDebugManager {
       vscode.debug.registerDebugAdapterTrackerFactory("*", {
         createDebugAdapterTracker: (session) => {
           const newSession = new CfsDebugSession(session);
-          this.onStartSessionEmitter.fire(newSession);
           this.sessions.set(session.id, newSession);
           newSession.onStop(() => {
             this.sessions.delete(session.id);
           });
+          this.onStartSessionEmitter.fire(newSession);
           return newSession;
         },
       }),
@@ -231,7 +289,11 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
   /** The underlying vscode.DebugSession */
   vscodeSession: vscode.DebugSession;
 
-  private running: boolean = false;
+  // Assume the target is running until the adapter reports otherwise. Some
+  // adapters (e.g. cppdbg used by the SHARC-FX xt-run simulator) emit the
+  // initial "stopped" event before the "launch" response, so starting from
+  // running ensures that first halt is not dropped by processHalt.
+  private running: boolean = true;
   private stopInfo: StopInfo | undefined = undefined;
   private evaluateOutputBuffer: string | undefined = undefined;
   private gdbScriptLoadPromise: Promise<void> | undefined = undefined;
@@ -249,7 +311,7 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
   get lastStopInfo(): StopInfo | undefined {
     return this.stopInfo;
   }
-  private evaluateMutex: Promise<string> = Promise.resolve("");
+  private evaluateMutex: Mutex = new Mutex();
 
   /**
    * Creates a new CfsDebugSession instance.
@@ -277,7 +339,9 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
    * @returns A promise that resolves to the full evaluation output when no result pattern is provided,
    * or to the matched substring (`match[0]`) when `resultPattern` is supplied
    */
-
+  // Method overload signatures intentionally repeat the same member name.
+  // See: https://github.com/typescript-eslint/typescript-eslint/issues/291
+  /* eslint-disable no-dupe-class-members */
   async evaluateREPL(expression: string): Promise<string>;
   async evaluateREPL(
     expression: string,
@@ -287,42 +351,144 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
     expression: string,
     resultPattern?: RegExp,
   ): Promise<string | RegExpMatchArray> {
-    // This implementation is just a mutex wrapper around evaluateREPL_Internal
-    // to prevent concurrent calls that would mix up output events.
-    const result = this.evaluateMutex.then(() =>
-      this.evaluateREPL_Internal(expression),
-    );
-    this.evaluateMutex = result.then(() => "").catch(() => "");
+    const { output: result } = await this.evaluate(expression);
 
     if (resultPattern) {
-      return result.then((output) => {
-        const match = output.trimStart().match(resultPattern);
-        if (!match) {
-          throw new Error(
-            `No match found for regex ${resultPattern} in output: ${output}`,
-          );
-        }
-        return match;
-      });
+      const match = result.trimStart().match(resultPattern);
+      if (!match) {
+        throw new Error(
+          `No match found for regex ${resultPattern} in output: ${result}`,
+        );
+      }
+      return match;
     }
 
     return result;
+  }
+  /* eslint-enable no-dupe-class-members */
+
+  /**
+   * Runs a GDB command in the session, handling adapter-specific quirks.
+   * cppdbg (e.g. the SHARC-FX xt-run simulator) evaluates bare REPL input as a
+   * C expression (via -var-create), so GDB CLI commands must be prefixed with
+   * "-exec" to run. MI commands (already starting with "-") and other adapters
+   * are passed through unchanged.
+   * @param command - The GDB command to run (e.g. "info registers").
+   * @param options - Options controlling how the output is surfaced.
+   * @returns A promise that resolves to the command output.
+   */
+  async evaluateGdbCommand(
+    command: string,
+    options: GdbCommandOptions = {},
+  ): Promise<string> {
+    const needsExecPrefix =
+      this.vscodeSession.type === "cppdbg" &&
+      !command.trimStart().startsWith("-");
+    const evaluation = await this.evaluate(
+      needsExecPrefix ? `-exec ${command}` : command,
+    );
+
+    if (options.echoOutput) {
+      const echo = getDebugConsoleEcho(evaluation);
+      if (echo !== undefined) {
+        this.appendToDebugConsole(echo);
+      }
+    }
+
+    return evaluation.output;
+  }
+
+  /**
+   * Appends a line to the Debug Console of the active debug session.
+   * @param text - The text to append.
+   */
+  private appendToDebugConsole(text: string): void {
+    vscode.debug.activeDebugConsole.appendLine(text);
+  }
+
+  /**
+   * Evaluates an expression, serialising concurrent calls so that the shared
+   * output event buffer is not mixed up between evaluations.
+   * @param expression - The expression to evaluate.
+   * @returns A promise that resolves to the evaluation output and its origin.
+   */
+  private async evaluate(expression: string): Promise<ReplEvaluation> {
+    return this.evaluateMutex.withLock(() =>
+      this.evaluateREPL_Internal(expression),
+    );
   }
 
   /**
    * This method is unsafe to be used concurrently, as it relies on
    * shared console output events from debug adapter.
    */
-  private async evaluateREPL_Internal(expression: string): Promise<string> {
+  private async evaluateREPL_Internal(
+    expression: string,
+  ): Promise<ReplEvaluation> {
+    // Guard evaluate requests while the target is running to avoid
+    // cortex-debug throwing a different error path than other customRequest
+    // commands, where we handle errors consistently.
+    if (this.running && this.vscodeSession.type === "cortex-debug") {
+      throw new Error(
+        `Cannot evaluate REPL expression while target is running (${this.vscodeSession.type} session).`,
+      );
+    }
     this.evaluateOutputBuffer = "";
-    await this.vscodeSession.customRequest("evaluate", {
+    // Some debug adapters (e.g. cppdbg, used by the SHARC-FX xt-run simulator)
+    // require a frameId to evaluate REPL expressions and reject the request
+    // otherwise. Only resolve and send the top frame for those adapters. Other
+    // adapters (e.g. cortex-debug) default to the user's currently selected
+    // frame, so forcing frame 0 would break expressions like the Memory
+    // Viewer's `&localVariable` when a lower stack frame is selected. This is
+    // best-effort: if the stack trace can't be obtained, fall back to omitting
+    // the frameId.
+    const frameId =
+      this.vscodeSession.type === "cppdbg"
+        ? await this.getTopFrameId()
+        : undefined;
+    const response = await this.vscodeSession.customRequest("evaluate", {
       expression: expression,
+      frameId: frameId,
       context: "repl",
     });
-    const result = this.evaluateOutputBuffer;
+    const streamedOutput = this.evaluateOutputBuffer;
     this.evaluateOutputBuffer = undefined;
 
-    return result;
+    if (streamedOutput) {
+      return { output: streamedOutput, streamedToConsole: true };
+    }
+
+    // Some debug adapters (e.g. cppdbg) return REPL output directly in the
+    // evaluate response body rather than streaming it via "output" events like
+    // cortex-debug does. Fall back to the response result when no output events
+    // were captured. Such output never reaches the Debug Console on its own.
+    return {
+      output: typeof response?.result === "string" ? response.result : "",
+      streamedToConsole: false,
+    };
+  }
+
+  /**
+   * Resolves the frameId of the active thread's top stack frame, used to
+   * scope REPL evaluate requests for adapters that require it.
+   * @returns A promise that resolves to the top frame's id, or undefined if it
+   * cannot be determined (e.g. the target is running or has no stack).
+   */
+  private async getTopFrameId(): Promise<number | undefined> {
+    try {
+      // Prefer the thread reported by the latest "stopped" event, since that
+      // is the thread whose stack is relevant for the evaluate request. Fall
+      // back to the first available thread when no stop info is present.
+      const threadId = this.stopInfo?.threadId ?? (await this.getThreadId());
+      const stackTrace = await this.vscodeSession.customRequest("stackTrace", {
+        threadId: threadId,
+        startFrame: 0,
+        levels: 1,
+      });
+      return stackTrace?.stackFrames?.[0]?.id;
+    } catch {
+      return undefined;
+    }
   }
 
   /**
@@ -377,21 +543,24 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
       await this.gdbScriptLoadPromise;
       return;
     }
+    // Due to CFSIO-26542 use "set" instructions at beginning of the functions to avoid the monitor commands being
+    // interleaved with other monitor commands from other operations. Use dummy ones to ensure the atomicity of the AP transactions.
     const READ_DP_ID_FUNCTION = "readDPIDRegister";
     const READWRITE_AP_FUNCTIONS_SCRIPT = `define ${CONF_READ_TRANSACTION_FUNCTION}
-      set $addr = $arg1
-      set $endAddr =  $arg1 + $arg2
+      set $count = $arg2
+      set $accumulator = 0
       monitor writeDP 2 $arg0
-      monitor writeAP 0 0x80000012
+      monitor writeAP 0 $arg3
       monitor writeAP 1 $arg1
-      while $addr < $endAddr
+      while $accumulator < $count
         monitor readAP 3
-        set $addr = $addr + 4
+        set $accumulator = $accumulator + 4
       end
     end
     define ${CONF_WRITE_TRANSACTION_FUNCTION}
+      set $dummySet = 0
       monitor writeDP 2 $arg0
-      monitor writeAP 0 0x80000012
+      monitor writeAP 0 0x${CONF_SEQUENTIAL.toString(16)}
       monitor writeAP 1 $arg1
       set $i = 2
       while $i < $argc
@@ -440,10 +609,46 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
     await this.gdbScriptLoadPromise;
   }
   /**
+   * Issues a `ReadMemAP` monitor command and returns the parsed hex words.
+   * Output format: `O.K.:0xXXXXXXXX,0xXXXXXXXX,...` (comma-separated on one line).
+   */
+  private async readMemApSequential(
+    apAddress: number,
+    address: number,
+    numberOfElems: number,
+  ): Promise<string[]> {
+    const readCommand = `monitor ReadMemAP 0x${apAddress.toString(16)} 0x${address.toString(16)} 0x${numberOfElems.toString(16)} 0`;
+    const regEx = /O\.K\.:0x[0-9a-fA-F]{8}(?:,0x[0-9a-fA-F]{8})*[\r\n]*/;
+    const match = await this.evaluateREPL(readCommand, regEx);
+    return match[0].match(/0x[0-9a-fA-F]{8}/g) ?? [];
+  }
+
+  /**
+   * Issues a `CONF_READ_TRANSACTION_FUNCTION` monitor command for repeated reads
+   * at a fixed address and returns the parsed hex words.
+   * Output format: three `O.K.` acknowledgement lines followed by one `O.K.:0xXXXXXXXX` per word.
+   */
+  private async readMemApSameAddress(
+    apAddress: number,
+    address: number,
+    count: number,
+  ): Promise<string[]> {
+    // eslint-disable-next-line no-bitwise
+    const apBank = apAddress | 0xd00; // 0xd00 is _CSW_REG_OFF DP reg to configure communication between the DP and AP.
+    const readCommand = `${CONF_READ_TRANSACTION_FUNCTION} 0x${apBank.toString(16)} 0x${address.toString(16)} 0x${count.toString(16)} 0x${CONF_NO_INCREMENT.toString(16)}`;
+    const regEx = /(?:O\.K\.\r?\n){3}(?:O\.K\.:0x[0-9a-fA-F]{8}(?:\r?\n|$))+/;
+    const match = await this.evaluateREPL(readCommand, regEx);
+    return match[0].match(/0x[0-9a-fA-F]{8}/g) ?? [];
+  }
+
+  /**
    * Reads memory from an AP (Access Port).
    * @param apAddress - The address of the AP to access
    * @param address - The target memory address to read on the AP. Must be 4-byte aligned.
    * @param count - The number of bytes to read, should be a multiple of 4 and > 0.
+   * @param readSameAddress - If true, all reads will be performed on the same AP register (address),
+   * which performs repeated/posted reads against a fixed address (for FIFO/data registers),
+   * not sequential memory reads across increasing addresses.
    * @returns A promise that resolves to the memory data (address and buffer)
    * @throws An error if the debug session type does not support AP access, if the count is not a multiple of 4,
    * or if a required command fails or if address is not 4-byte aligned or if count is not greater than 0.
@@ -455,6 +660,7 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
     apAddress: number,
     address: number,
     count: number,
+    readSameAddress = false,
   ): Promise<MemoryData> {
     if (count <= 0) {
       throw new Error("AP memory read count must be greater than 0");
@@ -487,23 +693,15 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
     // to ensure the required monitor commands are available.
     await this.ensureGDBScriptIsLoaded();
 
-    // 0xd00 is _CSW_REG_OFF DP reg to configure communication between the DP and AP.
-    // eslint-disable-next-line no-bitwise
-    const apBank = apAddress | 0xd00;
-    const match = await this.evaluateREPL(
-      `${CONF_READ_TRANSACTION_FUNCTION} 0x${apBank.toString(16)} 0x${address.toString(16)} 0x${count.toString(16)}`,
-      /(?:O\.K\.\r?\n){3}(?:O\.K\.:0x[0-9a-fA-F]{8}(?:\r?\n|$))+/,
-    );
+    const numberOfElems = count / 4;
+    const hexValues =
+      readSameAddress && numberOfElems > 1
+        ? await this.readMemApSameAddress(apAddress, address, count)
+        : await this.readMemApSequential(apAddress, address, numberOfElems);
 
-    const fullOutput = match[0]; // The entire matched string
-
-    // Extract ALL hex values (all O.K.:0x pairs)
-    const allHexMatches = fullOutput.match(/:0x([0-9a-fA-F]{8})/g) || [];
-    const hexValues = allHexMatches.map((hex) => hex.substring(1)); // Remove ':' prefix, keep '0x'
-    const expectedWords = count / 4;
-    if (hexValues.length !== expectedWords) {
+    if (hexValues.length !== numberOfElems) {
       throw new Error(
-        `AP memory read returned ${hexValues.length} words, expected ${expectedWords} (address=0x${address.toString(16)}, count=${count})`,
+        `AP memory read returned ${hexValues.length} words, expected ${numberOfElems} (address=0x${address.toString(16)}, count=${count})`,
       );
     }
 
@@ -795,49 +993,82 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
     await this.vscodeSession.customRequest("pause", { threadId: tid });
   }
 
+  /* eslint-disable no-dupe-class-members */
   /**
    * Reads a register and returns the content of each of its fields.
    * Only bits that are described in the register definition are returned,
    * other bits are discarded.
    *
    * @param register - The register description containing address and field definitions
-   * @returns A promise that resolves to an object mapping field names to their numeric values
-   */
+   * @param numberOfReads - Optional number of consecutive reads to perform on the register.
+   * @returns A promise that resolves to an object mapping field names to their corresponding values read from the register.
+   *           If `numberOfReads` is omitted, field values are returned as single numbers.
+   *           If `numberOfReads` is provided, the return value is an array of records (length = numberOfReads),
+   *           where each record maps field names to numbers.   */
   async readRegister(
     register: RegisterDescription,
-  ): Promise<Record<string, number>> {
+  ): Promise<Record<string, number>>;
+  async readRegister(
+    register: RegisterDescription,
+    numberOfReads: number,
+  ): Promise<Record<string, number>[]>;
+  async readRegister(
+    register: RegisterDescription,
+    numberOfReads?: number,
+  ): Promise<Record<string, number> | Record<string, number>[]> {
     // For the moment we only support 32-bit registers, for bigger registers
     // we would need to make use of BigInt and adjust the buffer size accordingly
-    const length = 4;
-
+    const numberOfReadsInternal = numberOfReads ?? 1;
+    if (!Number.isInteger(numberOfReadsInternal) || numberOfReadsInternal < 1) {
+      throw new Error(
+        `numberOfReads must be a positive integer (got ${numberOfReads})`,
+      );
+    }
+    const length = numberOfReadsInternal * 4;
     const buffer =
       register.apAddress === undefined
-        ? await this.readMemory(register.address, length)
-        : await this.readMemoryAp(register.apAddress, register.address, length);
-
-    const value = buffer.data.readUInt32LE(0);
-    return Object.fromEntries(
-      Object.entries(register.fields).map(
-        ([fieldName, [bitOffset, bitLength]]) => {
-          // BigInt needed for register fields of 32 bits
-          // eslint-disable-next-line no-bitwise
-          const mask = Number((1n << BigInt(bitLength)) - 1n);
-          // eslint-disable-next-line no-bitwise
-          const fieldValue = ((value >>> bitOffset) & mask) >>> 0;
-          // >>> 0 to enforce unsigned values
-          return [fieldName, fieldValue];
-        },
-      ),
-    );
+        ? await (async () => {
+            const chunks: MemoryData[] = [];
+            for (let i = 0; i < numberOfReadsInternal; i++) {
+              chunks.push(await this.readMemory(register.address, 4));
+            }
+            return {
+              address: chunks[0].address,
+              data: Buffer.concat(chunks.map((c) => c.data)),
+            };
+          })()
+        : await this.readMemoryAp(
+            register.apAddress,
+            register.address,
+            length,
+            true,
+          );
+    const arrayRegs: Record<string, number>[] = [];
+    for (let i = 0; i < numberOfReadsInternal; i++) {
+      const offset = i * 4;
+      const value = buffer.data.readUInt32LE(offset);
+      arrayRegs[i] = {};
+      for (const [fieldName, [bitOffset, bitLength]] of Object.entries(
+        register.fields,
+      )) {
+        // BigInt needed for register fields of 32 bits
+        // eslint-disable-next-line no-bitwise
+        const mask = Number((1n << BigInt(bitLength)) - 1n);
+        // eslint-disable-next-line no-bitwise
+        const fieldValue = ((value >>> bitOffset) & mask) >>> 0;
+        // >>> 0 to enforce unsigned values
+        arrayRegs[i][fieldName] = fieldValue;
+      }
+    }
+    return numberOfReads === undefined ? arrayRegs[0] : arrayRegs;
   }
-
+  /* eslint-enable no-dupe-class-members */
   /**
    * Writes values to a register in the debugged program.
    * This method reads the current value of the register, updates the bits corresponding
    * to the provided fields, and writes the new value back to memory.
    * Only the fields provided on values are modified by this operation,
    * other bits of the register remain unchanged.
-   *
    *
    * @param register - The register description containing address and field definitions
    * @param values - An object mapping field names to the numeric values to write on them.
@@ -958,8 +1189,12 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
 
   onDebugAdapterResponse(message: any) {
     switch (message.command) {
-      case "launch":
-      case "attach":
+      // Note: "launch"/"attach" responses are intentionally not treated as a
+      // resume. The target may stop at entry or a breakpoint as part of the
+      // launch, and some adapters (e.g. cppdbg) send that "stopped" event
+      // before the "launch" response; treating the response as a continue
+      // would incorrectly flip the session back to running. Session start is
+      // already assumed running (see `running` initial value).
       case "continue":
       case "next":
       case "stepIn":
@@ -994,6 +1229,21 @@ export class CfsDebugSession implements vscode.DebugAdapterTracker {
       const info = stopInfo ?? { reason: "unknown" };
       this.stopInfo = info;
       this.onHaltEmitter.fire(info);
+    }
+  }
+  /**
+   * Retrieves the executable path of the currently active debug session.
+   * @returns The path to the executable if available, undefined otherwise
+   */
+  public getExecutablePath(): string | undefined {
+    switch (this.vscodeSession.configuration.type) {
+      case "cortex-debug":
+        return this.vscodeSession.configuration.executable;
+      case "stlinkgdbtarget":
+        return this.vscodeSession.configuration.imagesAndSymbols?.[0]
+          ?.imageFileName;
+      default:
+        return this.vscodeSession.configuration.program;
     }
   }
 }

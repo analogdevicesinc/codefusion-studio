@@ -143,3 +143,22 @@ export function localizeWithArgs(
 
 	return interpolateString(template, args);
 }
+
+/*
+ * Cleans up an integer decimal value by removing leading zeros from the integer part
+ * while preserving the negative (-) sign and fractional part.
+ */
+export const cleanupIntegerDecimalValue = (value: string): string => {
+	if (value.length < 2) return value;
+
+	const sign = value.startsWith('-') ? '-' : '';
+	const unsignedValue = value.replace(/^[+-]/, '');
+
+	const normalizedValue = unsignedValue.startsWith('.')
+		? `0${unsignedValue}`
+		: unsignedValue
+				.replace(/^0+(?=\d)/, '')
+				.replace(/^0+(?=\.)/, '0');
+
+	return `${sign}${normalizedValue}`;
+};

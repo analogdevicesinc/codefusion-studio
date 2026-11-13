@@ -37,8 +37,7 @@ def create_backend_config(model, network):
     t = UserTarget(
         soc="MAX78002",
         core="CM4",
-        accelerator="CNN",
-        family="Cortex-M"
+        accelerator="CNN"
     )
     b = ConfigBackend(
         name="izer"

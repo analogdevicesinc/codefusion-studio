@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc. All Rights Reserved.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc. All Rights Reserved.
  * This software is proprietary to Analog Devices, Inc. and its licensors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,10 +26,7 @@ export function copyConanFiles(): Plugin {
         __dirname,
         "../cfs-package-manager/src/conan-backend/config",
       );
-      const outDir = path.resolve(
-        __dirname,
-        "./out/packages/cfs-package-manager/dist/conan-backend/config",
-      );
+      const outDir = path.resolve(__dirname, "./out/conan-config");
 
       if (fs.existsSync(sourceDir)) {
         fs.mkdirSync(outDir, { recursive: true });
@@ -49,9 +46,45 @@ export function copyConanFiles(): Plugin {
         }
 
         console.log(
-          `Copied files from "cfs-package-manager/src/conan-backend/config" to "./out/packages/cfs-package-manager/dist/conan-backend/config"`,
+          `Copied files from "cfs-package-manager/src/conan-backend/config" to "./out/conan-config"`,
         );
       }
+    },
+  };
+}
+
+/**
+ * Copies the shared `git-remote-cfspkg` launcher scripts from cfs-package-manager
+ * into `out/git-remote/`, next to the bundled helper entry, so the extension can
+ * put them on PATH for spawned git/west processes.
+ */
+export function copyGitRemoteHelper(): Plugin {
+  return {
+    name: "copy-git-remote-helper",
+    apply: "build",
+    closeBundle() {
+      const sourceDir = path.resolve(
+        __dirname,
+        "../cfs-package-manager/src/git-remote",
+      );
+      const outDir = path.resolve(__dirname, "./out/git-remote");
+
+      fs.mkdirSync(outDir, { recursive: true });
+
+      for (const file of ["git-remote-cfspkg", "git-remote-cfspkg.cmd"]) {
+        const sourceFile = path.join(sourceDir, file);
+        if (!fs.existsSync(sourceFile)) continue;
+        const destFile = path.join(outDir, file);
+        fs.copyFileSync(sourceFile, destFile);
+      }
+
+      // The POSIX launcher must be executable; git execs it directly.
+      const shim = path.join(outDir, "git-remote-cfspkg");
+      if (fs.existsSync(shim)) {
+        fs.chmodSync(shim, 0o755);
+      }
+
+      console.log(`Copied git-remote-cfspkg launcher(s) to "./out/git-remote"`);
     },
   };
 }

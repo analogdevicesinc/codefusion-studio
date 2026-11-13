@@ -16,7 +16,6 @@
 import * as vscode from "vscode";
 import { CfsDebugManager } from "../debug-manager";
 import { McpDebugStreamableWebServer } from "./mcp-debug-web-server";
-import { DebugChatParticipant } from "./debug-chat-participant";
 import { DebugCommandExecutor } from "./debug-command-executor";
 import type { McpServerDependencies } from "./mcp-server/cfs-mcp-server";
 import {
@@ -37,6 +36,9 @@ import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
 export class CfsDebugAssistant
   implements vscode.McpServerDefinitionProvider, vscode.Disposable
 {
+  // Label used for the definition; also the second half of VS Code's internal server id (`<extensionId>/<label>`).
+  private static readonly MCP_SERVER_LABEL = "CFS Debug Assistant";
+
   private onDidChangeMcpServerDefinitionsEmitter =
     new vscode.EventEmitter<void>();
 
@@ -49,7 +51,10 @@ export class CfsDebugAssistant
     this.onDidChangeMcpServerDefinitionsEmitter,
   ];
 
-  constructor(extensionUri: vscode.Uri, debugManager: CfsDebugManager) {
+  constructor(
+    debugManager: CfsDebugManager,
+    private readonly extensionId: string,
+  ) {
     const mcpDeps = CfsDebugAssistant.buildMcpDependencies(debugManager);
     this.mcpDebugServer = new McpDebugStreamableWebServer(mcpDeps);
 
@@ -63,14 +68,6 @@ export class CfsDebugAssistant
         "   If MCP is disabled, enable it in Settings: search for 'chat.mcp.enabled'",
       );
     }
-
-    this.disposables.push(
-      new DebugChatParticipant(
-        extensionUri,
-        debugManager,
-        mcpDeps.commandExecutor,
-      ),
-    );
 
     this.registerMcpServerCommands();
 
@@ -91,14 +88,6 @@ export class CfsDebugAssistant
     return {
       debugManager,
       commandExecutor: new DebugCommandExecutor(debugManager),
-      workspaceFileSearch: {
-        findFiles: async (glob) => {
-          // Use empty string for exclude pattern to override default files.exclude
-          // This ensures files in dot-prefixed folders like .cfs are found
-          const uris = await vscode.workspace.findFiles(glob, "");
-          return uris.map((u) => u.fsPath);
-        },
-      },
     };
   }
 
@@ -110,7 +99,7 @@ export class CfsDebugAssistant
     if (debugServerUri !== undefined) {
       definitions.push(
         new vscode.McpHttpServerDefinition(
-          "CFS Debug Assistant",
+          CfsDebugAssistant.MCP_SERVER_LABEL,
           debugServerUri,
         ),
       );
@@ -122,16 +111,7 @@ export class CfsDebugAssistant
     server: vscode.McpServerDefinition,
     _token: vscode.CancellationToken,
   ): vscode.McpServerDefinition | undefined {
-    if (server.label === "CFS Debug Assistant") {
-      const debugServerUri = this.mcpDebugServer.getUri();
-      if (debugServerUri !== undefined) {
-        return new vscode.McpHttpServerDefinition(
-          "CFS Debug Assistant",
-          debugServerUri,
-        );
-      }
-    }
-    return undefined;
+    return server;
   }
 
   public async startServer(): Promise<void> {
@@ -150,11 +130,36 @@ export class CfsDebugAssistant
         telemetryManager.logAction(TELEMETRY_ACTIONS.MCP_SERVER_STARTED, {});
       });
       this.onDidChangeMcpServerDefinitionsEmitter.fire();
+      void this.connectMcpClient();
       vscode.window.showInformationMessage(
         `MCP server started on ${this.mcpDebugServer.getUri()}`,
       );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to start MCP server: ${error}`);
+    }
+  }
+
+  /**
+   * Tells VS Code's built-in MCP client to connect right away, so tools show up as soon as the
+   * HTTP server is listening instead of requiring the user to start it from the MCP servers list.
+   * `workbench.mcp.startServer` is a built-in VS Code command for starting MCP servers.
+   * This is based on the VS Code repo, not their documentation.
+   */
+  private async connectMcpClient(): Promise<void> {
+    const startCommand = "workbench.mcp.startServer";
+    const availableCommands = await vscode.commands.getCommands(true);
+    if (!availableCommands.includes(startCommand)) {
+      return;
+    }
+
+    const serverId = `${this.extensionId.toLowerCase()}/${CfsDebugAssistant.MCP_SERVER_LABEL}`;
+
+    try {
+      await vscode.commands.executeCommand(startCommand, serverId, {
+        waitForLiveTools: true,
+      });
+    } catch (error) {
+      logger.error(`Failed to connect MCP client: ${error}`);
     }
   }
 

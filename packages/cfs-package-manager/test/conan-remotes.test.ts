@@ -17,7 +17,10 @@ import { expect, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { mock } from "node:test";
+import { DatabaseSync } from "node:sqlite";
 import { ConanPkgManager } from "../src/conan-backend/conan-backend.js";
+import { ConanRunner } from "../src/conan-backend/conan-runner.js";
 import type {
 	CfsManagedPackageRemote,
 	CfsPackageRemoteCredential,
@@ -65,9 +68,7 @@ class MockCfsRemotesProvider implements CfsPackageRemotesProvider {
 	}
 }
 
-class MockCredentialClient
-	implements CfsPackageRemoteCredentialClient
-{
+class MockCredentialClient implements CfsPackageRemoteCredentialClient {
 	public readonly auth: { public: false; credentialProvider: string };
 
 	public getCredentialCalls = 0;
@@ -129,6 +130,31 @@ function managedRemoteWithAuth(
 		getCredential: () => credentialClient.getCredential(),
 		refreshCredential: () => credentialClient.refreshCredential()
 	};
+}
+
+/**
+ * Replaces the login token Conan stored for a remote, as if it had expired:
+ * Conan still reports the remote as logged in, but the server rejects it.
+ * @param conanHome - the Conan home holding the `.conan.db` login database
+ * @param url - the remote URL
+ * @param token - the token to store
+ */
+function setStoredToken(
+	conanHome: string,
+	url: string,
+	token: string
+) {
+	const db = new DatabaseSync(path.join(conanHome, ".conan.db"));
+	try {
+		const { changes } = db
+			.prepare(
+				"UPDATE users_remotes SET token = ?, refresh_token = NULL WHERE remote_url IN (?, ?)"
+			)
+			.run(token, url, `${url}/`);
+		expect(changes, "stored logins for the remote").to.equal(1);
+	} finally {
+		db.close();
+	}
 }
 
 describe("ConanRemotesManager - provider-based and user-custom remotes", function () {
@@ -739,6 +765,26 @@ describe("ConanRemotesManager - provider-based and user-custom remotes", functio
 			).to.be.rejectedWith(/Invalid URL/i);
 		});
 
+		it("should reject adding custom remotes with URLs that do not use http or https", async function () {
+			const provider = new MockCfsRemotesProvider();
+			const api = await createApiWithProvider(provider);
+			await api.init({ initRemotes: true });
+
+			for (const url of [
+				"localhost:9300",
+				"ftp://scheme.example.com/repo",
+				"file:///tmp/repo",
+				"c:\\conan\\repo"
+			]) {
+				await expect(
+					api.addRemote("valid_name", url)
+				).to.be.rejectedWith(/must use http or https/i);
+			}
+
+			const remotes = await api.listRemotes();
+			expect(remotes.map((r) => r.name)).to.not.include("valid_name");
+		});
+
 		it("should overwrite provider-tagged legacy custom entry when adding a new custom remote with the same name", async function () {
 			await createCustomRemotesFile([
 				{
@@ -895,7 +941,8 @@ describe("ConanRemotesManager - provider-based and user-custom remotes", functio
 			expect(remote?.configError?.code).to.equal(
 				"REMOTE_AUTH_FAILED"
 			);
-			expect((remote?.configError?.cause as Error).message).to.match(
+			const configErrorCause = remote?.configError?.cause as Error;
+			expect(configErrorCause.message).to.match(
 				/Failed to fetch remote credential/i
 			);
 		});
@@ -945,6 +992,102 @@ describe("ConanRemotesManager - provider-based and user-custom remotes", functio
 			).to.equal(undefined);
 		});
 
+		it("should not log in again to a managed remote that is logged in", async function () {
+			const credentialClient = new MockCredentialClient(
+				"managed-auth-provider",
+				{ user: "test_user", password: "test_password" }
+			);
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemoteWithAuth(
+					"managed-auth-once",
+					conanURL,
+					credentialClient
+				)
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init({ initRemotes: true });
+			const calls = credentialClient.getCredentialCalls;
+
+			await api.listRemotes();
+
+			expect(calls).to.be.greaterThan(0);
+			expect(credentialClient.getCredentialCalls).to.equal(calls);
+		});
+
+		it("should not reuse a login stored by another session", async function () {
+			// Two package managers on one Conan home, like two CLI runs with
+			// different accounts: the same remote name, URL and Conan home
+			const remote = (client: MockCredentialClient) => {
+				const provider = new MockCfsRemotesProvider();
+				provider.setRemotes([
+					managedRemoteWithAuth(
+						"managed-auth-shared",
+						conanURL,
+						client
+					)
+				]);
+				return provider;
+			};
+			const firstClient = new MockCredentialClient(
+				"managed-auth-provider",
+				{ user: "test_user", password: "test_password" }
+			);
+			const first = await createApiWithProvider(remote(firstClient));
+			await first.init({ initRemotes: true });
+			expect(firstClient.getCredentialCalls).to.be.greaterThan(0);
+
+			const secondClient = new MockCredentialClient(
+				"managed-auth-provider",
+				{ user: "test_user", password: "test_password" }
+			);
+			const second = await createApiWithProvider(
+				remote(secondClient)
+			);
+			await second.init({ initRemotes: true });
+
+			// The first session's login is still stored, but not trusted
+			expect(secondClient.getCredentialCalls).to.be.greaterThan(0);
+		});
+
+		it("should log in again when the stored login is rejected", async function () {
+			const credentialClient = new MockCredentialClient(
+				"managed-auth-provider",
+				{ user: "test_user", password: "test_password" }
+			);
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemoteWithAuth(
+					"managed-auth-renew",
+					conanURL,
+					credentialClient
+				)
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init({ initRemotes: true });
+
+			setStoredToken(testConanHome, conanURL, "rejected-token");
+			const getCalls = credentialClient.getCredentialCalls;
+			const refreshCalls = credentialClient.refreshCredentialCalls;
+
+			// Still reported as logged in, so the remote set-up does not log in
+			await api.listRemotes();
+			expect(credentialClient.getCredentialCalls).to.equal(getCalls);
+
+			// The server rejects the token: the command fails to authenticate,
+			// the credential is refreshed, and the command runs again
+			const plan = await api.getInstallPlan([
+				{ name: "private_pkg", version: "1.0" }
+			]);
+			expect(plan.toInstall).to.deep.include({
+				name: "private_pkg",
+				version: "1.0"
+			});
+			expect(
+				credentialClient.refreshCredentialCalls
+			).to.be.greaterThan(refreshCalls);
+		});
+
 		it("should reject auth changes on disabled custom remotes", async function () {
 			await createCustomRemotesFile([
 				{ name: "disabled-custom-auth", url: conanURL }
@@ -990,6 +1133,293 @@ describe("ConanRemotesManager - provider-based and user-custom remotes", functio
 			expect(
 				remotes.find((r) => r.name === "custom-auth")?.auth
 			).to.deep.equal({ public: true });
+		});
+	});
+
+	describe("listing remote states", () => {
+		it("should not fetch the provider remotes", async function () {
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemote("cfs-public", "https://example.com/public")
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init({ initRemotes: true });
+			const calls = provider.getRemotesCalls;
+
+			const states = await api.listRemoteStates();
+
+			expect(provider.getRemotesCalls).to.equal(calls);
+			expect(states).to.deep.include({
+				name: "cfs-public",
+				url: new URL("https://example.com/public"),
+				disabled: false,
+				custom: false
+			});
+		});
+
+		it("should reflect disabled and custom remotes", async function () {
+			await createCustomRemotesFile([
+				{
+					name: "custom-state",
+					url: "https://custom.example.com/repo"
+				}
+			]);
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemote("cfs-public", "https://example.com/public")
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init({ initRemotes: true });
+			await api.disableRemote("custom-state");
+
+			const states = await api.listRemoteStates();
+
+			expect(
+				states.find((r) => r.name === "custom-state")
+			).to.include({
+				disabled: true,
+				custom: true
+			});
+			expect(states.find((r) => r.name === "cfs-public")).to.include({
+				disabled: false,
+				custom: false
+			});
+		});
+
+		it("should not report a managed remote added by another process as custom", async function () {
+			const ours = new MockCfsRemotesProvider();
+			ours.setRemotes([
+				managedRemote("cfs-public", "https://example.com/public")
+			]);
+			const api = await createApiWithProvider(ours);
+			await api.init({ initRemotes: true });
+
+			// Another process on the same Conan home, whose provider lists
+			// other managed remotes (e.g. a CLI run with another account)
+			const theirs = new MockCfsRemotesProvider();
+			theirs.setRemotes([
+				managedRemote("cfs-other", "https://example.com/other")
+			]);
+			const other = await createApiWithProvider(theirs);
+			await other.init({ initRemotes: true });
+
+			const states = await api.listRemoteStates();
+
+			expect(states.find((r) => r.name === "cfs-other")).to.include({
+				custom: false
+			});
+		});
+
+		it("should apply the config once if not applied yet", async function () {
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemote("cfs-public", "https://example.com/public")
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init();
+
+			const states = await api.listRemoteStates();
+
+			expect(provider.getRemotesCalls).to.be.greaterThan(0);
+			expect(states.map((r) => r.name)).to.include("cfs-public");
+		});
+	});
+
+	describe("remote listing cache", () => {
+		afterEach(() => mock.restoreAll());
+
+		async function createCachedApi() {
+			const provider = new MockCfsRemotesProvider();
+			provider.setRemotes([
+				managedRemote("cache-first", "https://example.com/first"),
+				managedRemote("cache-second", "https://example.com/second")
+			]);
+			const api = await createApiWithProvider(provider);
+			await api.init();
+			await createCustomRemotesFile([]);
+			await fs.writeFile(userRemotesConfigPath, "{}");
+			const execute = mock.method(ConanRunner.prototype, "execute");
+			const result = await api.listRemotes();
+			expect(result.every((r) => !r.configError)).to.equal(true);
+			const calls = execute.mock.callCount();
+			expect(await api.listRemotes()).to.deep.equal(result);
+			expect(execute.mock.callCount()).to.equal(calls);
+			return { api, provider, execute, result };
+		}
+
+		for (const filename of [
+			"remotes.json",
+			"customRemotes.json",
+			"userRemotesCfg.json",
+			".conan.db"
+		]) {
+			it(`invalidates the cache when an external writer touches ${filename}`, async () => {
+				const { api, execute, result } = await createCachedApi();
+				const file = path.join(testConanHome, filename);
+				const stat = await fs.stat(file);
+				await fs.utimes(
+					file,
+					stat.atime,
+					new Date(stat.mtimeMs + 10_000)
+				);
+				const calls = execute.mock.callCount();
+				expect(await api.listRemotes()).to.deep.equal(result);
+				expect(execute.mock.callCount()).to.be.greaterThan(calls);
+			});
+		}
+
+		it("applies custom remote configuration changed by an external writer", async () => {
+			const { api, execute } = await createCachedApi();
+			await createCustomRemotesFile([
+				{ name: "external-custom", url: "https://example.com/custom" }
+			]);
+			const calls = execute.mock.callCount();
+			const result = await api.listRemotes();
+			expect(result.map((r) => r.name)).to.include("external-custom");
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
+		});
+
+		it("applies user overrides changed by an external writer", async () => {
+			const { api, execute } = await createCachedApi();
+			await fs.writeFile(
+				userRemotesConfigPath,
+				JSON.stringify({
+					"cache-first": { name: "cache-first", disabled: true }
+				})
+			);
+			const calls = execute.mock.callCount();
+			const result = await api.listRemotes();
+			expect(
+				result.find((r) => r.name === "cache-first")?.disabled
+			).to.equal(true);
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
+		});
+
+		it("invalidates the cache when the provider changes during the TTL", async () => {
+			const { api, provider, execute } = await createCachedApi();
+			provider.setRemotes([
+				managedRemote(
+					"cache-replacement",
+					"https://example.com/replacement"
+				)
+			]);
+			const calls = execute.mock.callCount();
+			const result = await api.listRemotes();
+			expect(result.map((r) => r.name)).to.deep.equal([
+				"cache-replacement"
+			]);
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
+		});
+
+		it("discards cached results if the provider is replaced while cache validation is pending", async () => {
+			const {
+				api,
+				provider,
+				execute,
+				result: original
+			} = await createCachedApi();
+			const originalRemotes = await provider.getRemotes();
+			let validationEntered!: () => void;
+			const entered = new Promise<void>((resolve) => {
+				validationEntered = resolve;
+			});
+			let resumeValidation!: () => void;
+			const resumed = new Promise<void>((resolve) => {
+				resumeValidation = resolve;
+			});
+			mock.method(provider, "getRemotes", async () => {
+				validationEntered();
+				await resumed;
+				return originalRemotes;
+			});
+
+			const replacement = new MockCfsRemotesProvider();
+			replacement.setRemotes([
+				managedRemote(
+					"replacement-provider",
+					"https://example.com/replacement"
+				)
+			]);
+			const calls = execute.mock.callCount();
+			const listing = api.listRemotes();
+			try {
+				await Promise.race([
+					entered,
+					listing.then(() => {
+						throw new Error(
+							"Listing completed before cache validation was paused"
+						);
+					})
+				]);
+				await api.registerRemotesProvider(replacement);
+			} finally {
+				resumeValidation();
+				await Promise.allSettled([listing]);
+			}
+
+			const remotes = await listing;
+			expect(remotes).not.to.deep.equal(original);
+			expect(remotes.map((remote) => remote.name)).to.deep.equal([
+				"replacement-provider"
+			]);
+			expect(replacement.getRemotesCalls).to.be.greaterThan(0);
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
+		});
+
+		it("keeps the cache when only the provider's list order changes", async () => {
+			const { api, provider, execute, result } =
+				await createCachedApi();
+			provider.setRemotes((await provider.getRemotes()).reverse());
+			const calls = execute.mock.callCount();
+			expect(await api.listRemotes()).to.deep.equal(result);
+			expect(execute.mock.callCount()).to.equal(calls);
+		});
+
+		it("constructs independent URLs and auth objects for each listing", async () => {
+			const { api, execute, result } = await createCachedApi();
+			const expected = result[0].url.href;
+			result[0].url.pathname = "/mutated";
+			if (result[0].auth) {
+				result[0].auth.public = false;
+			}
+			const calls = execute.mock.callCount();
+			const cached = await api.listRemotes();
+			expect(cached[0].url.href).to.equal(expected);
+			expect(cached[0].auth).to.deep.equal({ public: true });
+			cached[0].url.pathname = "/mutated-again";
+			const next = await api.listRemotes();
+			expect(next[0].url.href).to.equal(expected);
+			expect(next[0].auth).not.to.equal(cached[0].auth);
+			expect(execute.mock.callCount()).to.equal(calls);
+		});
+
+		it("serves an updated result immediately after disabling a remote", async () => {
+			const { api, execute } = await createCachedApi();
+			await api.disableRemote("cache-first");
+			const calls = execute.mock.callCount();
+			const remotes = await api.listRemotes();
+			expect(
+				remotes.find((r) => r.name === "cache-first")?.disabled
+			).to.equal(true);
+			expect(
+				remotes.find((r) => r.name === "cache-second")?.disabled
+			).to.equal(false);
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
+		});
+
+		it("serves an updated result immediately after enabling a remote", async () => {
+			const { api, execute } = await createCachedApi();
+			await api.disableRemote("cache-first");
+			await api.enableRemote("cache-first");
+			const calls = execute.mock.callCount();
+			const remotes = await api.listRemotes();
+			expect(
+				remotes.find((r) => r.name === "cache-first")?.disabled
+			).to.equal(false);
+			expect(
+				remotes.find((r) => r.name === "cache-second")?.disabled
+			).to.equal(false);
+			expect(execute.mock.callCount()).to.be.greaterThan(calls);
 		});
 	});
 

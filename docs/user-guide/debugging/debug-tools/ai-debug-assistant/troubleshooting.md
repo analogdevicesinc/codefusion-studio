@@ -1,19 +1,13 @@
 ---
 description: Troubleshooting the AI Debug Assistant in CodeFusion Studio.
 author: Analog Devices
-date: 2026-05-15
+date: 2026-09-24
 ---
 
 # Troubleshooting
 
 !!! info "Preview"
     The AI Debug Assistant is currently in preview and may change in future releases.
-
-## Choosing the right path
-
-If you're experiencing issues with the CFS Debug chat participant, we recommend switching to the CFS MCP debug server with any MCP-compatible AI client for maximum portability and future compatibility.
-
-See [Getting started](getting-started.md#cfs-mcp-debug-server-recommended) for connection steps.
 
 ## Port conflict
 
@@ -28,13 +22,6 @@ If the OS cannot assign a port, or you need a specific port:
 
 Most tools require an active debug session. Start debugging with **F5** or via the **Run** menu before asking the assistant to inspect state or control execution. Alternatively, you can ask the assistant to start a debug session using the appropriate configuration name. For example: *"Start debugging CFS: Debug with GDB and OpenOCD (ARM Embedded)"*.
 
-## `No Copilot model available`
-
-If you see the error `No Copilot model available. Please ensure GitHub Copilot is installed and authenticated`, the `@cfs-debug` chat participant cannot access the required AI model. To resolve this:
-
-1. Ensure GitHub Copilot is installed and you are signed in
-2. Ensure your GitHub Copilot plan includes access to Claude models (such as Claude Sonnet 4.5 or Claude Opus 4.6)
-
 ## CFS Debug Assistant tools not appearing in GitHub Copilot Chat
 
 If the CFS Debug Assistant tools are not available in GitHub Copilot Chat:
@@ -42,6 +29,8 @@ If the CFS Debug Assistant tools are not available in GitHub Copilot Chat:
 1. Check that your VS Code version is 1.96.0 or later (**Help → About**)
 2. Ensure GitHub Copilot is installed and you are signed in
 3. Confirm the CodeFusion Studio extension is installed and active
+4. Confirm the MCP server is running — run `(CFS) MCP: Server Status` in the Command Palette
+5. Run `MCP: List Servers` in the Command Palette and start **CFS Debug Assistant** if it isn't connected
 
 ## Claude Code cannot connect
 

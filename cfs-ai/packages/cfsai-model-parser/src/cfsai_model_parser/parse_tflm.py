@@ -13,7 +13,7 @@ Key Features:
 - Hardware performance estimation and profiling
 - Comprehensive model metadata extraction
 
-Copyright (c) 2025 Analog Devices, Inc. All Rights Reserved.
+Copyright (c) 2025-2026 Analog Devices, Inc. All Rights Reserved.
 Released under the terms of the "LICENSE.md" file in the root directory.
 """
 
@@ -583,8 +583,10 @@ class TFLiteParser:
                 opcode_index = operator.OpcodeIndex()
                 op_code = model.OperatorCodes(opcode_index)
                 builtin_code = op_code.BuiltinCode()
+                if builtin_code == 0:
+                    builtin_code = op_code.DeprecatedBuiltinCode()
                 op_name = self._opcode_map.get(
-                    builtin_code, 
+                    builtin_code,
                     f'UNKNOWN_{builtin_code}'
                 )
                 

@@ -31,9 +31,7 @@ export interface PackageRepositoryClient {
 	getRepository(repoUrl: string): Promise<PackageRepository>;
 }
 
-export class MyAnalogCloudsmithCredentialProvider
-	implements CfsPackageRemoteCredentialProvider
-{
+export class MyAnalogCloudsmithCredentialProvider implements CfsPackageRemoteCredentialProvider {
 	private readonly cloudsmithDomain: string = ".cloudsmith.io";
 	private readonly repoCache = new Map<string, PackageRepository>();
 	private readonly repoClient: PackageRepositoryClient;

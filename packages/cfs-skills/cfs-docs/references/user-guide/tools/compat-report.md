@@ -1,7 +1,7 @@
 ---
 description: "Interpreting the Compatibility report"
 author: "Analog Devices"
-date: 2026-07-15
+date: 2026-08-10
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx line 192)
 ---
 
@@ -11,7 +11,7 @@ The Compatibility Analyzer report checks whether your model fits the target hard
 
 ## Before you start
 
-This section assumes you have already generated a Compatibility report from the System Planner UI in [Embedded AI Tools](../tools/manage-ai-models.md). The report is an interactive, graphical report with expandable sections, severity indicators, and clickable reference links.
+This section assumes you have already generated a Compatibility report from the System Planner UI in [Manage AI Models](../tools/manage-ai-models.md). The report is an interactive, graphical report with expandable sections, severity indicators, and clickable reference links.
 
   ![Compatibility Report UI](./images/compatibility-report-ui-dark.png#only-dark)
   ![Compatibility Report UI](./images/compatibility-report-ui-light.png#only-light)

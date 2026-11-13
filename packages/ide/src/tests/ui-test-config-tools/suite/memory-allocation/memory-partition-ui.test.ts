@@ -62,17 +62,11 @@ describe("Verifying the base block value retention on clicking edit partition an
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   //   Scenario: Edit a  partition and validate base block value is retained if not edited
@@ -93,7 +87,7 @@ describe("Verifying the base block value retention on clicking edit partition an
   //     And I click the  edit button
   //     And I verify the base block dropdown value is "sysram2"
 
-  it("Verify that the base block value is retained when editing a partition along with pattern plugin validation", async () => {
+  it("Verify that the base block value is retained when editing a partition along with pattern plugin validation @regression", async () => {
     // Scenario 1: Edit a partition and validate base block value is retained if not edited.
     //   When I open the configuration file "max32657-wlp-trustzone.cfsconfig"
     await browser.openResources(configPath);
@@ -223,7 +217,7 @@ describe("Verifying the base block value retention on clicking edit partition an
     console.log("User remains on the same edit partition sidebar");
   });
 
-  it("Verify secure and non-secure badges are displayed when the pattern plugin is applied", async () => {
+  it("Verify secure and non-secure badges are displayed when the pattern plugin is applied @regression", async () => {
     //   Scenario: Create a partition, verify secure and non-secure badges are displayed when the pattern plugin is applied, and validate the same in partition details view
     //     And I click on close partition sidebar button
     //     And I click on create partition button
@@ -344,16 +338,11 @@ describe("Verifying SHARC-FX partition size validation", () => {
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
+    await UIUtils.teardownTestSuite(view);
   });
 
   //   Scenario: Create a partition, verify the memory size exceeds should not allow the user to create partition
@@ -495,17 +484,11 @@ describe("Verifying the memory partition cannot be created with overlapping addr
   let view: WebView;
 
   before(async function () {
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-    view = new WebView();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   after(async function () {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
   // Scenario: Prevent creating a Flash partition when its address range overlaps an existing partition
@@ -814,7 +797,7 @@ describe("Verifying the memory partition cannot be created with overlapping addr
     ).to.equal("Size extends into existing partition");
   });
 });
-describe("disables a base block option when its memory is fully allocated and throw error when using same allocated memory", () => {
+describe("Disable a base block option when its memory is fully allocated and throw error when using same allocated memory", () => {
   const configPath = getConfigPathForFile("sharcfx_core.cfsconfig");
 
   let workbench: Workbench;

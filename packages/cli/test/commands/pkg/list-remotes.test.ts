@@ -22,6 +22,7 @@ import {
   setupMockPkgCommandDeps,
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 async function withMockStdout(
   overrides: {
@@ -139,6 +140,33 @@ describe('pkg list-remotes', () => {
         'None'
       )
     ).to.equal(true);
+  });
+
+  it('returns configured remotes as the JSON envelope data payload', async () => {
+    const {error: addError} = await runCommand(
+      ['pkg', 'add-remote', addedRemoteName, localTestRemoteUrl],
+      {root: '..'}
+    );
+    expect(addError).to.be.undefined;
+
+    const {stdout, error} = await runCommand(
+      ['pkg', 'list-remotes', '--format', 'json'],
+      {root: '..'}
+    );
+    expect(error).to.be.undefined;
+
+    const parsed = assertValidEnvelope<{
+      remotes: {name: string; url: string}[];
+    }>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data.remotes).to.be.an('array');
+      expect(
+        parsed.data.remotes.some(
+          (remote) => remote.name === addedRemoteName
+        )
+      ).to.be.true;
+    }
   });
 
   it('prints a single horizontal table when output fits terminal width', async () => {

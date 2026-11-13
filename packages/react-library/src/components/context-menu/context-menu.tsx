@@ -18,8 +18,10 @@ const DEFAULT_DISTANCE_TO_ANCHOR = 4;
 import {
 	type KeyboardEvent,
 	type MouseEvent,
+	type ReactNode,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState
@@ -33,6 +35,8 @@ type MenuOptionClickEvent =
 export type MenuOption = {
 	id: string;
 	label: string;
+	icon?: ReactNode;
+	disabled?: boolean;
 	onClick?: (event: MenuOptionClickEvent) => void;
 };
 
@@ -58,10 +62,36 @@ export function ContextMenu({
 	onSelect
 }: ContextMenuProps) {
 	const [scrollTick, setScrollTick] = useState(0);
+	const menuRef = useRef<HTMLDivElement>(null);
+	const [menuSize, setMenuSize] = useState<
+		{width: number; height: number} | undefined
+	>(undefined);
+
+	// Measure the actual rendered menu so placement decisions (top/bottom,
+	// left/right) account for real content width/height, including icons,
+	// rather than a text-length estimate. Runs before paint, so a size
+	// change here still resolves before the user sees it.
+	useLayoutEffect(() => {
+		if (!open) return;
+		const menu = menuRef.current;
+		if (!menu) return;
+
+		const rect = menu.getBoundingClientRect();
+		setMenuSize(prev => {
+			if (
+				prev &&
+				prev.width === rect.width &&
+				prev.height === rect.height
+			) {
+				return prev;
+			}
+			return {width: rect.width, height: rect.height};
+		});
+	}, [open, options]);
 
 	const positioning = useMemo(() => {
 		const {verticalPlacement, horizontalPlacement} =
-			calculateMenuPlacement(options, preferredPlacement, anchor);
+			calculateMenuPlacement(preferredPlacement, anchor, menuSize);
 		let top, left;
 		let anchorMargin = 0;
 		if (anchor instanceof HTMLElement) {
@@ -90,7 +120,14 @@ export function ContextMenu({
 		};
 		// scrollTick is included to recalculate position when the user scrolls
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [options, preferredPlacement, anchor, open, scrollTick]);
+	}, [
+		options,
+		preferredPlacement,
+		anchor,
+		open,
+		scrollTick,
+		menuSize
+	]);
 
 	// Recalculate position on scroll so the menu follows the anchor
 	useEffect(() => {
@@ -106,8 +143,6 @@ export function ContextMenu({
 			window.removeEventListener('scroll', handleScroll, true);
 		};
 	}, [open, anchor]);
-
-	const menuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (open && onOpen) {
@@ -132,7 +167,9 @@ export function ContextMenu({
 
 	// handle keyboard events
 	useEffect(() => {
-		function handleEscape(e: Event) {
+		if (!open) return;
+
+		function handleKeydown(e: Event) {
 			if (!(e instanceof KeyboardEvent)) return;
 			if (e.key === 'Escape') {
 				e.preventDefault();
@@ -146,14 +183,17 @@ export function ContextMenu({
 			}
 		}
 
-		document.addEventListener('keydown', handleEscape);
+		document.addEventListener('keydown', handleKeydown);
 
 		return () =>
-			document.removeEventListener('keydown', handleEscape);
-	}, [onClose]);
+			document.removeEventListener('keydown', handleKeydown);
+	}, [onClose, open]);
 
 	const handleClickOption = useCallback(
 		(option: MenuOption, event: MenuOptionClickEvent) => {
+			if (option.disabled) {
+				return;
+			}
 			option.onClick?.(event);
 			if (onSelect) {
 				onSelect(option);
@@ -190,8 +230,9 @@ export function ContextMenu({
 					<li
 						key={`${option.label}-${option.id}`}
 						role='menuitem'
-						tabIndex={0}
-						className={styles.menuItem}
+						tabIndex={option.disabled ? -1 : 0}
+						aria-disabled={option.disabled ? 'true' : undefined}
+						className={`${styles.menuItem} ${option.disabled ? styles.disabled : ''}`}
 						data-test={`event-sources:options-menu:item:${option.id}`}
 						onKeyDown={e => {
 							if (e.key === 'Enter' || e.key === ' ') {
@@ -202,6 +243,9 @@ export function ContextMenu({
 							handleClickOption(option, e);
 						}}
 					>
+						{option.icon && (
+							<span className={styles.icon}>{option.icon}</span>
+						)}
 						<div className={styles.label}>{option.label}</div>
 					</li>
 				);
@@ -211,30 +255,19 @@ export function ContextMenu({
 }
 
 function calculateMenuPlacement(
-	options: Array<MenuOption | 'divider'>,
 	preferredPlacement: 'top' | 'bottom',
-	anchor?: HTMLElement | {x: number; y: number}
+	anchor?: HTMLElement | {x: number; y: number},
+	measuredSize?: {width: number; height: number}
 ): {
 	verticalPlacement: 'top' | 'bottom';
 	horizontalPlacement: 'left' | 'right';
 } {
-	// estimate menu height
-	const estimatedHeight =
-		options.reduce(
-			// 4 pixels vertical padding. 20 pixels per option, 6 pixels for dividers
-			(acc, option) => acc + (option === 'divider' ? 6 : 20),
-			0
-		) + 4;
-
-	// calculate estimated width based on longest label
-	let maxTextLength = 0;
-	options.forEach(option => {
-		if (option !== 'divider') {
-			maxTextLength = Math.max(maxTextLength, option.label.length);
-		}
-	});
-	// 6 pixels per character approximation, 16 pixels for padding
-	const estimatedWidth = maxTextLength * 6 + 16;
+	// Before the menu has been measured (see the useLayoutEffect above),
+	// there's nothing to base a flip decision on; default to 0 and let
+	// the post-measurement re-render, which always happens before the
+	// browser paints, correct it.
+	const estimatedHeight = measuredSize?.height ?? 0;
+	const estimatedWidth = measuredSize?.width ?? 0;
 
 	let anchorY = 0;
 	let anchorX = 0;

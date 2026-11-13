@@ -14,18 +14,18 @@
  */
 
 export interface CfsFileMap {
-  /**
-   * Source file path
-   */
-  src: string;
+	/**
+	 * Source file path
+	 */
+	src: string;
 
-  /**
-   * Destination file path
-   */
-  dst: string;
+	/**
+	 * Destination file path
+	 */
+	dst: string;
 
-  /**
-   * Condition under which file is copied.
-   */
-  condition?: string;
+	/**
+	 * Condition under which file is copied.
+	 */
+	condition?: string;
 }

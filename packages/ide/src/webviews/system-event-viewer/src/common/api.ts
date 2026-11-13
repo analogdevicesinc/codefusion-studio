@@ -18,10 +18,15 @@ import {request} from '@common/api';
 import type {
 	CfsEventsDocument,
 	CfsEventState,
+	CfsEventSourceIndexEntry,
+	EventSourceTreeNode,
 	SevEventSource
 } from './types/events';
 import type {SevSaveType} from './types/files';
-import {mapEventSources} from './utils/events';
+import {
+	mapEventSources,
+	normalizeEventSourceIndex
+} from './utils/events';
 
 const SevMessageType = {
 	data: 'sev-data',
@@ -36,6 +41,9 @@ type SevMessage = {
 
 type SevOnDataCallback = (data: {
 	sources: SevEventSource[];
+	tickFrequency: number;
+	tickEpoch?: string;
+	eventSourceIndex?: EventSourceTreeNode[];
 	state?: CfsEventState;
 	lastUpdate?: string;
 	jsonErrors?: string[];
@@ -61,8 +69,16 @@ export function subscribeToEventSources(
 		switch (type) {
 			case SevMessageType.data:
 				if (body) {
+					const sources = mapEventSources(body);
+
 					onData({
-						sources: mapEventSources(body),
+						sources,
+						tickFrequency: body.tickFrequency,
+						tickEpoch: body.tickEpoch,
+						eventSourceIndex: normalizeEventSourceIndex(
+							body.eventSourceIndex,
+							sources
+						),
 						state: body.state,
 						lastUpdate: body.lastUpdate,
 						jsonErrors: []
@@ -74,6 +90,9 @@ export function subscribeToEventSources(
 				if (errors?.length) {
 					onData({
 						sources: [],
+						tickFrequency: 0,
+						tickEpoch: '',
+						eventSourceIndex: undefined,
 						state: undefined,
 						lastUpdate: undefined,
 						jsonErrors: errors
@@ -99,4 +118,12 @@ export async function createFile(
 	return request('sev-create-file', {saveType}) as Promise<
 		string | undefined
 	>;
+}
+
+export async function updateEventSourceIndex(
+	eventSourceIndex: CfsEventSourceIndexEntry[]
+): Promise<void> {
+	return request('sev-update-event-source-index', {
+		eventSourceIndex
+	}) as Promise<void>;
 }

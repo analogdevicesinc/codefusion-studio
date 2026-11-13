@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ interface SlidingPanelProps {
 	isMinimised?: boolean;
 	footer?: ReactNode;
 	dataTest?: string;
+	closeDataTest?: string;
 	closeSlider?: () => void;
 }
 
@@ -39,6 +40,7 @@ export const SlidingPanel = ({
 	isMinimised = true,
 	footer,
 	dataTest,
+	closeDataTest,
 	closeSlider
 }: SlidingPanelProps): JSX.Element => {
 	return (
@@ -55,7 +57,11 @@ export const SlidingPanel = ({
 					<div className={styles.title}>
 						<h2>{title}</h2>
 						{isCloseable && (
-							<Button appearance='icon' onClick={closeSlider}>
+							<Button
+								appearance='icon'
+								dataTest={closeDataTest}
+								onClick={closeSlider}
+							>
 								<CloseIcon className={styles.closeIcon} />
 							</Button>
 						)}

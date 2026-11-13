@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,13 @@
  */
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
+import {CatalogManager, CfsDataModelManager} from 'cfs-lib';
+import Sinon from 'sinon';
 
-import {parseJson} from '../../utils/parse-json.js';
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 describe('soc list (legacy format)', () => {
   it('text, no verbose', async () => {
@@ -38,8 +43,12 @@ describe('soc list (legacy format)', () => {
       ],
       {root: '..'}
     );
-    expect(parseJson(stdout)).to.be.an('array');
-    expect(parseJson(stdout)).to.include('test_soc_b-tqfn');
+    const data = assertSuccessEnvelopeData<{socs: string[]}>(
+      stdout,
+      'socs list'
+    );
+    expect(data.socs).to.be.an('array');
+    expect(data.socs).to.include('test_soc_b-tqfn');
   });
 
   it('text, verbose', async () => {
@@ -76,8 +85,12 @@ describe('soc list (legacy format)', () => {
         root: '..'
       }
     );
-    expect(parseJson(stdout)).to.be.an('object');
-    expect(Object.keys(parseJson(stdout))).to.include('test_soc_b-tqfn');
+    const data = assertSuccessEnvelopeData<Record<string, unknown>>(
+      stdout,
+      'socs list'
+    );
+    expect(data).to.be.an('object');
+    expect(Object.keys(data)).to.include('test_soc_b-tqfn');
   });
 });
 
@@ -101,9 +114,9 @@ describe('soc list', () => {
       ],
       {root: '..'}
     );
-    const parsedJson = parseJson(stdout);
-    expect(parsedJson).to.deep.property('test_soc_a', ['wlp']);
-    expect(parsedJson).to.deep.property('test_soc_b', ['tqfn', 'wlp']);
+    const data = assertSuccessEnvelopeData(stdout, 'socs list');
+    expect(data).to.deep.property('test_soc_a', ['wlp']);
+    expect(data).to.deep.property('test_soc_b', ['tqfn', 'wlp']);
   });
 
   it('text, verbose', async () => {
@@ -139,7 +152,9 @@ describe('soc list', () => {
         root: '..'
       }
     );
-    const parsedJson = parseJson(stdout);
+    const {socs: parsedJson} = assertSuccessEnvelopeData<{
+      socs: {Name: string; Package: string}[];
+    }>(stdout, 'socs list');
     const reducedJson = parsedJson.map(
       (soc: {Name: string; Package: string}) => ({
         Name: soc.Name,
@@ -159,5 +174,73 @@ describe('soc list', () => {
       Name: 'test_soc_b',
       Package: 'wlp'
     });
+  });
+});
+
+describe('soc list failures', () => {
+  afterEach(() => {
+    Sinon.restore();
+    process.exitCode = 0;
+  });
+
+  it('warns in the JSON envelope when verbose output cannot read the catalog', async () => {
+    Sinon.stub(CatalogManager.prototype, 'loadCatalog').rejects(
+      new Error('catalog unavailable')
+    );
+
+    const {stdout} = await runCommand(
+      [
+        'socs:list',
+        '--format',
+        'json',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    );
+    const parsed = assertValidEnvelope(stdout) as {
+      ok: boolean;
+      warnings: {message: string}[];
+    };
+    expect(parsed.ok).to.be.true;
+    expect(parsed.warnings.map((w) => w.message)).to.include(
+      'Error reading catalog data. Some information might be incorrect. '
+    );
+  });
+
+  it('prints the catalog notice as text outside JSON mode', async () => {
+    Sinon.stub(CatalogManager.prototype, 'loadCatalog').rejects(
+      new Error('catalog unavailable')
+    );
+
+    const {stdout} = await runCommand(
+      [
+        'socs:list',
+        '--verbose',
+        '--search-path',
+        './test/fixtures/socs'
+      ],
+      {root: '..'}
+    );
+    expect(stdout).to.contain('Error reading catalog data.');
+  });
+
+  it('reports a stable SOC_LIST_FAILED code in the JSON envelope', async () => {
+    Sinon.stub(
+      CfsDataModelManager.prototype,
+      'listDataModels'
+    ).rejects(new Error('listing failed'));
+
+    const {stdout} = await runCommand(
+      ['socs:list', '--format', 'json'],
+      {root: '..'}
+    );
+    const parsed = assertValidEnvelope(stdout) as {
+      ok: boolean;
+      errors: {code: string; message: string}[];
+    };
+    expect(parsed.ok).to.be.false;
+    expect(parsed.errors[0]?.code).to.equal('SOC_LIST_FAILED');
   });
 });

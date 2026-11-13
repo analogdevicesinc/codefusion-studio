@@ -67,17 +67,13 @@ describe("Auto Selection of required Pins", () => {
   }
 
   before(async function () {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    workbench = new Workbench();
-    await browser.waitForWorkbench();
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      waitForWorkbench: true,
+    }));
   });
 
   after(async function () {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("View: revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   /**
@@ -97,7 +93,7 @@ describe("Auto Selection of required Pins", () => {
    *   Then the pin toggle for "SPI4 MOSI" should be checked
    *   And an error message should be displayed
    */
-  it("Verify that pins get auto selected for GPIO and other peripherals not auto selected and conflict for some", async () => {
+  it("Verify that pins get auto selected for GPIO and other peripherals not auto selected and conflict for some @regression", async () => {
     // === GIVEN: I open the configuration file
     //  "max32690-wlp.cfsconfig" ===
     await browser.openResources(configPath);

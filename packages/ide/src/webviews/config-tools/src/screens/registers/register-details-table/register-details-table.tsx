@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import {DataGrid, DataGridCell, DataGridRow} from 'cfs-react-library';
 import styles from './register-details-table.module.scss';
 import DownFilledArrow from '../../../../../common/icons/DownFilledArrow';
 import DownArrow from '../../../../../common/icons/DownArrow';
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import type {
 	RegisterConfigField,
 	ConfigField,
@@ -108,12 +108,20 @@ export function RegisterDetailsTable({
 	>(undefined);
 
 	const [expandedRows, setExpandedRows] = useState<string[]>([]);
+	const tableWrapperRef = useRef<HTMLDivElement>(null);
 
 	const scrollToRow = (id: string) => {
 		const element = document.getElementById(id);
+		const wrapper = tableWrapperRef.current;
 
-		if (element) {
-			element.scrollIntoView({behavior: 'smooth', block: 'start'});
+		if (element && wrapper) {
+			const elementRect = element.getBoundingClientRect();
+			const wrapperRect = wrapper.getBoundingClientRect();
+
+			wrapper.scrollTo({
+				top: wrapper.scrollTop + (elementRect.top - wrapperRect.top),
+				behavior: 'smooth'
+			});
 		}
 	};
 
@@ -126,7 +134,7 @@ export function RegisterDetailsTable({
 	};
 
 	return (
-		<>
+		<div className={styles.detailsContainer}>
 			<BitGroup
 				registerDetails={searchResults}
 				registerName={registerName}
@@ -139,17 +147,20 @@ export function RegisterDetailsTable({
 					rowExpandHandler(id, false);
 				}}
 			/>
-			<div className={styles.tableWrapper}>
+			<div ref={tableWrapperRef} className={styles.tableWrapper}>
 				<DataGrid
 					className={styles.table}
-					gridTemplateColumns='15% 15% 15% 15% 15% 25%'
+					gridTemplateColumns='16px 15fr 15fr 15fr 15fr 15fr 25fr'
 					ariaLabel='Registers table'
 					dataTest='register-details-grid'
 				>
 					<DataGridRow rowType='header'>
-						<DataGridCell gridColumn='1' cellType='columnheader'>
+						<DataGridCell gridColumn='1' cellType='columnheader' />
+						<DataGridCell gridColumn='2' cellType='columnheader'>
 							<div
-								className={`${styles['sortable-title']} ${styles[sortedBy?.name ?? ''] ?? ''} `}
+								className={`${styles['sortable-title']} ${
+									styles[sortedBy?.name ?? ''] ?? ''
+								} `}
 								onClick={() => {
 									sortTable('name');
 								}}
@@ -158,9 +169,11 @@ export function RegisterDetailsTable({
 								{sortedBy?.name ? <DownFilledArrow /> : <DownArrow />}
 							</div>
 						</DataGridCell>
-						<DataGridCell gridColumn='2' cellType='columnheader'>
+						<DataGridCell gridColumn='3' cellType='columnheader'>
 							<div
-								className={`${styles['sortable-title']} ${styles[sortedBy?.bits ?? ''] ?? ''} `}
+								className={`${styles['sortable-title']} ${
+									styles[sortedBy?.bits ?? ''] ?? ''
+								} `}
 								onClick={() => {
 									sortTable('bits');
 								}}
@@ -169,16 +182,16 @@ export function RegisterDetailsTable({
 								{sortedBy?.bits ? <DownFilledArrow /> : <DownArrow />}
 							</div>
 						</DataGridCell>
-						<DataGridCell gridColumn='3' cellType='columnheader'>
+						<DataGridCell gridColumn='4' cellType='columnheader'>
 							{i10n?.access}
 						</DataGridCell>
-						<DataGridCell gridColumn='4' cellType='columnheader'>
+						<DataGridCell gridColumn='5' cellType='columnheader'>
 							{i10n?.value}
 						</DataGridCell>
-						<DataGridCell gridColumn='5' cellType='columnheader'>
+						<DataGridCell gridColumn='6' cellType='columnheader'>
 							{i10n?.reset}
 						</DataGridCell>
-						<DataGridCell gridColumn='6' cellType='columnheader'>
+						<DataGridCell gridColumn='7' cellType='columnheader'>
 							{i10n?.description}
 						</DataGridCell>
 					</DataGridRow>
@@ -208,6 +221,6 @@ export function RegisterDetailsTable({
 					))}
 				</DataGrid>
 			</div>
-		</>
+		</div>
 	);
 }

@@ -112,6 +112,7 @@ function MCUBootSidebarListItem({
 			oddHexLength: 'error',
 			hexValueExceedsMax: 'error',
 			valueTooLong: 'error',
+			valueByteIncrement: 'error',
 			tagOutOfRange: 'error'
 		};
 
@@ -124,7 +125,11 @@ function MCUBootSidebarListItem({
 
 		return (applicationPackage.images ?? []).some(
 			image =>
-				countImageValidationErrors(image, {}) > 0 ||
+				countImageValidationErrors(
+					image,
+					{},
+					applicationPackage.images
+				) > 0 ||
 				(Boolean(image.customTLVs?.length) &&
 					hasTlvError(image.customTLVs ?? []))
 		);

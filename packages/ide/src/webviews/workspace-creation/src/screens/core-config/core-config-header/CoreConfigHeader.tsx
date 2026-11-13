@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,9 +47,9 @@ function CoreConfigHeader({core}: CoreConfigHeaderProps) {
 			className={styles.coreConfigHeader}
 			data-test={`core-config:header:${core?.coreId}`}
 		>
-			<div
-				className={styles.coreStepCount}
-			>{`${currentStep + 1} of ${enabledCores.length} ${enabledCores.length > 1 ? 'projects' : 'project'}`}</div>
+			<div className={styles.coreStepCount}>{`${currentStep + 1} of ${
+				enabledCores.length
+			} ${enabledCores.length > 1 ? 'projects' : 'project'}`}</div>
 			<div className={styles.coreDetails}>
 				<div className={styles.coreName}>
 					{getBaseCoreName(core?.name)}

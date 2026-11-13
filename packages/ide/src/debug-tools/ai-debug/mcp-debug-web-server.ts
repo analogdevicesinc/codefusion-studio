@@ -12,8 +12,10 @@
  * limitations under the License.
  *
  */
-
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import {
+  localhostHostValidation,
+  NodeStreamableHTTPServerTransport,
+} from "@modelcontextprotocol/node";
 import express, { Request, Response } from "express";
 import { CfsMcpServer } from "./mcp-server/cfs-mcp-server";
 import type { McpServerDependencies } from "./mcp-server/cfs-mcp-server";
@@ -33,13 +35,33 @@ export class McpDebugStreamableWebServer {
   }
 
   private buildApp() {
+    // DNS rebinding protection: only accept requests addressed to a localhost Host
+    const validateHost = localhostHostValidation();
+    this.app.use((req, res, next) => {
+      if (validateHost(req, res)) {
+        next();
+      }
+    });
+
     this.app.use(express.json());
 
     // CORS restricted to localhost origins (MCP Inspector, webviews)
     this.app.use((req, res, next) => {
       const origin = req.headers.origin;
 
-      if (origin && McpDebugStreamableWebServer.isAllowedOrigin(origin)) {
+      if (origin && !McpDebugStreamableWebServer.isAllowedOrigin(origin)) {
+        res.status(403).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: `Invalid Origin: ${origin}`,
+          },
+          id: null,
+        });
+        return;
+      }
+
+      if (origin) {
         res.header("Access-Control-Allow-Origin", origin);
         res.header("Vary", "Origin");
       }
@@ -60,7 +82,7 @@ export class McpDebugStreamableWebServer {
         const server = new CfsMcpServer(this.deps);
 
         // Create transport for this connection
-        const transport = new StreamableHTTPServerTransport({
+        const transport = new NodeStreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
         });
 

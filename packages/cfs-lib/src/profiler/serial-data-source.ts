@@ -13,47 +13,57 @@
  *
  */
 
-import { EventEmitter } from "node:events";
 import { SerialPort } from "serialport";
-import type { IProfilerDataSource } from "./data-source.js";
+import { ProfilerDataSourceBase } from "./data-source-base.js";
+import type { SerialLineOptions } from "./serial-port-settings.js";
 
 /**
  * Data source implementation for serial port connections.
  */
-export class SerialDataSource implements IProfilerDataSource {
+export class SerialDataSource extends ProfilerDataSourceBase {
 	private readonly serialPort: SerialPort;
 
-	private readonly emitter = new EventEmitter();
-
+	/**
+	 * @param portPath - Serial port path (e.g. '/dev/ttyUSB0' or 'COM3').
+	 * @param baudRate - Baud rate for the serial connection.
+	 * @param lineOptions - Optional data bits, parity and stop bits.
+	 */
 	constructor(
 		private readonly portPath: string,
-		private readonly baudRate: number
+		private readonly baudRate: number,
+		lineOptions: SerialLineOptions = {}
 	) {
+		super();
+
 		this.serialPort = new SerialPort({
 			path: this.portPath,
 			baudRate: this.baudRate,
+			...lineOptions,
 			autoOpen: false
 		});
 
 		this.serialPort.on("data", (data: Buffer) => {
-			this.emitter.emit("data", data);
+			this.emitData(data);
 		});
 
 		this.serialPort.on("error", (error: Error) => {
 			this.emitError(error);
 		});
+
+		// serialport emits `close` with a `err.disconnected == true` object
+		// to indicate that a disconnection happened.
+		this.serialPort.on(
+			"close",
+			(error?: { disconnected?: boolean }) => {
+				if (error?.disconnected) {
+					this.emitDisconnect();
+				}
+			}
+		);
 	}
 
 	get isOpen(): boolean {
 		return this.serialPort.isOpen;
-	}
-
-	onData(listener: (data: Buffer) => void): void {
-		this.emitter.on("data", listener);
-	}
-
-	onError(listener: (error: Error) => void): void {
-		this.emitter.on("error", listener);
 	}
 
 	async open(): Promise<void> {
@@ -110,29 +120,5 @@ export class SerialDataSource implements IProfilerDataSource {
 				}
 			});
 		});
-	}
-
-	async dispose(): Promise<void> {
-		try {
-			await this.close();
-		} catch (error) {
-			console.debug(
-				"Error closing serial port during dispose. Error:",
-				error
-			);
-		} finally {
-			this.emitter.removeAllListeners();
-		}
-	}
-
-	/**
-	 * Emits an error event, guarding against Node's default behaviour of
-	 * throwing when an `"error"` event has no listeners.
-	 * @param error - The error to emit.
-	 */
-	private emitError(error: Error): void {
-		if (this.emitter.listenerCount("error") > 0) {
-			this.emitter.emit("error", error);
-		}
 	}
 }

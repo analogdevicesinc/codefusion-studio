@@ -15,23 +15,36 @@
 
 import {signalReady} from '@common/api';
 import {isCypressEnvironment} from '@common/utils/env';
-import {subscribeToEventSources} from '../../common/api';
 import {
-  setEventSources,
-  setJsonValidationErrors,
-  setLoading
+	subscribeToEventSources,
+	updateEventSourceIndex
+} from '../../common/api';
+import {
+	setEventSourceData,
+	setJsonValidationErrors,
+	setLoading
 } from '../../state/slices/event-sources/event-sources.reducer';
 import {
-  setLastUpdate,
-  setToolState
+	setLastUpdate,
+	setToolState
 } from '../../state/slices/app-context/app-context.reducer';
+import {
+	resetMeasurePhase,
+	setTimeAvailability
+} from '../../state/slices/timeline/timeline.reducer';
 import {TIMESTAMPS} from '../constants/mocked-event-sources';
-import {mapEventSources} from './events';
+import {
+	mapEventSources,
+	normalizeEventSourceIndex,
+	serializeEventSourceIndex
+} from './events';
+import {configureTimeContext} from './time-mode-formatters';
 
 import type {
-  CfsEventState,
-  SevEventSource
-} from '../../common/types/events';
+	CfsEventState,
+	EventSourceTreeNode,
+	SevEventSource
+} from '../types/events';
 import type {AppDispatch} from '../../state/store';
 
 /**
@@ -39,51 +52,111 @@ import type {AppDispatch} from '../../state/store';
  * Dispatches Redux updates on init and on each document change
  */
 export function startSystemEventsService(dispatch: AppDispatch) {
-  dispatch(setLoading(true));
+	dispatch(setLoading(true));
 
-  if (isCypressEnvironment()) {
-    const timer = setTimeout(() => {
-      dispatch(setEventSources(mapEventSources(TIMESTAMPS)));
-      dispatch(setLastUpdate(undefined));
-      dispatch(setLoading(false));
-    }, 1000);
+	if (isCypressEnvironment()) {
+		const timer = setTimeout(() => {
+			const eventSources = mapEventSources(TIMESTAMPS);
+			configureTimeContext({
+				tickFrequency: TIMESTAMPS.tickFrequency,
+				tickEpoch: TIMESTAMPS.tickEpoch
+			});
+			dispatch(
+				setTimeAvailability({abs: Boolean(TIMESTAMPS.tickEpoch)})
+			);
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }
+			dispatch(resetMeasurePhase());
+			dispatch(
+				setEventSourceData({
+					eventSources,
+					eventSourceIndex: normalizeEventSourceIndex(
+						TIMESTAMPS.eventSourceIndex,
+						eventSources
+					)
+				})
+			);
+			dispatch(setLastUpdate(undefined));
+			dispatch(setLoading(false));
+		}, 1000);
 
-  const unsubscribe = subscribeToEventSources(
-    (data: {
-      sources: SevEventSource[];
-      state?: CfsEventState;
-      lastUpdate?: string;
-      jsonErrors?: string[];
-    }) => {
-      const {sources, state, lastUpdate, jsonErrors} = data;
+		return () => {
+			clearTimeout(timer);
+		};
+	}
 
-      if (jsonErrors?.length) {
-        dispatch(setEventSources([]));
-        dispatch(setJsonValidationErrors(jsonErrors));
-        dispatch(setLoading(false));
-        dispatch(setToolState(undefined));
-        dispatch(setLastUpdate(undefined));
+	const unsubscribe = subscribeToEventSources(
+		(data: {
+			sources: SevEventSource[];
+			tickFrequency: number;
+			tickEpoch?: string;
+			eventSourceIndex?: EventSourceTreeNode[];
+			state?: CfsEventState;
+			lastUpdate?: string;
+			jsonErrors?: string[];
+		}) => {
+			const {
+				sources,
+				tickFrequency,
+				tickEpoch,
+				eventSourceIndex,
+				state,
+				lastUpdate,
+				jsonErrors
+			} = data;
 
-        return;
-      }
+			if (jsonErrors?.length) {
+				configureTimeContext({tickFrequency: 1});
+				dispatch(setTimeAvailability({abs: false}));
+				dispatch(resetMeasurePhase());
+				dispatch(
+					setEventSourceData({
+						eventSources: [],
+						eventSourceIndex: undefined
+					})
+				);
+				dispatch(setJsonValidationErrors(jsonErrors));
+				dispatch(setLoading(false));
+				dispatch(setToolState(undefined));
+				dispatch(setLastUpdate(undefined));
 
-      dispatch(setEventSources(sources));
-      dispatch(setJsonValidationErrors([]));
-      dispatch(setLoading(false));
-      dispatch(setToolState(state));
-      dispatch(setLastUpdate(lastUpdate));
-    }
-  );
+				return;
+			}
 
-  // Tell the extension that the UI is ready to receive the initial payload
-  signalReady();
+			configureTimeContext({tickFrequency, tickEpoch});
+			dispatch(setTimeAvailability({abs: Boolean(tickEpoch)}));
+			dispatch(resetMeasurePhase());
+			dispatch(
+				setEventSourceData({
+					eventSources: sources,
+					eventSourceIndex
+				})
+			);
+			dispatch(setJsonValidationErrors([]));
+			dispatch(setLoading(false));
+			dispatch(setToolState(state));
+			dispatch(setLastUpdate(lastUpdate));
+		}
+	);
 
-  return () => {
-    unsubscribe();
-  };
+	// Tell the extension that the UI is ready to receive the initial payload
+	signalReady();
+
+	return () => {
+		unsubscribe();
+	};
 }
+
+/**
+ * Trigger an update of the event source tree in the extension
+ * This should be called whenever the event source tree is updated, such as when the user moves a node or renames a group.
+ * @param updatedTree
+ */
+export const updateEventSourceTree = (
+	updatedTree: EventSourceTreeNode[]
+) => {
+	void updateEventSourceIndex(
+		serializeEventSourceIndex(updatedTree)
+	).catch(error => {
+		console.error('Failed to persist event-source layout', error);
+	});
+};

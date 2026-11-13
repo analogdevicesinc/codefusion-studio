@@ -14,18 +14,11 @@
  */
 import {
 	type ConfigOptionsReturn,
-	request,
 	type ConfiguredClockNode,
 	type ConfiguredPin,
 	type ConfiguredProject
 } from '@common/api';
-import type {
-	ClockNodeState,
-	Package,
-	Peripheral,
-	PinCanvas,
-	ControlCfg
-} from '@common/types/soc';
+import type {ClockNodeState, ControlCfg} from '@common/types/soc';
 import {
 	getAssignedPlugin,
 	getIsExternallyManagedProject,
@@ -39,7 +32,9 @@ import type {
 	Profiling,
 	CfsSettings,
 	ConfiguredApplicationPackage,
-	CfsMissingComponent
+	CfsMissingComponent,
+	CfsFeatureScope,
+	FirewallConfig
 } from 'cfs-types';
 import type {CodeGenerationProject} from 'cfs-lib/dist/types/code-generation';
 import type {AiSupportingBackend} from '../../../common/types/ai-fusion-data-model';
@@ -47,19 +42,76 @@ import type {
 	CfsPackage,
 	CfsPackageReference
 } from 'cfs-package-manager';
+import {messenger} from '../../../common/contexts/MessengerContext';
+import {
+	analyzeAIModelRequest,
+	getAIBackendPropertiesRequest,
+	getSupportedAiBackendsRequest,
+	validateAIModelRequest
+} from '@constants/messages/ai-tools-messages';
+import {
+	cancelGenerateCodeRequest,
+	exportCsvRequest,
+	generateCodeRequest,
+	generatePemKeyRequest,
+	getApplicationPackagesBannerRequest,
+	getDeleteAppPackWarningRequest,
+	getDeleteFirewallZoneWarningRequest,
+	getDeleteInitiatorResponderWarningRequest,
+	getDeleteCustomTLVWarningRequest,
+	getGenerateCodeWarningRequest,
+	getIsPeripheralBannerRequest,
+	getMemoryAccessOverridesRequest,
+	getPluginPropertiesRequest,
+	getSocAndConfigRequest,
+	packagerInstallRequest,
+	packagerSearchRequest,
+	packagerUpdatePersistedDataModelVersionRequest,
+	packagerUpdatePersistedPluginVersionRequest,
+	readPemAlgorithmRequest,
+	setApplicationPackagesBannerRequest,
+	setDeleteAppPackWarningRequest,
+	setDeleteFirewallZoneWarningRequest,
+	setDeleteInitiatorResponderWarningRequest,
+	setDeleteCustomTLVWarningRequest,
+	setGenerateCodeWarningNotification,
+	showSRUResetUndoNotificationRequest,
+	updateIsPeripheralBannerNotification,
+	updateFirewallConfigNotification,
+	updateMcubootConfigNotification,
+	updatePersistedConfigNotification,
+	updatePersistedDfgConfigNotification,
+	updateProfilingConfigNotification,
+	updateSRUConfigNotification
+} from '@constants/messages/cfgtools-messages';
+import {logTelemetryRequest} from '../../../../constants/messages/telemetry-messages';
+
+const extensionReceiver = {type: 'extension'} as const;
 
 export async function getSocAndCfsconfigData(): Promise<ConfigOptionsReturn> {
-	return request(
-		'get-soc-and-config'
+	return messenger.sendRequest(
+		getSocAndConfigRequest,
+		extensionReceiver
 	) as Promise<ConfigOptionsReturn>;
 }
 
 export async function generateCode(
 	selectedProjects?: CodeGenerationProject[]
 ) {
-	return request('generate-code', {
-		selectedProjects
-	}) as Promise<string[]>;
+	return messenger.sendRequest(
+		generateCodeRequest,
+		extensionReceiver,
+		{
+			selectedProjects: selectedProjects ?? []
+		}
+	);
+}
+
+export async function cancelGenerateCode() {
+	return messenger.sendRequest(
+		cancelGenerateCodeRequest,
+		extensionReceiver
+	);
 }
 
 /**
@@ -74,12 +126,11 @@ export async function logTelemetryEvent(
 	action: string,
 	metadata?: Record<string, unknown>
 ): Promise<void> {
-	return request('log-telemetry', {
-		action,
-		metadata
-	})
-		.then(() => undefined) // Catching errors to avoid unhandled promise rejections in the UI
-		.catch(() => undefined);
+	return messenger.sendRequest(
+		logTelemetryRequest,
+		{type: 'extension'},
+		{action, metadata}
+	);
 }
 
 export type CfsUpdateFileStatus = {
@@ -98,13 +149,11 @@ export async function updatePersistedConfigDataModelVersion(
 	componentId: string,
 	version: string
 ): Promise<CfsUpdateFileStatus> {
-	return request(
-		'packager--update--persisted--cfsconfig--data-model--version',
-		{
-			componentId,
-			version
-		}
-	) as Promise<CfsUpdateFileStatus>;
+	return messenger.sendRequest(
+		packagerUpdatePersistedDataModelVersionRequest,
+		extensionReceiver,
+		{componentId, version}
+	);
 }
 
 /**
@@ -117,13 +166,11 @@ export async function updatePersistedConfigPluginVersion(
 	componentId: string,
 	version: string
 ): Promise<CfsUpdateFileStatus> {
-	return request(
-		'packager--update--persisted--cfsconfig--plugin--version',
-		{
-			componentId,
-			version
-		}
-	) as Promise<CfsUpdateFileStatus>;
+	return messenger.sendRequest(
+		packagerUpdatePersistedPluginVersionRequest,
+		extensionReceiver,
+		{componentId, version}
+	);
 }
 
 export async function updatePersistedConfig(updatedConfig: {
@@ -137,16 +184,32 @@ export async function updatePersistedConfig(updatedConfig: {
 	clockFrequencies?: Record<string, string | number>;
 	aiModels?: AIModel[];
 }) {
-	return request('update-persisted-config', {
+	messenger.sendNotification(
+		updatePersistedConfigNotification,
+		extensionReceiver,
 		updatedConfig
-	}) as Promise<void>;
+	);
 }
 
 export async function updateMcubootConfig(config: {
 	settings: CfsSettings;
 	applicationPackages: ConfiguredApplicationPackage[];
 }) {
-	return request('update-mcuboot-config', config) as Promise<void>;
+	messenger.sendNotification(
+		updateMcubootConfigNotification,
+		extensionReceiver,
+		config
+	);
+}
+
+export async function updateFirewallConfig(config: {
+	firewall: FirewallConfig;
+}) {
+	messenger.sendNotification(
+		updateFirewallConfigNotification,
+		extensionReceiver,
+		config
+	);
 }
 
 export type GasketStreamDelta = {
@@ -159,10 +222,42 @@ export async function updatePersistedDfgConfig(
 	streams: DFGStream[],
 	gaskets: GasketConfig[]
 ) {
-	return request('update-persisted-dfg-config', {
-		streams,
-		gaskets
-	}) as Promise<void>;
+	messenger.sendNotification(
+		updatePersistedDfgConfigNotification,
+		extensionReceiver,
+		{streams, gaskets}
+	);
+}
+
+export async function updateSruConfig({
+	connections,
+	descriptions,
+	signalAliases,
+	signalInversions
+}: {
+	connections: Record<string, string>;
+	descriptions: Record<string, string>;
+	signalAliases: Record<string, string>;
+	signalInversions: Record<string, boolean>;
+}) {
+	messenger.sendNotification(
+		updateSRUConfigNotification,
+		extensionReceiver,
+		{connections, descriptions, signalAliases, signalInversions}
+	);
+}
+
+export async function showSruResetUndoNotification(
+	message: string,
+	undoButtonLabel: string
+): Promise<boolean> {
+	const response = await messenger.sendRequest(
+		showSRUResetUndoNotificationRequest,
+		extensionReceiver,
+		{message, undoButtonLabel}
+	);
+
+	return response.undo;
 }
 
 export async function updateProfilingConfig(
@@ -170,39 +265,19 @@ export async function updateProfilingConfig(
 	type: keyof Profiling,
 	projectId: string
 ) {
-	return request('update-profiling-config', {
-		config,
-		type,
-		projectId
-	}) as Promise<void>;
-}
-
-export async function getSocPackage() {
-	return request('get-soc-package') as Promise<Package>;
-}
-
-export async function getPinCanvas() {
-	return request('get-pin-canvas') as Promise<PinCanvas>;
-}
-
-export async function getSocPeripherals() {
-	return request('get-soc-peripherals') as Promise<Peripheral[]>;
-}
-
-export async function getPluginProperties(
-	pluginId: string,
-	pluginVersion: string
-) {
-	return request('get-plugin-properties', {
-		pluginId,
-		pluginVersion
-	}) as Promise<Record<string, any>>;
+	messenger.sendNotification(
+		updateProfilingConfigNotification,
+		extensionReceiver,
+		{config, type, projectId}
+	);
 }
 
 export async function getMemoryAccessOverrides(coreId: string) {
-	return request('get-memory-access-overrides', {
-		coreId
-	}) as Promise<Record<string, Record<string, string[] | undefined>>>;
+	return messenger.sendRequest(
+		getMemoryAccessOverridesRequest,
+		extensionReceiver,
+		{coreId}
+	) as Promise<Record<string, Record<string, string[] | undefined>>>;
 }
 
 export type CfsPackageInstallStatus = {
@@ -225,9 +300,11 @@ export type CfsPackageInstallStatus = {
 export async function installPackage(
 	referencesToInstall: CfsPackageReference[]
 ): Promise<CfsPackageInstallStatus[]> {
-	return request('packager--install', {
-		referencesToInstall
-	}) as Promise<CfsPackageInstallStatus[]>;
+	return messenger.sendRequest(
+		packagerInstallRequest,
+		extensionReceiver,
+		{referencesToInstall}
+	) as Promise<CfsPackageInstallStatus[]>;
 }
 
 export type SearchPackageResult = {
@@ -243,19 +320,28 @@ export type SearchPackageResult = {
 export async function searchPackage(
 	components: CfsMissingComponent[]
 ): Promise<SearchPackageResult[]> {
-	return request('packager--search', {components}) as Promise<
-		SearchPackageResult[]
-	>;
+	return messenger.sendRequest(
+		packagerSearchRequest,
+		extensionReceiver,
+		{
+			components
+		}
+	);
 }
 
 export async function getIsPeripheralBanner() {
-	return request('get-is-peripheral-banner') as Promise<boolean>;
+	return messenger.sendRequest(
+		getIsPeripheralBannerRequest,
+		extensionReceiver
+	);
 }
 
 export async function updateIsPeripheralBanner(flag: boolean) {
-	return request('update-is-peripheral-banner', {
-		flag
-	}) as Promise<void>;
+	messenger.sendNotification(
+		updateIsPeripheralBannerNotification,
+		extensionReceiver,
+		{flag}
+	);
 }
 
 export async function getProperties(
@@ -263,82 +349,172 @@ export async function getProperties(
 	pluginVersion: string,
 	scope: string
 ) {
-	return request('get-properties', {
-		pluginId,
-		pluginVersion,
-		scope
-	}) as Promise<Record<string, ControlCfg[]>>;
+	return messenger.sendRequest(
+		getPluginPropertiesRequest,
+		extensionReceiver,
+		{
+			pluginId,
+			pluginVersion,
+			scope: scope as CfsFeatureScope
+		}
+	) as Promise<Record<string, ControlCfg[]>>;
 }
 
 export async function showGenerateCodeWarning(flag: boolean) {
-	return request('show-generate-code-warning', {
-		flag
-	}) as Promise<void>;
+	messenger.sendNotification(
+		setGenerateCodeWarningNotification,
+		extensionReceiver,
+		{flag}
+	);
 }
 
 export async function getGenerateCodeWarning() {
-	return request('get-generate-code-warning') as Promise<boolean>;
+	return messenger.sendRequest(
+		getGenerateCodeWarningRequest,
+		extensionReceiver
+	);
 }
 
 export async function getAiBackends() {
-	return request('get-ai-backends') as Promise<
-		Record<string, AiSupportingBackend>
-	>;
+	return messenger.sendRequest(
+		getSupportedAiBackendsRequest,
+		extensionReceiver
+	) as Promise<Record<string, AiSupportingBackend>>;
 }
 
 export async function getAiProperties(
 	scope: string
 ): Promise<ControlCfg[]> {
-	return request('get-ai-backend-properties', {
-		scope
-	}) as Promise<ControlCfg[]>;
+	return messenger.sendRequest(
+		getAIBackendPropertiesRequest,
+		extensionReceiver,
+		{scope: scope as CfsFeatureScope}
+	) as Promise<ControlCfg[]>;
 }
 
 export async function analyzeAIModel(aiModel: AIModel) {
-	return request('analyze-ai-model', {
-		aiModel
-	}) as Promise<string>;
+	await messenger.sendRequest(
+		analyzeAIModelRequest,
+		extensionReceiver,
+		{aiModel}
+	);
 }
 
 export async function validateAIModel(aiModel: AIModel) {
-	return request('validate-ai-model', {
-		aiModel
-	}) as Promise<{
-		isValid: boolean;
-		reportPath?: string;
-	}>;
+	return messenger.sendRequest(
+		validateAIModelRequest,
+		extensionReceiver,
+		{aiModel}
+	);
 }
 
 export async function getApplicationPackageBanner() {
-	return request(
-		'get-application-package-banner'
-	) as Promise<boolean>;
+	return messenger.sendRequest(
+		getApplicationPackagesBannerRequest,
+		extensionReceiver
+	);
 }
 
 export async function updateApplicationPackageBanner(flag: boolean) {
-	return request('update-application-package-banner', {
-		flag
-	}) as Promise<void>;
+	return messenger.sendRequest(
+		setApplicationPackagesBannerRequest,
+		extensionReceiver,
+		{flag}
+	);
 }
 
 export async function showDeleteAppPackWarning(flag: boolean) {
-	return request('show-delete-app-pack-warning', {
-		flag
-	}) as Promise<void>;
+	return messenger.sendRequest(
+		setDeleteAppPackWarningRequest,
+		extensionReceiver,
+		{flag}
+	);
 }
 
 export async function getDeleteAppPackWarning() {
-	return request('get-delete-app-pack-warning') as Promise<boolean>;
+	return messenger.sendRequest(
+		getDeleteAppPackWarningRequest,
+		extensionReceiver
+	);
 }
 
 export async function showDeleteCustomTLVWarning(flag: boolean) {
-	return request('show-delete-custom-tlv-warning', {
-		flag
-	}) as Promise<void>;
+	return messenger.sendRequest(
+		setDeleteCustomTLVWarningRequest,
+		extensionReceiver,
+		{flag}
+	);
 }
 
 export async function getDeleteCustomTLVWarning() {
-	return request('get-delete-custom-tlv-warning') as Promise<boolean>;
+	return messenger.sendRequest(
+		getDeleteCustomTLVWarningRequest,
+		extensionReceiver
+	);
+}
+
+export async function exportCSV(
+	csvContent: string,
+	defaultFileName?: string
+) {
+	return messenger.sendRequest(exportCsvRequest, extensionReceiver, {
+		csvContent,
+		defaultFileName
+	});
+}
+
+export async function readPemAlgorithm(filePath: string) {
+	return messenger.sendRequest(
+		readPemAlgorithmRequest,
+		extensionReceiver,
+		{filePath}
+	);
+}
+
+export async function generatePemKey(
+	filePath: string,
+	algorithm: string
+) {
+	return messenger.sendRequest(
+		generatePemKeyRequest,
+		extensionReceiver,
+		{
+			filePath,
+			algorithm
+		}
+	);
+}
+
+export async function showDeleteFirewallZoneWarning(flag: boolean) {
+	return messenger.sendRequest(
+		setDeleteFirewallZoneWarningRequest,
+		extensionReceiver,
+		{flag}
+	);
+}
+
+export async function getDeleteFirewallZoneWarning() {
+	return messenger.sendRequest(
+		getDeleteFirewallZoneWarningRequest,
+		extensionReceiver
+	);
+}
+
+export async function showDeleteInitiatorResponderWarning(
+	flag: boolean
+) {
+	return messenger.sendRequest(
+		setDeleteInitiatorResponderWarningRequest,
+		extensionReceiver,
+		{flag}
+	);
+}
+
+export async function getDeleteInitiatorResponderWarning() {
+	return messenger.sendRequest(
+		getDeleteInitiatorResponderWarningRequest,
+		extensionReceiver
+	);
 }
 
 /**

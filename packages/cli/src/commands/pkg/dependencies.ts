@@ -12,7 +12,10 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+import type {CfsPackageReference} from 'cfs-package-manager';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {
   getPackageManager,
@@ -25,7 +28,9 @@ export const pkgDependenciesDeps: {
   getPackageManager
 };
 
-export default class CfsPackageDependencies extends Command {
+export default class CfsPackageDependencies extends BaseCommand<
+  typeof CfsPackageDependencies
+> {
   static args = {
     packageReference: Args.string({
       name: 'packageReference',
@@ -38,6 +43,7 @@ export default class CfsPackageDependencies extends Command {
 
   static description =
     'Retrieves dependencies of a package (including transitive dependencies), showing concrete resolved versions by default.';
+  static useResponseEnvelope = true;
 
   static flags = {
     unresolved: Flags.boolean({
@@ -53,8 +59,8 @@ export default class CfsPackageDependencies extends Command {
     })
   };
 
-  async run(): Promise<void> {
-    const {args, flags} = await this.parse(CfsPackageDependencies);
+  async run(): Promise<{dependencies: CfsPackageReference[]}> {
+    const {args, flags} = this;
     const pkgRef = parsePackageReference(args.packageReference);
     const packman = await pkgDependenciesDeps.getPackageManager(
       {
@@ -73,14 +79,15 @@ export default class CfsPackageDependencies extends Command {
       this.log(
         `${args.packageReference} does not require any other package`
       );
-      return;
+    } else {
+      this.log(
+        `${args.packageReference} requires the following packages:`
+      );
+      for (const pkg of packageRefs) {
+        this.log(`- ${pkg.name}/${pkg.version}`);
+      }
     }
 
-    this.log(
-      `${args.packageReference} requires the following packages:`
-    );
-    for (const pkg of packageRefs) {
-      this.log(`- ${pkg.name}/${pkg.version}`);
-    }
+    return {dependencies: packageRefs};
   }
 }

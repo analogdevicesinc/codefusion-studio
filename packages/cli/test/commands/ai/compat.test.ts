@@ -17,10 +17,17 @@ import {assert, expect} from 'chai';
 import {runCommand} from '@oclif/test';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {AiCommandError, CfsToolManager} from 'cfs-lib';
-import AIToolsPlugin from 'cfs-lib/dist/ai-tools/index.js';
+import {AiCommandError, CfsToolManager, AIToolsPlugin} from 'cfs-lib';
 import Sinon from 'sinon';
-import type {AiCommandResult} from 'cfs-types';
+import type {
+  AiCommandResult,
+  CfsAiCompatibilityReport
+} from 'cfs-types';
+
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,24 +39,54 @@ describe('ai:compat', () => {
   let sandbox: Sinon.SinonSandbox;
   let runCompatStub: Sinon.SinonStub;
 
-  const VALID_OUTPUT: AiCommandResult = {
+  const VALID_OUTPUT: AiCommandResult<CfsAiCompatibilityReport> = {
     code: 0,
     validCodes: [0, 10],
     events: [
       {
         type: 'INFO',
-        message:
-          'Model fully compatible with target hardware platform'
-      },
-      {
-        type: 'INFO',
-        message:
-          'No compatibility issues detected - ready for deployment'
+        message: 'Model compatibility checks pass.'
       }
-    ]
+    ],
+    data: {
+      type: 'compat',
+      memory_issues: null,
+      operator_issues: null,
+      unsupported_types: null,
+      model_summary: {
+        model_name: 'test-model.tflite',
+        model_path: '/models/test-model.tflite'
+      },
+      info: {
+        timestamp: '2026-08-06T14:30:43',
+        version: '2.2.0',
+        hardware: {
+          FlashSize: 3072,
+          RamSize: 1024,
+          CoreClock: 120,
+          SupportedOps: [],
+          AccelOps: [],
+          SupportedDataTypes: [],
+          OperatorInfos: [
+            {
+              Name: 'MAC',
+              Cycles: 2,
+              Energy: 0.17
+            }
+          ],
+          Target: {
+            Soc: 'MAX32690',
+            Core: 'CM4',
+            Package: 'CTBGA',
+            Accelerator: null,
+            Family: 'Cortex-M'
+          }
+        }
+      }
+    }
   };
 
-  const ERROR_OUTPUT: AiCommandResult = {
+  const ERROR_OUTPUT: AiCommandResult<CfsAiCompatibilityReport> = {
     code: 1,
     validCodes: [0, 10],
     events: [
@@ -187,6 +224,25 @@ describe('ai:compat', () => {
         expect(error?.message).to.include(
           'Multiple cores with AI support'
         );
+      });
+
+      it('should return an error envelope with a stable code in JSON mode', async () => {
+        const {stdout} = await runCommand(
+          [
+            'ai:compat',
+            '--soc',
+            'ai_multi_multiple',
+            '--model',
+            path.join(MODELS_DIR, 'test-model.tflite'),
+            '--format',
+            'json'
+          ],
+          {root: '..'}
+        );
+        const parsed = assertValidEnvelope(stdout) as {
+          errors: {code: string}[];
+        };
+        expect(parsed.errors[0]?.code).to.equal('AI_CORE_REQUIRED');
       });
 
       it('should succeed when explicit --core is provided with multiple AI cores', async () => {
@@ -335,7 +391,7 @@ describe('ai:compat', () => {
     });
 
     describe('--format json', () => {
-      it('GIVEN valid run WHEN runCompat THEN return AiCommandResult', async () => {
+      it('GIVEN valid run WHEN runCompat THEN return envelope with report as data', async () => {
         const {stdout, error} = await runCommand(
           [
             'ai:compat',
@@ -350,11 +406,16 @@ describe('ai:compat', () => {
         );
 
         expect(error).to.not.exist;
-        assert.deepEqual(JSON.parse(stdout), VALID_OUTPUT);
+        const data =
+          assertSuccessEnvelopeData<CfsAiCompatibilityReport>(
+            stdout,
+            'ai compat'
+          );
+        assert.deepEqual(data, VALID_OUTPUT.data);
       });
 
       // The compatibility static analysis tool can exit with code 10 (valid) but contains an error log
-      it('GIVEN valid run with error log WHEN runCompat THEN return whole AiCommandResult', async () => {
+      it('GIVEN valid run with error log WHEN runCompat THEN return success envelope', async () => {
         const VALID_OUTPUT_WITH_ERROR_EVENT: AiCommandResult = {
           ...VALID_OUTPUT,
           code: 10,
@@ -384,13 +445,21 @@ describe('ai:compat', () => {
         );
 
         expect(error).to.not.exist;
-        assert.deepEqual(
-          JSON.parse(stdout),
-          VALID_OUTPUT_WITH_ERROR_EVENT
-        );
+        const data =
+          assertSuccessEnvelopeData<CfsAiCompatibilityReport>(
+            stdout,
+            'ai compat'
+          );
+        assert.deepEqual(data, VALID_OUTPUT.data);
+        const {warnings} = assertValidEnvelope(stdout) as {
+          warnings: {message: string}[];
+        };
+        assert.deepEqual(warnings, [
+          {message: 'Process completed but there is an issue...'}
+        ]);
       });
 
-      it('GIVEN invalid run WHEN runCompat THEN return AiCommandError', async () => {
+      it('GIVEN invalid run WHEN runCompat THEN return error envelope', async () => {
         runCompatStub.rejects(new AiCommandError(ERROR_OUTPUT));
 
         const {stdout} = await runCommand(
@@ -406,7 +475,19 @@ describe('ai:compat', () => {
           {root: '..'}
         );
 
-        assert.deepEqual(JSON.parse(stdout), ERROR_OUTPUT);
+        const parsed = assertValidEnvelope(stdout) as {
+          ok: boolean;
+          command: string;
+          errors: {code: string; message: string}[];
+        };
+        expect(parsed.ok).to.be.false;
+        expect(parsed.command).to.equal('ai compat');
+        assert.deepEqual(parsed.errors, [
+          {
+            code: 'AI_COMMAND_FAILED',
+            message: ERROR_OUTPUT.events[1]?.message
+          }
+        ]);
       });
     });
   });

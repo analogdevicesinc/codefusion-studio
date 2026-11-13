@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { StopInfo } from "../../../../debug-manager";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
@@ -165,17 +164,17 @@ export function registerExecutionControlTools(
         "If the target is already halted, returns immediately with the last stop reason. " +
         "Use this after 'debug_continue' to wait for a breakpoint hit, then " +
         "use 'debug_get_context' to inspect the state.",
-      inputSchema: {
-        timeoutMs: z
-          .number()
-          .int()
-          .min(100)
-          .max(300000)
-          .default(30000)
-          .describe(
-            "Maximum time to wait in milliseconds (default 30000, max 300000)",
-          ),
-      },
+      inputSchema: z.object({
+              timeoutMs: z
+                .number()
+                .int()
+                .min(100)
+                .max(300000)
+                .default(30000)
+                .describe(
+                  "Maximum time to wait in milliseconds (default 30000, max 300000)",
+                ),
+            }),
     },
     async (params) => {
       try {

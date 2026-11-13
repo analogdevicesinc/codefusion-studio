@@ -512,14 +512,14 @@ describe('ApplicationPackages', () => {
 				id: 'img-tlv-1',
 				name: 'TLV A',
 				tag: 0x00a0,
-				value: '0x0A0B'
+				value: '0x0A0B0C0D'
 			};
 
 			const tlv2: CustomTLV = {
 				id: 'img-tlv-2',
 				name: 'TLV B',
 				tag: 0x00a0,
-				value: '0xCCDD'
+				value: '0xCCDDEEFF'
 			};
 
 			const imageWithDupTlvs: Image = {
@@ -545,14 +545,14 @@ describe('ApplicationPackages', () => {
 				id: 'img-tlv-1',
 				name: 'Image TLV',
 				tag: 0x00b0,
-				value: '0xCCDD'
+				value: '0xCCDDEEFF'
 			};
 
 			const imageTlv2: CustomTLV = {
 				id: 'img-tlv-2',
 				name: 'Image TLV 2',
 				tag: 0x00b0,
-				value: '0xAABB'
+				value: '0xAABBCCDD'
 			};
 
 			const imageWithTlv: Image = {
@@ -579,14 +579,14 @@ describe('ApplicationPackages', () => {
 				id: 'tlv-unique-1',
 				name: 'TLV A',
 				tag: 0x00a0,
-				value: '0x0A0B'
+				value: '0x0A0B0C0D'
 			};
 
 			const tlv2: CustomTLV = {
 				id: 'tlv-unique-2',
 				name: 'TLV B',
 				tag: 0x00b0,
-				value: '0xCCDD'
+				value: '0xCCDDEEFF'
 			};
 
 			const imageWithUniqueTlvs: Image = {
@@ -613,7 +613,7 @@ describe('ApplicationPackages', () => {
 				id: 'tlv-below-min',
 				name: 'TLV Below Min',
 				tag: 0x009f,
-				value: '0x0A0B'
+				value: '0x0A0B0C0D'
 			};
 
 			const imageWithInvalidTag: Image = {
@@ -639,7 +639,7 @@ describe('ApplicationPackages', () => {
 				id: 'tlv-above-max',
 				name: 'TLV Above Max',
 				tag: 0xffff,
-				value: '0x0A0B'
+				value: '0x0A0B0C0D'
 			};
 
 			const imageWithInvalidTag: Image = {
@@ -665,7 +665,7 @@ describe('ApplicationPackages', () => {
 				id: 'tlv-valid-range',
 				name: 'Valid TLV',
 				tag: 0x0100,
-				value: '0x0A0B'
+				value: '0x0A0B0C0D'
 			};
 
 			const imageWithValidTag: Image = {

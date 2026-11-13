@@ -1,12 +1,12 @@
 ---
 description: Information on the Telemetry feature in CodeFusion Studio
 author: Analog Devices
-date: 2026-07-30
+date: 2026-10-29
 ---
 
 # Telemetry
 
-If you enable telemetry, CodeFusion Studio collects a limited set of anonymous diagnostics and usage data. This data helps us understand which features are used most often so we can prioritize improvements and fix problems. It is used solely to improve the functionality and user experience of CodeFusion Studio.
+If you enable telemetry, CodeFusion Studio collects a limited set of diagnostic and usage data. This data helps us understand which features are used most often so we can prioritize improvements and fix problems. It is used solely to improve the functionality and user experience of CodeFusion Studio.
 
 Telemetry is **disabled by default** and collects no personally identifying information. For more information, refer to our [:octicons-link-external-24: Privacy Policy](https://www.analog.com/en/who-we-are/legal-and-risk-oversight/data-privacy/privacy-policy.html){:target="_blank"}.
 
@@ -14,25 +14,26 @@ Telemetry is **disabled by default** and collects no personally identifying info
 
 ### Activities we record
 
-When telemetry is enabled, CodeFusion Studio records anonymous events for the following activities:
+When telemetry is enabled, CodeFusion Studio records events for the following activities:
 
 - **Extension activation** — startup and shutdown, including activation timing to help us improve performance, and opening a CodeFusion Studio workspace.
-- **Telemetry preference** — selecting **Share Anonymous Data** when prompted to enable telemetry.
+- **Telemetry preference** — selecting **Share Data** when prompted to enable telemetry.
 - **Workspace creation** — including whether creation succeeded or failed and non-identifying context about the projects created in the workspace.
 - **Feature access and navigation** — opening a tool or view and selecting items in the **Quick Access** panel, so we can understand which features are used most.
 - **System Planner configuration** — opening the configuration tools and navigating between screens; allocating, deallocating, and configuring peripherals; assigning pins and signals; configuring clocks; creating, modifying, or deleting memory partitions; and configuring data flows.
 - **Code generation** — including whether generation succeeded or failed.
 - **Building and flashing** — operations and whether each succeeds or fails.
 - **Debugging** — starting debug sessions, opening SEGGER Ozone, using the GDB Toolbox, starting the Model Context Protocol (MCP) server for the AI Debug Assistant, and capturing and saving diagnostic event data.
-- **AI model tools** — model validation, compatibility checks, on-hardware profiling, hardware deployment, code generation, and capturing profiler traces.
+- **AI model tools** — adding models in System Planner, creating workspaces from a model, model validation, compatibility checks, on-hardware profiling, hardware deployment, code generation, and capturing profiler traces.
+- **Command-line interface (CLI) commands** — running [`cfsutil`](../cfsutil/telemetry.md) commands, including the duration and outcome of each command.
 
 ### Information included with each event
 
 Every event includes a small set of non-identifying metadata:
 
-- **Environment** — CodeFusion Studio version, VS Code version, and host operating system (for example, `osx`, `windows`, or `linux`).
-- **Anonymous identifiers** — a randomly generated user ID and a session ID, used only to group events for aggregate analysis. For details, view [Telemetry user ID](#telemetry-user-id).
-- **User type** — whether the session is an internal Analog Devices user or an external user. This lets us distinguish internal testing from real-world usage.
+- **Environment** — CodeFusion Studio version, VS Code version (or Node.js version for CLI events), and host operating system (for example, `osx`, `windows`, or `linux`).
+- **Usage identifiers** — a randomly generated usage identifier, stored locally, and a session ID, used only to group events for aggregate analysis. For details, view [Telemetry user ID](#telemetry-user-id).
+- **User type** — whether the session is an internal Analog Devices user or an external user. This lets us distinguish internal testing from real-world usage. To determine this, CodeFusion Studio checks locally whether you are signed in to myAnalog with an ADI account or using an ADI-managed computer. Only the result is shared.
 - **Event-specific context** — some events include details relevant to the activity, such as the selected system on chip (SoC) and package, the build system, the flash method, and the duration and outcome of the operation. For example, a successful build event records the following event-specific fields:
 
     ```json
@@ -50,13 +51,14 @@ Every event includes a small set of non-identifying metadata:
 - No source code, file contents, file paths, or project names.
 - No personal information. The user ID is a random identifier, not tied to your name, email, or account.
 - No names of custom hardware or plugins. When you use a board or plugin that was not developed by Analog Devices, its name is replaced with `Custom` before the event is sent, so your proprietary designs are not disclosed.
+- No names of your own AI models. When you add a local model file or a model from a model zoo other than the Analog Devices Model Zoo, its name and details are replaced with `Custom` before the event is sent.
 
 ## Enable Telemetry
 
 Telemetry is **disabled by default**. When you first launch CodeFusion Studio, you’ll be prompted to choose whether you want to enable telemetry:
 
-- **Share Anonymous Data** – Enables telemetry to help improve CodeFusion Studio
-- **Don’t Share Data** – Disables telemetry
+- **Share Data** – Enables telemetry to help improve CodeFusion Studio
+- **Don't Share Data** – Disables telemetry
 
 If you dismiss the prompt without making a choice, it will reappear each time you start CodeFusion Studio until a selection is made.
 
@@ -87,7 +89,7 @@ When CodeFusion Studio first launches, it automatically generates a unique user 
 "cfs.telemetry.userId"
 ```
 
-This identifier is created on first run, even if telemetry is later disabled. It allows anonymous telemetry events to be grouped by user session for aggregate analysis, for example, identifying the type of workspace created (such as the selected SoC, board, or plugin). If you delete this setting, a new ID is generated automatically the next time CodeFusion Studio starts. The `cfs.telemetry.userId` value does not contain personal data and is used solely for anonymous analytics.
+This identifier is created on first run, even if telemetry is later disabled. It allows telemetry events to be linked across sessions for aggregate analysis, for example, identifying the type of workspace created (such as the selected SoC, board, or plugin). If you delete this setting, a new ID is generated automatically the next time CodeFusion Studio starts. The `cfs.telemetry.userId` value does not contain personal data and is used solely for usage analytics.
 
 !!! note
     The presence of this setting does not mean telemetry is active. Telemetry is only sent if both the global VS Code telemetry setting (`telemetry.telemetryLevel`) and the CFS setting (`cfs.telemetry.enable`) are enabled.
@@ -116,6 +118,28 @@ Advanced users can use network inspection tools to view the full content of tele
 
 1. Install a network inspection tool that supports HTTPS decryption — for example, Fiddler Everywhere (cross-platform).
 For proxy-based tools, you’ll typically need to enable HTTPS traffic decryption and install a custom root certificate.
+1. To inspect requests from the CLI, first make sure CLI telemetry is enabled. It's controlled separately from the VS Code settings, so run `cfsutil telemetry enable` to turn it on. For details, see [CLI telemetry](../cfsutil/telemetry.md). Then route the CLI traffic through the proxy configured in your inspection tool, because the CLI does not use the system proxy settings. Set `HTTPS_PROXY` to the proxy address and `NODE_USE_ENV_PROXY=1` in the terminal before running a command. For example:
+
+    === "macOS/Linux"
+
+        ```sh
+        NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://127.0.0.1:8866 cfsutil plugins
+        ```
+
+    === "Windows (Command Prompt)"
+
+        ```bat
+        set NODE_EXTRA_CA_CERTS=C:\path\to\FiddlerRootCertificate.pem
+        set NODE_USE_ENV_PROXY=1
+        set HTTPS_PROXY=http://127.0.0.1:8866
+        cfsutil plugins
+        ```
+
+    Replace `127.0.0.1:8866` with the proxy address of your tool.
+
+    !!! note
+        On Windows, you might need to set `NODE_EXTRA_CA_CERTS` to point to the root certificate of your tool (`set NODE_EXTRA_CA_CERTS=<path-to-certificate>`). The file must be in PEM (text) format (in Fiddler Everywhere, export it as PEM from **Settings → HTTPS**).
+
 1. Trigger a telemetry event, like creating a new workspace.
 1. Look for a POST request sent shortly after the event, targeting a domain that includes `telemetry` and a path ending in `/v1/logs`.
 
@@ -141,7 +165,7 @@ The following example shows telemetry data sent as part of workspace creation. T
                         "firmwarePlatform": "msdk"
                     }
                 ],
-                "cfsVersion": "2.3.0",
+                "cfsVersion": "2.4.0",
                 "vscodeVersion": "1.101.0",
                 "userId": "<USER_ID>",
                 "userType": "External",

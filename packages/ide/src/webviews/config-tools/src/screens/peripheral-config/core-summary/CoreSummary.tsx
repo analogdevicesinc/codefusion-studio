@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ function CoreSummary() {
 	const filteredCoreName = useProjectFilters()[0];
 	const l10n: TLocaleContext | undefined =
 		useLocaleContext()?.peripherals;
+	const coreProjectsL10n = useLocaleContext()?.coreProjects as
+		| Record<string, string>
+		| undefined;
 	const projects = getProjectInfoList();
 	const dispatch = useDispatch();
 	const [isHelpBannerDisplayed, setIsHelpBannerDisplayed] = useState<
@@ -93,8 +96,14 @@ function CoreSummary() {
 		<div className={styles.scrollableContainer}>
 			<HelpBanner
 				isHelpBannerDisplayed={Boolean(isHelpBannerDisplayed)}
-				header='Getting Started with Peripheral Allocation'
-				description='Select a peripheral or function from the list to allocate it to a core.'
+				header={
+					coreProjectsL10n?.helpBannerHeader ??
+					'Getting Started with Peripheral Allocation'
+				}
+				description={
+					coreProjectsL10n?.helpBannerDescription ??
+					'Select a peripheral or function from the list to allocate it to a core.'
+				}
 				onDiscard={async () => handleHelpBanner()}
 				onContinue={async () => handleHelpBanner()}
 				onHelp={() => {
@@ -103,7 +112,7 @@ function CoreSummary() {
 			/>
 			<div className={styles.sectionContainer}>
 				<div className={styles.coreSectionHeader}>
-					<h1>Core Projects</h1>
+					<h1>{coreProjectsL10n?.title ?? 'Core Projects'}</h1>
 					{Array.isArray(projects) && projects.length > 1 && (
 						<div
 							className={styles.headerIcons}

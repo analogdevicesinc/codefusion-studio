@@ -65,19 +65,14 @@ describe("Peripheral Allocation Help Banner", () => {
   const secondConfigFile = "max32690-tqfn.cfsconfig";
 
   beforeEach(async function () {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   afterEach(async () => {
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("workbench.action.closeAllEditors");
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Should not display 'Getting Started' Help Banner if previously dismissed by the user - First Config file", async () => {
+  it("Should not display 'Getting Started' Help Banner if previously dismissed by the user - First Config file @regression", async () => {
     // === GIVEN: I open the file "max32690-wlp.cfsconfig" ===
     await browser.openResources(getConfigPathForFile(firstConfigFile));
     workbench = new Workbench();
@@ -131,14 +126,18 @@ describe("Peripheral Allocation Help Banner", () => {
     console.log("Help banner successfully dismissed and is no longer visible");
   });
 
-  it("Should not display 'Getting Started' Help Banner if previously dismissed by the user - Second Config file", async () => {
+  it("Should not display 'Getting Started' Help Banner if previously dismissed by the user - Second Config file @regression", async () => {
     // === AND: I open a different file "max32690-tqfn.cfsconfig" ===
     await browser.openResources(getConfigPathForFile(secondConfigFile));
     console.log(`Opened second configuration file: ${secondConfigFile}`);
 
-    view = new WebView();
-    await view.wait(2000);
+    /// === AND: All notifications are dismissed ===
+
+    await UIUtils.dismissAllNotifications(workbench, browser);
+
     // === AND: I switch to the webview frame ===
+    view = new WebView();
+    await view.wait(3000);
     await view.switchToFrame();
     console.log("Switched to webview frame for second file");
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ from unittest.mock import Mock, patch, MagicMock
 from utils import get_tf, has_tf
 
 
-from cfsai_compatibility_analyzer.analyze_compatibility import CompatibilityAnalyzer
-from cfsai_compatibility_analyzer.exceptions import (
+from cfsai_model_explorer.backends.tflm_static.compat import CompatibilityAnalyzer
+from cfsai_model_explorer.backends.tflm_static.compat_exceptions import (
     CompatibilityAnalysisError,
     InvalidHardwareMetadataError,
     ModelParsingError,
 )
-from cfsai_compatibility_analyzer.schemas import (
+from cfsai_model_explorer.backends.tflm_static.compat_schemas import (
     CompatibilityReport,
     MemoryIssue,
     OperatorIssue,
@@ -193,9 +193,9 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         analyzer = CompatibilityAnalyzer()
         self.assertIsNotNone(analyzer.logger)
         self.assertEqual(analyzer.logger.name, 
-                        "cfsai_compatibility_analyzer.analyze_compatibility.CompatibilityAnalyzer")
+                        "cfsai_model_explorer.backends.tflm_static.compat.CompatibilityAnalyzer")
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_empty_hardware_metadata(self, mock_parser_class):
         """Test analyze_model with empty hardware metadata."""
         # Create a dummy model file
@@ -208,7 +208,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         
         self.assertEqual(context.exception.error_code, "EMPTY_METADATA")
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_success_no_issues(self, mock_parser_class):
         """Test successful model analysis with no compatibility issues."""
         # Create a dummy model file
@@ -245,7 +245,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         self.assertIsNone(report.memory_issues)
         self.assertIsNone(report.unsupported_types)
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_operator_issues(self, mock_parser_class):
         """Test model analysis with unsupported operators."""
         # Create a dummy model file
@@ -286,7 +286,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         self.assertEqual(custom_op_issue.layers[0], 1)
         self.assertEqual(custom_op_issue.severity, "critical")
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_memory_issues(self, mock_parser_class):
         """Test model analysis with memory constraint violations."""
         # Create a dummy model file
@@ -321,7 +321,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         self.assertEqual(memory_issue.severity, "critical")
         self.assertGreater(len(memory_issue.recommendations), 0)
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_data_type_issues(self, mock_parser_class):
         """Test model analysis with unsupported data types."""
         # Create a dummy model file
@@ -358,7 +358,7 @@ class TestCompatibilityAnalyzer(unittest.TestCase):
         self.assertEqual(type_issue.data_type, "FLOAT32")
         self.assertEqual(type_issue.severity, "critical")
     
-    @patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser')
+    @patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser')
     def test_analyze_model_parsing_failure(self, mock_parser_class):
         """Test model analysis with parsing failure."""
         # Create a dummy model file

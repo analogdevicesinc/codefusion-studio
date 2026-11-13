@@ -5,13 +5,11 @@
 		"module": "Node16",
 		"outDir": "dist",
 		"rootDir": "src",
+		"types": ["node", "mocha"],
 		"strict": true,
 		"target": "es2022",
 		"moduleResolution": "node16",
-		"skipLibCheck": true,
+		"skipLibCheck": true
 	},
-	"include": ["./src/**/*"],
-	"ts-node": {
-		"esm": true,
-	},
+	"include": ["./src/**/*"]
 }

@@ -1,35 +1,35 @@
 {
-  "schemaVersion": "0.2",
+  "schemaVersion": "1.0",
   "lastUpdate": "2026-03-25T00:00:00.000Z",
   "tickFrequency": 10000000.0,
-  "ticksEpoch": "2025-12-22T10:18:31.307452+01:00",
-  "events": {
-    "event-2": {
-      "timestamps": [
-        17456441,
-        26545030,
-        81154813
-      ]
-    },
-    "event-3": {
-      "timestamps": [
-        47997338
-      ]
-    },
-    "event-5": {
-      "timestamps": [
-        75949713
-      ]
-    },
+  "tickEpoch": "2025-12-22T10:18:31.307452+01:00",
+  "eventSources": {
     "event-0": {
-      "timestamps": [
-        79624560
+      "events": [
+        {"ts": 79624560}
       ]
     },
     "event-1": {
-      "timestamps": [
-        84984890,
-        85706543
+      "events": [
+        {"ts": 84984890, "msg": "Interrupt masked"},
+        {"ts": 85706543}
+      ]
+    },
+    "event-2": {
+      "events": [
+        {"ts": 17456441},
+        {"ts": 26545030},
+        {"ts": 81154813, "msg": "UART RX buffer full"}
+      ]
+    },
+    "event-3": {
+      "events": [
+        {"ts": 47997338}
+      ]
+    },
+    "event-5": {
+      "events": [
+        {"ts": 75949713}
       ]
     }
   }

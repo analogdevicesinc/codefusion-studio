@@ -1,7 +1,7 @@
 ---
 description: The CFSUtil Command Line Utility
 author: Analog Devices
-date: 2026-04-26
+date: 2026-10-28
 ---
 
 # CFS command line utility
@@ -79,6 +79,7 @@ CFSUtil provides various command categories for different tasks:
 - **[AI](./ai/index.md)** - Compile AI models, analyze compatibility, profile resources, and manage models within a workspace
 - **[CFS Plugins](./cfs-plugins.md)** - List and manage CFS plugins
 - **[Catalog](./catalog.md)** - Update or restore the SoC catalog
+- **[Convert](./convert.md)** - Convert a profiling trace into a CodeFusion Studio report
 - **[Device Tree](./device-tree.md)** - Parse and work with device tree files
 - **[Docker](./docker.md)** - Pull Docker images
 - **[ELF Utilities](./elf-utilities.md)** - Analyze and inspect ELF files
@@ -91,7 +92,75 @@ CFSUtil provides various command categories for different tasks:
 - **[Project](./project.md)** - Create and manage projects within workspaces
 - **[SoCs](./socs.md)** - Manage SoC data models
 - **[Tasks](./tasks.md)** - List tasks for a named workspace
+- **[Telemetry](./telemetry.md)** - Manage telemetry preferences
+- **[Validate](./validate.md)** - Validate CFS configuration files against the schema
 - **[Workspace](./workspace.md)** - Create and manage CFS workspaces
+
+## JSON output envelope
+
+Most commands, except `ai e2e`, return their output in a standard envelope when you use `--format json`.
+
+!!! note
+    If you wrote scripts against the earlier JSON output of a command that now uses the envelope, read the result from `data`. Some commands wrap a top-level array in a named property, such as `data.models`.
+
+<!-- TODO: remove this note when the remaining commands are migrated to the envelope. -->
+!!! note
+    The following commands don't use the envelope yet, but are planned to:
+
+    - Device tree: `dt parse`
+    - Docker: `docker pull`
+    - Generate: `generate`
+    - myAnalog: `myanalog apikey create`, `myanalog apikey delete`, `myanalog apikey list`
+    - Telemetry: `telemetry enable`, `telemetry disable`, `telemetry status`
+    - Validate: `validate config`, `validate dependencies`
+
+A successful command returns:
+
+```json
+{
+  "ok": true,
+  "command": "catalog update",
+  "data": { "updated": true },
+  "warnings": []
+}
+```
+
+A failed command returns:
+
+```json
+{
+  "ok": false,
+  "command": "socs info",
+  "errors": [
+    { "code": "SOC_NOT_FOUND", "message": "SoC 'abc' not found in catalog" }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ok` | `true` when the command succeeded, `false` when it failed. |
+| `command` | The canonical command identifier, with spaces between the topic and command name (for example, `socs list`). Aliases resolve to the canonical identifier. |
+| `data` | Command-specific result. Present only on success. |
+| `warnings` | List of objects with a `message` field. Present only on success. In JSON mode, warnings appear here instead of in the terminal. |
+| `errors` | List of objects with a `code` and a `message`. Present only on failure. |
+
+## Verbose and quiet output
+
+Use `-v`/`--verbose` to show additional output, such as diagnostic messages or extra detail for each result. Use `-q`/`--quiet` to suppress non-error output, including warnings. Errors are still shown. Some commands still show some output, or hide error details, with `--quiet`. For details, see the command page. The two flags are mutually exclusive.
+
+`--quiet` works with most commands. The oclif plugin-management commands use their own output flags. `--verbose` is being added to commands individually and currently changes the output for the following command groups:
+
+- AI: `ai build`, `ai e2e`, and `ai model list`
+- Device tree
+- ELF utilities: `elf info`
+- Generate
+- myAnalog: `myanalog login` and `myanalog status`
+- Ports: `port list`
+- SoCs: `socs list`
+- Tasks
+- Validate: `validate config`
+- Workspace: `workspace configure`
 
 ## Working with multiple configuration files
 

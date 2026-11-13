@@ -28,14 +28,14 @@ import {formatSocCoreMemoryBlocks} from '../../../utils/json-formatter';
 import {configurePreloadedStore} from '../../../state/store';
 
 const mockAdsp = formatSocCoreMemoryBlocks(
-	(await import('@socs/adsp-21835w-bga_ed.json'))
+	(await import('@socs/adsp-sc835-bga_ed.json'))
 		.default as unknown as Soc
 );
 
 const mockedAdspConfigDict = {
 	BoardName: 'EV-SOMCRR-EZKIT',
 	Package: 'BGA_ED',
-	Soc: 'ADSP-SC835W',
+	Soc: 'ADSP-SC835',
 	Projects: [
 		{
 			ExternallyManaged: false,
@@ -291,11 +291,46 @@ describe('Partition Sidebar - SHARC-FX - Base Block Auto-Detection', () => {
 		cy.dataTest('start-address')
 			.find('input')
 			.clear()
-			.type(l2SramAddressInput);
+			.type(l2SramAddressInput)
+			.blur();
 
 		cy.dataTest('base-block-dropdown')
 			.invoke('prop', 'value')
 			.should('eq', 'L2_SRAM');
+	});
+
+	it('should clear the base block when the starting address is cleared', () => {
+		cy.mount(
+			<PartitionSidebar
+				isFormTouched={false}
+				onClose={cy.stub}
+				onFormTouched={cy.stub}
+			/>,
+			reduxStore
+		);
+
+		cy.dataTest('start-address')
+			.find('input')
+			.clear()
+			.type(l2SramAddressInput)
+			.blur();
+
+		cy.dataTest('base-block-dropdown')
+			.invoke('prop', 'value')
+			.should('eq', 'L2_SRAM');
+
+		cy.dataTest('start-address').find('input').clear().blur();
+
+		cy.dataTest('base-block-dropdown')
+			.invoke('prop', 'value')
+			.should('eq', '');
+
+		cy.then(() => {
+			expect(
+				reduxStore.getState().partitionsReducer.activePartition
+					?.blockNames
+			).to.deep.equal([]);
+		});
 	});
 
 	it('should display a validation error when the typed address overlaps with an existing partition in a fully occupied block', () => {
@@ -311,7 +346,8 @@ describe('Partition Sidebar - SHARC-FX - Base Block Auto-Detection', () => {
 		cy.dataTest('start-address')
 			.find('input')
 			.clear()
-			.type(l2SramAddressInput);
+			.type(l2SramAddressInput)
+			.blur();
 
 		cy.dataTest('start-address-error').should(
 			'have.text',

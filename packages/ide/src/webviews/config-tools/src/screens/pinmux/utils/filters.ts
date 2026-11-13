@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,8 +78,21 @@ export const filterSignals = (
 	>,
 	activeFilterType: AssignmentFilter,
 	assignedPins: PinState[]
-) =>
-	Object.values(peripheral.signals).reduce<
+) => {
+	const configurablePinIds = new Set(
+		getConfigurablePins().map(pin => pin.Name)
+	);
+	const assignedPinsDict = assignedPins.reduce<
+		Record<string, PinState>
+	>(
+		(acc, pin) => ({
+			...acc,
+			[pin.pinId]: pin
+		}),
+		{}
+	);
+
+	return Object.values(peripheral.signals).reduce<
 		Record<
 			string,
 			FormattedPeripheralSignal & {
@@ -87,56 +100,49 @@ export const filterSignals = (
 			}
 		>
 	>((acc, signal) => {
-		const configurablePins = getConfigurablePins();
-
-		const assignedPinsDict = assignedPins.reduce<
-			Record<string, PinState>
-		>(
-			(acc, pin) => ({
-				...acc,
-				[pin.pinId]: pin
-			}),
-			{}
+		const configurableSignalPins = signal.pins.filter(pin =>
+			configurablePinIds.has(pin.Name)
 		);
 
+		if (activeFilterType === 'available') {
+			const isAvailable = configurableSignalPins.some(
+				pin =>
+					(assignedPinsDict[pin.Name]?.appliedSignals ?? [])
+						.length === 0
+			);
+
+			if (isAvailable) {
+				acc[signal.name] = signal;
+			}
+
+			return acc;
+		}
+
+		const currentTargetPin = configurableSignalPins.find(
+			pin => pin.Name === signal.currentTarget
+		);
+		const currentAppliedSignals =
+			assignedPinsDict[currentTargetPin?.Name ?? '']
+				?.appliedSignals ?? [];
+
 		if (
-			configurablePins.some(pin => {
-				const isCurrentTargetPin = pin.Name === signal.currentTarget;
+			activeFilterType === 'assigned' &&
+			currentAppliedSignals.length === 1 &&
+			currentAppliedSignals[0].Peripheral === peripheral.name
+		) {
+			acc[signal.name] = signal;
+		}
 
-				if (!isCurrentTargetPin) return false;
-
-				const currentAppliedSignals =
-					assignedPinsDict[pin.Name]?.appliedSignals ?? [];
-
-				if (activeFilterType === 'assigned') {
-					return (
-						currentAppliedSignals.length === 1 &&
-						currentAppliedSignals[0].Peripheral === peripheral.name
-					);
-				}
-
-				if (activeFilterType === 'conflict') {
-					return (
-						currentAppliedSignals.length > 1 &&
-						currentAppliedSignals.some(
-							appliedSignal =>
-								appliedSignal.Peripheral === peripheral.name
-						)
-					);
-				}
-
-				if (activeFilterType === 'available') {
-					return (
-						assignedPins.length === 0 ||
-						currentAppliedSignals.length === 0
-					);
-				}
-
-				return false;
-			})
+		if (
+			activeFilterType === 'conflict' &&
+			currentAppliedSignals.length > 1 &&
+			currentAppliedSignals.some(
+				appliedSignal => appliedSignal.Peripheral === peripheral.name
+			)
 		) {
 			acc[signal.name] = signal;
 		}
 
 		return acc;
 	}, {});
+};

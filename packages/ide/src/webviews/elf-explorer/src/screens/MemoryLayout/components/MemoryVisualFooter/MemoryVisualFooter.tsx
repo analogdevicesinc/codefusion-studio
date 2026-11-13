@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,32 @@
  *
  */
 import styles from './MemoryVisualFooter.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 export default function MemoryVisualFooter() {
+	const l10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<div className={styles.footer}>
 			<div className={styles['footer-container']}>
 				<div className={`${styles.square} ${styles['read-write']}`} />
-				<span className={styles.label}>Read / Write</span>
+				<span className={styles.label}>
+					{l10n?.readWrite ?? 'Read / Write'}
+				</span>
 			</div>
 			<div className={styles['footer-container']}>
 				<div className={`${styles.square} ${styles['read-only']}`} />
-				<span className={styles.label}>Read only</span>
+				<span className={styles.label}>
+					{l10n?.readOnly ?? 'Read only'}
+				</span>
 			</div>
 			<div className={styles['footer-container']}>
 				<div className={`${styles.square} ${styles.unused}`} />
-				<span className={styles.label}>Unused</span>
+				<span className={styles.label}>
+					{l10n?.unused ?? 'Unused'}
+				</span>
 			</div>
 		</div>
 	);

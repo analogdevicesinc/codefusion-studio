@@ -29,8 +29,13 @@ export const updateWorkspaceConfig: NotificationType<
   method: "updateWorkspaceConfig",
 };
 
-export const generateWorkspace: NotificationType<
-  Partial<AIModelCfsWorkspace> | undefined
+/**
+ * Generates the workspace, including its AI model code. Resolves once the
+ * workspace is ready to be opened and rejects if generation failed.
+ */
+export const generateWorkspace: RequestType<
+  Partial<AIModelCfsWorkspace> | undefined,
+  void
 > = {
   method: "generateWorkspace",
 };

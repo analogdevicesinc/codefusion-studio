@@ -22,7 +22,7 @@ import styles from './WrkspFooter.module.scss';
 
 export default function WrkspFooter() {
 	const {navigationSpecs} = useScreenNavigation();
-	const {forwardAction, backAction, forwardLabel, backLabel} =
+	const {forwardAction, backAction, forwardLabel, backLabel, isBusy} =
 		navigationSpecs;
 
 	return (
@@ -36,6 +36,7 @@ export default function WrkspFooter() {
 						className={backAction ? '' : styles.hide}
 						type='button'
 						appearance='secondary'
+						disabled={isBusy}
 						dataTest='wrksp-footer:back-btn'
 						onClick={() => {
 							backAction?.();
@@ -46,6 +47,7 @@ export default function WrkspFooter() {
 
 					<Button
 						type='button'
+						disabled={isBusy}
 						dataTest='wrksp-footer:continue-btn'
 						onClick={forwardAction}
 					>

@@ -6,6 +6,7 @@ import { createMockPluginInfo } from "../fixtures/mock-plugin-info.js";
 function createCfsConfig(soc: string): CfsConfig {
 	return {
 		Copyright: "",
+		SchemaVersion: "2.1.0",
 		DataModelVersion: "0.0.0",
 		Soc: soc,
 		Package: "WLP",

@@ -75,35 +75,30 @@ describe("Memory Allocation", () => {
   let browser: VSBrowser;
   let view: WebView;
 
-  // let editor: EditorView;
-  browser = VSBrowser.instance;
-
-  let configPath: string | undefined;
+  const firstConfigPath = getConfigPathForFile(
+    "max32690-wlp-core-config.cfsconfig",
+  );
+  const secondConfigPath: string = getConfigPathForFile(
+    "max32690-wlp-dual-core-blinky.cfsconfig",
+  );
+  // Tracks whichever fixture the test that just ran opened, so afterEach restores the right one.
+  let activeConfigPath: string;
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      waitForWorkbench: true,
+    }));
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-
-    if (configPath) {
-      await UIUtils.restoreFixtureFileFromGit(configPath);
-      configPath = undefined;
-    }
+    await UIUtils.teardownTestSuite(view, activeConfigPath);
   });
 
-  it("Renders existing partitions from the config file", async () => {
-    configPath = getConfigPathForFile("max32690-wlp-core-config.cfsconfig");
-    await browser.openResources(configPath);
-    console.log("Opened config file: " + configPath);
+  it("Renders existing partitions from the config file @regression", async () => {
+    activeConfigPath = firstConfigPath;
+    await browser.openResources(firstConfigPath);
+    console.log("Opened config file: " + firstConfigPath);
 
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
@@ -147,16 +142,14 @@ describe("Memory Allocation", () => {
     ).to.contain("Shared_Partition");
   }).timeout(60000);
 
-  it("Deletes the existing partition and verifies the schema", async () => {
-    configPath = getConfigPathForFile(
-      "max32690-wlp-dual-core-blinky.cfsconfig",
-    );
-    await browser.openResources(configPath);
+  it("Deletes the existing partition and verifies the schema @regression", async () => {
+    activeConfigPath = secondConfigPath;
+    await browser.openResources(secondConfigPath);
     workbench = new Workbench();
 
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
-    await view.wait(5000);
+    await view.wait(2000);
     await view.switchToFrame();
 
     await UIUtils.clickElement(view, memoryAllocationTab);
@@ -175,7 +168,7 @@ describe("Memory Allocation", () => {
     console.log("Saved the configuration file");
     await UIUtils.sleep(300);
 
-    const peripheralData = parseJSONFile(configPath);
+    const peripheralData = parseJSONFile(secondConfigPath);
     const cm4Project = peripheralData.Projects.find(
       (proj: any) => proj.CoreId === "CM4",
     );

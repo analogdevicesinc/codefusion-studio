@@ -17,63 +17,63 @@ import { exec } from "child_process";
 import type { CfsProject } from "cfs-types";
 
 export class CfsSSPlusProjectGenerator {
-  /**
-   * Generate a SigmaStudio+ project using SStudioPlusConsole.exe.
-   * @param baseDir - Directory location for the files generated.
-   * @param context - The project context.
-   * @returns A promise that resolves when the project generation is complete.
-   */
-  async generateProject(
-    baseDir: string,
-    context: CfsProject
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      if (!context.platformConfig.CreateSigmaStudioPlusProject) {
-        resolve();
-        return;
-      }
+	/**
+	 * Generate a SigmaStudio+ project using SStudioPlusConsole.exe.
+	 * @param baseDir - Directory location for the files generated.
+	 * @param context - The project context.
+	 * @returns A promise that resolves when the project generation is complete.
+	 */
+	async generateProject(
+		baseDir: string,
+		context: CfsProject
+	): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			if (!context.platformConfig.CreateSigmaStudioPlusProject) {
+				resolve();
+				return;
+			}
 
-      if (!context.platformConfig.SigmaStudioPlusProjectName) {
-        reject(
-          new Error(
-            "SigmaStudio+ Project Name not set in core configuration"
-          )
-        );
-        return;
-      }
+			if (!context.platformConfig.SigmaStudioPlusProjectName) {
+				reject(
+					new Error(
+						"SigmaStudio+ Project Name not set in core configuration"
+					)
+				);
+				return;
+			}
 
-      let projectName = context.platformConfig
-        .SigmaStudioPlusProjectName as string;
-      // Trim the file extension - we'll add it later on the command line.
-      projectName = projectName.replace(/\.ssprj$/, "");
+			let projectName = context.platformConfig
+				.SigmaStudioPlusProjectName as string;
+			// Trim the file extension - we'll add it later on the command line.
+			projectName = projectName.replace(/\.ssprj$/, "");
 
-      if (!context.platformConfig.SigmaStudioPlusPath) {
-        reject(
-          new Error(
-            "SigmaStudio+ Installation Path not set in core configuration"
-          )
-        );
-        return;
-      }
+			if (!context.platformConfig.SigmaStudioPlusPath) {
+				reject(
+					new Error(
+						"SigmaStudio+ Installation Path not set in core configuration"
+					)
+				);
+				return;
+			}
 
-      const ssPlusPath = (
-        context.platformConfig.SigmaStudioPlusPath as string
-      ).replace(/\/$/, "");
+			const ssPlusPath = (
+				context.platformConfig.SigmaStudioPlusPath as string
+			).replace(/\/$/, "");
 
-      const projectPath = [baseDir, "src", "FastDSP"].join("/");
+			const projectPath = [baseDir, "src", "FastDSP"].join("/");
 
-      // Run SStudioPlusConsole.exe to create the project
-      exec(
-        `"${ssPlusPath}/Host/SStudioPlusConsole.exe" createproject -n "${projectName}.ssprj" -f ${projectPath}/"SStudioPlusConfig.json" -p ${projectPath} > ${projectPath}/SStudioPlusConsole.log`,
-        (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
+			// Run SStudioPlusConsole.exe to create the project
+			exec(
+				`"${ssPlusPath}/Host/SStudioPlusConsole.exe" createproject -n "${projectName}.ssprj" -f ${projectPath}/"SStudioPlusConfig.json" -p ${projectPath} > ${projectPath}/SStudioPlusConsole.log`,
+				(error) => {
+					if (error) {
+						reject(error);
+						return;
+					}
 
-          resolve();
-        }
-      );
-    });
-  }
+					resolve();
+				}
+			);
+		});
+	}
 }

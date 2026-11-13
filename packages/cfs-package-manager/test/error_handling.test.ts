@@ -160,7 +160,9 @@ describe("ErrorHandling", () => {
 					name: "non_existent_pkg",
 					version: "1.0"
 				})
-			).to.be.rejectedWith(/not found|does not exist/i);
+			).to.be.rejectedWith(
+				/(Couldn't find the following packages|No versions found matching)/i
+			);
 		});
 	});
 

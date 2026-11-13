@@ -38,7 +38,11 @@
 
 *[CTF]: Common Trace Format. A high-performance binary trace format designed for efficient recording and analysis of trace data.
 
+*[DAI]: Digital Applications Interface. A group of audio peripherals on SHARC-FX processors connected through the Signal Routing Unit (SRU).
+
 *[DDE]: DMA Engine. Varies by SoC; in some devices it means "Dedicated DMA Engine" and in others "Distributed DMA Engine."
+
+*[DMA]: Direct Memory Access
 
 *[DSP]: Digital Signal Processor
 
@@ -139,6 +143,12 @@
 *[SoC]: System on Chip. A combination of processors and peripherals within a single chip.
 
 *[sparsity]: A property of a model where many parameters are zero, enabling reduced memory usage, faster inference times, and lower energy consumption.
+
+*[SPI]: Serial peripheral interface. A synchronous serial interface commonly used to connect flash memory and other peripherals to a processor.
+
+*[SPORT]: Synchronous Serial Port. A high-speed serial peripheral on SHARC-FX processors, connected through the Signal Routing Unit (SRU).
+
+*[SRU]: Signal Routing Unit. A hardware crossbar switch on SHARC-FX processors that connects peripheral inputs and outputs to each other, and to and from external pins.
 
 *[SVD]: System View Description. A file format used to describe the hardware of a microcontroller.
 

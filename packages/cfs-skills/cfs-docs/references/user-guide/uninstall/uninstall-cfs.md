@@ -1,7 +1,7 @@
 ---
 description: Uninstall CodeFusion Studio
 author: Analog Devices
-date: 2026-07-16
+date: 2026-08-03
 ---
 
 # Uninstall CodeFusion Studio
@@ -66,6 +66,6 @@ To fully reset your environment and remove cached packages, delete the following
 
 Use the following command to uninstall CodeFusion Studio from the default location:
 
-- Windows: `C:\analog\cfs\2.3.0\MaintenanceTool.exe purge`
-- Linux: `~/analog/cfs/2.3.0/MaintenanceTool purge`
-- macOS: `~/analog/cfs/2.3.0/MaintenanceTool.app/Contents/MacOS/MaintenanceTool purge`
+- Windows: `C:\analog\cfs\2.4.0\MaintenanceTool.exe purge`
+- Linux: `~/analog/cfs/2.4.0/MaintenanceTool purge`
+- macOS: `~/analog/cfs/2.4.0/MaintenanceTool.app/Contents/MacOS/MaintenanceTool purge`

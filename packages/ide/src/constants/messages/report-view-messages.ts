@@ -13,11 +13,8 @@
  *
  */
 
-import type { RequestType } from "vscode-messenger-common";
-import type {
-  FilterdLayerData,
-  Report,
-} from "../../types/report-view-types";
+import type { NotificationType, RequestType } from "vscode-messenger-common";
+import type { FilterdLayerData, Report } from "../../types/report-view-types";
 
 export const reportRequestMessage: RequestType<void, Report> = {
   method: "get-report",
@@ -28,4 +25,8 @@ export const layerDataRequestMessage: RequestType<
   FilterdLayerData
 > = {
   method: "get-layer-data",
+};
+
+export const reportUpdatedNotification: NotificationType<void> = {
+  method: "report-updated",
 };

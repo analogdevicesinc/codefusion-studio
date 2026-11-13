@@ -23,7 +23,7 @@
  */
 export function substituteVars(
   input: string,
-  context: Record<string, string>,
+  context: Record<string, string>
 ): string {
   return input.replace(/\{(\w+)\}/g, (_, key) => context[key] || `{${key}}`);
 }
@@ -34,9 +34,9 @@ export function substituteVars(
 export function substituteVarsWithGroups(
   input: string,
   context: Record<string, string>,
-  groups: Record<string, string> | null,
+  groups: Record<string, string> | null
 ): string {
-  const mergedContext = { ...context, ...(groups || {}) };
+  const mergedContext = { ...context, ...groups };
   return substituteVars(input, mergedContext);
 }
 
@@ -48,7 +48,7 @@ export function substituteVarsWithGroups(
  * @returns A new record with all values converted to strings.
  */
 export function convertRecordValuesToString(
-  obj: Record<string, string | number>,
+  obj: Record<string, string | number>
 ): Record<string, string> {
   const result: Record<string, string> = {};
   for (const key in obj) {

@@ -17,6 +17,7 @@ import {Provider} from 'react-redux';
 import {configureTestStore} from '../../state/test-utils';
 import Toolbar from './toolbar';
 import {mockVsCodeApi} from '../../../../common/api';
+import type {SymbolsDataResponse} from '../../types/debug';
 
 const MOCK_ADDRESS = 0x2000;
 const MOCK_DATA_LENGTH = 32 * 1024;
@@ -26,7 +27,23 @@ function mountToolbar() {
 		memoryReducer: {
 			memoryBytes: {
 				address: MOCK_ADDRESS,
-				data: new Array(MOCK_DATA_LENGTH).fill(0)
+				data: Array.from({length: MOCK_DATA_LENGTH}, () => 0),
+				symbols: Array.from({length: 1}, () => ({
+					id: 0,
+					name: 'symbol',
+					demangled: undefined,
+					type: '',
+					address: 0,
+					section: undefined,
+					size: 1,
+					localstack: undefined,
+					stack: undefined,
+					bind: '',
+					visibility: '',
+					recursive: undefined,
+					path: '',
+					stackdepth: undefined
+				}))
 			},
 			sessions: [
 				{
@@ -68,7 +85,10 @@ describe('Toolbar', () => {
 								body: {
 									sessionId: message.body.sessionId,
 									address: message.body.address,
-									data: new Array(message.body.length).fill(255)
+									data: Array.from(
+										{length: message.body.length},
+										() => 255
+									)
 								}
 							}
 						})
@@ -84,9 +104,36 @@ describe('Toolbar', () => {
 								body: {
 									sessionId: message.body.sessionId,
 									address: 0x5000,
-									data: new Array(message.body.length).fill(255)
+									data: Array.from(
+										{length: message.body.length},
+										() => 255
+									)
 								},
 								error: undefined
+							}
+						})
+					);
+				}
+
+				if (message.type === 'get-symbol-data') {
+					window.dispatchEvent(
+						new MessageEvent('message', {
+							data: {
+								type: 'api-response',
+								id: message.id,
+								body: [{name: 'name', address: 0}]
+							}
+						})
+					);
+				}
+
+				if (message.type === 'get-symbols-at-symbol') {
+					window.dispatchEvent(
+						new MessageEvent('message', {
+							data: {
+								type: 'api-response',
+								id: message.id,
+								body: [{name: 'name', address: 0}]
 							}
 						})
 					);
@@ -131,6 +178,11 @@ describe('Toolbar', () => {
 			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 			expect(memoryBytes.data.every((byte: number) => byte === 255))
 				.to.be.true;
+			expect(memoryBytes.symbols).to.have.length(1);
+			expect(memoryBytes.symbols?.[0]).to.deep.equal({
+				name: 'name',
+				address: 0
+			});
 		});
 	});
 
@@ -156,7 +208,7 @@ describe('Toolbar', () => {
 	});
 
 	it('fetches memory data when user enters decimal address and presses enter', () => {
-		mountToolbar();
+		const store = mountToolbar();
 
 		cy.dataTest('address-control-input')
 			.shadow()
@@ -174,6 +226,15 @@ describe('Toolbar', () => {
 				}
 			})
 		);
+
+		cy.wrap(store).should(() => {
+			const {memoryBytes} = store.getState().memoryReducer;
+			expect(memoryBytes.symbols).to.have.length(1);
+			expect(memoryBytes.symbols?.[0]).to.deep.equal({
+				name: 'name',
+				address: 0
+			});
+		});
 	});
 
 	it('does not fetch memory data when user enters address with no halted sessions', () => {
@@ -181,7 +242,8 @@ describe('Toolbar', () => {
 			memoryReducer: {
 				memoryBytes: {
 					address: MOCK_ADDRESS,
-					data: new Array(MOCK_DATA_LENGTH).fill(0)
+					data: Array.from({length: MOCK_DATA_LENGTH}, () => 0),
+					symbols: [{name: 'name', address: 0} as SymbolsDataResponse]
 				},
 				sessions: [
 					{
@@ -222,7 +284,7 @@ describe('Toolbar', () => {
 	});
 
 	it('fetches memory at symbol when user enters non-numeric address', () => {
-		mountToolbar();
+		const store = mountToolbar();
 
 		cy.dataTest('address-control-input')
 			.shadow()
@@ -240,6 +302,16 @@ describe('Toolbar', () => {
 				}
 			})
 		);
+
+		// Verify symbols are stored from API response
+		cy.wrap(store).should(() => {
+			const {memoryBytes} = store.getState().memoryReducer;
+			expect(memoryBytes.symbols).to.have.length(1);
+			expect(memoryBytes.symbols?.[0]).to.deep.equal({
+				name: 'name',
+				address: 0
+			});
+		});
 	});
 
 	it('disables refresh when active session is running even if another session is halted', () => {
@@ -247,7 +319,8 @@ describe('Toolbar', () => {
 			memoryReducer: {
 				memoryBytes: {
 					address: MOCK_ADDRESS,
-					data: new Array(MOCK_DATA_LENGTH).fill(0)
+					data: Array.from({length: MOCK_DATA_LENGTH}, () => 0),
+					symbols: [{name: 'name', address: 0} as SymbolsDataResponse]
 				},
 				sessions: [
 					{
@@ -308,5 +381,60 @@ describe('Toolbar', () => {
 			.type('invalidSymbol{enter}');
 
 		cy.dataTest('address-error-symbolNotFound').should('exist');
+	});
+
+	it('stores memory data with empty symbols when symbol request fails', () => {
+		postMessageStub.callsFake((message: any) => {
+			if (message.type === 'get-memory-data') {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: {
+								sessionId: message.body.sessionId,
+								address: message.body.address,
+								data: Array.from(
+									{length: message.body.length},
+									() => 255
+								)
+							}
+						}
+					})
+				);
+			}
+
+			if (message.type === 'get-symbol-data') {
+				window.dispatchEvent(
+					new MessageEvent('message', {
+						data: {
+							type: 'api-response',
+							id: message.id,
+							body: undefined,
+							error: 'Symbol lookup failed'
+						}
+					})
+				);
+			}
+		});
+
+		const store = mountToolbar();
+
+		cy.get('[data-test="refresh-button"]').click();
+
+		// Memory data should be stored even when symbol request fails
+		cy.wrap(store).should(() => {
+			const {memoryBytes, error} = store.getState().memoryReducer;
+			expect(memoryBytes.address).to.equal(MOCK_ADDRESS);
+			expect(memoryBytes.data).to.have.length(MOCK_DATA_LENGTH);
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+			expect(memoryBytes.data.every((byte: number) => byte === 255))
+				.to.be.true;
+			// Symbols should fall back to empty array, not cause failure
+			expect(memoryBytes.symbols).to.deep.equal([]);
+			// No error should be set since memory fetch succeeded
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+			expect(error).to.be.undefined;
+		});
 	});
 });

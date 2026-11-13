@@ -1,0 +1,49 @@
+{
+	"Peripherals": [
+		{
+			"Name": "OWM"
+		}
+	],
+	"Packages": [
+		{
+			"Pins": [
+				{
+					"Name": "G4",
+					"Signals": [
+						{
+							"Peripheral": "OWM",
+							"Name": "PE"
+						}
+					]
+				},
+				{
+					"Name": "G7",
+					"Signals": [
+						{
+							"Peripheral": "OWM",
+							"Name": "IO"
+						}
+					]
+				},
+				{
+					"Name": "H5",
+					"Signals": [
+						{
+							"Peripheral": "OWM",
+							"Name": "IO"
+						}
+					]
+				},
+				{
+					"Name": "H9",
+					"Signals": [
+						{
+							"Peripheral": "OWM",
+							"Name": "PE"
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,10 @@
  *
  */
 
-import type { MiddlewareCallbackParams } from 'openapi-fetch';
+import type {
+    OpenApiMiddlewareCallbackParams,
+    OpenApiMiddlewareOnRequest,
+} from '../../sdk/openapi-client.js';
 import { AuthorizerBase } from '../authorizer.js';
 import type { AuthConfigBase } from '../authorizer.js';
 
@@ -53,7 +56,16 @@ export class PublicAuthorizer extends AuthorizerBase {
      * @param args0.request
      * @returns
      */
-    public async onRequest({ request }: MiddlewareCallbackParams) {
-        return this.setAuthHeader({ request, auth: this.publicUser });
+    public async onRequest({
+        request,
+    }: OpenApiMiddlewareCallbackParams): Promise<
+        Awaited<ReturnType<OpenApiMiddlewareOnRequest>>
+    > {
+        return this.setAuthHeader({
+            request,
+            auth: this.publicUser,
+        }) as unknown as Awaited<
+            ReturnType<OpenApiMiddlewareOnRequest>
+        >;
     }
 }

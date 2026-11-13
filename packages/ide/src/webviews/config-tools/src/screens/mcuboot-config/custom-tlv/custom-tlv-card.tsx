@@ -186,7 +186,11 @@ function CustomTLVCard({
 									}}
 								>
 									<span
-										className={`${labelSize === 'small' ? styles.nameSmall : styles.name}`}
+										className={`${
+											labelSize === 'small'
+												? styles.nameSmall
+												: styles.name
+										}`}
 									>
 										{customTLV.name}
 									</span>
@@ -235,7 +239,11 @@ function CustomTLVCard({
 								}}
 							>
 								<span
-									className={`${labelSize === 'small' ? styles.descriptionSmall : styles.description}`}
+									className={`${
+										labelSize === 'small'
+											? styles.descriptionSmall
+											: styles.description
+									}`}
 								>
 									{customTLV.description?.trim()
 										? customTLV.description
@@ -279,7 +287,11 @@ function CustomTLVCard({
 				<div slot='content'>
 					<div className={styles.formContainer}>
 						<div
-							className={`${labelSize === 'small' ? styles.tagFieldSmall : styles.tagField}`}
+							className={`${
+								labelSize === 'small'
+									? styles.tagFieldSmall
+									: styles.tagField
+							}`}
 						>
 							<label>{l10n?.fields?.tag}</label>
 							<HexInputField
@@ -291,7 +303,11 @@ function CustomTLVCard({
 							/>
 						</div>
 						<div
-							className={`${labelSize === 'small' ? styles.valueFieldSmall : styles.valueField}`}
+							className={`${
+								labelSize === 'small'
+									? styles.valueFieldSmall
+									: styles.valueField
+							}`}
 						>
 							<label>{l10n?.fields?.value}</label>
 							<span

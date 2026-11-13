@@ -51,7 +51,9 @@ export class SocsPackages {
             | 'BGAED'
             | 'EWLB'
             | 'LFCSP'
-            | 'LGA';
+            | 'LGA'
+            | 'FBGA'
+            | 'WLSCP';
     }): Promise<Package> {
         const { data, error, response } = await this.apiClient.POST(
             '/socs/{socID}/packages',
@@ -136,7 +138,9 @@ export class SocsPackages {
             | 'BGAED'
             | 'EWLB'
             | 'LFCSP'
-            | 'LGA';
+            | 'LGA'
+            | 'FBGA'
+            | 'WLSCP';
     }): Promise<void> {
         const { error, response } = await this.apiClient.PATCH(
             '/socs/{socID}/packages/{packageID}',

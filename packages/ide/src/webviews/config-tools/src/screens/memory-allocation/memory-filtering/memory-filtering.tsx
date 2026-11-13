@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import {
 } from '../../../state/slices/app-context/appContext.reducer';
 import {useProjectFilters} from '../../../state/slices/app-context/appContext.selector';
 import {getProjectInfoList} from '../../../utils/config';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import ProjectOption from '../../../components/project-option/project-option';
 
 export type MemoryFilters = {
@@ -34,6 +35,9 @@ export type MemoryFilters = {
 export function MemoryFiltering() {
 	const projects = getProjectInfoList();
 	const projectFilter = useProjectFilters();
+	const l10n = useLocaleContext()?.memoryConfig as
+		| Record<string, string>
+		| undefined;
 	const [selectedMemoryTypes, setSelectedMemoryTypes] = useState<
 		MultiSelectOption[]
 	>([]);
@@ -98,7 +102,7 @@ export function MemoryFiltering() {
 		<div className={styles.container}>
 			<div className={styles.memoryType}>
 				<MultiSelect
-					dropdownText='Memory Type'
+					dropdownText={l10n?.memoryType ?? 'Memory Type'}
 					initialSelectedOptions={selectedMemoryTypes}
 					options={getSocMemoryTypeList().map(memoryType => ({
 						label: memoryType.Name,
@@ -116,7 +120,7 @@ export function MemoryFiltering() {
 			</div>
 			<div className={styles.cores}>
 				<MultiSelect
-					dropdownText='Project'
+					dropdownText={l10n?.project ?? 'Project'}
 					initialSelectedOptions={initialSelectedProjectOptions}
 					options={projectOptions ?? []}
 					variant='filter'

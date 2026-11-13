@@ -13,11 +13,14 @@
  *
  */
 
-import { Fragment } from 'react/jsx-runtime';
-import { navigationItems as navItems } from '@common/constants/navigation';
+import {Fragment} from 'react/jsx-runtime';
+import {navigationItems as navItems} from '@common/constants/navigation';
 
 import ProjectListContentItem from './ProjectListContentItem';
-import type { ProjectInfo } from '../../../utils/config';
+import type {ProjectInfo} from '../../../utils/config';
+import type {TLocaleContext} from '../../../common/types/context';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {localizeMessage} from '../../../../../common/utils/localization';
 
 import styles from './ProjectListContent.module.scss';
 
@@ -35,16 +38,29 @@ export default function ProjectListContent({
 			clock: number;
 			dfg: number;
 			mcuboot: number;
+			firewall: number;
+			profiling: number;
 		};
 	};
 }>) {
-	const { memory, peripheral, pin, clock, dfg, mcuboot } = errors?.param || {};
+	const {
+		memory,
+		peripheral,
+		pin,
+		clock,
+		dfg,
+		mcuboot,
+		firewall,
+		profiling
+	} = errors?.param || {};
+	const l10n: TLocaleContext | undefined =
+		useLocaleContext()?.generateCode;
 
 	return (
 		<>
 			<div className={`${styles.card} ${styles.attributes}`}>
 				<Fragment key={project.ProjectId}>
-					<div>Plugin ID</div>
+					<div>{localizeMessage(l10n, 'pluginId')}</div>
 					{project.PluginId ? (
 						<div>{project.PluginId}</div>
 					) : (
@@ -57,47 +73,63 @@ export default function ProjectListContent({
 					className={`${styles.card} ${styles.issues}`}
 					data-test={`cfsSelectionCard:${project.ProjectId}:content:errors-container`}
 				>
-					<div className={styles.title}>Issues</div>
+					<div className={styles.title}>
+						{localizeMessage(l10n, 'issuesTitle')}
+					</div>
 					{Boolean(memory) && (
 						<ProjectListContentItem
 							error={memory}
 							path={navItems.memory}
-							label='Memory Allocation.'
+							label={localizeMessage(l10n, 'issueLabels.memory')}
 						/>
 					)}
 					{Boolean(peripheral) && (
 						<ProjectListContentItem
 							error={peripheral}
 							path={navItems.peripherals}
-							label='Peripheral Allocation.'
+							label={localizeMessage(l10n, 'issueLabels.peripheral')}
 						/>
 					)}
 					{Boolean(pin) && (
 						<ProjectListContentItem
 							error={pin}
 							path={navItems.pinmux}
-							label='Pin Config.'
+							label={localizeMessage(l10n, 'issueLabels.pin')}
 						/>
 					)}
 					{Boolean(clock) && (
 						<ProjectListContentItem
 							error={clock}
 							path={navItems.clockConfig}
-							label='Clock Config.'
+							label={localizeMessage(l10n, 'issueLabels.clock')}
 						/>
 					)}
 					{Boolean(dfg) && (
 						<ProjectListContentItem
 							error={dfg}
 							path={navItems.dfg}
-							label='DFG.'
+							label={localizeMessage(l10n, 'issueLabels.dfg')}
 						/>
 					)}
 					{Boolean(mcuboot) && (
 						<ProjectListContentItem
 							error={mcuboot}
 							path={navItems.mcubootConfig}
-							label='MCUboot Config.'
+							label={localizeMessage(l10n, 'issueLabels.mcuboot')}
+						/>
+					)}
+					{Boolean(firewall) && (
+						<ProjectListContentItem
+							error={firewall}
+							path={navItems.firewallConfig}
+							label={localizeMessage(l10n, 'issueLabels.firewall')}
+						/>
+					)}
+					{Boolean(profiling) && (
+						<ProjectListContentItem
+							error={profiling}
+							path={navItems.profiling}
+							label={localizeMessage(l10n, 'issueLabels.profiling')}
 						/>
 					)}
 				</div>

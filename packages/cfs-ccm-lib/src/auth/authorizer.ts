@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  */
 
 import type {
-    MiddlewareCallbackParams,
-    MiddlewareOnRequest,
-    MiddlewareOnResponse,
-} from 'openapi-fetch';
+    OpenApiMiddlewareCallbackParams,
+    OpenApiMiddlewareOnRequest,
+    OpenApiMiddlewareOnResponse,
+} from '../sdk/openapi-client.js';
 
 export interface Authorizer {
-    onRequest: MiddlewareOnRequest;
-    onResponse?: MiddlewareOnResponse;
+    onRequest: OpenApiMiddlewareOnRequest;
+    onResponse?: OpenApiMiddlewareOnResponse;
 }
 
 export interface AuthConfigBase {
@@ -52,8 +52,8 @@ export abstract class AuthorizerBase implements Authorizer {
      */
     public onRequest(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        options: Parameters<MiddlewareOnRequest>[0],
-    ): ReturnType<MiddlewareOnRequest> {
+        options: Parameters<OpenApiMiddlewareOnRequest>[0],
+    ): ReturnType<OpenApiMiddlewareOnRequest> {
         // Leaves the request unchanged
         return undefined;
     }
@@ -62,9 +62,9 @@ export abstract class AuthorizerBase implements Authorizer {
         request,
         auth,
     }: {
-        request: MiddlewareCallbackParams['request'];
+        request: OpenApiMiddlewareCallbackParams['request'];
         auth: string;
-    }): MiddlewareCallbackParams['request'] {
+    }): OpenApiMiddlewareCallbackParams['request'] {
         request.headers.set(this.httpHeader, `${this.prefix}${auth}`);
         return request;
     }

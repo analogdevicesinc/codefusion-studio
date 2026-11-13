@@ -14,7 +14,7 @@
  */
 
 import type {Meta} from '@storybook/react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import {useState} from 'react';
 import {VSCodeButton} from '@vscode/webview-ui-toolkit/react';
 import WarningModal from './WarningModal';

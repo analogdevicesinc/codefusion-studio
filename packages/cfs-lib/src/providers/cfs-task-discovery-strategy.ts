@@ -31,9 +31,7 @@ import { readJsonFile } from "../utils/file-utils.js";
  * 4. Sets options.cwd on each task to the project folder where it was discovered
  * 5. Sets projectId to the project name (last directory component of the project path)
  */
-export class CfsTaskDiscoveryStrategy
-	implements TaskDiscoveryStrategy
-{
+export class CfsTaskDiscoveryStrategy implements TaskDiscoveryStrategy {
 	readonly id = "cfs";
 
 	private readonly resolver: CfsVariableResolver;

@@ -12,12 +12,15 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {
   getPackageManager,
   parsePackageReference
 } from '../../utils/package-manager.js';
+import {CfsPackage} from 'cfs-package-manager';
 
 export const pkgInfoDeps: {
   getPackageManager: typeof getPackageManager;
@@ -25,7 +28,11 @@ export const pkgInfoDeps: {
   getPackageManager
 };
 
-export default class CfsPackageInformation extends Command {
+export default class CfsPackageInformation extends BaseCommand<
+  typeof CfsPackageInformation
+> {
+  static useResponseEnvelope = true;
+
   static args = {
     packageReference: Args.string({
       name: 'packageReference',
@@ -39,16 +46,7 @@ export default class CfsPackageInformation extends Command {
   static description =
     'Retrieve a given package metadata. The package does not need to be installed for this information to be retrieved.';
 
-  static flags = {
-    format: Flags.string({
-      char: 'f',
-      default: undefined,
-      summary: 'Output format',
-      options: ['json']
-    })
-  };
-
-  async run(): Promise<void> {
+  async run(): Promise<CfsPackage> {
     const packman = await pkgInfoDeps.getPackageManager(
       {
         useRemotes: true
@@ -56,34 +54,34 @@ export default class CfsPackageInformation extends Command {
       undefined,
       this
     );
-    const {args, flags} = await this.parse(CfsPackageInformation);
+    const {args} = this;
     const pkgRef = parsePackageReference(args.packageReference);
 
     const packageInfo = await packman.getPackageInfo(pkgRef);
 
-    if (flags.format === 'json') {
-      const packageInfoStr = JSON.stringify(packageInfo, null, 2);
-      this.log(packageInfoStr);
-      return;
-    }
-
     // Display package information in a formatted, human-readable way
-    this.log('Package Information');
-    this.log('-------------------');
-    this.log(`Name:        ${packageInfo.reference.name || 'N/A'}`);
-    this.log(
-      `Version:     ${packageInfo.reference.version || 'N/A'}`
-    );
-    this.log(`Type:        ${packageInfo.type || 'N/A'}`);
-    this.log(`Description: ${packageInfo.description || 'N/A'}`);
-    this.log(`License:     ${packageInfo.license || 'N/A'}`);
-    this.log(`CFS Version: ${packageInfo.cfsVersion || 'N/A'}`);
+    // (suppressed in JSON mode; the data is returned as the envelope's
+    // `data` payload instead).
+    if (!this.jsonEnabled()) {
+      this.log('Package Information');
+      this.log('-------------------');
+      this.log(`Name:        ${packageInfo.reference.name || 'N/A'}`);
+      this.log(
+        `Version:     ${packageInfo.reference.version || 'N/A'}`
+      );
+      this.log(`Type:        ${packageInfo.type || 'N/A'}`);
+      this.log(`Description: ${packageInfo.description || 'N/A'}`);
+      this.log(`License:     ${packageInfo.license || 'N/A'}`);
+      this.log(`CFS Version: ${packageInfo.cfsVersion || 'N/A'}`);
 
-    if (packageInfo.soc && packageInfo.soc.length > 0) {
-      this.log('Supported SoCs:');
-      for (const soc of packageInfo.soc) {
-        this.log(`  - ${soc}`);
+      if (packageInfo.soc && packageInfo.soc.length > 0) {
+        this.log('Supported SoCs:');
+        for (const soc of packageInfo.soc) {
+          this.log(`  - ${soc}`);
+        }
       }
     }
+
+    return packageInfo;
   }
 }

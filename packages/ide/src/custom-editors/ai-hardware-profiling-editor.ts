@@ -17,10 +17,16 @@ import * as vscode from "vscode";
 import * as os from "node:os";
 import * as path from "node:path";
 import { ViewProviderPanel } from "../view-provider/view-provider-panel";
-import { AI_HARDWARE_PROFILING_EDITOR_ID, PRISTINE_BUILD } from "../constants";
+import {
+  AI_HARDWARE_PROFILING_EDITOR_ID,
+  BUILD,
+  CLEAN,
+  PRISTINE_BUILD,
+} from "../constants";
 import { Messenger } from "vscode-messenger";
 import {
   applicationStatusUpdate,
+  cleanAndBuild,
   deployModelForProfiling,
   getProfilingViewData,
   stopDeployment,
@@ -31,19 +37,21 @@ import type {
   DeployStatus,
 } from "../types/ai-hardware-profiling-types";
 import { MessageParticipant } from "vscode-messenger-common";
-import { Utils } from "../utils/utils";
-import { CfsAiProfilingData, CfsConfig } from "cfs-types";
+import { Utils, getProjectFolderPath } from "../utils/utils";
+import { CfsAiProfilingData, CfsConfig, CfsSocDataModel } from "cfs-types";
 import { IDEShellEnvProvider } from "../toolchains/shell-env-provider";
 import {
   CfsDataModelManager,
-  CfsToolManager,
+  DEFAULT_SERIAL_PORT_SETTINGS,
+  getWorkspaceSerialSettings,
   globFiles,
   readJsonFile,
   Recording,
   SerialSourceConfig,
+  convertTefToReport,
+  type SerialPortSettings,
 } from "cfs-lib";
 import { SerialPort } from "serialport";
-import { AIToolsService, getCfsaiPath } from "../services/ai-tools-service";
 import { startTraceConversion } from "../debug-tools/profiler/trace-conversion-ui-helper";
 import { getTelemetryManager } from "../telemetry/telemetry";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
@@ -59,11 +67,17 @@ export class AiHardwareProfilingEditor
   private recording: Recording | undefined;
   private deployStartTime: number | undefined;
 
+  private projectCfsConfig?: CfsConfig;
+  private projectDataModel?: CfsSocDataModel;
+
+  // Workspace folder of the profiled core, used to scope the CFS tasks in
+  // multi-core workspaces
+  private taskScope?: vscode.WorkspaceFolder;
+
   constructor(
     private context: vscode.ExtensionContext,
     private messenger: Messenger,
     private shellEnvProvider: IDEShellEnvProvider,
-    private toolManager: CfsToolManager,
     private dataModelManager: CfsDataModelManager,
   ) {}
 
@@ -71,7 +85,6 @@ export class AiHardwareProfilingEditor
     context: vscode.ExtensionContext,
     messenger: Messenger,
     shellEnvProvider: IDEShellEnvProvider,
-    toolManager: CfsToolManager,
     dataModelManager: CfsDataModelManager,
   ): vscode.Disposable {
     return vscode.window.registerCustomEditorProvider(
@@ -80,7 +93,6 @@ export class AiHardwareProfilingEditor
         context,
         messenger,
         shellEnvProvider,
-        toolManager,
         dataModelManager,
       ),
       {
@@ -117,7 +129,7 @@ export class AiHardwareProfilingEditor
 
     await viewProviderPanel.resolveWebviewView(webviewPanel);
 
-    this.startBuild();
+    this.startBuild(document);
   }
 
   private registerMessageHandlers(
@@ -201,13 +213,16 @@ export class AiHardwareProfilingEditor
 
         this.updateDeployStatus("deploying");
         try {
-          await Utils.executeAndWaitForCFSTask(
-            aiProfilingData.Debuggers[aiProfilingData.SelectedDebugger],
-          );
-
           await this.startRecording(
             aiProfilingData.SelectedPort,
             this.getProfilingOutputFolder(),
+            aiProfilingData.Output.Format === "TEXT" ? "txt" : "ctf",
+            aiProfilingData.Cores?.[0],
+          );
+
+          await Utils.executeAndWaitForCFSTask(
+            aiProfilingData.Debuggers[aiProfilingData.SelectedDebugger],
+            { scope: this.taskScope },
           );
 
           this.updateDeployStatus("running");
@@ -236,6 +251,14 @@ export class AiHardwareProfilingEditor
       },
       { sender: participant },
     );
+
+    this.messenger.onNotification(
+      cleanAndBuild,
+      async () => {
+        await this.startBuild(document, PRISTINE_BUILD);
+      },
+      { sender: participant },
+    );
   }
 
   private getProfilingOutputFolder(): string {
@@ -245,9 +268,16 @@ export class AiHardwareProfilingEditor
   private async startRecording(
     serialPort: string,
     outputFolder: string,
+    format: "txt" | "ctf",
+    coreId?: string,
   ): Promise<void> {
     try {
-      const sourceConfig = new SerialSourceConfig(serialPort, 115200);
+      const { baudRate, ...lineOptions } = this.getSerialPortSettings(coreId);
+      const sourceConfig = new SerialSourceConfig(
+        serialPort,
+        baudRate,
+        lineOptions,
+      );
 
       void getTelemetryManager().then((telemetryManager) => {
         telemetryManager.logAction(TELEMETRY_ACTIONS.HW_PROFILING_STARTED, {});
@@ -256,6 +286,7 @@ export class AiHardwareProfilingEditor
       this.recording = await Recording.start({
         source: sourceConfig,
         outputFolder,
+        format,
       });
 
       this.recording.onError((error) => {
@@ -273,6 +304,28 @@ export class AiHardwareProfilingEditor
       }`;
       throw new Error(errorMessage);
     }
+  }
+
+  private getSerialPortSettings(
+    coreId: string | undefined,
+  ): Readonly<SerialPortSettings> {
+    const workspaceFile = vscode.workspace.workspaceFile;
+    const project = this.projectCfsConfig?.Projects.find((configuredProject) =>
+      coreId
+        ? configuredProject.CoreId === coreId
+        : configuredProject.Profiling?.Zephelin?.Enabled,
+    );
+
+    if (!workspaceFile || !project) {
+      return DEFAULT_SERIAL_PORT_SETTINGS;
+    }
+
+    return (
+      getWorkspaceSerialSettings(
+        path.dirname(workspaceFile.fsPath),
+        String(project.PlatformConfig?.ProjectName || project.ProjectId),
+      ) ?? DEFAULT_SERIAL_PORT_SETTINGS
+    );
   }
 
   private async stopRecordingAndHandleOutput(): Promise<void> {
@@ -311,23 +364,33 @@ export class AiHardwareProfilingEditor
       return;
     }
 
-    await startTraceConversion(this.recording, this.shellEnvProvider);
+    const files = await startTraceConversion(
+      this.recording,
+      this.shellEnvProvider,
+    );
     this.recording = undefined;
 
     telemetryManager.logAction(TELEMETRY_ACTIONS.AI_HW_DEPLOY_STOPPED, {
       sessionDurationMs,
     });
+
+    for (const file of files) {
+      const report = await convertTefToReport(file, {
+        datamodel: this.projectDataModel,
+        cfsconfig: this.projectCfsConfig,
+      });
+      vscode.commands.executeCommand("vscode.open", vscode.Uri.file(report));
+    }
   }
 
-  private async startBuild() {
+  private async startBuild(
+    document: vscode.TextDocument,
+    taskName: string = BUILD,
+  ) {
     try {
       this.updateBuildStatus("building");
 
       await Utils.isExtensionReady();
-
-      const aiToolsService = new AIToolsService(
-        await getCfsaiPath(this.toolManager),
-      );
 
       const workspaceFile = vscode.workspace.workspaceFile;
 
@@ -349,6 +412,19 @@ export class AiHardwareProfilingEditor
 
       const cfsConfig = (await readJsonFile(cfsconfig)) as CfsConfig;
 
+      this.projectCfsConfig = cfsConfig;
+
+      const aiProfilingData: Partial<CfsAiProfilingData> = JSON.parse(
+        document.getText() || "{}",
+      );
+
+      // Only a single profiled core is supported for now
+      this.taskScope = this.resolveCoreWorkspaceFolder(
+        cfsConfig,
+        workspacePath,
+        aiProfilingData.Cores?.[0],
+      );
+
       const datamodel = await this.dataModelManager.getDataModel(
         cfsConfig.Soc,
         cfsConfig.Package,
@@ -361,43 +437,95 @@ export class AiHardwareProfilingEditor
         );
       }
 
-      const codeGenStart = Date.now();
-      try {
-        const codeGenRes = await aiToolsService.generateAiModelCode(
-          cfsConfig,
-          datamodel,
-          workspacePath,
-        );
+      // The AI model code is generated during workspace creation, so only
+      // keep the project data needed to convert the captured traces.
+      this.projectDataModel = datamodel;
 
-        const telemetryManager = await getTelemetryManager();
-        telemetryManager.logAction(TELEMETRY_ACTIONS.AI_CODE_GENERATED, {
-          generatedFileCount: codeGenRes.length,
-          durationMs: Date.now() - codeGenStart,
-        });
-      } catch (codeGenError) {
-        const telemetryManager = await getTelemetryManager();
-        telemetryManager.logAction(
-          TELEMETRY_ACTIONS.AI_CODE_GENERATION_FAILED,
-          {
-            errorType: "CodeGenerationFailure",
-            failureCount: 1,
-            durationMs: Date.now() - codeGenStart,
-          },
-        );
-
-        throw codeGenError;
-      }
-
-      const exitCode = await Utils.executeAndWaitForCFSTask(
-        PRISTINE_BUILD,
-        vscode.TaskGroup.Build,
-      );
+      const exitCode = await this.runBuildTask(taskName);
 
       this.updateBuildStatus(exitCode === 0 ? "built" : "error");
     } catch (error) {
       console.error("Error during build process:", error);
       this.updateBuildStatus("error");
     }
+  }
+
+  /**
+   * Resolves the workspace folder of the project running on the given core.
+   * @param cfsConfig - the workspace's system configuration
+   * @param workspacePath - the root path of the workspace
+   * @param coreId - the id of the profiled core
+   * @returns The core's workspace folder, or undefined when no core is given,
+   * in which case tasks are not scoped.
+   * @throws When a core is given but no project or open workspace folder
+   * matches it, as running unscoped tasks could build the wrong project.
+   */
+  private resolveCoreWorkspaceFolder(
+    cfsConfig: CfsConfig,
+    workspacePath: string,
+    coreId: string | undefined,
+  ): vscode.WorkspaceFolder | undefined {
+    if (!coreId) {
+      return undefined;
+    }
+
+    const project = cfsConfig.Projects.find(
+      (configuredProject) => configuredProject.CoreId === coreId,
+    );
+
+    if (!project) {
+      throw new Error(`No project found for profiled core '${coreId}'.`);
+    }
+
+    const projectFolderPath = getProjectFolderPath(workspacePath, project);
+    const workspaceFolder = vscode.workspace.workspaceFolders?.find(
+      (folder) => folder.uri.fsPath === projectFolderPath,
+    );
+
+    if (!workspaceFolder) {
+      throw new Error(
+        `No workspace folder found for profiled core '${coreId}' at '${projectFolderPath}'.`,
+      );
+    }
+
+    return workspaceFolder;
+  }
+
+  /**
+   * Runs the requested build task, falling back to a clean followed by a
+   * regular build when the requested task is a pristine build but the
+   * workspace's toolchain (e.g. MSDK) does not define one.
+   * @param taskName - the name of the CFS task to run
+   */
+  private async runBuildTask(taskName: string): Promise<number | undefined> {
+    const scope = this.taskScope;
+    const needsPristineFallback =
+      taskName === PRISTINE_BUILD &&
+      !(await Utils.cfsTaskExists(PRISTINE_BUILD, {
+        group: vscode.TaskGroup.Build,
+        scope,
+      }));
+
+    if (!needsPristineFallback) {
+      return Utils.executeAndWaitForCFSTask(taskName, {
+        group: vscode.TaskGroup.Build,
+        scope,
+      });
+    }
+
+    const cleanExitCode = await Utils.executeAndWaitForCFSTask(CLEAN, {
+      group: vscode.TaskGroup.Clean,
+      scope,
+    });
+
+    if (cleanExitCode !== 0) {
+      return cleanExitCode;
+    }
+
+    return Utils.executeAndWaitForCFSTask(BUILD, {
+      group: vscode.TaskGroup.Build,
+      scope,
+    });
   }
 
   updateBuildStatus(status: BuildStatus) {

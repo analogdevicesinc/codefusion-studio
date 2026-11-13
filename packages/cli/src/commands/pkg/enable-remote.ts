@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -22,7 +24,9 @@ export const pkgEnableRemoteDeps: {
   getPackageManager
 };
 
-export default class CfsPackageEnableRemote extends Command {
+export default class CfsPackageEnableRemote extends BaseCommand<
+  typeof CfsPackageEnableRemote
+> {
   static args = {
     remoteName: Args.string({
       description: 'Name of the remote package server.',
@@ -34,7 +38,9 @@ export default class CfsPackageEnableRemote extends Command {
   static description =
     'Enables a previously registered remote package server.';
 
-  async run(): Promise<void> {
+  static useResponseEnvelope = true;
+
+  async run(): Promise<{remote: string; enabled: boolean}> {
     const packman = await pkgEnableRemoteDeps.getPackageManager(
       {
         useRemotes: true
@@ -43,9 +49,11 @@ export default class CfsPackageEnableRemote extends Command {
       this
     );
 
-    const {args} = await this.parse(CfsPackageEnableRemote);
+    const {args} = this;
     await packman.enableRemote(args.remoteName);
 
     this.log(`Enabled remote package server successfully`);
+
+    return {remote: args.remoteName, enabled: true};
   }
 }

@@ -41,12 +41,31 @@ import type {
 } from "cfs-types/types/cfs-config";
 import { randomUUID } from "node:crypto";
 import { CfsApiClient } from "cfs-ccm-lib";
+import type { CfsCancellationToken } from "../utils/cancellation.js";
+import {
+	addFileCreatedEvent,
+	escapeBlockComment
+} from "./ai-tools-utils.js";
+import { hashFile } from "../utils/file-utils.js";
+import { requiresCalibrationValidationLabels } from "./ai-tools-model-utils.js";
+
+interface AiMotMetric {
+	name: string;
+	decision?: {
+		threshold?: number;
+		max_fpr?: number;
+	};
+	direction?: "positive" | "negative";
+}
 
 interface AiMotModel {
 	path: string;
 	arch: string;
 	mode?: string;
 	class?: string;
+	metric?: AiMotMetric;
+	input_quantize?: boolean;
+	search?: { time_limit: number };
 	dataset?: {
 		calibration_set: CalibrationData;
 		validation_set: ValidationData;
@@ -57,7 +76,10 @@ interface AiMotModel {
 interface AiMotModelArtifacts {
 	name: string;
 	extensions: NonNullable<AIModelBackend["Extensions"]>;
+	modelPath: string;
+	modelHash: string;
 	datasetPath?: string;
+	datasetHash?: string;
 }
 
 interface AiMotSubsystem {
@@ -120,8 +142,20 @@ async function invokeContainer(
 	image: string,
 	dir: string,
 	json: boolean,
-	output: AiCommandResult
+	output: AiCommandResult,
+	token?: CfsCancellationToken,
+	quiet = false,
+	verbose = false
 ): Promise<AiCommandResult> {
+	if (token?.isCancellationRequested) {
+		output.code = 1;
+		output.events.push({
+			type: "ERROR",
+			message: "Operation cancelled."
+		});
+		throw new AiCommandError(output);
+	}
+
 	const args: string[] = ["run", "--rm"];
 
 	if (
@@ -129,7 +163,7 @@ async function invokeContainer(
 		process.getuid &&
 		process.getgid
 	) {
-		container === "podman" && args.push("--userns=keep-id");
+		if (container === "podman") args.push("--userns=keep-id");
 		args.push(
 			"-u",
 			`${process.getuid().toString()}:${process.getgid().toString()}`
@@ -137,9 +171,6 @@ async function invokeContainer(
 	}
 
 	args.push(
-		// @TODO: Workaround for mot image requiring HOME to be set for compiler-mode builds. Remove once the image is fixed.
-		"-e",
-		"HOME=/host_data",
 		"-v",
 		`${dir}:/host_data`,
 		image,
@@ -153,22 +184,38 @@ async function invokeContainer(
 		"/host_data"
 	);
 
+	if (verbose && !json) {
+		console.log(
+			`Invoking container with: ${[container, ...args].join(" ")}`
+		);
+	}
+
 	return new Promise((resolve, reject) => {
 		const fullOutput: string[] = [];
 
 		const proc = spawn(container, args);
 
+		// docker/podman run proxies signals to the container by default,
+		// so killing this client process stops the underlying build.
+		const cancellationListener = token?.onCancellationRequested(
+			() => {
+				proc.kill();
+				reject(new Error("Container execution cancelled."));
+			}
+		);
+
 		proc.stderr.on("data", (data: Buffer) => {
 			const lines = data.toString().split(/\r?\n/);
 			for (const line of lines) {
-				if (!json) {
-					if (line.startsWith("[")) {
+				const testIfProgressIndicator = /^\[\d/.test(line);
+				if (!json && !quiet) {
+					if (testIfProgressIndicator) {
 						console.log(line);
 					}
 				}
 				if (
 					line.trim().length > 0 &&
-					!(line.startsWith("[") && !json)
+					!(testIfProgressIndicator && !json)
 				) {
 					fullOutput.push(line);
 				}
@@ -176,6 +223,7 @@ async function invokeContainer(
 		});
 
 		proc.on("close", (code) => {
+			cancellationListener?.dispose();
 			if (code !== 0) {
 				output.code = code ?? 1;
 				// An error occurred, so report the full console output
@@ -190,6 +238,7 @@ async function invokeContainer(
 		});
 
 		proc.on("error", (error) => {
+			cancellationListener?.dispose();
 			reject(error);
 		});
 	});
@@ -246,29 +295,29 @@ async function generateArray(
 	return { size, outStr };
 }
 
-function addFileCreatedEvent(
-	output: AiCommandResult,
-	outputDir: string,
-	file: string
-) {
-	const outputPath = path.join(outputDir, file).replace(/\\/g, "/");
-	output.events.push({
-		type: "FILE",
-		message: `Created file: ${outputPath}`,
-		value: outputPath
-	});
-	output.artifacts?.files.push(outputPath);
-}
-
 async function generateAdditionalFiles(
 	models: AiMotModelArtifacts[],
 	outputDir: string,
+	reportDir: string,
 	artifactName: string,
 	output: AiCommandResult
 ) {
 	let hasDatasets = false;
 
-	let headerContent = `
+	let sourceFilesText = "";
+	for (const model of models) {
+		sourceFilesText += ` * ${escapeBlockComment(model.modelPath)} (sha256: ${model.modelHash})\n`;
+		if (model.datasetPath) {
+			sourceFilesText += ` * ${escapeBlockComment(model.datasetPath)} (sha256: ${String(model.datasetHash)})\n`;
+		}
+	}
+
+	let headerContent = `/*
+ * Generated ADI NN header for ${artifactName} on ${new Date().toString()}. Do not modify.
+ *
+ * Generated from:
+${sourceFilesText} */
+
 #if !defined(${artifactName.toUpperCase()}_HPP)
 #define ${artifactName.toUpperCase()}_HPP\n\n`;
 
@@ -318,21 +367,34 @@ async function generateAdditionalFiles(
 		headerContent
 	);
 
-	addFileCreatedEvent(output, outputDir, `${artifactName}.hpp`);
+	addFileCreatedEvent(
+		output,
+		outputDir,
+		reportDir,
+		`${artifactName}.hpp`
+	);
 
 	await fs.writeFile(
 		path.join(outputDir, "datasets.cpp"),
 		datasetsContent
 	);
 
-	addFileCreatedEvent(output, outputDir, "datasets.cpp");
+	addFileCreatedEvent(output, outputDir, reportDir, "datasets.cpp");
 }
 
-async function copyToBuild(src: string, dst: string) {
+async function copyToBuild(
+	src: string,
+	dst: string,
+	isExcluded: (candidate: string) => boolean = () => false
+) {
 	await fs.cp(src, dst, {
 		recursive: true,
 		force: true,
 		filter: async (src) => {
+			if (isExcluded(src)) {
+				return false;
+			}
+
 			try {
 				const st = await fs.lstat(src);
 				return !st.isSymbolicLink();
@@ -343,6 +405,37 @@ async function copyToBuild(src: string, dst: string) {
 	});
 }
 
+/**
+ * Top level directories under `buildDir` that `copy` writes into.
+ *
+ * Entries resolving to `buildDir` itself or outside it are dropped, so an
+ * unexpected `OutDir` cannot turn the cleanup into a wider delete.
+ */
+function getCopyRoots(buildDir: string, copy: string[]): string[] {
+	const roots = new Set<string>();
+
+	for (const item of copy) {
+		const relative = path.relative(
+			buildDir,
+			path.resolve(buildDir, item)
+		);
+
+		if (path.isAbsolute(relative)) {
+			continue;
+		}
+
+		const [first] = relative.split(path.sep);
+
+		if (!first || first === "..") {
+			continue;
+		}
+
+		roots.add(path.join(buildDir, first));
+	}
+
+	return [...roots];
+}
+
 async function getValidationSet(
 	tmpDir: string,
 	resolveSource: (value: string) => Promise<string>,
@@ -351,14 +444,27 @@ async function getValidationSet(
 	const errors: string[] = [];
 
 	await Promise.allSettled(
-		validationSet.map(async ([s, label], i) => {
-			const source = await copyToTempDir(s, tmpDir, resolveSource);
-			validationSet[i] = [source, label];
+		validationSet.map(async (entry, i) => {
+			const source = await copyToTempDir(
+				entry.input,
+				tmpDir,
+				resolveSource
+			);
+			validationSet[i] = { ...entry, input: source };
+
+			if ("expected" in entry) {
+				const expected = await copyToTempDir(
+					entry.expected,
+					tmpDir,
+					resolveSource
+				);
+				validationSet[i] = { ...validationSet[i], expected };
+			}
 		})
 	).then((results) =>
-		results.map((result) => {
-			if (result.status === "rejected") {
-				errors.push(String(result.reason));
+		results.map((r) => {
+			if (r.status === "rejected") {
+				errors.push(String(r.reason));
 			}
 		})
 	);
@@ -421,6 +527,51 @@ function validateExtensions(
 	}
 }
 
+function constructMotMetricEntry(
+	extensions: NonNullable<AIModelBackend["Extensions"]>
+): AiMotMetric | undefined {
+	// Metric at least needs a name. Omit entirely if not provided
+	if (
+		extensions.MetricName == undefined ||
+		extensions.MetricName == ""
+	) {
+		return undefined;
+	}
+
+	const metric: AiMotMetric = { name: String(extensions.MetricName) };
+	if (extensions.MetricDirection !== undefined) {
+		if (
+			extensions.MetricDirection != "positive" &&
+			extensions.MetricDirection != "negative"
+		) {
+			throw new Error(
+				`Unsupported MetricDirection: ${extensions.MetricDirection}`
+			);
+		}
+		metric.direction = String(extensions.MetricDirection) as
+			| "positive"
+			| "negative";
+	}
+
+	// Decision needs to be "threshold" or "max_fpr" and have a value
+	if (
+		extensions.MetricDecision !== undefined &&
+		extensions.MetricValue !== undefined
+	) {
+		if (extensions.MetricDecision === "threshold") {
+			metric.decision = { threshold: Number(extensions.MetricValue) };
+		} else if (extensions.MetricDecision === "max_fpr") {
+			metric.decision = { max_fpr: Number(extensions.MetricValue) };
+		} else {
+			throw new Error(
+				`Unsupported MetricDecision: ${extensions.MetricDecision}`
+			);
+		}
+	}
+
+	return metric;
+}
+
 async function constructMotModelEntry(
 	extensions: NonNullable<AIModelBackend["Extensions"]>,
 	vcfg: VerifiedConfig,
@@ -437,6 +588,23 @@ async function constructMotModelEntry(
 		arch: extensions.Arch as string,
 		mode: extensions.Mode as string
 	};
+
+	const tmp_metric: AiMotMetric | undefined =
+		constructMotMetricEntry(extensions);
+
+	if (tmp_metric !== undefined) {
+		baseModel.metric = tmp_metric;
+	}
+
+	if (extensions.InputQuantize !== undefined) {
+		baseModel.input_quantize = Boolean(extensions.InputQuantize);
+	}
+
+	if (extensions.SearchTimeLimit !== undefined) {
+		baseModel.search = {
+			time_limit: Number(extensions.SearchTimeLimit)
+		};
+	}
 
 	if (isWithDatasets) {
 		return {
@@ -466,7 +634,10 @@ export async function generateMot(
 	vcfgs: VerifiedConfig[],
 	json: boolean,
 	apiAccess: CfsApiClient | AuthConfig | undefined,
-	resolveSource: (value: string) => Promise<string>
+	resolveSource: (value: string) => Promise<string>,
+	token?: CfsCancellationToken,
+	verbose = false,
+	quiet = false
 ): Promise<AiCommandResult> {
 	const output: AiCommandResult = {
 		code: 0,
@@ -507,15 +678,28 @@ export async function generateMot(
 			backend.Mot.DockerImage
 		);
 
-		const creds = await getCredentials(repo, apiAccess, json);
+		const creds = await getCredentials(
+			repo,
+			apiAccess,
+			json || quiet
+		);
 
 		await pullImage({
 			image: backend.Mot.DockerImage,
 			registry,
 			utility: container,
 			creds,
-			quiet: json
+			quiet: json || quiet
 		});
+	}
+
+	if (token?.isCancellationRequested) {
+		output.code = 1;
+		output.events.push({
+			type: "ERROR",
+			message: "Operation cancelled."
+		});
+		throw new AiCommandError(output);
 	}
 
 	if (vcfgs.length > backend.MaxModels) {
@@ -542,32 +726,28 @@ export async function generateMot(
 		const flexTcm = ext.FlexTCM as string;
 		const compiler = ext.Compiler as string;
 
-		const requiresDatasets = Boolean(ext.Class);
+		const requiresDatasets = requiresCalibrationValidationLabels(ext);
 
 		if (requiresDatasets) {
 			const errors: string[] = [];
-			const requiredFields = [
-				"CalibrationData",
-				"ValidationData",
-				"Labels"
-			] as const;
+			const requiredFields = new Map([
+				["CalibrationData", "CalibrationSet"],
+				["ValidationData", "ValidationSet"],
+				["Labels", "Labels"]
+			] as const);
 
-			for (const field of requiredFields) {
+			for (const [field, jsonId] of requiredFields) {
 				if (initialConfig.backend[field] === undefined) {
-					errors.push(
-						`Backend '${backend.Name}' requires '${field}' to be set.`
-					);
+					errors.push(`'${jsonId}'`);
 				}
 			}
 
 			if (errors.length) {
 				output.code = 1;
-				for (const err of errors) {
-					output.events.push({
-						type: "ERROR",
-						message: err
-					});
-				}
+				output.events.push({
+					type: "ERROR",
+					message: `Backend '${backend.Name}' requires ${errors.join(", ")} to be set.`
+				});
 				throw new AiCommandError(output);
 			}
 		}
@@ -624,9 +804,19 @@ export async function generateMot(
 
 			inputData.subsystem[subsystem].models.push(modelDetails);
 
+			const modelHash = await hashFile(
+				await resolveSource(vcfg.files.Model)
+			);
+			const datasetHash = vcfg.files.Dataset
+				? await hashFile(vcfg.files.Dataset)
+				: undefined;
+
 			models.push({
 				name: vcfg.name,
+				modelPath: vcfg.files.Model,
+				modelHash,
 				datasetPath: vcfg.files.Dataset,
+				datasetHash,
 				extensions: extensions
 			});
 		}
@@ -641,6 +831,7 @@ export async function generateMot(
 					artifactName
 				);
 			}
+			const reportDir = outDir;
 			const buildDir = path.isAbsolute(outDir)
 				? outDir
 				: path.resolve(
@@ -652,50 +843,102 @@ export async function generateMot(
 				JSON.stringify(inputData, null, 2)
 			);
 
-			if (!json) {
-				console.log(
-					"INFO: Invoking code generation may take several minutes. Please wait..."
+			try {
+				const result = await invokeContainer(
+					container,
+					backend.Mot.DockerImage,
+					tmpDir,
+					json,
+					output,
+					token,
+					quiet,
+					verbose
 				);
+				output.code = result.code;
+
+				if (output.code !== 0) {
+					output.events.push({
+						type: "ERROR",
+						message: `Container execution failed with code ${String(output.code)}.`
+					});
+					if (verbose && !json) {
+						console.log(
+							"input.json:\n" + JSON.stringify(inputData, null, 2)
+						);
+					}
+					throw new AiCommandError(output);
+				}
+			} catch (error) {
+				// Dump input on rejection for error diagnostics in verbose mode
+				if (verbose && !json && !(error instanceof AiCommandError)) {
+					console.log(
+						"input.json:\n" + JSON.stringify(inputData, null, 2)
+					);
+				}
+				throw error;
 			}
 
-			const result = await invokeContainer(
-				container,
-				backend.Mot.DockerImage,
-				tmpDir,
-				json,
-				output
-			);
-			output.code = result.code;
-
-			if (output.code !== 0) {
-				output.events.push({
-					type: "ERROR",
-					message: `Container execution failed with code ${String(output.code)}.`
-				});
-				throw new AiCommandError(output);
-			} else {
+			{
 				const srcDir = path.join(tmpDir, subsystem);
 				await fs.mkdir(buildDir, { recursive: true });
 
 				if (backend.Mot.Copy) {
-					for (const item of backend.Mot.Copy) {
+					const excluded = new Set(
+						(backend.Mot.Exclude ?? []).map((item) =>
+							path.resolve(srcDir, item)
+						)
+					);
+					const isExcluded = (candidate: string) =>
+						excluded.has(path.resolve(candidate));
+
+					// fs.cp only overwrites, so output from an earlier run would survive.
+					for (const root of getCopyRoots(
+						buildDir,
+						backend.Mot.Copy
+					)) {
 						try {
-							const srcPath = path.join(srcDir, item);
-							const destPath = path.join(buildDir, item);
+							await fs.rm(root, { recursive: true, force: true });
+						} catch {
+							output.events.push({
+								type: "ERROR",
+								message: `Failed to remove '${root}' before copying`
+							});
+							output.code = 1;
+							throw new AiCommandError(output);
+						}
+					}
 
-							const stat = await fs.lstat(srcPath);
+					for (const item of backend.Mot.Copy) {
+						const srcPath = path.join(srcDir, item);
+						const destPath = path.join(buildDir, item);
 
-							if (stat.isSymbolicLink()) {
+						try {
+							// Some entries only exist for certain architectures.
+							const stat = await fs
+								.lstat(srcPath)
+								.catch((error: unknown) => {
+									if (
+										(error as NodeJS.ErrnoException).code === "ENOENT"
+									) {
+										return undefined;
+									}
+
+									throw error;
+								});
+
+							if (!stat || stat.isSymbolicLink()) {
 								continue;
-							} else if (stat.isDirectory()) {
-								await copyToBuild(srcPath, destPath);
+							}
+
+							if (stat.isDirectory()) {
+								await copyToBuild(srcPath, destPath, isExcluded);
 							} else {
 								await fs.mkdir(path.dirname(destPath), {
 									recursive: true
 								});
 								await fs.copyFile(srcPath, destPath);
 							}
-							addFileCreatedEvent(output, buildDir, item);
+							addFileCreatedEvent(output, buildDir, reportDir, item);
 						} catch {
 							output.events.push({
 								type: "ERROR",
@@ -711,6 +954,7 @@ export async function generateMot(
 				await generateAdditionalFiles(
 					models,
 					buildDir,
+					reportDir,
 					artifactName,
 					output
 				);

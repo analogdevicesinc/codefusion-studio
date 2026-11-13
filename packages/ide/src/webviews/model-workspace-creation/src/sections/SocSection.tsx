@@ -25,9 +25,9 @@ import {
 } from '../state/slices/workspace.selector';
 import {useAppDispatch} from '../state/store';
 import styles from './SocSection.module.scss';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {messenger} from '../../../common/contexts/MessengerContext';
-import type {CorePart} from 'cfs-ccm-lib/dist';
+import type {CorePart} from 'cfs-ccm-lib';
 import formatCatalog from '../../../workspace-creation/src/utils/catalog-formatter';
 import {
 	clearRunModelOn,
@@ -98,11 +98,6 @@ export function SocSection() {
 			{errors?.soc && (
 				<InlineMessage type='error'>{errors.soc}</InlineMessage>
 			)}
-			{errors?.compatibility && (
-				<InlineMessage type='error'>
-					{errors.compatibility}
-				</InlineMessage>
-			)}
 			{/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
 			{(errors?.board || errors?.runModelOn) && (
 				<InlineMessage type='error'>
@@ -143,42 +138,53 @@ function CompatibilityTestState({soc}: {readonly soc: string}) {
 	const l10n = useLocaleContext()?.socSection;
 
 	const compatStatus = useCompatibilityStatus(soc);
+	const selectedSoc = useSoc();
+	const runModelOn = useRunModelOn();
 
 	if (!compatStatus) {
 		return null;
 	}
 
-	if (compatStatus === 'error') {
+	if (compatStatus === 'testing') {
 		return (
 			<div className={styles.compatibilityStatus}>
-				<ConflictIcon />
-				{l10n?.compatibilityTestError}
+				<Spinner />
+				{l10n?.testingCompatibility}
 			</div>
 		);
 	}
 
-	if (typeof compatStatus === 'object') {
-		const anyCompatible = Object.values(compatStatus).some(
-			status => typeof status === 'boolean' && status
-		);
+	// 'error' for the whole SoC means the check failed before any core ran.
+	let state: 'compatible' | 'incompatible' | 'error' = 'error';
 
-		return anyCompatible ? (
-			<div className={styles.compatibilityStatus}>
-				<CircledCheckmarkIcon />
-				{l10n?.compatible}
-			</div>
-		) : (
-			<div className={styles.compatibilityStatus}>
-				<ConflictIcon />
-				{l10n?.incompatible}
-			</div>
-		);
+	if (typeof compatStatus === 'object') {
+		// runModelOn only applies to the currently selected SoC; for other
+		// SoCs in the list, or when no core is selected, summarize all
+		// tested cores. A selected core without a result counts as an error.
+		const relevantStatuses =
+			soc === selectedSoc && runModelOn.length > 0
+				? runModelOn.map(coreId => compatStatus[coreId] ?? 'error')
+				: Object.values(compatStatus);
+
+		if (relevantStatuses.some(status => status === true)) {
+			state = 'compatible';
+		} else if (!relevantStatuses.some(status => status === 'error')) {
+			state = 'incompatible';
+		}
 	}
 
 	return (
 		<div className={styles.compatibilityStatus}>
-			<Spinner />
-			{l10n?.testingCompatibility}
+			{state === 'compatible' ? (
+				<CircledCheckmarkIcon />
+			) : (
+				<ConflictIcon />
+			)}
+			{state === 'compatible'
+				? l10n?.compatible
+				: state === 'incompatible'
+					? l10n?.incompatible
+					: l10n?.compatibilityTestError}
 		</div>
 	);
 }
@@ -201,10 +207,30 @@ function SelectedSocContent({
 
 	const socData = catalog.find(s => s.name === soc);
 
+	// Read through a ref so manual toggles don't re-trigger the auto selection
+	const runModelOnRef = useRef(runModelOn);
+	runModelOnRef.current = runModelOn;
+
 	useEffect(() => {
 		let bestFittingCore: CorePart | undefined;
 		const hasCompatibilityResult = typeof compatStatus === 'object';
 		const hasNoCompatibilityResult = !compatStatus;
+
+		// Keep the current (e.g. restored) selection while it is still valid
+		const selectedCore = socData?.cores.find(
+			(core: CorePart & {aiSupported: boolean}) =>
+				core.aiSupported &&
+				core.dataModelCoreID === runModelOnRef.current[0]
+		);
+
+		if (
+			selectedCore &&
+			(hasNoCompatibilityResult ||
+				(hasCompatibilityResult &&
+					compatStatus[selectedCore.dataModelCoreID] === true))
+		) {
+			return;
+		}
 
 		if (hasCompatibilityResult) {
 			bestFittingCore = socData?.cores.find(
@@ -214,7 +240,12 @@ function SelectedSocContent({
 			);
 		}
 
-		if (!bestFittingCore && hasNoCompatibilityResult) {
+		// Fall back to the first AI-supported core when no core is known to be
+		// compatible, so the user can still create the workspace (after a warning).
+		if (
+			!bestFittingCore &&
+			(hasCompatibilityResult || hasNoCompatibilityResult)
+		) {
 			bestFittingCore = socData?.cores.find(
 				(core: CorePart & {aiSupported: boolean}) => core.aiSupported
 			);
@@ -222,7 +253,7 @@ function SelectedSocContent({
 
 		if (bestFittingCore) {
 			dispatch(clearRunModelOn());
-			dispatch(toggleRunModelOnCore(bestFittingCore.id));
+			dispatch(toggleRunModelOnCore(bestFittingCore.dataModelCoreID));
 		} else if (hasCompatibilityResult) {
 			dispatch(clearRunModelOn());
 		}
@@ -289,13 +320,19 @@ function SelectedSocContent({
 								)}
 						</span>
 						<div
-							className={`${styles.toggleContainer} ${core.aiSupported ? '' : styles.disabled}`}
+							className={`${styles.toggleContainer} ${
+								core.aiSupported ? '' : styles.disabled
+							}`}
 						>
 							<Toggle
-								isToggledOn={runModelOn?.includes(core.id)}
+								isToggledOn={runModelOn?.includes(
+									core.dataModelCoreID
+								)}
 								isDisabled={!core.aiSupported}
 								handleToggle={() => {
-									dispatch(toggleRunModelOnCore(core.id));
+									dispatch(
+										toggleRunModelOnCore(core.dataModelCoreID)
+									);
 								}}
 							/>
 							<span>{l10n?.runModelOnCore}</span>

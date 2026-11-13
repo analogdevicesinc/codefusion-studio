@@ -13,7 +13,7 @@
  *
  */
 
-import {type CfsConfig} from 'cfs-lib';
+import {type CfsConfig} from 'cfs-types';
 import {configurePreloadedStore} from '../../state/store';
 import {Dfg} from './DFG';
 import {
@@ -33,7 +33,7 @@ describe('DFG Stream Property Calculation', () => {
 			localStorage.setItem(
 				'DFGConfig',
 				JSON.stringify({
-					Soc: 'DFGTEST',
+					Soc: 'DFGTESTS',
 					BoardName: '',
 					Package: 'WLP',
 					projects: [

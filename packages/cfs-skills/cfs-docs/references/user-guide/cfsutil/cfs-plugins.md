@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - CFS Plugins
 author: Analog Devices
-date: 2026-03-23
+date: 2026-10-08
 ---
 
 # CFS plugins
@@ -11,7 +11,7 @@ The CFS plugins command allows you to list CFS plugins. These commands work with
 ## List
 
 ```sh
-cfsutil cfsplugins list [-s <path>] [--soc <name>] [--board <name>] [--service <service>] [--config-options]
+cfsutil cfsplugins list [-s <path>] [--soc <name>] [--board <name>] [--service <service>] [--config-options] [--format text|json]
 ```
 
 Lists all available CFS plugins installed with CodeFusion Studio or added through the Package Manager. You can also specify additional search paths to include locally built plugins. Results can be filtered by SoC, board, or service type.
@@ -23,6 +23,7 @@ Lists all available CFS plugins installed with CodeFusion Studio or added throug
 | `--board=<name>` | Filter results by supported board name |
 | `--config-options` | Include configuration options (properties.project) in output |
 | `--service=<service>` | Filter results by service type. Available services: `workspace`, `project`, `codegen`, `memory`, `peripheral`, `pinConfig`, `clockConfig` |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 !!! example
     ```sh

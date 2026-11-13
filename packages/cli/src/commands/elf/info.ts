@@ -15,8 +15,11 @@
 /* eslint-disable complexity */
 /* eslint-disable camelcase */
 // TODO Proper import from src
-import {Args, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
 import {
+  ElfDataModel,
+  ElfProgramHeader,
+  ElfSectionHeader,
   HeaderInfo,
   convertHeaderBigIntsToNumber,
   decimalToHex,
@@ -24,14 +27,10 @@ import {
   mapArmAttributes,
   mapHeaderInfoData
 } from 'cfs-lib';
-import {ElfFileParser} from 'elf-parser';
-import {ElfDataModel} from 'elf-parser/dist/ElfDataModel.js';
-import {ElfProgramHeader} from 'elf-parser/dist/ElfProgramHeader.js';
-import {ElfSectionHeader} from 'elf-parser/dist/ElfSectionHeader.js';
-import * as Enums from 'elf-parser/dist/enums.js';
+import * as Enums from 'cfs-lib';
 
-import {Logger} from '../../logger.js';
 import {BaseCommand} from '../../utils/base-command.js';
+import {BaseElfCommand} from '../../utils/base-elf-command.js';
 
 const formatHeaderInfoIntoJsonStringData = (
   data: HeaderInfo[],
@@ -73,12 +72,9 @@ const getMetadataHeaderInfo = (
   return elfHeaderArray;
 };
 
-export default class Info extends BaseCommand<typeof Info> {
-  static args = {
-    filePath: Args.string({description: 'file path to read'})
-  };
-
+export default class Info extends BaseElfCommand<typeof Info> {
   static description = 'ELF parser CLI';
+  static useResponseEnvelope = true;
   static flags = {
     // flag with a value (-n, --name=VALUE)
     // flag with no value (-f, --force)
@@ -104,8 +100,19 @@ export default class Info extends BaseCommand<typeof Info> {
       hidden: true
     }),
     verbose: Flags.boolean({
-      char: 'v',
-      description: 'enable verbose mode'
+      ...BaseCommand.baseFlags.verbose,
+      relationships: [
+        {
+          type: 'none',
+          flags: [
+            {
+              name: 'format',
+              when: async (flags) => flags.format === 'json'
+            },
+            'json'
+          ]
+        }
+      ]
     }),
 
     debug_segments: Flags.boolean({
@@ -142,305 +149,219 @@ export default class Info extends BaseCommand<typeof Info> {
     })
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async run(): Promise<any> {
-    const {args, flags} = this;
+  public async run(): Promise<Record<string, unknown>> {
+    const {flags} = this;
 
-    if (args.filePath) {
-      let isActionSet: boolean = false;
-      let jsonString: string = '{\n ';
+    const hasActionFlag =
+      flags.header ||
+      flags.attributes ||
+      flags.core ||
+      flags.fsize ||
+      flags.debug_segments ||
+      flags.debug_sections ||
+      flags.debug_syms ||
+      flags.debug_cus ||
+      flags.debug_lt ||
+      flags.debug_abbrevs ||
+      flags.debug_dies ||
+      flags.debug_heuristics;
 
-      try {
-        const parser = new ElfFileParser(args.filePath);
-        await parser.initialize(
-          flags.nodb || false,
-          flags.verbose || false
-        );
-
-        const md = parser.getDataModel();
-        const headerInf = getMetadataHeaderInfo(
-          md,
-          this.jsonEnabled()
-        );
-
-        let flagsCount: number =
-          Number(flags.header || 0) +
-          Number(flags.core || 0) +
-          Number(flags.fsize || 0) +
-          Number(flags.nodb || 0) +
-          Number(flags.attributes || 0) +
-          Number(flags.verbose || 0) +
-          Number(flags.debug_segments || 0) +
-          Number(flags.debug_sections || 0) +
-          Number(flags.debug_cus || 0) +
-          Number(flags.debug_lt || 0) +
-          Number(flags.debug_abbrevs || 0) +
-          Number(flags.debug_syms || 0) +
-          Number(flags.debug_dies || 0) +
-          Number(flags.debug_heuristics || 0) +
-          0;
-
-        if (flags.header) {
-          isActionSet = true;
-
-          if (this.jsonEnabled()) {
-            jsonString += '"Header": {';
-            for (const item of headerInf) {
-              const itemVal: string = item.value.toString() || '';
-              if (itemVal !== '') {
-                const strValue: string =
-                  typeof item.value === 'number' ||
-                  item.label === 'HeaderSize'
-                    ? itemVal
-                    : '"' + itemVal + '"';
-                jsonString += '\n\t"' + item.label + '":' + strValue;
-                const lstIndex = headerInf.length - 1;
-                if (lstIndex > 0 && headerInf.at(lstIndex) !== item) {
-                  jsonString += ',';
-                }
-              }
-            }
-
-            --flagsCount;
-            jsonString += flagsCount > 0 ? '\n\t},\n' : '\n\t}\n';
-          } else {
-            this.log(`\nHeader Info:`);
-            for (const item of headerInf) {
-              this.log(`${item.label}: ${item.value}`);
-            }
-          }
-        }
-
-        if (flags.attributes) {
-          isActionSet = true;
-          if (md.elfArmAttributes) {
-            const armAttributes = mapArmAttributes(
-              md.elfArmAttributes as unknown as Record<
-                symbol,
-                number | string
-              >
-            );
-            const attrNotNull = armAttributes.filter(
-              (item) =>
-                item.value !== undefined && item.value !== null
-            );
-
-            if (this.jsonEnabled()) {
-              formatHeaderInfoIntoJsonStringData(
-                attrNotNull as HeaderInfo[],
-                '_'
-              );
-              jsonString += '"AttributesInfo": {';
-              const lstIndex = attrNotNull.length - 1;
-
-              for (const item of attrNotNull) {
-                if (item.value !== undefined && item.value !== null) {
-                  const itemVal: string = item.value.toString() || '';
-                  const strValue: string =
-                    typeof item.value === 'number'
-                      ? itemVal
-                      : '"' + itemVal + '"';
-                  jsonString +=
-                    '\n\t"' + item.label + '":' + strValue;
-                  if (
-                    lstIndex > 0 &&
-                    attrNotNull.at(lstIndex) !== item
-                  ) {
-                    jsonString += ',';
-                  }
-                }
-              }
-
-              --flagsCount;
-              jsonString += flagsCount > 0 ? '\n\t},\n' : '\n\t}\n';
-            } else {
-              formatHeaderInfoIntoCliStringData(
-                attrNotNull as HeaderInfo[]
-              );
-              this.log(`\nAttributes Info:`);
-              for (const item of attrNotNull) {
-                this.log(`${item.label}: ${item.value}`);
-              }
-            }
-          } else if (!this.jsonEnabled()) {
-            this.log('ELF file has no ARM attributes');
-          }
-        }
-
-        if (flags.core) {
-          isActionSet = true;
-          const dataToDisplay: string[] = [
-            headerInf
-              .find((item) => item.label === 'Class')
-              ?.value.toString() || '',
-            headerInf
-              .find((item) => item.label === 'Data')
-              ?.value.toString() || '',
-            headerInf
-              .find((item) => item.label === 'Type')
-              ?.value.toString() || '',
-            headerInf
-              .find((item) => item.label === 'Machine')
-              ?.value.toString() || '',
-            headerInf
-              .find((item) => item.label === 'OsAbi')
-              ?.value.toString() || '',
-            headerInf.find((item) => item.label === 'AbiVersion')
-              ?.value === undefined
-              ? ''
-              : 'ABI Version ' +
-                (
-                  headerInf.find(
-                    (item) => item.label === 'AbiVersion'
-                  )?.value ?? ''
-                ).toString(),
-            headerInf.find((item) => item.label === 'AbiVersion')
-              ?.value === 0
-              ? 'statically linked'
-              : '',
-            md.elfSectionHeaders.some(
-              (item) => item.shName === '.debug_info'
-            )
-              ? 'with debug_info'
-              : 'with no debug_info',
-            (md.elfSectionHeaders.some(
-              (item) => item.shName === '.debug_info'
-            ) ?? md.elfSectionHeaders.some((item) => item.type === 2))
-              ? 'not stripped'
-              : 'stripped'
-          ];
-
-          if (this.jsonEnabled()) {
-            jsonString += '"FileInfo": "';
-            for (const item of dataToDisplay) {
-              jsonString += item;
-              const lstIndex = dataToDisplay.length - 1;
-
-              if (
-                lstIndex > 0 &&
-                dataToDisplay.at(lstIndex) !== item
-              ) {
-                jsonString += ', ';
-              }
-            }
-
-            --flagsCount;
-            jsonString += flagsCount > 0 ? '",\n' : '"\n';
-          } else {
-            let data: string = '';
-            this.log(`\nFile Info:`);
-            for (let i = 0; i < dataToDisplay.length; i++) {
-              const item = dataToDisplay[i];
-              if (item !== '') {
-                data += item;
-                if (i !== dataToDisplay.length - 1) {
-                  data += ', ';
-                }
-              }
-            }
-
-            this.log(`${data}`);
-          }
-        }
-
-        if (flags.debug_heuristics) {
-          isActionSet = true;
-          md.getHeuristics().print();
-        }
-
-        if (flags.fsize) {
-          isActionSet = true;
-          const data = new Map<string, number>();
-
-          for (const section of md.elfSectionHeaders) {
-            const bucket = getBucket(section.flags, section.type);
-            if (bucket !== undefined && bucket !== '') {
-              if (data.has(bucket)) {
-                let val: number = data.get(bucket) || 0;
-                val += Number(section.size);
-                data.set(bucket, val);
-              } else {
-                data.set(bucket, Number(section.size));
-              }
-            }
-          }
-
-          if (this.jsonEnabled()) {
-            jsonString += '"SizeInfo": {';
-            for (const item of data) {
-              jsonString += '\n\t"' + item[0] + '":' + item[1];
-              if ([...data][data.size - 1][0] !== item[0]) {
-                jsonString += ',';
-              }
-            }
-
-            jsonString += '\n\t}\n';
-          } else {
-            this.log(`\nSize Info:`);
-            for (const [key, value] of data) {
-              this.log(`${key}: ${value}`);
-            }
-          }
-        }
-
-        if (flags.debug_segments) {
-          isActionSet = true;
-          for (const segment of md.elfProgramHeaders) {
-            this.printSegment(md, segment);
-          }
-        }
-
-        if (flags.debug_sections) {
-          isActionSet = true;
-          for (const section of md.elfSectionHeaders) {
-            this.printSection(section);
-          }
-        }
-
-        if (flags.debug_syms) {
-          isActionSet = true;
-          this.processSyms(md);
-        }
-
-        if (
-          flags.debug_cus ||
-          flags.debug_lt ||
-          flags.debug_abbrevs ||
-          flags.debug_dies
-        ) {
-          isActionSet = true;
-          if (md.dw) {
-            for (const cu of md.dw.compilationUnits) {
-              cu.print(
-                flags.debug_lt,
-                flags.debug_abbrevs,
-                flags.debug_dies
-              );
-            }
-          } else {
-            this.log(
-              'ELF file does not contain debugging information!'
-            );
-          }
-        }
-
-        jsonString += '\n}';
-      } catch (error) {
-        return Logger.logError(`${error}`);
-      }
-
-      if (!isActionSet) {
-        return Logger.logError(
-          `No flags provided. Please provide at least one mandatory flag.`
-        );
-      }
-
-      return JSON.parse(jsonString);
+    if (!hasActionFlag) {
+      this.error(
+        'No flags provided. Please provide at least one mandatory flag.'
+      );
     }
 
-    return Logger.logError(
-      `No input file. Please provide a valid file path.`
+    // These flags dump text with console.log inside cfs-lib, which would
+    // corrupt the JSON envelope on stdout.
+    if (
+      this.jsonEnabled() &&
+      (flags.debug_heuristics ||
+        flags.debug_cus ||
+        flags.debug_lt ||
+        flags.debug_abbrevs ||
+        flags.debug_dies)
+    ) {
+      this.error(
+        'The --debug_heuristics, --debug_cus, --debug_lt, --debug_abbrevs and --debug_dies flags only support text output.',
+        {code: 'ELF_INFO_UNSUPPORTED_JSON_FLAGS'}
+      );
+    }
+
+    const result: Record<string, unknown> = {};
+    const parser = await this.initializeParser(
+      flags.nodb,
+      flags.verbose
     );
+
+    const md = parser.getDataModel();
+    const headerInf = getMetadataHeaderInfo(md, this.jsonEnabled());
+
+    if (flags.header) {
+      const header: Record<string, number | string> = {};
+
+      this.log(`\nHeader Info:`);
+      for (const item of headerInf) {
+        const itemVal = item.value.toString() || '';
+        if (itemVal !== '') {
+          header[item.label] =
+            typeof item.value === 'number' ||
+            item.label === 'HeaderSize'
+              ? Number(itemVal)
+              : itemVal;
+          this.log(`${item.label}: ${item.value}`);
+        }
+      }
+
+      result.Header = header;
+    }
+
+    if (flags.attributes) {
+      if (md.elfArmAttributes) {
+        const armAttributes = mapArmAttributes(
+          md.elfArmAttributes as unknown as Record<
+            symbol,
+            number | string
+          >
+        );
+        const attrNotNull = armAttributes.filter(
+          (item) => item.value !== undefined && item.value !== null
+        );
+
+        if (this.jsonEnabled()) {
+          formatHeaderInfoIntoJsonStringData(
+            attrNotNull as HeaderInfo[],
+            '_'
+          );
+        } else {
+          formatHeaderInfoIntoCliStringData(
+            attrNotNull as HeaderInfo[]
+          );
+        }
+
+        const attrs: Record<string, number | string> = {};
+        this.log(`\nAttributes Info:`);
+        for (const item of attrNotNull) {
+          if (item.value !== undefined && item.value !== null) {
+            attrs[item.label] = item.value;
+            this.log(`${item.label}: ${item.value}`);
+          }
+        }
+
+        result.AttributesInfo = attrs;
+      } else {
+        this.log('ELF file has no ARM attributes');
+      }
+    }
+
+    if (flags.core) {
+      const dataToDisplay: string[] = [
+        headerInf
+          .find((item) => item.label === 'Class')
+          ?.value.toString() || '',
+        headerInf
+          .find((item) => item.label === 'Data')
+          ?.value.toString() || '',
+        headerInf
+          .find((item) => item.label === 'Type')
+          ?.value.toString() || '',
+        headerInf
+          .find((item) => item.label === 'Machine')
+          ?.value.toString() || '',
+        headerInf
+          .find((item) => item.label === 'OsAbi')
+          ?.value.toString() || '',
+        headerInf.find((item) => item.label === 'AbiVersion')
+          ?.value === undefined
+          ? ''
+          : 'ABI Version ' +
+            (
+              headerInf.find((item) => item.label === 'AbiVersion')
+                ?.value ?? ''
+            ).toString(),
+        headerInf.find((item) => item.label === 'AbiVersion')
+          ?.value === 0
+          ? 'statically linked'
+          : '',
+        md.elfSectionHeaders.some(
+          (item) => item.shName === '.debug_info'
+        )
+          ? 'with debug_info'
+          : 'with no debug_info',
+        (md.elfSectionHeaders.some(
+          (item) => item.shName === '.debug_info'
+        ) ?? md.elfSectionHeaders.some((item) => item.type === 2))
+          ? 'not stripped'
+          : 'stripped'
+      ];
+
+      const fileInfo = dataToDisplay
+        .filter((item) => item !== '')
+        .join(', ');
+      this.log(`\nFile Info:`);
+      this.log(fileInfo);
+      result.FileInfo = fileInfo;
+    }
+
+    if (flags.debug_heuristics) {
+      md.getHeuristics().print();
+    }
+
+    if (flags.fsize) {
+      const sizeData = new Map<string, number>();
+
+      for (const section of md.elfSectionHeaders) {
+        const bucket = getBucket(section.flags, section.type);
+        if (bucket !== undefined && bucket !== '') {
+          const current = sizeData.get(bucket) || 0;
+          sizeData.set(bucket, current + Number(section.size));
+        }
+      }
+
+      this.log(`\nSize Info:`);
+      for (const [key, value] of sizeData) {
+        this.log(`${key}: ${value}`);
+      }
+
+      result.SizeInfo = Object.fromEntries(sizeData);
+    }
+
+    if (flags.debug_segments) {
+      for (const segment of md.elfProgramHeaders) {
+        this.printSegment(md, segment);
+      }
+    }
+
+    if (flags.debug_sections) {
+      for (const section of md.elfSectionHeaders) {
+        this.printSection(section);
+      }
+    }
+
+    if (flags.debug_syms) {
+      this.processSyms(md);
+    }
+
+    if (
+      flags.debug_cus ||
+      flags.debug_lt ||
+      flags.debug_abbrevs ||
+      flags.debug_dies
+    ) {
+      if (md.dw) {
+        for (const cu of md.dw.compilationUnits) {
+          cu.print(
+            flags.debug_lt,
+            flags.debug_abbrevs,
+            flags.debug_dies
+          );
+        }
+      } else {
+        this.log('ELF file does not contain debugging information!');
+      }
+    }
+
+    return result;
   }
 
   private printSection(section: ElfSectionHeader, prefix = '') {

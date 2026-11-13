@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ export class Locatorspaths {
   );
 
   public getRadiobuttonSoc(socValue: string): By {
-    return By.xpath(`//*[@id='MAX${socValue}']`);
+    return By.xpath(`//*[@id='${socValue}']`);
   }
 
   public continueButton: By = By.xpath(

@@ -7,7 +7,7 @@ particularly with large model sizes and high MAC usage. Tests validate that
 appropriate optimization suggestions are generated based on model characteristics
 and resource constraints.
 
-Copyright (c) 2025 Analog Devices, Inc. All Rights Reserved.
+Copyright (c) 2025-2026 Analog Devices, Inc. All Rights Reserved.
 Released under the terms of the "LICENSE.md" file in the root directory.
 """
 import unittest
@@ -17,16 +17,16 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from utils import has_tf, get_tf
 
-from cfsai_compatibility_analyzer.analyze_compatibility import CompatibilityAnalyzer
-from cfsai_compatibility_analyzer.schemas import (
+from cfsai_model_explorer.backends.tflm_static.compat import CompatibilityAnalyzer
+from cfsai_model_explorer.backends.tflm_static.compat_schemas import (
     CompatibilityReport,
     MemoryIssue,
     OperatorIssue,
     UnsupportedTypeIssue,
     SeverityLevel,
 )
-from cfsai_resource_profiler.profile_resources import TFLiteResourceProfiler
-from cfsai_resource_profiler.schemas import (
+from cfsai_model_explorer.backends.tflm_static.profiler import TFLiteResourceProfiler
+from cfsai_model_explorer.backends.tflm_static.profiler_schemas import (
     ResourceProfileReport,
     OptimizationOpportunities,
     MemoryAnalysis,
@@ -201,7 +201,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
         )
         
         # Mock the parser to return our large model
-        with patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser') as mock_parser_class:
+        with patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser') as mock_parser_class:
             mock_parser = Mock()
             mock_parser_class.return_value = mock_parser
             mock_parser.parse_model.return_value = large_model
@@ -259,7 +259,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
             has_large_dense=True
         )
         
-        with patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser') as mock_parser_class:
+        with patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser') as mock_parser_class:
             mock_parser = Mock()
             mock_parser_class.return_value = mock_parser
             mock_parser.parse_model.return_value = high_mac_model
@@ -312,7 +312,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
             target_dtype="FLOAT32"
         )
         
-        with patch('cfsai_resource_profiler.profile_resources.TFLiteParser') as mock_parser_class:
+        with patch('cfsai_model_explorer.backends.tflm_static.profiler.TFLiteParser') as mock_parser_class:
             mock_parser = Mock()
             mock_parser_class.return_value = mock_parser
             mock_parser.parse_model.return_value = large_model
@@ -385,7 +385,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
             target_dtype="FLOAT32"
         )
         
-        with patch('cfsai_resource_profiler.profile_resources.TFLiteParser') as mock_parser_class:
+        with patch('cfsai_model_explorer.backends.tflm_static.profiler.TFLiteParser') as mock_parser_class:
             mock_parser = Mock()
             mock_parser_class.return_value = mock_parser
             mock_parser.parse_model.return_value = high_mac_model
@@ -508,7 +508,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
                 )
                 
                 # Test compatibility analyzer
-                with patch('cfsai_compatibility_analyzer.analyze_compatibility.TFLiteParser') as mock_parser_class:
+                with patch('cfsai_model_explorer.backends.tflm_static.compat.TFLiteParser') as mock_parser_class:
                     mock_parser = Mock()
                     mock_parser_class.return_value = mock_parser
                     mock_parser.parse_model.return_value = model
@@ -520,7 +520,7 @@ class TestOptimizationRecommendations(unittest.TestCase):
                     compat_fixes = compat_report.get_quick_fixes()
                     
                 # Test resource profiler
-                with patch('cfsai_resource_profiler.profile_resources.TFLiteParser') as mock_parser_class:
+                with patch('cfsai_model_explorer.backends.tflm_static.profiler.TFLiteParser') as mock_parser_class:
                     mock_parser = Mock()
                     mock_parser_class.return_value = mock_parser
                     mock_parser.parse_model.return_value = model
@@ -541,6 +541,92 @@ class TestOptimizationRecommendations(unittest.TestCase):
                 print(f"  Compatibility recommendations: {len(compat_fixes)}")
                 print(f"  Resource recommendations: {len(memory_recs)}")
                 print(f"  Total recommendations: {total_recommendations}")
+
+    def create_mock_unmatched_op_model(self, flash_kb):
+        """Create mock ModelDetails whose only layer has no architecture rule.
+
+        ADD is not covered by the smart suggestion rules, which only match
+        CONV*, FULLY_CONNECTED and DENSE.
+
+        Args:
+            flash_kb: Parameter memory for the layer, selecting the fallback
+                branch for layers with and without stored constants
+
+        Returns:
+            ModelDetails containing a single ADD layer
+        """
+        layer = LayerDetail(
+            index=0,
+            name="ADD",
+            macs=128,
+            flash_kb=flash_kb,
+            kernel_tensors=[],
+            ram_kb=0.25,
+            input_tensors=[0],
+            output_tensors=[1],
+            lifecycle=TensorLifecycle(new=1, live=2, terminated=0)
+        )
+
+        return ModelDetails(
+            model_name="unmatched_op_model",
+            model_path="/tmp/unmatched_op_model.tflite",
+            framework="TensorFlow Lite",
+            model_size_on_disk_kb=0.04,
+            target_dtype="int16",
+            layer_count=1,
+            layer_details=[layer],
+            total_macs=128,
+            model_total_param_memory_b=flash_kb * 1024,
+            model_peak_ram_kb=0.25,
+        )
+
+    def test_layer_suggestions_are_never_null(self):
+        """Test layers without an architecture rule still get a suggestion.
+
+        Regression test for CFSIO-26546, where ADD produced
+        "suggestion": null and the report viewer rejected the report.
+        """
+        # flash_kb > 0 and flash_kb == 0 select different fallback branches
+        for flash_kb in (0.035, 0.0):
+            with self.subTest(flash_kb=flash_kb):
+                model = self.create_mock_unmatched_op_model(flash_kb)
+
+                with patch(
+                    'cfsai_model_explorer.backends.tflm_static.profiler.TFLiteParser'
+                ) as mock_parser_class:
+                    mock_parser = Mock()
+                    mock_parser_class.return_value = mock_parser
+                    mock_parser.parse_model.return_value = model
+
+                    report = self.resource_profiler.analyze_model(
+                        "/tmp/unmatched_op_model.tflite",
+                        self.constrained_resource_profile
+                    )
+
+                # The report viewer consumes the serialized form, so assert there
+                opportunities = report.model_dump(
+                    mode="json"
+                )["optimization_opportunities"]
+
+                for section in ("layerwise_opportunities", "macs_opportunities"):
+                    entries = opportunities[section]
+                    self.assertGreater(
+                        len(entries), 0,
+                        f"{section} must not be empty or the check is vacuous"
+                    )
+
+                    for entry in entries:
+                        suggestion = entry["suggestion"]
+                        self.assertIsInstance(
+                            suggestion, str,
+                            f"{section} layer {entry['layer_index']} "
+                            f"serialized a non-string suggestion"
+                        )
+                        self.assertTrue(
+                            suggestion.strip(),
+                            f"{section} layer {entry['layer_index']} "
+                            f"serialized an empty suggestion"
+                        )
 
 
 if __name__ == "__main__":

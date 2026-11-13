@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2026 Analog Devices, Inc.
+﻿# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@ import logging
 import sys
 import platform
 import subprocess
+import datetime
+import tempfile
+import re
 from pathlib import Path
 import urllib.request as request
 import json
@@ -27,6 +30,7 @@ from typing import Self, Optional
 
 logger = logging.getLogger(__name__)
 
+TFLM_SFX_REPO_URL = 'https://github.com/analogdevicesinc/tflite-micro.git'
 
 @dataclass
 class Package:
@@ -97,7 +101,7 @@ class Version:
             patch = None
             major, minor = split
         else:
-            print(f'Invalid version {v}')
+            logger.error(f'Invalid version {v}')
             exit(-1)
         return cls(int(major), int(minor), patch)
 
@@ -223,7 +227,7 @@ def tarfile_filter(ti: tarfile.TarInfo) -> tarfile.TarInfo:
     return ti
 
 def compress_directory_contents(source_dir: Path, output_path: Path):
-    logger.info(f'Compressing {source_dir}')
+    logger.info('Compressing package')
 
     with tarfile.open(output_path, 'w:xz') as tar:
         for x in source_dir.iterdir():
@@ -248,17 +252,18 @@ def pip_install(python_path: Path, dist_path: Path, package: Package):
         '--torch-backend', 'cpu',
         package.module
     ]
-    logger.info(f'Executing => {" ".join(pip_cmd)}')
+    logger.info('Building python environment')
+    logger.debug(f'Executing => {" ".join(pip_cmd)}')
     result = subprocess.run(
         pip_cmd,
         capture_output=True
     )
     logger.debug(f'return code => {result.returncode}')
     logger.debug(f'stdout => {result.stdout.decode("utf-8")}')
-    logger.warning(f'stderr => {result.stderr.decode("utf-8")}')
+    logger.debug(f'stderr => {result.stderr.decode("utf-8")}')
 
     if result.returncode != 0:
-        logger.error('pip failed')
+        logger.error(f'pip failed\nstderr: {result.stderr.decode("utf-8")}')
         exit(-1)
 
 def bootstrap(repo_root: Path, workspace: Path):
@@ -271,17 +276,18 @@ def bootstrap(repo_root: Path, workspace: Path):
     if 'linux' in system:
         cargo_cmd.extend([ '--target', 'x86_64-unknown-linux-musl' ])
 
-    logger.info(f'Executing => {" ".join(cargo_cmd)}')
+    logger.info('Building cfsai compatibility executable')
+    logger.debug(f'Executing => {" ".join(cargo_cmd)}')
     result = subprocess.run(
         cargo_cmd,
         capture_output=True
     )
     logger.debug(f'return code => {result.returncode}')
     logger.debug(f'stdout => {result.stdout.decode("utf-8")}')
-    logger.warning(f'stderr => {result.stderr.decode("utf-8")}')
+    logger.debug(f'stderr => {result.stderr.decode("utf-8")}')
 
     if result.returncode != 0:
-        logger.error('cargo failed')
+        logger.error(f'cargo failed\nstderr: {result.stderr.decode("utf-8")}')
         exit(-1)
     
     build_name = 'cfsai.exe' if 'windows' in platform.system().lower() else 'cfsai'
@@ -304,17 +310,18 @@ def uv_build(package: Package):
     build_cmd = [ 'uv', 'build', '--directory', package.dir ]
     if package.name == "cfsai":
         build_cmd.append("--all")
-    logger.info(f'Executing => {" ".join(build_cmd)}')
+    logger.info(f'Building {package.name} sources')
+    logger.debug(f'Executing => {" ".join(build_cmd)}')
     result = subprocess.run(
         build_cmd,
         capture_output=True
     )
     logger.debug(f'return code => {result.returncode}')
     logger.debug(f'stdout => {result.stdout.decode("utf-8")}')
-    logger.warning(f'stderr => {result.stderr.decode("utf-8")}')
+    logger.debug(f'stderr => {result.stderr.decode("utf-8")}')
 
     if result.returncode != 0:
-        logger.error('build failed')
+        logger.error(f'build failed\nstderr: {result.stderr.decode("utf-8")}')
         exit(-1)
 
 def backend_json(repo_root: Path, workspace: Path):
@@ -327,7 +334,7 @@ def backend_json(repo_root: Path, workspace: Path):
 
 def extract_zip(src: Path, dest: Path):
     try:
-        logger.info(f'Executing => extract {src}')
+        logger.debug(f'Executing => extract {src}')
         with zipfile.ZipFile(src, 'r') as zip_ref:
             zip_ref.extractall(dest)
     except FileNotFoundError:
@@ -339,23 +346,121 @@ def extract_zip(src: Path, dest: Path):
     except Exception as e:
         logger.error(f'extracting ZIP file: {e}')
         exit(-1)
+        
+def run_checked(cmd: list[str], cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
+    logger.debug(f'Executing => {" ".join(cmd)}')
+    result = subprocess.run(
+        cmd,
+        cwd=cwd,
+        capture_output=True,
+        text=True
+    )
+    logger.debug(f'return code => {result.returncode}')
+    logger.debug(f'stdout => {result.stdout}')
+    logger.debug(f'stderr => {result.stderr}')
+    if result.returncode != 0:
+        logger.error(f'Command failed: {" ".join(cmd)}\nstderr: {result.stderr}')
+        exit(-1)
+    return result
+
+
+def read_tflm_sfx_hash(tflm_dir: Path) -> str:
+    hash_file = tflm_dir / 'tflm_src.hash'
+    if not hash_file.exists():
+        logger.error(f'Hash file not found: {hash_file.as_posix()}')
+        exit(-1)
+
+    for line in hash_file.read_text(encoding='utf-8').splitlines():
+        candidate = line.split('#', 1)[0].strip()
+        if candidate:
+            if re.fullmatch(r'[0-9a-fA-F]{7,40}', candidate):
+                return candidate
+            logger.error(f'Invalid hash format in {hash_file.as_posix()}: "{candidate}"')
+            exit(-1)
+
+    logger.error(f'No hash found in {hash_file.as_posix()}')
+    exit(-1)
+
+
+def copy_required_tree(src: Path, dest: Path):
+    if not src.exists():
+        logger.error(f'Required source path not found: {src.as_posix()}')
+        exit(-1)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dest, dirs_exist_ok=True)
+
+
+def copy_required_file(src: Path, dest: Path):
+    if not src.exists():
+        logger.error(f'Required source file not found: {src.as_posix()}')
+        exit(-1)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dest)
+
+
+def populate_sharc_src_from_checkout(checkout_root: Path, tflm_dest: Path):
+    src_root = tflm_dest / 'src'
+
+    required_dirs = [ 
+        'adi_sharcfx_nn',
+        'cces/examples/shared',
+        'tensorflow',
+        'third_party'
+    ]
+
+    for dirpath in required_dirs:
+        dest = src_root / dirpath
+        src = checkout_root / dirpath
+        copy_required_tree(src, dest)
+
+
+def write_tflm_git_info(tflm_dest: Path, requested_ref: str, resolved_hash: str):
+    downloaded_at = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
+    info = (
+        f'repository: {TFLM_SFX_REPO_URL}\n'
+        f'requested_ref: {requested_ref}\n'
+        f'resolved_hash: {resolved_hash}\n'
+        f'downloaded_at_utc: {downloaded_at}\n'
+    )
+    (tflm_dest / 'git_info.txt').write_text(info, encoding='utf-8')
 
 def tflm_src_cortex(repo_root: Path, workspace: Path):
-    # Copy the TFLM source and libs (zipped)
+    # Copy the zipped TFLM sources, lib
+    logger.info('Extracting Cortex library')
     tflm_src  = repo_root / 'platforms' / 'cortex-m' / 'lib' / 'tflite-micro' / 'tflm.zip'
     tflm_dest = workspace / 'lib' / 'cortex-m'
+
+    if tflm_dest.exists():
+        shutil.rmtree(tflm_dest)
     tflm_dest.mkdir(parents=True, exist_ok=True)
 
     extract_zip(tflm_src, tflm_dest)
 
-def tflm_src_sfx(repo_root: Path, workspace: Path):
-    # Copy the TFLM sources (zipped), the Makefiles
+def tflm_src_sfx(repo_root: Path, workspace: Path, use_latest: bool = False):
+    # Download TFLM sources from public GitHub, copy the Makefiles
+    logger.info('Downloading SHARC-FX library')
     tflm_src  = repo_root / 'platforms' / 'sharc-fx' / 'lib' / 'tflite-micro'
     tflm_dest = workspace / 'lib' / 'sharc-fx' / 'tflite-micro'
+
+    if tflm_dest.exists():
+        shutil.rmtree(tflm_dest)
     tflm_dest.mkdir(parents=True, exist_ok=True)
 
-    extract_zip(tflm_src / 'tflm_src.zip', tflm_dest)
+    with tempfile.TemporaryDirectory(prefix='tflm-sfx-') as tmpdir:
+        checkout_root = Path(tmpdir) / 'tflite-micro'
+        run_checked(['git', 'clone', TFLM_SFX_REPO_URL, str(checkout_root)])
 
+        if use_latest:
+            logger.info('Using latest TFLM SHARC-FX sources from repository HEAD')
+            requested_ref = 'latest'
+        else:
+            requested_ref = read_tflm_sfx_hash(tflm_src)
+            run_checked(['git', 'checkout', '--detach', requested_ref], cwd=checkout_root)
+
+        resolved_hash = run_checked(['git', 'rev-parse', 'HEAD'], cwd=checkout_root).stdout.strip()
+        run_checked(['git', 'submodule', 'update', '--init', '--recursive'], cwd=checkout_root)
+        populate_sharc_src_from_checkout(checkout_root, tflm_dest)
+        write_tflm_git_info(tflm_dest, requested_ref, resolved_hash)
     try:
         shutil.copy(tflm_src / 'Makefile' , tflm_dest / 'Makefile')
         shutil.copy(tflm_src / 'project.mk' , tflm_dest / 'project.mk')
@@ -375,11 +480,12 @@ def examples(repo_root: Path, workspace: Path):
     shutil.copytree(src, dest, dirs_exist_ok=True)
 
 def strip(dist_path: Path):
+    logger.info('Stripping debug info from binaries')
     system = platform.system().lower()
     if 'linux' in system or 'darwin' in system:
         strip_cmd = f"strip --strip-unneeded $(find {dist_path} -type f -executable)"
     
-        logger.info(f'Executing => {strip_cmd}')
+        logger.debug(f'Executing => {strip_cmd}')
         result = subprocess.run(
             strip_cmd,
             shell=True,
@@ -399,14 +505,14 @@ def strip(dist_path: Path):
                 + list(dist_path.rglob("*.pyd"))
 
             if not exe_files:
-                logger.info("No executables found to strip on Windows.")
+                logger.debug("No executables found to strip on Windows.")
                 return
 
             # Remove files that cause problems when stripped
             excluded_files = {"libiomp5md.dll"}
             exe_files = [p for p in exe_files if p.name not in excluded_files]
             
-            logger.info(f"Stripping {len(exe_files)} files")
+            logger.debug(f"Stripping {len(exe_files)} files")
             batch_size = 50
             # Batch files to avoid command line length issues
             for i in range(0, len(exe_files), batch_size):
@@ -414,11 +520,14 @@ def strip(dist_path: Path):
                 strip_cmd = ["llvm-strip"] + [str(f) for f in batch]
                 result = subprocess.run(strip_cmd, capture_output=True, text=True)
                 if result.returncode != 0:
-                    logger.error(f"Error stripping batch {i//batch_size + 1}: {result.stderr}")
+                    # Only report errors as debug since stripping errors can
+                    # be safely ignored. Some files appear invalid and failing
+                    # to strip just results in a larger file. 
+                    logger.debug(f"Error stripping batch {i//batch_size + 1}: {result.stderr}")
                 else:
-                    logger.info(f"Batch {i//batch_size + 1} stripped successfully")
+                    logger.debug(f"Batch {i//batch_size + 1} stripped successfully")
         else:
-            logger.info('Could not find `llvm-strip`')
+            logger.warning('Could not find `llvm-strip`')
             return
 
 def remove_pyc(dist_path: Path):
@@ -431,7 +540,7 @@ def remove_static_libs(dist_path: Path):
             f.unlink()
         
 
-def package(package:Package, pyver: str, no_tar: bool) -> None:
+def package(package:Package, pyver: str, no_tar: bool, use_latest: bool) -> None:
     release_data = ReleaseDataV1.from_pinned_release()
     dist = Distribution.from_pyver_and_tag(pyver, release_data.tag)
 
@@ -464,7 +573,7 @@ def package(package:Package, pyver: str, no_tar: bool) -> None:
         # Components that only need to be produced in the base package
         bootstrap(repo_root_path, workspace_path)
         backend_json(repo_root_path, workspace_path)
-        tflm_src_sfx(repo_root_path, workspace_path)
+        tflm_src_sfx(repo_root_path, workspace_path, use_latest=use_latest)
         tflm_src_cortex(repo_root_path, workspace_path)
         examples(repo_root_path, workspace_path)
     strip(workspace_path)
@@ -493,14 +602,15 @@ if __name__ == '__main__':
     parser.add_argument('--py-version', default="3.11", help='Python version (default 3.11)')
     parser.add_argument('--package', default="cfsai", help='Package to build (default cfsai)')
     parser.add_argument('--no-tar', action='store_true', help='Don\'t compress final artifact')
+    parser.add_argument('--use-latest', action='store_true', help='Use latest TFLM SHARC-FX sources instead of pinned hash')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     args = parser.parse_args()
 
-    logging.basicConfig( level=logging.DEBUG if args.verbose else logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
     if args.package not in packages:
         keys = list(packages.keys())
         logger.error(f' package not found: {args.package}. Valid options: {", ".join(keys)}')
         exit(-1)
 
-    package(packages[args.package], args.py_version, args.no_tar)
+    package(packages[args.package], args.py_version, args.no_tar, args.use_latest)

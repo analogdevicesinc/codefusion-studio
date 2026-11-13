@@ -24,7 +24,11 @@ import {
 	TensorType
 } from "./schema/tflite.js";
 import { ByteBuffer } from "flatbuffers";
-import { getOpName } from "./operator-info.js";
+import {
+	CUSTOM_OPCODE,
+	getKnownCustomOpMethod,
+	getOpName
+} from "./operator-info.js";
 
 const TENSOR_TYPE_SIZES = new Map<TensorType, number>([
 	[TensorType.BOOL, 1],
@@ -44,6 +48,26 @@ const TENSOR_TYPE_SIZES = new Map<TensorType, number>([
 	// TensorType.STRING: Not supported in tflite-micro
 ]);
 
+// Reference RAM used only to scale the safety margin, not a device limit.
+const REFERENCE_RAM = 256 * 1024;
+const SCRATCH_BUFFER_WEIGHT_FACTOR = 0.3;
+
+// Matches the alignas(16) the generated C uses for the arena.
+const ARENA_ALIGNMENT = 16;
+
+// Target a fraction of the reference RAM, spending the headroom on the safety
+// margin; large models still get at least MIN_SAFETY_MARGIN.
+const ARENA_RAM_FRACTION = 0.75;
+const MIN_SAFETY_MARGIN = 0.2;
+const MAX_SAFETY_MARGIN = 3.0;
+
+// MicroAllocator bookkeeping (TfLiteEvalTensor, NodeAndRegistration, op data,
+// scratch-buffer handles) is roughly constant per graph and invisible in the
+// schema, so it dominates tiny models: measured arenas run up to 11x the
+// computed subtotal below this size. No multiplicative margin covers that
+// without inflating mid-size models, and 4 KB is too small to break a link.
+const SMALL_MODEL_ARENA_FLOOR = 4 * 1024;
+
 /**
  * Class to manage tensorflow lite information.
  *
@@ -53,7 +77,7 @@ export default class TfliteInfo {
 	private ops: Set<string>;
 	private numTensors: number;
 	private activationSize: number;
-	private paramSize: number;
+	private maxWeightSize: number;
 	private opCodes: (OperatorCode | null)[];
 
 	public summary: string;
@@ -71,7 +95,7 @@ export default class TfliteInfo {
 		this.graph = "";
 		this.numTensors = 0;
 		this.activationSize = 0;
-		this.paramSize = 0;
+		this.maxWeightSize = 0;
 		this.inputWidth = [];
 		this.inputLen = [];
 		this.outputWidth = [];
@@ -102,11 +126,32 @@ export default class TfliteInfo {
 			this.opCodes.push(code);
 			// DeprecatedBuiltinCode() for older models (codes < 127)
 			// BuiltinCode() for codes >= 127
-			this.addOp(
-				getOpName(
-					Math.max(code.deprecatedBuiltinCode(), code.builtinCode())
-				)
+			const builtinCode = Math.max(
+				code.deprecatedBuiltinCode(),
+				code.builtinCode()
 			);
+
+			if (builtinCode === CUSTOM_OPCODE) {
+				const customCode = code.customCode();
+
+				if (!customCode) {
+					throw new Error(
+						`${fname} is corrupt: custom operator at index ${String(i)} has no custom_code`
+					);
+				}
+
+				const knownMethod = getKnownCustomOpMethod(customCode);
+
+				if (knownMethod) {
+					this.addOp(knownMethod);
+				} else {
+					throw new Error(
+						`Custom operator '${customCode}' has no known resolver method.`
+					);
+				}
+			} else {
+				this.addOp(getOpName(builtinCode));
+			}
 		}
 
 		this.numOps = this.ops.size;
@@ -146,6 +191,9 @@ export default class TfliteInfo {
 			this.addToGraph(`  Tensors (${String(numGraphTensors)}):`);
 			this.addTensors(numGraphTensors);
 
+			// Aligned byte size of each non-constant tensor, keyed by tensor index
+			const variableTensorSizes = new Map<number, number>();
+
 			for (let j = 0; j < numGraphTensors; j++) {
 				const tensor = subgraph.tensors(j);
 
@@ -160,15 +208,20 @@ export default class TfliteInfo {
 					: "(no name)";
 				this.addToGraph(`    ${String(j)}: ${name}`);
 
-				// Attempt to calculate arena size
-				const size = this.tensorConstLength(model, tensor);
-
-				if (size) {
-					this.addToParams(size);
+				// Constants (weights/biases) live in flash, not the arena, but
+				// their size drives the kernel scratch-buffer estimate below.
+				if (this.isConstantTensor(model, tensor)) {
+					this.maxWeightSize = Math.max(
+						this.maxWeightSize,
+						this.alignedTensorSize(tensor)
+					);
 				} else {
-					this.addTensorToArena(tensor);
+					variableTensorSizes.set(j, this.alignedTensorSize(tensor));
 				}
 			}
+
+			// Peak concurrent usage, not a flat sum of every tensor
+			this.updateArenaPeak(subgraph, variableTensorSizes);
 		}
 
 		const firstSg = model.subgraphs(0);
@@ -273,7 +326,13 @@ export default class TfliteInfo {
 				opCode.deprecatedBuiltinCode(),
 				opCode.builtinCode()
 			);
-			graphOps.add(getOpName(bCode));
+
+			if (bCode === CUSTOM_OPCODE) {
+				const customCode = opCode.customCode() ?? "unknown";
+				graphOps.add(`Custom(${customCode})`);
+			} else {
+				graphOps.add(getOpName(bCode));
+			}
 		}
 
 		return [Array.from(graphOps).sort(), graphOps.size];
@@ -362,31 +421,21 @@ export default class TfliteInfo {
 		}
 	}
 
-	private tensorConstLength(model: Model, tensor: Tensor): number {
-		// Returns a length if tensor has a constant buffer.
-		// Returns 0 if variable
-		if (!tensor.isVariable()) {
-			const bufId = tensor.buffer();
-
-			if (bufId > 0) {
-				const buf = model.buffers(bufId);
-
-				if (buf) {
-					return buf.dataLength();
-				}
-			}
+	private isConstantTensor(model: Model, tensor: Tensor): boolean {
+		if (tensor.isVariable()) {
+			return false;
 		}
 
-		return 0;
-	}
+		const bufId = tensor.buffer();
 
-	/**
-	 * Increment the size required for the model params.
-	 *
-	 * @param n - The number by which to increment the param count.
-	 */
-	private addToParams(n: number) {
-		this.paramSize += n;
+		if (bufId <= 0) {
+			return false;
+		}
+
+		const buf = model.buffers(bufId);
+
+		// An empty buffer has no data, so TFLM allocates it in the arena.
+		return buf !== null && buf.dataLength() > 0;
 	}
 
 	private tensorNumElements(tensor: Tensor): number {
@@ -427,20 +476,174 @@ export default class TfliteInfo {
 		);
 	}
 
-	private alignUp(x: number, alignment = 16): number {
+	private alignUp(x: number, alignment = ARENA_ALIGNMENT): number {
 		// eslint-disable-next-line no-bitwise
 		return (x + (alignment - 1)) & ~(alignment - 1);
 	}
 
 	/**
-	 * Increment the arena by the size of the tensor.
+	 * Compute the alignment-padded size of a tensor's data buffer.
 	 *
-	 * @param tensor - The tensor to be accounted for in the arena.
+	 * @param tensor - The tensor to size.
+	 * @returns Aligned size in bytes.
 	 */
-	private addTensorToArena(tensor: Tensor) {
+	private alignedTensorSize(tensor: Tensor): number {
 		const size =
 			this.tensorNumElements(tensor) * this.tensorTypeSize(tensor);
-		this.activationSize += this.alignUp(size);
+		return this.alignUp(size);
+	}
+
+	/**
+	 * Add this subgraph's peak concurrent tensor usage to the arena estimate.
+	 *
+	 * Tracks the first/last operator index that references each non-constant
+	 * tensor (its liveness window), then sums the tensors alive at each
+	 * operator step to find the peak, instead of assuming every tensor is
+	 * alive for the whole graph.
+	 *
+	 * @param subgraph - Subgraph to analyze.
+	 * @param tensorSizes - Aligned size of each non-constant tensor, keyed by tensor index.
+	 */
+	private updateArenaPeak(
+		subgraph: SubGraph,
+		tensorSizes: Map<number, number>
+	) {
+		const numOperators = subgraph.operatorsLength();
+		const firstUse = new Map<number, number>();
+		const lastUse = new Map<number, number>();
+
+		const markUse = (tensorIdx: number | null, opIdx: number) => {
+			if (
+				tensorIdx === null ||
+				tensorIdx < 0 ||
+				!tensorSizes.has(tensorIdx)
+			) {
+				return;
+			}
+
+			const first = firstUse.get(tensorIdx);
+			if (first === undefined || opIdx < first) {
+				firstUse.set(tensorIdx, opIdx);
+			}
+
+			const last = lastUse.get(tensorIdx);
+			if (last === undefined || opIdx > last) {
+				lastUse.set(tensorIdx, opIdx);
+			}
+		};
+
+		for (let opIdx = 0; opIdx < numOperators; opIdx++) {
+			const op = subgraph.operators(opIdx);
+
+			if (!op) {
+				throw new Error(
+					`Subgraph operator not found at index ${String(opIdx)}`
+				);
+			}
+
+			for (let i = 0; i < op.inputsLength(); i++) {
+				markUse(op.inputs(i), opIdx);
+			}
+
+			for (let i = 0; i < op.outputsLength(); i++) {
+				markUse(op.outputs(i), opIdx);
+			}
+		}
+
+		// Tensors never referenced by an operator (e.g. unused graph I/O) are
+		// given a minimal lifetime: they still count, but holding them live for
+		// the whole subgraph inflates the peak for every other operator step.
+		for (const tensorIdx of tensorSizes.keys()) {
+			if (!firstUse.has(tensorIdx)) {
+				firstUse.set(tensorIdx, 0);
+				lastUse.set(
+					tensorIdx,
+					Math.min(1, Math.max(numOperators - 1, 0))
+				);
+			}
+		}
+
+		let peakUsage = 0;
+
+		for (let opIdx = 0; opIdx < Math.max(numOperators, 1); opIdx++) {
+			let usageAtStep = 0;
+
+			for (const [tensorIdx, size] of tensorSizes) {
+				const first = firstUse.get(tensorIdx) ?? 0;
+				const last = lastUse.get(tensorIdx) ?? first;
+
+				if (first <= opIdx && opIdx <= last) {
+					usageAtStep += size;
+				}
+			}
+
+			peakUsage = Math.max(peakUsage, usageAtStep);
+		}
+
+		const ffdUsage = this.packFirstFitDecreasing(
+			tensorSizes,
+			firstUse,
+			lastUse
+		);
+
+		// Parent tensors that are live at an IF/WHILE call stay allocated while
+		// the child subgraph runs, so summing subgraph peaks is a safe upper bound.
+		this.activationSize += Math.max(peakUsage, ffdUsage);
+	}
+
+	/**
+	 * Place tensors largest-first at the lowest arena offset that does not
+	 * overlap any already-placed tensor with an intersecting lifetime, in the
+	 * same way as TFLM's greedy memory planner.
+	 *
+	 * @param tensorSizes - Aligned size of each non-constant tensor.
+	 * @param firstUse - First operator index referencing each tensor.
+	 * @param lastUse - Last operator index referencing each tensor.
+	 * @returns Highest arena offset reached by any placed tensor.
+	 */
+	private packFirstFitDecreasing(
+		tensorSizes: Map<number, number>,
+		firstUse: Map<number, number>,
+		lastUse: Map<number, number>
+	): number {
+		const intervals = Array.from(tensorSizes.entries())
+			.filter(([, size]) => size > 0)
+			.map(([tensorIdx, size]) => ({
+				size,
+				start: firstUse.get(tensorIdx) ?? 0,
+				end: lastUse.get(tensorIdx) ?? firstUse.get(tensorIdx) ?? 0
+			}))
+			.sort((a, b) => b.size - a.size || a.start - b.start);
+
+		const placed: {
+			offset: number;
+			size: number;
+			start: number;
+			end: number;
+		}[] = [];
+		let total = 0;
+
+		for (const tensor of intervals) {
+			// Lifetimes are inclusive: tensors sharing an operator are both live.
+			const conflicts = placed
+				.filter((p) => p.start <= tensor.end && tensor.start <= p.end)
+				.sort((a, b) => a.offset - b.offset);
+
+			let offset = 0;
+
+			for (const p of conflicts) {
+				if (offset + tensor.size <= p.offset) {
+					break;
+				}
+
+				offset = Math.max(offset, p.offset + p.size);
+			}
+
+			placed.push({ ...tensor, offset });
+			total = Math.max(total, offset + tensor.size);
+		}
+
+		return total;
 	}
 
 	/**
@@ -484,7 +687,39 @@ export default class TfliteInfo {
 		return `TfLiteStatus adi_resolve_ops_${n} (tflite::MicroMutableOpResolver<${n.toUpperCase()}_NUM_OPERATORS>& resolver);`;
 	}
 
-	public arenaSize(errorMargin = 2): number {
-		return (this.activationSize + this.paramSize) * errorMargin;
+	/**
+	 * Estimate the TFLM tensor arena size.
+	 *
+	 * @returns Arena size in bytes.
+	 */
+	public arenaSize(): number {
+		// Kernels such as CONV_2D request scratch buffers (e.g. im2col) in the
+		// arena at Prepare() time. These are not graph tensors, so they cannot be
+		// measured from the schema and have to be approximated.
+		const scratchSize = Math.floor(
+			this.maxWeightSize * SCRATCH_BUFFER_WEIGHT_FACTOR
+		);
+		const subtotal = this.activationSize + scratchSize;
+		const arenaBudget = Math.floor(
+			REFERENCE_RAM * ARENA_RAM_FRACTION
+		);
+
+		// Spend whatever RAM headroom is left on the safety margin, so small
+		// models get more slack than large ones. Models that already exceed the
+		// budget fall back to the minimum margin; reporting that they do not fit
+		// is the caller's job, not this estimate's.
+		const affordableMargin =
+			subtotal > 0
+				? (arenaBudget - ARENA_ALIGNMENT) / subtotal - 1
+				: MAX_SAFETY_MARGIN;
+		const safetyMargin = Math.max(
+			MIN_SAFETY_MARGIN,
+			Math.min(affordableMargin, MAX_SAFETY_MARGIN)
+		);
+
+		return Math.max(
+			this.alignUp(Math.floor(subtotal * (1 + safetyMargin))),
+			SMALL_MODEL_ARENA_FLOOR
+		);
 	}
 }

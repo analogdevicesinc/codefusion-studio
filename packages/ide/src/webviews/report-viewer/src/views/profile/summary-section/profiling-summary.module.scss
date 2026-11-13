@@ -60,26 +60,8 @@
 	row-gap: layout.$spacing-5;
 }
 
-.infoItem {
-	display: flex;
-	flex-direction: column;
-	gap: layout.$spacing-2;
-	overflow: hidden;
-
-	.label {
-		@include fonts.heading-h6;
-		margin: 0;
-		text-transform: uppercase;
-	}
-
-	.value {
-		@include fonts.body-b1;
-		margin: 0;
-		color: colors.$description-foreground;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		overflow: hidden;
-	}
+.runtimeModelInfo {
+	align-content: start;
 }
 
 .hardwareInfoContainer {

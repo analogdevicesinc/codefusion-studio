@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,12 @@
  * limitations under the License.
  *
  */
+import type {FormattedSearchResultItem} from '../../../components/search-results-panel/types';
 import type {
 	PeripheralSearchResult,
 	PinSearchResult,
 	SignalSearchResult
 } from '../../../hooks/use-pinmux-search-results';
-
-export type FormatedSearchResultItem = {
-	sourceIndex: number;
-	key: string;
-	displayName: string;
-	subDisplayName?: string;
-};
 
 const collator = new Intl.Collator(undefined, {
 	numeric: true,
@@ -39,7 +33,7 @@ const sortByDisplayName = <T extends {displayName: string}>(
 
 export function formatPinResults(
 	results: PinSearchResult[]
-): FormatedSearchResultItem[] {
+): FormattedSearchResultItem[] {
 	return sortByDisplayName(
 		results.map((result, index) => ({
 			sourceIndex: index,
@@ -52,7 +46,7 @@ export function formatPinResults(
 
 export function formatSignalResults(
 	results: SignalSearchResult[]
-): FormatedSearchResultItem[] {
+): FormattedSearchResultItem[] {
 	return sortByDisplayName(
 		results.map((result, index) => ({
 			sourceIndex: index,
@@ -64,7 +58,7 @@ export function formatSignalResults(
 
 export function formatPeripheralResults(
 	results: PeripheralSearchResult[]
-): FormatedSearchResultItem[] {
+): FormattedSearchResultItem[] {
 	return sortByDisplayName(
 		results.map((result, index) => ({
 			sourceIndex: index,

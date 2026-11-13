@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,19 @@
 
 .table {
 	@include table.table-styles;
+	border-top: none;
+
+	& > * {
+		border-bottom: none;
+	}
+
+	vscode-data-grid-cell:not(:first-child) {
+		border-bottom: 1px solid colors.$default-border;
+	}
+
+	vscode-data-grid-cell:first-child {
+		background-color: colors.$default-background;
+	}
 }
 
 .sortable-title {
@@ -25,19 +38,12 @@
 }
 
 .name {
-	display: flex;
-	align-items: center;
 	color: colors.$active-cta;
 	cursor: pointer;
-
-	& div:first-child {
-		color: colors.$default-foreground;
-		position: absolute;
-		left: -10px;
-	}
 }
 
 .tableWrapper {
 	height: 100%;
 	overflow: auto;
+	margin-left: -16px;
 }

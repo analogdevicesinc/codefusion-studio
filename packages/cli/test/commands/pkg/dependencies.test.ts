@@ -20,6 +20,7 @@ import {
   runPkgTestsEnvVar,
   setupMockPkgCommandDeps
 } from '../../utils/pkg-test-helpers.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 async function uninstallIfInstalled(pkgName: string): Promise<void> {
   const {error} = await runPkgCommandWithAuthRetry([
@@ -82,6 +83,32 @@ describe('pkg dependencies', () => {
     expect(stdout).to.contain('- test_pkg_dep1/1.0');
     expect(stdout).to.contain('- test_pkg_dep2/1.0');
     expect(stdout).to.contain('- test_pkg_dep1dep/1.0');
+  });
+
+  it('returns dependencies as the JSON envelope data payload', async () => {
+    const {stdout, error} = await runPkgCommandWithAuthRetry([
+      'pkg',
+      'dependencies',
+      'test_pkg_consumer12/1.0',
+      '--format',
+      'json'
+    ]);
+
+    expect(error).to.be.undefined;
+
+    const parsed = assertValidEnvelope<{
+      dependencies: {name: string; version: string}[];
+    }>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data.dependencies).to.be.an('array');
+      expect(
+        parsed.data.dependencies.some(
+          (pkg) =>
+            `${pkg.name}/${pkg.version}` === 'test_pkg_dep1/1.0'
+        )
+      ).to.be.true;
+    }
   });
 
   it('shows unresolved requirements when --unresolved is used', async () => {

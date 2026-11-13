@@ -20,22 +20,49 @@ import {exec} from 'node:child_process';
 import {promisify} from 'node:util';
 import {readFile, rm} from 'node:fs/promises';
 
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 
+interface SymbolsData {
+  rows: Record<string, unknown>[];
+  rowsTotalNumber: number;
+}
+
 describe('elf symbols', () => {
+  const elfPath = path.resolve(
+    __dirname,
+    '../../../../cfs-lib/test/parsers/elf-parser/data/input.elf'
+  );
+  const query = '"SELECT * FROM symbols WHERE size > 0 limit 1"';
+
+  it('produces valid JSON output', async () => {
+    const {stdout} = await runCommand(
+      ['elf:symbols', elfPath, query, '--format=json'],
+      {root: '..'}
+    );
+
+    const parsed = assertValidEnvelope<SymbolsData>(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data).to.be.an('object');
+      expect(parsed.data.rows).to.be.an('array');
+      expect(parsed.data.rowsTotalNumber).to.equal(
+        parsed.data.rows.length
+      );
+    }
+  });
+
   describe('output colors', () => {
     it('text', async () => {
       const {stdout} = await runCommand([]);
       expect(stdout).to.contain('');
     });
 
-    it('should print color characters when output is not piped', // Skipped: needs more investigation across environments.
-    // (ctx) => {
-    //   expect(ctx.stdout).to.include('\x1b[90m');
-    // }
-    function () {
+    // Skipped: needs more investigation across environments.
+    it('should print color characters when output is not piped', function () {
       this.skip();
     });
 
@@ -46,10 +73,7 @@ describe('elf symbols', () => {
           path.resolve(__dirname, '../../../bin/run.js'),
           'elf',
           'symbols',
-          path.resolve(
-            __dirname,
-            '../../../../elf-parser/test/data/input.elf'
-          ),
+          elfPath,
           '"SELECT * FROM symbols WHERE name = \'devices\'"',
           '>',
           path.resolve(__dirname, 'output-file.txt')
@@ -66,6 +90,30 @@ describe('elf symbols', () => {
       expect(outputFile).to.not.include('\x1b[90m');
 
       await rm(path.resolve(__dirname, 'output-file.txt'));
+    });
+  });
+
+  describe('-f (--full) deprecation', () => {
+    it('still works and surfaces a deprecation warning', async () => {
+      const {stdout} = await runCommand(
+        ['elf:symbols', elfPath, query, '-f', '--format=json'],
+        {root: '..'}
+      );
+
+      const parsed = assertValidEnvelope<SymbolsData>(stdout);
+      expect(parsed.ok).to.be.true;
+      if (parsed.ok) {
+        expect(parsed.data.rows[0].path).to.equal(
+          '/Users/kevin/Linaro/zephyr/upstream/zephyr/lib/os/printk.c:99:13'
+        );
+        expect(
+          parsed.warnings.some((warning) =>
+            warning.message.includes(
+              'The "-f" flag has been deprecated. Use "--full" instead'
+            )
+          )
+        ).to.be.true;
+      }
     });
   });
 });

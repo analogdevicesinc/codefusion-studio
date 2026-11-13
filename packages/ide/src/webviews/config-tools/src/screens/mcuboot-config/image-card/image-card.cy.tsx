@@ -78,7 +78,7 @@ const mockImageWithError: Image = {
 
 const mockImageEmptyVersion: Image = {
 	...mockImage,
-	imageVersion: '',
+	imageVersion: ''
 };
 
 const mockPackage: ApplicationPackage = {
@@ -159,8 +159,28 @@ describe('ImageCard', () => {
 
 			cy.dataTest(`image-card:${mockImage.id}-address-range`)
 				.should('exist')
-				.and('contain.text', '0x30000')
-				.and('contain.text', '0x31000');
+				.and('have.text', '0x30000 - 0x30FFF');
+		});
+
+		it('should display the address range for a slot ending at the top of the address space', () => {
+			const topImage: Image = {
+				...mockImage,
+				id: 'img-top',
+				locationAddress: 'FFFFF000',
+				slotSize: 4096
+			};
+
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [topImage]
+			};
+
+			mountImageCard(topImage, pkg);
+
+			cy.dataTest(`image-card:${topImage.id}-address-range`).should(
+				'have.text',
+				'0xFFFFF000 - 0xFFFFFFFF'
+			);
 		});
 
 		it('should not display the address range when locationAddress is empty', () => {
@@ -309,6 +329,181 @@ describe('ImageCard', () => {
 				});
 
 			cy.dataTest('conflict-icon').should('exist');
+		});
+	});
+
+	describe('overlapping location address', () => {
+		// mockImage occupies 0x30000 - 0x30FFF (4096-byte slot).
+		const secondImage: Image = {
+			...mockImage,
+			id: 'img-2',
+			name: 'Second Image',
+			locationAddress: '40000'
+		};
+		const overlapMessage =
+			'Address range overlaps with another image.';
+
+		it('should show an error when another image in the package uses the same address', () => {
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [
+					mockImage,
+					{...secondImage, locationAddress: '0x30000'}
+				]
+			};
+			mountImageCard(mockImage, pkg);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-location-address-error`
+			).should('have.text', overlapMessage);
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should show an error on an image that starts inside another image slot', () => {
+			const inside: Image = {
+				...secondImage,
+				locationAddress: '30800'
+			};
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImage, inside]
+			};
+			mountImageCard(inside, pkg);
+
+			cy.dataTest(`image-card:${inside.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${inside.name}-location-address-error`
+			).should('have.text', overlapMessage);
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should show an error on the image whose slot contains another image start address', () => {
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [
+					mockImage,
+					{...secondImage, locationAddress: '30FFF'}
+				]
+			};
+			mountImageCard(mockImage, pkg);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-location-address-error`
+			).should('have.text', overlapMessage);
+		});
+
+		it('should show an error when an earlier image slot extends into this image', () => {
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [
+					mockImage,
+					{...secondImage, locationAddress: '2F800'}
+				]
+			};
+			mountImageCard(mockImage, pkg);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-location-address-error`
+			).should('have.text', overlapMessage);
+		});
+
+		it('should not show an error when an image starts at the exclusive end of another image', () => {
+			const adjacent: Image = {
+				...secondImage,
+				locationAddress: '31000'
+			};
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImage, adjacent]
+			};
+			mountImageCard(adjacent, pkg);
+
+			cy.dataTest(`image-card:${adjacent.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${adjacent.name}-location-address-error`
+			).should('not.exist');
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		['G30000', '3-0000', '0000030000'].forEach(malformed => {
+			it(`should not treat malformed sibling address "${malformed}" as overlapping`, () => {
+				const pkg: ApplicationPackage = {
+					...mockPackage,
+					images: [
+						mockImage,
+						{...secondImage, locationAddress: malformed}
+					]
+				};
+				mountImageCard(mockImage, pkg);
+
+				cy.dataTest(`image-card:${mockImage.id}-header`)
+					.should('exist')
+					.click();
+
+				cy.dataTest(
+					`image:${mockImage.name}-location-address-error`
+				).should('not.exist');
+			});
+		});
+
+		[
+			['G30000', 'Invalid hex address.'],
+			['3-0000', 'Invalid hex address.'],
+			[
+				'0000030000',
+				'Hex address must be at most 8 digits (0xFFFFFFFF).'
+			]
+		].forEach(([malformed, expectedError]) => {
+			it(`should reject malformed persisted address "${malformed}"`, () => {
+				const image: Image = {
+					...mockImage,
+					locationAddress: malformed
+				};
+				mountImageCard(image, {...mockPackage, images: [image]});
+
+				cy.dataTest(`image-card:${image.id}-header`)
+					.should('exist')
+					.click();
+
+				cy.dataTest(
+					`image:${image.name}-location-address-error`
+				).should('have.text', expectedError);
+			});
+		});
+
+		it('should not show an overlap error when slots do not overlap', () => {
+			const pkg: ApplicationPackage = {
+				...mockPackage,
+				images: [mockImage, secondImage]
+			};
+			mountImageCard(mockImage, pkg);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(
+				`image:${mockImage.name}-location-address-error`
+			).should('not.exist');
+			cy.dataTest('conflict-icon').should('not.exist');
 		});
 	});
 
@@ -497,6 +692,31 @@ describe('ImageCard', () => {
 			});
 		});
 
+		it('should store only hex digits when typing the location address', () => {
+			const reduxStore = mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest(`image:${mockImage.name}-location-address`)
+				.find('input')
+				.clear()
+				.type('5G0-000');
+
+			cy.then(() => {
+				const img = getImageFromStore(
+					reduxStore,
+					mockPackage.id,
+					mockImage.id
+				);
+				expect(img?.locationAddress).to.equal('50000');
+			});
+			cy.dataTest(
+				`image:${mockImage.name}-location-address-error`
+			).should('not.exist');
+		});
+
 		it('should update the path in the store', () => {
 			const reduxStore = mountImageCard(mockImage, mockPackage);
 
@@ -681,6 +901,77 @@ describe('ImageCard', () => {
 				);
 				expect(img?.aesGcmKeyPath).to.equal('/keys/aes-gcm.bin');
 			});
+		});
+
+		it('should show an error when the AES KW Key path contains illegal characters', () => {
+			mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest('image-aes-kw-key-path-control-input')
+				.shadow()
+				.find('input')
+				.type('/keys/a#$&c.bin');
+
+			cy.dataTest('image-aes-kw-key-path-error').should(
+				'have.text',
+				'Invalid path'
+			);
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should show an error when the AES GCM Key path contains illegal characters', () => {
+			mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest('image-aes-gcm-key-path-control-input')
+				.shadow()
+				.find('input')
+				.type('/keys/aes!gcm;(1).bin');
+
+			cy.dataTest('image-aes-gcm-key-path-error').should(
+				'have.text',
+				'Invalid path'
+			);
+			cy.dataTest('conflict-icon').should('exist');
+		});
+
+		it('should accept a Windows drive-letter AES key path', () => {
+			mountImageCard(mockImage, mockPackage);
+
+			cy.dataTest(`image-card:${mockImage.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest('image-aes-kw-key-path-control-input')
+				.shadow()
+				.find('input')
+				.type('C:/keys/aes-kw.bin');
+
+			cy.dataTest('image-aes-kw-key-path-error').should('not.exist');
+			cy.dataTest('conflict-icon').should('not.exist');
+		});
+
+		it('should accept persisted Windows backslash AES key paths', () => {
+			const image: Image = {
+				...mockImage,
+				aesKwKeyPath: 'C:\\keys\\aes-kw.bin',
+				aesGcmKeyPath: 'C:\\keys\\aes-gcm.bin'
+			};
+			mountImageCard(image, {...mockPackage, images: [image]});
+
+			cy.dataTest(`image-card:${image.id}-header`)
+				.should('exist')
+				.click();
+
+			cy.dataTest('image-aes-kw-key-path-error').should('not.exist');
+			cy.dataTest('image-aes-gcm-key-path-error').should('not.exist');
+			cy.dataTest('conflict-icon').should('not.exist');
 		});
 
 		it('should update image signKey in store when selecting a key from the dropdown', () => {
@@ -872,14 +1163,14 @@ describe('ImageCard', () => {
 			id: 'img-tlv-1',
 			name: 'Image TLV 1',
 			tag: 0x00a0,
-			value: '0x0A0B'
+			value: '0x0A0B0C0D'
 		};
 
 		const duplicateTLV: CustomTLV = {
 			id: 'img-tlv-2',
 			name: 'Image TLV 2',
 			tag: 0x00a0,
-			value: '0xCCDD'
+			value: '0xCCDDEEFF'
 		};
 
 		it('should show conflict icon on image TLV when another image TLV has the same tag', () => {
@@ -907,7 +1198,7 @@ describe('ImageCard', () => {
 				id: 'testTlv',
 				name: 'Other Image TLV',
 				tag: baseTLV.tag,
-				value: '0xEEFF'
+				value: '0xEEFF0011'
 			};
 
 			const imageWithTlv: Image = {
@@ -949,7 +1240,7 @@ describe('ImageCard', () => {
 				id: 'img-tlv-unique',
 				name: 'Unique TLV',
 				tag: 999,
-				value: '0xAABB'
+				value: '0xAABBCCDD'
 			};
 
 			const imageWithUniqueTlvs: Image = {

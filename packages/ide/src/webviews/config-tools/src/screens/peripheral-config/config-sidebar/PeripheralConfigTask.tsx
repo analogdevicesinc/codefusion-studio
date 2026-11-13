@@ -61,7 +61,7 @@ const getActiveConfigValues = (
 	controls: ControlCfg[]
 ): Record<string, TFormFieldValue> => {
 	const activeConfig: Record<string, TFormFieldValue> = {
-		...(config ?? {})
+		...config
 	};
 
 	for (const control of controls) {

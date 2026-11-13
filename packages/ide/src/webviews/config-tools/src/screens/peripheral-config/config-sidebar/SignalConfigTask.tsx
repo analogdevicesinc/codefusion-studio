@@ -30,21 +30,40 @@ import useIsPinAssignmentMissing from '../../../hooks/useIsPinAssignmentMissing'
 import SignalConfig from './SignalConfig';
 import {
 	setActivePeripheral,
-	setActiveSignal
+	setActiveSignal,
+	setCurrentTarget
 } from '../../../state/slices/peripherals/peripherals.reducer';
 import {getProjectInfoList} from '../../../utils/config';
 import ConfigUnavailable from '../../../components/config-unavailable/config-unavailable';
 import {getPinByPeripheralSignal} from '../../../utils/soc-pins';
 import {setPinDetailsTargetPin} from '../../../state/slices/pins/pins.reducer';
+import {usePinHasConfiguration} from '../../../hooks/use-pin-has-configuration';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
 
 function SignalConfigTask() {
 	const dispatch = useAppDispatch();
 	const [peripheral, signal] = useActiveSignal()?.split(' ') ?? [];
 	const activePin = getPinByPeripheralSignal(peripheral, signal);
+
+	const pinHasConfiguration = usePinHasConfiguration({
+		pinId: activePin?.Name,
+		peripheral,
+		signal
+	});
+
+	const isConfigurableReservedPin =
+		Boolean(activePin?.Name) &&
+		isPinReserved(activePin?.Name ?? '') &&
+		pinHasConfiguration;
+
 	const isPinAssignmentMissing = useIsPinAssignmentMissing(
 		signal,
 		peripheral
 	);
+
+	const isConfigurationPinAssignmentMissing =
+		isPinAssignmentMissing && !isConfigurableReservedPin;
+
 	const signalProjectId = useSignalProjectId(peripheral, signal);
 	const projectConfig = getProjectInfoList()?.find(
 		p => signalProjectId === p.ProjectId
@@ -60,12 +79,18 @@ function SignalConfigTask() {
 						<ConfigUnavailable message='This signal is allocated to a core that is externally managed' />
 					) : (
 						<SignalConfig
-							isMissingPinAssignment={Boolean(isPinAssignmentMissing)}
+							isMissingPinAssignment={Boolean(
+								isConfigurationPinAssignmentMissing
+							)}
 							signal={signal}
 						/>
 					)
 				}
-				variant={isPinAssignmentMissing ? 'noChevron' : 'navigate'}
+				variant={
+					isConfigurationPinAssignmentMissing
+						? 'noChevron'
+						: 'navigate'
+				}
 				isExternallyManaged={projectConfig?.ExternallyManaged}
 				onManagePinAssignmentsClick={() => {
 					dispatch(
@@ -84,6 +109,17 @@ function SignalConfigTask() {
 							value: ''
 						})
 					);
+
+					if (isConfigurableReservedPin && activePin?.Name) {
+						dispatch(
+							setCurrentTarget({
+								peripheralGroup: peripheral,
+								signalName: signal,
+								dropdownVal: activePin.Name
+							})
+						);
+					}
+
 					dispatch(setActivePeripheral(peripheral));
 					dispatch(
 						setActiveSignal({

@@ -41,7 +41,10 @@ export default function MissingPackagesAlert() {
 	}
 
 	return (
-		<div className={styles.warningContainer}>
+		<div
+			data-test='missing-packages-alert'
+			className={styles.warningContainer}
+		>
 			<WarningIcon />
 			<span className={styles.warningText}>
 				{l10n?.missingAccess}

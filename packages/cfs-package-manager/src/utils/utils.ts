@@ -90,28 +90,27 @@ const PackmanUtils = {
 	 * @returns An array of SoCs, regardless of the input format
 	 */
 	formatCfsSocAttribute(socs: string | string[]): string[] {
-			if (!socs) {
-				return [];
+		if (!socs) {
+			return [];
+		}
+		const inputArray = Array.isArray(socs) ? socs : [socs];
+		const result: string[] = [];
+
+		for (const entry of inputArray) {
+			if (!entry) {
+				continue;
 			}
-			const inputArray = Array.isArray(socs) ? socs : [socs];
-			const result: string[] = [];
+			const parts = entry.split(",");
 
-			for (const entry of inputArray) {
-				if (!entry) {
-					continue;
-				}
-				const parts = entry.split(",");
+			for (const part of parts) {
+				const trimmed = part.trim();
 
-				for (const part of parts) {
-
-					const trimmed = part.trim();
-
-					if (trimmed) {
-						result.push(trimmed);
-					}
+				if (trimmed) {
+					result.push(trimmed);
 				}
 			}
-			return result;
+		}
+		return result;
 	}
 };
 

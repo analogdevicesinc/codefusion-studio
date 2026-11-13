@@ -16,7 +16,7 @@ import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {parseJson} from '../../utils/parse-json.js';
+import {assertValidEnvelope} from '../../utils/assert-json-envelope.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,17 +24,31 @@ const __dirname = path.dirname(__filename);
 describe('elf analyze', () => {
   const elfPath = path.resolve(
     __dirname,
-    '../../../../elf-parser/test/data/input.elf'
+    '../../../../cfs-lib/test/parsers/elf-parser/data/input.elf'
   );
+
+  it('produces text output by default', async () => {
+    const {stdout} = await runCommand(['elf:analyze', elfPath], {
+      root: '..'
+    });
+
+    expect(stdout).to.contain('Firmware Platform:');
+    expect(stdout).to.contain('Detected Compiler:');
+    expect(stdout).to.contain('Flash size:');
+    expect(stdout).to.contain('SRAM size:');
+  });
 
   it('produces valid JSON output', async () => {
     const {stdout} = await runCommand(
       ['elf:analyze', elfPath, '--format=json'],
       {root: '..'}
     );
-    // Verify the output is valid JSON
-    const output = parseJson(stdout);
-    expect(output).to.be.an('object');
+    // Verify the output is a valid envelope wrapping an object
+    const parsed = assertValidEnvelope(stdout);
+    expect(parsed.ok).to.be.true;
+    if (parsed.ok) {
+      expect(parsed.data).to.be.an('object');
+    }
 
     // Verify no trailing commas in JSON
     const jsonString = stdout;

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import {useId, type ReactNode} from 'react';
+import {forwardRef, useId, type ReactNode} from 'react';
 import styles from './card.module.scss';
 
 type CardProps = Readonly<{
@@ -28,28 +28,36 @@ type CardProps = Readonly<{
 	children?: ReactNode;
 }>;
 
-export default function Card({
-	ariaLabel,
-	interactive = true,
-	isActive,
-	id,
-	testId,
-	hasError,
-	isDisabled,
-	isExpanded,
-	disableHoverEffects,
-	children
-}: CardProps) {
-	const baseId = useId();
-	return (
-		<div
-			data-test={testId}
-			data-active={isActive}
-			className={`${styles['card']} ${interactive && isActive ? styles.active : ''} ${interactive && hasError ? styles.error : ''} ${interactive && (disableHoverEffects || isDisabled) ? styles.noHover : ''} ${interactive && isExpanded ? styles.expanded : ''} ${isDisabled ? styles.disabled : ''}`}
-			id={id ? id : baseId}
-			aria-label={ariaLabel}
-		>
-			{children}
-		</div>
-	);
-}
+const Card = forwardRef<HTMLDivElement, CardProps>(
+	(
+		{
+			ariaLabel,
+			interactive = true,
+			isActive,
+			id,
+			testId,
+			hasError,
+			isDisabled,
+			isExpanded,
+			disableHoverEffects,
+			children
+		},
+		ref
+	) => {
+		const baseId = useId();
+		return (
+			<div
+				ref={ref}
+				data-test={testId}
+				data-active={isActive}
+				className={`${styles['card']} ${interactive && isActive ? styles.active : ''} ${interactive && hasError ? styles.error : ''} ${interactive && (disableHoverEffects || isDisabled) ? styles.noHover : ''} ${interactive && isExpanded ? styles.expanded : ''} ${isDisabled ? styles.disabled : ''}`}
+				id={id ? id : baseId}
+				aria-label={ariaLabel}
+			>
+				{children}
+			</div>
+		);
+	}
+);
+
+export default Card;

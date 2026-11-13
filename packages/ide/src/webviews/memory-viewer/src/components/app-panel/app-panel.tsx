@@ -70,7 +70,9 @@ export default function AppPanel() {
 		<div className={styles.appPanelContainer}>
 			<Toolbar />
 			<div
-				className={`${styles.scrollingContainer} ${reasonForEmptyState ? styles.empty : ''}`}
+				className={`${styles.scrollingContainer} ${
+					reasonForEmptyState ? styles.empty : ''
+				}`}
 			>
 				{reasonForEmptyState ? (
 					<EmptyContainer

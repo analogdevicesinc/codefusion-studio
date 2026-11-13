@@ -32,10 +32,7 @@ import {
     Resource,
     ResourceCatalog,
 } from '../../src/index.js';
-import {
-    DataStore,
-    StoreItem,
-} from '../../src/catalog/types.js';
+import { DataStore, StoreItem } from '../../src/catalog/types.js';
 
 import { LIB_VERSION } from '../../src/config/constants.cjs';
 import {
@@ -52,7 +49,7 @@ let mockMetaData: Map<string, Record<string, unknown> | undefined>;
 // Closure to access the primary MockDataStore in tests
 let primaryCatalogStore: () => MockDataStore;
 // Closure to access the temp MockDataStore in tests
-let tempCatalogStore: () => MockDataStore;
+let _tempCatalogStore: () => MockDataStore;
 
 // Mock implementation of DataStore
 class MockDataStore implements DataStore {
@@ -113,7 +110,7 @@ class MockDataStore implements DataStore {
 
         // Store references to the mock data stores based on their directory
         if (dirname.endsWith('.tmp')) {
-            tempCatalogStore = () => this;
+            _tempCatalogStore = () => this;
         } else {
             primaryCatalogStore = () => this;
         }
@@ -271,7 +268,9 @@ const setupTestData = () => {
 const mockApiData = (response: string): StoreItem[] => {
     const data = mockData.get(response);
     if (!data) {
-        throw new Error(`Test setup error, mock data not found for: "${response}"`);
+        throw new Error(
+            `Test setup error, mock data not found for: "${response}"`,
+        );
     }
     return _.cloneDeep(data).map((itm) => itm[1]);
 };
@@ -363,7 +362,8 @@ describe('ResourceCatalog tests', async () => {
             directory: 'with_access_tags',
         });
 
-        updatedOfflineCatalogWithAccessTagsStore = primaryCatalogStore;
+        updatedOfflineCatalogWithAccessTagsStore =
+            primaryCatalogStore;
 
         // Verify catalogs are setup correctly
         await expect(
@@ -388,13 +388,16 @@ describe('ResourceCatalog tests', async () => {
     });
 
     afterEach(async function (this: Context) {
-
         if (testStorageDir) {
             if (this.currentTest?.isPassed()) {
                 testDirs.push(testStorageDir);
             } else if (this.currentTest?.err) {
                 this.currentTest.err.message += ` (local storage dir: ${testStorageDir})`;
-                console.error('\t', 'local storage dir:', testStorageDir);
+                console.error(
+                    '\t',
+                    'local storage dir:',
+                    testStorageDir,
+                );
                 cleanLocalStorageDir = false;
             }
             testStorageDir = undefined;
@@ -440,7 +443,9 @@ describe('ResourceCatalog tests', async () => {
                         ? updatedOnlineCatalogWithAccessTags
                         : updatedOfflineCatalogWithAccessTags;
                     const resource = await catalog.get('resource1Id');
-                    expect(resource).to.not.have.deep.property('accessTag');
+                    expect(resource).to.not.have.deep.property(
+                        'accessTag',
+                    );
                 });
             });
 
@@ -450,9 +455,12 @@ describe('ResourceCatalog tests', async () => {
                         ? updatedOnlineCatalogWithAccessTags
                         : updatedOfflineCatalogWithAccessTags;
                     const resources = await catalog.getAll();
-                    expect(resources).to.be.an('array').that.is.not.empty;
+                    expect(resources).to.be.an('array').that.is.not
+                        .empty;
                     resources.forEach((resource) => {
-                        expect(resource).to.not.have.deep.property('accessTag');
+                        expect(resource).to.not.have.deep.property(
+                            'accessTag',
+                        );
                     });
                 });
             });

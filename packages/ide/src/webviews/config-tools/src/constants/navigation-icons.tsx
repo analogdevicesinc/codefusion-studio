@@ -23,7 +23,9 @@ import {
 	PeripheralsIcon,
 	DataFlowGasketIcon,
 	SettingsIcon,
-	MCUBootIcon
+	MCUBootIcon,
+	FirewallConfigIcon,
+	SignalRoutingUnitIcon
 } from 'cfs-react-library';
 import EmbeddedAITools from '../../../common/icons/EmbeddedAITools';
 import {ProfilingIcon} from '../../../common/icons/Profiling';
@@ -60,6 +62,11 @@ export const availableIcons = [
 		tooltipLabel: 'Memory Allocation'
 	},
 	{
+		icon: <SignalRoutingUnitIcon width={24} height={24} />,
+		id: navigationItems.signalRoutingUnit,
+		tooltipLabel: 'Signal Routing Unit'
+	},
+	{
 		icon: <Registers />,
 		id: navigationItems.registers,
 		tooltipLabel: 'Registers'
@@ -70,7 +77,12 @@ export const availableIcons = [
 		tooltipLabel: 'Embedded AI Tools'
 	},
 	{
-		icon: <MCUBootIcon width={24} height={24} />,
+		icon: <FirewallConfigIcon />,
+		id: navigationItems.firewallConfig,
+		tooltipLabel: 'Firewall Config'
+	},
+	{
+		icon: <MCUBootIcon />,
 		id: navigationItems.mcubootConfig,
 		tooltipLabel: 'MCUboot Config'
 	},

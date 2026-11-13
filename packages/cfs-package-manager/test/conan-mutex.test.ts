@@ -85,7 +85,7 @@ describe("Lockfile Tests", function () {
 	async function teardownTest() {
 		try {
 			await api.logout("local-test-server");
-		} catch (error) {
+		} catch {
 			// Ignore logout errors during cleanup
 		}
 	}
@@ -116,7 +116,7 @@ describe("Lockfile Tests", function () {
 				return [];
 			});
 		const listStub = sinon
-			.stub(ConanPkgManager.prototype, "list")
+			.stub(ConanPkgManager.prototype, "listCache")
 			.callsFake(async function () {
 				listEntered();
 				return Promise.resolve([]);
@@ -127,7 +127,7 @@ describe("Lockfile Tests", function () {
 				{ name: "test_pkg1", version: "1.0" }
 			]);
 			await installEnteredPromise;
-			const listPromise = api.list();
+			const listPromise = api.listCache();
 			const listRanEarly = await Promise.race([
 				listEnteredPromise.then(() => true),
 				new Promise<boolean>((resolve) =>
@@ -138,7 +138,7 @@ describe("Lockfile Tests", function () {
 			]);
 			expect(
 				listRanEarly,
-				"list() should not start until install() releases the lock"
+				"listCache() should not start until install() releases the lock"
 			).to.be.false;
 			releaseInstall();
 			await installPromise;

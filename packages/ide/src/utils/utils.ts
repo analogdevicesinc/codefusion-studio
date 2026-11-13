@@ -16,6 +16,8 @@ import * as fs from "fs";
 import * as fg from "fast-glob";
 import * as path from "path";
 import * as vscode from "vscode";
+import type { ConfiguredProject } from "cfs-types";
+import { TaskDefinitionConverter } from "../providers/task-definition-converter";
 import { tmpdir } from "os";
 import { logger } from "./logger";
 
@@ -47,6 +49,10 @@ import { SELECT_JLINK_PATH } from "../constants";
 import { openFileAtLocation } from "./open-file-location";
 import { ViewContainerItem } from "../view-container";
 
+type ProjectFolderPlatformConfig = {
+  ProjectName?: string;
+};
+
 const SELECT_OPENOCD_TARGET = "Choose OpenOCD Target";
 const SELECT_OPENOCD_INTERFACE = "Choose OpenOCD Interface";
 const SELECT_OPENOCD_RISCV_TARGET = "Choose OpenOCD RISCV Target";
@@ -57,6 +63,12 @@ export enum ToolchainType {
   ARM = "arm.none.elf",
   RISCV = "riscv.none.elf",
 }
+
+/** Optional filter to narrow CFS tasks by group and/or workspace folder. */
+type CFSTaskFilter = {
+  group?: vscode.TaskGroup;
+  scope?: vscode.WorkspaceFolder;
+};
 
 // Utility to robustly extract a session ID from any input
 export function extractSessionId(input: any): string | undefined {
@@ -74,6 +86,7 @@ export function extractSessionId(input: any): string | undefined {
 
 import { SoC } from "cfs-ccm-lib";
 import { Deferred } from "./deferred";
+
 export class Utils {
   static extensionReadyDeferred = new Deferred<void>();
   static isExtensionReady() {
@@ -341,7 +354,7 @@ export class Utils {
       });
   }
 
-  static async getSdkPath(): Promise<string | undefined> {
+  static getSdkPath(): string | undefined {
     let conf = vscode.workspace.getConfiguration(EXTENSION_ID);
     let sdkPath: string | undefined = conf.get(SDK_PATH);
     return sdkPath;
@@ -408,28 +421,127 @@ export class Utils {
   }
 
   /**
-   * Executes the tasks, indicates an error if the task is not defined.
-   * @param _taskType - string to identify task type
-   * @param taskName - string to identify task name
+   * Fetches the CFS tasks available in the current workspace, optionally
+   * filtered by task group.
+   * @param group - the task group to filter by
    */
-  static async executeCFSTask(taskName: string, group?: vscode.TaskGroup) {
-    const tasks = (await vscode.tasks.fetchTasks()).filter((task) => {
-      return task.source === "CFS" && (group ? task.group === group : true);
+  static async fetchCFSTasks(taskFilter?: CFSTaskFilter) {
+    return (await vscode.tasks.fetchTasks()).filter((task) => {
+      return (
+        task.source === "CFS" &&
+        (taskFilter?.group ? task.group === taskFilter.group : true) &&
+        (taskFilter?.scope
+          ? (task.scope as vscode.WorkspaceFolder)?.uri?.fsPath ===
+            taskFilter.scope.uri.fsPath
+          : true)
+      );
     });
+  }
+
+  /**
+   * Checks whether a CFS task with the given name is available in the
+   * current workspace.
+   * @param taskName - string to identify task name
+   * @param taskFilter - Optional filter to narrow down tasks by group or workspace folder
+   */
+  static async cfsTaskExists(
+    taskName: string,
+    taskFilter?: CFSTaskFilter,
+  ): Promise<boolean> {
+    const tasks = await this.fetchCFSTasks(taskFilter);
+    return tasks.some((task) => task.name === taskName);
+  }
+
+  /**
+   * Executes the tasks, indicates an error if the task is not defined.
+   * @param taskName - string to identify task name
+   * @param taskFilter - Optional filter to narrow down tasks by group or workspace folder
+   */
+  static async executeCFSTask(taskName: string, taskFilter?: CFSTaskFilter) {
+    const tasks = await this.fetchCFSTasks(taskFilter);
     const selectedTask = tasks.find((task) => task.name === taskName);
     if (selectedTask) {
-      return vscode.tasks.executeTask(selectedTask);
+      return Utils.runTask(selectedTask);
     } else {
       console.error(`Error: Task '${taskName}' not found`);
       return undefined;
     }
   }
 
+  /**
+   * Checks if executing the given task would result in a circular dependency.
+   * EG: Task A depends on B, B depends on C and C depends on A.
+   *
+   * @param task - The task to check for circular dependencies
+   * @param dependencyChain - The current chain of task names being checked
+   * @returns Whether a circular dependency is detected
+   */
+  private static async isCircularDependencyDetected(
+    task: vscode.Task,
+    dependencyChain = new Set<string>(),
+  ): Promise<boolean> {
+    if (dependencyChain.has(task.name)) return true;
+
+    const activeTaskNames = new Set(dependencyChain).add(task.name);
+
+    for (const dependencyName of TaskDefinitionConverter.getDependsOn(task)) {
+      const dependencyTask = (
+        await Utils.fetchCFSTasks({
+          scope: task.scope as vscode.WorkspaceFolder,
+        })
+      ).find((candidate) => candidate.name === dependencyName);
+
+      if (
+        dependencyTask &&
+        (await Utils.isCircularDependencyDetected(
+          dependencyTask,
+          activeTaskNames,
+        ))
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns the direct dependency names declared by the task's `dependsOn`.
+   * Throws an error if a circular dependency is detected.
+   */
+  private static async getTaskDependencyNames(
+    task: vscode.Task,
+  ): Promise<string[]> {
+    if (await Utils.isCircularDependencyDetected(task)) {
+      throw new Error(`Circular dependsOn detected for task "${task.name}".`);
+    }
+
+    return TaskDefinitionConverter.getDependsOn(task);
+  }
+
+  /**
+   * Handles the execution of a task along with its `dependsOn` prerequisites.
+   */
+  static async runTask(task: vscode.Task): Promise<vscode.TaskExecution> {
+    for (const dependencyName of await Utils.getTaskDependencyNames(task)) {
+      const exitCode = await Utils.executeAndWaitForCFSTask(dependencyName, {
+        scope: task.scope as vscode.WorkspaceFolder,
+      });
+
+      if (exitCode !== undefined && exitCode !== 0) {
+        throw new Error(
+          `Task '${dependencyName}' failed with exit code ${exitCode}. Aborting '${task.name}'.`,
+        );
+      }
+    }
+    return vscode.tasks.executeTask(task);
+  }
+
   static async executeAndWaitForCFSTask(
     taskName: string,
-    group?: vscode.TaskGroup,
+    taskFilter?: CFSTaskFilter,
   ): Promise<number | undefined> {
-    const execution = await this.executeCFSTask(taskName, group);
+    const execution = await this.executeCFSTask(taskName, taskFilter);
 
     if (!execution) {
       throw new Error(`Task '${taskName}' could not be executed`);
@@ -482,7 +594,7 @@ export class Utils {
       (task) => task.group?.isDefault === true,
     );
     for (const task of defaultBuildTasks) {
-      await vscode.tasks.executeTask(task);
+      await Utils.runTask(task);
       await new Promise<void>((resolve) => {
         const disposable = vscode.tasks.onDidEndTaskProcess((e) => {
           if (e.execution.task === task) {
@@ -512,7 +624,7 @@ export class Utils {
       }
     }
     const filePath = `${taskFolder.uri.fsPath}/.vscode/tasks.json`;
-    const taskLabelMatch = /(CFS: )?([\w \&]+) (\(\w+\))( \((\w+)\))?/.exec(
+    const taskLabelMatch = /(CFS: )?([\w &]+) (\(\w+\))( \((\w+)\))?/.exec(
       actionItem.label,
     );
 
@@ -776,7 +888,7 @@ export class Utils {
     );
 
     if (filteredTasks.length > 0) {
-      await vscode.tasks.executeTask(filteredTasks[0]);
+      await Utils.runTask(filteredTasks[0]);
     } else {
       vscode.window.showErrorMessage(
         `Task '${taskName}' not found in project '${folderName}'.`,
@@ -884,6 +996,26 @@ export function getWorkspaceRoot(): string | undefined {
   return vscode.workspace.workspaceFile
     ? path.dirname(vscode.workspace.workspaceFile?.fsPath)
     : vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+}
+
+/**
+ * Resolves the absolute folder path for a configured project, preferring the
+ * live workspace folder matching its `PlatformConfig.ProjectName` (falling
+ * back to `ProjectId` for projects with no generated `PlatformConfig`, e.g.
+ * cores with no project folder yet).
+ */
+export function getProjectFolderPath(
+  workspaceRoot: string,
+  project: ConfiguredProject<ProjectFolderPlatformConfig>,
+): string {
+  const configuredProjectName = project.PlatformConfig?.ProjectName?.trim();
+  const projectFolderName = configuredProjectName || project.ProjectId;
+
+  return (
+    vscode.workspace.workspaceFolders?.find(
+      (folder) => folder.name === projectFolderName,
+    )?.uri.fsPath ?? path.join(workspaceRoot, projectFolderName)
+  );
 }
 
 /**

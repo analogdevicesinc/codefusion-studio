@@ -23,13 +23,15 @@ export interface HexInputFieldProps {
 	error?: string;
 	placeholder?: string;
 	onValueChange: (value: string) => void;
+	onBlur?: () => void;
 }
 export default function HexInputField({
 	value,
 	dataTest,
 	error,
 	placeholder = '00000000',
-	onValueChange
+	onValueChange,
+	onBlur
 }: HexInputFieldProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +69,7 @@ export default function HexInputField({
 					className={styles.input}
 					placeholder={placeholder}
 					type='text'
+					onBlur={onBlur}
 					onChange={handleOnChange}
 					value={value ? formatStringToHex(value?.toUpperCase()) : ''}
 				></input>

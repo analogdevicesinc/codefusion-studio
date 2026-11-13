@@ -20,131 +20,22 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { URL } from "node:url";
 
+import Table from "cli-table3";
+
 import { checkIfFileExists } from "../utils/file-utils.js";
-import type { AIModelBackend, SocControl } from "cfs-types";
+import type {
+	AiCommandResult,
+	AIModelBackend,
+	CfsAiProfilingReport,
+	SocControl
+} from "cfs-types";
 
-export const C_CPP_RESERVED_KEYWORDS = new Set<string>([
-	"alignas",
-	"alignof",
-	"and",
-	"and_eq",
-	"asm",
-	"auto",
-	"bitand",
-	"bitor",
-	"bool",
-	"break",
-	"case",
-	"catch",
-	"char",
-	"char8_t",
-	"char16_t",
-	"char32_t",
-	"class",
-	"compl",
-	"concept",
-	"const",
-	"consteval",
-	"constexpr",
-	"constinit",
-	"const_cast",
-	"continue",
-	"co_await",
-	"co_return",
-	"co_yield",
-	"decltype",
-	"default",
-	"delete",
-	"do",
-	"double",
-	"dynamic_cast",
-	"else",
-	"enum",
-	"explicit",
-	"export",
-	"extern",
-	"false",
-	"float",
-	"for",
-	"friend",
-	"goto",
-	"if",
-	"inline",
-	"int",
-	"long",
-	"mutable",
-	"namespace",
-	"new",
-	"noexcept",
-	"not",
-	"not_eq",
-	"nullptr",
-	"operator",
-	"or",
-	"or_eq",
-	"private",
-	"protected",
-	"public",
-	"register",
-	"reinterpret_cast",
-	"requires",
-	"return",
-	"short",
-	"signed",
-	"sizeof",
-	"static",
-	"static_assert",
-	"static_cast",
-	"struct",
-	"switch",
-	"template",
-	"this",
-	"thread_local",
-	"throw",
-	"true",
-	"try",
-	"typedef",
-	"typeid",
-	"typename",
-	"union",
-	"unsigned",
-	"using",
-	"virtual",
-	"void",
-	"volatile",
-	"wchar_t",
-	"while",
-	"xor",
-	"xor_eq",
-	"_Alignas",
-	"_Alignof",
-	"_Atomic",
-	"_BitInt",
-	"_Bool",
-	"_Complex",
-	"_Decimal32",
-	"_Decimal64",
-	"_Decimal128",
-	"_Generic",
-	"_Imaginary",
-	"_Noreturn",
-	"_Static_assert",
-	"_Thread_local"
-]);
-
-export function sanitizeToCIdentifier(s: string): string {
-	s = s.trim();
-	s = s.replace(/[^a-zA-Z0-9_]/g, "_");
-
-	if (!/^[a-zA-Z_]/.test(s)) {
-		s = "_" + s;
-	}
-
-	if (C_CPP_RESERVED_KEYWORDS.has(s)) {
-		s = "_" + s;
-	}
-
-	return s;
+/**
+ * Escapes `star-slash` sequences so a value can be safely embedded inside a
+ * C-style block comment (`/* ... *\/`) without prematurely closing it.
+ */
+export function escapeBlockComment(text: string): string {
+	return text.replace(/\*\//g, "*\\/");
 }
 
 export function getCFSCachePath(cfsVersion: string): string {
@@ -258,7 +149,13 @@ export function getValidExtensions(
 	);
 
 	for (const ext of extensions) {
-		let [key, value] = ext.split("=");
+		const separatorIndex = ext.indexOf("=");
+		let key =
+			separatorIndex === -1 ? ext : ext.slice(0, separatorIndex);
+		let value =
+			separatorIndex === -1
+				? undefined
+				: ext.slice(separatorIndex + 1);
 
 		key = key.toLowerCase();
 
@@ -291,12 +188,12 @@ export function getValidExtensions(
 				break;
 			case "enum":
 				const validValue = property.EnumValues?.find(
-					(e) => e.Value === value
+					(e) => e.Id === value
 				);
 
 				if (!validValue) {
 					errors.push(
-						`Invalid value for '${key}', expected one of: ${property.EnumValues ? property.EnumValues.map((p) => p.Value).join(", ") : "[]"} ${property.Default !== undefined ? `(default: ${String(property.Default)})` : ""}`
+						`Invalid value for '${key}', expected one of: ${property.EnumValues ? property.EnumValues.map((p) => p.Id).join(", ") : "[]"} ${property.Default !== undefined ? `(default: ${String(property.Default)})` : ""}`
 					);
 					break;
 				}
@@ -363,6 +260,9 @@ export function getValidExtensions(
 				validExtensions[property.Id] = array.toString();
 				break;
 			default:
+				errors.push(
+					`Unsupported property type for '${key}': ${property.Type}`
+				);
 				break;
 		}
 	}
@@ -397,4 +297,308 @@ export function getGeneratedFileComment({
  * Copyright (c) ${String(date.getFullYear())} Analog Devices, Inc.
  */\n
 `;
+}
+
+export function addFileCreatedEvent(
+	output: AiCommandResult,
+	outputDir: string,
+	reportDir: string,
+	file: string
+) {
+	const outputPath = path.join(outputDir, file).replace(/\\/g, "/");
+	const reportPath = path.join(reportDir, file).replace(/\\/g, "/");
+	output.events.push({
+		type: "FILE",
+		message: `Created file: ${reportPath}`,
+		value: outputPath
+	});
+	output.artifacts?.files.push(outputPath);
+}
+
+const PLAIN_TABLE_STYLE = {
+	chars: {
+		top: "-",
+		"top-mid": "+",
+		"top-left": "+",
+		"top-right": "+",
+		bottom: "-",
+		"bottom-mid": "+",
+		"bottom-left": "+",
+		"bottom-right": "+",
+		left: "|",
+		"left-mid": "+",
+		mid: "-",
+		"mid-mid": "+",
+		right: "|",
+		"right-mid": "+",
+		middle: "|"
+	},
+	wordWrap: true,
+	style: { border: [] as string[], head: [] as string[] }
+};
+
+export function generateProfilingReport(
+	data: CfsAiProfilingReport
+): string {
+	const sections: string[] = ["RESOURCE PROFILING REPORT"];
+
+	// Model Summary
+	if (data.model_summary) {
+		const model = data.model_summary;
+		const table = new Table({
+			head: ["Metric", "Value"],
+			...PLAIN_TABLE_STYLE
+		});
+		if (model.model_name)
+			table.push(["Model Name", model.model_name]);
+		if (model.model_path)
+			table.push(["Model Path", model.model_path]);
+		if (model.model_hash)
+			table.push(["Model Hash", model.model_hash]);
+		if (model.framework) table.push(["Framework", model.framework]);
+		if (model.model_size_kb)
+			table.push([
+				"Model Size",
+				`${model.model_size_kb.toFixed(2)} KB`
+			]);
+		if (model.target_dtype)
+			table.push(["Data Type", model.target_dtype]);
+		if (model.layer_count)
+			table.push(["Layer Count", String(model.layer_count)]);
+		if (model.total_parameters)
+			table.push([
+				"Total Parameters",
+				model.total_parameters.toLocaleString()
+			]);
+		sections.push(`\nMODEL SUMMARY\n${table.toString()}`);
+	}
+
+	// Memory Analysis
+	if (data.memory_analysis) {
+		const mem = data.memory_analysis;
+		const table = new Table({
+			head: ["Memory Metric", "Value"],
+			...PLAIN_TABLE_STYLE
+		});
+		table.push(
+			[
+				"Peak RAM Required",
+				`${mem.model_peak_ram_kb.toFixed(2)} KB` +
+					` (${(mem.model_peak_ram_kb / 1024).toFixed(2)} MB)`
+			],
+			["RAM Status", mem.ram_status]
+		);
+		if (mem.available_ram_kb) {
+			table.push([
+				"Available RAM",
+				`${mem.available_ram_kb.toFixed(2)} KB` +
+					` (${(mem.available_ram_kb / 1024).toFixed(2)} MB)`
+			]);
+		}
+
+		if (mem.ram_utilization_percent) {
+			table.push([
+				"RAM Utilization",
+				`${mem.ram_utilization_percent.toFixed(1)}%`
+			]);
+		}
+
+		let section = `\nMEMORY ANALYSIS\n${table.toString()}`;
+		if (mem.memory_issues.length > 0) {
+			section += "\n\n  Memory Issues:";
+			for (const issue of mem.memory_issues) {
+				section += `\n    - ${issue}`;
+			}
+		}
+
+		if (mem.memory_recommendations.length > 0) {
+			section += "\n\n  Memory Recommendations:";
+			for (const rec of mem.memory_recommendations) {
+				section += `\n    - ${rec}`;
+			}
+		}
+
+		sections.push(section);
+	}
+
+	// Hardware Performance
+	if (data.hardware_metrics) {
+		const hw = data.hardware_metrics;
+		const table = new Table({
+			head: ["Metric", "Value"],
+			...PLAIN_TABLE_STYLE
+		});
+		if (hw.total_cycles)
+			table.push(["Total Cycles", hw.total_cycles.toLocaleString()]);
+		if (hw.estimated_latency_ms)
+			table.push([
+				"Estimated Latency",
+				`${hw.estimated_latency_ms.toFixed(2)} ms`
+			]);
+		if (hw.estimated_power_mw)
+			table.push([
+				"Estimated Power",
+				`${hw.estimated_power_mw.toFixed(2)} mW`
+			]);
+		if (hw.peak_memory_kb)
+			table.push([
+				"Peak Memory",
+				`${hw.peak_memory_kb.toFixed(2)} KB`
+			]);
+		if (hw.accelerated_layers !== null)
+			table.push([
+				"Accelerated Layers",
+				String(hw.accelerated_layers)
+			]);
+		if (hw.cpu_only_layers !== null)
+			table.push(["CPU-Only Layers", String(hw.cpu_only_layers)]);
+		sections.push(`\nHARDWARE PERFORMANCE\n${table.toString()}`);
+	}
+
+	// Per-Layer Performance
+	if (data.layer_performance && data.layer_performance.length > 0) {
+		const table = new Table({
+			head: [
+				"Layer",
+				"Operator",
+				"Cycles",
+				"Latency (ms)",
+				"Energy (uJ)",
+				"Power (mW)",
+				"MACs",
+				"Memory (KB)",
+				"Accel"
+			],
+			...PLAIN_TABLE_STYLE
+		});
+		for (const layer of data.layer_performance) {
+			table.push([
+				String(layer.layer_idx),
+				layer.layer_name ?? "-",
+				layer.cycles ? layer.cycles.toLocaleString() : "-",
+				layer.latency_ms ? layer.latency_ms.toFixed(2) : "-",
+				layer.energy_uj ? layer.energy_uj.toFixed(2) : "-",
+				layer.power_mw ? layer.power_mw.toFixed(2) : "-",
+				layer.macs ? layer.macs.toLocaleString() : "-",
+				layer.memory_kb ? layer.memory_kb.toFixed(2) : "-",
+				layer.is_accelerated ? "Yes" : "No"
+			]);
+		}
+
+		sections.push(`\nPER-LAYER PERFORMANCE\n${table.toString()}`);
+	}
+
+	// Optimization Suggestions
+	if (
+		data.optimization_suggestions &&
+		data.optimization_suggestions.length > 0
+	) {
+		const table = new Table({
+			head: [
+				"Category",
+				"Description",
+				"Est. Improvement",
+				"Complexity"
+			],
+			...PLAIN_TABLE_STYLE
+		});
+		for (const s of data.optimization_suggestions) {
+			table.push([
+				s.category.charAt(0).toUpperCase() + s.category.slice(1),
+				s.description,
+				s.estimated_improvement ?? "-",
+				s.complexity ?? "-"
+			]);
+		}
+
+		sections.push(`\nOPTIMIZATION SUGGESTIONS\n${table.toString()}`);
+	}
+
+	// Optimization Opportunities
+	if (data.optimization_opportunities) {
+		const opp = data.optimization_opportunities;
+		const summaryTable = new Table({
+			head: ["Metric", "Value"],
+			...PLAIN_TABLE_STYLE
+		});
+		summaryTable.push(
+			[
+				"Total Parameter Memory",
+				`${opp.total_parameter_memory_kb.toFixed(2)} KB`
+			],
+			["Total MACs", opp.total_macs.toLocaleString()]
+		);
+		sections.push(
+			`\nOPTIMIZATION OPPORTUNITIES\n${summaryTable.toString()}`
+		);
+
+		if (opp.layerwise_opportunities.length > 0) {
+			const table = new Table({
+				head: [
+					"Layer",
+					"Op Type",
+					"Param Mem (KB)",
+					"MACs",
+					"Kernel Info",
+					"Suggestion"
+				],
+				...PLAIN_TABLE_STYLE
+			});
+			for (const o of opp.layerwise_opportunities) {
+				table.push([
+					String(o.layer_index),
+					o.op_type,
+					o.parameter_memory_kb.toFixed(2),
+					o.macs ? o.macs.toLocaleString() : "-",
+					o.kernel_info ?? "-",
+					o.suggestion ?? "-"
+				]);
+			}
+
+			sections.push(
+				`\nLAYERWISE MEMORY OPTIMIZATION OPPORTUNITIES\n${table.toString()}`
+			);
+		}
+
+		if (opp.macs_opportunities.length > 0) {
+			const table = new Table({
+				head: [
+					"Layer",
+					"Op Type",
+					"Param Mem (KB)",
+					"MACs",
+					"Kernel Info",
+					"Suggestion"
+				],
+				...PLAIN_TABLE_STYLE
+			});
+			for (const o of opp.macs_opportunities) {
+				table.push([
+					String(o.layer_index),
+					o.op_type,
+					o.parameter_memory_kb.toFixed(2),
+					o.macs ? o.macs.toLocaleString() : "-",
+					o.kernel_info ?? "-",
+					o.suggestion ?? "-"
+				]);
+			}
+
+			sections.push(
+				`\nLAYERWISE MAC OPTIMIZATION OPPORTUNITIES\n${table.toString()}`
+			);
+		}
+	}
+
+	// Errors
+	if (data.errors && data.errors.length > 0) {
+		let errorSection = "\nERRORS";
+		for (const e of data.errors) {
+			const code = e.code ? ` (Code: ${e.code})` : "";
+			errorSection += `\n  - ${e.message}${code}`;
+		}
+
+		sections.push(errorSection);
+	}
+
+	return sections.join("\n");
 }

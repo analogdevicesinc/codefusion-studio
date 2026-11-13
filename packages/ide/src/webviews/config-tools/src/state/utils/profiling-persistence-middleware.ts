@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
 
 import {
 	type ActionCreatorWithPayload,
-	createListenerMiddleware
+	createListenerMiddleware,
+	isAnyOf
 } from '@reduxjs/toolkit';
 
 import {
 	setCpuLoadInterval,
+	setInstrumentationStopperFunction,
+	setInstrumentationTriggerFunction,
 	setInterface,
 	setMemoryUsageInterval,
 	setUARTPort,
@@ -53,14 +56,23 @@ export const persistedProfilingActions: Array<
 	toggleProfilingEnabled,
 	toggleRtosEventsEnabled,
 	toggleMemoryUsageEnabled,
-	setMemoryUsageInterval,
 	toggleCpuLoadEnabled,
-	setCpuLoadInterval,
 	toggleAIProfilingEnabled,
 	toggleInstrumentationSubsystemEnabled,
 	setInterface,
 	setUARTPort
 ];
+
+export const debouncedProfilingActions: Array<
+	ActionCreatorWithPayload<any>
+> = [
+	setMemoryUsageInterval,
+	setCpuLoadInterval,
+	setInstrumentationTriggerFunction,
+	setInstrumentationStopperFunction
+];
+
+const DEBOUNCE_MS = 50;
 
 export function getProfilingPersistenceListenerMiddleware(
 	actionsArray: Array<ActionCreatorWithPayload<unknown>>
@@ -72,22 +84,54 @@ export function getProfilingPersistenceListenerMiddleware(
 			actionCreator: action,
 			effect(action, listenerApi) {
 				const {projectId} = action.payload as {projectId: string};
-				const state = listenerApi.getState() as RootState;
-				const config = state.profilingReducer.zephelin[projectId];
 
-				void updateProfilingConfig(config, 'Zephelin', projectId);
-
-				listenerApi.dispatch(
-					setValidationErrors({
-						projectId,
-						errors: validateProfilingConfig(config)
-					})
-				);
+				persistProfilingConfig(projectId, listenerApi);
 			}
 		});
 
 		return listenerMiddleware.middleware;
 	});
+}
+
+export function getDebouncedProfilingPersistenceListenerMiddleware(
+	actionsArray: Array<ActionCreatorWithPayload<unknown>>
+) {
+	const listenerMiddleware = createListenerMiddleware();
+
+	listenerMiddleware.startListening({
+		matcher: isAnyOf(...actionsArray),
+		async effect(action, listenerApi) {
+			listenerApi.cancelActiveListeners();
+
+			await listenerApi.delay(DEBOUNCE_MS);
+
+			const {projectId} = action.payload as {projectId: string};
+
+			persistProfilingConfig(projectId, listenerApi);
+		}
+	});
+
+	return [listenerMiddleware.middleware];
+}
+
+function persistProfilingConfig(
+	projectId: string,
+	listenerApi: {
+		getState: () => unknown;
+		dispatch: (action: unknown) => void;
+	}
+) {
+	const state = listenerApi.getState() as RootState;
+	const config = state.profilingReducer.zephelin[projectId];
+
+	void updateProfilingConfig(config, 'Zephelin', projectId);
+
+	listenerApi.dispatch(
+		setValidationErrors({
+			projectId,
+			errors: validateProfilingConfig(config)
+		})
+	);
 }
 
 const validateProfilingConfig = (

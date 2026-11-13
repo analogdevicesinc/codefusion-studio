@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,3 +13,7 @@
  *
  */
 declare module '*.scss';
+declare module '*.css';
+declare module 'swiper/css';
+declare module 'swiper/css/pagination';
+declare module 'swiper/css/navigation';

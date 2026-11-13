@@ -258,10 +258,16 @@ describe("resolveZephyrHostToolsId", function () {
 		);
 	});
 
-	it("returns the host-tools id for ARM Zephyr toolchains (id contains 'zephyr')", function () {
+	it("returns the toolchain's own id for ARM Zephyr toolchains (id contains 'zephyr')", function () {
 		expect(
 			resolveZephyrHostToolsId("arm.zephyr.eabi.toolchain")
 		).to.equal("arm.zephyr.eabi.toolchain");
+	});
+
+	it("returns the toolchain's own id for RISC-V Zephyr toolchains", function () {
+		expect(
+			resolveZephyrHostToolsId("riscv.zephyr.elf.toolchain")
+		).to.equal("riscv.zephyr.elf.toolchain");
 	});
 
 	it("matches a Zephyr toolchain id case-insensitively and trims whitespace", function () {
@@ -379,6 +385,27 @@ describe("getZephyrSdkPath", function () {
 		);
 
 		expect(requestedToolId).to.equal("arm.zephyr.eabi.toolchain");
+	});
+
+	it("resolves the SDK root from the RISC-V toolchain package for RISC-V Zephyr projects", async function () {
+		let requestedToolId: string | undefined;
+		const packageRoot = path.join(tmpDir, "zephyr-riscv-sdk-1.0.0");
+		fs.mkdirSync(path.join(packageRoot, "cmake"), {
+			recursive: true
+		});
+
+		const result = await getZephyrSdkPath(
+			path.join(tmpDir, "install"),
+			undefined,
+			"riscv.zephyr.elf.toolchain",
+			mockToolManager((toolId) => {
+				requestedToolId = toolId;
+				return Promise.resolve(packageRoot);
+			})
+		);
+
+		expect(requestedToolId).to.equal("riscv.zephyr.elf.toolchain");
+		expect(result).to.equal(packageRoot);
 	});
 
 	it("skips the host-tools lookup when no toolchain id is provided", async function () {

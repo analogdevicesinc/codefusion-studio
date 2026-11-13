@@ -37,34 +37,32 @@ export default class CfsPackageListCache extends BaseCommand<
   };
 
   static description = 'List cached packages.';
+  static useResponseEnvelope = true;
 
-  async run(): Promise<void> {
+  async run(): Promise<{
+    packages: {name: string; version: string; isInstalled: boolean}[];
+  }> {
     const packman = await pkgListCacheDeps.getPackageManager();
     const {args} = this;
 
     const packageRefs = await packman.listCache(args.pattern);
-
-    if (this.jsonEnabled()) {
-      this.logJson({
-        packages: packageRefs.map((pkg) => ({
-          name: pkg.reference.name,
-          version: pkg.reference.version,
-          isInstalled: pkg.isInstalled
-        }))
-      });
-      return;
-    }
+    const packages = packageRefs.map((pkg) => ({
+      name: pkg.reference.name,
+      version: pkg.reference.version,
+      isInstalled: pkg.isInstalled
+    }));
 
     if (packageRefs.length === 0) {
       this.log('No packages cached');
-      return;
+    } else {
+      this.log('Cached Packages: ');
+      for (const pkg of packageRefs) {
+        this.log(
+          `- ${pkg.reference.name}/${pkg.reference.version} | ${pkg.isInstalled ? 'Installed' : 'Not Installed'}`
+        );
+      }
     }
 
-    this.log('Cached Packages: ');
-    for (const pkg of packageRefs) {
-      this.log(
-        `- ${pkg.reference.name}/${pkg.reference.version} | ${pkg.isInstalled ? 'Installed' : 'Not Installed'}`
-      );
-    }
+    return {packages};
   }
 }

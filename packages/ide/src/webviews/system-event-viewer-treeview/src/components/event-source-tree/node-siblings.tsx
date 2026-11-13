@@ -13,8 +13,7 @@
  *
  */
 
-import {memo, useCallback} from 'react';
-import {CheckBox, Tooltip} from 'cfs-react-library';
+import {memo, useCallback, useState} from 'react';
 import {
 	useNodeById,
 	useNodeChildIds,
@@ -23,16 +22,12 @@ import {
 } from '../../state/slices/event-tree/event-tree.selector';
 import {toggleNodeExpanded} from '../../state/slices/event-tree/event-tree.reducer';
 import {useAppDispatch} from '../../state/store';
-import {
-	TreeItemCheckboxState,
-	TreeItemCollapsibleState
-} from '../../common/utils/types';
-import type {EventNode} from '../../common/utils/types';
-
 import {setNodeCheckbox} from '../../common/utils/service';
 import {loadChildrenByNodeThunk} from '../../state/slices/event-tree/event-tree.thunks';
-import ChevronRight from '@common/icons/ChevronRight';
-import {SEV_TREE_TOOLTIP_CONTAINER_ID} from '../app-content/app-content';
+import EventSourceTreeRow, {
+	isNodeChecked,
+	isNodeCollapsible
+} from './event-source-tree-row';
 
 import styles from './event-source-tree.module.scss';
 
@@ -40,22 +35,15 @@ type NodeSiblingsProps = {
 	readonly nodeIds: string[];
 	readonly depth: number;
 	readonly tooltipWidth: number;
+	readonly isTreeRefreshing: boolean;
 };
 
-type TreeRowProps = {
+type ConnectedTreeRowProps = {
 	readonly nodeId: string;
 	readonly depth: number;
 	readonly tooltipWidth: number;
+	readonly isTreeRefreshing: boolean;
 };
-
-export const isNodeCollapsible = (
-	collapsibleState: TreeItemCollapsibleState | undefined
-) =>
-	collapsibleState === TreeItemCollapsibleState.Collapsed ||
-	collapsibleState === TreeItemCollapsibleState.Expanded;
-
-const isNodeChecked = (node: EventNode) =>
-	node.treeItem.checkboxState === TreeItemCheckboxState.Checked;
 
 /**
  * This is a recursive component that renders a list of sibling nodes.
@@ -69,133 +57,128 @@ const isNodeChecked = (node: EventNode) =>
 function NodeSiblings({
 	nodeIds,
 	depth,
-	tooltipWidth
+	tooltipWidth,
+	isTreeRefreshing
 }: NodeSiblingsProps) {
 	return (
 		<ul
-			className={`${depth === 0 ? styles.rootList : ''} ${styles.listContainer}`}
+			className={`${depth === 0 ? styles.rootList : ''} ${
+				styles.listContainer
+			}`}
 		>
 			{nodeIds.map(nodeId => (
-				<TreeRow
+				<ConnectedTreeRow
 					key={nodeId}
 					nodeId={nodeId}
 					depth={depth}
 					tooltipWidth={tooltipWidth}
+					isTreeRefreshing={isTreeRefreshing}
 				/>
 			))}
 		</ul>
 	);
 }
 
-const TreeRow = memo(
-	({nodeId, depth, tooltipWidth}: TreeRowProps) => {
+const ConnectedTreeRow = memo(
+	({
+		nodeId,
+		depth,
+		tooltipWidth,
+		isTreeRefreshing
+	}: ConnectedTreeRowProps) => {
 		const dispatch = useAppDispatch();
 		const node = useNodeById(nodeId);
 		const childIds = useNodeChildIds(nodeId);
 		const isExpanded = useNodeExpanded(nodeId);
 		const isCache = useNodeCache(nodeId);
+		const [isActionPending, setIsActionPending] = useState(false);
 
-		const isGroupNode =
-			node.isGroup &&
-			isNodeCollapsible(node.treeItem?.collapsibleState);
-		const nodeLabel = node.treeItem.label ?? node.name;
-		const isNodeDisabled = Boolean(node.treeItem?.isDisabled);
-
-		const listItemClassName = [
-			styles.listItem,
-			isGroupNode ? styles.listItemInteractive : '',
-			!isGroupNode && isNodeDisabled ? styles.listItemDisabled : ''
-		]
-			.filter(Boolean)
-			.join(' ');
+		const isNodeDisabled = Boolean(node?.treeItem?.isDisabled);
 
 		const onToggle = useCallback(async () => {
-			if (!node || !node.isGroup) return;
+			if (
+				!node ||
+				!node.isGroup ||
+				isActionPending ||
+				isTreeRefreshing
+			) {
+				return;
+			}
 
-			const isCollapsible = isNodeCollapsible(
-				node.treeItem?.collapsibleState
-			);
+			if (!isNodeCollapsible(node.treeItem?.collapsibleState)) return;
 
-			if (!isCollapsible) return;
+			if (isExpanded || isCache) {
+				dispatch(toggleNodeExpanded(node.path));
 
-			dispatch(toggleNodeExpanded(node.path));
+				return;
+			}
 
-			if (isExpanded || !isGroupNode || isCache) return;
+			setIsActionPending(true);
 
-			await dispatch(
-				loadChildrenByNodeThunk({parentId: node.path, element: node})
-			);
-		}, [dispatch, isExpanded, isCache, node, isGroupNode]);
+			try {
+				await dispatch(
+					loadChildrenByNodeThunk({
+						parentId: node.path,
+						element: node
+					})
+				).unwrap();
+
+				dispatch(toggleNodeExpanded(node.path));
+			} catch {
+				// Keep the group collapsed when loading its children fails.
+			} finally {
+				setIsActionPending(false);
+			}
+		}, [
+			dispatch,
+			isExpanded,
+			isCache,
+			node,
+			isActionPending,
+			isTreeRefreshing
+		]);
 
 		const onCheckboxClick = useCallback(async () => {
-			if (!node || node.isGroup || isNodeDisabled) return;
+			if (
+				!node ||
+				node.isGroup ||
+				isNodeDisabled ||
+				isActionPending ||
+				isTreeRefreshing
+			) {
+				return;
+			}
 
-			await setNodeCheckbox(node, !isNodeChecked(node));
-		}, [node, isNodeDisabled]);
+			setIsActionPending(true);
+
+			try {
+				await setNodeCheckbox(node, !isNodeChecked(node));
+			} catch {
+				// Keep the current checkbox state when the request fails.
+			} finally {
+				setIsActionPending(false);
+			}
+		}, [isActionPending, isNodeDisabled, isTreeRefreshing, node]);
 
 		if (!node) return null;
 
-		const groupNode = (
-			<button
-				type='button'
-				className={styles.toggleButton}
-				disabled={false}
-				onClick={onToggle}
-			>
-				<span
-					className={`${styles.icon} ${isExpanded ? styles.expanded : ''}`}
-				>
-					<ChevronRight />
-				</span>
-				<span className={styles.nodeName}>{nodeLabel}</span>
-			</button>
-		);
-
-		const checkboxElement = (
-			<CheckBox
-				className={styles.checkbox}
-				checked={isNodeChecked(node)}
-				isDisabled={isNodeDisabled}
-				onClick={onCheckboxClick}
-			>
-				{nodeLabel}
-			</CheckBox>
-		);
-
-		const leafNode = (
-			<div className={styles.leafRow}>
-				{node.treeItem.tooltip ? (
-					<Tooltip
-						title={node.treeItem.tooltip ?? ''}
-						containerId={SEV_TREE_TOOLTIP_CONTAINER_ID}
-						position='bottom'
-						type='long'
-						width={tooltipWidth}
-					>
-						{checkboxElement}
-					</Tooltip>
-				) : (
-					checkboxElement
-				)}
-			</div>
-		);
-
 		return (
-			<li className={listItemClassName}>
-				<div className={styles.treeRow}>
-					{isGroupNode ? groupNode : leafNode}
-				</div>
-
-				{isGroupNode && isExpanded && (
-					<div className={styles.childListWithGuide}>
-						<NodeSiblings
-							nodeIds={childIds}
-							depth={depth + 1}
-							tooltipWidth={tooltipWidth}
-						/>
-					</div>
-				)}
-			</li>
+			<EventSourceTreeRow
+				node={node}
+				isActionPending={isActionPending}
+				isTreeRefreshing={isTreeRefreshing}
+				isExpanded={isExpanded}
+				tooltipWidth={tooltipWidth}
+				onToggle={onToggle}
+				onCheckboxClick={onCheckboxClick}
+			>
+				<NodeSiblings
+					nodeIds={childIds}
+					depth={depth + 1}
+					tooltipWidth={tooltipWidth}
+					isTreeRefreshing={isTreeRefreshing}
+				/>
+			</EventSourceTreeRow>
 		);
 	}
 );

@@ -40,7 +40,9 @@ type RestObject = {
 // (because they have a class with a getAll() method and an entity
 // tag in the REST client)
 export type RestEntity = {
-    [K in keyof CfsApiClient['rest']]: CfsApiClient['rest'][K] extends {
+    [
+        K in keyof CfsApiClient['rest']
+    ]: CfsApiClient['rest'][K] extends {
         getAll(): infer R extends Promise<RestObject[]>;
         TAG: string;
     }
@@ -50,7 +52,9 @@ export type RestEntity = {
 
 // The class in the REST client which returns the entity
 type RestClass<T extends RestEntity> = {
-    [K in keyof CfsApiClient['rest']]: CfsApiClient['rest'][K] extends {
+    [
+        K in keyof CfsApiClient['rest']
+    ]: CfsApiClient['rest'][K] extends {
         getAll(): Promise<T[]>;
         TAG: string;
     }
@@ -109,9 +113,9 @@ const defaultStorageOpts: RequireOptional<StorageOptions> = {
  * Subclasses provide the item parser, entity tag, and the REST client class to use.
  * @template T REST entity type to store
  */
-export abstract class Catalog<T extends RestEntity>
-    implements AsyncDisposable
-{
+export abstract class Catalog<
+    T extends RestEntity,
+> implements AsyncDisposable {
     private readonly cleanTmp: boolean;
     private readonly primaryStore: DataStore;
     private readonly tempStore: DataStore;

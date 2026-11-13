@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import {
 	getCfsConfigDict,
 	getAssignedPlugin
 } from '../../utils/config';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 import styles from './plugin-info.module.scss';
 
 type PluginInfoProps = Readonly<{
@@ -30,13 +31,25 @@ type PluginInfoProps = Readonly<{
 function PluginInfo({projectId}: PluginInfoProps) {
 	const socConfig = getCfsConfigDict();
 	const pluginInfo = getAssignedPlugin(projectId);
+	const l10n = useLocaleContext()?.pinConfig as
+		| Record<string, string>
+		| undefined;
 
 	return (
 		<div className={styles.pluginInfoContainer}>
 			<p data-test='plugin-info:firmware'>
-				{`${(socConfig?.Soc ?? '').toUpperCase()} ${capitalizeWord(pluginInfo?.firmwarePlatform ?? '')}`}
+				{`${(socConfig?.Soc ?? '').toUpperCase()} ${capitalizeWord(
+					pluginInfo?.firmwarePlatform ?? ''
+				)}`}
 			</p>
-			<p data-test='plugin-info:version'>{`Version ${pluginInfo?.pluginVersion ?? 'unknown'}`}</p>
+			<p data-test='plugin-info:version'>{`${
+				l10n?.version ?? 'Version'
+			} ${
+				pluginInfo?.resolvedPluginVersion ??
+				pluginInfo?.pluginVersion ??
+				l10n?.unknown ??
+				'unknown'
+			}`}</p>
 		</div>
 	);
 }

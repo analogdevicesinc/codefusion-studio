@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,50 +23,64 @@ import {
 	type PinconfigSearchScope,
 	setActivePinconfigSearchScope
 } from '../../../state/slices/app-context/appContext.reducer';
+import {PINCONFIG_SEARCH_SCOPES} from '../constants/search-scope';
 import {
-	PINCONFIG_SEARCH_SCOPE_PRIORITY,
-	PINCONFIG_SEARCH_SCOPES
-} from '../constants/search-scope';
+	getAvailablePinconfigSearchScopes,
+	isPinconfigSearchScopeAvailable,
+	resolveEffectivePinconfigSearchScope
+} from '../utils/search-scope';
+import {useRegisterScopeControls} from '../../../components/search-results-panel/search-panel-keyboard';
 
 export default function ScopeFilterControls() {
 	const results = usePinmuxSearchResults();
 	const dispatch = useDispatch();
 	const activeScope = useActivePinconfigSearchScope();
 
-	const isAvailable = (scope: PinconfigSearchScope) =>
-		(scope === PINCONFIG_SEARCH_SCOPES.PINS &&
-			results.pinResults.length > 0) ||
-		(scope === PINCONFIG_SEARCH_SCOPES.PERIPHERALS &&
-			results.peripheralResults.length > 0) ||
-		(scope === PINCONFIG_SEARCH_SCOPES.SIGNALS &&
-			results.signalResults.length > 0);
-
-	const hasAnyResults =
-		isAvailable(PINCONFIG_SEARCH_SCOPES.PINS) ||
-		isAvailable(PINCONFIG_SEARCH_SCOPES.PERIPHERALS) ||
-		isAvailable(PINCONFIG_SEARCH_SCOPES.SIGNALS);
+	const availableScopes = getAvailablePinconfigSearchScopes(results);
+	const hasAnyResults = availableScopes.length > 0;
 
 	const selectedScope: PinconfigSearchScope | '' = hasAnyResults
-		? isAvailable(activeScope)
-			? activeScope
-			: (PINCONFIG_SEARCH_SCOPE_PRIORITY.find(isAvailable) ?? '')
+		? resolveEffectivePinconfigSearchScope(activeScope, results)
 		: '';
 
 	const filterOptions: Record<PinconfigSearchScope, FilterOption> = {
 		pins: {
-			isDisabled: !isAvailable(PINCONFIG_SEARCH_SCOPES.PINS),
+			isDisabled: !isPinconfigSearchScopeAvailable(
+				PINCONFIG_SEARCH_SCOPES.PINS,
+				results
+			),
 			isSelected: selectedScope === PINCONFIG_SEARCH_SCOPES.PINS
 		},
 		peripherals: {
-			isDisabled: !isAvailable(PINCONFIG_SEARCH_SCOPES.PERIPHERALS),
+			isDisabled: !isPinconfigSearchScopeAvailable(
+				PINCONFIG_SEARCH_SCOPES.PERIPHERALS,
+				results
+			),
 			isSelected:
 				selectedScope === PINCONFIG_SEARCH_SCOPES.PERIPHERALS
 		},
 		signals: {
-			isDisabled: !isAvailable(PINCONFIG_SEARCH_SCOPES.SIGNALS),
+			isDisabled: !isPinconfigSearchScopeAvailable(
+				PINCONFIG_SEARCH_SCOPES.SIGNALS,
+				results
+			),
 			isSelected: selectedScope === PINCONFIG_SEARCH_SCOPES.SIGNALS
 		}
 	};
+
+	const handleScopeSelect = (scope: string) => {
+		if (!hasAnyResults) return;
+
+		dispatch(
+			setActivePinconfigSearchScope(scope as PinconfigSearchScope)
+		);
+	};
+
+	useRegisterScopeControls({
+		availableScopes,
+		effectiveScope: selectedScope,
+		onScopeChange: handleScopeSelect
+	});
 
 	return (
 		<div className={styles.filterControlsContainer}>
@@ -74,15 +88,7 @@ export default function ScopeFilterControls() {
 				id='pinmux-search:filterControlsContainer'
 				data-test='pinmux-search-filter-controls'
 				options={filterOptions}
-				onSelect={scope => {
-					if (!hasAnyResults) return;
-
-					dispatch(
-						setActivePinconfigSearchScope(
-							scope as PinconfigSearchScope
-						)
-					);
-				}}
+				onSelect={handleScopeSelect}
 			/>
 		</div>
 	);

@@ -12,6 +12,13 @@
       },
       "symbolTypes": {
         "title": "Symbol Types",
+        "functionsByBinding": "Functions by binding",
+        "variablesByBinding": "Variables by binding",
+        "localFunctions": "Local Functions",
+        "globalFunctions": "Global Functions",
+        "weakFunctions": "Weak Functions",
+        "localVariables": "Local Variables",
+        "globalVariables": "Global Variables",
         "tooltips": {
           "title": "Symbol Types",
           "description": "Categorizes functions and variables based on their binding.</br> </br> Global and weak symbols are accessible outside of their defining component, while local symbols remain hidden.</br> Additionally, global and weak symbols can be preempted, meaning they can be overridden by definitions with the same name in another component.</br> </br> <i>Use the buttons (all, text, data, bss) to filter symbols by main section type.</i>"
@@ -297,11 +304,112 @@
         "Is part of": "ELF Sections are grouped into 'Main sections': 'text' for executable code, 'data' for initialized data, and 'bss' for uninitialized data",
         "Flags": "Describe the attributes and permissions of a section, such as whether the section is writable, executable, or allocated in memory during program execution. These flags help the system manage how the section behaves, including if it contains code, data, or special linking information"
       }
+    },
+    "common": {
+      "loading": "Loading...",
+      "noInformationAvailable": "No information available",
+      "searchForElfFiles": "Search for ELF files",
+      "openModal": "Open modal",
+      "goToSymbolSourceCode": "Go to symbol source code",
+      "showColumnAsHexadecimal": "Show column as hexadecimal",
+      "showColumnAsDecimal": "Show column as decimal",
+      "helpPrefix": "Help - ",
+      "showColumnAs": "Show column as",
+      "filterByColumnAndValue": "Filter by {columnAndValue}",
+      "fileOverview": "File overview",
+      "staticallyLinked": "statically linked",
+      "withDebugInfo": "with debug_info",
+      "withNoDebugInfo": "with no debug_info",
+      "stripped": "stripped",
+      "notStripped": "not stripped",
+      "filterAll": "All",
+      "filterText": "Text",
+      "filterData": "Data",
+      "filterBss": "Bss",
+      "sectionLabel": "Section",
+      "sizeLabel": "Size",
+      "bytes": "bytes",
+      "fileAttribute": "File attribute",
+      "value": "Value",
+      "unusedSegment": "UNUSED SEGMENT",
+      "globalFunctions": "Global Functions",
+      "localFunctions": "Local Functions",
+      "weakFunctions": "Weak Functions",
+      "variables": "Variables",
+      "tooltipBitFormat": "Bit Format",
+      "tooltipBitFormatDesc": "Specifies the architecture of the file, indicating whether it is a 32-bit or 64-bit binary. This affects the width of data units and addresses used by the program",
+      "tooltipByteOrder": "Byte Order",
+      "tooltipByteOrderDesc": "Indicates the endianness of the file, which can be Least Significant Byte (LSB, little-endian) or Most Significant Byte (MSB, big-endian). This determines how byte sequences are ordered in memory",
+      "tooltipFileType": "File Type",
+      "tooltipFileTypeDesc": "Denotes the type of the file, such as an executable binary, an object file, a shared library, or a core dump.",
+      "tooltipArchitecture": "Architecture",
+      "tooltipArchitectureDesc": "Specifies the target architecture for the file, such as ARM, x86, MIPS, etc. This indicates the CPU type and instruction set the file is intended for.",
+      "tooltipAbiVersion": "ABI and ELF Version",
+      "tooltipAbiVersionDesc": "Indicates the Application Binary Interface (ABI) version used, which defines standards for binary interfacing between software components, ensuring compatibility and efficient execution and also specifies the version of the ELF format, typically version 1. It may also indicate compliance with specific standards like System V (SYSV)",
+      "tooltipLinkage": "Linkage",
+      "tooltipLinkageDesc": "Indicates whether the file is statically or dynamically linked. Statically linked files include all necessary libraries within the executable, while dynamically linked files rely on external shared libraries at runtime.",
+      "tooltipDebugInfo": "Debug Information",
+      "tooltipDebugInfoDesc": "Indicates whether the file contains debugging information. This information is used by debuggers to provide detailed analysis, including source code references and variable names.",
+      "tooltipStripping": "Stripping",
+      "tooltipStrippingDesc": "Indicates whether the file has had its symbol table and debugging information removed (stripped) to reduce size. Non-stripped files retain these elements, which are useful for debugging and development.",
+      "total": "total"
+    },
+    "memoryLayout": {
+      "segments": "Segments",
+      "sections": "Sections",
+      "symbols": "Symbols",
+      "allSegments": "All segments",
+      "sectionsForSegment": "Sections for Segment \"{id} - {type}\"",
+      "symbolsForSection": "Symbols for Section \"{id} - {name}\"",
+      "startAddress": "START ADDRESS",
+      "endAddress": "END ADDRESS",
+      "size": "SIZE",
+      "sizeLabel": "Size",
+      "readWrite": "Read / Write",
+      "readOnly": "Read only",
+      "unused": "Unused",
+      "unusedSegment": "UNUSED SEGMENT",
+      "unusedSpace": "Unused space",
+      "aboutThisSection": "About this section",
+      "sectionName": "Section Name",
+      "sectionType": "Section Type",
+      "startingAddress": "Starting Address",
+      "endingAddress": "Ending Address",
+      "isPartOf": "Is part of",
+      "flags": "Flags"
+    },
+    "symbolExplorer": {
+      "searchByNameOrAddress": "Search by name or address",
+      "filterUsingSqlQuery": "Filter using SQL query, e.g., SELECT * FROM symbols WHERE size > 0",
+      "savedQueries": "Saved queries",
+      "search": "Search",
+      "symbols": "Symbols",
+      "noName": "<no name>",
+      "confirmDelete": "Confirm delete",
+      "confirmDeleteMessage": "Please confirm you wish to delete \"{name}\".",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "save": "Save",
+      "saveYourQuery": "Save your query",
+      "queryLabel": "Query",
+      "queryNameLabel": "Query name",
+      "enterQueryName": "Enter query name",
+      "saveQueryDescription": "If you would like to save your query for future use, fill in the field below to be able to easily identify it.",
+      "saveQueryWithErrors": "Save query even if there are errors",
+      "editQueryTitle": "Edit query {name}",
+      "duplicateError": "This is a duplicate and cannot be saved!",
+      "querySaved": "Query \"{name}\" saved successfully",
+      "queryUpdated": "Query \"{name}\" updated successfully",
+      "queryDeleted": "Query \"{name}\" deleted successfully",
+      "genericError": "An error occurred. Please try again!",
+      "savedQueriesError": "An error occurred retrieving the saved queries. Please try again!"
     }
   },
   "cfgtools": {
     "common": {
-      "optionGroupNotSupportedByPlugin": "Not Supported by Plugin:"
+      "optionGroupNotSupportedByPlugin": "Not Supported by Plugin:",
+      "windowTooSmall": "This feature is not currently supported for windows this size. If possible please increase the size of this window.",
+      "back": "Back"
     },
     "dashboard": {
       "title": "System Planner Configuration Tools dashboard",
@@ -332,11 +440,14 @@
         "configure-clocks": "Configure Clocks",
         "configure-dfg": "Configure DFG",
         "partition-memory": "Allocate and Partition Memory",
+        "signal-routing-unit": "Configure Signal Routing (SRU)",
         "registers": "View Registers",
         "ai-tools": "Manage AI Models",
-        "mcuboot-config": "MCUboot Config",
+        "mcuboot-config": "Configure MCUboot and Application Packs",
+        "firewall-config": "Configure Firewalls",
         "profiling": "Profiler Configuration",
-        "generate-code": "Generate Code"
+        "generate-code": "Generate Code",
+        "conflict-label": "Has conflicts"
       }
     },
     "pinmux": {
@@ -350,6 +461,9 @@
         "minLength": "A minimum of {minLength} characters is required to start searching.",
         "allPinsReserved": "All pins associated with this peripheral are reserved and cannot be configured.",
         "signalPinReserved": "The {signalName} signal uses a reserved pin and cannot be configured."
+      },
+      "scope-conflict": {
+        "error": "\"{value}\" is already used by {conflictingItems}."
       }
     },
     "config": {
@@ -384,6 +498,9 @@
         "tiedErrorMessage": "Another stream is tied to the stream you are trying to delete. Please remove the tied stream before deleting this stream."
       },
       "noGasketPluginSettings": "No settings found for this gasket.",
+      "scope-conflict": {
+        "error": "\"{value}\" is already used by {conflictingItems}."
+      },
       "streamConfigSidePanel": {
         "createStreamTitle": "Create Stream",
         "editStreamTitle": "Edit Stream",
@@ -420,14 +537,37 @@
       "help": {
         "title": "Data Flow Streams Help"
       },
-      "exportAsCsv": "Export as CSV"
+      "exportAsCsv": "Export as CSV",
+      "columnId": "ID",
+      "columnSource": "Source",
+      "columnDestination": "Destination",
+      "columnIndex": "Index",
+      "columnDescription": "Description",
+      "columnGroup": "Group",
+      "columnBufferAddress": "Buffer Address",
+      "columnBufferSize": "Buffer Size",
+      "filterSource": "Source",
+      "filterDestination": "Destination",
+      "filterGroup": "Group",
+      "typeToSearch": "Type to search...",
+      "clearAll": "Clear all"
     },
     "dfgVisualisation": {
       "title": "DFG Visualization",
       "description": "<p>This screen allows you to view the Data Flow Gaskets.</p>",
       "help": {
         "title": "Data Flow Gaskets Help"
-      }
+      },
+      "networkOnChip": "DFG Network-On-Chip",
+      "viewBy": "View By:",
+      "viewGasket": "Gasket",
+      "viewGroup": "Group",
+      "typeToSearch": "Type to search...",
+      "streams": "Streams",
+      "inOut": "IN | OUT",
+      "total": "TOTAL",
+      "inbound": "INBOUND",
+      "outbound": "OUTBOUND"
     },
     "peripherals": {
       "title": "Peripheral Allocation",
@@ -452,6 +592,10 @@
         "one": "error",
         "other": "errors"
       },
+      "scope-conflict": {
+        "error": "\"{value}\" is already used by {conflictingItems}."
+      },
+      "noPluginOptions": "No plugin options available.",
       "pin-assignment": {
         "title": "PIN ASSIGNMENTS",
         "manage": "Manage",
@@ -498,6 +642,7 @@
         }
       },
       "noPermissions": "Permissions handled in Plugin options",
+      "selectValuePlaceholder": "Select value",
       "core": {
         "owner": "Owner"
       },
@@ -510,14 +655,13 @@
         "details": "Details",
         "type": "Memory Type",
         "name": "Partition Name",
-        "badge": {
-          "primary": "Primary",
-          "secure": "Secure",
-          "non_secure": "Non-secure",
-          "external_managed": "Externally-managed"
-        },
         "plugin-options": "Plugin Options",
         "missing-assignment": "Please assign to a core to configure plugin options.",
+        "scope-conflict": {
+          "tooltip": "Identifier used is not unique",
+          "error": "\"{value}\" is already used by {conflictingItems}.",
+          "booleanError": "This option is already used by {conflictingItems}."
+        },
         "num_partitions": {
           "zero": "No memory partitions allocated yet.",
           "one": {
@@ -600,17 +744,21 @@
           "file": "Model File",
           "calibrationFiles": "Calibration file(s)",
           "validationFiles": "Validation file(s)",
-          "expectedReturn": "Expected return"
+          "label": "Label",
+          "expected": "Expected output"
         },
         "errors": {
           "targetRequired": "Target is required",
           "modelNameRequired": "Name is required",
-          "modelNameExists": "A model with this name already exists",
+          "identifierCollision": "This identifier is already in use by another model",
           "modelNameTooLong": "Model name must not exceed {maxLength} characters",
-          "invalidCIdentifier": "Enter a valid C identifier. Only letters, numbers and underscores are allowed. Reserved C/C++ keywords are not allowed.",
+          "invalidCIdentifier": "Enter a valid C identifier. Only letters, non-leading numbers and underscores are allowed. Reserved C/C++ keywords are not allowed.",
           "modelFileRequired": "Model file is required",
           "fieldRequired": "Field is required",
-          "modelDoesNotSupportPlatform": "The selected model does not support the selected platform"
+          "modelDoesNotSupportPlatform": "The selected model does not support the selected platform",
+          "validationInputRequired": "Every validation entry needs an input file",
+          "validationLabelOrExpectedRequired": "Every validation entry needs either a label or an expected output, but not both",
+          "validationMixedLabelAndExpected": "All validation entries must use the same field. Use a label for every entry, or an expected output for every entry"
         }
       },
       "modelList": {
@@ -650,6 +798,324 @@
           "enableProfiling": "Enable Zephelin AI Profiling",
           "enableProfilingTooltip": "This will configure Zephyr to produce a profiling trace of the AI models via the specified UART port"
         }
+      }
+    },
+    "firewallConfig": {
+      "title": "Firewall Config",
+      "description": "<p>TBD.</p>",
+      "help": {
+        "title": "Firewall Config Help"
+      }
+    },
+    "signalRoutingUnit": {
+      "title": "Signal Routing Unit",
+      "description": "<p>The SRU Config tool lets you configure the Signal Routing Unit (SRU), a hardware crossbar switch that connects peripheral inputs and outputs to each other, and to and from external pins.</p><p>Use the <strong>Connections</strong> tab to configure routing one peripheral or pin buffer at a time, and the <strong>Routing</strong> tab to view all configured connections in a single table.</p><br /><h2>Connections overview</h2><p>The Connections tab is divided into the following areas:</p><ul><li><strong>Search and filters</strong>: Find a signal or peripheral by name, alias, or description. Use the scope picker to narrow your search, and the <strong>All</strong>, <strong>Default</strong>, and <strong>Modified</strong> filter chips to show only default routing or routing you have changed.</li><li><strong>Components list</strong> (left panel): Browse <strong>Pin Buffers</strong> and <strong>Peripherals</strong>. Expand a group to reveal its entries. The badges on each entry show its input and output signal counts.</li><li><strong>Signals</strong> (main panel): Select an entry to view its input and output signals, grouped by signal type. Expand a signal to view its current connection.</li></ul><br /><h2>Configuring a pin buffer</h2><p>Select a pin buffer to view its package pin location and set its <strong>Direction</strong>:</p><ul><li><strong>Input</strong>: The external pin provides a signal to the SRU. The enable signal is routed to a fixed LOW source.</li><li><strong>Output</strong>: The SRU drives a signal through the external pin. The enable signal is routed to a fixed HIGH source.</li><li><strong>Bidirectional</strong>: The signal you route to the enable signal switches the pin between input and output at runtime.</li></ul><br /><h2>Editing a connection</h2><p>Select <strong>Configure</strong> on a signal to open the <strong>Connection Details</strong> panel. An input receives its signal from one source, while an output can drive multiple inputs.</p><ul><li><strong>Input signal</strong>: Select the <strong>Output Signal</strong> that drives the input. Optionally, add an <strong>Alias</strong> and a <strong>Description</strong>, or select <strong>Invert signal polarity</strong> where supported.</li><li><strong>Output signal</strong>: Use <strong>Input Signals</strong> to add one or more inputs. Optionally, add an <strong>Alias</strong>, and expand each connected input to edit its description.</li></ul><p>Changes are staged in the panel and only take effect when you select <strong>Save</strong>. If you add an input that is already <strong>Modified</strong> and routed to a different output, you are prompted to confirm the reroute.</p><p><i><strong>Note:</strong> An alias is a custom display name, shown with the underlying signal name alongside it. Aliases and descriptions document your routing and do not change the generated configuration.</i></p><br /><h2>Resetting or removing a connection</h2><ul><li>On a <strong>Modified</strong> connection, select <strong>Reset Source</strong> to revert the input to its default routing, clear its description and alias, and reset its polarity to normal.</li><li>On a <strong>Default</strong> connection, select <strong>Remove</strong> to disconnect the input by routing it to the fixed LOW source.</li></ul><br /><h2>Routing overview</h2><p>The Routing tab displays every configured connection in a single table.</p><ul><li>Use <strong>Search</strong> to find connections by source or destination signal name or alias, and the filter chips to show only default or modified connections.</li><li>An <strong>Inverted Signal</strong> icon appears next to any input with polarity inversion enabled.</li><li>Select <strong>Reset Source</strong> to revert a connection to its default routing, clear its description and alias, and reset its polarity to normal.</li><li>Select <strong>Configure</strong> to jump to the signal on the Connections tab, with the Connection Details panel open.</li></ul><br /><h2>Next steps</h2><p>After you select <strong>Save</strong>, your SRU changes are applied to the open <code>.cfsconfig</code> file. Save the file, then use <strong>Generate Code</strong> to apply the configuration to your project.</p>",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "help": {
+        "title": "Signal Routing Unit Help"
+      },
+      "empty-sidebar": {
+        "title": "No SRU Components",
+        "description": "This SoC has no signal routing components to configure."
+      },
+      "filter": {
+        "all": "All",
+        "default": "Default",
+        "modified": "Modified",
+        "search": "Search"
+      },
+      "connections": {
+        "title": "SRU Connections",
+        "peripheralList": {
+          "title": "Signal Routing Unit Components",
+          "sections": {
+            "pinBuffers": "Pin Buffers",
+            "peripherals": "Peripherals",
+            "signals": "Signals",
+            "descriptions": "Descriptions"
+          }
+        },
+        "search": {
+          "noResults": "No results found.",
+          "minLength": "A minimum of {minLength} characters is required to start searching.",
+          "sections": {
+            "peripherals": "Peripherals",
+            "pinBuffers": "Pin Buffers",
+            "groups": "Groups",
+            "connectionDescriptions": "Connection Descriptions",
+            "signalDescriptions": "Signal Descriptions",
+            "peripheralDescriptions": "Peripheral Descriptions"
+          }
+        },
+        "connectionDetails": {
+          "title": "Connection Details",
+          "sourceDetails": "Source Details",
+          "destinationDetails": "Destination Details",
+          "peripheral": "Peripheral",
+          "type": "Type",
+          "signalInfo": "Signal Info",
+          "outputSignal": "Output Signal",
+          "selectOutputSignal": "Select output signal",
+          "inputSignals": "Input Signals",
+          "selectInputSignals": "Select input signals",
+          "searchSignals": "Search signals",
+          "noSignalsFound": "No signals found",
+          "save": "Save",
+          "defaultConnectionLocked": "Default connection cannot be removed",
+          "alreadyDisconnected": "This signal is already disconnected (routed to LOW)",
+          "description": "Description",
+          "descriptionPlaceholder": "Start typing...",
+          "alias": "Alias",
+          "aliasPlaceholder": "Enter an alias",
+          "aliasInfo": "Aliases make signals easier to identify without changing the hardware signal name.",
+          "optional": "Optional",
+          "polarityControl": "Polarity control",
+          "invertSignalPolarity": "Invert signal polarity",
+          "polarityControlInfo": "Only applies to a certain number of signals. Controls signal polarity (Normal/Inverted). Default (unchecked state) corresponds to Normal.",
+          "rerouteWarning": {
+            "title": {
+              "one": "Reroute selected input?",
+              "other": "Reroute selected inputs?"
+            },
+            "intro": {
+              "one": "The following routing will be changed to use {newOutput}:",
+              "other": "The following routings will be changed to use {newOutput}:"
+            },
+            "continueQuestion": "Do you want to continue?",
+            "confirmButton": "Confirm and Reroute",
+            "cancelButton": "Cancel"
+          }
+        },
+        "signalCount": {
+          "inputs": {
+            "one": "{count} input",
+            "other": "{count} inputs"
+          },
+          "outputs": {
+            "one": "{count} output",
+            "other": "{count} outputs"
+          }
+        },
+        "noSelection": {
+          "title": "No Items Selected Yet",
+          "description": "Select an SRU component to view and configure its signal connections."
+        },
+        "noMatchingSignals": {
+          "title": "No Matching Signals",
+          "description": "No signals in this SRU component match the current filter."
+        },
+        "connectionCount": {
+          "one": "{count} Connection",
+          "other": "{count} Connections"
+        },
+        "unused": "Unused",
+        "configure": "Configure",
+        "expandAll": "Expand all",
+        "collapseAll": "Collapse all",
+        "inputSignals": "Input Signals",
+        "outputSignals": "Output Signals",
+        "headings": {
+          "inputs": {
+            "label": "Inputs",
+            "tooltip": "The signal path used when the Pin Buffer receives data from the external pin."
+          },
+          "outputs": {
+            "label": "Outputs",
+            "tooltip": "The signal path used when the Pin Buffer transmits data to the external pin."
+          },
+          "directionControls": {
+            "label": "Direction Controls",
+            "tooltip": "Defines how the Pin Buffer determines whether it operates in input or output mode."
+          }
+        },
+        "pinBufferControls": {
+          "directionLabel": "Direction:",
+          "pinLocationLabel": "Pin:",
+          "pinLocationUnassigned": "Unassigned",
+          "directionOptions": {
+            "input": "Input",
+            "output": "Output",
+            "bidirectional": "Bidirectional"
+          }
+        }
+      },
+      "routing": {
+        "title": "Routing",
+        "source": "Source",
+        "destination": "Destination",
+        "description": "Description",
+        "connectionStatus": "Connection Status",
+        "resetSource": "Reset Source",
+        "configure": "Configure",
+        "removeConnection": "Remove",
+        "default": "Default",
+        "modified": "Modified",
+        "invertedSignal": "Inverted Signal",
+        "resetUndo": {
+          "message": "\"{input}\" was disconnected and reset to its Default source.",
+          "undoButton": "Undo",
+          "staleMessage": "\"{input}\" has changed since the reset. Undo is no longer available."
+        },
+        "disconnectUndo": {
+          "message": "\"{input}\" was disconnected and set to LOW.",
+          "undoButton": "Undo",
+          "staleMessage": "\"{input}\" has changed since it was disconnected. Undo is no longer available."
+        },
+        "emptyState": {
+          "noResultsTitle": "No results match the criteria",
+          "noResultsDescription": "Try adjusting your filters or clearing your search to see more results.",
+          "clearFilters": "Clear Filters"
+        }
+      }
+    },
+    "firewallOverview": {
+      "title": "Firewall Overview",
+      "description": "<p>This screen provides an overview of the firewall configuration.</p>",
+      "help": {
+        "title": "Firewall Overview Help"
+      },
+      "firewallZones": "Firewall Zones",
+      "zones": {
+        "openZones": "Open zones",
+        "blockedZones": "Blocked zones",
+        "restrictedZones": "Restricted zones",
+        "conflictsAndErrors": "Conflicts and errors"
+      },
+      "firewallProtectionStatus": {
+        "title": "Firewall Protection Status",
+        "configured": "Configured",
+        "unconfigured": "Unconfigured",
+        "link": "Configure Firewalls"
+      },
+      "firewallStatus": {
+        "title": "Firewall Status",
+        "enabled": "Enabled",
+        "overrideAllBlocked": "Override - All Blocked",
+        "overrideAllOpen": "Override - All Open",
+        "securitySettings": "Security Settings",
+        "overrideBanner": "Firewall Status is set to Override - All Blocked.",
+        "overrideBannerOpen": "Firewall Status is set to Override - All Open.",
+        "enableFirewall": "Enable Firewall"
+      },
+      "manageAccessPermissions": {
+        "title": "Manage Access Permissions",
+        "columns": {
+          "coreInitiator": "CORE INITIATOR",
+          "firewalls": "FIREWALLS"
+        }
+      },
+      "unconfiguredFirewalls": {
+        "title": "Unconfigured Firewalls",
+        "link": "Protect and Configure Firewalls Zones",
+        "columns": {
+          "initiators": "INITIATORS",
+          "responders": "RESPONDERS"
+        }
+      }
+    },
+    "firewallZones": {
+      "title": "Firewall Zones",
+      "description": "<p>This screen allows you to configure firewall zones.</p>",
+      "help": {
+        "title": "Firewall Zones Help"
+      },
+      "tooltip": {
+        "addZone": "Add Firewall Zones"
+      },
+      "empty-content": {
+        "title": "No Firewall Zones",
+        "description": "Create a zone using the + button in the sidebar, or the button below to get started.",
+        "addButton": "Add Firewall Zone"
+      },
+      "empty-sidebar": {
+        "title": "No Firewall Zones",
+        "description": "Create a zone to get started."
+      },
+      "search": {
+        "placeholder": "Search",
+        "no-results": {
+          "title": "No Results Found",
+          "description": "No firewall zones match your search."
+        }
+      },
+      "deleteZone": "Delete Firewall Zone",
+      "conflictLabel": "Has conflicts",
+      "duplicateZoneName": "A zone named '{name}' already exists.",
+      "zoneOverlapBanner": "{count} programmable regions in this zone have overlapping addresses.",
+      "accessModeConflict": "{initiator} and {responder} are in {zones} with different access modes.",
+      "warningModal": {
+        "description": "Deleting a Firewall Zone will lose all configuration related to it. ",
+        "dismiss": "Don't show this message again.",
+        "deleteButton": "Delete",
+        "cancelButton": "Cancel"
+      },
+      "manage-access-modes": {
+        "title": "Select Open Access Modes",
+        "tooltip": "Configure which access modes are allowed for this zone. Only access modes supported by an initiator are applied.",
+        "infoLabel": "Access mode information",
+        "subtitle": "To create restrictions, uncheck the access modes you want to block.",
+        "selectAll": "Select All",
+        "accessModes": {
+          "nonSecureNonPrivileged": "Non-Secure, Non-Privileged",
+          "nonSecurePrivileged": "Non-Secure, Privileged",
+          "secureNonPrivileged": "Secure, Non-Privileged",
+          "securePrivileged": "Secure, Privileged"
+        }
+      },
+      "manage-firewalls": {
+        "addButton": "Add",
+        "addTooltip": "Add Initiators and Responders",
+        "breadcrumb": "Manage Firewalls",
+        "searchPlaceholder": "Search Initiators and Responders",
+        "selectAll": "Select All",
+        "no-results": {
+          "title": "No Results Found",
+          "description": "No initiators or responders match your search."
+        },
+        "unconfigured": "Unconfigured",
+        "configured": "Configured",
+        "applyButton": "Apply",
+        "cancelButton": "Cancel",
+        "title": "Manage Firewalls",
+        "description": "Select the Initiators and Responders the zone controls.",
+        "tabs": {
+          "initiators": "INITIATORS",
+          "responders": "RESPONDERS"
+        },
+        "table": {
+          "name": "NAME",
+          "supportedModes": "SUPPORTED MODES",
+          "deleteTooltip": "Remove",
+          "configureTooltip": "Configure",
+          "conflictLabel": "Has conflicts"
+        },
+        "warningModal": {
+          "description": "Removing an item will discard any configuration related to it. ",
+          "dismiss": "Don't show this message again.",
+          "removeButton": "Remove",
+          "cancelButton": "Cancel"
+        },
+        "emptyState": {
+          "initiators": {
+            "title": "No Initiators",
+            "description": "Click the plus icon or the button below to add your first initiator."
+          },
+          "responders": {
+            "title": "No Responders",
+            "description": "Click the plus icon or the button below to add your first responder."
+          }
+        }
+      },
+      "responder-config": {
+        "name": "Name",
+        "namePlaceholder": "Enter name",
+        "description": "Description",
+        "descriptionPlaceholder": "<description goes in here — click to inline edit>",
+        "noDescription": "No description",
+        "startAddress": "Start Address",
+        "addressOverlapError": "Address overlaps with '{regionName}'",
+        "addressOverlapBanner": "{regionName} address overlaps with {conflictingRegionName}. Programmable regions cannot overlap."
       }
     },
     "mcubootConfig": {
@@ -743,6 +1209,7 @@
             "oddHexLength": "Hex value must have an even number of digits (e.g. 0x01, not 0x1).",
             "hexValueExceedsMax": "Hex value exceeds the maximum allowed (0xFFFF).",
             "valueTooLong": "Value exceeds the maximum length of 65535 characters.",
+            "valueByteIncrement": "Value must be a multiple of 4 bytes.",
             "tagOutOfRange": "Tag must be between 0x00A0 and 0xFFFE.",
             "tagRequired": "Tag is required.",
             "tagDuplicate": "Tag already in use by another TLV.",
@@ -801,6 +1268,7 @@
             "startAddressRequired": "Start address is required.",
             "endAddressRequired": "End address is required.",
             "locationAddressRequired": "Location address is required.",
+            "locationAddressOverlap": "Address range overlaps with another image.",
 
             "slotSizeRequired": "Slot size is required.",
             "headerSizeRequired": "Header size is required.",
@@ -811,7 +1279,8 @@
             "nameRequired": "Name is required.",
             "securityCounterInvalid": "Security counter must be a non-negative integer.",
             "aesKwKeyPathInvalid": "Path must point to a valid binary file (.bin).",
-            "aesGcmKeyPathInvalid": "Path must point to a valid binary file (.bin)."
+            "aesGcmKeyPathInvalid": "Path must point to a valid binary file (.bin).",
+            "keyPathIllegalChars": "Invalid path"
           }
         }
       }
@@ -834,7 +1303,9 @@
         "memory-usage": "Memory Usage",
         "profiling-interval": "Profiling Interval",
         "ai-profiling": "AI Model Profiling",
-        "application-callgraph": "Application Callgraph"
+        "application-callgraph": "Application Callgraph",
+        "triggerFunction": "Trigger Function",
+        "stopperFunction": "Stopper Function"
       },
       "interface": {
         "title": "Interface Options",
@@ -871,7 +1342,8 @@
         "confirm": "Continue Generation"
       },
       "enableAiModels": "Generate AI Models",
-      "enableAiModelsTooltip": "Existing files won't be removed before generating"
+      "enableAiModelsTooltip": "Existing files won't be removed before generating",
+      "platform": "Platform:"
     },
     "errors": {
       "missingPlugins": {
@@ -896,7 +1368,8 @@
           "missingPluginDescription": "System Planner requires {componentName} version {componentVersion} which is not available.",
           "resolutionOptionsLabel": "Resolution Options",
           "allowFutureVersions": "Allow all future compatible versions",
-          "loadingResolutionsMessage": "This operation can take several minutes, please wait..."
+          "loadingResolutionsMessage": "This operation can take several minutes, please wait...",
+          "resolutionPlaceholder": "Select a resolution"
         }
       },
       "missingDataModel": {
@@ -916,6 +1389,20 @@
       },
       "security": {
         "title": "Security",
+        "firewall-settings": {
+          "title": "Firewall Settings",
+          "config-firewall": "Configure Firewall",
+          "enableTitle": "Enable Firewall",
+          "enabledLabel": "Enabled",
+          "overrideAllBlockedLabel": "Override - All Blocked",
+          "overrideAllOpenLabel": "Override - All Open",
+          "enabled": "System Planner will use the firewall configuration.",
+          "overrideAllBlocked": "All firewalls will be set to blocked. Configuration will be ignored. ",
+          "overrideAllOpen": "All firewalls will be set to open. Configuration will be ignored. ",
+          "binaryFileTitle": "Firewall Binary File Location",
+          "binaryFilePlaceholder": "Choose path",
+          "browse": "Browse"
+        },
         "mcuboot-settings": {
           "title": "MCUboot Settings",
           "config-mcuboot": "Configure MCUboot",
@@ -938,10 +1425,123 @@
           "apply": "Apply",
           "duplicateKeyName": "A key with this name already exists. Please choose a different name.",
           "duplicateKey": "A key with this name already exists. Please choose a different key.",
+          "keyNameInvalidChars": "Key name can only contain letters, numbers, underscores and hyphens.",
           "destinationPathRequired": "Destination path is required.",
           "destinationPathNoSpaces": "Path cannot contain spaces.",
           "invalidPath": "Destination path must be an existing directory."
         }
+      }
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "peripheral-allocation": "Peripheral Allocation",
+      "pin-config": "Pin Config",
+      "clock-config": "Clock Config",
+      "data-flow-gasket": "Data Flow Gasket",
+      "memory-allocation": "Memory Allocation",
+      "signal-routing-unit": "Signal Routing Unit",
+      "firewall-config": "Firewall Config",
+      "registers": "Registers",
+      "embedded-ai-tools": "Manage AI Models",
+      "mcuboot-config": "MCUboot Config",
+      "profiling": "Profiling",
+      "generate-code": "Generate Code",
+      "settings": "Settings"
+    },
+    "configPanel": {
+      "details": "DETAILS",
+      "configuration": "CONFIGURATION",
+      "codeGenerationPlugin": "CODE GENERATION PLUGIN"
+    },
+    "filters": {
+      "modified": "Modified",
+      "unmodified": "Unmodified",
+      "assigned": "Assigned",
+      "available": "Available",
+      "conflicts": "Conflicts"
+    },
+    "badges": {
+      "primary": "Primary",
+      "secure": "Secure",
+      "nonSecure": "Non-secure",
+      "externallyManaged": "Externally managed"
+    },
+    "coreProjects": {
+      "title": "Core Projects",
+      "helpBannerHeader": "Getting Started with Peripheral Allocation",
+      "helpBannerDescription": "Select a peripheral or function from the list to allocate it to a core."
+    },
+    "pinConfig": {
+      "functionsAssigned": "Functions assigned:",
+      "functionsAvailable": "Functions available:",
+      "noPluginOptions": "No plugin options available.",
+      "version": "Version",
+      "unknown": "unknown",
+      "search": "Search",
+      "configUnavailable": "Configuration unavailable until {signal} is allocated to a project.",
+      "peripheralConfigUnavailable": "Configuration unavailable until {peripheral} is allocated to a project.",
+      "externallyManaged": "This signal is allocated to a project that is externally managed",
+      "description": "Description",
+      "startTyping": "Start typing..."
+    },
+    "peripheralConfig": {
+      "allocatedTo": "Allocated to",
+      "allocatedToMultipleCores": "Allocated to multiple cores.",
+      "description": "Description",
+      "startTyping": "Start typing...",
+      "nonDefaultValue": "Non-default value",
+      "filterAll": "all",
+      "filterAllocated": "allocated",
+      "filterAvailable": "available",
+      "allocateTo": "Allocate {name} to: ",
+      "back": "Back",
+      "resetToDefault": "Reset to default"
+    },
+    "clockConfig": {
+      "select": "Select",
+      "selectLabel": "Select {label}",
+      "setLabel": "Set {label}"
+    },
+    "memoryConfig": {
+      "partitions": "Partitions",
+      "viewBy": "View By",
+      "project": "Project",
+      "type": "Type",
+      "memoryType": "Memory Type"
+    },
+    "registersScreen": {
+      "modifiedFromResetValue": "Modified from reset value",
+      "search": "Search",
+      "noResults": "No results found"
+    },
+    "generateCode": {
+      "header": "Generate Code",
+      "subtitle": "Select which projects, from those managed, to generate code for.",
+      "generatedFiles": "Generated files",
+      "generateButton": "Generate",
+      "cancelButton": "Cancel",
+      "backButton": "Back",
+      "ready": "Ready",
+      "issuesTitle": "Issues",
+      "issueCount": {
+        "one": "{count} Issue",
+        "other": "{count} Issues"
+      },
+      "pluginId": "Plugin ID",
+      "issueLabels": {
+        "memory": "Memory Allocation.",
+        "peripheral": "Peripheral Allocation.",
+        "pin": "Pin Config.",
+        "clock": "Clock Config.",
+        "dfg": "DFG.",
+        "mcuboot": "MCUboot Config.",
+        "firewall": "Firewall Config.",
+        "profiling": "Profiling."
+      },
+      "directoryModal": {
+        "title": "Code Generation Directory",
+        "detail": "Code will be generated in the {workspacePath} directory.",
+        "confirm": "OK"
       }
     }
   },
@@ -980,6 +1580,14 @@
         "usbDevice": "USB Device",
         "usbDevicePlaceholder": "Select Device",
         "noUsbDevice": "No device detected"
+      },
+      "liveTracing": {
+        "title": "Live Tracing",
+        "enableToggle": "Enable Zephelin Live Tracing",
+        "tcpHost": "TCP Server Host",
+        "tcpPort": "TCP Server Port",
+        "backendHost": "Backend Host",
+        "backendPort": "Backend Port"
       },
       "generalSettings": {
         "title": "General Settings",
@@ -1359,6 +1967,10 @@
       "report-load-error": "Error loading report:",
       "unknown-report-type": "Error: Unknown report type"
     },
+    "common": {
+      "copyModelHash": "Copy file hash",
+      "notAvailable": "N/A"
+    },
     "profiling": {
       "title": "Resource Profile Report",
       "summary": {
@@ -1388,6 +2000,8 @@
         "bias": "Bias",
         "model": "Model",
         "modelPath": "Model Path",
+        "modelHash": "Model Hash",
+        "copyModelHash": "Copy full Hash",
         "framework": "Framework",
         "modelSize": "Model Size",
         "dataType": "Data Type",
@@ -1395,18 +2009,34 @@
         "cycles": "Cycles",
         "power": "Power",
         "latency": "Latency",
-        "layers": "Layers"
+        "layers": "Layers",
+        "accelerated": "Accelerated"
       },
       "tableLegend": {
-        "availableMemory": "Available Memory {value}KB",
-        "model": "Model {value}KB",
-        "runtimeMemory": "Run-time Memory {value}KB"
+        "availableMemory": "Available Memory {value}",
+        "model": "Model {value}",
+        "runtimeMemory": "Run-time Memory {value}"
+      }
+    },
+    "runtimeProfiling": {
+      "title": "Runtime Profile Report",
+      "tableDetail": {
+        "avgLatency": "Average Latency",
+        "throughput": "Throughput",
+        "iterations": "Iterations",
+        "layers": "Layers",
+        "accelerated": "Accelerated"
+      },
+      "memoryView": {
+        "title": "Run Time Performance"
       }
     },
     "compatibility": {
       "title": "Compatibility Report",
       "affected-layers": "Affected Layers",
       "data-type": "Type",
+      "modelPath": "Model Path",
+      "modelHash": "Model Hash",
       "memory": {
         "title": "Memory Issues",
         "no-issues": "No memory issues found",
@@ -1461,7 +2091,8 @@
       "error": "Error"
     },
     "footer": {
-      "create": "Create Workspace"
+      "create": "Create Workspace",
+      "creating": "Creating Workspace..."
     },
     "search": {
       "matchesAvailable": "{matchesCount} matches available",
@@ -1475,10 +2106,17 @@
       "selectSocRequired": "Please select a SoC.",
       "selectBoardRequired": "Please select a board.",
       "selectedCoreRequired": "Please select a core to run the model on.",
-      "invalidFilenameCharacters": "Workspace name contains invalid filename characters.",
+      "invalidFilenameCharacters": "Spaces and special characters (except \"_\", \"-\" and \".\") are not allowed",
       "modelDoesNotSupportPlatform": "The selected model does not support the selected SoC, board, and core configuration.",
-      "socConfigurationError": "Error with the selected SoC configuration. Please check the selected SoC.",
-      "compatibilityCheckFailed": "Model file seems to not be a valid tflite file. Please choose a different model file"
+      "socConfigurationError": "Error with the selected SoC configuration. Please check the selected SoC."
+    },
+    "compatibilityWarning": {
+      "title": "Potential compatibility issues",
+      "incompatible": "The model was reported as incompatible with the selected core. The created workspace might not build or run as expected. Do you want to create the workspace anyway?",
+      "error": "The compatibility check for the selected core failed. See the CodeFusion Studio output for details. The created workspace might not build or run as expected. Do you want to create the workspace anyway?",
+      "untested": "The compatibility check for the selected core has not completed yet. The created workspace might not build or run as expected. Do you want to create the workspace anyway?",
+      "confirm": "Create anyway",
+      "cancel": "Cancel"
     }
   },
   "model-profiling": {
@@ -1498,12 +2136,13 @@
     },
 
     "config": {
-      "description": "Once you are ready, select the serial port from the drop-down below.",
+      "description": "Once you are ready, select the serial port from the list, click Run, then press the Reset button on your board to start sending trace data. Click Stop when you have collected enough data. When the capture produces a TEF file, CodeFusion Studio creates and opens a profiling report.",
       "usbPortLabel": "Host USB port designation",
       "usbPortTooltip": "Select the serial port on your host computer that you connected to the board's UART port to receive the profiling output.",
       "usbPortPlaceholder": "Please select an option",
       "runWithLabel": "Run with",
       "runWithPlaceholder": "Please select a debugger",
+      "cleanAndBuild": "Clean & Build",
       "run": "Run",
       "stop": "Stop"
     },
@@ -1520,12 +2159,86 @@
       "title": "CFS Package Manager",
       "helpButton": "Help",
       "helpModalTitle": "Package Manager Help",
-      "helpModalBody": "<p>The Package Manager lets you browse, install, and uninstall CodeFusion Studio packages. </p><h3>Sign in</h3><p>Some packages require a myAnalog account. If you are not signed in, a prompt appears at the top of the panel. Select <strong>Sign In</strong> and follow the browser authentication flow. You can dismiss the prompt to browse public packages without signing in.</p><h3>Browse and filter</h3><p>Use the search bar to filter packages by name. Use the filter chips to narrow results by <strong>Status</strong>, <strong>SoC</strong>, or <strong>Type</strong>. Select <strong>Required</strong> to show only packages required by your current workspace.</p><h3>Install packages</h3><ol><li>Select the checkbox on one or more package cards.</li><li>Select <strong>Continue</strong>.</li><li>Review the summary — any required dependencies are resolved and listed automatically. Select <strong>Continue</strong>.</li><li>If any packages require license acceptance, review each license and select <strong>Accept License(s) and Install</strong>.</li></ol><h3>Uninstall packages</h3><p>Select the delete icon to the right of an installed package card. If other installed packages depend on it, a confirmation dialog lists them before proceeding. Built-in packages that ship with CFS cannot be uninstalled.</p><h3>Select a version</h3><p>Each package card includes a version menu. Select a version before installing if you need something other than the latest. If your workspace requires a specific version range, it is shown beneath the version menu.</p>"
+      "helpModalBody": "<p>The Package Manager lets you browse, install, and uninstall CodeFusion Studio packages. </p><h3>Sign in</h3><p>Some packages require a myAnalog account. If you are not signed in, a prompt appears at the top of the panel. Select <strong>Sign In</strong> and follow the browser authentication flow. You can dismiss the prompt to browse public packages without signing in.</p><h3>Browse and filter</h3><p>Use the search bar to filter packages by name. Use the filter chips to narrow results by <strong>Status</strong>, <strong>SoC</strong>, or <strong>Type</strong>. Select <strong>Required</strong> to show only packages required by your current workspace.</p><h3>Install packages</h3><ol><li>Select the checkbox on one or more package cards.</li><li>Select <strong>Continue</strong>.</li><li>Review the summary — any required dependencies are resolved and listed automatically. Select <strong>Continue</strong>.</li><li>If any packages require license acceptance, review each license and select <strong>Accept License(s) and Install</strong>.</li></ol><h3>Uninstall packages</h3><p>Select the delete icon to the right of an installed package card. If other installed packages depend on it, a confirmation dialog lists them before proceeding. Built-in packages that ship with CFS cannot be uninstalled.</p><h3>Select a version</h3><p>Each package card includes a version menu. Select a version before installing if you need something other than the latest. If your workspace requires a specific version range, it is shown beneath the version menu.</p>",
+      "tabs": {
+        "packages": "Packages",
+        "remotes": "Remotes"
+      }
+    },
+    "indexing": {
+      "unavailable": "Disabled until indexing of {remotes} finishes."
+    },
+    "remotes": {
+      "title": "Manage your remotes",
+      "subtitle": "Add, enable, or disable remote sources used to find and install packages.",
+      "addRemoteButton": "Add remote",
+      "emptyTitle": "No remotes configured",
+      "emptyDescription": "Add a remote to find and install packages from it.",
+      "loadErrorTitle": "Couldn't load remotes",
+      "retry": "Try again",
+      "card": {
+        "customBadge": "Custom",
+        "enableToggle": "Enable remote",
+        "disableToggle": "Disable remote",
+        "updatingToggle": "Updating...",
+        "configure": "Configure authentication",
+        "configureDisabled": "Enable the remote to configure it",
+        "delete": "Delete",
+        "auth": {
+          "none": "No Auth",
+          "myAnalog": "myAnalog",
+          "usernamePassword": "Username / Password",
+          "authenticationMethod": "Authentication Method"
+        },
+        "errors": {
+          "auth": "Authentication with this remote failed.",
+          "fetch": "Couldn't load packages from this remote.",
+          "config": "Couldn't set up this remote."
+        }
+      },
+      "sidebar": {
+        "addTitle": "Add Custom Remote",
+        "editTitle": "Edit Custom Remote",
+        "remoteDetails": "Remote details",
+        "nameLabel": "Remote name",
+        "namePlaceholder": "Enter a name",
+        "urlLabel": "Remote URL",
+        "urlPlaceholder": "Enter the remote URL",
+        "readOnly": "Remote name and URL can't be changed after the remote is created.",
+        "authentication": "Authentication",
+        "authLabel": "Set Authentication",
+        "authOptions": {
+          "none": "No Authentication",
+          "usernamePassword": "Username / Password"
+        },
+        "usernameLabel": "Username",
+        "usernamePlaceholder": "Set username",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Set password",
+        "passwordKeepPlaceholder": "Leave empty to keep current password",
+        "addButton": "Add Remote",
+        "saveButton": "Save",
+        "close": "Close",
+        "errors": {
+          "nameRequired": "Enter a remote name.",
+          "nameInvalid": "Use only letters, numbers, hyphens, and underscores.",
+          "nameExists": "A remote with this name already exists.",
+          "urlRequired": "Enter a remote URL.",
+          "urlInvalid": "Enter a valid http or https URL."
+        }
+      },
+      "removeModal": {
+        "title": "Remove {name}?",
+        "message": "Removing this remote is permanent. It will no longer be available as a package source.",
+        "cancel": "Cancel",
+        "confirm": "Remove",
+        "close": "Close"
+      }
     },
     "filters": {
       "title": "Manage your Packages",
       "subtitle": "Select the package(s) that you would like to install.",
-      "searchPlaceholder": "Search by name",
+      "searchPlaceholder": "Search by name, SoC or description",
       "requiredChip": "Required",
       "availableCount": "{count} available",
       "clear": "Clear All",
@@ -1538,7 +2251,8 @@
       "soc": {
         "label": "SoC",
         "searchPlaceholder": "Search SoCs",
-        "noResults": "No matching SoCs"
+        "noResults": "No matching SoCs",
+        "loading": "Loading SoCs..."
       },
       "type": {
         "label": "Type",
@@ -1573,8 +2287,7 @@
       "status": {
         "installed": "{version} Installed",
         "installing": "{version} Installing",
-        "notInstalled": "",
-        "installationFailed": "Installation failed"
+        "notInstalled": ""
       },
       "detail": {
         "description": "Description",
@@ -1635,7 +2348,14 @@
       "description": "Review the package details before installation.",
       "packageDependencies": "Package Dependencies",
       "packageDependenciesDescription": "These required dependencies will be installed automatically to ensure proper functionality.",
-      "noDependencies": "This package has no dependencies."
+      "noDependencies": "This package has no dependencies.",
+      "expandAllTooltip": "Expand",
+      "collapseAllTooltip": "Collapse",
+      "conflict": {
+        "cannotInstallTogether": "These packages cannot be installed together:",
+        "returnToSelection": "The incompatible dependencies are highlighted below. Return to package selection and choose different packages to resolve the conflict.",
+        "resolutionFailed": "Dependencies could not be resolved. {error}"
+      }
     },
     "license": {
       "appliesTo": "Applies to",
@@ -1661,9 +2381,14 @@
   "sev": {
     "timeline": {
       "title": "Event Timeline",
-      "description": "Timeline description",
+      "description": "<p>Monitor and analyze hardware and software system events captured through the ARM CoreSight trace infrastructure. This view shows captured events on a common timeline.</p><br /><h2>Working with the timeline</h2><ul><li>Hover over an event marker to view its source, timestamp, and description.</li><li>Zoom in and out by holding <strong>Ctrl</strong> while scrolling the mouse wheel or using a trackpad pinch gesture, or use the on-screen zoom controls. Pan using the on-screen pan controls.</li><li>Select <strong>Measure</strong> in the top-left corner to activate the measurement tool, then click a start point and an end point on the timeline to measure the elapsed time between them.</li><li>Drag event source rows to reorder them.</li><li>Save captured events to a <code>.cfsevents</code> file to preserve the full session and reopen it later without a live device connection, or export events as CSV for analysis in external tools.</li></ul><h2>Capture additional events</h2><p>Events are stored in a fixed-size trace buffer while code runs. Resume code execution, then pause it again to read the buffer. Each time you pause execution, the timeline is cleared and displays only the events read at that point. If the buffer fills before you pause, the oldest unread events are overwritten and lost.</p><h2>Change the captured event sources</h2><p>While code execution is paused, expand <strong>System Event Viewer</strong> in the <strong>Debug</strong> panel and select the event sources you want to capture. </p><h2>If no events appear</h2><ul><li>Confirm that the event sources you expect are selected under <strong>System Event Viewer</strong> in the <strong>Debug</strong> panel.</li><li>Confirm that code execution has resumed since you last changed the selected event sources.</li><li>Pause execution to read newly captured events from the trace buffer.</li></ul>",
       "help": {
-        "title": "Timeline Help"
+        "title": "System Event Viewer Help"
+      },
+      "diagram": {
+        "event-sources": {
+          "drag-to-reorder": "Drag to reorder"
+        }
       }
     },
     "list": {
@@ -1724,6 +2449,91 @@
       },
       "actions": {
         "useModel": "Use model"
+      }
+    }
+  },
+  "west-editor": {
+    "loading": "Loading west.yml...",
+    "tabsLabel": "Sections",
+    "helpLabel": "Help",
+    "helpModalTitle": "West Editor Help",
+    "helpModalClose": "Close",
+    "helpModalBody": "<p>The West Editor shows the projects, remotes, imported manifests, and groups of a <code>west.yml</code> manifest as cards. Your changes apply to the open file and are written to disk when you save.</p><h3>Add a project or fix errors</h3><p>To add a project, or to fix a manifest that the editor can't read, select <strong>Open west.yml as Text</strong> in the editor title bar and edit the file.</p><h3>Projects</h3><p>Each card shows the project status, revision, groups, path, and URL. The status compares the project in your local workspace with what <code>west.yml</code> defines.</p><ul><li>To change the revision, edit the <strong>Revision</strong> field.</li><li>To add a group, select <strong>+</strong> next to <strong>Groups</strong>, then select a group or select <strong>Create a Group</strong>.</li><li>To remove a group, select the <strong>×</strong> on the group.</li><li>To remove the project, select the trash icon.</li></ul><h3>Find projects</h3><p>Enter text in <strong>Search Projects</strong> to filter the list by project name. Use the filter chips to filter by status, group, or remote.</p><h3>Remotes and Manifests</h3><p>The <strong>Remotes</strong> tab lists the remotes and their base URLs. Select <strong>Copy URL</strong> to copy a URL. The <strong>Manifests</strong> tab lists the imported manifests. Select the arrow icon to open one in a new tab.</p><h3>Groups</h3><p>Set each group to <strong>Enabled</strong>, <strong>Disabled</strong>, or <strong>None</strong>. The editor records your choices in the <code>group-filter</code> setting. A project that belongs only to disabled groups is inactive.</p>",
+    "errors": {
+      "sync": "Could not sync west.yml:",
+      "invalidYaml": "Invalid YAML:",
+      "location": "at line ${line}, column ${column}",
+      "revealLabel": "at line ${line}, column ${column}, show in text editor"
+    },
+    "tabs": {
+      "projects": "Projects",
+      "remotes": "Remotes",
+      "manifests": "Manifests",
+      "groups": "Groups"
+    },
+    "remotes": {
+      "count": "${count} Remotes",
+      "countOne": "1 Remote",
+      "copyUrl": "Copy URL",
+      "empty": "No remotes defined."
+    },
+    "projects": {
+      "revision": "Revision",
+      "remove": "Remove project",
+      "empty": "No projects defined.",
+      "search": "Search Projects",
+      "noResultsTitle": "No Results",
+      "noResultsDescription": "No matching results for “${search}”.",
+      "noResultsFiltersDescription": "No projects match the selected filters.",
+      "filters": {
+        "in-sync": "In sync",
+        "not-cloned": "Not cloned",
+        "different-revision": "Different revision",
+        "untracked-files": "Untracked files",
+        "modified-files": "Modified files",
+        "disabled": "Disabled",
+        "groups": "Groups",
+        "remotes": "Remotes",
+        "clearAll": "Clear All"
+      },
+      "groups": "Groups",
+      "addGroup": "Add Group",
+      "removeGroup": "Remove group ${group}",
+      "selectGroup": "Select a Group",
+      "createGroup": "Create a Group",
+      "confirmGroup": "Create group",
+      "cancelGroup": "Cancel",
+      "groupNameError": {
+        "empty": "Enter a group name.",
+        "invalidCharacter": "Group names cannot contain spaces, commas or colons.",
+        "invalidPrefix": "Group names cannot start with “-” or “+”."
+      },
+      "status": {
+        "in-sync": "In Sync",
+        "not-cloned": "Not Cloned",
+        "different-revision": "Different Revision",
+        "modified-files": "Modified Files",
+        "untracked-files": "Untracked Files",
+        "disabled": "Disabled",
+        "loading": "Loading"
+      }
+    },
+    "manifests": {
+      "count": "${count} Manifests",
+      "countOne": "1 Manifest",
+      "open": "Open manifest",
+      "empty": "No manifests imported.",
+      "self": "self",
+      "error": "Could not resolve imported manifests:"
+    },
+    "groups": {
+      "count": "${count} Groups",
+      "countOne": "1 Group",
+      "empty": "No groups defined.",
+      "state": {
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "none": "None"
       }
     }
   }

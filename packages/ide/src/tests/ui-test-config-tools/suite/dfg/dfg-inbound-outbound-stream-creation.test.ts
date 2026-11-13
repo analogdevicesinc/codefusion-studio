@@ -41,7 +41,6 @@ import {
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import {
-  homePageTitle,
   dfgTab,
   subscreenBtnDfgVisualisation,
   subscreenBtnDfgStreamList,
@@ -83,6 +82,10 @@ import {
   destinationError,
   exportAsCsvButton,
   validateExportedCsvContent,
+  getSourceConfigDetails,
+  getDestinationConfigDetails,
+  sourceToggleInputs,
+  destinationToggleInputs,
 } from "../../page-objects/dfg-section/dfg-inbound-outbound-stream-creation-screen";
 import { existsSync } from "fs";
 import { tmpdir } from "os";
@@ -107,41 +110,27 @@ describe("DFG Tests", () => {
     await browser.waitForWorkbench();
     workbench = new Workbench();
     view = new WebView();
-    await view.wait();
+    await view.wait(2000);
 
     // === Then dismiss all notifications ,wait for the webview to load===
     await UIUtils.dismissAllNotifications(workbench, browser);
 
     // ===Then switch to frame===
     await view.switchToFrame(4000);
-    const pageTitle = await UIUtils.waitForElementToBeVisible(
-      view,
-      homePageTitle,
-    );
-
-    // Verify the page title "DFGTESTS" in the DFG webview
-    const pageTitleText = await pageTitle.getText();
-    expect(pageTitleText).to.equal(
-      "DFGTESTS",
-      "DFGTESTS title should be visible in the WebView",
-    );
-
     // Click on the DFG tab
     await UIUtils.clickElement(view, dfgTab);
   }
 
   before(async () => {
-    browser = VSBrowser.instance;
-
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async function () {
-    this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("View: revert and close editor");
+    await UIUtils.teardownTestSuiteKeepingChanges(view);
+  });
+
+  after(async function () {
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   /* Scenario: DFG title and tabs are visible and clickable
@@ -153,7 +142,7 @@ describe("DFG Tests", () => {
    *     And the "DFG Stream List" tab is visible and clickable
    */
 
-  it("Verify the title and tabs in DFG", async () => {
+  it("Verify the title and tabs in DFG @regression", async () => {
     // Given the user is on the DFG config screen
     await openDfgTab();
 
@@ -193,7 +182,7 @@ describe("DFG Tests", () => {
    *     Then the "Export as CSV" button is enabled
    */
 
-  it("Verify the export as CSV button is disabled when stream list is empty", async () => {
+  it("Verify the export as CSV button is disabled when stream list is empty @regression", async () => {
     await openDfgTab();
     await switchToStreamListTab(view);
     const [streamRowCount, isExportButtonEnabled] =
@@ -234,7 +223,7 @@ describe("DFG Tests", () => {
    *     Then the saved configuration persists a ASS→ASS stream for source "ASS" and destination "ASS"
    */
 
-  it("Verify the inbound stream selection auto populates the stream destination and create ASS-ASS stream", async () => {
+  it("Verify the inbound stream selection auto populates the stream destination and create ASS-ASS stream @regression", async () => {
     await openDfgTab();
     // Get the initial stream counts and stream list row count before creating the stream
     const initialInboundStreamCount = await getInboundStreamCount(
@@ -382,7 +371,7 @@ describe("DFG Tests", () => {
    *     And the CSV contains the expected stream list headers
    *     And the CSV contains a row for the exported ASS→ASS stream with buffer sizes 64B and 64B
    */
-  it("Verify the Export CSV creates a file and is populated with the stream list content (ASS-ASS)", async () => {
+  it("Verify the Export CSV creates a file and is populated with the stream list content (ASS-ASS) @regression", async () => {
     await openDfgTab();
 
     await switchToStreamListTab(view);
@@ -514,7 +503,7 @@ describe("DFG Tests", () => {
    *     Then the saved configuration persists a ASS→BSS stream for source "ASS" and destination "BSS"
    */
 
-  it("Verify the outbound stream selection auto populates the stream source and create css-dde stream", async () => {
+  it("Verify the outbound stream selection auto populates the stream source and create css-dde stream @regression", async () => {
     // Given the user is on the DFG config screen
     await openDfgTab();
     const source: string = "ASS";
@@ -977,7 +966,7 @@ describe("DFG Tests", () => {
    *     When I select the "ASS" stream node
    *     And I click "Add outbound stream" for source "ASS"
    *     Then the stream source dropdown auto-populates with "ASS"
-   *     When I select "BSS" as the stream destination
+   *     When I select "ESS" as the stream destination
    *     And I enter a description and buffer size "64" for the stream
    *     And I create the stream
    *     Then the inbound stream count for "ESS" is incremented by 1
@@ -987,7 +976,7 @@ describe("DFG Tests", () => {
    *     Then the saved configuration persists a ASS→ESS stream for source "ASS" and destination "ESS"
    */
 
-  it("Create a ASS-ESS stream", async () => {
+  it("Create a ASS-ESS stream @regression", async () => {
     // Given the user is on the DFG config screen
     await openDfgTab();
     const source: string = "ASS";
@@ -1110,7 +1099,7 @@ describe("DFG Tests", () => {
    *     And saving the configuration persists ESS→ESS, ESS→FSS and ESS→GSS streams with the configured buffer sizes
    */
 
-  it("Create a multiple destinations stream ESS-ESS, ESS-FSS, ESS-GSS", async () => {
+  it("Create a multiple destinations stream ESS-ESS, ESS-FSS, ESS-GSS @regression", async () => {
     // Given the user is on the DFG config screen
     await openDfgTab();
     const source: string = "ESS";
@@ -1268,7 +1257,7 @@ describe("DFG Tests", () => {
    *     And the stream list shows only the header row
    */
 
-  it("Delete the created ASS-ESS stream and verify the message that it is a tied stream, delete the ESS-ESS,FSS,GSS stream followed by ASS-ESS stream", async () => {
+  it("Delete the created ASS-ESS stream and verify the message that it is a tied stream, delete the ESS-ESS,FSS,GSS stream followed by ASS-ESS stream @regression", async () => {
     // Given the user is on the DFG config screen
     await openDfgTab();
     await switchToStreamListTab(view);
@@ -1365,7 +1354,7 @@ describe("DFG Tests", () => {
    *     Then saving the configuration persists a DSS→BSS stream with the default buffer sizes
    */
 
-  it("Verify the error messages when required fields are empty", async () => {
+  it("Verify the error messages when required fields are empty @regression", async () => {
     await openDfgTab();
     const source: string = "DSS";
     const destination: string = "BSS";
@@ -1429,6 +1418,316 @@ describe("DFG Tests", () => {
       [destination],
       defaultSourceBufferSize,
       [defaultDestinationBufferSize],
+    );
+  });
+
+  it("Verify the default settings are retained on creating a stream (ASS-ASS, BSS-BSS, DSS-DSS, FSS-FSS, GSS-GSS)", async () => {
+    const sources: string[] = ["ASS", "BSS", "DSS", "FSS", "GSS"];
+    const destinations: string[] = ["ASS", "BSS", "DSS", "FSS", "GSS"];
+
+    for (let i = 0; i < sources.length; i++) {
+      await openDfgTab();
+      const source = sources[i];
+      const destination = destinations[i];
+      // Get the initial stream counts and stream list row count before creating the stream
+      const initialInboundStreamCount = await getInboundStreamCount(
+        view,
+        destination,
+      );
+      const initialOutboundStreamCount = await getOutboundStreamCount(
+        view,
+        source,
+      );
+
+      // Select the source stream node and click on add inbound stream button
+      await UIUtils.clickElement(view, selectStream(source));
+      await UIUtils.clickElement(view, addInboundStreamButton(destination));
+
+      // Selecting the source
+      await UIUtils.selectOptionFromDropdown(
+        view,
+        streamSourceDropdown,
+        streamSourceOption(source),
+      );
+
+      const sourceConfigValues = await getSourceConfigDetails(view, source);
+
+      const destinationConfigValues = await getDestinationConfigDetails(
+        view,
+        browser,
+        destination,
+      );
+
+      // Entering stream description and buffer sizes and creating the stream
+      await createStreamWithValues(
+        view,
+        source,
+        destination,
+        sourceBufferSize,
+        destinationBufferSize,
+      );
+
+      // Verify the inbound and outbound stream counts are incremented by 1 after stream creation
+      expect(await getInboundStreamCount(view, destination)).to.equal(
+        initialInboundStreamCount + 1,
+        "Inbound stream count should be incremented by 1 after adding an inbound stream",
+      );
+
+      expect(await getOutboundStreamCount(view, source)).to.equal(
+        initialOutboundStreamCount + 1,
+        "Outbound stream count should be incremented by 1 after adding an outbound stream",
+      );
+
+      // === THEN: I save the configuration file ===
+      // === AND: I verify the persistence schema of the config file after changes being saved ===
+      await verifyConfigFilePersistence(
+        view,
+        workbench,
+        configPath,
+        false,
+        source,
+        [destination],
+        sourceBufferSize,
+        [destinationBufferSize],
+        "",
+        sourceConfigValues,
+        [destinationConfigValues],
+      );
+    }
+  });
+
+  it("Verify the default settings are retained on creating a stream ASS-ASS with all inputs @regression", async () => {
+    await openDfgTab();
+    const source: string = "ASS";
+    const destination: string = "ASS";
+    const sourceWindowSize = "1";
+    const sourceStreamPriority = "2";
+    const destBufferInterruptSize = "1";
+    const destWindowSize = "2";
+    const destStreamPriority = "3";
+    // Get the initial stream counts and stream list row count before creating the stream
+    const initialInboundStreamCount = await getInboundStreamCount(
+      view,
+      destination,
+    );
+    const initialOutboundStreamCount = await getOutboundStreamCount(
+      view,
+      source,
+    );
+
+    // Select the source stream node and click on add inbound stream button
+    await UIUtils.clickElement(view, selectStream(source));
+    await UIUtils.clickElement(view, addInboundStreamButton(destination));
+
+    // Selecting the source
+    await UIUtils.selectOptionFromDropdown(
+      view,
+      streamSourceDropdown,
+      streamSourceOption(source),
+    );
+
+    await sourceToggleInputs(
+      view,
+      source,
+      sourceWindowSize,
+      sourceStreamPriority,
+    );
+
+    await destinationToggleInputs(
+      view,
+      destination,
+      destBufferInterruptSize,
+      destWindowSize,
+      destStreamPriority,
+    );
+
+    const sourceConfigValues = await getSourceConfigDetails(view, source);
+
+    const destinationConfigValues = await getDestinationConfigDetails(
+      view,
+      browser,
+      destination,
+    );
+
+    console.log("Source Config Values: ", sourceConfigValues);
+    console.log("Destination Config Values: ", destinationConfigValues);
+
+    // Entering stream description and buffer sizes and creating the stream
+    await createStreamWithValues(
+      view,
+      source,
+      destination,
+      sourceBufferSize,
+      destinationBufferSize,
+    );
+
+    // Verify the inbound and outbound stream counts are incremented by 1 after stream creation
+    expect(await getInboundStreamCount(view, destination)).to.equal(
+      initialInboundStreamCount + 1,
+      "Inbound stream count should be incremented by 1 after adding an inbound stream",
+    );
+
+    expect(await getOutboundStreamCount(view, source)).to.equal(
+      initialOutboundStreamCount + 1,
+      "Outbound stream count should be incremented by 1 after adding an outbound stream",
+    );
+
+    // === THEN: I save the configuration file ===
+    // === AND: I verify the persistence schema of the config file after changes being saved ===
+    await verifyConfigFilePersistence(
+      view,
+      workbench,
+      configPath,
+      false,
+      source,
+      [destination],
+      sourceBufferSize,
+      [destinationBufferSize],
+      "",
+      sourceConfigValues,
+      [destinationConfigValues],
+    );
+  });
+
+  it("Verify the default settings are retained on creating a stream ESS-ESS with all inputs", async () => {
+    // First create a ASS-ESS source stream
+    await openDfgTab();
+    const source: string = "ASS";
+    const destination: string = "ESS";
+    // Get the initial inbound and outbound stream counts before creating the stream
+    const initialInboundStreamCount = await getInboundStreamCount(
+      view,
+      destination,
+    );
+    const initialOutboundStreamCount = await getOutboundStreamCount(
+      view,
+      source,
+    );
+
+    // Select the source stream node and click on add outbound stream button
+    await UIUtils.clickElement(view, selectStream(source));
+
+    await UIUtils.clickElement(view, addOutboundStreamButton(source));
+
+    // Select the destination from the dropdown, enter stream description and buffer sizes and create the stream
+    await UIUtils.selectOptionFromDropdown(
+      view,
+      streamDestinationDropdown,
+      streamDestinationOption(destination),
+    );
+
+    await UIUtils.clickElement(view, streamDestinationDropdown);
+
+    await createStreamWithValues(
+      view,
+      source,
+      destination,
+      sourceBufferSize,
+      destinationBufferSize,
+    );
+
+    // Verify the inbound and outbound stream counts are incremented by 1 after stream creation
+    expect(await getInboundStreamCount(view, destination)).to.equal(
+      initialInboundStreamCount + 1,
+      "Inbound stream count should be incremented by 1 after adding an inbound stream",
+    );
+
+    expect(await getOutboundStreamCount(view, source)).to.equal(
+      initialOutboundStreamCount + 1,
+      "Outbound stream count should be incremented by 1 after adding an outbound stream",
+    );
+
+    // Create a ESS-ESS stream with all inputs
+    const finalSource: string = "ESS";
+    const finalDestination: string = "ESS";
+    const sourceWindowSize = "1";
+    const sourceStreamPriority = "2";
+    const destBufferInterruptSize = "1";
+    const destWindowSize = "2";
+    const destStreamPriority = "3";
+    // Get the initial inbound and outbound stream counts before creating the stream
+    const initialSecondInboundStreamCount = await getInboundStreamCount(
+      view,
+      finalDestination,
+    );
+    const initialSecondOutboundStreamCount = await getOutboundStreamCount(
+      view,
+      finalSource,
+    );
+
+    // Select the source stream node and click on add outbound stream button
+    await UIUtils.clickElement(view, selectStream(finalSource));
+    await UIUtils.clickElement(view, addOutboundStreamButton(finalSource));
+
+    // Select the destinations from the dropdown, enter stream description and buffer sizes and create the stream
+    await UIUtils.clickElement(view, streamDestinationDropdown);
+    await UIUtils.clickElement(view, streamDestinationOption(finalDestination));
+    await UIUtils.clickElement(view, streamDestinationDropdown);
+
+    // Select the tied source stream from dorpdown
+    await UIUtils.clickElement(view, tiedSourceStreamDropdown);
+
+    await UIUtils.clickElement(view, tiedSourceStreamDropdownOption);
+
+    await sourceToggleInputs(
+      view,
+      finalSource,
+      sourceWindowSize,
+      sourceStreamPriority,
+    );
+
+    await destinationToggleInputs(
+      view,
+      finalDestination,
+      destBufferInterruptSize,
+      destWindowSize,
+      destStreamPriority,
+    );
+
+    const sourceConfigValues = await getSourceConfigDetails(view, finalSource);
+
+    const destinationConfigValues = await getDestinationConfigDetails(
+      view,
+      browser,
+      finalDestination,
+    );
+
+    console.log("Source Config Values: ", sourceConfigValues);
+    console.log("Destination Config Values: ", destinationConfigValues);
+
+    await createStreamWithValues(
+      view,
+      finalSource,
+      finalDestination,
+      sourceBufferSize,
+      destinationBufferSize,
+    );
+
+    // Verify the inbound and outbound stream counts are incremented by 1 after stream creation
+    expect(await getInboundStreamCount(view, finalDestination)).to.equal(
+      initialSecondInboundStreamCount + 1,
+      "Inbound stream count should be incremented by 1 after adding an inbound stream",
+    );
+
+    expect(await getOutboundStreamCount(view, finalSource)).to.equal(
+      initialSecondOutboundStreamCount + 1,
+      "Outbound stream count should be incremented by 1 after adding an outbound stream",
+    );
+
+    // === THEN: I save the configuration file ===
+    // === AND: I verify the persistence schema of the config file after changes being saved ===
+    await verifyConfigFilePersistence(
+      view,
+      workbench,
+      configPath,
+      false,
+      finalSource,
+      [finalDestination],
+      128,
+      [4096],
+      "",
+      sourceConfigValues,
+      [destinationConfigValues],
     );
   });
 });

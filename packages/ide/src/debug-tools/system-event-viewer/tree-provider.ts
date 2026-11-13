@@ -14,8 +14,10 @@
  */
 
 import * as vscode from "vscode";
-import { TraceManager } from "./hardware/trace-manager";
+import { TraceManager } from "../trace/trace-manager";
 import { CfsDebugManager } from "../debug-manager";
+import { TELEMETRY_ACTIONS } from "../../telemetry/action-names";
+import { getTelemetryManager } from "../../telemetry/telemetry";
 
 export interface EventNode {
   name: string;
@@ -36,9 +38,7 @@ export interface SevTreeItem extends vscode.TreeItem {
  * For the moment it is mostly a placeholder implementation until we define a clear path
  * for custom SoC event support on CFSIO-14904.
  */
-export class EventTreeDataProvider
-  implements vscode.TreeDataProvider<EventNode>
-{
+export class EventTreeDataProvider implements vscode.TreeDataProvider<EventNode> {
   private _onDidChangeTreeData: vscode.EventEmitter<EventNode | void> =
     new vscode.EventEmitter<EventNode | void>();
   readonly onDidChangeTreeData: vscode.Event<EventNode | void> =
@@ -53,13 +53,12 @@ export class EventTreeDataProvider
   constructor(traceManager: TraceManager, debugManager: CfsDebugManager) {
     this.traceManager = traceManager;
 
-    vscode.debug.onDidChangeActiveDebugSession(async () => {
-      this.checkboxStateCache.clear();
-      this._onDidChangeTreeData.fire();
-    });
-
     debugManager.onStartSession(async (session) => {
-      this.checkboxStateCache.clear();
+      const isFirstSession = debugManager.getAllSessions().length === 1;
+      if (isFirstSession) {
+        this.checkboxStateCache.clear();
+      }
+      this._onDidChangeTreeData.fire();
 
       const disposables: vscode.Disposable[] = [];
       disposables.push(
@@ -73,10 +72,13 @@ export class EventTreeDataProvider
         }),
       );
       disposables.push(
-        // No need to fire, already handled by onDidChangeActiveDebugSession
         session.onStop(() => {
-          this.checkboxStateCache.clear();
           disposables.forEach((d) => d.dispose());
+          const isLastSession = debugManager.getAllSessions().length === 0;
+          if (isLastSession) {
+            this.checkboxStateCache.clear();
+          }
+          this._onDidChangeTreeData.fire();
         }),
       );
     });
@@ -133,13 +135,15 @@ export class EventTreeDataProvider
     }
   }
 
-  public getChildren(element?: EventNode): EventNode[] {
+  public async getChildren(element?: EventNode): Promise<EventNode[]> {
     if (vscode.debug.activeDebugSession === undefined) {
       // Do not show events unless we are on a debug session.
       return [];
     }
 
-    return this.traceManager.getEventSources(element?.path).map((source) => {
+    const eventsources = await this.traceManager.getEventSources(element?.path);
+
+    return eventsources.map((source) => {
       return {
         name: source.name,
         path:
@@ -153,5 +157,37 @@ export class EventTreeDataProvider
 
   public refresh(node?: EventNode): void {
     this._onDidChangeTreeData.fire(node);
+  }
+
+  /**
+   * Enables a trace event and activates trace collection.
+   * @param eventPath The dot-separated event path to enable.
+   */
+  public async enableEvent(eventPath: string): Promise<void> {
+    const startTime = Date.now();
+    await this.traceManager.enableEvent(`*.${eventPath}`);
+    // Enable all trace. Temporary until proper trace configuration management is in place.
+    await this.traceManager.enableTrace();
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_ENABLED, {
+        eventPath,
+        durationMs: Date.now() - startTime,
+      });
+    });
+  }
+
+  /**
+   * Disables a trace event.
+   * @param eventPath The dot-separated event path to disable.
+   */
+  public async disableEvent(eventPath: string): Promise<void> {
+    const startTime = Date.now();
+    await this.traceManager.disableEvent(`*.${eventPath}`);
+    void getTelemetryManager().then((telemetryManager) => {
+      telemetryManager.logAction(TELEMETRY_ACTIONS.SEV_EVENT_DISABLED, {
+        eventPath,
+        durationMs: Date.now() - startTime,
+      });
+    });
   }
 }

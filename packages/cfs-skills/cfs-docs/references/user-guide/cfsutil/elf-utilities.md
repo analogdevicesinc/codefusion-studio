@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - ELF
 author: Analog Devices
-date: 2026-03-23
+date: 2026-10-10
 ---
 
 # ELF
@@ -13,11 +13,14 @@ Provides a series of commands to get information about an ELF file.
 `cfsutil elf analyze <FILEPATH> [--format text|json]`
 
 Provides high-level information about the ELF file, including the platform, stack/heap sizes and flash/sram sizes.
-Use the `--format json` flag to produce output in JSON format.
+
+| Flag | Description |
+| --- | --- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 ## Info
 
-`cfsutil elf info <FILEPATH> [--format text|json] [-h] [-a] [-c] [-s] [-v]`
+`cfsutil elf info <FILEPATH> [--format text|json] [-v | -q] [-h] [-a] [-c] [-s]`
 
 Provides more in depth information about the ELF file.
 At least one of the following switches are required. They can be used individually or in combination to select the required information.
@@ -33,8 +36,9 @@ Additional options are available to control the output.
 
 | Switch    | Effect                   |
 | --------- | ------------------------ |
-| `--format` | Output format: `text` (default) or `json` |
-| `-v`      | Verbose output           |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
+| `-v`      | Print detailed ELF parser diagnostics. Text output only: cannot be used with `--format json`. Mutually exclusive with `-q`. |
+| `-q`      | Suppress non-error output, including warnings. Mutually exclusive with `-v`. |
 
 ## Memory
 
@@ -48,7 +52,7 @@ Choose at least one of the available switches:
 | ------ | ------------------------------------------ |
 | `-d`   | Print detailed information. Must be used with `-s`, `-t`, or `-y`.  |
 | `-i`   | Display from section or segment with id      |
-| `--format` | Output format: `text` (default) or `json`. Must be used with `-s`, `-t`, or `-y`. |
+| `-f, --format` | Output format: `text` (default) or `json`. Must be used with `-s`, `-t`, or `-y`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 | `-n`   | Display from section or segment with name    |
 | `-s`   | List of segments                           |
 | `-t`   | List of sections in each segment           |
@@ -61,7 +65,7 @@ Choose at least one of the available switches:
 
 ## Symbols
 
-`cfsutil elf symbols <FILEPATH> <SQLQUERY> [--format text|json] [-f]`
+`cfsutil elf symbols <FILEPATH> <SQLQUERY> [--format text|json] [--full]`
 
 This command allows you to run SQL queries on the symbol table.
 This involves queries on a table called `symbols` with the following fields.
@@ -89,7 +93,7 @@ Some examples of queries are as follows:
 
 The output can be modified with the following switches.
 
-| Switch | Effect                                       |
+| Switch | Effect |
 | ------ | -------------------------------------------- |
-| `-f`   | Print full path (if debug info is available) |
-| `--format` | Output format: `text` (default) or `json` |
+| `--full` | Print full path (if debug info is available) |
+| `--format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |

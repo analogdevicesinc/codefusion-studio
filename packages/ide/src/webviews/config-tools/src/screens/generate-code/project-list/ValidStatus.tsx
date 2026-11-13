@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,42 @@
 
 import ConflictIcon from '@common/icons/Conflict';
 import CircledCheckmarkIcon from '@common/icons/CircledCheckmark';
+import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
+import {localizeMessage} from '../../../../../common/utils/localization';
 
 export default function ValidStatus({
 	errorsNumber,
 	testId
 }: Readonly<{errorsNumber: number; testId: string}>) {
+	const l10n = useLocaleContext()?.generateCode as
+		| Record<string, string>
+		| undefined;
+
+	const issueCountFallback =
+		errorsNumber === 1
+			? `${errorsNumber} Issue`
+			: `${errorsNumber} Issues`;
+
 	return errorsNumber ? (
 		<>
 			<div data-test={`${testId}:error-state`}>
-				{errorsNumber} Issues
+				{l10n
+					? localizeMessage(
+							l10n,
+							errorsNumber === 1
+								? 'issueCount.one'
+								: 'issueCount.other',
+							{count: String(errorsNumber)}
+						)
+					: issueCountFallback}
 			</div>
 			<ConflictIcon />
 		</>
 	) : (
 		<>
-			<span data-test={`${testId}:ready-state`}>Ready</span>
+			<span data-test={`${testId}:ready-state`}>
+				{l10n?.ready ?? 'Ready'}
+			</span>
 			<CircledCheckmarkIcon />
 		</>
 	);

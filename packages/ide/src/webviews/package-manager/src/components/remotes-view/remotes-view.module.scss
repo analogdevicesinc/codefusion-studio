@@ -1,0 +1,72 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#layout' as layout;
+
+// Positioning context for the side panel. It fills the tab body and owns the
+// scrolling, so the absolutely positioned panel stays put while the list scrolls.
+.container {
+	// The panel's height is `100vh - offset`. The `100%` resolves on the panel
+	// against this container, so it fits exactly whatever sits above it (header,
+	// sign-in banner) instead of overflowing and getting its footer clipped.
+	--sliding-panel-vertical-offset: calc(100vh - 100%);
+	position: relative;
+	display: flex;
+	flex: 1 1 0;
+	align-self: stretch;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.scrollArea {
+	display: flex;
+	justify-content: center;
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 0 layout.$spacing-5;
+	overflow: auto;
+
+	// Keep the list clear of the open panel: the centred list only moves once
+	// the space right of it gets narrower than the panel plus a gap. Uses vw
+	// rather than % (the webview is full width) because percentage padding
+	// resolves to 0 while sizing, which would inflate the scroll area.
+	&.sidebarOpen {
+		padding-right: clamp(
+			#{layout.$spacing-5},
+			calc(
+				2 * (#{layout.$max-sidebar-width} + #{layout.$spacing-5}) +
+					#{layout.$main-width} + #{layout.$spacing-5} - 100vw
+			),
+			#{layout.$max-sidebar-width + layout.$spacing-5}
+		);
+	}
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	align-self: flex-start;
+	gap: layout.$spacing-9;
+	width: 100%;
+	max-width: 600px;
+	padding: layout.$spacing-9 0 layout.$spacing-5;
+	box-sizing: border-box;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-2;
+}

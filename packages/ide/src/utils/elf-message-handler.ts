@@ -21,18 +21,16 @@ import {
   mapArmAttributes,
   mapHeaderInfoData,
   decimalToHex,
-} from "cfs-lib";
-import { SYMBOLS_TABLE_ID } from "elf-parser";
-import type { WebviewPanel } from "vscode";
-import * as vscode from "vscode";
-
-import type {
   ElfDataModel,
   ElfFileParser,
   ElfProgramHeader,
   ElfSectionHeader,
   ElfHeuristics,
-} from "elf-parser";
+  SYMBOLS_TABLE_ID,
+} from "cfs-lib";
+import type { WebviewPanel } from "vscode";
+import * as vscode from "vscode";
+
 import { ELF_EXPLORER_COMMANDS } from "../commands/constants";
 
 const SEGM_FLAG_READ_ONLY = "R";
@@ -502,7 +500,7 @@ export async function elfMessageHandler(
 
       const segments = mapSegments(elfModel.elfProgramHeaders, dbSymbols);
       request = Promise.resolve(segments);
-    } catch (error) {
+    } catch (_) {
       request = Promise.reject();
     }
   }
@@ -552,7 +550,7 @@ export async function elfMessageHandler(
         void vscode.commands.executeCommand(
           ELF_EXPLORER_COMMANDS.LOAD_ELF_FILE,
         );
-    } catch (error) {
+    } catch (_) {
       throw new Error(`Unknown command: ${message.body.command}`);
     }
   }

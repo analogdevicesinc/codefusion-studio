@@ -36,6 +36,7 @@ import {
 } from '../../../state/slices/app-context/appContext.selector';
 import {Chip} from 'cfs-react-library';
 import {setActivePeripheral} from '../../../state/slices/peripherals/peripherals.reducer';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 const emptyCounter = 0;
 
@@ -44,6 +45,9 @@ function PinAssignmentStatusFilter() {
 	const pinDetailsTargetId = usePinDetailsTargetPin();
 	const activeFilterType = useActivePinconfigAssignmentFilter();
 	const searchString = useSearchString('pinconfig');
+	const l10n = useLocaleContext()?.filters as
+		| Record<string, string>
+		| undefined;
 
 	const dispatch = useDispatch();
 
@@ -113,7 +117,7 @@ function PinAssignmentStatusFilter() {
 				key='filterControl-assigned'
 				isActive={activeFilterType === 'assigned'}
 				id='filterControl-assigned'
-				label='Assigned'
+				label={l10n?.assigned ?? 'Assigned'}
 				dataTest='filter-control:assigned'
 				isDisabled={
 					Boolean(pinDetailsTargetId) ||
@@ -128,7 +132,7 @@ function PinAssignmentStatusFilter() {
 				key='filterControl-available'
 				isActive={activeFilterType === 'available'}
 				id='filterControl-available'
-				label='Available'
+				label={l10n?.available ?? 'Available'}
 				dataTest='filter-control:available'
 				isDisabled={
 					Boolean(pinDetailsTargetId) ||
@@ -143,7 +147,7 @@ function PinAssignmentStatusFilter() {
 				key='filterControl-conflicts'
 				isActive={activeFilterType === 'conflict'}
 				id='filterControl-conflicts'
-				label='Conflicts'
+				label={l10n?.conflicts ?? 'Conflicts'}
 				dataTest='filter-control:conflicts'
 				isDisabled={
 					Boolean(pinDetailsTargetId) ||

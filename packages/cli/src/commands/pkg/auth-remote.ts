@@ -13,7 +13,9 @@
  *
  */
 import {input, password} from '@inquirer/prompts';
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -23,7 +25,9 @@ export const pkgAuthRemoteDeps: {
   getPackageManager
 };
 
-export default class CfsPackageAuthRemote extends Command {
+export default class CfsPackageAuthRemote extends BaseCommand<
+  typeof CfsPackageAuthRemote
+> {
   static args = {
     remoteName: Args.string({
       description: 'Name of the remote package server.',
@@ -82,8 +86,10 @@ export default class CfsPackageAuthRemote extends Command {
 
   static usage = `<%= command.id %> REMOTENAME {--user USERNAME [--password PASSWORD] | --none}`;
 
-  async run(): Promise<void> {
-    const {args, flags} = await this.parse(CfsPackageAuthRemote);
+  static useResponseEnvelope = true;
+
+  async run(): Promise<{remote: string; authenticated: boolean}> {
+    const {args, flags} = this;
     const {remoteName} = args;
 
     const packman = await pkgAuthRemoteDeps.getPackageManager(
@@ -100,6 +106,15 @@ export default class CfsPackageAuthRemote extends Command {
       // Use a username and password
       const username =
         flags.user ?? (await input({message: 'Username'}));
+
+      // Prompts write to stdout, which would corrupt the JSON envelope.
+      if (flags.password === undefined && this.jsonEnabled()) {
+        this.error(
+          'A password is required in JSON mode. Provide it with --password.',
+          {code: 'PKG_AUTH_REMOTE_PASSWORD_REQUIRED'}
+        );
+      }
+
       const pswd =
         flags.password ??
         (await password({message: 'Password (hidden)', mask: true}));
@@ -107,5 +122,7 @@ export default class CfsPackageAuthRemote extends Command {
     }
 
     this.log(`Authentication method set successfully`);
+
+    return {remote: remoteName, authenticated: !flags.none};
   }
 }

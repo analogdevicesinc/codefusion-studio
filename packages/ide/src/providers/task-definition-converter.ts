@@ -31,6 +31,21 @@ import type { Task } from "cfs-types";
  * via ShellOptionsResolver implementations.
  */
 export class TaskDefinitionConverter {
+
+  // VS Code strips dependsOn from the task definition, so we track it separately
+  private static readonly dependsOnMap = new Map<string, string[]>();
+
+  /**
+   * Returns the `dependsOn` labels for a task, if any were declared.
+   * Only CFS tasks are tracked, so other sources are ignored.
+   */
+  static getDependsOn(task: vscode.Task): string[] {
+    if (task.source !== "CFS") return [];
+
+    const key = `${(task.scope as vscode.WorkspaceFolder)?.uri?.fsPath}:${task.name}`;
+    return this.dependsOnMap.get(key) ?? [];
+  }
+
   /**
    * Creates a vscode.Task from a Task.Definition with the given shell options.
    *
@@ -45,6 +60,7 @@ export class TaskDefinitionConverter {
     shellOptions: vscode.ShellExecutionOptions,
   ): vscode.Task | undefined {
     const command = this.getCommandForPlatform(taskDefinition);
+    const args = this.normalizeTaskArgs(taskDefinition.args);
     if (!command) {
       console.warn(
         `Task "${taskDefinition.label}" has no command for platform ${process.platform}. Skipping.`,
@@ -53,6 +69,14 @@ export class TaskDefinitionConverter {
     }
 
     // Create the task with shell execution
+    // command may be a full command line (e.g. "make -r -j 8 ..."), so args
+    // are appended to the command line rather than passed via the structured
+    // ShellExecution(command, args, options) overload, which would treat the
+    // whole command line as a single executable token.
+    const commandLine = args?.length
+      ? `${command} ${args.map((arg) => this.quoteArg(arg)).join(" ")}`
+      : command;
+
     const task = new vscode.Task(
       {
         type: taskDefinition.type,
@@ -60,7 +84,7 @@ export class TaskDefinitionConverter {
       folder,
       taskDefinition.label,
       "CFS",
-      new vscode.ShellExecution(command, shellOptions),
+      new vscode.ShellExecution(commandLine, shellOptions),
       taskDefinition.problemMatcher,
     );
 
@@ -78,6 +102,11 @@ export class TaskDefinitionConverter {
       },
     };
 
+    if (taskDefinition.dependsOn) {
+      const key = `${folder.uri.fsPath}:${taskDefinition.label}`;
+      this.dependsOnMap.set(key, [taskDefinition.dependsOn].flat());
+    }
+
     // Map task group
     task.group = this.mapTaskGroup(taskDefinition.group);
 
@@ -88,6 +117,51 @@ export class TaskDefinitionConverter {
     };
 
     return task;
+  }
+
+  /**
+   * Converts task args into a string array for VS Code shell execution.
+   *
+   * cfs.tasks.json allows unknown args payloads, but vscode.ShellExecution
+   * requires a string array. Non-string values are stringified to preserve
+   * user intent while keeping execution resilient.
+   *
+   * @param args - The raw args value from Task.Definition
+   * @returns A string array of args, or undefined if args is not an array
+   */
+  private static normalizeTaskArgs(
+    args: unknown,
+  ): readonly string[] | undefined {
+    if (!Array.isArray(args)) {
+      return undefined;
+    }
+
+    return args.map((arg) => String(arg));
+  }
+
+  /**
+   * Wraps an arg in double quotes and escapes embedded backslashes/quotes,
+   * so it survives being appended to a shell command line as a single token.
+   *
+   * @remarks
+   * Every arg is quoted unconditionally (not just when whitespace is
+   * present) so that shell-splitting metacharacters (`;`, `|`, `&`, `<`,
+   * `>`) are neutralized even in args without spaces. This does not
+   * neutralize `$(...)`/backtick command substitution in bash (still
+   * active inside double quotes) or `%VAR%` expansion in cmd.exe (active
+   * regardless of quoting). `args` is currently only used by the xt-run
+   * simulator task on SHARC-FX, using CFS-controlled variables and static
+   * literals rather than arbitrary user-typed input, so this residual risk
+   * is accepted for now. Revisit with a proper shell-aware quoting
+   * strategy (e.g. vscode.ShellQuotedString) if `args` usage broadens to
+   * less-trusted input.
+   *
+   * @param arg - The raw argument string
+   * @returns The arg, quoted and escaped
+   */
+  private static quoteArg(arg: string): string {
+    const escapedArg = arg.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `"${escapedArg}"`;
   }
 
   /**

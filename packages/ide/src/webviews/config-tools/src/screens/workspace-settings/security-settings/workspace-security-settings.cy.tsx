@@ -20,10 +20,25 @@ import WorkspaceSecuritySettings from './workspace-security-settings';
 import MCUBootSettings from '../mcuboot-settings/mcuboot-settings';
 import {mockVsCodeApi} from '../../../../../common/api';
 import {LocalizationProvider} from '../../../../../common/contexts/LocaleContext';
+import {checkDirectoryExistsRequest} from '../../../../../../constants/messages/vscode-api-messages';
+import {setupMessengerMock} from '@common/test-utils/messenger-mock';
+import {
+	generatePemKeyRequest,
+	readPemAlgorithmRequest
+} from '@constants/messages/cfgtools-messages';
+import {withFirewallTestData} from '../../firewall-config/firewall-test-data';
+import {logTelemetryRequest} from '@constants/messages/telemetry-messages';
 
-const socMax = await import('@socs/max32690-wlp.json').then(
-	module => module.default as unknown as Soc
-);
+const socWithoutMcuboot =
+	await import('@socs/max32690-wlp.json').then(
+		module => module.default as unknown as Soc
+	);
+
+// The SoC data model's supportsMCUboot flag drives getSupportsMCUboot().
+const socMax = {
+	...socWithoutMcuboot,
+	supportsMCUboot: true
+} as unknown as Soc;
 
 const configWithGranite = {
 	Soc: 'AD71270',
@@ -40,11 +55,35 @@ const configWithGranite = {
 	]
 } as unknown as CfsConfig;
 
+// Firewall support (getSupportsFirewall()) requires the SoC data model to define a Firewall section.
+const socWithFirewall = withFirewallTestData(socWithoutMcuboot);
+
+const configWithFirewall = {
+	...configWithGranite,
+	Soc: 'ADAU2042'
+} as unknown as CfsConfig;
+
 describe('Security settings Components', () => {
 	beforeEach(() => {
 		cy.viewport(1920, 1080);
 	});
-	it('renders MCUBoot Setting', () => {
+	it('renders Firewall Setting and hides MCUboot when only firewall is supported', () => {
+		const reduxStore = configurePreloadedStore(
+			socWithFirewall,
+			configWithFirewall
+		);
+		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
+		cy.get('[data-test="workspace-setting:firewall-status"]').should(
+			'exist'
+		);
+		cy.get('[data-test="workspace-setting:mcuboot-config"]').should(
+			'not.exist'
+		);
+		cy.get(
+			'[data-test="workspace-setting:sign-key-management"]'
+		).should('not.exist');
+	});
+	it('renders MCUBoot Setting and hides Firewall when only MCUboot is supported', () => {
 		const reduxStore = configurePreloadedStore(
 			socMax,
 			configWithGranite
@@ -52,6 +91,9 @@ describe('Security settings Components', () => {
 		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
 		cy.get('[data-test="workspace-setting:mcuboot-config"]').should(
 			'exist'
+		);
+		cy.get('[data-test="workspace-setting:firewall-status"]').should(
+			'not.exist'
 		);
 	});
 	it('renders Sign Key Management Setting', () => {
@@ -202,20 +244,10 @@ describe('MCUBoot settings behavior', () => {
 
 describe('Sign Key Management behavior', () => {
 	beforeEach(() => {
-		mockVsCodeApi({
-			postMessage(message: any) {
-				window.dispatchEvent(
-					new MessageEvent('message', {
-						data: {
-							type: 'api-response',
-							id: message.id,
-							body: undefined
-						}
-					})
-				);
-			},
-			getState: () => undefined,
-			setState: () => undefined as any
+		setupMessengerMock({
+			[readPemAlgorithmRequest.method]: undefined,
+			[generatePemKeyRequest.method]: () => ({}),
+			[logTelemetryRequest.method]: []
 		});
 		cy.viewport(1920, 1080);
 	});
@@ -475,23 +507,12 @@ describe('Sign Key Management behavior', () => {
 			configWithGranite
 		);
 
-		mockVsCodeApi({
-			postMessage(message: any) {
-				window.dispatchEvent(
-					new MessageEvent('message', {
-						data: {
-							type: 'api-response',
-							id: message.id,
-							body: undefined,
-							...(message.type === 'check-directory-exists' && {
-								body: true
-							})
-						}
-					})
-				);
+		setupMessengerMock({
+			[checkDirectoryExistsRequest.method]: true,
+			[generatePemKeyRequest.method]() {
+				// Void return
 			},
-			getState: () => undefined,
-			setState: () => undefined as any
+			[logTelemetryRequest.method]: []
 		});
 
 		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
@@ -590,26 +611,12 @@ describe('Sign Key Management behavior', () => {
 			configWithGranite
 		);
 
-		mockVsCodeApi({
-			postMessage(message: any) {
-				window.dispatchEvent(
-					new MessageEvent('message', {
-						data: {
-							type: 'api-response',
-							id: message.id,
-							body: undefined,
-							...(message.type === 'generate-pem-key' && {
-								error: 'python not found'
-							}),
-							...(message.type === 'check-directory-exists' && {
-								body: true
-							})
-						}
-					})
-				);
+		setupMessengerMock({
+			[readPemAlgorithmRequest.method]: undefined,
+			[generatePemKeyRequest.method]() {
+				throw new Error('python not found');
 			},
-			getState: () => undefined,
-			setState: () => undefined as any
+			[checkDirectoryExistsRequest.method]: () => true
 		});
 
 		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
@@ -657,29 +664,67 @@ describe('Sign Key Management behavior', () => {
 		);
 	});
 
+	it('should show an error when the key name contains spaces', () => {
+		const reduxStore = configurePreloadedStore(
+			socMax,
+			configWithGranite
+		);
+
+		setupMessengerMock({
+			[readPemAlgorithmRequest.method]: undefined,
+			[generatePemKeyRequest.method]: undefined,
+			[checkDirectoryExistsRequest.method]: () => true
+		});
+
+		cy.mount(<WorkspaceSecuritySettings />, reduxStore);
+
+		cy.get(
+			'[data-test="sign-key-management:generate-new-key"]'
+		).click();
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('my test key');
+
+		cy.get(
+			'[data-test="generate-key:destination-path-control-input"]'
+		)
+			.shadow()
+			.find('input')
+			.focus()
+			.type('/home/user/keys');
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:submit"]'
+		).click();
+
+		cy.get(
+			'[data-test="key-management:generate-key-form:control-keyName-error"]'
+		)
+			.should('exist')
+			.and(
+				'contain.text',
+				'can only contain letters, numbers, underscores and hyphens'
+			);
+
+		// Key card should NOT be created
+		cy.get(
+			'[data-test="key-management:key-card-my test key.pem"]'
+		).should('not.exist');
+	});
+
 	it('should show an error when the destination path does not exist', () => {
 		const reduxStore = configurePreloadedStore(
 			socMax,
 			configWithGranite
 		);
 
-		mockVsCodeApi({
-			postMessage(message: any) {
-				window.dispatchEvent(
-					new MessageEvent('message', {
-						data: {
-							type: 'api-response',
-							id: message.id,
-							body: undefined,
-							...(message.type === 'check-directory-exists' && {
-								body: false
-							})
-						}
-					})
-				);
-			},
-			getState: () => undefined,
-			setState: () => undefined as any
+		setupMessengerMock({
+			[checkDirectoryExistsRequest.method]: false
 		});
 
 		(window as any).__webview_localization_resources__ = {
@@ -796,23 +841,12 @@ describe('Sign Key Management behavior', () => {
 			configWithGranite
 		);
 
-		mockVsCodeApi({
-			postMessage(message: any) {
-				window.dispatchEvent(
-					new MessageEvent('message', {
-						data: {
-							type: 'api-response',
-							id: message.id,
-							body: undefined,
-							...(message.type === 'check-directory-exists' && {
-								body: true
-							})
-						}
-					})
-				);
+		setupMessengerMock({
+			[checkDirectoryExistsRequest.method]: true,
+			[generatePemKeyRequest.method]() {
+				// Void return
 			},
-			getState: () => undefined,
-			setState: () => undefined as any
+			[logTelemetryRequest.method]: []
 		});
 
 		(window as any).__webview_localization_resources__ = {

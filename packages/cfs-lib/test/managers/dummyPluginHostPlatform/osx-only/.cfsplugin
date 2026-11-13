@@ -1,0 +1,20 @@
+{
+	"pluginName": "Host Platform Plugin (macOS)",
+	"pluginId": "com.analog.test.hostplatform.plugin",
+	"pluginDescription": "macOS-only version of the host platform test plugin",
+	"schemaVersion": "1.1.0",
+	"pluginVersion": "3.0.0",
+	"pluginApiVersion": 1,
+	"author": "Analog Devices, Inc.",
+	"supportedHostPlatforms": ["osx"],
+	"features": {
+		"project": {
+			"files": [],
+			"templates": []
+		},
+		"codegen": {
+			"files": [],
+			"templates": []
+		}
+	}
+}

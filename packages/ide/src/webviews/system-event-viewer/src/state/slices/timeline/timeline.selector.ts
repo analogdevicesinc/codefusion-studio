@@ -17,8 +17,19 @@ import {useAppSelector} from '../../store';
 export const useDataZoom = () =>
 	useAppSelector(state => state.timelineReducer.dataZoom);
 
-export const useTickValue = () =>
-	useAppSelector(state => state.timelineReducer.tickValue);
+export const useEventSourcesListWidth = () =>
+	useAppSelector(
+		state => state.timelineReducer.eventSourcesListWidth
+	);
+
+export const useReferenceValue = () =>
+	useAppSelector(state => state.timelineReducer.referenceValue);
+
+export const useTimeMode = () =>
+	useAppSelector(state => state.timelineReducer.timeMode);
+
+export const useTimeAvailability = () =>
+	useAppSelector(state => state.timelineReducer.timeAvailability);
 
 export const useMeasurePhase = () =>
 	useAppSelector(state => state.timelineReducer.measurePhase);

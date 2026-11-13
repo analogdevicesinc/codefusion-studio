@@ -34,7 +34,10 @@ export default function CoreConfig() {
 	const l10n: TLocaleContext | undefined = useLocaleContext();
 	const socId = useSelectedSoc();
 	const {packageId, boardId} = useSelectedBoardPackage();
-	const pluginsPromise = useMemo(async () => fetchPlugins(socId, packageId, boardId), [socId, packageId, boardId]);
+	const pluginsPromise = useMemo(
+		async () => fetchPlugins(socId, packageId, boardId),
+		[socId, packageId, boardId]
+	);
 	const coreId = useSelectedCoreToConfigId();
 	const core = useConfiguredCore(coreId ?? '');
 

@@ -34,6 +34,7 @@ type EventTreeState = {
 	childrenByParentId: Record<string, string[]>;
 	expandedIds: Record<string, boolean>;
 	cacheById: Record<string, boolean>;
+	isTreeRefreshing: boolean;
 	card: SevContentCard | undefined;
 };
 
@@ -43,6 +44,7 @@ export const eventTreeInitialState: EventTreeState = {
 	childrenByParentId: createDictionary<string[]>(),
 	expandedIds: createDictionary<boolean>(),
 	cacheById: createDictionary<boolean>(),
+	isTreeRefreshing: false,
 	card: undefined
 };
 
@@ -111,12 +113,8 @@ const eventTreeSlice = createSlice({
 		) {
 			state.card = action.payload;
 		},
-		clearTree(state) {
-			state.rootIds = [];
-			state.nodesById = createDictionary<EventNode>();
-			state.childrenByParentId = createDictionary<string[]>();
-			state.cacheById = createDictionary<boolean>();
-			state.expandedIds = createDictionary<boolean>();
+		setTreeRefreshing(state, action: PayloadAction<boolean>) {
+			state.isTreeRefreshing = action.payload;
 		}
 	}
 });
@@ -128,6 +126,6 @@ export const {
 	toggleNodeExpanded,
 	setNodeExpanded,
 	setCard,
-	clearTree
+	setTreeRefreshing
 } = eventTreeSlice.actions;
 export const eventTreeReducer = eventTreeSlice.reducer;

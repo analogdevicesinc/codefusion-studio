@@ -155,6 +155,28 @@ export class ConanRunner {
 						{ cause: error }
 					);
 				}
+
+				// Check for package not found error (transformed by error_handling.py)
+				if (stderr.includes("Couldn't find the following packages")) {
+					// Extract the entire ERROR line that contains the package list
+					const errorLine = stderr
+						.split("\n")
+						.find((line) =>
+							line.includes("Couldn't find the following packages")
+						);
+
+					if (errorLine) {
+						// Extract the full message after "ERROR: " prefix
+						const messageMatch = errorLine.match(/ERROR:\s*(.+)/);
+						const message = messageMatch
+							? messageMatch[1].trim()
+							: "Couldn't find the following packages: unknown packages";
+
+						throw new ConanError("PACKAGE_NOT_FOUND", message, {
+							cause: error
+						});
+					}
+				}
 				// If stderr is available, use it as error message, otherwise use a generic message
 				throw new ConanError("EXEC_ERROR", stderr, {
 					cause: error
@@ -177,7 +199,8 @@ type ConanErrorCode =
 	| "REMOTE_NOT_FOUND"
 	| "NET_ERROR"
 	| "UNKNOWN_ERROR"
-	| "LICENSE_NOT_ACCEPTED";
+	| "LICENSE_NOT_ACCEPTED"
+	| "PACKAGE_NOT_FOUND";
 
 export class ConanError<T extends ConanErrorCode> extends Error {
 	code: T;

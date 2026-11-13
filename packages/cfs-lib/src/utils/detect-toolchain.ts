@@ -49,13 +49,14 @@ export function resolveZephyrSdkRoot(toolPath: string): string {
  * Resolves the tool id of the package that provides the Zephyr SDK host-tools
  * for a project's configured toolchain.
  *
- * The Zephyr SDK host-tools (cmake/Zephyr-sdkConfig.cmake) always ship in the
- * arm.zephyr.eabi.toolchain package: for ARM Zephyr projects that package is
- * the SDK, while for Xtensa projects the compiler (xt-clang) ships separately
- * but the host-tools still come from that package. Any Zephyr-related toolchain
- * id (containing "zephyr" or "xtensa", case-insensitive) therefore maps to that
- * package. Non-Zephyr toolchains return an empty string, indicating that no
- * host-tools package applies.
+ * Each Zephyr SDK toolchain package (e.g. arm.zephyr.eabi.toolchain or
+ * riscv.zephyr.elf.toolchain) is a complete Zephyr SDK containing the
+ * host-tools (cmake/Zephyr-sdkConfig.cmake) alongside its own compiler, so a
+ * Zephyr toolchain id (containing "zephyr", case-insensitive) maps to itself.
+ * For Xtensa projects (id containing "xtensa", case-insensitive) the compiler
+ * (xt-clang) ships separately and the host-tools come from the
+ * arm.zephyr.eabi.toolchain package. Non-Zephyr toolchains return an empty
+ * string, indicating that no host-tools package applies.
  *
  * @param toolchainId - The project's configured toolchain id
  * @returns The host-tools package tool id, or an empty string when the
@@ -65,10 +66,12 @@ export function resolveZephyrHostToolsId(
 	toolchainId: string
 ): string {
 	const normalizedId = toolchainId.trim().toLowerCase();
-	return normalizedId.includes("xtensa") ||
-		normalizedId.includes("zephyr")
-		? ZEPHYR_ARM_TOOLCHAIN_TOOL_ID
-		: "";
+
+	if (normalizedId.includes("xtensa")) {
+		return ZEPHYR_ARM_TOOLCHAIN_TOOL_ID;
+	}
+
+	return normalizedId.includes("zephyr") ? normalizedId : "";
 }
 
 /**
@@ -175,7 +178,7 @@ export function detectToolchain(
 
 			if (firmwarePlatform === PLATFORM_IDS.MSDK)
 				return PLATFORM_IDS.MSDK;
-		} catch (error) {
+		} catch {
 			// Settings file not found or invalid JSON - continue
 		}
 	}

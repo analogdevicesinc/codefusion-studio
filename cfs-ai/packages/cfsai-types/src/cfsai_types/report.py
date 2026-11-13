@@ -20,19 +20,18 @@ from cfsai_types.hardware_profile import HardwareProfile
 
 class ReportType(StrEnum):
     """Enumeration of report types."""
+
     COMPAT = "compat"
     PROFILE = "profile"
+    EXPLORE = "explore"
 
 class ReportInfo(BaseModel):
     """Class containing metadata for generated reports."""
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now().replace(microsecond=0)
     )
-    type: Optional[ReportType] = Field(
-        default=None, description="Type of report generated"
-    )
-    version: Optional[str] = Field(
-        default=None, description="Version of report generated"
+    version: str = Field(
+        description="Version of report generated"
     )
     hardware: Optional[HardwareProfile] = Field(
         default=None, description="Hardware configuration used"

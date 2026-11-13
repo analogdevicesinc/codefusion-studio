@@ -56,7 +56,7 @@ export type CfsUpdateStatus = {
 
 type ComponentResolutionState = {
 	component: CfsMissingComponent;
-	resolution: CfsUpdateResolutionType;
+	resolution?: CfsUpdateResolutionType;
 	allowFutureCompatibleVersion: boolean;
 	latestRemoteVersion?: {
 		componentVersion: string;
@@ -90,7 +90,6 @@ function createInitialComponentState(
 ): ComponentResolutionState {
 	return {
 		component,
-		resolution: 'INSTALL_REQUIRED_VERSION',
 		allowFutureCompatibleVersion: true
 	};
 }
@@ -243,8 +242,13 @@ function MissingComponentsError({
 
 	const getUpdateResolutions = (): CfsUpdateResolution[] =>
 		components
-			.map(component => {
+			.map<CfsUpdateResolution | undefined>(component => {
 				const state = getComponentState(component.id);
+
+				if (!state.resolution) {
+					return undefined;
+				}
+
 				const isRequired =
 					state.resolution === 'INSTALL_REQUIRED_VERSION';
 				const packageReferenceToUse = isRequired
@@ -261,7 +265,7 @@ function MissingComponentsError({
 						state.latestLocalCompatibleComponentVersion
 				};
 			})
-			.filter(r => r !== undefined);
+			.filter((r): r is CfsUpdateResolution => r !== undefined);
 
 	const updateComponentState = (
 		componentId: string,
@@ -481,14 +485,16 @@ function MissingComponentsError({
 					requiredVersion
 				};
 
-				const options = generateResolutionOptions(updatedState);
+				const defaultResolution = generateResolutionOptions(
+					updatedState
+				).find(o => o.value === 'INSTALL_REQUIRED_VERSION')?.value;
 
 				updateComponentState(component.id, {
 					latestLocalCompatibleComponentVersion,
 					latestRemoteVersion,
 					requiredVersion,
-					...(options.length > 0 && {
-						resolution: options[0].value
+					...(defaultResolution && {
+						resolution: defaultResolution
 					})
 				});
 			}
@@ -589,7 +595,12 @@ function MissingComponentsError({
 	const shouldShowContinueToSystemPlannerButton =
 		showButtons && isFullyCompleted;
 
-	const shouldDisableContinueRetryButton = isLoading;
+	const hasUnselectedResolution = components.some(
+		component => !getComponentState(component.id).resolution
+	);
+
+	const shouldDisableContinueRetryButton =
+		isLoading || hasUnselectedResolution;
 
 	const titleToUse =
 		retryCounter === 0 ? title : UPDATE_PROGRESS_TITLE;

@@ -12,8 +12,7 @@
  * limitations under the License.
  *
  */
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { McpServerDependencies } from "../../types/mcp-dependencies";
 import {
@@ -134,13 +133,13 @@ export function registerGdbCommandTools(
       title: "Execute GDB Command",
       description:
         "Execute a raw GDB command for debugging. Supported commands include: backtrace/bt, info (breakpoints/locals/registers/threads/args), print/p <expr>, x/<format> <address>, continue/c, next/n, step/s, finish, until, break/b, delete, disable, enable, list, disassemble. Dangerous commands (quit, kill, detach, file, target) are blocked.",
-      inputSchema: {
+      inputSchema: z.object({
         command: z
           .string()
           .describe(
             "GDB command to execute (e.g., 'info registers', 'backtrace', 'x/16x 0x20000000')",
           ),
-      },
+      }),
     },
     async (params) => {
       try {
@@ -175,7 +174,7 @@ export function registerGdbCommandTools(
         "Execute a sequence of GDB commands in order and return all results. " +
         "Useful for multi-step debugging operations like 'read registers then examine stack'. " +
         "The debug session must be halted (paused at a breakpoint or after a step).",
-      inputSchema: {
+      inputSchema: z.object({
         commands: z
           .array(z.string())
           .min(1)
@@ -187,7 +186,7 @@ export function registerGdbCommandTools(
           .describe(
             "Whether to stop executing remaining commands if one fails (default true)",
           ),
-      },
+      }),
     },
     async (params) => {
       try {

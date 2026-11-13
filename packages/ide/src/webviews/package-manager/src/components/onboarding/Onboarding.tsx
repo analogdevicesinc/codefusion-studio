@@ -42,7 +42,7 @@ export default function Onboarding() {
 	};
 
 	return (
-		<div className={styles.container}>
+		<div data-test='onboarding' className={styles.container}>
 			<div className={styles.frame}>
 				<div className={styles.textFrame}>
 					<span className={styles.signInHeader}>{l10n?.title}</span>
@@ -50,7 +50,11 @@ export default function Onboarding() {
 						{l10n?.description}
 					</span>
 				</div>
-				<Button appearance='primary' onClick={handleSignIn}>
+				<Button
+					appearance='primary'
+					dataTest='onboarding-sign-in'
+					onClick={handleSignIn}
+				>
 					{l10n?.signIn}
 				</Button>
 			</div>
@@ -59,6 +63,7 @@ export default function Onboarding() {
 				appearance='icon'
 				ariaLabel={l10n?.dismiss ?? 'Dismiss'}
 				className={styles.dismissButton}
+				dataTest='onboarding-dismiss'
 				onClick={onDismiss}
 			>
 				<CloseIcon />

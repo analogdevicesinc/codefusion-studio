@@ -47,5 +47,8 @@ export const useNodeCache = (nodeId: string) =>
 		state => state.eventTreeReducer.cacheById[nodeId] ?? false
 	);
 
+export const useTreeRefreshing = () =>
+	useAppSelector(state => state.eventTreeReducer.isTreeRefreshing);
+
 export const useInfoCard = () =>
 	useAppSelector(state => state.eventTreeReducer.card);

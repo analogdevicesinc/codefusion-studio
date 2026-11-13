@@ -99,14 +99,12 @@ function CoreConfigContainer({
 				!plugin.features.workspace &&
 				(plugin.supportedSocs?.some(
 					soc =>
-						soc.name.toLowerCase() ===
-							selectedSocId?.toLowerCase() &&
+						soc.name.toLowerCase() === selectedSocId?.toLowerCase() &&
 						(!Array.isArray(soc.cores) ||
 							soc.cores?.includes(core?.coreId)) &&
 						// Board is irrelevant for project plugins — match on
 						// SoC and package only.
-						(soc.package.toLowerCase() ===
-							packageId.toLowerCase() ||
+						(soc.package.toLowerCase() === packageId.toLowerCase() ||
 							(soc.name.toLowerCase() === 'max32675c' &&
 								soc.package.toLowerCase() === 'tqfn' &&
 								packageId.toLowerCase() === 'lga'))
@@ -121,10 +119,7 @@ function CoreConfigContainer({
 
 			if (
 				!existing ||
-				semver.gt(
-					plugin.pluginVersion,
-					existing.pluginVersion
-				)
+				semver.gt(plugin.pluginVersion, existing.pluginVersion)
 			) {
 				bestByPluginId.set(plugin.pluginId, plugin);
 			}

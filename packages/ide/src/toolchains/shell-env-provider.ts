@@ -31,6 +31,7 @@ import { Utils } from "../utils/utils";
 import { platform } from "node:process";
 import { getPropertyName } from "../properties";
 import type { CfsToolManager, ToolInfo } from "cfs-lib";
+import type { GitRemoteHelperSetup } from "../git-remote/helper-launcher";
 
 /**
  * The IDEShellEnvProvider class manages environment and shell configuration
@@ -46,11 +47,21 @@ export class IDEShellEnvProvider {
   /** Cache for tool environment variables */
   private toolEnvVarsCache: Record<string, string> | null = null;
 
+  /** cfspkg git remote helper setup (PATH entry + env additions). */
+  private readonly gitRemoteHelper: GitRemoteHelperSetup;
+
   /**
    * Constructor
+   * @param toolManager - Tool manager used to resolve installed tool paths/env.
+   * @param gitRemoteHelper - cfspkg git remote helper setup so spawned
+   *   build/flash/west processes can resolve `cfspkg://` URLs.
    */
-  constructor(toolManager: CfsToolManager) {
+  constructor(
+    toolManager: CfsToolManager,
+    gitRemoteHelper: GitRemoteHelperSetup,
+  ) {
     this.toolManager = toolManager;
+    this.gitRemoteHelper = gitRemoteHelper;
     this.cfsShellEnvProvider = new CfsShellEnvProvider();
   }
 
@@ -112,6 +123,27 @@ export class IDEShellEnvProvider {
   }
 
   /**
+   * Resolves the Zephyr repository root (ZEPHYR_BASE).
+   *
+   * @param workspaceFolder - Optional workspace folder for resolving resource-scoped settings
+   * @returns the Zephyr base path, or undefined when it cannot be resolved
+   */
+  public async getZephyrBase(
+    workspaceFolder?: WorkspaceFolder,
+  ): Promise<string | undefined> {
+    const config = workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
+    const customZephyrWrksp = config.get<string>(ZEPHYR_WORKSPACE);
+
+    if (customZephyrWrksp) {
+      return customZephyrWrksp;
+    }
+
+    const zephyrPath = await this.toolManager.getToolPath("zephyr");
+
+    return zephyrPath ? path.join(zephyrPath, "zephyr") : undefined;
+  }
+
+  /**
    * Get the shell environment, including the updated PATH and MAXIM_PATH variables
    * @param workspaceFolder - Optional workspace folder for resolving resource-scoped settings
    * @returns the shell environment
@@ -120,7 +152,7 @@ export class IDEShellEnvProvider {
     workspaceFolder?: WorkspaceFolder,
   ): Promise<ShellExecutionOptions["env"]> {
     const installedTools = (await this.toolManager.getInstalledTools()) ?? [];
-    const sdkPath = await Utils.getSdkPath();
+    const sdkPath = Utils.getSdkPath();
     const shellPath = this.getShellPath(sdkPath ?? "", installedTools);
     const config = workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
 
@@ -128,21 +160,14 @@ export class IDEShellEnvProvider {
       sdkPath,
       config.get<string>(`${PROJECT}.toolchain.path`),
       config.get<string>(`${PROJECT}.${TOOLCHAIN_ID}`),
-      this.toolManager
+      this.toolManager,
     );
 
     // Add zephyr-sdk to the CMAKE_PREFIX_PATH so CMake can find the zephyr toolchains.
     const cmakePrefixPath = [zephyrSdkPath, process.env.CMAKE_PREFIX_PATH]
       .filter((segment): segment is string => Boolean(segment))
       .join(path.delimiter);
-    const customZephyrWrksp = config.get<string>(ZEPHYR_WORKSPACE);
-    let zephyrBase = customZephyrWrksp;
-    if (!customZephyrWrksp) {
-      const zephyrPath = await this.toolManager.getToolPath("zephyr");
-      if (zephyrPath) {
-        zephyrBase = path.join(zephyrPath, "zephyr");
-      }
-    }
+    const zephyrBase = await this.getZephyrBase(workspaceFolder);
 
     let gitExecPath = "";
     if (platform != "win32") {
@@ -173,10 +198,15 @@ export class IDEShellEnvProvider {
       ...this.getToolEnvVars(installedTools),
     };
 
+    // Prepend the cfspkg git remote helper bin dir to PATH so git/west can
+    // resolve cfspkg:// URLs, and merge its environment additions.
+    const pathWithCfspkgHelper = `${this.gitRemoteHelper.binDir}${path.delimiter}${shellPath}`;
+
     // Final environment object creation
     return {
       ...env,
-      PATH: shellPath,
+      ...this.gitRemoteHelper.env,
+      PATH: pathWithCfspkgHelper,
       PYTHON_CMD: "none",
       CMAKE_PREFIX_PATH: cmakePrefixPath,
       ...(zephyrSdkPath ? { ZEPHYR_SDK_INSTALL_DIR: zephyrSdkPath } : {}),

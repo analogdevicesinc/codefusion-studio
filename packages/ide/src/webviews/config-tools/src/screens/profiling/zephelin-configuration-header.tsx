@@ -65,7 +65,9 @@ export default function ZephelinConfigurationHeader({
 					isInvalid={isInvalid}
 				/>
 			}
-			className={`${project.ExternallyManaged ? styles.disabled : ''}`}
+			className={`${
+				project.ExternallyManaged ? styles.disabled : ''
+			}`}
 			onToggle={() => {
 				onToggleExpand(project.ProjectId);
 			}}

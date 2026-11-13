@@ -142,16 +142,16 @@ export function stripHexPrefix(value: string): string {
 }
 
 /**
- * Computes the exclusive end address of an image slot given a hex
+ * Computes the inclusive end address of an image slot given a hex
  * start address and slot size in bytes.
  *
- * The returned end address is exclusive, i.e. it represents the first
- * address after the slot (`start + size`).  For example a slot at
- * `10000` with size 4096 (0x1000) returns `11000`.
+ * The returned end address is inclusive, i.e. it represents the last
+ * address of the slot (`start + size - 1`).  For example a slot at
+ * `10000` with size 4096 (0x1000) returns `10FFF`.
  *
  * @param locationAddress - The start address as a hex string (with or without 0x prefix).
  * @param slotSizeBytes - The slot size in bytes.
- * @returns The exclusive end address as an uppercase hex string (without 0x prefix),
+ * @returns The inclusive end address as an uppercase hex string (without 0x prefix),
  *          or `undefined` if the inputs are invalid or the result overflows.
  */
 export function computeEndAddress(
@@ -177,7 +177,7 @@ export function computeEndAddress(
 		return undefined;
 	}
 
-	const endAddress = startAddress + slotSizeBytes;
+	const endAddress = startAddress + slotSizeBytes - 1;
 
 	if (endAddress > MAX_ADDRESS) {
 		return undefined;

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,37 +13,30 @@
  *
  */
 import { expect } from "chai";
-import {
-  By,
-  CustomEditor,
-  VSBrowser,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, CustomEditor, VSBrowser, WebView } from "vscode-extension-tester";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 
 describe("Elf file custom editor", () => {
   let browser: VSBrowser;
   let view: WebView;
-  let workbench: Workbench;
 
   before(async function () {
     this.timeout(60000);
-    browser = VSBrowser.instance;
-    await browser.waitForWorkbench();
+    ({ browser } = await UIUtils.setupTestSuite({ waitForWorkbench: true }));
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    workbench = new Workbench();
-    await UIUtils.dismissAllNotifications(workbench, browser);
-    await workbench.wait();
-    await workbench.executeCommand("View: revert and close editor");
+    await UIUtils.teardownTestSuite(view);
+    // await view.switchBack();
+    // workbench = new Workbench();
+    // await UIUtils.dismissAllNotifications(workbench, browser);
+    // await workbench.wait();
+    // await workbench.executeCommand("View: revert and close editor");
   });
 
-  it("Should open the elf viewer panel when opening a file with *.elf extension", async () => {
+  it("Should open the elf viewer panel when opening a file with *.elf extension @regression", async () => {
     const configPath = getConfigPathForFile("hello_world.elf");
     await browser.openResources(configPath);
 

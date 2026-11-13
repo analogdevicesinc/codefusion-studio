@@ -24,23 +24,35 @@ var {
 
 // ── Plugin-specific PropertyProvider (from zephyr-project-plugin) ────────────
 
-const getZephyrBoardName = (board, soc, secure) => {
+const getZephyrBoardName = (board, soc, secure, coreId) => {
+  // RISC-V cores use the /rv32 board variant; all other cores use /m4.
+  const coreSuffix = coreId?.toLowerCase() === "rv" ? "/rv32" : "/m4";
   switch (board.toLowerCase()) {
     case "ad-apard32690-sl":
       return "apard32690/max32690/m4";
+    case "ad-board-sl":
+      return `apard-${soc.toLowerCase()}/${soc.toLowerCase()}/m4`;
     case "evkit_v1":
+    case "kit_board":
       if (soc.toLowerCase() === "max32675c") {
         return "max32675evkit/max32675";
       }
       return `${soc.toLowerCase()}evkit/${soc.toLowerCase()}${
         soc.toLowerCase() === "max32666"
           ? "/cpu0"
-          : ["max78000", "max78002", "max32690", "max32655"].includes(
-                soc.toLowerCase(),
-              )
-            ? "/m4"
-            : ["max32657", "max32658"].includes(soc.toLowerCase()) &&
-                secure === false
+          : [
+                "max78000",
+                "max78002",
+                "max32690",
+                "max32655",
+                "test8002",
+                "test690",
+                "test655",
+              ].includes(soc.toLowerCase())
+            ? coreSuffix
+            : ["max32657", "max32658", "test657", "test658"].includes(
+                  soc.toLowerCase(),
+                ) && secure === false
               ? "/ns"
               : ""
       }`;
@@ -48,10 +60,13 @@ const getZephyrBoardName = (board, soc, secure) => {
       return `${soc.toLowerCase()}evsys`;
     case "fthr":
     case "fthr_reva":
+    case "pthr":
       return `${soc.toLowerCase()}fthr/${soc.toLowerCase()}${
         soc.toLowerCase() === "max32666"
           ? "/cpu0"
-          : ["max32657", "max32672", "max32650"].includes(soc.toLowerCase())
+          : ["max32657", "max32672", "max32650", "test657"].includes(
+                soc.toLowerCase(),
+              )
             ? ""
             : "/m4"
       }`;
@@ -84,21 +99,23 @@ class PropertyProvider extends BasePropertyProvider {
         }
       }
     }
-    const { boardId, soc, secure } = context ?? {};
+    const { boardId, soc, secure, coreId } = context ?? {};
     if (boardId && soc) {
       const boardNameProp = properties.find(
         (property) =>
           property.default === "" && property.id === "ZephyrBoardName",
       );
       if (boardNameProp) {
-        boardNameProp.default = getZephyrBoardName(boardId, soc, secure);
+        boardNameProp.default = getZephyrBoardName(boardId, soc, secure, coreId);
       }
       const zephyrVersionProp = properties.find(
         (property) => property.id === "ZephyrVersion",
       );
       if (
         zephyrVersionProp &&
-        (soc.toLowerCase() === "max32657" || soc.toLowerCase() === "max32658")
+        ["max32657", "max32658", "test657", "test658"].includes(
+          soc.toLowerCase(),
+        )
       ) {
         zephyrVersionProp.default = "4.3.0";
         zephyrVersionProp.enum?.push({ label: "4.3.0", value: "4.3.0" });

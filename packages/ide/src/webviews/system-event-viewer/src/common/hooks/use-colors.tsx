@@ -13,22 +13,18 @@
  *
  */
 
-const getStyle = (token: string) =>
-	getComputedStyle(document.documentElement).getPropertyValue(token);
+import {useContext} from 'react';
+import {
+	ColorsContext,
+	type SevColors
+} from '../context/colors-context';
 
-export default function useColors(): Record<string, string> {
-	return {
-		borderColor: getStyle('--vscode-commandCenter-inactiveBorder'),
-		itemColor: getStyle('--vscode-button-background'),
-		hoverItemColor: getStyle('--vscode-button-hoverBackground'),
-		editorWidgetBackground: getStyle(
-			'--vscode-editorWidget-background'
-		),
-		editorWidgetColor: getStyle('--vscode-editorWidget-border'),
-		editorWidgetForeground: getStyle(
-			'--vscode-editorWidget-foreground'
-		),
-		descriptionForeground: getStyle('--vscode-descriptionForeground'),
-		defaultForeground: getStyle('--vscode-editor-foreground')
-	};
+export default function useColors(): SevColors {
+	const colors = useContext(ColorsContext);
+
+	if (!colors) {
+		throw new Error('useColors must be used within a ColorsProvider');
+	}
+
+	return colors;
 }

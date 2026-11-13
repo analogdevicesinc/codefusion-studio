@@ -13,45 +13,53 @@
  *
  */
 
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useState} from 'react';
 import styles from './review-summary.module.scss';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 import {
-	Button,
 	CollapseAllIcon,
-	ExpandAllIcon
+	ExpandAllIcon,
+	SegmentedControls
 } from 'cfs-react-library';
 import PackageReviewGroup from '../package-review-group/PackageReviewGroup';
 import {
 	buildDependencyCardKey,
 	useDependencyGroups
 } from './useDependencyGroups';
+import ConflictNotice from './ConflictNotice';
 import ActionBar from '../action-bar/ActionBar';
+import {useIndexingLock} from '../../hooks/useIndexingLock';
 import {useAppDispatch} from '../../state/store';
 import {
-	fetchPageDetails,
-	buildPackageReference
+	buildPackageReference,
+	installPackages
 } from '../../state/slices/packages/packages.reducer';
-import {
-	useSelectedPackages,
-	useDetails
-} from '../../state/slices/packages/packages.selector';
+import {useSelectedPackages} from '../../state/slices/packages/packages.selector';
+import {type InstallPlanResult} from '../../hooks/useInstallPlan';
 
 type ReviewSummaryProps = {
 	readonly onBack: () => void;
 	readonly onContinue: () => void;
+	readonly onInstall: () => void;
+	readonly installPlanResult: InstallPlanResult;
 };
 
 export default function ReviewSummary({
 	onBack,
-	onContinue
+	onContinue,
+	onInstall,
+	installPlanResult
 }: ReviewSummaryProps) {
 	const l10n = useLocaleContext()?.reviewSummary;
 	const actionBarL10n = useLocaleContext()?.actionBar;
+	const indexingLock = useIndexingLock();
 	const dispatch = useAppDispatch();
 	const selectedPackages = useSelectedPackages();
-	const details = useDetails();
-	const groups = useDependencyGroups(selectedPackages);
+	const {groups, culprits, conflictingPackage, failure} =
+		useDependencyGroups(selectedPackages);
+
+	// Use the install plan passed from parent (shared between ReviewSummary and LicenseAcceptPage)
+	const {plan} = installPlanResult;
 	const [expandedKeys, setExpandedKeys] = useState<
 		ReadonlySet<string>
 	>(new Set());
@@ -89,15 +97,31 @@ export default function ReviewSummary({
 		});
 	}, []);
 
-	useEffect(() => {
-		const missing = selectedPackages.filter(
-			pkg => !details[buildPackageReference(pkg.name, pkg.version)]
-		);
+	const handleContinue = () => {
+		const {loading: planLoading} = installPlanResult;
 
-		if (missing.length > 0) {
-			void dispatch(fetchPageDetails(missing));
+		// Optimization: if plan has FINISHED loading and no licenses need acceptance,
+		// skip the license page entirely and install directly
+		if (
+			!planLoading &&
+			plan &&
+			plan.requiresLicenseAcceptance.length === 0
+		) {
+			void dispatch(
+				installPackages({
+					packages: plan.toInstall,
+					options: {
+						acceptLicense: true
+					}
+				})
+			);
+			onInstall();
+		} else {
+			// Plan is still loading, has licenses to review, or errored.
+			// In all cases, go to license page which will handle these states.
+			onContinue();
 		}
-	}, [dispatch, selectedPackages, details]);
+	};
 
 	return (
 		<div className={styles.outerFrame}>
@@ -112,23 +136,35 @@ export default function ReviewSummary({
 								</span>
 							</div>
 							<div className={styles.buttonGroup}>
-								<Button
-									appearance='icon'
-									disabled={isResolving || allExpanded}
-									onClick={expandAll}
-								>
-									<ExpandAllIcon />
-								</Button>
-								<Button
-									appearance='icon'
-									disabled={isResolving || allCollapsed}
-									onClick={collapseAll}
-								>
-									<CollapseAllIcon />
-								</Button>
+								<SegmentedControls
+									dataTest='review-summary:expand-collapse'
+									ariaLabel={l10n?.title}
+									options={[
+										{
+											key: 'expand-all',
+											content: <ExpandAllIcon />,
+											tooltip: l10n?.expandAllTooltip ?? 'Expand',
+											ariaLabel: l10n?.expandAllTooltip ?? 'Expand',
+											disabled: isResolving || allExpanded,
+											onClick: expandAll
+										},
+										{
+											key: 'collapse-all',
+											content: <CollapseAllIcon />,
+											tooltip: l10n?.collapseAllTooltip ?? 'Collapse',
+											ariaLabel:
+												l10n?.collapseAllTooltip ?? 'Collapse',
+											disabled: isResolving || allCollapsed,
+											onClick: collapseAll
+										}
+									]}
+								/>
 							</div>
 						</div>
 					</div>
+					{failure === undefined ? null : (
+						<ConflictNotice culprits={culprits} failure={failure} />
+					)}
 
 					<div className={styles.packageList}>
 						{groups.map(group => (
@@ -140,6 +176,7 @@ export default function ReviewSummary({
 								reference={group.reference}
 								dependencies={group.dependencies}
 								isLoading={group.loading}
+								conflictingPackage={conflictingPackage}
 								expandedKeys={expandedKeys}
 								onToggle={handleToggle}
 							/>
@@ -148,13 +185,19 @@ export default function ReviewSummary({
 				</div>
 			</div>
 			<ActionBar
+				dataTest='review-action-bar'
 				secondaryAction={{
 					label: actionBarL10n?.back ?? '',
 					onClick: onBack
 				}}
 				primaryAction={{
 					label: actionBarL10n?.continue ?? '',
-					onClick: onContinue
+					onClick: handleContinue,
+					disabled:
+						isResolving ||
+						failure !== undefined ||
+						indexingLock !== undefined,
+					disabledReason: indexingLock
 				}}
 			/>
 		</div>

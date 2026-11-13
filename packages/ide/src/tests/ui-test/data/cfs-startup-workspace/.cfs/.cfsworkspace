@@ -1,0 +1,30 @@
+{
+  "Copyright": "Copyright (c) 2026 Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
+  "SchemaVersion": "2.1.0",
+  "DataModelVersion": "^0.0.1",
+  "Timestamp": "2026-10-07T00:00:00.000Z",
+  "Soc": "TEST690",
+  "WorkspacePluginId": "",
+  "WorkspacePluginVersion": "",
+  "Board": "AD-BOARD-SL",
+  "Package": "PLP",
+  "Projects": [
+    {
+      "Id": "primary_project",
+      "CoreId": "CM4",
+      "Name": "Arm Cortex-M4F",
+      "IsPrimary": true,
+      "IsEnabled": true,
+      "PluginId": "com.analog.project.zephyr.mock.plugin",
+      "PluginVersion": "^1.0.0",
+      "FirmwarePlatform": "Zephyr 4.0",
+      "PlatformConfig": {
+        "ProjectName": "primary-project",
+        "BuildSystem": "ninja",
+        "ZephyrBoardName": ""
+      }
+    }
+  ],
+  "WorkspaceName": "cfs-startup-workspace",
+  "Location": "."
+}

@@ -66,6 +66,7 @@ function createConfiguredProject(): ConfiguredProject {
 function createCfsConfig(): CfsConfig {
 	return {
 		Copyright: "",
+		SchemaVersion: "2.1.0",
 		DataModelVersion: "0.0.0",
 		Soc: "MAX78000",
 		Package: "WLP",

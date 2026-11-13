@@ -19,7 +19,7 @@ import {
   GdbToolboxCommand,
   GdbToolboxInput,
 } from "../types/types";
-import { CfsDebugManager } from "../../debug-manager";
+import { CfsDebugManager, GdbCommandOptions } from "../../debug-manager";
 import {
   substituteVars,
   convertRecordValuesToString,
@@ -36,6 +36,10 @@ import {
   handleOpenDisassemblyAction,
 } from "./gdb-action-handlers";
 import { Utils } from "../../../utils/utils";
+import {
+  SessionArchitectureStore,
+  UNKNOWN_ARCHITECTURE,
+} from "../core/session-architecture-store";
 
 /**
  * GDBExecutor is responsible for executing GDB Toolbox scripts and commands
@@ -43,17 +47,21 @@ import { Utils } from "../../../utils/utils";
  * execution, response handling, and all supported script actions.
  */
 export class GDBExecutor {
-  private variableContext: Record<string, string | number> = {};
   private debugManager: CfsDebugManager;
-  constructor(debugManager: CfsDebugManager) {
+  private sessionArchitecture: SessionArchitectureStore;
+  constructor(
+    debugManager: CfsDebugManager,
+    sessionArchitecture: SessionArchitectureStore,
+  ) {
     this.debugManager = debugManager;
+    this.sessionArchitecture = sessionArchitecture;
   }
 
   /**
    * Utility: Find all unique input placeholders in a string (e.g., ${input} or ${input:label})
    */
   private static findInputPlaceholders(str: string): string[] {
-    const regex = /\$\{input(?::([a-zA-Z0-9_\-]+))?\}/g;
+    const regex = /\$\{input(?::([a-zA-Z0-9_-]+))?\}/g;
     const found = new Set<string>();
     let match;
     while ((match = regex.exec(str))) {
@@ -68,6 +76,7 @@ export class GDBExecutor {
   private async promptForInputs(
     placeholders: string[],
     inputs: GdbToolboxInput[],
+    variableContext: Record<string, string | number>,
   ): Promise<void> {
     for (const label of placeholders) {
       const input = inputs.find((i) => i.id === label);
@@ -99,9 +108,9 @@ export class GDBExecutor {
 
       if (value === undefined) throw new Error("User cancelled input");
       if (label) {
-        this.variableContext[`input:${label}`] = value;
+        variableContext[`input:${label}`] = value;
       } else {
-        this.variableContext["input"] = value;
+        variableContext["input"] = value;
       }
     }
   }
@@ -109,13 +118,16 @@ export class GDBExecutor {
   /**
    * Substitute input placeholders in a string using variableContext
    */
-  private substituteInputs(str: string): string {
-    return str.replace(/\$\{input(?::([a-zA-Z0-9_\-]+))?\}/g, (_m, label) => {
+  private substituteInputs(
+    str: string,
+    variableContext: Record<string, string | number>,
+  ): string {
+    return str.replace(/\$\{input(?::([a-zA-Z0-9_-]+))?\}/g, (_m, label) => {
       if (label) {
-        const val = this.variableContext[`input:${label}`];
+        const val = variableContext[`input:${label}`];
         return typeof val === "number" ? String(val) : val || "";
       } else {
-        const val = this.variableContext["input"];
+        const val = variableContext["input"];
         return typeof val === "number" ? String(val) : val || "";
       }
     });
@@ -123,11 +135,20 @@ export class GDBExecutor {
   /**
    * Executes a single GDB command in the debug session.
    * Handles variable substitution, user input, and waits for the response.
+   * @param cmd - The command to execute.
+   * @param inputs - Input definitions used to resolve `${input}` placeholders.
+   * @param session - The debug session to run the command in.
+   * @param variableContext - Variables available for substitution.
+   * @param options - Options forwarded to the debug session, e.g. whether the
+   * output must be echoed to the Debug Console.
+   * @returns A promise that resolves to the command output.
    */
   public async executeCommand(
     cmd: GdbToolboxCommand,
     inputs: GdbToolboxInput[],
     session: vscode.DebugSession,
+    variableContext: Record<string, string | number> = {},
+    options: GdbCommandOptions = {},
   ): Promise<string> {
     // Get the CFS debug session from the manager
     const cfsSession = this.debugManager.getSession(session.id);
@@ -140,24 +161,38 @@ export class GDBExecutor {
     // Find and prompt for input placeholders in the command
     const inputPlaceholders = GDBExecutor.findInputPlaceholders(cmd.command);
     if (inputPlaceholders.length > 0) {
-      await this.promptForInputs(inputPlaceholders, inputs ?? []);
+      await this.promptForInputs(
+        inputPlaceholders,
+        inputs ?? [],
+        variableContext,
+      );
     }
     // Substitute user inputs
-    const commandWithInputs = this.substituteInputs(cmd.command);
+    const commandWithInputs = this.substituteInputs(
+      cmd.command,
+      variableContext,
+    );
     const substitutedCommand = substituteVars(
       commandWithInputs,
-      convertRecordValuesToString(this.variableContext),
+      convertRecordValuesToString(variableContext),
     );
 
-    return await cfsSession.evaluateREPL(substitutedCommand);
+    return await cfsSession.evaluateGdbCommand(substitutedCommand, options);
   }
   /**
    * Executes a sequence of GDB Toolbox commands as a script.
+   * @param commands - The commands to execute in order.
+   * @param inputs - Input definitions used to resolve `${input}` placeholders.
+   * @param session - The debug session to run the script in.
+   * @param options - Options forwarded to each command, e.g. whether the
+   * output must be echoed to the Debug Console.
+   * @returns A promise that resolves to the output of each command.
    */
   public async executeScript(
     commands: GdbToolboxCommand[],
     inputs: GdbToolboxInput[],
     session: vscode.DebugSession,
+    options: GdbCommandOptions = {},
   ): Promise<string[]> {
     const results: string[] = [];
     const cfsWorkspaceFolder = vscode.workspace.workspaceFolders?.find(
@@ -174,18 +209,34 @@ export class GDBExecutor {
       "gdb",
     );
 
-    this.variableContext = {
+    // Execution-local context so concurrent scripts on different sessions do
+    // not clobber each other's variables (this executor is a singleton).
+    const variableContext: Record<string, string | number> = {
       defaultScriptsDirectory: defaultScriptsDir,
     };
+
+    // Expose the session's detected architecture so scripts can source
+    // arch-specific helpers, e.g. `{defaultScriptsDirectory}/fault-analyzer-{arch}.gdb`.
+    // Skip the unknown sentinel so it is never substituted as a real arch.
+    const sessionArch = this.sessionArchitecture.get(session.id);
+    if (sessionArch && sessionArch !== UNKNOWN_ARCHITECTURE) {
+      variableContext.arch = sessionArch;
+    }
 
     for (const cmd of commands) {
       try {
         const substitutedCommand = substituteVars(
           cmd.command,
-          convertRecordValuesToString(this.variableContext),
+          convertRecordValuesToString(variableContext),
         );
         const commandObj = { ...cmd, command: substitutedCommand };
-        const response = await this.executeCommand(commandObj, inputs, session);
+        const response = await this.executeCommand(
+          commandObj,
+          inputs,
+          session,
+          variableContext,
+          options,
+        );
 
         results.push(response);
         if (cmd.actions) {
@@ -194,6 +245,7 @@ export class GDBExecutor {
             inputs ?? [],
             response,
             session,
+            variableContext,
           );
         }
       } catch (error) {
@@ -213,6 +265,7 @@ export class GDBExecutor {
     inputs: GdbToolboxInput[],
     response: string,
     session: vscode.DebugSession,
+    variableContext: Record<string, string | number>,
   ): Promise<void> {
     for (const action of actions) {
       // Find and prompt for input placeholders in action fields (filePath, content, etc)
@@ -230,16 +283,30 @@ export class GDBExecutor {
       // Remove duplicates
       actionInputFields = Array.from(new Set(actionInputFields));
       if (actionInputFields.length > 0) {
-        await this.promptForInputs(actionInputFields, inputs);
+        await this.promptForInputs(actionInputFields, inputs, variableContext);
       }
-      // Substitute user inputs in action fields
-      if (typeof action.filePath === "string") {
-        action.filePath = this.substituteInputs(action.filePath);
+      // Substitute user inputs into a copy so the cached ScriptManager action
+      // keeps its ${input...} placeholders for reruns and concurrent runs.
+      const resolvedAction: GdbToolboxAction = { ...action };
+      if (typeof resolvedAction.filePath === "string") {
+        resolvedAction.filePath = this.substituteInputs(
+          resolvedAction.filePath,
+          variableContext,
+        );
       }
-      if (typeof action.content === "string") {
-        action.content = this.substituteInputs(action.content);
+      if (typeof resolvedAction.content === "string") {
+        resolvedAction.content = this.substituteInputs(
+          resolvedAction.content,
+          variableContext,
+        );
       }
-      await this.handleAction(action, inputs, response, session);
+      await this.handleAction(
+        resolvedAction,
+        inputs,
+        response,
+        session,
+        variableContext,
+      );
     }
   }
   /**
@@ -250,9 +317,10 @@ export class GDBExecutor {
     inputs: GdbToolboxInput[],
     response: string,
     session: vscode.DebugSession,
+    variableContext: Record<string, string | number>,
   ): Promise<void> {
     const context = {
-      ...this.variableContext,
+      ...variableContext,
       gdbOutput: response,
       command: action.command || "",
       timestamp: new Date().toISOString(),
@@ -272,32 +340,27 @@ export class GDBExecutor {
     // Handle the action based on its type
     switch (action.type) {
       case "log":
-        handleLogAction(action, context.gdbOutput, this.variableContext);
+        handleLogAction(action, context.gdbOutput, variableContext);
         break;
 
       case "showMessage":
-        handleShowMessageAction(action, this.variableContext, response);
+        handleShowMessageAction(action, variableContext, response);
         break;
 
       case "writeFile":
-        handleWriteFileAction(action, context, this.variableContext, response);
+        handleWriteFileAction(action, context, variableContext, response);
         break;
 
       case "appendFile":
-        handleAppendFileAction(action, context, this.variableContext, response);
+        handleAppendFileAction(action, context, variableContext, response);
         break;
 
       case "setVariable":
-        handleSetVariableAction(action, response, this.variableContext);
+        handleSetVariableAction(action, response, variableContext);
         break;
 
       case "openFile":
-        await handleOpenFileAction(
-          action,
-          response,
-          this.variableContext,
-          session,
-        );
+        await handleOpenFileAction(action, response, variableContext, session);
         break;
 
       case "conditional":
@@ -306,7 +369,13 @@ export class GDBExecutor {
           context,
           session,
           (actions, response, session) =>
-            this.executeActions(actions, inputs, response, session),
+            this.executeActions(
+              actions,
+              inputs,
+              response,
+              session,
+              variableContext,
+            ),
         );
         break;
 

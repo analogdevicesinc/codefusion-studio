@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ export default function TextArea({
 		<div className={styles.textareaContainer}>
 			<VSCodeTextArea
 				className={`${error ? styles.errorBorder : undefined}`}
+				data-test={dataTest}
 				value={value}
 				name={name}
 				resize={direction}

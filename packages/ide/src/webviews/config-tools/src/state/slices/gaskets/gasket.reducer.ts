@@ -107,11 +107,18 @@ const gasketsSlice = createSlice({
 				(value, index, self) => value && self.indexOf(value) === index
 			);
 
+			/* NOTE: Preserve the nogroup option */
+			if (
+				uniqueGroupNames.length > 0 &&
+				state.Streams.some(stream => !stream.Group)
+			) {
+				uniqueGroupNames.push('nogroup');
+			}
+
 			if (state.filteredGroups) {
-				const updatedFilteredGroups = state.filteredGroups.filter(
+				state.filteredGroups = state.filteredGroups.filter(
 					groupName => uniqueGroupNames.includes(groupName)
 				);
-				state.filteredGroups = updatedFilteredGroups;
 			}
 		},
 
@@ -133,6 +140,17 @@ const gasketsSlice = createSlice({
 			}
 
 			recomputeStreams(state);
+
+			// We need to clean up the filtered groups to remove any groups that no longer exist in the streams
+			const uniqueGroupNames = state.Streams.map(s => s.Group).filter(
+				(value, index, self) => value && self.indexOf(value) === index
+			);
+
+			if (state.filteredGroups) {
+				state.filteredGroups = state.filteredGroups.filter(
+					groupName => uniqueGroupNames.includes(groupName)
+				);
+			}
 		},
 		setEditingStream(
 			state,

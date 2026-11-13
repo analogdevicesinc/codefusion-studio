@@ -18,6 +18,8 @@ import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 import {useAppDispatch} from '../../state/store';
 import {
 	setCpuLoadInterval,
+	setInstrumentationStopperFunction,
+	setInstrumentationTriggerFunction,
 	setInterface,
 	setMemoryUsageInterval,
 	setUARTPort,
@@ -88,7 +90,9 @@ export default function ZephelinConfigurationBody({
 
 	return (
 		<div
-			className={`${styles.container} ${globalDisabled ? styles.disabled : ''}`}
+			className={`${styles.container} ${
+				globalDisabled ? styles.disabled : ''
+			}`}
 		>
 			<div className={styles.configSection}>
 				<h3 className={styles.title}>{l10n.profiling.title}</h3>
@@ -117,6 +121,38 @@ export default function ZephelinConfigurationBody({
 							zephelin.InstrumentationSubsystemEnabled
 						)}
 						isDisabled={globalDisabled}
+						dependantInputProps={[
+							{
+								label: l10n.profiling.triggerFunction,
+								dataTest: 'profiling-trigger-function-field',
+								textValue:
+									zephelin.InstrumentationTriggerFunction ?? '',
+								isDisabled: globalDisabled,
+								onChange(value: string) {
+									dispatch(
+										setInstrumentationTriggerFunction({
+											projectId,
+											value
+										})
+									);
+								}
+							},
+							{
+								label: l10n.profiling.stopperFunction,
+								dataTest: 'profiling-stopper-function-field',
+								textValue:
+									zephelin.InstrumentationStopperFunction ?? '',
+								isDisabled: globalDisabled,
+								onChange(value: string) {
+									dispatch(
+										setInstrumentationStopperFunction({
+											projectId,
+											value
+										})
+									);
+								}
+							}
+						]}
 						onChange={() => {
 							dispatch(
 								toggleInstrumentationSubsystemEnabled({

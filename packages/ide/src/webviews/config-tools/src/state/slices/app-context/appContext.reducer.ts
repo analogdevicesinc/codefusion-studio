@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 - 2026 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,48 @@
  * limitations under the License.
  *
  */
-import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
+import {
+	createAsyncThunk,
+	createSlice,
+	type PayloadAction
+} from '@reduxjs/toolkit';
 import type {NavigationItem} from '@common/types/navigation';
 import {navigationItems} from '@common/constants/navigation';
 import type {RegisterDictionary} from '@common/types/soc';
 import type {CodeGenerationProject} from 'cfs-lib/dist/types/code-generation';
 import {PINCONFIG_SEARCH_SCOPES} from '../../../screens/pinmux/constants/search-scope';
+import {createCodeGenerationPromise} from '../../../utils/api';
 import type {
 	McubootEnableOption,
 	KeyData
 } from '../../../types/workspace-settings';
+
+export type CodeGenState =
+	| {status: 'idle'}
+	| {status: 'running'}
+	| {status: 'success'; files: string[]}
+	| {status: 'error'; error: string};
+
+/**
+ * Runs code generation for the given projects and reports the outcome
+ * into the `codeGenState` slice of the app context store.
+ */
+export const runCodeGeneration = createAsyncThunk(
+	'appContext/runCodeGeneration',
+	async (
+		selectedProjects: CodeGenerationProject[],
+		{rejectWithValue}
+	) => {
+		const result =
+			await createCodeGenerationPromise(selectedProjects);
+
+		if (typeof result === 'string') {
+			return rejectWithValue(result);
+		}
+
+		return result;
+	}
+);
 
 export type AssignmentFilter =
 	| 'assigned'
@@ -88,6 +120,7 @@ type AppContextState = {
 	activeSettingsChild: string;
 	mcubootEnableState: McubootEnableOption;
 	signingKeys: KeyData[];
+	codeGenState: CodeGenState;
 };
 
 export const appContextInitialState: AppContextState = {
@@ -132,7 +165,8 @@ export const appContextInitialState: AppContextState = {
 	activeSettingsPage: '',
 	activeSettingsChild: '',
 	mcubootEnableState: 'default',
-	signingKeys: []
+	signingKeys: [],
+	codeGenState: {status: 'idle'}
 };
 
 const appContextSlice = createSlice({
@@ -328,7 +362,28 @@ const appContextSlice = createSlice({
 			state.signingKeys = state.signingKeys.filter(
 				(_, index) => index !== payload
 			);
+		},
+		resetCodeGenState(state) {
+			state.codeGenState = {status: 'idle'};
 		}
+	},
+	extraReducers(builder) {
+		builder
+			.addCase(runCodeGeneration.pending, state => {
+				state.codeGenState = {status: 'running'};
+			})
+			.addCase(runCodeGeneration.fulfilled, (state, {payload}) => {
+				state.codeGenState = {status: 'success', files: payload};
+			})
+			.addCase(runCodeGeneration.rejected, (state, {payload}) => {
+				state.codeGenState = {
+					status: 'error',
+					error:
+						typeof payload === 'string'
+							? payload
+							: 'Error generating code'
+				};
+			});
 	}
 });
 
@@ -356,7 +411,8 @@ export const {
 	setActiveSettingsChild,
 	setMcubootEnableState,
 	addSigningKey,
-	removeSigningKey
+	removeSigningKey,
+	resetCodeGenState
 } = appContextSlice.actions;
 
 export const appContextReducer = appContextSlice.reducer;

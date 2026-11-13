@@ -2,6 +2,49 @@
 
 # Release Notes
 
+## 2.4.0
+
+### ✨ New Features
+
+- **Package Manager — Remotes tab:** The new **Remotes** tab in the Package Manager lists your package remotes. You can add custom remotes, enable or disable any remote, change the authentication of a custom remote, and delete a custom remote without using the command line.
+- **Package Manager — Packages view:** The new **Packages** view in the CodeFusion Studio sidebar lets you browse, search, and filter the contents of installed packages. By default it shows the packages your workspace depends on.
+- **Package Manager — update checks:** CodeFusion Studio now notifies you when newer versions of the installed workspace packages are available. You can also check on demand with the `(CFS) Check for Package Updates` command.
+- **West Editor:** Open the `west.yml` manifest of a west workspace that you manage in a graphical editor. View the current status of each project, search and filter projects, edit revisions and groups, and turn groups on or off.
+- **`cfspkg://` Git protocol:** `west` can clone a package installed with the Package Manager into your own application through a `cfspkg://<name>/<version>` URL in `west.yml`.
+- **SRU Config:** New tab in System Planner for configuring Signal Routing Unit (SRU) connections graphically on SHARC-FX processors, replacing manual register-level configuration.
+- **Tasks — `dependsOn` support:** Add a `dependsOn` property to a custom task in `cfs.tasks.json` to run one or more other tasks first when you run the task from the CodeFusion Studio **Actions** view.
+- **AI Hardware Profiling — Runtime Profile Report:** For captures that generate a `.tef` file, selecting **Stop** also creates a **Runtime Profile Report** (`.cfsreport`) alongside it and opens the report automatically. The report shows measured latency, throughput, and per-layer timing from the target hardware.
+- **AI-Assisted Development Skills — workspace bootstrap and AI model evaluation:** Three new skills extend what your AI assistant can do: `cfs-workspace-bootstrap` sets up a workspace and checks that your environment is ready to build; `cfs-ai-evaluation` evaluates an AI model on a connected ADI board; and `cfs-ai-report` turns the results into an engineering report. They are available in GitHub Copilot, Claude Code, OpenAI Codex, and other supported agents. For installation and usage, see [AI-Assisted Development Skills](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/developer-tools/cfs-ai-skills/) in the CodeFusion Studio User Guide.
+
+### ⛔ Breaking Changes
+
+- **AI Debug Assistant — chat participant and source-search interfaces removed:** The `@cfs-debug` GitHub Copilot chat participant has been removed. The MCP `debug_search_source` tool and `source-search-and-debug` prompt have also been removed; use the file-search capabilities of your AI client instead. Use the CFS MCP debug server for AI-assisted debugging with GitHub Copilot Agent Mode, Claude Code, or another MCP-compatible AI client.
+
+### 🐞 Bug fixes, Minor Improvements
+
+- **Debug with Ozone — per-core actions:** The **Actions** panel shows a separate **Debug with Ozone (`<core>`)** action for each Ozone-capable core (Arm Cortex-M and RISC-V), so you can open the debugger for a specific core from either the **Workspace** context or a core context. Cores that don't support Ozone, such as SHARC-FX, no longer show the action.
+- **AI Debug Assistant — automatic client connection:** When you start the CFS MCP debug server, the built-in MCP client in VS Code connects automatically, so debug tools are ready to use in GitHub Copilot Agent Mode without an extra manual step.
+- **GDB Toolbox — SHARC-FX fault analysis:** The **Analyze Faults** script supports SHARC-FX targets. During a halted debug session, it reads and decodes the SHARC-FX exception status registers and prints a fault summary.
+- **Installer — smaller, more flexible installation:** Install toolchains and SDKs separately through the Package Manager, reducing the initial installer download and allowing you to install only the components you need. See [Commonly available packages](https://developer.analog.com/docs/codefusion-studio/latest/user-guide/installation/package-manager/available-packages/) for the toolchain and SDK packages that replace the removed installer components. The setup wizard copies the CodeFusion Studio extension VSIX to your system, installs OpenOCD for ADI processors, and can install ADI ICE Drivers on Windows.
+- **Create a workspace from an AI model — single-core selection:** In the **Cores** section, selecting a core clears the previous selection, so only one core can run the model.
+- **Manage AI Models — reports saved to your project:** Compatibility and profiling reports now save to the `reports` folder of the project assigned to the same core as the model, instead of always saving to the temp directory.
+- **Manage AI Models — renamed tab:** The **Embedded AI Tools** tab in System Planner has been renamed to **Manage AI Models**. Functionality is unchanged.
+- **Manage AI Models — identifier collision detection:** Adding or updating a model reports `This identifier is already in use by another model` when the normalized **Model Name** or **Symbol for data** value (when set) collides case-insensitively with either value from another model in the workspace.
+- **Pin Config — fixed-function pins and configuration display:** Fixed-function pins on SHARC-FX peripherals, such as DAI0, now display their physical pin mappings. **Enable** and **Configure** controls appear only for pins that support those actions. This behavior also applies to peripherals that contain a mix of assignable and fixed signals, such as SYS. In the configuration sidebar, the **Configuration** and **Code Generation Plugin** sections appear only when they contain applicable controls.
+- **Pin Config — pin description editor:** Peripherals that allow assignment at the pin level, such as GPIO, now show a **Details** section in the configuration sidebar with a **Description** field for documenting the purpose of the pin.
+- **AI Hardware Profiling — Clean & Build:** The AI Hardware Profiling view now uses the standard build task for your project by default and adds **Clean & Build** to rebuild the AI application from scratch.
+- **Profiling — instrumentation trigger and stopper functions:** Set the functions that start and stop Application Callgraph instrumentation directly in System Planner, using the new **Trigger Function** and **Stopper Function** fields on the **Profiling** tab.
+- **Package Manager — dependency conflict detection:** The review summary screen now checks whether the packages you selected pull in incompatible versions of the same package — whether that package is one of your direct selections or a dependency they share — and reports the conflict before you accept licenses. The disputed package is highlighted, and **Continue** is unavailable until you resolve the conflict.
+- **Profiling — Zephelin live tracing:** Stream trace data to the Zephelin Trace Viewer while the capture runs, instead of saving `.ctf` and `.tef` files for later viewing. Turn on **Enable Zephelin Live Tracing** in the **Trace Configuration** view to monitor CPU load, memory usage, and AI inference timing in real time over UART or USB.
+
+### 🚧 Experimental Features
+
+- None
+
+### 👷 CI Improvements
+
+- None
+
 ## 2.3.0
 
 ### ✨ New Features
@@ -9,7 +52,6 @@
 - **Quick Access Panel:** The CFS sidebar now includes a **Help and Support** section with links to the Getting Started walkthrough, online documentation, Engineer Zone, and technical support.
 - **Workspace Creation Wizard:** Templates in the **Workspace Template** section are now listed in alphabetical order. A search bar lets you filter templates by name or description.
 - **Package Manager UI:** A new graphical interface for managing packages directly from VS Code. Browse, filter by name, status, SoC, or type, view package details and version history, and install or uninstall packages - all without leaving the editor.
-- **CLI API key authentication:** `cfsutil` commands now support API key authentication through the `CFS_API_KEY` environment variable for use in CI/CD and automated workflows. New commands `cfsutil myanalog apikey create`, `list`, and `delete` manage keys.
 - **Peripheral Allocation — automatic signal assignment:** Allocating a peripheral to a project automatically assigns required signals that have a single possible pin, reducing manual setup.
 - **Telemetry:** Anonymous, opt-in telemetry covers System Planner configuration, code generation, build, flash, debug, and artificial intelligence (AI) model workflows. Disabled by default; no personally identifying information is collected. View the Telemetry documentation for more information about the collected data.
 - **AI-Assisted Development Skills:** New `cfs-docs` and `cfs-cli` skills give your AI assistant doc-backed, product-specific answers about CodeFusion Studio. They are bundled with the extension for GitHub Copilot (requires VS Code 1.109 or later), and follow the open Agent Skills standard so they also work in Claude Code, OpenAI Codex, and other supported agents.
@@ -30,13 +72,11 @@
 
 ### 🐞 Bug fixes, Minor Improvements
 
-- **Build command output:** Build commands display output in a new format. Underlying build behavior is unchanged.
-- **`cfsutil ai` commands — optional `--core` flag:** `cfsutil ai build`, `cfsutil ai compat`, and `cfsutil ai profile` no longer require `--core` when the target SoC has only one AI-capable core. The core is inferred automatically. For SoCs with multiple AI-capable cores, `--core` is still required.
-- **`cfsutil workspace configure` — optional `--board` flag:** `cfsutil workspace configure` no longer requires `--board` when `--package` is specified. Provide `--board`, `--package`, or both; at least one is required. If you provide only `--board`, the package is inferred from the board.
 - **Memory Viewer — go to symbol:** The **Go to** field in the Memory Viewer now accepts symbol names (for example, `count`) in addition to hex and decimal addresses. Symbol lookup requires a halted debug session.
 - **System Planner version resolution:** When the remote package repository can't be accessed (no network access or not logged in to myAnalog), the version resolution screen now shows compatible locally installed versions (if available) instead of an empty menu. The **Upgrade to latest compatible downloadable version** option now appears when no compatible version is installed locally or when the remote version is newer than the best compatible version installed locally.
 - **Workspace from AI Model — automatic board and core selection:** When creating a workspace from an AI model, the board is selected automatically when only one board is available for the selected SoC. A supported processor core is initially pre-selected. When compatibility results are available, the selection is updated to a compatible core if one is found; otherwise, it is cleared. You can change the core selection or target additional cores.
-- **Embedded AI Tools — model name length limit:** AI model names are limited to 64 characters. The **Model Name** field in the model editor stops accepting input at 64 characters, and the `cfsutil ai model add`, `cfsutil ai model update`, and `cfsutil ai build` commands report an error when a name (including one derived from a model file name) exceeds the limit.
+- **Embedded AI Tools — model name length limit:** AI model names are limited to 64 characters. The **Model Name** field in the model editor stops accepting input at 64 characters.
+
 
 ### 🚧 Experimental Features
 
@@ -73,10 +113,8 @@
 
 ### ✨ New Features
 
-- **CLI-first workspace workflows:** It is now possible to set up a workspace, build, and flash a project entirely from the command line without opening the IDE. New commands include `cfsutil socs list`, `cfsutil socs info`, `cfsutil workspace configure`, `cfsutil workspace create`, `cfsutil tasks list`, and `cfsutil tasks run`.
-- **`cfsutil ai` command group:** The `cfsai` command-line tool has been migrated into `cfsutil` as the `cfsutil ai` command group, enabling end-to-end AI model workflows from the command line. Includes `cfsutil ai build`, `cfsutil ai compat`, `cfsutil ai profile`, `cfsutil ai model` (add, list, update, remove models), and `cfsutil ai backends list` (optionally with `--name`). `cfsai` remains available as a compatibility wrapper.
 - **Memory Viewer:** A new debug tool that lets you inspect device memory during live and retrospective debug sessions. Features configurable display options (byte grouping, column count, endianness, format), auto-refresh on debugger halt, multi-core session tracking, and read-only support for core dump sessions.
-- **Package Manager enhancements:** Some packages require license acceptance before installation. When installing packages using the VS Code Command Palette, a license acceptance prompt appears during installation. For automated workflows, the new `--acceptLicense` flag on `cfsutil pkg install` allows you to accept the license upfront, enabling installation in scripts and CI pipelines without interactive prompts. Added **(CFS) Delete Package from Cache** command in the Command Palette for bulk deletion of cached packages.
+- **Package Manager enhancements:** Some packages require license acceptance before installation. When installing packages using the VS Code Command Palette, a license acceptance prompt appears during installation. Added **(CFS) Delete Package from Cache** command in the Command Palette for bulk deletion of cached packages.
 - **Embedded AI Tools enhancements:** Improved UX for Compatibility and Resource Profiling report outputs with better visualization and interpretation. Added **Open Report** option on the CFS Home page for accessing previously generated reports.
 - **System Planner improvements:** Enhanced Pin Config search with categorized results and navigation in the Pin Mux view for faster pin, signal, and peripheral identification.
 - **Expanded System Planner support:** Added full System Planner support (Memory Allocation, Peripheral Allocation, Pin Config, and Registers) for MAX32660, MAX32662, MAX32666, MAX32672, and MAX32675C microcontrollers.
@@ -93,8 +131,7 @@
 
 ### ⛔ Breaking Changes
 
-- **`cfsutil socs` command format changes:** The default output format of `cfsutil socs list` (text and JSON) and the usage of `cfsutil socs export` have changed to support SoC names containing hyphens (e.g., `adsp-21836`). For `socs export`, pass the SoC name as a positional argument and specify the package with `--package` (for example, `cfsutil socs export adsp-21836 --package <package-name>`). Use the `--legacy` flag for `socs list` or the deprecated `-n, --name` flag for `socs export` while migrating. Both legacy options will be removed in a future release.
-- **`--json` flag deprecated:** The `--json` flag has been deprecated across all `cfsutil ai`, `cfsutil elf`, and `cfsutil socs` commands. Use `--format json` instead. The `--json` flag continues to work but displays a deprecation warning and will be removed in a future release.
+- None
 
 ### 🐞 Bug fixes, Minor Improvements
 
@@ -110,10 +147,8 @@
 ### ✨ New Features
 
 - Introduced the **AI Debug Assistant**, a preview agentic debugging tool that connects compatible AI clients, such as GitHub Copilot and Claude Code, directly to your live debug sessions. Built on the Model Context Protocol (MCP), it enables AI models to autonomously investigate faults, inspect hardware state, and coordinate across multiple cores in real time.
-- `cfsutil pkg install` now supports semantic version range expressions, including caret (`^`), tilde (`~`), and comparison operators (`>=`, `<=`, `>`, `<`).
 
 ### 🐞 Bug fixes, Minor Improvements
-- Package Manager authentication handling has been improved. Authentication is now managed using `cfsutil myanalog` and `cfsutil pkg auth-remote`; the commands `cfsutil pkg login`, `cfsutil pkg logout`, and `cfsutil auth` are deprecated.
 - Plugin options are now filtered by core during manual workspace creation. Users can no longer select unsupported plugins for a given architecture — for example, the Zephyr plugin is hidden for RISC-V cores such as MAX32690.
 - Cores in the workspace creation wizard are now ordered with the primary core listed first.
 - Fixed an issue where adding a myAnalog remote with an incorrect URL caused Package Manager to fail when attempting to obtain credentials.
@@ -147,7 +182,6 @@
 
 - Develop AI-enabled applications with the new suite of **Embedded AI Tools** for supported processors, including MAX32657, MAX32690, MAX78002, and the SHARC-FX (ADSP-2183x/SC83x family).
   - Import and configure AI models directly in the **System Planner**, assign them to cores, run compatibility and profiling checks, and generate deployment code.
-  - Access the same capabilities from the terminal using the new **`cfsai` command-line utility**, supporting model builds, compatibility reports, and profiling workflows.
   - Capture runtime and AI inference-level performance data with **Zephelin profiling**, and visualize traces in the **Zephelin Trace Viewer**.
 - Accelerate setup and updates with the new **Package Manager**, which lets you download SDKs, toolchains, and plugins on demand without requiring a full reinstallation.
 - Debug faster with new and enhanced **Debugging Tools**.

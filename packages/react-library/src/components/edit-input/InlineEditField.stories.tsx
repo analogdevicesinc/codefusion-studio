@@ -15,7 +15,7 @@
 
 import type {Meta} from '@storybook/react';
 import React, {useState} from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import InlineEditField from './InlineEditField.js';
 
 const meta: Meta<typeof InlineEditField> = {

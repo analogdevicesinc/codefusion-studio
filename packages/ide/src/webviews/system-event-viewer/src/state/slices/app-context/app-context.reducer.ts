@@ -12,47 +12,41 @@
  * limitations under the License.
  *
  */
-import {
-  createSlice,
-  type PayloadAction
-} from '@reduxjs/toolkit';
+import {createSlice, type PayloadAction} from '@reduxjs/toolkit';
 import {navigationItems} from '../../../common/constants/navigation';
 
 import type {NavigationItem} from '../../../common/types/navigation';
 import type {CfsEventState} from '../../../common/types/events';
 
 type SevContextState = {
-  activeScreen: NavigationItem;
-  toolState?: CfsEventState;
-  lastUpdate?: string;
+	activeScreen: NavigationItem;
+	toolState?: CfsEventState;
+	lastUpdate?: string;
 };
 
 export const sevContextInitialState: SevContextState = {
-  activeScreen: navigationItems.timeline
+	activeScreen: navigationItems.timeline
 };
 
 const appContextSlice = createSlice({
-  name: 'appContext',
-  initialState: sevContextInitialState,
-  reducers: {
-    setActiveScreen(state, action: PayloadAction<NavigationItem>) {
-      state.activeScreen = action.payload;
-    },
-    setToolState(
-      state,
-      action: PayloadAction<CfsEventState | undefined>
-    ) {
-      state.toolState = action.payload;
-    },
-    setLastUpdate(
-      state,
-      action: PayloadAction<string | undefined>
-    ) {
-      state.lastUpdate = action.payload;
-    }
-  }
+	name: 'appContext',
+	initialState: sevContextInitialState,
+	reducers: {
+		setActiveScreen(state, action: PayloadAction<NavigationItem>) {
+			state.activeScreen = action.payload;
+		},
+		setToolState(
+			state,
+			action: PayloadAction<CfsEventState | undefined>
+		) {
+			state.toolState = action.payload;
+		},
+		setLastUpdate(state, action: PayloadAction<string | undefined>) {
+			state.lastUpdate = action.payload;
+		}
+	}
 });
 
 export const {setActiveScreen, setToolState, setLastUpdate} =
-  appContextSlice.actions;
+	appContextSlice.actions;
 export const appContextReducer = appContextSlice.reducer;

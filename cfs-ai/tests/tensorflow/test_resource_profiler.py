@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ from pathlib import Path
 
 from utils import has_tf, get_tf
 
-from cfsai_resource_profiler.profile_resources import TFLiteResourceProfiler
-from cfsai_resource_profiler.exceptions import (
+from cfsai_model_explorer.backends.tflm_static.profiler import TFLiteResourceProfiler
+from cfsai_model_explorer.backends.tflm_static.profiler_exceptions import (
     HardwareProfileError,
     ModelAnalysisError,
 )
-from cfsai_resource_profiler.schemas import (
+from cfsai_model_explorer.backends.tflm_static.profiler_schemas import (
     ResourceProfileReport,
     OptimizationOpportunities,
     MemoryAnalysis,

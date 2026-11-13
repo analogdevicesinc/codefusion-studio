@@ -15,23 +15,18 @@
 
 import {useEffect, useRef} from 'react';
 import type {CfsPackageReference} from 'cfs-package-manager';
-import {Button, ProgressRing} from 'cfs-react-library';
+import {Button} from 'cfs-react-library';
 import styles from './package-dependency-review-card.module.scss';
 import ChevronRight from '@common/icons/ChevronRight';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
 import RightArrow from '@common/icons/RightArrow';
 import {useMessenger} from '../../../../common/contexts/MessengerContext';
 import {openLicensePreviewRequest} from '@constants/messages/package-manager-messages';
-import {useAppDispatch} from '../../state/store';
 import {
-	useDetails,
-	usePackageList
+	usePackageList,
+	useVersionMeta
 } from '../../state/slices/packages/packages.selector';
-import {
-	fetchPageDetails,
-	buildPackageReference
-} from '../../state/slices/packages/packages.reducer';
-import {formatCachedVersions} from '../../utils';
+import {formatCachedVersions, formatSupportedSocs} from '../../utils';
 
 /** A request to expand and scroll to a specific dependency card. */
 export type FocusRequest = {
@@ -48,6 +43,8 @@ type PackageDependencyReviewCardProps = {
 	/** True when the parent package is required by the workspace. */
 	readonly isRequired: boolean;
 	readonly isCollapsed: boolean;
+	/** True when this dependency is the one the selection disagrees about. */
+	readonly hasConflict?: boolean;
 	/** Toggles the collapsed state. */
 	readonly onToggle: () => void;
 	/** When targeted from the parent's dependency list, scrolls into view. */
@@ -59,22 +56,19 @@ export default function PackageDependencyReviewCard({
 	cardKey,
 	isRequired,
 	isCollapsed,
+	hasConflict,
 	onToggle,
 	focusRequest
 }: PackageDependencyReviewCardProps) {
 	const l10n = useLocaleContext()?.packageCard;
 	const messenger = useMessenger();
-	const dispatch = useAppDispatch();
-	const details = useDetails();
 	const packageList = usePackageList();
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const detailKey = buildPackageReference(
-		dependency.name,
-		dependency.version
-	);
-	const detail = details[detailKey];
+	// Undefined for a dependency the catalog does not list; its rows show dashes.
+	const detail = useVersionMeta(dependency.name, dependency.version);
 	const entry = packageList.find(e => e.name === dependency.name);
+	const socs = detail?.socs ?? [];
 
 	/** Scroll into view when this card is targeted from the parent's dependency
 	 * list. Matched by the unique cardKey so duplicate name/version entries
@@ -92,15 +86,6 @@ export default function PackageDependencyReviewCard({
 		});
 	}, [focusRequest, cardKey]);
 
-	// Fetch this dependency's details on first expand if not already cached.
-	useEffect(() => {
-		if (isCollapsed || detail) {
-			return;
-		}
-
-		void dispatch(fetchPageDetails([dependency]));
-	}, [isCollapsed, detail, dispatch, dependency]);
-
 	const cachedVersions = entry ? formatCachedVersions(entry) : '—';
 
 	const handleViewLicense = async () => {
@@ -117,7 +102,14 @@ export default function PackageDependencyReviewCard({
 
 	return (
 		<div ref={containerRef} className={styles.container}>
-			<div className={styles.card}>
+			<div
+				className={`${styles.card}${
+					hasConflict ? ` ${styles.conflicting}` : ''
+				}`}
+				data-test={
+					hasConflict ? 'dependency-card-conflicting' : undefined
+				}
+			>
 				<div className={styles.cardContent}>
 					<div className={styles.header}>
 						<span className={styles.name}>{dependency.name}</span>
@@ -140,70 +132,65 @@ export default function PackageDependencyReviewCard({
 						</div>
 					</div>
 
-					{!isCollapsed &&
-						(detail ? (
-							<div className={styles.cardBody}>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.description}
-									</div>
-									<div className={styles.rowValue}>
-										{detail.description}
-									</div>
+					{!isCollapsed && (
+						<div className={styles.cardBody}>
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.description}
 								</div>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.type}
-									</div>
-									<div className={styles.rowValue}>
-										{detail.type ?? '—'}
-									</div>
-								</div>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.cfsCompatibility}
-									</div>
-									<div className={styles.rowValue}>
-										{detail.cfsVersion}
-									</div>
-								</div>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.license}
-									</div>
-									<div className={styles.rowValue}>
-										{detail.license ?? '—'} &nbsp;
-										<button
-											type='button'
-											className={styles.link}
-											onClick={handleViewLicense}
-										>
-											{l10n?.detail?.viewLicense} <RightArrow />{' '}
-										</button>
-									</div>
-								</div>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.cachedVersions}
-									</div>
-									<div className={styles.rowValue}>
-										{cachedVersions}
-									</div>
-								</div>
-								<div className={styles.packageDetailsRow}>
-									<div className={styles.rowHeader}>
-										{l10n?.detail?.supportedSocs}
-									</div>
-									<div className={styles.rowValue}>
-										{detail.soc?.join(', ') ?? '—'}
-									</div>
+								<div className={styles.rowValue}>
+									{detail?.description ?? '—'}
 								</div>
 							</div>
-						) : (
-							<div className={styles.detailsLoading}>
-								<ProgressRing position='center' />
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.type}
+								</div>
+								<div className={styles.rowValue}>
+									{detail?.type ?? '—'}
+								</div>
 							</div>
-						))}
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.cfsCompatibility}
+								</div>
+								<div className={styles.rowValue}>
+									{detail?.cfsVersionConstraint ?? '—'}
+								</div>
+							</div>
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.license}
+								</div>
+								<div className={styles.rowValue}>
+									{detail?.license ?? '—'} &nbsp;
+									<button
+										type='button'
+										className={styles.link}
+										onClick={handleViewLicense}
+									>
+										{l10n?.detail?.viewLicense} <RightArrow />{' '}
+									</button>
+								</div>
+							</div>
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.cachedVersions}
+								</div>
+								<div className={styles.rowValue}>
+									{cachedVersions}
+								</div>
+							</div>
+							<div className={styles.packageDetailsRow}>
+								<div className={styles.rowHeader}>
+									{l10n?.detail?.supportedSocs}
+								</div>
+								<div className={styles.rowValue}>
+									{formatSupportedSocs(socs)}
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

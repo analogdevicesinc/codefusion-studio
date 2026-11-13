@@ -13,40 +13,28 @@
  *
  */
 
-import {useRef} from 'react';
-import {
-	type TLocaleContext,
-	useLocaleContext
-} from '../../../../../common/contexts/LocaleContext';
+import {type ComponentType} from 'react';
 import KeyManagement from '../sign-key-management/sign-key-management';
 import MCUBootSettings from '../mcuboot-settings/mcuboot-settings';
-import useSettingsSectionObserver from '../../../hooks/use-settings-section-observer';
-import styles from './workspace-security-settings.module.scss';
+import FirewallSettings from '../firewall-settings/firewall-settings';
+import SettingsSection from '../settings-section/settings-section';
 
 /**
- * Section IDs matching the children keys defined in
- * SIDEBAR_SECTIONS for the 'security' section.
- * Kept separate to avoid a circular dependency with constants.ts.
+ * Child components for the 'security' section, keyed by their
+ * SIDEBAR_SECTIONS child key. Render order comes from SIDEBAR_SECTIONS.
  */
-const SECURITY_CHILD_IDS = ['mcuboot-config', 'key-management'];
+const SECURITY_CHILDREN: Record<string, ComponentType> = {
+	'firewall-status': FirewallSettings,
+	'mcuboot-config': MCUBootSettings,
+	'key-management': KeyManagement
+};
 
 function WorkspaceSecuritySettings() {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const i10n: TLocaleContext | undefined =
-		useLocaleContext()?.settings;
-
-	useSettingsSectionObserver(SECURITY_CHILD_IDS, containerRef);
-
 	return (
-		<div ref={containerRef} className={styles.container}>
-			<div className={styles.header}>
-				<h1>{i10n?.security?.title}</h1>
-			</div>
-			<div className={styles.settingsContainer}>
-				<MCUBootSettings />
-				<KeyManagement />
-			</div>
-		</div>
+		<SettingsSection
+			sectionKey='security'
+			childComponents={SECURITY_CHILDREN}
+		/>
 	);
 }
 

@@ -61,7 +61,9 @@ export function getModelWorkspacePersistenceListenerMiddleware() {
 						sampleData: state.sampleData,
 						workspaceName: state.workspaceName,
 						soc: state.soc,
-						board: state.board
+						board: state.board,
+						// Only a single core is supported for now
+						coreId: state.runModelOn[0]
 					}
 				);
 			}

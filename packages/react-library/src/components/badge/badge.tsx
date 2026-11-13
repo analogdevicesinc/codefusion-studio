@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ import React from 'react';
 import {VSCodeBadge} from '@vscode/webview-ui-toolkit/react';
 import styles from './badge.module.scss';
 
+export type BadgeAppearance = 'primary' | 'secondary' | 'active';
+
 type BadgeProps = React.ComponentProps<typeof VSCodeBadge> & {
-	readonly appearance?: 'primary' | 'secondary';
+	readonly appearance?: BadgeAppearance;
 	readonly dataTest?: string;
 	readonly size?: 'small' | 'medium';
 };
@@ -32,7 +34,7 @@ export default function Badge({
 }: BadgeProps) {
 	return (
 		<VSCodeBadge
-			className={`${className} ${appearance === 'secondary' ? styles.secondary : ''} ${styles[size] ?? ''}`}
+			className={`${className} ${styles[appearance] ?? ''} ${styles[size] ?? ''}`}
 			{...(dataTest ? {'data-test': dataTest} : {})}
 		>
 			{children}

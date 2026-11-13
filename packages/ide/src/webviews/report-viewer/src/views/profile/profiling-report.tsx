@@ -13,7 +13,7 @@
  *
  */
 import styles from './profiling-report.module.scss';
-import type {AIModelProfileReport} from '@ide-types/report-view-types';
+import type {LayerReport} from '@ide-types/report-view-types';
 import {useReport} from '../../report';
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 import {ProfilingSummary} from './summary-section/profiling-summary';
@@ -22,7 +22,7 @@ import {useState} from 'react';
 import {RecommendationSection} from './sidepanels/recommendation-section';
 
 export function ProfilingReport() {
-	const report = useReport<AIModelProfileReport>();
+	const report = useReport<LayerReport>();
 	const l10n = useLocaleContext();
 
 	const [recommendationsExpanded, setRecommendationsExpanded] =
@@ -35,26 +35,36 @@ export function ProfilingReport() {
 	return (
 		<div className={styles.sidePanelContainer}>
 			<div className={styles.container}>
-				<h1>
-					{l10n?.profiling.title}: {report.model_summary?.model_name}
-				</h1>
+				<div className={styles.titleRow}>
+					<h1>
+						{report.type === 'profile'
+							? `${l10n?.profiling.title}: ${report.model_summary?.model_name ?? ''}`
+							: `${l10n?.runtimeProfiling.title}`}
+					</h1>
+				</div>
 				<ProfilingSummary
 					setRecommendationsExpanded={setRecommendationsExpanded}
 				/>
 				<ModelLayersSection
-					reportOptimizations={report.optimization_opportunities}
+					reportOptimizations={
+						report.type === 'profile'
+							? (report.optimization_opportunities ?? undefined)
+							: undefined
+					}
 					activeSqlQuery={activeSqlQuery}
 					setActiveSqlQuery={setActiveSqlQuery}
 				/>
 			</div>
-			<RecommendationSection
-				isOpen={recommendationsExpanded}
-				report={report}
-				setActiveSqlQuery={setActiveSqlQuery}
-				onClose={() => {
-					setRecommendationsExpanded(false);
-				}}
-			/>
+			{report.type === 'profile' && (
+				<RecommendationSection
+					isOpen={recommendationsExpanded}
+					report={report}
+					setActiveSqlQuery={setActiveSqlQuery}
+					onClose={() => {
+						setRecommendationsExpanded(false);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

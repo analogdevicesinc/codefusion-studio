@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,13 @@
  * limitations under the License.
  *
  */
+import CfsSingleColumnLayout from '@common/components/cfs-main-layout/CfsSingleColumnLayout';
 import RegisterBody from './body/RegisterBody';
-import SingleColumnLayout from '@common/components/single-column-layout/single-column-layout';
 
 export default function Registers() {
-	return <SingleColumnLayout header={null} body={<RegisterBody />} />;
+	return (
+		<CfsSingleColumnLayout>
+			<RegisterBody />
+		</CfsSingleColumnLayout>
+	);
 }

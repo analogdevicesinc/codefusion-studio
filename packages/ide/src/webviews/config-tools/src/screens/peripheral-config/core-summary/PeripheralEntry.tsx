@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,9 @@ function PeripheralEntry({
 	return (
 		<section
 			id={peripheralName}
-			className={`${styles.sectionHeader} ${isActive ? styles.highlight : ''}`}
+			className={`${styles.sectionHeader} ${
+				isActive ? styles.highlight : ''
+			}`}
 		>
 			<div className={styles.nameSection}>
 				<div className={styles.cardNamePlaceholder} />
@@ -73,7 +75,9 @@ function PeripheralEntry({
 					)}
 					<Tooltip title='Configure' type='short' position='bottom'>
 						<Button
-							className={`${styles.configIcon} ${isActive ? styles.isActive : ''}`}
+							className={`${styles.configIcon} ${
+								isActive ? styles.isActive : ''
+							}`}
 							appearance='icon'
 							onClick={() => {
 								dispatch(

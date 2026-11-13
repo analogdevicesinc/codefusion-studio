@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import {type PeripheralConfig} from '../types/peripherals';
 import {formatPeripheralConfigValues} from './peripheral';
 import {
 	getSocPeripheralDictionary,
-	getConfigFormatFromSocControls,
+	getConfigFormatFromSocControls
 } from './soc-peripherals';
 
 export type PeripheralSignalsTargets = {
@@ -219,11 +219,9 @@ export const formatPartitions = (
 								owner: partition.IsOwner
 							}
 						],
-						config: {
-							...(core.ProjectId
-								? {[core.ProjectId]: partition.Config}
-								: {})
-						}
+						config: core.ProjectId
+							? {[core.ProjectId]: partition.Config}
+							: {}
 					};
 				}
 			});
@@ -265,7 +263,7 @@ export const formatPeripheralAllocations = (
 						peripheral.Config,
 						configFormat
 					),
-          ...(configFormat && {configFormat})
+					...(configFormat && {configFormat})
 				};
 			}
 

@@ -36,6 +36,7 @@ export interface CfsSocDataModel {
 	MemoryAliasTypes: SocCoreMemoryAliasType[];
 	SystemMemory: SocCoreMemory[];
 	supportsMCUboot?: boolean;
+	Firewall?: SocFirewall;
 	Trace?: SocTraceInfo;
 }
 
@@ -62,15 +63,43 @@ export interface SocPart {
 	MemoryDescription: string;
 }
 
+/**
+ * The control value kinds a SoC data model may declare.
+ *
+ * Source of truth is `Controls.additionalProperties.items.properties.Type` in
+ * [datamodel-schema.json](../../schemas/datamodel-schema.json), which
+ * `validate-datamodel.js` enforces when a model is authored. Keep this union
+ * in step with that enum.
+ *
+ * `SocControl.Type` stays `string`: the schema is an authoring-time gate, not
+ * a runtime one, and nothing revalidates a model at load. Use this union where
+ * code *handles* the declared kinds.
+ */
+export type SocControlType = "enum" | "integer" | "boolean" | "text";
+
+/**
+ * The numeric base a control's value is expressed in.
+ *
+ * Source of truth is `Controls.additionalProperties.items.properties.
+ * NumericBase` in [datamodel-schema.json](../../schemas/datamodel-schema.json).
+ */
+export type SocNumericBase =
+	| "Decimal"
+	| "Hexadecimal"
+	| "Octal"
+	| "Binary";
+
 export interface SocControl {
 	Id: string;
 	Description: string;
+	/** One of {@link SocControlType}, unvalidated at runtime. */
 	Type: string;
 	EnumValues?: SocControlValue[];
 	Condition?: string;
 	Increment?: string | number;
 	MinimumValue?: string | number;
 	MaximumValue?: string | number;
+	/** One of {@link SocNumericBase}, unvalidated at runtime. */
 	NumericBase?: string;
 	Units?: string;
 	Default?: string | number | boolean;
@@ -78,12 +107,14 @@ export interface SocControl {
 	Hint?: string;
 	Pattern?: string;
 	Tooltip?: string;
+	Scope?: string;
+	PersistenceSeparator?: string;
 }
 
 export interface SocControlValue {
 	Id: string;
 	Description: string;
-	Value: number | string;
+	Value: number;
 	Condition?: string;
 	IsPluginAddedOption?: boolean;
 	Inactive?: boolean;
@@ -206,6 +237,7 @@ export interface SocPeripheral {
 	Security?: "Any" | "Secure" | "Non-Secure";
 	Initialization?: SocConfigField[];
 	Ai?: object;
+	SRU?: SocSruType;
 }
 
 interface SocPeripheralSignalConfig {
@@ -299,7 +331,10 @@ interface NestedConfigMSDK {
 	[key: string]: ConfigCode | NestedConfigMSDK;
 }
 
-type ConfigMSDK = Record<string, NestedConfigMSDK | Record<string, never>>;
+type ConfigMSDK = Record<
+	string,
+	NestedConfigMSDK | Record<string, never>
+>;
 
 export interface SocGasketInputStream {
 	Config: SocConfigFields;
@@ -327,7 +362,10 @@ export interface SocGasket {
 	Config?: SocConfigFields;
 }
 
-export type SocConfigFields = Record<string, Record<string, SocConfigField[]>>;
+export type SocConfigFields = Record<
+	string,
+	Record<string, SocConfigField[]>
+>;
 
 export interface SocConfigField {
 	Register?: string;
@@ -340,6 +378,52 @@ export interface SocConfigField {
 }
 
 export type Expression = string;
+
+/**
+ * An integer that the data model may express either as a plain number or as a
+ * `0x`-prefixed hexadecimal string.
+ */
+export type SocMultiFormatInteger = string | number;
+
+/** Information about the firewalls on the part. */
+export interface SocFirewall {
+	Initiators: SocFirewallInitiator[];
+	ResponderGroups: SocFirewallResponderGroup[];
+}
+
+/** An initiator that traffic can originate from. */
+export interface SocFirewallInitiator {
+	Name: string;
+	Description: string;
+	BaseAddress: SocMultiFormatInteger;
+}
+
+/** A named collection of related responders. */
+export interface SocFirewallResponderGroup {
+	Name: string;
+	Description: string;
+	Responders: SocFirewallResponder[];
+}
+
+/** The kind of resource a responder protects. Defaults to `Memory` when unset. */
+export type SocFirewallResponderType =
+	| "Memory"
+	| "Peripheral"
+	| "ProgrammableRegion";
+
+/**
+ * A responder that traffic can be directed at. `ProgrammableRegion` responders
+ * have no fixed address range; every other type defines `AddressStart` and
+ * `AddressEnd`.
+ */
+export interface SocFirewallResponder {
+	Name: string;
+	Description: string;
+	Id: number;
+	Type?: SocFirewallResponderType;
+	AddressStart?: SocMultiFormatInteger;
+	AddressEnd?: SocMultiFormatInteger;
+}
 
 export interface SocTraceInfo {
 	EventSources: SocTraceEventSourceGroup;
@@ -358,3 +442,22 @@ export type SocTraceComponentInfo = Record<
 	string,
 	string | Record<string, string>
 >;
+
+export type SocSruType = {
+	Inputs: SruInputSignal[];
+	Outputs: SruOutputSignal[];
+};
+
+export type SruSignal = {
+	Name: string;
+	Description: string;
+	SignalType: string;
+	PeripheralSubGroup?: string;
+};
+
+export type SruInputSignal = SruSignal & {
+	Config: SocConfigFields;
+	IsPinBufferEnable?: boolean;
+};
+
+export type SruOutputSignal = SruSignal;

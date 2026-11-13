@@ -12,11 +12,8 @@
  * limitations under the License.
  *
  */
-import {Args} from '@oclif/core';
-import {ElfFileParser} from 'elf-parser';
 
-import {Logger} from '../../logger.js';
-import {BaseCommand} from '../../utils/base-command.js';
+import {BaseElfCommand} from '../../utils/base-elf-command.js';
 
 /**
  * Capitalizes all words in the input string and removes spaces or other separators.
@@ -51,51 +48,34 @@ function capitalizeAndRemoveSeparators(
 
 type JsonObject = Record<string, number | string>;
 
-export default class Analyze extends BaseCommand<typeof Analyze> {
-  static args = {
-    filePath: Args.string({description: 'ELF file path'})
-  };
-
+export default class Analyze extends BaseElfCommand<typeof Analyze> {
   static description = 'Heuristics from an ELF file';
+  static useResponseEnvelope = true;
 
   public async run(): Promise<JsonObject> {
-    const {args} = this;
+    const parser = await this.initializeParser();
 
-    if (args.filePath) {
-      try {
-        const parser = new ElfFileParser(args.filePath);
-        await parser.initialize();
+    const md = parser.getDataModel();
+    const heuristics = md.getHeuristics();
 
-        const md = parser.getDataModel();
-        const heuristics = md.getHeuristics();
+    const jsonObject: JsonObject = {
+      FirmwarePlatform: heuristics.getTargetOs(),
+      DetectedCompiler: heuristics.getCompilerDetected()
+    };
 
-        const jsonObject: JsonObject = {
-          FirmwarePlatform: heuristics.getTargetOs(),
-          DetectedCompiler: heuristics.getCompilerDetected()
-        };
+    this.log(`Firmware Platform: ${heuristics.getTargetOs()}`);
 
-        this.log(`Firmware Platform: ${heuristics.getTargetOs()}`);
-
-        // Add all symbol entries to the object
-        for (const [k, v] of heuristics.getSymbolEntries()) {
-          this.log(`${k}: ${v.stringValue}`);
-          const unit = v.stringValue.split(' ').pop();
-          jsonObject[capitalizeAndRemoveSeparators(k, unit)] =
-            v.value;
-        }
-
-        this.log(
-          `Detected Compiler: ${heuristics.getCompilerDetected()}`
-        );
-
-        return jsonObject;
-      } catch (error) {
-        return Logger.logError(`${error}`);
-      }
-    } else {
-      return Logger.logError(
-        `No input file. Please provide a valid file path.`
-      );
+    // Add all symbol entries to the object
+    for (const [k, v] of heuristics.getSymbolEntries()) {
+      this.log(`${k}: ${v.stringValue}`);
+      const unit = v.stringValue.split(' ').pop();
+      jsonObject[capitalizeAndRemoveSeparators(k, unit)] = v.value;
     }
+
+    this.log(
+      `Detected Compiler: ${heuristics.getCompilerDetected()}`
+    );
+
+    return jsonObject;
   }
 }

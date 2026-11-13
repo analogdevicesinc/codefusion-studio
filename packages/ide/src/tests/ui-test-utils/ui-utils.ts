@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 import {
   By,
+  ModalDialog,
   VSBrowser,
   WebElement,
   WebView,
@@ -137,7 +138,7 @@ export class UIUtils {
         if (isDisplayed) {
           break;
         }
-      } catch (e) {
+      } catch (_) {
         if (i === retries - 1) {
           throw new Error(
             `Element not visible after ${retries} retries: ${optionLocator.toString()}`,
@@ -323,7 +324,7 @@ export class UIUtils {
     element: WebElement,
     attribute: string,
   ) {
-    const attributeValue: string = await element.getAttribute(attribute);
+    const attributeValue = await element.getAttribute(attribute);
     console.log(`Found element with ${attribute} attribute: ${attributeValue}`);
 
     return attributeValue;
@@ -457,6 +458,83 @@ export class UIUtils {
   }
 
   /**
+   * Dismisses a VS Code modal dialog by clicking the OK button.
+   * Waits up to 5 seconds for the dialog to appear and scrolls the button into view for reliable interaction.
+   * @param wb The Workbench instance.
+   * @param timeout Optional timeout in milliseconds. Default is 5000ms.
+   * @returns A Promise that resolves when the dialog is dismissed or timeout occurs.
+   */
+  static async dismissOkDialog(wb: Workbench, timeout = 5000): Promise<void> {
+    await this.sleep(1000);
+
+    console.log("Switched back to workbench to dismiss any dialogs");
+    try {
+      const driver = wb.getDriver();
+      const okBtn = await driver.wait(async () => {
+        const buttons = await driver.findElements({
+          css: "a.monaco-button.monaco-text-button",
+        });
+        for (const btn of buttons) {
+          const text = await btn.getText();
+          if (text.trim() === "OK") {
+            return btn;
+          }
+        }
+        return null;
+      }, timeout);
+
+      if (okBtn) {
+        // Scroll into view and click using actions for better reliability
+        await driver.executeScript("arguments[0].scrollIntoView(true);", okBtn);
+        await this.sleep(500);
+        await driver.actions().move({ origin: okBtn }).click().perform();
+        await this.sleep(1000);
+        console.log("Dismissed Code Generation Directory dialog");
+      }
+    } catch (error) {
+      console.log(
+        "No Code Generation Directory dialog found or already dismissed:",
+        error,
+      );
+    }
+  }
+
+  /**
+   * Waits for package manager initialization and dismisses any related notifications.
+   * Uses multiple passes to handle async notifications that may appear during webview loading.
+   * IMPORTANT: If called after switchToFrame(), must provide the WebView parameter so the
+   * helper can switch back to the workbench context to access notifications.
+   * @param workbench The Workbench instance.
+   * @param browser The VSBrowser instance.
+   * @param view Optional WebView instance. If provided, switches back before dismissing notifications, then returns to frame.
+   * @returns A Promise that resolves when webview is ready.
+   */
+  static async waitForPackageManager(
+    workbench: Workbench,
+    browser: VSBrowser,
+    view?: WebView,
+  ): Promise<void> {
+    console.log("Waiting for webview stabilization...");
+
+    // If inside a webview frame, switch back to access workbench notifications
+    if (view) {
+      await view.switchBack();
+    }
+
+    for (let i = 0; i < 3; i++) {
+      await this.sleep(1000);
+      await this.dismissAllNotifications(workbench, browser);
+    }
+
+    // Switch back to webview frame if we switched out
+    if (view) {
+      await view.switchToFrame();
+    }
+
+    console.log("Webview ready");
+  }
+
+  /**
    * Finds a WebElement in the WebView using a `data-test` attribute.
    * @param view The WebView instance.
    * @param selector The value of the `data-test` attribute.
@@ -532,6 +610,104 @@ export class UIUtils {
         `Could not restore fixture ${filePath}. This may be normal if the file is new to this PR. Error: ${error instanceof Error ? error.message : String(error)}`,
       );
       // Gracefully skip if git fails (e.g., file not in HEAD)
+    }
+  }
+
+  /**
+   * Common suite-level setup: captures the VSBrowser/Workbench instances and
+   * closes all open editors so each suite starts from a clean state.
+   * @param options.waitForWorkbench When true, waits for the workbench to load before closing editors.
+   * @param options.sleepMs Optional delay (ms) to apply after closing editors, for suites that need the UI to settle.
+   * @returns A Promise resolving to the shared `browser` and `workbench` instances.
+   *
+   * @example
+   * before(async function () {
+   *   this.timeout(10000);
+   *   ({ browser, workbench } = await UIUtils.setupTestSuite());
+   * });
+   */
+  static async setupTestSuite(options?: {
+    waitForWorkbench?: boolean;
+    sleepMs?: number;
+  }): Promise<{ browser: VSBrowser; workbench: Workbench }> {
+    const browser = VSBrowser.instance;
+    const workbench = new Workbench();
+
+    if (options?.waitForWorkbench) {
+      await browser.waitForWorkbench();
+    }
+
+    await workbench.executeCommand("workbench.action.closeAllEditors");
+
+    if (options?.sleepMs) {
+      await UIUtils.sleep(options.sleepMs);
+    }
+
+    return { browser, workbench };
+  }
+
+  /**
+   * Common suite-level teardown: exits any active webview frame, closes all
+   * open editors (discarding any dirty custom-editor state by answering
+   * "Don't Save" on the confirmation dialog), and restores
+   * a fixture file from git if its path is provided.
+   * @param view The active WebView to switch back from, if one is open.
+   * @param configPath The fixture file path to restore via `restoreFixtureFileFromGit`, if set.
+   * @returns A Promise that resolves once teardown is complete.
+   *
+   * @example
+   * afterEach(async () => {
+   *   await UIUtils.teardownTestSuite(view, configPath);
+   * });
+   */
+  static async teardownTestSuite(
+    view?: WebView,
+    configPath?: string,
+  ): Promise<void> {
+    if (view) {
+      await view.switchBack();
+    }
+
+    const wb = new Workbench();
+    await wb.executeCommand("workbench.action.closeAllEditors");
+    // Discard any dirty editor via the save-confirmation dialog closeAllEditors raises.
+    try {
+      const dialog = new ModalDialog();
+      await dialog.pushButton("Don't Save");
+    } catch {
+      // No unsaved changes dialog appeared, nothing to dismiss.
+    }
+
+    if (configPath) {
+      await UIUtils.restoreFixtureFileFromGit(configPath);
+    }
+  }
+
+  /**
+   * Common suite-level teardown that preserves editor changes: exits any
+   * active webview frame, then closes all open editors, saving any dirty
+   * state via the "Save" button if a confirmation dialog appears, instead of
+   * discarding it (unlike {@link teardownTestSuite}, which reverts/discards).
+   * @param view The active WebView to switch back from, if one is open.
+   * @returns A Promise that resolves once teardown is complete.
+   *
+   * @example
+   * afterEach(async () => {
+   *   await UIUtils.teardownTestSuiteKeepingChanges(view);
+   * });
+   */
+  static async teardownTestSuiteKeepingChanges(view?: WebView): Promise<void> {
+    if (view) {
+      await view.switchBack();
+    }
+
+    const wb = new Workbench();
+    await wb.executeCommand("workbench.action.closeAllEditors");
+    try {
+      const dialog = new ModalDialog();
+      await dialog.pushButton("Save");
+    } catch {
+      // No unsaved changes dialog appeared, nothing to dismiss.
     }
   }
 }

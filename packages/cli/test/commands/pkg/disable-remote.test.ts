@@ -23,6 +23,9 @@ import {
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
 
+import {pkgDisableRemoteDeps} from '../../../dist/commands/pkg/disable-remote.js';
+import {assertSuccessEnvelopeData} from '../../utils/assert-json-envelope.js';
+
 function remoteName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
@@ -79,5 +82,35 @@ describe('pkg disable-remote', () => {
     expect(
       listRemotesOutputHasRemoteValue(remotesStdout, name, 'Disabled')
     ).to.equal(true);
+  });
+});
+
+describe('pkg disable-remote JSON envelope', () => {
+  const originalGetPackageManager =
+    pkgDisableRemoteDeps.getPackageManager;
+
+  afterEach(() => {
+    pkgDisableRemoteDeps.getPackageManager =
+      originalGetPackageManager;
+  });
+
+  it('returns a remote/disabled envelope in JSON mode', async () => {
+    pkgDisableRemoteDeps.getPackageManager = (async () => ({
+      disableRemote: async () => {}
+    })) as unknown as typeof pkgDisableRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      ['pkg', 'disable-remote', 'mock-remote', '--format', 'json'],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      disabled: boolean;
+    }>(stdout, 'pkg disable-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      disabled: true
+    });
   });
 });

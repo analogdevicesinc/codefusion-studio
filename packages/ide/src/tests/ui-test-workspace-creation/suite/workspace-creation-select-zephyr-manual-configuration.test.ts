@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 /**
- * These tests cover building workspace for MAX32690.
+ * These tests cover building workspace for TEST8002.
  */
 
 import { expect } from "chai";
@@ -29,25 +29,26 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Test building a MAX78XXX zephyr project manually configured
+ * Test building a TEST8002 zephyr project manually configured
  */
 
-describe("Workspace MAX78XXX creation manual configuration", () => {
+describe("Workspace TEST8002 creation manual configuration", () => {
   const locatorspath = new Locatorspaths();
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
 
-  after(async () => {
-    await view.switchBack();
-    console.log("Switched back to close editors");
-    await workbench.executeCommand("View: Revert and Close Editor");
-    console.log("Closed all editors");
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
-  it("Create new workspace manually(riscv/arm) configured MAX78XXX", async () => {
+  after(async () => {
+    await UIUtils.teardownTestSuite(view);
+  });
+
+  it("Create new workspace manually(riscv/arm) configured TEST8002", async () => {
     console.log(
-      "Starting workspace creation for MAX78XXX using arm/riscv cores",
+      "Starting workspace creation for TEST8002 using arm/riscv cores",
     );
     workbench = new Workbench();
     browser = VSBrowser.instance;
@@ -60,8 +61,11 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     console.log("WebView instance created");
     await view.switchToFrame();
 
+    // Wait for package manager and dismiss any initialization notifications
+    await UIUtils.waitForPackageManager(workbench, browser, view);
+
     // SOC Screen Selection
-    console.log("Creating new workspace for MAX78XXX");
+    console.log("Creating new workspace for TEST8002");
     await UIUtils.clickElement(view, locatorspath.selectorSoc);
     await UIUtils.sendKeysToElements(
       view,
@@ -71,7 +75,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
 
     const socSelection = await UIUtils.clickElement(
       view,
-      locatorspath.getRadiobuttonSoc("78002"),
+      locatorspath.getRadiobuttonSoc("TEST8002"),
     );
     const socName = await socSelection.getAttribute("id");
     console.log(`Selected SOC: ${socName}`);
@@ -87,7 +91,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
       await (
         await UIUtils.findWebElement(
           view,
-          locatorspath.kitSelect("EvKit_V1___CSBGA"),
+          locatorspath.kitSelect("KIT_BOARD___PSBGA"),
         )
       ).getText(),
     ).to.include(TextData.evKitText);
@@ -96,14 +100,14 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     const kitName = await (
       await UIUtils.findWebElement(
         view,
-        locatorspath.kitSelect("EvKit_V1___CSBGA"),
+        locatorspath.kitSelect("KIT_BOARD___PSBGA"),
       )
     ).getText();
     console.log("kitname:", kitName);
 
     await UIUtils.clickElement(
       view,
-      locatorspath.kitSelect("EvKit_V1___CSBGA"),
+      locatorspath.kitSelect("KIT_BOARD___PSBGA"),
     );
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
@@ -189,9 +193,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     await UIUtils.clickElement(view, msdkSelRiscv);
     const boardNameRiscv = await UIUtils.findWebElement(
       view,
-      By.xpath(
-        `//*[@id='control-input' and @current-value='${TextData.evKitText}']`,
-      ),
+      By.xpath(`//*[@id='control-input' and @current-value='test8002evkit']`),
     );
     await UIUtils.clickElement(view, boardNameRiscv);
     const getBoardNameRiscv =
@@ -212,7 +214,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     await UIUtils.sendKeysToElements(
       view,
       By.xpath('//*[@id="control-input"]'),
-      "max78xxx-blinky-manual",
+      "max8002-blinky-manual",
     );
 
     console.log(
@@ -245,7 +247,7 @@ describe("Workspace MAX78XXX creation manual configuration", () => {
     // Assertions of Persistance of workspace data and schema verification
     if (!workspaceData) throw new Error("workspaceData is undefined or null");
     expect(workspaceData.Soc).to.equal(socName);
-    expect(workspaceData.Board).to.equal(kitName.slice(0, 8));
+    expect(workspaceData.Board).to.equal(kitName.slice(0, 9));
     expect(workspaceData.WorkspaceName).to.equal(workspaceName);
     expect(workspaceData.Projects[0].PluginId).to.equal(pluginId);
     expect(workspaceData.Projects[0].Name).to.equal(armCoreName.slice(0, 14));

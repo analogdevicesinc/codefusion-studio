@@ -19,56 +19,71 @@
 
 @use '@sev-common/styles/sev-variables' as sev;
 
-.floatingCardContainer {
+.floatingCardClip {
 	position: fixed;
-	z-index: sev.zIndex('drag-overlay');
+	overflow: hidden;
 	pointer-events: none;
-	box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.6);
+	z-index: sev.zIndex('drag-overlay');
 
-	.card {
-		display: flex;
-		width: 100%;
-		height: 100%;
+	.floatingCard {
+		position: absolute;
+		pointer-events: none;
+		box-shadow: 0 2px 12px 0 colors.$default-shadow;
 
-		.listItem {
+		.card {
 			display: flex;
-			align-items: center;
-			gap: 8px;
-			box-sizing: border-box;
-			padding: 0 8px;
+			width: 100%;
 			height: 100%;
-			background-color: colors.$list-inactive-selection-background;
-			border: 1px solid colors.$default-border;
-			border-right: 2px solid colors.$default-border;
 
-			.dragIcon {
-				display: inline-flex;
-				margin-right: 8px;
-				user-select: none;
-			}
-
-			.name {
-				margin: 0;
-				white-space: nowrap;
-				overflow: hidden;
-				text-overflow: ellipsis;
-			}
-		}
-
-		.chartSnapshot {
-			flex: 1 1 auto;
-			display: flex;
-			align-items: center;
-			height: 100%;
-			box-sizing: border-box;
-			padding: 0 sev.$timeline-empty-block-width;
-			background-color: colors.$list-inactive-selection-background;
-			border: 1px solid colors.$default-border;
-
-			.chartImage {
-				display: block;
-				width: 100%;
+			.listItem {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				box-sizing: border-box;
+				padding: 0 8px;
 				height: 100%;
+				background-color: colors.$default-background;
+				background-image: linear-gradient(
+					colors.$list-inactive-selection-background,
+					colors.$list-inactive-selection-background
+				);
+				border: 1px solid colors.$button-primary-background;
+				border-right: 2px solid colors.$button-primary-background;
+
+				.dragIcon {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					user-select: none;
+				}
+
+				.name {
+					margin: 0;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+			}
+
+			.chartSnapshot {
+				flex: 1 1 auto;
+				display: flex;
+				align-items: center;
+				height: 100%;
+				box-sizing: border-box;
+				padding: 0 sev.$timeline-empty-block-width;
+				background-color: colors.$default-background;
+				background-image: linear-gradient(
+					colors.$list-inactive-selection-background,
+					colors.$list-inactive-selection-background
+				);
+				border: 1px solid colors.$button-primary-background;
+
+				.chartImage {
+					display: block;
+					width: 100%;
+					height: 100%;
+				}
 			}
 		}
 	}

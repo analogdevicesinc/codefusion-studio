@@ -12,31 +12,35 @@
  * limitations under the License.
  *
  */
+import type {Config} from '@oclif/core';
 import type {AIToolsPlugin} from 'cfs-lib';
 import type {
   AIModelBackend,
   AiCommandResult,
-  CfsConfig,
+  CfsConfig as CfsConfigType,
   CfsSocDataModel,
   SocControl
 } from 'cfs-types';
 
 import {Flags} from '@oclif/core';
 import {
+  CURRENT_SCHEMA_VERSION,
+  CfsConfigError,
   getAiToolsPlugin,
-  getValidExtensions,
-  resolveSource
+  getValidExtensions
 } from 'cfs-lib';
-import {promises as fs} from 'node:fs';
+import path from 'node:path';
 
 import {
   ensureOrTryInferCoreFlags,
   getAndEnsureDataModel,
   getBaseName,
+  getModelFormat,
   inferBackendFromFlags
 } from '../../utils/ai-command-utils.js';
 import {getApiClient} from '../../utils/api-client.js';
 import {BaseAiCommand} from '../../utils/base-ai-command.js';
+import {validateCfsConfigFile} from '../../utils/config-validation.js';
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {getPackageManager} from '../../utils/package-manager.js';
 import {RecoverableError} from '../../utils/recoverable-error.js';
@@ -47,11 +51,14 @@ import {
 } from '../../utils/utils.js';
 
 export default class Build extends BaseAiCommand<typeof Build> {
+  static useResponseEnvelope = true;
+
   static description = `Compile a model into source code.`;
 
   static examples: string[] = [
     '<%= config.bin %> <%= command.id %> --soc MAX32690 --core CM4 --model PATH_TO_MODEL',
-    '<%= config.bin %> <%= command.id %> --config PATH_TO_CONFIG'
+    '<%= config.bin %> <%= command.id %> --config PATH_TO_CONFIG',
+    '<%= config.bin %> <%= command.id %> --soc ae822fa0e5597xx0 --core M55_HP --model model.tflite --backend vela -e Optimise=Size'
   ];
 
   static flags = {
@@ -130,11 +137,6 @@ export default class Build extends BaseAiCommand<typeof Build> {
     const {flags} = this;
     const warnings: string[] = [];
 
-    const aiPlugin = getAiToolsPlugin(
-      await getCfsaiPath(this.config),
-      getVersionFromConfig(this.config)
-    );
-
     const apiClient = await getApiClient({optional: true}, this);
 
     const packageManager = await getPackageManager(
@@ -145,6 +147,17 @@ export default class Build extends BaseAiCommand<typeof Build> {
       this
     );
 
+    const aiPlugin = getAiToolsPlugin(
+      await getCfsaiPath(this.config),
+      getVersionFromConfig(this.config),
+      packageManager
+    );
+
+    // Set plugin modes before backend inference
+    aiPlugin.setJsonMode(this.jsonEnabled());
+    aiPlugin.setVerbose(flags.verbose);
+    aiPlugin.setQuiet(flags.quiet);
+
     const dmManager = await getDataModelManager(
       this.config,
       packageManager,
@@ -152,7 +165,9 @@ export default class Build extends BaseAiCommand<typeof Build> {
     );
 
     let dataModel: CfsSocDataModel | undefined;
-    let config: CfsConfig;
+    let cwd: string | undefined;
+    let config: CfsConfigType;
+
     // Config file provided, read into structure
     if (flags.config) {
       if (flags.soc || flags.core || flags.model) {
@@ -161,14 +176,11 @@ export default class Build extends BaseAiCommand<typeof Build> {
         );
       }
 
-      const resolvedConfig = await resolveSource(
-        getVersionFromConfig(this.config),
+      config = await this.getValidConfigFromPath(
         flags.config,
-        flags['ignore-cache'] ?? false
+        this.config,
+        flags['search-path']
       );
-
-      const fileContent = await fs.readFile(resolvedConfig, 'utf8');
-      config = JSON.parse(fileContent) as CfsConfig;
     } else if (flags.soc && flags.model) {
       if (!flags.package) {
         flags.package = await dmManager.getFirstPackageIdForSoc(
@@ -180,7 +192,8 @@ export default class Build extends BaseAiCommand<typeof Build> {
             {
               suggestion:
                 'Verify the SoC name is correct or required package is available',
-              run: `cfsutil socs list`
+              run: `cfsutil socs list`,
+              code: 'SOC_PACKAGE_NOT_FOUND'
             }
           );
         }
@@ -204,6 +217,7 @@ export default class Build extends BaseAiCommand<typeof Build> {
       // Construct CfsConfig
       config = {
         Copyright: '',
+        SchemaVersion: CURRENT_SCHEMA_VERSION,
         DataModelVersion: '',
         DataModelSchemaVersion: '',
         Soc: flags.soc,
@@ -216,7 +230,7 @@ export default class Build extends BaseAiCommand<typeof Build> {
           {
             CoreId: flags.core,
             ProjectId: '.',
-            PlatformConfig: {ProjectName: flags.cwd},
+            PlatformConfig: {ProjectName: '.'},
             FirmwarePlatform: 'cfsai',
             ExternallyManaged: false,
             Partitions: [],
@@ -248,9 +262,15 @@ export default class Build extends BaseAiCommand<typeof Build> {
         ]
       };
     } else {
-      const {config: cfsConfig, pathToConfig} = getCfsConfig();
+      const {pathToConfig} = getCfsConfig();
+      config = await this.getValidConfigFromPath(
+        pathToConfig,
+        this.config,
+        flags['search-path']
+      );
       this.log(`Using config located at:`, pathToConfig);
-      config = cfsConfig;
+      // set cwd relative to workspace
+      cwd = path.resolve(path.dirname(pathToConfig), '..');
     }
 
     // get datamodel
@@ -260,12 +280,38 @@ export default class Build extends BaseAiCommand<typeof Build> {
       dmManager
     );
 
-    aiPlugin.setJsonMode(this.jsonEnabled());
+    const effectiveModel =
+      flags.model ?? config.Projects[0]?.AIModels?.[0]?.Files?.Model;
+
+    this.telemetryMetadata = {
+      soc: config.Soc,
+      core: config.Projects[0]?.CoreId,
+      backend: config.Projects[0]?.AIModels?.[0]?.Backend?.Name,
+      modelFormat: getModelFormat(effectiveModel)
+    };
+
+    if (cwd && flags.cwd !== '.') {
+      warnings.push(
+        '--cwd is ignored when .cfsconfig path is inferred.'
+      );
+    }
+
+    const hasSlowBackend = await this.hasSlowBackend(
+      aiPlugin,
+      config,
+      dataModel
+    );
+
+    if (hasSlowBackend) {
+      this.log(
+        'INFO: Invoking code generation may take several minutes. Please wait...'
+      );
+    }
 
     const result = await aiPlugin.generateFromConfig(
       config,
       dataModel,
-      flags.cwd,
+      cwd ?? path.resolve(flags.cwd),
       apiClient,
       undefined,
       flags['ignore-cache']
@@ -307,7 +353,8 @@ export default class Build extends BaseAiCommand<typeof Build> {
           : `No backend properties found for '${name}'`,
         {
           suggestion: 'Verify the backend is properly configured',
-          run: `cfsutil ai backends list --name ${name}`
+          run: `cfsutil ai backends list --name ${name}`,
+          code: 'BACKEND_PROPERTIES_NOT_FOUND'
         }
       );
     }
@@ -321,5 +368,74 @@ export default class Build extends BaseAiCommand<typeof Build> {
       Name: name,
       Extensions: validExtensions
     };
+  }
+
+  private async hasSlowBackend(
+    aiPlugin: AIToolsPlugin,
+    config: CfsConfigType,
+    dataModel: CfsSocDataModel
+  ): Promise<boolean> {
+    for (const project of config.Projects) {
+      for (const model of project.AIModels ?? []) {
+        if (String(model.Enabled).toLowerCase() !== 'true') continue;
+
+        const core = model.Target.Core;
+        const isSlow = await aiPlugin.isBackendSlow({
+          Soc: config.Soc,
+          Core: core,
+          Family: dataModel.Cores.find(
+            (c) => c.Id.toLowerCase() === core.toLowerCase()
+          )?.Family
+        });
+
+        if (isSlow) return true;
+      }
+    }
+
+    return false;
+  }
+
+  private async getValidConfigFromPath(
+    configPath: string,
+    cliConfig: Config,
+    searchPaths?: string[]
+  ): Promise<CfsConfigType> {
+    try {
+      const {config: cfsConfig, diagnostics} =
+        await validateCfsConfigFile(
+          configPath,
+          cliConfig,
+          searchPaths
+        );
+
+      if (
+        !cfsConfig ||
+        diagnostics.some((d) => d.severity === 'critical')
+      ) {
+        throw new RecoverableError(
+          'Configuration validation failed.',
+          {
+            suggestion: 'Run validate config to see all issues',
+            run: `cfsutil validate config -i ${configPath}`
+          }
+        );
+      }
+
+      return cfsConfig;
+    } catch (error) {
+      if (error instanceof CfsConfigError) {
+        if (error.code === 'SCHEMA_INVALID') {
+          throw new RecoverableError(`${error.message}`, {
+            suggestion: 'Run validate config to see all issues',
+            run: `cfsutil validate config -i ${configPath}`,
+            code: 'SCHEMA_INVALID'
+          });
+        }
+
+        this.error(error.message, {code: error.code});
+      }
+
+      throw error;
+    }
   }
 }

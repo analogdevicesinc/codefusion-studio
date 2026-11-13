@@ -1,19 +1,20 @@
 ---
 description: Package Manager in CodeFusion Studio
 author: Analog Devices
-date: 2026-07-20
+date: 2026-10-08
 ---
 
 # Package Manager
 
-You can use the Package Manager to install updates, add new SDKs, or manage plugins and toolchains as they become available, with no need to perform a full installation.
+The CodeFusion Studio installer copies the VS Code extension VSIX to your system and installs OpenOCD for ADI processors, the base data models package, and the base plugins package by default.
 
-Each component is delivered as a package — a versioned unit that can be downloaded on demand from a remote server. This means you don’t need to rerun the full installer when updates are released. Instead, you can keep your environment up to date by installing only the packages you need, when you need them.
+Toolchains, SDKs, and additional plugins are delivered as versioned packages hosted on a remote package server. Use the Package Manager to download and install these packages locally, allowing you to add and update only the components you need.
 
-To get started with packages in CodeFusion Studio:
+To get started:
 
 1. Install and remove packages from the [Package Manager UI](manage-packages-ide.md).
 2. View the [available packages](available-packages.md) you can install.
+3. View the files in [installed packages](view-installed-packages.md).
 
 ## More options
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,9 @@ export function CfsNavItem<T extends string>({
 			id={id}
 			data-test={`nav-item:${id}`}
 			data-tooltip={tooltipLabel}
-			className={`${styles.icon}${isActive ? ` ${styles.active}` : ''}${disabled ? ` ${styles.disabled}` : ''}`}
+			className={`${styles.icon}${
+				isActive ? ` ${styles.active}` : ''
+			}${disabled ? ` ${styles.disabled}` : ''}`}
 			onClick={() => {
 				onClick(id);
 			}}

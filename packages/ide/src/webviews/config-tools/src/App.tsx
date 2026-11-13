@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import styles from './App.module.scss';
 import CfgtoolsTopBar from './components/cfgtools-header/CfgtoolsTopbar';
 import {LocalizationProvider} from '../../common/contexts/LocaleContext';
 import ScreenLoader from './components/screen-loader/screen-loader';
+import '@vscode/codicons/dist/codicon.css';
 
 function App() {
 	const [store, setStore] = useState<Store | undefined>();

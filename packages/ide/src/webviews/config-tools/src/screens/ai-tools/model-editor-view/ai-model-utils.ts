@@ -21,13 +21,16 @@ import {
 	getLocalization,
 	localizeMessage
 } from '../../../../../common/utils/localization';
-import {C_CPP_RESERVED_KEYWORDS} from '../../../constants/cpp-reserved-keywords';
 import {type AIModelWithId} from '../../../state/slices/ai-tools/aiModel.reducer';
 import {type AISupportingCore} from '../../../utils/ai-tools';
 import {getCfsConfigDict} from '../../../utils/config';
 import type {SocControl} from 'cfs-types';
+import type {ValidationData} from 'cfs-types/types/cfs-config';
 import {getFormErrors} from '../../../utils/soc-controls';
 import type {TLocaleContext} from '../../../../../common/types/l10n';
+import {requiresCalibrationValidationLabels} from 'cfs-lib/dist/ai-tools/ai-tools-model-utils.js';
+import {C_CPP_RESERVED_KEYWORDS} from 'cfs-lib/dist/utils/c-utils';
+import {findModelIdentifierCollision} from 'cfs-lib/dist/ai-tools/ai-tools-model-utils';
 
 const MAX_MODEL_NAME_LENGTH = 64;
 
@@ -40,7 +43,44 @@ function isValidCIdentifier(name: string): boolean {
 
 // Fields that are not supposed to be validated when going through the dynamic Fields
 // (e.g. because they have their own dedicated validation logic)
-const dynamicValidationExemptFields = new Set(['Symbol']);
+const dynamicValidationExemptFields = new Set([
+	'Symbol',
+	'CalibrationSet',
+	'ValidationSet',
+	'Labels'
+]);
+
+/** Every entry needs an input plus exactly one of `label`/`expected`, all using the same one. */
+function validateValidationSet(
+	validationSet: ValidationData,
+	l10n: TLocaleContext | undefined
+): string | undefined {
+	if (!validationSet.length) {
+		return undefined;
+	}
+
+	if (validationSet.some(({input}) => !input?.trim())) {
+		return l10n?.validationInputRequired as string;
+	}
+
+	const usesExpected = validationSet.map(entry => {
+		const hasLabel = 'label' in entry && Boolean(entry.label?.trim());
+		const hasExpected =
+			'expected' in entry && Boolean(entry.expected?.trim());
+
+		return hasLabel === hasExpected ? undefined : hasExpected;
+	});
+
+	if (usesExpected.some(mode => mode === undefined)) {
+		return l10n?.validationLabelOrExpectedRequired as string;
+	}
+
+	if (usesExpected.some(mode => mode !== usesExpected[0])) {
+		return l10n?.validationMixedLabelAndExpected as string;
+	}
+
+	return undefined;
+}
 
 export function validateModel(
 	currentModel: AIModelWithId,
@@ -53,33 +93,24 @@ export function validateModel(
 	const l10n =
 		getLocalization('cfgtools')?.aitools.modelConfig.errors;
 
-	// Fail if model name is empty
-	if (!currentModel.Name?.trim()) {
+	const modelName = currentModel.Name?.trim();
+
+	if (modelName) {
+		if (modelName.length > MAX_MODEL_NAME_LENGTH) {
+			errors.Name = localizeMessage(
+				l10n as TLocaleContext,
+				'modelNameTooLong',
+				{
+					maxLength: String(MAX_MODEL_NAME_LENGTH)
+				}
+			);
+		}
+
+		if (/^[0-9]/.test(modelName)) {
+			errors.Name = l10n?.invalidCIdentifier;
+		}
+	} else {
 		errors.Name = l10n?.modelNameRequired;
-	}
-
-	// Fail if model name > MAX_MODEL_NAME_LENGTH
-	if (
-		currentModel.Name &&
-		currentModel.Name.length > MAX_MODEL_NAME_LENGTH
-	) {
-		errors.Name = localizeMessage(
-			l10n as TLocaleContext,
-			'modelNameTooLong',
-			{
-				maxLength: String(MAX_MODEL_NAME_LENGTH)
-			}
-		);
-	}
-
-	// Fail if model name already exists (and is not the original name when editing)
-	if (
-		models.some(
-			model =>
-				model.Name === currentModel.Name && model !== originalModel
-		)
-	) {
-		errors.Name = l10n?.modelNameExists;
 	}
 
 	// Target core
@@ -87,7 +118,7 @@ export function validateModel(
 		errors.Target = l10n?.targetRequired;
 	}
 
-	// Symbol name
+	// Symbol name (and collision check)
 	if (
 		currentModel.Backend?.Extensions?.Symbol &&
 		!isValidCIdentifier(
@@ -95,11 +126,40 @@ export function validateModel(
 		)
 	) {
 		errors.Symbol = l10n?.invalidCIdentifier;
+	} else if (
+		!errors.Name &&
+		findModelIdentifierCollision(
+			currentModel,
+			models.filter(m => m !== originalModel)
+		)
+	) {
+		const errorField = currentModel.Backend?.Extensions?.Symbol
+			? 'Symbol'
+			: 'Name';
+		errors[errorField] = l10n?.identifierCollision;
 	}
 
 	// Model file
 	if (!currentModel.Files.Model?.trim()) {
 		errors.ModelFile = l10n?.modelFileRequired;
+	}
+
+	if (
+		requiresCalibrationValidationLabels(
+			currentModel.Backend?.Extensions
+		)
+	) {
+		if (!currentModel.Backend?.CalibrationData?.length) {
+			errors.CalibrationSet = l10n?.fieldRequired;
+		}
+
+		if (!currentModel.Backend?.ValidationData?.length) {
+			errors.ValidationSet = l10n?.fieldRequired;
+		}
+
+		if (!currentModel.Backend?.Labels?.length) {
+			errors.Labels = l10n?.fieldRequired;
+		}
 	}
 
 	// Validate dynamic controls
@@ -131,6 +191,15 @@ export function validateModel(
 			errors[control.Id] = l10n?.fieldRequired;
 		}
 	});
+
+	const validationSetError = validateValidationSet(
+		currentModel.Backend?.ValidationData ?? [],
+		l10n as TLocaleContext
+	);
+
+	if (validationSetError) {
+		errors.ValidationSet = validationSetError;
+	}
 
 	return errors;
 }

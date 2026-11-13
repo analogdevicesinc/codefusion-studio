@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import type {
 } from '../../../../common/types/memory-layout';
 
 import styles from './BackButton.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TMemoryBackButtonProps = {
 	readonly layer: number;
@@ -30,9 +31,13 @@ export default function MemoryBackButton({
 	data,
 	onClick
 }: TMemoryBackButtonProps) {
+	const l10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<ol className={styles.breadcrumbs}>
-			{layer === 1 && <li>Segments</li>}
+			{layer === 1 && <li>{l10n?.segments ?? 'Segments'}</li>}
 			{layer === 2 && (
 				<>
 					<li>
@@ -43,11 +48,11 @@ export default function MemoryBackButton({
 								onClick(layer);
 							}}
 						>
-							{data && `Segments`}
+							{data && (l10n?.segments ?? 'Segments')}
 						</button>
 					</li>
 					<li>
-						<span>Sections</span>
+						<span>{l10n?.sections ?? 'Sections'}</span>
 					</li>
 				</>
 			)}
@@ -61,7 +66,7 @@ export default function MemoryBackButton({
 								onClick(1);
 							}}
 						>
-							{data && `Segments`}
+							{data && (l10n?.segments ?? 'Segments')}
 						</button>
 					</li>
 					<li>
@@ -72,11 +77,11 @@ export default function MemoryBackButton({
 								onClick(layer);
 							}}
 						>
-							{data && `Sections`}
+							{data && (l10n?.sections ?? 'Sections')}
 						</button>
 					</li>
 					<li>
-						<span>Symbols</span>
+						<span>{l10n?.symbols ?? 'Symbols'}</span>
 					</li>
 				</>
 			)}

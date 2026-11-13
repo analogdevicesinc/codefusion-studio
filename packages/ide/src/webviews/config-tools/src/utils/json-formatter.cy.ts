@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import {type ConfiguredProject} from '../../../common/api';
 import type {Soc} from '../../../common/types/soc';
 import {type PeripheralConfig} from '../types/peripherals';
@@ -55,7 +70,7 @@ describe('Json formatter', () => {
 							Description: 'Disabled',
 							Value: 2
 						}
-						],
+					],
 					Hint: 'TARGET'
 				},
 				{
@@ -73,7 +88,7 @@ describe('Json formatter', () => {
 					NumericBase: 'Decimal'
 				}
 			]
-		}
+		};
 		sysPlannerDataInit(mock);
 	});
 
@@ -170,7 +185,7 @@ describe('Json formatter', () => {
 		const config = {
 			MODE: 'TARGET',
 			TARGET0_ADDR: '0x000000FF', // Should be formatted as 0x000000FF
-			CLK_LO: '100'       // Should remain as "100"
+			CLK_LO: '100' // Should remain as "100"
 		};
 
 		const projects: ConfiguredProject[] = [
@@ -202,7 +217,7 @@ describe('Json formatter', () => {
 		const i2c0Peripheral = result[peripheralName];
 
 		// Check that configFormat was created with numeric base mapping
-		(expect(i2c0Peripheral.configFormat?.numericBase)).to.deep.equal({
+		expect(i2c0Peripheral.configFormat?.numericBase).to.deep.equal({
 			TARGET0_ADDR: 'Hexadecimal',
 			CLK_LO: 'Decimal'
 		});
@@ -211,7 +226,7 @@ describe('Json formatter', () => {
 		expect(i2c0Peripheral.config).to.deep.equal({
 			MODE: 'TARGET',
 			TARGET0_ADDR: '0x000000FF', // Hexadecimal formatting applied
-			CLK_LO: '100'               // Decimal value unchanged
+			CLK_LO: '100' // Decimal value unchanged
 		});
 	});
 });

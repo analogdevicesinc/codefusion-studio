@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import {
 } from '../../../../common/api';
 
 import type {TSavedQuery} from '../../../../common/types/symbols';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 import styles from './SymbolsFilters.module.scss';
 
 type TSymbolsFiltersProps = {
@@ -48,6 +49,9 @@ export default function SymbolsFilters({
 	error,
 	emitQuery
 }: TSymbolsFiltersProps) {
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
 	const [query, setQuery] = useState<string>('');
 	const [isSaveModalOpen, setIsSaveModalOpen] =
 		useState<boolean>(false);
@@ -83,45 +87,57 @@ export default function SymbolsFilters({
 			.catch((err: string) => {
 				console.error(err);
 				throw new Error(
-					'An eror occurred retrieving the saved queries. Please try again!'
+					l10n?.savedQueriesError ??
+						'An error occurred retrieving the saved queries. Please try again!'
 				);
 			});
 	};
 
-	const postQueries = (
-		queryName: string,
-		data: TSavedQuery[],
-		action: string
-	) => {
-		updateQueries(data)
-			.then((response: TSavedQuery[]) => {
-				setSavedQueries(response);
+	const postQueries = useCallback(
+		(queryName: string, data: TSavedQuery[], action: string) => {
+			updateQueries(data)
+				.then((response: TSavedQuery[]) => {
+					setSavedQueries(response);
 
-				switch (action) {
-					case 'saveQuery':
-						showInformationMessage(
-							`Query "${queryName}" saved successfully`
-						);
-						break;
-					case 'editQuery':
-						showInformationMessage(
-							`Query "${queryName}" updated successfully`
-						);
-						break;
-					case 'deleteQuery':
-						showInformationMessage(
-							`Query "${queryName}" deleted successfully`
-						);
-						break;
-					default:
-						console.log('Unrecognized action: ', action);
-				}
-			})
-			.catch((err: string) => {
-				console.error(err);
-				showErrorMessage('An error occurred. Please try again!');
-			});
-	};
+					switch (action) {
+						case 'saveQuery':
+							showInformationMessage(
+								(
+									l10n?.querySaved ??
+									'Query "{name}" saved successfully'
+								).replace('{name}', () => queryName)
+							);
+							break;
+						case 'editQuery':
+							showInformationMessage(
+								(
+									l10n?.queryUpdated ??
+									'Query "{name}" updated successfully'
+								).replace('{name}', () => queryName)
+							);
+							break;
+						case 'deleteQuery':
+							showInformationMessage(
+								(
+									l10n?.queryDeleted ??
+									'Query "{name}" deleted successfully'
+								).replace('{name}', () => queryName)
+							);
+							break;
+						default:
+							console.log('Unrecognized action: ', action);
+					}
+				})
+				.catch((err: string) => {
+					console.error(err);
+					showErrorMessage(
+						l10n?.genericError ??
+							'An error occurred. Please try again!'
+					);
+				});
+		},
+		[l10n]
+	);
 
 	const handleOnInput = useCallback(
 		(event: ChangeEvent<HTMLInputElement>) => {
@@ -167,7 +183,10 @@ export default function SymbolsFilters({
 			}
 		} else {
 			// If duplicate, show error message
-			setDbError('This is a duplicate and can not be saved!');
+			setDbError(
+				l10n?.duplicateError ??
+					'This is a duplicate and cannot be saved!'
+			);
 		}
 	};
 
@@ -191,7 +210,7 @@ export default function SymbolsFilters({
 			name: '',
 			value: query
 		});
-	}, [query, queryToSave, savedQueries]);
+	}, [query, queryToSave, savedQueries, postQueries]);
 
 	const saveWithCheck = useCallback(() => {
 		setDbError('');
@@ -282,17 +301,17 @@ export default function SymbolsFilters({
 				footer={
 					<>
 						<Button appearance='secondary' onClick={resetState}>
-							Cancel
+							{l10n?.cancel ?? 'Cancel'}
 						</Button>
 						<Button appearance='primary' onClick={handleOnSaveQuery}>
-							Save
+							{l10n?.save ?? 'Save'}
 						</Button>
 					</>
 				}
 			>
 				<SaveEditQueryModal
 					query={queryToSave}
-					title='Save your query'
+					title={l10n?.saveYourQuery ?? 'Save your query'}
 					error={dbError}
 					onChange={query => {
 						setQueryToSave(query);

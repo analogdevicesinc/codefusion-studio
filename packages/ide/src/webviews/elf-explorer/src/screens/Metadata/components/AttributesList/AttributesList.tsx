@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import type {TLocaleContext} from '../../../../common/types/context';
 import type {TArmAttributes} from '../../../../common/types/metadata';
 
 import styles from './AttributesList.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type AttributesListProps = {
 	readonly list: TArmAttributes[] | Array<Record<string, any>>;
@@ -32,6 +33,10 @@ export default function AttributesList({
 	noDataMessage,
 	i10n
 }: AttributesListProps) {
+	const l10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<div className={styles.container} data-test='metadata:list'>
 			<HeaderWithTooltip title={i10n?.title} i10n={i10n} />
@@ -41,8 +46,12 @@ export default function AttributesList({
 					<div>
 						<Divider />
 						<li className={styles.item}>
-							<span className={styles.header}>File attribute</span>
-							<span className={styles.header}>Value</span>
+							<span className={styles.header}>
+								{l10n?.fileAttribute ?? 'File attribute'}
+							</span>
+							<span className={styles.header}>
+								{l10n?.value ?? 'Value'}
+							</span>
 						</li>
 						<Divider />
 					</div>

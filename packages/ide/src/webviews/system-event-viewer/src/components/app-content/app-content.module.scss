@@ -39,6 +39,7 @@
 
 	:global([id='cfs-top-bar:container']) {
 		border-left: 0;
+		--cfs-tooltip-z-index: 1000;
 	}
 }
 

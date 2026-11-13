@@ -1,0 +1,111 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+@use '#layout' as layout;
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-5;
+	padding: layout.$spacing-5 layout.$spacing-6;
+	border-bottom: 1px solid colors.$default-border;
+}
+
+.conflictBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: layout.$spacing-2;
+	padding: layout.$spacing-5 layout.$spacing-6;
+	border-bottom: 1px solid colors.$default-border;
+}
+
+.conflictBannerIcon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	// Nudged to sit on the first text line.
+	margin-top: 1px;
+}
+
+.conflictBannerMessage {
+	@include fonts.body-b3;
+	color: colors.$default-foreground;
+}
+.label {
+	@include fonts.heading-h5;
+	color: colors.$default-foreground;
+}
+
+.readOnlyValue {
+	@include fonts.body-b3;
+	color: colors.$description-foreground;
+}
+
+.startAddressDropdown {
+	--cfs-dropdown-max-width: 100%;
+	max-width: 100%;
+}
+
+.subtitle {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-1;
+	@include fonts.body-b3;
+	color: colors.$description-foreground;
+}
+
+.editFieldSlot {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-height: 38px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.editableField {
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-2;
+	padding: layout.$spacing-2;
+	padding-left: 0;
+	min-height: 38px;
+	box-sizing: border-box;
+	cursor: pointer;
+	@include fonts.body-b2;
+	color: colors.$description-foreground;
+
+	.editIcon {
+		display: inline-flex;
+	}
+}
+
+.titleField {
+	@include fonts.heading-h2;
+	color: colors.$default-foreground;
+	text-transform: uppercase;
+	gap: layout.$spacing-3;
+	padding-left: 0;
+}
+
+.startAddressContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: layout.$spacing-2;
+	align-self: stretch;
+}

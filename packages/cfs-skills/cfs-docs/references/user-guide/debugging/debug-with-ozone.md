@@ -47,14 +47,14 @@ CodeFusion Studio generates a `.jdebug` project file for Ozone based on your wor
 1. Connect your J-Link debug probe to your computer and target hardware. See [Connect hardware](connect-hardware.md) for details.
 2. Build your project to generate an ELF file in the `build/` directory.
 3. Click the **CFS icon** ![cfs-icon](../about/images/cfs-icon-light.png#only-light) ![cfs-icon](../about/images/cfs-icon-dark.png#only-dark) to open the CFS sidebar.
-4. Select the core you want to debug from the **Context Filter**.
-5. From the **Actions** panel, click **Debug with Ozone**.
+4. From the **Context Filter**, select **Workspace** to view an action for every Ozone-capable core, or select a specific core to view only the action for that core.
+5. From the **Actions** panel, select the **Debug with Ozone (`<core>`)** action for the core you want to debug, for example **Debug with Ozone (CM33)**.
 
-    ![Debug with Ozone in the Actions panel](images/ozone-debug-actions-panel-dark.png#only-dark)
-    ![Debug with Ozone in the Actions panel](images/ozone-debug-actions-panel-light.png#only-light)
+    ![Per-core Debug with Ozone actions in the Actions panel](images/ozone-debug-actions-panel-dark.png#only-dark)
+    ![Per-core Debug with Ozone actions in the Actions panel](images/ozone-debug-actions-panel-light.png#only-light)
 
 !!! note
-    The **Debug with Ozone** option only appears in the **Actions** panel when a core is selected from **Context Filter**.
+    CodeFusion Studio shows a separate **Debug with Ozone (`<core>`)** action for each Ozone-capable core (Arm Cortex-M and RISC-V). Cores that don't support Ozone, such as SHARC-FX, don't show an action.
 
 CodeFusion Studio launches Ozone and loads a debug configuration file (`.jdebug`). Ozone connects to the target hardware, loads the compiled application, and opens the graphical debugging interface. You can now use Ozone debugging features—source code view, breakpoints, register inspection, memory viewer, and instruction trace—to debug your application.
 

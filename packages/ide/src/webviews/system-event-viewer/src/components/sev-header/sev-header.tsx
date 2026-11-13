@@ -18,7 +18,7 @@ import {useCallback, useMemo, useState, type MouseEvent} from 'react';
 import {Badge, MeasurementIcon, Tooltip} from 'cfs-react-library';
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
-import {Direction} from '@common/components/tooltip/Tooltip';
+import {Modal} from '@common/components/modal/Modal';
 import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 import SevHeaderFileButtons from './sev-header-file-buttons';
 
@@ -49,6 +49,7 @@ import type {
 import type {CfsEventState} from '../../common/types/events';
 
 import styles from './sev-header.module.scss';
+import {Direction} from '@common/utils';
 
 type Status = {
 	label: string;
@@ -96,6 +97,11 @@ export default function SevHeader() {
 	const [elapsedTimeComputedAt, setElapsedTimeComputedAt] = useState(
 		() => Date.now()
 	);
+	const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+
+	const onToggleHelpModal = useCallback(() => {
+		setIsHelpModalOpen(prev => !prev);
+	}, []);
 	const elapsedTime = useMemo(
 		() =>
 			formatElapsedTime(lastUpdate, new Date(elapsedTimeComputedAt)),
@@ -193,7 +199,7 @@ export default function SevHeader() {
 				<SevHeaderFileButtons
 					onSaveAs={onSaveAs}
 					onExport={onExport}
-					onHelpClick={() => undefined}
+					onHelpClick={onToggleHelpModal}
 				/>
 			)
 		},
@@ -204,7 +210,9 @@ export default function SevHeader() {
 		<Badge appearance='secondary'>
 			<span className={styles.statusContent}>
 				<span
-					className={`${styles.dotContent} ${styles[status?.dot ?? ''] ?? ''}`}
+					className={`${styles.dotContent} ${
+						styles[status?.dot ?? ''] ?? ''
+					}`}
 				/>
 				<span className={styles.label}>{status?.label}</span>
 			</span>
@@ -251,6 +259,20 @@ export default function SevHeader() {
 			</div>
 
 			<div slot='end'>{slots.end}</div>
+
+			<div slot='modal'>
+				<Modal
+					isOpen={isHelpModalOpen}
+					handleModalClose={onToggleHelpModal}
+					titleId='sev-help-modal-title'
+					title={t({id: `${activeScreen}.help.title`})}
+				>
+					{t({
+						id: `${activeScreen}.description`,
+						parseHtml: true
+					})}
+				</Modal>
+			</div>
 		</CfsTopBar>
 	);
 }

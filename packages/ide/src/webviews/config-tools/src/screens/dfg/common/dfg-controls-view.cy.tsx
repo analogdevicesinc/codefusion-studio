@@ -16,10 +16,10 @@
 import {useState} from 'react';
 import {LocalizationProvider} from '@common/contexts/LocaleContext';
 import {DFGControlsView} from './dfg-controls-view';
-import type {
-	ConfigFields,
-	ControlCfg
-} from '../../../../../common/types/soc';
+import type {ControlCfg, ConfigFields} from '@common/types/soc';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {createScopeConflictDictionary} from '../../../test-utils/scope-conflict-test-utils';
+import type {ScopeValidationOptions} from '../../../utils/plugin-options-validation';
 
 describe('DFGControlsView', () => {
 	beforeEach(() => {
@@ -116,6 +116,52 @@ describe('DFGControlsView', () => {
 		);
 	});
 
+	it('should show scope conflict errors for duplicated scoped plugin options', () => {
+		const controls = fakeRequest<Record<string, ControlCfg[]>>({
+			TestProperty: [
+				{
+					Id: 'ALIAS',
+					Type: 'text',
+					Description: 'Alias',
+					Scope: `\${ProjectId} \${String: zephyr phandles} +`,
+					PluginOption: true
+				}
+			]
+		});
+		const scopeValidation: ScopeValidationOptions = {
+			scopes: createScopeConflictDictionary({
+				scopeKey: 'Proj_ID1 zephyr phandles',
+				value: 'shared_endpoint',
+				controlScope: CONTROL_SCOPES.DFG,
+				controlId: 'ALIAS',
+				projectId: 'Proj_ID1',
+				coreId: 'CMxx',
+				groupId: 'ASS',
+				itemIds: ['ASS[0]', 'BSS[0]']
+			}),
+			controlScope: CONTROL_SCOPES.DFG,
+			projectId: 'Proj_ID1',
+			itemId: 'ASS[0]',
+			formatConflictMessage: ({value, conflictingItems}) =>
+				`Value "${value}" is already used by ${conflictingItems}.`
+		};
+
+		cy.mount(
+			<DFGControlsViewWrapper
+				controls={controls}
+				initialData={{ALIAS: 'shared_endpoint'}}
+				scopeValidation={scopeValidation}
+			/>
+		);
+
+		cy.dataTest('dfg-test-controls:control-ALIAS-error')
+			.should('exist')
+			.and(
+				'contain.text',
+				'Value "shared_endpoint" is already used by BSS[0].'
+			);
+	});
+
 	it('marks non-default values and removes the marker after resetting', () => {
 		const controls = fakeRequest<Record<string, ControlCfg[]>>({
 			TestProperty: [
@@ -205,7 +251,8 @@ describe('DFGControlsView', () => {
 
 function DFGControlsViewWrapper({
 	controls,
-	initialData,
+	initialData = {},
+	scopeValidation,
 	socConfig = {
 		TestString: {},
 		TestNumber: {
@@ -223,10 +270,10 @@ function DFGControlsViewWrapper({
 	readonly controls: Promise<Record<string, ControlCfg[]>>;
 	readonly initialData?: Record<string, string | number | boolean>;
 	readonly socConfig?: ConfigFields;
+	readonly scopeValidation?: ScopeValidationOptions;
 }) {
-	const [data, setData] = useState<
-		Record<string, string | number | boolean>
-	>(initialData ?? {});
+	const [data, setData] =
+		useState<Record<string, string | number | boolean>>(initialData);
 
 	return (
 		<LocalizationProvider namespace='cfgtools'>
@@ -235,6 +282,7 @@ function DFGControlsViewWrapper({
 				controlsPrms={controls}
 				propertyName='TestProperty'
 				testId='dfg-test-controls'
+				scopeValidation={scopeValidation}
 				socConfig={socConfig}
 				onControlChange={(field, value) => {
 					setData(prevData => {

@@ -19,6 +19,17 @@ export {
     PackageRepository,
     PackageRepositoryError,
 } from './sw/repository.js';
+export { SWPackageCatalog } from './sw/swpackage-catalog.js';
 export { EulaClient, PackageEulaError } from './sw/eula.js';
+export {
+    PackageSyncClient,
+    PackageSyncError,
+    isTerminalSyncStatus,
+} from './sw/sync-job.js';
+export type {
+    PackageSyncRequest,
+    PackageSyncJobStatus,
+    PackageSyncJobDetails,
+} from './sw/sync-job.js';
 export { CfsApiClient, CfsApiError } from './cfsapi-client.js';
 export type { ApiOptions } from './cfsapi-client.js';

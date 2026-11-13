@@ -3,9 +3,9 @@
   "DataModelVersion": "^1.1.0",
   "SchemaVersion": "2.1.0",
   "Timestamp": "2026-06-24T14:27:43.433Z",
-  "Soc": "MAX32690",
-  "BoardName": "AD-APARD32690-SL",
-  "Package": "WLP",
+  "Soc": "TEST690",
+  "BoardName": "AD-BOARD-SL",
+  "Package": "PLP",
   "Pins": [
     {
       "Pin": "D2",

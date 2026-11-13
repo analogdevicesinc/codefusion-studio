@@ -14,26 +14,26 @@
  */
 
 export interface CfsPluginProperty {
-  id: string;
-  /** Property name */
-  name: string;
-  /** Property description (shown in UI) */
-  description?: string;
-  /** Property category used to group common properties (shown in UI) */
-  category?: string;
-  /** Default value */
-  default?: string;
-  /** Property type, e.g. "string" | "integer" | "float" | "boolean" | "array" */
-  type: string;
-  /** Valid options, presented as a drop down list */
-  enum?: {
-    label: string;
-    value: string;
-  }[];
-  /** Required fields will be checked at runtime to ensure they are set */
-  required?: boolean;
-  /** If true, don't show to user */
-  readonly?: boolean;
-  placeholder?: string;
-  condition?: string;
+	id: string;
+	/** Property name */
+	name: string;
+	/** Property description (shown in UI) */
+	description?: string;
+	/** Property category used to group common properties (shown in UI) */
+	category?: string;
+	/** Default value */
+	default?: string;
+	/** Property type, e.g. "string" | "integer" | "float" | "boolean" | "array" */
+	type: string;
+	/** Valid options, presented as a drop down list */
+	enum?: {
+		label: string;
+		value: string;
+	}[];
+	/** Required fields will be checked at runtime to ensure they are set */
+	required?: boolean;
+	/** If true, don't show to user */
+	readonly?: boolean;
+	placeholder?: string;
+	condition?: string;
 }

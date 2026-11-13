@@ -14,133 +14,128 @@
  */
 import GeneratedFiles from './GeneratedFiles';
 import {formatGeneratedFilePaths} from '../../../utils/api';
-import {sysPlannerDataInit} from '../../../utils/sys-planner-data-init';
+import {runCodeGeneration} from '../../../state/slices/app-context/appContext.reducer';
+import {configurePreloadedStore} from '../../../state/store';
 import type {CfsConfig} from 'cfs-types';
 import type {Soc} from '@common/types/soc';
 
 const max32690Wlp = (await import('@socs/max32690-wlp.json'))
 	.default as unknown as Soc;
 
+// Mock config dictionary based on the max32690-wlp-dual-core-blinky.cfsconfig file
+const mockConfigDict = {
+	Soc: 'MAX32690',
+	BoardName: 'AD-APARD32690-SL',
+	Package: 'WLP',
+	Projects: [
+		{
+			CoreId: 'CM4',
+			ProjectId: 'CM4',
+			PluginId: 'com.analog.project.zephyr40.plugin',
+			PluginVersion: '1.0.0',
+			FirmwarePlatform: 'zephyr-4.0',
+			ExternallyManaged: false,
+			Description: 'ARM Cortex-M4 Core',
+			CoreNum: 0,
+			IsPrimary: true,
+			Name: 'Cortex-M4',
+			PlatformConfig: {
+				ProjectName: 'm4',
+				ZephyrBoardName: 'apard32690/max32690/m4'
+			}
+		},
+		{
+			CoreId: 'RV',
+			ProjectId: 'RV',
+			PluginId: 'com.analog.project.msdk.plugin',
+			PluginVersion: '1.1.0',
+			FirmwarePlatform: 'msdk',
+			ExternallyManaged: false,
+			Description: 'RISC-V Core',
+			CoreNum: 1,
+			IsPrimary: false,
+			Name: 'RISC-V',
+			PlatformConfig: {
+				ProjectName: 'riscv'
+			}
+		}
+	]
+} as unknown as CfsConfig;
+
 describe('GeneratedFiles component', () => {
-	before(() => {
-		// Mock config dictionary based on the max32690-wlp-dual-core-blinky.cfsconfig file
-		const mockConfigDict = {
-			Soc: 'MAX32690',
-			BoardName: 'AD-APARD32690-SL',
-			Package: 'WLP',
-			Projects: [
-				{
-					CoreId: 'CM4',
-					ProjectId: 'CM4',
-					PluginId: 'com.analog.project.zephyr40.plugin',
-					PluginVersion: '1.0.0',
-					FirmwarePlatform: 'zephyr-4.0',
-					ExternallyManaged: false,
-					Description: 'ARM Cortex-M4 Core',
-					CoreNum: 0,
-					IsPrimary: true,
-					Name: 'Cortex-M4',
-					PlatformConfig: {
-						ProjectName: 'm4',
-						ZephyrBoardName: 'apard32690/max32690/m4'
-					}
-				},
-				{
-					CoreId: 'RV',
-					ProjectId: 'RV',
-					PluginId: 'com.analog.project.msdk.plugin',
-					PluginVersion: '1.1.0',
-					FirmwarePlatform: 'msdk',
-					ExternallyManaged: false,
-					Description: 'RISC-V Core',
-					CoreNum: 1,
-					IsPrimary: false,
-					Name: 'RISC-V',
-					PlatformConfig: {
-						ProjectName: 'riscv'
-					}
-				}
-			]
-		} as unknown as CfsConfig;
-
-		// Mock generated file paths that include the ProjectName from PlatformConfig
-		const mockGeneratedFiles = [
-			'/home/user/projects/m4/src/main.c',
-			'/home/user/projects/m4/config/pinmux.c',
-			'/home/user/projects/m4/zephyr/led_control.c',
-			'/home/user/projects/riscv/src/app.c',
-			'/home/user/projects/riscv/include/uart_config.h',
-			'/tmp/unknown/path/file.c' // A path that doesn't match any project name
-		];
-
-		window.localStorage.setItem(
-			'generatedFiles',
-			JSON.stringify(mockGeneratedFiles)
+	it('should format and display generated file paths correctly', () => {
+		const reduxStore = configurePreloadedStore(
+			max32690Wlp,
+			mockConfigDict
 		);
 
-		sysPlannerDataInit(max32690Wlp, mockConfigDict);
-	});
-
-	it('should format and display generated file paths correctly', () => {
-		// Create a promise that resolves to the mock file paths
-		const mockPromise = Promise.resolve([
-			'/home/user/projects/m4/src/main.c',
-			'/home/user/projects/m4/config/pinmux.c',
-			'/home/user/projects/m4/zephyr/led_control.c',
-			'/home/user/projects/riscv/src/app.c',
-			'/home/user/projects/riscv/include/uart_config.h',
+		// Payload already formatted by `createCodeGenerationPromise`, as
+		// `codeGenState.files` stores post-formatting paths.
+		const mockGeneratedFiles = [
+			'm4/src/main.c',
+			'm4/config/pinmux.c',
+			'm4/zephyr/led_control.c',
+			'riscv/src/app.c',
+			'riscv/include/uart_config.h',
 			'/tmp/unknown/path/file.c'
-		]);
+		];
 
-		// Mount the component
-		cy.mount(<GeneratedFiles promise={mockPromise} />);
+		cy.mount(<GeneratedFiles />, reduxStore).then(() => {
+			reduxStore.dispatch({
+				type: runCodeGeneration.fulfilled.type,
+				payload: mockGeneratedFiles
+			});
 
-		// Wait for the component to render
-		cy.dataTest('generated-files:list-container').should('exist');
+			cy.dataTest('generated-files:list-container').should('exist');
 
-		// Verify the list contains the correct number of items
-		cy.dataTest('generated-files:list-container')
-			.children()
-			.should('have.length', 6);
+			cy.dataTest('generated-files:list-container')
+				.children()
+				.should('have.length', 6);
 
-		// Verify the formatted paths are displayed correctly
-		// Project paths should be shortened to include only the project name and subdirectories
-		cy.contains('m4/src/main.c').should('exist');
-		cy.contains('m4/config/pinmux.c').should('exist');
-		cy.contains('m4/zephyr/led_control.c').should('exist');
-		cy.contains('riscv/src/app.c').should('exist');
-		cy.contains('riscv/include/uart_config.h').should('exist');
-
-		// Paths that don't match any project name should be displayed in full
-		cy.contains('/tmp/unknown/path/file.c').should('exist');
+			cy.contains('m4/src/main.c').should('exist');
+			cy.contains('m4/config/pinmux.c').should('exist');
+			cy.contains('m4/zephyr/led_control.c').should('exist');
+			cy.contains('riscv/src/app.c').should('exist');
+			cy.contains('riscv/include/uart_config.h').should('exist');
+			cy.contains('/tmp/unknown/path/file.c').should('exist');
+		});
 	});
 
 	it('should display error message when generation fails', () => {
-		// Create a promise that resolves to an error string
-		const mockPromise = Promise.resolve(
-			'An error occurred while generating the code files, please try again.'
+		const reduxStore = configurePreloadedStore(
+			max32690Wlp,
+			mockConfigDict
 		);
 
-		// Mount the component
-		cy.mount(<GeneratedFiles promise={mockPromise} />);
+		cy.mount(<GeneratedFiles />, reduxStore).then(() => {
+			reduxStore.dispatch({
+				type: runCodeGeneration.rejected.type,
+				payload:
+					'An error occurred while generating the code files, please try again.'
+			});
 
-		// The component should display the error message
-		cy.contains(
-			'An error occurred while generating the code files, please try again.'
-		).should('exist');
+			cy.contains(
+				'An error occurred while generating the code files, please try again.'
+			).should('exist');
+		});
 	});
 
 	it('should display empty list when generated files array is empty', () => {
-		// Create a promise that resolves to an empty array
-		const mockPromise = Promise.resolve([]);
+		const reduxStore = configurePreloadedStore(
+			max32690Wlp,
+			mockConfigDict
+		);
 
-		// Mount the component
-		cy.mount(<GeneratedFiles promise={mockPromise} />);
+		cy.mount(<GeneratedFiles />, reduxStore).then(() => {
+			reduxStore.dispatch({
+				type: runCodeGeneration.fulfilled.type,
+				payload: []
+			});
 
-		// List should be empty
-		cy.dataTest('generated-files:list-container')
-			.children()
-			.should('have.length', 0);
+			cy.dataTest('generated-files:list-container')
+				.children()
+				.should('have.length', 0);
+		});
 	});
 
 	// Unit test for the formatGeneratedFilePaths utility function

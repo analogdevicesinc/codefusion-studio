@@ -13,16 +13,23 @@
  *
  */
 import type {Config} from '@oclif/core';
+import crypto from 'node:crypto';
 
 import {SoC} from 'cfs-ccm-lib';
-import {CfsToolManager} from 'cfs-lib';
+import {CfsToolManager, readJsonFile} from 'cfs-lib';
 import {CfsConfig, CfsPluginInfo, CfsWorkspace} from 'cfs-types';
 import {Task} from 'cfs-types/types/cfs-task';
 import fs from 'node:fs';
 import path from 'node:path';
 import {lt as semverLessThan} from 'semver';
 
+import type {
+  CliConfig,
+  CliTelemetryConfig
+} from '../types/cli-config.js';
 import {getSocCatalog} from './catalog-manager.js';
+import {errorWithCode} from './recoverable-error.js';
+import {findWorkspaceRoot} from './workspace-utils.js';
 
 export function checkIfFileExists(filename: string | undefined) {
   if (!filename) {
@@ -34,17 +41,6 @@ export function checkIfFileExists(filename: string | undefined) {
     : path.resolve(process.cwd(), filename);
 
   return fs.existsSync(filepath);
-}
-
-export function readJsonFile(filename: string) {
-  try {
-    const fileContent = fs.readFileSync(filename, 'utf8');
-    return JSON.parse(fileContent);
-  } catch {
-    throw new Error(
-      `The file: ${filename} is not a valid JSON file.`
-    );
-  }
 }
 
 /**
@@ -75,19 +71,99 @@ export function lowercaseFirstLetterProps<
  */
 export function readUserConfig(
   config: Config
-): Record<string, unknown> | undefined {
+): CliConfig | undefined {
   try {
     const configPath = path.join(config.configDir, 'config.json');
 
     if (fs.existsSync(configPath)) {
       const configContent = fs.readFileSync(configPath, 'utf8');
-      return JSON.parse(configContent) as Record<string, unknown>;
+
+      return JSON.parse(configContent) as CliConfig;
     }
   } catch {
     // Silently continue if config file doesn't exist or can't be read
   }
 
   return undefined;
+}
+
+export type WriteTelemetryDeps = {
+  readFileSync: typeof fs.readFileSync;
+  writeFileSync: typeof fs.writeFileSync;
+  renameSync: typeof fs.renameSync;
+  unlinkSync: typeof fs.unlinkSync;
+  chmodSync: typeof fs.chmodSync;
+  mkdirSync: typeof fs.mkdirSync;
+  existsSync: typeof fs.existsSync;
+  randomSuffix: () => string;
+};
+
+export const writeTelemetryDeps: WriteTelemetryDeps = {
+  readFileSync: fs.readFileSync,
+  writeFileSync: fs.writeFileSync,
+  renameSync: fs.renameSync,
+  unlinkSync: fs.unlinkSync,
+  chmodSync: fs.chmodSync,
+  mkdirSync: fs.mkdirSync,
+  existsSync: fs.existsSync,
+  randomSuffix: () => crypto.randomUUID().slice(0, 8)
+};
+
+/**
+ * Atomically update only the `telemetry` property in the
+ * user configuration file, preserving every other key.
+ */
+export function writeTelemetryPreference(
+  config: Config,
+  telemetry: CliTelemetryConfig
+): void {
+  const deps = writeTelemetryDeps;
+  deps.mkdirSync(config.configDir, {recursive: true});
+  const configPath = path.join(config.configDir, 'config.json');
+
+  let existing: Record<string, unknown> = {};
+  try {
+    if (deps.existsSync(configPath)) {
+      const parsed: unknown = JSON.parse(
+        deps.readFileSync(configPath, 'utf8') as string
+      );
+
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        existing = parsed as Record<string, unknown>;
+      }
+    }
+  } catch {
+    // Start fresh if the file is corrupt
+  }
+
+  existing.telemetry = telemetry;
+
+  const data = JSON.stringify(existing, null, 2) + '\n';
+  const tmpPath = configPath + '.tmp.' + deps.randomSuffix();
+
+  deps.writeFileSync(tmpPath, data, {mode: 0o600});
+
+  try {
+    deps.renameSync(tmpPath, configPath);
+  } catch (renameError: unknown) {
+    const code = (renameError as {code?: string}).code;
+    if (code === 'EPERM' || code === 'EACCES') {
+      deps.unlinkSync(configPath);
+      deps.renameSync(tmpPath, configPath);
+    } else {
+      throw renameError;
+    }
+  }
+
+  try {
+    deps.chmodSync(configPath, 0o600);
+  } catch {
+    // Best-effort on platforms that support permissions
+  }
 }
 
 /**
@@ -243,8 +319,9 @@ export function checkProjectExists(
   );
 
   if (!projectExists) {
-    throw new Error(
-      `No project with the name "${projectName}" found in the specified workspace.`
+    throw errorWithCode(
+      `No project with the name "${projectName}" found in the specified workspace.`,
+      'PROJECT_NOT_FOUND'
     );
   }
 }
@@ -389,12 +466,16 @@ export function tableOutputStyles() {
 }
 
 function getCfsWorkspaceFromPath(workspacePath: string) {
-  const cfsFolder = `${workspacePath}/.cfs`;
-  const workspaceFile = `${cfsFolder}/.cfsworkspace`;
-
-  if (!checkIfFileExists(workspaceFile)) {
+  const workspaceRoot = findWorkspaceRoot(workspacePath);
+  if (!workspaceRoot) {
     throw new Error('no cfs workspace file');
   }
+
+  const workspaceFile = path.join(
+    workspaceRoot,
+    '.cfs',
+    '.cfsworkspace'
+  );
 
   return lowercaseFirstLetterProps(
     readJsonFile(workspaceFile)
@@ -405,10 +486,18 @@ function getConfigFromWorkspace(workspacePath: string): {
   config: CfsConfig;
   pathToConfig: string;
 } {
-  const cfsFolder = `${workspacePath}/.cfs`;
-  const cfsWorkspace = getCfsWorkspaceFromPath(workspacePath);
+  const workspaceRoot = findWorkspaceRoot(workspacePath);
+  if (!workspaceRoot) {
+    throw new Error('no cfs workspace file');
+  }
 
-  const pathToConfig = `${cfsFolder}/${cfsWorkspace.soc.toLowerCase()}-${cfsWorkspace.package.toLowerCase()}.cfsconfig`;
+  const cfsWorkspace = getCfsWorkspaceFromPath(workspaceRoot);
+
+  const pathToConfig = path.join(
+    workspaceRoot,
+    '.cfs',
+    `${cfsWorkspace.soc.toLowerCase()}-${cfsWorkspace.package.toLowerCase()}.cfsconfig`
+  );
   const config = readJsonFile(pathToConfig) as CfsConfig;
   return {config, pathToConfig};
 }

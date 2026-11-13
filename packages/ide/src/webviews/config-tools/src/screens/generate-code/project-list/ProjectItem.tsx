@@ -36,11 +36,14 @@ import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 
 const isError = (errors: TCodeGenError) =>
 	Number(
-		errors.peripheralAllocErr +
+		errors.memoryAllocErr +
+			errors.peripheralAllocErr +
 			errors.pinConfigErr +
 			errors.clockConfigErr +
 			errors.dfgErr +
-			errors.mcubootErr
+			errors.mcubootErr +
+			errors.firewallErr +
+			errors.profilingErr
 	);
 
 function ProjectItem({
@@ -60,7 +63,12 @@ function ProjectItem({
 }>) {
 	const errorExists = isError(errors);
 	const canBeSelected = !project.ExternallyManaged && !errorExists;
-	const l10n = useLocaleContext()?.generate;
+	const l10n = useLocaleContext()?.generate as
+		| Record<string, string>
+		| undefined;
+	const badges = useLocaleContext()?.badges as
+		| Record<string, string>
+		| undefined;
 
 	const aiModelsForCore = useAIModels().filter(
 		model =>
@@ -74,14 +82,25 @@ function ProjectItem({
 		}
 	}, [canBeSelected, onProjectSelect, project.ProjectId, isSelected]);
 
-	const displaySecureBadge = useCallback((project: ProjectInfo) => {
-		if (!Object.prototype.hasOwnProperty.call(project, 'Secure'))
-			return '';
-		if (project.Secure)
-			return <Badge appearance='secondary'>{SECURE}</Badge>;
-		if (project.Secure === false)
-			return <Badge appearance='secondary'>{NON_SECURE}</Badge>;
-	}, []);
+	const displaySecureBadge = useCallback(
+		(project: ProjectInfo) => {
+			if (!Object.prototype.hasOwnProperty.call(project, 'Secure'))
+				return '';
+			if (project.Secure)
+				return (
+					<Badge appearance='secondary'>
+						{badges?.secure ?? SECURE}
+					</Badge>
+				);
+			if (project.Secure === false)
+				return (
+					<Badge appearance='secondary'>
+						{badges?.nonSecure ?? NON_SECURE}
+					</Badge>
+				);
+		},
+		[badges]
+	);
 
 	return (
 		<CfsSelectionCard
@@ -107,7 +126,9 @@ function ProjectItem({
 				<div className={styles.title}>
 					<div className={styles.name}>{project.Name}</div>
 					{project.IsPrimary && (
-						<Badge appearance='secondary'>{PRIMARY}</Badge>
+						<Badge appearance='secondary'>
+							{badges?.primary ?? PRIMARY}
+						</Badge>
 					)}
 					{displaySecureBadge(project)}
 					{project?.ExternallyManaged ? (
@@ -115,13 +136,13 @@ function ProjectItem({
 							dataTest='project-item:externally-managed-badge'
 							appearance='secondary'
 						>
-							{EXTERNALLY_MANAGED}
+							{badges?.externallyManaged ?? EXTERNALLY_MANAGED}
 						</Badge>
 					) : null}
 				</div>
 				{!project.ExternallyManaged && (
 					<div className={styles.description}>
-						<span>Platform:</span>
+						<span>{l10n?.platform ?? 'Platform:'}</span>
 						{project.FirmwarePlatform ? (
 							<span>{project.FirmwarePlatform}</span>
 						) : (
@@ -145,7 +166,10 @@ function ProjectItem({
 							<div className={styles.labelTooltip}>
 								<h3>{l10n?.enableAiModels}</h3>
 								<Tooltip
-									title={l10n.enableAiModelsTooltip}
+									title={
+										l10n?.enableAiModelsTooltip ??
+										"Existing files won't be removed before generating"
+									}
 									position='right'
 								>
 									<InfoIcon />
@@ -172,12 +196,14 @@ function ProjectItem({
 					errors={{
 						show: Boolean(errorExists),
 						param: {
-							memory: 0,
+							memory: errors.memoryAllocErr,
 							peripheral: errors.peripheralAllocErr,
 							pin: errors.pinConfigErr,
 							clock: errors.clockConfigErr,
 							dfg: errors.dfgErr,
-							mcuboot: errors.mcubootErr
+							mcuboot: errors.mcubootErr,
+							firewall: errors.firewallErr,
+							profiling: errors.profilingErr
 						}
 					}}
 				/>

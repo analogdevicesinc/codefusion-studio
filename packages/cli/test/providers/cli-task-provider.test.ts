@@ -208,10 +208,7 @@ describe('CliTaskProvider getCfsEnvironmentVariables', () => {
     const envVars = await provider.getCfsEnvironmentVariables();
 
     // ${config:cfs.mock.target} should resolve to "mock-core-a"
-    expect(envVars).to.have.property(
-      'MOCK_TARGET',
-      'mock-core-a'
-    );
+    expect(envVars).to.have.property('MOCK_TARGET', 'mock-core-a');
   });
 
   it('resolves ${workspaceFolder} in env var values', async () => {

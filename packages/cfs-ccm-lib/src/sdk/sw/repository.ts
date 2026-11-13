@@ -54,7 +54,8 @@ export class RepositoryClient {
 
     /**
      * Fetches all available package repository URLs.
-     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
+     * @param options optional lookup options
+     * @param options.format optional filter by package format (e.g. "conan", "docker", etc.)
      * @returns Promise<string[]>
      */
     public async getRepositoryUrls({
@@ -71,7 +72,8 @@ export class RepositoryClient {
 
     /**
      * Fetches info about available package repositories.
-     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
+     * @param options optional lookup options
+     * @param options.format optional filter by package format (e.g. "conan", "docker", etc.)
      * @returns Promise<SWPackageRepo[]>
      */
     public async getRepositoryInfo({
@@ -99,7 +101,8 @@ export class RepositoryClient {
 
     /**
      * Fetches all available package repositories
-     * @param format optional filter by package format (e.g. "conan", "docker", etc.)
+     * @param options optional lookup options
+     * @param options.format optional filter by package format (e.g. "conan", "docker", etc.)
      * @returns Promise<PackageRepository[]>
      */
     public async getRepositories({

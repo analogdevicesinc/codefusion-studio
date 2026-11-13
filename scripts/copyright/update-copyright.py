@@ -1,5 +1,5 @@
 """
-Copyright (c) 2024 Analog Devices, Inc.
+Copyright (c) 2024-2026 Analog Devices, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ FILE_REGEX.extend([ROOT_PATH + "/../../packages/ide/cypress.config.ts", ROOT_PAT
 FILE_REGEX.extend([ROOT_PATH + "/../../packages/cfs-lib/src/**/*.ts"])
 FILE_REGEX.extend([ROOT_PATH + "/../../packages/cli/src/**/*.ts", ROOT_PATH + "/../../packages/cli/test/**/*.ts"])
 FILE_REGEX.extend([ROOT_PATH + "/../../packages/cli-plugins/add-codegen/src/**/*.ts", ROOT_PATH + "/../../packages/cli-plugins/add-codegen/test/**/*.ts", ROOT_PATH + "/../../packages/cli-plugins/add-soc/src/**/*.ts", ROOT_PATH + "/../../packages/cli-plugins/add-soc/test/**/*.ts"])
-FILE_REGEX.extend([ROOT_PATH + "/../../packages/elf-parser/src/**/*.ts", ROOT_PATH + "/../../packages/elf-parser/test/**/*.ts"])
+FILE_REGEX.extend([ROOT_PATH + "/../../packages/cfs-lib/src/parsers/elf-parser/**/*.ts", ROOT_PATH + "/../../packages/cfs-lib/test/parsers/elf-parser/**/*.ts"])
 FILE_REGEX.extend([ROOT_PATH + "/../../packages/react-library/src/**/*.ts", ROOT_PATH + "/../../packages/react-library/src/**/*.tsx", ROOT_PATH + "/../../packages/react-library/src/**/*.scss"])
 
 # Each file header should contain the following copyright header:

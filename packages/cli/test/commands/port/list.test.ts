@@ -16,7 +16,8 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 
-import {portListDeps} from '../../../src/commands/port/list.js';
+import {portListDeps} from '../../../dist/commands/port/list.js';
+import {assertSuccessEnvelopeData} from '../../utils/assert-json-envelope.js';
 
 /**
  * Test suite for port:list command.
@@ -94,5 +95,38 @@ describe('port:list', () => {
         expect(stdout).to.contain('0x5678');
       });
     }
+  });
+
+  describe('JSON envelope', () => {
+    it('returns an empty ports envelope in JSON mode', async () => {
+      portListDeps.listPorts = async () => [];
+      const {stdout} = await runCommand(
+        ['port:list', '--format', 'json'],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{
+        ports: unknown[];
+      }>(stdout, 'port list');
+
+      expect(data).to.deep.equal({ports: []});
+    });
+
+    it('returns a populated ports envelope in JSON mode', async () => {
+      portListDeps.listPorts = async () => mockPorts;
+      const {stdout} = await runCommand(
+        ['port:list', '--format', 'json'],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{
+        ports: {path: string}[];
+      }>(stdout, 'port list');
+
+      expect(data.ports.map((port) => port.path)).to.deep.equal([
+        '/dev/ttyUSB0',
+        '/dev/ttyUSB1'
+      ]);
+    });
   });
 });

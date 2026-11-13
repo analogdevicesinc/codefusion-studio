@@ -27,6 +27,8 @@ import {AiTools} from '../../screens/ai-tools/ai-tools';
 import {Profiling} from '../../screens/profiling/profiling';
 import MCUBootConfig from '../../screens/mcuboot-config/mcuboot-config';
 import WorkspaceSettings from '../../screens/workspace-settings/workspace-settings';
+import {FirewallConfig} from '../../screens/firewall-config/firewall-config';
+import {SignalRoutingUnit} from '../../screens/signal-routing-unit/signal-routing-unit';
 
 function AppPanel() {
 	const activeScreen = useActiveScreen();
@@ -39,8 +41,10 @@ function AppPanel() {
 			<Dfg key={navigationItems.dfg} />
 			<PeripheralConfig key={navigationItems.peripherals} />
 			<MemoryAllocation key={navigationItems.memory} />
+			<SignalRoutingUnit key={navigationItems.signalRoutingUnit} />
 			<Registers key={navigationItems.registers} />
 			<AiTools key={navigationItems.aiTools} />
+			<FirewallConfig key={navigationItems.firewallConfig} />
 			<MCUBootConfig key={navigationItems.mcubootConfig} />
 			<Profiling key={navigationItems.profiling} />
 			<GenerateCode key={navigationItems.generate} />

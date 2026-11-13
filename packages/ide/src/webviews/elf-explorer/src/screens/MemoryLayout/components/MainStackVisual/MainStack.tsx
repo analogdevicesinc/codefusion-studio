@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import type {
 } from '../../../../common/types/memory-layout';
 import type {TSymbol} from '../../../../common/types/symbols';
 import styles from './MainStack.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TMainStackProps = {
 	readonly segments: Array<TSegment | TSection>;
@@ -66,6 +67,12 @@ export default function MainStack({
 		HoveredPartInfo | undefined
 	>();
 	const containerRef = useRef<HTMLLIElement>(null);
+	const l10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 
 	const handleClick = (segment: TSegment | TSection) => {
 		const segm = segment as TSegment;
@@ -99,7 +106,7 @@ export default function MainStack({
 			id: segm.id,
 			name:
 				segm.category === SegmentCategory.UNUSED
-					? 'Unused space'
+					? (l10n?.unusedSpace ?? 'Unused space')
 					: segm.label,
 			size: segm.size,
 			start: segm.address,
@@ -130,7 +137,9 @@ export default function MainStack({
 	const displayAddress = (segment: TSegment) =>
 		segment.category !== SegmentCategory.UNUSED && (
 			<div
-				className={`${styles.address} ${isSegmToBeHighlighted(segment) ? styles.highlight : ''}`}
+				className={`${styles.address} ${
+					isSegmToBeHighlighted(segment) ? styles.highlight : ''
+				}`}
 			>
 				{segment?.address}
 			</div>
@@ -213,25 +222,31 @@ export default function MainStack({
 			>
 				<div className={styles['tooltip-container']}>
 					<div className={styles['tooltip-row']}>
-						<div className={styles.start}>START ADDRESS</div>
+						<div className={styles.start}>
+							{l10n?.startAddress ?? 'START ADDRESS'}
+						</div>
 						<div className={styles.end}>{hoveredPartInfo.start}</div>
 					</div>
 					<div className={styles['tooltip-row']}>
-						<div className={styles.start}>END ADDRESS</div>
+						<div className={styles.start}>
+							{l10n?.endAddress ?? 'END ADDRESS'}
+						</div>
 						<div className={styles.end}>{hoveredPartInfo.end}</div>
 					</div>
 					{segment?.category !== SegmentCategory.UNUSED && (
 						<div className={styles['tooltip-row']}>
-							<div className={styles.start}>SIZE</div>
-							<div
-								className={styles.end}
-							>{`${hoveredPartInfo.size} bytes`}</div>
+							<div className={styles.start}>
+								{l10n?.size ?? 'SIZE'}
+							</div>
+							<div className={styles.end}>{`${hoveredPartInfo.size} ${
+								commonL10n?.bytes ?? 'bytes'
+							}`}</div>
 						</div>
 					)}
 				</div>
 			</CfsTooltip>
 		);
-	}, [hoveredPartInfo, segments]);
+	}, [hoveredPartInfo, segments, l10n, commonL10n]);
 
 	return (
 		<>

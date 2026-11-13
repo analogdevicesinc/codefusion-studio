@@ -19,6 +19,11 @@ import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
+
 /**
  * Test suite for tasks:list command.
  *
@@ -98,13 +103,7 @@ describe('tasks:list', () => {
     it('infers the project from cwd when no workspace flag is provided', () => {
       const stdout = execFileSync(
         process.execPath,
-        [
-          '--loader',
-          'ts-node/esm',
-          '--no-warnings=ExperimentalWarning',
-          cliDevEntryPoint,
-          'tasks:list'
-        ],
+        ['--import', 'tsx', cliDevEntryPoint, 'tasks:list'],
         {
           cwd: project1Path,
           env: process.env,
@@ -246,6 +245,81 @@ describe('tasks:list', () => {
       expect(stdout).to.match(
         /Tasks for workspace .* and project "project1"/
       );
+    });
+  });
+
+  describe('JSON envelope', () => {
+    it('returns a tasks envelope grouped by project in JSON mode', async () => {
+      const {stdout} = await runCommand(
+        [
+          'tasks:list',
+          '--workspace',
+          testWorkspacePath,
+          '--format',
+          'json'
+        ],
+        {root: '..'}
+      );
+
+      const data = assertSuccessEnvelopeData<{
+        tasks: {
+          project: string;
+          tasks: {name: string; command?: string}[];
+        }[];
+      }>(stdout, 'tasks list');
+
+      const project1 = data.tasks.find(
+        (group) => group.project === 'project1'
+      );
+      expect(project1).to.not.be.undefined;
+      expect(
+        project1!.tasks.map((task) => task.name)
+      ).to.include.members(['Build', 'Clean', 'Test']);
+    });
+
+    const errorCodeFor = async (args: string[]): Promise<string> => {
+      const {stdout} = await runCommand(
+        ['tasks:list', ...args, '--format', 'json'],
+        {root: '..'}
+      );
+      const parsed = assertValidEnvelope(stdout);
+      expect(parsed.ok).to.be.false;
+      if (parsed.ok) throw new Error('expected an error envelope');
+      expect(parsed.command).to.equal('tasks list');
+
+      return parsed.errors[0].code;
+    };
+
+    it('returns the same error code for any invalid workspace path', async () => {
+      const first = await errorCodeFor([
+        '--workspace',
+        path.join(__dirname, 'nonexistent-workspace-a')
+      ]);
+      const second = await errorCodeFor([
+        '--workspace',
+        path.join(__dirname, 'nonexistent-workspace-b')
+      ]);
+
+      expect(first).to.equal('INVALID_WORKSPACE');
+      expect(second).to.equal(first);
+    });
+
+    it('returns the same error code for any unknown project', async () => {
+      const first = await errorCodeFor([
+        '--workspace',
+        testWorkspacePath,
+        '--project',
+        'unknown-project-a'
+      ]);
+      const second = await errorCodeFor([
+        '--workspace',
+        testWorkspacePath,
+        '--project',
+        'unknown-project-b'
+      ]);
+
+      expect(first).to.equal('PROJECT_NOT_FOUND');
+      expect(second).to.equal(first);
     });
   });
 });

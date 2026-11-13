@@ -13,70 +13,83 @@
  *
  */
 
-import {useRef} from 'react';
-
+import {MEASURE_PHASE} from '../../../../../common/constants/timeline';
 import {
-	MEASURE_PHASE,
-	UNITS_ID
-} from '../../../../../common/constants/timeline';
-import {
-	formatTimeDiff,
-	formatTimestamp,
 	getAxisPoints,
 	isLinePhase,
 	isPreviewPhase
 } from '../../../../../common/utils/measurement-tool';
+import {
+	formatTimeDiff,
+	formatTimestampLabel,
+	type TimeMode
+} from '../../../../../common/utils/time-mode-formatters';
 import type {
+	HeaderChartHandle,
 	MeasurePhase,
 	MeasurePoint,
 	MeasureResolvedPoint,
 	MeasureSnapCandidate,
-	Unit,
-	MeasurementState
+	MeasurementState,
+	PreparedMeasurementValue
 } from '../../../../../common/types/timeline';
-import type {EChartsType} from 'echarts/core';
 import useLabelLayout from '../../../../../common/hooks/use-measure-label-layout';
-import useMeasureLayoutViewport, {
-	type LayoutViewport
-} from '../../../../../common/hooks/use-measure-layout-viewport';
-import type {SevEventSource} from '../../../../../common/types/events';
+import type {LayoutViewport} from '../../../../../common/hooks/use-measure-layout-viewport';
 
 import MeasurementGuides from './measurement-guides';
 import MeasurementLabels from './measurement-labels';
 import MeasurementMarkers from './measurement-markers';
+import MeasurementDelta from './measurement-delta';
 
 import styles from './measurement-overlay.module.scss';
 
 type MeasurementOverlayProps = Readonly<{
 	phase: MeasurePhase;
-	unit: Unit;
+	timeMode: TimeMode;
 	cursorPoint: MeasurePoint | undefined;
 	cursorTimestamp: number | undefined;
+	cursorPreparedValue?: PreparedMeasurementValue;
 	previewSnapCandidate: MeasureSnapCandidate | undefined;
 	startResolvedPoint: MeasureResolvedPoint | undefined;
 	startTimestamp: number | undefined;
 	endResolvedPoint: MeasureResolvedPoint | undefined;
 	endTimestamp: number | undefined;
-	headerChart: EChartsType | undefined;
-	eventSources: SevEventSource[];
-	getChartInstance: (sourceId: string) => EChartsType | undefined;
+	headerChart: HeaderChartHandle | undefined;
+	visibleAnchorRowIds: ReadonlyMap<string, string>;
+	visibleChartRowIds: ReadonlySet<string>;
+	viewport: LayoutViewport;
+}>;
+
+type MeasurementProjection = Readonly<{
+	chart: HeaderChartHandle | undefined;
+	viewport: LayoutViewport;
+	visibleAnchorRowIds: ReadonlyMap<string, string>;
+	visibleChartRowIds: ReadonlySet<string>;
 }>;
 
 /**
- * Repositions a resolved measurement point to the source row’s current Y value so committed markers stay aligned after row reorder or resize.
+ * Keeps committed points aligned to the header chart or row after scrolling, reorder, or resize.
  */
-const projectPointToCurrentRow = (
+const projectPointToCurrentAnchor = (
 	point: MeasureResolvedPoint,
-	viewport: LayoutViewport
-): MeasureResolvedPoint => {
-	if (point.sourceId === undefined || point.rowLocalY === undefined) {
-		return point;
+	viewport: LayoutViewport,
+	visibleAnchorRowIds: ReadonlyMap<string, string>,
+	visibleChartRowIds: ReadonlySet<string>
+): MeasureResolvedPoint | undefined => {
+	const visibleRowId =
+		visibleAnchorRowIds.get(point.anchor.rowId) ?? point.anchor.rowId;
+
+	if (
+		point.anchor.kind === 'chart' &&
+		!visibleChartRowIds.has(visibleRowId)
+	) {
+		return undefined;
 	}
 
-	const rowTop = viewport.rowTopBySourceId.get(point.sourceId);
-	if (rowTop === undefined) return point;
+	const rowBounds = viewport.rowBoundsByRowId.get(visibleRowId);
+	if (!rowBounds) return undefined;
 
-	const projectedY = rowTop - viewport.overlayTop + point.rowLocalY;
+	const projectedY = rowBounds.top + point.anchor.rowLocalY;
 	if (projectedY === point.y) return point;
 
 	return {...point, y: projectedY};
@@ -88,33 +101,50 @@ const projectPointToCurrentRow = (
  */
 const projectResolvedPoint = (
 	point: MeasureResolvedPoint | undefined,
-	chart: EChartsType | undefined,
-	viewport: LayoutViewport
+	{
+		chart,
+		viewport,
+		visibleAnchorRowIds,
+		visibleChartRowIds
+	}: MeasurementProjection
 ): MeasureResolvedPoint | undefined => {
-	if (!point || point.timestamp === undefined || !chart) {
-		return point;
+	if (!point) return undefined;
+
+	const pointWithProjectedY = projectPointToCurrentAnchor(
+		point,
+		viewport,
+		visibleAnchorRowIds,
+		visibleChartRowIds
+	);
+
+	if (
+		!pointWithProjectedY ||
+		pointWithProjectedY.timestamp === undefined ||
+		!chart
+	) {
+		return pointWithProjectedY;
 	}
 
-	const chartPx = chart.convertToPixel(
-		{xAxisIndex: 0},
-		point.timestamp
-	);
-	if (!Number.isFinite(chartPx)) return point;
+	const chartPx = chart.elapsedToPixel(pointWithProjectedY.timestamp);
+	if (chartPx === undefined || !Number.isFinite(chartPx)) {
+		return pointWithProjectedY;
+	}
 
 	const projectedX =
 		viewport.headerChartLeft - viewport.overlayLeft + chartPx;
-	const pointWithProjectedX: MeasureResolvedPoint =
-		projectedX === point.x ? point : {...point, x: projectedX};
 
-	return projectPointToCurrentRow(pointWithProjectedX, viewport);
+	return projectedX === pointWithProjectedY.x
+		? pointWithProjectedY
+		: {...pointWithProjectedY, x: projectedX};
 };
 
 // eslint-disable-next-line complexity
 function buildOverlayState({
 	phase,
-	unit,
+	timeMode,
 	cursorPoint,
 	cursorTimestamp,
+	cursorPreparedValue,
 	previewSnapCandidate,
 	startResolvedPoint,
 	startTimestamp,
@@ -122,7 +152,10 @@ function buildOverlayState({
 	endTimestamp
 }: Omit<
 	MeasurementOverlayProps,
-	'headerChart' | 'eventSources' | 'getChartInstance'
+	| 'headerChart'
+	| 'visibleAnchorRowIds'
+	| 'visibleChartRowIds'
+	| 'viewport'
 >): MeasurementState {
 	// Measurement phase state
 	const previewPhase = isPreviewPhase(phase);
@@ -144,9 +177,16 @@ function buildOverlayState({
 		endLine = isFixedPhase ? endPoint : cursorPoint;
 	}
 
-	const endGuideTimestamp = isFixedPhase
+	const cursorValue = previewSnapCandidate
+		? cursorTimestamp
+		: (cursorPreparedValue ?? cursorTimestamp);
+	const startValue = startResolvedPoint?.isSnapped
+		? startTimestamp
+		: (startResolvedPoint?.preparedValue ?? startTimestamp);
+	const fixedEndValue = endResolvedPoint?.isSnapped
 		? endTimestamp
-		: cursorTimestamp;
+		: (endResolvedPoint?.preparedValue ?? endTimestamp);
+	const endValue = isFixedPhase ? fixedEndValue : cursorValue;
 
 	if (startLine && endLine) {
 		horizontalLine = {
@@ -155,21 +195,6 @@ function buildOverlayState({
 			width: Math.abs(endLine.x - startLine.x)
 		};
 	}
-
-	const cursorTimestampUnit = previewSnapCandidate
-		? UNITS_ID.NS
-		: unit;
-	const startTimestampUnit = startResolvedPoint?.isSnapped
-		? UNITS_ID.NS
-		: unit;
-	const endTimestampUnit = endResolvedPoint?.isSnapped
-		? UNITS_ID.NS
-		: unit;
-	const deltaUnit =
-		startResolvedPoint?.isSnapped &&
-		(endResolvedPoint?.isSnapped ?? previewSnapCandidate)
-			? UNITS_ID.NS
-			: unit;
 
 	return {
 		isFixedPhase,
@@ -184,17 +209,37 @@ function buildOverlayState({
 		endMarkerSnapped:
 			isFixedPhase && endResolvedPoint?.isSnapped === true,
 		cursorLabelText: previewPhase
-			? formatTimestamp(cursorTimestamp, cursorTimestampUnit)
+			? formatTimestampLabel(
+					cursorValue,
+					timeMode,
+					previewSnapCandidate?.rawTicks
+				)
 			: undefined,
 		startLabelText: startLine
-			? formatTimestamp(startTimestamp, startTimestampUnit)
+			? formatTimestampLabel(
+					startValue,
+					timeMode,
+					startResolvedPoint?.rawTicks
+				)
 			: undefined,
 		endLabelText:
 			isFixedPhase && endLine
-				? formatTimestamp(endGuideTimestamp, endTimestampUnit)
+				? formatTimestampLabel(
+						endValue,
+						timeMode,
+						endResolvedPoint?.rawTicks
+					)
 				: undefined,
 		horizontalDeltaText: linePhase
-			? formatTimeDiff(startTimestamp, endGuideTimestamp, deltaUnit)
+			? formatTimeDiff(
+					startValue,
+					endValue,
+					timeMode,
+					startResolvedPoint?.rawTicks,
+					isFixedPhase
+						? endResolvedPoint?.rawTicks
+						: previewSnapCandidate?.rawTicks
+				)
 			: undefined
 	};
 }
@@ -206,42 +251,42 @@ function buildOverlayState({
  */
 function MeasurementOverlay({
 	phase,
-	unit,
+	timeMode,
 	cursorPoint,
 	cursorTimestamp,
+	cursorPreparedValue,
 	previewSnapCandidate,
 	startResolvedPoint,
 	startTimestamp,
 	endResolvedPoint,
 	endTimestamp,
 	headerChart,
-	eventSources,
-	getChartInstance
+	visibleAnchorRowIds,
+	visibleChartRowIds,
+	viewport
 }: MeasurementOverlayProps) {
-	const overlayRef = useRef<HTMLDivElement>(null);
-	const viewport = useMeasureLayoutViewport(
-		overlayRef,
-		headerChart,
-		eventSources,
-		getChartInstance
-	);
-
+	const projection = {
+		chart: headerChart,
+		viewport,
+		visibleAnchorRowIds,
+		visibleChartRowIds
+	};
 	const projectedStartPoint = projectResolvedPoint(
 		startResolvedPoint,
-		headerChart,
-		viewport
+		projection
 	);
 
 	const projectedEndPoint =
 		phase === MEASURE_PHASE.FIXED
-			? projectResolvedPoint(endResolvedPoint, headerChart, viewport)
+			? projectResolvedPoint(endResolvedPoint, projection)
 			: endResolvedPoint;
 
 	const state = buildOverlayState({
 		phase,
-		unit,
+		timeMode,
 		cursorPoint,
 		cursorTimestamp,
+		cursorPreparedValue,
 		previewSnapCandidate,
 		startResolvedPoint: projectedStartPoint,
 		startTimestamp,
@@ -252,15 +297,19 @@ function MeasurementOverlay({
 	const layout = useLabelLayout(state, viewport);
 
 	return (
-		<div
-			ref={overlayRef}
-			className={styles.measureOverlay}
-			data-test='timeline-diagram:measurement-overlay'
-		>
-			<MeasurementGuides state={state} layout={layout} />
-			<MeasurementLabels state={state} layout={layout} />
-			<MeasurementMarkers state={state} />
-		</div>
+		<>
+			<div className={styles.markerOverlay}>
+				<MeasurementMarkers state={state} />
+			</div>
+			<div
+				className={styles.measureOverlay}
+				data-test='timeline-diagram:measurement-overlay'
+			>
+				<MeasurementGuides state={state} />
+				<MeasurementLabels state={state} layout={layout} />
+				<MeasurementDelta state={state} layout={layout} />
+			</div>
+		</>
 	);
 }
 

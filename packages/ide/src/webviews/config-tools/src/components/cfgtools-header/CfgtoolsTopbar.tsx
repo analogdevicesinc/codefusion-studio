@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,21 @@
  *
  */
 
-import { useActiveScreen, useActiveScreenSubscreen, useActiveScreenSubScreens } from '../../state/slices/app-context/appContext.selector';
+import {
+	useActiveScreen,
+	useActiveScreenSubscreen,
+	useActiveScreenSubScreens
+} from '../../state/slices/app-context/appContext.selector';
 import CfsTopBar from '@common/components/cfs-top-bar/CfsTopBar';
-import { Modal } from '@common/components/modal/Modal';
+import {Modal} from '@common/components/modal/Modal';
 import Help from '@common/icons/Help';
-import { type NavigationItem } from '@common/types/navigation';
-import { LocalizedMessage as t } from '@common/components/l10n/LocalizedMessage';
+import {type NavigationItem} from '@common/types/navigation';
+import {LocalizedMessage as t} from '@common/components/l10n/LocalizedMessage';
 import TopbarButton from '@common/components/cfs-top-bar/TopbarButton';
-import { Direction } from '@common/components/tooltip/Tooltip';
-import { useState } from 'react';
-import { useAppDispatch } from '../../state/store';
-import { setActiveScreenSubscreen } from '../../state/slices/app-context/appContext.reducer';
+import {Direction} from '@common/utils';
+import {useState} from 'react';
+import {useAppDispatch} from '../../state/store';
+import {setActiveScreenSubscreen} from '../../state/slices/app-context/appContext.reducer';
 import styles from './CfgtoolsTopbar.module.scss';
 
 export default function CfgtoolsHeader() {
@@ -41,13 +45,13 @@ export default function CfgtoolsHeader() {
 
 	const changeActiveSubscreen = (subscreen: NavigationItem) => {
 		dispatch(setActiveScreenSubscreen(subscreen));
-	}
+	};
 
 	return (
 		<CfsTopBar>
 			<div slot='end'>
 				<TopbarButton
-					title={t({ id: `${id}.help.title` })}
+					title={t({id: `${id}.help.title`})}
 					icon={<Help />}
 					tooltipType='long'
 					tooltipDirection={Direction.Left}
@@ -55,20 +59,34 @@ export default function CfgtoolsHeader() {
 				/>
 			</div>
 			<div slot='center'>
-				{activeScreenSubScreens && activeScreenSubScreens.length > 0 ?
-					<div data-test='subscreen-buttons-container' className={styles.subscreenButtonsContainer}>
+				{activeScreenSubScreens &&
+				activeScreenSubScreens.length > 0 ? (
+					<div
+						data-test='subscreen-buttons-container'
+						className={styles.subscreenButtonsContainer}
+					>
 						<div className={styles.subscreenButtons}>
 							{activeScreenSubScreens.map(subscreen => (
-								<div key={subscreen} data-test={`subscreen-button:${subscreen}`} className={`${styles.subscreenButton} ${subscreen === activeScreenSubscreen ? styles.active : ''}`} onClick={() => { changeActiveSubscreen(subscreen) }}>
-									{t({ id: `${subscreen}.title` })}
+								<div
+									key={subscreen}
+									data-test={`subscreen-button:${subscreen}`}
+									className={`${styles.subscreenButton} ${
+										subscreen === activeScreenSubscreen
+											? styles.active
+											: ''
+									}`}
+									onClick={() => {
+										changeActiveSubscreen(subscreen);
+									}}
+								>
+									{t({id: `${subscreen}.title`})}
 								</div>
 							))}
 						</div>
 					</div>
-					:
-					<>
-						{t({ id: `${id}.title` })}
-					</>}
+				) : (
+					<>{t({id: `${id}.title`})}</>
+				)}
 			</div>
 
 			<div slot='modal'>
@@ -76,8 +94,8 @@ export default function CfgtoolsHeader() {
 					isOpen={isHelpModalOpen}
 					handleModalClose={onToggleHelpModal}
 				>
-					<div style={{ textAlign: 'left' }}>
-						<h1>{t({ id: `${id}.help.title` })}</h1>
+					<div style={{textAlign: 'left'}}>
+						<h1>{t({id: `${id}.help.title`})}</h1>
 						{t({
 							parseHtml: true,
 							id: `${id}.description`

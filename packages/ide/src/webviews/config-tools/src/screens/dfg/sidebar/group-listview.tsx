@@ -31,6 +31,10 @@ import {useStreamErrors} from '../../../state/slices/gaskets/gasket.selector';
 import {useAppDispatch} from '../../../state/store';
 import {useFilteredStreams} from '../hooks/useFilteredStreams';
 import styles from './stream-sidebar.module.scss';
+import {
+	streamHasDfgScopeConflict,
+	useDfgScopeConflictItemIds
+} from '../../../hooks/use-dfg-scope-conflicts';
 
 export type StreamGroupListViewProps = {
 	readonly groupName: string;
@@ -119,6 +123,11 @@ function StreamListView({stream}: {readonly stream: DFGStreamUI}) {
 
 	const streamErrors = useStreamErrors();
 	const errors = streamErrors[stream.Uuid] ?? [];
+	const scopeConflictItemIds = useDfgScopeConflictItemIds();
+	const hasScopeConflict = streamHasDfgScopeConflict(
+		stream,
+		scopeConflictItemIds
+	);
 
 	return (
 		<div
@@ -157,7 +166,7 @@ function StreamListView({stream}: {readonly stream: DFGStreamUI}) {
 					<SmallSettingsIcon />
 				</Button>
 			</Tooltip>
-			{errors.length > 0 ? (
+			{errors.length > 0 || hasScopeConflict ? (
 				<div
 					data-test={`stream-${stream.StreamId}-error`}
 					id={`stream-${stream.StreamId}-error`}

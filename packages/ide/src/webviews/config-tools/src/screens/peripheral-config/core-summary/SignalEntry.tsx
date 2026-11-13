@@ -17,10 +17,7 @@ import {memo, useCallback} from 'react';
 import ConfigIcon16px from '@common/icons/Config16px';
 import ConflictIcon from '@common/icons/Conflict';
 import {useAppDispatch} from '../../../state/store';
-import {
-	removeSignalAssignment,
-	setActiveSignal
-} from '../../../state/slices/peripherals/peripherals.reducer';
+import {setActiveSignal} from '../../../state/slices/peripherals/peripherals.reducer';
 import PinAssignmentInfo from './PinAssignmentInfo';
 import useIsPinAssignmentMissing from '../../../hooks/useIsPinAssignmentMissing';
 import {
@@ -37,7 +34,7 @@ import {
 } from '../../../state/slices/pins/pins.selector';
 import {getAppliedSignal} from '../../../utils/peripheral';
 import {pinInConflict} from '../../../utils/pin-error';
-import {removeAppliedSignal} from '../../../state/slices/pins/pins.reducer';
+import useDeleteSignalAssignment from '../../../hooks/use-delete-signal-assignment';
 
 type SignalEntryProps = Readonly<{
 	signal: string;
@@ -82,27 +79,11 @@ function SignalEntry({signal, peripheral}: SignalEntryProps) {
 		);
 	}, [dispatch, signal, peripheral]);
 
-	const handleDeleteClick = useCallback(() => {
-		const payload = {
-			Pin: targetPinId,
-			Peripheral: peripheral,
-			Name: signal
-		};
-
-		dispatch(
-			// Two Redux actions are dispatched synchronously — removeSignalAssignment and removeAppliedSignal.
-			// Each triggers its own async persistence call to the extension, which does a full document replacement.
-			// These two writes race: each reads the document, modifies only its subset, then writes the entire document back.
-			// So we discard the persistence of this action so that the stale data does not get written back.
-			removeSignalAssignment({
-				signalName: signal,
-				peripheral,
-				discardPersistence: true
-			})
-		);
-		dispatch(removeAppliedSignal(payload));
-		dispatch(setActiveSignal(undefined));
-	}, [dispatch, peripheral, signal, targetPinId]);
+	const handleDeleteClick = useDeleteSignalAssignment(
+		peripheral,
+		signal,
+		targetPinId
+	);
 
 	// Render if not a signalGroup, or if signalGroup and assignedPin is true
 	if (Boolean(assignable) && !assignedPin) {
@@ -111,7 +92,9 @@ function SignalEntry({signal, peripheral}: SignalEntryProps) {
 
 	return (
 		<div
-			className={`${styles.signalRowWrapper} ${isActive ? styles.highlight : ''}`}
+			className={`${styles.signalRowWrapper} ${
+				isActive ? styles.highlight : ''
+			}`}
 		>
 			<div
 				key={signal}
@@ -146,7 +129,9 @@ function SignalEntry({signal, peripheral}: SignalEntryProps) {
 						<Tooltip title='Configure' type='long'>
 							<Button
 								dataTest='signal-assignment:config-btn'
-								className={`${styles.configIcon} ${isActive ? styles.isActive : ''}`}
+								className={`${styles.configIcon} ${
+									isActive ? styles.isActive : ''
+								}`}
 								appearance='icon'
 								onClick={handleConfigClick}
 							>

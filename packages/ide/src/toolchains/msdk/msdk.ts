@@ -274,7 +274,6 @@ export async function migrateProject(folder: string, prompt: boolean = false) {
 
       fs.writeFileSync(makefilePath, contents);
     }
-
   }
 
   // Create .cfs/gdb_toolbox directory structure

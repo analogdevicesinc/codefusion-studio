@@ -7,7 +7,7 @@
         "name": "MAX32XXX"
       },
       "description": "Low-Power, Arm Cortex-M4 Processor with FPU-Based Microcontroller and Bluetooth 5.2.",
-      "name": "MAX32655",
+      "name": "TEST655",
       "cores": [
         {
           "id": "corepart_01jrdgezmjehdrxjc30xrfwd9x",
@@ -39,25 +39,25 @@
       "packages": [
         {
           "id": "package_01jrdgezmjehetnj4dnqwbf5dq",
-          "name": "CTBGA",
+          "name": "PTBGA",
           "description": "81-ball CTBGA package",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
           "packageType": "CTBGA",
-          "dataModelPackageID": "CTBGA"
+          "dataModelPackageID": "PTBGA"
         },
         {
           "id": "package_01jrdgezmjehfbfwy6sar1ek6t",
-          "name": "WLP",
+          "name": "PLP",
           "description": "51-ball WLP package",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
           "packageType": "WLP",
-          "dataModelPackageID": "WLP"
+          "dataModelPackageID": "PLP"
         }
       ],
       "boards": [
         {
           "id": "board_01jrdgezmjehfscjmchg7haxxc",
-          "name": "EvKit_V1",
+          "name": "KIT_BOARD",
           "description": "The MAX32655 evaluation kit (EV kit) provides a platform for evaluation capabilities of the MAX32655 microcontroller, which is an advanced system-on-chip (SoC).",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655evkit.html",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
@@ -67,7 +67,7 @@
         },
         {
           "id": "board_01jrdgezmjehg9gmam8ckxf366",
-          "name": "FTHR",
+          "name": "PTHR",
           "description": "The MAX32655FTHR is a rapid development platform to help engineers quickly implement ultra low-power wireless solutions using MAX32655 Arm© Cortex®-M4F and Bluetooth® 5.2 Low Energy (LE)",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32655fthr.html",
           "socID": "soc_01jrdgezmjehdazd3dkqgns3pb",
@@ -142,7 +142,7 @@
         "name": "MAX32XXX"
       },
       "description": "Arm® Cortex®-M33 CPU with floating-point and DSP extensions, 1MB dual-bank internal flash with ECC, 256kB internal SRAM, and Bluetooth® 5.4 Low Energy (LE) radio.",
-      "name": "MAX32657",
+      "name": "TEST657",
       "cfsVersionConstraint": ">=2.0.0",
       "cores": [
         {
@@ -163,17 +163,17 @@
       "packages": [
         {
           "id": "package_01jrdgezp9eeytjag8bb5jdr5r",
-          "name": "WLP",
+          "name": "PLP",
           "description": "0.4mm pitch WLP 2.621mm by 2.621mm package",
           "socID": "soc_01jrdgezp9eexs3hf01g7hzrz2",
           "packageType": "WLP",
-          "dataModelPackageID": "WLP"
+          "dataModelPackageID": "PLP"
         }
       ],
       "boards": [
         {
           "id": "board_01jrdgezp9eezrmd0yr9cw1f52",
-          "name": "EvKit_V1",
+          "name": "KIT_BOARD",
           "description": "The MAX32657 EV kit evaluates the MAX32657 microcontroller. It includes an Arm® Cortex®-M33 CPU with FPU and DSP extensions, 1MB dual-bank flash with ECC, 256kB SRAM, and Bluetooth® 5.4 LE radio.",
           "socID": "soc_01jrdgezp9eexs3hf01g7hzrz2",
           "packageIDs": [
@@ -200,7 +200,7 @@
         "name": "MAX78XXX"
       },
       "description": "Artificial Intelligence Microcontroller with Low-Power Convolutional Neural Network Accelerator.",
-      "name": "MAX78002",
+      "name": "TEST8002",
       "cores": [
         {
           "id": "corepart_01jrdgezphe4na53xk7nwssdg7",
@@ -232,17 +232,17 @@
       "packages": [
         {
           "id": "package_01jrdgezphe4p8thcavw037exe",
-          "name": "CSBGA",
+          "name": "PSBGA",
           "description": "144-ball CSBGA 12mm x 12mm package (0.8mm pitch)",
           "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
           "packageType": "CSBGA",
-          "dataModelPackageID": "CSBGA"
+          "dataModelPackageID": "PSBGA"
         }
       ],
       "boards": [
         {
           "id": "board_01jrdgezphe4prs63wx7qfkhgp",
-          "name": "EvKit_V1",
+          "name": "KIT_BOARD",
           "description": "The MAX78002 evaluation kit (EV kit) provides a platform and tools for leveraging device capabilities to build new generations of artificial intelligence (AI) products.",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max78002evkit.html",
           "socID": "soc_01jrdgezphe4mrnzszxn3189wa",
@@ -293,7 +293,7 @@
         "name": "MAX32XXX"
       },
       "description": "Arm Cortex-M4 with FPU Microcontroller and Bluetooth LE 5 for Industrial and Wearables.",
-      "name": "MAX32690",
+      "name": "TEST690",
       "cores": [
         {
           "id": "corepart_01jrdgezrce69rsqvja125h3v2",
@@ -325,25 +325,25 @@
       "packages": [
         {
           "id": "package_01jrdgezrce6asccftccpc6df0",
-          "name": "WLP",
+          "name": "PLP",
           "description": "140-ball WLP package (0.35mm pitch)",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
           "packageType": "WLP",
-          "dataModelPackageID": "WLP"
+          "dataModelPackageID": "PLP"
         },
         {
           "id": "package_01jrdgezrce6b9nqbjfzkfg20a",
-          "name": "TQFN",
+          "name": "PQFN",
           "description": "68-pin TQFN package (0.40mm pitch)",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
           "packageType": "TQFN",
-          "dataModelPackageID": "TQFN"
+          "dataModelPackageID": "PQFN"
         }
       ],
       "boards": [
         {
           "id": "board_01jrdgezrce6bsbc3yezgs4ttn",
-          "name": "AD-APARD32690-SL",
+          "name": "AD-BOARD-SL",
           "description": "The AD-APARD32690-SL is a platform for prototyping intelligent, secure, and connected field devices. It has an Arduino Mega-compatible form factor and two Pmod™-compatible connectors",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
@@ -353,7 +353,7 @@
         },
         {
           "id": "board_01jrdgezrce6cbvzcpf51aehwv",
-          "name": "EvKit_V1",
+          "name": "KIT_BOARD",
           "description": "The MAX32690 evaluation kit (EV kit) provides a platform for evaluating the capabilities of the MAX32690 microcontroller, which is an advanced system-on-chip (SoC). It features an Arm® Cortex®-M4F CPU for efficient computation of complex functions and algorithms, and the latest generation Bluetooth® 5 Low Energy (Bluetooth LE) radio designed for wearable and hearable fitness devices, portable and wearable wireless medical devices, industrial sensors/networks, internet of things (IoT), and asset tracking.",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/MAX32690EVKIT.html",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
@@ -363,7 +363,7 @@
         },
         {
           "id": "board_01jrdgezrce6cre3v0jq18vss4",
-          "name": "FTHR",
+          "name": "PTHR",
           "description": "MAX32690 dev board in a compact Feather form factor, including LIPO battery charging and CAN interface.",
           "productUrl": "https://www.analog.com/en/products/max32690.html#evaluation-kit",
           "socID": "soc_01jrdgezrce698gcnq1qmwrw4c",
@@ -445,7 +445,7 @@
         "name": "MAX32XXX"
       },
       "description": "High-Reliability, Tiny, Ultra-Low-Power Arm Cortex-M4F Microcontroller with 12-Bit 1MSPS ADC.",
-      "name": "MAX32672",
+      "name": "TEST672",
       "cores": [
         {
           "id": "corepart_01jrdgezssf12rd22s71j3943w",
@@ -464,25 +464,25 @@
       "packages": [
         {
           "id": "package_01jrdgezssf139s4zyg2hqpqxj",
-          "name": "TQFN-40",
+          "name": "PQFN-40",
           "description": "40-pin TQFN-EP package",
           "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
           "packageType": "TQFN",
-          "dataModelPackageID": "TQFN40"
+          "dataModelPackageID": "PQFN40"
         },
         {
           "id": "package_01jrdgezssf13tmxfxgm5218j9",
-          "name": "TQFN-56",
+          "name": "PQFN-56",
           "description": "56-pin TQFN-EP package",
           "socID": "soc_01jrdgezssf129rva9p2vbhc3w",
           "packageType": "TQFN",
-          "dataModelPackageID": "TQFN56"
+          "dataModelPackageID": "PQFN56"
         }
       ],
       "boards": [
         {
           "id": "board_01jrdgezssf148e50prgger6yq",
-          "name": "EvKit_V1",
+          "name": "KIT_BOARD",
           "description": "The MAX32672 evaluation kit (EV kit) provides a platform for evaluation capabilities of the MAX32672.",
           "productUrl": "https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/max32672evkit.html",
           "socID": "soc_01jrdgezssf129rva9p2vbhc3w",

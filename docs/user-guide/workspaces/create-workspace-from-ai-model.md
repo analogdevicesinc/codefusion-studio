@@ -1,7 +1,7 @@
 ---
 description: Create a workspace from an AI model for deploying and profiling machine learning models on hardware
 author: Analog Devices
-date: 2026-07-29
+date: 2026-11-09
 # Note: This page is linked from AI Hardware Profiling UI (ModelInstructions.tsx line 198)
 ---
 
@@ -58,17 +58,21 @@ Ensure you have the following:
 
 5. After selecting an SoC, select your development board from the **Board** menu. If only one board supports the selected SoC, it is selected automatically.
 
-6. In the **Cores** section, select which processor cores should run your AI model:
+6. In the **Cores** section, select the core that runs your AI model:
 
     - Each core in the SoC is listed with its support status
     - Supported cores show a toggle labeled **Run model on core**
     - Unsupported cores display an **Unsupported** badge and cannot be selected
-    - A supported core is initially pre-selected. When compatibility results are available, the selection is updated to a compatible core if one is found; otherwise, it is cleared
-    - Turn the toggles on or off to change the selection; you can select multiple cores
+    - A supported core is initially pre-selected. When compatibility results are available, the selection is updated to a compatible core if one is found
+    - You can select only one core at a time. Turning on **Run model on core** for another core turns off the previous selection
 
 7. Click **Create Workspace**.
 
-    The system validates your selections, generates the workspace, and automatically opens it in a new VS Code window.
+    If the compatibility check reported the selected core as incompatible, failed, or hasn't finished yet, a **Potential compatibility issues** dialog opens first. Click **Create anyway** to continue, or click **Cancel** to return to the wizard and select a different core or model. A workspace created despite this warning might not build or run as expected. If the check failed, see the **CodeFusion Studio** output for details.
+
+    The system validates your selections, then generates the workspace and the AI model code. A notification shows the progress, and the **Create Workspace** button is disabled until generation finishes. Generating the AI model code can take several minutes. When generation is complete, the workspace opens automatically in a new VS Code window.
+
+    To stop the process, click **Cancel** in the progress notification. If you cancel or generation fails, the partially generated workspace is removed.
 
 ## Select a model from the Model Zoo
 
@@ -87,11 +91,11 @@ You can access models from a custom Model Zoo. See [Use a custom model zoo](../t
 | Workspace Name | No | Custom name for the workspace directory. If omitted, auto-generates as `{SoC}-{Package}` (e.g., `MAX32690-TQFN`). |
 | SoC | Yes | Target microcontroller family. Only SoCs with AI plugin support are shown. Compatible SoCs display a **Compatible** badge after automatic compatibility checking. |
 | Board | Yes | Specific development board variant. Available options depend on the selected SoC. Automatically selected when only one board is available. |
-| Run model on core | No | Toggle for each supported processor core. Enable to target that core for model deployment. |
+| Run model on core | Yes | Toggle for each supported processor core. Turn on this option to target that core for model deployment. Only one core can be selected at a time. |
 
 ## Opening the workspace
 
-1. The workspace is generated in your configured workspace location (typically `~/cfs/2.3.0/`)
+1. The workspace and its AI model code are generated in your configured workspace location (typically `~/cfs/2.4.0/`)
     - The generated workspace includes a complete AI application that:
 
         - Loads your model file into memory

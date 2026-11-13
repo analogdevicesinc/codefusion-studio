@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --loader ts-node/esm --no-warnings=ExperimentalWarning
+#!/usr/bin/env -S node --import tsx
 
 import {settings, run, handle, flush} from '@oclif/core'
 import util from 'node:util'

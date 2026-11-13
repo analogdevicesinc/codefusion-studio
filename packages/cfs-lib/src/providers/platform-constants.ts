@@ -39,9 +39,10 @@ export type PlatformId =
 	(typeof PLATFORM_IDS)[keyof typeof PLATFORM_IDS];
 
 /**
- * Tool id of the Zephyr ARM toolchain package that provides the Zephyr SDK
- * host-tools (`cmake/Zephyr-sdkConfig.cmake`). For ARM Zephyr projects this
- * package is the SDK itself; for Xtensa projects the compiler ships separately
- * but the host-tools still come from this package.
+ * Tool id of the Zephyr ARM toolchain package. Like every Zephyr SDK toolchain
+ * package it includes the Zephyr SDK host-tools (`cmake/Zephyr-sdkConfig.cmake`);
+ * Xtensa projects, whose compiler ships separately, take the host-tools from
+ * this package.
  */
-export const ZEPHYR_ARM_TOOLCHAIN_TOOL_ID = "arm.zephyr.eabi.toolchain";
+export const ZEPHYR_ARM_TOOLCHAIN_TOOL_ID =
+	"arm.zephyr.eabi.toolchain";

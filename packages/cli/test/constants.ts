@@ -20,10 +20,18 @@ export const CFS_WORKSPACE_TEMPLATES_PATH = path.resolve(
   'workspace-templates'
 );
 
+export const CFS_AI_WORKSPACE_TEMPLATES_PATH = path.resolve(
+  TEST_FIXTURES_ROOT,
+  'ai-workspace-templates'
+);
+
 /** @deprecated Use CFS_PROJECT_PLUGINS_PATH and CFS_WORKSPACE_TEMPLATES_PATH */
 export const CFS_PLUGINS_PATH = CFS_PROJECT_PLUGINS_PATH;
 
+// Real MAX32690/MAX32655/MAX32657/MAX78002/ADSP-SC835 SoC files copied
+// verbatim from packages/cfs-data-models/socs, shared with the IDE's
+// ui-test-workspace-creation suite instead of depending on that package.
 export const CFS_DATA_MODELS_PATH = path.resolve(
   __dirname,
-  '../../cfs-data-models/socs'
+  '../../../test-fixtures/cfs-data-model/socs'
 );

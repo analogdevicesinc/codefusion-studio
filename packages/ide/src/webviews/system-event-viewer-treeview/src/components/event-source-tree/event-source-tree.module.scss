@@ -43,6 +43,10 @@
 				gap: 4px;
 				width: 100%;
 
+				&:disabled {
+					cursor: default;
+				}
+
 				.icon {
 					display: flex;
 					justify-content: center;
@@ -67,7 +71,6 @@
 					align-items: center;
 
 					::part(label) {
-						@include fonts.heading-h6;
 						color: colors.$foreground;
 					}
 
@@ -76,12 +79,42 @@
 						cursor: default !important;
 					}
 				}
+
+				.pendingCheckbox {
+					display: inline-flex;
+					align-items: center;
+					height: 18px;
+					margin: 0;
+
+					.pendingSpinner {
+						width: 18px;
+						height: 18px;
+						flex-basis: 18px;
+					}
+
+					.pendingCheckboxLabel {
+						font-size: 13px;
+						padding: 0 10px;
+						color: colors.$foreground;
+						line-height: normal;
+						white-space: nowrap;
+					}
+				}
 			}
 
 			.nodeName {
 				@include fonts.heading-h6;
 				color: colors.$foreground;
 			}
+		}
+
+		.pendingSpinner {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 16px;
+			height: 16px;
+			flex: 0 0 16px;
 		}
 
 		&.listItemInteractive {

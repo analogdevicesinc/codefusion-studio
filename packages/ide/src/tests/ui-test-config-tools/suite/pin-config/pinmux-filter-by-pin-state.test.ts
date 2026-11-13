@@ -101,22 +101,16 @@ describe("Pinmux Filter Tests", () => {
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
-  browser = VSBrowser.instance;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
   after(async () => {
     await UIUtils.sleep(2000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Should display the filters are filtering the Pins as expected", async () => {
+  it("Should display the filters are filtering the Pins as expected @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
     // === And I wait for the webview to load===
@@ -295,20 +289,14 @@ describe("Pin Config - Auto clearing of pin filters - CFSIO-21304", () => {
   browser = VSBrowser.instance;
 
   beforeEach(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async () => {
-    if (view) {
-      await view.switchBack();
-    }
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view);
   });
 
-  it("Verify that the assigned filter is cleared after unassigning of pins", async () => {
+  it("Verify that the assigned filter is cleared after unassigning of pins @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
     // === And I wait for the webview to load===
@@ -373,7 +361,7 @@ describe("Pin Config - Auto clearing of pin filters - CFSIO-21304", () => {
     );
   }).timeout(150000);
 
-  it("Verify that the conflicts filter is cleared after unassigning one of the pins", async () => {
+  it("Verify that the conflicts filter is cleared after unassigning one of the pins @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
     // === And I wait for the webview to load===

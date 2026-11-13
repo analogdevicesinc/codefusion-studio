@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import {
 } from '../../../../common/types/memory-layout';
 import type {TLocaleContext} from '../../../../common/types/context';
 import MemoryListItem from '../MemoryListItem/MemoryListItem';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TMemoryListProps = {
 	readonly data: TSection[];
@@ -39,10 +40,15 @@ type TMemoryListProps = {
 
 function MemoryList({data, i10n}: TMemoryListProps) {
 	const columns: string[] = getColumns(data);
+	const l10n = useLocaleContext()?.memoryLayout as
+		| Record<string, string>
+		| undefined;
 
 	return (
 		<section data-test='memory-list:about:container'>
-			<div className={styles.header}>About this section</div>
+			<div className={styles.header}>
+				{l10n?.aboutThisSection ?? 'About this section'}
+			</div>
 			<VSCodeDataGrid
 				aria-label='Memory List'
 				className={styles.table}
@@ -53,7 +59,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Section Name'
+								title={l10n?.sectionName ?? 'Section Name'}
+								helpKey='Section Name'
 								i10n={i10n}
 							>
 								{row.name}
@@ -64,7 +71,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Section Type'
+								title={l10n?.sectionType ?? 'Section Type'}
+								helpKey='Section Type'
 								i10n={i10n}
 							>
 								{row.type}
@@ -74,7 +82,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Starting Address'
+								title={l10n?.startingAddress ?? 'Starting Address'}
+								helpKey='Starting Address'
 								i10n={i10n}
 							>
 								{row.address}
@@ -84,7 +93,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Ending Address'
+								title={l10n?.endingAddress ?? 'Ending Address'}
+								helpKey='Ending Address'
 								i10n={i10n}
 							>
 								{convertDecimalToHex(
@@ -98,7 +108,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Size'
+								title={l10n?.sizeLabel ?? 'Size'}
+								helpKey='Size'
 								i10n={i10n}
 							>
 								{transformBtoKB(row.size)}
@@ -108,7 +119,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Is part of'
+								title={l10n?.isPartOf ?? 'Is part of'}
+								helpKey='Is part of'
 								i10n={i10n}
 							>
 								{row.name && (
@@ -124,7 +136,8 @@ function MemoryList({data, i10n}: TMemoryListProps) {
 							<MemoryListItem
 								section={row}
 								index={index}
-								title='Flags'
+								title={l10n?.flags ?? 'Flags'}
+								helpKey='Flags'
 								i10n={i10n}
 							>
 								{row.flags}

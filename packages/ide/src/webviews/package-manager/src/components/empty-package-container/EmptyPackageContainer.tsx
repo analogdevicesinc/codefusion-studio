@@ -35,14 +35,13 @@ export default function EmptyPackageContainer() {
 	const requiredOnly = useRequiredOnly();
 	const dispatch = useAppDispatch();
 
-	const hasActiveServerSideFilters = Boolean(
-		searchQuery || socFilter.length > 0 || typeFilter.length > 0
-	);
-
-	const hasActiveFilters =
-		hasActiveServerSideFilters ||
+	const hasActiveFilters = Boolean(
+		searchQuery ||
+		socFilter.length > 0 ||
+		typeFilter.length > 0 ||
 		statusFilter.length > 0 ||
-		requiredOnly;
+		requiredOnly
+	);
 
 	const handleClearFilters = () => {
 		dispatch(clearFilters());
@@ -58,6 +57,7 @@ export default function EmptyPackageContainer() {
 
 	return (
 		<EmptyState
+			dataTest='empty-packages'
 			type='info'
 			title={title}
 			description={description}
@@ -65,7 +65,11 @@ export default function EmptyPackageContainer() {
 		>
 			<div slot='body' className={styles.description}>
 				{hasActiveFilters ? (
-					<Button appearance='primary' onClick={handleClearFilters}>
+					<Button
+						appearance='primary'
+						dataTest='clear-filters'
+						onClick={handleClearFilters}
+					>
 						{l10n?.clearFilters}
 					</Button>
 				) : (

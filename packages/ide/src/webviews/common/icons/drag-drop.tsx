@@ -13,11 +13,14 @@
  *
  */
 
-export default function DragDropIcon() {
+export default function DragDropIcon({
+	width,
+	height
+}: Readonly<{width?: number; height?: number}>) {
 	return (
 		<svg
-			width='16'
-			height='17'
+			width={width ?? 16}
+			height={height ?? 17}
 			viewBox='0 0 16 17'
 			fill='none'
 			xmlns='http://www.w3.org/2000/svg'

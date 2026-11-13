@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.11.9"
 resolution-markers = [
     "sys_platform == 'darwin'",
@@ -11,11 +11,13 @@ members = [
     "cfsai",
     "cfsai-backend-izer",
     "cfsai-compatibility-analyzer",
+    "cfsai-model-explorer",
     "cfsai-model-parser",
     "cfsai-resource-profiler",
     "cfsai-tflite",
     "cfsai-types",
 ]
+overrides = [{ name = "urllib3", specifier = "==2.8.0" }]
 
 [[package]]
 name = "absl-py"
@@ -84,15 +86,17 @@ wheels = [
 
 [[package]]
 name = "cfsai"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "cfsai-backend-izer" },
     { name = "cfsai-compatibility-analyzer" },
+    { name = "cfsai-model-explorer" },
     { name = "cfsai-model-parser" },
     { name = "cfsai-resource-profiler" },
     { name = "cfsai-tflite" },
     { name = "cfsai-types" },
+    { name = "ethos-u-vela" },
     { name = "pydantic" },
 ]
 
@@ -110,10 +114,12 @@ dev = [
 requires-dist = [
     { name = "cfsai-backend-izer", editable = "packages/cfsai-backend-izer" },
     { name = "cfsai-compatibility-analyzer", editable = "packages/cfsai-compatibility-analyzer" },
+    { name = "cfsai-model-explorer", editable = "packages/cfsai-model-explorer" },
     { name = "cfsai-model-parser", editable = "packages/cfsai-model-parser" },
     { name = "cfsai-resource-profiler", editable = "packages/cfsai-resource-profiler" },
     { name = "cfsai-tflite", editable = "packages/cfsai-tflite" },
     { name = "cfsai-types", editable = "packages/cfsai-types" },
+    { name = "ethos-u-vela", specifier = ">=5.1.0" },
     { name = "pydantic", specifier = "==2.11.3" },
 ]
 
@@ -129,7 +135,7 @@ dev = [
 
 [[package]]
 name = "cfsai-backend-izer"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-backend-izer" }
 dependencies = [
     { name = "cfsai-types" },
@@ -158,18 +164,33 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-compatibility-analyzer"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-compatibility-analyzer" }
 dependencies = [
-    { name = "cfsai-model-parser" },
+    { name = "cfsai-model-explorer" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cfsai-model-parser", editable = "packages/cfsai-model-parser" }]
+requires-dist = [{ name = "cfsai-model-explorer", editable = "packages/cfsai-model-explorer" }]
+
+[[package]]
+name = "cfsai-model-explorer"
+version = "2.4.0"
+source = { editable = "packages/cfsai-model-explorer" }
+dependencies = [
+    { name = "cfsai-model-parser" },
+    { name = "cfsai-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cfsai-model-parser", editable = "packages/cfsai-model-parser" },
+    { name = "cfsai-types", editable = "packages/cfsai-types" },
+]
 
 [[package]]
 name = "cfsai-model-parser"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-model-parser" }
 dependencies = [
     { name = "cfsai-tflite" },
@@ -184,18 +205,18 @@ requires-dist = [
 
 [[package]]
 name = "cfsai-resource-profiler"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-resource-profiler" }
 dependencies = [
-    { name = "cfsai-model-parser" },
+    { name = "cfsai-model-explorer" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cfsai-model-parser", editable = "packages/cfsai-model-parser" }]
+requires-dist = [{ name = "cfsai-model-explorer", editable = "packages/cfsai-model-explorer" }]
 
 [[package]]
 name = "cfsai-tflite"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-tflite" }
 dependencies = [
     { name = "flatbuffers" },
@@ -214,7 +235,7 @@ dev = [{ name = "hatchling", specifier = ">=1.27.0" }]
 
 [[package]]
 name = "cfsai-types"
-version = "2.3.0"
+version = "2.4.0"
 source = { editable = "packages/cfsai-types" }
 dependencies = [
     { name = "pydantic" },
@@ -261,6 +282,24 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/39/a4/5180d9afc57e8fca05601dd652bdff19604c218814037fe90ffc7625a50a/docutils-0.23.tar.gz", hash = "sha256:746f5060322511280a1e50eb76846ed6bf2342984b2ac04dc42caa1a8d78799e", size = 2303823, upload-time = "2026-05-27T17:41:06.934Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/91/30151a39f7570f448ed84529390628a651d7f27c87d73c9b887f8189695e/docutils-0.23-py3-none-any.whl", hash = "sha256:25d013af9bf23bc1c7b2b093dff4208166c53a94786c9e447808335ef1185fea", size = 634701, upload-time = "2026-05-27T17:40:58.442Z" },
+]
+
+[[package]]
+name = "ethos-u-vela"
+version = "5.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flatbuffers" },
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c6/c3/888199b4e71ab779df8db8793e58bb30e0eeb81d318d5cb89a984fd96e7a/ethos_u_vela-5.1.0.tar.gz", hash = "sha256:5f260e3aabfb54f5758311efbdd86f742b5e54aba27caffefcfc3175e301341a", size = 2357453, upload-time = "2026-06-04T15:26:14.85Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/e7/56cd4a85ba854b0834bd7372652f60d138519b46a4591bad7183d738b897/ethos_u_vela-5.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8a7f0cfa691d6f95b031a524c412613ee891ccc4e17cb86bde8ffac4e2b7be66", size = 1819055, upload-time = "2026-06-04T15:25:31.436Z" },
+    { url = "https://files.pythonhosted.org/packages/47/4f/893acda8083b640c14fae80cfc03f9d4e0ffd5c0ce27f6ae89546dd208e6/ethos_u_vela-5.1.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b27d01cb6e3e6b527406416e3bc13d5fffbd3c95663457af049e06c0e501500d", size = 1874443, upload-time = "2026-06-04T15:25:32.902Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/db/93d02404c1b84c8b7cc55c0c0c0562cc1bbefbc3925b0452388abae2022b/ethos_u_vela-5.1.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:de22d2ac87050b7e70369f3a9473a9e0483707e7f0f45b2711420d1c6a2cf433", size = 2065581, upload-time = "2026-06-04T15:25:34.139Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/b0/126de0fe3f5fd9b4326ec7e3767afe1643bdfad8c0bb69e42b8a23cff3f5/ethos_u_vela-5.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dbee0172b6c1aa3bc48f53fe2fe95b24da3265f836742ab93244e37c6f648276", size = 1987689, upload-time = "2026-06-04T15:25:35.468Z" },
+    { url = "https://files.pythonhosted.org/packages/57/ae/604df0c5d2b0ffdffe119396a06cfcfe2d27fcbfb90518640d44fc186043/ethos_u_vela-5.1.0-cp311-cp311-win32.whl", hash = "sha256:e494c996c6f7f7ff834a537c2357b6f19fa09f78fc83af8e1b9d6ab73105b6a0", size = 1511055, upload-time = "2026-06-04T15:25:36.793Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/a9/c0c8f40ba6b0dfbf012e44d3d31f0a32762e5d541593162534c0284b56f5/ethos_u_vela-5.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:a2b63a04005eb9f8de203a402e58c62a15eef768355ca5cd08770619aa9d5db6", size = 1676056, upload-time = "2026-06-04T15:25:38.228Z" },
 ]
 
 [[package]]
@@ -983,13 +1022,13 @@ resolution-markers = [
     "sys_platform == 'darwin'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform == 'darwin'" },
-    { name = "fsspec", marker = "sys_platform == 'darwin'" },
-    { name = "jinja2", marker = "sys_platform == 'darwin'" },
-    { name = "networkx", marker = "sys_platform == 'darwin'" },
-    { name = "setuptools", marker = "sys_platform == 'darwin'" },
-    { name = "sympy", marker = "sys_platform == 'darwin'" },
-    { name = "typing-extensions", marker = "sys_platform == 'darwin'" },
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx" },
+    { name = "setuptools" },
+    { name = "sympy" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:e76f9bcecc52b8ff711239a2f7547d5353df95878ab232f0773c1d95928b92f8", upload-time = "2026-07-08T12:26:13Z" },
@@ -1003,13 +1042,13 @@ resolution-markers = [
     "sys_platform != 'darwin'",
 ]
 dependencies = [
-    { name = "filelock", marker = "sys_platform != 'darwin'" },
-    { name = "fsspec", marker = "sys_platform != 'darwin'" },
-    { name = "jinja2", marker = "sys_platform != 'darwin'" },
-    { name = "networkx", marker = "sys_platform != 'darwin'" },
-    { name = "setuptools", marker = "sys_platform != 'darwin'" },
-    { name = "sympy", marker = "sys_platform != 'darwin'" },
-    { name = "typing-extensions", marker = "sys_platform != 'darwin'" },
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx" },
+    { name = "setuptools" },
+    { name = "sympy" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp311-cp311-linux_s390x.whl", hash = "sha256:6e9817dbdf5ea76789babd46e457eac5bf14ff566cf85f8addbfdff2d56601ce", upload-time = "2026-07-08T19:27:52Z" },
@@ -1051,11 +1090,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.7.0"
+version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63", size = 458972, upload-time = "2026-09-15T19:29:36.253Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+    { url = "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3", size = 135717, upload-time = "2026-09-15T19:29:34.577Z" },
 ]
 
 [[package]]

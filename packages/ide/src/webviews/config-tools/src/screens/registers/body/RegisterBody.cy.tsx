@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,18 @@
 import type {Soc} from '@common/types/soc';
 import {configurePreloadedStore} from '../../../state/store';
 import RegisterBody from './RegisterBody';
+import Registers from '../Registers';
 import {setAppliedSignal} from '../../../state/slices/pins/pins.reducer';
 import {setClockNodeControlValue} from '../../../state/slices/clock-nodes/clockNodes.reducer';
 import {
 	setPeripheralAssignment,
 	setPeripheralConfig
 } from '../../../state/slices/peripherals/peripherals.reducer';
+import {
+	resetSruConnection,
+	setSignalInversion,
+	setSruConnection
+} from '../../../state/slices/sru/sru.reducer';
 
 const mock = (await import(
 	`@socs/max32690-tqfn.json`
@@ -29,6 +35,10 @@ const mock = (await import(
 
 const clockConfigMock = (await import(
 	`@socs/max32690-wlp.json`
+)) as unknown as Soc;
+
+const sruMock = (await import('@socs/adsp-21834-bga_ed.json').then(
+	module => module.default
 )) as unknown as Soc;
 
 const mockWithoutClocks = {
@@ -542,5 +552,350 @@ describe('Register body component', () => {
 			'contain.text',
 			(mock.Registers.length - 3).toString()
 		);
+	});
+
+	it('Computes register from enum numeric Value when PinConfig uses VALUE fallback', () => {
+		// Create a mock where pin 41's LPTMR0/IOA signal uses a VALUE fallback
+		// in PinConfig (the selected enum Id is absent from PinConfig keys).
+		const mockWithValueFallback = JSON.parse(
+			JSON.stringify(mock)
+		) as typeof mock;
+		const pin41 = mockWithValueFallback.Packages[0].Pins.find(
+			p => p.Name === '41'
+		);
+		const signal = pin41?.Signals?.find(
+			s => s.Name === 'IOA' && s.Peripheral === 'LPTMR0'
+		);
+
+		// Replace the DS PinConfig to only have a VALUE entry with ${Value}.
+		// The enum Id '1' (Value: 1) is NOT an explicit key in PinConfig,
+		// so the fallback to VALUE is exercised.
+		signal!.PinConfig = {
+			...signal!.PinConfig,
+			DS: {
+				VALUE: [
+					{
+						Register: 'GPIO3_DS0',
+						Field: 'PIN4',
+						// eslint-disable-next-line no-template-curly-in-string
+						Value: '${Value}',
+						Operation: 'Write'
+					}
+				]
+			}
+		};
+
+		const reduxStore = configurePreloadedStore(mockWithValueFallback);
+
+		// Apply the signal with PinCfg DS='1' (enum Id='1', numeric Value=1)
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '41',
+				Peripheral: 'LPTMR0',
+				Name: 'IOA',
+				PinCfg: {DS: '1'}
+			})
+		);
+
+		cy.mount(<RegisterBody />, reduxStore);
+
+		// The signal assignment triggers PinMuxConfig writes (GPIO3_EN0, GPIO3_EN1,
+		// GPIO3_EN2, GPIO3_INEN) plus the VALUE-fallback DS write to GPIO3_DS0.
+		// That means GPIO3_DS0 should appear among the modified registers.
+		cy.get('[data-test="Modified"]').click();
+
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').should(
+				'contain.text',
+				'GPIO3_DS0'
+			);
+		});
+	});
+
+	it('should keep the bit-group visible after clicking a bit in the bit-breakout', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		cy.mount(<Registers />, reduxStore);
+
+		// Navigate to a register's detail view
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').not(':first').first().click();
+		});
+
+		cy.dataTest('bit-group').should('be.visible');
+
+		// Click the first bit value in the bit-group to trigger scrollToRow
+		cy.dataTest('bit-group').find('span').first().click();
+
+		// The bit-group must remain visible — the scroll should not push it off screen
+		cy.dataTest('bit-group').should('be.visible');
+	});
+
+	it('Shows modified indicators in the register table and details grid', () => {
+		const reduxStore = configurePreloadedStore(mock);
+
+		reduxStore.dispatch(
+			setAppliedSignal({
+				Pin: '41',
+				Peripheral: 'LPTMR0',
+				Name: 'IOA'
+			})
+		);
+
+		cy.mount(<RegisterBody />, reduxStore);
+
+		cy.get('[data-test="Modified"]').click();
+
+		// Verify asterisk indicators are visible in the register table
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row')
+				.not(':first')
+				.first()
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+		});
+
+		// Verify the register table grid does not overflow horizontally
+		cy.dataTest('register-table-grid').then($grid => {
+			expect($grid[0].scrollWidth).to.be.at.most(
+				$grid[0].clientWidth
+			);
+		});
+
+		// Navigate to register details
+		cy.dataTest('register-table-grid').within(() => {
+			cy.get('vscode-data-grid-row').not(':first').first().click();
+		});
+
+		cy.get('[data-test="Modified"]').click();
+
+		// Verify asterisk indicators are visible in the details grid
+		cy.dataTest('register-details-grid').within(() => {
+			cy.get('vscode-data-grid-row')
+				.not(':first')
+				.first()
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+		});
+
+		// Verify the details grid does not overflow horizontally
+		cy.dataTest('register-details-grid').then($grid => {
+			expect($grid[0].scrollWidth).to.be.at.most(
+				$grid[0].clientWidth
+			);
+		});
+	});
+
+	describe('SRU connections', () => {
+		const INPUT_SIGNAL = 'SRC0_CLK_IP_I';
+		const MODIFIED_SOURCE = 'DAI1_PB01_O';
+		// Its routing control (DAI0_GROUP_D) writes DAI0_PIN4 and
+		// DAI0_EXTD_PIN4; its INVERT control writes DAI0_PIN4 too, so this
+		// input can exercise both controls sharing a register.
+		const POLARITY_INPUT_SIGNAL = 'DAI0_PB19_I';
+
+		it('Leaves the routed registers unmodified when no SRU connection is changed', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').should('be.disabled');
+
+			cy.dataTest('DAI0_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+
+			cy.dataTest('DAI0_EXTD_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+		});
+
+		it('Shows the registers written by a manually changed SRU connection as modified', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			reduxStore.dispatch(
+				setSruConnection({
+					input: INPUT_SIGNAL,
+					source: MODIFIED_SOURCE
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').click();
+
+			cy.dataTest('register-table-grid').should(
+				'contain.text',
+				'DAI0_CLK1'
+			);
+			cy.dataTest('register-table-grid').should(
+				'contain.text',
+				'DAI0_EXTD_CLK1'
+			);
+
+			cy.dataTest('DAI0_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+
+			cy.dataTest('DAI0_EXTD_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+		});
+
+		it('Drops the registers again once the connection is reset to its default', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			reduxStore.dispatch(
+				setSruConnection({
+					input: INPUT_SIGNAL,
+					source: MODIFIED_SOURCE
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('DAI0_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*')
+				.then(() => {
+					reduxStore.dispatch(resetSruConnection(INPUT_SIGNAL));
+				});
+
+			cy.dataTest('DAI0_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+
+			cy.dataTest('DAI0_EXTD_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+		});
+
+		it('Ignores overrides for input signals not present in the data model', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			reduxStore.dispatch(
+				setSruConnection({
+					input: 'NOT_AN_SRU_SIGNAL',
+					source: MODIFIED_SOURCE
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').should('be.disabled');
+		});
+
+		it('Ignores overrides with a source that is not selectable for the input', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			// Simulates a stale persisted connection referencing a source
+			// that is no longer a legal route for this input. Without the
+			// selectable-output check, the unrecognized source would resolve
+			// to enum value 0 and could be mistaken for a real route.
+			reduxStore.dispatch(
+				setSruConnection({
+					input: INPUT_SIGNAL,
+					source: 'NOT_A_SELECTABLE_SOURCE'
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').should('be.disabled');
+
+			cy.dataTest('DAI0_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+
+			cy.dataTest('DAI0_EXTD_CLK1-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+		});
+
+		it('Shows the register written by enabling polarity inversion as modified', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			reduxStore.dispatch(
+				setSignalInversion({
+					input: POLARITY_INPUT_SIGNAL,
+					inverted: true
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').click();
+
+			cy.dataTest('DAI0_PIN4-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+		});
+
+		it('Drops the register again once polarity inversion is disabled', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			reduxStore.dispatch(
+				setSignalInversion({
+					input: POLARITY_INPUT_SIGNAL,
+					inverted: true
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('DAI0_PIN4-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*')
+				.then(() => {
+					reduxStore.dispatch(
+						setSignalInversion({
+							input: POLARITY_INPUT_SIGNAL,
+							inverted: false
+						})
+					);
+				});
+
+			cy.dataTest('DAI0_PIN4-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('not.contain.text', '*');
+		});
+
+		it('Preserves both the routing and inversion writes to a register they share', () => {
+			const reduxStore = configurePreloadedStore(sruMock);
+
+			// `MODIFIED_SOURCE` (Value 256 in the DAI0_GROUP_D control) sets
+			// the DAI0_EXTD_PIN4 byte to 1 - unlike most SRU_GROUP_D options,
+			// whose Value < 256 leaves that extended byte at its reset value
+			// of 0 either way, so the write wouldn't show as modified.
+			reduxStore.dispatch(
+				setSruConnection({
+					input: POLARITY_INPUT_SIGNAL,
+					source: MODIFIED_SOURCE
+				})
+			);
+			reduxStore.dispatch(
+				setSignalInversion({
+					input: POLARITY_INPUT_SIGNAL,
+					inverted: true
+				})
+			);
+
+			cy.mount(<RegisterBody />, reduxStore);
+
+			cy.dataTest('Modified').click();
+
+			// Shared with INVERT - would still show modified from the
+			// inversion write alone, so this only proves the register wasn't
+			// dropped, not that the routing write survived.
+			cy.dataTest('DAI0_PIN4-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+
+			// Written only by the routing control - proves the routing write
+			// wasn't lost alongside the INVERT write to the shared register.
+			cy.dataTest('DAI0_EXTD_PIN4-data-grid-row')
+				.find('vscode-data-grid-cell:first-child')
+				.should('contain.text', '*');
+		});
 	});
 });

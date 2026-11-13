@@ -93,7 +93,15 @@
 	}
 	&[disabled] {
 		cursor: not-allowed;
+
+		&:not(.optionGroup)::part(content) {
+			color: colors.$disabled-foreground;
+		}
 	}
+}
+
+.dropdown[aria-expanded='true'] .noValueOption {
+	display: none;
 }
 
 .groupedOption {

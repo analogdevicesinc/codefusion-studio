@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ import {usePeripheralAllocations} from '../state/slices/peripherals/peripherals.
 import {useAssignedPins} from '../state/slices/pins/pins.selector';
 import {getProjectInfoList} from '../utils/config';
 import {getAssignedPinErrors} from '../utils/pin-error';
+import {useScopeConflictsByControlScope} from '../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../constants/scopes';
 
 /**
  * Custom hook to get the pin erros for each core. Any usassigned errors will be added to the primary core.
@@ -27,6 +29,9 @@ export const usePinErrors = (): Map<string, number> => {
 	const assignedPins = useAssignedPins();
 	const projects = getProjectInfoList();
 	const peripheralAllocations = usePeripheralAllocations();
+	const pinScopeConflicts = useScopeConflictsByControlScope(
+		CONTROL_SCOPES.PIN_CONFIG
+	);
 
 	const {conflictsCount} = getAssignedPinErrors(assignedPins);
 	let unassignedErrors = conflictsCount;
@@ -46,10 +51,17 @@ export const usePinErrors = (): Map<string, number> => {
 
 		const {conflictsCount, hasFunctionConfigErrors} =
 			getAssignedPinErrors(assignedPinsForProject);
+		const scopeConflictCount = pinScopeConflicts.filter(conflict =>
+			conflict.entries.some(
+				entry => entry.projectId === project.ProjectId
+			)
+		).length;
 
 		errorMap.set(
 			project.ProjectId,
-			hasFunctionConfigErrors ? conflictsCount + 1 : conflictsCount
+			(hasFunctionConfigErrors
+				? conflictsCount + 1
+				: conflictsCount) + scopeConflictCount
 		);
 
 		unassignedErrors -= conflictsCount;

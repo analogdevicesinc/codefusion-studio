@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,10 @@ export default function MainSectionChart({
 	);
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.stats?.chart;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
+	const totalLabel = commonL10n?.total ?? 'total';
 
 	const {totalSize, step, maxValue} = useMemo(() => {
 		const totalSize = chartData.text + chartData.data + chartData.bss;
@@ -123,8 +127,13 @@ export default function MainSectionChart({
 				trigger: 'item',
 				className: styles.chartTooltip,
 				formatter(params: ECElementEvent) {
-					// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-					return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+					return `${commonL10n?.sectionLabel ?? 'Section'}: ${String(
+						params.marker ?? ''
+					)}${params.seriesName} <br/>${
+						commonL10n?.sizeLabel ?? 'Size'
+					}: ${params.value?.toLocaleString()} ${
+						commonL10n?.bytes ?? 'bytes'
+					}`;
 				},
 				confine: true
 			},
@@ -176,7 +185,14 @@ export default function MainSectionChart({
 				}
 			]
 		}),
-		[chartData, step, maxValue, totalSize, chartLegendColors]
+		[
+			chartData,
+			step,
+			maxValue,
+			totalSize,
+			chartLegendColors,
+			commonL10n
+		]
 	);
 
 	return (
@@ -186,7 +202,10 @@ export default function MainSectionChart({
 		>
 			<div className={styles.title}>
 				<HeaderWithTooltip
-					title={`${i10n?.title} ${transformBtoKB(totalSize, true)}`}
+					title={`${i10n?.title} ${transformBtoKB(
+						totalSize,
+						totalLabel
+					)}`}
 					i10n={i10n}
 				/>
 			</div>

@@ -13,34 +13,15 @@
  *
  */
 
-import type {CfsConfig} from 'cfs-types';
-
-import {findWorkspaceConfigFile} from 'cfs-lib';
-import fs from 'node:fs';
-import {SerialPort} from 'serialport';
-
 import {
-  type SerialPortConfig,
-  type ValidSerialPortConfig,
-  isDataBits,
-  isParity,
-  isStopBits
-} from '../types/serial-port-config.js';
-
-function isValidSerialPortConfig(
-  obj: Record<string, unknown>
-): obj is ValidSerialPortConfig {
-  return (
-    typeof obj.dataBits === 'number' &&
-    isDataBits(obj.dataBits) &&
-    typeof obj.stopBits === 'number' &&
-    isStopBits(obj.stopBits) &&
-    typeof obj.parity === 'string' &&
-    isParity(obj.parity) &&
-    typeof obj.baudRate === 'number' &&
-    obj.baudRate > 0
-  );
-}
+  DEFAULT_SERIAL_PORT_SETTINGS,
+  type IProfilerDataSource,
+  type SerialPortSettings,
+  SerialSourceConfig,
+  createDataSource,
+  getWorkspaceSerialSettings
+} from 'cfs-lib';
+import {SerialPort} from 'serialport';
 
 /**
  * List all available serial ports.
@@ -51,139 +32,94 @@ export async function listAvailablePorts(): Promise<string[]> {
   return ports.map((port) => port.path);
 }
 
-async function getWorkspaceSerialConfig(
-  workspacePath: string,
-  project: string
-): Promise<ValidSerialPortConfig | undefined> {
-  // open the file <workspacePath>/.cfs/*-.cfsconfig and read the serial port info from it
+/**
+ * Build the data source config for a serial port. Settings are taken from:
+ * - User-provided configuration parameters (if any).
+ * - If not provided, the project settings in the workspace configuration
+ *   file (if it exists).
+ * - Otherwise, default values (115200 baud, 8N1).
+ * @param portName - The name/path of the serial port.
+ * @param options - Where to look for serial settings.
+ * @param options.project - The name of the project.
+ * @param options.workspacePath - The path of the workspace.
+ * @param options.userConfig - Optional user-provided serial settings.
+ * @returns The serial source config.
+ * @throws Error when the workspace configuration cannot be read or
+ * contains invalid serial settings.
+ */
+export function resolveSerialSourceConfig(
+  portName: string,
+  options: {
+    project?: string;
+    workspacePath?: string;
+    userConfig?: Partial<SerialPortSettings>;
+  } = {}
+): SerialSourceConfig {
+  const {project, workspacePath, userConfig} = options;
 
-  const file = findWorkspaceConfigFile(workspacePath);
-  if (!file) {
-    return undefined;
-  }
+  const workspaceSettings =
+    !userConfig && workspacePath && project
+      ? getWorkspaceSerialSettings(workspacePath, project)
+      : undefined;
 
-  try {
-    const content = JSON.parse(
-      fs.readFileSync(file, 'utf8')
-    ) as CfsConfig;
+  // Skip undefined values so they don't override the defaults.
+  const overrides = Object.fromEntries(
+    Object.entries(userConfig ?? workspaceSettings ?? {}).filter(
+      ([, value]) => value !== undefined
+    )
+  ) as Partial<SerialPortSettings>;
 
-    const projects = content.Projects;
+  const {baudRate, ...lineOptions} = {
+    ...DEFAULT_SERIAL_PORT_SETTINGS,
+    ...overrides
+  };
 
-    const projectConfig = projects?.find(
-      (p) => p.PlatformConfig.ProjectName === project
-    );
-
-    const peripherals = projectConfig?.Peripherals;
-
-    // find the peripheral that contains a "Config" with serial port settings
-    const serialPortConfig = Object.values(peripherals ?? {}).find(
-      (p) => {
-        const c = p.Config as Record<string, unknown> | undefined;
-        return (
-          c &&
-          'BAUD' in c &&
-          'CHAR_SIZE' in c &&
-          'PARITY' in c &&
-          'STOP_BITS' in c
-        );
-      }
-    )?.Config as Record<string, unknown> | undefined;
-
-    if (serialPortConfig) {
-      const parity = String(serialPortConfig.PARITY).toLowerCase();
-      const charSize = Number(serialPortConfig.CHAR_SIZE);
-      const stopBits = Number(serialPortConfig.STOP_BITS);
-      const baudRate = Number(serialPortConfig.BAUD);
-
-      const raw = {
-        parity: isParity(parity) ? parity : 'none',
-        dataBits: charSize,
-        stopBits,
-        baudRate
-      };
-
-      if (isValidSerialPortConfig(raw)) {
-        return raw;
-      }
-
-      throw new Error(
-        `Invalid serial port config found in workspace file ${file}. Please ensure the config contains valid values.`
-      );
-    }
-  } catch (error) {
-    throw new Error(
-      `Error loading serial port settings from ${file}. Please ensure the file exists and contains valid JSON.\nError details: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-
-  return undefined;
+  return new SerialSourceConfig(portName, baudRate, lineOptions);
 }
 
 /**
- * Open a serial port. Look for:
- * - User-provided configuration parameters (if any).
- * - If not provided, attempt to load from workspace configuration file (if it exists).
- * - Otherwise, use default values for any missing parameters.
+ * Open a serial port as a profiler data source. See
+ * {@link resolveSerialSourceConfig} for how the serial settings are
+ * determined.
  * @param portName - The name/path of the serial port to open.
  * @param project - The name of the project that will be executed.
  * @param workspacePath - The path of the workspace.
- * @param userConfig - Optional user-provided serial port configuration parameters.
- * @returns Promise resolving to the opened SerialPort instance.
+ * @param userConfig - Optional user-provided serial settings.
+ * @returns Promise resolving to the opened data source.
  */
 export async function openSerialPort(
   portName: string,
   project?: string,
   workspacePath?: string,
-  userConfig?: SerialPortConfig
-): Promise<SerialPort> {
-  let {
-    baudRate = 115_200,
-    dataBits = 8 as const,
-    parity = 'none',
-    stopBits = 1 as const
-  } = userConfig || {};
-
-  // If the user hasn't provided config parameters, attempt to load them from the workspace configuration
-  if (!userConfig && workspacePath && project) {
-    const projectConfig = await getWorkspaceSerialConfig(
+  userConfig?: Partial<SerialPortSettings>
+): Promise<IProfilerDataSource> {
+  const source = createDataSource(
+    resolveSerialSourceConfig(portName, {
+      project,
       workspacePath,
-      project
-    );
-    if (projectConfig) {
-      baudRate = projectConfig.baudRate;
-      dataBits = projectConfig.dataBits;
-      parity = projectConfig.parity;
-      stopBits = projectConfig.stopBits;
-    }
+      userConfig
+    })
+  );
+
+  try {
+    await source.open();
+  } catch (error) {
+    await source.dispose();
+    throw error;
   }
 
-  const portInstance = new SerialPort({
-    path: portName,
-    baudRate,
-    dataBits,
-    parity,
-    stopBits,
-    autoOpen: false
-  });
-
-  await new Promise<void>((resolve, reject) => {
-    portInstance.open((err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-
-  return portInstance;
+  return source;
 }
 
 /**
- * Capture serial port output line-by-line.
+ * Capture serial port output.
  * @param workspacePath - The path of the workspace.
  * @param portName - The name/path of the serial port.
- * @param onData - Callback invoked with each line of data received.
+ * @param onData - Callback invoked with each chunk of data received.
  * @param onError - Callback invoked if an error occurs.
- * @param userConfig - Optional user-provided serial port configuration parameters.
- * @returns Promise resolving to an object with the port and a stop function.
+ * @param userConfig - Optional user-provided serial settings.
+ * @returns Promise resolving to an object with the data source and a stop
+ * function.
  */
 export async function captureSerialOutput({
   portName,
@@ -198,38 +134,23 @@ export async function captureSerialOutput({
   onError: (error: Error) => void;
   workspacePath: string;
   project: string;
-  userConfig?: SerialPortConfig;
-}): Promise<{port: SerialPort; stop: () => Promise<void>}> {
-  const port = await openSerialPort(
+  userConfig?: Partial<SerialPortSettings>;
+}): Promise<{
+  source: IProfilerDataSource;
+  stop: () => Promise<void>;
+}> {
+  const source = await openSerialPort(
     portName,
     project,
     workspacePath,
     userConfig
   );
 
-  port.on('data', (data: Buffer) => {
-    onData(data);
-  });
+  source.onData(onData);
+  source.onError(onError);
 
-  port.on('error', (err: Error) => {
-    onError(err);
-  });
+  // Closing the port reports close errors through onError.
+  const stop = async (): Promise<void> => source.dispose();
 
-  // Return control object with stop method
-  const stop = async (): Promise<void> =>
-    new Promise<void>((resolve) => {
-      if (port.isOpen) {
-        port.close((err) => {
-          if (err) {
-            onError(err);
-          }
-
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
-
-  return {port, stop};
+  return {source, stop};
 }

@@ -95,7 +95,7 @@ import { parseJSONFile } from "../../config-tools-utility/cfsconfig-utils";
  */
 
 describe("Smoke Test: System Planner End-to-End Workflow", () => {
-  const configFile = "max32690-wlp.cfsconfig";
+  const configPath = getConfigPathForFile("max32690-wlp.cfsconfig");
 
   // ===Test Setup===
   let workbench: Workbench;
@@ -103,26 +103,22 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
   let view: WebView;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   after(async () => {
     await UIUtils.sleep(2000);
-    await view.switchBack();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.restoreFixtureFileFromGit(getConfigPathForFile(configFile));
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   it("Performs system planner end to end flow @smoke", async () => {
-    await browser.openResources(getConfigPathForFile(configFile));
+    await browser.openResources(configPath);
     workbench = new Workbench();
 
     // === Then dismiss all notifications, wait for the webview to load===
     await UIUtils.dismissAllNotifications(workbench, browser);
     view = new WebView();
-    await view.wait();
+    await view.wait(60000); // Increased timeout to 60 seconds for CI environments
     await view.switchToFrame();
     console.log("Switched to the WebView frame");
 
@@ -208,7 +204,7 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
     await generateCode(view, workbench);
 
     // ===Persistence Verification of JSON ===
-    const fullConfig = await parseJSONFile(getConfigPathForFile(configFile));
+    const fullConfig = await parseJSONFile(configPath);
 
     // === Overall cfsconfig structure (order-insensitive arrays) ===
     function deepSortArrays(obj: any): any {
@@ -236,9 +232,9 @@ describe("Smoke Test: System Planner End-to-End Workflow", () => {
     });
 
     const expectedConfig = deepSortArrays({
-      Soc: "MAX32690",
-      BoardName: "AD-APARD32690-SL",
-      Package: "WLP",
+      Soc: "TEST690",
+      BoardName: "AD-BOARD-SL",
+      Package: "PLP",
       Pins: [
         {
           Pin: "F4",

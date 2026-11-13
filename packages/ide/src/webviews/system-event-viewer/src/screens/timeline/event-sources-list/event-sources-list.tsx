@@ -20,19 +20,21 @@ import {
 	useCallback,
 	memo,
 	useRef,
-	forwardRef,
-	useImperativeHandle
+	useLayoutEffect
 } from 'react';
+import {ROW_SELECTOR} from '../../../common/constants/events';
 import type {
-	EventSourcesListHandle,
+	DragOverlayRow,
 	RowStateUpdate
 } from '../../../common/types/timeline';
 import type {
-	SevEventSource,
+	EventSourceMoveIntent,
+	TimelineRow,
 	MenuAction
 } from '../../../common/types/events';
 
-import EmptyBlockItem from './empty-block-item';
+import EventSourceGroup from './event-source-group';
+import EventSourceItemContainer from './event-source-item-container';
 import {setListWidthProperty} from '../../../common/utils/events';
 import {
 	TIMELINE_LIST_MIN_WIDTH as MIN_WIDTH,
@@ -40,311 +42,262 @@ import {
 	TIMELINE_DIAGRAM_MIN_WIDTH as DIAGRAM_MIN_WIDTH,
 	EV_SOURCES_LIST_CONTENT_ID as CONTENT_LIST_ID
 } from '../../../common/constants/timeline';
-import {MENU_ACTION as ACTION} from '../../../common/constants/events';
-
-import EventSourceItem from './event-source-item';
-
 import styles from './event-sources-list.module.scss';
 
 type EventSourcesProps = Readonly<{
 	diagramContainerRef: React.RefObject<HTMLDivElement>;
-	events: SevEventSource[];
-	onReorder: (orderedList: SevEventSource[]) => void;
+	rows: TimelineRow[];
+	listWidth?: number;
+	isDraggingRef: React.MutableRefObject<boolean>;
+	onWidthChange?: (width: number) => void;
+	onMoveNode: (nodeId: string, intent: EventSourceMoveIntent) => void;
+	onRenameGroup: (groupId: string, groupName: string) => void;
 	onRowStateChange: (update: RowStateUpdate) => void;
-	onBeginDragOverlay: (
-		evSource: SevEventSource,
-		e: PointerEvent
+	onToggleGroup: (groupId: string) => void;
+	onStartDrag: (
+		row: DragOverlayRow,
+		ev: PointerEvent,
+		rowIndex: number
 	) => void;
 }>;
 
-const EventSourcesList = forwardRef<
-	EventSourcesListHandle,
-	EventSourcesProps
->(
-	(
-		{
-			diagramContainerRef: containerRef,
-			events,
-			onReorder,
-			onRowStateChange,
-			onBeginDragOverlay
+/**
+ * Pure presentational list of event sources.
+ * This component keeps no internal drag state and re-renders only when the `events` prop
+ * or the list width change.
+ */
+function EventSourcesList({
+	diagramContainerRef: containerRef,
+	rows,
+	isDraggingRef,
+	onMoveNode,
+	onRenameGroup,
+	onRowStateChange,
+	onToggleGroup,
+	onStartDrag,
+	listWidth = DEFAULT_WIDTH,
+	onWidthChange
+}: EventSourcesProps) {
+	const [width, setWidth] = useState(listWidth);
+	const isResizing = useRef(false);
+	const resizerRef = useRef<HTMLDivElement>(null);
+
+	const handlePointerDown = useCallback(
+		(index: number, ev: React.PointerEvent<HTMLSpanElement>) => {
+			// Only respond to left click
+			if (ev.button !== 0) return;
+
+			const row = rows[index];
+
+			if (!row) return;
+
+			const rowElement =
+				ev.currentTarget.closest<HTMLElement>(ROW_SELECTOR);
+			const rowHeight =
+				rowElement?.getBoundingClientRect().height ?? 0;
+
+			onStartDrag(
+				{
+					id: row.id,
+					name: row.type === 'group' ? row.name : row.sourceName,
+					height: rowHeight
+				},
+				ev.nativeEvent,
+				index
+			);
 		},
-		ref
-	) => {
-		const [draggedItem, setDraggedItem] = useState<number>();
-		const [localEvents, setLocalEvents] = useState(events);
-		const [width, setWidth] = useState(DEFAULT_WIDTH);
-		const isResizing = useRef(false);
-		const resizerRef = useRef<HTMLDivElement>(null);
-		// Used to prevent setting draggedItem state if drag is cancelled before the next frame
-		// also avoids scenarios where a drag-enter reorder can happen before that first visual drag state update
-		const dragStartRafRef = useRef<number | undefined>();
-		// Source-of-truth for the dragged item's CURRENT index in the live-reordered list.
-		// used for accuracy since draggedItem state may be stale on fast drags and reorders.
-		const currentDragIndexRef = useRef<number | undefined>();
+		[onStartDrag, rows]
+	);
 
-		const reorder = useCallback(
-			(list: SevEventSource[], from: number, to: number) => {
-				if (from === to) return list;
+	const handleMenuOptionSelect = useCallback(
+		(action: MenuAction, index: number) => {
+			const row = rows[index];
 
-				const copy = [...list];
-				const [removed] = copy.splice(from, 1);
-				copy.splice(to, 0, removed);
-
-				return copy;
-			},
-			[]
-		);
-
-		const clearDragItems = useCallback(() => {
-			if (dragStartRafRef.current !== undefined) {
-				cancelAnimationFrame(dragStartRafRef.current);
-				dragStartRafRef.current = undefined;
+			if (row) {
+				onMoveNode(row.id, {type: 'menu', action});
 			}
+		},
+		[onMoveNode, rows]
+	);
 
-			currentDragIndexRef.current = undefined;
-			setDraggedItem(undefined);
-		}, []);
-
-		const commitDraggedReorder = useCallback(() => {
-			if (draggedItem !== undefined) onReorder(localEvents);
-
-			clearDragItems();
-		}, [clearDragItems, draggedItem, localEvents, onReorder]);
-
-		// List container component decides to commit or cancel
-		// This list only exposes actions and keeps local state in sync.
-		useImperativeHandle(
-			ref,
-			() => ({
-				commitDraggedReorder,
-				cancelDraggedReorder: clearDragItems
-			}),
-			[clearDragItems, commitDraggedReorder]
-		);
-
-		const handlePointerDown = useCallback(
-			(index: number, e: React.PointerEvent<HTMLSpanElement>) => {
-				// Only respond to left click
-				if (e.button !== 0) return;
-
-				currentDragIndexRef.current = index;
-				onBeginDragOverlay(localEvents[index], e.nativeEvent);
-
-				dragStartRafRef.current = requestAnimationFrame(() => {
-					dragStartRafRef.current = undefined;
-					setDraggedItem(currentDragIndexRef.current);
-				});
-			},
-			[onBeginDragOverlay, localEvents]
-		);
-
-		const handlePointerEnterRow = useCallback(
-			(index: number) => {
-				const from = currentDragIndexRef.current;
-
-				if (from === undefined || from === index) return;
-
-				currentDragIndexRef.current = index;
-
-				setLocalEvents(prev => reorder(prev, from, index));
-				setDraggedItem(index);
-			},
-			[reorder]
-		);
-
-		const handleOptionSelect = useCallback(
-			(action: MenuAction, index: number) => {
-				setLocalEvents(prev => {
-					let newIndex = index;
-
-					switch (action) {
-						case ACTION.top:
-							newIndex = 0;
-							break;
-						case ACTION.up:
-							newIndex = Math.max(0, index - 1);
-							break;
-						case ACTION.down:
-							newIndex = Math.min(prev.length - 1, index + 1);
-							break;
-						case ACTION.bottom:
-							newIndex = prev.length - 1;
-							break;
-						default:
-							return prev;
-					}
-
-					if (newIndex === index) return prev;
-
-					const orderedList = reorder(prev, index, newIndex);
-					onReorder(orderedList);
-
-					return orderedList;
-				});
-			},
-			[reorder, onReorder]
-		);
-
-		const renderList = useMemo(
-			() =>
-				localEvents.map((evSource, index) => (
-					<EventSourceItem
-						key={evSource.id}
-						index={index}
-						totalLength={localEvents.length}
-						name={evSource.name}
-						isDragged={draggedItem === index}
+	const renderTree = useMemo(
+		() =>
+			rows.map((row, index) =>
+				row.type === 'group' ? (
+					<EventSourceGroup
+						key={row.id}
+						row={row}
+						rowIndex={index}
 						isResizingRef={isResizing}
+						isDraggingRef={isDraggingRef}
 						onRowStateChange={onRowStateChange}
 						onPointerDown={handlePointerDown}
-						onPointerEnterRow={handlePointerEnterRow}
-						onOptionSelect={handleOptionSelect}
+						onToggle={() => {
+							onToggleGroup(row.id);
+						}}
+						onRenameGroup={onRenameGroup}
+						onMenuOptionSelect={handleMenuOptionSelect}
 					/>
-				)),
-			[
-				localEvents,
-				draggedItem,
-				onRowStateChange,
-				handlePointerDown,
-				handlePointerEnterRow,
-				handleOptionSelect
-			]
-		);
+				) : (
+					<EventSourceItemContainer
+						key={row.id}
+						row={row}
+						rowIndex={index}
+						isResizingRef={isResizing}
+						isDraggingRef={isDraggingRef}
+						onRowStateChange={onRowStateChange}
+						onPointerDown={handlePointerDown}
+						onMenuOptionSelect={handleMenuOptionSelect}
+					/>
+				)
+			),
+		[
+			rows,
+			isDraggingRef,
+			onRowStateChange,
+			handlePointerDown,
+			handleMenuOptionSelect,
+			onRenameGroup,
+			onToggleGroup
+		]
+	);
 
-		const handleMouseMove = useCallback(
-			(ev: MouseEvent) => {
-				if (!isResizing.current) return;
+	const handleMouseMove = useCallback(
+		(ev: MouseEvent) => {
+			if (!isResizing.current) return;
 
-				const containerWidth =
-					containerRef.current?.getBoundingClientRect().width ?? 0;
-				const maxAllowedWidth = containerWidth - DIAGRAM_MIN_WIDTH;
+			const containerWidth =
+				containerRef.current?.getBoundingClientRect().width ?? 0;
+			const maxAllowedWidth = Math.max(
+				MIN_WIDTH,
+				containerWidth - DIAGRAM_MIN_WIDTH
+			);
 
-				setWidth(prev => {
-					const newWidth = Math.min(
-						maxAllowedWidth,
-						Math.max(MIN_WIDTH, prev + ev.movementX)
-					);
-
-					const host = containerRef.current?.parentElement;
-					if (host) setListWidthProperty(host, newWidth);
-
-					return newWidth;
-				});
-			},
-			[containerRef]
-		);
-
-		const handleMouseUp = useCallback(() => {
-			isResizing.current = false;
-			resizerRef.current?.classList.remove(styles.active as string);
-			document.body.classList.remove('ev-sources-list-resizing');
-
-			window.removeEventListener('mousemove', handleMouseMove);
-			window.removeEventListener('mouseup', handleMouseUp);
-		}, [handleMouseMove, resizerRef]);
-
-		const startResize = useCallback(() => {
-			isResizing.current = true;
-			resizerRef.current?.classList.add(styles.active as string);
-			document.body.classList.add('ev-sources-list-resizing');
-
-			window.addEventListener('mousemove', handleMouseMove);
-			window.addEventListener('mouseup', handleMouseUp);
-		}, [handleMouseMove, handleMouseUp]);
-
-		useEffect(() => {
-			setLocalEvents(events);
-		}, [events]);
-
-		useEffect(
-			() => () => {
-				window.removeEventListener('mousemove', handleMouseMove);
-				window.removeEventListener('mouseup', handleMouseUp);
-
-				resizerRef.current?.classList.remove(styles.active as string);
-			},
-			[handleMouseMove, handleMouseUp]
-		);
-
-		// The purpose of this effect is to recompute the list width
-		// whenever the window resizes to ensure that the diagram minimum width is respected
-		useEffect(() => {
-			const elem = containerRef.current;
-			if (!elem) return;
-
-			let frameId: number;
-
-			const recompute = (containerWidth: number) => {
-				const maxAllowedWidth = Math.max(
-					MIN_WIDTH,
-					containerWidth - DIAGRAM_MIN_WIDTH
+			setWidth(prev => {
+				const newWidth = Math.min(
+					maxAllowedWidth,
+					Math.max(MIN_WIDTH, prev + ev.movementX)
 				);
 
-				setWidth(prev => {
-					const newWidth = Math.min(prev, maxAllowedWidth);
-
-					if (elem.parentElement) {
-						setListWidthProperty(elem.parentElement, newWidth);
-					}
-
-					return newWidth;
-				});
-			};
-
-			const observer = new ResizeObserver(entries => {
-				const {contentRect} = entries[0];
-				if (frameId) cancelAnimationFrame(frameId);
-
-				frameId = requestAnimationFrame(() => {
-					recompute(contentRect.width);
-				});
+				return newWidth;
 			});
-			observer.observe(elem);
+		},
+		[containerRef]
+	);
 
-			const onWindowResize = () => {
-				if (frameId) cancelAnimationFrame(frameId);
+	useLayoutEffect(() => {
+		onWidthChange?.(width);
+	}, [onWidthChange, width]);
 
-				frameId = requestAnimationFrame(() => {
-					recompute(elem.getBoundingClientRect().width);
-				});
-			};
+	useEffect(() => {
+		const host = containerRef.current?.parentElement;
+		if (host) setListWidthProperty(host, width);
+	}, [containerRef, width]);
 
-			window.addEventListener('resize', onWindowResize);
+	const handleMouseUp = useCallback(() => {
+		isResizing.current = false;
+		resizerRef.current?.classList.remove(styles.active as string);
+		document.body.classList.remove('ev-sources-list-resizing');
 
-			return () => {
-				observer.disconnect();
-				window.removeEventListener('resize', onWindowResize);
+		window.removeEventListener('mousemove', handleMouseMove);
+		window.removeEventListener('mouseup', handleMouseUp);
+	}, [handleMouseMove]);
 
-				if (frameId) cancelAnimationFrame(frameId);
-			};
-		}, [containerRef]);
+	const startResize = useCallback(() => {
+		isResizing.current = true;
+		resizerRef.current?.classList.add(styles.active as string);
+		document.body.classList.add('ev-sources-list-resizing');
 
-		return (
+		window.addEventListener('mousemove', handleMouseMove);
+		window.addEventListener('mouseup', handleMouseUp);
+	}, [handleMouseMove, handleMouseUp]);
+
+	useEffect(
+		() => () => {
+			window.removeEventListener('mousemove', handleMouseMove);
+			window.removeEventListener('mouseup', handleMouseUp);
+
+			resizerRef.current?.classList.remove(styles.active as string);
+			document.body.classList.remove('ev-sources-list-resizing');
+		},
+		[handleMouseMove, handleMouseUp]
+	);
+
+	// The purpose of this effect is to recompute the list width
+	// whenever the window resizes to ensure that the diagram minimum width is respected
+	useEffect(() => {
+		const elem = containerRef.current;
+		if (!elem) return;
+
+		let frameId: number;
+
+		const recompute = (containerWidth: number) => {
+			const maxAllowedWidth = Math.max(
+				MIN_WIDTH,
+				containerWidth - DIAGRAM_MIN_WIDTH
+			);
+
+			setWidth(prev => {
+				const newWidth = Math.min(prev, maxAllowedWidth);
+
+				return newWidth;
+			});
+		};
+
+		const observer = new ResizeObserver(entries => {
+			const {contentRect} = entries[0];
+			if (frameId) cancelAnimationFrame(frameId);
+
+			frameId = requestAnimationFrame(() => {
+				recompute(contentRect.width);
+			});
+		});
+		observer.observe(elem);
+
+		const handleWindowResize = () => {
+			if (frameId) cancelAnimationFrame(frameId);
+
+			frameId = requestAnimationFrame(() => {
+				recompute(elem.getBoundingClientRect().width);
+			});
+		};
+
+		window.addEventListener('resize', handleWindowResize);
+
+		return () => {
+			observer.disconnect();
+			window.removeEventListener('resize', handleWindowResize);
+
+			if (frameId) cancelAnimationFrame(frameId);
+		};
+	}, [containerRef]);
+
+	return (
+		<div
+			className={styles.listContainer}
+			style={{width}}
+			data-test='event-sources:container'
+		>
+			<section className={styles.listContent}>
+				<div className={styles.emptyBlock} />
+
+				<ul
+					className={styles.list}
+					id={CONTENT_LIST_ID}
+					data-test='event-sources:list'
+				>
+					{renderTree}
+				</ul>
+			</section>
+
 			<div
-				className={styles.listContainer}
-				style={{width}}
-				data-test='event-sources:container'
-			>
-				<section style={{width}}>
-					<EmptyBlockItem />
-					<ul
-						className={styles.list}
-						id={CONTENT_LIST_ID}
-						data-test='event-sources:list'
-					>
-						{renderList}
-					</ul>
-				</section>
-
-				<div
-					ref={resizerRef}
-					className={styles.resizer}
-					onMouseDown={startResize}
-				/>
-			</div>
-		);
-	}
-);
+				ref={resizerRef}
+				className={styles.resizer}
+				data-test='event-sources:resizer'
+				onMouseDown={startResize}
+			/>
+		</div>
+	);
+}
 
 export default memo(EventSourcesList);

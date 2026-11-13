@@ -14,37 +14,44 @@
  */
 
 import { NotificationType, RequestType } from "vscode-messenger-common";
-import { ApplicationStatus, HardwareResources, ProfilingConfiguration } from "../../types/ai-hardware-profiling-types";
+import {
+  ApplicationStatus,
+  HardwareResources,
+  ProfilingConfiguration,
+} from "../../types/ai-hardware-profiling-types";
 
 // Extension -> webview notifications
 
-
 export const applicationStatusUpdate: NotificationType<ApplicationStatus> = {
-	method: "applicationStatus/update",
+  method: "applicationStatus/update",
 };
 
 // webview -> extension
 
 export const getProfilingViewData: RequestType<
-	void,
-	{
-		hardwareResources: HardwareResources;
-		profilingConfig: ProfilingConfiguration;
-		applicationStatus: ApplicationStatus;
-	}
+  void,
+  {
+    hardwareResources: HardwareResources;
+    profilingConfig: ProfilingConfiguration;
+    applicationStatus: ApplicationStatus;
+  }
 > = {
-	method: "profilingConfiguration/get",
+  method: "profilingConfiguration/get",
 };
 
 export const updateProfilingConfiguration: NotificationType<ProfilingConfiguration> =
-	{
-		method: "profilingConfiguration/update",
-	};
+  {
+    method: "profilingConfiguration/update",
+  };
 
 export const deployModelForProfiling: NotificationType<void> = {
-	method: "model/deployForProfiling",
+  method: "model/deployForProfiling",
+};
+
+export const cleanAndBuild: NotificationType<void> = {
+  method: "model/cleanAndBuild",
 };
 
 export const stopDeployment: NotificationType<void> = {
-	method: "model/stopDeployment",
+  method: "model/stopDeployment",
 };

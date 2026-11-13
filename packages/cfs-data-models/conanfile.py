@@ -27,8 +27,7 @@ class BasicConanfile(ConanFile):
     exports = "package.json"
     exports_sources = (
       "LICENSE",
-      "socs/*.json",
-      "!socs/datamodel-schema.json"
+      "socs/*.json"
     )
     cfs_version = "^2.0"
     cfs_pkg_type = "data-model"

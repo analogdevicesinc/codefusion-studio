@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,11 @@
  * limitations under the License.
  *
  */
-import type {ControlErrorTypes as Errors} from 'cfs-types';
+import type {
+	ControlErrorTypes as Errors,
+	SocControlType,
+	SocNumericBase
+} from 'cfs-types';
 
 export enum ShortDescErrors {
 	INVALID_INTEGER = 'Invalid input type',
@@ -32,15 +36,13 @@ export type NodeErrorTypes =
 	| 'HIGH_COMPUTED_VALUE'
 	| 'LOW_COMPUTED_VALUE';
 
-export type TControlTypes =
-	| 'integer'
-	| 'text'
-	| 'number'
-	| 'enum'
-	| 'boolean';
+/**
+ * The control kinds the form layer renders.
+ *
+ * A superset of {@link SocControlType}: `text_list` and `number` are webview
+ * form concepts that no SoC data model can declare, since the data model
+ * schema permits only the four kinds in that union.
+ */
+export type TControlTypes = SocControlType | 'text_list' | 'number';
 
-export type TNumericBase =
-| 'Binary'
-| 'Decimal'
-| 'Octal'
-| 'Hexadecimal';
+export type TNumericBase = SocNumericBase;

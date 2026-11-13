@@ -24,16 +24,34 @@ import {type PeripheralConfig} from '../types/peripherals';
 import {getFormErrors} from './soc-controls';
 import {getIsPeripheralSignalRequired} from './soc-peripherals';
 import {pinInConflict} from './pin-error';
+import {
+	validatePluginOptions,
+	type ScopeValidationOptions
+} from './plugin-options-validation';
+
+type PeripheralScopeValidationOptions = Omit<
+	ScopeValidationOptions,
+	'itemId' | 'formatConflictMessage'
+> & {
+	formatConflictMessage?: ScopeValidationOptions['formatConflictMessage'];
+};
+
+type PeripheralErrorCountOptions = {
+	projectId?: string;
+	scopeValidation?: PeripheralScopeValidationOptions;
+};
 
 /**
  * Retrieves the error messages for a given set of controls and their corresponding data.
  * it's used to validate the form data and to be used in the Peripheral Configuration form
  * @param controls - An array of controls per peripheral
  * @param data - The data object containing the values for each control
+ * @param scopeValidation - Optional scoped peripheral config validation settings
  */
 export const getPeripheralFormErrors = (
 	controls: ControlCfg[],
-	data: TFormData
+	data: TFormData,
+	scopeValidation?: ScopeValidationOptions
 ): Record<string, string> => {
 	let errors: Record<string, string> = {};
 
@@ -41,7 +59,10 @@ export const getPeripheralFormErrors = (
 		errors = getFormErrors(errors, control, data[control.Id]);
 	});
 
-	return errors;
+	return {
+		...errors,
+		...validatePluginOptions(data, controls, scopeValidation)
+	};
 };
 
 /**
@@ -78,16 +99,19 @@ export const getAssignedPin = (
  * @param assignedPins - Array of pins that have been assigned to peripheral signals
  * @param allocations - Record mapping peripheral names to their configuration
  * @param controls - The control configurations for this project and peripheral
- * @param projectId - (Optional) For filtering signal errors where signals are assigned across multiple projects
- * @returns The count of required peripheral signals that have not been assigned to pins
+ * @param options - Optional project and scope validation settings
+ * @param options.projectId - Filters signal errors where signals are assigned across multiple projects
+ * @param options.scopeValidation - Enables scoped peripheral config validation
+ * @returns The total peripheral pin-assignment, form validation, and scope conflict error count
  */
 export function getPeripheralErrorCount(
 	assignedPins: AssignedPin[],
-	allocations: Record<string, PeripheralConfig>,
-	controls: Record<string, ControlCfg[]>,
-	projectId?: string
+	allocations: Record<string, PeripheralConfig> = {},
+	controls: Record<string, ControlCfg[]> = {},
+	options: PeripheralErrorCountOptions = {}
 ): number {
 	let count = 0;
+	const {projectId, scopeValidation} = options;
 
 	Object.values(allocations).forEach(peripheral => {
 		Object.values(peripheral?.signals ?? {})
@@ -120,7 +144,16 @@ export function getPeripheralErrorCount(
 			controls && controls[peripheral?.name]?.length && peripheral
 				? getPeripheralFormErrors(
 						controls[peripheral.name],
-						peripheral?.config ?? {}
+						peripheral?.config ?? {},
+						scopeValidation
+							? {
+									...scopeValidation,
+									itemId: peripheral.name,
+									formatConflictMessage:
+										scopeValidation.formatConflictMessage ??
+										(() => '')
+								}
+							: undefined
 					)
 				: {};
 

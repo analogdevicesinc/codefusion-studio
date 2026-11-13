@@ -24,6 +24,7 @@ export const SIDEBAR_SECTIONS = [
 		key: 'security',
 		title: 'Security',
 		children: [
+			{key: 'firewall-status', label: 'Firewall Status'},
 			{key: 'mcuboot-config', label: 'MCUboot Settings'},
 			{key: 'key-management', label: 'Sign Key Management'}
 		]
@@ -38,6 +39,17 @@ export const MCUBOOT_ENABLE_OPTIONS = [
 	{label: 'Enabled', value: 'enabled'},
 	{label: 'Default', value: 'default'},
 	{label: 'Disabled', value: 'disabled'}
+] as const;
+
+/**
+ * Defines the firewall status options with their labels and values.
+ * Values match the FirewallStatusOption type so this control stays in
+ * sync with the firewall overview screen via the shared firewall slice.
+ */
+export const FIREWALL_STATUS_OPTIONS = [
+	{label: 'Enabled', value: 'enabled'},
+	{label: 'Override - All Blocked', value: 'overrideAllBlocked'},
+	{label: 'Override - All Open', value: 'overrideAllOpen'}
 ] as const;
 
 /**

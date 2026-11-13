@@ -12,9 +12,10 @@
  * limitations under the License.
  *
  */
-import styles from './search-scope-picker.module.scss';
 import ScopeFilterControls from './scope-filter-controls';
-import SearchResult from './search-result';
+import SearchResultsPanel, {
+	type SearchResultsEmptyState
+} from '../../../components/search-results-panel/search-results-panel';
 import {
 	useSearchString,
 	useActivePinconfigSearchScope
@@ -47,9 +48,9 @@ import {
 import {useCallback, useMemo} from 'react';
 import {
 	MIN_PINCONFIG_SEARCH_LENGTH,
-	PINCONFIG_SEARCH_SCOPE_PRIORITY,
 	PINCONFIG_SEARCH_SCOPES
 } from '../constants/search-scope';
+import {resolveEffectivePinconfigSearchScope} from '../utils/search-scope';
 
 export default function SearchScopePicker() {
 	const l10n: TLocaleContext | undefined = useLocaleContext();
@@ -59,25 +60,8 @@ export default function SearchScopePicker() {
 	const activeScope = useActivePinconfigSearchScope();
 	const results = usePinmuxSearchResults();
 
-	const isScopeAvailable = (scope: PinconfigSearchScope) => {
-		switch (scope) {
-			case PINCONFIG_SEARCH_SCOPES.PINS:
-				return results.pinResults.length > 0;
-			case PINCONFIG_SEARCH_SCOPES.PERIPHERALS:
-				return results.peripheralResults.length > 0;
-			case PINCONFIG_SEARCH_SCOPES.SIGNALS:
-				return results.signalResults.length > 0;
-			default:
-				return false;
-		}
-	};
-
-	const effectiveScope: PinconfigSearchScope = isScopeAvailable(
-		activeScope
-	)
-		? activeScope
-		: (PINCONFIG_SEARCH_SCOPE_PRIORITY.find(isScopeAvailable) ??
-			PINCONFIG_SEARCH_SCOPES.PINS);
+	const effectiveScope: PinconfigSearchScope =
+		resolveEffectivePinconfigSearchScope(activeScope, results);
 
 	const formattedResults = useMemo(() => {
 		switch (effectiveScope) {
@@ -92,10 +76,28 @@ export default function SearchScopePicker() {
 		}
 	}, [effectiveScope, results]);
 
-	const showMinLengthMessage =
-		searchString.length < MIN_PINCONFIG_SEARCH_LENGTH;
-	const showNoResults =
-		!showMinLengthMessage && formattedResults.length === 0;
+	const emptyState = useMemo<
+		SearchResultsEmptyState | undefined
+	>(() => {
+		if (searchString.length < MIN_PINCONFIG_SEARCH_LENGTH) {
+			return {
+				kind: 'minLength',
+				message: l10n?.pinmux?.search?.minLength?.replace(
+					'{minLength}',
+					String(MIN_PINCONFIG_SEARCH_LENGTH)
+				)
+			};
+		}
+
+		if (formattedResults.length === 0) {
+			return {
+				kind: 'noResults',
+				message: l10n?.pinmux?.search?.noResults
+			};
+		}
+
+		return undefined;
+	}, [searchString, formattedResults, l10n]);
 
 	const handleResultClick = useCallback(
 		(sourceIndex: number) => {
@@ -155,54 +157,14 @@ export default function SearchScopePicker() {
 	);
 
 	return (
-		<div className={styles.container}>
-			<ScopeFilterControls />
-			<div className={styles.horizontalDivider} />
-
-			{/* Show minimum length message */}
-			{showMinLengthMessage && (
-				<div
-					data-test='min-characters'
-					className={styles.noResultsLabel}
-				>
-					{(
-						l10n?.l10n?.pinmux?.search?.minLength ??
-						`A minimum of ${MIN_PINCONFIG_SEARCH_LENGTH} characters is required to start searching`
-					).replace(
-						'{minLength}',
-						String(MIN_PINCONFIG_SEARCH_LENGTH)
-					)}
-				</div>
-			)}
-
-			{/* Show no results message */}
-			{!showMinLengthMessage && showNoResults && (
-				<div data-test='no-results' className={styles.noResultsLabel}>
-					{l10n?.l10n?.pinmux?.search?.noResults ??
-						'No results found.'}
-				</div>
-			)}
-
-			{/* Show results */}
-			{!showMinLengthMessage && !showNoResults && (
-				<div
-					key={`search-result-${effectiveScope}-list`}
-					className={styles.resultsContainer}
-				>
-					{formattedResults.map(result => (
-						<div
-							key={`search-result-${effectiveScope}-${result.key}`}
-							className={styles.resultItem}
-						>
-							<SearchResult
-								result={result}
-								matchedTerm={searchString}
-								onClick={handleResultClick}
-							/>
-						</div>
-					))}
-				</div>
-			)}
-		</div>
+		<SearchResultsPanel
+			scopeControls={<ScopeFilterControls />}
+			sections={[{items: formattedResults}]}
+			matchedTerm={searchString}
+			resultLayout='inline'
+			emptyState={emptyState}
+			resetKey={effectiveScope}
+			onResultSelect={handleResultClick}
+		/>
 	);
 }

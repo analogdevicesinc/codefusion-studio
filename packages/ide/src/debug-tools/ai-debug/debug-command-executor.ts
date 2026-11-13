@@ -299,11 +299,7 @@ export class DebugCommandExecutor {
 
     if (isDuplicate) {
       return response.concat(
-        `A debug session with configuration **${selectedConfig.name}** is already running.\n\n` +
-          "Please stop the current session first or use the `restart` command.\n\n" +
-          "Examples:\n" +
-          "- `@cfs-debug stop`\n" +
-          "- `@cfs-debug restart`\n",
+        `A debug session with configuration **${selectedConfig.name}** is already running.\n\n`,
       );
     }
 

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import { VSBrowser, WebView, Workbench } from "vscode-extension-tester";
+import { VSBrowser, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
@@ -21,6 +21,7 @@ import {
   configButton,
   mainPanelPinOnLineAndColumn,
   pinDetailsContainer,
+  pinDetailsSignalsContainer,
   signalControlDropdown,
   signalToggleWithIndex,
 } from "../../page-objects/pin-config-section/pin-config-screen";
@@ -28,22 +29,19 @@ import {
 describe("Zephyr Firmware Platform", () => {
   let browser: VSBrowser;
   let view: WebView;
+  const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
 
-  before(function () {
+  before(async function () {
     this.timeout(60000);
-    browser = VSBrowser.instance;
+    ({ browser } = await UIUtils.setupTestSuite({ waitForWorkbench: true }));
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Should only allow Zephyr specific controls", async () => {
-    const configPath = getConfigPathForFile("max32690-tqfn.cfsconfig");
+  it("Should only allow Zephyr specific controls @regression", async () => {
     await browser.openResources(configPath);
 
     view = new WebView();
@@ -63,9 +61,14 @@ describe("Zephyr Firmware Platform", () => {
         expect(await view.findWebElement(pinDetailsContainer)).to.exist;
       });
 
-      const firstSignalToggle = await UIUtils.findWebElement(
+      // Wait for signals container to be populated
+      await UIUtils.waitForElement(view, pinDetailsSignalsContainer, 5000);
+      await UIUtils.sleep(500);
+
+      const firstSignalToggle = await UIUtils.waitForElement(
         view,
         await signalToggleWithIndex(1),
+        5000,
       );
 
       UIUtils.clickElement(view, firstSignalToggle).then(async () => {

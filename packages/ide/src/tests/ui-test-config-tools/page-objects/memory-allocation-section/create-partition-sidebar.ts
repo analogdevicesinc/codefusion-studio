@@ -120,7 +120,7 @@ export async function getAssignedCoreText(view: WebView): Promise<string> {
     By.css('vscode-checkbox[aria-checked="true"]'),
   );
   if (checked.length) {
-    return normaliseText(await checked[0].getAttribute("aria-label"));
+    return normaliseText((await checked[0].getAttribute("aria-label")) ?? "");
   }
 
   return "";

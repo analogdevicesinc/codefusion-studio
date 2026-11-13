@@ -24,7 +24,10 @@ import {
 	validateImage
 } from '../../../utils/application-package-validation';
 
-export function useImageValidation(image: Image): {
+export function useImageValidation(
+	image: Image,
+	siblingImages: Image[] = []
+): {
 	errors: ImageValidationErrors;
 	hasError: boolean;
 } {
@@ -33,23 +36,32 @@ export function useImageValidation(image: Image): {
 
 	const errors = useMemo(
 		() =>
-			validateImage(image, {
-				locationAddressRequired:
-					l10n?.validation?.locationAddressRequired,
-				slotSizeRequired: l10n?.validation?.slotSizeRequired,
-				headerSizeRequired: l10n?.validation?.headerSizeRequired,
-				pathRequired: l10n?.validation?.pathRequired,
-				imageVersionRequired: l10n?.validation?.imageVersionRequired,
-				imageVersionInvalid: l10n?.validation?.imageVersionInvalid,
-				publicKeyFormatRequired:
-					l10n?.validation?.publicKeyFormatRequired,
-				nameRequired: l10n?.validation?.nameRequired,
-				securityCounterInvalid:
-					l10n?.validation?.securityCounterInvalid,
-				aesKwKeyPathInvalid: l10n?.validation?.aesKwKeyPathInvalid,
-				aesGcmKeyPathInvalid: l10n?.validation?.aesGcmKeyPathInvalid
-			}),
-		[image, l10n?.validation]
+			validateImage(
+				image,
+				{
+					locationAddressRequired:
+						l10n?.validation?.locationAddressRequired,
+					locationAddressOverlap:
+						l10n?.validation?.locationAddressOverlap,
+					slotSizeRequired: l10n?.validation?.slotSizeRequired,
+					headerSizeRequired: l10n?.validation?.headerSizeRequired,
+					pathRequired: l10n?.validation?.pathRequired,
+					imageVersionRequired:
+						l10n?.validation?.imageVersionRequired,
+					imageVersionInvalid: l10n?.validation?.imageVersionInvalid,
+					publicKeyFormatRequired:
+						l10n?.validation?.publicKeyFormatRequired,
+					nameRequired: l10n?.validation?.nameRequired,
+					securityCounterInvalid:
+						l10n?.validation?.securityCounterInvalid,
+					aesKwKeyPathInvalid: l10n?.validation?.aesKwKeyPathInvalid,
+					aesGcmKeyPathInvalid:
+						l10n?.validation?.aesGcmKeyPathInvalid,
+					keyPathIllegalChars: l10n?.validation?.keyPathIllegalChars
+				},
+				siblingImages
+			),
+		[image, siblingImages, l10n?.validation]
 	);
 
 	const hasError = Object.keys(errors).length > 0;

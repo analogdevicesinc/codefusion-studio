@@ -116,6 +116,30 @@ describe('handleMissingDependencyError', () => {
         .that.includes('data model')
         .and.includes('cfsutil pkg install');
     });
+
+    it('should attach the provided code and keep the guidance message', () => {
+      const error = new MissingDependencyError('data-model', {
+        socName: 'MAX32690',
+        packageId: 'WLP'
+      });
+
+      expect(() =>
+        handleMissingDependencyError(error, 'SOME_STABLE_CODE')
+      )
+        .to.throw()
+        .with.property('code', 'SOME_STABLE_CODE');
+      expect(() =>
+        handleMissingDependencyError(error, 'SOME_STABLE_CODE')
+      ).to.throw(/MAX32690\/WLP[\s\S]*cfsutil pkg install/);
+    });
+
+    it('should default to the MISSING_DEPENDENCY code when none is provided', () => {
+      const error = new MissingDependencyError('data-model', {});
+
+      expect(() => handleMissingDependencyError(error))
+        .to.throw()
+        .with.property('code', 'MISSING_DEPENDENCY');
+    });
   });
 
   describe('plugin package errors', () => {

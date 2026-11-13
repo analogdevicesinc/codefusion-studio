@@ -28,14 +28,25 @@ import {localizeMessage} from '../../../../../common/utils/localization';
 export function ProfilingMemoryView({
 	availableMemoryKb,
 	modelMemoryKb,
-	runTimeMemoryKb
+	runTimeMemoryKb,
+	title,
+	hasModelMemory = true
 }: {
-	readonly availableMemoryKb: number;
-	readonly modelMemoryKb: number;
-	readonly runTimeMemoryKb: number;
+	/** `null` when the value is not available in the report. */
+	readonly availableMemoryKb: number | null;
+	/** `null` when the value is not available in the report. */
+	readonly modelMemoryKb: number | null;
+	/** `null` when the value is not available in the report. */
+	readonly runTimeMemoryKb: number | null;
+	readonly title: string;
+	readonly hasModelMemory?: boolean;
 }) {
 	const l10n = useLocaleContext();
-	const totalMemoryKb = Math.trunc(modelMemoryKb + runTimeMemoryKb);
+	const notAvailable: string = l10n?.common.notAvailable;
+	const totalMemoryKb = Math.trunc(
+		(hasModelMemory ? (modelMemoryKb ?? 0) : 0) +
+			(runTimeMemoryKb ?? 0)
+	);
 	const legendPayload: LegendEntry[] = [
 		{
 			id: 'availableMemory',
@@ -43,27 +54,44 @@ export function ProfilingMemoryView({
 				l10n,
 				'profiling.tableLegend.availableMemory',
 				{
-					value: availableMemoryKb.toString(10)
+					value:
+						availableMemoryKb === null
+							? notAvailable
+							: `${availableMemoryKb.toString(10)}KB`
 				}
 			),
 			type: 'line',
 			color: '#89D185'
 		},
-		{
-			id: 'modelMemory',
-			value: localizeMessage(l10n, 'profiling.tableLegend.model', {
-				value: formatToFixedOrFirstSignificant(modelMemoryKb, 2, 2)
-			}),
-			type: 'circle',
-			color: '#3794FF'
-		},
+		...(hasModelMemory
+			? [
+					{
+						id: 'modelMemory',
+						value: localizeMessage(
+							l10n,
+							'profiling.tableLegend.model',
+							{
+								value:
+									modelMemoryKb === null
+										? notAvailable
+										: `${formatToFixedOrFirstSignificant(modelMemoryKb, 2, 2)}KB`
+							}
+						),
+						type: 'circle',
+						color: '#3794FF'
+					}
+				]
+			: []),
 		{
 			id: 'runTimeMemory',
 			value: localizeMessage(
 				l10n,
 				'profiling.tableLegend.runtimeMemory',
 				{
-					value: runTimeMemoryKb.toString(10)
+					value:
+						runTimeMemoryKb === null
+							? notAvailable
+							: `${formatToFixedOrFirstSignificant(runTimeMemoryKb, 3, 3)}KB`
 				}
 			),
 			type: 'circle',
@@ -73,17 +101,19 @@ export function ProfilingMemoryView({
 
 	return (
 		<div className={styles.container}>
-			<h4>{l10n?.profiling.estimatedRunTimePerformance}</h4>
+			<h4>{title}</h4>
 			<ResponsiveContainer width='100%' height={50}>
 				<BarChart
-					title={l10n?.profiling.estimatedRunTimePerformance}
+					title={title}
 					layout='vertical'
 					barGap={24}
 					data={[
 						{
 							name: 'required',
-							modelMemory: Math.trunc(modelMemoryKb),
-							runTimeMemory: Math.trunc(runTimeMemoryKb)
+							modelMemory: hasModelMemory
+								? Math.trunc(modelMemoryKb ?? 0)
+								: 0,
+							runTimeMemory: Math.trunc(runTimeMemoryKb ?? 0)
 						}
 					]}
 				>
@@ -91,28 +121,35 @@ export function ProfilingMemoryView({
 						type='number'
 						axisLine={false}
 						tickFormatter={(value: number) => `${value}kb`}
-						domain={[0, Math.max(availableMemoryKb, totalMemoryKb)]}
+						domain={[
+							0,
+							Math.max(availableMemoryKb ?? 0, totalMemoryKb)
+						]}
 					/>
 					<YAxis dataKey='name' type='category' width={0} />
-					<Bar
-						dataKey='modelMemory'
-						stackId='memory'
-						fill='#3794FF'
-						layout='vertical'
-					/>
+					{hasModelMemory && (
+						<Bar
+							dataKey='modelMemory'
+							stackId='memory'
+							fill='#3794FF'
+							layout='vertical'
+						/>
+					)}
 					<Bar
 						dataKey='runTimeMemory'
 						stackId='memory'
 						fill='#B180D7'
 						layout='vertical'
 					/>
-					<CartesianGrid
-						strokeDasharray='3 3'
-						horizontal={false}
-						verticalValues={[availableMemoryKb]}
-						stroke='#89D185'
-						strokeWidth={2}
-					/>
+					{availableMemoryKb !== null && (
+						<CartesianGrid
+							strokeDasharray='3 3'
+							horizontal={false}
+							verticalValues={[availableMemoryKb]}
+							stroke='#89D185'
+							strokeWidth={2}
+						/>
+					)}
 				</BarChart>
 			</ResponsiveContainer>
 			<CustomLegend payload={legendPayload} />

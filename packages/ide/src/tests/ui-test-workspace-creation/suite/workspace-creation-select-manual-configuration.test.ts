@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 /**
- * These tests cover building workspace for MAX32690.
+ * These tests cover building workspace for TEST690.
  */
 
 import { expect } from "chai";
@@ -29,28 +29,26 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Test building a MAX32690 zephyr project manually configured
+ * Test building a TEST690 zephyr project manually configured
  */
 
-describe("Workspace MAX32690 creation manual configuration", () => {
+describe("Workspace TEST690 creation manual configuration", () => {
   const locatorspath = new Locatorspaths();
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
 
-  after(async () => {
-    try {
-      if (view) await view.switchBack();
-      if (workbench)
-        await workbench.executeCommand("View: Revert and Close Editor");
-    } catch (error) {
-      console.error("Error in after() hook:", error);
-    }
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
-  it("Create new workspace manually(riscv/arm) configured MAX32690", async () => {
+  after(async () => {
+    await UIUtils.teardownTestSuite(view);
+  });
+
+  it("Create new workspace manually(riscv/arm) configured TEST690", async () => {
     console.log(
-      "Starting workspace creation for MAX32690 using arm/riscv cores",
+      "Starting workspace creation for TEST690 using arm/riscv cores",
     );
     workbench = new Workbench();
     browser = VSBrowser.instance;
@@ -63,19 +61,18 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     console.log("WebView instance created");
     await view.switchToFrame();
 
+    // Wait for package manager and dismiss any initialization notifications
+    await UIUtils.waitForPackageManager(workbench, browser, view);
+
     // SOC Screen Selection
-    console.log("Creating new workspace for MAX32690");
+    console.log("Creating new workspace for TEST690");
     await UIUtils.clickElement(view, locatorspath.selectorSoc);
 
-    await UIUtils.sendKeysToElements(
-      view,
-      locatorspath.selectorSoc,
-      "MAX32690",
-    );
+    await UIUtils.sendKeysToElements(view, locatorspath.selectorSoc, "TEST690");
 
     const socSelection = await UIUtils.clickElement(
       view,
-      locatorspath.getRadiobuttonSoc("32690"),
+      locatorspath.getRadiobuttonSoc("TEST690"),
     );
     const socName = await socSelection.getAttribute("id");
     console.log(`Selected SOC: ${socName}`);
@@ -89,7 +86,7 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     console.log("KIT SELECTION SCREEN");
     const kitSelect = await UIUtils.findWebElement(
       view,
-      locatorspath.kitSelect("EvKit_V1___TQFN"),
+      locatorspath.kitSelect("KIT_BOARD___PQFN"),
     );
     const kitSelectText = await kitSelect.getText();
     expect(kitSelectText).to.include(TextData.evKitText);
@@ -98,13 +95,13 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     const kitName = await (
       await UIUtils.findWebElement(
         view,
-        locatorspath.kitSelect("EvKit_V1___TQFN"),
+        locatorspath.kitSelect("KIT_BOARD___PQFN"),
       )
     ).getText();
     console.log("kitname:", kitName);
     const kitClick = await UIUtils.findWebElement(
       view,
-      locatorspath.kitSelect("EvKit_V1___TQFN"),
+      locatorspath.kitSelect("KIT_BOARD___PQFN"),
     );
 
     await UIUtils.clickElement(view, kitClick);
@@ -165,15 +162,17 @@ describe("Workspace MAX32690 creation manual configuration", () => {
       2000,
     );
     const pluginId = await zephyrSel.getAttribute("id");
-    expect(pluginId).to.include("com.analog.project.zephyr.mock.plugin");
 
     await UIUtils.clickElement(view, zephyrSel);
+    expect(pluginId).to.include("com.analog.project.zephyr.mock.plugin");
 
-    const boardDefaultName = await UIUtils.findWebElement(
+    // Zephyr Board Name is auto-populated by the plugin's default for the selected SoC
+    const boardDefaultName = await UIUtils.waitForElement(
       view,
       By.xpath(
         `//*[@id='control-input' and @current-value='${TextData.evkitName32690}']`,
       ),
+      2000,
     );
     await UIUtils.clickElement(view, boardDefaultName);
     const boardName = await boardDefaultName.getAttribute("current-value");
@@ -192,11 +191,11 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     const pluginIdRiscv = await msdkSelRiscv.getAttribute("id");
     expect(pluginIdRiscv).to.include("com.analog.project.msdk.mock.plugin");
     await UIUtils.clickElement(view, msdkSelRiscv);
+
+    // MSDK Board Name is auto-populated by the plugin's default for the selected SoC
     const boardNameRiscv = await UIUtils.findWebElement(
       view,
-      By.xpath(
-        `//*[@id='control-input' and @current-value='${TextData.evKitText}']`,
-      ),
+      By.xpath(`//*[@id='control-input' and @current-value='test690evkit']`),
     );
     await UIUtils.clickElement(view, boardNameRiscv);
     const getBoardNameRiscv =
@@ -217,7 +216,7 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     await UIUtils.sendKeysToElements(
       view,
       By.xpath('//*[@id="control-input"]'),
-      "max32690-blinky-manual",
+      "TEST690-blinky-manual",
     );
 
     console.log(
@@ -254,20 +253,39 @@ describe("Workspace MAX32690 creation manual configuration", () => {
     console.log("Parsed workspace data: below");
     // Assertions of Persistance of workspace data and schema verification
     if (!workspaceData) throw new Error("workspaceData is undefined or null");
-    expect(workspaceData.Soc).to.equal(socName);
-    expect(workspaceData.Board).to.equal(kitName.slice(0, 8));
-    expect(workspaceData.WorkspaceName).to.equal(workspaceName);
-    expect(workspaceData.Projects[0].PluginId).to.equal(pluginId);
-    expect(workspaceData.Projects[0].Name).to.equal(armcorename.slice(0, 14));
-    expect(workspaceData.Projects[1].Name).to.equal(riscvCoresName.slice(0, 6));
-    expect(workspaceData.Projects[1].PluginId).to.equal(pluginIdRiscv);
+    expect(workspaceData.Soc, "workspaceData.Soc mismatch").to.equal(socName);
+    expect(workspaceData.Board, "workspaceData.Board mismatch").to.equal(
+      kitName.slice(0, 9),
+    );
+    expect(
+      workspaceData.WorkspaceName,
+      "workspaceData.WorkspaceName mismatch",
+    ).to.equal(workspaceName);
+    expect(
+      workspaceData.Projects[0].PluginId,
+      "workspaceData.Projects[0].PluginId (Arm core) mismatch",
+    ).to.equal(pluginId);
+    expect(
+      workspaceData.Projects[0].Name,
+      "workspaceData.Projects[0].Name (Arm core) mismatch",
+    ).to.equal(armcorename.slice(0, 14));
+    expect(
+      workspaceData.Projects[1].Name,
+      "workspaceData.Projects[1].Name (RISC-V core) mismatch",
+    ).to.equal(riscvCoresName.slice(0, 6));
+    expect(
+      workspaceData.Projects[1].PluginId,
+      "workspaceData.Projects[1].PluginId (RISC-V core) mismatch",
+    ).to.equal(pluginIdRiscv);
 
-    expect(workspaceData.Projects[0].PlatformConfig.ZephyrBoardName).to.equal(
-      boardName,
-    );
-    expect(workspaceData.Projects[1].PlatformConfig.MsdkBoardName).to.equal(
-      getBoardNameRiscv,
-    );
+    expect(
+      workspaceData.Projects[0].PlatformConfig.ZephyrBoardName,
+      "workspaceData.Projects[0].PlatformConfig.ZephyrBoardName mismatch",
+    ).to.equal(boardName);
+    expect(
+      workspaceData.Projects[1].PlatformConfig.MsdkBoardName,
+      "workspaceData.Projects[1].PlatformConfig.MsdkBoardName mismatch",
+    ).to.equal(getBoardNameRiscv);
     expect(workspaceData.Location).to.equal(location);
   }).timeout(120000);
 });

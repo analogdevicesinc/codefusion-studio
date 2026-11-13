@@ -118,7 +118,9 @@ export type CreateInputPackage = {
         | 'BGAED'
         | 'EWLB'
         | 'LFCSP'
-        | 'LGA';
+        | 'LGA'
+        | 'FBGA'
+        | 'WLSCP';
 };
 
 export type Documentation = {
@@ -150,7 +152,9 @@ export type Package = {
         | 'BGAED'
         | 'EWLB'
         | 'LFCSP'
-        | 'LGA';
+        | 'LGA'
+        | 'FBGA'
+        | 'WLSCP';
     socID: string;
 };
 
@@ -183,6 +187,24 @@ export type SoC = {
 export type SoCFamily = {
     id: string;
     name: string;
+};
+
+export type SWPackage = {
+    accessTag?: AccessTag;
+    cfsVersionConstraint?: string;
+    compatibleHardware?: SWPackageCompatibility;
+    description?: string;
+    id: string;
+    license: string;
+    name: string;
+    packageTags?: SWPackageTag[];
+    repo: SWPackageRepo;
+    type?: string;
+    version: string;
+};
+
+export type SWPackageCompatibility = {
+    soc?: string[];
 };
 
 export type SWPackageRepo = {

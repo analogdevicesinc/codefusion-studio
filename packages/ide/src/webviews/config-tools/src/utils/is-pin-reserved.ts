@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,5 +18,8 @@ import {getSocPinDetails} from './soc-pins';
 export function isPinReserved(pinId: string) {
 	const pinDetails = getSocPinDetails(pinId);
 
-	return !pinDetails?.Signals || pinDetails?.Signals.every(signal => !signal.PinMuxConfig);
+	return (
+		!pinDetails?.Signals ||
+		pinDetails?.Signals.every(signal => !signal.PinMuxConfig)
+	);
 }

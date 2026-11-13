@@ -59,6 +59,10 @@ import {getConfigurablePeripherals} from '../../../utils/soc-peripherals';
 import {getPrimaryProjectId} from '../../../utils/config';
 import {pinInConflict} from '../../../utils/pin-error';
 import PinCfgSignalLabel from './pincfg-signal-label/pincfg-signal-label';
+import {useHasScopeConflictForItem} from '../../../state/slices/scopes/scopes.selector';
+import {CONTROL_SCOPES} from '../../../constants/scopes';
+import {isPinReserved} from '../../../utils/is-pin-reserved';
+import {usePinHasConfiguration} from '../../../hooks/use-pin-has-configuration';
 
 type FunctionProps = {
 	readonly peripheralGroup: string;
@@ -68,6 +72,7 @@ type FunctionProps = {
 	readonly isLastIndex?: boolean;
 };
 
+// eslint-disable-next-line complexity
 function Function({
 	peripheralGroup,
 	name: signalName,
@@ -86,6 +91,11 @@ function Function({
 		peripheralGroup,
 		signalName
 	);
+	const hasScopeConflict = useHasScopeConflictForItem({
+		controlScope: CONTROL_SCOPES.PIN_CONFIG,
+		itemId: signalName,
+		projectIds: signalProjectId ? [signalProjectId] : undefined
+	});
 
 	const assignedPeripherals = useAppSelector(
 		state => state.peripheralsReducer.assignments
@@ -97,7 +107,18 @@ function Function({
 		useCurrentSignalTarget(peripheralGroup, signalName) ??
 		pins[0].Name;
 
+	const targetPin =
+		pins.find(pin => pin.Name === targetPinId) ?? pins[0];
+
 	const signalsForTargetPin = usePinAppliedSignals(targetPinId) ?? [];
+
+	const pinHasConfiguration = usePinHasConfiguration({
+		pinId: targetPinId,
+		peripheral: peripheralGroup,
+		signal: signalName
+	});
+
+	const reservedPin = isPinReserved(targetPinId);
 
 	const assignedPin = signalsForTargetPin.find(
 		signal =>
@@ -133,10 +154,19 @@ function Function({
 
 	const shouldRenderConflict =
 		isToggledOn &&
-		(pinInConflict(signalsForTargetPin) ||
-			Object.keys(assignedPin?.Errors ?? {}).length);
+		(hasScopeConflict ||
+			pinInConflict(signalsForTargetPin) ||
+			Object.keys(assignedPin?.Errors ?? {}).length > 0);
 
 	const handlePanelOpen = () => {
+		dispatch(
+			setCurrentTarget({
+				peripheralGroup,
+				signalName,
+				dropdownVal: targetPinId
+			})
+		);
+
 		if (activePeripheralName) {
 			// If the panel is open for a different signal, switch to the correct peripheral group
 			if (peripheralGroup !== activePeripheralName) {
@@ -163,6 +193,18 @@ function Function({
 		};
 
 		if (isToggledOn) {
+			const shouldUnassignPeripheral =
+				!isPeripheralConfigurable &&
+				!Object.values(peripheral?.signals ?? {}).some(
+					signal =>
+						hasAssignedPin(peripheralGroup, signal.name) &&
+						signal.name !== signalName &&
+						(!coprogrammedSignals?.length ||
+							coprogrammedSignals.every(
+								s => s.Signal !== signal.name
+							))
+				);
+
 			// Remove the active assignment
 			if (coprogrammedSignals?.length) {
 				const payloads = [
@@ -185,7 +227,12 @@ function Function({
 					}
 				});
 			} else {
-				dispatch(removeAppliedSignal(payload));
+				dispatch(
+					removeAppliedSignal({
+						...payload,
+						discardPersistence: shouldUnassignPeripheral
+					})
+				);
 
 				if (
 					activeConfiguredPin === targetPinId &&
@@ -196,18 +243,6 @@ function Function({
 			}
 
 			// Unassign peripheral if no other signals are assigned excluding this signal and coprogrammed signals
-			const shouldUnassignPeripheral =
-				!isPeripheralConfigurable &&
-				!Object.values(peripheral?.signals ?? {}).some(
-					signal =>
-						hasAssignedPin(peripheralGroup, signal.name) &&
-						signal.name !== signalName &&
-						(!coprogrammedSignals?.length ||
-							coprogrammedSignals.every(
-								s => s.Signal !== signal.name
-							))
-				);
-
 			if (shouldUnassignPeripheral) {
 				dispatch(
 					removePeripheralAssignment({
@@ -229,7 +264,8 @@ function Function({
 					setSignalGroupAssignment({
 						peripheral: peripheralGroup,
 						projectId: projectToAllocate ?? '',
-						config: {}
+						config: {},
+						discardPersistence: true
 					})
 				);
 			}
@@ -346,9 +382,11 @@ function Function({
 			) : (
 				<div>{signalName}</div>
 			)}
-			<div className={styles.divider} />
-			{pins.length === 1 ? (
-				<div>{getPinLabel(pins[0])}</div>
+			{/* For reserved pins we always show plain label */}
+			{reservedPin || pins.length === 1 ? (
+				<div className={styles.pinLabel}>
+					{getPinLabel(targetPin)}
+				</div>
 			) : (
 				<VSCodeDropdown
 					position={isLastIndex ? 'above' : 'below'}
@@ -360,7 +398,9 @@ function Function({
 				>
 					<div
 						slot='indicator'
-						className={`${styles.indicator}${isExpanded ? ` ${styles.expanded}` : ''}`}
+						className={`${styles.indicator}${
+							isExpanded ? ` ${styles.expanded}` : ''
+						}`}
 					>
 						<DownArrow />
 					</div>
@@ -382,15 +422,23 @@ function Function({
 					))}
 				</VSCodeDropdown>
 			)}
-			<Toggle
-				isToggledOn={isToggledOn}
-				handleToggle={handleToggle}
-				dataTest={`${peripheralGroup}-${signalName}`}
-			/>
+			{/* We hide toggle for reserved pins */}
+			<div className={reservedPin ? styles.hiddenToggle : undefined}>
+				<Toggle
+					isToggledOn={isToggledOn}
+					handleToggle={handleToggle}
+					dataTest={`${peripheralGroup}-${signalName}`}
+				/>
+			</div>
 			<div
-				className={`${styles.configButtonContainer} ${openSignal === `${peripheralGroup} ${signalName}` ? styles.active : ''}`}
+				className={`${styles.configButtonContainer} ${
+					openSignal === `${peripheralGroup} ${signalName}`
+						? styles.active
+						: ''
+				}`}
 			>
-				{isToggledOn && (
+				{/* Reserved pins don't have a toggle so we only show the config button if it is configurable */}
+				{pinHasConfiguration && (isToggledOn || reservedPin) && (
 					<Button
 						dataTest={`configure-${peripheralGroup}-${signalName}-button`}
 						appearance='icon'

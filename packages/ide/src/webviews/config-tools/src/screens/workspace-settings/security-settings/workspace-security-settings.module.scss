@@ -17,33 +17,6 @@
 @use '#colors' as colors;
 @use '#layout' as layout;
 
-.container {
-	display: flex;
-	height: 100%;
-	padding: layout.$common-padding layout.$common-padding;
-	flex-direction: column;
-	align-items: center;
-	align-self: stretch;
-	overflow-y: auto;
-
-	.header {
-		display: flex;
-		width: 800px;
-		max-width: 800px;
-		padding: layout.$spacing-4 0;
-		flex-direction: column;
-		align-items: flex-start;
-		@include fonts.heading-h1;
-		color: colors.$input-foreground;
-	}
-	.settingsContainer {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: layout.$spacing-5;
-	}
-}
-
 .sectionContainer {
 	display: flex;
 	width: 800px;

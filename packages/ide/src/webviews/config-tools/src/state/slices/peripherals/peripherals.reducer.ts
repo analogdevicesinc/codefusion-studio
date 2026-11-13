@@ -192,6 +192,7 @@ const peripheralsSlice = createSlice({
 				peripheral: string;
 				projectId: string;
 				config: Record<string, string>;
+				discardPersistence?: boolean;
 			}>
 		) {
 			const peripheralSignals = getPeripheralSignals(

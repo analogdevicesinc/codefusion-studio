@@ -107,6 +107,12 @@ class JsonLogFormatter(logging.Formatter):
             Formatted string.
         """
         msg = str(record.exc_info[1]) if record.exc_info else record.getMessage()
+
+        data_payload: Optional[str] = getattr(record, 'data_payload', None)
+        if data_payload is not None:
+            return LogMessage(
+                type='DATA', message=msg, value=data_payload
+            ).model_dump_json(exclude_none=True)
         event: Optional[LogEvent] = \
             getattr(record, 'event', None)
 
@@ -149,6 +155,24 @@ def dump_logs() -> str:
     logs = _logs.copy()
     _logs.clear()
     return json.dumps([json.loads(log) for log in logs])
+
+def log_data(logger: logging.Logger, data: object, message: str = "") -> None:
+    """
+    Emit a DATA event containing a JSON-serializable object.
+
+    Args:
+        logger: Logger object to use.
+        data: JSON-serializable object (will be stringified).
+        message: Optional human-readable description.
+
+    Raises:
+        TypeError: If data is not JSON-serializable.
+    """
+    payload = json.dumps(data)
+    logger.info(
+        message or "DATA",
+        extra={"data_payload": payload},
+    )
 
 def log_event(
         logger: logging.Logger, 

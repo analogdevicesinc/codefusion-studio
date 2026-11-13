@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 import type {Meta} from '@storybook/react';
 
 import React from 'react';
-import {fn} from '@storybook/test';
+import {fn} from 'storybook/test';
 import Button from './button';
 
 const meta: Meta<typeof Button> = {

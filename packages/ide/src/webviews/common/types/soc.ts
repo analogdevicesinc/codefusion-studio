@@ -36,7 +36,8 @@ import type {
 	SocCore,
 	SocGasketInputStream,
 	SocGasketOutputStream,
-	SocGasket
+	SocGasket,
+	SocSruType
 } from 'cfs-types';
 import type {ControlErrorTypes} from '@common/types/errorTypes';
 
@@ -84,6 +85,7 @@ export type FormattedPeripheralSignal = {
 	name: string;
 	description: string;
 	pins: Pin[];
+	reservedPins: Pin[];
 	required?: string;
 	group?: string;
 };
@@ -100,6 +102,7 @@ export type FormattedPeripheral<T> = {
 	required?: string[];
 	security?: string;
 	initialization?: SocConfigField[];
+	sru?: SocSruType;
 };
 
 export type UnifiedPeripherals = Record<
@@ -190,5 +193,7 @@ export type Gasket = SocGasket;
 
 export type ConfigFields = SocConfigFields;
 export type ConfigField = SocConfigField;
+
+export type SruType = SocSruType;
 
 export type Expression = string;

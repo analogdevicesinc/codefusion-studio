@@ -25,6 +25,8 @@ export type ModalProps = {
 	readonly footer?: ReactNode;
 	readonly title?: ReactNode;
 	readonly titleId?: string;
+	/** Accessible name of the icon-only close button. */
+	readonly closeLabel?: string;
 };
 
 export function Modal({
@@ -32,6 +34,7 @@ export function Modal({
 	footer,
 	title,
 	titleId,
+	closeLabel,
 	handleModalClose,
 	children
 }: ModalProps) {
@@ -80,6 +83,7 @@ export function Modal({
 					<Button
 						appearance='icon'
 						className={styles.closeButton}
+						ariaLabel={closeLabel}
 						onClick={() => {
 							modalRef.current?.close();
 							handleModalClose();

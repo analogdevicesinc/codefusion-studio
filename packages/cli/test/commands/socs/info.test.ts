@@ -15,7 +15,57 @@
 import {expect} from 'chai';
 import {runCommand} from '@oclif/test';
 
-import {parseJson} from '../../utils/parse-json.js';
+import {
+  assertSuccessEnvelopeData,
+  assertValidEnvelope
+} from '../../utils/assert-json-envelope.js';
+
+/**
+ * `socs info --format=json`'s raw output shape, including the internal
+ * catalog properties (`id`, `socID`, `accessTag`, `packageIDs`) the command
+ * is expected to filter out. Used only to type-check the presence/absence
+ * assertions below without resorting to `any`.
+ */
+interface TestSoCOutput {
+  id?: string;
+  accessTag?: string;
+  name: string;
+  description?: string;
+  familyName?: string;
+  cores?: {
+    id?: string;
+    socID?: string;
+    accessTag?: string;
+    coreType: {
+      id?: string;
+      description?: string;
+      architecture: string;
+      isa: string;
+    };
+    aiCompatible: boolean;
+  }[];
+  boards?: {
+    id?: string;
+    socID?: string;
+    accessTag?: string;
+    packageIDs?: string[];
+    identifier: string;
+    description: string;
+    packages: string[];
+  }[];
+  packages?: {
+    id?: string;
+    socID?: string;
+    accessTag?: string;
+  }[];
+}
+
+function parseData(stdout: string): TestSoCOutput {
+  return assertSuccessEnvelopeData<TestSoCOutput>(
+    stdout,
+    'socs info'
+  );
+}
 
 /**
  * Feature: SoC Information Display
@@ -35,11 +85,16 @@ describe('socs info', () => {
     //   Then I should see the SoC name, description, and family
     //   And I should see all cores, boards, and packages
     it('displays SoC info with description, family, cores, boards, packages', async () => {
-      const {stdout} = await runCommand(['socs:info', 'TestChip100'], {
-        root: '..'
-      });
+      const {stdout} = await runCommand(
+        ['socs:info', 'TestChip100'],
+        {
+          root: '..'
+        }
+      );
       expect(stdout).to.contain('SoC: TestChip100');
-      expect(stdout).to.contain('Ultra-Low-Power Test Microcontroller');
+      expect(stdout).to.contain(
+        'Ultra-Low-Power Test Microcontroller'
+      );
       expect(stdout).to.contain('Family: TestChipXXX');
       expect(stdout).to.contain('===== Cores =====');
       expect(stdout).to.contain('TestArch-v7');
@@ -70,9 +125,12 @@ describe('socs info', () => {
     //   Then the command should find the SoC case-insensitively
     //   And display the correct SoC information
     it('performs case-insensitive lookup (lowercase input)', async () => {
-      const {stdout} = await runCommand(['socs:info', 'testchip100'], {
-        root: '..'
-      });
+      const {stdout} = await runCommand(
+        ['socs:info', 'testchip100'],
+        {
+          root: '..'
+        }
+      );
       expect(stdout).to.contain('SoC: TestChip100');
     });
 
@@ -82,9 +140,12 @@ describe('socs info', () => {
     //   Then the command should find the SoC case-insensitively
     //   And display the correct SoC information
     it('performs case-insensitive lookup (uppercase input)', async () => {
-      const {stdout} = await runCommand(['socs:info', 'TESTCHIP100'], {
-        root: '..'
-      });
+      const {stdout} = await runCommand(
+        ['socs:info', 'TESTCHIP100'],
+        {
+          root: '..'
+        }
+      );
       expect(stdout).to.contain('SoC: TestChip100');
     });
   });
@@ -279,7 +340,7 @@ describe('socs info', () => {
           root: '..'
         }
       );
-      const output = parseJson(stdout);
+      const output = parseData(stdout);
       expect(output).to.be.an('object');
       expect(output.name).to.equal('TestChip100');
       expect(output.description).to.contain('Ultra-Low-Power');
@@ -290,43 +351,44 @@ describe('socs info', () => {
       // Verify internal properties are filtered out
       expect(output.id).to.be.undefined;
       expect(output.accessTag).to.be.undefined;
-      if (output.boards.length > 0) {
-        expect(output.boards[0].id).to.be.undefined;
-        expect(output.boards[0].socID).to.be.undefined;
-        expect(output.boards[0].accessTag).to.be.undefined;
-        expect(output.boards[0].packageIDs).to.be.undefined;
+      const boards = output.boards ?? [];
+      if (boards.length > 0) {
+        expect(boards[0]?.id).to.be.undefined;
+        expect(boards[0]?.socID).to.be.undefined;
+        expect(boards[0]?.accessTag).to.be.undefined;
+        expect(boards[0]?.packageIDs).to.be.undefined;
         // Verify packages property is present and properly formatted
-        expect(output.boards[0].packages).to.be.an('array');
-        expect(output.boards[0].identifier).to.be.a('string');
-        expect(output.boards[0].description).to.be.a('string');
+        expect(boards[0]?.packages).to.be.an('array');
+        expect(boards[0]?.identifier).to.be.a('string');
+        expect(boards[0]?.description).to.be.a('string');
         // Verify specific board package mappings
         // DevKit_V1 should have CTBGA-PKG-A-20
-        const devkit = output.boards.find(
-          (b: any) => b.identifier === 'DevKit_V1'
+        const devkit = boards.find(
+          (b) => b.identifier === 'DevKit_V1'
         );
         expect(devkit).to.exist;
-        expect(devkit.packages).to.include('CTBGA-PKG-A-20');
-        expect(devkit.packages.length).to.equal(1);
+        expect(devkit?.packages).to.include('CTBGA-PKG-A-20');
+        expect(devkit?.packages.length).to.equal(1);
         // EVSYS should have both CTBGA-PKG-A-20 and CTBGA-PKG-B-16
-        const evsys = output.boards.find(
-          (b: any) => b.identifier === 'EVSYS'
-        );
+        const evsys = boards.find((b) => b.identifier === 'EVSYS');
         expect(evsys).to.exist;
-        expect(evsys.packages).to.include('CTBGA-PKG-A-20');
-        expect(evsys.packages).to.include('CTBGA-PKG-B-16');
-        expect(evsys.packages.length).to.equal(2);
+        expect(evsys?.packages).to.include('CTBGA-PKG-A-20');
+        expect(evsys?.packages).to.include('CTBGA-PKG-B-16');
+        expect(evsys?.packages.length).to.equal(2);
       }
-      if (output.cores.length > 0) {
-        expect(output.cores[0].id).to.be.undefined;
-        expect(output.cores[0].socID).to.be.undefined;
-        expect(output.cores[0].accessTag).to.be.undefined;
-        expect(output.cores[0].coreType?.id).to.be.undefined;
-        expect(output.cores[0].aiCompatible).to.be.true;
+      const cores = output.cores ?? [];
+      if (cores.length > 0) {
+        expect(cores[0]?.id).to.be.undefined;
+        expect(cores[0]?.socID).to.be.undefined;
+        expect(cores[0]?.accessTag).to.be.undefined;
+        expect(cores[0]?.coreType?.id).to.be.undefined;
+        expect(cores[0]?.aiCompatible).to.be.true;
       }
-      if (output.packages.length > 0) {
-        expect(output.packages[0].id).to.be.undefined;
-        expect(output.packages[0].socID).to.be.undefined;
-        expect(output.packages[0].accessTag).to.be.undefined;
+      const packages = output.packages ?? [];
+      if (packages.length > 0) {
+        expect(packages[0]?.id).to.be.undefined;
+        expect(packages[0]?.socID).to.be.undefined;
+        expect(packages[0]?.accessTag).to.be.undefined;
       }
     });
 
@@ -343,43 +405,40 @@ describe('socs info', () => {
           root: '..'
         }
       );
-      const output = parseJson(stdout);
+      const output = parseData(stdout);
       expect(output).to.be.an('object');
       expect(output.name).to.equal('TestChip100');
       expect(output.boards).to.be.an('array');
-      expect(output.boards.length).to.equal(2);
+      const boards = output.boards ?? [];
+      expect(boards.length).to.equal(2);
       expect(output.cores).to.be.undefined;
       expect(output.packages).to.be.undefined;
       // Verify internal properties are filtered from boards
-      expect(output.boards[0].id).to.be.undefined;
-      expect(output.boards[0].socID).to.be.undefined;
-      expect(output.boards[0].accessTag).to.be.undefined;
-      expect(output.boards[0].packageIDs).to.be.undefined;
+      expect(boards[0]?.id).to.be.undefined;
+      expect(boards[0]?.socID).to.be.undefined;
+      expect(boards[0]?.accessTag).to.be.undefined;
+      expect(boards[0]?.packageIDs).to.be.undefined;
       // Verify expected properties are present
-      expect(output.boards[0].identifier).to.be.a('string');
-      expect(output.boards[0].description).to.be.a('string');
-      expect(output.boards[0].packages).to.be.an('array');
+      expect(boards[0]?.identifier).to.be.a('string');
+      expect(boards[0]?.description).to.be.a('string');
+      expect(boards[0]?.packages).to.be.an('array');
       // Verify specific board-package associations
-      const devkit = output.boards.find(
-        (b: any) => b.identifier === 'DevKit_V1'
-      );
+      const devkit = boards.find((b) => b.identifier === 'DevKit_V1');
       expect(devkit).to.exist;
-      expect(devkit.identifier).to.equal('DevKit_V1');
-      expect(devkit.packages).to.be.an('array');
-      expect(devkit.packages).to.include('CTBGA-PKG-A-20');
-      expect(devkit.description).to.contain('Development board');
-      const evsys = output.boards.find(
-        (b: any) => b.identifier === 'EVSYS'
-      );
+      expect(devkit?.identifier).to.equal('DevKit_V1');
+      expect(devkit?.packages).to.be.an('array');
+      expect(devkit?.packages).to.include('CTBGA-PKG-A-20');
+      expect(devkit?.description).to.contain('Development board');
+      const evsys = boards.find((b) => b.identifier === 'EVSYS');
       expect(evsys).to.exist;
-      expect(evsys.identifier).to.equal('EVSYS');
-      expect(evsys.packages).to.be.an('array');
-      expect(evsys.packages).to.have.lengthOf(2);
-      expect(evsys.packages).to.include.members([
+      expect(evsys?.identifier).to.equal('EVSYS');
+      expect(evsys?.packages).to.be.an('array');
+      expect(evsys?.packages).to.have.lengthOf(2);
+      expect(evsys?.packages).to.include.members([
         'CTBGA-PKG-A-20',
         'CTBGA-PKG-B-16'
       ]);
-      expect(evsys.description).to.contain('Evaluation system');
+      expect(evsys?.description).to.contain('Evaluation system');
     });
 
     // Scenario: Output JSON with multiple cores
@@ -395,18 +454,19 @@ describe('socs info', () => {
           root: '..'
         }
       );
-      const output = parseJson(stdout);
+      const output = parseData(stdout);
       expect(output.cores).to.be.an('array');
-      expect(output.cores.length).to.equal(2);
+      const cores = output.cores ?? [];
+      expect(cores.length).to.equal(2);
       // Verify internal properties are filtered from cores
-      expect(output.cores[0].id).to.be.undefined;
-      expect(output.cores[0].socID).to.be.undefined;
-      expect(output.cores[0].accessTag).to.be.undefined;
-      expect(output.cores[0].coreType.id).to.be.undefined;
-      expect(output.cores[0].coreType.description).to.be.undefined;
+      expect(cores[0]?.id).to.be.undefined;
+      expect(cores[0]?.socID).to.be.undefined;
+      expect(cores[0]?.accessTag).to.be.undefined;
+      expect(cores[0]?.coreType.id).to.be.undefined;
+      expect(cores[0]?.coreType.description).to.be.undefined;
       // Verify expected properties are present
-      expect(output.cores[0].coreType.architecture).to.be.a('string');
-      expect(output.cores[0].coreType.isa).to.be.a('string');
+      expect(cores[0]?.coreType.architecture).to.be.a('string');
+      expect(cores[0]?.coreType.isa).to.be.a('string');
     });
   });
 
@@ -417,10 +477,28 @@ describe('socs info', () => {
     //   Then the command should fail with an error
     //   And the error message should indicate the SoC was not found
     it('shows error for unknown SoC', async () => {
-      const {error} = await runCommand(['socs:info', 'NonExistentSoC'], {
-        root: '..'
-      });
-      expect(error?.message).to.contain("SoC 'NonExistentSoC' not found");
+      const {error} = await runCommand(
+        ['socs:info', 'NonExistentSoC'],
+        {
+          root: '..'
+        }
+      );
+      expect(error?.message).to.contain(
+        "SoC 'NonExistentSoC' not found"
+      );
+    });
+
+    it('reports a stable SOC_NOT_FOUND code in the JSON envelope', async () => {
+      const {stdout} = await runCommand(
+        ['socs:info', 'NonExistentSoC', '--format=json'],
+        {root: '..'}
+      );
+      const parsed = assertValidEnvelope(stdout) as {
+        ok: boolean;
+        errors: {code: string; message: string}[];
+      };
+      expect(parsed.ok).to.be.false;
+      expect(parsed.errors[0]?.code).to.equal('SOC_NOT_FOUND');
     });
   });
 
@@ -435,6 +513,34 @@ describe('socs info', () => {
         root: '..'
       });
       expect(stdout).to.contain('SoC: TestChip100');
+    });
+  });
+
+  describe('--quiet flag', () => {
+    it('suppresses text output with -q', async () => {
+      const {stdout} = await runCommand(
+        ['socs:info', 'TestChip100', '-q'],
+        {root: '..'}
+      );
+      expect(stdout).to.equal('');
+    });
+
+    it('suppresses JSON output with --quiet', async () => {
+      const {stdout} = await runCommand(
+        ['socs:info', 'TestChip100', '--format=json', '--quiet'],
+        {root: '..'}
+      );
+      expect(stdout).to.equal('');
+    });
+
+    it('still surfaces errors with --quiet', async () => {
+      const {error} = await runCommand(
+        ['socs:info', 'NonExistentSoC', '--quiet'],
+        {root: '..'}
+      );
+      expect(error?.message).to.contain(
+        "SoC 'NonExistentSoC' not found"
+      );
     });
   });
 });

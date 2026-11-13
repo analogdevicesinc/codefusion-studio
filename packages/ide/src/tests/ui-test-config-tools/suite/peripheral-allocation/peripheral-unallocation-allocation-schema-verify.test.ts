@@ -58,13 +58,16 @@ describe("System Planner Peripheral Verification allocation/unallocation", () =>
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
+    ({ browser, workbench } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
     driver = browser.driver;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
   });
 
-  it("Should check the peripheral assignment of Signals to multiple Cores", async () => {
+  after(async function () {
+    this.timeout(60000);
+    await UIUtils.teardownTestSuite(view, configPath);
+  });
+
+  it("Should check the peripheral assignment of Signals to multiple Cores @regression", async () => {
     // Scenario: Allocate GPIO signals to multiple cores and validate configuration
     //   When I open the configuration file "manual32690.cfsconfig"
     //   And I dismiss all notifications
@@ -218,7 +221,7 @@ describe("System Planner Peripheral Verification allocation/unallocation", () =>
     });
   }).timeout(90000);
 
-  it("Should Delete the Signals and Pin Configuration and verify persistance schema", async () => {
+  it("Should Delete the Signals and Pin Configuration and verify persistance schema @regression", async () => {
     // Scenario: Unallocate a peripheral signal and validate configuration
     //   When I open the configuration file "manual32690.cfsconfig"
     //   And I dismiss all notifications

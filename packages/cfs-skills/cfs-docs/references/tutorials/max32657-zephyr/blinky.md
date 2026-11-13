@@ -1,7 +1,7 @@
 ---
 description: Build, flash, and debug the Blinky example on MAX32657 or MAX32658 using Zephyr 4.4.0 in CodeFusion Studio
 author: Analog Devices
-date: 2026-06-18
+date: 2026-10-01
 ---
 
 # Blinky

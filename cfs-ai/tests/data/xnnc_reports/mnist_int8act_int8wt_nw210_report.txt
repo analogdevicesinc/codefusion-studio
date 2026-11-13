@@ -1,0 +1,102 @@
+	Neo2x0 NPU Compiler v2.5.4-7100d7b7
+
+NEO_CFG:
+CoreDef, [Core:0, ArraySz,256, umemSz,4456448] 
+XNNEFreq,1250 MHz
+SysMemBW,32
+axiWidth,32
+dramDuplex,true
+dramPorts,1
+dramLat,1
+nXnneAxiIf, 1
+turboINT4En, false
+tfFP16En, false
+vheFP16En, false
+filtComp,2
+umemScratchStartOffset,-1
+ipVersion,2
+umemNbanks,2
+umemBankSz,4194304
+switchNodes,true
+maxNeoAtomicLatency,0
+
+ Processing network at path ../networks/nw_out/temp/xnnec_compiler_file/enmap_files/mnist_int8act_int8wt/mnist_int8act_int8wt.csv
+Optimized Network: 
+ LyrNum,         OP,  idT,  CdT,  odT,     EU,   IH,   IW,   IC, STRH, STRW,   RH,   RW,   OH,   OW,   OC,             lyrName
+      1,        Inp,   I8,   I8,   I8,    DMY,    1,   28,   28,    1,    1,    1,    1,    1,   28,   28,                          INPUT0
+      3,       Conv,   I8,   I8,   I8,  3DEng,   28,   28,    1,    1,    1,    5,    5,   24,   24,   32,                       CONV0_Op1
+      4,       Conv,   I8,   I8,   I8,  3DEng,   24,   24,   32,    1,    1,    5,    5,   20,   20,   32,                       CONV1_Op2
+      5,     MxPool,   I8,   I8,   I8,  2DEng,   20,   20,   32,    2,    2,    2,    2,   10,   10,   32,                   MAX_POOL0_Op3
+      6,       Conv,   I8,   I8,   I8,  3DEng,   10,   10,   32,    1,    1,    5,    5,    6,    6,   64,                       CONV2_Op4
+      7,     MxPool,   I8,   I8,   I8,  2DEng,    6,    6,   64,    2,    2,    2,    2,    3,    3,   64,                   MAX_POOL1_Op5
+      8,  Transpose,   I8,   I8,   I8,  3DEng,    3,    3,   64,    1,    1,    1,    1,    3,   64,    3,          TRANSPOSE0_Op6_transP1
+     13,  Transpose,   I8,   I8,   I8,  2DEng,    3,   64,    3,    1,    1,    1,    1,   64,    3,    3,          TRANSPOSE0_Op6_transP2
+     10,         FC,   I8,   I8,   I8,  3DEng,    1,    1,  576,    1,    1,    1,    1,    1,    1,  256,                         FC0_Op8
+     11,         FC,   I8,   I8,   I8,  3DEng,    1,    1,  256,    1,    1,    1,    1,    1,    1,   10,                         FC1_Op9
+     12,     Output,   I8,   I8,   I8,    DMY,    1,    1,   10,    1,    1,    1,    1,    1,    1,   10,                         OUTPUT0
+
+UMEM Filter lock Spec:
+Reserved, 1048576
+Lyr,3,      7168
+Lyr,4,     26112
+Lyr,5,       256
+Lyr,6,     52224
+Lyr,7,       256
+Lyr,8,       256
+Lyr,13,       256
+Lyr,10,    151552
+Lyr,11,      4352
+Network locked filter size: 242432
+Total locked filter size: 1291008
+UmemScratchStartOffset: 1291008
+
+
+INFO, Network Structure:
+
+CustomOP,1
+SG Cfg,11
+Lyr, 3->11
+TotClks,71968
+L0SR Read Vol, 0
+L0SR Write Vol, 0
+AxiSR Read Vol, 0
+AxiSR Write Vol, 0
+DRAM Activation Read Vol, 1360
+DRAM Filter Read Vol, 0
+
+ Lyr,       OP,     EU,  PClks,  FLock,                   LyrName
+   3,     Conv,  3DEng,  10776,   true,                CONV0_Op1
+   4,     Conv,  3DEng,  44352,   true,                CONV1_Op2
+   5,   MxPool,  2DEng,   1280,   true,            MAX_POOL0_Op3
+   6,     Conv,  3DEng,   7968,   true,                CONV2_Op4
+   7,   MxPool,  2DEng,    324,   true,            MAX_POOL1_Op5
+   8,Transpose,  3DEng,    220,   true,   TRANSPOSE0_Op6_transP1
+  13,Transpose,  2DEng,    288,   true,   TRANSPOSE0_Op6_transP2
+  10,       FC,  3DEng,   2648,   true,                  FC0_Op8
+  11,       FC,  3DEng,    102,   true,                  FC1_Op9
+
+Filter lock candidates
+    Lyr,       OP,    FFvol,    FSize,    stall,
+      3,     Conv,     4608,     4608,        0 (0)
+      4,     Conv,    26112,    26112,        0 (0)
+      6,     Conv,    52224,    52224,        0 (0)
+     10,       FC,   151552,   151552,        0 (0)
+     11,       FC,     4352,     4352,        0 (0)
+
+
+**************************************************************
+Results
+	TotalClks:                 72228
+	     TotalNeoClks:         72228
+	     TotalDSPClks:             0
+	FPS:                    17306.31
+	DRAM Read BW   :    127.49 MB/Sec
+	DRAM Write BW  :      1.00 MB/Sec
+	DRAM Activation Read Volume :      1.33 KB
+	DRAM Filter Read Volume :      0.00 KB
+	DRAM Write Volume :      0.00 KB
+	L0SRAM used:           0 KB
+	AXI_SRAM used:           0 KB
+	DRAM Scratch used:           1 KB
+
+ * *************************************************************

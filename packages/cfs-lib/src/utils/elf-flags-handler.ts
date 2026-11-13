@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import {
 	e_flags_riscv,
 	e_flags_arm,
 	e_machine
-} from "elf-parser";
+} from "../parsers/elf-parser/enums.js";
 
 export const getFlags = (flagsValue: sh_flags): string => {
 	const flagMappings = [

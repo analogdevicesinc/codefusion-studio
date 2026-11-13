@@ -1,0 +1,62 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#fonts' as fonts;
+@use '#colors' as colors;
+@use '#layout' as layout;
+
+.stack {
+	display: flex;
+	flex-direction: column;
+	gap: layout.$spacing-1;
+	min-width: 0;
+}
+
+.primaryWrapper {
+	display: flex;
+	gap: layout.$spacing-3;
+}
+
+.primary {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.link {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: none;
+	background: none;
+	font: inherit;
+	text-align: inherit;
+	color: colors.$active-cta;
+	text-decoration: none;
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 1px solid colors.$focus-border;
+		outline-offset: 1px;
+	}
+}
+
+.alias {
+	font-size: fonts.$font-size-small;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: colors.$description-foreground;
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ export class DtsTree {
       try {
         await workspace.fs.stat(Uri.file(this.filePath));
         doc = await workspace.openTextDocument(this.filePath);
-      } catch (error) {
+      } catch (_) {
         throw new FileNotFoundError();
       }
       const content = doc.getText();

@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {
   containerImageExists,
   extractRegistryAndRepoName,
@@ -40,7 +42,7 @@ export const dockerPullDeps: {
   pullImage
 };
 
-export default class Pull extends Command {
+export default class Pull extends BaseCommand<typeof Pull> {
   static args = {
     image: Args.string({
       description: 'Docker image to pull',
@@ -64,17 +66,11 @@ export default class Pull extends Command {
       required: false,
       default: false,
       char: 'n'
-    }),
-    quiet: Flags.boolean({
-      summary: 'Suppress output from the pull command',
-      required: false,
-      default: false,
-      char: 'q'
     })
   };
 
   public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Pull);
+    const {args, flags} = this;
     const {registry, repo} =
       dockerPullDeps.extractRegistryAndRepoName(args.image);
     let creds: CfsPackageRemoteCredential | undefined;

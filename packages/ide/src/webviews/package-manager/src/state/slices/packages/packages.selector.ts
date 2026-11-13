@@ -14,26 +14,18 @@
  */
 
 import {createSelector} from '@reduxjs/toolkit';
-import type {CfsPackage} from 'cfs-package-manager';
 import type {
 	PackageListEntry,
-	PackageListEntryState
+	PackageVersionMeta
 } from '@constants/messages/package-manager-messages';
 import {useAppSelector, type RootState} from '../../store';
 import {compareVersions, isUpdateAvailable} from '../../../utils';
-import {buildPackageReference} from './packages.reducer';
 
 export const usePackageListLoading = () =>
 	useAppSelector(state => state.packagesReducer.packageListLoading);
 
 export const usePackagesError = () =>
 	useAppSelector(state => state.packagesReducer.error);
-
-export const useDetailsError = () =>
-	useAppSelector(state => state.packagesReducer.detailsError);
-
-export const useDetailsEpoch = () =>
-	useAppSelector(state => state.packagesReducer.detailsEpoch);
 
 export const useSearchQuery = () =>
 	useAppSelector(state => state.packagesReducer.searchQuery);
@@ -43,9 +35,6 @@ export const useStatusFilter = () =>
 
 export const useSocFilter = () =>
 	useAppSelector(state => state.packagesReducer.socFilter);
-
-export const useSocOptions = () =>
-	useAppSelector(state => state.packagesReducer.socOptions);
 
 export const useTypeFilter = () =>
 	useAppSelector(state => state.packagesReducer.typeFilter);
@@ -62,14 +51,11 @@ export const usePage = () =>
 export const usePageSize = () =>
 	useAppSelector(state => state.packagesReducer.pageSize);
 
-export const useDetails = () =>
-	useAppSelector(state => state.packagesReducer.details);
-
 /** The full, unfiltered package list (every package/version known to the backend). */
 export const usePackageList = () =>
 	useAppSelector(state => state.packagesReducer.packageList);
 
-/** Required packages absent from the catalog search (no access). */
+/** Required packages absent from the visible catalog (no access). */
 export const useMissingRequiredPackages = () =>
 	useAppSelector(
 		state => state.packagesReducer.missingRequiredPackages
@@ -78,6 +64,13 @@ export const useMissingRequiredPackages = () =>
 export const useSelectedPackages = () =>
 	useAppSelector(state => state.packagesReducer.selectedPackages);
 
+/**
+ * Dependency closure of the current selection, resolved once and shared by the
+ * review and licence pages.
+ */
+export const useDependencyResolution = () =>
+	useAppSelector(state => state.packagesReducer.dependencyResolution);
+
 export const useSelectedVersion = (name: string) =>
 	useAppSelector(
 		state => state.packagesReducer.selectedVersions[name]
@@ -85,6 +78,18 @@ export const useSelectedVersion = (name: string) =>
 
 export const useNoSelectionError = () =>
 	useAppSelector(state => state.packagesReducer.noSelectionError);
+
+/** The catalog metadata of one package version, if the catalog knows it. */
+export const useVersionMeta = (
+	name: string,
+	version: string
+): PackageVersionMeta | undefined =>
+	useAppSelector(
+		state =>
+			state.packagesReducer.packageList.find(
+				entry => entry.name === name
+			)?.releases?.[version]
+	);
 
 /**
  * True when at least one selected package is pinned to the version that is
@@ -123,46 +128,55 @@ export const useInstallTargets = () =>
 export const useAlreadyInstalledRefs = () =>
 	useAppSelector(state => state.packagesReducer.alreadyInstalled);
 
-/** Per-package install state keyed by package name. */
-const selectPackageStateByName = createSelector(
-	[(state: RootState) => state.packagesReducer.packageList],
-	packageList => {
-		const byName: Record<string, PackageListEntryState> = {};
-
-		for (const entry of packageList) {
-			byName[entry.name] = entry.state;
-		}
-
-		return byName;
-	}
-);
-
-/** Looks up any package's current install state by name, e.g. to surface a per-package `installation-failed`. */
-export const usePackageStateByName = () =>
-	useAppSelector(selectPackageStateByName);
-
 /** The newest version of a package list entry. */
 const latestVersionOf = (entry: PackageListEntry): string =>
 	[...entry.versions].sort((a, b) => compareVersions(b, a))[0] ?? '';
 
+/** The metadata of every version of an entry the catalog knows. */
+const releasesOf = (entry: PackageListEntry): PackageVersionMeta[] =>
+	Object.values(entry.releases ?? {});
+
+/** Whether the name, or any version's description or SoCs, contain the query. */
+const matchesSearch = (
+	entry: PackageListEntry,
+	query: string
+): boolean =>
+	entry.name.toLowerCase().includes(query) ||
+	releasesOf(entry).some(
+		meta =>
+			meta.description?.toLowerCase().includes(query) === true ||
+			meta.socs.some(soc => soc.toLowerCase().includes(query))
+	);
+
 /**
- * The package list after applying the cheap, list-only filters: name search,
- * the required-only toggle, and the install-status filter. (soc/type metadata
- * filters are not applied here — they require per-package metadata and are
- * handled separately.)
+ * The package list after every filter. SoC and type match when any
+ * version of the package does (case-insensitive).
  */
 const selectFilteredPackageList = createSelector(
 	[
 		(state: RootState) => state.packagesReducer.packageList,
 		(state: RootState) => state.packagesReducer.searchQuery,
 		(state: RootState) => state.packagesReducer.statusFilter,
-		(state: RootState) => state.packagesReducer.requiredOnly
+		(state: RootState) => state.packagesReducer.requiredOnly,
+		(state: RootState) => state.packagesReducer.socFilter,
+		(state: RootState) => state.packagesReducer.typeFilter
 	],
-	(packageList, searchQuery, statusFilter, requiredOnly) => {
+	(
+		packageList,
+		searchQuery,
+		statusFilter,
+		requiredOnly,
+		socFilter,
+		typeFilter
+	) => {
 		const query = searchQuery.trim().toLowerCase();
+		const selectedSocs = new Set(socFilter.map(s => s.toLowerCase()));
+		const selectedTypes = new Set(
+			typeFilter.map(t => t.toLowerCase())
+		);
 
 		return packageList.filter(entry => {
-			if (query && !entry.name.toLowerCase().includes(query)) {
+			if (query && !matchesSearch(entry, query)) {
 				return false;
 			}
 
@@ -192,92 +206,61 @@ const selectFilteredPackageList = createSelector(
 				}
 			}
 
+			if (selectedSocs.size > 0 || selectedTypes.size > 0) {
+				const matchesVersion = (meta: PackageVersionMeta) =>
+					(selectedSocs.size === 0 ||
+						meta.socs.some(soc =>
+							selectedSocs.has(soc.toLowerCase())
+						)) &&
+					(selectedTypes.size === 0 ||
+						(meta.type !== undefined &&
+							selectedTypes.has(meta.type.toLowerCase())));
+
+				if (!releasesOf(entry).some(matchesVersion)) {
+					return false;
+				}
+			}
+
 			return true;
 		});
 	}
 );
 
-/**
- * Applies the metadata filters (SoC and type) on top of
- * {@link selectFilteredPackageList}.
- *
- * SoC and type live only on a package's fetched details, not the list entry.
- * When a soc/type filter is active, {@link MainPackageContainer} batch-fetches
- * details for the *entire* list, so every entry has loaded details and this
- * filter spans all pages. A package matches when any of its versions has
- * details satisfying the active filters (case-insensitive). With neither
- * filter set, the package list passes through unchanged.
- */
-const selectMetadataFilteredPackageList = createSelector(
-	[
-		selectFilteredPackageList,
-		(state: RootState) => state.packagesReducer.details,
-		(state: RootState) => state.packagesReducer.socFilter,
-		(state: RootState) => state.packagesReducer.typeFilter
-	],
-	(packageList, details, socFilter, typeFilter) => {
-		if (socFilter.length === 0 && typeFilter.length === 0) {
-			return packageList;
+/** SoC filter options: every SoC in the SoC catalog. */
+export const useSocOptions = () =>
+	useAppSelector(state => state.packagesReducer.socOptions);
+
+export const useSocListLoading = () =>
+	useAppSelector(state => state.packagesReducer.socListLoading);
+
+/** Package types offered by the type filter: every type some listed version has. */
+const selectTypeOptions = createSelector(
+	[(state: RootState) => state.packagesReducer.packageList],
+	packageList => {
+		const types = new Set<string>();
+
+		for (const entry of packageList) {
+			for (const meta of releasesOf(entry)) {
+				if (meta.type) {
+					types.add(meta.type);
+				}
+			}
 		}
 
-		const selectedSocs = new Set(socFilter.map(s => s.toLowerCase()));
-		const selectedTypes = new Set(
-			typeFilter.map(t => t.toLowerCase())
-		);
-
-		/**
-		 * A package's `soc` entry can be a single comma-joined string
-		 * rather than separate array elements, so split
-		 * each entry on commas before matching.
-		 *
-		 * Undefined `pkg` means details aren't fetched yet — keep the entry.
-		 */
-		const matchesSoc = (pkg: CfsPackage | undefined) => {
-			if (selectedSocs.size === 0 || pkg === undefined) {
-				return true;
-			}
-
-			return Boolean(
-				pkg.soc?.some(entry =>
-					entry
-						.split(',')
-						.some(soc => selectedSocs.has(soc.trim().toLowerCase()))
-				)
-			);
-		};
-
-		const matchesType = (pkg: CfsPackage | undefined) => {
-			if (selectedTypes.size === 0 || pkg === undefined) {
-				return true;
-			}
-
-			return (
-				pkg.type !== undefined &&
-				selectedTypes.has(pkg.type.toLowerCase())
-			);
-		};
-
-		return packageList.filter(entry =>
-			entry.versions.some(version => {
-				const pkg =
-					details[buildPackageReference(entry.name, version)];
-
-				return matchesSoc(pkg) && matchesType(pkg);
-			})
-		);
+		return [...types].sort((a, b) => a.localeCompare(b));
 	}
 );
 
+export const useTypeOptions = () => useAppSelector(selectTypeOptions);
+
 /** Total number of packages after filtering — drives pagination. */
 export const usePackageListTotal = () =>
-	useAppSelector(
-		state => selectMetadataFilteredPackageList(state).length
-	);
+	useAppSelector(state => selectFilteredPackageList(state).length);
 
 /** The package list entries visible on the current page. */
 const selectCurrentPageEntries = createSelector(
 	[
-		selectMetadataFilteredPackageList,
+		selectFilteredPackageList,
 		(state: RootState) => state.packagesReducer.page,
 		(state: RootState) => state.packagesReducer.pageSize
 	],

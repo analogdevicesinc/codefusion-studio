@@ -32,7 +32,6 @@ const packageId = 'WLP';
 
 describe('WorkspaceOptions', () => {
 	beforeEach(() => {
-		
 		localStorage.setItem('host-platform', JSON.stringify('windows'));
 
 		cy.viewport(1200, 800);

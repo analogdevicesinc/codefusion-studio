@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import EditIcon from '@common/icons/Edit';
 import type {TSavedQuery} from '../../../../common/types/symbols';
 import styles from './SavedQueryContainer.module.scss';
 import {Button, Divider} from 'cfs-react-library';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TSavedQueriesContainerProps = {
 	readonly queryToFilter: string;
@@ -43,6 +44,10 @@ export default function SavedQueryContainer({
 	onItemClick,
 	onActionClick
 }: TSavedQueriesContainerProps) {
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
+
 	const getFilteredQueries = (): TSavedQuery[] =>
 		queries.filter(
 			item =>
@@ -59,7 +64,7 @@ export default function SavedQueryContainer({
 			<VSCodeTextField
 				className={styles.input}
 				type='text'
-				placeholder='Search'
+				placeholder={l10n?.search ?? 'Search'}
 				name='save-query'
 				value={queryToFilter}
 				onInput={event => {

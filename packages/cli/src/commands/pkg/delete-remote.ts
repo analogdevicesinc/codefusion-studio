@@ -12,7 +12,9 @@
  * limitations under the License.
  *
  */
-import {Args, Command} from '@oclif/core';
+import {Args} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 
@@ -22,7 +24,9 @@ export const pkgDeleteRemoteDeps: {
   getPackageManager
 };
 
-export default class CfsPackageDeleteRemote extends Command {
+export default class CfsPackageDeleteRemote extends BaseCommand<
+  typeof CfsPackageDeleteRemote
+> {
   static args = {
     remoteName: Args.string({
       description: 'Name of the remote package server.',
@@ -34,7 +38,9 @@ export default class CfsPackageDeleteRemote extends Command {
   static description =
     'Unregister a package server so it is no longer considered for package retrieval.';
 
-  async run(): Promise<void> {
+  static useResponseEnvelope = true;
+
+  async run(): Promise<{remote: string; deleted: boolean}> {
     const packman = await pkgDeleteRemoteDeps.getPackageManager(
       {
         useRemotes: true
@@ -42,10 +48,12 @@ export default class CfsPackageDeleteRemote extends Command {
       undefined,
       this
     );
-    const {args} = await this.parse(CfsPackageDeleteRemote);
+    const {args} = this;
 
     await packman.deleteRemote(args.remoteName);
 
     this.log(`Removed remote package server successfully`);
+
+    return {remote: args.remoteName, deleted: true};
   }
 }

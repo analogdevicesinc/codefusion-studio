@@ -57,11 +57,10 @@ type MultiFileSelectProps<TFileProperties> = {
 	readonly emptySelectionText?: string;
 	readonly selectFileOptions?: Parameters<typeof selectFile>[0];
 	readonly dataTest?: string;
+	readonly error?: string;
 };
 
-export default function MultiFileSelect<
-	TFileProperties = undefined
->({
+export default function MultiFileSelect<TFileProperties = undefined>({
 	title,
 	files,
 	onFilesChange,
@@ -69,7 +68,8 @@ export default function MultiFileSelect<
 	browseTitle,
 	emptySelectionText,
 	selectFileOptions,
-	dataTest
+	dataTest,
+	error
 }: MultiFileSelectProps<TFileProperties>) {
 	const l10n = getLocalization('common');
 	const resolvedBrowseTitle =
@@ -86,9 +86,14 @@ export default function MultiFileSelect<
 			return;
 		}
 
- 		const normalizedSelectedFile = selectedFile.replace(/\\/g, '/');
+		const normalizedSelectedFile = selectedFile.replace(/\\/g, '/');
 
-		if (files.some(file => file.path === normalizedSelectedFile)) {
+		if (
+			files.some(
+				file =>
+					file.path.replace(/\\/g, '/') === normalizedSelectedFile
+			)
+		) {
 			return;
 		}
 
@@ -96,10 +101,7 @@ export default function MultiFileSelect<
 			path: selectedFile
 		};
 
-		onFilesChange([
-			...files,
-			newFile
-		]);
+		onFilesChange([...files, newFile]);
 	};
 
 	const handleRemoveFile = (removeIndex: number) => {
@@ -174,6 +176,12 @@ export default function MultiFileSelect<
 						</li>
 					))}
 				</ul>
+			)}
+
+			{error && (
+				<p className={styles.error} data-test={`${dataTest}-error`}>
+					{error}
+				</p>
 			)}
 		</div>
 	);

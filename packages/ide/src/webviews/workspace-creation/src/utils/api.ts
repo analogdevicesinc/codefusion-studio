@@ -63,7 +63,11 @@ export async function getPluginsInfoList(
 	packageId?: string,
 	boardId?: string
 ) {
-	return request('get-plugins', {socId, packageId, boardId}) as Promise<CfsPluginInfo[]>;
+	return request('get-plugins', {
+		socId,
+		packageId,
+		boardId
+	}) as Promise<CfsPluginInfo[]>;
 }
 
 export async function getHostPlatform() {

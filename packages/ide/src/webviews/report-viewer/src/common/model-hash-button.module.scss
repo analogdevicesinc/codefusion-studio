@@ -1,0 +1,46 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+@use '#layout' as layout;
+
+.button {
+	// Height/width match the 15px line-height of the adjacent body-b1 hash
+	// text (see .value in profiling-summary.module.scss) so the button sits
+	// flush with that line instead of stretching it.
+	--button-icon-padding: 0;
+
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	height: 15px;
+	width: 15px;
+	min-width: 15px;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.label {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: layout.$spacing-2;
+	white-space: nowrap;
+}
+
+.icon {
+	height: 14px;
+	width: 14px;
+}

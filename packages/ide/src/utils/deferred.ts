@@ -13,7 +13,6 @@
  *
  */
 
-
 export class Deferred<T> {
   promise: Promise<T>;
   resolve!: (value: T | PromiseLike<T>) => void;

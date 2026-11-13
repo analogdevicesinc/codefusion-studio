@@ -125,9 +125,10 @@ const defaultCreateFlowReporter: TokenCodeExchangeReporter = (
 };
 
 // Implementation of authorization code flow for token exchange
-export class TokenCodeExchangeFlows
-    implements AuthFlows<TokenSessionInfo, AccessToken>
-{
+export class TokenCodeExchangeFlows implements AuthFlows<
+    TokenSessionInfo,
+    AccessToken
+> {
     #openIdConfig?: Promise<openid.Configuration>;
     private readonly callbacks: URL[];
     /**

@@ -2,9 +2,9 @@
   "Copyright": "Copyright (c) undefined Analog Devices, Inc.  All rights reserved. This software is proprietary to Analog Devices, Inc. and its licensors.",
   "DataModelVersion": "^1.0.0",
   "SchemaVersion": "2.1.0",
-  "Soc": "MAX32690",
-  "Package": "WLP",
-  "BoardName": "AD-APARD32690-SL",
+  "Soc": "TEST690",
+  "Package": "PLP",
+  "BoardName": "AD-BOARD-SL",
   "Timestamp": "",
   "Pins": [
     {

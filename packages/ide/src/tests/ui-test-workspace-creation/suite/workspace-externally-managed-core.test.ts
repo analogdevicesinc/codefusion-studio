@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,15 @@ import * as os from "os";
 import { existsSync } from "node:fs";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  continueBtn,
+  futureVersionCheckbox,
+  installLocallyAvailableVersionOption,
+  pluginCompleteState,
+  pluginDropdown,
+  pluginNameLabel,
+  systemPlannerButton,
+} from "../../ui-test-config-tools/page-objects/version-updater-section/version-updater-screen";
 
 /*
  * Feature: Workspace creation for MAX32XXX with externally managed core
@@ -54,7 +63,7 @@ import * as path from "path";
  *     And select SOC as "MAX32XXX" on soc selection screen by selecting radio button
  *     And click on continue button
  *     And I verify the active step circle for board selection screen
- *     Then I select the EVKit as "EvKit_V1___TQFN" on evkit selection screen
+ *     Then I select the EVKit as "KIT_BOARD___PQFN" on evkit selection screen
  *     And I click on continue button
  *     Then I choose the "MANUALLY CONFIGURED TEMPLATE" option further clicking on continue button
  *     And I verify the active step circle for Cores and Configuration screen
@@ -94,6 +103,7 @@ import * as path from "path";
  *    Then check for externally managed attribute is true in persistence for RISC-V core
  */
 
+// Restore this test in CFSIO-26883.
 describe("Workspace MAX32XXX creation for externally managed core and verifying its persistence", () => {
   const locatorspath = new Locatorspaths();
   let workbench: Workbench;
@@ -103,14 +113,12 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
   let workspaceName: string;
   let cfsConfigFile: string;
 
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
+  });
+
   afterEach(async () => {
-    try {
-      if (view) await view.switchBack();
-      if (workbench)
-        await workbench.executeCommand("View: Revert and Close Editor");
-    } catch (error) {
-      console.error("Error in after() hook:", error);
-    }
+    await UIUtils.teardownTestSuite(view);
   });
 
   it("Create new workspace manually configured MAX326XXXX externally managed core", async () => {
@@ -126,6 +134,7 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
     //--- And I wait for the webview to load---
 
     view = new WebView();
+    await view.wait(2000);
     console.log("WebView instance created");
 
     //--- Then I switch to the webview frame---
@@ -144,20 +153,16 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
       "soc selection screen",
     );
 
-    // ---  And select SOC as "MAX32XXX" on soc selection screen by selecting radio button ---
-    await UIUtils.sendKeysToElements(
-      view,
-      locatorspath.selectorSoc,
-      "MAX32690",
-    );
+    // ---  And select SOC as "TEST690" on soc selection screen by selecting radio button ---
+    await UIUtils.sendKeysToElements(view, locatorspath.selectorSoc, "TEST690");
 
     const socSelection = await UIUtils.clickElement(
       view,
-      locatorspath.getRadiobuttonSoc("32690"),
+      locatorspath.getRadiobuttonSoc("TEST690"),
     );
     const socName = await socSelection.getAttribute("id");
     console.log(`Selected SOC: ${socName}`);
-    expect(socName).to.include("MAX32690");
+    expect(socName).to.include("TEST690");
 
     // --- And I click on continue button ---
     await UIUtils.clickElement(view, locatorspath.continueButton);
@@ -171,16 +176,19 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
       "board selection screen",
     );
 
-    // --- Then I select the EVKit as "EvKit_V1___TQFN" on evkit selection screen---
+    // --- Then I select the EVKit as "KIT_BOARD___PQFN" on evkit selection screen---
     const kitName = await UIUtils.getAttributeFromWebElement(
       await UIUtils.findWebElement(
         view,
-        locatorspath.kitSelect("EvKit_V1___TQFN"),
+        locatorspath.kitSelect("KIT_BOARD___PQFN"),
       ),
       "id",
     );
     expect(kitName).to.include(TextData.evKitText);
-    await UIUtils.clickElement(view, locatorspath.kitSelect("EvKit_V1___TQFN"));
+    await UIUtils.clickElement(
+      view,
+      locatorspath.kitSelect("KIT_BOARD___PQFN"),
+    );
 
     //---And I click on continue button---
     await UIUtils.clickElement(view, locatorspath.continueButton);
@@ -260,11 +268,11 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
     //---And I land on workspace location and name screen---
-    //---And I enter the workspace name as "max326XX_externally"---
+    //---And I enter the workspace name as "TEST690_externally"---
     await UIUtils.sendKeysToElements(
       view,
       By.xpath('//*[@id="control-input"]'),
-      "max326XX_externally",
+      "TEST690_externally",
     );
     //---And I verify the active step circle for workspace location and name screen---
     console.log("WORKSPACE NAME DETAILS SCREEN");
@@ -275,13 +283,14 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
     );
 
     //--Then I click on create workspace button and verify the name entered---
-    const workspaceNameValue = await UIUtils.getAttributeFromWebElement(
-      await UIUtils.findWebElement(view, locatorspath.workspaceNameInput),
-      "current-value",
-    );
+    const workspaceNameValue =
+      (await UIUtils.getAttributeFromWebElement(
+        await UIUtils.findWebElement(view, locatorspath.workspaceNameInput),
+        "current-value",
+      )) ?? "";
 
     console.log("workspaceName:", workspaceNameValue);
-    expect(workspaceNameValue).to.equal("max326XX_externally");
+    expect(workspaceNameValue).to.equal("TEST690_externally");
     console.log("Sent workspace name to input element");
 
     //--Assign to shared variables--
@@ -328,7 +337,7 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
     expect(
       workspaceData.Board,
       `Board validation failed: Expected '${workspaceData.Board}' to contain '${kitName}'`,
-    ).to.equal("EvKit_V1");
+    ).to.equal(TextData.evKitText);
     console.log("Board verified successfully");
 
     //--- Find and verify the disabled externally managed project (RV)---
@@ -371,6 +380,14 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
 
   it("Verify externally managed label on UI in cfsconfig file", async () => {
     //--- Given I open the generated cfsconfig file from the created workspace---
+    const packageName = "PQFN";
+    const soc = "TEST690";
+
+    // Dynamic selectors scoped to DATA MODEL VERSION
+    const resolutionDropdown = pluginDropdown(packageName);
+    const resolutionOption = installLocallyAvailableVersionOption(packageName);
+    const componentCompleteState = pluginCompleteState(packageName);
+    const componentNameLabel = pluginNameLabel(`${soc}-${packageName}`);
     cfsConfigFile = path.join(
       workspacePath,
       ".cfs",
@@ -384,6 +401,73 @@ describe("Workspace MAX32XXX creation for externally managed core and verifying 
 
     //---  When I switch to the webview frame to see loaded cfsconfig file---
     await view.switchToFrame();
+
+    await UIUtils.selectOptionFromDropdown(
+      view,
+      resolutionDropdown,
+      resolutionOption,
+    );
+
+    console.log("✓ Selected locally-available version option");
+
+    // === AND: The continue button exists on the critical error page ===
+    expect(await UIUtils.waitForElement(view, continueBtn)).to.exist;
+    console.log("✓ Continue button exists on critical error page");
+
+    // === AND: The "Allow all future compatible versions" checkbox is checked by default ===
+    const checkbox = await UIUtils.findWebElement(view, futureVersionCheckbox);
+    expect(await checkbox.getAttribute("aria-checked")).to.equal("true");
+    console.log("✓ 'Allow all future compatible versions' checkbox is checked");
+
+    // === AND: Dismiss any error notifications (e.g. "searching packages") before clicking Continue ===
+    // These toasts appear in the bottom-right and can overlap the Continue button
+    // when it is scrolled into view, causing ElementClickInterceptedException.
+    await view.switchBack();
+    await UIUtils.dismissAllNotifications(workbench, browser);
+    await view.switchToFrame(5000);
+
+    // === AND: The user clicks Continue to apply the update ===
+    // The button renders below the fold — scroll it to center before clicking.
+    const continueBtnEl = await UIUtils.waitForElementToBeVisible(
+      view,
+      continueBtn,
+    );
+
+    await view
+      .getDriver()
+      .executeScript(
+        "arguments[0].scrollIntoView({block: 'center'})",
+        continueBtnEl,
+      );
+    await UIUtils.sleep(500);
+    await view
+      .getDriver()
+      .actions({ async: true })
+      .move({ origin: continueBtnEl })
+      .click()
+      .perform();
+    console.log("✓ Clicked Continue button");
+
+    const completedStateEl = await UIUtils.waitForElementToBeVisible(
+      view,
+      componentCompleteState,
+      15000,
+    );
+    expect(await completedStateEl.isDisplayed()).to.be.true;
+
+    expect(await UIUtils.findWebElement(view, componentNameLabel)).to.exist;
+
+    await UIUtils.clickElement(view, systemPlannerButton);
+
+    // Waiting for the webview to reload after clicking continue to system planner button.
+    await UIUtils.sleep(3000);
+    await view.switchBack();
+
+    view = new WebView();
+    await view.wait(8000);
+
+    // Webview frame can take longer to attach when extension host is under load.
+    await view.switchToFrame(5000);
 
     //--- When I click on peripheral tab on cfsconfig file webview---
     await UIUtils.clickElement(view, peripheralTab);

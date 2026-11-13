@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import CloseIcon from '@common/components/icons/CloseIcon';
 import SaveIcon from '@common/icons/Save';
 
 import styles from './QueryFilterInput.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TQueryFilterInputProps = {
 	readonly error: string | undefined;
@@ -44,12 +45,19 @@ export default function QueryFilterInput({
 	onClear,
 	onSave
 }: TQueryFilterInputProps) {
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
+
 	return (
 		<div className={styles.container}>
 			<VSCodeTextField
 				className={styles.input}
 				type='text'
-				placeholder='Filter using SQL query. eg: SELECT * FROM symbols WHERE size > 0'
+				placeholder={
+					l10n?.filterUsingSqlQuery ??
+					'Filter using SQL query. eg: SELECT * FROM symbols WHERE size > 0'
+				}
 				name='query-filter'
 				value={query}
 				data-test='symbols:filter:query-input'

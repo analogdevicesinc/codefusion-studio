@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ const getDataFromLocalStorage = (field: string) => {
 			const parsedData = JSON.parse(data);
 
 			return parsedData?.[field] ?? null;
-		} catch (error) {
+		} catch (_error) {
 			return null;
 		}
 	}
@@ -140,21 +140,17 @@ export async function updateSavedOptionsForTableFormat(
 export function showErrorMessage(err: string) {
 	request('elf-show-error-message', {
 		err
-	})
-		.then()
-		.catch(err => {
-			console.error(err);
-			throw new Error(String(err));
-		});
+	}).catch(err => {
+		console.error(err);
+		throw new Error(String(err));
+	});
 }
 
 export function showInformationMessage(info: string) {
 	request('elf-show-info-message', {
 		info
-	})
-		.then()
-		.catch(err => {
-			console.error(err);
-			throw new Error(String(err));
-		});
+	}).catch(err => {
+		console.error(err);
+		throw new Error(String(err));
+	});
 }

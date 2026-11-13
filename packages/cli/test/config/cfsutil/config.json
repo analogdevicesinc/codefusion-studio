@@ -1,4 +1,6 @@
 {
-  "dataModelSearchPaths": ["./test/fixtures/socs"],
+  "dataModelSearchPaths": [
+    "./test/fixtures/socs"
+  ],
   "catalogStorePath": "./test/fixtures/catalog"
 }

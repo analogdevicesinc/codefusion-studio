@@ -21,10 +21,10 @@
 // Background:
 //   Given VS Code is open with the CodeFusion Studio extension loaded
 //   And all editors are closed
-//   And the configuration file "max32650-tqfp.cfsconfig" is available
+//   And the configuration file "max32690-wlp-single-core.cfsconfig" is available
 
 // Scenario: Verify core selection button is not present for single-core projects
-//   Given I open the configuration file "max32650-tqfp.cfsconfig"
+//   Given I open the configuration file "max32690-wlp-single-core.cfsconfig"
 //   When I navigate to the Peripheral Allocation tab
 //   And I expand the GPIO0 peripheral accordion
 //   And I click the assign chevron for signal P0.1
@@ -69,13 +69,7 @@
 //   And the delete button should no longer be present
 //   And the initial state should be restored
 
-import {
-  By,
-  VSBrowser,
-  WebDriver,
-  WebView,
-  Workbench,
-} from "vscode-extension-tester";
+import { By, VSBrowser, WebDriver, WebView } from "vscode-extension-tester";
 import { expect } from "chai";
 import { UIUtils } from "../../../ui-test-utils/ui-utils";
 import { getConfigPathForFile } from "../../config-tools-utility/cfsconfig-utils";
@@ -103,7 +97,7 @@ describe("Peripheral Allocation Single Core", () => {
   let browser: VSBrowser;
   let view: WebView;
   let driver: WebDriver;
-  const configPath = getConfigPathForFile("max32650-tqfp.cfsconfig");
+  const configPath = getConfigPathForFile("max32690-wlp-single-core.cfsconfig");
   const coreSelector = By.xpath(
     "//div[@data-test='core-CM4']//ancestor::vscode-button",
   );
@@ -112,33 +106,25 @@ describe("Peripheral Allocation Single Core", () => {
 
   before(async function () {
     this.timeout(60000);
-    browser = VSBrowser.instance;
+    ({ browser } = await UIUtils.setupTestSuite({ waitForWorkbench: true }));
     driver = browser.driver;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await browser.waitForWorkbench();
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("View: revert and close editor");
     // Restore fixture file after all tests complete
-    await UIUtils.restoreFixtureFileFromGit(
-      getConfigPathForFile("max32650-tqfp.cfsconfig"),
-    );
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   /**
    * Scenario: Verify core selection button is not present for single-core projects
-   *   Given I open the configuration file "max32650-tqfp.cfsconfig"
+   *   Given I open the configuration file "max32690-wlp-single-core.cfsconfig"
    *   When I navigate to the Peripheral Allocation tab
    *   And I expand the GPIO0 peripheral accordion
    *   And I click the assign chevron for signal P0.1
    *   Then the core selection button should not be present
    */
-  it("Verify that the core selection button is not present", async () => {
+  it("Verify that the core selection button is not present @regression", async () => {
     await browser.openResources(configPath);
     await UIUtils.sleep(5000);
 
@@ -186,7 +172,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   Then the sidebar title should display "GPIO0 P0.1"
    *   And the sidebar sections should be correct
    */
-  it("Verify that the sidebar is open, title and following sections are correct", async () => {
+  it("Verify that the sidebar is open, title and following sections are correct @regression", async () => {
     await UIUtils.sleep(3000);
     await sidebarChecks(view, signal, subSignal);
   });
@@ -198,7 +184,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   Then the expand button should not be present
    *   And the collapse button should not be present
    */
-  it("Verify that the expand and collapse buttons are not present", async () => {
+  it("Verify that the expand and collapse buttons are not present @regression", async () => {
     const expandButton = By.xpath(
       "//span[contains(text(),'Expand')]//parent::div/vscode-button",
     );
@@ -227,7 +213,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   And the assigned pin should appear in the core card
    *   And the error message should be cleared
    */
-  it("On enabling the pin, no error is displayed", async () => {
+  it("On enabling the pin, no error is displayed @regression", async () => {
     await UIUtils.sleep(2000);
     const pinAssignmentError = await UIUtils.findWebElement(
       view,
@@ -280,7 +266,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   Then the GPIO0 signal should be highlighted
    *   And the P0.1 pin should be highlighted
    */
-  it("Verify that the selected accordion is highlighted in core project card", async () => {
+  it("Verify that the selected accordion is highlighted in core project card @regression", async () => {
     const expandClick = await UIUtils.findWebElement(
       view,
       await coreExpandBtn(signal),
@@ -309,7 +295,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   Then the sidebar should open for GPIO0
    *   And the sidebar should contain the required sections for details, pin assignment and configuration
    */
-  it("Verify the flow using configure button on the left panel signal", async () => {
+  it("Verify the flow using configure button on the left panel signal @regression", async () => {
     await UIUtils.sleep(2000);
     await clickOnSidebarCloseButton(view);
     await UIUtils.sleep(2000);
@@ -336,7 +322,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   Then the sidebar should open for GPIO0
    *   And the sidebar should contain the required sections for details, pin assignment and configuration
    */
-  it("Verify the flow using configure button on the core card signal", async () => {
+  it("Verify the flow using configure button on the core card signal @regression", async () => {
     await UIUtils.sleep(2000);
     await clickOnSidebarCloseButton(view);
     await UIUtils.sleep(2000);
@@ -358,7 +344,7 @@ describe("Peripheral Allocation Single Core", () => {
    *   And the delete button should no longer be present
    *   And the initial state should be restored
    */
-  it("Delete the assigned pin and verify the initial state restored", async () => {
+  it("Delete the assigned pin and verify the initial state restored @regression", async () => {
     await UIUtils.sleep(2000);
     await clickOnSidebarCloseButton(view);
     await UIUtils.sleep(2000);

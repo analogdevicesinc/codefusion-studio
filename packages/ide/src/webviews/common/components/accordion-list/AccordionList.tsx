@@ -80,7 +80,9 @@ export default function AccordionList({
 			data-test={`accordion-list:${title}`}
 		>
 			<section
-				className={`${styles.header} ${highlight ? styles.highlight : ''}`}
+				className={`${styles.header} ${
+					highlight ? styles.highlight : ''
+				}`}
 			>
 				<div className={styles.leftSection}>
 					<div className={styles.titleContainer}>

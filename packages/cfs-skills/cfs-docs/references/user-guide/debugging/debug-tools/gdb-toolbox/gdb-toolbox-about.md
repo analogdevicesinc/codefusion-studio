@@ -1,7 +1,7 @@
 ---
 description: Introduction to the GDB Toolbox and how to use it with CodeFusion Studio.
 author: Analog Devices
-date: 2026-08-05
+date: 2026-09-30
 ---
 
 # About the GDB Toolbox
@@ -30,7 +30,7 @@ The following default scripts are added to your workspace when it's created and 
 | Script name                       | Description                                                                                                                                               | Supported architecture | Supported firmware platform[^1] |
 |-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|---------------------------------|
 | **Analyze Crash** | Analyzes a crash and generates a JSON report of faulting threads. | Architecture agnostic | Zephyr |
-| **Analyze Faults**                | Analyzes system faults and exceptions such as hard faults or bus errors. Reads and decodes fault status registers, and prints a fault summary.            | ARM             | Firmware agnostic               |
+| **Analyze Faults**                | Analyzes system faults and exceptions such as hard faults or bus errors. Reads and decodes fault status registers, and prints a fault summary.            | ARM, SHARC-FX   | Firmware agnostic               |
 | **Analyze Global Heap**           | Analyzes heap usage and prints a JSON report showing total heap size (total), currently used memory (used), and the peak memory usage (max).              | Architecture agnostic   | Zephyr                          |
 | **Analyze Stack**                 | Performs a detailed analysis of stack usage. Traverses stack frames, prints local variables and arguments, and calculates used and remaining stack space. | ARM   | MSDK                            |
 | **Analyze Stack High-water Mark** | Analyzes the maximum stack depth reached during runtime using a known fill pattern. Requires the stack painter to be run beforehand.                      | ARM   | MSDK                            |

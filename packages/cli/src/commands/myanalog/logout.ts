@@ -12,19 +12,22 @@
  * limitations under the License.
  *
  */
-import {Command} from '@oclif/core';
+import {BaseCommand} from '../../utils/base-command.js';
 
 import {getPackageManager} from '../../utils/package-manager.js';
 import {getSessionManager} from '../../utils/session-manager.js';
 
-export default class CfsMyAnalogLogout extends Command {
+export default class CfsMyAnalogLogout extends BaseCommand<
+  typeof CfsMyAnalogLogout
+> {
   static aliases = ['auth:logout'];
   static deprecateAliases = true;
   static description = 'Log out of the current myAnalog session.';
 
   static hiddenAliases = ['myAnalog:logout'];
+  static useResponseEnvelope = true;
 
-  async run(): Promise<void> {
+  async run(): Promise<{loggedOut: boolean}> {
     let session;
     let sessionManager;
     try {
@@ -43,7 +46,7 @@ export default class CfsMyAnalogLogout extends Command {
 
     if (!session) {
       this.log('You are not logged in to myAnalog.');
-      this.exit();
+      return {loggedOut: false};
     }
 
     try {
@@ -72,6 +75,7 @@ export default class CfsMyAnalogLogout extends Command {
       }
 
       this.log('You have been logged out of myAnalog successfully.');
+      return {loggedOut: true};
     } catch (error) {
       this.error(
         new Error(

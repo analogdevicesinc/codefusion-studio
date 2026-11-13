@@ -5,6 +5,7 @@
 		"module": "NodeNext",
 		"outDir": "dist",
 		"rootDir": "src",
+		"types": ["node", "mocha"],
 		"strict": true,
 		"target": "es2022",
 		"moduleResolution": "NodeNext",
@@ -17,8 +18,5 @@
 	"include": [
 		"./src/**/*",
 		"./src/project-generation/firmware-platform/zephyr/templates/.vscode/*"
-	],
-	"ts-node": {
-		"esm": true
-	}
+	]
 }

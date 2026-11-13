@@ -48,8 +48,7 @@ export interface TaskDiscoveryStrategy {
  * rules (for example, suppress Zephyr defaults when custom CFS tasks exist in
  * the same Zephyr project folder).
  */
-export interface DefaultTaskDiscoveryStrategy
-	extends TaskDiscoveryStrategy {
+export interface DefaultTaskDiscoveryStrategy extends TaskDiscoveryStrategy {
 	/**
 	 * Detects whether the given folder belongs to this strategy's platform.
 	 *

@@ -1,7 +1,7 @@
 ---
 description: Pin Configuration Tool for CodeFusion Studio
 author: Analog Devices
-date: 2025-04-24
+date: 2026-09-22
 ---
 
 # Pin Config
@@ -61,7 +61,10 @@ Each expanded peripheral lists signals with their signal name and pin designatio
 Toggle the pin to 'on'
 ![Toggle](images/icon-toggle-dark.png#only-dark)
 ![Toggle](images/icon-toggle-light.png#only-light)
-to assign a signal to a pin. This enables the pin in the generated code and updates the map.  
+to assign a signal to a pin. This enables the pin in the generated code and updates the map.
+
+!!! note
+    Fixed-function signals on peripherals such as DAI0 don't display a toggle because their pin assignment can't be changed.
 
 ### Resolve conflicts
 
@@ -78,18 +81,18 @@ To resolve a conflict, disable one of the functions associated with that pin.
 
 ### Configure pin functions
 
-Ensure the pin is [assigned](#assign-pin) and the peripheral is allocated to a core before proceeding with configuration. For information on peripheral allocation, see [Peripheral Allocation](./peripheral-allocation.md).
+If the peripheral appears in [Peripheral Allocation](./peripheral-allocation.md), ensure it's allocated to a core before proceeding with configuration. For signals that support pin reassignment, also ensure the pin is [assigned](#assign-pin).
 
-Click configure ![Configure](images/icon-config-dark.png#only-dark)
-![Configure](images/icon-config-light.png#only-light) to open the configuration sidebar and modify settings.
+Select **Configure** ![Configure](images/icon-config-dark.png#only-dark)
+![Configure](images/icon-config-light.png#only-light) to open the configuration sidebar and modify settings. The **Configure** icon only appears for signals that have applicable configuration options.
 
 ### Configuration sidebar
 
-The configuration sidebar allows you to modify settings for enabled signals. These options are only available after the pin is assigned and its peripheral is allocated.
+The configuration sidebar allows you to modify settings for a signal when it has applicable configuration options. If the peripheral appears in [Peripheral Allocation](./peripheral-allocation.md), these options are only available after the peripheral is allocated. For signals that support pin reassignment, they're also only available after the pin is assigned.
 
 The fields shown in the sidebar vary depending on the selected signal type:
 
-- GPIO signals provide all available configuration options, including the attached function and, in some environments, code generation metadata. The availability of these code generation fields depends on the selected firmware platform.
+- GPIO signals provide all available configuration options, including the attached function and, in some environments, code generation metadata. The availability of these code generation fields depends on the selected firmware platform. Peripherals that allow assignment at the pin level, such as GPIO, also show a **Details** section with a **Description** field. Enter text in this field to document the purpose of the pin. The description is for reference only and doesn't affect code generation.
 - Peripheral signals expose basic options such as pull-up/pull-down state and power supply. The behavior and code generation settings of supported peripherals can be configured in the [Peripheral Allocation](./peripheral-allocation.md) tool.
 
 !!! note

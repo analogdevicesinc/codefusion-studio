@@ -24,8 +24,12 @@ for (const command of ['soc', 'socs']) {
     describe('output with no command', () => {
       //   Display the help text when no command is given.
       it('displays help text when no command is given', async () => {
-        const {stdout} = await runCommand(['help', command], {root: '..'});
-        expect(stdout).to.contain('SoC data model and catalog operations');
+        const {stdout} = await runCommand(['help', command], {
+          root: '..'
+        });
+        expect(stdout).to.contain(
+          'SoC data model and catalog operations'
+        );
         expect(stdout).to.contain(`${command} export`);
         expect(stdout).to.contain(`${command} list`);
         expect(stdout).to.contain(`${command} info`);

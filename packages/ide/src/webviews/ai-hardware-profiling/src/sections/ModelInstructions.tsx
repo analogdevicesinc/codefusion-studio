@@ -22,13 +22,14 @@ import {
 	type ApplicationStatus,
 	type HardwareResources,
 	type ProfilingConfiguration
-} from "@ide-types/ai-hardware-profiling-types";
+} from '@ide-types/ai-hardware-profiling-types';
 
 import {
+	cleanAndBuild,
 	deployModelForProfiling,
 	stopDeployment,
 	updateProfilingConfiguration
-} from "@constants/messages/ai-hardware-profiling-messages";
+} from '@constants/messages/ai-hardware-profiling-messages';
 import {LocalizedMessage} from '../../../common/components/l10n/LocalizedMessage';
 
 type ModelInstructionsProps = Readonly<{
@@ -65,7 +66,6 @@ export function ModelInstructions({
 		},
 		[messenger, setProfilingConfig]
 	);
-
 
 	return (
 		<div className={styles.container}>
@@ -158,6 +158,19 @@ export function ModelInstructions({
 						)}
 					</div>
 					<div className={styles.buttonContainer}>
+						<Button
+							disabled={
+								applicationStatus.buildStatus === 'building' ||
+								applicationStatus.deployStatus === 'running'
+							}
+							onClick={() => {
+								messenger.sendNotification(cleanAndBuild, {
+									type: 'extension'
+								});
+							}}
+						>
+							{l10n?.config.cleanAndBuild}
+						</Button>
 						<Button
 							disabled={
 								applicationStatus.buildStatus !== 'built' ||

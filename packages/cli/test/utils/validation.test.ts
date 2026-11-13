@@ -18,6 +18,10 @@ import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
+import {
+  parsePackageReference,
+  validatePackageName
+} from '../../src/utils/package-manager.js';
 import {validatePaths} from '../../src/utils/validation.js';
 
 /**
@@ -94,5 +98,142 @@ describe('validatePaths', () => {
         }
       });
     }
+  });
+});
+
+/**
+ * Feature: Package Reference Parsing
+ *   As a CLI user
+ *   I want clear error messages when I provide invalid package references
+ *   so that I can understand what went wrong and how to fix it.
+ */
+describe('parsePackageReference', () => {
+  describe('valid package references', () => {
+    it('should parse a simple package reference', () => {
+      const result = parsePackageReference('mypackage/1.0.0');
+      expect(result).to.deep.equal({
+        name: 'mypackage',
+        version: '1.0.0'
+      });
+    });
+
+    it('should parse a package reference with version ranges', () => {
+      const result = parsePackageReference('mypackage/^1.0.0');
+      expect(result).to.deep.equal({
+        name: 'mypackage',
+        version: '^1.0.0'
+      });
+    });
+  });
+
+  describe('invalid package references - package name only', () => {
+    it('should throw helpful error when only package name is provided', () => {
+      expect(() => parsePackageReference('mypackage')).to.throw(
+        /Expecting a package reference, but only package name was provided/
+      );
+      expect(() => parsePackageReference('mypackage')).to.throw(
+        /mypackage\/<version>/
+      );
+    });
+  });
+
+  describe('invalid package references - file paths', () => {
+    it('should throw helpful error for Windows absolute path', () => {
+      expect(() =>
+        parsePackageReference('C:\\workdir\\trial\\manifest.json')
+      ).to.throw(/File not found/);
+      expect(() =>
+        parsePackageReference('C:\\workdir\\trial\\manifest.json')
+      ).to.throw(/A valid file path to a manifest file, or/);
+    });
+
+    it('should throw helpful error for Unix absolute path', () => {
+      expect(() =>
+        parsePackageReference('/tmp/manifest.json')
+      ).to.throw(/File not found/);
+    });
+
+    it('should throw helpful error for .cfsdependencies', () => {
+      expect(() =>
+        parsePackageReference('C:\\workdir\\trial\\.cfsdependencies')
+      ).to.throw(/File not found/);
+      expect(() =>
+        parsePackageReference('C:\\workdir\\trial\\.cfsdependencies')
+      ).to.throw(/\.cfsdependencies/);
+    });
+  });
+
+  describe('invalid package references - malformed format', () => {
+    it('should throw generic error for truly invalid format', () => {
+      expect(() =>
+        parsePackageReference('not valid at all')
+      ).to.throw(/Invalid package reference format/);
+    });
+
+    it('should throw generic error for empty string', () => {
+      expect(() => parsePackageReference('')).to.throw(
+        /Invalid package reference format/
+      );
+    });
+
+    it('should throw generic error for package reference with trailing slash', () => {
+      expect(() => parsePackageReference('mypackage/')).to.throw(
+        /Invalid package reference format/
+      );
+      expect(() => parsePackageReference('mypackage/')).not.to.throw(
+        /File not found/
+      );
+    });
+
+    it('should throw generic error for package reference with spaces in version', () => {
+      expect(() =>
+        parsePackageReference('mypackage/bad version')
+      ).to.throw(/Invalid package reference format/);
+      expect(() =>
+        parsePackageReference('mypackage/bad version')
+      ).not.to.throw(/File not found/);
+    });
+
+    it('should throw generic error for string with .json but no path separator', () => {
+      // Edge case: "my-package.json" without path separators should not be treated as a file
+      expect(() => parsePackageReference('my-package.json')).to.throw(
+        /Invalid package reference format/
+      );
+      expect(() =>
+        parsePackageReference('my-package.json')
+      ).not.to.throw(/File not found/);
+    });
+  });
+});
+
+/**
+ * Feature: Package Name Validation
+ *   As a CLI user
+ *   I want validation for package names
+ *   so that I know when I've provided invalid input.
+ */
+describe('validatePackageName', () => {
+  describe('valid package names', () => {
+    it('should accept a simple package name', () => {
+      expect(() => validatePackageName('mypackage')).not.to.throw();
+    });
+
+    it('should accept a package name with hyphens', () => {
+      expect(() => validatePackageName('my-package')).not.to.throw();
+    });
+  });
+
+  describe('invalid package names', () => {
+    it('should reject a full package reference (name/version)', () => {
+      expect(() => validatePackageName('mypackage/1.0.0')).to.throw(
+        /Expecting a package name, but a package reference was provided/
+      );
+    });
+
+    it('should reject invalid characters', () => {
+      expect(() => validatePackageName('my package')).to.throw(
+        /Invalid package name/
+      );
+    });
   });
 });

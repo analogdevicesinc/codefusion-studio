@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,9 @@ type TMainSectionChartProps = {
 export default function Charts({sections}: TMainSectionChartProps) {
 	const i10n: TLocaleContext | undefined =
 		useLocaleContext()?.metadata?.sizes;
+	const commonL10n = useLocaleContext()?.common as
+		| Record<string, string>
+		| undefined;
 	const chartData = calculateSectionSizes(sections);
 
 	const totalSize = chartData.text + chartData.data + chartData.bss;
@@ -89,8 +92,13 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				trigger: 'item',
 				className: styles.chartTooltip,
 				formatter(params: ECElementEvent) {
-					// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-					return `Section: ${params.marker}${params.seriesName} <br/>Size: ${params.value?.toLocaleString()} bytes`;
+					return `${commonL10n?.sectionLabel ?? 'Section'}: ${String(
+						params.marker ?? ''
+					)}${params.seriesName} <br/>${
+						commonL10n?.sizeLabel ?? 'Size'
+					}: ${params.value?.toLocaleString()} ${
+						commonL10n?.bytes ?? 'bytes'
+					}`;
 				},
 				confine: true
 			},
@@ -134,13 +142,13 @@ export default function Charts({sections}: TMainSectionChartProps) {
 				}
 			]
 		}),
-		[chartData, chartLegendColors]
+		[chartData, chartLegendColors, commonL10n]
 	);
 
 	return (
 		<div className={styles.container} data-test='metadata:chart'>
 			<HeaderWithTooltip
-				title={`${i10n?.title} (${transformBtoKB(totalSize, false)})`}
+				title={`${i10n?.title} (${transformBtoKB(totalSize)})`}
 				i10n={i10n}
 			/>
 

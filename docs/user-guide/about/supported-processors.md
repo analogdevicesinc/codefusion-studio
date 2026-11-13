@@ -1,7 +1,7 @@
 ---
 description: List of supported processors
 author: Analog Devices
-date: 2026-04-27
+date: 2026-10-20
 ---
 
 # Supported processors
@@ -10,7 +10,7 @@ CodeFusion Studio supports a growing number of processors from across Analog Dev
 
 ## Supported MSDK processors
 
-Microcontroller Software Development Kit (MSDK) processors support bare-metal projects using the MSDK plugin, as well as Zephyr-based development workflows through dedicated Zephyr plugins. Some MSDK processors also support configuration tools in System Planner and integration with Embedded AI Tools.
+Microcontroller Software Development Kit (MSDK) processors support bare-metal projects using the MSDK plugin, as well as Zephyr-based development workflows through dedicated Zephyr plugins. Some MSDK processors also support configuration tools in System Planner and AI model import and configuration in the **Manage AI Models** tab.
 
 | Processor                                                      | Bare-metal SDK[^sdk]| Zephyr | Config Tools[^cfg] | [AI Tools](../tools/manage-ai-models.md)[^ai] | [TESA](../resources/security-resources.md)[^tesa] |
 |----------------------------------------------------------------|---------------------|--------|--------------------|---------------|---------------------------------------------------|
@@ -30,7 +30,7 @@ Microcontroller Software Development Kit (MSDK) processors support bare-metal pr
 
 ## Supported SHARC-FX processors
 
-SHARC-FX processors support bare-metal projects using a SHARC-FX DSP plugin, with support for Pin Mux configuration in System Planner. All SHARC-FX processors also support Embedded AI Tools for model import, configuration, and code generation.
+SHARC-FX processors support bare-metal projects using a SHARC-FX DSP plugin, with support for the [Pin Config](../tools/pin-config.md), [Peripheral Allocation](../tools/peripheral-allocation.md), and [SRU Config](../tools/sru-config.md) tools in System Planner. All SHARC-FX processors also support AI model import and configuration in the **Manage AI Models** tab.
 
 W variants (automotive-grade) are listed as separate plugin entries in CodeFusion Studio but have the same support level as their corresponding base processors.
 
@@ -44,7 +44,7 @@ W variants (automotive-grade) are listed as separate plugin entries in CodeFusio
 | [ADSP-SC835 / SC835W](https://www.analog.com/en/products/adsp-sc835.html) | Yes                 | No     | Partial            | Yes           | No                                                |
 
 [^sdk]: Indicates support for bare-metal development workflows in CodeFusion Studio, including the MSDK for MAX32xxx and MAX78xxx microcontrollers, and the ADSP-2183x/SC83x SHARC-FX family.
-[^cfg]: Indicates support for configuration flows in System Planner. **Yes** = Full support,  **Partial** = Pin Mux only, **No** = Not supported.
+[^cfg]: Indicates support for configuration flows in System Planner. **Yes** = Full support,  **Partial** = Pin Config, Peripheral Allocation, and SRU Config only, **No** = Not supported.
 [^ai]: Indicates AI Tools support in CodeFusion Studio, including model integration and advanced analysis for embedded AI applications. For details on supported AI model formats see [supported processors and model formats](./supported-ai-model-formats.md).
 [^tesa]: TESA security support: **Yes** = Full TESA support including UCL and USS, **Partial** = UCL support only, **No** = Not supported.
 \* For MAX32658, use the MAX32657 USS and UCL examples.

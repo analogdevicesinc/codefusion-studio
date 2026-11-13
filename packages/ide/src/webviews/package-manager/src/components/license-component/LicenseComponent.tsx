@@ -91,12 +91,19 @@ export default function LicenseComponent({
 			<div className={styles.licenseBody}>
 				<div className={styles.licenseHeader}>
 					<div className={styles.nameAndTarget}>
-						<div className={styles.name}>{name}</div>
+						<div data-test='license-name' className={styles.name}>
+							{name}
+						</div>
 						<div className={styles.target}>
 							<span className={styles.targetText}>
 								{l10n?.appliesTo}
 							</span>
-							<span className={styles.targetValue}>{target}</span>
+							<span
+								data-test='license-target'
+								className={styles.targetValue}
+							>
+								{target}
+							</span>
 						</div>
 					</div>
 				</div>
@@ -105,7 +112,10 @@ export default function LicenseComponent({
 						<ProgressRing />
 					</div>
 				) : (
-					<div className={styles.licenseContent}>
+					<div
+						data-test='license-content'
+						className={styles.licenseContent}
+					>
 						{renderLicenseContentWithLinks(licenseContent)}
 					</div>
 				)}

@@ -36,9 +36,7 @@ import ZoomInIcon from '../../../../../common/icons/ZoomIn';
 import ZoomOutIcon from '../../../../../common/icons/ZoomOut';
 import ResetZoomIcon from '../../../../../common/icons/ZoomReset';
 import {ProgressRing} from 'cfs-react-library';
-import {
-	useClockNodesStatus
-} from '../../../state/slices/clock-nodes/clockNodes.selector';
+import {useClockNodesStatus} from '../../../state/slices/clock-nodes/clockNodes.selector';
 import type {
 	DiagramClocks,
 	DiagramData,
@@ -269,13 +267,7 @@ function ClockDiagram({
 		highlightWires(newDisabledWires, 'disabled');
 
 		rerenderContent?.();
-	}, [
-		globalConfig,
-		canvas,
-		nodesStatus,
-		shouldRender,
-		dispatch
-	]);
+	}, [globalConfig, canvas, nodesStatus, shouldRender, dispatch]);
 
 	if (shouldRecreateSchematic || !canvas) return null;
 
@@ -290,7 +282,9 @@ function ClockDiagram({
 				</div>
 			)}
 			<div
-				className={`schematicContainer${shouldRender ? ' rendered' : ''}`}
+				className={`schematicContainer${
+					shouldRender ? ' rendered' : ''
+				}`}
 				onClick={handleBackdropClick}
 			>
 				<ErrorBoundary>

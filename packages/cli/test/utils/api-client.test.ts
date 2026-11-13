@@ -338,4 +338,69 @@ describe('api-client auth selection', () => {
     );
     expect(error?.cause).to.equal(authnRequiredError);
   });
+
+  it('warns and falls back to a public client when session refresh fails and optional is true', async () => {
+    delete process.env.CFS_API_KEY;
+
+    apiClientDeps.getAuthConfig = () =>
+      ({
+        authUrl: new URL('https://auth.example.com'),
+        ccmUrl: new URL('https://ccm.example.com'),
+        clientId: 'client',
+        authCallbacks: [new URL('https://localhost/callback')],
+        sessionFile: '/tmp/session',
+        scopes: ['openid']
+      }) as never;
+
+    apiClientDeps.getSessionManager = (() => ({
+      getSession: async () => {
+        throw new Error('ERROR');
+      }
+    })) as never;
+
+    const warnings: string[] = [];
+    const fakeCommand = {
+      warn: (message: string) => warnings.push(message)
+    } as never;
+
+    const result = await getApiClient(
+      {auth: ['session', 'public'], optional: true},
+      fakeCommand
+    );
+
+    expect(result).to.not.equal(undefined);
+    expect(warnings).to.deep.equal([
+      'Could not refresh your myAnalog session, continuing without it.'
+    ]);
+  });
+
+  it('rethrows the session refresh error when optional is false', async () => {
+    delete process.env.CFS_API_KEY;
+
+    apiClientDeps.getAuthConfig = () =>
+      ({
+        authUrl: new URL('https://auth.example.com'),
+        ccmUrl: new URL('https://ccm.example.com'),
+        clientId: 'client',
+        authCallbacks: [new URL('https://localhost/callback')],
+        sessionFile: '/tmp/session',
+        scopes: ['openid']
+      }) as never;
+
+    const sessionError = new Error('ERROR');
+    apiClientDeps.getSessionManager = (() => ({
+      getSession: async () => {
+        throw sessionError;
+      }
+    })) as never;
+
+    let error: unknown;
+    try {
+      await getApiClient({auth: ['session', 'public']});
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).to.equal(sessionError);
+  });
 });

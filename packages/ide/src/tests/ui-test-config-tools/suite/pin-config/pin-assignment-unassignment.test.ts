@@ -85,24 +85,19 @@ describe("Pin Assignment and Unassignment Persistence Test", () => {
   let browser: VSBrowser;
   let view: WebView;
   browser = VSBrowser.instance;
+  const configPath = getConfigPathForFile("manual32690.cfsconfig");
 
   before(async function () {
     this.timeout(10000);
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser } = await UIUtils.setupTestSuite({ sleepMs: 3000 }));
   });
 
   after(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Pin-assign-unassign", async () => {
-    const configPath = getConfigPathForFile("manual32690.cfsconfig");
+  it("Pin-assign-unassign @regression", async () => {
     await browser.openResources(configPath);
     workbench = new Workbench();
 

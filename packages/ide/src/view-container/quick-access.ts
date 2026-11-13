@@ -62,9 +62,7 @@ function trackedCommand(
 /**
  * This provider is responsible for supplying data in a tree structure to the welcome view container.
  */
-export class QuickAccessProvider
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
+export class QuickAccessProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   helpAndSupportTreeItems: vscode.TreeItem[] = [
     new ViewContainerItem({
       label: "Walkthrough",

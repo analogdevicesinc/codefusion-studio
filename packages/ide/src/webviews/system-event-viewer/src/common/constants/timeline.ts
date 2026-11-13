@@ -13,12 +13,18 @@
  *
  */
 
-import type {Unit} from '../types/timeline';
-
 export const GRID = {
 	left: 5,
 	right: 5,
 	bottom: 0
+};
+
+export const GRID_TIME_LABEL = {
+	fontSize: 11,
+	fontWeight: 500,
+	edgeInset: 2,
+	left: GRID.left + 10,
+	right: GRID.right + 10
 };
 
 export const INITIAL_DATA_ZOOM = {
@@ -28,15 +34,21 @@ export const INITIAL_DATA_ZOOM = {
 
 export const MIN_TICK_INTERVAL = 1e-7; // 100ns tick step
 export const MIN_ZOOM_WINDOW_TICKS = 4;
-export const MIN_VALUE_SPAN =
-	MIN_TICK_INTERVAL * MIN_ZOOM_WINDOW_TICKS;
 
 export const PAN_PERCENTAGE = 0.2;
 export const ZOOM_PERCENTAGE = 0.2;
+export const DROP_ZONE_EDGE_RATIO = 0.25;
+
+export const AUTO_SCROLL_EDGE_PX = 40; // Height of the top/bottom hot zone inside the diagram container
+export const AUTO_SCROLL_MIN_SPEED_PX_PER_FRAME = 2;
+export const AUTO_SCROLL_MAX_SPEED_PX_PER_FRAME = 12;
+export const AUTO_SCROLL_BOUNDARY_EPSILON_PX = 0.5;
 
 export const TIMELINE_LIST_MIN_WIDTH = 120;
 export const TIMELINE_LIST_DEFAULT_WIDTH = 262;
 export const TIMELINE_DIAGRAM_MIN_WIDTH = 600;
+
+export const DRAG_OFFSET_X = 18; // Takes into account 8px padding + 10px drag icon width
 
 export const EV_SOURCES_LIST_CONTENT_ID =
 	'event-sources-list-content';
@@ -49,34 +61,11 @@ export const DATA_TEST_E = 'data-test-dz-end';
 export const TIMELINE_CONTAINER_ID = 'timeline-container';
 export const DIAGRAM_CONTAINER_ID = 'timeline-diagram-container';
 export const DATA_ROW_EMPHASIS_ATTR = 'data-row-emphasized';
+export const DATA_ROW_DRAGGED_ATTR = 'data-row-dragged';
+export const DATA_ROW_DROP_TARGET_ATTR = 'data-row-drop-target';
 export const TIMELINE_DRAG_ACTIVE = 'timeline-drag-active';
 export const TIMELINE_MEASURE_ACTIVE = 'timeline-measure-active';
 export const TIMELINE_DRAG_OUTSIDE = 'timeline-drag-outside';
-
-export const UNITS_ID: Record<'S' | 'MS' | 'US' | 'NS', Unit> = {
-	S: 's',
-	MS: 'ms',
-	US: 'us',
-	NS: 'ns'
-};
-
-export const UNITS_LABEL: Record<Unit, string> = {
-	s: 's',
-	ms: 'ms',
-	us: 'µs',
-	ns: 'ns'
-};
-
-// Unit selection cutoffs expressed in seconds-per-pixel.
-// example S: 1e-3 means switch to seconds when each pixel covers >= 1ms.
-export const UNIT_SEC_PER_PX = {
-	S: 1e-3,
-	MS: 1e-6,
-	US: 1e-9
-} as const;
-
-// Used when chart pixel width is not available yet to estimate seconds-per-pixel.
-export const DEFAULT_VISIBLE_WIDTH_PX = 1000;
 
 export const MEASURE_PHASE = {
 	IDLE: 'idle',
@@ -85,12 +74,19 @@ export const MEASURE_PHASE = {
 	FIXED: 'fixed'
 } as const;
 
+export const DROP_ZONE = {
+	BEFORE: 'before',
+	CENTER: 'center',
+	AFTER: 'after',
+	OUTSIDE: 'outside'
+} as const;
+
 export const SNAP_RADIUS_X = 40;
 export const SNAP_RADIUS_Y = 40;
-export const HEADER_HEIGHT = 28;
+export const MEASUREMENT_HEADER_CHART_ID = 'measurement:headerChart';
+export const HEADER_HEIGHT = 56;
+export const LABEL_GAP = 2;
 export const TIMESTAMP_LABEL_HEIGHT = 20;
-export const HEADER_LABEL_TOP =
-	(HEADER_HEIGHT - TIMESTAMP_LABEL_HEIGHT) / 2;
+export const HEADER_LABEL_TOP = HEADER_HEIGHT / 2 + LABEL_GAP * 2;
 export const HORIZONTAL_LABEL_MARGIN = 6;
 export const HORIZONTAL_LINE_HEIGHT = 2;
-export const LABEL_GAP = 2;

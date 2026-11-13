@@ -13,6 +13,7 @@
  *
  */
 
+import type {CfsConfig} from 'cfs-types';
 import {type AiSupportingBackend} from '../../../../../common/types/ai-fusion-data-model';
 import {type AISupportingCore} from '../../../utils/ai-tools';
 import {initializeConfigDict} from '../../../utils/config';
@@ -24,7 +25,7 @@ const createBackend = (
 ): AiSupportingBackend => ({
 	Name: name,
 	Description: `${name} backend for tests`,
-	Formats: ['tflite'],
+	Formats: ['.tflite'],
 	Package: `test.package.${name}`,
 	Module: `test.module.${name}`,
 	Targets: targets,
@@ -61,7 +62,7 @@ const backendData: Record<string, AiSupportingBackend> = {
 	])
 };
 
-const baseCfsConfig = {
+const baseCfsConfig: CfsConfig = {
 	BoardName: 'TestBoard',
 	Package: 'WLP',
 	Projects: [],
@@ -73,7 +74,8 @@ const baseCfsConfig = {
 	DataModelVersion: '1.0.0',
 	Pins: [],
 	Partitions: [],
-	Timestamp: ''
+	Timestamp: '',
+	Soc: ''
 };
 
 describe('Backend Selection', () => {

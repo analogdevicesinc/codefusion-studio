@@ -15,100 +15,100 @@
 
 import { CfsFeatureScope } from "cfs-types";
 import type {
-  CfsSocDataModel,
-  SocControl,
-  CfsPluginProperty,
-  CfsPluginInfo
+	CfsSocDataModel,
+	SocControl,
+	CfsPluginProperty,
+	CfsPluginInfo
 } from "cfs-types";
 import { CfsSocControlsOverride } from "./cfs-soc-controls-override.js";
 import { evalNestedTemplateLiterals } from "../utilities/cfs-utilities.js";
 import { CfsMemoryAccessOverrides } from "./cfs-memory-access-override.js";
 
 export class PropertyProvider {
-  protected cfsPluginInfo: CfsPluginInfo;
-  private socControlsOverride: CfsSocControlsOverride;
-  private socMemoryAccessOverrides: CfsMemoryAccessOverrides;
+	protected cfsPluginInfo: CfsPluginInfo;
+	private socControlsOverride: CfsSocControlsOverride;
+	private socMemoryAccessOverrides: CfsMemoryAccessOverrides;
 
-  constructor(cfsPluginInfo: CfsPluginInfo) {
-    this.cfsPluginInfo = cfsPluginInfo;
-    this.socControlsOverride = new CfsSocControlsOverride(
-      cfsPluginInfo
-    );
-    this.socMemoryAccessOverrides = new CfsMemoryAccessOverrides(
-      cfsPluginInfo
-    );
-  }
+	constructor(cfsPluginInfo: CfsPluginInfo) {
+		this.cfsPluginInfo = cfsPluginInfo;
+		this.socControlsOverride = new CfsSocControlsOverride(
+			cfsPluginInfo
+		);
+		this.socMemoryAccessOverrides = new CfsMemoryAccessOverrides(
+			cfsPluginInfo
+		);
+	}
 
-  getProperties(
-    scope: CfsFeatureScope,
-    context?: Record<string, unknown>
-  ): CfsPluginProperty[] {
-    const targetProperties = this.cfsPluginInfo.properties?.[scope];
+	getProperties(
+		scope: CfsFeatureScope,
+		context?: Record<string, unknown>
+	): CfsPluginProperty[] {
+		const targetProperties = this.cfsPluginInfo.properties?.[scope];
 
-    if (targetProperties === undefined) {
-      return [];
-    }
+		if (targetProperties === undefined) {
+			return [];
+		}
 
-    // Conditionally remove properties that should not be included for the current context
-    const filteredProperties = targetProperties.filter(
-      (pluginProp) => {
-        if (typeof pluginProp.condition === "undefined") {
-          return true;
-        }
+		// Conditionally remove properties that should not be included for the current context
+		const filteredProperties = targetProperties.filter(
+			(pluginProp) => {
+				if (typeof pluginProp.condition === "undefined") {
+					return true;
+				}
 
-        return (
-          evalNestedTemplateLiterals(
-            pluginProp.condition,
-            context ?? {}
-          ) === "true"
-        );
-      }
-    );
+				return (
+					evalNestedTemplateLiterals(
+						pluginProp.condition,
+						context ?? {}
+					) === "true"
+				);
+			}
+		);
 
-    if (context === undefined) {
-      return filteredProperties;
-    }
+		if (context === undefined) {
+			return filteredProperties;
+		}
 
-    // Parse default values if present
-    const propertiesWithParsedDefaults = filteredProperties.map(
-      (pluginProperties) => {
-        if (
-          typeof pluginProperties.default === "string" &&
-          pluginProperties.default
-        ) {
-          const parsedDefault = evalNestedTemplateLiterals(
-            pluginProperties.default,
-            context
-          );
+		// Parse default values if present
+		const propertiesWithParsedDefaults = filteredProperties.map(
+			(pluginProperties) => {
+				if (
+					typeof pluginProperties.default === "string" &&
+					pluginProperties.default
+				) {
+					const parsedDefault = evalNestedTemplateLiterals(
+						pluginProperties.default,
+						context
+					);
 
-          return {
-            ...pluginProperties,
-            default:
-              parsedDefault === "undefined" ? "" : parsedDefault
-          };
-        }
+					return {
+						...pluginProperties,
+						default:
+							parsedDefault === "undefined" ? "" : parsedDefault
+					};
+				}
 
-        return pluginProperties;
-      }
-    );
+				return pluginProperties;
+			}
+		);
 
-    return propertiesWithParsedDefaults;
-  }
+		return propertiesWithParsedDefaults;
+	}
 
-  overrideControls(
-    scope: CfsFeatureScope,
-    soc: CfsSocDataModel
-  ): Record<string, SocControl[]> {
-    return this.socControlsOverride.overrideControls(scope, soc);
-  }
+	overrideControls(
+		scope: CfsFeatureScope,
+		soc: CfsSocDataModel
+	): Record<string, SocControl[]> {
+		return this.socControlsOverride.overrideControls(scope, soc);
+	}
 
-  getMemoryAccessOverrides(
-    partName: string,
-    coreId: string
-  ): Record<string, string[] | undefined> | undefined {
-    return this.socMemoryAccessOverrides.getMemoryAccessOverrides(
-      partName,
-      coreId
-    );
-  }
+	getMemoryAccessOverrides(
+		partName: string,
+		coreId: string
+	): Record<string, string[] | undefined> | undefined {
+		return this.socMemoryAccessOverrides.getMemoryAccessOverrides(
+			partName,
+			coreId
+		);
+	}
 }

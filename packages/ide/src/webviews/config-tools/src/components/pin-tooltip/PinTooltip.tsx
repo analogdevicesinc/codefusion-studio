@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import {
 import {getSocPinDetails} from '../../utils/soc-pins';
 import {isPinReserved} from '../../utils/is-pin-reserved';
 import {pinInConflict} from '../../utils/pin-error';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 type PinTooltipProps = {
 	readonly pinId: string;
@@ -32,6 +33,9 @@ type PinTooltipProps = {
 export default function PinTooltip({pinId}: PinTooltipProps) {
 	const {appliedSignals} = usePin(pinId);
 	const {Label, Signals, Description} = getSocPinDetails(pinId) ?? {};
+	const l10n = useLocaleContext()?.pinConfig as
+		| Record<string, string>
+		| undefined;
 	const isReserved = isPinReserved(pinId);
 
 	const availableSignals =
@@ -46,7 +50,9 @@ export default function PinTooltip({pinId}: PinTooltipProps) {
 		signalName: string,
 		peripheral: string | undefined
 	) =>
-		`${peripheral !== undefined && `${peripheral}.`}${signalName} ${signalName === Label ? '(default)' : ''}`;
+		`${peripheral !== undefined && `${peripheral}.`}${signalName} ${
+			signalName === Label ? '(default)' : ''
+		}`;
 
 	const {
 		top: pinTop = 0,
@@ -111,7 +117,9 @@ export default function PinTooltip({pinId}: PinTooltipProps) {
 								data-test='pin:tooltip:assigned'
 								className={styles.tooltipSection}
 							>
-								<h4>Functions assigned:</h4>
+								<h4>
+									{l10n?.functionsAssigned ?? 'Functions assigned:'}
+								</h4>
 								{appliedSignals.map(signal => (
 									<p
 										key={`${signal.Peripheral}-${signal.Name}`}
@@ -127,7 +135,9 @@ export default function PinTooltip({pinId}: PinTooltipProps) {
 								data-test='pin:tooltip:available'
 								className={styles.tooltipSection}
 							>
-								<h4>Functions available:</h4>
+								<h4>
+									{l10n?.functionsAvailable ?? 'Functions available:'}
+								</h4>
 								{availableSignals.map(signal => (
 									<p
 										key={`${signal.Peripheral}-${signal.Name}`}

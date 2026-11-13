@@ -1,0 +1,40 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+import {SVGProps} from 'react';
+
+/**
+ * Direction glyph for an SRU output signal: an arrow leaving an originating
+ * node.
+ */
+function SruOutputIcon(props: SVGProps<SVGSVGElement>) {
+	return (
+		<svg
+			width='24'
+			height='24'
+			viewBox='0 0 24 24'
+			fill='none'
+			xmlns='http://www.w3.org/2000/svg'
+			{...props}
+		>
+			<path
+				d='M4.49926 14.998C2.84476 14.998 1.49926 13.6525 1.49926 11.998C1.49926 10.3435 2.84476 8.99796 4.49926 8.99796C6.15376 8.99796 7.49926 10.3435 7.49926 11.998C7.49926 13.6525 6.15376 14.998 4.49926 14.998ZM16.9193 18.046L22.1693 12.796C22.2738 12.6915 22.3567 12.5674 22.4133 12.4309C22.4699 12.2944 22.499 12.148 22.499 12.0002C22.499 11.8524 22.4699 11.7061 22.4133 11.5695C22.3567 11.433 22.2738 11.3089 22.1693 11.2045L16.9193 5.95446C16.8148 5.84996 16.6907 5.76706 16.5542 5.71051C16.4176 5.65396 16.2713 5.62485 16.1235 5.62485C15.9757 5.62485 15.8294 5.65396 15.6929 5.71051C15.5563 5.76706 15.4323 5.84996 15.3278 5.95446C15.2233 6.05896 15.1404 6.18302 15.0838 6.31955C15.0273 6.45609 14.9982 6.60242 14.9982 6.75021C14.9982 6.89799 15.0273 7.04433 15.0838 7.18086C15.1404 7.3174 15.2233 7.44146 15.3278 7.54596L18.6578 10.876L10.1243 10.876C9.8259 10.876 9.53975 10.9945 9.32877 11.2055C9.11779 11.4164 8.99926 11.7026 8.99926 12.001C8.99926 12.2993 9.11779 12.5855 9.32877 12.7965C9.53975 13.0074 9.82589 13.126 10.1243 13.126L18.6578 13.126L15.3278 16.456C15.1171 16.6669 14.9988 16.9528 14.9988 17.251C14.9988 17.5491 15.1171 17.835 15.3278 18.046C15.4322 18.1505 15.5563 18.2334 15.6928 18.29C15.8294 18.3466 15.9757 18.3757 16.1235 18.3757C16.2713 18.3757 16.4177 18.3466 16.5542 18.29C16.6907 18.2334 16.8148 18.1505 16.9193 18.046Z'
+				fill='currentColor'
+			/>
+		</svg>
+	);
+}
+
+export default SruOutputIcon;

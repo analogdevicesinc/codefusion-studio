@@ -201,7 +201,9 @@ export function MemoryGraph({
 			return (
 				<div
 					key={block.Name}
-					className={`${styles.block} ${hasPartitions ? styles.highlighted : ''}`}
+					className={`${styles.block} ${
+						hasPartitions ? styles.highlighted : ''
+					}`}
 					style={{width: `${width}%`}}
 				>
 					{freeGaps.map(({address, offset, endAddress, width}) => (
@@ -221,7 +223,9 @@ export function MemoryGraph({
 
 	return (
 		<div
-			className={`${styles.container} ${hasPartitions ? styles.highlighted : ''}`}
+			className={`${styles.container} ${
+				hasPartitions ? styles.highlighted : ''
+			}`}
 			data-test={dataTest}
 		>
 			<div className={styles.section}>

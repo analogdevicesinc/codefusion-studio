@@ -14,6 +14,7 @@
  */
 
 import {expect} from 'chai';
+import {runCommand} from '@oclif/test';
 import {
   localTestRemoteUrl,
   runPkgCommandWithAuthRetry,
@@ -21,6 +22,9 @@ import {
   setupMockPkgCommandDeps,
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
+
+import {pkgDeleteRemoteDeps} from '../../../dist/commands/pkg/delete-remote.js';
+import {assertSuccessEnvelopeData} from '../../utils/assert-json-envelope.js';
 
 function remoteName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
@@ -81,5 +85,34 @@ describe('pkg delete-remote', () => {
 
     expect(remotesError).to.be.undefined;
     expect(remotesStdout).to.not.contain(name);
+  });
+});
+
+describe('pkg delete-remote JSON envelope', () => {
+  const originalGetPackageManager =
+    pkgDeleteRemoteDeps.getPackageManager;
+
+  afterEach(() => {
+    pkgDeleteRemoteDeps.getPackageManager = originalGetPackageManager;
+  });
+
+  it('returns a remote/deleted envelope in JSON mode', async () => {
+    pkgDeleteRemoteDeps.getPackageManager = (async () => ({
+      deleteRemote: async () => {}
+    })) as unknown as typeof pkgDeleteRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      ['pkg', 'delete-remote', 'mock-remote', '--format', 'json'],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      deleted: boolean;
+    }>(stdout, 'pkg delete-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      deleted: true
+    });
   });
 });

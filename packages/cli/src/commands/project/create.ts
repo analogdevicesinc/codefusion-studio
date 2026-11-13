@@ -15,7 +15,11 @@
 
 import type {CfsWorkspace} from 'cfs-types';
 
-import {Command, Flags} from '@oclif/core';
+import {Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
+import {CfsToolManager} from 'cfs-lib';
+import path from 'node:path';
 
 import {getDataModelManager} from '../../utils/data-model-manager.js';
 import {handleMissingDependencyError} from '../../utils/error-handler.js';
@@ -23,12 +27,16 @@ import {getPackageManager} from '../../utils/package-manager.js';
 import {getPluginManager} from '../../utils/plugin-manager.js';
 import {
   checkIfFileExists,
-  lowercaseFirstLetterProps,
-  readJsonFile
+  getCFSInstallPath,
+  lowercaseFirstLetterProps
 } from '../../utils/utils.js';
+import {readJsonFile} from 'cfs-lib';
 
-export default class ProjectCreate extends Command {
+export default class ProjectCreate extends BaseCommand<
+  typeof ProjectCreate
+> {
   static description = 'Generates the project';
+  static useResponseEnvelope = true;
 
   static flags = {
     'search-path': Flags.string({
@@ -50,19 +58,31 @@ export default class ProjectCreate extends Command {
     })
   };
 
-  async run() {
-    const {flags} = await this.parse(ProjectCreate);
+  async run(): Promise<{projectName: string; workspacePath: string}> {
+    const {flags} = this;
     const cfsWorkspaceFile = flags['workspace-file-path'];
     const projectName = flags['project-name'];
 
     if (!checkIfFileExists(cfsWorkspaceFile)) {
       this.error(
-        `Workspace file: ${cfsWorkspaceFile} does not exist.`
+        `Workspace file: ${cfsWorkspaceFile} does not exist.`,
+        {code: 'WORKSPACE_FILE_NOT_FOUND'}
+      );
+    }
+
+    let workspaceFileContent: Record<string, unknown>;
+    try {
+      workspaceFileContent = readJsonFile(cfsWorkspaceFile);
+    } catch (error) {
+      // readJsonFile messages embed the path; pin a stable code instead.
+      this.error(
+        error instanceof Error ? error.message : String(error),
+        {code: 'WORKSPACE_FILE_READ_FAILED'}
       );
     }
 
     const cfsWorkspace = lowercaseFirstLetterProps(
-      readJsonFile(cfsWorkspaceFile)
+      workspaceFileContent
     ) as CfsWorkspace;
 
     if (
@@ -104,11 +124,38 @@ export default class ProjectCreate extends Command {
       packageManager
     );
 
+    const installPath = getCFSInstallPath(this.config);
+    const toolManager = new CfsToolManager(
+      packageManager,
+      installPath ? [installPath] : undefined,
+      cfsWorkspace.soc
+    );
+    const zephyrTool =
+      await toolManager.getInstalledToolById('zephyr');
+    const zephyrBase = zephyrTool
+      ? path.join(zephyrTool.rootPath, 'zephyr')
+      : undefined;
+
     try {
-      await pluginManager.generateProject(cfsWorkspace, projectName);
+      await pluginManager.generateProject(cfsWorkspace, projectName, {
+        zephyrBase
+      });
     } catch (error) {
       handleMissingDependencyError(error);
-      throw error;
+      this.error(
+        error instanceof Error ? error.message : String(error),
+        {
+          code: 'PROJECT_CREATE_FAILED'
+        }
+      );
     }
+
+    return {
+      projectName,
+      workspacePath: path.resolve(
+        cfsWorkspace.location,
+        cfsWorkspace.workspaceName
+      )
+    };
   }
 }

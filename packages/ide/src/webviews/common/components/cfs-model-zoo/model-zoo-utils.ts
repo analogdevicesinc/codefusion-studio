@@ -26,30 +26,47 @@ type GetZooModelPlatformParams = {
 	board: string;
 	core: string;
 	accelerator?: string;
+	family?: string;
 };
 
 /**
  * Retrieves the correct ModelSupportedPlatform for the given zoo model, soc, board, core, and optional accelerator.
+ * When no exact board match is found, falls back to a family match (excluding accelerator).
  */
 export function getZooModelPlatform({
 	selectedZooModel,
 	soc,
 	board,
 	core,
-	accelerator
+	accelerator,
+	family
 }: GetZooModelPlatformParams): ModelSupportedPlatform | undefined {
+	let familyFallback: ModelSupportedPlatform | undefined;
+
 	for (const platform of selectedZooModel?.supportedPlatforms ?? []) {
 		if (
-			platform.soc === soc &&
-			(!board || platform.board === board) &&
-			platform.core === core &&
-			(!accelerator || platform.accelerator === accelerator)
+			platform.soc !== soc ||
+			platform.core !== core ||
+			(accelerator && platform.accelerator !== accelerator)
 		) {
+			continue;
+		}
+
+		if (!board || platform.board === board) {
 			return platform;
+		}
+
+		if (
+			!familyFallback &&
+			family &&
+			!accelerator &&
+			platform.family === family
+		) {
+			familyFallback = platform;
 		}
 	}
 
-	return undefined;
+	return familyFallback;
 }
 
 export function filterZooModelPlatforms(
@@ -67,7 +84,7 @@ export function filterZooModelPlatforms(
 
 /**
  * Resolves a zoo model selection to a model file URL string for the given soc/board/core combination.
- * If no core is provided, falls back to the first matching platform for the soc/board.
+ * If no core is provided, falls back to the first matching platform for the soc/board (or family).
  */
 // eslint-disable-next-line max-params
 export function resolveZooModelUrl(
@@ -75,7 +92,8 @@ export function resolveZooModelUrl(
 	soc: string,
 	board: string,
 	core?: string,
-	accelerator?: string
+	accelerator?: string,
+	family?: string
 ): {modelUrl: string | undefined; datasetUrl: string | undefined} {
 	const platform = core
 		? getZooModelPlatform({
@@ -83,11 +101,17 @@ export function resolveZooModelUrl(
 				soc,
 				board,
 				core,
-				accelerator
+				accelerator,
+				family
 			})
-		: zooModel.model.supportedPlatforms.find(
+		: (zooModel.model.supportedPlatforms.find(
 				p => p.soc === soc && p.board === board
-			);
+			) ??
+			(family !== undefined
+				? zooModel.model.supportedPlatforms.find(
+						p => p.soc === soc && p.family === family
+					)
+				: undefined));
 
 	if (!platform) {
 		return {modelUrl: undefined, datasetUrl: undefined};
@@ -192,5 +216,7 @@ export function getZooModelDisplayName(
 ): string {
 	return typeof modelFile === 'string'
 		? modelFile
-		: `${modelFile.model.displayName ?? modelFile.model.name} (${modelFile.quantization})`;
+		: `${modelFile.model.displayName ?? modelFile.model.name} (${
+				modelFile.quantization
+			})`;
 }

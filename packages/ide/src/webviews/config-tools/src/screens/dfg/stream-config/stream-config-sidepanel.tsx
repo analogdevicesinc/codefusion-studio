@@ -49,11 +49,7 @@ import {
 	useStreams
 } from '../../../state/slices/gaskets/gasket.selector';
 import {useAppDispatch} from '../../../state/store';
-import {
-	getControlsForProjectIds,
-	logTelemetryEvent
-} from '../../../utils/api';
-import {CONFIG_TOOLS_TELEMETRY_ACTIONS} from '../../../state/utils/telemetry-reporter';
+import {getControlsForProjectIds} from '../../../utils/api';
 import {getProjectInfoList} from '../../../utils/config';
 import {
 	getGasketDictionary,
@@ -66,6 +62,9 @@ import {StreamGroupSelector} from './stream-groups/stream-groups-select';
 import {TiedStreamDropdown} from './tied-stream-dropdown';
 import {useLocaleContext} from '../../../../../common/contexts/LocaleContext';
 import {type TLocaleContext} from '../../../common/types/context';
+import {useScopes} from '../../../state/slices/scopes/scopes.selector';
+import {type ScopeValidationOptions} from '../../../utils/plugin-options-validation';
+import {localizeMessage} from '../../../../../common/utils/localization';
 import {
 	hasRemovedTiedStreamDependency,
 	validateStream
@@ -79,9 +78,13 @@ export function StreamConfigSidePanel() {
 	const dispatch = useAppDispatch();
 	const gasketUIProps = useGasketUIProps();
 	const [
-		hasAdditionalStreamConfigErrors,
-		setHasAdditionalStreamConfigErrors
-	] = useState(false);
+		additionalStreamConfigErrors,
+		setAdditionalStreamConfigErrors
+	] = useState<Record<string, boolean>>({});
+	const hasAdditionalStreamConfigErrors = useMemo(
+		() => Object.values(additionalStreamConfigErrors).some(Boolean),
+		[additionalStreamConfigErrors]
+	);
 
 	// Extract gasket properties
 	const sourceGasketProps = activeStream?.Source.Gasket
@@ -118,7 +121,7 @@ export function StreamConfigSidePanel() {
 		dispatch(setSelectedStreams([]));
 		dispatch(setSelectedGaskets([]));
 		setStreamModified(false);
-		setHasAdditionalStreamConfigErrors(false);
+		setAdditionalStreamConfigErrors({});
 	}, [dispatch]);
 
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -142,7 +145,7 @@ export function StreamConfigSidePanel() {
 		 * as users cannot create new streams with errors.
 		 */
 		setErrors({});
-		setHasAdditionalStreamConfigErrors(false);
+		setAdditionalStreamConfigErrors({});
 
 		if (activeStream === undefined) {
 			setAdditionalAvailableInputGaskets(new Set());
@@ -180,13 +183,6 @@ export function StreamConfigSidePanel() {
 			if (streamExists) {
 				dispatch(updateStream({updatedStream: activeStream}));
 			} else {
-				void logTelemetryEvent(
-					CONFIG_TOOLS_TELEMETRY_ACTIONS.DFG_STREAM_CREATED,
-					{
-						sourceGasket: activeStream.Source?.Gasket,
-						destinationCount: activeStream.Destinations?.length ?? 0
-					}
-				);
 				dispatch(addNewStream(activeStream));
 			}
 
@@ -203,6 +199,20 @@ export function StreamConfigSidePanel() {
 		hasAdditionalStreamConfigErrors,
 		streams
 	]);
+
+	const handleAdditionalStreamConfigErrorsChange = useCallback(
+		(sectionId: string, hasErrors: boolean) => {
+			setAdditionalStreamConfigErrors(prev => {
+				if (prev[sectionId] === hasErrors) return prev;
+
+				return {
+					...prev,
+					[sectionId]: hasErrors
+				};
+			});
+		},
+		[]
+	);
 
 	const gasketOutputStreamMap = useGasketOutputStreamMap();
 	const gasketInputStreamMap = useGasketInputStreamMap();
@@ -276,7 +286,8 @@ export function StreamConfigSidePanel() {
 						sourceBufferOutputSizeChoices.length > 0
 							? sourceBufferOutputSizeChoices[0]
 							: 0,
-					Index: -1
+					Index: -1,
+					Config: {}
 				};
 
 				value.StreamId = 0;
@@ -468,13 +479,11 @@ export function StreamConfigSidePanel() {
 							dataTest='stream-source'
 							error={errors['Source.Gasket']}
 							placeholder={i10n?.selectValuePlaceholder}
-							options={[
-								...gaskets.map(g => ({
-									label: g.Name,
-									value: g.Name,
-									disabled: !availableOutputGaskets[g.Name]
-								}))
-							]}
+							options={gaskets.map(g => ({
+								label: g.Name,
+								value: g.Name,
+								disabled: !availableOutputGaskets[g.Name]
+							}))}
 							onHandleDropdown={e => {
 								setValue({
 									Source: {
@@ -529,7 +538,7 @@ export function StreamConfigSidePanel() {
 						values={sourceBufferSizeChoices}
 						defaultValue={activeStream.Source.BufferSize}
 						onHasAdditionalStreamConfigErrors={
-							setHasAdditionalStreamConfigErrors
+							handleAdditionalStreamConfigErrorsChange
 						}
 					/>
 					<Divider />
@@ -557,7 +566,7 @@ export function StreamConfigSidePanel() {
 									values={destinationBufferSizeChoices}
 									destinationIndex={index}
 									onHasAdditionalStreamConfigErrors={
-										setHasAdditionalStreamConfigErrors
+										handleAdditionalStreamConfigErrorsChange
 									}
 								/>
 								<Divider />
@@ -591,9 +600,10 @@ type GasketOptionsSectionProps = Readonly<{
 	errors: Record<string, string>;
 	streamConfig?: ConfigFields;
 	destinationIndex?: number;
-	onHasAdditionalStreamConfigErrors: React.Dispatch<
-		React.SetStateAction<boolean>
-	>;
+	onHasAdditionalStreamConfigErrors: (
+		sectionId: string,
+		hasErrors: boolean
+	) => void;
 }>;
 
 function GasketOptionsSection({
@@ -610,6 +620,7 @@ function GasketOptionsSection({
 	onHasAdditionalStreamConfigErrors
 }: GasketOptionsSectionProps): React.JSX.Element {
 	const i10n: TLocaleContext | undefined = useLocaleContext()?.dfg;
+	const scopes = useScopes();
 
 	const setOptions = useCallback(
 		(options: Partial<DFGEndpoint>) => {
@@ -667,24 +678,90 @@ function GasketOptionsSection({
 
 	const relatedProjects = useMemo(
 		() =>
-			getProjectInfoList()
-				?.filter(p =>
-					gasket?.AssociatedCore
-						? p.CoreId === gasket.AssociatedCore
-						: p.IsPrimary
-				)
-				.map(p => p.ProjectId),
+			getProjectInfoList()?.filter(p =>
+				gasket?.AssociatedCore
+					? p.CoreId === gasket.AssociatedCore
+					: p.IsPrimary
+			) ?? [],
 		[gasket]
+	);
+
+	const relatedProjectIds = useMemo(
+		() => relatedProjects.map(project => project.ProjectId),
+		[relatedProjects]
 	);
 
 	const controlsPrms = useMemo(async () => {
 		const ctls = await getControlsForProjectIds(
-			relatedProjects ?? [],
+			relatedProjectIds,
 			CONTROL_SCOPES.DFG
 		);
 
 		return ctls;
-	}, [relatedProjects]);
+	}, [relatedProjectIds]);
+
+	const formatScopeConflictMessage = useCallback<
+		ScopeValidationOptions['formatConflictMessage']
+	>(
+		({value, conflictingItems}) =>
+			localizeMessage(i10n, 'scope-conflict.error', {
+				value,
+				conflictingItems
+			}),
+		[i10n]
+	);
+
+	const scopeValidation = useMemo<
+		ScopeValidationOptions | undefined
+	>(() => {
+		const project = relatedProjects[0];
+		const endpoint =
+			fieldName === 'Source'
+				? stream.Source
+				: stream.Destinations?.[destinationIndex];
+
+		if (
+			!project ||
+			!endpoint?.Gasket ||
+			endpoint.Index === undefined
+		) {
+			return undefined;
+		}
+
+		return {
+			scopes,
+			controlScope: CONTROL_SCOPES.DFG,
+			projectId: project.ProjectId,
+			itemId: `${endpoint.Gasket}[${endpoint.Index}]`,
+			getConfigPath: controlId =>
+				`DFG.Streams.${stream.StreamId}.Endpoints.${endpoint.Gasket}.${endpoint.Index}.Config.${controlId}`,
+			formatConflictMessage: formatScopeConflictMessage
+		};
+	}, [
+		destinationIndex,
+		fieldName,
+		formatScopeConflictMessage,
+		relatedProjects,
+		scopes,
+		stream.Destinations,
+		stream.Source,
+		stream.StreamId
+	]);
+
+	const sectionId = `${fieldName}:${name ?? ''}:${destinationIndex}`;
+	const handleHasErrorsChange = useCallback(
+		(hasErrors: boolean) => {
+			onHasAdditionalStreamConfigErrors(sectionId, hasErrors);
+		},
+		[onHasAdditionalStreamConfigErrors, sectionId]
+	);
+
+	useEffect(
+		() => () => {
+			onHasAdditionalStreamConfigErrors(sectionId, false);
+		},
+		[onHasAdditionalStreamConfigErrors, sectionId]
+	);
 
 	return (
 		<>
@@ -743,12 +820,10 @@ function GasketOptionsSection({
 						fieldName === 'Source' ? 'Source' : `${name}-Destinations`
 					}-buffer-size-selector`}
 					isDisabled={!isEnabled}
-					options={[
-						...values.map(size => ({
-							label: size.toString(),
-							value: size.toString()
-						}))
-					]}
+					options={values.map(size => ({
+						label: size.toString(),
+						value: size.toString()
+					}))}
 					onHandleDropdown={(value: string) => {
 						setOptions({
 							BufferSize: value ? parseInt(value, 10) : undefined
@@ -769,7 +844,8 @@ function GasketOptionsSection({
 					}
 					socConfig={streamConfig ?? {}}
 					testId={`${fieldName}-${name}-additionalControls`}
-					onHasErrorsChange={onHasAdditionalStreamConfigErrors}
+					scopeValidation={scopeValidation}
+					onHasErrorsChange={handleHasErrorsChange}
 					onControlChange={(field, value) => {
 						const currentConfig =
 							fieldName === 'Source'
@@ -784,7 +860,7 @@ function GasketOptionsSection({
 										)
 									)
 								: {
-										...(currentConfig ?? {}),
+										...currentConfig,
 										[field]: value
 									};
 
@@ -814,4 +890,3 @@ function FieldWithLabel({
 		</div>
 	);
 }
-

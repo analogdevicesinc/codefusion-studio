@@ -5,7 +5,9 @@
 		"./memory-viewer/**/*.tsx",
 		"./custom.d.ts",
 		"./common/**/*.ts",
-		"./common/**/*.tsx"
+		"./common/**/*.tsx",
+		"../constants/**/*.ts",
+		"../types/**/*.ts"
 	],
 	"exclude": ["./**/*.cy.ts*"]
 }

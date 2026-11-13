@@ -13,15 +13,20 @@
  *
  */
 
-import {type AIModelCompatReport} from '@ide-types/report-view-types';
+import type {
+	CfsAiCompatibilityReport,
+	CfsAiCompatModelSummary
+} from 'cfs-types';
 import {useReport} from '../../report';
 import styles from './compatibility-report.module.scss';
 import {useLocaleContext} from '../../../../common/contexts/LocaleContext';
 import CompatibilityIssues from './components/compatibility-issues';
+import {InfoItem} from '../../common/info-item';
+import {ModelHashButton} from '../../common/model-hash-button';
 
 export function CompatibilityReport() {
 	const l10n = useLocaleContext();
-	const report = useReport<AIModelCompatReport>();
+	const report = useReport<CfsAiCompatibilityReport>();
 
 	if (!report) {
 		return <div>{l10n?.errors['report-load-error']}</div>;
@@ -34,10 +39,14 @@ export function CompatibilityReport() {
 				data-test='compatibility-report'
 			>
 				<main className={styles.main}>
-					<h1 className={styles.heading}>
-						{l10n?.compatibility.title}:{' '}
-						{report.model_summary?.model_name}
-					</h1>
+					<div className={styles.titleRow}>
+						<h1 className={styles.heading}>
+							{l10n?.compatibility.title}:{' '}
+							{report.model_summary?.model_name}
+						</h1>
+					</div>
+
+					<ModelInfo modelSummary={report.model_summary} />
 
 					<CompatibilityIssues
 						issues={report.memory_issues}
@@ -62,6 +71,41 @@ export function CompatibilityReport() {
 						dataTest='unsupported-types'
 					/>
 				</main>
+			</div>
+		</div>
+	);
+}
+
+function ModelInfo({
+	modelSummary
+}: {
+	readonly modelSummary: CfsAiCompatModelSummary | null;
+}) {
+	const locale = useLocaleContext();
+	const l10n = locale?.compatibility;
+
+	return (
+		<div className={styles.modelInfoCard}>
+			<div className={styles.modelInfoContainer}>
+				<InfoItem
+					label={l10n?.model}
+					value={
+						modelSummary?.model_path ?? locale?.common.notAvailable
+					}
+					truncationSide='left'
+					dataTest='model-path-value'
+				/>
+				{modelSummary?.model_hash && (
+					<InfoItem
+						label={l10n?.modelHash}
+						value={modelSummary.model_hash}
+						truncationSide='left'
+						dataTest='model-hash-value'
+						action={
+							<ModelHashButton hash={modelSummary.model_hash} />
+						}
+					/>
+				)}
 			</div>
 		</div>
 	);

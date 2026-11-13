@@ -23,12 +23,12 @@ export const handleTelemetryNotification = async (): Promise<void> => {
   const isTelemetryEnabled = config.get(CFS_TELEMETRY_ENABLE);
 
   if (isTelemetryEnabled === null) {
-    const shareData = "Share Anonymous Data";
-    const dontShareData = "Don’t Share Data";
+    const shareData = "Share Data";
+    const dontShareData = "Don't Share Data";
     const result = await vscode.window.showInformationMessage(
-      "CodeFusion Studio collects anonymous diagnostics and usage data (such as which features or parts you use), known as Telemetry, to improve performance and usability. You can change your data collection preference at any time by opening Settings and searching for 'CFS Telemetry'. For details on data collection, see our [Privacy Policy.](https://www.analog.com/en/who-we-are/legal-and-risk-oversight/data-privacy/privacy-policy.html)",
-      shareData,
+      "CodeFusion Studio collects diagnostic and usage data, including tool version, operating system, command categories, performance metrics, and error codes, to improve usability and performance. A randomly generated usage identifier is stored locally to link your sessions. No source code, file paths, credentials, or personal details are collected. To distinguish ADI-internal from external use, CodeFusion Studio checks locally whether you are signed in to myAnalog with an ADI account or using an ADI-managed computer; only the result is shared. You can change your data collection preference at any time by opening Settings and searching for 'CFS Telemetry'. To learn more, view our [Privacy Policy](https://www.analog.com/en/who-we-are/legal-and-risk-oversight/data-privacy/privacy-policy.html).",
       dontShareData,
+      shareData,
     );
 
     if (result === shareData) {

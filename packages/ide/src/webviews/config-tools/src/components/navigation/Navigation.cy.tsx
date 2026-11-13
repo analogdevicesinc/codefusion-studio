@@ -1,3 +1,18 @@
+/**
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import type {Soc} from '@common/types/soc';
 import Navigation from './Navigation';
 import {type CfsConfig} from 'cfs-types';
@@ -6,8 +21,13 @@ import {resetClockNodes} from '../../utils/clock-nodes';
 import {resetCoreMemoryDictionary} from '../../utils/memory';
 import {resetPinDictionary} from '../../utils/soc-pins';
 import {resetDfg} from '../../utils/dfg';
+import {withFirewallTestData} from '../../screens/firewall-config/firewall-test-data';
 
 const socMax = await import('@socs/max32690-wlp.json').then(
+	module => module.default as unknown as Soc
+);
+
+const socAdsp = await import('@socs/adsp-sc834w-bga_ed.json').then(
 	module => module.default as unknown as Soc
 );
 
@@ -168,6 +188,31 @@ describe('Navigation', () => {
 			cy.get('[data-test="nav-item:settings"]').should('exist');
 		});
 
+		it('should render Settings tab when the SOC supports Firewall even without MCUboot support', () => {
+			const configWithFirewallSupport = {
+				Soc: 'ADAU2042',
+				Projects: [
+					{
+						Description: 'ARM Cortex-M55',
+						ExternallyManaged: false,
+						FirmwarePlatform: 'zephyr',
+						CoreId: 'CM55',
+						Name: 'ARM Cortex-M55',
+						PluginId: '',
+						ProjectId: 'CM55-proj'
+					}
+				]
+			} as unknown as CfsConfig;
+
+			const reduxStore = configurePreloadedStore(
+				withFirewallTestData(socMax),
+				configWithFirewallSupport
+			);
+			cy.mount(<Navigation />, reduxStore);
+
+			cy.get('[data-test="nav-item:settings"]').should('exist');
+		});
+
 		it('should not render Settings tab when SOC is unsupported and no Zephyr projects', () => {
 			const reduxStore = configurePreloadedStore(
 				socMax,
@@ -208,6 +253,101 @@ describe('Navigation', () => {
 			cy.mount(<Navigation />, reduxStore);
 
 			cy.get('[data-test="nav-item:settings"]').should('not.exist');
+		});
+	});
+
+	describe('Firewall Navigation', () => {
+		it('should render Firewall Config navigation tab when the SOC supports Firewall', () => {
+			const configWithFirewallSupport = {
+				Soc: 'ADAU2042',
+				Projects: [
+					{
+						Description: 'M55',
+						ExternallyManaged: false,
+						FirmwarePlatform: 'zephyr',
+						CoreId: 'CM55',
+						Name: 'ARM Cortex-M55',
+						PluginId: '',
+						ProjectId: 'CM55-proj'
+					}
+				]
+			} as unknown as CfsConfig;
+
+			const reduxStore = configurePreloadedStore(
+				withFirewallTestData(socMax),
+				configWithFirewallSupport
+			);
+			cy.mount(<Navigation />, reduxStore);
+
+			cy.get('[data-test="nav-item:firewallConfig"]').should('exist');
+		});
+
+		it('should not render Firewall Config navigation tab when the SOC does not support Firewall', () => {
+			const configWithoutFirewallSupport = {
+				Soc: 'MAX32690',
+				Projects: [
+					{
+						Description: 'ARM Cortex-M4',
+						ExternallyManaged: false,
+						FirmwarePlatform: 'zephyr',
+						CoreId: 'CM4',
+						Name: 'ARM Cortex-M4',
+						PluginId: '',
+						ProjectId: 'CM4-proj'
+					}
+				]
+			} as unknown as CfsConfig;
+
+			const reduxStore = configurePreloadedStore(
+				socMax,
+				configWithoutFirewallSupport
+			);
+			cy.mount(<Navigation />, reduxStore);
+
+			cy.get('[data-test="nav-item:firewallConfig"]').should(
+				'not.exist'
+			);
+		});
+	});
+
+	describe('Signal Routing Unit Navigation', () => {
+		it('should render Signal Routing Unit navigation tab when the models peripherals contain SRU', () => {
+			const configWithSharcFxCore = {
+				Soc: 'ADSP-SC834W',
+				Projects: [
+					{
+						Description: 'SHARC-FX',
+						ExternallyManaged: false,
+						FirmwarePlatform: 'msdk',
+						CoreId: 'FX',
+						Name: 'SHARC-FX',
+						PluginId: '',
+						ProjectId: 'FX-proj'
+					}
+				]
+			} as unknown as CfsConfig;
+
+			const reduxStore = configurePreloadedStore(
+				socAdsp,
+				configWithSharcFxCore
+			);
+			cy.mount(<Navigation />, reduxStore);
+
+			cy.get('[data-test="nav-item:signalRoutingUnit"]').should(
+				'exist'
+			);
+		});
+
+		it('should not render Signal Routing Unit navigation tab when the SoC is not ADSP', () => {
+			const reduxStore = configurePreloadedStore(
+				socMax,
+				{} as CfsConfig
+			);
+			cy.mount(<Navigation />, reduxStore);
+
+			cy.get('[data-test="nav-item:signalRoutingUnit"]').should(
+				'not.exist'
+			);
 		});
 	});
 });

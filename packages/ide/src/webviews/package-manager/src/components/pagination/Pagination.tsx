@@ -95,13 +95,17 @@ export default function Pagination() {
 					options={PAGE_SIZE_OPTIONS}
 					onHandleDropdown={handleItemsPerPageChange}
 				/>
-				<p className={styles.itemsPerPageText}>
-					{rangeStart}-{rangeEnd} of {total}
-				</p>
 			</div>
+			<p
+				data-test='pagination-range'
+				className={styles.currentItemsText}
+			>
+				{rangeStart}-{rangeEnd} of {total}
+			</p>
 			<div className={styles.rowContainer}>
 				<Button
 					appearance='icon'
+					dataTest='pagination-first'
 					disabled={isFirstPage}
 					onClick={() => {
 						goToPage(1);
@@ -111,6 +115,7 @@ export default function Pagination() {
 				</Button>
 				<Button
 					appearance='icon'
+					dataTest='pagination-previous'
 					disabled={isFirstPage}
 					onClick={() => {
 						goToPage(currentPage - 1);
@@ -138,6 +143,7 @@ export default function Pagination() {
 				</div>
 				<Button
 					appearance='icon'
+					dataTest='pagination-next'
 					disabled={isLastPage}
 					onClick={() => {
 						goToPage(currentPage + 1);
@@ -147,6 +153,7 @@ export default function Pagination() {
 				</Button>
 				<Button
 					appearance='icon'
+					dataTest='pagination-last'
 					disabled={isLastPage}
 					onClick={() => {
 						goToPage(pageCount);

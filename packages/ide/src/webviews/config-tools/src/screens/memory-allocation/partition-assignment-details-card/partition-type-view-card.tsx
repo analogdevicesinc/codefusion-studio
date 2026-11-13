@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,11 @@ export default function PartitionTypeViewCard({
 					</div>
 
 					<p className={styles.memoryCardDetails}>
-						{`${formatTotalAndAvailableMemory(totalMemoryBlockSize, AvailableMemoryInBlock, false)} Available`}
+						{`${formatTotalAndAvailableMemory(
+							totalMemoryBlockSize,
+							AvailableMemoryInBlock,
+							false
+						)} Available`}
 					</p>
 				</div>
 				<div slot='end'>

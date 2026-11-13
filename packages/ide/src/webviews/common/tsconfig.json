@@ -1,4 +1,12 @@
 {
 	"extends": "../tsconfig.json",
-	"include": ["./**/*.ts", "./*.ts", "./**/*.tsx", "../custom.d.ts", "../cypress.d.ts"]
+	"include": [
+		"./**/*.ts",
+		"./*.ts",
+		"./**/*.tsx",
+		"../custom.d.ts",
+		"../../constants/**/*.ts",
+		"../../types/**/*.ts",
+		"../cypress.d.ts"
+	]
 }

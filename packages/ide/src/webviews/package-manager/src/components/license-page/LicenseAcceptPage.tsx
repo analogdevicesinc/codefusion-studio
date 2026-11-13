@@ -13,8 +13,7 @@
  *
  */
 
-import {useState} from 'react';
-import type {CfsPackageReference} from 'cfs-package-manager';
+import {useEffect, useRef, useState} from 'react';
 import {
 	ProgressRing,
 	CompletedIcon,
@@ -26,14 +25,10 @@ import AccordionList, {
 	AccordionItem
 } from '@common/components/accordion-list/AccordionList';
 import ActionBar from '../action-bar/ActionBar';
+import {useIndexingLock} from '../../hooks/useIndexingLock';
 import LicenseComponent from '../license-component/LicenseComponent';
-import {
-	useLicenseMap,
-	type LicenseDataState
-} from '../license-component/useLicenseData';
-import {useInstallSet} from '../../hooks/useInstallSet';
+import {type InstallPlanResult} from '../../hooks/useInstallPlan';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
-import {useSelectedPackages} from '../../state/slices/packages/packages.selector';
 import {
 	buildPackageReference,
 	installPackages
@@ -43,86 +38,45 @@ import {useAppDispatch} from '../../state/store';
 type LicenseAcceptPageProps = {
 	readonly onBack: () => void;
 	readonly onAcceptAndInstall: () => void;
+	readonly installPlanResult: InstallPlanResult;
 };
 
 /**
- * True until the install set is resolved and every package in it has its
- * license data fetched.
- */
-function areLicensesLoading(
-	installSetLoading: boolean,
-	installSet: CfsPackageReference[],
-	getLicense: (
-		packageName: string,
-		packageVersion: string
-	) => LicenseDataState
-): boolean {
-	if (installSetLoading) {
-		return true;
-	}
-
-	return installSet.some(
-		pkg => getLicense(pkg.name, pkg.version).loading
-	);
-}
-
-/**
- * The backend installs every package in the install set (selected packages + dependencies) with the same acceptLicense flag.
- * An error in any of them must block installation rather than being treated as accepted.
- */
-function hasAnyLicenseError(
-	installSet: CfsPackageReference[],
-	getLicense: (
-		packageName: string,
-		packageVersion: string
-	) => LicenseDataState
-): boolean {
-	return installSet.some(
-		pkg => getLicense(pkg.name, pkg.version).error !== undefined
-	);
-}
-
-/**
- * True once every package in the install set has been opened by the user and
- * nothing (license fetch, or dependency resolution for the install set
- * itself) failed along the way.
+ * True once every package in the install set has been opened by the user.
  */
 function isInstallSetFullyReviewed(
-	installSet: CfsPackageReference[],
-	reviewed: Set<string>,
-	licensesLoading: boolean,
-	hasBlockingErrors: boolean
+	installSetLength: number,
+	reviewed: Set<string>
 ): boolean {
-	return (
-		!licensesLoading &&
-		installSet.length > 0 &&
-		reviewed.size === installSet.length &&
-		!hasBlockingErrors
-	);
+	return installSetLength > 0 && reviewed.size === installSetLength;
 }
 
 export default function LicenseAcceptPage({
 	onBack,
-	onAcceptAndInstall
+	onAcceptAndInstall,
+	installPlanResult
 }: LicenseAcceptPageProps) {
 	const l10n = useLocaleContext()?.license;
 	const actionBarL10n = useLocaleContext()?.actionBar;
-	const selectedPackages = useSelectedPackages();
+	const indexingLock = useIndexingLock();
 	const dispatch = useAppDispatch();
 
-	// The backend installs dependencies alongside the selected packages, so
-	// every dependency license it will silently accept must be reviewed too.
+	// Use the install plan passed from parent (shared with ReviewSummary)
 	const {
-		packages: installSet,
-		loading: installSetLoading,
-		error: installSetError
-	} = useInstallSet(selectedPackages);
+		plan,
+		loading: planLoading,
+		error: planError
+	} = installPlanResult;
+
+	// Use the license information directly from the plan (already includes license text)
+	const packagesRequiringLicense =
+		plan?.requiresLicenseAcceptance ?? [];
 
 	const [activeId, setActiveId] = useState(
-		installSet[0]
+		packagesRequiringLicense[0]
 			? buildPackageReference(
-					installSet[0].name,
-					installSet[0].version
+					packagesRequiringLicense[0].reference.name,
+					packagesRequiringLicense[0].reference.version
 				)
 			: ''
 	);
@@ -131,38 +85,73 @@ export default function LicenseAcceptPage({
 		() => new Set(activeId ? [activeId] : [])
 	);
 
-	const activePkg =
-		installSet.find(
-			pkg => buildPackageReference(pkg.name, pkg.version) === activeId
-		) ?? installSet[0];
-
-	const {getLicense} = useLicenseMap(installSet);
-	const {licenseData, error, loading} = getLicense(
-		activePkg?.name ?? '',
-		activePkg?.version ?? ''
+	const activeLicenseInfo = packagesRequiringLicense.find(
+		info =>
+			buildPackageReference(
+				info.reference.name,
+				info.reference.version
+			) === activeId
 	);
-
-	const licensesLoading = areLicensesLoading(
-		installSetLoading,
-		installSet,
-		getLicense
-	);
-
-	const hasBlockingErrors =
-		installSetError || hasAnyLicenseError(installSet, getLicense);
 
 	const allReviewed = isInstallSetFullyReviewed(
-		installSet,
-		reviewed,
-		licensesLoading,
-		hasBlockingErrors
+		packagesRequiringLicense.length,
+		reviewed
 	);
 
-	const resolvedLicenseName = licenseData?.licenseId ?? '';
+	// Auto-install when plan loads with no licenses requiring acceptance
+	// ONLY proceed if there are no errors (planError from useInstallPlan handles timeout too)
+	// Waits while custom remotes are indexed, like the install buttons.
+	// Runs once: installing re-renders the parent, which recreates
+	// onAcceptAndInstall and would otherwise rerun this effect.
+	const autoInstalled = useRef(false);
+	useEffect(() => {
+		if (
+			!autoInstalled.current &&
+			plan &&
+			plan.requiresLicenseAcceptance.length === 0 &&
+			!planError &&
+			indexingLock === undefined
+		) {
+			autoInstalled.current = true;
+			// Handle empty install (all packages already installed) - just transition without dispatching
+			if (plan.toInstall.length === 0) {
+				onAcceptAndInstall();
+				return;
+			}
+
+			void dispatch(
+				installPackages({
+					packages: plan.toInstall,
+					options: {
+						acceptLicense: true
+					}
+				})
+			);
+			onAcceptAndInstall();
+		}
+	}, [plan, planError, indexingLock, dispatch, onAcceptAndInstall]);
+
+	// Set the first package as active when packages load
+	useEffect(() => {
+		if (
+			packagesRequiringLicense.length > 0 &&
+			!activeId &&
+			packagesRequiringLicense[0]
+		) {
+			const firstId = buildPackageReference(
+				packagesRequiringLicense[0].reference.name,
+				packagesRequiringLicense[0].reference.version
+			);
+			setActiveId(firstId);
+			setReviewed(new Set([firstId]));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [packagesRequiringLicense.length, activeId]);
+
+	const resolvedLicenseName = activeLicenseInfo?.license ?? '';
 
 	const licenseContent =
-		error ??
-		licenseData?.licenseText ??
+		activeLicenseInfo?.licenseText ??
 		l10n?.fallbackLicenseText?.replace(
 			'{license}',
 			resolvedLicenseName
@@ -170,11 +159,17 @@ export default function LicenseAcceptPage({
 		`This package uses the ${resolvedLicenseName} license.`;
 
 	const handleAcceptAndInstall = () => {
-		if (hasBlockingErrors) return;
+		if (!plan) return;
+
+		// Handle empty install (all packages already installed) - just transition without dispatching
+		if (plan.toInstall.length === 0) {
+			onAcceptAndInstall();
+			return;
+		}
 
 		void dispatch(
 			installPackages({
-				packages: installSet,
+				packages: plan.toInstall,
 				options: {
 					acceptLicense: true
 				}
@@ -183,58 +178,96 @@ export default function LicenseAcceptPage({
 		onAcceptAndInstall();
 	};
 
+	// Show loading state while gathering package information
+	if (planLoading) {
+		return (
+			<div className={styles.outerFrame}>
+				<div className={styles.main}>
+					<div className={styles.loadingContainer}>
+						<ProgressRing position='center' />
+						<span className={styles.loadingMessage}>
+							{l10n?.gatheringPackageInfo ??
+								'Gathering package information for installation'}
+						</span>
+					</div>
+				</div>
+				<ActionBar
+					secondaryAction={{
+						label: actionBarL10n?.back ?? '',
+						onClick: onBack
+					}}
+				/>
+			</div>
+		);
+	}
+
+	// Show error state if plan fetch failed (including timeouts)
+	if (planError) {
+		return (
+			<div className={styles.outerFrame}>
+				<div className={styles.main}>
+					<div className={styles.loadingContainer}>
+						<span className={styles.errorMessage}>
+							{l10n?.planFetchError ??
+								'Unable to load license information.'}
+						</span>
+					</div>
+				</div>
+				<ActionBar
+					secondaryAction={{
+						label: actionBarL10n?.back ?? '',
+						onClick: onBack
+					}}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<div className={styles.container}>
 			<div className={styles.sidebar}>
 				<AccordionList
 					title={l10n?.sidebarTitle ?? 'Licenses'}
 					caption={
-						licensesLoading
-							? undefined
-							: (l10n?.reviewedCount
-									?.replace('{reviewed}', String(reviewed.size))
-									?.replace('{total}', String(installSet.length)) ??
-								`${reviewed.size} of ${installSet.length} reviewed`)
+						l10n?.reviewedCount
+							?.replace('{reviewed}', String(reviewed.size))
+							?.replace(
+								'{total}',
+								String(packagesRequiringLicense.length)
+							) ??
+						`${reviewed.size} of ${packagesRequiringLicense.length} reviewed`
 					}
 					className={styles.accordionContainer}
 				>
-					{licensesLoading ? (
-						<div className={styles.accordionLoading}>
-							<ProgressRing position='center' />
-						</div>
-					) : (
-						installSet.map(pkg => {
-							const id = buildPackageReference(pkg.name, pkg.version);
-							const licenseName =
-								getLicense(pkg.name, pkg.version).licenseData
-									?.licenseId ?? pkg.name;
+					{packagesRequiringLicense.map(info => {
+						const id = buildPackageReference(
+							info.reference.name,
+							info.reference.version
+						);
 
-							return (
-								<AccordionItem
-									key={id}
-									active={activeId === id}
-									subTitle={`${pkg.name} v${pkg.version}`}
-									icon={
-										reviewed.has(id) ? (
-											<FilledCircledCheckmarkIcon
-												className={styles.viewedIcon}
-											/>
-										) : (
-											<CompletedIcon
-												className={styles.notViewedIcon}
-											/>
-										)
-									}
-									onClick={() => {
-										setActiveId(id);
-										setReviewed(prev => new Set(prev).add(id));
-									}}
-								>
-									{licenseName}
-								</AccordionItem>
-							);
-						})
-					)}
+						return (
+							<AccordionItem
+								key={id}
+								active={activeId === id}
+								subTitle={`${info.reference.name} v${info.reference.version}`}
+								icon={
+									reviewed.has(id) ? (
+										<FilledCircledCheckmarkIcon
+											className={styles.viewedIcon}
+										/>
+									) : (
+										<CompletedIcon className={styles.notViewedIcon} />
+									)
+								}
+								onClick={() => {
+									setActiveId(id);
+									setReviewed(prev => new Set(prev).add(id));
+								}}
+							>
+								{info.license}
+							</AccordionItem>
+						);
+					})}
 				</AccordionList>
 				<div className={styles.inlineMessage}>
 					<InfoIcon
@@ -254,24 +287,26 @@ export default function LicenseAcceptPage({
 								title={l10n?.reviewLicensesTitle ?? ''}
 								name={resolvedLicenseName}
 								target={
-									activePkg
-										? `${activePkg.name} ${activePkg.version}`
+									activeLicenseInfo
+										? `${activeLicenseInfo.reference.name} ${activeLicenseInfo.reference.version}`
 										: ''
 								}
-								isLoading={loading}
+								isLoading={false}
 								licenseContent={licenseContent}
 							/>
 						</div>
 					</div>
 				</div>
 				<ActionBar
+					dataTest='license-action-bar'
 					secondaryAction={{
 						label: actionBarL10n?.back ?? '',
 						onClick: onBack
 					}}
 					primaryAction={{
 						label: actionBarL10n?.acceptLicense ?? '',
-						disabled: !allReviewed,
+						disabled: !allReviewed || indexingLock !== undefined,
+						disabledReason: indexingLock,
 						onClick: handleAcceptAndInstall
 					}}
 				/>

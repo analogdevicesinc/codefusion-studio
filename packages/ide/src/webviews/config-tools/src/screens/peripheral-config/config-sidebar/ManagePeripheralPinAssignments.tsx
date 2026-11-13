@@ -1,12 +1,9 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +17,7 @@ import {
 	useActivePeripheral,
 	usePeripheralSignalAssignments
 } from '../../../state/slices/peripherals/peripherals.selector';
+import {getFixedFunctionPins} from '../../../utils/soc-pins';
 import SignalAssignment from './SignalAssignment';
 
 function ManagePeripheralPinAssignments() {
@@ -31,16 +29,34 @@ function ManagePeripheralPinAssignments() {
 		coreId
 	);
 
-	if (!activePeripheral || !assignedSignals.length) return null;
+	const reservedSignals = activePeripheral
+		? getFixedFunctionPins().flatMap(
+				pin =>
+					pin.Signals?.filter(
+						signal => signal.Peripheral === activePeripheral
+					).map(signal => signal.Name) ?? []
+			)
+		: [];
+
+	const signals = activePeripheral
+		? [
+				...new Set([
+					...assignedSignals.map(signal => signal.name),
+					...reservedSignals
+				])
+			]
+		: [];
+
+	if (!activePeripheral || !signals.length) return null;
 
 	return (
 		<div
 			style={{display: 'flex', flexDirection: 'column', gap: '6px'}}
 		>
-			{assignedSignals.map(signal => (
+			{signals.map(signal => (
 				<SignalAssignment
-					key={`${activePeripheral}-${signal.name}`}
-					signal={signal.name}
+					key={`${activePeripheral}-${signal}`}
+					signal={signal}
 					peripheral={activePeripheral}
 				/>
 			))}

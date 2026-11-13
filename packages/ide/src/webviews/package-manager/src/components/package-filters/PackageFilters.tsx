@@ -38,9 +38,20 @@ import {
 	useSearchQuery,
 	useStatusFilter,
 	useSocFilter,
+	useSocListLoading,
 	useSocOptions,
-	useTypeFilter
+	useTypeFilter,
+	useTypeOptions
 } from '../../state/slices/packages/packages.selector';
+
+/** Display labels for the package types the catalog uses. */
+const TYPE_LABELS: Record<string, string> = {
+	'data-model': 'Data Model',
+	plugin: 'Plugin',
+	sdk: 'SDK',
+	tool: 'Tool',
+	toolchain: 'Toolchain'
+};
 
 /**
  * Displays the page title and subtitle. This section scrolls
@@ -65,9 +76,15 @@ export function PackageFiltersTitle() {
 export function PackageFiltersBar() {
 	const l10n = useLocaleContext()?.filters;
 	const dispatch = useAppDispatch();
+	// SoC options are the full SoC catalog; type options are the types the
+	// listed packages have.
 	const socFromCatalog = useSocOptions();
+	const socListLoading = useSocListLoading();
+	const typesFromCatalog = useTypeOptions();
 	const total = usePackageListTotal();
-	const loading = usePackageListLoading();
+
+	// List loading: the initial package list fetch, disables everything until it completes.
+	const listLoading = usePackageListLoading();
 	const searchQuery = useSearchQuery();
 	const statusFilter = useStatusFilter();
 	const socFilter = useSocFilter();
@@ -78,13 +95,12 @@ export function PackageFiltersBar() {
 		void dispatch(fetchSocList());
 	}, [dispatch]);
 
-	const typeOptions: MultiSelectOption[] = [
-		{label: 'Data Model', value: 'data-model'},
-		{label: 'Plugin', value: 'plugin'},
-		{label: 'SDK', value: 'sdk'},
-		{label: 'Tool', value: 'tool'},
-		{label: 'Toolchain', value: 'toolchain'}
-	];
+	const typeOptions: MultiSelectOption[] = typesFromCatalog.map(
+		type => ({
+			label: TYPE_LABELS[type] ?? type,
+			value: type
+		})
+	);
 
 	const statusOptions: MultiSelectOption[] = [
 		{label: 'Installed', value: 'installed'},
@@ -119,25 +135,30 @@ export function PackageFiltersBar() {
 			<label className={styles.searchWrapper}>
 				<SearchIcon />
 				<input
+					data-test='package-search'
 					className={styles.searchInput}
-					disabled={loading}
+					disabled={listLoading}
 					placeholder={l10n?.searchPlaceholder}
 					value={searchQuery}
 					onChange={e => {
 						handleSearchChange(e.target.value);
 					}}
 				/>
-				{!loading && (
-					<span className={styles.availableCount}>
+				{!listLoading && (
+					<span
+						data-test='available-count'
+						className={styles.availableCount}
+					>
 						{l10n?.availableCount?.replace('{count}', String(total))}
 					</span>
 				)}
 			</label>
 			<div className={styles.filtersList}>
 				<Chip
+					dataTest='required-only-chip'
 					isActive={requiredOnly}
 					label={l10n?.requiredChip}
-					isDisabled={loading}
+					isDisabled={listLoading}
 					onClick={() => {
 						dispatch(toggleRequiredOnly());
 					}}
@@ -145,9 +166,10 @@ export function PackageFiltersBar() {
 				<SearchableMultiSelect
 					isClearable
 					disableSearch
+					dataTest='status-filter'
 					className={styles.filterChip}
 					variant='filter'
-					isDisabled={loading}
+					isDisabled={listLoading}
 					dropdownText={l10n?.status?.label}
 					clearText={l10n?.clear}
 					chipText={
@@ -167,12 +189,15 @@ export function PackageFiltersBar() {
 				/>
 				<SearchableMultiSelect
 					isClearable
+					dataTest='soc-filter'
 					className={styles.filterChip}
 					variant='filter'
-					isDisabled={loading}
+					isDisabled={listLoading}
 					dropdownText={l10n?.soc?.label}
 					searchPlaceholder={l10n?.soc?.searchPlaceholder}
-					noResultsText={l10n?.soc?.noResults}
+					noResultsText={
+						socListLoading ? l10n?.soc?.loading : l10n?.soc?.noResults
+					}
 					clearText={l10n?.clear}
 					chipText={
 						socFilter.length ? String(socFilter.length) : undefined
@@ -190,9 +215,10 @@ export function PackageFiltersBar() {
 				<SearchableMultiSelect
 					isClearable
 					disableSearch
+					dataTest='type-filter'
 					className={styles.filterChip}
 					variant='filter'
-					isDisabled={loading}
+					isDisabled={listLoading}
 					dropdownText={l10n?.type?.label}
 					clearText={l10n?.clear}
 					chipText={

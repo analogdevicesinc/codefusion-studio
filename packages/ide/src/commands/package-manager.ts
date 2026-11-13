@@ -18,6 +18,10 @@ import type {
   CfsPackageRemote,
   CfsSkippedPackageInfo,
 } from "cfs-package-manager";
+import {
+  REMOTE_URL_ERROR_MESSAGES,
+  validateRemoteUrl,
+} from "cfs-package-manager";
 import * as vscode from "vscode";
 import {
   CLOUD_CATALOG_AUTH,
@@ -30,17 +34,30 @@ import {
   formatErrorForDisplay,
 } from "../utils/package-manager";
 import { PackageManagerPagePanel } from "../panels/package-manager";
+import type { PackageCatalogService } from "../utils/package-catalog";
+import type { CustomRemoteCatalogService } from "../utils/custom-remote-catalog";
 import { Messenger } from "vscode-messenger";
+import type { AuthService } from "../services/auth-service";
 
 interface InstallPackageItem extends vscode.QuickPickItem {
   pkg: CfsPackageReference;
 }
 
+const PACKAGE_MANAGER_INIT_ERROR =
+  "CFS: Package Manager commands cannot be run because the package manager failed to initialize.";
+
 //This file contains Package Manager specific commands
 export function registerPackageManagerCommands(
   context: vscode.ExtensionContext,
-  pkgManager?: CfsPackageManagerProvider,
-  messenger?: Messenger,
+  authService: AuthService,
+  pkgManager: CfsPackageManagerProvider | undefined,
+  messenger: Messenger | undefined,
+  checkForPackageUpdates: (
+    pkgManager: CfsPackageManagerProvider | undefined,
+    showNoUpdatesMessage: boolean,
+  ) => Promise<void>,
+  packageCatalog?: PackageCatalogService,
+  customRemoteCatalog?: CustomRemoteCatalogService,
 ) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -95,17 +112,50 @@ export function registerPackageManagerCommands(
         context,
         messenger ? messenger : new Messenger(),
         pkgManager,
+        packageCatalog,
+        customRemoteCatalog,
+        authService,
       );
     }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      PACKAGE_MANAGER_COMMANDS.CHECK_PACKAGE_UPDATES,
+      () => checkPackageUpdates(pkgManager, checkForPackageUpdates),
+    ),
+  );
+}
+
+async function checkPackageUpdates(
+  pkgManager: CfsPackageManagerProvider | undefined,
+  checkForPackageUpdatesCallback: (
+    pkgManager: CfsPackageManagerProvider | undefined,
+    showNoUpdatesMessage: boolean,
+  ) => Promise<void>,
+) {
+  if (!pkgManager) {
+    vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: "Checking for package updates...",
+      cancellable: false,
+    },
+    async () => {
+      // Pass true for showNoUpdatesMessage since this is a manual check
+      await checkForPackageUpdatesCallback(pkgManager, true);
+    },
   );
 }
 
 async function installPackages(pkgManager?: CfsPackageManagerProvider) {
   //Registering the command even if package manager is not defined as Vs Code complains about the command not being registered
   if (!pkgManager) {
-    vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -148,13 +198,11 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
     searchQuickPick.canSelectMany = true;
     searchQuickPick.placeholder = "Select package(s) to install.";
     searchQuickPick.items = availablePackages
-      .map(
-        (pkg): InstallPackageItem => ({
-          label: pkg.name,
-          description: pkg.version,
-          pkg,
-        }),
-      )
+      .map((pkg): InstallPackageItem => ({
+        label: pkg.name,
+        description: pkg.version,
+        pkg,
+      }))
       // Sort alphabetically by name then in descending order by version
       .sort((a, b) => {
         const nameCompare = a.label.localeCompare(b.label);
@@ -323,7 +371,10 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
     );
   } catch (err) {
     console.error(err);
-    vscode.window.showErrorMessage("CFS: Failed to install package.");
+    const errorDetail = formatErrorForDisplay(err);
+    vscode.window.showErrorMessage(
+      `CFS: Failed to install package.${errorDetail}`,
+    );
   } finally {
     hideDisposable.dispose();
     licenseQuickPick.dispose();
@@ -333,9 +384,7 @@ async function installPackages(pkgManager?: CfsPackageManagerProvider) {
 async function uninstallPackage(pkgManager?: CfsPackageManagerProvider) {
   //Registering the command even if package manager is not defined as Vs Code complains about the command not being registered
   if (!pkgManager) {
-    vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -439,9 +488,7 @@ interface CachedPackageItem extends vscode.QuickPickItem {
 async function deletePackage(pkgManager?: CfsPackageManagerProvider) {
   //Registering the command even if package manager is not defined as Vs Code complains about the command not being registered
   if (!pkgManager) {
-    vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -590,9 +637,7 @@ async function deletePackage(pkgManager?: CfsPackageManagerProvider) {
 
 async function manageRemotes(pkgManager?: CfsPackageManagerProvider) {
   if (!pkgManager) {
-    void vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    void vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -813,9 +858,7 @@ export async function promptMyAnalogLogin(): Promise<void> {
 
 async function addRemote(pkgManager?: CfsPackageManagerProvider) {
   if (!pkgManager) {
-    vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -848,15 +891,10 @@ async function addRemote(pkgManager?: CfsPackageManagerProvider) {
       placeHolder: "e.g., https://my-server.com/packages",
       ignoreFocusOut: true,
       validateInput: (value) => {
-        if (!value || value.trim().length === 0) {
-          return "Remote URL is required";
-        }
-        try {
-          new URL(value);
-          return null;
-        } catch {
-          return "Please enter a valid URL";
-        }
+        const validation = validateRemoteUrl(value);
+        return validation.valid
+          ? null
+          : REMOTE_URL_ERROR_MESSAGES[validation.error];
       },
     });
 
@@ -899,7 +937,7 @@ async function addRemote(pkgManager?: CfsPackageManagerProvider) {
     await authRemoteAction(pkgManager, remote, authSelection);
 
     void vscode.window.showInformationMessage(
-      `CFS: Successfully added remote "${remoteName}" with URL "${remoteUrl}".`,
+      `CFS: Successfully added remote "${remoteName}" with URL "${remote.url}".`,
     );
   } catch (err) {
     console.error(err);
@@ -911,9 +949,7 @@ async function addRemote(pkgManager?: CfsPackageManagerProvider) {
 
 async function removeRemote(pkgManager?: CfsPackageManagerProvider) {
   if (!pkgManager) {
-    void vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    void vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 
@@ -974,9 +1010,11 @@ async function toggleRemoteEnabledAction(
     };
 
     await vscode.window.withProgress(progressOptions, async () => {
-      remote.disabled
-        ? await pkgManager.enableRemote(remote.name)
-        : await pkgManager.disableRemote(remote.name);
+      if (remote.disabled) {
+        await pkgManager.enableRemote(remote.name);
+      } else {
+        await pkgManager.disableRemote(remote.name);
+      }
     });
 
     void vscode.window.showInformationMessage(
@@ -992,9 +1030,7 @@ async function toggleRemoteEnabledAction(
 
 async function authRemote(pkgManager?: CfsPackageManagerProvider) {
   if (!pkgManager) {
-    void vscode.window.showErrorMessage(
-      "CFS: Package Manager commands cannot be run because the package manager failed to initialize.",
-    );
+    void vscode.window.showErrorMessage(PACKAGE_MANAGER_INIT_ERROR);
     return;
   }
 

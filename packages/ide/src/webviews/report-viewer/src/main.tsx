@@ -22,7 +22,6 @@ const root = document.getElementById('root');
 const errorDiv = document.getElementById('error');
 
 if (errorDiv) {
-
 	const rawError = errorDiv.getAttribute('data-error');
 	let error: WebviewError;
 

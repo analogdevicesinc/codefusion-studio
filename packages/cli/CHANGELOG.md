@@ -1,335 +1,252 @@
-## [0.4.14](https://github.com/oclif/hello-world/compare/0.4.13...0.4.14) (2024-01-07)
+<!-- markdownlint-disable -->
 
+# Release Notes
 
-### Bug Fixes
+## 2.4.0
 
-* **deps:** bump @oclif/plugin-plugins from 4.1.12 to 4.1.14 ([0f8e410](https://github.com/oclif/hello-world/commit/0f8e4105cc862b8fd23301b4f0eae2f083ea41db))
+### ✨ New Features
 
+- **`cfsutil telemetry`:** New commands to manage diagnostic and usage telemetry preferences. Enable or disable data sharing, or check the preference and privacy disclosure with `cfsutil telemetry enable`, `cfsutil telemetry disable`, and `cfsutil telemetry status`. The CLI prompts for consent on the first interactive run and doesn't send telemetry in CI or non-interactive environments.
+- **`cfsutil validate config`:** New command that validates a CFS workspace or a standalone `.cfsconfig` file against the schema. Supports `--workspace`, `--input`, `--verbose`, and `--format` flags.
+- **`cfsutil validate dependencies`:** New command that checks whether packages declared in a CFS dependency manifest are installed at compatible versions. Alias `cfsutil validate deps`. Supports `--workspace`, `--input`, and `--format` flags. Without `--input`, validates the shared workspace manifest and the `.cfs/.cfsdependencies` manifest of each project folder directly inside the workspace; JSON output is an array with one result per manifest.
+- **`cfsutil validate config` — pin and peripheral control checks:** The command now also reports `pin-conflict` for incompatible physical-pin assignments, `control-invalid` for persisted pin-control errors, and `control-invalid-value` when an unconditional peripheral control value violates its type, range, or pattern constraints. These checks fail the command (critical) when a data model is available for the SoC; validation falls back to schema-only checks (warning) when it isn't.
+- **`cfsutil pkg install` — `--tar` flag:** Install a package from a local tarball using `--tar`, without downloading it from a package server.
+- **`cfsutil pkg path`:** New command that retrieves the absolute filesystem path of an installed package by name.
+- **Tasks — `dependsOn` support:** Add a `dependsOn` property to a custom task in `cfs.tasks.json` to run one or more other tasks first when you run the task with `cfsutil tasks run`.
+- **`cfsutil tasks run` — `--timeout` flag:** Use `--timeout` with `--capture` to stop a serial port capture session automatically after the specified number of seconds, measured from when the task completes successfully. Omit the flag, or set it to `0`, to capture until you stop it manually.
+- **Verbose and quiet output:** `cfsutil` commands are moving to consistent `-v`/`--verbose` and `-q`/`--quiet` behavior. For details of the extra output, see the command page.
+- **`cfsutil ai workspace create` — `--set` flag:** Set model fields, such as `enabled`, in the new workspace with `--set key=value`. Repeat the flag to set multiple fields.
+- **`cfsutil ai e2e`:** New command that runs the full AI model workflow in one step: compatibility check, optional profiling, workspace creation with build, and flash and serial capture on hardware. By default, the command converts captured TEF traces into CodeFusion Studio reports; use `--no-create-reports` to skip.
+- **`cfsutil convert`:** New command that converts a TEF profiling trace into a CodeFusion Studio report (`.cfsreport`).
+- **CLI flag collisions — short-flag deprecations:** Several command's short flags have been deprecated in favour of
+the long-form variant to support future work: `cfsutil pkg list` (`-f` → `--filter`), `cfsutil elf symbols` (`-f` → `--full`), `cfsutil ai workspace create` (`-f` → `--skip-compat`), `cfsutil socs export` (`-v` → `--version`).
+- **`cfspkg://` Git protocol:** `west` can clone a package installed with the Package Manager through a `cfspkg://<name>/<version>` URL in `west.yml`.
+- **`cfsutil socs export` — `--gzip` removed:** The `--gzip` flag has been removed. Pipe the command's output to an external compression tool if you need a compressed file.
 
+### ⛔ Breaking Changes
 
-## [0.4.13](https://github.com/oclif/hello-world/compare/0.4.12...0.4.13) (2023-12-30)
+- **JSON output envelope:** `cfsutil` commands are moving to a standard `{ok, command, data, warnings, errors}` envelope for `--format json` output. If you have scripts that parse `--format json` output from these commands, update them to read results from `data`. Some commands also changed the shape of their results; see the command page for details.
 
+### 🐞 Bug fixes, Minor Improvements
 
-### Bug Fixes
+- **AI model file extension validation:** `cfsutil ai` commands now validate model file extensions against the formats supported by the selected backend and list the supported extensions when an extension isn't supported.
+- **`cfsutil ai model add`, `cfsutil ai model update` — paths and URLs stored as provided:** `cfsutil ai model add` stores its model, dataset, and network config flag values in the `.cfsconfig` file as provided. `cfsutil ai model update` does the same for `model`, `dataset`, and `networkconfig` values passed through `--set`. Enter relative paths relative to the workspace root, and run these commands from the workspace root because `cfsutil ai build` resolves relative paths from there.
+- **`cfsutil ai model add`, `cfsutil ai model update` — identifier collision detection:** Both commands now reject a model when the normalized C identifier for its `Name` or optional `Symbol` collides case-insensitively with either identifier from another model in the same workspace.
 
-* **deps:** bump @oclif/plugin-plugins from 4.1.10 to 4.1.12 ([836fdb7](https://github.com/oclif/hello-world/commit/836fdb719bbd8898f5d38bb2c87f4ebdfd7a82d6))
+### 🚧 Experimental Features
 
+- None
 
+### 👷 CI Improvements
 
-## [0.4.12](https://github.com/oclif/hello-world/compare/0.4.11...0.4.12) (2023-12-30)
+- None
 
+## 2.3.0
 
-### Bug Fixes
+### ✨ New Features
 
-* **deps:** bump @oclif/core from 3.15.0 to 3.15.1 ([c760beb](https://github.com/oclif/hello-world/commit/c760bebb0086cbb53fa67341dc40258d08d36132))
+- **CLI API key authentication:** `cfsutil` commands now support API key authentication through the `CFS_API_KEY` environment variable for use in CI/CD and automated workflows. New commands `cfsutil myanalog apikey create`, `list`, and `delete` manage keys.
 
+### ⛔ Breaking Changes
 
+- None
 
-## [0.4.11](https://github.com/oclif/hello-world/compare/0.4.10...0.4.11) (2023-12-23)
+### 🐞 Bug fixes, Minor Improvements
 
+- **Build command output:** Build commands display output in a new format. Underlying build behavior is unchanged.
+- **`cfsutil ai` commands — optional `--core` flag:** `cfsutil ai build`, `cfsutil ai compat`, and `cfsutil ai profile` no longer require `--core` when the target SoC has only one AI-capable core. The core is inferred automatically. For SoCs with multiple AI-capable cores, `--core` is still required.
+- **`cfsutil workspace configure` — optional `--board` flag:** `cfsutil workspace configure` no longer requires `--board` when `--package` is specified. Provide `--board`, `--package`, or both; at least one is required. If you provide only `--board`, the package is inferred from the board.
+- **Embedded AI Tools — model name length limit:** AI model names are limited to 64 characters. The `cfsutil ai model add`, `cfsutil ai model update`, and `cfsutil ai build` commands report an error when a name (including one derived from a model file name) exceeds the limit.
 
-### Bug Fixes
+### 🚧 Experimental Features
 
-* **deps:** bump @oclif/core from 3.13.1 to 3.15.0 ([d1e4f6f](https://github.com/oclif/hello-world/commit/d1e4f6f7e6bd7e1de5e39aa28c01fbcd829e1f7a))
+- None
 
+### 👷 CI Improvements
 
+- None
 
-## [0.4.10](https://github.com/oclif/hello-world/compare/0.4.9...0.4.10) (2023-12-09)
+## 2.2.1
 
+### ✨ New Features
 
-### Bug Fixes
+- None
 
-* **deps:** bump @oclif/plugin-plugins from 4.1.8 to 4.1.10 ([13e3438](https://github.com/oclif/hello-world/commit/13e343855ed1ca9168b80826ec5e91cce5cc50a5))
+### 🐞 Bug fixes, Minor Improvements
 
+- None
 
+### 🚧 Experimental Features
 
-## [0.4.9](https://github.com/oclif/hello-world/compare/0.4.8...0.4.9) (2023-11-26)
+- None
 
+### 👷 CI Improvements
 
-### Bug Fixes
+- None
 
-* **deps:** bump @oclif/plugin-plugins from 4.1.5 to 4.1.8 ([eb58fcf](https://github.com/oclif/hello-world/commit/eb58fcf7f6535189dc1acbec3628ed37702df7e5))
+## 2.2.0
 
+### ✨ New Features
 
+- **CLI-first workspace workflows:** It is now possible to set up a workspace, build, and flash a project entirely from the command line without opening the IDE. New commands include `cfsutil socs list`, `cfsutil socs info`, `cfsutil workspace configure`, `cfsutil workspace create`, `cfsutil tasks list`, and `cfsutil tasks run`.
+- **`cfsutil ai` command group:** The `cfsai` command-line tool has been migrated into `cfsutil` as the `cfsutil ai` command group, enabling end-to-end AI model workflows from the command line. Includes `cfsutil ai build`, `cfsutil ai compat`, `cfsutil ai profile`, `cfsutil ai model` (add, list, update, remove models), and `cfsutil ai backends list` (optionally with `--name`). `cfsai` remains available as a compatibility wrapper.
+- **`cfsutil pkg install --acceptLicense`:** For packages that require license acceptance, the new `--acceptLicense` flag allows you to accept the license upfront, enabling installation in scripts and CI pipelines without interactive prompts.
 
-## [0.4.8](https://github.com/oclif/hello-world/compare/0.4.7...0.4.8) (2023-11-25)
+### ⛔ Breaking Changes
 
+- **`cfsutil socs` command format changes:** The default output format of `cfsutil socs list` (text and JSON) and the usage of `cfsutil socs export` have changed to support SoC names containing hyphens (e.g., `adsp-21836`). For `socs export`, pass the SoC name as a positional argument and specify the package with `--package` (for example, `cfsutil socs export adsp-21836 --package <package-name>`). Use the `--legacy` flag for `socs list` or the deprecated `-n, --name` flag for `socs export` while migrating. Both legacy options will be removed in a future release.
+- **`--json` flag deprecated:** The `--json` flag has been deprecated across all `cfsutil ai`, `cfsutil elf`, and `cfsutil socs` commands. Use `--format json` instead. The `--json` flag continues to work but displays a deprecation warning and will be removed in a future release.
 
-### Bug Fixes
+### 🐞 Bug fixes, Minor Improvements
 
-* **deps:** bump @oclif/core from 3.11.0 to 3.12.0 ([80e5f57](https://github.com/oclif/hello-world/commit/80e5f5755ede98541b951125887c349cf1df3373))
+- None
 
+### 🚧 Experimental Features
 
+- None
 
-## [0.4.7](https://github.com/oclif/hello-world/compare/0.4.6...0.4.7) (2023-11-18)
+### 👷 CI Improvements
 
+- None
 
-### Bug Fixes
+## 2.1.0
 
-* **deps:** bump @oclif/core from 3.10.8 to 3.11.0 ([781bf61](https://github.com/oclif/hello-world/commit/781bf6149ceceeb54839971f93481db180542cba))
+### ✨ New Features
 
+- `cfsutil pkg install` now supports semantic version range expressions, including caret (`^`), tilde (`~`), and comparison operators (`>=`, `<=`, `>`, `<`).
 
+### 🐞 Bug fixes, Minor Improvements
 
-## [0.4.6](https://github.com/oclif/hello-world/compare/0.4.5...0.4.6) (2023-11-11)
+- Package Manager authentication handling has been improved. Authentication is now managed using `cfsutil myanalog` and `cfsutil pkg auth-remote`; the commands `cfsutil pkg login`, `cfsutil pkg logout`, and `cfsutil auth` are deprecated.
 
+### 🚧 Experimental Features
 
-### Bug Fixes
+- None
 
-* **deps:** bump @oclif/plugin-plugins from 4.0.2 to 4.1.5 ([90e69e5](https://github.com/oclif/hello-world/commit/90e69e58caab0d401869a7523dbcd1387803234d))
+### 👷 CI Improvements
 
+- None
 
+## 2.0.2
 
-## [0.4.5](https://github.com/oclif/hello-world/compare/0.4.4...0.4.5) (2023-11-05)
+### ✨ New Features
 
+- None
 
-### Bug Fixes
+### 🐞 Bug fixes, Minor Improvements
 
-* **deps:** bump @oclif/plugin-help from 5.2.19 to 5.2.20 ([d710325](https://github.com/oclif/hello-world/commit/d710325af125cd0acc4cb7ee732569efa29d9e6c))
+- None
 
+### 🚧 Experimental Features
 
+- None
 
-## [0.4.4](https://github.com/oclif/hello-world/compare/0.4.3...0.4.4) (2023-10-28)
+### 👷 CI Improvements
 
+- None
 
-### Bug Fixes
+## 2.0.1
 
-* **deps:** bump @oclif/plugin-plugins from 3.7.0 to 3.9.4 ([8369b56](https://github.com/oclif/hello-world/commit/8369b566d0ce50909e54b477ae5bb6c11b082f3d))
+### ✨ New Features
 
+- None
 
+### 🐞 Bug fixes, Minor Improvements
 
-## [0.4.3](https://github.com/oclif/hello-world/compare/0.4.2...0.4.3) (2023-10-10)
+- None
 
+### 🚧 Experimental Features
 
-### Bug Fixes
+- None
 
-* update dev.cmd too ([2ce7bdc](https://github.com/oclif/hello-world/commit/2ce7bdc2c2b262f8f16bcab62fe7c9c5dd8d3f48))
-* use node with ts-node loader ([5f406d6](https://github.com/oclif/hello-world/commit/5f406d6dd2ce06bcfe50a9c003bcfe25c63d93b4))
+### 👷 CI Improvements
 
+- None
 
+## 2.0.0
 
-## [0.4.2](https://github.com/oclif/hello-world/compare/0.4.1...0.4.2) (2023-10-09)
+### ⛔ Breaking Changes
 
+- None
 
-### Bug Fixes
+### ✨ New Features
 
-* use latest eslint-config-oclif-typescript ([a010663](https://github.com/oclif/hello-world/commit/a010663092a2c269c56cecc96bfd4ff3bcb4a2f1))
+- **`cfsai` command-line utility:** Access Embedded AI Tools capabilities from the terminal, supporting model builds, compatibility reports, and profiling workflows.
 
+### 🐞 Bug fixes, Minor Improvements
 
+- None
 
-## [0.4.1](https://github.com/oclif/hello-world/compare/0.4.0...0.4.1) (2023-10-04)
+### 🚧 Experimental Features
 
+- None
 
-### Bug Fixes
+### 👷 CI Improvements
 
-* deps ([ede92f9](https://github.com/oclif/hello-world/commit/ede92f95be182a8cd08f970781988959e02550b0))
-* satisfy linter ([896fd96](https://github.com/oclif/hello-world/commit/896fd96ab5821774751811567ab7d97d01e8bb2b))
+- None
 
+## 1.1.0
 
+### ⛔ Breaking Changes
 
-# [0.4.0](https://github.com/oclif/hello-world/compare/0.3.0...0.4.0) (2023-10-04)
+- None
 
+### ✨ New Features
 
-### Features
+- None
 
-* bump core, add prettier ([5be0350](https://github.com/oclif/hello-world/commit/5be0350ed4446ec1fc2eba55b73b459875f8b90b))
+### 🐞 Bug fixes, Minor Improvements
 
+- None
 
+### 🚧 Experimental Features
 
-# [0.3.0](https://github.com/oclif/hello-world/compare/0.2.3...0.3.0) (2023-09-18)
+- None
 
+### 👷 CI Improvements
 
-### Features
+- None
 
-* update eslint configs ([85c1530](https://github.com/oclif/hello-world/commit/85c15307f8faefb2646050276a58c310f48cff2b))
+## 1.0.2
 
+### ⛔ Breaking Changes
 
+- None
 
-## [0.2.3](https://github.com/oclif/hello-world/compare/0.2.2...0.2.3) (2023-09-17)
+### ✨ New Features
 
+- None
 
-### Bug Fixes
+### 🐞 Bug fixes, Minor Improvements
 
-* **deps:** bump @oclif/plugin-plugins from 3.4.0 to 3.7.0 ([04939c2](https://github.com/oclif/hello-world/commit/04939c21e6db4018ab8655c1f37ae3c10d85f0d1))
+- None
 
+### 🚧 Experimental Features
 
+- None
 
-## [0.2.2](https://github.com/oclif/hello-world/compare/0.2.1...0.2.2) (2023-09-16)
+### 👷 CI Improvements
 
+- None
 
-### Bug Fixes
+## 1.0.0
 
-* **deps:** bump @oclif/core from 3.0.0-beta.12 to 3.0.0-beta.13 ([f054f82](https://github.com/oclif/hello-world/commit/f054f823c30b6080ae005a8f9fe5dd30290ad061))
+### ⛔ Breaking Changes
 
+- None
 
+### ✨ New Features
 
-## [0.2.1](https://github.com/oclif/hello-world/compare/0.2.0...0.2.1) (2023-09-09)
+- None
 
+### 🐞 Bug fixes, Minor Improvements
 
-### Bug Fixes
+- None
 
-* **deps:** bump @oclif/plugin-help from 5.2.17 to 5.2.19 ([60d2b33](https://github.com/oclif/hello-world/commit/60d2b338401d4d9a5790416c99b7cbe6c019346f))
+### 🚧 Experimental Features
 
+- None
 
+### 👷 CI Improvements
 
-# [0.2.0](https://github.com/oclif/hello-world/compare/0.1.6...0.2.0) (2023-09-07)
-
-
-### Features
-
-* use ts-node in bin/dev.js ([6ab5e0f](https://github.com/oclif/hello-world/commit/6ab5e0f31cb7c09c196d30bd3ecdf2f9e7462ea8))
-
-
-
-## [0.1.6](https://github.com/oclif/hello-world/compare/0.1.5...0.1.6) (2023-09-05)
-
-
-### Bug Fixes
-
-* remove ts-node loader ([370eba5](https://github.com/oclif/hello-world/commit/370eba5db778c240bf95fca27f5afac71aa48466))
-
-
-
-## [0.1.5](https://github.com/oclif/hello-world/compare/0.1.4...0.1.5) (2023-09-05)
-
-
-### Bug Fixes
-
-* update bin scripts ([9d14905](https://github.com/oclif/hello-world/commit/9d1490590a11ff79f817dd8ec8e9a548b70d9aa6))
-
-
-
-## [0.1.4](https://github.com/oclif/hello-world/compare/0.1.3...0.1.4) (2023-09-03)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/core from 3.0.0-beta.6 to 3.0.0-beta.12 ([4a67b9f](https://github.com/oclif/hello-world/commit/4a67b9f67e287de7fca92376899b00cab25a2ada))
-
-
-
-## [0.1.3](https://github.com/oclif/hello-world/compare/0.1.2...0.1.3) (2023-09-02)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/plugin-plugins from 3.3.2 to 3.4.0 ([d077b38](https://github.com/oclif/hello-world/commit/d077b38d54d06aefd3ffc3d78235f4a682da423b))
-
-
-
-## [0.1.2](https://github.com/oclif/hello-world/compare/0.1.1...0.1.2) (2023-08-31)
-
-
-### Bug Fixes
-
-* use core v3 ([0896ec1](https://github.com/oclif/hello-world/commit/0896ec15081020dd38f8cf9a26fd61f899182d29))
-
-
-
-## [0.1.1](https://github.com/oclif/hello-world/compare/0.1.0...0.1.1) (2023-08-23)
-
-
-### Bug Fixes
-
-* add void to bin scripts ([a3e257e](https://github.com/oclif/hello-world/commit/a3e257efa4984834d221ec356dc5269dc8c39ee9))
-
-
-
-# [0.1.0](https://github.com/oclif/hello-world/compare/0.0.10...0.1.0) (2023-08-21)
-
-
-### Features
-
-* remove ts-node/esm shebang ([c2c3aab](https://github.com/oclif/hello-world/commit/c2c3aabcea5edf646ef87874cd4c7b87ad05c5f5))
-
-
-
-## [0.0.10](https://github.com/oclif/hello-world/compare/0.0.9...0.0.10) (2023-08-13)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/plugin-help from 5.2.15 to 5.2.17 ([08b2587](https://github.com/oclif/hello-world/commit/08b25875b07788a2969393efcbb7b1d7a1bdc1dd))
-
-
-
-## [0.0.9](https://github.com/oclif/hello-world/compare/0.0.8...0.0.9) (2023-08-12)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/plugin-plugins from 3.1.8 to 3.2.6 ([11e89e0](https://github.com/oclif/hello-world/commit/11e89e06d3eb1e12104bd562ff79ca2eaf0e3425))
-
-
-
-## [0.0.8](https://github.com/oclif/hello-world/compare/0.0.7...0.0.8) (2023-08-12)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/core from 2.11.7 to 2.11.8 ([ff1da5a](https://github.com/oclif/hello-world/commit/ff1da5aa66ede6dc657f2ceb0c57b3a3d71fa8ba))
-
-
-
-## [0.0.7](https://github.com/oclif/hello-world/compare/0.0.6...0.0.7) (2023-08-10)
-
-
-### Bug Fixes
-
-* update tsconfig ([0cd7321](https://github.com/oclif/hello-world/commit/0cd73218c2a0c3fc44de072331a1b77217d06cc9))
-
-
-
-## [0.0.6](https://github.com/oclif/hello-world/compare/0.0.5...0.0.6) (2023-08-10)
-
-
-### Bug Fixes
-
-* bin/dev shebang ([e1633f2](https://github.com/oclif/hello-world/commit/e1633f21c04eec833747080a3da9e10b51653840))
-
-
-
-## [0.0.5](https://github.com/oclif/hello-world/compare/0.0.4...0.0.5) (2023-08-09)
-
-
-### Bug Fixes
-
-* bin/run shebang ([abbf92a](https://github.com/oclif/hello-world/commit/abbf92ab774077ef2e3634c6c8b679932d5f6158))
-
-
-
-## [0.0.4](https://github.com/oclif/hello-world/compare/0.0.3...0.0.4) (2023-08-06)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/plugin-help from 5.2.14 to 5.2.15 ([5a25888](https://github.com/oclif/hello-world/commit/5a258889436705c8a430188343294660b0aec8af))
-
-
-
-## [0.0.3](https://github.com/oclif/hello-world/compare/0.0.2...0.0.3) (2023-08-03)
-
-
-### Bug Fixes
-
-* add experimentalSpecifierResolution ([a57c7e0](https://github.com/oclif/hello-world/commit/a57c7e07f2cfcc6a67d598773fe3a6ab7903c4ae))
-
-
-
-## [0.0.2](https://github.com/oclif/hello-world/compare/0.0.1...0.0.2) (2023-07-29)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/core from 2.10.0 to 2.11.1 ([2a28629](https://github.com/oclif/hello-world/commit/2a286297f0e021df4ab2c3f33686b142351c70ea))
-
-
-
-## [0.0.1](https://github.com/oclif/hello-world/compare/27cc5bb44cc4aee53f74bfaef39c1fe03e637d72...0.0.1) (2023-07-27)
-
-
-### Bug Fixes
-
-* **deps:** bump @oclif/core from 2.9.4 to 2.10.0 ([27cc5bb](https://github.com/oclif/hello-world/commit/27cc5bb44cc4aee53f74bfaef39c1fe03e637d72))
-
-
-
+- None

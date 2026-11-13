@@ -19,9 +19,10 @@ import {
 	validateAndGenerateWorkspace
 } from '../thunks/workspace-thunks';
 import {getLocalization} from '../../../../common/utils/localization';
+import {isWorkspaceNameInvalid} from '../../../../common/utils/workspace-name';
 import type {ModelZooSelectionData} from '../../../../common/components/cfs-model-zoo/CfsModelZoo';
 import {getZooModelPlatform} from '../../../../common/components/cfs-model-zoo/model-zoo-utils';
-import type {CorePart, SoC} from 'cfs-ccm-lib/dist';
+import type {CorePart, SoC} from 'cfs-ccm-lib';
 
 export type SocCatalog = Array<
 	SoC & {
@@ -50,9 +51,9 @@ type WorkspaceConfigState = {
 		board?: string;
 		soc?: string;
 		runModelOn?: string;
-		compatibility?: string;
 	};
 	compatibilityStatus: Record<string, CompatibilityStatus>;
+	isCreatingWorkspace: boolean;
 };
 
 export const workspaceConfigInitialState: WorkspaceConfigState = {
@@ -60,7 +61,8 @@ export const workspaceConfigInitialState: WorkspaceConfigState = {
 	sampleData: '',
 	workspaceName: '',
 	runModelOn: [],
-	compatibilityStatus: {}
+	compatibilityStatus: {},
+	isCreatingWorkspace: false
 };
 
 const workspaceConfigSlice = createSlice({
@@ -73,7 +75,6 @@ const workspaceConfigSlice = createSlice({
 		) {
 			state.modelFile = castDraft(action.payload);
 			delete state.errors?.modelFile;
-			delete state.errors?.compatibility;
 			state.compatibilityStatus = {};
 		},
 		setSampleData(state, action: PayloadAction<string>) {
@@ -90,7 +91,6 @@ const workspaceConfigSlice = createSlice({
 				state.soc = action.payload;
 				state.board = undefined;
 				state.runModelOn = [];
-				delete state.errors?.compatibility;
 				delete state.errors?.soc;
 			}
 		},
@@ -105,7 +105,9 @@ const workspaceConfigSlice = createSlice({
 			const index = state.runModelOn.indexOf(action.payload);
 
 			if (index === -1) {
-				state.runModelOn.push(action.payload);
+				// Only a single core is supported for now, so selecting a core deselects all others.
+				// runModelOn stays an array because multi-core support is planned.
+				state.runModelOn = [action.payload];
 				delete state.errors?.runModelOn;
 			} else {
 				state.runModelOn.splice(index, 1);
@@ -133,17 +135,16 @@ const workspaceConfigSlice = createSlice({
 						s => s.name === state.soc
 					);
 					const unsupportedCores = state.runModelOn.filter(core => {
-						const dataModelCoreID = socEntry?.cores.find(
-							c => c.id === core
-						)?.dataModelCoreID;
-
-						if (!dataModelCoreID) return false;
+						if (
+							!socEntry?.cores.some(c => c.dataModelCoreID === core)
+						)
+							return false;
 
 						return !getZooModelPlatform({
 							selectedZooModel: zooModel.model,
 							soc: state.soc!,
 							board: state.board!,
-							core: dataModelCoreID
+							core
 						});
 					});
 
@@ -155,19 +156,6 @@ const workspaceConfigSlice = createSlice({
 			}
 
 			if (state.soc?.trim()) {
-				const compatStatus =
-					state.compatibilityStatus[state.soc ?? ''];
-
-				if (
-					!compatStatus ||
-					compatStatus === 'error' ||
-					Object.values(compatStatus).some(
-						status => status === 'error'
-					)
-				) {
-					state.errors.compatibility = l10n?.compatibilityCheckFailed;
-				}
-
 				// Only validate board and runModelOn if a SoC is selected
 				if (!state.board?.trim()) {
 					state.errors.board = l10n?.selectBoardRequired;
@@ -180,20 +168,22 @@ const workspaceConfigSlice = createSlice({
 				state.errors.soc = l10n?.selectSocRequired;
 			}
 
-			// Check for invalid filename characters in workspace name
-			const invalidCharsPattern = /[<>:"|?*/\\]/;
-
-			if (
-				state.workspaceName.trim() &&
-				invalidCharsPattern.test(state.workspaceName)
-			) {
+			if (isWorkspaceNameInvalid(state.workspaceName)) {
 				state.errors.workspaceName = l10n?.invalidFilenameCharacters;
 			}
 		}
 	},
 	extraReducers(builder) {
-		builder.addCase(validateAndGenerateWorkspace.rejected, () => {
-			// Errors are already set
+		builder.addCase(validateAndGenerateWorkspace.pending, state => {
+			state.isCreatingWorkspace = true;
+		});
+		builder.addCase(validateAndGenerateWorkspace.rejected, state => {
+			// Validation errors are already set, generation errors are
+			// reported by the extension.
+			state.isCreatingWorkspace = false;
+		});
+		builder.addCase(validateAndGenerateWorkspace.fulfilled, state => {
+			state.isCreatingWorkspace = false;
 		});
 		builder.addCase(checkCompatibility.pending, state => {
 			if (state.soc) {

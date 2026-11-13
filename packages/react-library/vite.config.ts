@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc. All Rights Reserved.
+ * Copyright (c) 2024, 2026 Analog Devices, Inc. All Rights Reserved.
  * This software is proprietary to Analog Devices, Inc. and its licensors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,26 +41,26 @@ export default defineConfig(({command, mode}) => {
 				fileName: 'cfs-react-library'
 			},
 			sourcemap: isWatchMode ? 'inline' : false,
-			rollupOptions: {
+			rolldownOptions: {
 				// make sure to externalize deps that shouldn't be bundled
-				// into your library
-				external: ['react', 'react-dom'],
+				// into your library. Subpaths (e.g. `react/jsx-runtime`) must be
+				// externalized too: rolldown does not rewrite a bundled CJS module's
+				// `require('react')` into an import, which breaks in the browser.
+				external: [/^react(\/.*)?$/, /^react-dom(\/.*)?$/],
 				output: {
 					// Provide global variables to use in the UMD build
 					// for externalized deps
 					globals: {
 						react: 'React',
-						'react-dom': 'ReactDOM'
+						'react-dom': 'ReactDOM',
+						'react/jsx-runtime': 'jsxRuntime'
 					}
 				}
 			},
 			...(isWatchMode && {
 				watch: {
 					include: 'src/**',
-					clearScreen: true,
-					chokidar: {
-						atomic: true
-					}
+					clearScreen: true
 				}
 			})
 		}

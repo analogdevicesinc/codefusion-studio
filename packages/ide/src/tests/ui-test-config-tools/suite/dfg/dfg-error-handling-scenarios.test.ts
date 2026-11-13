@@ -117,16 +117,12 @@ describe("DFG Tests", () => {
   }
 
   before(async () => {
-    browser = VSBrowser.instance;
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
   afterEach(async function () {
     this.timeout(60000);
-    await view.switchBack();
-    const wb = new Workbench();
-    await wb.wait();
-    await wb.executeCommand("View: revert and close editor");
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
   /*  Scenario: Error when creating an ESS-to-ESS inbound stream without a corresponding input stream

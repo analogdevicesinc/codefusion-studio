@@ -13,7 +13,13 @@ limitations under the License.
 
 """
 
+import contextlib
+import io
 import json
+import os
+import shutil
+import stat
+import subprocess
 from pathlib import Path
 import fnmatch
 from collections.abc import MutableMapping, Sequence
@@ -23,17 +29,34 @@ from conan.api.conan_api import ConanAPI
 from conan.api.output import cli_out_write
 from conan.api.model import ListPattern
 from conan.cli.command import conan_command, conan_subcommand
-from conan import conan_version
+from conan import conan_version, Version
 
+# TODO: We can replace these internal APIs by public conan_api.command.run
+# whenever we decide to drop support for old versions
 if conan_version < "2.17":
     from conans.util.runners import conan_run, check_output_runner
 else:
     from conan.internal.util.runners import conan_run, check_output_runner
+
 from conan.errors import ConanException
 from conan.api.model import ListPattern, RecipeReference
-from conan.internal.conan_app import ConanApp
-from conan.internal.model.version_range import VersionRange
-from conan.internal.model.version import Version
+from conan.api.model.list import VersionRange
+
+from conan.internal.errors import (
+    ConanReferenceDoesNotExistInDB,
+    NotFoundException,
+    RecipeNotFoundException,
+)
+
+# Import error handling utilities
+# Use absolute import to avoid issues when Conan loads this as a custom command
+import sys
+from pathlib import Path
+
+_commands_dir = Path(__file__).parent
+if str(_commands_dir) not in sys.path:
+    sys.path.insert(0, str(_commands_dir))
+from error_handling import handle_and_raise_conan_exception
 
 # Characters that indicate a version range expression (rather than a literal version)
 VERSION_RANGE_CHARS = "*^~><|"
@@ -121,109 +144,6 @@ class PackagesJson(MutableMapping):
         self._packages_json.write_text(json.dumps(dict(self), indent=2))
 
 
-def handle_and_raise_conan_exception(e):
-    """
-    Processes and raises a ConanException with a user-friendly error message based on the provided exception.
-
-    This function analyzes the exception message from Conan commands, formats it for readability,
-    and raises a more descriptive ConanException depending on the error type:
-      - Detects authentication errors and raises a specific message listing affected remotes.
-      - Detects unresolved package errors and raises a message listing missing packages.
-      - For all other errors, raises a ConanException with the processed error message.
-
-    Args:
-        e (Exception): The original exception raised by Conan commands, expected to have a message in e.args[0].
-
-    Raises:
-        ConanException: With a formatted and user-friendly error message, specific to the detected error type.
-    """
-    # First, process line breaks from stdout
-    error_msg = e.args[0].replace("\\n", "\n")
-
-    # Trim out anything before "ERROR: " text, if possible
-    error_pattern = re.compile(r".*ERROR: (.*)", re.DOTALL)
-    error_match = error_pattern.findall(error_msg)
-    if len(error_match) == 1:
-        error_msg = error_match[0]
-
-    # Check for authentication errors
-    authentication_error_pattern = re.compile(
-        r"Conan interactive mode disabled(?:\. \[Remote: (.+)\])?"
-    )
-    authentication_errors = authentication_error_pattern.findall(error_msg)
-    if len(authentication_errors) > 0:
-        exceptionMsg = ""
-        for error in authentication_errors:
-            if error == "" or error is None:
-                continue
-            exceptionMsg += f"Authentication error on remote '{error}'\n"
-        if exceptionMsg == "":
-            exceptionMsg = "Authentication error"
-        raise ConanException(exceptionMsg)
-
-    # Check for missing recipe errors
-    missing_recipe_error_pattern = re.compile(r"Missing prebuilt package for '([^']+)'", re.DOTALL)
-    missing_recipe_errors = missing_recipe_error_pattern.findall(error_msg.replace('\r', '').replace("\\'", "'").strip())
-    if missing_recipe_errors:
-        raise ConanException(
-            f"The following packages are not available and cannot be installed: {', '.join(missing_recipe_errors)}"
-        )
-
-    # Check for packages not found. Conan can report this in multiple forms:
-    # 1) "Unable to find '<ref>' in remotes"
-    # 2) "<ref>: Not found in local cache, looking in remotes"
-    missing_refs = []
-
-    unresolved_error_pattern = re.compile(r"Unable to find '([^']+)' in remotes")
-    missing_refs.extend(unresolved_error_pattern.findall(error_msg))
-
-    local_cache_miss_pattern = re.compile(
-        r"([^\s:]+): Not found in local cache, looking in remotes"
-    )
-    missing_refs.extend(local_cache_miss_pattern.findall(error_msg))
-
-    if missing_refs:
-        # Preserve order while removing duplicates.
-        normalized_missing_refs = list(dict.fromkeys(missing_refs))
-        raise ConanException(
-            f"Couldn't find the following packages: {', '.join(normalized_missing_refs)}"
-        )
-
-    # Check for version range resolution errors (no available version satisfies the requested range)
-    version_range_error_pattern = re.compile(r"Package '([^']+)' not resolved: Version range")
-    version_range_errors = version_range_error_pattern.findall(error_msg)
-    if version_range_errors:
-        # Strip brackets from version for cleaner output
-        cleaned_refs = [re.sub(r'\[([^\]]+)\]', r'\1', ref) for ref in version_range_errors]
-        raise ConanException(
-            f"No versions found matching the specified range for: {', '.join(cleaned_refs)}"
-        )
-
-    # Check for package not found with bracket syntax (e.g., "Package 'pkg/[1.0]' not found")
-    package_not_found_pattern = re.compile(r"Package '([^']+)' not found")
-    package_not_found_errors = package_not_found_pattern.findall(error_msg)
-    if package_not_found_errors:
-        # Strip brackets from version for cleaner output
-        cleaned_refs = [re.sub(r'\[([^\]]+)\]', r'\1', ref) for ref in package_not_found_errors]
-        raise ConanException(
-            f"Couldn't find the following packages: {', '.join(cleaned_refs)}"
-        )
-
-    # Check for package not resolved with no remote (local install failure)
-    no_remote_pattern = re.compile(r"Package '([^']+)' not resolved.*No remote")
-    no_remote_errors = no_remote_pattern.findall(error_msg)
-    if no_remote_errors:
-        # Strip brackets from version for cleaner output
-        pkg_ref = no_remote_errors[0]
-        pkg_ref = re.sub(r'\[([^\]]+)\]', r'\1', pkg_ref)
-        raise ConanException(
-            f"Package {pkg_ref} not resolved: No remote defined"
-        )
-
-    # Unexpected error, re-throw it
-    raise ConanException(error_msg)
-
-
 def parse_manifest_file(manifest_path_str: str):
     """
     Reads and parses a manifest file, performing validation checks.
@@ -245,14 +165,23 @@ def parse_manifest_file(manifest_path_str: str):
     # Read and parse the manifest file
     try:
         manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    except json.JSONDecodeError:
-        raise ConanException("Invalid JSON format in manifest file.")
-    except Exception as e:
-        raise ConanException(f"Error reading manifest file: {str(e)}")
+    except json.JSONDecodeError as e:
+        raise ConanException(f"Invalid JSON format in manifest file: {e}") from e
+    except (OSError, UnicodeDecodeError) as e:
+        raise ConanException(f"Error reading manifest file: {e}") from e
 
     # Validate manifest structure
     if "version" not in manifest or "packages" not in manifest or not isinstance(manifest["packages"], list):
         raise ConanException("Invalid manifest format. Must contain 'version' and 'packages' fields.")
+
+    # Validate each package entry has required fields
+    for i, pkg in enumerate(manifest["packages"]):
+        if not isinstance(pkg, dict):
+            raise ConanException(f"Invalid package entry at index {i}: must be an object")
+        if "name" not in pkg:
+            raise ConanException(f"Invalid package entry at index {i}: missing required 'name' field")
+        if "version" not in pkg:
+            raise ConanException(f"Invalid package entry at index {i}: missing required 'version' field")
 
     return manifest
 
@@ -300,7 +229,9 @@ def get_required_packages_from_manifest(manifest_packages: Sequence[dict[str, st
     return packages_to_install
 
 
-def get_packages_requiring_license_acceptance(conan_api: ConanAPI, pkg_refs: Sequence[str]):
+def get_packages_requiring_license_acceptance(
+    conan_api: ConanAPI, pkg_refs: Sequence[str], local_only: bool = False
+):
     """
     Determines which packages from the provided list require license acceptance.
     Only checks packages that are NOT already present in the local cache.
@@ -309,6 +240,9 @@ def get_packages_requiring_license_acceptance(conan_api: ConanAPI, pkg_refs: Seq
     Args:
         conan_api: The ConanAPI instance to use for inspecting packages
         pkg_refs: List of package references in "name/version" format
+        local_only: If True, remote connection will not be attempted,
+                    which will lead to return either no package, or
+                    a not-found error being raised
 
     Returns:
         A list of package reference strings that require license acceptance.
@@ -318,7 +252,7 @@ def get_packages_requiring_license_acceptance(conan_api: ConanAPI, pkg_refs: Seq
 
     # Use cached binaries (not recipe metadata) to infer accepted licenses.
     # Recipes can be cached after metadata inspection without user acceptance.
-    packages_in_cache = get_conan_cached_packages()
+    packages_in_cache = get_conan_cached_packages(conan_api)
 
     # Only check license for packages NOT in cache.
     # For version ranges, check whether any cached concrete version satisfies the range.
@@ -331,47 +265,23 @@ def get_packages_requiring_license_acceptance(conan_api: ConanAPI, pkg_refs: Seq
         # All packages are already cached, no license acceptance needed
         return []
 
-    remotes = conan_api.remotes.list()
-    app = ConanApp(conan_api)
     packages_requiring_license = []
 
     for pkg_ref in packages_to_check:
-        try:
-            reference_to_inspect = normalize_reference(pkg_ref)
-            layout, _, _ = app.proxy.get_recipe(
-                RecipeReference.loads(reference_to_inspect), remotes, True, True
-            )
-            conanfile = conan_api.local.inspect(
-                layout.conanfile(), remotes=remotes, lockfile=None
-            )
+        resolved_ref = resolve_recipe_reference(pkg_ref, local_only)
+        # Passing an empty list of remotes will only check local cache while
+        # passing None will check all remotes
+        conanfile = _get_recipe_info(
+            conan_api, resolved_ref, [] if local_only else None
+        )
 
-            # Fallback for ranges: some Conan paths may not expose recipe/license metadata
-            # consistently from range refs, so resolve to a concrete ref and retry once.
-            if (
-                not getattr(conanfile, "license", None)
-                and has_version_range(split_recipe_ref(pkg_ref)[1] or "")
-            ):
-                resolved_ref = resolve_recipe_reference(pkg_ref)
-                if resolved_ref != reference_to_inspect:
-                    layout, _, _ = app.proxy.get_recipe(
-                        RecipeReference.loads(resolved_ref), remotes, True, True
-                    )
-                    conanfile = conan_api.local.inspect(
-                        layout.conanfile(), remotes=remotes, lockfile=None
-                    )
-
-            pkg_license = getattr(conanfile, "license", None)
-            license_file = Path(layout.conanfile()).parent / "LICENSE"
-            if (pkg_license and license_file.exists()):
-                packages_requiring_license.append(pkg_ref)
-        except ConanException:
-            # A ConanException here means the package recipe could not be fetched
-            # (e.g. network error, package not found on any remote). We skip it
-            # rather than aborting the whole check: the install step itself will
-            # fail with a proper error if the package truly cannot be resolved.
-            pass
+        pkg_license = conanfile["license"]
+        pkg_license_text = conanfile.get("licenseText", None)
+        if pkg_license and pkg_license_text:
+            packages_requiring_license.append(pkg_ref)
 
     return packages_requiring_license
+
 
 def install_packages(pkg_refs_to_install: Sequence[str], no_remote: bool = False):
     """
@@ -462,7 +372,11 @@ def normalize_reference(reference: str) -> str:
     pkg_name, pkg_version = reference.split("/", 1)
     if pkg_version.startswith('"') and pkg_version.endswith('"'):
         pkg_version = pkg_version[1:-1]
+    # Strip existing brackets to prevent double-bracketing on re-normalization
+    if pkg_version.startswith("[") and pkg_version.endswith("]"):
+        pkg_version = pkg_version[1:-1]
     return to_conan_reference(pkg_name, pkg_version)
+
 
 @conan_command(group="CFS")
 def cfs(conan_api: ConanAPI, parser, *args):
@@ -542,7 +456,7 @@ def cfs_list_cache(conan_api: ConanAPI, parser, subparser, *args):
         if "/" not in filter_pattern and "*" not in filter_pattern:
             filter_pattern = f"{filter_pattern}/*"
 
-        cached_packages = get_conan_cached_packages(filter_pattern)
+        cached_packages = get_conan_cached_packages(conan_api, filter_pattern)
         package_list = sorted(cached_packages)
         if package_list:
             cli_out_write("\n".join(package_list))
@@ -592,72 +506,24 @@ def cfs_search(conan_api: ConanAPI, parser, subparser, *args):
     cli_out_write("\n".join(sorted(pkg_list)))
 
 
-def get_package_license_info(conan_api: ConanAPI, pkg_ref: str) -> dict | None:
-    """
-    Returns license info for a package if it requires acceptance.
-    Returns None if package doesn't require license acceptance.
-
-    Args:
-        conan_api: The ConanAPI instance to use for inspecting packages
-        pkg_ref: Package reference in "name/version" format
-
-    Returns:
-        A dict with 'license' and 'licenseText' keys, or None if no license required
-
-    Raises:
-        ConanException: If the recipe cannot be fetched or inspected (e.g. network error,
-            unknown reference). This allows callers to detect and handle real failures;
-            the actual install step will surface detailed errors if truly unresolvable.
-    """
-    try:
-        remotes = conan_api.remotes.list()
-        app = ConanApp(conan_api)
-        layout, _, _ = app.proxy.get_recipe(
-            RecipeReference.loads(pkg_ref), remotes, True, True
-        )
-        conanfile = conan_api.local.inspect(
-            layout.conanfile(), remotes=remotes, lockfile=None
-        )
-    except Exception as e:
-        handle_and_raise_conan_exception(e)
-
-    pkg_license = getattr(conanfile, "license", None)
-    license_file = Path(layout.conanfile()).parent / "LICENSE"
-
-    if pkg_license and license_file.exists():
-        try:
-            license_text = license_file.read_text(encoding='utf-8')
-        except OSError:
-            # The LICENSE file exists but cannot be read (e.g. permissions).
-            # We still return the license identifier so the caller can prompt
-            # the user; the full text is optional for acceptance.
-            return {
-                "license": pkg_license,
-                "licenseText": None
-            }
-        return {
-            "license": pkg_license,
-            "licenseText": license_text
-        }
-    return None
-
-
-def resolve_recipe_reference(pkg_ref: str) -> str:
+def resolve_recipe_reference(pkg_ref: str, local_only: bool = False) -> str:
     """
     Resolve a package reference to a concrete Conan recipe reference.
 
     Exact versions are returned in normalized form. Version ranges are resolved
     through `conan graph info`, matching the same mechanism used elsewhere in
-    this file for dependency graph queries.
+    this file for dependency graph queries. If `local_only` is True, the resolution
+    will be attempted using only the local cache, avoiding remote queries.
+
     """
     normalized_ref = normalize_reference(pkg_ref)
     name, version = split_recipe_ref(pkg_ref)
-    if not name or not version or not has_version_range(version):
+    if not has_version_range(version):
         return normalized_ref
 
     try:
         graph_output = check_output_runner(
-            f'conan graph info --requires="{normalized_ref}" --format=json'
+            f'conan graph info --requires="{normalized_ref}" --format=json{" --no-remote" if local_only else ""}'
         )
     except ConanException as err:
         # Best-effort fallback: graph resolution can fail for transient remote issues
@@ -683,12 +549,12 @@ def resolve_recipe_reference(pkg_ref: str) -> str:
         if resolved_name == name and resolved_version and version_satisfies(
             resolved_version, version
         ):
-            return resolved_ref
+            return f"{resolved_name}/{resolved_version}"
 
     return normalized_ref
 
 
-def get_conan_cached_packages(pattern: str = "*") -> set:
+def get_conan_cached_packages(conan_api: ConanAPI, pattern: str = "*") -> set:
     """
     Returns set of recipe references that have at least one cached binary
     package in Conan cache.
@@ -697,31 +563,32 @@ def get_conan_cached_packages(pattern: str = "*") -> set:
     acceptance is tied to installable binaries, not recipe metadata.
 
     Args:
+        conan_api: The ConanAPI instance of the running command
         pattern: Optional recipe pattern in name/version glob form.
 
     Raises:
-        ConanException: If the Conan cache cannot be queried (e.g. Conan CLI
-            error) or if the output cannot be parsed.
+        ConanException: If the pattern is invalid.
     """
     # Query Conan with package scope (:*) so results only include recipes that
     # contain binary package nodes. Use the caller pattern to avoid full-cache
     # scans when users provide narrow list-cache filters.
     query_pattern = pattern if pattern == "*" or "/" in pattern else f"{pattern}/*"
+    # Same selection as `conan list "<pattern>:*"`, but in this process: a
+    # nested conan process costs about a second to start on Windows.
     try:
-        raw = check_output_runner(f'conan list "{query_pattern}:*" --format=json')
-    except ConanException as e:
+        local_cache = conan_api.list.select(
+            ListPattern(f"{query_pattern}:*", rrev=None, prev=None)
+        ).serialize()
+    except (RecipeNotFoundException, ConanReferenceDoesNotExistInDB, NotFoundException):
+        # Recipe not found in cache is expected for uncached exact references;
+        # return empty rather than failing. Wildcard patterns that match nothing
+        # return empty without raising.
+        return set()
+    except Exception as e:
         raise ConanException(
             f"Failed to query the Conan cache: {e}"
         ) from e
 
-    try:
-        cached_result = json.loads(raw)
-    except json.JSONDecodeError as e:
-        raise ConanException(
-            f"Unexpected output from 'conan list': could not parse JSON: {e}"
-        ) from e
-
-    local_cache = cached_result.get("Local Cache", {})
     cached_binary_recipes = set()
 
     for recipe_ref, recipe_data in local_cache.items():
@@ -744,22 +611,34 @@ def get_conan_cached_packages(pattern: str = "*") -> set:
     return cached_binary_recipes
 
 
-def split_recipe_ref(pkg_ref: str) -> tuple[str, str] | tuple[None, None]:
+def split_recipe_ref(pkg_ref: str) -> tuple[str, str]:
     """
     Extract name/version from a recipe reference-like string.
 
     Handles refs that may include revision/user-channel suffixes.
+
+    Args:
+        pkg_ref: Package reference in "name/version" format, optionally with
+                 @user/channel or #revision suffixes.
+
+    Returns:
+        Tuple of (name, version)
+
+    Raises:
+        ValueError: If pkg_ref is not in valid "name/version" format.
+                   All inputs should be valid refs from Conan or .cfsPackages;
+                   if not, this is a data integrity error that should fail loudly.
     """
-    try:
-        clean_ref = pkg_ref.split("#", 1)[0]
-        name, version_part = clean_ref.split("/", 1)
-        version = version_part.split("@", 1)[0]
-        return name, version
-    except ValueError:
-        # split("/", 1) raises ValueError when the ref contains no "/" separator,
-        # meaning it is not a valid name/version reference. Return (None, None) so
-        # callers can treat it as an unrecognised reference rather than crashing.
-        return None, None
+    if "/" not in pkg_ref:
+        raise ValueError(
+            f"Invalid package reference '{pkg_ref}'. "
+            f"Expected format: 'name/version' (e.g., 'pkg/1.0.0')"
+        )
+
+    clean_ref = pkg_ref.split("#", 1)[0]
+    name, version_part = clean_ref.split("/", 1)
+    version = version_part.split("@", 1)[0]
+    return name, version
 
 
 def _normalize_dependency_ref(ref: str | None) -> str | None:
@@ -770,8 +649,6 @@ def _normalize_dependency_ref(ref: str | None) -> str | None:
         return None
 
     name, version = split_recipe_ref(ref)
-    if not name or not version:
-        return None
 
     # Convert Conan bracket range syntax to plain constraint text
     # used by the CFS API and CLI output.
@@ -851,6 +728,28 @@ def _dependency_output_ref(
     return _normalize_dependency_ref(resolved_ref)
 
 
+def _run_graph_info(graph_cmd: str) -> dict:
+    """
+    Run `conan graph info` and return its JSON even when the graph fails.
+
+    A failed graph is still printed in full, with `error` describing what went
+    wrong, so reacting to the exit code alone would discard the one answer that
+    explains the failure.
+    """
+    completed = subprocess.run(
+        graph_cmd, shell=True, capture_output=True, text=True
+    )
+
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        # Conan died before producing a graph, so there is nothing structured
+        # to report and the raw message is all we have.
+        raise ConanException(
+            completed.stderr.strip() or completed.stdout.strip()
+        )
+
+
 def is_requirement_cached(pkg_ref: str, cached_packages: set) -> bool:
     """
     Return True if the requirement has a cached binary representation.
@@ -859,8 +758,6 @@ def is_requirement_cached(pkg_ref: str, cached_packages: set) -> bool:
     - Range refs: any cached concrete version satisfying the range is considered cached
     """
     req_name, req_version = split_recipe_ref(pkg_ref)
-    if not req_name or not req_version:
-        return False
 
     if not has_version_range(req_version):
         return any(
@@ -870,7 +767,7 @@ def is_requirement_cached(pkg_ref: str, cached_packages: set) -> bool:
 
     for cached_ref in cached_packages:
         cached_name, cached_version = split_recipe_ref(cached_ref)
-        if cached_name != req_name or not cached_version:
+        if cached_name != req_name:
             continue
         if version_satisfies(cached_version, req_version):
             return True
@@ -958,16 +855,15 @@ def get_installed_packages() -> set:
 
     Installed packages are actively in use. Only one version per package
     can be installed at a time.
+
+    Raises:
+        json.JSONDecodeError: If .cfsPackages is corrupted (invalid JSON)
     """
-    try:
-        packages = PackagesJson()
-        return {x["full_ref"].split("#")[0] for x in packages.values()}
-    except (OSError, json.JSONDecodeError):
-        # .cfsPackages may be absent (fresh workspace) or unreadable/corrupt.
-        # Returning an empty set causes every package to be treated as not
-        # installed, which is safe: the install step will either install them
-        # fresh or detect the real problem with a proper error.
-        return set()
+    # PackagesJson constructor handles missing file by returning empty dict.
+    # If file exists but is corrupted, let the error propagate so user knows
+    # their installation state is broken.
+    packages = PackagesJson()
+    return {x["full_ref"].split("#")[0] for x in packages.values()}
 
 
 @conan_subcommand()
@@ -1045,7 +941,7 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
     installed_packages = get_installed_packages()
 
     # Get cached packages that have binaries available in Conan cache.
-    cached_packages = get_conan_cached_packages()
+    cached_packages = get_conan_cached_packages(conan_api)
     enabled_remote_names = [
         remote.name for remote in conan_api.remotes.list(only_enabled=True)
     ]
@@ -1068,6 +964,8 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
     to_install = []
     for pkg_ref in pkg_refs:
         name, requested_version = pkg_ref.split("/", 1)
+
+        # toInstall uses the requested version to maintain manifest-to-action mapping
         pkg_obj = {"name": name, "version": requested_version}
 
         installed_version = installed_package_versions.get(name)
@@ -1075,38 +973,62 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
             to_install.append(pkg_obj)
             continue
 
-        is_version_range = has_version_range(requested_version)
         version_matches = (
             version_satisfies(installed_version, requested_version)
-            if is_version_range
+            if has_version_range(requested_version)
             else installed_version == requested_version
         )
 
         if version_matches:
-            # For ranges, report the concrete installed version in alreadyInstalled.
+            # Report the concrete installed version in alreadyInstalled.
             already_installed.append({
                 "name": name,
-                "version": installed_version if is_version_range else requested_version
+                "version": installed_version
             })
         else:
             to_install.append(pkg_obj)
 
+    # Resolve version ranges to concrete versions for packages that actually need installation.
+    # This defers expensive remote graph resolution until after the installed-package check,
+    # avoiding unnecessary network calls and recipe cache pollution.
+    # resolved_versions maps package names to concrete versions for license checking.
+    resolved_versions = {}
+    for pkg in to_install:
+        name = pkg['name']
+        requested_version = pkg['version']
+
+        if has_version_range(requested_version):
+            pkg_ref = f"{name}/{requested_version}"
+            concrete_ref = resolve_recipe_reference(pkg_ref)
+            _, concrete_version = split_recipe_ref(concrete_ref)
+            resolved_version = concrete_version or requested_version
+
+            # Strip surrounding brackets if present. resolve_recipe_reference() can return
+            # normalized range refs like "name/[^1.0]" when resolution fails. We need the
+            # unbracketed form for VersionRange() in cache checks.
+            if resolved_version and resolved_version.startswith("[") and resolved_version.endswith("]"):
+                resolved_version = resolved_version[1:-1]
+        else:
+            resolved_version = requested_version
+
+        resolved_versions[name] = resolved_version
+
     # Get license info for packages that need to be installed AND are not in cache
     # (if in cache, license was already accepted previously)
-    # Track packages we download so we can clean them up afterwards
-    packages_downloaded_for_license_check = set()
+
     requires_license = []
     for pkg in to_install:
-        pkg_ref = f"{pkg['name']}/{pkg['version']}"
+        pkg_name = pkg['name']
+        # Use the concrete resolved version for license checking, not the requested range
+        concrete_version = resolved_versions.get(pkg_name, pkg['version'])
+        concrete_ref = f"{pkg_name}/{concrete_version}"
+
         # Cached packages can always be reused locally.
-        if is_requirement_cached(pkg_ref, cached_packages):
+        if is_requirement_cached(concrete_ref, cached_packages):
             continue
 
-        resolved_ref = (
-            resolve_recipe_reference(pkg_ref)
-            if has_version_range(pkg["version"])
-            else normalize_reference(pkg_ref)
-        )
+        # Normalize the concrete reference for license checking
+        resolved_ref = normalize_reference(concrete_ref)
 
         try:
             binary_support = has_supported_binary_for_reference(
@@ -1123,34 +1045,20 @@ def cfs_install_plan(conan_api: ConanAPI, parser, subparser, *args):
             })
             continue
 
-        license_info = get_package_license_info(conan_api, resolved_ref)
+        pkg_info = _get_recipe_info(conan_api, resolved_ref)
 
-        # Always schedule cleanup of the concrete ref that was actually downloaded.
-        # get_package_license_info downloads the recipe into the Conan cache as
-        # a side effect (via app.proxy.get_recipe), even when it returns None.
-        # Without this the recipe leaks into cache and subsequent install-plan
-        # calls will skip the license prompt (cached == previously accepted).
-        packages_downloaded_for_license_check.add(resolved_ref)
+        license = pkg_info.get("license")
+        license_text = pkg_info.get("licenseText", None)
 
-        if license_info:
-            requires_license.append({
-                "reference": pkg,
-                "license": license_info["license"],
-                "licenseText": license_info.get("licenseText")
-            })
+        if license and license_text:
 
-    # Clean up any recipes we downloaded during license checking
-    # This prevents polluting the cache with packages the user hasn't accepted yet
-    for pkg_ref in packages_downloaded_for_license_check:
-        try:
-            check_output_runner(f'conan remove "{pkg_ref}" -c')
-        except ConanException as e:
-            # Best-effort cleanup: install-plan should not fail after computing a
-            # valid result just because cache cleanup could not be completed.
-            # This can happen for non-fatal reasons (ref already gone, lock
-            # contention, transient cache issues, non-concrete refs, or
-            # already-removed cache entries.
-            continue
+            requires_license.append(
+                {
+                    "reference": pkg_info["reference"],
+                    "license": license,
+                    "licenseText": license_text,
+                }
+            )
 
     skipped_ref_set = {
         f"{x['reference']['name']}/{x['reference']['version']}"
@@ -1217,7 +1125,7 @@ def cfs_search_info(conan_api: ConanAPI, parser, subparser, *args):
                 raise
 
         # Pass remotes so they are not fetched on every iteration
-        # Note that check_update is set to False to avoid checking all the remotes for all the packages.
+        # Note that _get_recipe_info doesn't check all the remotes for all the packages.
         # This is important because the typical use case for this command is to be used with pattern "*"
         # since we cannot assume any package name, so if we search for updates we will end up checking for
         # updates on every package every single time.
@@ -1226,7 +1134,7 @@ def cfs_search_info(conan_api: ConanAPI, parser, subparser, *args):
         # versions that are not already in the local cache. In other words, we assume that if a version is on
         # the local cache, that version is valid and there is no a newer one.
         pkg_dict = {
-            f"{ref}": _get_recipe_info(conan_api, str(ref), remotes, check_update=False)
+            f"{ref}": _get_recipe_info(conan_api, str(ref), remotes)
             for ref in references
         }
 
@@ -1234,6 +1142,46 @@ def cfs_search_info(conan_api: ConanAPI, parser, subparser, *args):
         handle_and_raise_conan_exception(e)
 
     cli_out_write(json.dumps(pkg_dict, indent=2))
+
+@conan_subcommand()
+def cfs_local_install(conan_api: ConanAPI, parser, subparser, *args):
+    """
+    Installs CFS packages from a local tarball by restoring them into the Conan
+    cache and then installing them locally without contacting any remote.
+    """
+    subparser.add_argument("pkg_location", help="CFS tarball package location")
+    args = parser.parse_args(*args)
+
+    try:
+        pkg_out = json.loads(
+            # this can bomb out badly on win due with linux files that have "::"
+            # and the extract fails halfway thru, with no revert mechanism
+
+            check_output_runner(f'conan cache restore "{args.pkg_location}" --format=json')
+        )
+    except ConanException as e:
+        handle_and_raise_conan_exception(e)
+
+    restored_refs = sorted(pkg_out["Local Cache"])
+    if not restored_refs:
+        raise ConanException(f"Tarball '{args.pkg_location}' contains no packages")
+
+    try:
+        installed = install_packages(restored_refs, no_remote=True)
+    except ConanException as e:
+        # install_packages routes its failures through
+        # handle_and_raise_conan_exception, so the diagnosis is already in `e`.
+        # Add only what it cannot know about: which tarball was being installed
+        # and what the restore left behind, so the user can clean up.
+        raise ConanException(
+            f"{e}\n\n"
+            f"Failed to install from tarball '{args.pkg_location}'\n"
+            f"References cached by the restore: {', '.join(restored_refs)}\n"
+            "You may want to delete these references from the cache."
+        ) from e
+
+    if installed:
+        cli_out_write("\n".join(installed))
 
 
 @conan_subcommand()
@@ -1277,7 +1225,9 @@ def cfs_install(conan_api: ConanAPI, parser, subparser, *args):
 
     # Check if any packages require license acceptance (only if flag not set)
     if not args.accept_license:
-        pkg_requiring_licenses = get_packages_requiring_license_acceptance(conan_api, args.references)
+        pkg_requiring_licenses = get_packages_requiring_license_acceptance(
+            conan_api, args.references, args.no_remote
+        )
         if pkg_requiring_licenses:
             raise ConanException(
                 f"The following packages require license acceptance: {', '.join(pkg_requiring_licenses)}. "
@@ -1341,7 +1291,7 @@ def cfs_get_path(conan_api: ConanAPI, parser, subparser, *args):
     cli_out_write(packages[f"{args.pkg_name}"]["path"])
 
 
-def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None, check_update=True) -> dict:
+def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None) -> dict:
 
     if remotes is None:
         remotes = conan_api.remotes.list()
@@ -1349,16 +1299,54 @@ def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None, check_up
     def ensureList(x):
         return x if isinstance(x, (list, tuple)) else [x] if x is not None else []
 
-    # This uses a non-public (as in, not documented) conan method, so it may change in the future, but there is no
-    # public API for downloading just the recipe of a package from any remote
+    conanfile = None
+
+    parsed_reference = RecipeReference.loads(reference)
+
     try:
-        app = ConanApp(conan_api)
-        layout, recipe_status, remote = app.proxy.get_recipe(
-            RecipeReference.loads(reference), remotes, False, check_update
-        )
-        conanfile = conan_api.local.inspect(layout.conanfile(), remotes=remotes, lockfile=None)
+        # Searching the first appearance between local cache and remotes
+        # Note that this assumes that all the recipes on all remotes are the same
+        # for a given reference, with no revisions
+        for remote in [None] + remotes:
+            try:
+                recipe_ref = conan_api.list.latest_recipe_revision(
+                    parsed_reference, remote
+                )
+                if recipe_ref is None:
+                    # According to the documentation of latest_recipe_revision,
+                    # return should be returned but that implementation changed a while ago.
+                    # Adding this code in case the behavior is reverted back to previous one
+                    # but as of conan 2.33, this will never be executed
+                    # More info on: https://github.com/conan-io/conan/issues/20391
+                    continue
+
+            except (
+                ConanReferenceDoesNotExistInDB,
+                RecipeNotFoundException,
+                NotFoundException,
+            ) as e:
+                # The recipe was not found on this remote (or local cache),
+                # Let's try on the next one
+                continue
+
+            # Ensure the recipe is downloaded to the local cache
+            # This will skip the download if the recipe is already in the local cache
+            conan_api.download.recipe(recipe_ref, remote=remote)
+
+            # Load recipe content
+            export_path = conan_api.cache.export_path(recipe_ref)
+            conanfile_path = conan_api.local.get_conanfile_path(".", export_path, False)
+
+            # Not passing remotes nor lockfile because we are not using python_requires
+            # on our recipes, which is the only use for it inside inspect
+            conanfile = conan_api.local.inspect(conanfile_path, None, None)
+            # break on first success (hopefully local cache)
+            break
     except ConanException as e:
         handle_and_raise_conan_exception(e)
+
+    if conanfile is None:
+        raise ConanException(f"Couldn't find the following packages: {reference}")
 
     # Derive the name and version from the package reference, because inspect()
     # is not necessarily able to obtain the correct ones from the recipe, as any
@@ -1375,26 +1363,15 @@ def _get_recipe_info(conan_api: ConanAPI, reference: str, remotes=None, check_up
 
     # Attempt to read LICENSE file from the recipe export folder
     # The LICENSE file should be exported using the 'exports' field in conanfile.py
-    license_text = None
 
-    try:
-        # The conanfile.py path points to the export folder
-        # layout.conanfile() returns the path to conanfile.py in the export folder
-        conanfile_path = Path(layout.conanfile())
-        export_folder = conanfile_path.parent
-
-        # Check for LICENSE file in the export folder
-        license_file_path = export_folder / "LICENSE"
-        if license_file_path.exists():
-            license_text = license_file_path.read_text(encoding='utf-8')
-    except OSError:
-        # The export folder path or LICENSE file could not be read (e.g. layout
-        # returned an unexpected path, or a permissions error). The license text
-        # is supplementary metadata; omitting it does not block installation or
-        # license acceptance, so we continue without it.
-        pass
-
-    if license_text:
+    # Check for LICENSE file in the export folder
+    license_file_path = Path(export_path) / "LICENSE"
+    if license_file_path.exists():
+        # If the LICENSE file exists, we expect to be able to read it.
+        # OSError here (permissions, I/O error) indicates an unexpected system state
+        # that should be surfaced rather than silently ignored, as users rely on
+        # this metadata for compliance and package selection decisions.
+        license_text = license_file_path.read_text(encoding='utf-8')
         pkg_info["licenseText"] = license_text
 
     if hasattr(conanfile, "cfs_soc"):
@@ -1428,14 +1405,77 @@ def cfs_get_pkg_info(conan_api: ConanAPI, parser, subparser, *args):
     # Resolve remotes once so they are not re-fetched for every package.
     remotes = conan_api.remotes.list()
 
-    pkg_infos = [
-        _get_recipe_info(
-            conan_api, normalize_reference(ref), remotes, check_update=False
-        )
-        for ref in args.references
-    ]
+    try:
+        pkg_infos = [
+            _get_recipe_info(conan_api, normalize_reference(ref), remotes)
+            for ref in args.references
+        ]
+    except Exception as e:
+        handle_and_raise_conan_exception(e)
 
     cli_out_write(json.dumps(pkg_infos, indent=2))
+
+
+@conan_subcommand()
+def cfs_remote_refs(conan_api: ConanAPI, parser, subparser, *args):
+    """
+    Lists every package version in the given remotes, as name/version,
+    without downloading recipes. Recipes are immutable (a change is a new
+    version), so revisions are not listed: that would take one request per
+    version instead of one per remote. A remote that cannot be listed is
+    reported as {"error": message, "auth": bool}, where auth tells an
+    authentication failure from any other failure.
+    """
+    subparser.add_argument("remotes", nargs="+", help="Remote names")
+    args = parser.parse_args(*args)
+
+    result = {}
+    for name in args.remotes:
+        try:
+            listed = conan_api.list.select(
+                ListPattern("*", rrev=None, only_recipe=True),
+                remote=conan_api.remotes.get(name),
+            ).serialize()
+            result[name] = sorted(listed)
+        except ConanException as e:
+            # The helper words the error; one remote failing must not stop the others.
+            try:
+                handle_and_raise_conan_exception(e)
+            except Exception as formatted:
+                message = str(formatted)
+                result[name] = {
+                    "error": message,
+                    "auth": "Authentication error" in message
+                    or "Wrong user or password" in message,
+                }
+
+    cli_out_write(json.dumps(result))
+
+
+@conan_subcommand()
+def cfs_remote_pkg_info(conan_api: ConanAPI, parser, subparser, *args):
+    """
+    Returns the metadata of the latest recipe revision of each given
+    reference from one remote, keyed by the references as given.
+    """
+    subparser.add_argument("remote", help="Remote name")
+    subparser.add_argument(
+        "references",
+        nargs="+",
+        help="References in name/version format (a #revision is ignored)",
+    )
+    args = parser.parse_args(*args)
+
+    try:
+        remotes = [conan_api.remotes.get(args.remote)]
+        infos = {
+            ref: _get_recipe_info(conan_api, ref.split("#")[0], remotes)
+            for ref in args.references
+        }
+    except ConanException as e:
+        handle_and_raise_conan_exception(e)
+
+    cli_out_write(json.dumps(infos))
 
 
 @conan_subcommand()
@@ -1502,8 +1542,7 @@ def cfs_dependencies(conan_api: ConanAPI, parser, subparser, *args):
     # installed compatible versions over newly resolved concrete versions.
     for installed_ref in get_installed_packages():
         name, version = split_recipe_ref(installed_ref)
-        if name and version:
-            installed_versions[name] = version
+        installed_versions[name] = version
 
     graph_nodes = pkg_dict["graph"]["nodes"]
 
@@ -1588,17 +1627,26 @@ def cfs_dependencies_batch(conan_api: ConanAPI, parser, subparser, *args):
         if args.no_remote:
             graph_cmd += " --no-remote"
 
-        pkg_dict = json.loads(check_output_runner(graph_cmd))
+        pkg_dict = _run_graph_info(graph_cmd)
     except ConanException as e:
         handle_and_raise_conan_exception(e)
+
+    # A failed graph is reported as data rather than a non-zero exit, because
+    # exiting non-zero would make the caller discard this output and see only
+    # the message on stderr.
+    graph_error = pkg_dict["graph"].get("error")
+    if graph_error:
+        cli_out_write(
+            json.dumps({"dependencies": {}, "error": graph_error}, indent=2)
+        )
+        return
 
     installed_versions: dict[str, str] = {}
     # Load installed versions once so range dependencies can prefer already
     # installed compatible versions over newly resolved concrete versions.
     for installed_ref in get_installed_packages():
         name, version = split_recipe_ref(installed_ref)
-        if name and version:
-            installed_versions[name] = version
+        installed_versions[name] = version
 
     graph_nodes = pkg_dict["graph"]["nodes"]
 
@@ -1639,7 +1687,7 @@ def cfs_dependencies_batch(conan_api: ConanAPI, parser, subparser, *args):
         # response.
         result[requested] = dependencies
 
-    cli_out_write(json.dumps(result, indent=2))
+    cli_out_write(json.dumps({"dependencies": result, "error": None}, indent=2))
 
 
 @conan_subcommand()
@@ -1692,7 +1740,7 @@ def cfs_install_manifest(conan_api: ConanAPI, parser, subparser, *args):
         pkg_refs_to_check = [f"{pkg['name']}/{pkg['version']}" for pkg in packages_to_install]
 
         # Get the packages that require license acceptance
-        pkg_requiring_licenses = get_packages_requiring_license_acceptance(conan_api, pkg_refs_to_check)
+        pkg_requiring_licenses = get_packages_requiring_license_acceptance(conan_api, pkg_refs_to_check, args.no_remote)
 
         # Skipping packages that require license acceptance if the flag is not set
         skipped_packages = []
@@ -1728,9 +1776,7 @@ def cfs_install_manifest(conan_api: ConanAPI, parser, subparser, *args):
         cli_out_write(json.dumps(result))
 
     except Exception as e:
-        if isinstance(e, ConanException):
-            raise e
-        raise ConanException(f"Error installing packages from manifest: {str(e)}")
+        handle_and_raise_conan_exception(e)
 
 
 @conan_subcommand()
@@ -1768,9 +1814,24 @@ def cfs_check_manifest(conan_api: ConanAPI, parser, subparser, *args):
         cli_out_write(json.dumps(packages_to_install))
 
     except Exception as e:
-        if isinstance(e, ConanException):
-            raise e
-        raise ConanException(f"Error checking manifest: {str(e)}")
+        handle_and_raise_conan_exception(e)
+
+
+def _remove_finalize_folders(conan_api: ConanAPI, pkg: str):
+    """
+    On Windows, delete the finalize() folders of pkg using extended-length paths.
+    finalize() may run a git checkout with paths beyond MAX_PATH, which `conan remove` cannot delete.
+    """
+    if os.name != "nt":
+        return
+    for _, prefs in conan_api.list.select(ListPattern(f"{pkg}#*:*#*")).items():
+        for pref in prefs:
+            folder = conan_api.cache.package_path(pref)
+            # package_path() returns the finalize folder ("f") when it exists
+            if os.path.basename(folder) == "f":
+                shutil.rmtree("\\\\?\\" + os.path.abspath(folder),
+                              onerror=lambda func, path, _: (os.chmod(path, stat.S_IWRITE), func(path)))
+
 
 @conan_subcommand()
 def cfs_delete(conan_api: ConanAPI, parser, subparser, *args):
@@ -1803,15 +1864,14 @@ def cfs_delete(conan_api: ConanAPI, parser, subparser, *args):
         cached_packages = [pkg for pkg in local_cache.keys() if pkg != "error" and "/" in pkg]
 
     except Exception as e:
-        # Check if this is a ConanException we just raised
+        # Command-specific error handling for "not found" patterns
         if isinstance(e, ConanException):
-            raise e
-        # Check if this is a case where no packages match the pattern or other conan errors
-        error_msg = str(e)
-        if ("Recipe" in error_msg and "not found" in error_msg) or \
-           ("not found" in error_msg) or \
-           ("argument" in error_msg.lower() and ("invalid" in error_msg.lower() or "empty" in error_msg.lower())):
-            raise ConanException(f"No local packages found matching pattern '{args.pattern}' to delete.")
+            error_msg = str(e)
+            if ("Recipe" in error_msg and "not found" in error_msg) or \
+               ("not found" in error_msg) or \
+               ("argument" in error_msg.lower() and ("invalid" in error_msg.lower() or "empty" in error_msg.lower())):
+                raise ConanException(f"No local packages found matching pattern '{args.pattern}' to delete.")
+        # Generic error transformation (or re-raise if not matched)
         handle_and_raise_conan_exception(e)
 
     if not cached_packages:
@@ -1847,15 +1907,12 @@ def cfs_delete(conan_api: ConanAPI, parser, subparser, *args):
     deleted = []
     for pkg in to_delete:
         try:
+            _remove_finalize_folders(conan_api, pkg)
             # Use conan remove command directly to handle revisions automatically
             check_output_runner(f'conan remove "{pkg}" -c')
             deleted.append(pkg)
         except Exception as e:
-            # For ConanException, re-raise as is; for other exceptions, process them
-            if isinstance(e, ConanException):
-                raise e
-            else:
-                handle_and_raise_conan_exception(e)
+            handle_and_raise_conan_exception(e)
 
     # Output the deleted packages for the caller
     if deleted:

@@ -20,3 +20,20 @@ export type DebugSessionInfo = {
 	isLive: boolean;
 	sessionId: string;
 };
+
+export type SymbolsDataResponse = {
+	id: number;
+	name: string;
+	demangled: string | undefined;
+	type: string;
+	address: number;
+	section: string | undefined;
+	size: number;
+	localstack: number | undefined;
+	stack: number | undefined;
+	bind: string;
+	visibility: string;
+	recursive: number | undefined;
+	path: string;
+	stackdepth: number | undefined;
+};

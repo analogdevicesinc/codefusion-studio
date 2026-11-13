@@ -26,9 +26,9 @@ import {
 } from '../../../../../../common/contexts/LocaleContext';
 import {
 	selectFile,
-	checkDirectoryExists,
-	generatePemKey
+	checkDirectoryExists
 } from '../../../../../../common/api';
+import {generatePemKey} from '../../../../utils/api';
 import {GENERATE_KEY_CONTROLS} from '../../../../constants/workspace-settings';
 import type {KeyData} from '../../../../types/workspace-settings';
 import {isDuplicateKeyName} from '../../../../utils/application-package-validation';
@@ -63,26 +63,19 @@ function GenerateKey({
 
 	const handleControlChange = useCallback(
 		(controlId: string, value: TFormFieldValue) => {
-			const sanitized =
-				controlId === 'keyName' && typeof value === 'string'
-					? value.replace(/[^a-zA-Z0-9 _.-]/g, '')
-					: value;
+			setFormData(prev => ({...prev, [controlId]: value}));
 
-			setFormData(prev => ({...prev, [controlId]: sanitized}));
-
-			if (controlId === 'keyName') {
-				setErrors(prev => {
-					if (prev.keyName) {
-						const {keyName: _, ...rest} = prev;
-
-						return rest;
-					}
-
-					return prev;
-				});
+			if (controlId === 'keyName' && typeof value === 'string') {
+				setErrors(prev => ({
+					...prev,
+					keyName: /[^a-zA-Z0-9_-]/.test(value)
+						? (l10n?.keyNameInvalidChars ??
+							'Key name can only contain letters, numbers, underscores and hyphens.')
+						: ''
+				}));
 			}
 		},
-		[]
+		[l10n?.keyNameInvalidChars]
 	);
 
 	const handleBrowse = useCallback(async () => {
@@ -107,7 +100,7 @@ function GenerateKey({
 				if (!value.trim()) {
 					next.destinationPath =
 						l10n?.destinationPathRequired ??
-						'Destination path is required';
+						'Destination path is required.';
 				} else if (/\s/.test(value)) {
 					next.destinationPath =
 						l10n?.destinationPathNoSpaces ??
@@ -169,10 +162,21 @@ function GenerateKey({
 			return;
 		}
 
-		const keyName = ((formData.keyName as string) ?? '').trim();
+		const keyName = (formData.keyName as string) ?? '';
 		const destinationPath = (
 			(formData.destinationPath as string) ?? ''
 		).trim();
+
+		if (/[^a-zA-Z0-9_-]/.test(keyName)) {
+			setErrors(prev => ({
+				...prev,
+				keyName:
+					l10n?.keyNameInvalidChars ??
+					'Key name can only contain letters, numbers, underscores and hyphens.'
+			}));
+
+			return;
+		}
 
 		if (/\s/.test(destinationPath)) {
 			setErrors(prev => ({
@@ -239,6 +243,7 @@ function GenerateKey({
 		existingKeyNames,
 		formData,
 		l10n?.duplicateKeyName,
+		l10n?.keyNameInvalidChars,
 		l10n?.destinationPathNoSpaces,
 		l10n?.invalidPath,
 		onSubmit

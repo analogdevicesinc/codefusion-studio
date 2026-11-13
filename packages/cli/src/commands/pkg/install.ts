@@ -15,10 +15,13 @@
 import type {
   CfsInstallInput,
   CfsInstallPlan,
-  CfsPackageReference
+  CfsPackageReference,
+  CfsSkippedPackageReasonCode
 } from 'cfs-package-manager';
 
-import {Args, Command, Flags} from '@oclif/core';
+import {Args, Flags} from '@oclif/core';
+
+import {BaseCommand} from '../../utils/base-command.js';
 import {getSkippedPackageReasonMessage} from 'cfs-package-manager';
 import * as fs from 'node:fs';
 
@@ -33,14 +36,36 @@ export const pkgInstallDeps: {
   getPackageManager
 };
 
-export default class CfsPackageInstall extends Command {
+/**
+ * Shape of a package skipped because it has no compatible binary for the
+ * current platform, flattened for the JSON response envelope.
+ */
+interface SkippedPlatformPackage {
+  name: string;
+  version: string;
+  reasonCode: CfsSkippedPackageReasonCode;
+}
+
+/**
+ * JSON envelope `data` payload for `pkg install`.
+ */
+interface PkgInstallResult {
+  installed: CfsPackageReference[];
+  skippedLicense: CfsPackageReference[];
+  skippedPlatform: SkippedPlatformPackage[];
+  alreadyInstalled: CfsPackageReference[];
+}
+
+export default class CfsPackageInstall extends BaseCommand<
+  typeof CfsPackageInstall
+> {
   static args = {
     reference: Args.string({
       name: 'reference',
       description:
-        'Package reference (name/version) or path to a manifest file containing packages to install. eg. somePkg/2.0.0 or /absolute/path/to/.cfsdependencies',
+        'Package reference (name/version) or path to a manifest file. eg. somePkg/2.0.0 or /absolute/path/to/.cfsdependencies',
       multiple: false,
-      required: true
+      required: false
     })
   };
 
@@ -56,12 +81,26 @@ export default class CfsPackageInstall extends Command {
     acceptLicense: Flags.boolean({
       summary:
         'Accept package license(s). Required for packages that require license acceptance. If not provided, you will be prompted interactively.'
+    }),
+    tar: Flags.string({
+      char: 't',
+      summary:
+        'Path to a package tarball to install from. Cannot be combined with a package reference.'
     })
   };
 
-  async run(): Promise<void> {
+  static useResponseEnvelope = true;
+
+  async run(): Promise<PkgInstallResult> {
     // Parse the command arguments
-    const {args, flags} = await this.parse(CfsPackageInstall);
+    const {args, flags} = this;
+    const input = args.reference;
+
+    if (flags.tar !== undefined && input !== undefined) {
+      this.error(
+        'Specify either a package reference or --tar, not both.'
+      );
+    }
 
     // Get the package manager instance
     const packman = await pkgInstallDeps.getPackageManager(
@@ -72,13 +111,38 @@ export default class CfsPackageInstall extends Command {
       this
     );
 
-    const input = args.reference;
+    if (flags.tar !== undefined) {
+      const installed = await packman.localInstall(flags.tar);
+      this.log(`Package installed from tarball: ${flags.tar}`);
+      return {
+        installed,
+        skippedLicense: [],
+        skippedPlatform: [],
+        alreadyInstalled: []
+      };
+    }
+
+    if (input === undefined) {
+      this.error(
+        'Specify a package reference, a manifest file path, or --tar <path>.'
+      );
+    }
+
     const isManifest = this.isManifestFile(input);
 
     // Build the install input
     const installInput: CfsInstallInput = isManifest
       ? input
       : parsePackageReference(input);
+
+    this.telemetryMetadata = {
+      packageName: isManifest
+        ? 'manifest'
+        : parsePackageReference(input).name,
+      isLocal: flags.local ?? false,
+      isManifest,
+      installedCount: 0
+    };
 
     // Get installation plan (single call for all pre-flight info)
     const plan = await packman.getInstallPlan(installInput);
@@ -110,7 +174,13 @@ export default class CfsPackageInstall extends Command {
         }
       }
 
-      return;
+      return {
+        installed: [],
+        skippedLicense: [],
+        skippedPlatform:
+          this.toSkippedPlatformData(skippedWithReason),
+        alreadyInstalled: plan.alreadyInstalled
+      };
     }
 
     // Handle license acceptance
@@ -119,6 +189,14 @@ export default class CfsPackageInstall extends Command {
       !licenseAccepted &&
       plan.requiresLicenseAcceptance.length > 0
     ) {
+      // The prompt writes to stdout, which would corrupt the JSON envelope.
+      if (this.jsonEnabled()) {
+        this.error(
+          'License acceptance is required in JSON mode. Re-run with --acceptLicense.',
+          {code: 'PKG_INSTALL_LICENSE_REQUIRED'}
+        );
+      }
+
       licenseAccepted = await this.promptForLicenseAcceptance(plan);
     } else if (plan.requiresLicenseAcceptance.length === 0) {
       // No licenses to accept
@@ -126,10 +204,10 @@ export default class CfsPackageInstall extends Command {
     }
 
     // Determine which packages to install based on license acceptance
-    const licensedPackageRefs = new Set(
-      plan.requiresLicenseAcceptance.map(
-        (p) => `${p.reference.name}/${p.reference.version}`
-      )
+    // Match by package name only, since toInstall may contain version ranges
+    // while requiresLicenseAcceptance contains concrete versions.
+    const licensedPackageNames = new Set(
+      plan.requiresLicenseAcceptance.map((p) => p.reference.name)
     );
 
     let packagesToInstall: CfsPackageReference[] = [];
@@ -141,11 +219,10 @@ export default class CfsPackageInstall extends Command {
     } else {
       // User rejected licenses - install only packages that don't require license
       packagesToInstall = plan.toInstall.filter(
-        (pkg) =>
-          !licensedPackageRefs.has(`${pkg.name}/${pkg.version}`)
+        (pkg) => !licensedPackageNames.has(pkg.name)
       );
       skipped = plan.toInstall.filter((pkg) =>
-        licensedPackageRefs.has(`${pkg.name}/${pkg.version}`)
+        licensedPackageNames.has(pkg.name)
       );
     }
 
@@ -164,8 +241,41 @@ export default class CfsPackageInstall extends Command {
       );
     }
 
+    this.telemetryMetadata = {
+      packageName: isManifest
+        ? 'manifest'
+        : parsePackageReference(input).name,
+      isLocal: flags.local ?? false,
+      isManifest,
+      installedCount: installed.length
+    };
+
     // Report results
     this.logInstallResult(installed, skipped, plan);
+
+    return {
+      installed,
+      skippedLicense: skipped,
+      skippedPlatform: this.toSkippedPlatformData(plan.skipped ?? []),
+      alreadyInstalled: plan.alreadyInstalled
+    };
+  }
+
+  /**
+   * Flattens the package manager's skipped-with-reason entries into the
+   * shape used by the JSON response envelope.
+   *
+   * @param skipped - Packages excluded from the install plan with a reason
+   * @returns The flattened skipped-platform package data
+   */
+  private toSkippedPlatformData(
+    skipped: CfsInstallPlan['skipped']
+  ): SkippedPlatformPackage[] {
+    return (skipped ?? []).map((pkg) => ({
+      name: pkg.reference.name,
+      version: pkg.reference.version,
+      reasonCode: pkg.reasonCode
+    }));
   }
 
   /**

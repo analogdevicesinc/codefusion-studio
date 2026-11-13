@@ -1,3 +1,3 @@
-# CFSAI Compatibility Analyzer
+# cfsai-compatibility-analyzer
 
-Static analysis tool to estimate the compatibility of an AI model with a particular piece of hardware.
+Thin wrapper — delegates to `cfsai-model-explorer`.

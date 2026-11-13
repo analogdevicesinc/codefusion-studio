@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  */
 
 /**
- * These tests cover building workspace for MAX32690.
+ * These tests cover building workspace for TEST690.
  */
 
 import { expect } from "chai";
@@ -29,26 +29,24 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 
 /**
- * Test building a MAX32690 zephyr project
+ * Test building a TEST690 zephyr project
  */
 
-describe("Workspace MAX32690 creation", () => {
+describe("Workspace TEST690 creation", () => {
   const locatorspath = new Locatorspaths();
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
 
-  after(async () => {
-    try {
-      if (view) await view.switchBack();
-      if (workbench)
-        await workbench.executeCommand("View: Revert and Close Editor");
-    } catch (error) {
-      console.error("Error in after() hook:", error);
-    }
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite());
   });
 
-  it("Create new workspace manually configured MAX32690 @smoke", async () => {
+  after(async () => {
+    await UIUtils.teardownTestSuite(view);
+  });
+
+  it("Create new workspace manually configured TEST690 @smoke", async () => {
     workbench = new Workbench();
     browser = VSBrowser.instance;
 
@@ -63,22 +61,21 @@ describe("Workspace MAX32690 creation", () => {
 
     await view.switchToFrame();
 
-    console.log("Creating new workspace for MAX32690");
+    // Wait for package manager and dismiss any initialization notifications
+    await UIUtils.waitForPackageManager(workbench, browser, view);
+
+    console.log("Creating new workspace for TEST690");
     // SOC Screen Selection
     console.log("SELECT YOUR SOC SCREEN");
 
     await UIUtils.clickElement(view, locatorspath.selectorSoc);
 
     console.log("Waiting for selectorsoc");
-    await UIUtils.sendKeysToElements(
-      view,
-      locatorspath.selectorSoc,
-      "MAX32690",
-    );
+    await UIUtils.sendKeysToElements(view, locatorspath.selectorSoc, "TEST690");
 
     const socSelection = await UIUtils.clickElement(
       view,
-      locatorspath.getRadiobuttonSoc("32690"),
+      locatorspath.getRadiobuttonSoc("TEST690"),
     );
     const socName = await socSelection.getAttribute("id");
     console.log(`Selected SOC: ${socName}`);
@@ -95,14 +92,17 @@ describe("Workspace MAX32690 creation", () => {
     const kitName = await (
       await UIUtils.findWebElement(
         view,
-        locatorspath.kitSelect("EvKit_V1___TQFN"),
+        locatorspath.kitSelect("KIT_BOARD___PQFN"),
       )
     ).getText();
     console.log("kitname:", kitName);
 
     expect(kitName).to.include(TextData.evKitText);
 
-    await UIUtils.clickElement(view, locatorspath.kitSelect("EvKit_V1___TQFN"));
+    await UIUtils.clickElement(
+      view,
+      locatorspath.kitSelect("KIT_BOARD___PQFN"),
+    );
 
     await UIUtils.clickElement(view, locatorspath.continueButton);
 
@@ -195,7 +195,7 @@ describe("Workspace MAX32690 creation", () => {
     if (!workspaceData) throw new Error("workspaceData is undefined or null");
     expect(workspaceData.Soc).to.equal(socName);
     expect(workspaceData.WorkspacePluginId).to.equal(templateName);
-    expect(workspaceData.Board).to.equal(kitName.slice(0, 8));
+    expect(workspaceData.Board).to.equal(kitName.slice(0, 9));
     expect(workspaceData.WorkspaceName).to.equal(workspaceName);
     expect(workspaceData.Location).to.equal(location);
     console.log("Workspace data verified successfully");

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  */
 
 export * from 'cfs-ccm-api/rest-types';
+export { zSWPackage } from 'cfs-ccm-api/rest-types/zod';
 export * from './auth/index.js';
 export * from './catalog/index.js';
 export * from './sdk/index.js';

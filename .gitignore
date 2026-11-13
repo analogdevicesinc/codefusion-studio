@@ -46,3 +46,5 @@ packages/ide/skills/
 .claude/plans
 
 sample-workspaces
+
+**/__pycache__/

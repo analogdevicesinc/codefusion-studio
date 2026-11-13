@@ -28,7 +28,7 @@ You can override this directory using environment variables:
 
 ## Configure package paths during development
 
-Define custom search paths for development packages in your `config.json` file. A template is available in `packages/cli/config/cfsutil/config.json` for development use.
+Define custom search paths for development packages in your `config.json` file. A template is available in `packages/cli/config/cfsutil/config.jsons.example` for development use.
 
 ### Example configuration
 
@@ -141,7 +141,8 @@ The VS Code launch configuration **Execute CLI Dev Command** launches the CLI in
 {
   "env": {
     "CFSUTIL_CONFIG_HOME": "${workspaceFolder}/packages/cli/config",
-    "XDG_CONFIG_HOME": "${workspaceFolder}/packages/cli/config"
+    "XDG_CONFIG_HOME": "${workspaceFolder}/packages/cli/config",
+    "DO_NOT_TRACK": "1"
   }
 }
 ```
@@ -204,6 +205,7 @@ The test suite uses several environment variables to configure the test environm
 - **`CFSUTIL_CONFIG_HOME`** – Overrides the config directory to use test-specific configuration at `test/config/cfsutil/`
 - **`XDG_CONFIG_HOME`** – Alternative config directory override (Linux/macOS)
 - **`PRESERVE_TEST_FIXTURES`** – When set to `1`, skips automatic cleanup of test artifacts after test runs
+- **`DO_NOT_TRACK`** - When set to `1` or `true`, skips telemetry
 
 These are configured in `test/setup.js` and the test scripts in `package.json`.
 
@@ -270,3 +272,26 @@ If you are running in PowerShell, use:
 $env:CFS_RUN_PKG_TESTS = "1"
 yarn ws:cli test:dev --grep "pkg" --timeout 180000
 ```
+
+### Troubleshooting `*Deps`-mocked command tests
+
+Some commands export a mutable `*Deps` object so tests can swap out network/auth/hardware calls without hitting the real implementation, e.g.:
+
+```typescript
+// test file
+import {apiKeyListDeps} from '../../../../dist/commands/myanalog/apikey/list.js';
+
+apiKeyListDeps.getApiClient = async () => ({/* fake client */}) as never;
+```
+
+**These tests must import the `*Deps` object from `dist/commands/...`, not `src/commands/...`, and `dist/` must be built (`yarn ws:cli build`) before running them.** This is a workaround for a TypeScript 7 incompatibility in `@oclif/core`: normally, oclif detects local development (`NODE_ENV=test`/`development`) and auto-transpiles commands directly from `src/` so a test's live source edits take effect immediately. It does this by parsing `tsconfig.json` with the TypeScript compiler API to find `rootDir`/`outDir` — but TypeScript 7 removed that API from `require('typescript')` entirely. The parse call fails, oclif silently catches the error, and it always falls back to running the compiled `dist/` build instead.
+
+If a test mutates a `*Deps` object imported from `src/`, it's mutating a different module instance than the one oclif actually executes (from `dist/`) — the mock silently has no effect, and the real network/auth/hardware code runs. Symptoms look like real integration-test failures (`AuthenticationRequiredError`, network errors, "no serial ports found") rather than an obvious mocking bug, because the command genuinely does run — just the un-mocked version.
+
+If you add a new command test using this pattern:
+
+1. Import the `*Deps` object from `../../../../dist/commands/<path>/<command>.js` (matching the compiled output path, not `src/`).
+2. Run `yarn ws:cli build` first (or rely on CI's separate build step) so `dist/` reflects your current source changes — a stale `dist/` means the test exercises old behavior.
+3. If the test instead calls the command's exported function or oclif hook directly (not through `@oclif/test`'s `runCommand()`/`runHook()`), this workaround does not apply — importing from `src/` works fine, since there's only one module instance involved either way (see `test/hooks/init/system-ca.test.ts` for an example).
+
+This can be reverted to importing from `src/` once `@oclif/core` (or TypeScript 7's compiler API) supports parsing `tsconfig.json` without the removed API.

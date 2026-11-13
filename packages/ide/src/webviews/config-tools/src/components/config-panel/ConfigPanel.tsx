@@ -26,7 +26,8 @@ function ConfigPanel({
 	pluginConfiguration,
 	variant,
 	unavailableSections,
-	isExternallyManaged
+	isExternallyManaged,
+	showConfigurationWithPlugin = true
 }: Readonly<{
 	details?: React.ReactNode;
 	managePinAssignments?: React.ReactNode;
@@ -40,6 +41,7 @@ function ConfigPanel({
 		boolean
 	>;
 	isExternallyManaged?: boolean;
+	showConfigurationWithPlugin?: boolean;
 }>) {
 	const l10n = useLocaleContext();
 
@@ -48,17 +50,21 @@ function ConfigPanel({
 		!unavailableSections?.pinAssignment;
 	const shouldShowPluginSection =
 		Boolean(pluginConfiguration) && !unavailableSections?.plugin;
-	// Configuration section is parent to Plugin Configuration, so show
-	// Configuration section if any Plugin Configuration option is present
+	// Plugin content depends on Configuration being mounted by default.
+	// Consumers that mount it independently can opt out.
 	const shouldShowConfigurationSection =
-		shouldShowPluginSection ||
+		(showConfigurationWithPlugin && shouldShowPluginSection) ||
 		(Boolean(configuration) && !unavailableSections?.configuration) ||
 		isExternallyManaged;
 
 	return (
 		<>
 			{details && (
-				<ConfigSection isExpanded title='DETAILS' variant='noChevron'>
+				<ConfigSection
+					isExpanded
+					title={l10n?.configPanel?.details}
+					variant='noChevron'
+				>
 					{details}
 				</ConfigSection>
 			)}
@@ -79,7 +85,7 @@ function ConfigPanel({
 					isExpanded
 					dataTest='config-section:configuration'
 					isUnavailable={unavailableSections?.configuration}
-					title='CONFIGURATION'
+					title={l10n?.configPanel?.configuration}
 					variant={variant}
 					handleHeaderClick={onConfigurationClick}
 				>
@@ -91,7 +97,7 @@ function ConfigPanel({
 					isExpanded
 					dataTest='config-panel:plugin-options'
 					isUnavailable={unavailableSections?.plugin}
-					title='CODE GENERATION PLUGIN'
+					title={l10n?.configPanel?.codeGenerationPlugin}
 					variant={variant}
 				>
 					{pluginConfiguration}

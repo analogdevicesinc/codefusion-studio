@@ -1,0 +1,8 @@
+{
+  "name": "CodeFusion Studio AI Tools",
+  "description": "Fixture cfsai tool used to satisfy tool discovery in E2E tests.",
+  "id": "cfsai.tool",
+  "vendor": "ADI",
+  "version": "1.0.0",
+  "schemaVersion": "1.0"
+}

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,29 +29,57 @@ const convertValueToBase = (
 	value?: string | number,
 	base?: TNumericBase
 ): number | undefined => {
-	if (!value) return undefined;
+	if (value === undefined || value === '') return undefined;
 
 	let parsedNumber: number;
 
 	switch (base) {
-			case 'Binary':
-					parsedNumber = typeof value === 'string' ? parseInt(value, 2) : NaN;
-					break;
-			case 'Octal':
-					parsedNumber = typeof value === 'string' ? parseInt(value, 8) : NaN;
-					break;
-			case 'Hexadecimal':
-					parsedNumber = typeof value === 'string' ? parseInt(value, 16) : NaN;
-					break;
-			case 'Decimal':
-			default:
-					parsedNumber = Number(value);
-					break;
+		case 'Binary':
+			parsedNumber =
+				typeof value === 'string' ? parseInt(value, 2) : NaN;
+			break;
+		case 'Octal':
+			parsedNumber =
+				typeof value === 'string' ? parseInt(value, 8) : NaN;
+			break;
+		case 'Hexadecimal':
+			parsedNumber =
+				typeof value === 'string' ? parseInt(value, 16) : NaN;
+			break;
+		case 'Decimal':
+		default:
+			parsedNumber = Number(value);
+			break;
 	}
 
 	return isNaN(parsedNumber) ? undefined : parsedNumber;
 };
 
+const splitStringList = (
+	content: string,
+	persistenceSeparator?: string
+): string[] => {
+	if (
+		persistenceSeparator !== undefined &&
+		persistenceSeparator !== ''
+	) {
+		return content
+			.split(persistenceSeparator)
+			.map(value => value.trim());
+	}
+
+	return content.split(/\r?\n/).map(value => value.trim());
+};
+
+const matchesPattern = (value: string, pattern: string): boolean => {
+	try {
+		return new RegExp(`^(?:${pattern})$`).test(value);
+	} catch {
+		return false;
+	}
+};
+
+// eslint-disable-next-line complexity
 export const generateValidationErrorType = (inputData: {
 	content: string;
 	controlType: TControlTypes;
@@ -59,34 +87,52 @@ export const generateValidationErrorType = (inputData: {
 	maxVal?: number | string;
 	base?: TNumericBase;
 	pattern?: string;
+	persistenceSeparator?: string;
 }): ControlErrorTypes | undefined => {
-	const {content, controlType, minVal, maxVal, base, pattern} = inputData;
+	const {
+		content,
+		controlType,
+		minVal,
+		maxVal,
+		base,
+		pattern,
+		persistenceSeparator
+	} = inputData;
+
 	const parsedMinVal = convertValueToBase(minVal, base);
 	const parsedMaxVal = convertValueToBase(maxVal, base);
 
 	if (!content) {
-		if (controlType === 'integer') return controlErrorTypes.integer;
+		if (controlType === 'integer') {
+			return controlErrorTypes.integer;
+		}
 	}
 
 	if (controlType === 'integer') {
 		const parsedContent = convertValueToBase(content, base);
 
 		if (parsedContent === undefined) {
-				return controlErrorTypes.integer;
+			return controlErrorTypes.integer;
 		}
 
-		if (
-			parsedMinVal !== undefined &&
-			parsedContent < parsedMinVal
-		) {
-				return controlErrorTypes.minVal;
+		if (parsedMinVal !== undefined && parsedContent < parsedMinVal) {
+			return controlErrorTypes.minVal;
 		}
 
+		if (parsedMaxVal !== undefined && parsedContent > parsedMaxVal) {
+			return controlErrorTypes.maxVal;
+		}
+	}
+
+	if (content && controlType === 'text_list' && pattern) {
+		const values = splitStringList(content, persistenceSeparator);
+
 		if (
-			parsedMaxVal !== undefined &&
-			parsedContent > parsedMaxVal
+			values.some(
+				value => value === '' || !matchesPattern(value, pattern)
+			)
 		) {
-				return controlErrorTypes.maxVal;
+			return controlErrorTypes.text;
 		}
 	}
 

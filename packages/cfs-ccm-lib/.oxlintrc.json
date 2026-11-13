@@ -1,0 +1,36 @@
+{
+    "$schema": "../../node_modules/oxlint/configuration_schema.json",
+    "extends": ["../../.oxlintrc.json"],
+    "plugins": ["jsdoc"],
+    "categories": {
+        "correctness": "error"
+    },
+    "env": {
+        "node": true,
+        "es2022": true
+    },
+    "jsPlugins": ["../../scripts/oxlint-plugins/cfs/index.js"],
+    "rules": {},
+    "ignorePatterns": ["dist/**", "cfs-ccm-api/**"],
+    "overrides": [
+        {
+            "files": ["src/**/*.ts"],
+            "rules": {
+                "import/no-default-export": "error",
+                "node/no-top-level-await": "error",
+                "jsdoc/require-param": "error",
+                "jsdoc/require-param-name": "error",
+                "jsdoc/require-returns": "error",
+                "jsdoc/require-yields": "warn",
+                "cfs/require-jsdoc": "error",
+                "cfs/require-throws": "warn"
+            }
+        },
+        {
+            "files": ["src/sdk/openapi-client.ts"],
+            "rules": {
+                "no-unused-vars": "off"
+            }
+        }
+    ]
+}

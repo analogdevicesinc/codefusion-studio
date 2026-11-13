@@ -1,33 +1,15 @@
 {
 	"name": "adi-cfs",
-	"publisher": "Analog Devices",
 	"private": true,
-	"packageManager": "yarn@4.13.0",
+	"publisher": "Analog Devices",
+	"workspaces": [
+		"packages/*",
+		"packages/cli-plugins/*"
+	],
 	"type": "module",
-	"engines": {
-		"node": ">=22"
-	},
-	"devDependencies": {
-		"@eslint/eslintrc": "^3.1.0",
-		"@tsconfig/node22": "^22.0.5",
-		"@typescript-eslint/eslint-plugin": "^7.10.0",
-		"@typescript-eslint/parser": "^7.10.0",
-		"c8": "^10.1.3",
-		"eslint": "^8.56.0",
-		"jszip": "^3.10.1",
-		"markdownlint-cli2": "^0.13.0",
-		"prettier": "^3.1.1",
-		"prettier-config-xo": "^2.0.0",
-		"puppeteer": "^23.2.2",
-		"rimraf": "^5.0.5",
-		"terser": "^5.39.0",
-		"tsx": "^4.7.0",
-		"typescript": "^5"
-	},
 	"scripts": {
-		"lint": "eslint --fix . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-		"build": "yarn run lint",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc -b --noEmit --pretty false",
+		"lint": "oxlint .",
 		"lint:docs": "markdownlint-cli2 'docs/**/*.md'",
 		"preinstall": "npx only-allow yarn",
 		"auth-config": "node ./scripts/auth-config/auth-config.js",
@@ -41,7 +23,6 @@
 		"ws:add-soc": "yarn workspace add-soc",
 		"ws:lib": "yarn workspace cfs-lib",
 		"ws:ccm-lib": "yarn workspace cfs-ccm-lib",
-		"ws:elf-parser": "yarn workspace elf-parser",
 		"ws:react-lib": "yarn workspace cfs-react-library",
 		"ws:plugins-sdk": "yarn workspace cfs-plugins-sdk",
 		"ws:pkg-mgr": "yarn workspace cfs-package-manager",
@@ -50,12 +31,29 @@
 		"ui-package": "yarn ws:ui package",
 		"ide-package": "yarn ws:ide package"
 	},
-	"workspaces": [
-		"packages/*",
-		"packages/cli-plugins/*"
-	],
+	"devDependencies": {
+		"@tsconfig/node22": "^22.0.5",
+		"@types/uuid": "^11.0.0",
+		"c8": "^10.1.3",
+		"jszip": "^3.10.1",
+		"markdownlint-cli2": "^0.13.0",
+		"oxlint": "catalog:",
+		"prettier": "^3.1.1",
+		"prettier-config-xo": "^2.0.0",
+		"puppeteer": "^23.2.2",
+		"rimraf": "^5.0.5",
+		"terser": "^5.39.0",
+		"tsx": "^4.7.0",
+		"typescript": "catalog:"
+	},
 	"resolutions": {
+		"http-cache-semantics": "^4.3.0",
+		"proxy-addr": "^2.0.8",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0"
-	}
+	},
+	"engines": {
+		"node": ">=22.12"
+	},
+	"packageManager": "yarn@4.18.0"
 }

@@ -23,6 +23,9 @@ import {
   CfsDebugSession,
   MemoryReadStrategy,
 } from "../debug-tools/debug-manager";
+import { ElfFileParser } from "cfs-lib";
+import { DataResult } from "cfs-lib";
+import path from "node:path";
 import { getTelemetryManager } from "../telemetry/telemetry";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 
@@ -86,6 +89,23 @@ interface VariableAddressResponse {
   address: number;
 }
 
+interface ElfParserSymbolData {
+  id: number;
+  name: string;
+  demangled: string | null;
+  type: string;
+  address: number;
+  section: string | null;
+  size: number;
+  localstack: number | null;
+  stack: number | null;
+  bind: string;
+  visibility: string;
+  recursive: number | null;
+  path: string;
+  stackdepth: number | null;
+}
+
 enum MemoryViewerErrorCode {
   NoRequestBody = "NoRequestBody",
   InvalidAddressSize = "InvalidAddressSize",
@@ -108,6 +128,7 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
   private disposables: vscode.Disposable[] = [];
   private sessionDisposables: Map<string, vscode.Disposable[]> = new Map();
   private debugManager: CfsDebugManager;
+  private sessionElfParsers: Map<string, Promise<ElfFileParser>> = new Map();
 
   private static readonly MEMORY_READ_TIMEOUT_MS = 5000;
   private static readonly MAX_ADDRESS = 0xffffffff;
@@ -159,11 +180,28 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     disposables?.forEach((d) => d.dispose());
     this.sessionDisposables.delete(sessionId);
 
+    // Notify the webview that the session has stopped before disposing of the ELF parser.
+    // Webview doesn't need to wait for parser disposal since this session will not be reused.
     webview.postMessage({
       type: "debugger-state-change",
       event: "stop",
       sessionId,
     });
+
+    // Dispose of the ELF parser for this session asynchronously.
+    // Nothing should be waiting for this to complete since the session is no longer in use.
+    const elfParserPromise = this.sessionElfParsers.get(sessionId);
+    if (elfParserPromise) {
+      elfParserPromise
+        .then((elfParser) => elfParser?.dropSymbolsTable())
+        .catch((e) => {
+          console.debug(
+            `Memory Viewer: Error disposing ELF parser: ${extractErrorMessage(e)}`,
+          );
+        });
+
+      this.sessionElfParsers.delete(sessionId);
+    }
   }
 
   private handleStart(
@@ -185,6 +223,22 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     });
   }
 
+  private async initialiseElfFileParser(elfPath: string) {
+    const fileName = path.basename(elfPath);
+
+    const parser: ElfFileParser = new ElfFileParser(elfPath);
+
+    const res: DataResult = await parser.initialize();
+
+    if (res === DataResult.OK) {
+      return parser;
+    } else {
+      throw new Error(
+        `Could not initialise elf parser. ${fileName} does not contain valid ELF header`,
+      );
+    }
+  }
+
   private handleNewSession(session: CfsDebugSession, webview: vscode.Webview) {
     const sessionId = session.vscodeSession.id;
     const disposables: vscode.Disposable[] = [];
@@ -202,16 +256,98 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     );
 
     disposables.push(
-      session.onStop(() => {
+      session.onStop(async () => {
         this.handleStop(sessionId, webview);
       }),
     );
 
     this.sessionDisposables.set(sessionId, disposables);
+
+    const executablePath: string =
+      session.vscodeSession.configuration.type === "cortex-debug"
+        ? session.vscodeSession.configuration.executable
+        : session.vscodeSession.configuration.program;
+
+    if (typeof executablePath === "string" && executablePath.length !== 0) {
+      const executableExtMatch = executablePath.match(/[^.]+$/);
+      if (executableExtMatch) {
+        if (executableExtMatch[0] === "elf") {
+          const elfParserPromise = this.initialiseElfFileParser(executablePath);
+          this.sessionElfParsers.set(sessionId, elfParserPromise);
+          // Avoid node reporting an unhandled promise rejection if the parser fails to initialise.
+          // The error that caused the rejection will be kept on the map so it can be lazily shown
+          // when required.
+          void elfParserPromise.catch((e) => {
+            console.debug(
+              `Memory Viewer: Error initializing ELF parser: ${extractErrorMessage(e)}`,
+            );
+          });
+        }
+      }
+    }
+
     this.handleStart(sessionId, session, webview);
   }
 
-  private getMemoryDataWithTimeout(
+  private async getSymbolsInRange(
+    message: WebviewRequest,
+  ): Promise<ElfParserSymbolData[]> {
+    const body = message.body;
+    if (!body) {
+      throw new Error("No body provided in request");
+    }
+
+    const address: number = body.address as number;
+    const length: number = body.length as number;
+    const sessionId: string = body.sessionId as string;
+
+    if (
+      typeof address !== "number" ||
+      address < 0 ||
+      !Number.isInteger(address) ||
+      !Number.isFinite(address) ||
+      address > MemoryViewerWebviewProvider.MAX_ADDRESS
+    ) {
+      throw new Error("Invalid address");
+    }
+
+    if (typeof sessionId !== "string" || sessionId.length === 0) {
+      throw new Error("Invalid sessionId");
+    }
+
+    if (
+      typeof length !== "number" ||
+      length <= 0 ||
+      !Number.isInteger(length) ||
+      !Number.isFinite(length)
+    ) {
+      throw new Error("Invalid length");
+    }
+
+    const parserPromise = this.sessionElfParsers.get(sessionId);
+
+    // Let the query fail quietly instead of displaying an error message on
+    // every read. Memory data should still be fetched even if the elf parser
+    // isn't working
+    if (!parserPromise) {
+      return [];
+    }
+
+    const parser = await parserPromise;
+
+    try {
+      const symbols =
+        parser.query(
+          `SELECT * FROM symbols WHERE size > 0 AND address < ? AND (address + size) > ?`,
+          [address + length, address],
+        ) ?? [];
+      return symbols;
+    } catch {
+      return [];
+    }
+  }
+
+  private async getMemoryDataWithTimeout(
     message: WebviewRequest,
     timeoutMs: number,
   ): Promise<MemoryPacket> {
@@ -421,6 +557,18 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
     );
   }
 
+  private async getSymbolsAtSymbol(message: WebviewRequest) {
+    if (!message.body) {
+      throw new Error(MemoryViewerErrorCode.NoRequestBody);
+    }
+
+    const response = await this.getVariableAddressWithTimeout(message);
+
+    message.body.address = response.address;
+
+    return this.getSymbolsInRange(message);
+  }
+
   private async handleWebviewRequest(
     message: WebviewRequest,
     webview: vscode.Webview,
@@ -442,6 +590,12 @@ class MemoryViewerWebviewProvider implements WebviewViewProvider {
         break;
       case "get-memory-at-symbol":
         request = this.getMemoryAtSymbol(message);
+        break;
+      case "get-symbol-data":
+        request = this.getSymbolsInRange(message);
+        break;
+      case "get-symbols-at-symbol":
+        request = this.getSymbolsAtSymbol(message);
         break;
       default:
         request = Promise.reject(

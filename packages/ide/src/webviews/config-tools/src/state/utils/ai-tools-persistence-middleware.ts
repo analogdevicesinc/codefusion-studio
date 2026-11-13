@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,27 @@ export function getAiToolsPersistenceListenerMiddleware(
 			actionCreator: action,
 			effect(_, listenerApi) {
 				const state = listenerApi.getState() as RootState;
-				// Strip the 'id' field from models before persisting
+				// Strip the 'id' field and mot dataset/label extensions
 				const modelsWithoutId = state.aiModelReducer.aiModels.map(
-					({id, ...model}) => model
+					({id: _id, ...model}) => {
+						if (model.Backend?.Extensions) {
+							const {
+								CalibrationSet: _c,
+								ValidationSet: _v,
+								Labels: _l,
+								...restExtensions
+							} = model.Backend.Extensions;
+							model = {
+								...model,
+								Backend: {
+									...model.Backend,
+									Extensions: restExtensions
+								}
+							};
+						}
+
+						return model;
+					}
 				);
 				updatePersistedConfig({
 					aiModels: modelsWithoutId

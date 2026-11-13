@@ -51,6 +51,15 @@ export function StreamDeleteModal({
 		return hasTiedStreamDependency(persistedStream, streams);
 	}, [stream, streams]);
 
+	const handleDeleteStream = () => {
+		if (stream?.Uuid) {
+			dispatch(removeStream({Uuid: stream.Uuid}));
+			onClose(true);
+		} else {
+			onClose(false);
+		}
+	};
+
 	return (
 		<Modal
 			isOpen={isOpen}
@@ -70,14 +79,7 @@ export function StreamDeleteModal({
 					{!hasTiedStream && (
 						<Button
 							dataTest='confirm-delete-stream'
-							onClick={() => {
-								if (stream?.Uuid) {
-									dispatch(removeStream({Uuid: stream.Uuid}));
-									onClose(true);
-								} else {
-									onClose(false);
-								}
-							}}
+							onClick={handleDeleteStream}
 						>
 							{i10n?.dfg.deleteConfirmation.deleteButton}
 						</Button>

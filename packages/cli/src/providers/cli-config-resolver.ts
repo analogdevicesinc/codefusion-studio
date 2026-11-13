@@ -21,6 +21,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import type {CliConfig} from '../types/cli-config.js';
+import {errorWithCode} from '../utils/recoverable-error.js';
+import {findWorkspaceRoot} from '../utils/workspace-utils.js';
 
 /**
  * CLI implementation of config resolution.
@@ -50,8 +52,9 @@ export class CliConfigResolver {
         .join(path.posix.sep);
     }
 
-    // Layer 2: user config overrides
-    const userSettings = userConfig ?? {};
+    // Layer 2: user config overrides (telemetry is user-only metadata,
+    // not a resolvable setting)
+    const {telemetry: _telemetry, ...userSettings} = userConfig ?? {};
 
     // Layer 3: top level workspace overrides
     const workspaceSettings =
@@ -213,19 +216,12 @@ export class CliConfigResolver {
   private loadWorkspaceSettings(
     workspacePath: string
   ): Record<string, unknown> {
-    // If no .cfs folder exists, we're not in a workspace folder. We could be in a sub-folder, so search
-    // up the directory tree until we find a .cfs folder or reach the root.
-    let currentPath = workspacePath;
-    while (!fs.existsSync(path.join(currentPath, '.cfs'))) {
-      const parentPath = path.dirname(currentPath);
-      if (parentPath === currentPath) {
-        // Reached the root without finding a .cfs folder
-        throw new Error(
-          `Error loading workspace settings from ${workspacePath}. Please ensure this is a valid workspace folder.`
-        );
-      }
-
-      currentPath = parentPath;
+    const currentPath = findWorkspaceRoot(workspacePath);
+    if (!currentPath) {
+      throw errorWithCode(
+        `Error loading workspace settings from ${workspacePath}. Please ensure this is a valid workspace folder.`,
+        'INVALID_WORKSPACE'
+      );
     }
 
     // Assume the workspace config file is named after the workspace folder
@@ -242,8 +238,9 @@ export class CliConfigResolver {
         return content.settings as Record<string, unknown>;
       }
     } catch {
-      throw new Error(
-        `Error loading workspace settings from ${settingsPath}. Please ensure the file exists and contains valid JSON.`
+      throw errorWithCode(
+        `Error loading workspace settings from ${settingsPath}. Please ensure the file exists and contains valid JSON.`,
+        'INVALID_WORKSPACE_SETTINGS'
       );
     }
 

@@ -45,9 +45,13 @@ import {
   onUsbDeviceDetached,
 } from "cfs-lib";
 import { SerialPort } from "serialport";
+import { LiveTracing } from "../debug-tools/profiler/live-tracing";
+import { toZephelinConfig } from "../debug-tools/profiler/zephelin-config";
 import { IDEShellEnvProvider } from "../toolchains/shell-env-provider";
+import { execFile } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
-import { getWorkspaceRoot } from "../utils/utils";
+import { Utils, getWorkspaceRoot } from "../utils/utils";
 import { startTraceConversion } from "../debug-tools/profiler/trace-conversion-ui-helper";
 import { TELEMETRY_ACTIONS } from "../telemetry/action-names";
 import { getTelemetryManager } from "../telemetry/telemetry";
@@ -63,6 +67,11 @@ export const DEFAULT_TRACE_CONFIGURATION: TraceConfiguration = {
   elfFile: "",
   buildDir: "",
   aiModels: [],
+  isLiveTracingEnabled: false,
+  tcpServerHost: "127.0.0.1",
+  tcpServerPort: 5000,
+  backendHost: "127.0.0.1",
+  backendPort: 8000,
 };
 
 // The trace capture configuration shipped as a flat object (interfaceType
@@ -140,25 +149,239 @@ type RegisteredWebview = {
   handlers: vscode.Disposable[];
 };
 
+type ActiveCapture =
+  | {
+      mode: "offline";
+      recording: Recording;
+    }
+  | {
+      mode: "live";
+      liveTracing: LiveTracing;
+    };
+
 // "stopping" is a distinct state (rather than folding it into
-// "recording") so handleRecordingError can tell an active recording
+// "recording") so handleRecordingError can tell an active capture
 // apart from one that's already being torn down and no-op instead of
 // racing the in-progress stop — see stopRecording/handleRecordingError.
 type RecordingDetails =
   | {
       status: "recording";
-      recording: Recording;
+      capture: ActiveCapture;
       startTime: number;
     }
   | {
       status: "stopping";
-      recording: Recording;
+      capture: ActiveCapture;
       startTime: number;
     }
   | {
       status: "idle";
       error?: string;
     };
+
+const ZEPHELIN_MODULE_PATH = path.join("modules", "zephelin");
+const ZEPHELIN_BACKEND_ENTRY_POINT = path.join("server", "run_backend.py");
+const ZEPHELIN_REQUIREMENTS = [
+  "requirements.txt",
+  path.join("server", "requirements.txt"),
+];
+const ZEPHELIN_VENV_DIR = ".venv-zephelin";
+const ZEPHELIN_VENV_PYTHON =
+  process.platform === "win32"
+    ? path.join(ZEPHELIN_VENV_DIR, "Scripts", "python.exe")
+    : path.join(ZEPHELIN_VENV_DIR, "bin", "python");
+
+/**
+ * Runs a Python command.
+ *
+ * @param executable - The interpreter to run.
+ * @param args - The arguments to pass to it.
+ * @param cwd - The directory to run in.
+ * @param token - Cancellation token that kills the process.
+ */
+function runPython(
+  executable: string,
+  args: string[],
+  cwd: string,
+  token: vscode.CancellationToken,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      executable,
+      args,
+      { cwd, maxBuffer: 32 * 1024 * 1024 },
+      (error, _stdout, stderr) => {
+        if (error) {
+          const reason = stderr.trim().split("\n").slice(-3).join("\n");
+          reject(new Error(reason || error.message));
+          return;
+        }
+
+        resolve();
+      },
+    );
+
+    token.onCancellationRequested(() => child.kill());
+  });
+}
+
+/**
+ * Resolves the interpreter that builds the virtual environment. The CFS SDK
+ * ships one, so a user without a system Python can still set it up.
+ *
+ * @returns the interpreter to create the virtual environment with
+ */
+async function resolveSdkPython(): Promise<string> {
+  const sdkPath = await Utils.getSdkPath();
+  const isWindows = process.platform === "win32";
+  const sdkPython = sdkPath
+    ? path.join(
+        sdkPath,
+        "Tools",
+        "python",
+        isWindows ? "python.exe" : path.join("bin", "python3"),
+      )
+    : undefined;
+
+  if (sdkPython && fs.existsSync(sdkPython)) {
+    return sdkPython;
+  }
+
+  return isWindows ? "python" : "python3";
+}
+
+/**
+ * Offers to create the virtual environment the Zephelin backend runs in,
+ * inside the user's workspace.
+ *
+ * @param repositoryPath - The Zephelin repository the backend runs from.
+ * @param workspaceRoot - The workspace the virtual environment is created in.
+ * @returns the interpreter that was created, or undefined when it was not
+ */
+async function offerZephelinVirtualEnvironment(
+  repositoryPath: string,
+  workspaceRoot: string,
+): Promise<string | undefined> {
+  const venvDir = path.join(workspaceRoot, ZEPHELIN_VENV_DIR);
+  const createItem: vscode.QuickPickItem = {
+    label: "Create the Python environment",
+    detail: `Creates ${venvDir} and installs the dependencies. Requires network access.`,
+  };
+  const answer = await vscode.window.showQuickPick([createItem], {
+    title:
+      "CFS: Live tracing needs a Python environment for the Zephelin server backend",
+    placeHolder: "Select an option, or press Escape to cancel",
+    ignoreFocusOut: true,
+  });
+
+  if (answer !== createItem) {
+    return undefined;
+  }
+
+  const venvPython = path.join(workspaceRoot, ZEPHELIN_VENV_PYTHON);
+
+  return vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: "CFS: Creating the Zephelin Python environment...",
+      cancellable: true,
+    },
+    async (progress, token) => {
+      try {
+        const sdkPython = await resolveSdkPython();
+
+        await runPython(
+          sdkPython,
+          ["-m", "venv", venvDir],
+          workspaceRoot,
+          token,
+        );
+
+        progress.report({ message: "Installing the backend requirements" });
+
+        await runPython(
+          venvPython,
+          [
+            "-m",
+            "pip",
+            "install",
+            ...ZEPHELIN_REQUIREMENTS.flatMap((requirements) => [
+              "-r",
+              requirements,
+            ]),
+          ],
+          repositoryPath,
+          token,
+        );
+
+        return venvPython;
+      } catch (error: unknown) {
+        // A partial environment would be mistaken for a working one next time.
+        await fs.promises.rm(venvDir, { recursive: true, force: true });
+
+        if (token.isCancellationRequested) {
+          return undefined;
+        }
+
+        vscode.window.showErrorMessage(
+          `CFS: Failed to create the Zephelin Python environment. ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+
+        return undefined;
+      }
+    },
+  );
+}
+
+/**
+ * Derives where the Zephelin backend lives and which interpreter runs it, so
+ * live tracing works against the Zephelin repository shipped with the
+ * installed Zephyr package without the user pointing at a clone by hand.
+ *
+ * Looks for the interpreter in `.venv-zephelin` at the workspace root, and
+ * offers to create it there when it is missing.
+ *
+ * @param zephyrBase - The resolved Zephyr repository root (ZEPHYR_BASE).
+ * @returns the backend paths to forward, each set only when CFS derived it
+ */
+async function resolveZephelinBackend(zephyrBase: string): Promise<{
+  backendPath?: string;
+  pythonPath?: string;
+}> {
+  const zephelinSettings = vscode.workspace.getConfiguration("zephelin");
+  const configuredBackendPath = zephelinSettings.get<string>("backendPath");
+
+  const modulePath = zephyrBase
+    ? path.join(path.dirname(zephyrBase), ZEPHELIN_MODULE_PATH)
+    : undefined;
+  const derivedBackendPath =
+    modulePath &&
+    fs.existsSync(path.join(modulePath, ZEPHELIN_BACKEND_ENTRY_POINT))
+      ? modulePath
+      : undefined;
+
+  const repositoryPath = configuredBackendPath || derivedBackendPath;
+  const backendPath = configuredBackendPath ? undefined : derivedBackendPath;
+
+  const workspaceRoot = getWorkspaceRoot();
+
+  if (
+    !repositoryPath ||
+    !workspaceRoot ||
+    zephelinSettings.get<string>("pythonPath")
+  ) {
+    return { backendPath };
+  }
+
+  const venvPython = path.join(workspaceRoot, ZEPHELIN_VENV_PYTHON);
+  const pythonPath = fs.existsSync(venvPython)
+    ? venvPython
+    : await offerZephelinVirtualEnvironment(repositoryPath, workspaceRoot);
+
+  return { backendPath, pythonPath };
+}
 
 export class TraceCaptureService {
   private readonly webviews = new Map<string, RegisteredWebview>();
@@ -204,9 +427,9 @@ export class TraceCaptureService {
   private getConfiguration(): TraceConfiguration {
     const rawConfiguration = vscode.workspace
       .getConfiguration("cfs")
-      .get<
-        TraceConfiguration & LegacyFlatTraceConfiguration
-      >(TRACE_CONFIGURATION_KEY);
+      .get<TraceConfiguration & LegacyFlatTraceConfiguration>(
+        TRACE_CONFIGURATION_KEY,
+      );
 
     const firstCoreFolder = vscode.workspace.workspaceFolders?.find(
       (f) => f.name !== ".cfs",
@@ -227,7 +450,47 @@ export class TraceCaptureService {
         rawConfiguration?.autoReset ?? DEFAULT_TRACE_CONFIGURATION.autoReset,
       aiModels:
         rawConfiguration?.aiModels ?? DEFAULT_TRACE_CONFIGURATION.aiModels,
+      isLiveTracingEnabled:
+        rawConfiguration?.isLiveTracingEnabled ??
+        DEFAULT_TRACE_CONFIGURATION.isLiveTracingEnabled,
+      tcpServerHost:
+        rawConfiguration?.tcpServerHost ??
+        DEFAULT_TRACE_CONFIGURATION.tcpServerHost,
+      tcpServerPort:
+        rawConfiguration?.tcpServerPort ??
+        DEFAULT_TRACE_CONFIGURATION.tcpServerPort,
+      backendHost:
+        rawConfiguration?.backendHost ??
+        DEFAULT_TRACE_CONFIGURATION.backendHost,
+      backendPort:
+        rawConfiguration?.backendPort ??
+        DEFAULT_TRACE_CONFIGURATION.backendPort,
     };
+  }
+
+  private async syncZephelinSettings(
+    configuration: TraceConfiguration,
+  ): Promise<void> {
+    try {
+      const zephelinConfig = vscode.workspace.getConfiguration("zephelin");
+
+      const forwarded = toZephelinConfig(configuration, getWorkspaceRoot());
+
+      await Promise.all(
+        Object.entries(forwarded).map(([key, value]) =>
+          zephelinConfig.update(
+            key,
+            value,
+            vscode.ConfigurationTarget.Workspace,
+          ),
+        ),
+      );
+    } catch (error) {
+      logger.error(
+        "Failed to sync settings to Zephelin workspace config:",
+        error,
+      );
+    }
   }
 
   private async saveConfiguration(
@@ -240,6 +503,8 @@ export class TraceCaptureService {
         configuration,
         vscode.ConfigurationTarget.Workspace,
       );
+
+    await this.syncZephelinSettings(configuration);
 
     return configuration;
   }
@@ -425,21 +690,53 @@ export class TraceCaptureService {
         telemetryManager.logAction(TELEMETRY_ACTIONS.HW_PROFILING_STARTED, {});
       });
 
-      const recording = await Recording.start({
-        source: sourceConfig,
-        outputFolder: path.isAbsolute(configuration.outputDirectory)
-          ? configuration.outputDirectory
-          : path.join(getWorkspaceRoot() ?? "", configuration.outputDirectory),
-        sendEnableCommand: configuration.source.type === "usb",
-      });
-      this.lastRecording = recording;
+      let capture: ActiveCapture;
 
-      recording.onError((error) => {
-        void this.handleRecordingError(recording, error);
-      });
+      if (configuration.isLiveTracingEnabled) {
+        const zephyrBase = (await this.shellEnvProvider.getZephyrBase()) || "";
+        const configuredZephyrBase = vscode.workspace
+          .getConfiguration("zephelin")
+          .get<string>("zephyrBase");
+
+        const liveTracing = await LiveTracing.start({
+          source: sourceConfig,
+          tcpServerHost: configuration.tcpServerHost,
+          tcpServerPort: configuration.tcpServerPort,
+          backendHost: configuration.backendHost,
+          backendPort: configuration.backendPort,
+          aiModels: configuration.aiModels,
+          buildDir: configuration.buildDir,
+          zephyrBase: configuredZephyrBase ? "" : zephyrBase,
+          ...(await resolveZephelinBackend(zephyrBase)),
+        });
+
+        capture = { mode: "live", liveTracing };
+
+        liveTracing.onError((error) => {
+          void this.handleRecordingError(capture, error);
+        });
+      } else {
+        const recording = await Recording.start({
+          source: sourceConfig,
+          outputFolder: path.isAbsolute(configuration.outputDirectory)
+            ? configuration.outputDirectory
+            : path.join(
+                getWorkspaceRoot() ?? "",
+                configuration.outputDirectory,
+              ),
+          sendEnableCommand: configuration.source.type === "usb",
+        });
+        this.lastRecording = recording;
+
+        capture = { mode: "offline", recording };
+
+        recording.onError((error) => {
+          void this.handleRecordingError(capture, error);
+        });
+      }
 
       const startTime = Date.now();
-      this.recordingDetails = { status: "recording", recording, startTime };
+      this.recordingDetails = { status: "recording", capture, startTime };
     } catch (error: unknown) {
       this.recordingDetails = {
         status: "idle",
@@ -459,11 +756,11 @@ export class TraceCaptureService {
     // awaiting: handleRecordingError only acts while status is
     // "recording", so it can't race this method and swap
     // recordingDetails out from under it while this awaits.
-    const { recording, startTime } = this.recordingDetails;
-    this.recordingDetails = { status: "stopping", recording, startTime };
+    const { capture, startTime } = this.recordingDetails;
+    this.recordingDetails = { status: "stopping", capture, startTime };
 
     try {
-      await recording.stop();
+      await this.stopCapture(capture);
       this.recordingDetails = { status: "idle" };
 
       void getTelemetryManager().then((telemetryManager) => {
@@ -484,42 +781,61 @@ export class TraceCaptureService {
       this.broadcastRecordingState();
     }
 
-    const config = this.getConfiguration();
+    // Live tracing streams straight to the viewer, so there is no trace
+    // file to convert. The static TEF file of live-tracing session can
+    // be exported from the viewer menu.
+    if (capture.mode === "offline") {
+      const config = this.getConfiguration();
 
-    await startTraceConversion(recording, this.shellEnvProvider, {
-      aiModelPaths: config.aiModels,
-      buildDir: config.buildDir,
-      zephyrElfPath: config.elfFile,
-    });
+      await startTraceConversion(capture.recording, this.shellEnvProvider, {
+        aiModelPaths: config.aiModels,
+        buildDir: config.buildDir,
+        zephyrElfPath: config.elfFile,
+      });
+    }
   }
 
   /**
-   * Reacts to a data source error during an active recording:
-   * transitions to the error state and stops the recording. Guards
-   * against reacting twice if the recording is already being stopped
-   * (whether by this method or by a user-initiated stopRecording()).
-   * @param recording - The recording that reported the error.
+   * Tears down an active capture, whichever mode it is in.
+   * @param capture - The capture to stop.
+   */
+  private async stopCapture(capture: ActiveCapture): Promise<void> {
+    if (capture.mode === "live") {
+      await capture.liveTracing.stop();
+      capture.liveTracing.dispose();
+      return;
+    }
+
+    await capture.recording.stop();
+  }
+
+  /**
+   * Reacts to a data source error during an active capture: transitions
+   * to the error state and stops the capture. Guards against reacting
+   * twice if the capture is already being stopped (whether by this
+   * method or by a user-initiated stopRecording()).
+   * @param capture - The capture that reported the error.
    * @param error - The error reported by the data source.
    */
   private async handleRecordingError(
-    recording: Recording,
+    capture: ActiveCapture,
     error: Error,
   ): Promise<void> {
     if (
       this.recordingDetails.status !== "recording" ||
-      this.recordingDetails.recording !== recording
+      this.recordingDetails.capture !== capture
     ) {
       return;
     }
 
     this.recordingDetails = {
       status: "stopping",
-      recording,
+      capture,
       startTime: this.recordingDetails.startTime,
     };
 
     try {
-      await recording.stop();
+      await this.stopCapture(capture);
     } catch (stopError: unknown) {
       logger.error(
         `Failed to stop recording after an error: ${
@@ -534,6 +850,19 @@ export class TraceCaptureService {
     };
 
     this.broadcastRecordingState();
+
+    // Convert whatever was captured before the error so a mid-recording
+    // failure (e.g. a device disconnect) still salvages the traces. Live
+    // tracing streams straight to the viewer, so there is nothing to convert.
+    if (capture.mode === "offline") {
+      const config = this.getConfiguration();
+
+      await startTraceConversion(capture.recording, this.shellEnvProvider, {
+        aiModelPaths: config.aiModels,
+        buildDir: config.buildDir,
+        zephyrElfPath: config.elfFile,
+      });
+    }
   }
 
   private broadcastRecordingState(exclude?: WebviewIdMessageParticipant): void {

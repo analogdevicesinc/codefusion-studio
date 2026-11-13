@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import {
 import {updateProjectCardOpenState} from '../../../utils/peripheral';
 import {useCallback} from 'react';
 import useProjectHasPeripheralError from '../../../hooks/use-project-has-peripheral-error';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 type WorkspaceProjectsRowProps = {
 	readonly project: ProjectInfo;
@@ -53,6 +54,9 @@ type WorkspaceProjectsRowProps = {
 
 function WorkspaceProjectsRow({project}: WorkspaceProjectsRowProps) {
 	const dispatch = useAppDispatch();
+	const badges = useLocaleContext()?.badges as
+		| Record<string, string>
+		| undefined;
 	const assignedPeripherals = useAssignedPeripherals(
 		project.ProjectId
 	);
@@ -92,22 +96,28 @@ function WorkspaceProjectsRow({project}: WorkspaceProjectsRowProps) {
 			<DataGridCell gridColumn='1' className={styles.coreCol}>
 				{project.Name}
 				{shouldShowPrimaryBadge && (
-					<Tooltip type='long' title='Primary'>
+					<Tooltip type='long' title={badges?.primary ?? 'Primary'}>
 						<Badge appearance='secondary'>{P}</Badge>
 					</Tooltip>
 				)}
 				{project.Secure && (
-					<Tooltip type='long' title='Secure'>
+					<Tooltip type='long' title={badges?.secure ?? 'Secure'}>
 						<Badge appearance='secondary'>{S}</Badge>
 					</Tooltip>
 				)}
 				{project.Secure === false && (
-					<Tooltip type='long' title='Non Secure'>
+					<Tooltip
+						type='long'
+						title={badges?.nonSecure ?? 'Non-secure'}
+					>
 						<Badge appearance='secondary'>{NS}</Badge>
 					</Tooltip>
 				)}
 				{project.ExternallyManaged && (
-					<Tooltip type='long' title='Externally Managed'>
+					<Tooltip
+						type='long'
+						title={badges?.externallyManaged ?? 'Externally managed'}
+					>
 						<Badge appearance='secondary'>{EM}</Badge>
 					</Tooltip>
 				)}

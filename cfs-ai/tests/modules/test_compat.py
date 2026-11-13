@@ -31,11 +31,9 @@ _good_models = {
 def create_hardware_profile(flash, ram, clock, ops, types, infos=[]):
     soc = "TestSoc"
     core = "TestCore"
-    family = "TestFamily"
     t = UserTarget(
         soc=soc,
-        core=core,
-        family=family
+        core=core
     )
     p = HardwareProfile(
         flash_size=flash,
@@ -107,6 +105,16 @@ def invoke_model_with_class(config, model, dataset=None):
     os.remove(tmp_path)
     return result
 
+def parse_compat_output(result):
+    """Parse the JSON log output and return the compatibility report data and parsed log entries."""
+    logs = json.loads(result.stdout)
+    report = None
+    for entry in logs:
+        if entry.get("type") == "DATA" and entry.get("value"):
+            report = json.loads(entry["value"])
+            break
+    return report, logs
+
 @pytest.mark.parametrize("file", _json_params, ids=_json_ids)
 def test_compat_jsons(file):
     expected_exit_code = 0
@@ -169,10 +177,13 @@ def test_incompatible_memory():
         "tests/data/models/resnet.tflite"
     )
     assert result.returncode == expected_exit_code
-    assert "issues identified" in result.stdout
-    assert "memory_overflow" in result.stdout
-    assert "flash_overflow" in result.stdout
-    assert "ram_overflow" in result.stdout
+    report, _ = parse_compat_output(result)
+    assert report is not None
+    memory_types = [i["type"] for i in report["memory_issues"]]
+    # When both flash and RAM are exceeded, only the combined overflow should be reported
+    assert memory_types == ["model_storage_memory_overflow"], (
+        f"Expected only combined overflow, got: {memory_types}"
+    )
 
 def test_incompatible_types():
     expected_exit_code = 10
@@ -186,14 +197,18 @@ def test_incompatible_types():
 
     p = create_hardware_profile(flash, ram, clock, ops, types)
     
-    # Resnet - too big to fit in any memory
     result = invoke_model_with_class(
-        p, 
+        p,
         "tests/data/models/hello_world_f32.tflite"
     )
     assert result.returncode == expected_exit_code
-    assert "issues identified" in result.stdout
-    assert "FULLY_CONNECTED operation uses FLOAT32." in result.stdout
+    report, _ = parse_compat_output(result)
+    assert report is not None
+    assert report["unsupported_types"] is not None
+    assert any(
+        t["operation_type"] == "FULLY_CONNECTED" and t["data_type"] == "FLOAT32"
+        for t in report["unsupported_types"]
+    )
 
 def test_incompatible_operators():
     expected_exit_code = 10
@@ -207,16 +222,19 @@ def test_incompatible_operators():
 
     p = create_hardware_profile(flash, ram, clock, ops, types)
 
-    # Resnet - too big to fit in any memory
     result = invoke_model_with_class(
         p,
         "tests/data/models/hello_world_f32.tflite"
     )
     assert result.returncode == expected_exit_code
-    assert "issues identified" in result.stdout
-    assert "Operations not supported" in result.stdout
-    assert "FULLY_CONNECTED" in result.stdout
-    assert "Layer(s)" in result.stdout
+    report, _ = parse_compat_output(result)
+    assert report is not None
+    assert report["operator_issues"] is not None
+    assert any(
+        i["operator"] == "FULLY_CONNECTED" and i["type"] == "unsupported operator"
+        for i in report["operator_issues"]
+    )
+    assert any(len(i["layers"]) > 0 for i in report["operator_issues"])
 
 
 def test_dataset_memory_overflow():
@@ -263,11 +281,9 @@ def test_dataset_memory_overflow():
         )
         assert result.returncode == expected_exit_code, \
             "Model with dataset should trigger memory overflow"
-        assert "issues identified" in result.stdout
-        assert (
-            "Memory Constraint Issues" in result.stdout
-            or "memory" in result.stdout.lower()
-        )
+        report, _ = parse_compat_output(result)
+        assert report is not None
+        assert len(report["memory_issues"]) > 0
     finally:
         # Clean up temporary file
         if os.path.exists(dataset_path):

@@ -119,7 +119,11 @@ function GroupedPeripheralSignals({
 			return (
 				<div
 					key={`peripheral-signal-${signal.name}`}
-					className={`${isSelected ? styles.focused : ''} ${signal.name === signalName && isHighlighted ? styles.highlight : ''}`}
+					className={`${isSelected ? styles.focused : ''} ${
+						signal.name === signalName && isHighlighted
+							? styles.highlight
+							: ''
+					}`}
 				>
 					<SignalBlock
 						signal={signal}
@@ -139,7 +143,9 @@ function GroupedPeripheralSignals({
 		<>
 			<div
 				data-test={`peripheral-block-${name}`}
-				className={`${styles.accordionContainer} ${isOpen ? styles.selected : ''}`}
+				className={`${styles.accordionContainer} ${
+					isOpen ? styles.selected : ''
+				}`}
 				id={`peripheral-${name}`}
 				onMouseEnter={() => {
 					if (!isOpen) displayTooltip();
@@ -159,6 +165,7 @@ function GroupedPeripheralSignals({
 								data-test={`accordion:allocated:${name}`}
 								id={`${name}-allocated`}
 								className={styles.config}
+								onMouseEnter={hideTooltip}
 							>
 								<Tooltip
 									title='Configure'
@@ -190,7 +197,11 @@ function GroupedPeripheralSignals({
 					subTitle={
 						<span>
 							{categorizedAllocations.get(name)?.signals
-								? `${Object.keys(categorizedAllocations.get(name)?.signals ?? {}).length} allocated`
+								? `${
+										Object.keys(
+											categorizedAllocations.get(name)?.signals ?? {}
+										).length
+									} allocated`
 								: null}
 						</span>
 					}

@@ -23,6 +23,9 @@ import {
   shouldSkipPkgTests
 } from '../../utils/pkg-test-helpers.js';
 
+import {pkgEnableRemoteDeps} from '../../../dist/commands/pkg/enable-remote.js';
+import {assertSuccessEnvelopeData} from '../../utils/assert-json-envelope.js';
+
 function remoteName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
 }
@@ -85,5 +88,34 @@ describe('pkg enable-remote', () => {
     expect(
       listRemotesOutputHasRemoteValue(remotesStdout, name, 'OK')
     ).to.equal(true);
+  });
+});
+
+describe('pkg enable-remote JSON envelope', () => {
+  const originalGetPackageManager =
+    pkgEnableRemoteDeps.getPackageManager;
+
+  afterEach(() => {
+    pkgEnableRemoteDeps.getPackageManager = originalGetPackageManager;
+  });
+
+  it('returns a remote/enabled envelope in JSON mode', async () => {
+    pkgEnableRemoteDeps.getPackageManager = (async () => ({
+      enableRemote: async () => {}
+    })) as unknown as typeof pkgEnableRemoteDeps.getPackageManager;
+
+    const {stdout} = await runCommand(
+      ['pkg', 'enable-remote', 'mock-remote', '--format', 'json'],
+      {root: '..'}
+    );
+
+    const data = assertSuccessEnvelopeData<{
+      remote: string;
+      enabled: boolean;
+    }>(stdout, 'pkg enable-remote');
+    expect(data).to.deep.equal({
+      remote: 'mock-remote',
+      enabled: true
+    });
   });
 });

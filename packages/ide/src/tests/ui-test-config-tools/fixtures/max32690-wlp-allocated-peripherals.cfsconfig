@@ -3,8 +3,8 @@
   "DataModelVersion": "^1.0.0",
   "SchemaVersion": "2.1.0",
   "Timestamp": "2026-01-22T08:02:30.507Z",
-  "Soc": "MAX32690",
-  "Package": "WLP",
+  "Soc": "TEST690",
+  "Package": "PLP",
   "Pins": [
     {
       "Pin": "H9",

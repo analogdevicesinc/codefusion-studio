@@ -14,7 +14,14 @@
  */
 
 import type * as vscode from "vscode";
-import { RequestType } from "vscode-messenger-common";
+import { NotificationType, RequestType } from "vscode-messenger-common";
+import type {
+  GetFileSizePayload,
+  GetPreferencePayload,
+  OpenFilePayload,
+  SetPreferencePayload,
+  ShowInformationMessagePayload,
+} from "../../types/vscode-api-types";
 
 export type SelectFileRequestOptions = Omit<
   vscode.OpenDialogOptions,
@@ -39,9 +46,55 @@ export const selectFileRequest: RequestType<
 };
 
 /**
- * Gets a vscode preference in the cfs scope.
- * The preference ID should not include the 'cfs.' prefix.
+ * Fire-and-forget request to show an information message in the IDE.
  */
-export const getPreferenceRequest: RequestType<{ id: string }, any> = {
-  method: "getPreference",
+export const showInformationMessageNotification: NotificationType<ShowInformationMessagePayload> =
+  {
+    method: "vscode/showInformationMessage",
+  };
+
+/**
+ * Opens a file in the IDE, optionally using a specific custom editor view type.
+ */
+export const openFileNotification: NotificationType<OpenFilePayload> = {
+  method: "vscode/openFile",
+};
+
+/**
+ * Reads a value from the `cfs.*` workspace/user configuration.
+ */
+export const getPreferenceRequest: RequestType<GetPreferencePayload, unknown> =
+  {
+    method: "vscode/getPreference",
+  };
+
+/**
+ * Writes a value to the `cfs.*` workspace/user configuration.
+ */
+export const setPreferenceRequest: RequestType<SetPreferencePayload, void> = {
+  method: "vscode/setPreference",
+};
+
+/**
+ * Returns the size in bytes of the file at the given absolute path.
+ */
+export const getFileSizeRequest: RequestType<GetFileSizePayload, number> = {
+  method: "vscode/getFileSize",
+};
+
+/**
+ * Reloads the currently active document — used by the custom editor to
+ * recover from a state where the persisted document has diverged from the
+ * cached in-memory representation.
+ */
+export const reloadDocumentNotification: NotificationType<void> = {
+  method: "vscode/reloadDocument",
+};
+
+/**
+ * Checks if a directory exists at the given absolute path.
+ * Returns true if the path is a valid directory, false otherwise.
+ */
+export const checkDirectoryExistsRequest: RequestType<string, boolean> = {
+  method: "vscode/checkDirectoryExists",
 };

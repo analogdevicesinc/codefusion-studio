@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
  * limitations under the License.
  *
  */
-import Tooltip, {Direction} from '../tooltip/Tooltip';
+import Tooltip from '../tooltip/Tooltip';
+import {Direction} from '../../utils';
 import styles from './TopbarButton.module.scss';
 
 function TopbarButton({
@@ -22,6 +23,7 @@ function TopbarButton({
 	tooltipDirection = Direction.Right,
 	isDisabled = false,
 	variant = 'rounded',
+	className,
 	clickHandler
 }: {
 	readonly icon: React.ReactNode;
@@ -29,7 +31,12 @@ function TopbarButton({
 	readonly tooltipType?: 'short' | 'long';
 	readonly tooltipDirection?: Direction;
 	readonly isDisabled?: boolean;
-	readonly variant?: 'rounded' | 'square' | 'startingRadius' | 'endingRadius';
+	readonly variant?:
+		| 'rounded'
+		| 'square'
+		| 'startingRadius'
+		| 'endingRadius';
+	readonly className?: string;
 	readonly clickHandler?: () => void;
 }) {
 	return (
@@ -40,7 +47,9 @@ function TopbarButton({
 		>
 			<button
 				type='button'
-				className={`${styles.btn} ${isDisabled ? undefined : styles.enabled} ${styles[variant]}`}
+				className={`${styles.btn} ${
+					isDisabled ? undefined : styles.enabled
+				} ${styles[variant]} ${className ?? ''}`}
 				disabled={isDisabled}
 				data-test={`top-bar-button:${title}`}
 				onClick={clickHandler}

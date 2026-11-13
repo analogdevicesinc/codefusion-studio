@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,4 +157,15 @@ export function getPartitionsByCoreId(data: any, coreId: string): any[] {
 
   console.log("Number of partitions: ", partitions.length);
   return partitions;
+}
+
+/**
+ * Builds the absolute path to MCUBoot test data files under
+ * src/tests/ui-test-config-tools/fixtures/mcuboot-testdata.
+ *
+ * @param fileName - File name in the mcuboot-testdata folder (e.g. "aes-kw-key.bin").
+ * @returns The fixture path relative to the IDE package.
+ */
+export function getMCUBootTestDataPath(fileName: string): string {
+  return getConfigPathForFile(path.join("mcuboot-testdata", fileName));
 }

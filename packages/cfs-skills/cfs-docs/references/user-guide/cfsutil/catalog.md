@@ -1,7 +1,7 @@
 ---
 description: CFSUtil - Catalog
 author: Analog Devices
-date: 2026-07-27
+date: 2026-10-08
 ---
 
 # Catalog
@@ -13,18 +13,28 @@ The `catalog` commands allow you to update the SoC catalog to the latest online 
 ## Update the catalog
 
 ```sh
-cfsutil catalog update
+cfsutil catalog update [--format text|json]
 ```
 
-Updates the catalog to the latest version available online. Requires an internet connection and either an active myAnalog session or the `CFS_API_KEY` environment variable set with a valid API key.
+Updates the catalog to the latest version available online. Requires an internet connection. If you don't have an active myAnalog session or a valid API key in `CFS_API_KEY`, the update uses the public catalog and might omit restricted SoCs.
+
+| Flag | Description |
+| --- | --- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
+
+With `--format json`, `data` is `{ "updated": true }` on success. If the update fails, the error code is `CATALOG_UPDATE_FAILED`.
 
 ## Restore the catalog
 
 ```sh
-cfsutil catalog restore
+cfsutil catalog restore [--format text|json]
 ```
 
 Restores the catalog to its original version using the backup stored in `<install_dir>/Data/SoC/catalog.zip`. This will delete the existing catalog.
+
+| Flag | Description |
+| --- | --- |
+| `-f, --format` | Output format: `text` (default) or `json`. JSON output uses the [JSON output envelope](index.md#json-output-envelope). |
 
 ## Additional information
 

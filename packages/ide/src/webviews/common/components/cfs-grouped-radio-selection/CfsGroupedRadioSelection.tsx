@@ -61,7 +61,7 @@ type CfsGroupedRadioSelectionProps = Readonly<{
  * or the component will manage it internally if neither are provided (hybrid/uncontrolled pattern).
  */
 function CfsGroupedRadioSelection({
-	dataTest = "cfs-grouped-radio-selection",
+	dataTest = 'cfs-grouped-radio-selection',
 	options,
 	selectedId,
 	highlightQuery,
@@ -86,7 +86,7 @@ function CfsGroupedRadioSelection({
 	useLayoutEffect(() => {
 		if (!isHighlightsAPISupported()) {
 			console.warn(
-				"Browser does not support CSS highlights API, search term highlighting will not work"
+				'Browser does not support CSS highlights API, search term highlighting will not work'
 			);
 
 			return;
@@ -129,7 +129,7 @@ function CfsGroupedRadioSelection({
 			className={styles.container}
 			data-test={`${dataTest}:group-container`}
 		>
-			{options.map((group) => (
+			{options.map(group => (
 				<Accordion
 					key={group.label}
 					open={openGroups[group.id]}
@@ -149,7 +149,7 @@ function CfsGroupedRadioSelection({
 					}}
 				>
 					<div>
-						{group.options.map((option) => (
+						{group.options.map(option => (
 							<div key={option.id}>
 								<Option
 									option={option}
@@ -199,7 +199,7 @@ export function Option({
 				checked={isSelected}
 				value={option.id}
 				className={styles.radio}
-				onChange={(e) => {
+				onChange={e => {
 					if ((e.target as HTMLInputElement).checked) {
 						onChange?.(option.id);
 					}

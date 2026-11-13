@@ -36,3 +36,22 @@
 	@include fonts.heading-h1;
 	margin: 0;
 }
+
+.titleRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: layout.$spacing-3;
+}
+
+.modelInfoCard {
+	border: 0.5px solid colors.$default-border;
+	border-radius: layout.$border-radius-2;
+	padding: layout.$spacing-5;
+}
+
+.modelInfoContainer {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: layout.$spacing-5;
+}

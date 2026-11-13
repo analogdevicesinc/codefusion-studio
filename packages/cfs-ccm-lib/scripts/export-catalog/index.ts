@@ -18,6 +18,7 @@ import {
     CfsApiClient,
     ResourceCatalog,
     SocCatalog,
+    SWPackageCatalog,
     PublicAuthorizer,
 } from 'cfs-ccm-lib';
 
@@ -83,10 +84,11 @@ const argv = await yargsInstance
     })
     .option('catalog', {
         alias: 'c',
-        choices: ['soc', 'resource'],
+        choices: ['soc', 'resource', 'swpackage'],
         description: 'Which catalog(s) to download/export.',
-        default: ['soc', 'resource'],
+        default: ['soc', 'resource', 'swpackage'],
         array: true,
+        unique: true,
     })
     .option('output', {
         alias: 'o',
@@ -154,6 +156,15 @@ if (argv.catalog.includes('soc')) {
 if (argv.catalog.includes('resource')) {
     catalogs.push(
         new ResourceCatalog(
+            { directory: argv.dir },
+            cfsApiClient,
+            argv['cfs-version'],
+        ),
+    );
+}
+if (argv.catalog.includes('swpackage')) {
+    catalogs.push(
+        new SWPackageCatalog(
             { directory: argv.dir },
             cfsApiClient,
             argv['cfs-version'],

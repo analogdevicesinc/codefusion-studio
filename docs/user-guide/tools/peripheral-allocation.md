@@ -1,7 +1,7 @@
 ---
 description: "Peripheral Allocation for CodeFusion Studio"
 author: "Analog Devices"
-date: "2026-07-28"
+date: "2026-08-26"
 ---
 
 # Peripheral Allocation
@@ -60,7 +60,14 @@ Use the **Description** field to capture optional notes about the role of the pe
 !!! note
     You can manage basic pin settings directly from the Peripheral Allocation page. This reduces navigation, while the full set of configuration options remains available in the dedicated **Pin Config** tab. If you need advanced settings or encounter issues, open **Pin Config** to complete the configuration. For more details, see [Pin Config](pin-config.md).
 
-When you allocate a peripheral, some signals are assigned to pins automatically — required signals that have a single possible pin. Optional signals, and signals with more than one possible pin, stay unassigned so you can choose the pin that suits your layout. A signal is sometimes assigned to a pin that another signal already uses, which creates a conflict to resolve.
+#### Notes on pin behavior
+
+When you allocate a peripheral:
+
+- Required signals with a single possible pin are assigned automatically.
+- Optional signals, and signals with more than one possible pin, stay unassigned so you can select the pin that suits your layout.
+- Fixed-function signals on peripherals such as DAI0 don't display a toggle because their pin assignment can't be changed.
+- A signal assigned to a pin that another signal already uses creates a conflict to resolve.
 
 !!! warning
     Signals that require pin assignment or are in conflict display an error ![Error](images/icon-conflict-dark.png#only-dark) ![Error](images/icon-conflict-light.png#only-light).  

@@ -3,7 +3,7 @@
 	"publisher": "adi",
 	"description": "Reusable utilities for CFS components",
 	"author": "Analog Devices",
-	"version": "2.3.0",
+	"version": "2.4.0",
 	"dependencies": {
 		"@ster5/global-mutex": "^3.3.0",
 		"env-paths": "^3"
@@ -11,14 +11,17 @@
 	"devDependencies": {
 		"@types/chai": "^5.2.0",
 		"@types/chai-as-promised": "^8.0.2",
+		"@types/mocha": "^10.0.1",
 		"@types/node": "^22.20.0",
 		"chai": "^5.2.0",
 		"chai-as-promised": "^8.0.1",
 		"mocha": "11.1.0",
+		"oxfmt": "catalog:",
+		"oxlint": "catalog:",
 		"shx": "^0.4.0",
 		"sinon": "^19.0.4",
-		"ts-node": "^10.9.2",
-		"typescript": "^5.8.2"
+		"tsx": "^4.20.4",
+		"typescript": "catalog:"
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -29,10 +32,12 @@
 	"type": "module",
 	"license": "Apache-2.0",
 	"scripts": {
-		"postbuild": "shx cp -r src/conan-backend/config dist/conan-backend/",
+		"postbuild": "shx cp -r src/conan-backend/config dist/conan-backend/ && shx cp src/git-remote/git-remote-cfspkg src/git-remote/git-remote-cfspkg.cmd dist/git-remote/",
 		"clean": "shx rm -rf dist",
 		"build": "yarn lint && tsc -b && yarn postbuild",
-		"lint": "eslint . --ext .ts",
+		"lint": "oxlint --max-warnings 5 .",
+		"format-check": "oxfmt --check {src,test}/**/*.ts",
+		"format-write": "oxfmt --write {src,test}/**/*.ts",
 		"test": "mocha test/**/*.test.ts"
 	}
 }

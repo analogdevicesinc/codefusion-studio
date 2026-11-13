@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import DownCarret from '@common/icons/DownCarret';
 import type {TSavedQuery} from '../../../../common/types/symbols';
 
 import styles from './SavedQueriesDropdown.module.scss';
+import {useLocaleContext} from '../../../../../../common/contexts/LocaleContext';
 
 type TSavedQueriesDropdownProps = {
 	readonly queries: TSavedQuery[];
@@ -53,6 +54,9 @@ export default function SavedQueriesDropdown({
 		TSavedQuery | undefined
 	>(undefined);
 	const [dbError, setDbError] = useState<string>('');
+	const l10n = useLocaleContext()?.symbolExplorer as
+		| Record<string, string>
+		| undefined;
 	const [queryFilterInput, setQueryFilterInput] =
 		useState<string>('');
 	const [isCheckQueryValidity, setIsCheckQueryValidity] =
@@ -148,12 +152,16 @@ export default function SavedQueriesDropdown({
 				editQueryWithoutCheck();
 			}
 		} else {
-			setDbError('This is a duplicate and can not be saved!');
+			setDbError(
+				l10n?.duplicateError ??
+					'This is a duplicate and cannot be saved!'
+			);
 		}
 	}, [
 		editQueryWithCheck,
 		editQueryWithoutCheck,
 		isCheckQueryValidity,
+		l10n?.duplicateError,
 		queries,
 		selectedQuery
 	]);
@@ -166,10 +174,10 @@ export default function SavedQueriesDropdown({
 	const getDeleteModalFooter = () => (
 		<>
 			<Button appearance='secondary' onClick={onToggleDeleteModal}>
-				Cancel
+				{l10n?.cancel ?? 'Cancel'}
 			</Button>
 			<Button appearance='primary' onClick={onDeleteQuery}>
-				Confirm
+				{l10n?.confirm ?? 'Confirm'}
 			</Button>
 		</>
 	);
@@ -177,10 +185,10 @@ export default function SavedQueriesDropdown({
 	const getEditModalFooter = () => (
 		<>
 			<Button appearance='secondary' onClick={onToggleEditModal}>
-				Cancel
+				{l10n?.cancel ?? 'Cancel'}
 			</Button>
 			<Button appearance='primary' onClick={onEditQuery}>
-				Confirm
+				{l10n?.confirm ?? 'Confirm'}
 			</Button>
 		</>
 	);
@@ -198,17 +206,18 @@ export default function SavedQueriesDropdown({
 				}}
 			>
 				<Chip
-					isDisabled={false}
 					isActive={isDropdownOpen}
 					id='saved-queries'
-					label='Saved queries'
+					label={l10n?.savedQueries ?? 'Saved queries'}
 					onClick={() => {
 						onChipClick();
 					}}
 				>
 					<div slot='end' className={styles.button}>
 						<span
-							className={`${isDropdownOpen ? styles['is-open'] : ''} ${styles.icon}`}
+							className={`${
+								isDropdownOpen ? styles['is-open'] : ''
+							} ${styles.icon}`}
 						>
 							<DownCarret />
 						</span>
@@ -216,7 +225,9 @@ export default function SavedQueriesDropdown({
 				</Chip>
 
 				<div
-					className={`${isDropdownOpen ? styles.show : styles.hide} ${styles.panel}`}
+					className={`${isDropdownOpen ? styles.show : styles.hide} ${
+						styles.panel
+					}`}
 				>
 					<SavedQueryContainer
 						queries={queries}
@@ -245,7 +256,18 @@ export default function SavedQueriesDropdown({
 			>
 				<SaveEditQueryModal
 					query={selectedQuery}
-					title={`Edit query ${queries.find(query => query.id === selectedQuery?.id)?.name}`}
+					title={
+						l10n?.editQueryTitle?.replace(
+							'{name}',
+							() =>
+								queries.find(query => query.id === selectedQuery?.id)
+									?.name ?? ''
+						) ??
+						`Edit query ${
+							queries.find(query => query.id === selectedQuery?.id)
+								?.name ?? ''
+						}`
+					}
 					error={dbError}
 					onChange={newQuery => {
 						setSelectedQuery(newQuery);

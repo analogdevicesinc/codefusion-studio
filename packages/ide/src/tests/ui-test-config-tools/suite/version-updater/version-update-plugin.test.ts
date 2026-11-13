@@ -25,9 +25,10 @@ import {
   continueBtn,
   criticalErrorHeader,
   futureVersionCheckbox,
+  headerCss,
+  homePageTitle,
   installLocallyAvailableVersionOption,
   missingPluginLabel,
-  peripheralCard,
   pluginCompleteState,
   pluginDropdown,
   pluginNameLabel,
@@ -71,30 +72,24 @@ describe("Version Updater - System Critical Error", () => {
   const componentDropdown = pluginDropdown(PLUGIN_ID);
   const localVersionOption = installLocallyAvailableVersionOption(PLUGIN_ID);
   const componentNameLabel = pluginNameLabel(PLUGIN_ID);
-
-  // ===Test Setup===
-
-  before(async () => {
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
-  });
-
-  after(async () => {
-    // Teardown - reset cfsconfig file
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
-    await UIUtils.restoreFixtureFileFromGit(configPath);
-  });
-
   let workbench: Workbench;
   let browser: VSBrowser;
   let view: WebView;
 
-  it("Verify locally-available resolution option for plugin  and continue to version update", async function () {
+  // ===Test Setup===
+
+  before(async () => {
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      sleepMs: 3000,
+    }));
+  });
+
+  after(async () => {
+    // Teardown - reset cfsconfig file
+    await UIUtils.teardownTestSuite(view, configPath);
+  });
+
+  it("Verify locally-available resolution option for plugin  and continue to version update @regression", async function () {
     this.timeout(120000);
     // === GIVEN: A cfsconfig file referencing a missing plugin version is opened ===
 
@@ -121,6 +116,7 @@ describe("Version Updater - System Critical Error", () => {
     );
     expect(await missingPluginElement.isDisplayed()).to.be.true;
 
+    await UIUtils.dismissAllNotifications(workbench, browser);
     // === AND: The continue button exists on the critical error page ===
     expect(await UIUtils.waitForElement(view, continueBtn)).to.exist;
     console.log("✓ Continue button exists on critical error page");
@@ -165,29 +161,48 @@ describe("Version Updater - System Critical Error", () => {
     console.log("✓ Clicked Continue button");
 
     // === THEN: The plugin is shown in resolved/complete state ===
-    const systemPlannerBtn = await UIUtils.waitForElement(
+    const completedElement = await UIUtils.waitForElementToBeVisible(
       view,
-      systemPlannerButton,
+      componentCompleteState,
+      15000,
     );
-    expect(systemPlannerBtn).to.exist;
-    expect(
-      await (
-        await UIUtils.findWebElement(view, componentCompleteState)
-      ).isDisplayed(),
-    ).to.be.true;
+    expect(await completedElement.isDisplayed()).to.be.true;
+
     expect(await UIUtils.findWebElement(view, componentNameLabel)).to.exist;
 
-    // === WHEN: The user clicks "Continue to System Planner" ===
-    await systemPlannerBtn.click();
+    await UIUtils.clickElement(view, systemPlannerButton);
 
-    // === THEN: The System Planner loads and a peripheral card is visible ===
+    // === THEN: The System Planner loads and shows the home page ===
+    await UIUtils.sleep(3000);
     await view.switchBack();
-    await UIUtils.sleep(2000);
+
+    view = new WebView();
+    await view.wait(8000);
+
+    // Webview frame can take longer to attach when extension host is under load.
     await view.switchToFrame(5000);
 
-    const card = await UIUtils.waitForElement(view, peripheralCard);
-    expect(card).to.exist;
-    await card.click();
+    const pageTitle = await UIUtils.waitForElementToBeVisible(
+      view,
+      homePageTitle,
+      15000,
+    );
+
+    const pageTitleText = await pageTitle.getText();
+    expect(pageTitleText).to.equal(
+      "TEST690",
+      "TEST690 title should be visible in the WebView",
+    );
+
+    const headerElement = await UIUtils.waitForElementToBeVisible(
+      view,
+      headerCss,
+    );
+    const headerText = (await headerElement.getText()).trim();
+    expect(headerText).to.equal(
+      "System Planner Configuration Tools",
+      "System Planner title should be visible in the WebView",
+    );
 
     //=== Then save to view the updated cfsconfig file with the applied version update ===
 
@@ -238,21 +253,16 @@ describe("Version Updater - No Resolution Dropdown For Unavailable Plugin Versio
   let workbench: Workbench;
 
   before(async () => {
-    browser = VSBrowser.instance;
-    workbench = new Workbench();
-    await new Workbench().executeCommand("workbench.action.closeAllEditors");
-    await UIUtils.sleep(3000);
+    ({ browser, workbench } = await UIUtils.setupTestSuite({
+      sleepMs: 3000,
+    }));
   });
 
   after(async () => {
-    if (view) {
-      await view.switchBack();
-      await new Workbench().executeCommand("revert and close editor");
-    }
-    await UIUtils.restoreFixtureFileFromGit(configPath);
+    await UIUtils.teardownTestSuite(view, configPath);
   });
 
-  it("Verify no resolution dropdown and troubleshooting link for unavailable plugin version", async function () {
+  it("Verify no resolution dropdown and troubleshooting link for unavailable plugin version @regression", async function () {
     this.timeout(60000);
 
     // === GIVEN: A cfsconfig referencing a plugin version newer than any locally-installed version ===

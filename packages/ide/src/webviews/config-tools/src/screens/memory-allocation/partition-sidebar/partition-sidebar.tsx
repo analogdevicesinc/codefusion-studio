@@ -16,7 +16,7 @@
 import {Button, SlidingPanel, CfsSuspense} from 'cfs-react-library';
 import styles from './partition-sidebar.module.scss';
 import {useAppDispatch} from '../../../state/store';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {
 	createPartition,
 	editPartition,
@@ -44,8 +44,13 @@ import ConfigUnavailable from '../../../components/config-unavailable/config-una
 import DeleteIcon from '../../../../../common/icons/Delete';
 import {CONTROL_SCOPES} from '../../../constants/scopes';
 import {evaluateCondition} from '../../../utils/rpn-expression-resolver';
-import {validatePluginOptions} from '../../../utils/plugin-options-validation';
+import {
+	validatePluginOptions,
+	type ScopeValidationOptions
+} from '../../../utils/plugin-options-validation';
 import {getAllPluginOptions} from '../../../utils/plugin-options';
+import {useScopes} from '../../../state/slices/scopes/scopes.selector';
+import {localizeMessage} from '../../../../../common/utils/localization';
 
 type PartitionSidebarProps = {
 	readonly isFormTouched: boolean;
@@ -64,9 +69,9 @@ function addDefaultPluginOptionValues(
 
 	Object.entries(pluginOptions).forEach(([projectId, controls]) => {
 		if (partition.projects.find(p => p.projectId === projectId)) {
-			partition.config = {...(partition.config ?? {})};
+			partition.config = {...partition.config};
 			partition.config[projectId] = {
-				...(partition.config[projectId] ?? {})
+				...partition.config[projectId]
 			};
 
 			controls.memory?.forEach(control => {
@@ -105,6 +110,7 @@ export function PartitionSidebar({
 		useSidebarState();
 	const projects = useActivePartitionProjects();
 	const config = useActivePartitionConfig();
+	const scopes = useScopes();
 
 	// Existing partitions have a name.
 	const existingPartition = Boolean(sidebarPartition.displayName);
@@ -182,6 +188,50 @@ export function PartitionSidebar({
 		[config, pluginOptions, projects]
 	);
 
+	const formatScopeConflictMessage = useCallback<
+		ScopeValidationOptions['formatConflictMessage']
+	>(
+		({value, conflictingItems, controlType}) =>
+			localizeMessage(
+				i10n,
+				controlType === 'boolean'
+					? 'partition.scope-conflict.booleanError'
+					: 'partition.scope-conflict.error',
+				{
+					value,
+					conflictingItems
+				}
+			),
+		[i10n]
+	);
+
+	const scopeValidationByProject = useMemo(() => {
+		const validationByProject: Record<
+			string,
+			ScopeValidationOptions
+		> = {};
+
+		for (const project of projects ?? []) {
+			validationByProject[project.projectId] = {
+				scopes,
+				controlScope: CONTROL_SCOPES.MEMORY,
+				projectId: project.projectId,
+				itemId: existingPartition
+					? sidebarPartition.displayName
+					: undefined,
+				formatConflictMessage: formatScopeConflictMessage
+			};
+		}
+
+		return validationByProject;
+	}, [
+		existingPartition,
+		projects,
+		scopes,
+		sidebarPartition.displayName,
+		formatScopeConflictMessage
+	]);
+
 	const pluginOptionsAreValid = useMemo(() => {
 		const projectIdList = Object.keys(pluginOptions);
 
@@ -190,7 +240,8 @@ export function PartitionSidebar({
 			const pluginControls = pluginOptions[projectId].memory ?? [];
 			const pluginOptionsErrors = validatePluginOptions(
 				config,
-				pluginControls
+				pluginControls,
+				scopeValidationByProject[projectId]
 			);
 
 			if (Object.keys(pluginOptionsErrors).length > 0) {
@@ -199,7 +250,7 @@ export function PartitionSidebar({
 		}
 
 		return true;
-	}, [allPluginOptions, pluginOptions]);
+	}, [allPluginOptions, pluginOptions, scopeValidationByProject]);
 
 	const partitionTitle = useMemo(
 		() => (
@@ -333,6 +384,7 @@ export function PartitionSidebar({
 							<PluginOptionsSection
 								pluginOptions={pluginOptions}
 								allOptions={allPluginOptions}
+								scopeValidation={scopeValidationByProject}
 							/>
 						</CfsSuspense>
 					) : (

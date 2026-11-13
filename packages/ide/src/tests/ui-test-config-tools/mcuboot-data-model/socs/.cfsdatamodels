@@ -1,0 +1,11 @@
+{
+  "MCUTESTS": {
+    "mcu": {
+      "version": "1.3.831",
+      "schema": "1.2.0",
+      "timestamp": "2026-06-10 00:00:00.000000",
+      "description": "MCUTESTS SoC for MCUBoot extension tests.",
+      "path": "mcutests-mcu.json"
+    }
+  }
+}

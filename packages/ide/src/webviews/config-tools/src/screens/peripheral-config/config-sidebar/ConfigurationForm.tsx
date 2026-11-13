@@ -24,6 +24,7 @@ import styles from './PeripheralConfigForm.module.scss';
 import BooleanControl from '../../../components/boolean-control/BooleanControl';
 import {HexInputField} from 'cfs-react-library';
 import {areControlValuesEqual} from '../../../utils/control-defaults';
+import {useLocaleContext} from '@common/contexts/LocaleContext';
 
 type ConfigurationFormProps = Readonly<{
 	controls: TFormControl[];
@@ -46,6 +47,9 @@ function ConfigurationForm({
 	testId = 'configuration-form',
 	emptyMessage = 'No settings available.'
 }: ConfigurationFormProps) {
+	const l10n = useLocaleContext()?.peripheralConfig as
+		| Record<string, string>
+		| undefined;
 	const didDefaultValuesChange = useMemo(
 		() =>
 			Object.entries(data ?? {}).some(
@@ -103,7 +107,7 @@ function ConfigurationForm({
 				<div className={styles.info}>
 					<span>&lowast;</span>
 					<label data-test='package-display-info'>
-						Non-default value
+						{l10n?.nonDefaultValue ?? 'Non-default value'}
 					</label>
 				</div>
 			)}
@@ -138,7 +142,7 @@ function ConfigurationForm({
 						// since some parts of the controls may be hidden or not passed down.
 						onClick={onReset}
 					>
-						Reset to default
+						{l10n?.resetToDefault ?? 'Reset to default'}
 					</label>
 				)}
 		</section>

@@ -12,7 +12,7 @@
  * limitations under the License.
  *
  */
-import type * as vscode from "vscode";
+import * as vscode from "vscode";
 import { AbstractViewProvider } from "./view-provider-abstract";
 import type { MissingDependencyError } from "cfs-lib";
 
@@ -41,7 +41,18 @@ export class ViewProviderPanel extends AbstractViewProvider {
       localResourceRoots: [this.context.extensionUri],
     };
 
-    webview.html = await this.getWebviewHtml(webview, commandArgs);
+    const html = await this.getWebviewHtml(webview, commandArgs);
+
+    const themeListener = vscode.window.onDidChangeActiveColorTheme((theme) => {
+      void webview.postMessage({
+        type: "theme-changed",
+        kind: theme.kind,
+      });
+    });
+
+    webviewView.onDidDispose(() => themeListener.dispose());
+
+    webview.html = html;
   }
 
   async resolveWebviewErrorView(

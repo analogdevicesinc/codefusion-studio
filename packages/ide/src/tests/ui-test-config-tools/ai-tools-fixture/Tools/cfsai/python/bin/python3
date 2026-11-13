@@ -1,0 +1,13 @@
+#!/bin/sh
+# Fixture stub for the cfsai python toolchain (invoked as `python3 -m <module> ...`):
+# reports every model as compatible/profiled with no issues, without requiring
+# a real Python/cfsai install in E2E tests. Payloads match the Report Viewer's
+# zod schema (packages/ide/src/custom-editors/report-viewer/report-schema.ts).
+case "$2" in
+  cfsai_resource_profiler)
+    printf '%s' '[{"type":"DATA","value":"{\"type\":\"profile\",\"info\":{\"timestamp\":\"2026-01-01T00:00:00Z\",\"version\":\"1.0.0\",\"hardware\":{\"FlashSize\":0,\"RamSize\":0,\"CoreClock\":0,\"SupportedOps\":[],\"AccelOps\":[],\"SupportedDataTypes\":[],\"OperatorInfos\":[],\"Target\":null}},\"model_summary\":{\"model_name\":\"model\",\"model_path\":\"model\",\"framework\":\"unknown\",\"model_size_kb\":0,\"target_dtype\":\"unknown\",\"layer_count\":0,\"total_parameters\":0},\"hardware_metrics\":{\"total_cycles\":0,\"estimated_latency_ms\":0,\"estimated_power_mw\":0,\"peak_memory_kb\":0,\"peak_memory_mb\":0,\"available_ram_kb\":0,\"accelerated_layers\":0,\"cpu_only_layers\":0},\"memory_analysis\":{\"model_peak_ram_kb\":0,\"available_ram_kb\":0,\"ram_utilization_percent\":0,\"ram_status\":\"OK\",\"memory_issues\":[],\"memory_recommendations\":[]},\"layer_performance\":[],\"optimization_suggestions\":[],\"optimization_opportunities\":{\"total_parameter_memory_kb\":0,\"total_macs\":0,\"layerwise_opportunities\":[],\"macs_opportunities\":[]},\"errors\":[]}"}]'
+    ;;
+  *)
+    printf '%s' '[{"type":"DATA","value":"{\"type\":\"compat\",\"info\":{\"timestamp\":\"2026-01-01T00:00:00Z\",\"version\":\"1.0.0\",\"hardware\":{\"FlashSize\":0,\"RamSize\":0,\"CoreClock\":0,\"SupportedOps\":[],\"AccelOps\":[],\"SupportedDataTypes\":[],\"OperatorInfos\":[],\"Target\":null}},\"model_summary\":{\"model_name\":\"model\",\"model_path\":\"model\"},\"memory_issues\":[],\"operator_issues\":[],\"unsupported_types\":[]}"}]'
+    ;;
+esac

@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ describe('Multi-Cast Feature tests', () => {
 			localStorage.setItem(
 				'DFGConfig',
 				JSON.stringify({
-					Soc: 'DFGTEST',
+					Soc: 'DFGTESTS',
 					BoardName: '',
 					Package: 'WLP',
 					projects: [

@@ -493,6 +493,57 @@ describe('Core Configuration Screen', () => {
 		});
 	});
 
+	it('Should show the controls when the plugin info icon is clicked', () => {
+		const testStore = {...store};
+		testStore.dispatch(setActiveScreen(navigationItems.coreConfig));
+		testStore.dispatch(setSelectedSoc('MAX32690'));
+		testStore.dispatch(
+			setSelectedBoardPackage({boardId: '', packageId: 'wlp'})
+		);
+		testStore.dispatch(setCoresInitialState(['Arm Cortex-M4F']));
+		testStore.dispatch(setCoreToConfigId('Arm Cortex-M4F'));
+
+		cy.mount(<TestComponent />, testStore).then(() => {
+			cy.dataTest(
+				'core-config:dynamic-form:control-ProjectName-control-input'
+			).should('not.exist');
+
+			cy.dataTest('coreConfig:card:MAX32690_zephyr.plugin')
+				.find('[slot="end"] svg')
+				.click();
+
+			cy.dataTest(
+				'core-config:dynamic-form:control-ProjectName-control-input'
+			).should('exist');
+		});
+	});
+
+	it('Should show the controls when the end-slot padding is clicked', () => {
+		const testStore = {...store};
+		testStore.dispatch(setActiveScreen(navigationItems.coreConfig));
+		testStore.dispatch(setSelectedSoc('MAX32690'));
+		testStore.dispatch(
+			setSelectedBoardPackage({boardId: '', packageId: 'wlp'})
+		);
+		testStore.dispatch(setCoresInitialState(['Arm Cortex-M4F']));
+		testStore.dispatch(setCoreToConfigId('Arm Cortex-M4F'));
+
+		cy.mount(<TestComponent />, testStore).then(() => {
+			cy.dataTest(
+				'core-config:dynamic-form:control-ProjectName-control-input'
+			).should('not.exist');
+
+			cy.dataTest('coreConfig:card:MAX32690_zephyr.plugin')
+				.find('[slot="end"]')
+				.parent()
+				.click(2, 26);
+
+			cy.dataTest(
+				'core-config:dynamic-form:control-ProjectName-control-input'
+			).should('exist');
+		});
+	});
+
 	it('Should only show plugins that support the selected core', () => {
 		const testStore = {...store};
 		testStore.dispatch(setActiveScreen(navigationItems.coreConfig));
@@ -558,15 +609,13 @@ describe('Core Configuration Screen', () => {
 
 		cy.mount(<TestComponent />, testStore).then(() => {
 			// V1.0.0 supports wlp — its card should appear
-			cy.dataTest(
-				'coreConfig:card:MAX32690_MultiVer.plugin'
-			).should('exist');
+			cy.dataTest('coreConfig:card:MAX32690_MultiVer.plugin').should(
+				'exist'
+			);
 
 			// The compatible v1.0.0 should be the only card rendered,
 			// not the incompatible v2.0.0 that targets tqfn
-			cy.dataTest(
-				'coreConfig:card:MAX32690_MultiVer.plugin'
-			)
+			cy.dataTest('coreConfig:card:MAX32690_MultiVer.plugin')
 				.should('have.length', 1)
 				.and('contain.text', 'v1.0.0');
 		});

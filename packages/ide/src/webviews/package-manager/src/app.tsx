@@ -18,6 +18,7 @@ import {
 	useLocaleContext
 } from '@common/contexts/LocaleContext';
 import PackageManagerHeader from './components/header/PackageManagerHeader';
+import {type PackageManagerView} from './components/package-manager-tabs/PackageManagerTabs';
 import '@vscode/codicons/dist/codicon.css';
 
 import styles from './app.module.scss';
@@ -25,6 +26,7 @@ import Onboarding from './components/onboarding/Onboarding';
 import MainPackageContainer from './components/main-package-container/MainPackageContainer';
 import Pagination from './components/pagination/Pagination';
 import ActionBar from './components/action-bar/ActionBar';
+import RemotesView from './components/remotes-view/RemotesView';
 import {Provider} from 'react-redux';
 import {MessengerProvider} from '../../common/contexts/MessengerContext';
 import {store, useAppDispatch} from './state/store';
@@ -38,6 +40,8 @@ import ReviewSummary from './components/review-summary/ReviewSummary';
 import LicenseAcceptPage from './components/license-page/LicenseAcceptPage';
 import LicensePreviewPage from './components/license-preview-page/LicensePreviewPage';
 import InstallProgressPage from './components/install-progress/InstallProgressPage';
+import {useInstallPlan} from './hooks/useInstallPlan';
+import {useIndexingLock} from './hooks/useIndexingLock';
 
 type CommandArgs = {
 	view?: 'license-preview';
@@ -60,9 +64,18 @@ function AppContent() {
 	const loading = usePackageListLoading();
 	const hasInstalledVersionSelected =
 		useHasInstalledVersionSelected();
+	const indexingLock = useIndexingLock();
 	const [step, setStep] = useState<
 		'list' | 'review' | 'license' | 'installing'
 	>('list');
+	const [activeView, setActiveView] =
+		useState<PackageManagerView>('packages');
+
+	// Only fetch install plan when user is on review/license pages (not on the list page)
+	// This prevents expensive background fetching while user is still selecting packages
+	const packagesForPlan =
+		step === 'review' || step === 'license' ? selectedPackages : [];
+	const installPlanResult = useInstallPlan(packagesForPlan);
 
 	const handleContinue = () => {
 		if (selectedPackages.length === 0) {
@@ -76,25 +89,53 @@ function AppContent() {
 
 	return (
 		<div className={styles.appContainer}>
-			<PackageManagerHeader />
+			<PackageManagerHeader
+				activeView={activeView}
+				onViewChange={setActiveView}
+				showTabs={step === 'list'}
+			/>
+			{/* Sits outside the scrolling area so it stays pinned above both tabs.
+			    Hidden rather than unmounted so a dismissal survives the install flow. */}
+			<div className={step === 'list' ? undefined : styles.hidden}>
+				<Onboarding />
+			</div>
 			<div className={styles.main}>
+				{/* Use hidden class to keep both tab views mounted so that state is preserved */}
 				<div
-					className={step === 'list' ? styles.content : styles.hidden} // Use hidden class to keep the component mounted so that state is preserved
+					className={
+						step === 'list' && activeView === 'packages'
+							? styles.content
+							: styles.hidden
+					}
 				>
-					<Onboarding />
 					<MainPackageContainer />
 					{!loading && (
 						<div className={styles.bottomBar}>
 							<Pagination />
 							<ActionBar
+								dataTest='list-action-bar'
 								primaryAction={{
 									label: actionBarL10n?.continue ?? 'continue',
-									disabled: hasInstalledVersionSelected,
+									disabled:
+										hasInstalledVersionSelected ||
+										indexingLock !== undefined,
+									disabledReason: indexingLock,
 									onClick: handleContinue
 								}}
 							/>
 						</div>
 					)}
+				</div>
+				<div
+					className={
+						step === 'list' && activeView === 'remotes'
+							? styles.content
+							: styles.hidden
+					}
+				>
+					<RemotesView
+						isActive={step === 'list' && activeView === 'remotes'}
+					/>
 				</div>
 
 				{step === 'review' && (
@@ -105,6 +146,10 @@ function AppContent() {
 						onContinue={() => {
 							setStep('license');
 						}}
+						onInstall={() => {
+							setStep('installing');
+						}}
+						installPlanResult={installPlanResult}
 					/>
 				)}
 				{step === 'license' && (
@@ -115,6 +160,7 @@ function AppContent() {
 						onAcceptAndInstall={() => {
 							setStep('installing');
 						}}
+						installPlanResult={installPlanResult}
 					/>
 				)}
 				{step === 'installing' && (

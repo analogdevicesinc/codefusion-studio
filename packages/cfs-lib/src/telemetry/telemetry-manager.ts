@@ -34,7 +34,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({
-	path: path.resolve(__dirname, "../../../../.env")
+	path: [
+		// First match wins
+		path.resolve(__dirname, "../../../../.env"), // repo root, when running from dist
+		path.resolve(__dirname, ".env") // next to a single-file bundle (e.g. the IDE extension)
+	]
 });
 
 export enum UserType {

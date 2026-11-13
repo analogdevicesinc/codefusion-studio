@@ -30,10 +30,8 @@ import {
 } from './model-layers-table';
 import {formatToFixedOrFirstSignificant} from '@common/utils/string';
 import {useLocaleContext} from '@common/contexts/LocaleContext';
-import {
-	type FilterdLayerData,
-	type OptimizationOpportunities
-} from '@ide-types/report-view-types';
+import type {CfsAiProfilingOptimizationOpportunities} from 'cfs-types';
+import {type FilterdLayerData} from '@ide-types/report-view-types';
 
 const defaultQuery = 'Select *';
 
@@ -44,7 +42,7 @@ export function ModelLayersSection({
 	activeSqlQuery,
 	setActiveSqlQuery
 }: {
-	readonly reportOptimizations: OptimizationOpportunities;
+	readonly reportOptimizations?: CfsAiProfilingOptimizationOpportunities;
 	readonly activeSqlQuery: string;
 	readonly setActiveSqlQuery: (query: string) => void;
 }) {
@@ -159,6 +157,36 @@ export function ModelLayersSection({
 }
 
 function DataInfoFooter({data}: {readonly data: FilterdLayerData}) {
+	if (data.kind === 'runtime-profile') {
+		return (
+			<div className={styles.footer}>
+				<FooterInfoEntry
+					label='Layers Displayed'
+					value={data.rows.length.toString()}
+				/>
+				{data.rows[0].avg_latency_ms !== undefined && (
+					<FooterInfoEntry
+						label='Total Layers Latency'
+						value={`${formatToFixedOrFirstSignificant(
+							data.rows.reduce(
+								(acc, row) => acc + (row.avg_latency_ms ?? 0),
+								0
+							)
+						)} ms`}
+					/>
+				)}
+				{data.rows[0].memory_kb !== undefined && (
+					<FooterInfoEntry
+						label='Peak Memory'
+						value={`${Math.max(
+							...data.rows.map(row => row.memory_kb ?? 0)
+						).toLocaleString()}kb`}
+					/>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div className={styles.footer}>
 			<FooterInfoEntry
@@ -176,15 +204,20 @@ function DataInfoFooter({data}: {readonly data: FilterdLayerData}) {
 			{data.rows[0].cycles !== undefined && (
 				<FooterInfoEntry
 					label='Total Cycles'
-					value={`${data.rows
+					value={data.rows
 						.reduce((acc, row) => acc + (row.cycles ?? 0), 0)
-						.toLocaleString()}`}
+						.toLocaleString()}
 				/>
 			)}
 			{data.rows[0].latency_ms !== undefined && (
 				<FooterInfoEntry
 					label='Latency'
-					value={`${formatToFixedOrFirstSignificant(data.rows.reduce((acc, row) => acc + (row.latency_ms ?? 0), 0))}ms`}
+					value={`${formatToFixedOrFirstSignificant(
+						data.rows.reduce(
+							(acc, row) => acc + (row.latency_ms ?? 0),
+							0
+						)
+					)}ms`}
 				/>
 			)}
 		</div>
